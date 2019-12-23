@@ -1,4 +1,9 @@
+using Rx
+
 export AdditionNode
+
+@CreateMapOperator(ForwardOut, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (d) -> calculate_addition_out(d[1], d[2]))
+@CreateMapOperator(BackwardIn1, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (d) -> calculate_addition_in1(d[1], d[2]))
 
 struct AdditionNode <: AbstractFactorNode
     name :: String
@@ -13,10 +18,10 @@ struct AdditionNode <: AbstractFactorNode
         out = InterfaceOut("[$name] outInterfaceOut")
 
         # Forward message over the out
-        define_sum_product!(out, combineLatest(in1.joint_message, in2.joint_message) |> map(AbstractMessage, (d) -> calculate_addition_out(d[1], d[2])))
+        define_sum_product!(out, combineLatest(in1.joint_message, in2.joint_message) |> ForwardOutMapOperator())
 
         # Backward message over the in1
-        define_sum_product!(in1, combineLatest(out.joint_message, in2.joint_message) |> map(AbstractMessage, (d) -> calculate_addition_in1(d[1], d[2])))
+        define_sum_product!(in1, combineLatest(out.joint_message, in2.joint_message) |> BackwardIn1MapOperator())
 
         # Backward message over the in2
         define_sum_product!(in2, throwError("[$name]: Sum product message over the in2 in addition node is not implemented at all because I am too lazy", AbstractMessage))
