@@ -1,4 +1,4 @@
-using Rx
+using Distributions
 
 export AbstractMessage
 export DeterministicMessage, StochasticMessage
@@ -24,16 +24,16 @@ function multiply(d1::DeterministicMessage, d2::DeterministicMessage)::Determini
     return DeterministicMessage(zero(Float64))
 end
 
-function multiply(n1::StochasticMessage{D}, n2::StochasticMessage{D})::StochasticMessage{Normal} where { D <: Normal }
-    mean1 = mean(n1)
-    mean2 = mean(n2)
+function multiply(n1::StochasticMessage{D}, n2::StochasticMessage{D})::StochasticMessage{Normal{Float64}} where { D <: Normal{Float64} }
+    mean1 = mean(n1.distribution)
+    mean2 = mean(n2.distribution)
 
-    var1 = var(n1)
-    var2 = var(n2)
+    var1 = var(n1.distribution)
+    var2 = var(n2.distribution)
 
     result = Normal((mean1 * var2 + mean2 * var1) / (var2 + var1), sqrt((var1 * var2) / (var1 + var2)))
 
-    return StochasticMessage{Normal}(result)
+    return StochasticMessage(result)
 end
 
 multiply(m1::AbstractMessage, m2::AbstractMessage) = error("Message multiplication for types $(typeof(m1)) and $(typeof(m2)) is not implemented")
