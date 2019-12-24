@@ -29,3 +29,16 @@ end
 function Rx.on_subscribe!(lazy::LazyObservable{D}, actor::A) where { A <: AbstractActor{D} } where D
     return subscribe!(lazy.observable, actor)
 end
+
+struct LazyCombined{D1, D2} <: Subscribable{Tuple{D1, D2}}
+    lazy1 :: LazyObservable{D1}
+    lazy2 :: LazyObservable{D2}
+end
+
+function Rx.on_subscribe!(combinedLazy::LazyCombined{D1, D2}, actor::A) where { A <: AbstractActor{Tuple{D1, D2}} } where D1 where D2
+    return subscribe!(combineLatest(combinedLazy.lazy1.observable, combinedLazy.lazy2.observable), actor)
+end
+
+function Rx.combineLatest(source1::LazyObservable{D1}, source2::LazyObservable{D2}) where D1 where D2
+    return LazyCombined{D1, D2}(source1, source2)
+end
