@@ -4,42 +4,35 @@ export AbstractInterface, InterfaceIn, InterfaceOut
 
 abstract type AbstractInterface end
 
-function define_joint!(interface::AbstractInterface, observable)
-    define!(interface.joint_message, observable)
-end
+define_joint!(interface::I, observable) where { I <: AbstractInterface }       = define!(interface.joint_message, observable)
+define_sum_product!(interface::I, observable) where { I <: AbstractInterface } = define!(interface.sum_product_message, observable)
 
-function define_sum_product!(interface::AbstractInterface, observable)
-    define!(interface.sum_product_message, observable)
-end
+sum_product(interface::I) where { I <: AbstractInterface } = interface.sum_product_message
 
-function sum_product(interface::AbstractInterface)
-    return interface.sum_product_message
-end
-
-struct InterfaceIn <: AbstractInterface
+struct InterfaceIn{S, J} <: AbstractInterface
     name :: String
 
-    joint_message       :: LazyObservable{AbstractMessage}
-    sum_product_message :: LazyObservable{AbstractMessage}
+    sum_product_message :: LazyObservable{S}
+    joint_message       :: LazyObservable{J}
 
-    InterfaceIn(name::String) = begin
-        joint_message       = LazyObservable{AbstractMessage}("[$name]: jointMessage")
-        sum_product_message = LazyObservable{AbstractMessage}("[$name]: sumProductMessage")
+    InterfaceIn{S, J}(name::String) where { S <: AbstractMessage } where { J <: AbstractMessage } = begin
+        sum_product_message = LazyObservable{S}("[$name]: sumProductMessage")
+        joint_message       = LazyObservable{J}("[$name]: jointMessage")
 
-        return new(name, joint_message, sum_product_message)
+        return new(name, sum_product_message, joint_message)
     end
 end
 
-struct InterfaceOut <: AbstractInterface
+struct InterfaceOut{S, J} <: AbstractInterface
     name :: String
 
-    joint_message       :: LazyObservable{AbstractMessage}
-    sum_product_message :: LazyObservable{AbstractMessage}
+    sum_product_message :: LazyObservable{S}
+    joint_message       :: LazyObservable{J}
 
-    InterfaceOut(name::String) = begin
-        joint_message       = LazyObservable{AbstractMessage}("[$name]: jointMessage")
-        sum_product_message = LazyObservable{AbstractMessage}("[$name]: sumProductMessage")
+    InterfaceOut{S, J}(name::String) where { S <: AbstractMessage } where { J <: AbstractMessage } = begin
+        sum_product_message = LazyObservable{S}("[$name]: sumProductMessage")
+        joint_message       = LazyObservable{J}("[$name]: jointMessage")
 
-        return new(name, joint_message, sum_product_message)
+        return new(name, sum_product_message, joint_message)
     end
 end
