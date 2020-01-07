@@ -1,6 +1,5 @@
 module ReactiveMP
 
-include("lazy_observable.jl")
 include("message.jl")
 include("interface.jl")
 include("variable.jl")

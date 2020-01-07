@@ -8,6 +8,10 @@ function Rx.on_call!(::Type{Tuple{In1J, In2J}}, ::Type{OutS}, operator::Addition
     return ProxyObservable{OutS}(source, AdditionOutForwardMapOperatorProxy{In1J, In2J, OutS}())
 end
 
+function Rx.on_call!(::Type{Tuple{In1J, In2J}}, ::Type{OutS}, operator::AdditionOutForwardMapOperator{In1J, In2J, OutS}, source::SingleObservable{Tuple{In1J, In2J}}) where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
+    return SingleObservable{OutS}(calculate_addition_out(source.value[1], source.value[2]))
+end
+
 struct AdditionOutForwardMapOperatorProxy{In1J, In2J, OutS} <: ActorProxy end
 
 function Rx.actor_proxy!(proxy::AdditionOutForwardMapOperatorProxy{In1J, In2J, OutS}, actor::A) where { A <: AbstractActor{OutS} } where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
@@ -36,6 +40,10 @@ struct AdditionIn1BackwardMapOperator{OutJ, In2J, In1S} <: TypedOperator{Tuple{O
 
 function Rx.on_call!(::Type{Tuple{OutJ, In2J}}, ::Type{In1S}, operator::AdditionIn1BackwardMapOperator{OutJ, In2J, In1S}, source) where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
     return ProxyObservable{In1S}(source, AdditionIn1BackwardMapOperatorProxy{OutJ, In2J, In1S}())
+end
+
+function Rx.on_call!(::Type{Tuple{OutJ, In2J}}, ::Type{In1S}, operator::AdditionIn1BackwardMapOperator{OutJ, In2J, In1S}, source::SingleObservable{Tuple{OutJ, In2J}}) where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
+    return SingleObservable{In1S}(calculate_addition_in1(source.value[1], source.value[2]))
 end
 
 struct AdditionIn1BackwardMapOperatorProxy{OutJ, In2J, In1S} <: ActorProxy end
