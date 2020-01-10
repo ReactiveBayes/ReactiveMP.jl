@@ -24,7 +24,7 @@ function multiply(d1::DeterministicMessage, d2::DeterministicMessage)::Determini
     return DeterministicMessage(zero(Float64))
 end
 
-function multiply(n1::StochasticMessage{D}, n2::StochasticMessage{D})::StochasticMessage{Normal{Float64}} where { D <: Normal{Float64} }
+function multiply(n1::StochasticMessage{Normal{Float64}}, n2::StochasticMessage{Normal{Float64}})::StochasticMessage{Normal{Float64}}
     mean1 = mean(n1.distribution)
     mean2 = mean(n2.distribution)
 
