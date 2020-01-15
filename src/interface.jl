@@ -4,10 +4,11 @@ export AbstractInterface, InterfaceIn, InterfaceOut
 
 abstract type AbstractInterface end
 
-define_joint!(interface::I, observable) where { I <: AbstractInterface }       = set!(interface.lazy_jm, observable)
-define_sum_product!(interface::I, observable) where { I <: AbstractInterface } = set!(interface.lazy_sp, observable)
+define_joint!(interface, observable)       = set!(interface.lazy_jm, observable)
+define_sum_product!(interface, observable) = set!(interface.lazy_sp, observable)
 
-sum_product(interface::I) where { I <: AbstractInterface } = interface.sum_product_message
+sum_product(interface) = interface.sum_product_message
+joint(interface)       = interface.joint_message
 
 struct InterfaceIn{S, J} <: AbstractInterface
     name :: String
@@ -23,7 +24,7 @@ struct InterfaceIn{S, J} <: AbstractInterface
         lazy_jm = LazyObservable{J}()
 
         sum_product_message = lazy_sp# |> replay(1) #|> take(1)
-        joint_message       = lazy_jm #|> take(1)
+        joint_message       = lazy_jm#|> take(1)
 
         return new(name, lazy_sp, lazy_jm, sum_product_message, joint_message)
     end
@@ -42,7 +43,7 @@ struct InterfaceOut{S, J} <: AbstractInterface
         lazy_sp = LazyObservable{S}()
         lazy_jm = LazyObservable{J}()
 
-        sum_product_message = lazy_sp# |> replay(1) #|> take(1)
+        sum_product_message = lazy_sp # |> replay(1) #|> take(1)
         joint_message       = lazy_jm #|> take(1)
 
         return new(name, lazy_sp, lazy_jm, sum_product_message, joint_message)

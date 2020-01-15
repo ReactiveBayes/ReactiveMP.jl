@@ -17,7 +17,7 @@ struct GaussianMeanVarianceFactorNode <: AbstractFactorNode
         value    = InterfaceOut{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}("[$name]: valueInterfaceOut")
 
         # Forward message over the value
-        define_sum_product!(value, combineLatest(mean.joint_message, variance.joint_message) |> GaussianValueForwardMapOperator())
+        define_sum_product!(value, combineLatest(joint(mean), joint(variance)) |> GaussianValueForwardMapOperator())
 
         # Backward message over the mean
         define_sum_product!(mean, throwError("[$name]: messageOverTheMean is not implemented for all types of incoming messages", AbstractMessage))

@@ -2,71 +2,9 @@ using Rx
 
 export AdditionNode, addition_node
 
-struct AdditionOutForwardMapOperator{In1J, In2J, OutS} <: TypedOperator{Tuple{In1J, In2J}, OutS} end
-
-function Rx.on_call!(::Type{Tuple{In1J, In2J}}, ::Type{OutS}, operator::AdditionOutForwardMapOperator{In1J, In2J, OutS}, source) where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
-    return ProxyObservable{OutS}(source, AdditionOutForwardMapOperatorProxy{In1J, In2J, OutS}())
-end
-
-function Rx.on_call!(::Type{Tuple{In1J, In2J}}, ::Type{OutS}, operator::AdditionOutForwardMapOperator{In1J, In2J, OutS}, source::SingleObservable{Tuple{In1J, In2J}}) where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
-    return SingleObservable{OutS}(calculate_addition_out(source.value[1], source.value[2]))
-end
-
-struct AdditionOutForwardMapOperatorProxy{In1J, In2J, OutS} <: ActorProxy end
-
-function Rx.actor_proxy!(proxy::AdditionOutForwardMapOperatorProxy{In1J, In2J, OutS}, actor::A) where { A <: AbstractActor{OutS} } where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
-    return AdditionOutForwardMapOperatorActor{In1J, In2J, OutS, A}(actor)
-end
-
-struct AdditionOutForwardMapOperatorActor{ In1J, In2J, OutS, A <: AbstractActor{OutS} } <: Actor{Tuple{In1J, In2J}}
-    actor :: A
-end
-
-function Rx.on_next!(actor::AdditionOutForwardMapOperatorActor{In1J, In2J, OutS, A}, data::Tuple{In1J, In2J}) where { A <: AbstractActor{OutS} } where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
-    next!(actor.actor, calculate_addition_out(data[1], data[2]))
-end
-
-function Rx.on_error!(actor::AdditionOutForwardMapOperatorActor{In1J, In2J, OutS, A}, err) where { A <: AbstractActor{OutS} } where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
-    error!(actor.actor, err)
-end
-
-function Rx.on_complete!(actor::AdditionOutForwardMapOperatorActor{In1J, In2J, OutS, A}) where { A <: AbstractActor{OutS} } where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutS <: AbstractMessage }
-    complete!(actor.actor)
-end
-
-## ------------------ ##
-
-struct AdditionIn1BackwardMapOperator{OutJ, In2J, In1S} <: TypedOperator{Tuple{OutJ, In2J}, In1S} end
-
-function Rx.on_call!(::Type{Tuple{OutJ, In2J}}, ::Type{In1S}, operator::AdditionIn1BackwardMapOperator{OutJ, In2J, In1S}, source) where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
-    return ProxyObservable{In1S}(source, AdditionIn1BackwardMapOperatorProxy{OutJ, In2J, In1S}())
-end
-
-function Rx.on_call!(::Type{Tuple{OutJ, In2J}}, ::Type{In1S}, operator::AdditionIn1BackwardMapOperator{OutJ, In2J, In1S}, source::SingleObservable{Tuple{OutJ, In2J}}) where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
-    return SingleObservable{In1S}(calculate_addition_in1(source.value[1], source.value[2]))
-end
-
-struct AdditionIn1BackwardMapOperatorProxy{OutJ, In2J, In1S} <: ActorProxy end
-
-function Rx.actor_proxy!(proxy::AdditionIn1BackwardMapOperatorProxy{OutJ, In2J, In1S}, actor::A) where { A <: AbstractActor{In1S} } where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
-    return AdditionIn1BackwardMapOperatorActor{OutJ, In2J, In1S, A}(actor)
-end
-
-struct AdditionIn1BackwardMapOperatorActor{ OutJ, In2J, In1S, A <: AbstractActor{In1S} } <: Actor{Tuple{OutJ, In2J}}
-    actor :: A
-end
-
-function Rx.on_next!(actor::AdditionIn1BackwardMapOperatorActor{OutJ, In2J, In1S, A}, data::Tuple{OutJ, In2J}) where { A <: AbstractActor{In1S} } where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
-    next!(actor.actor, calculate_addition_in1(data[1], data[2]))
-end
-
-function Rx.on_error!(actor::AdditionIn1BackwardMapOperatorActor{OutJ, In2J, In1S, A}, err) where { A <: AbstractActor{In1S} } where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
-    error!(actor.actor, err)
-end
-
-function Rx.on_complete!(actor::AdditionIn1BackwardMapOperatorActor{OutJ, In2J, In1S, A}) where { A <: AbstractActor{In1S} } where { OutJ <: AbstractMessage } where { In2J <: AbstractMessage } where { In1S <: AbstractMessage }
-    complete!(actor.actor)
-end
+@CreateMapOperator(AdditionOutForward,  (t) -> calculate_addition_out(t[1], t[2]))
+@CreateMapOperator(AdditionIn1Backward, (t) -> calculate_addition_in1(t[1], t[2]))
+@CreateMapOperator(AdditionIn2Backward, (t) -> calculate_addition_in2(t[1], t[2]))
 
 
 struct AdditionNode{In1S, In1J, In2S, In2J, OutS, OutJ} <: AbstractFactorNode
@@ -82,13 +20,14 @@ struct AdditionNode{In1S, In1J, In2S, In2J, OutS, OutJ} <: AbstractFactorNode
         out = InterfaceOut{OutS, OutJ}("[$name] outInterfaceOut")
 
         # Forward message over the out
-        define_sum_product!(out, combineLatest(in1.joint_message, in2.joint_message) |> AdditionOutForwardMapOperator{In1J, In2J, OutS}())
+        # define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator{Tuple{In1J, In2J}, OutS}())
+        define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator{Tuple{In1J, In2J}, OutS}() |> share_cached(1))
 
         # Backward message over the in1
-        define_sum_product!(in1, combineLatest(out.joint_message, in2.joint_message) |> AdditionIn1BackwardMapOperator{OutJ, In2J, In1S}())
+        define_sum_product!(in1, combineLatest(joint(out), joint(in2)) |> AdditionIn1BackwardMapOperator{Tuple{OutJ, In2J}, In1S}())
 
         # Backward message over the in2
-        define_sum_product!(in2, combineLatest(out.joint_message, in1.joint_message) |> map(In2S, (d::Tuple{OutJ, In1J}) -> calculate_addition_in2(d[1], d[2])))
+        define_sum_product!(in2, combineLatest(joint(out), joint(in1)) |> AdditionIn1BackwardMapOperator{Tuple{OutJ, In1J}, In2S}())
 
         return new(name, in1, in2, out)
     end
