@@ -22,8 +22,8 @@ struct InterfaceIn{S, J} <: AbstractInterface
         lazy_sp = LazyObservable{S}()
         lazy_jm = LazyObservable{J}()
 
-        sum_product_message = lazy_sp# |> replay(1) |> take(1)
-        joint_message       = lazy_jm# |> replay(1) |> take(1)
+        sum_product_message = lazy_sp# |> replay(1) #|> take(1)
+        joint_message       = lazy_jm #|> take(1)
 
         return new(name, lazy_sp, lazy_jm, sum_product_message, joint_message)
     end
@@ -42,8 +42,8 @@ struct InterfaceOut{S, J} <: AbstractInterface
         lazy_sp = LazyObservable{S}()
         lazy_jm = LazyObservable{J}()
 
-        sum_product_message = lazy_sp# |> replay(1) |> take(1)
-        joint_message       = lazy_jm# |> replay(1) |> take(1)
+        sum_product_message = lazy_sp# |> replay(1) #|> take(1)
+        joint_message       = lazy_jm #|> take(1)
 
         return new(name, lazy_sp, lazy_jm, sum_product_message, joint_message)
     end

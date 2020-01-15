@@ -133,7 +133,8 @@ addition_type_in1(::Type{Out}, ::Type{In2}) where { Out <: DeterministicMessage 
 calculate_addition_in1(out_m::DeterministicMessage, in2_m::DeterministicMessage) = DeterministicMessage(out_m.value - in2_m.value)
 
 function calculate_addition_in1(out_m::StochasticMessage{D}, in2_m::StochasticMessage{D}) where { D <: Normal{Float64} }
-    return StochasticMessage(Normal(mean(out_m.distribution) - mean(in2_m.distribution), sqrt(var(out_m.distribution) - var(in2_m.distribution))))
+    # TODO ??
+    return StochasticMessage(Normal(mean(out_m.distribution) - mean(in2_m.distribution), sqrt(var(out_m.distribution) + var(in2_m.distribution))))
 end
 
 function calculate_addition_in1(out_m::StochasticMessage{D}, in2_m::DeterministicMessage) where { D <: Normal{Float64} }
@@ -154,7 +155,8 @@ addition_type_in2(::Type{Out}, ::Type{In1}) where { Out <: DeterministicMessage 
 calculate_addition_in2(out_m::DeterministicMessage, in1_m::DeterministicMessage) = DeterministicMessage(out_m.value - in1_m.value)
 
 function calculate_addition_in2(out_m::StochasticMessage{D}, in1_m::StochasticMessage{D}) where { D <: Normal{Float64} }
-    return StochasticMessage(Normal(mean(out_m.distribution) - mean(in1_m.distribution), sqrt(var(out_m.distribution) - var(in1_m.distribution))))
+    # TODO ??
+    return StochasticMessage(Normal(mean(out_m.distribution) - mean(in1_m.distribution), sqrt(var(out_m.distribution) + var(in1_m.distribution))))
 end
 
 function calculate_addition_in2(out_m::StochasticMessage{D}, in1_m::DeterministicMessage) where { D <: Normal{Float64} }
