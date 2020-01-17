@@ -32,5 +32,5 @@ end
 gaussian_mean_variance(name::String) = GaussianMeanVarianceFactorNode(name)
 
 function calculate_gaussian_value_output(mean::DeterministicMessage, variance::DeterministicMessage)::AbstractMessage
-    return StochasticMessage(Normal(mean.value, variance.value))::AbstractMessage
+    return StochasticMessage(Normal(mean.value, sqrt(variance.value)))::AbstractMessage
 end
