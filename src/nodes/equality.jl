@@ -16,7 +16,7 @@ struct EqualityIOONode <: AbstractFactorNode
         out2 = InterfaceOut{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}("[$name]: out2InterfaceOut")
 
         # define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator())
-        define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator() |> share_sync_replay(1))
+        define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator() |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
 
         define_sum_product!(out1, combineLatest(joint(in1), joint(out2)) |> MultipleIOOMapOperator())
 

@@ -21,7 +21,7 @@ struct AdditionNode{In1S, In1J, In2S, In2J, OutS, OutJ} <: AbstractFactorNode
 
         # Forward message over the out
         # define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator{Tuple{In1J, In2J}, OutS}())
-        define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator{Tuple{In1J, In2J}, OutS}() |> share_sync_replay(1))
+        define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator{Tuple{In1J, In2J}, OutS}() |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
 
         # Backward message over the in1
         define_sum_product!(in1, combineLatest(joint(out), joint(in2)) |> AdditionIn1BackwardMapOperator{Tuple{OutJ, In2J}, In1S}())

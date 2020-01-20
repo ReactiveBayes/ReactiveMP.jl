@@ -54,12 +54,12 @@ backward_message(v::ConstantVariable{B}) where B = sum_product(v.right_interface
 
 struct ObservedVariable{F} <: AbstractVariable{F, DeterministicMessage}
     name   :: String
-    values :: SyncSubject{Float64}
+    values :: SynchronousSubject{Float64}
 
     left   :: InterfaceOut{F, DeterministicMessage}
 
     ObservedVariable{F}(name::String, left::InterfaceOut{F, DeterministicMessage}) where { F <: AbstractMessage } = begin
-        variable = new(name, SyncSubject{Float64}(), left)
+        variable = new(name, subject(Float64, mode = SYNCHRONOUS_SUBJECT_MODE), left)
 
         define_joint!(left, backward_message(variable))
 
@@ -78,12 +78,12 @@ update!(variable::ObservedVariable, value::Float64) = next!(variable.values, val
 
 struct EstimatedVariable{B} <: AbstractVariable{DeterministicMessage, B}
     name   :: String
-    values :: SyncSubject{Float64}
+    values :: SynchronousSubject{Float64}
 
     right  :: InterfaceIn{B, DeterministicMessage}
 
     EstimatedVariable{B}(name::String, right::InterfaceIn{B, DeterministicMessage}) where { B <: AbstractMessage } = begin
-        variable = new(name, SyncSubject{Float64}(), right)
+        variable = new(name, subject(Float64, mode = SYNCHRONOUS_SUBJECT_MODE), right)
 
         define_joint!(right, forward_message(variable))
 
