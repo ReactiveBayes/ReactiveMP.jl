@@ -54,7 +54,7 @@ function calculate_addition_out(m1::StochasticMessage{D}, m2::DeterministicMessa
 end
 
 function calculate_addition_out(m1::DeterministicMessage, m2::StochasticMessage{D}) where { D <: Normal{Float64} }
-    calculate_addition_out(m2, m1)
+    return calculate_addition_out(m2, m1)
 end
 
 ### In 1 ###
