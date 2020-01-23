@@ -1,19 +1,17 @@
 export EqualityIOONode
-export equality_ioo
 
-@CreateMapOperator(MultipleIOO, Tuple{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}, StochasticMessage{Normal{Float64}}, (d::Tuple{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}) -> multiply(d[1], d[2]))
+@CreateMapOperator(MultipleIOO, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (d) -> multiply(d[1], d[2]))
 
 struct EqualityIOONode <: AbstractFactorNode
     name :: String
-
-    in1  :: InterfaceIn{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}
-    out1 :: InterfaceOut{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}
-    out2 :: InterfaceOut{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}
+    in1  :: InterfaceIn
+    out1 :: InterfaceOut
+    out2 :: InterfaceOut
 
     EqualityIOONode(name::String) = begin
-        in1  = InterfaceIn{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}("[$name]: in1InterfaceIn")
-        out1 = InterfaceOut{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}("[$name]: out1InterfaceOut")
-        out2 = InterfaceOut{StochasticMessage{Normal{Float64}}, StochasticMessage{Normal{Float64}}}("[$name]: out2InterfaceOut")
+        in1  = InterfaceIn("[$name]: in1InterfaceIn")
+        out1 = InterfaceOut("[$name]: out1InterfaceOut")
+        out2 = InterfaceOut("[$name]: out2InterfaceOut")
 
         # define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator())
         define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator() |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
@@ -25,5 +23,3 @@ struct EqualityIOONode <: AbstractFactorNode
         return new(name, in1, out1, out2)
     end
 end
-
-equality_ioo(name::String) = EqualityIOONode(name)

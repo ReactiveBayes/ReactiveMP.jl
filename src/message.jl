@@ -13,7 +13,7 @@ struct DeterministicMessage <: AbstractMessage
     value :: Float64
 end
 
-struct StochasticMessage{ D } <: AbstractMessage
+struct StochasticMessage{D} <: AbstractMessage
     distribution :: D
 end
 

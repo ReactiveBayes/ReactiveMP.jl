@@ -5,19 +5,20 @@ export RandomVariable, ConstantVariable, ObservedVariable, EstimatedVariable
 export update!, forward_message, backward_message
 export random_variable, constant_variable, observed_variable, estimated_variable
 
-abstract type AbstractVariable{F, B} end
+abstract type AbstractVariable end
 
-function inference(variable::V) where { V <: AbstractVariable{F, B} } where { F <: AbstractMessage } where { B <: AbstractMessage }
-    return combineLatest(forward_message(variable), backward_message(variable)) |> map(AbstractMessage, (t) -> multiply(t[1], t[2]))
+@CreateMapOperator(Inference, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> multiply(t[1], t[2]))
+
+function inference(variable)
+    return combineLatest(forward_message(variable), backward_message(variable)) |> InferenceMapOperator()
 end
 
-struct RandomVariable{F, B} <: AbstractVariable{F, B}
-    name :: String
+struct RandomVariable <: AbstractVariable
+    name  :: String
+    left  :: InterfaceOut
+    right :: InterfaceIn
 
-    left  :: InterfaceOut{F, B}
-    right :: InterfaceIn{B, F}
-
-    RandomVariable{F, B}(name::String, left::InterfaceOut{F, B}, right::InterfaceIn{B, F}) where { F <: AbstractMessage } where { B <: AbstractMessage } = begin
+    RandomVariable(name::String, left::InterfaceOut, right::InterfaceIn) = begin
         variable = new(name, left, right)
 
         define_joint!(left, backward_message(variable))
@@ -27,18 +28,15 @@ struct RandomVariable{F, B} <: AbstractVariable{F, B}
     end
 end
 
-random_variable(name::String, left::InterfaceOut{F, B}, right::InterfaceIn{B, F}) where { F <: AbstractMessage } where { B <: AbstractMessage } = RandomVariable{F, B}(name, left, right)
+forward_message(v::RandomVariable)  = sum_product(v.left)
+backward_message(v::RandomVariable) = sum_product(v.right)
 
-forward_message(v::RandomVariable{F, B}) where F where B  = sum_product(v.left)
-backward_message(v::RandomVariable{F, B}) where F where B = sum_product(v.right)
-
-struct ConstantVariable{B} <: AbstractVariable{DeterministicMessage, B}
+struct ConstantVariable <: AbstractVariable
     name  :: String
     value :: Float64
+    right :: InterfaceIn
 
-    right :: InterfaceIn{B, DeterministicMessage}
-
-    ConstantVariable{B}(name::String, value::Float64, right::InterfaceIn{B, DeterministicMessage}) where { B <: AbstractMessage } = begin
+    ConstantVariable(name::String, value::Float64, right::InterfaceIn) = begin
         variable = new(name, value, right)
 
         define_joint!(right, forward_message(variable))
@@ -47,19 +45,16 @@ struct ConstantVariable{B} <: AbstractVariable{DeterministicMessage, B}
     end
 end
 
-constant_variable(name::String, value::Float64, right::InterfaceIn{B, DeterministicMessage}) where { B <: AbstractMessage } = ConstantVariable{B}(name, value, right)
+forward_message(v::ConstantVariable)  = of(DeterministicMessage(v.value))
+backward_message(v::ConstantVariable) = sum_product(v.right_interface)
 
-forward_message(v::ConstantVariable{B})  where B = of(DeterministicMessage(v.value))
-backward_message(v::ConstantVariable{B}) where B = sum_product(v.right_interface)
-
-struct ObservedVariable{F} <: AbstractVariable{F, DeterministicMessage}
+struct ObservedVariable <: AbstractVariable
     name   :: String
     values :: SynchronousSubject{Float64}
+    left   :: InterfaceOut
 
-    left   :: InterfaceOut{F, DeterministicMessage}
-
-    ObservedVariable{F}(name::String, left::InterfaceOut{F, DeterministicMessage}) where { F <: AbstractMessage } = begin
-        variable = new(name, subject(Float64, mode = SYNCHRONOUS_SUBJECT_MODE), left)
+    ObservedVariable(name::String, left::InterfaceOut) = begin
+        variable = new(name, SynchronousSubject{Float64}(), left)
 
         define_joint!(left, backward_message(variable))
 
@@ -67,23 +62,20 @@ struct ObservedVariable{F} <: AbstractVariable{F, DeterministicMessage}
     end
 end
 
-observed_variable(name::String, left::InterfaceOut{F, DeterministicMessage}) where { F <: AbstractMessage } = ObservedVariable{F}(name, left)
-
 @CreateMapOperator(ObservedBackward, Float64, DeterministicMessage, (f::Float64) -> DeterministicMessage(f))
 
-forward_message(v::ObservedVariable{F})  where F = sum_product(v.left_interface)
-backward_message(v::ObservedVariable{F}) where F = v.values |> ObservedBackwardMapOperator()
+forward_message(v::ObservedVariable)  = sum_product(v.left_interface)
+backward_message(v::ObservedVariable) = v.values |> ObservedBackwardMapOperator()
 
 update!(variable::ObservedVariable, value::Float64) = next!(variable.values, value)
 
-struct EstimatedVariable{B} <: AbstractVariable{DeterministicMessage, B}
+struct EstimatedVariable <: AbstractVariable
     name   :: String
     values :: SynchronousSubject{Float64}
+    right  :: InterfaceIn
 
-    right  :: InterfaceIn{B, DeterministicMessage}
-
-    EstimatedVariable{B}(name::String, right::InterfaceIn{B, DeterministicMessage}) where { B <: AbstractMessage } = begin
-        variable = new(name, subject(Float64, mode = SYNCHRONOUS_SUBJECT_MODE), right)
+    EstimatedVariable(name::String, right::InterfaceIn) = begin
+        variable = new(name, SynchronousSubject{Float64}(), right)
 
         define_joint!(right, forward_message(variable))
 
@@ -91,11 +83,9 @@ struct EstimatedVariable{B} <: AbstractVariable{DeterministicMessage, B}
     end
 end
 
-estimated_variable(name::String, right::InterfaceIn{B, DeterministicMessage}) where { B <: AbstractMessage } = EstimatedVariable{B}(name, right)
-
 @CreateMapOperator(EstimatedForward, Float64, DeterministicMessage, (f::Float64) -> DeterministicMessage(f))
 
-forward_message(v::EstimatedVariable{B})  where B = v.values |> EstimatedForwardMapOperator()
-backward_message(v::EstimatedVariable{B}) where B = sum_product(v.right_interface)
+forward_message(v::EstimatedVariable)  = v.values |> EstimatedForwardMapOperator()
+backward_message(v::EstimatedVariable) = sum_product(v.right_interface)
 
 update!(variable::EstimatedVariable, value::Float64) = next!(variable.values, value)
