@@ -1,6 +1,6 @@
 export EqualityIOONode
 
-@CreateMapOperator(MultipleIOO, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (d) -> multiply(d[1], d[2]))
+Rx.@GenerateCombineLatest(2, "equalityMessage", AbstractMessage, true, t -> multiply(t[1], t[2]))
 
 struct EqualityIOONode <: AbstractFactorNode
     name :: String
@@ -14,11 +14,11 @@ struct EqualityIOONode <: AbstractFactorNode
         out2 = InterfaceOut("[$name]: out2InterfaceOut")
 
         # define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator())
-        define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator() |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
+        define_sum_product!(in1,  equalityMessage(joint(out1), joint(out2)) |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
 
-        define_sum_product!(out1, combineLatest(joint(in1), joint(out2)) |> MultipleIOOMapOperator())
+        define_sum_product!(out1, equalityMessage(joint(in1), joint(out2)))
 
-        define_sum_product!(out2, combineLatest(joint(out1), joint(in1)) |> MultipleIOOMapOperator())
+        define_sum_product!(out2, equalityMessage(joint(out1), joint(in1)))
 
         return new(name, in1, out1, out2)
     end

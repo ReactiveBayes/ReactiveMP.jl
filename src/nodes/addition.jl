@@ -2,9 +2,13 @@ export AdditionNode
 
 using Rx
 
-@CreateMapOperator(AdditionOutForward, Tuple{AbstractMessage, AbstractMessage},  AbstractMessage, (t) -> calculate_addition_out(t[1], t[2]))
-@CreateMapOperator(AdditionIn1Backward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_in1(t[1], t[2]))
-@CreateMapOperator(AdditionIn2Backward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_in2(t[1], t[2]))
+Rx.@GenerateCombineLatest(2, "additionOutForward",  AbstractMessage, true, t -> calculate_addition_out(t[1], t[2]))
+Rx.@GenerateCombineLatest(2, "additionIn1Backward", AbstractMessage, true, t -> calculate_addition_in1(t[1], t[2]))
+Rx.@GenerateCombineLatest(2, "additionIn2Backward", AbstractMessage, true, t -> calculate_addition_in2(t[1], t[2]))
+
+# @CreateMapOperator(AdditionOutForward,  Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_out(t[1], t[2]))
+# @CreateMapOperator(AdditionIn1Backward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_in1(t[1], t[2]))
+# @CreateMapOperator(AdditionIn2Backward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_in2(t[1], t[2]))
 
 struct AdditionNode <: AbstractFactorNode
     name :: String
@@ -19,24 +23,16 @@ struct AdditionNode <: AbstractFactorNode
 
         # Forward message over the out
         # define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator{Tuple{In1J, In2J}, OutS}())
-        define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator() |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
+        define_sum_product!(out, additionOutForward(joint(in1), joint(in2)) |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
 
         # Backward message over the in1
-        define_sum_product!(in1, combineLatest(joint(out), joint(in2)) |> AdditionIn1BackwardMapOperator())
+        define_sum_product!(in1, additionIn1Backward(joint(out), joint(in2)))
 
         # Backward message over the in2
-        define_sum_product!(in2, combineLatest(joint(out), joint(in1)) |> AdditionIn1BackwardMapOperator())
+        define_sum_product!(in2, additionIn2Backward(joint(out), joint(in1)))
 
         return new(name, in1, in2, out)
     end
-end
-
-function addition_node(name::String, ::Type{In1J}, ::Type{In2J}, ::Type{OutJ}) where { In1J <: AbstractMessage } where { In2J <: AbstractMessage } where { OutJ <: AbstractMessage }
-    return addition_node(name, In1J, addition_type_in1(OutJ, In2J), In2J, addition_type_in2(OutJ, In1J), OutJ, addition_type_out(In1J, In2J))
-end
-
-function addition_node(name::String, ::Type{In1J}, ::Type{In1S}, ::Type{In2J}, ::Type{In2S}, ::Type{OutJ}, ::Type{OutS}) where { In1J <: AbstractMessage } where { In1S <: AbstractMessage } where { In2J <: AbstractMessage } where { In2S <: AbstractMessage } where { OutJ <: AbstractMessage } where { OutS <: AbstractMessage }
-    return AdditionNode{In1S, In1J, In2S, In2J, OutS, OutJ}(name)
 end
 
 ### Out ###

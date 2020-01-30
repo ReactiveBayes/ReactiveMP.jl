@@ -2,7 +2,7 @@ export GaussianMeanVarianceNode
 
 using Rx
 
-@CreateMapOperator(GaussianValueForward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (d) -> calculate_gaussian_value_output(d[1], d[2]))
+Rx.@GenerateCombineLatest(2, "gaussianValueForward", AbstractMessage, true, t -> calculate_gaussian_value_output(t[1], t[2]))
 
 struct GaussianMeanVarianceNode <: AbstractFactorNode
     name     :: String
@@ -16,7 +16,7 @@ struct GaussianMeanVarianceNode <: AbstractFactorNode
         value    = InterfaceOut("[$name]: valueInterfaceOut")
 
         # Forward message over the value
-        define_sum_product!(value, combineLatest(joint(mean), joint(variance)) |> GaussianValueForwardMapOperator())
+        define_sum_product!(value, gaussianValueForward(joint(mean), joint(variance)))
 
         # Backward message over the mean
         define_sum_product!(mean, throwError("[$name]: messageOverTheMean is not implemented for all types of incoming messages", AbstractMessage))

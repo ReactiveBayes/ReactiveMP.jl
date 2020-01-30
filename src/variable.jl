@@ -7,10 +7,10 @@ export random_variable, constant_variable, observed_variable, estimated_variable
 
 abstract type AbstractVariable end
 
-@CreateMapOperator(Inference, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> multiply(t[1], t[2]))
+Rx.@GenerateCombineLatest(2, "inferenceMessage", AbstractMessage, true, t -> multiply(t[1], t[2]))
 
 function inference(variable)
-    return combineLatest(forward_message(variable), backward_message(variable)) |> InferenceMapOperator()
+    return inferenceMessage(forward_message(variable), backward_message(variable))
 end
 
 struct RandomVariable <: AbstractVariable
