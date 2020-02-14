@@ -1,4 +1,4 @@
-using Rx
+using Rocket
 
 export AbstractInterface, InterfaceIn, InterfaceOut
 
@@ -9,6 +9,13 @@ define_sum_product!(interface, observable) = set!(interface.sum_product, observa
 
 sum_product(interface) = interface.sum_product
 joint(interface)       = interface.joint
+
+# struct Interface
+#     sum_product_msg :: LazyObservable{AbstractMessage}
+#     partner_msg     :: LazyObservable{AbstractMessage}
+#
+#     Interface(name::String) = new(name, lazy(AbstractMessage), lazy(AbstractMessage))
+# end
 
 struct InterfaceIn <: AbstractInterface
     name :: String

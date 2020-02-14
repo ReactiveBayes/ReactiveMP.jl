@@ -1,8 +1,8 @@
 export GaussianMeanVarianceNode
 
-using Rx
+using Rocket
 
-Rx.@GenerateCombineLatest(2, "gaussianValueForward", AbstractMessage, true, t -> calculate_gaussian_value_output(t[1], t[2]))
+Rocket.@GenerateCombineLatest(2, "gaussianValueForward", AbstractMessage, true, t -> calculate_gaussian_value_output(t[1], t[2]))
 
 struct GaussianMeanVarianceNode <: AbstractFactorNode
     name     :: String

@@ -1,4 +1,4 @@
-using Rx
+using Rocket
 
 export AbstractVariable, inference
 export RandomVariable, ConstantVariable, ObservedVariable, EstimatedVariable
@@ -7,11 +7,9 @@ export random_variable, constant_variable, observed_variable, estimated_variable
 
 abstract type AbstractVariable end
 
-Rx.@GenerateCombineLatest(2, "inferenceMessage", AbstractMessage, true, t -> multiply(t[1], t[2]))
+Rocket.@GenerateCombineLatest(2, "inferenceMessage", AbstractMessage, true, t -> multiply(t[1], t[2]))
 
-function inference(variable)
-    return inferenceMessage(forward_message(variable), backward_message(variable))
-end
+inference(variable) = inferenceMessage(forward_message(variable), backward_message(variable))
 
 struct RandomVariable <: AbstractVariable
     name  :: String

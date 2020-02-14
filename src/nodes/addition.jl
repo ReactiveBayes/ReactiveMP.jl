@@ -1,10 +1,10 @@
 export AdditionNode
 
-using Rx
+using Rocket
 
-Rx.@GenerateCombineLatest(2, "additionOutForward",  AbstractMessage, true, t -> calculate_addition_out(t[1], t[2]))
-Rx.@GenerateCombineLatest(2, "additionIn1Backward", AbstractMessage, true, t -> calculate_addition_in1(t[1], t[2]))
-Rx.@GenerateCombineLatest(2, "additionIn2Backward", AbstractMessage, true, t -> calculate_addition_in2(t[1], t[2]))
+Rocket.@GenerateCombineLatest(2, "additionOutForward",  AbstractMessage, true, t -> calculate_addition_out(t[1], t[2]))
+Rocket.@GenerateCombineLatest(2, "additionIn1Backward", AbstractMessage, true, t -> calculate_addition_in1(t[1], t[2]))
+Rocket.@GenerateCombineLatest(2, "additionIn2Backward", AbstractMessage, true, t -> calculate_addition_in2(t[1], t[2]))
 
 # @CreateMapOperator(AdditionOutForward,  Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_out(t[1], t[2]))
 # @CreateMapOperator(AdditionIn1Backward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_in1(t[1], t[2]))

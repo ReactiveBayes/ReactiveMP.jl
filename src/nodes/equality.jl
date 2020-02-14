@@ -1,6 +1,8 @@
 export EqualityIOONode
 
-Rx.@GenerateCombineLatest(2, "equalityMessage", AbstractMessage, true, t -> multiply(t[1], t[2]))
+using Rocket
+
+Rocket.@GenerateCombineLatest(2, "equalityMessage", AbstractMessage, true, t -> multiply(t[1], t[2]))
 
 struct EqualityIOONode <: AbstractFactorNode
     name :: String
