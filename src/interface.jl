@@ -1,44 +1,24 @@
+export Interface, sum_product_msg, partner_msg
+export define_sum_product_msg!, define_partner_msg!
+
 using Rocket
 
-export AbstractInterface, InterfaceIn, InterfaceOut
+import Base: show
 
-abstract type AbstractInterface end
+struct Interface
+    name                :: String
+    sum_product_message :: LazyObservable{AbstractMessage}
+    partner_message     :: LazyObservable{AbstractMessage}
 
-define_joint!(interface, observable)       = set!(interface.joint, observable)
-define_sum_product!(interface, observable) = set!(interface.sum_product, observable)
-
-sum_product(interface) = interface.sum_product
-joint(interface)       = interface.joint
-
-# struct Interface
-#     sum_product_msg :: LazyObservable{AbstractMessage}
-#     partner_msg     :: LazyObservable{AbstractMessage}
-#
-#     Interface(name::String) = new(name, lazy(AbstractMessage), lazy(AbstractMessage))
-# end
-
-struct InterfaceIn <: AbstractInterface
-    name :: String
-
-    sum_product :: LazyObservable{AbstractMessage}
-    joint       :: LazyObservable{AbstractMessage}
-
-    InterfaceIn(name::String) = begin
-        sum_product = LazyObservable{AbstractMessage}()
-        joint       = LazyObservable{AbstractMessage}()
-        return new(name, sum_product, joint)
-    end
+    Interface(name::String) = new(name, lazy(AbstractMessage), lazy(AbstractMessage))
 end
 
-struct InterfaceOut <: AbstractInterface
-    name :: String
+sum_product_message(interface::Interface) = interface.sum_product_message
+partner_message(interface::Interface)     = interface.partner_message
 
-    sum_product :: LazyObservable{AbstractMessage}
-    joint       :: LazyObservable{AbstractMessage}
+define_sum_product_message!(interface::Interface, source) = set!(interface.sum_product_message, source)
+define_partner_message!(interface::Interface,     source) = set!(interface.partner_message, source)
 
-    InterfaceOut(name::String) = begin
-        sum_product = LazyObservable{AbstractMessage}()
-        joint       = LazyObservable{AbstractMessage}()
-        return new(name, sum_product, joint)
-    end
-end
+Base.show(io::IO, interface::Interface) = print(io, "Interface($(interface.name))")
+
+

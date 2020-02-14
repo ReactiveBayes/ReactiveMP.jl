@@ -6,30 +6,25 @@ Rocket.@GenerateCombineLatest(2, "additionOutForward",  AbstractMessage, true, t
 Rocket.@GenerateCombineLatest(2, "additionIn1Backward", AbstractMessage, true, t -> calculate_addition_in1(t[1], t[2]))
 Rocket.@GenerateCombineLatest(2, "additionIn2Backward", AbstractMessage, true, t -> calculate_addition_in2(t[1], t[2]))
 
-# @CreateMapOperator(AdditionOutForward,  Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_out(t[1], t[2]))
-# @CreateMapOperator(AdditionIn1Backward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_in1(t[1], t[2]))
-# @CreateMapOperator(AdditionIn2Backward, Tuple{AbstractMessage, AbstractMessage}, AbstractMessage, (t) -> calculate_addition_in2(t[1], t[2]))
-
-struct AdditionNode <: AbstractFactorNode
+struct AdditionNode <: AbstractDeterministicNode
     name :: String
-    in1  :: InterfaceIn
-    in2  :: InterfaceIn
-    out  :: InterfaceOut
+    in1  :: Interface
+    in2  :: Interface
+    out  :: Interface
 
     AdditionNode(name::String) = begin
-        in1 = InterfaceIn("[$name] in1InterfaceIn")
-        in2 = InterfaceIn("[$name] in2InterfaceIn")
-        out = InterfaceOut("[$name] outInterfaceOut")
+        in1 = Interface("[$name]: in1")
+        in2 = Interface("[$name]: in2")
+        out = Interface("[$name]: out")
 
         # Forward message over the out
-        # define_sum_product!(out, combineLatest(joint(in1), joint(in2)) |> AdditionOutForwardMapOperator{Tuple{In1J, In2J}, OutS}())
-        define_sum_product!(out, additionOutForward(joint(in1), joint(in2)) |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
+        define_sum_product_message!(out, additionOutForward(partner_message(in1), partner_message(in2)) |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
 
         # Backward message over the in1
-        define_sum_product!(in1, additionIn1Backward(joint(out), joint(in2)))
+        define_sum_product_message!(in1, additionIn1Backward(partner_message(out), partner_message(in2)))
 
         # Backward message over the in2
-        define_sum_product!(in2, additionIn2Backward(joint(out), joint(in1)))
+        define_sum_product_message!(in2, additionIn2Backward(partner_message(out), partner_message(in1)))
 
         return new(name, in1, in2, out)
     end

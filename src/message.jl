@@ -1,9 +1,8 @@
-using Distributions
-
-export AbstractMessage
-export DeterministicMessage, StochasticMessage
+export AbstractMessage, DeterministicMessage, StochasticMessage
 export multiply
-export *
+
+using Distributions
+using Rocket
 
 import Base: *
 
