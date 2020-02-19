@@ -19,10 +19,8 @@ struct ObservedVariable <: AbstractVariable
     end
 end
 
-@CreateMapOperator(ObservedBackward, Float64, DeterministicMessage, (f::Float64) -> DeterministicMessage(f))
-
 forward_message(v::ObservedVariable)  = sum_product_message(v.left)
-backward_message(v::ObservedVariable) = v.values |> ObservedBackwardMapOperator()
+backward_message(v::ObservedVariable) = v.values |> map(DeterministicMessage, f -> DeterministicMessage(f))
 
 update!(v::ObservedVariable, value::Float64) = Rocket.next!(v.values, value)
 

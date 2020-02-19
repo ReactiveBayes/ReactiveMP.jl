@@ -19,9 +19,7 @@ struct PriorVariable <: AbstractVariable
     end
 end
 
-@CreateMapOperator(PriorForward, Float64, DeterministicMessage, (f::Float64) -> DeterministicMessage(f))
-
-forward_message(v::PriorVariable)  = v.values |> PriorForwardMapOperator()
+forward_message(v::PriorVariable)  = v.values |> map(DeterministicMessage, f -> DeterministicMessage(f))
 backward_message(v::PriorVariable) = sum_product_message(v.right)
 
 update!(v::PriorVariable, value::Float64) = Rocket.next!(v.values, value)
