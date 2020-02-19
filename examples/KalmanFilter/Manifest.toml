@@ -218,7 +218,7 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[ReactiveMP]]
 deps = ["BenchmarkTools", "DataStructures", "Distributions", "MetaGraphs"]
-git-tree-sha1 = "94501633a2de68ee86a950c8332cc890d5a3f43f"
+git-tree-sha1 = "15717261ef651a7ecc4c5a8f5f1d8b5a9ebc571d"
 repo-rev = "master"
 repo-url = "/Users/bvdmitri/.julia/dev/ReactiveMP/"
 uuid = "a194aa59-28ba-4574-a09c-4a745416d6e3"
