@@ -1,6 +1,7 @@
 export AdditionNode
 
 using Rocket
+using ForneyLab
 
 Rocket.@GenerateCombineLatest(2, "additionOutForward",  AbstractMessage, true, t -> calculate_addition_out(t[1], t[2]))
 Rocket.@GenerateCombineLatest(2, "additionIn1Backward", AbstractMessage, true, t -> calculate_addition_in1(t[1], t[2]))
@@ -36,12 +37,26 @@ function calculate_addition_out(m1::DeterministicMessage, m2::DeterministicMessa
     return DeterministicMessage(m1.value + v2.value)
 end
 
+
+
 function calculate_addition_out(m1::StochasticMessage{D}, m2::StochasticMessage{D}) where { D <: Normal{Float64} }
-    return StochasticMessage(Normal(mean(m1.distribution) + mean(m2.distribution), sqrt(var(m1.distribution) + var(m2.distribution))))
+    # Reuse rules from ForneyLab
+    mfl1 = Message(Univariate, GaussianMeanVariance, m = mean(m1.distribution), v = var(m1.distribution))
+    mfl2 = Message(Univariate, GaussianMeanVariance, m = mean(m2.distribution), v = var(m2.distribution))
+    outfl = ForneyLab.ruleSPAdditionOutNGG(nothing, mfl1, mfl2)
+    mean = outfl.params[:m]
+    var  = outfl.params[:v]
+    return StochasticMessage(Normal(mean, sqrt(var)))
+    # return StochasticMessage(Normal(mean(m1.distribution) + mean(m2.distribution), sqrt(var(m1.distribution) + var(m2.distribution))))
 end
 
 function calculate_addition_out(m1::StochasticMessage{D}, m2::DeterministicMessage) where { D <: Normal{Float64} }
-    return StochasticMessage(Normal(mean(m1.distribution) + m2.value, std(m1.distribution)))
+    # Reuse rules from ForneyLab
+    mflg  = Message(ForneyLab.Univariate, GaussianMeanVariance, m = mean(m1.distribution), v = var(m1.distribution))
+    mflp  = Message(ForneyLab.Univariate, PointMass, m = m2.value)
+    outfl = ruleSPAdditionOutNGP(nothing, mflg, mflp)
+    return StochasticMessage(Normal(outfl.dist.params[:m], sqrt(outfl.dist.params[:v])))
+    # return StochasticMessage(Normal(mean(m1.distribution) + m2.value, std(m1.distribution)))
 end
 
 function calculate_addition_out(m1::DeterministicMessage, m2::StochasticMessage{D}) where { D <: Normal{Float64} }

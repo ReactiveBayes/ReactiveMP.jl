@@ -113,6 +113,11 @@ function julia_main()::Cint
     @time kalman();
     @time kalman();
     @btime kalman();
+    
+    values = kalman()
+
+    println(values[1:5])
+    println(values[end-5:end])
     return 0
 end
 
