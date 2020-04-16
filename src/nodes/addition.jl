@@ -1,11 +1,10 @@
 export AdditionNode
 
 using Rocket
-using ForneyLab
 
-Rocket.@GenerateCombineLatest(2, "additionOutForward",  AbstractMessage, true, t -> calculate_addition_out(t[1], t[2]))
-Rocket.@GenerateCombineLatest(2, "additionIn1Backward", AbstractMessage, true, t -> calculate_addition_in1(t[1], t[2]))
-Rocket.@GenerateCombineLatest(2, "additionIn2Backward", AbstractMessage, true, t -> calculate_addition_in2(t[1], t[2]))
+additionOutForward(args...)  = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = calculate_addition_out)
+additionIn1Backward(args...) = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = calculate_addition_in1)
+additionIn2Backward(args...) = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = calculate_addition_in2)
 
 struct AdditionNode <: AbstractDeterministicNode
     name :: String
@@ -33,30 +32,20 @@ end
 
 ### Out ###
 
+function calculate_addition_out(t::Tuple)
+    return calculate_addition_out(t[1], t[2])
+end
+
 function calculate_addition_out(m1::DeterministicMessage, m2::DeterministicMessage)
     return DeterministicMessage(m1.value + v2.value)
 end
 
-
-
 function calculate_addition_out(m1::StochasticMessage{D}, m2::StochasticMessage{D}) where { D <: Normal{Float64} }
-    # Reuse rules from ForneyLab
-    mfl1 = Message(Univariate, GaussianMeanVariance, m = mean(m1.distribution), v = var(m1.distribution))
-    mfl2 = Message(Univariate, GaussianMeanVariance, m = mean(m2.distribution), v = var(m2.distribution))
-    outfl = ForneyLab.ruleSPAdditionOutNGG(nothing, mfl1, mfl2)
-    mean = outfl.params[:m]
-    var  = outfl.params[:v]
-    return StochasticMessage(Normal(mean, sqrt(var)))
-    # return StochasticMessage(Normal(mean(m1.distribution) + mean(m2.distribution), sqrt(var(m1.distribution) + var(m2.distribution))))
+    return StochasticMessage(Normal(mean(m1.distribution) + mean(m2.distribution), sqrt(var(m1.distribution) + var(m2.distribution))))
 end
 
 function calculate_addition_out(m1::StochasticMessage{D}, m2::DeterministicMessage) where { D <: Normal{Float64} }
-    # Reuse rules from ForneyLab
-    mflg  = Message(ForneyLab.Univariate, GaussianMeanVariance, m = mean(m1.distribution), v = var(m1.distribution))
-    mflp  = Message(ForneyLab.Univariate, PointMass, m = m2.value)
-    outfl = ruleSPAdditionOutNGP(nothing, mflg, mflp)
-    return StochasticMessage(Normal(outfl.dist.params[:m], sqrt(outfl.dist.params[:v])))
-    # return StochasticMessage(Normal(mean(m1.distribution) + m2.value, std(m1.distribution)))
+    return StochasticMessage(Normal(mean(m1.distribution) + m2.value, std(m1.distribution)))
 end
 
 function calculate_addition_out(m1::DeterministicMessage, m2::StochasticMessage{D}) where { D <: Normal{Float64} }
@@ -64,6 +53,10 @@ function calculate_addition_out(m1::DeterministicMessage, m2::StochasticMessage{
 end
 
 ### In 1 ###
+
+function calculate_addition_in1(t::Tuple)
+    return calculate_addition_in1(t[1], t[2])
+end
 
 function calculate_addition_in1(out_m::DeterministicMessage, in2_m::DeterministicMessage)
     return DeterministicMessage(out_m.value - in2_m.value)
@@ -82,6 +75,10 @@ function calculate_addition_in1(out_m::DeterministicMessage, in2_m::StochasticMe
 end
 
 ### In 2 ###
+
+function calculate_addition_in2(t::Tuple)
+    return calculate_addition_in2(t[1], t[2])
+end
 
 function calculate_addition_in2(out_m::DeterministicMessage, in1_m::DeterministicMessage)
     return DeterministicMessage(out_m.value - in1_m.value)

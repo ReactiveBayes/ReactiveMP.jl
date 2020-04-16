@@ -2,7 +2,7 @@ export EqualityIOONode
 
 using Rocket
 
-Rocket.@GenerateCombineLatest(2, "equalityMessage", AbstractMessage, true, t -> multiply(t[1], t[2]))
+equalityMessage(args...) = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = multiply)
 
 struct EqualityIOONode <: AbstractDeterministicNode
     name :: String

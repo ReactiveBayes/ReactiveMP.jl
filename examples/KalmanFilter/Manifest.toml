@@ -94,9 +94,9 @@ version = "1.2.2"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "fec413d4fc547992eb62a5c544cedb6d7853c1f5"
+git-tree-sha1 = "85c6b57e2680fa28d5c8adc798967377646fbf66"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.8.4"
+version = "0.8.5"
 
 [[Inflate]]
 deps = ["Pkg", "Printf", "Random", "Test"]
@@ -218,7 +218,7 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[ReactiveMP]]
 deps = ["BenchmarkTools", "DataStructures", "Distributions", "MetaGraphs"]
-git-tree-sha1 = "15717261ef651a7ecc4c5a8f5f1d8b5a9ebc571d"
+git-tree-sha1 = "8d2fa7cf6799cabc7935fb4ebe073bee336f27e0"
 repo-rev = "master"
 repo-url = "/Users/bvdmitri/.julia/dev/ReactiveMP/"
 uuid = "a194aa59-28ba-4574-a09c-4a745416d6e3"
@@ -232,11 +232,11 @@ version = "0.6.0"
 
 [[Rocket]]
 deps = ["DataStructures", "Documenter", "Sockets", "Suppressor", "Test"]
-git-tree-sha1 = "3ba62c372026973b75f00d5e18225374fad7ae24"
+git-tree-sha1 = "9da7f6236f39c29e08ea566849fe9223d6d4a9fc"
 repo-rev = "develop"
 repo-url = "/Users/bvdmitri/.julia/dev/Rocket"
 uuid = "df971d30-c9d6-4b37-b8ff-e965b2cb3a40"
-version = "1.1.0"
+version = "1.1.1"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
