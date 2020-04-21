@@ -2,9 +2,9 @@ export AdditionNode
 
 using Rocket
 
-additionOutForward(args...)  = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = calculate_addition_out)
-additionIn1Backward(args...) = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = calculate_addition_in1)
-additionIn2Backward(args...) = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = calculate_addition_in2)
+additionOutForward(l ,r)  = combineLatest((l, r), true, (AbstractMessage, calculate_addition_out))
+additionIn1Backward(l, r) = combineLatest((l, r), true, (AbstractMessage, calculate_addition_in1))
+additionIn2Backward(l, r) = combineLatest((l, r), true, (AbstractMessage, calculate_addition_in2))
 
 struct AdditionNode <: AbstractDeterministicNode
     name :: String

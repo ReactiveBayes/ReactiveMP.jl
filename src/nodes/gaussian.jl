@@ -2,7 +2,7 @@ export GaussianMeanVarianceNode
 
 using Rocket
 
-gaussianValueForward(args...) = combineLatest(args..., isbatch = true, transformType = AbstractMessage, transformFn = calculate_gaussian_value_output)
+gaussianValueForward(l, r) = combineLatest((l, r), true, (AbstractMessage, calculate_gaussian_value_output))
 
 struct GaussianMeanVarianceNode <: AbstractStochasticNode
     name     :: String
