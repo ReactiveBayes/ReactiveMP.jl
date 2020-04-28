@@ -15,8 +15,8 @@ struct EqualityIOONode <: AbstractDeterministicNode
         out1 = Interface("[$name]: out1")
         out2 = Interface("[$name]: out2")
 
-        # define_sum_product!(in1, combineLatest(joint(out1), joint(out2)) |> MultipleIOOMapOperator())
-        define_sum_product_message!(in1,  equalityMessage(partner_message(out1), partner_message(out2)) |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
+        define_sum_product_message!(in1,  equalityMessage(partner_message(out1), partner_message(out2)) |> share(mode = SYNCHRONOUS_SUBJECT_MODE))
+        # define_sum_product_message!(in1,  equalityMessage(partner_message(out1), partner_message(out2)))
 
         define_sum_product_message!(out1, equalityMessage(partner_message(in1), partner_message(out2)))
 

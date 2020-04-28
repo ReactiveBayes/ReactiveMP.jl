@@ -18,7 +18,8 @@ struct AdditionNode <: AbstractDeterministicNode
         out = Interface("[$name]: out")
 
         # Forward message over the out
-        define_sum_product_message!(out, additionOutForward(partner_message(in1), partner_message(in2)) |> share_replay(1, mode = SYNCHRONOUS_SUBJECT_MODE))
+        define_sum_product_message!(out, additionOutForward(partner_message(in1), partner_message(in2)) |> share(mode = SYNCHRONOUS_SUBJECT_MODE))
+        # define_sum_product_message!(out, additionOutForward(partner_message(in1), partner_message(in2)))
 
         # Backward message over the in1
         define_sum_product_message!(in1, additionIn1Backward(partner_message(out), partner_message(in2)))
