@@ -5,18 +5,18 @@ using Rocket
 
 import Base: show
 
-struct PriorVariable <: AbstractVariable
+struct PriorVariable{S} <: AbstractVariable
     name   :: String
-    values :: SynchronousSubject{Float64}
+    values :: S
     right  :: Interface
+end
 
-    PriorVariable(name::String, right::Interface) = begin
-        variable = new(name, make_subject(Float64, mode = SYNCHRONOUS_SUBJECT_MODE), right)
+function PriorVariable(name::String, right::Interface)
+    variable = PriorVariable(name, Subject(Float64, scheduler = Rocket.AsapScheduler()), right)
 
-        define_partner_message!(right, forward_message(variable))
+    define_partner_message!(right, forward_message(variable))
 
-        return variable
-    end
+    return variable
 end
 
 forward_message(v::PriorVariable)  = v.values |> map(DeterministicMessage, f -> DeterministicMessage(f))

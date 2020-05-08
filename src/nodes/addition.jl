@@ -2,7 +2,7 @@ export AdditionNode
 
 using Rocket
 
-additionOutForward(l ,r)  = combineLatest((l, r), true, (AbstractMessage, calculate_addition_out))
+additionOutForward(l, r)  = combineLatest((l, r), true, (AbstractMessage, calculate_addition_out))
 additionIn1Backward(l, r) = combineLatest((l, r), true, (AbstractMessage, calculate_addition_in1))
 additionIn2Backward(l, r) = combineLatest((l, r), true, (AbstractMessage, calculate_addition_in2))
 
@@ -18,7 +18,7 @@ struct AdditionNode <: AbstractDeterministicNode
         out = Interface("[$name]: out")
 
         # Forward message over the out
-        define_sum_product_message!(out, additionOutForward(partner_message(in1), partner_message(in2)) |> share(mode = SYNCHRONOUS_SUBJECT_MODE))
+        define_sum_product_message!(out, additionOutForward(partner_message(in1), partner_message(in2)) |> share())
         # define_sum_product_message!(out, additionOutForward(partner_message(in1), partner_message(in2)))
 
         # Backward message over the in1

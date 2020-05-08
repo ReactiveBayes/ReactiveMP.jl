@@ -5,18 +5,18 @@ using Rocket
 
 import Base: show
 
-struct ObservedVariable <: AbstractVariable
+struct ObservedVariable{S} <: AbstractVariable
     name   :: String
-    values :: SynchronousSubject{Float64}
+    values :: S
     left   :: Interface
+end
 
-    ObservedVariable(name::String, left::Interface) = begin
-        variable = new(name, make_subject(Float64, mode = SYNCHRONOUS_SUBJECT_MODE), left)
+function ObservedVariable(name::String, left::Interface)
+    variable = ObservedVariable(name, Subject(Float64, scheduler = Rocket.AsapScheduler()), left)
 
-        define_partner_message!(left, backward_message(variable))
+    define_partner_message!(left, backward_message(variable))
 
-        return variable
-    end
+    return variable
 end
 
 forward_message(v::ObservedVariable)  = sum_product_message(v.left)

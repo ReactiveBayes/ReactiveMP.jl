@@ -222,14 +222,6 @@ git-tree-sha1 = "1660f8fefbf5ab9c67560513131d4e933012fc4b"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
 version = "0.2.2+0"
 
-[[Rocket]]
-deps = ["DataStructures", "Documenter", "Sockets"]
-git-tree-sha1 = "199139dab71b5a46e58e12ca5903f3b6af0f6ed0"
-repo-rev = "develop"
-repo-url = "/Users/bvdmitri/.julia/dev/Rocket"
-uuid = "df971d30-c9d6-4b37-b8ff-e965b2cb3a40"
-version = "1.1.3"
-
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
