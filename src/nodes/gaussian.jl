@@ -19,10 +19,10 @@ struct GaussianMeanVarianceNode <: AbstractStochasticNode
         define_sum_product_message!(value, gaussianValueForward(partner_message(mean), partner_message(variance)))
 
         # Backward message over the mean
-        define_sum_product_message!(mean, throwError(AbstractMessage, "[$name]: messageOverTheMean is not implemented for all types of incoming messages"))
+        define_sum_product_message!(mean, faulted(AbstractMessage, "[$name]: messageOverTheMean is not implemented for all types of incoming messages"))
 
         # Backward message over the variance
-        define_sum_product_message!(variance, throwError(AbstractMessage, "[$name]: messageOverTheVariance is not implemented for all types of incoming messages"))
+        define_sum_product_message!(variance, faulted(AbstractMessage, "[$name]: messageOverTheVariance is not implemented for all types of incoming messages"))
 
         return new(name, mean, variance, value)
     end
