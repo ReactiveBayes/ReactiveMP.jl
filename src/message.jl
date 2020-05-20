@@ -1,44 +1,48 @@
-export AbstractMessage, DeterministicMessage, StochasticMessage
-export multiply
+export Message, data
+export multiplyMessages
 
 using Distributions
-using Rocket
 
 import Base: *
 
-abstract type AbstractMessage end
-
-struct DeterministicMessage <: AbstractMessage
-    value :: Float64
+struct Message{D}
+    data :: D
 end
 
-struct StochasticMessage{D} <: AbstractMessage
-    distribution :: D
+data(message::Message) = message.data
+
+function multiplyMessages(m1, m2) end
+
+function multiplyMessages(m1::Message{Nothing}, m2::Message{Nothing})
+    error("multiplyMessage(m1::Message{Nothing}, m2::Message{Nothing})")
 end
 
-function multiply(t::Tuple)
-    return multiply(t[1], t[2])
+function multiplyMessages(m1::Message{Nothing}, m2)
+    return Message(data(m2))
 end
 
-function multiply(d1::DeterministicMessage, d2::DeterministicMessage)
-    if abs(d1.value - d2.value) < eps(Float64)
-        return DeterministicMessage(d1.value)
+function multiplyMessages(m1, m2::Message{Nothing})
+    return Message(data(m1))
+end
+
+function multiplyMessages(m1::Message{T}, m2::Message{T}) where { T <: Real }
+    if abs(data(m1) - data(m2)) < eps(T)
+        return Message(data(m1))
+    else
+        return Message(zero(T))
     end
-    return DeterministicMessage(zero(Float64))
 end
 
-function multiply(n1::StochasticMessage{Normal{Float64}}, n2::StochasticMessage{Normal{Float64}})
-    mean1 = mean(n1.distribution)
-    mean2 = mean(n2.distribution)
+function multiplyMessages(m1::Message{N}, m2::Message{N}) where { N <: Normal }
+    mean1 = mean(data(m1))
+    mean2 = mean(data(m2))
 
-    var1 = var(n1.distribution)
-    var2 = var(n2.distribution)
+    var1 = var(data(m1))
+    var2 = var(data(m2))
 
-    result = Normal((mean1 * var2 + mean2 * var1) / (var2 + var1), sqrt((var1 * var2) / (var1 + var2)))
+    result = N((mean1 * var2 + mean2 * var1) / (var2 + var1), sqrt((var1 * var2) / (var1 + var2)))
 
-    return StochasticMessage(result)
+    return Message(result)
 end
 
-multiply(m1::AbstractMessage, m2::AbstractMessage) = error("Message multiplication for types $(typeof(m1)) and $(typeof(m2)) is not implemented")
-
-Base.:*(m1::AbstractMessage, m2::AbstractMessage) = multiply(m1, m2)
+Base.:*(m1::Message, m2::Message) = multiplyMessages(m1, m2)
