@@ -5,9 +5,9 @@ function multiply_messages(m1::Message{Nothing}, m2::Message{Nothing})
 end
 
 function multiply_messages(m1::Message{Nothing}, m2)
-    return Message(data(m2))
+    return Message(getdata(m2))
 end
 
 function multiply_messages(m1, m2::Message{Nothing})
-    return Message(data(m1))
+    return Message(getdata(m1))
 end

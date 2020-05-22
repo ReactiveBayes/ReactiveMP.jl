@@ -30,12 +30,12 @@ struct Node{F, N, C}
     factorisation :: C
 end
 
-function Node(::F, variables::SVector{N, NodeVariable}, factorisation::C) where { F, N, C }
+function Node(::Type{F}, variables::SVector{N, NodeVariable}, factorisation::C) where { F, N, C }
     return Node{F, N, C}(deepcopy(variables), deepcopy(factorisation))
 end
 
-function Node(fform, variables::SVector{N, Symbol}, factorisation) where N
-    return Node(fform, map(v -> nodevar(v), variables), factorisation)
+function Node(fform::Type{F}, variables::SVector{N, Symbol}, factorisation) where { N, F }
+    return Node(F, map(v -> nodevar(v), variables), factorisation)
 end
 
 functionalform(::Node{F}) where F = F

@@ -7,6 +7,8 @@ include("messages/dummy.jl")
 include("messages/delta.jl")
 include("messages/normal.jl")
 
+include("variable.jl")
+
 include("node.jl")
 
 # include("interface.jl")
