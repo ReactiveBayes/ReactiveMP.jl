@@ -57,16 +57,20 @@ isfactorised(node::Node, f)      = findfirst(d -> d == f, factorisation(node)) !
 function deps(node::Node, v::Symbol)
     vindex = varindex(node, v)
     cindex = clusterindex(node, vindex)
-    vars   = variables(node)
 
-    cls = factorisation(node)
-    clsskipped = skipindex(cls, cindex)
-    clusterdeps = length(clsskipped) !== 0 ? map(i -> vars[i], clsskipped) : nothing
+    @assert vindex !== nothing
+    @assert cindex !== nothing
 
-    factor = @inbounds cls[cindex]
+    vars = variables(node)
+    cls  = factorisation(node)
+
+    factor  = @inbounds cls[cindex]
     vcindex = varclusterindex(factor, vindex)
-    mskipped = skipindex(factor, vcindex)
-    mdeps = length(mskipped) !== 0 ? map(i -> vars[i], mskipped) : nothing
+
+    @assert vcindex !== nothing
+
+    mdeps       = map(i -> vars[i], skipindex(factor, vcindex))
+    clusterdeps = map(i -> vars[i], skipindex(cls, cindex))
 
     return mdeps, clusterdeps
 end
