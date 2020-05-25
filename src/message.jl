@@ -1,5 +1,5 @@
-export Message, multiply_messages, reduce_messages
-export Belief
+export AbstractMessage, Message, multiply_messages, reduce_messages
+export AbstractBelief, Belief
 export getdata
 
 import Base: *

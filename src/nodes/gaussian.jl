@@ -1,5 +1,7 @@
 export GaussianMeanVariance
 
+using Distributions
+
 function GaussianMeanVariance(::Type{T} = Float64; factorisation = SA[ [ 1, 2, 3 ] ]) where T
     return Node(Normal{T}, SA[ :mean, :variance, :value ], factorisation)
 end

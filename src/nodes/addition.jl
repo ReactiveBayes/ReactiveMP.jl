@@ -1,5 +1,7 @@
 export AdditionNode
 
+using Distributions
+
 function AdditionNode()
     return Node(typeof(+), SA[ :in1, :in2, :out ], SA[ SA[ 1, 2, 3 ] ])
 end

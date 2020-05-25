@@ -1,7 +1,7 @@
 export AbstractVariable
 export RandomVariable, randomvar
 export ConstVariable, constvar
-export DataVariable, datavar
+export DataVariable, datavar, update!, finish!
 export belief
 
 # TODO typed fauled?
@@ -23,7 +23,7 @@ messageout(randomvar::RandomVariable, index::Int) = begin
     return combineLatest(tuple(skipindex(randomvar.inputmsgs, index)...), true, (AbstractMessage, reduce_messages)) # TODO
 end
 
-belief(randomvar::RandomVariable) = combineLatest(tuple(randomvar.inputmsgs...), true, (Belief, reduce_message_to_belief)) # TODO
+belief(randomvar::RandomVariable) = combineLatest(tuple(randomvar.inputmsgs...), true, (AbstractBelief, reduce_message_to_belief)) # TODO
 
 ##
 
@@ -69,6 +69,7 @@ function messagein(datavar::DataVariable, index::Int)
     return datavar.messagein
 end
 
-update!(datavar::DataVariable{S, D}, data::D) where { S, D } = next!(messageout(datavar), Message(data))
+update!(datavar::DataVariable{S, D}, data::D) where { S, D } = next!(messageout(datavar, 1), Message(data))
+finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
 belief(datavar::DataVariable) = combineLatest((messageout(constvar, 1), messagein(constvar, 1)), true, (AbstractBelief, reduce_message_to_belief))
