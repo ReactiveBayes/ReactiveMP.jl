@@ -1,44 +1,33 @@
-export AbstractMessage, DeterministicMessage, StochasticMessage
-export multiply
-
-using Distributions
-using Rocket
+export AbstractMessage, Message, multiply_messages, reduce_messages
+export AbstractBelief, Belief
+export getdata
 
 import Base: *
 
 abstract type AbstractMessage end
 
-struct DeterministicMessage <: AbstractMessage
-    value :: Float64
+struct Message{D} <: AbstractMessage
+    data :: D
 end
 
-struct StochasticMessage{D} <: AbstractMessage
-    distribution :: D
+getdata(message::Message) = message.data
+
+function multiply_messages end
+
+function reduce_messages(messages)
+    return reduce(*, messages; init = Message(nothing))
 end
 
-function multiply(t::Tuple)
-    return multiply(t[1], t[2])
+Base.:*(m1::AbstractMessage, m2::AbstractMessage) = multiply_messages(m1, m2)
+
+abstract type AbstractBelief end
+
+struct Belief{D} <: AbstractBelief
+    data :: D
 end
 
-function multiply(d1::DeterministicMessage, d2::DeterministicMessage)
-    if abs(d1.value - d2.value) < eps(Float64)
-        return DeterministicMessage(d1.value)
-    end
-    return DeterministicMessage(zero(Float64))
+getdata(belief::Belief) = belief.data
+
+function reduce_message_to_belief(messages)
+    return Belief(messages |> reduce_messages |> getdata)
 end
-
-function multiply(n1::StochasticMessage{Normal{Float64}}, n2::StochasticMessage{Normal{Float64}})
-    mean1 = mean(n1.distribution)
-    mean2 = mean(n2.distribution)
-
-    var1 = var(n1.distribution)
-    var2 = var(n2.distribution)
-
-    result = Normal((mean1 * var2 + mean2 * var1) / (var2 + var1), sqrt((var1 * var2) / (var1 + var2)))
-
-    return StochasticMessage(result)
-end
-
-multiply(m1::AbstractMessage, m2::AbstractMessage) = error("Message multiplication for types $(typeof(m1)) and $(typeof(m2)) is not implemented")
-
-Base.:*(m1::AbstractMessage, m2::AbstractMessage) = multiply(m1, m2)
