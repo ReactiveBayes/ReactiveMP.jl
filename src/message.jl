@@ -4,7 +4,9 @@ export getdata
 
 import Base: *
 
-struct Message{D}
+abstract type AbstractMessage end
+
+struct Message{D} <: AbstractMessage
     data :: D
 end
 
@@ -13,12 +15,14 @@ getdata(message::Message) = message.data
 function multiply_messages end
 
 function reduce_messages(messages)
-    return reduce(*, messages; init = nothing)
+    return reduce(*, messages; init = Message(nothing))
 end
 
-Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
+Base.:*(m1::AbstractMessage, m2::AbstractMessage) = multiply_messages(m1, m2)
 
-struct Belief{D}
+abstract type AbstractBelief end
+
+struct Belief{D} <: AbstractBelief
     data :: D
 end
 

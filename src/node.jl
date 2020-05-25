@@ -1,7 +1,8 @@
 export NodeVariable, nodevar, name, messageout, messagein
-export Node, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised
+export Node, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised, getvariable
 export getcluster, clusters, clusterindex
-export deps
+export deps, connect!, activate!
+export rule
 
 using StaticArrays
 using BenchmarkTools
@@ -9,12 +10,20 @@ using Rocket
 
 import Base: show
 
+mutable struct NodeVariableProps
+    connected_variable :: Union{Nothing, AbstractVariable}
+    connected_index    :: Int
+
+    NodeVariableProps() = new(nothing, 0)
+end
+
 struct NodeVariable
     name  :: Symbol
-    m_out :: LazyObservable{Message}
-    m_in  :: LazyObservable{Message}
+    m_out :: LazyObservable{AbstractMessage}
+    m_in  :: LazyObservable{AbstractMessage}
+    props :: NodeVariableProps
 
-    NodeVariable(name::Symbol) = new(name, lazy(Message), lazy(Message))
+    NodeVariable(name::Symbol) = new(name, lazy(AbstractMessage), lazy(AbstractMessage), NodeVariableProps())
 end
 
 Base.show(io::IO, nodevar::NodeVariable) = print(io, name(nodevar))
@@ -24,6 +33,11 @@ nodevar(name::Symbol) = NodeVariable(name)
 name(nodevar::NodeVariable)       = nodevar.name
 messageout(nodevar::NodeVariable) = nodevar.m_out
 messagein(nodevar::NodeVariable)  = nodevar.m_in
+
+function connectvariable!(nodevar::NodeVariable, variable, index)
+    nodevar.props.connected_variable = variable
+    nodevar.props.connected_index    = index
+end
 
 struct Node{F, N, C}
     variables     :: SVector{N, NodeVariable}
@@ -50,9 +64,29 @@ clusterindex(node::Node, vindex::Int)    = findfirst(cluster -> vindex ∈ clust
 varclusterindex(cluster, v::Symbol)   = varclusterindex(cluster, varindex(v))
 varclusterindex(cluster, vindex::Int) = findfirst(index -> index === vindex, cluster)
 
-varindex(node::Node, v::Symbol)  = findfirst(d -> d === v, map(v -> name(v), variables(node)))
-iscontain(node::Node, v::Symbol) = varindex(node, v) !== nothing
-isfactorised(node::Node, f)      = findfirst(d -> d == f, factorisation(node)) !== nothing
+function getvariable(node::Node, v::Symbol)
+    vindex = varindex(node, v)
+    @assert vindex !== nothing
+    return @inbounds variables(node)[vindex]
+end
+
+varindex(node::Node, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), variables(node)))
+iscontain(node::Node, v::Symbol)   = varindex(node, v) !== nothing
+isfactorised(node::Node, f)        = findfirst(d -> d == f, factorisation(node)) !== nothing
+
+function connect!(node::Node, v::Symbol, variable, index)
+    vindex = varindex(node, v)
+
+    @assert vindex !== nothing
+
+    nodevars = variables(node)
+    nodevar  = @inbounds nodevars[vindex]
+
+    connectvariable!(nodevar, variable, index) # for debugging mostly
+
+    set!(messagein(variable, index), messageout(nodevar))
+    set!(messagein(nodevar), messageout(variable, index))
+end
 
 function deps(node::Node, v::Symbol)
     vindex = varindex(node, v)
@@ -74,3 +108,17 @@ function deps(node::Node, v::Symbol)
 
     return mdeps, clusterdeps
 end
+
+function activate!(node::Node)
+    for variable in variables(node)
+        mdeps, clusterdeps = deps(node, name(variable))
+
+        mgsobservable     = combineLatest(tuple(map(m -> messagein(m), mdeps)...), true)
+        clusterobservable = of(nothing) # TODO
+        vmessageout       = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(functionalform(node), Val(name(variable)), d[1], d[2], nothing)))
+
+        set!(messageout(variable), vmessageout)
+    end
+end
+
+function rule end

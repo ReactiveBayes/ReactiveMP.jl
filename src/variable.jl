@@ -1,73 +1,74 @@
-export RandomVariable
-export randomvar
+export AbstractVariable
+export RandomVariable, randomvar
+export ConstVariable, constvar
+export DataVariable, datavar
+export belief
+
+# TODO typed fauled?
 
 using StaticArrays
 using Rocket
 
-struct RandomVariable{N}
+abstract type AbstractVariable end
+
+struct RandomVariable{N} <: AbstractVariable
     name      :: Symbol
-    inputmsgs :: SVector{N, LazyObservable{Message}}
+    inputmsgs :: SVector{N, LazyObservable{AbstractMessage}}
 end
 
-randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, SVector{N}([ lazy(Message) for _ in 1:N ]))
+randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, SVector{N}([ lazy(AbstractMessage) for _ in 1:N ]))
 
 messagein(randomvar::RandomVariable, index::Int)  = randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = begin
-    return combineLatest(tuple(skipindex(randomvar.inputmsgs, index)...), true, (Message, reduce_messages)) # TODO
+    return combineLatest(tuple(skipindex(randomvar.inputmsgs, index)...), true, (AbstractMessage, reduce_messages)) # TODO
 end
 
 belief(randomvar::RandomVariable) = combineLatest(tuple(randomvar.inputmsgs...), true, (Belief, reduce_message_to_belief)) # TODO
 
 ##
 
-struct ConstVariable{M}
+struct ConstVariable{M} <: AbstractVariable
     name       :: Symbol
     messageout :: M
+    messagein  :: LazyObservable{AbstractMessage}
 end
 
-constvar(name::Symbol, constval) = ConstVariable(name, of(constval))
+constvar(name::Symbol, constval) = ConstVariable(name, of(Message(constval)), lazy(AbstractMessage))
 
-messageout(constvar::ConstVariable, index::Int) = constvar.messageout
-messagein(constvar::ConstVariable, index::Int)  = error("messagein is not defined for ConstVariable object")
+function messageout(constvar::ConstVariable, index::Int)
+    @assert index === 1
+    return constvar.messageout
+end
 
-belief(constvar::ConstVariable) = error("belief is not defined for ConstVariable object")
+function messagein(constvar::ConstVariable, index::Int)
+    @assert index === 1
+    return constvar.messagein
+end
+
+belief(constvar::ConstVariable) = combineLatest((messageout(constvar, 1), messagein(constvar, 1)), true, (AbstractBelief, reduce_message_to_belief))
 
 ##
 
-struct DataVariable{S}
-    name      :: Symbol
-    messagein :: S
-end
-
-function datavar(name::Symbol, ::Type{D}; subject = nothing) where D
-    messagein = subject === nothing ? Subject(D) : subject
-    return DataVariable(name, messagein)
-end
-
-messageout(datavar::DataVariable, index::Int) = error("messageout is not defined for DataVariable object")
-messagein(datavar::DataVariable, index::Int)  = datavar.messagein
-
-update!(datavar::DataVariable, data) = next!(messagein(datavar), data)
-
-belief(datavar::DataVariable) = error("belief is not defined for DataVariable object")
-
-##
-
-struct PriorVariable{S}
+struct DataVariable{S, D} <: AbstractVariable
     name       :: Symbol
     messageout :: S
+    messagein  :: LazyObservable
 end
 
-function priorvar(name::Symbol, ::Type{D}; subject = nothing) where D
-    messageout = subject === nothing ? Subject(D) : subject
-    return PriorVariable(name, messageout)
+function datavar(name::Symbol, ::Type{D}; subject::S = Subject(Message{D})) where { S, D }
+    return DataVariable{S, D}(name, subject, lazy(AbstractMessage))
 end
 
-messageout(priorvar::PriorVariable, index::Int) = priorvar.messageout
-messagein(priorvar::PriorVariable, index::Int)  = error("messagein is not defined for PriorVariable object")
+function messageout(datavar::DataVariable, index::Int)
+    @assert index === 1
+    return datavar.messageout
+end
 
-update!(priorvar::PriorVariable, prior) = next!(messageout(priorvar), prior)
+function messagein(datavar::DataVariable, index::Int)
+    @assert index === 1
+    return datavar.messagein
+end
 
-belief(priorvar::PriorVariable) = error("belief is not defined for PriorVariable object")
+update!(datavar::DataVariable{S, D}, data::D) where { S, D } = next!(messageout(datavar), Message(data))
 
-##
+belief(datavar::DataVariable) = combineLatest((messageout(constvar, 1), messagein(constvar, 1)), true, (AbstractBelief, reduce_message_to_belief))
