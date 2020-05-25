@@ -39,6 +39,9 @@ function connectvariable!(nodevar::NodeVariable, variable, index)
     nodevar.props.connected_index    = index
 end
 
+connectedvar(nodevar::NodeVariable)      = nodevar.props.connected_variable
+connectedvarindex(nodevar::NodeVariable) = nodevar.props.connected_index
+
 struct Node{F, N, C}
     variables     :: SVector{N, NodeVariable}
     factorisation :: C
@@ -82,10 +85,8 @@ function connect!(node::Node, v::Symbol, variable, index)
     nodevars = variables(node)
     nodevar  = @inbounds nodevars[vindex]
 
-    connectvariable!(nodevar, variable, index) # for debugging mostly
-
-    set!(messagein(variable, index), messageout(nodevar))
-    set!(messagein(nodevar), messageout(variable, index))
+    connectvariable!(nodevar, variable, index)
+    setmessagein!(variable, index, messageout(nodevar))
 end
 
 function deps(node::Node, v::Symbol)
@@ -118,6 +119,7 @@ function activate!(node::Node)
         vmessageout       = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(functionalform(node), Val(name(variable)), d[1], d[2], nothing)))
 
         set!(messageout(variable), vmessageout)
+        set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end
 
