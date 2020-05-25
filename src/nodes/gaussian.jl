@@ -31,20 +31,18 @@ end
 function rule(::Type{ <: NormalMeanPrecision{T} }, ::Val{:mean}, messages::Nothing, beliefs::Tuple{Belief{Gamma{T}}, Belief{NormalMeanPrecision{T}}}, meta) where { T <: Real }
     precision_belief = getdata(beliefs[1])
     value_belief     = getdata(beliefs[2])
-    return Message(NormalMeanPrecision{T}(mean(value_belief), shape(precision_belief) / scale(precision_belief)))
+    return Message(NormalMeanPrecision{T}(mean(value_belief), mean(precision_belief)))
 end
 
 function rule(::Type{ <: NormalMeanPrecision{T} }, ::Val{:precision}, messages::Nothing, beliefs::Tuple{Belief{NormalMeanPrecision{T}}, Belief{NormalMeanPrecision{T}}}, meta) where { T <: Real }
     mean_belief  = getdata(beliefs[1])
     value_belief = getdata(beliefs[2])
-    Sm = one(T) / precision(mean_belief)
-    Sy = one(T) / precision(value_belief)
     dif = mean(value_belief) - mean(mean_belief)
-    return Message(Gamma{T}(3.0 / 2.0, 1.0 / 2.0 * (Sm + Sy + dif^2)))
+    return Message(Gamma{T}(3.0 / 2.0, 1.0 / 2.0 * (var(mean_belief) + var(value_belief) + dif^2)))
 end
 
 function rule(::Type{ <: NormalMeanPrecision{T} }, ::Val{:value}, messages::Nothing, beliefs::Tuple{Belief{NormalMeanPrecision{T}}, Belief{Gamma{T}}}, meta) where { T <: Real }
     mean_belief      = getdata(beliefs[1])
     precision_belief = getdata(beliefs[2])
-    return Message(NormalMeanPrecision{T}(mean(mean_belief), shape(precision_belief) / scale(precision_belief)))
+    return Message(NormalMeanPrecision{T}(mean(mean_belief), mean(precision_belief)))
 end
