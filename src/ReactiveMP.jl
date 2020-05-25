@@ -2,10 +2,13 @@ module ReactiveMP
 
 include("helpers.jl")
 
+include("distributions/normal_mean_precision.jl")
+
 include("message.jl")
 include("messages/dummy.jl")
 include("messages/delta.jl")
 include("messages/normal.jl")
+include("messages/gamma.jl")
 
 include("variable.jl")
 

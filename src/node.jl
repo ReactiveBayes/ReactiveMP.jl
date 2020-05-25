@@ -122,7 +122,7 @@ function activate!(node::Node)
         vtag        = tag(variable)
         vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(fform, vtag, d[1], d[2], nothing)))
 
-        set!(messageout(variable), vmessageout |> share())
+        set!(messageout(variable), vmessageout |> discontinue() |> share())
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end
