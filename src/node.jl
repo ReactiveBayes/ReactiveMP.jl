@@ -49,10 +49,10 @@ struct Node{F, N, C}
 end
 
 function Node(::Type{F}, variables::SVector{N, NodeVariable}, factorisation::C) where { F, N, C }
-    return Node{F, N, C}(deepcopy(variables), deepcopy(factorisation))
+    return Node{F, N, C}(variables, factorisation)
 end
 
-function Node(fform::Type{F}, variables::SVector{N, Symbol}, factorisation) where { N, F }
+function Node(::Type{F}, variables::SVector{N, Symbol}, factorisation) where { N, F }
     return Node(F, map(v -> nodevar(v), variables), factorisation)
 end
 
@@ -120,9 +120,9 @@ function activate!(node::Node)
 
         fform       = functionalform(node)
         vtag        = tag(variable)
-        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(fform, Val(name(variable)), d[1], d[2], nothing)))
+        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(fform, vtag, d[1], d[2], nothing)))
 
-        set!(messageout(variable), vmessageout)
+        set!(messageout(variable), vmessageout |> share())
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end
