@@ -31,6 +31,7 @@ Base.show(io::IO, nodevar::NodeVariable) = print(io, name(nodevar))
 nodevar(name::Symbol) = NodeVariable(name)
 
 name(nodevar::NodeVariable)       = nodevar.name
+tag(nodevar::NodeVariable)        = Val(name(nodevar))
 messageout(nodevar::NodeVariable) = nodevar.m_out
 messagein(nodevar::NodeVariable)  = nodevar.m_in
 
@@ -116,7 +117,10 @@ function activate!(node::Node)
 
         mgsobservable     = combineLatest(tuple(map(m -> messagein(m), mdeps)...), true)
         clusterobservable = of(nothing) # TODO
-        vmessageout       = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(functionalform(node), Val(name(variable)), d[1], d[2], nothing)))
+
+        fform       = functionalform(node)
+        vtag        = tag(variable)
+        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(fform, Val(name(variable)), d[1], d[2], nothing)))
 
         set!(messageout(variable), vmessageout)
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))

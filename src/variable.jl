@@ -12,10 +12,10 @@ abstract type AbstractVariable end
 
 struct RandomVariable{N} <: AbstractVariable
     name      :: Symbol
-    inputmsgs :: MVector{N, Union{Nothing, LazyObservable{AbstractMessage}}}
+    inputmsgs :: Vector{Union{Nothing, LazyObservable{AbstractMessage}}}
 end
 
-randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, MVector{N, Union{Nothing, LazyObservable{AbstractMessage}}}([ nothing for _ in 1:N ]))
+randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N))
 
 messagein(randomvar::RandomVariable, index::Int)  = randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = begin
