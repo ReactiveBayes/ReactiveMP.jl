@@ -15,6 +15,7 @@ include("variable.jl")
 include("node.jl")
 include("nodes/gaussian.jl")
 include("nodes/addition.jl")
+include("nodes/gamma.jl")
 
 # include("interface.jl")
 #

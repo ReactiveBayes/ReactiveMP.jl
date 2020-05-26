@@ -3,6 +3,7 @@ export Node, functionalform, variables, factorisation, factors, varindex, iscont
 export getcluster, clusters, clusterindex
 export deps, connect!, activate!
 export rule
+export Marginalisation
 
 using StaticArrays
 using BenchmarkTools
@@ -10,12 +11,20 @@ using Rocket
 
 import Base: show
 
+## Variable constraints
+
+struct Marginalisation end
+
+## Node Variable Props
+
 mutable struct NodeVariableProps
     connected_variable :: Union{Nothing, AbstractVariable}
     connected_index    :: Int
 
     NodeVariableProps() = new(nothing, 0)
 end
+
+## Node Variable
 
 struct NodeVariable
     name  :: Symbol
@@ -42,6 +51,8 @@ end
 
 connectedvar(nodevar::NodeVariable)      = nodevar.props.connected_variable
 connectedvarindex(nodevar::NodeVariable) = nodevar.props.connected_index
+
+## Node
 
 struct Node{F, N, C}
     variables     :: SVector{N, NodeVariable}
@@ -120,11 +131,14 @@ function activate!(node::Node)
 
         fform       = functionalform(node)
         vtag        = tag(variable)
-        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(fform, vtag, d[1], d[2], nothing)))
+        vconstraint = Marginalisation()
+        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(fform, vtag, vconstraint, d[1], d[2], nothing)))
 
         set!(messageout(variable), vmessageout |> discontinue() |> share())
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end
+
+## rule
 
 function rule end

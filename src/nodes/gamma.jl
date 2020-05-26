@@ -7,8 +7,8 @@ function GammaNode(::Type{T} = Float64; factorisation = SA[ SA[ 1, 2, 3 ] ]) whe
 end
 
 # BP rule
-function rule(::Type{ <: Gamma{T} }, ::Val{:value}, messages::Tuple{Message{T}, Message{T}}, beliefs::Nothing, meta) where { T <: Real }
+function rule(::Type{ <: Gamma{T} }, ::Val{:value}, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, beliefs::Nothing, meta) where { T <: Real }
     shape = getdata(messages[1])
-    scale = getdata(messages[2])
-    return Message(Gamma{T}(shape, scale))
+    rate  = getdata(messages[2])
+    return Message(Gamma{T}(shape, one(T) / rate))
 end
