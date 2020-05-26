@@ -126,8 +126,8 @@ function activate!(node::Node)
     for variable in variables(node)
         mdeps, clusterdeps = deps(node, name(variable))
 
-        mgsobservable     = combineLatest(tuple(map(m -> messagein(m), mdeps)...), true)
-        clusterobservable = of(nothing) # TODO
+        mgsobservable     = length(mdeps) !== 0 ? combineLatest(tuple(map(m -> messagein(m), mdeps)...), true) : of(nothing)
+        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(tuple(map(c -> cluster_belief(c), clusterdeps)...), false) : of(nothing)
 
         fform       = functionalform(node)
         vtag        = tag(variable)
@@ -139,6 +139,30 @@ function activate!(node::Node)
     end
 end
 
+function cluster_belief(cluster)
+    if length(cluster) === 1 # Cluster contains only one variable, we can take belief over this variable
+        connected = connectedvar(cluster[1])
+        activate!(connected)
+        return getbelief(connected)
+    else
+        error("Unsupported cluster size: $(length(cluster))")
+    end
+end
+
 ## rule
 
 function rule end
+
+## Helpers for the rule
+
+macro fform(expr)
+    return :(::Type{ <: $expr })
+end
+
+macro edge(expr)
+    return :(::Val{$expr})
+end
+
+macro MC()
+    return :(::Marginalisation)
+end
