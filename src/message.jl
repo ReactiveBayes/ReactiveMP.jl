@@ -9,6 +9,10 @@ using Distributions
 
 abstract type AbstractMessage end
 
+## AbstractBelief
+
+abstract type AbstractBelief end
+
 ## Message
 
 struct Message{D} <: AbstractMessage
@@ -31,9 +35,9 @@ Distributions.var(message::Message)  = Distributions.var(getdata(message))
 Distributions.mean(message::Message{T}) where { T <: Real } = getdata(message)
 Distributions.var(message::Message{T}) where { T <: Real }  = zero(T)
 
-## AbstractBelief
-
-abstract type AbstractBelief end
+as_message(data)                     = Message(data)
+as_message(message::AbstractMessage) = message
+as_message(belief::AbstractBelief)   = Message(getdata(belief))
 
 ## Belief
 
@@ -44,7 +48,7 @@ end
 getdata(belief::Belief) = belief.data
 
 function reduce_message_to_belief(messages)
-    return Belief(messages |> reduce_messages |> getdata)
+    return as_belief(reduce_messages(messages))
 end
 
 Distributions.mean(belief::Belief) = Distributions.mean(getdata(belief))
@@ -52,3 +56,7 @@ Distributions.var(belief::Belief)  = Distributions.var(getdata(belief))
 
 Distributions.mean(belief::Belief{T}) where { T <: Real } = getdata(belief)
 Distributions.var(belief::Belief{T}) where { T <: Real }  = zero(T)
+
+as_belief(data)                     = Belief(data)
+as_belief(belief::AbstractBelief)   = belief
+as_belief(message::AbstractMessage) = Belief(getdata(message))

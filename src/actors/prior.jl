@@ -10,7 +10,7 @@ end
 prioractor(::Type{D}, name::Symbol, prior::P) where { D, P } = PriorActor{D, P}(name, prior)
 
 function Rocket.on_next!(actor::PriorActor{D}, data::D) where D
-    update!(actor.prior, getdata(data))
+    update!(actor.prior, as_message(data))
 end
 
 function Rocket.on_error!(actor::PriorActor, err)

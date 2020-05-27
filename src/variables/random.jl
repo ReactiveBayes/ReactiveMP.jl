@@ -4,16 +4,18 @@ struct RandomVariable{N} <: AbstractVariable
     name      :: Symbol
     inputmsgs :: Vector{Union{Nothing, LazyObservable{AbstractMessage}}}
     belief    :: VariableBelief
+    marginal   :: VariableMarginal
 end
 
-randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N), VariableBelief())
+randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N), VariableBelief(), VariableMarginal())
 
 messagein(randomvar::RandomVariable, index::Int)  = randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = begin
     return combineLatest(tuple(skipindex(randomvar.inputmsgs, index)...), true, (AbstractMessage, reduce_messages)) # TODO
 end
 
-makebelief(randomvar::RandomVariable) = combineLatest(tuple(randomvar.inputmsgs...), false, (AbstractBelief, reduce_message_to_belief)) # TODO
+makebelief(randomvar::RandomVariable)   = combineLatest(tuple(randomvar.inputmsgs...), false, (AbstractBelief, reduce_message_to_belief)) # TODO
+makemarginal(randomvar::RandomVariable) = combineLatest(tuple(randomvar.inputmsgs...), true, (AbstractBelief, reduce_message_to_belief)) # TODO
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     randomvar.inputmsgs[index] = messagein
@@ -30,12 +32,13 @@ mutable struct SimpleRandomVariableProps
 end
 
 struct SimpleRandomVariable <: AbstractVariable
-    name   :: Symbol
-    props  :: SimpleRandomVariableProps
-    belief :: VariableBelief
+    name     :: Symbol
+    props    :: SimpleRandomVariableProps
+    belief   :: VariableBelief
+    marginal :: VariableMarginal
 end
 
-simplerandomvar(name::Symbol) = SimpleRandomVariable(name, SimpleRandomVariableProps(), VariableBelief())
+simplerandomvar(name::Symbol) = SimpleRandomVariable(name, SimpleRandomVariableProps(), VariableBelief(), VariableMarginal())
 
 function messagein(srandomvar::SimpleRandomVariable, index::Int)
     if index === 1
@@ -57,7 +60,8 @@ function messageout(srandomvar::SimpleRandomVariable, index::Int)
     end
 end
 
-makebelief(srandomvar::SimpleRandomVariable) = combineLatest((srandomvar.props.messagein1, srandomvar.props.messagein2), false, (AbstractBelief, reduce_message_to_belief))
+makebelief(srandomvar::SimpleRandomVariable)   = combineLatest((srandomvar.props.messagein1, srandomvar.props.messagein2), false, (AbstractBelief, reduce_message_to_belief))
+makemarginal(srandomvar::SimpleRandomVariable) = combineLatest((srandomvar.props.messagein1, srandomvar.props.messagein2), true, (AbstractBelief, reduce_message_to_belief))
 
 function setmessagein!(srandomvar::SimpleRandomVariable, index::Int, messagein)
     if index === 1

@@ -11,10 +11,11 @@ struct DataVariable{S, D} <: AbstractVariable
     messageout :: S
     props      :: DataVariableProps
     belief     :: VariableBelief
+    marginal   :: VariableMarginal
 end
 
 function datavar(name::Symbol, ::Type{D}; subject::S = Subject(Message{D})) where { S, D }
-    return DataVariable{S, D}(name, subject, DataVariableProps(), VariableBelief())
+    return DataVariable{S, D}(name, subject, DataVariableProps(), VariableBelief(), VariableMarginal())
 end
 
 function messageout(datavar::DataVariable, index::Int)
@@ -27,10 +28,11 @@ function messagein(datavar::DataVariable, index::Int)
     return datavar.props.messagein
 end
 
-update!(datavar::DataVariable{S, D}, data::D) where { S, D } = next!(messageout(datavar, 1), Message(data))
-finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
+update!(datavar::DataVariable, data) = next!(messageout(datavar, 1), as_message(data))
+finish!(datavar::DataVariable)       = complete!(messageout(datavar, 1))
 
-makebelief(datavar::DataVariable) = combineLatest((datavar.messageout, datavar.props.messagein), false, (AbstractBelief, reduce_message_to_belief))
+makebelief(datavar::DataVariable)   = combineLatest((datavar.messageout, datavar.props.messagein), false, (AbstractBelief, reduce_message_to_belief))
+makemarginal(datavar::DataVariable) = combineLatest((datavar.messageout, datavar.props.messagein), true, (AbstractBelief, reduce_message_to_belief))
 
 function setmessagein!(datavar::DataVariable, index::Int, messagein)
     @assert index === 1

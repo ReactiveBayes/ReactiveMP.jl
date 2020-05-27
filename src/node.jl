@@ -141,9 +141,7 @@ end
 
 function cluster_belief(cluster)
     if length(cluster) === 1 # Cluster contains only one variable, we can take belief over this variable
-        connected = connectedvar(cluster[1])
-        activate!(connected)
-        return getbelief(connected)
+        return getbelief(connectedvar(cluster[1]))
     else
         error("Unsupported cluster size: $(length(cluster))")
     end
