@@ -132,7 +132,7 @@ function activate!(node::Node)
         fform       = functionalform(node)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
-        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> rule(fform, vtag, vconstraint, d[1], d[2], nothing)))
+        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> as_message(rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
 
         set!(messageout(variable), vmessageout |> discontinue() |> share())
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
