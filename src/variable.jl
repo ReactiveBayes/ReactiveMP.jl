@@ -3,7 +3,7 @@ export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
-export getbelief, setbelief!
+export getbelief, setbelief!, activate!, name
 
 using StaticArrays
 using Rocket
@@ -49,6 +49,10 @@ end
 function activate!(variable::AbstractVariable)
     connect!(variable.belief, makebelief(variable))
     return nothing
+end
+
+function name(variable::AbstractVariable)
+    return variable.name
 end
 
 ## RandomVariable

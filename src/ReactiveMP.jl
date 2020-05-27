@@ -21,6 +21,9 @@ include("node.jl")
 include("nodes/gaussian.jl")
 include("nodes/addition.jl")
 
+include("actors/prior.jl")
+
+
 # include("interface.jl")
 #
 # include("variables/variables.jl")

@@ -152,17 +152,3 @@ end
 ## rule
 
 function rule end
-
-## Helpers for the rule
-
-macro fform(expr)
-    return :(::Type{ <: $expr })
-end
-
-macro edge(expr)
-    return :(::Val{$expr})
-end
-
-macro MC()
-    return :(::Marginalisation)
-end
