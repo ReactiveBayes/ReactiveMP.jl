@@ -11,10 +11,9 @@ struct ConstVariable{M} <: AbstractVariable
     messageout :: M
     props      :: ConstVariableProps
     belief     :: VariableBelief
-    marginal   :: VariableMarginal
 end
 
-constvar(name::Symbol, constval) = ConstVariable(name, of(Message(constval)), ConstVariableProps(), VariableBelief(), VariableMarginal())
+constvar(name::Symbol, constval) = ConstVariable(name, of(Message(constval)), ConstVariableProps(), VariableBelief())
 
 function messageout(constvar::ConstVariable, index::Int)
     @assert index === 1
@@ -26,9 +25,7 @@ function messagein(constvar::ConstVariable, index::Int)
     return constvar.props.messagein
 end
 
-# TODO false or true
-makebelief(constvar::ConstVariable)   = combineLatest((constvar.messageout, constvar.props.messagein), false, (AbstractBelief, reduce_message_to_belief))
-makemarginal(constvar::ConstVariable) = combineLatest((constvar.messageout, constvar.props.messagein), true, (AbstractBelief, reduce_message_to_belief))
+makebelief(constvar::ConstVariable)   = combineLatest((constvar.messageout, constvar.props.messagein), true, (AbstractBelief, reduce_message_to_belief))
 
 function setmessagein!(constvar::ConstVariable, index::Int, messagein)
     @assert index === 1
