@@ -23,6 +23,8 @@ include("nodes/addition.jl")
 
 include("actors/prior.jl")
 
+include("free-energy.jl")
+
 
 # include("interface.jl")
 #

@@ -4,6 +4,7 @@ export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
 export getbelief, setbelief!, activate!, name
+export as_message, as_belief
 
 using StaticArrays
 using Rocket

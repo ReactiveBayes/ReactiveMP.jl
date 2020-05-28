@@ -6,6 +6,8 @@ struct RandomVariable{N} <: AbstractVariable
     belief    :: VariableBelief
 end
 
+# degree() # TODO
+
 randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N), VariableBelief())
 
 messagein(randomvar::RandomVariable, index::Int)  = randomvar.inputmsgs[index]
