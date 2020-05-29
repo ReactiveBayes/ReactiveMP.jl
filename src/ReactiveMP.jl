@@ -16,6 +16,7 @@ include("variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
+include("variables/prior.jl")
 
 include("node.jl")
 include("nodes/gaussian.jl")
