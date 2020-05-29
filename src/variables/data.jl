@@ -17,6 +17,8 @@ function datavar(name::Symbol, ::Type{D}; subject::S = Subject(Message{D})) wher
     return DataVariable{S, D}(name, subject, DataVariableProps(), VariableBelief())
 end
 
+degree(::DataVariable) = 1
+
 function messageout(datavar::DataVariable, index::Int)
     @assert index === 1
     return datavar.messageout
@@ -30,7 +32,7 @@ end
 update!(datavar::DataVariable, data) = next!(messageout(datavar, 1), as_message(data))
 finish!(datavar::DataVariable)       = complete!(messageout(datavar, 1))
 
-makebelief(datavar::DataVariable)   = combineLatest((datavar.messageout, datavar.props.messagein), true, (AbstractBelief, reduce_message_to_belief))
+makebelief(datavar::DataVariable)   = combineLatest(datavar.messageout, datavar.props.messagein, strategy = PushNew()) |> reduce_to_belief
 
 function setmessagein!(datavar::DataVariable, index::Int, messagein)
     @assert index === 1

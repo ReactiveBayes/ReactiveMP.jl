@@ -1,9 +1,12 @@
-export AbstractMessage, Message, multiply_messages, reduce_messages
+export AbstractMessage, Message
 export AbstractBelief, Belief
 export getdata
+export multiply_messages
 
 import Base: *
+
 using Distributions
+using Rocket
 
 ## AbstractMessage
 
@@ -22,10 +25,6 @@ end
 getdata(message::Message) = message.data
 
 function multiply_messages end
-
-function reduce_messages(messages)
-    return reduce(*, messages; init = Message(nothing))
-end
 
 Base.:*(m1::AbstractMessage, m2::AbstractMessage) = multiply_messages(m1, m2)
 
@@ -49,10 +48,6 @@ end
 
 getdata(belief::Belief) = belief.data
 
-function reduce_message_to_belief(messages)
-    return as_belief(reduce_messages(messages))
-end
-
 Distributions.mean(belief::Belief) = Distributions.mean(getdata(belief))
 Distributions.var(belief::Belief)  = Distributions.var(getdata(belief))
 Distributions.std(belief::Belief)  = Distributions.std(getdata(belief))
@@ -64,3 +59,16 @@ Distributions.std(belief::Belief{T}) where { T <: Real }  = zero(T)
 as_belief(data)                     = Belief(data)
 as_belief(belief::AbstractBelief)   = belief
 as_belief(message::AbstractMessage) = Belief(getdata(message))
+
+## Operators
+
+reduce_messages(messages) = reduce(*, messages; init = Message(nothing))
+
+const __as_message_operator = Rocket.map(AbstractMessage, as_message)
+const __as_belief_operator  = Rocket.map(AbstractBelief, as_belief)
+
+as_message() = __as_message_operator
+as_belief()  = __as_belief_operator
+
+const reduce_to_message = Rocket.map(AbstractMessage, (messages) -> reduce_messages(messages))
+const reduce_to_belief  = Rocket.map(AbstractBelief, (messages) -> as_belief(reduce_messages(messages)))

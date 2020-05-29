@@ -1,4 +1,4 @@
-export AbstractVariable
+export AbstractVariable, degree
 export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
@@ -10,6 +10,8 @@ using StaticArrays
 using Rocket
 
 abstract type AbstractVariable end
+
+function degree end
 
 ## VariableBelief
 

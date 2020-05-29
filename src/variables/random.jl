@@ -6,16 +6,16 @@ struct RandomVariable{N} <: AbstractVariable
     belief    :: VariableBelief
 end
 
-# degree() # TODO
-
 randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N), VariableBelief())
+
+degree(::RandomVariable{N}) where N = N
 
 messagein(randomvar::RandomVariable, index::Int)  = randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = begin
-    return combineLatest(tuple(skipindex(randomvar.inputmsgs, index)...), true, (AbstractMessage, reduce_messages)) # TODO
+    return combineLatest(skipindex(randomvar.inputmsgs, index)..., strategy = PushNew()) |> reduce_to_message
 end
 
-makebelief(randomvar::RandomVariable)   = combineLatest(tuple(randomvar.inputmsgs...), true, (AbstractBelief, reduce_message_to_belief))
+makebelief(randomvar::RandomVariable) = combineLatest(randomvar.inputmsgs..., strategy = PushNew()) |> reduce_to_belief
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     randomvar.inputmsgs[index] = messagein
@@ -39,6 +39,8 @@ end
 
 simplerandomvar(name::Symbol) = SimpleRandomVariable(name, SimpleRandomVariableProps(), VariableBelief())
 
+degree(::SimpleRandomVariable) = 2
+
 function messagein(srandomvar::SimpleRandomVariable, index::Int)
     if index === 1
         return srandomvar.props.messagein1
@@ -59,7 +61,7 @@ function messageout(srandomvar::SimpleRandomVariable, index::Int)
     end
 end
 
-makebelief(srandomvar::SimpleRandomVariable) = combineLatest((srandomvar.props.messagein1, srandomvar.props.messagein2), true, (AbstractBelief, reduce_message_to_belief))
+makebelief(srandomvar::SimpleRandomVariable) = combineLatest(srandomvar.props.messagein1, srandomvar.props.messagein2, strategy = PushNew()) |> reduce_to_belief
 
 function setmessagein!(srandomvar::SimpleRandomVariable, index::Int, messagein)
     if index === 1

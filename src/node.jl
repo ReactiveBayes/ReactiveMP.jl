@@ -126,13 +126,13 @@ function activate!(node::Node)
     for variable in variables(node)
         mdeps, clusterdeps = deps(node, name(variable))
 
-        mgsobservable     = length(mdeps) !== 0 ? combineLatest(tuple(map(m -> messagein(m), mdeps)...), true) : of(nothing)
-        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(tuple(map(c -> cluster_belief(c), clusterdeps)...), false) : of(nothing)
+        mgsobservable     = length(mdeps) !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
+        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> cluster_belief(c), clusterdeps)..., strategy = PushEach()) : of(nothing)
 
         fform       = functionalform(node)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
-        vmessageout = combineLatest((mgsobservable, clusterobservable), false, (AbstractMessage, (d) -> as_message(rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
+        vmessageout = combineLatest(mgsobservable, clusterobservable, strategy = PushEach()) |> map(AbstractMessage, (d) -> as_message(rule(fform, vtag, vconstraint, d[1], d[2], nothing)))
 
         set!(messageout(variable), vmessageout |> discontinue() |> share())
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
