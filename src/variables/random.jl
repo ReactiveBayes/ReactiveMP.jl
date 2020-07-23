@@ -3,10 +3,10 @@ export randomvar, simplerandomvar
 struct RandomVariable{N} <: AbstractVariable
     name      :: Symbol
     inputmsgs :: Vector{Union{Nothing, LazyObservable{AbstractMessage}}}
-    belief    :: VariableBelief
+    marginal  :: VariableMarginal
 end
 
-randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N), VariableBelief())
+randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N), VariableMarginal())
 
 degree(::RandomVariable{N}) where N = N
 
@@ -15,7 +15,7 @@ messageout(randomvar::RandomVariable, index::Int) = begin
     return combineLatest(skipindex(randomvar.inputmsgs, index)..., strategy = PushNew()) |> reduce_to_message
 end
 
-makebelief(randomvar::RandomVariable) = combineLatest(randomvar.inputmsgs..., strategy = PushNew()) |> reduce_to_belief
+makemarginal(randomvar::RandomVariable) = combineLatest(randomvar.inputmsgs..., strategy = PushNew()) |> reduce_to_marginal
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     randomvar.inputmsgs[index] = messagein
@@ -34,10 +34,10 @@ end
 struct SimpleRandomVariable <: AbstractVariable
     name     :: Symbol
     props    :: SimpleRandomVariableProps
-    belief   :: VariableBelief
+    marginal :: VariableMarginal
 end
 
-simplerandomvar(name::Symbol) = SimpleRandomVariable(name, SimpleRandomVariableProps(), VariableBelief())
+simplerandomvar(name::Symbol) = SimpleRandomVariable(name, SimpleRandomVariableProps(), VariableMarginal())
 
 degree(::SimpleRandomVariable) = 2
 
@@ -61,7 +61,7 @@ function messageout(srandomvar::SimpleRandomVariable, index::Int)
     end
 end
 
-makebelief(srandomvar::SimpleRandomVariable) = combineLatest(srandomvar.props.messagein1, srandomvar.props.messagein2, strategy = PushNew()) |> reduce_to_belief
+makemarginal(srandomvar::SimpleRandomVariable) = combineLatest(srandomvar.props.messagein1, srandomvar.props.messagein2, strategy = PushNew()) |> reduce_to_marginal
 
 function setmessagein!(srandomvar::SimpleRandomVariable, index::Int, messagein)
     if index === 1

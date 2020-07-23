@@ -10,11 +10,11 @@ struct DataVariable{S, D} <: AbstractVariable
     name       :: Symbol
     messageout :: S
     props      :: DataVariableProps
-    belief     :: VariableBelief
+    marginal   :: VariableMarginal
 end
 
 function datavar(name::Symbol, ::Type{D}; subject::S = Subject(Message{D})) where { S, D }
-    return DataVariable{S, D}(name, subject, DataVariableProps(), VariableBelief())
+    return DataVariable{S, D}(name, subject, DataVariableProps(), VariableMarginal())
 end
 
 degree(::DataVariable) = 1
@@ -32,7 +32,7 @@ end
 update!(datavar::DataVariable, data) = next!(messageout(datavar, 1), as_message(data))
 finish!(datavar::DataVariable)       = complete!(messageout(datavar, 1))
 
-makebelief(datavar::DataVariable)   = combineLatest(datavar.messageout, datavar.props.messagein, strategy = PushNew()) |> reduce_to_belief
+makemarginal(datavar::DataVariable)   = combineLatest(datavar.messageout, datavar.props.messagein, strategy = PushNew()) |> reduce_to_marginal
 
 function setmessagein!(datavar::DataVariable, index::Int, messagein)
     @assert index === 1

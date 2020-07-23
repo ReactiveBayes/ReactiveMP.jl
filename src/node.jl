@@ -53,6 +53,7 @@ connectedvar(nodevar::NodeVariable)      = nodevar.props.connected_variable
 connectedvarindex(nodevar::NodeVariable) = nodevar.props.connected_index
 
 ## Node
+# TODO: posterior_factorisation
 
 struct Node{F, N, C}
     variables     :: SVector{N, NodeVariable}
@@ -127,7 +128,7 @@ function activate!(node::Node)
         mdeps, clusterdeps = deps(node, name(variable))
 
         mgsobservable     = length(mdeps) !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
-        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> cluster_belief(c), clusterdeps)..., strategy = PushEach()) : of(nothing)
+        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> cluster_marginal(c), clusterdeps)..., strategy = PushEach()) : of(nothing)
 
         fform       = functionalform(node)
         vtag        = tag(variable)
@@ -139,9 +140,9 @@ function activate!(node::Node)
     end
 end
 
-function cluster_belief(cluster)
-    if length(cluster) === 1 # Cluster contains only one variable, we can take belief over this variable
-        return getbelief(connectedvar(cluster[1]))
+function cluster_marginal(cluster)
+    if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
+        return getmarginal(connectedvar(cluster[1]))
     else
         error("Unsupported cluster size: $(length(cluster))")
     end

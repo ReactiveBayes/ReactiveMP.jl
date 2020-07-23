@@ -1,6 +1,6 @@
 using Distributions
 
-function multiply_messages(m1::Message{N}, m2::Message{N}) where { N <: NormalMeanPrecision }
+function multiply_messages(m1::Message{N}, m2::Message{N}) where { T, N <: NormalMeanPrecision{T} }
     mean1 = mean(m1)
     mean2 = mean(m2)
 
@@ -11,7 +11,7 @@ function multiply_messages(m1::Message{N}, m2::Message{N}) where { N <: NormalMe
     return Message(result)
 end
 
-@symmetrical function multiply_messages(m1::Message{T}, m2::Message{N}) where { T <: Real, N <: NormalMeanPrecision }
+@symmetrical function multiply_messages(m1::Message{T}, m2::Message{N}) where { T <: Real, N <: NormalMeanPrecision{T} }
     mean1 = mean(m1)
     mean2 = mean(m2)
 

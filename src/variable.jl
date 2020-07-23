@@ -3,8 +3,8 @@ export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
-export getbelief, setbelief!, activate!, name
-export as_message, as_belief
+export getmarginal, setmarginal!, activate!, name
+export as_message, as_marginal
 
 using StaticArrays
 using Rocket
@@ -13,42 +13,42 @@ abstract type AbstractVariable end
 
 function degree end
 
-## VariableBelief
+## VariableMarginal
 
-struct VariableBelief{R}
+struct VariableMarginal{R}
     subject :: R
-    stream  :: LazyObservable{AbstractBelief}
+    stream  :: LazyObservable{AbstractMarginal}
 end
 
-function VariableBelief()
-    return VariableBelief(ReplaySubject(AbstractBelief, 1), lazy(AbstractBelief))
+function VariableMarginal()
+    return VariableMarginal(ReplaySubject(AbstractMarginal, 1), lazy(AbstractMarginal))
 end
 
-function connect!(belief::VariableBelief, source)
-    set!(belief.stream, source |> multicast(belief.subject) |> ref_count())
+function connect!(marginal::VariableMarginal, source)
+    set!(marginal.stream, source |> multicast(marginal.subject) |> ref_count())
     return nothing
 end
 
-function setbelief!(belief::VariableBelief, value)
-    next!(belief.subject, as_belief(value))
+function setmarginal!(marginal::VariableMarginal, value)
+    next!(marginal.subject, as_marginal(value))
     return nothing
 end
 
-function getbelief(belief::VariableBelief)
-    return belief.stream
+function getmarginal(marginal::VariableMarginal)
+    return marginal.stream
 end
 
 ## Common functions
 
-function getbelief(variable::AbstractVariable)
-    if !Rocket.isready(variable.belief.stream)
-        connect!(variable.belief, makebelief(variable))
+function getmarginal(variable::AbstractVariable)
+    if !Rocket.isready(variable.marginal.stream)
+        connect!(variable.marginal, makemarginal(variable))
     end
-    return getbelief(variable.belief)
+    return getmarginal(variable.marginal)
 end
 
-function setbelief!(variable::AbstractVariable, value)
-    setbelief!(variable.belief, value)
+function setmarginal!(variable::AbstractVariable, value)
+    setmarginal!(variable.marginal, value)
     return nothing
 end
 

@@ -10,10 +10,10 @@ struct ConstVariable{M} <: AbstractVariable
     name       :: Symbol
     messageout :: M
     props      :: ConstVariableProps
-    belief     :: VariableBelief
+    marginal   :: VariableMarginal
 end
 
-constvar(name::Symbol, constval) = ConstVariable(name, of(Message(constval)), ConstVariableProps(), VariableBelief())
+constvar(name::Symbol, constval) = ConstVariable(name, of(Message(constval)), ConstVariableProps(), VariableMarginal())
 
 degree(::ConstVariable) = 1
 
@@ -27,7 +27,7 @@ function messagein(constvar::ConstVariable, index::Int)
     return constvar.props.messagein
 end
 
-makebelief(constvar::ConstVariable) = combineLatest(constvar.messageout, constvar.props.messagein, strategy = PushNew()) |> reduce_to_belief
+makemarginal(constvar::ConstVariable) = combineLatest(constvar.messageout, constvar.props.messagein, strategy = PushNew()) |> reduce_to_marginal
 
 function setmessagein!(constvar::ConstVariable, index::Int, messagein)
     @assert index === 1

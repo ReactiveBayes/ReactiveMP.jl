@@ -11,37 +11,37 @@ using SpecialFunctions
 
 ## Normal
 
-# beliefs: mean, precision, value
-function averageEnergy(::Type{<:NormalMeanPrecision}, beliefs::Tuple{Belief, Belief, Belief})
-    m_mean, v_mean = mean(beliefs[1]), var(beliefs[1])
-    m_out, v_out = mean(beliefs[3]), var(beliefs[3])
+# Marginals: mean, precision, value
+function averageEnergy(::Type{<:NormalMeanPrecision}, marginals::Tuple{Marginal, Marginal, Marginal})
+    m_mean, v_mean = mean(marginals[1]), var(marginals[1])
+    m_out, v_out = mean(marginals[3]), var(marginals[3])
 
     result = 0.5 * log(2 * π) -
-        0.5 * log(mean(beliefs[2])) +
-        0.5 * mean(beliefs[2]) * (v_out + v_mean + (m_out - m_mean)^2)
+        0.5 * log(mean(marginals[2])) +
+        0.5 * mean(marginals[2]) * (v_out + v_mean + (m_out - m_mean)^2)
     return result
 end
 
 ## Gamma
 # marg_out::ProbabilityDistribution{Univariate}, marg_a::ProbabilityDistribution{Univariate, PointMass}, marg_b::ProbabilityDistribution{Univariate}
-function averageEnergy(::Type{<:GammaAB}, beliefs::Tuple{Belief{T1}, Belief{T1}, Belief{<:GammaAB}}) where { T1 <: Real, T2 <: Real }
-    return labsgamma(mean(beliefs[1])) - mean(beliefs[1]) * log(mean(beliefs[2])) -
-    (mean(beliefs[1]) - 1.0) * log(mean(beliefs[3])) +
-    mean(beliefs[2]) * mean(beliefs[3])
+function averageEnergy(::Type{<:GammaAB}, marginals::Tuple{Marginal{T}, Marginal{T}, Marginal{<:GammaAB}}) where { T <: Real }
+    return labsgamma(mean(marginals[1])) - mean(marginals[1]) * log(mean(marginals[2])) -
+    (mean(marginals[1]) - 1.0) * log(mean(marginals[3])) +
+    mean(marginals[2]) * mean(marginals[3])
 end
 
 ##
 
-function differentialEntropy(belief::Belief{N}) where { N <: NormalMeanPrecision }
-    return 0.5 * log(var(belief)) + 0.5 * log(2 * π) + 0.5
+function differentialEntropy(marginal::Marginal{ <: NormalMeanPrecision })
+    return 0.5 * log(var(marginal)) + 0.5 * log(2 * π) + 0.5
 end
 
 function labsgamma(x::Number)
     return SpecialFunctions.logabsgamma(x)[1]
 end
 
-function differentialEntropy(belief::Belief{G}) where { G <: GammaAB }
-    distribution = getdata(belief)
+function differentialEntropy(marginal::Marginal{ <: GammaAB })
+    distribution = getdata(marginal)
     return labsgamma(distribution.a) -
     (distribution.a - 1.0) * digamma(distribution.a) -
     log(distribution.b) +

@@ -1,5 +1,5 @@
 export AbstractMessage, Message
-export AbstractBelief, Belief
+export AbstractMarginal, Marginal
 export getdata
 export multiply_messages
 
@@ -12,9 +12,9 @@ using Rocket
 
 abstract type AbstractMessage end
 
-## AbstractBelief
+## AbstractMarginal
 
-abstract type AbstractBelief end
+abstract type AbstractMarginal end
 
 ## Message
 
@@ -36,39 +36,39 @@ Distributions.mean(message::Message{T}) where { T <: Real } = getdata(message)
 Distributions.var(message::Message{T}) where { T <: Real }  = zero(T)
 Distributions.std(message::Message{T}) where { T <: Real }  = zero(T)
 
-as_message(data)                     = Message(data)
-as_message(message::AbstractMessage) = message
-as_message(belief::AbstractBelief)   = Message(getdata(belief))
+as_message(data)                       = Message(data)
+as_message(message::AbstractMessage)   = message
+as_message(marginal::AbstractMarginal) = Message(getdata(marginal))
 
-## Belief
+## Marginal
 
-struct Belief{D} <: AbstractBelief
+struct Marginal{D} <: AbstractMarginal
     data :: D
 end
 
-getdata(belief::Belief) = belief.data
+getdata(marginal::Marginal) = marginal.data
 
-Distributions.mean(belief::Belief) = Distributions.mean(getdata(belief))
-Distributions.var(belief::Belief)  = Distributions.var(getdata(belief))
-Distributions.std(belief::Belief)  = Distributions.std(getdata(belief))
+Distributions.mean(marginal::Marginal) = Distributions.mean(getdata(marginal))
+Distributions.var(marginal::Marginal)  = Distributions.var(getdata(marginal))
+Distributions.std(marginal::Marginal)  = Distributions.std(getdata(marginal))
 
-Distributions.mean(belief::Belief{T}) where { T <: Real } = getdata(belief)
-Distributions.var(belief::Belief{T}) where { T <: Real }  = zero(T)
-Distributions.std(belief::Belief{T}) where { T <: Real }  = zero(T)
+Distributions.mean(marginal::Marginal{T}) where { T <: Real } = getdata(marginal)
+Distributions.var(marginal::Marginal{T}) where { T <: Real }  = zero(T)
+Distributions.std(marginal::Marginal{T}) where { T <: Real }  = zero(T)
 
-as_belief(data)                     = Belief(data)
-as_belief(belief::AbstractBelief)   = belief
-as_belief(message::AbstractMessage) = Belief(getdata(message))
+as_marginal(data)                       = Marginal(data)
+as_marginal(marginal::AbstractMarginal) = marginal
+as_marginal(message::AbstractMessage)   = Marginal(getdata(message))
 
 ## Operators
 
 reduce_messages(messages) = reduce(*, messages; init = Message(nothing))
 
-const __as_message_operator = Rocket.map(AbstractMessage, as_message)
-const __as_belief_operator  = Rocket.map(AbstractBelief, as_belief)
+const __as_message_operator  = Rocket.map(AbstractMessage, as_message)
+const __as_marginal_operator = Rocket.map(AbstractMarginal, as_marginal)
 
-as_message() = __as_message_operator
-as_belief()  = __as_belief_operator
+as_message()  = __as_message_operator
+as_marginal() = __as_marginal_operator
 
-const reduce_to_message = Rocket.map(AbstractMessage, (messages) -> reduce_messages(messages))
-const reduce_to_belief  = Rocket.map(AbstractBelief, (messages) -> as_belief(reduce_messages(messages)))
+const reduce_to_message  = Rocket.map(AbstractMessage, (messages) -> reduce_messages(messages))
+const reduce_to_marginal = Rocket.map(AbstractMarginal, (messages) -> as_marginal(reduce_messages(messages)))
