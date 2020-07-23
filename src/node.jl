@@ -123,17 +123,19 @@ function deps(node::Node, v::Symbol)
     return mdeps, clusterdeps
 end
 
-function activate!(node::Node)
+function activate!(model, node::Node)
     for variable in variables(node)
         mdeps, clusterdeps = deps(node, name(variable))
 
         mgsobservable     = length(mdeps) !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
         clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> cluster_marginal(c), clusterdeps)..., strategy = PushEach()) : of(nothing)
 
+        gate        = message_gate(model)
         fform       = functionalform(node)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
-        vmessageout = combineLatest(mgsobservable, clusterobservable, strategy = PushEach()) |> map(AbstractMessage, (d) -> as_message(rule(fform, vtag, vconstraint, d[1], d[2], nothing)))
+        mapping     = map(AbstractMessage, (d) -> as_message(gate!(gate, node, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
+        vmessageout = combineLatest(mgsobservable, clusterobservable, strategy = PushEach()) |> mapping
 
         set!(messageout(variable), vmessageout |> discontinue() |> share())
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))

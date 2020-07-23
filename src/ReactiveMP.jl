@@ -18,6 +18,8 @@ include("variables/constant.jl")
 include("variables/data.jl")
 include("variables/prior.jl")
 
+include("model.jl")
+
 include("node.jl")
 include("nodes/gaussian.jl")
 include("nodes/addition.jl")

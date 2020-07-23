@@ -2,8 +2,9 @@ export AbstractMessage, Message
 export AbstractMarginal, Marginal
 export getdata
 export multiply_messages
+export DefaultMessageGate, LoggerMessageGate, TransformMessageGate, MessageGatesComposition
 
-import Base: *
+import Base: *, +
 
 using Distributions
 using Rocket
@@ -72,3 +73,37 @@ as_marginal() = __as_marginal_operator
 
 const reduce_to_message  = Rocket.map(AbstractMessage, (messages) -> reduce_messages(messages))
 const reduce_to_marginal = Rocket.map(AbstractMarginal, (messages) -> as_marginal(reduce_messages(messages)))
+
+## Gates
+
+abstract type AbstractMessageGate end
+
+struct DefaultMessageGate <: AbstractMessageGate end
+
+gate!(::DefaultMessageGate, node, variable, message)  = message
+
+struct LoggerMessageGate <: AbstractMessageGate end
+
+function gate!(::LoggerMessageGate, node, variable, message)
+    println(string("From variable ", variable, " of node ", functionalform(node), " => ", message));
+    return message
+end
+
+struct TransformMessageGate{F} <: AbstractMessageGate
+    transformFn::F
+end
+
+gate!(tg::TransformMessageGate, node, variable, message) = tg.transformFn(node, variable, message)
+
+struct MessageGatesComposition{C} <: AbstractMessageGate
+    composition :: C
+end
+
+gate!(gc::MessageGatesComposition, node, variable, message) = foldl((m, g) -> gate!(g, node, variable, m), gc.composition, init = message)
+
+Base.:+(gate1::AbstractMessageGate,     gate2::AbstractMessageGate)     = MessageGatesComposition((gate1, gate2))
+Base.:+(gate1::MessageGatesComposition, gate2::AbstractMessageGate)     = MessageGatesComposition((gate1.composition..., gate2))
+Base.:+(gate1::AbstractMessageGate,     gate2::MessageGatesComposition) = MessageGatesComposition((gate1, gate2.composition...))
+Base.:+(gate1::MessageGatesComposition, gate2::MessageGatesComposition) = MessageGatesComposition((gate1.composition..., gate2.composition...))
+
+gate!(::AbstractMessageGate, node, variable, message) = gate!(DefaultMessageGate(), node, variable, message)
