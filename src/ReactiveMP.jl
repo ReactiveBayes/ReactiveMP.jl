@@ -4,6 +4,8 @@ include("helpers.jl")
 
 include("distributions/gamma_ab.jl")
 include("distributions/normal_mean_precision.jl")
+include("distributions/normal_mean_variance.jl")
+include("distributions/exp_linear_quadratic.jl")
 
 include("message.jl")
 include("messages/dummy.jl")

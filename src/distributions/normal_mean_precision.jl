@@ -7,13 +7,12 @@ struct NormalMeanPrecision{T}
     precision :: T
 end
 
-NormalMeanPrecision(mean::Float64, precision::Float64) = NormalMeanPrecision{Float64}(mean, precision)
-
-Distributions.mean(nmp::NormalMeanPrecision) = nmp.mean
+Distributions.mean(nmp::NormalMeanPrecision)           = nmp.mean
 Distributions.var(nmp::NormalMeanPrecision{T}) where T = one(T) / precision(nmp)
+Distributions.std(nmp::NormalMeanPrecision)            = sqrt(var(nmp))
 
 precision(nmp::NormalMeanPrecision) = nmp.precision
 
-function Distributions.pdf(distribution:: NormalMeanPrecision{T}, x::T) where T
-    return Distributions.pdf(Normal(mean(distribution), sqrt(var(distribution))), x)
+function Distributions.pdf(distribution::NormalMeanPrecision, x)
+    return Distributions.pdf(Normal(mean(distribution), std(distribution)), x)
 end
