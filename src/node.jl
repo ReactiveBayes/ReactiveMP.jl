@@ -55,14 +55,14 @@ connectedvarindex(varnode::VariableNode) = varnode.props.connected_index
 ## FactorNodeLocalMarginals
 
 struct FactorNodeLocalMarginals{N}
-    marginals :: NTuple{N, Tuple{Symbol, Ref{Union{Nothing, Marginal}}}}
+    marginals :: NTuple{N, Tuple{Symbol, Ref{Union{Nothing, LazyObservable{Marginal}}}}}
 end
 
 function FactorNodeLocalMarginals(variables, factorisation)
     names = map(n -> Symbol(n...), map(q -> map(v -> variables[v], q), factorisation))
-    init  = map(n -> (n, Ref{Union{Nothing, Marginal}}(nothing)), names)
+    init  = map(n -> (n, Ref{Union{Nothing, LazyObservable{Marginal}}}(nothing)), names)
     N     = length(factorisation)
-    return FactorNodeLocalMarginals{N}(NTuple{N, Tuple{Symbol, Ref{Union{Nothing, Marginal}}}}(init))
+    return FactorNodeLocalMarginals{N}(NTuple{N, Tuple{Symbol, Ref{Union{Nothing, LazyObservable{Marginal}}}}}(init))
 end
 
 @inline function __findindex(lm::FactorNodeLocalMarginals, s::Symbol)
@@ -73,8 +73,8 @@ end
     return index
 end
 
-Base.getindex(lm::FactorNodeLocalMarginals, s::Symbol)                               = @inbounds lm.marginals[__findindex(lm, s)][2][]
-Base.setindex!(lm::FactorNodeLocalMarginals, v::Union{Nothing, Marginal}, s::Symbol) = @inbounds lm.marginals[__findindex(lm, s)][2][] = v
+Base.getindex(lm::FactorNodeLocalMarginals, s::Symbol)     = @inbounds lm.marginals[__findindex(lm, s)][2][]
+Base.setindex!(lm::FactorNodeLocalMarginals, v, s::Symbol) = @inbounds lm.marginals[__findindex(lm, s)][2][] = v
 
 Base.firstindex(::FactorNodeLocalMarginals)           = 1
 Base.lastindex(::FactorNodeLocalMarginals{N}) where N = N
@@ -107,10 +107,9 @@ factorisation(factornode::FactorNode)  = factornode.factorisation
 
 getcluster(factornode::FactorNode, i)                = @inbounds factornode.factorisation[i]
 clusters(factornode::FactorNode)                     = map(factor -> map(i -> @inbounds factornode.variables[i], factor), factornode.factorisation)
-clusterindex(factornode::FactorNode, v::Symbol)      = clusterindex(factornode, varindex(v))
+clusterindex(factornode::FactorNode, v::Symbol)      = clusterindex(factornode, varindex(factornode, v))
 clusterindex(factornode::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(factornode))
 
-varclusterindex(cluster, v::Symbol)   = varclusterindex(cluster, varindex(v))
 varclusterindex(cluster, vindex::Int) = findfirst(index -> index === vindex, cluster)
 
 function getvariable(factornode::FactorNode, v::Symbol)
@@ -161,7 +160,7 @@ function activate!(model, factornode::FactorNode)
         mdeps, clusterdeps = deps(factornode, name(variable))
 
         mgsobservable     = length(mdeps) !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
-        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> cluster_marginal(c), clusterdeps)..., strategy = PushEach()) : of(nothing)
+        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach()) : of(nothing)
 
         gate        = message_gate(model)
         fform       = functionalform(factornode)
@@ -175,12 +174,29 @@ function activate!(model, factornode::FactorNode)
     end
 end
 
-function cluster_marginal(cluster)
-    if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
-        return getmarginal(connectedvar(cluster[1]))
+clustername(cluster) = Symbol(map(v -> name(v), cluster)...)
+
+function setmarginal!(factornode::FactorNode, name::Symbol, marginal)
+    # TODO
+    throw("Not implemented")
+end
+
+function getmarginal!(factornode::FactorNode, cluster)
+    cname = clustername(cluster)
+
+    if factornode.marginals[cname] !== nothing
+        return factornode.marginals[cname]
+    end
+
+    marginal = if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
+        getmarginal(connectedvar(cluster[1]))
     else
         error("Unsupported cluster size: $(length(cluster))")
     end
+
+    factornode.marginals[cname] = marginal
+
+    return marginal
 end
 
 ## rule
