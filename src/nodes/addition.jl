@@ -1,11 +1,10 @@
 export AdditionNode
 
 using Distributions
-using StaticArrays
 
 # SA = StaticArrays
 function AdditionNode()
-    return FactorNode(+, SA[ :in1, :in2, :out ], SA[ SA[ 1, 2, 3 ] ])
+    return FactorNode(+, (:in1, :in2, :out), ((1, 2, 3), ))
 end
 
 ### Out ###

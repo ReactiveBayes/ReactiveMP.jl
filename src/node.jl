@@ -5,7 +5,6 @@ export deps, connect!, activate!
 export rule
 export Marginalisation
 
-using StaticArrays
 using BenchmarkTools
 using Rocket
 
@@ -52,66 +51,64 @@ end
 connectedvar(varnode::VariableNode)      = varnode.props.connected_variable
 connectedvarindex(varnode::VariableNode) = varnode.props.connected_index
 
-## FactorNode
-# TODO: posterior_factorisation
-
 struct FactorNode{F, N, C}
     fform         :: F
-    variables     :: SVector{N, VariableNode}
+    variables     :: NTuple{N, VariableNode}
     factorisation :: C
 end
 
-function FactorNode(fform::Type{F}, variables::SVector{N, Symbol}, factorisation::C) where { N, F, C }
+# Additional method specific for Type{F} needed here to bypass Julia's DataType type
+function FactorNode(fform::Type{F}, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C }
     return FactorNode{Type{F}, N, C}(fform, map(v -> varnode(v), variables), factorisation)
 end
 
-function FactorNode(fform::F, variables::SVector{N, Symbol}, factorisation::C) where { N, F, C }
+function FactorNode(fform::F, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C }
     return FactorNode{F, N, C}(fform, map(v -> varnode(v), variables), factorisation)
 end
 
-functionalform(node::FactorNode) = node.fform
-variables(node::FactorNode)      = node.variables
-factorisation(node::FactorNode)  = node.factorisation
+functionalform(factornode::FactorNode) = factornode.fform
+variables(factornode::FactorNode)      = factornode.variables
+factorisation(factornode::FactorNode)  = factornode.factorisation
 
-getcluster(node::FactorNode, i)                = @inbounds node.factorisation[i]
-clusters(node::FactorNode)                     = map(factor -> map(i -> @inbounds node.variables[i], factor), node.factorisation)
-clusterindex(node::FactorNode, v::Symbol)      = clusterindex(node, varindex(v))
-clusterindex(node::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(node))
+getcluster(factornode::FactorNode, i)                = @inbounds factornode.factorisation[i]
+clusters(factornode::FactorNode)                     = map(factor -> map(i -> @inbounds factornode.variables[i], factor), factornode.factorisation)
+clusterindex(factornode::FactorNode, v::Symbol)      = clusterindex(factornode, varindex(v))
+clusterindex(factornode::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(factornode))
 
 varclusterindex(cluster, v::Symbol)   = varclusterindex(cluster, varindex(v))
 varclusterindex(cluster, vindex::Int) = findfirst(index -> index === vindex, cluster)
 
-function getvariable(node::FactorNode, v::Symbol)
-    vindex = varindex(node, v)
+function getvariable(factornode::FactorNode, v::Symbol)
+    vindex = varindex(factornode, v)
     @assert vindex !== nothing
-    return @inbounds variables(node)[vindex]
+    return @inbounds variables(factornode)[vindex]
 end
 
-varindex(node::FactorNode, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), variables(node)))
-iscontain(node::FactorNode, v::Symbol)   = varindex(node, v) !== nothing
-isfactorised(node::FactorNode, f)        = findfirst(d -> d == f, factorisation(node)) !== nothing
+varindex(factornode::FactorNode, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), variables(factornode)))
+iscontain(factornode::FactorNode, v::Symbol)   = varindex(factornode, v) !== nothing
+isfactorised(factornode::FactorNode, f)        = findfirst(d -> d == f, factorisation(factornode)) !== nothing
 
-function connect!(node::FactorNode, v::Symbol, variable, index)
-    vindex = varindex(node, v)
+function connect!(factornode::FactorNode, v::Symbol, variable, index)
+    vindex = varindex(factornode, v)
 
     @assert vindex !== nothing
 
-    varnodes = variables(node)
+    varnodes = variables(factornode)
     varnode  = @inbounds varnodes[vindex]
 
     connectvariable!(varnode, variable, index)
     setmessagein!(variable, index, messageout(varnode))
 end
 
-function deps(node::FactorNode, v::Symbol)
-    vindex = varindex(node, v)
-    cindex = clusterindex(node, vindex)
+function deps(factornode::FactorNode, v::Symbol)
+    vindex = varindex(factornode, v)
+    cindex = clusterindex(factornode, vindex)
 
     @assert vindex !== nothing
     @assert cindex !== nothing
 
-    vars = variables(node)
-    cls  = factorisation(node)
+    vars = variables(factornode)
+    cls  = factorisation(factornode)
 
     factor  = @inbounds cls[cindex]
     vcindex = varclusterindex(factor, vindex)
@@ -124,18 +121,18 @@ function deps(node::FactorNode, v::Symbol)
     return mdeps, clusterdeps
 end
 
-function activate!(model, node::FactorNode)
-    for variable in variables(node)
-        mdeps, clusterdeps = deps(node, name(variable))
+function activate!(model, factornode::FactorNode)
+    for variable in variables(factornode)
+        mdeps, clusterdeps = deps(factornode, name(variable))
 
         mgsobservable     = length(mdeps) !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
         clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> cluster_marginal(c), clusterdeps)..., strategy = PushEach()) : of(nothing)
 
         gate        = message_gate(model)
-        fform       = functionalform(node)
+        fform       = functionalform(factornode)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
-        mapping     = map(Message, (d) -> as_message(gate!(gate, node, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
+        mapping     = map(Message, (d) -> as_message(gate!(gate, factornode, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
         vmessageout = combineLatest(mgsobservable, clusterobservable, strategy = PushEach()) |> mapping
 
         set!(messageout(variable), vmessageout |> discontinue() |> share())

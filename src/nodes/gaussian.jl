@@ -4,8 +4,8 @@ import Distributions: Normal
 
 ## GaussianMeanVariance
 
-function GaussianMeanVarianceNode(::Type{T} = Float64; factorisation = SA[ SA[ 1, 2, 3 ] ]) where T
-    return FactorNode(Normal{T}, SA[ :mean, :variance, :value ], factorisation)
+function GaussianMeanVarianceNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
+    return FactorNode(Normal{T}, (:mean, :variance, :value), factorisation)
 end
 
 # Messages ordered as Tuple{ :mean, :variance }
@@ -16,8 +16,8 @@ end
 
 ## GaussianMeanPrecision
 
-function GaussianMeanPrecisionNode(::Type{T} = Float64; factorisation = SA[ SA[ 1, 2, 3 ] ]) where T
-    return FactorNode(NormalMeanPrecision{T}, SA[ :mean, :precision, :value ], factorisation)
+function GaussianMeanPrecisionNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
+    return FactorNode(NormalMeanPrecision{T}, (:mean, :precision, :value), factorisation)
 end
 
 function rule(::Type{ <: NormalMeanPrecision{T} }, ::Val{:value}, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, marginals::Nothing, meta) where { T <: Real }

@@ -5,27 +5,26 @@ import Base: IteratorEltype, HasEltype
 import Base: eltype, length, size
 import Base: IndexStyle, IndexLinear, getindex
 
-struct SkipIndexIterator{Iterator, T, N} <: AbstractArray{T, N}
-    iterator :: Iterator
+struct SkipIndexIterator{T, I} <: AbstractVector{T}
+    iterator :: I
     skip     :: Int
 end
 
 skip(iter::SkipIndexIterator) = iter.skip
 
-function skipindex(iter::Iterator, skip::Int) where Iterator
+function skipindex(iterator::I, skip::Int) where I
     @assert skip >= 1
-    @assert length(iter) >= 1
-    @assert IndexStyle(Iterator) === IndexLinear()
-    return SkipIndexIterator{Iterator, eltype(Iterator), 1}(iter, skip)
+    @assert length(iterator) >= 1
+    return SkipIndexIterator{eltype(I), I}(iterator, skip)
 end
 
 Base.IteratorSize(::Type{<:SkipIndexIterator})   = HasLength()
 Base.IteratorEltype(::Type{<:SkipIndexIterator}) = HasEltype()
 Base.IndexStyle(::Type{<:SkipIndexIterator})     = IndexLinear()
 
-Base.eltype(::Type{<:SkipIndexIterator{Any, T}}) where T = T
-Base.length(iter::SkipIndexIterator) = max(0, length(iter.iterator) - 1)
-Base.size(iter::SkipIndexIterator)   = (length(iter), )
+Base.eltype(::Type{<:SkipIndexIterator{T}}) where T = T
+Base.length(iter::SkipIndexIterator)                = length(iter.iterator) - 1
+Base.size(iter::SkipIndexIterator)                  = (length(iter), )
 
 Base.getindex(iter::SkipIndexIterator, i) = @inbounds begin i < skip(iter) ? iter.iterator[i] : iter.iterator[i + 1] end
 
