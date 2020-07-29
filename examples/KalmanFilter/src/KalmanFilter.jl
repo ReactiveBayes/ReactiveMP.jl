@@ -7,11 +7,11 @@ using BenchmarkTools
 
 import Base: show
 
-mutable struct InferenceActor <: Actor{AbstractMessage}
+mutable struct InferenceActor <: Actor{Message}
     index       :: Int
     size        :: Int
     data        :: Vector{Float64}
-    messages    :: Vector{AbstractMessage}
+    messages    :: Vector{Message}
     communicate :: Channel{Tuple{Float64, Float64}}
 
     y          :: ObservedVariable
@@ -20,7 +20,7 @@ mutable struct InferenceActor <: Actor{AbstractMessage}
 
     InferenceActor(data::Vector{Float64}, y::ObservedVariable, e_mean::PriorVariable, e_variance::PriorVariable) = begin
         size  = length(data)
-        messages = Vector{AbstractMessage}(undef, size)
+        messages = Vector{Message}(undef, size)
 
         actor = new(1, size, data, messages, Channel{Tuple{Float64, Float64}}(Inf), y, e_mean, e_variance)
 
@@ -49,7 +49,7 @@ function stop!(actor::InferenceActor)
     complete!(actor.e_variance.values)
 end
 
-function Rocket.on_next!(actor::InferenceActor, data::AbstractMessage)
+function Rocket.on_next!(actor::InferenceActor, data::Message)
     m = mean(data.distribution)
     v = var(data.distribution)
 
@@ -113,7 +113,7 @@ function julia_main()::Cint
     @time kalman();
     @time kalman();
     @btime kalman();
-    
+
     values = kalman()
 
     println(values[1:5])

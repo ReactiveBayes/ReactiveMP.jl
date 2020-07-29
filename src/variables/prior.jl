@@ -1,7 +1,7 @@
 export priorvar
 
 mutable struct PriorVariableProps
-    messagein :: Union{Nothing, LazyObservable{AbstractMessage}}
+    messagein :: Union{Nothing, LazyObservable{Message}}
 
     PriorVariableProps() = new(nothing)
 end

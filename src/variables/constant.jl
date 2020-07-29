@@ -1,7 +1,7 @@
 export constvar
 
 mutable struct ConstVariableProps
-    messagein :: Union{Nothing, LazyObservable{AbstractMessage}}
+    messagein :: Union{Nothing, LazyObservable{Message}}
 
     ConstVariableProps() = new(nothing)
 end

@@ -1,5 +1,5 @@
-export NodeVariable, nodevar, name, messageout, messagein
-export Node, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised, getvariable
+export VariableNode, varnode, name, messageout, messagein
+export FactorNode, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised, getvariable
 export getcluster, clusters, clusterindex
 export deps, connect!, activate!
 export rule
@@ -15,94 +15,95 @@ import Base: show
 
 struct Marginalisation end
 
-## Node Variable Props
+## FactorNode Variable Props
 
-mutable struct NodeVariableProps
+mutable struct VariableNodeProps
     connected_variable :: Union{Nothing, AbstractVariable}
     connected_index    :: Int
 
-    NodeVariableProps() = new(nothing, 0)
+    VariableNodeProps() = new(nothing, 0)
 end
 
-## Node Variable
+## FactorNode Variable
 
-struct NodeVariable
+struct VariableNode
     name  :: Symbol
-    m_out :: LazyObservable{AbstractMessage}
-    m_in  :: LazyObservable{AbstractMessage}
-    props :: NodeVariableProps
+    m_out :: LazyObservable{Message}
+    m_in  :: LazyObservable{Message}
+    props :: VariableNodeProps
 
-    NodeVariable(name::Symbol) = new(name, lazy(AbstractMessage), lazy(AbstractMessage), NodeVariableProps())
+    VariableNode(name::Symbol) = new(name, lazy(Message), lazy(Message), VariableNodeProps())
 end
 
-Base.show(io::IO, nodevar::NodeVariable) = print(io, name(nodevar))
+Base.show(io::IO, varnode::VariableNode) = print(io, name(varnode))
 
-nodevar(name::Symbol) = NodeVariable(name)
+varnode(name::Symbol) = VariableNode(name)
 
-name(nodevar::NodeVariable)       = nodevar.name
-tag(nodevar::NodeVariable)        = Val(name(nodevar))
-messageout(nodevar::NodeVariable) = nodevar.m_out
-messagein(nodevar::NodeVariable)  = nodevar.m_in
+name(varnode::VariableNode)       = varnode.name
+tag(varnode::VariableNode)        = Val(name(varnode))
+messageout(varnode::VariableNode) = varnode.m_out
+messagein(varnode::VariableNode)  = varnode.m_in
 
-function connectvariable!(nodevar::NodeVariable, variable, index)
-    nodevar.props.connected_variable = variable
-    nodevar.props.connected_index    = index
+function connectvariable!(varnode::VariableNode, variable, index)
+    varnode.props.connected_variable = variable
+    varnode.props.connected_index    = index
 end
 
-connectedvar(nodevar::NodeVariable)      = nodevar.props.connected_variable
-connectedvarindex(nodevar::NodeVariable) = nodevar.props.connected_index
+connectedvar(varnode::VariableNode)      = varnode.props.connected_variable
+connectedvarindex(varnode::VariableNode) = varnode.props.connected_index
 
-## Node
+## FactorNode
 # TODO: posterior_factorisation
 
-struct Node{F, N, C}
-    variables     :: SVector{N, NodeVariable}
+struct FactorNode{F, N, C}
+    fform         :: F
+    variables     :: SVector{N, VariableNode}
     factorisation :: C
 end
 
-function Node(::Type{F}, variables::SVector{N, NodeVariable}, factorisation::C) where { F, N, C }
-    return Node{F, N, C}(variables, factorisation)
+function FactorNode(fform::Type{F}, variables::SVector{N, Symbol}, factorisation::C) where { N, F, C }
+    return FactorNode{Type{F}, N, C}(fform, map(v -> varnode(v), variables), factorisation)
 end
 
-function Node(::Type{F}, variables::SVector{N, Symbol}, factorisation) where { N, F }
-    return Node(F, map(v -> nodevar(v), variables), factorisation)
+function FactorNode(fform::F, variables::SVector{N, Symbol}, factorisation::C) where { N, F, C }
+    return FactorNode{F, N, C}(fform, map(v -> varnode(v), variables), factorisation)
 end
 
-functionalform(::Node{F}) where F = F
-variables(node::Node)     = node.variables
-factorisation(node::Node) = node.factorisation
+functionalform(node::FactorNode) = node.fform
+variables(node::FactorNode)      = node.variables
+factorisation(node::FactorNode)  = node.factorisation
 
-getcluster(node::Node, i)                = @inbounds node.factorisation[i]
-clusters(node::Node)                     = map(factor -> map(i -> node.variables[i], factor), node.factorisation)
-clusterindex(node::Node, v::Symbol)      = clusterindex(node, varindex(v))
-clusterindex(node::Node, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(node))
+getcluster(node::FactorNode, i)                = @inbounds node.factorisation[i]
+clusters(node::FactorNode)                     = map(factor -> map(i -> @inbounds node.variables[i], factor), node.factorisation)
+clusterindex(node::FactorNode, v::Symbol)      = clusterindex(node, varindex(v))
+clusterindex(node::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(node))
 
 varclusterindex(cluster, v::Symbol)   = varclusterindex(cluster, varindex(v))
 varclusterindex(cluster, vindex::Int) = findfirst(index -> index === vindex, cluster)
 
-function getvariable(node::Node, v::Symbol)
+function getvariable(node::FactorNode, v::Symbol)
     vindex = varindex(node, v)
     @assert vindex !== nothing
     return @inbounds variables(node)[vindex]
 end
 
-varindex(node::Node, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), variables(node)))
-iscontain(node::Node, v::Symbol)   = varindex(node, v) !== nothing
-isfactorised(node::Node, f)        = findfirst(d -> d == f, factorisation(node)) !== nothing
+varindex(node::FactorNode, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), variables(node)))
+iscontain(node::FactorNode, v::Symbol)   = varindex(node, v) !== nothing
+isfactorised(node::FactorNode, f)        = findfirst(d -> d == f, factorisation(node)) !== nothing
 
-function connect!(node::Node, v::Symbol, variable, index)
+function connect!(node::FactorNode, v::Symbol, variable, index)
     vindex = varindex(node, v)
 
     @assert vindex !== nothing
 
-    nodevars = variables(node)
-    nodevar  = @inbounds nodevars[vindex]
+    varnodes = variables(node)
+    varnode  = @inbounds varnodes[vindex]
 
-    connectvariable!(nodevar, variable, index)
-    setmessagein!(variable, index, messageout(nodevar))
+    connectvariable!(varnode, variable, index)
+    setmessagein!(variable, index, messageout(varnode))
 end
 
-function deps(node::Node, v::Symbol)
+function deps(node::FactorNode, v::Symbol)
     vindex = varindex(node, v)
     cindex = clusterindex(node, vindex)
 
@@ -123,7 +124,7 @@ function deps(node::Node, v::Symbol)
     return mdeps, clusterdeps
 end
 
-function activate!(model, node::Node)
+function activate!(model, node::FactorNode)
     for variable in variables(node)
         mdeps, clusterdeps = deps(node, name(variable))
 
@@ -134,7 +135,7 @@ function activate!(model, node::Node)
         fform       = functionalform(node)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
-        mapping     = map(AbstractMessage, (d) -> as_message(gate!(gate, node, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
+        mapping     = map(Message, (d) -> as_message(gate!(gate, node, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
         vmessageout = combineLatest(mgsobservable, clusterobservable, strategy = PushEach()) |> mapping
 
         set!(messageout(variable), vmessageout |> discontinue() |> share())

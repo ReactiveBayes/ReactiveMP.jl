@@ -17,11 +17,11 @@ function degree end
 
 struct VariableMarginal{R}
     subject :: R
-    stream  :: LazyObservable{AbstractMarginal}
+    stream  :: LazyObservable{Marginal}
 end
 
 function VariableMarginal()
-    return VariableMarginal(ReplaySubject(AbstractMarginal, 1), lazy(AbstractMarginal))
+    return VariableMarginal(ReplaySubject(Marginal, 1), lazy(Marginal))
 end
 
 function connect!(marginal::VariableMarginal, source)

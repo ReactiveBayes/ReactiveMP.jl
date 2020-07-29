@@ -1,7 +1,7 @@
 export datavar
 
 mutable struct DataVariableProps
-    messagein :: Union{Nothing, LazyObservable{AbstractMessage}}
+    messagein :: Union{Nothing, LazyObservable{Message}}
 
     DataVariableProps() = new(nothing)
 end

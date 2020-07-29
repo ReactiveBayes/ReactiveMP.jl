@@ -2,11 +2,11 @@ export randomvar, simplerandomvar
 
 struct RandomVariable{N} <: AbstractVariable
     name      :: Symbol
-    inputmsgs :: Vector{Union{Nothing, LazyObservable{AbstractMessage}}}
+    inputmsgs :: Vector{Union{Nothing, LazyObservable{Message}}}
     marginal  :: VariableMarginal
 end
 
-randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{AbstractMessage}}}(undef, N), VariableMarginal())
+randomvar(name::Symbol, N::Int) = RandomVariable{N}(name, Vector{Union{Nothing, LazyObservable{Message}}}(undef, N), VariableMarginal())
 
 degree(::RandomVariable{N}) where N = N
 
@@ -25,8 +25,8 @@ end
 ##
 
 mutable struct SimpleRandomVariableProps
-    messagein1 :: Union{Nothing, LazyObservable{AbstractMessage}}
-    messagein2 :: Union{Nothing, LazyObservable{AbstractMessage}}
+    messagein1 :: Union{Nothing, LazyObservable{Message}}
+    messagein2 :: Union{Nothing, LazyObservable{Message}}
 
     SimpleRandomVariableProps() = new(nothing, nothing)
 end
