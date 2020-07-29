@@ -9,6 +9,7 @@ using BenchmarkTools
 using Rocket
 
 import Base: show
+import Base: getindex, setindex!, firstindex, lastindex
 
 ## Variable constraints
 
@@ -51,19 +52,53 @@ end
 connectedvar(varnode::VariableNode)      = varnode.props.connected_variable
 connectedvarindex(varnode::VariableNode) = varnode.props.connected_index
 
-struct FactorNode{F, N, C}
+## FactorNodeLocalMarginals
+
+struct FactorNodeLocalMarginals{N}
+    marginals :: NTuple{N, Tuple{Symbol, Ref{Union{Nothing, Marginal}}}}
+end
+
+function FactorNodeLocalMarginals(variables, factorisation)
+    names = map(n -> Symbol(n...), map(q -> map(v -> variables[v], q), factorisation))
+    init  = map(n -> (n, Ref{Union{Nothing, Marginal}}(nothing)), names)
+    N     = length(factorisation)
+    return FactorNodeLocalMarginals{N}(NTuple{N, Tuple{Symbol, Ref{Union{Nothing, Marginal}}}}(init))
+end
+
+@inline function __findindex(lm::FactorNodeLocalMarginals, s::Symbol)
+    index = findnext(d -> d[1] === s, lm.marginals, 1)
+    if index === nothing
+        throw("Invalid marginal id: $s")
+    end
+    return index
+end
+
+Base.getindex(lm::FactorNodeLocalMarginals, s::Symbol)                               = @inbounds lm.marginals[__findindex(lm, s)][2][]
+Base.setindex!(lm::FactorNodeLocalMarginals, v::Union{Nothing, Marginal}, s::Symbol) = @inbounds lm.marginals[__findindex(lm, s)][2][] = v
+
+Base.firstindex(::FactorNodeLocalMarginals)           = 1
+Base.lastindex(::FactorNodeLocalMarginals{N}) where N = N
+
+## FactorNode
+
+struct FactorNode{F, N, C, M}
     fform         :: F
     variables     :: NTuple{N, VariableNode}
     factorisation :: C
+    marginals     :: M
 end
 
 # Additional method specific for Type{F} needed here to bypass Julia's DataType type
 function FactorNode(fform::Type{F}, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C }
-    return FactorNode{Type{F}, N, C}(fform, map(v -> varnode(v), variables), factorisation)
+    localmarginals = FactorNodeLocalMarginals(variables, factorisation)
+    M = typeof(localmarginals)
+    return FactorNode{Type{F}, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
 end
 
 function FactorNode(fform::F, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C }
-    return FactorNode{F, N, C}(fform, map(v -> varnode(v), variables), factorisation)
+    localmarginals = FactorNodeLocalMarginals(variables, factorisation)
+    M = typeof(localmarginals)
+    return FactorNode{F, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
 end
 
 functionalform(factornode::FactorNode) = factornode.fform

@@ -26,7 +26,7 @@ Base.eltype(::Type{<:SkipIndexIterator{T}}) where T = T
 Base.length(iter::SkipIndexIterator)                = length(iter.iterator) - 1
 Base.size(iter::SkipIndexIterator)                  = (length(iter), )
 
-Base.getindex(iter::SkipIndexIterator, i) = @inbounds begin i < skip(iter) ? iter.iterator[i] : iter.iterator[i + 1] end
+Base.getindex(iter::SkipIndexIterator, i) = i < skip(iter) ? @inbounds(iter.iterator[i]) : @inbounds(iter.iterator[i + 1])
 
 """
     @symmetrical `function_definition`
