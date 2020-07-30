@@ -5,7 +5,7 @@ import Distributions: Normal
 ## GaussianMeanVariance
 
 function GaussianMeanVarianceNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
-    return FactorNode(Normal{T}, (:mean, :variance, :value), factorisation)
+    return FactorNode(NormalMeanVariance{T}, (:mean, :variance, :value), factorisation)
 end
 
 # Messages ordered as Tuple{ :mean, :variance }

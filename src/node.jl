@@ -149,8 +149,8 @@ function deps(factornode::FactorNode, v::Symbol)
 
     @assert vcindex !== nothing
 
-    mdeps       = map(i -> vars[i], skipindex(factor, vcindex))
-    clusterdeps = map(i -> vars[i], skipindex(cls, cindex))
+    mdeps       = map(inds -> map(i -> vars[i], inds), skipindex(factor, vcindex))
+    clusterdeps = map(inds -> map(i -> vars[i], inds), skipindex(cls, cindex))
 
     return mdeps, clusterdeps
 end
@@ -194,6 +194,7 @@ function getmarginal!(factornode::FactorNode, cluster)
     marginal = if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
         getmarginal(connectedvar(cluster[1]))
     else
+        
         error("Unsupported cluster size: $(length(cluster))")
     end
 

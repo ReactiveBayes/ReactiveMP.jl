@@ -1,8 +1,9 @@
+export GCVNode
 
 struct GCV end
 
 function GCVNode()
-    return FactorNode(GCV, SA[ :x, :y, :z, :κ, :ω ], ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ))
+    return FactorNode(GCV, ( :x, :y, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ))
 end
 
 # Message for backward ν_x

@@ -31,6 +31,7 @@ include("model.jl")
 include("node.jl")
 include("nodes/gaussian.jl")
 include("nodes/addition.jl")
+include("nodes/gcv.jl")
 
 include("actors/prior.jl")
 
