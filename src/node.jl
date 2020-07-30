@@ -55,14 +55,14 @@ connectedvarindex(varnode::VariableNode) = varnode.props.connected_index
 ## FactorNodeLocalMarginals
 
 struct FactorNodeLocalMarginals{N}
-    marginals :: NTuple{N, Tuple{Symbol, Ref{Union{Nothing, LazyObservable{Marginal}}}}}
+    marginals :: NTuple{ N, Tuple{ Symbol, Ref{ Union{ Nothing, MarginalObservable } } } }
 end
 
 function FactorNodeLocalMarginals(variables, factorisation)
     names = map(n -> Symbol(n...), map(q -> map(v -> variables[v], q), factorisation))
-    init  = map(n -> (n, Ref{Union{Nothing, LazyObservable{Marginal}}}(nothing)), names)
+    init  = map(n -> (n, Ref{Union{Nothing, MarginalObservable}}(nothing)), names)
     N     = length(factorisation)
-    return FactorNodeLocalMarginals{N}(NTuple{N, Tuple{Symbol, Ref{Union{Nothing, LazyObservable{Marginal}}}}}(init))
+    return FactorNodeLocalMarginals{N}(NTuple{N, Tuple{Symbol, Ref{Union{Nothing, MarginalObservable}}}}(init))
 end
 
 @inline function __findindex(lm::FactorNodeLocalMarginals, s::Symbol)

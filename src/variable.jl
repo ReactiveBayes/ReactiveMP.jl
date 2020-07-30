@@ -13,43 +13,21 @@ abstract type AbstractVariable end
 
 function degree end
 
-## VariableMarginal
-
-struct VariableMarginal{R}
-    subject :: R
-    stream  :: LazyObservable{Marginal}
-end
-
-function VariableMarginal()
-    return VariableMarginal(ReplaySubject(Marginal, 1), lazy(Marginal))
-end
-
-function connect!(marginal::VariableMarginal, source)
-    set!(marginal.stream, source |> multicast(marginal.subject) |> ref_count())
-    return nothing
-end
-
-function setmarginal!(marginal::VariableMarginal, value)
-    next!(marginal.subject, as_marginal(value))
-    return nothing
-end
-
-function getmarginal(marginal::VariableMarginal)
-    return marginal.stream
-end
-
 ## Common functions
 
 function getmarginal(variable::AbstractVariable)
-    if !Rocket.isready(variable.marginal.stream)
-        connect!(variable.marginal, makemarginal(variable))
+    vmarginal = _getmarginal(variable)
+    if vmarginal === nothing
+        nmarginal = MarginalObservable()
+        connect!(nmarginal, _makemarginal(variable))
+        _setmarginal!(variable, nmarginal)
+        return nmarginal
     end
-    return getmarginal(variable.marginal)
+    return vmarginal
 end
 
-function setmarginal!(variable::AbstractVariable, value)
-    setmarginal!(variable.marginal, value)
-    return nothing
+function setmarginal!(variable::AbstractVariable, marginal)
+    setmarginal!(getmarginal(variable), marginal)
 end
 
 function name(variable::AbstractVariable)

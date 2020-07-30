@@ -1,5 +1,4 @@
-export Message, Marginal
-export getdata
+export Message, getdata, as_message
 export multiply_messages
 export DefaultMessageGate, LoggerMessageGate, TransformMessageGate, MessageGatesComposition
 
@@ -8,17 +7,11 @@ import Base: *, +
 using Distributions
 using Rocket
 
-
 struct Message{D}
     data :: D
 end
 
-struct Marginal{D}
-    data :: D
-end
-
 getdata(message::Message)   = message.data
-getdata(marginal::Marginal) = marginal.data
 
 ## Message
 
@@ -34,36 +27,18 @@ Distributions.mean(message::Message{T}) where { T <: Real } = getdata(message)
 Distributions.var(message::Message{T}) where { T <: Real }  = zero(T)
 Distributions.std(message::Message{T}) where { T <: Real }  = zero(T)
 
-as_message(data)                       = Message(data)
+as_message(data)               = Message(data)
 as_message(message::Message)   = message
-as_message(marginal::Marginal) = Message(getdata(marginal))
-
-## Marginal
-
-Distributions.mean(marginal::Marginal) = Distributions.mean(getdata(marginal))
-Distributions.var(marginal::Marginal)  = Distributions.var(getdata(marginal))
-Distributions.std(marginal::Marginal)  = Distributions.std(getdata(marginal))
-
-Distributions.mean(marginal::Marginal{T}) where { T <: Real } = getdata(marginal)
-Distributions.var(marginal::Marginal{T}) where { T <: Real }  = zero(T)
-Distributions.std(marginal::Marginal{T}) where { T <: Real }  = zero(T)
-
-as_marginal(data)                       = Marginal(data)
-as_marginal(marginal::Marginal) = marginal
-as_marginal(message::Message)   = Marginal(getdata(message))
 
 ## Operators
 
 reduce_messages(messages) = reduce(*, messages; init = Message(nothing))
 
 const __as_message_operator  = Rocket.map(Message, as_message)
-const __as_marginal_operator = Rocket.map(Marginal, as_marginal)
 
 as_message()  = __as_message_operator
-as_marginal() = __as_marginal_operator
 
 const reduce_to_message  = Rocket.map(Message, (messages) -> reduce_messages(messages))
-const reduce_to_marginal = Rocket.map(Marginal, (messages) -> as_marginal(reduce_messages(messages)))
 
 ## Gates
 

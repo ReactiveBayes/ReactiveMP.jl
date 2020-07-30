@@ -7,7 +7,13 @@ include("distributions/normal_mean_precision.jl")
 include("distributions/normal_mean_variance.jl")
 include("distributions/exp_linear_quadratic.jl")
 
+
 include("message.jl")
+include("marginal.jl")
+
+as_marginal(message::Message)  = Marginal(getdata(message))
+as_message(marginal::Marginal) = Message(getdata(marginal))
+
 include("messages/dummy.jl")
 include("messages/delta.jl")
 include("messages/normal.jl")
