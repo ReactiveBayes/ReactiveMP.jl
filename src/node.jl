@@ -176,9 +176,12 @@ end
 
 clustername(cluster) = Symbol(map(v -> name(v), cluster)...)
 
-function setmarginal!(factornode::FactorNode, name::Symbol, marginal)
-    # TODO
-    throw("Not implemented")
+function setmarginal!(factornode::FactorNode, name::Symbol, v)
+    marginal = factornode.marginals[name]
+    if marginal === nothing
+        throw("Marginal with name $(name) does not exist on factor node $(factornode)")
+    end
+    setmarginal!(marginal, v)
 end
 
 function getmarginal!(factornode::FactorNode, cluster)
