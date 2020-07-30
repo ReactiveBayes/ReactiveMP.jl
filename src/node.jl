@@ -194,7 +194,6 @@ function getmarginal!(factornode::FactorNode, cluster)
     marginal = if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
         getmarginal(connectedvar(cluster[1]))
     else
-        
         error("Unsupported cluster size: $(length(cluster))")
     end
 
