@@ -14,11 +14,15 @@ include("marginal.jl")
 as_marginal(message::Message)  = Marginal(getdata(message))
 as_message(marginal::Marginal) = Message(getdata(marginal))
 
+include("approximations/gausshermite.jl")
+
 include("messages/dummy.jl")
 include("messages/delta.jl")
 include("messages/normal.jl")
 include("messages/normal_mean_precision.jl")
+include("messages/normal_mean_variance.jl")
 include("messages/gamma_ab.jl")
+include("messages/exp_linear_quadratic.jl")
 
 include("variable.jl")
 include("variables/random.jl")

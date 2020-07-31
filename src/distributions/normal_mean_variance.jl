@@ -11,6 +11,7 @@ end
 Distributions.mean(nmp::NormalMeanVariance) = nmp.mean
 Distributions.var(nmp::NormalMeanVariance)  = nmp.variance
 Distributions.std(nmp::NormalMeanVariance)  = sqrt(var(nmp))
+Distributions.cov(nmp::NormalMeanVariance)  = Distributions.var(nmp)
 
 precision(nmp::NormalMeanVariance{T}) where T = one(T) / var(nmp)
 

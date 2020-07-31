@@ -81,7 +81,7 @@ function rule(::Type{ <: GCV }, ::Val{:ω}, ::Marginalisation, messages::Nothing
     q_z  = marginals[2]
     q_κ  = marginals[3]
 
-    Λ = cov(q_xy)
+    Λ = Matrix(cov(q_xy))
     m = mean(q_xy)
 
     γ_1 = mean(q_z) ^ 2 * var(q_κ) + mean(q_κ) ^ 2 * var(q_z) + var(q_z) * var(q_κ)
