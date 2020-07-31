@@ -1,6 +1,7 @@
-export NormalMeanVariance
+export NormalMeanVariance, MvNormalMeanCovariance
 
 using Distributions
+import PDMats: PDMat
 
 struct NormalMeanVariance{T}
     mean     :: T
@@ -19,9 +20,9 @@ end
 
 struct MvNormalMeanCovariance{T}
     mean       :: Vector{T}
-    covariance :: Matrix{T}
+    covariance :: PDMat{T,Array{T,2}}
 end
 
 Distributions.mean(nmc::MvNormalMeanCovariance) = nmc.mean
-Distributions.cov(nmc::MvNormalMeanCovariance)  = nmc.cov
+Distributions.cov(nmc::MvNormalMeanCovariance)  = nmc.covariance
 

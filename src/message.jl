@@ -22,10 +22,16 @@ Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 Distributions.mean(message::Message) = Distributions.mean(getdata(message))
 Distributions.var(message::Message)  = Distributions.var(getdata(message))
 Distributions.std(message::Message)  = Distributions.std(getdata(message))
+Distributions.cov(message::Message)  = Distributions.cov(getdata(message))
+
+precision(message::Message) = precision(getdata(message))
 
 Distributions.mean(message::Message{T}) where { T <: Real } = getdata(message)
 Distributions.var(message::Message{T}) where { T <: Real }  = zero(T)
 Distributions.std(message::Message{T}) where { T <: Real }  = zero(T)
+Distributions.cov(message::Message{T}) where { T <: Real }  = zero(T)
+
+precision(message::Message{T}) where { T <: Real } = Inf
 
 as_message(data)               = Message(data)
 as_message(message::Message)   = message

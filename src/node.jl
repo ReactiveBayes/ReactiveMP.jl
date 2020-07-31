@@ -15,7 +15,7 @@ import Base: getindex, setindex!, firstindex, lastindex
 
 struct Marginalisation end
 
-## FactorNode Variable Props
+## VariableNode Props
 
 mutable struct VariableNodeProps
     connected_variable :: Union{Nothing, AbstractVariable}
@@ -24,7 +24,7 @@ mutable struct VariableNodeProps
     VariableNodeProps() = new(nothing, 0)
 end
 
-## FactorNode Variable
+## VariableNode
 
 struct VariableNode
     name  :: Symbol
@@ -59,7 +59,7 @@ struct FactorNodeLocalMarginals{N}
 end
 
 function FactorNodeLocalMarginals(variables, factorisation)
-    names = map(n -> Symbol(n...), map(q -> map(v -> variables[v], q), factorisation))
+    names = clusternames(variables, factorisation)
     init  = map(n -> (n, Ref{Union{Nothing, MarginalObservable}}(nothing)), names)
     N     = length(factorisation)
     return FactorNodeLocalMarginals{N}(NTuple{N, Tuple{Symbol, Ref{Union{Nothing, MarginalObservable}}}}(init))
@@ -105,10 +105,17 @@ functionalform(factornode::FactorNode) = factornode.fform
 variables(factornode::FactorNode)      = factornode.variables
 factorisation(factornode::FactorNode)  = factornode.factorisation
 
+clusternames(factornode::FactorNode)                              = clusternames(map(v -> name(v), variables(factornode)), factorisation(factornode))
+clusternames(variables::NTuple{N, Symbol}, factorisation) where N = map(n -> Symbol(n...), map(q -> map(v -> variables[v], q), factorisation))
+
 getcluster(factornode::FactorNode, i)                = @inbounds factornode.factorisation[i]
 clusters(factornode::FactorNode)                     = map(factor -> map(i -> @inbounds factornode.variables[i], factor), factornode.factorisation)
 clusterindex(factornode::FactorNode, v::Symbol)      = clusterindex(factornode, varindex(factornode, v))
 clusterindex(factornode::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(factornode))
+
+clusterindex(factornode::FactorNode, vars::NTuple{N, VariableNode}) where N = clusterindex(factornode, map(v -> name(v), vars))
+clusterindex(factornode::FactorNode, vars::NTuple{N, Symbol}) where N       = clusterindex(factornode, map(v -> varindex(factornode, v), vars))
+clusterindex(factornode::FactorNode, vars::NTuple{N, Int}) where N          = findfirst(cluster -> all(v -> v ∈ cluster, vars), factorisation(factornode))
 
 varclusterindex(cluster, vindex::Int) = findfirst(index -> index === vindex, cluster)
 
@@ -159,17 +166,17 @@ function activate!(model, factornode::FactorNode)
     for variable in variables(factornode)
         mdeps, clusterdeps = deps(factornode, name(variable))
 
-        mgsobservable     = length(mdeps) !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
-        clusterobservable = length(clusterdeps) !== 0 ? combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach()) : of(nothing)
+        msgs_observable     = length(mdeps)       !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
+        clusters_observable = length(clusterdeps) !== 0 ? combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach()) : of(nothing)
 
         gate        = message_gate(model)
         fform       = functionalform(factornode)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
         mapping     = map(Message, (d) -> as_message(gate!(gate, factornode, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
-        vmessageout = combineLatest(mgsobservable, clusterobservable, strategy = PushEach()) |> mapping
+        vmessageout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
 
-        set!(messageout(variable), vmessageout |> discontinue() |> share())
+        set!(messageout(variable), vmessageout |> share())
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end
@@ -191,15 +198,36 @@ function getmarginal!(factornode::FactorNode, cluster)
         return factornode.marginals[cname]
     end
 
-    marginal = if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
-        getmarginal(connectedvar(cluster[1]))
+    if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
+        vmarginal = getmarginal(connectedvar(cluster[1]))
+        factornode.marginals[cname] = vmarginal
+        return vmarginal
     else
-        error("Unsupported cluster size: $(length(cluster))")
+        cmarginal = MarginalObservable()
+        factornode.marginals[cname] = cmarginal
+        # TODO generalise as a separate function
+        mdeps = cluster
+
+        vars = variables(factornode)
+        cls  = factorisation(factornode)
+
+        cindex      = clusterindex(factornode, cluster)
+        clusterdeps = map(inds -> map(i -> vars[i], inds), skipindex(cls, cindex))
+
+        msgs_observable     = length(mdeps)       !== 0 ? combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew()) : of(nothing)
+        clusters_observable = length(clusterdeps) !== 0 ? combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach()) : of(nothing)
+
+        fform       = functionalform(factornode)
+        vtag        = Val(clustername(cluster))
+        mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, d[1], d[2], nothing)))
+        marginalout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
+
+        connect!(cmarginal, marginalout)
+
+        return cmarginal
     end
 
-    factornode.marginals[cname] = marginal
-
-    return marginal
+    throw("Unsupported marginal size: $(length(cluster))")
 end
 
 ## rule

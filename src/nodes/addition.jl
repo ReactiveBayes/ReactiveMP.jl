@@ -55,6 +55,14 @@ function rule(::typeof(+), ::Val{:in1}, ::Marginalisation, messages::Tuple{Messa
     return Normal{T}(mean(outd) - mean(in2v), std(outd))
 end
 
+## In 1 NVM 
+
+function rule(::typeof(+), ::Val{:in1}, ::Marginalisation, messages::Tuple{Message{NormalMeanVariance{T}}, Message{T}}, marginals::Nothing, meta) where T
+    in2d = messages[1]
+    outv = messages[2]
+    return NormalMeanVariance{T}(mean(outv) - mean(in2d), var(in2d))
+end
+
 ### In 2 ###
 
 function rule(::typeof(+), ::Val{:in2}, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, marginals::Nothing, meta) where T

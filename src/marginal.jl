@@ -14,10 +14,16 @@ getdata(marginal::Marginal) = marginal.data
 Distributions.mean(marginal::Marginal) = Distributions.mean(getdata(marginal))
 Distributions.var(marginal::Marginal)  = Distributions.var(getdata(marginal))
 Distributions.std(marginal::Marginal)  = Distributions.std(getdata(marginal))
+Distributions.cov(marginal::Marginal)  = Distributions.cov(getdata(marginal))
+
+precision(marginal::Marginal) = precision(getdata(marginal))
 
 Distributions.mean(marginal::Marginal{T}) where { T <: Real } = getdata(marginal)
 Distributions.var(marginal::Marginal{T}) where { T <: Real }  = zero(T)
 Distributions.std(marginal::Marginal{T}) where { T <: Real }  = zero(T)
+Distributions.cov(marginal::Marginal{T}) where { T <: Real }  = zero(T)
+
+precision(marginal::Marginal{T}) where { T <: Real } = Inf
 
 as_marginal(data)               = Marginal(data)
 as_marginal(marginal::Marginal) = marginal
