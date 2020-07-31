@@ -8,6 +8,11 @@ function GaussianMeanVarianceNode(::Type{T} = Float64; factorisation = ((1, 2, 3
     return FactorNode(NormalMeanVariance{T}, (:mean, :variance, :value), factorisation)
 end
 
+function rule(::Type{ <: NormalMeanVariance }, ::Val{:value}, ::Marginalisation, messages::Tuple{Message{ <: NormalMeanVariance{T} }, Message{T}}, ::Nothing, meta) where { T <: Real }
+    return NormalMeanVariance(mean(messages[1]), var(messages[1]) + mean(messages[2]))
+end
+
+
 # Messages ordered as Tuple{ :mean, :variance }
 # BP rule
 function rule(::Type{ <: Normal{T} }, ::Val{:value}, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, marginals::Nothing, meta) where { T <: Real }

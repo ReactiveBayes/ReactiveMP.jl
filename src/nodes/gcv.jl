@@ -22,6 +22,7 @@ end
 
 # Message for forward ν_y
 function rule(::Type{ <: GCV }, ::Val{:y}, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+
     m_x = messages[1]
     q_z = marginals[1]
     q_κ = marginals[2]
