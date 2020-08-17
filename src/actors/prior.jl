@@ -21,7 +21,10 @@ function Rocket.on_complete!(::PriorActor)
     return nothing
 end
 
-link(datavar::DataVariable, source::S) where S = link(datavar, as_subscribable(S), source)
+link(datavar::DataVariable, source::S) where S = check_link(datavar, as_subscribable(S), source)
 
-link(datavar::DataVariable, ::InvalidSubscribable, source)               = throw(InvalidSubscribableTraitUsageError(source))
-link(datavar::DataVariable, ::ValidSubscribableTrait{D}, source) where D = subscribe!(source |> discontinue(), prioractor(D, name(datavar), datavar))
+check_link(datavar::DataVariable, ::InvalidSubscribableTrait, source)              = throw(InvalidSubscribableTraitUsageError(source))
+check_link(datavar::DataVariable, ::SimpleSubscribableTrait{D}, source)    where D = _link(datavar, D, source)
+check_link(datavar::DataVariable, ::ScheduledSubscribableTrait{D}, source) where D = _link(datavar, D, source)
+
+_link(datavar::DataVariable, ::Type{D}, source) where D = subscribe!(source |> discontinue(), prioractor(D, name(datavar), datavar))

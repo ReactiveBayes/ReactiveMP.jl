@@ -156,8 +156,10 @@ function deps(factornode::FactorNode, v::Symbol)
 
     @assert vcindex !== nothing
 
-    mdeps       = map(inds -> map(i -> vars[i], inds), skipindex(factor, vcindex))
-    clusterdeps = map(inds -> map(i -> vars[i], inds), skipindex(cls, cindex))
+    # TODO Consider to change this line with map/map
+    # TODO benchmark it
+    mdeps       = map(inds -> map(i -> begin return @inbounds vars[i] end, inds), skipindex(factor, vcindex))
+    clusterdeps = map(inds -> map(i -> begin return @inbounds vars[i] end, inds), skipindex(cls, cindex))
 
     return mdeps, clusterdeps
 end

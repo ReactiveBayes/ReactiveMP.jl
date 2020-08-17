@@ -4,4 +4,6 @@ demo/*.jl
 
 .idea
 
+**/*.mem
+
 examples/*Compiled
