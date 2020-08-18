@@ -40,7 +40,7 @@ Base.show(io::IO, varnode::VariableNode) = print(io, name(varnode))
 varnode(name::Symbol) = VariableNode(name)
 
 name(varnode::VariableNode)       = varnode.name
-tag(varnode::VariableNode)        = Val(name(varnode))
+tag(varnode::VariableNode)        = Val{name(varnode)}
 messageout(varnode::VariableNode) = varnode.m_out
 messagein(varnode::VariableNode)  = varnode.m_in
 

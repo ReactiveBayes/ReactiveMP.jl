@@ -7,7 +7,7 @@ function GCVNode()
 end
 
 # Message for backward ν_x
-function rule(::Type{ <: GCV }, ::Val{:x}, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function rule(::Type{ <: GCV }, ::Type{ Val{:x} }, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
     m_y = messages[1]
     q_z = marginals[1]
     q_κ = marginals[2]
@@ -21,7 +21,7 @@ function rule(::Type{ <: GCV }, ::Val{:x}, ::Marginalisation, messages::Tuple{Me
 end
 
 # Message for forward ν_y
-function rule(::Type{ <: GCV }, ::Val{:y}, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function rule(::Type{ <: GCV }, ::Type{ Val{:y} }, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
 
     m_x = messages[1]
     q_z = marginals[1]
@@ -36,7 +36,7 @@ function rule(::Type{ <: GCV }, ::Val{:y}, ::Marginalisation, messages::Tuple{Me
 end
 
 # Message for upward ν_z
-function rule(::Type{ <: GCV }, ::Val{:z}, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function rule(::Type{ <: GCV }, ::Type{ Val{:z} }, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
     q_xy = marginals[1]
     q_κ  = marginals[2]
     q_ω  = marginals[3]
@@ -57,7 +57,7 @@ function rule(::Type{ <: GCV }, ::Val{:z}, ::Marginalisation, messages::Nothing,
 end
 
 # Message for backward ν_κ
-function rule(::Type{ <: GCV }, ::Val{:κ}, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function rule(::Type{ <: GCV }, ::Type{ Val{:κ} }, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
     q_xy = marginals[1]
     q_z  = marginals[2]
     q_ω  = marginals[3]
@@ -77,7 +77,7 @@ function rule(::Type{ <: GCV }, ::Val{:κ}, ::Marginalisation, messages::Nothing
 end
 
 # Message for backward ν_ω
-function rule(::Type{ <: GCV }, ::Val{:ω}, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function rule(::Type{ <: GCV }, ::Type{ Val{:ω} }, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
     q_xy = marginals[1]
     q_z  = marginals[2]
     q_κ  = marginals[3]
@@ -98,7 +98,7 @@ function rule(::Type{ <: GCV }, ::Val{:ω}, ::Marginalisation, messages::Nothing
 end
 
 # Marginal for q_xy
-function marginalrule(::Type{ <: GCV }, ::Val{:xy}, messages::Tuple{Message, Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function marginalrule(::Type{ <: GCV }, ::Type{ Val{:xy} }, messages::Tuple{Message, Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
     m_x = messages[1]
     m_y = messages[2]
 
