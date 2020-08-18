@@ -220,7 +220,7 @@ function getmarginal!(factornode::FactorNode, cluster)
         clusters_observable = length(clusterdeps) !== 0 ? combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach()) : of(nothing)
 
         fform       = functionalform(factornode)
-        vtag        = Val(clustername(cluster))
+        vtag        = Val{ clustername(cluster) }
         mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, d[1], d[2], nothing)))
         marginalout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
 
