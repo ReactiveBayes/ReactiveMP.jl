@@ -19,6 +19,8 @@ end
 
 degree(::PriorVariable) = 1
 
+getlastindex(::PriorVariable) = 1
+
 function messageout(priorvar::PriorVariable, index::Int)
     @assert index === 1
     return priorvar.messageout
@@ -37,7 +39,7 @@ _setmarginal!(priorvar::PriorVariable, marginal::MarginalObservable) = priorvar.
 _makemarginal(priorvar::PriorVariable)   = combineLatest(priorvar.messageout, priorvar.props.messagein, strategy = PushNewBut{1}()) |> reduce_to_marginal
 
 function setmessagein!(priorvar::PriorVariable, index::Int, messagein)
-    @assert index === 1
+    @assert index === 1 && priorvar.props.messagein === nothing
     priorvar.props.messagein = messagein
     return nothing
 end

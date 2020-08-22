@@ -2,9 +2,16 @@ export AdditionNode
 
 using Distributions
 
-# SA = StaticArrays
-function AdditionNode()
+function make_node(::typeof(+)) 
     return FactorNode(+, (:in1, :in2, :out), ((1, 2, 3), ))
+end
+
+function make_node(::typeof(+), in1, in2, out)
+    node = make_node(+)
+    connect!(node, :in1, in1)
+    connect!(node, :in2, in2)
+    connect!(node, :out, out)
+    return node
 end
 
 ### Out ###

@@ -17,6 +17,8 @@ constvar(name::Symbol, constval) = ConstVariable(name, of(Message(constval)), Co
 
 degree(::ConstVariable) = 1
 
+getlastindex(::ConstVariable) = 1
+
 function messageout(constvar::ConstVariable, index::Int)
     @assert index === 1
     return constvar.messageout
@@ -32,7 +34,7 @@ _setmarginal!(constvar::ConstVariable, marginal::MarginalObservable) = constvar.
 _makemarginal(constvar::ConstVariable) = combineLatest(constvar.messageout, constvar.props.messagein, strategy = PushNew()) |> reduce_to_marginal
 
 function setmessagein!(constvar::ConstVariable, index::Int, messagein)
-    @assert index === 1
+    @assert index === 1 && constvar.props.messagein === nothing
     constvar.props.messagein = messagein
     return nothing
 end

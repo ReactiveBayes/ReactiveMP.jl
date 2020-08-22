@@ -3,6 +3,7 @@ export FactorNode, functionalform, variables, factorisation, factors, varindex, 
 export getcluster, clusters, clusterindex
 export deps, connect!, activate!
 export rule
+export make_node
 export Marginalisation
 
 using BenchmarkTools
@@ -129,6 +130,10 @@ varindex(factornode::FactorNode, v::Symbol)    = findfirst(d -> d === v, map(v -
 iscontain(factornode::FactorNode, v::Symbol)   = varindex(factornode, v) !== nothing
 isfactorised(factornode::FactorNode, f)        = findfirst(d -> d == f, factorisation(factornode)) !== nothing
 
+function connect!(factornode::FactorNode, v::Symbol, variable) 
+    return connect!(factornode::FactorNode, v::Symbol, variable, getlastindex(variable))
+end
+
 function connect!(factornode::FactorNode, v::Symbol, variable, index)
     vindex = varindex(factornode, v)
 
@@ -222,7 +227,7 @@ function getmarginal!(factornode::FactorNode, cluster)
         fform       = functionalform(factornode)
         vtag        = Val{ clustername(cluster) }
         mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, d[1], d[2], nothing)))
-        marginalout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
+        marginalout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping |> share()
 
         connect!(cmarginal, marginalout)
 
@@ -235,3 +240,5 @@ end
 ## rule
 
 function rule end
+
+function make_node end

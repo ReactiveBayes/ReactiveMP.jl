@@ -34,6 +34,9 @@ include("model.jl")
 
 include("node.jl")
 include("nodes/gaussian.jl")
+include("nodes/gaussian_mean_variance.jl")
+include("nodes/gaussian_mean_precision.jl")
+include("nodes/gamma_ab.jl")
 include("nodes/addition.jl")
 include("nodes/gcv.jl")
 
