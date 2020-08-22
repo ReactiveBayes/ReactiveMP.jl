@@ -43,3 +43,6 @@ function setmessagein!(datavar::DataVariable, index::Int, messagein)
     datavar.props.messagein = messagein
     return nothing
 end
+
+# TODO Check this in variable.jl
+__score_getmarginal(datavar::DataVariable) = messageout(datavar, 1) |> map(Marginal, as_marginal)

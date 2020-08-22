@@ -1,6 +1,6 @@
-export GaussianMeanPrecisionNode
+export NormalMeanPrecisionNode
 
-function GaussianMeanPrecisionNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
+function NormalMeanPrecisionNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
     return FactorNode(NormalMeanPrecision{T}, (:mean, :precision, :value), factorisation)
 end
 

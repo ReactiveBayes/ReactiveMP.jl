@@ -28,20 +28,25 @@ include("variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
-include("variables/prior.jl")
-
-include("model.jl")
 
 include("node.jl")
-include("nodes/gaussian.jl")
-include("nodes/gaussian_mean_variance.jl")
-include("nodes/gaussian_mean_precision.jl")
+include("nodes/normal.jl")
+include("nodes/normal_mean_variance.jl")
+include("nodes/normal_mean_precision.jl")
 include("nodes/gamma_ab.jl")
 include("nodes/addition.jl")
 include("nodes/gcv.jl")
 
 include("actors/prior.jl")
 
-include("free-energy.jl")
+include("model.jl")
+
+include("score.jl")
+
+include("score/average_energy/gamma_ab.jl")
+include("score/average_energy/normal_mean_precision.jl")
+
+include("score/differential_entropy/gamma_ab.jl")
+include("score/differential_entropy/normal_mean_precision.jl")
 
 end

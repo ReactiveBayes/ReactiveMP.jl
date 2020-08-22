@@ -1,11 +1,31 @@
 export Model, add!
 
 struct Model{T}
-    # Here will be nodes and edge etc
     message_gate :: T
+
+    nodes    :: Vector{FactorNode}
+    random   :: Vector{RandomVariable}
+    constant :: Vector{ConstVariable}
+    data     :: Vector{DataVariable}
 end
+
+Model(message_gate::T) where T = Model{T}(
+    message_gate, 
+    Vector{FactorNode}(), 
+    Vector{RandomVariable}(),
+    Vector{ConstVariable}(),
+    Vector{DataVariable}()
+)
 
 message_gate(model::Model) = model.message_gate
 
 # placeholder for future
-add!(model, some) = some
+add!(model, node::FactorNode)        = begin push!(model.nodes, node); return node end
+add!(model, random::RandomVariable)  = begin push!(model.random, random); return random end
+add!(model, constant::ConstVariable) = begin push!(model.constant, constant); return constant end
+add!(model, data::DataVariable)      = begin push!(model.data, data); return data end
+
+getnodes(model::Model)    = model.nodes
+getrandom(model::Model)   = model.random
+getconstant(model::Model) = model.constant
+getdata(model::Model)     = model.data

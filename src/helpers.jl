@@ -1,5 +1,7 @@
 export skipindex, @symmetrical
 
+using SpecialFunctions
+
 import Base: IteratorSize, HasLength
 import Base: IteratorEltype, HasEltype
 import Base: eltype, length, size
@@ -70,4 +72,8 @@ function swap_arguments(fn::Expr)
     end
 
     return swapped
+end
+
+function labsgamma(x::Number)
+    return SpecialFunctions.logabsgamma(x)[1]
 end

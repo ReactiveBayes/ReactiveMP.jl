@@ -1,6 +1,6 @@
-export GaussianMeanVarianceNode
+export NormalMeanVarianceNode
 
-function GaussianMeanVarianceNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
+function NormalMeanVarianceNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
     return FactorNode(NormalMeanVariance{T}, (:mean, :variance, :value), factorisation)
 end
 

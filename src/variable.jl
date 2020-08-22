@@ -15,6 +15,9 @@ function degree end
 
 ## Common functions
 
+# TODO this is for free energy, check DataVariable
+__score_getmarginal(variable::AbstractVariable) = getmarginal(variable)
+
 function getmarginal(variable::AbstractVariable)
     vmarginal = _getmarginal(variable)
     if vmarginal === nothing
