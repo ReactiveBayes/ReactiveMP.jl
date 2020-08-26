@@ -8,14 +8,16 @@ struct DifferentialEntropy end
 struct BetheFreeEnergy end
 
 # TODO: Messages around nodes, not marginals
-function score(::BetheFreeEnergy, model::Model, score_barrier)
+# TODO: Check if we use clusters instead of marginals
+# TODO __score_getmarginal wont work for clusters?
+function score(::BetheFreeEnergy, model::Model, scheduler)
     average_energies = map(getnodes(model)) do node
         marginals = combineLatest(map(v -> __score_getmarginal(connectedvar(v)), variables(node)), PushEach())
-        return marginals |> barrier(score_barrier) |> map(Float64, (m) -> score(AverageEnergy(), functionalform(node), m)) 
+        return marginals |> schedule_on(scheduler) |> map(Float64, (m) -> score(AverageEnergy(), functionalform(node), m)) 
     end
 
     differential_entropies = map(getrandom(model)) do random 
-        return __score_getmarginal(random) |> barrier(score_barrier) |> map(Float64, (m) -> score(DifferentialEntropy(), m))
+        return __score_getmarginal(random) |> schedule_on(scheduler) |> map(Float64, (m) -> score(DifferentialEntropy(), m))
     end
 
     energies_sum  = combineLatest(average_energies, PushNew()) |> map(Float64, energies -> reduce(+, energies))

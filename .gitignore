@@ -1,3 +1,5 @@
+.ipynb_checkpoints
+
 demo/.ipynb_checkpoints
 demo/*incomplete.ipynb
 demo/*.jl
