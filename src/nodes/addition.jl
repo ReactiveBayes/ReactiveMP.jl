@@ -2,8 +2,12 @@ export AdditionNode
 
 using Distributions
 
-function make_node(::typeof(+)) 
+function AdditionNode()
     return FactorNode(+, (:in1, :in2, :out), ((1, 2, 3), ))
+end
+
+function make_node(::typeof(+)) 
+    return AdditionNode()
 end
 
 function make_node(::typeof(+), in1, in2, out)
