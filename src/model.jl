@@ -29,3 +29,5 @@ getnodes(model::Model)    = model.nodes
 getrandom(model::Model)   = model.random
 getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
+
+activate!(model::Model) = foreach(n -> activate!(model, n), getnodes(model))

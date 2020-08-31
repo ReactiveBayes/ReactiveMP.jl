@@ -1,9 +1,23 @@
-export GCVNode
+export make_node, rule, GCV
 
 struct GCV end
 
 function GCVNode()
-    return FactorNode(GCV, ( :x, :y, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ))
+    return FactorNode(GCV, Stochastic, ( :x, :y, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ))
+end
+
+function make_node(::Type{ GCV })
+    return GCVNode()
+end
+
+function make_node(::Type{ GCV }, x, z, κ, ω, y)
+    node = GCVNode()
+    connect!(node, :x, x)
+    connect!(node, :z, z)
+    connect!(node, :κ, κ)
+    connect!(node, :ω, ω)
+    connect!(node, :y, y)
+    return node
 end
 
 # Message for backward ν_x

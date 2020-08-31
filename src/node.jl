@@ -5,12 +5,28 @@ export deps, connect!, activate!
 export rule
 export make_node
 export Marginalisation
+export sdtype, isdeterministic, isstochastic
 
 using BenchmarkTools
 using Rocket
 
 import Base: show
 import Base: getindex, setindex!, firstindex, lastindex
+
+## Node types
+
+struct Deterministic end
+struct Stochastic end
+
+isdeterministic(::Deterministic)         = true
+isdeterministic(::Type{ Deterministic }) = true
+isdeterministic(::Stochastic)            = false
+isdeterministic(::Type{ Stochastic })    = false
+
+isstochastic(::Stochastic)            = true
+isstochastic(::Type{ Stochastic })    = true
+isstochastic(::Deterministic)         = false
+isstochastic(::Type{ Deterministic }) = false
 
 ## Variable constraints
 
@@ -82,7 +98,7 @@ Base.lastindex(::FactorNodeLocalMarginals{N}) where N = N
 
 ## FactorNode
 
-struct FactorNode{F, N, C, M}
+struct FactorNode{F, T, N, C, M}
     fform         :: F
     variables     :: NTuple{N, VariableNode}
     factorisation :: C
@@ -90,21 +106,30 @@ struct FactorNode{F, N, C, M}
 end
 
 # Additional method specific for Type{F} needed here to bypass Julia's DataType type
-function FactorNode(fform::Type{F}, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C }
+function FactorNode(fform::Type{F}, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C, T }
     localmarginals = FactorNodeLocalMarginals(variables, factorisation)
     M = typeof(localmarginals)
-    return FactorNode{Type{F}, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
+    return FactorNode{Type{F}, T, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
 end
 
-function FactorNode(fform::F, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C }
+function FactorNode(fform::F, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C, T }
     localmarginals = FactorNodeLocalMarginals(variables, factorisation)
     M = typeof(localmarginals)
-    return FactorNode{F, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
+    return FactorNode{F, T, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
 end
 
 functionalform(factornode::FactorNode) = factornode.fform
 variables(factornode::FactorNode)      = factornode.variables
 factorisation(factornode::FactorNode)  = factornode.factorisation
+
+sdtype(::N) where { N <: FactorNode } = sdtype(N)
+sdtype(::Type{ <: FactorNode{F, T} }) where { F, T } = T
+
+isstochastic(::N)    where { N <: FactorNode }         = isstochastic(N)
+isstochastic(::Type{ N })    where { N <: FactorNode } = isstochastic(sdtype(N))
+
+isdeterministic(::N) where { N <: FactorNode }         = isdeterministic(N)
+isdeterministic(::Type{ N }) where { N <: FactorNode } = isdeterministic(sdtype(N))
 
 clusternames(factornode::FactorNode)                              = clusternames(map(v -> name(v), variables(factornode)), factorisation(factornode))
 clusternames(variables::NTuple{N, Symbol}, factorisation) where N = map(n -> Symbol(n...), map(q -> map(v -> variables[v], q), factorisation))

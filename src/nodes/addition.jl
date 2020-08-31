@@ -1,9 +1,9 @@
-export AdditionNode
+export make_node, rule
 
 using Distributions
 
 function AdditionNode()
-    return FactorNode(+, (:in1, :in2, :out), ((1, 2, 3), ))
+    return FactorNode(+, Deterministic, (:in1, :in2, :out), ((1, 2, 3), ))
 end
 
 function make_node(::typeof(+)) 

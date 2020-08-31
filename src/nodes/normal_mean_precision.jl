@@ -1,8 +1,22 @@
-export NormalMeanPrecisionNode
+export make_node, rule
 
 function NormalMeanPrecisionNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
-    return FactorNode(NormalMeanPrecision{T}, (:mean, :precision, :value), factorisation)
+    return FactorNode(NormalMeanPrecision{T}, Stochastic, (:mean, :precision, :value), factorisation)
 end
+
+function make_node(::Type{ <: NormalMeanPrecision{T} }; factorisation = ((1, 2, 3), )) where T
+    return NormalMeanPrecisionNode(T, factorisation = factorisation)
+end
+
+function make_node(::Type{ <: NormalMeanPrecision{T} }, mean, precision, value; factorisation = ((1, 2, 3), )) where T
+    node = make_node(NormalMeanPrecision{T}, factorisation = factorisation)
+    connect!(node, :mean, mean)
+    connect!(node, :precision, precision)
+    connect!(node, :value, value)
+    return node
+end
+
+## rules
 
 function rule(::Type{ <: NormalMeanPrecision{T} }, ::Type{ Val{:value} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, marginals::Nothing, meta) where { T <: Real }
     return NormalMeanPrecision{T}(mean(messages[1]), mean(messages[2]))
