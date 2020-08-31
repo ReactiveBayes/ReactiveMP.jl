@@ -112,7 +112,7 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:ω} }, ::Marginalisation, messages:
 end
 
 # Marginal for q_xy
-function marginalrule(::Type{ <: GCV }, ::Type{ Val{:xy} }, messages::Tuple{Message, Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function marginalrule(::Type{ <: GCV }, ::Type{ Val{:x_y} }, messages::Tuple{Message, Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
     m_x = messages[1]
     m_y = messages[2]
 

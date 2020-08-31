@@ -56,7 +56,8 @@ Base.show(io::IO, varnode::VariableNode) = print(io, name(varnode))
 
 varnode(name::Symbol) = VariableNode(name)
 
-name(varnode::VariableNode)       = varnode.name
+name(symbol::Symbol)              = symbol
+name(varnode::VariableNode)       = name(varnode.name)
 tag(varnode::VariableNode)        = Val{name(varnode)}
 messageout(varnode::VariableNode) = varnode.m_out
 messagein(varnode::VariableNode)  = varnode.m_in
@@ -131,11 +132,13 @@ isstochastic(::Type{ N })    where { N <: FactorNode } = isstochastic(sdtype(N))
 isdeterministic(::N) where { N <: FactorNode }         = isdeterministic(N)
 isdeterministic(::Type{ N }) where { N <: FactorNode } = isdeterministic(sdtype(N))
 
-clusternames(factornode::FactorNode)                              = clusternames(map(v -> name(v), variables(factornode)), factorisation(factornode))
-clusternames(variables::NTuple{N, Symbol}, factorisation) where N = map(n -> Symbol(n...), map(q -> map(v -> variables[v], q), factorisation))
+clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
+
+clusternames(factornode::FactorNode)                              = map(clustername, clusters(factornode))
+clusternames(variables::NTuple{N, Symbol}, factorisation) where N = map(clustername, map(q -> map(v -> variables[v], q), factorisation))
 
 getcluster(factornode::FactorNode, i)                = @inbounds factornode.factorisation[i]
-clusters(factornode::FactorNode)                     = map(factor -> map(i -> @inbounds factornode.variables[i], factor), factornode.factorisation)
+clusters(factornode::FactorNode)                     = map(factor -> map(i -> begin return @inbounds factornode.variables[i] end, factor), factorisation(factornode))
 clusterindex(factornode::FactorNode, v::Symbol)      = clusterindex(factornode, varindex(factornode, v))
 clusterindex(factornode::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(factornode))
 
@@ -212,8 +215,6 @@ function activate!(model, factornode::FactorNode)
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end
-
-clustername(cluster) = Symbol(map(v -> name(v), cluster)...)
 
 function setmarginal!(factornode::FactorNode, name::Symbol, v)
     marginal = factornode.marginals[name]

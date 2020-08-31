@@ -12,12 +12,12 @@ struct BetheFreeEnergy end
 # TODO __score_getmarginal wont work for clusters?
 function score(::BetheFreeEnergy, model::Model, scheduler)
     average_energies = map(getnodes(model)) do node
-        marginals = combineLatest(map(v -> __score_getmarginal(connectedvar(v)), variables(node)), PushEach())
+        marginals = combineLatest(map(cluster -> getmarginal!(node, cluster), clusters(node)), PushEach())
         return marginals |> schedule_on(scheduler) |> map(Float64, (m) -> score(AverageEnergy(), functionalform(node), m)) 
     end
 
     differential_entropies = map(getrandom(model)) do random 
-        return __score_getmarginal(random) |> schedule_on(scheduler) |> map(Float64, (m) -> score(DifferentialEntropy(), m))
+        return getmarginal(random) |> schedule_on(scheduler) |> map(Float64, (m) -> score(DifferentialEntropy(), m))
     end
 
     energies_sum  = collectLatest(Float64, average_energies) |> map(Float64, energies -> reduce(+, energies))

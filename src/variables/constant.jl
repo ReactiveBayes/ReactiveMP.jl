@@ -31,7 +31,7 @@ end
 
 _getmarginal(constvar::ConstVariable)                                = constvar.props.marginal
 _setmarginal!(constvar::ConstVariable, marginal::MarginalObservable) = constvar.props.marginal = marginal
-_makemarginal(constvar::ConstVariable) = combineLatest(constvar.messageout, constvar.props.messagein, strategy = PushNew()) |> reduce_to_marginal
+_makemarginal(constvar::ConstVariable)                               = constvar.messageout |> map(Marginal, as_marginal)
 
 function setmessagein!(constvar::ConstVariable, index::Int, messagein)
     @assert index === 1 && constvar.props.messagein === nothing

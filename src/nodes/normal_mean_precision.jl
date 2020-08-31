@@ -34,3 +34,10 @@ end
 function rule(::Type{ <: NormalMeanPrecision{T} }, ::Type{ Val{:value} }, ::Marginalisation, ::Nothing, marginals::Tuple{Marginal, Marginal}, meta) where { T <: Real }
     return NormalMeanPrecision{T}(mean(marginals[1]), mean(marginals[2]))
 end
+
+## marginal rules
+
+function marginalrule(::Type{ <: NormalMeanPrecision{T} }, ::Type{ Val{ :mean_precision_value } }, messages::Tuple{Message{T}, Message{T}, Message{NormalMeanPrecision{T}}}, ::Nothing, ::Nothing) where { T <: Real }
+    q_value = Message(NormalMeanPrecision(getdata(messages[1]), getdata(messages[2]))) * messages[3]
+    return (getdata(messages[1]), getdata(messages[2]), getdata(q_value))
+end

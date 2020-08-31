@@ -6,7 +6,6 @@ export DataVariable, datavar, update!, finish!
 export getmarginal, setmarginal!, activate!, name
 export as_message, as_marginal
 
-using StaticArrays
 using Rocket
 
 abstract type AbstractVariable end
@@ -14,9 +13,6 @@ abstract type AbstractVariable end
 function degree end
 
 ## Common functions
-
-# TODO this is for free energy, check DataVariable
-__score_getmarginal(variable::AbstractVariable) = getmarginal(variable)
 
 function getmarginal(variable::AbstractVariable)
     vmarginal = _getmarginal(variable)

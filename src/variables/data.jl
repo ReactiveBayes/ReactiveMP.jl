@@ -36,13 +36,10 @@ finish!(datavar::DataVariable)       = complete!(messageout(datavar, 1))
 
 _getmarginal(datavar::DataVariable)                                = datavar.props.marginal
 _setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.props.marginal = marginal
-_makemarginal(datavar::DataVariable)   = combineLatest(datavar.messageout, datavar.props.messagein, strategy = PushNew()) |> reduce_to_marginal
+_makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, as_marginal)
 
 function setmessagein!(datavar::DataVariable, index::Int, messagein)
     @assert index === 1 && datavar.props.messagein === nothing
     datavar.props.messagein = messagein
     return nothing
 end
-
-# TODO Check this in variable.jl
-__score_getmarginal(datavar::DataVariable) = messageout(datavar, 1) |> map(Marginal, as_marginal)

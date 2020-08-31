@@ -9,3 +9,8 @@ function score(::AverageEnergy, ::Type{ <: NormalMeanPrecision }, marginals::Tup
         0.5 * mean(marginals[2]) * (v_out + v_mean + (m_out - m_mean)^2)
     return result
 end
+
+function score(::AverageEnergy, ::Type{ <: NormalMeanPrecision }, marginals::Tuple{ Marginal{ Tuple{T, T, NormalMeanPrecision{T}} } }) where { T <: Real }
+    factorised = getdata(marginals[1])
+    return score(AverageEnergy(), NormalMeanPrecision, (factorised[1] |> as_marginal, factorised[2] |> as_marginal, factorised[3] |> as_marginal))
+end
