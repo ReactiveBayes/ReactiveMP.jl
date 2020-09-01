@@ -1,3 +1,4 @@
+
 function multiply_messages(m1::Message{N}, m2::Message{N}) where { N <: NormalMeanVariance }
     m1data = getdata(m1)
     m2data = getdata(m2)

@@ -11,7 +11,7 @@ struct BetheFreeEnergy end
 # TODO: Check if we use clusters instead of marginals
 # TODO __score_getmarginal wont work for clusters?
 function score(::BetheFreeEnergy, model::Model, scheduler)
-    average_energies = map(getnodes(model)) do node
+    average_energies = map(filter(isstochastic, getnodes(model))) do node
         marginals = combineLatest(map(cluster -> getmarginal!(node, cluster), clusters(node)), PushEach())
         return marginals |> schedule_on(scheduler) |> map(Float64, (m) -> score(AverageEnergy(), functionalform(node), m)) 
     end

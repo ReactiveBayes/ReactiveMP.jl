@@ -1,5 +1,7 @@
 export Model, add!
 
+import Base: show
+
 struct Model{T}
     message_gate :: T
 
@@ -8,6 +10,8 @@ struct Model{T}
     constant :: Vector{ConstVariable}
     data     :: Vector{DataVariable}
 end
+
+Base.show(io::IO, model::Model) = print(io, "Model()")
 
 Model(message_gate::T) where T = Model{T}(
     message_gate, 

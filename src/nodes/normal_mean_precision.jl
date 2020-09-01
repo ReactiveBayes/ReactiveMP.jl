@@ -18,7 +18,7 @@ end
 
 ## rules
 
-function rule(::Type{ <: NormalMeanPrecision{T} }, ::Type{ Val{:value} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, marginals::Nothing, meta) where { T <: Real }
+function rule(::Type{ <: NormalMeanPrecision{T} }, ::Type{ Val{:value} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, meta) where { T <: Real }
     return NormalMeanPrecision{T}(mean(messages[1]), mean(messages[2]))
 end
 

@@ -2,6 +2,7 @@ module ReactiveMP
 
 include("helpers.jl")
 
+include("distributions.jl")
 include("distributions/gamma_ab.jl")
 include("distributions/normal_mean_precision.jl")
 include("distributions/normal_mean_variance.jl")

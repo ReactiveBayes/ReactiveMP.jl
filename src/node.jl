@@ -211,7 +211,7 @@ function activate!(model, factornode::FactorNode)
         mapping     = map(Message, (d) -> as_message(gate!(gate, factornode, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
         vmessageout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
 
-        set!(messageout(variable), vmessageout |> share())
+        set!(messageout(variable), vmessageout |> share_replay(1))
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end
