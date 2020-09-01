@@ -17,7 +17,7 @@ function score(::BetheFreeEnergy, model::Model, scheduler)
     end
 
     differential_entropies = map(getrandom(model)) do random 
-        return getmarginal(random) |> schedule_on(scheduler) |> map(Float64, (m) -> score(DifferentialEntropy(), m))
+        return getmarginal(random) |> schedule_on(scheduler) |> map(Float64, (m) -> (degree(random) - 1) * score(DifferentialEntropy(), m))
     end
 
     energies_sum  = collectLatest(Float64, average_energies) |> map(Float64, energies -> reduce(+, energies))

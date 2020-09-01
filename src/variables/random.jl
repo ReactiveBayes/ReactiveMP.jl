@@ -14,7 +14,7 @@ end
 
 randomvar(name::Symbol) = RandomVariable(name, Vector{Union{Nothing, LazyObservable{Message}}}(), RandomVariableProps())
 
-degree(::RandomVariable) = length(variable.inputmsgs)
+degree(randomvar::RandomVariable) = length(randomvar.inputmsgs)
 
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 
