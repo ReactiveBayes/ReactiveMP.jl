@@ -22,6 +22,10 @@ function rule(::Type{ <: NormalMeanVariance }, ::Type{ Val{:value} }, ::Marginal
     return NormalMeanVariance(mean(messages[1]), mean(messages[2]))
 end
 
+function rule(::Type{ <: NormalMeanVariance }, ::Type{ Val{:mean} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, meta) where { T <: Real }
+    return NormalMeanVariance(mean(messages[2]), mean(messages[1]))
+end
+
 function rule(::Type{ <: NormalMeanVariance }, ::Type{ Val{:value} }, ::Marginalisation, messages::Tuple{Message{ <: NormalMeanVariance{T} }, Message{T}}, ::Nothing, meta) where { T <: Real }
     return NormalMeanVariance(mean(messages[1]), var(messages[1]) + mean(messages[2]))
 end
