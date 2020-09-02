@@ -18,7 +18,7 @@ function getmarginal(variable::AbstractVariable)
     vmarginal = _getmarginal(variable)
     if vmarginal === nothing
         nmarginal = MarginalObservable()
-        connect!(nmarginal, _makemarginal(variable))
+        connect!(nmarginal, _makemarginal(variable) |> share_replay(1))
         _setmarginal!(variable, nmarginal)
         return nmarginal
     end

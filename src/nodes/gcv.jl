@@ -31,7 +31,7 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:x} }, ::Marginalisation, messages::
     γ_2 = exp(-mean(q_κ) * mean(q_z) + 0.5 * γ_1)
     γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
 
-    return NormalMeanVariance(mean(m_y), var(m_y) + γ_2 * γ_3)
+    return NormalMeanVariance(mean(m_y), var(m_y) + 1.0 / (γ_2 * γ_3))
 end
 
 # Message for forward ν_y
@@ -46,7 +46,7 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:y} }, ::Marginalisation, messages::
     γ_2 = exp(-mean(q_κ) * mean(q_z) + 0.5 * γ_1)
     γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
 
-    return NormalMeanVariance(mean(m_x), var(m_x) + γ_2 * γ_3)
+    return NormalMeanVariance(mean(m_x), var(m_x) + 1.0 / (γ_2 * γ_3))
 end
 
 # Message for upward ν_z
