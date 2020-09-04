@@ -27,6 +27,8 @@ Distributions.cov(message::Message)  = Distributions.cov(getdata(message))
 Base.precision(message::Message) = precision(getdata(message))
 Base.ndims(message::Message)     = ndims(getdata(message))
 
+## Delta function message
+
 Distributions.mean(message::Message{T}) where { T <: Real } = getdata(message)
 Distributions.var(message::Message{T}) where { T <: Real }  = zero(T)
 Distributions.std(message::Message{T}) where { T <: Real }  = zero(T)
@@ -37,6 +39,18 @@ Base.ndims(message::Message{T})     where { T <: Real } = 1
 
 logmean(message::Message{T}) where { T <: Real }     = log(getdata(message))
 inversemean(message::Message{T}) where { T <: Real } = 1.0 / getdata(message)
+
+## Vector-based delta function message
+
+Distributions.mean(message::Message{T}) where { T <: Vector } = getdata(message)
+Distributions.var(message::Message{T}) where { T <: Vector }  = zero(T)
+Distributions.std(message::Message{T}) where { T <: Vector }  = zero(T)
+Distributions.cov(message::Message{T}) where { T <: Vector }  = zero(T)
+
+Base.precision(message::Message{T}) where { T <: Vector } = Inf
+Base.ndims(message::Message{T})     where { T <: Vector } = length(getdata(message))
+
+## Utility functions
 
 as_message(data)               = Message(data)
 as_message(message::Message)   = message

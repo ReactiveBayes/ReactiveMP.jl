@@ -5,7 +5,7 @@ import Distributions: Normal
 # BP rule
 
 # TODO
-make_node(::Type{ <: Normal{T} }) where T = FactorNode(Normal{T}, Stochastic, (:mean, :std, :value), ((1, 2, 3), ))
+make_node(::Type{ <: Normal{T} }) where T = FactorNode(Normal{T}, Stochastic, (:mean, :std, :value), ((1, 2, 3), ), nothing)
 
 function make_node(::Type{ <: Normal{T} }, mean, std, value) where T 
     node = make_node(Normal{T})

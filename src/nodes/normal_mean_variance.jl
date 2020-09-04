@@ -1,7 +1,7 @@
 export make_node, rule
 
 function NormalMeanVarianceNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
-    return FactorNode(NormalMeanVariance{T}, Stochastic, (:mean, :variance, :value), factorisation)
+    return FactorNode(NormalMeanVariance{T}, Stochastic, (:mean, :variance, :value), factorisation, nothing)
 end
 
 function make_node(::Type{ <: NormalMeanVariance{T} }; factorisation = ((1, 2, 3), )) where T

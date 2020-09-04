@@ -35,10 +35,12 @@ include("variables/data.jl")
 include("node.jl")
 include("nodes/normal.jl")
 include("nodes/normal_mean_variance.jl")
+include("nodes/mv_normal_mean_covariance.jl")
 include("nodes/normal_mean_precision.jl")
 include("nodes/gamma_ab.jl")
 include("nodes/addition.jl")
 include("nodes/gcv.jl")
+include("nodes/kernel_gcv.jl")
 
 include("actors/prior.jl")
 

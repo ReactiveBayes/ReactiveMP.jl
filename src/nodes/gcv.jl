@@ -3,7 +3,7 @@ export make_node, rule, GCV
 struct GCV end
 
 function GCVNode()
-    return FactorNode(GCV, Stochastic, ( :x, :y, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ))
+    return FactorNode(GCV, Stochastic, ( :x, :y, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ), nothing)
 end
 
 function make_node(::Type{ GCV })

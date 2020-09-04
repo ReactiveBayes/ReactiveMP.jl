@@ -99,24 +99,25 @@ Base.lastindex(::FactorNodeLocalMarginals{N}) where N = N
 
 ## FactorNode
 
-struct FactorNode{F, T, N, C, M}
+struct FactorNode{F, T, N, C, M, A}
     fform         :: F
     variables     :: NTuple{N, VariableNode}
     factorisation :: C
     marginals     :: M
+    metadata      :: A
 end
 
 # Additional method specific for Type{F} needed here to bypass Julia's DataType type
-function FactorNode(fform::Type{F}, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C, T }
+function FactorNode(fform::Type{F}, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C, metadata::A) where { F, N, C, T, A }
     localmarginals = FactorNodeLocalMarginals(variables, factorisation)
     M = typeof(localmarginals)
-    return FactorNode{Type{F}, T, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
+    return FactorNode{Type{F}, T, N, C, M, A}(fform, map(v -> varnode(v), variables), factorisation, localmarginals, metadata)
 end
 
-function FactorNode(fform::F, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C) where { F, N, C, T }
+function FactorNode(fform::F, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C, metadata::A) where { F, N, C, T, A }
     localmarginals = FactorNodeLocalMarginals(variables, factorisation)
     M = typeof(localmarginals)
-    return FactorNode{F, T, N, C, M}(fform, map(v -> varnode(v), variables), factorisation, localmarginals)
+    return FactorNode{F, T, N, C, M, A}(fform, map(v -> varnode(v), variables), factorisation, localmarginals, metadata)
 end
 
 functionalform(factornode::FactorNode) = factornode.fform
@@ -131,6 +132,8 @@ isstochastic(::Type{ N })    where { N <: FactorNode } = isstochastic(sdtype(N))
 
 isdeterministic(::N) where { N <: FactorNode }         = isdeterministic(N)
 isdeterministic(::Type{ N }) where { N <: FactorNode } = isdeterministic(sdtype(N))
+
+metadata(factornode::FactorNode) = factornode.metadata
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
@@ -208,7 +211,8 @@ function activate!(model, factornode::FactorNode)
         fform       = functionalform(factornode)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
-        mapping     = map(Message, (d) -> as_message(gate!(gate, factornode, variable, rule(fform, vtag, vconstraint, d[1], d[2], nothing))))
+        meta        = metadata(factornode)
+        mapping     = map(Message, (d) -> as_message(gate!(gate, factornode, variable, rule(fform, vtag, vconstraint, d[1], d[2], meta))))
         vmessageout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
 
         set!(messageout(variable), vmessageout |> share_replay(1))

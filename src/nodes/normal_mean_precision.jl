@@ -1,7 +1,7 @@
 export make_node, rule
 
 function NormalMeanPrecisionNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
-    return FactorNode(NormalMeanPrecision{T}, Stochastic, (:mean, :precision, :value), factorisation)
+    return FactorNode(NormalMeanPrecision{T}, Stochastic, (:mean, :precision, :value), factorisation, nothing)
 end
 
 function make_node(::Type{ <: NormalMeanPrecision{T} }; factorisation = ((1, 2, 3), )) where T

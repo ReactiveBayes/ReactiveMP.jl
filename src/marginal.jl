@@ -21,6 +21,8 @@ Distributions.cov(marginal::Marginal)  = Distributions.cov(getdata(marginal))
 Base.precision(marginal::Marginal) = precision(getdata(marginal))
 Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
 
+## Delta-function marginal
+ 
 Distributions.mean(marginal::Marginal{T}) where { T <: Real } = getdata(marginal)
 Distributions.var(marginal::Marginal{T}) where { T <: Real }  = zero(T)
 Distributions.std(marginal::Marginal{T}) where { T <: Real }  = zero(T)
@@ -31,6 +33,18 @@ Base.ndims(marginal::Marginal{T})     where { T <: Real } = 1
 
 logmean(marginal::Marginal{T}) where { T <: Real }     = log(getdata(marginal))
 inversemean(marginal::Marginal{T}) where { T <: Real } = 1.0 / getdata(marginal)
+
+## Vector-based delta function marginal
+
+Distributions.mean(marginal::Marginal{T}) where { T <: Vector } = getdata(marginal)
+Distributions.var(marginal::Marginal{T}) where { T <: Vector }  = zero(T)
+Distributions.std(marginal::Marginal{T}) where { T <: Vector }  = zero(T)
+Distributions.cov(marginal::Marginal{T}) where { T <: Vector }  = zero(T)
+
+Base.precision(marginal::Marginal{T}) where { T <: Vector } = Inf
+Base.ndims(marginal::Marginal{T})     where { T <: Vector } = length(getdata(marginal))
+
+## Utility functions
 
 as_marginal(data)               = Marginal(data)
 as_marginal(marginal::Marginal) = marginal

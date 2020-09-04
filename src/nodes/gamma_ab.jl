@@ -1,7 +1,7 @@
 export make_node, rule
 
 function GammaABNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
-    return FactorNode(GammaAB{T}, Stochastic, (:a, :b, :out), factorisation)
+    return FactorNode(GammaAB{T}, Stochastic, (:a, :b, :out), factorisation, nothing)
 end
 
 function make_node(::Type{ <: GammaAB{T} }; factorisation = ((1, 2, 3), )) where T
