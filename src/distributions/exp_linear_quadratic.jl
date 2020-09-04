@@ -1,6 +1,6 @@
 export ExponentialLinearQuadratic
 
-using Distributions
+import Distributions: mean, var, cov, pdf, logpdf
 
 struct ExponentialLinearQuadratic{T}
     a :: T

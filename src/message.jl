@@ -2,7 +2,7 @@ export Message, getdata, as_message
 export multiply_messages
 export DefaultMessageGate, LoggerMessageGate, TransformMessageGate, MessageGatesComposition
 
-import Base: *, +
+import Base: *, +, ndims, precision
 
 using Distributions
 using Rocket
@@ -24,14 +24,19 @@ Distributions.var(message::Message)  = Distributions.var(getdata(message))
 Distributions.std(message::Message)  = Distributions.std(getdata(message))
 Distributions.cov(message::Message)  = Distributions.cov(getdata(message))
 
-precision(message::Message) = precision(getdata(message))
+Base.precision(message::Message) = precision(getdata(message))
+Base.ndims(message::Message)     = ndims(getdata(message))
 
 Distributions.mean(message::Message{T}) where { T <: Real } = getdata(message)
 Distributions.var(message::Message{T}) where { T <: Real }  = zero(T)
 Distributions.std(message::Message{T}) where { T <: Real }  = zero(T)
 Distributions.cov(message::Message{T}) where { T <: Real }  = zero(T)
 
-precision(message::Message{T}) where { T <: Real } = Inf
+Base.precision(message::Message{T}) where { T <: Real } = Inf
+Base.ndims(message::Message{T})     where { T <: Real } = 1
+
+logmean(message::Message{T}) where { T <: Real }     = log(getdata(message))
+inversemean(message::Message{T}) where { T <: Real } = 1.0 / getdata(message)
 
 as_message(data)               = Message(data)
 as_message(message::Message)   = message

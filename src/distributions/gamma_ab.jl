@@ -1,6 +1,6 @@
 export GammaAB
 
-using Distributions
+import Distributions: mean, var
 
 struct GammaAB{T}
     a :: T

@@ -3,6 +3,8 @@ export Marginal, getdata, as_marginal
 using Distributions
 using Rocket
 
+import Base: ndims, precision
+
 struct Marginal{D}
     data :: D
 end
@@ -16,14 +18,19 @@ Distributions.var(marginal::Marginal)  = Distributions.var(getdata(marginal))
 Distributions.std(marginal::Marginal)  = Distributions.std(getdata(marginal))
 Distributions.cov(marginal::Marginal)  = Distributions.cov(getdata(marginal))
 
-precision(marginal::Marginal) = precision(getdata(marginal))
+Base.precision(marginal::Marginal) = precision(getdata(marginal))
+Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
 
 Distributions.mean(marginal::Marginal{T}) where { T <: Real } = getdata(marginal)
 Distributions.var(marginal::Marginal{T}) where { T <: Real }  = zero(T)
 Distributions.std(marginal::Marginal{T}) where { T <: Real }  = zero(T)
 Distributions.cov(marginal::Marginal{T}) where { T <: Real }  = zero(T)
 
-precision(marginal::Marginal{T}) where { T <: Real } = Inf
+Base.precision(marginal::Marginal{T}) where { T <: Real } = Inf
+Base.ndims(marginal::Marginal{T})     where { T <: Real } = 1
+
+logmean(marginal::Marginal{T}) where { T <: Real }     = log(getdata(marginal))
+inversemean(marginal::Marginal{T}) where { T <: Real } = 1.0 / getdata(marginal)
 
 as_marginal(data)               = Marginal(data)
 as_marginal(marginal::Marginal) = marginal

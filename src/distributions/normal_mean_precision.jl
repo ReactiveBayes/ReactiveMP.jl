@@ -1,7 +1,6 @@
 export NormalMeanPrecision
 
-using Distributions
-
+import Distributions: mean, var, std, pdf
 import Base: precision
 
 struct NormalMeanPrecision{T}

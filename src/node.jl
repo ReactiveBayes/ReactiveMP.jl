@@ -266,5 +266,6 @@ end
 ## rule
 
 function rule end
+function marginalrule end
 
 function make_node end

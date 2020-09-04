@@ -1,7 +1,6 @@
-export NormalMeanVariance, MvNormalMeanCovariance
+export NormalMeanVariance
 
-using Distributions
-
+import Distributions: mean, var, std, cov, pdf
 import PDMats: PDMat
 import Base: precision
 
@@ -20,12 +19,4 @@ Base.precision(nmp::NormalMeanVariance{T}) where T = one(T) / var(nmp)
 function Distributions.pdf(distribution:: NormalMeanVariance, x)
     return Distributions.pdf(Normal(mean(distribution), std(distribution)), x)
 end
-
-struct MvNormalMeanCovariance{T}
-    mean       :: Vector{T}
-    covariance :: PDMat{T,Array{T,2}}
-end
-
-Distributions.mean(nmc::MvNormalMeanCovariance) = nmc.mean
-Distributions.cov(nmc::MvNormalMeanCovariance)  = nmc.covariance
 
