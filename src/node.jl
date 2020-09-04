@@ -256,7 +256,8 @@ function getmarginal!(factornode::FactorNode, cluster)
 
         fform       = functionalform(factornode)
         vtag        = Val{ clustername(cluster) }
-        mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, d[1], d[2], nothing)))
+        meta        = metadata(factornode)
+        mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, d[1], d[2], meta)))
         marginalout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
 
         connect!(cmarginal, marginalout |> share_replay(1))

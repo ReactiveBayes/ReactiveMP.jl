@@ -24,6 +24,7 @@ include("messages/delta.jl")
 include("messages/normal.jl")
 include("messages/normal_mean_precision.jl")
 include("messages/normal_mean_variance.jl")
+include("messages/mv_normal_mean_covariance.jl")
 include("messages/gamma_ab.jl")
 include("messages/exp_linear_quadratic.jl")
 

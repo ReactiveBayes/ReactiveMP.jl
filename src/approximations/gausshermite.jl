@@ -1,6 +1,13 @@
+export ghcubature
+
 import FastGaussQuadrature: gausshermite
+import LinearAlgebra: mul!, axpy!
 
 using Distributions
+
+const product  = Iterators.product
+const repeated = Iterators.repeated
+const sqrtPI1  = sqrt(pi)
 
 const precomputed_sigma_pointsweights = (
     ([0.0], [1.7724538509055159]),
@@ -20,7 +27,7 @@ const precomputed_sigma_pointsweights = (
     ([-4.499990707309391, -3.669950373404453, -2.9671669279056054, -2.3257324861738606, -1.7199925751864926, -1.136115585210924, -0.5650695832555779, -3.552713678800501e-15, 0.5650695832555779, 1.136115585210924, 1.7199925751864926, 2.3257324861738606, 2.9671669279056054, 3.669950373404453, 4.499990707309391], [1.5224758042535364e-9, 1.059115547711077e-6, 0.00010000444123250023, 0.0027780688429127603, 0.030780033872546228, 0.1584889157959356, 0.4120286874988987, 0.5641003087264174, 0.4120286874988987, 0.1584889157959356, 0.030780033872546228, 0.0027780688429127603, 0.00010000444123250023, 1.059115547711077e-6, 1.5224758042535364e-9])
 )
 
-struct UnivariateGaussHermite{PI, WI}
+struct GaussHermiteCubature{PI, WI}
     p     :: Int
     piter :: PI
     witer :: WI
@@ -29,32 +36,53 @@ end
 function ghcubature(p::Int)
     points, weights = p <= length(precomputed_sigma_pointsweights) ? precomputed_sigma_pointsweights[p] : gausshermite(p)
 
-    return UnivariateGaussHermite(p, points, weights)
+    return GaussHermiteCubature(p, points, weights)
 end
 
-function getweights(gh::UnivariateGaussHermite)
-    return gh.witer
+function getweights(gh::GaussHermiteCubature, mean::T, variance::T) where { T <: Real }
+    return Base.Generator(gh.witer) do weight
+        return weight / sqrtPI1
+    end
 end
 
-function getpoints(gh::UnivariateGaussHermite, mean::T, variance::T) where { T <: Real }
+function getweights(gh::GaussHermiteCubature, mean::Vector{T}, covariance::PDMat{T}) where { T <: Real }
+    sqrtpi = (pi ^ (length(mean) / 2))
+    return Base.Generator(product(repeated(gh.witer, length(mean))...)) do pweight
+        return prod(pweight) / sqrtpi
+    end
+end
+
+function getpoints(gh::GaussHermiteCubature, mean::T, variance::T) where { T <: Real }
     sqrt2V = sqrt(2 * variance)
     return Base.Generator(gh.piter) do point
         return mean + sqrt2V * point
     end
 end
 
-function approximate_meancov(gh::UnivariateGaussHermite, g::Function, distribution)
-    m = Distributions.mean(distribution)
-    v = Distributions.var(distribution)
+function getpoints(cubature::GaussHermiteCubature, mean::Vector{T}, covariance::PDMat{T}) where { T <: Real }
+    sqrtP = sqrt(Matrix(covariance))
+    sqrt2 = sqrt(2)
 
-    weights = getweights(gh)
+    tbuffer = similar(mean)
+    pbuffer = similar(mean)
+    return Base.Generator(product(repeated(cubature.piter, length(mean))...)) do ptuple
+        copyto!(pbuffer, ptuple)
+        copyto!(tbuffer, mean)
+        return mul!(tbuffer, sqrtP, pbuffer, sqrt2, 1.0) # point = m + sqrt2 * sqrtP * p
+    end
+end
+
+function approximate_meancov(gh::GaussHermiteCubature, g::Function, distribution)
+    return approximate_meancov(gh, g, mean(distribution), cov(distribution))
+end
+
+function approximate_meancov(gh::GaussHermiteCubature, g::Function, m::T, v::T) where { T <: Real }
+    weights = getweights(gh, m, v)
     points  = getpoints(gh, m, v)
 
     cs   = Vector{eltype(m)}(undef, length(weights))
     norm = 0.0
     mean = 0.0
-
-    sqrtpi = sqrt(pi)
 
     for (index, (weight, point)) in enumerate(zip(weights, points))
         gv = g(point)
@@ -66,10 +94,7 @@ function approximate_meancov(gh::UnivariateGaussHermite, g::Function, distributi
         @inbounds cs[index] = cv
     end
 
-    norm /= sqrtpi
-
     mean /= norm
-    mean /= sqrtpi
 
     var = 0.0
     for (index, (point, c)) in enumerate(zip(points, cs))
@@ -78,7 +103,59 @@ function approximate_meancov(gh::UnivariateGaussHermite, g::Function, distributi
     end
 
     var /= norm
-    var /= sqrtpi
 
     return mean, var
+end
+
+function approximate_meancov(cubature::GaussHermiteCubature, g::Function, m::Vector{T}, P::PDMat{T}) where { T <: Real }
+    ndims = length(m)
+
+    weights = getweights(cubature, m, P)
+    points  = getpoints(cubature, m, P)
+
+    cs = similar(m, eltype(m), length(weights))
+    norm = 0.0
+    mean = zeros(ndims)
+
+    for (index, (weight, point)) in enumerate(zip(weights, points))
+        gv = g(point)
+        cv = weight * gv
+
+        # mean = mean + point * weight * g(point)
+        broadcast!(*, point, point, cv)  # point *= cv
+        broadcast!(+, mean, mean, point) # mean += point
+        norm += cv
+
+        @inbounds cs[index] = cv
+    end
+
+    broadcast!(/, mean, mean, norm)
+
+    cov = zeros(ndims, ndims)
+    foreach(enumerate(zip(points, cs))) do (index, (point, c))
+        broadcast!(-, point, point, mean)                # point -= mean
+        mul!(cov, point, reshape(point, (1, ndims)), c, 1.0) # cov = cov + c * (point)⋅(point)' where c = weight * g(point)
+    end
+
+    broadcast!(/, cov, cov, norm)
+
+    return mean, cov
+end
+
+function approximate_kernel_expectation(cubature::GaussHermiteCubature, g::Function, distribution)
+    return approximate_kernel_expectation(cubature, g, mean(distribution), cov(distribution))
+end
+
+function approximate_kernel_expectation(cubature::GaussHermiteCubature, g::Function, m::Vector{T}, P::PDMat{T}) where { T <: Real }
+    ndims = length(m)
+
+    weights = getweights(cubature, m, P)
+    points  = getpoints(cubature, m, P)
+
+    gbar = zeros(ndims, ndims)
+    foreach(zip(weights, points)) do (weight, point)
+        axpy!(weight, g(point), gbar) # gbar = gbar + weight * g(point)
+    end
+
+    return gbar
 end
