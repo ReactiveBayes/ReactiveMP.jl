@@ -6,7 +6,8 @@ function score(
         Marginal{ <: NormalMeanVariance{T} },
         Marginal{T},
         Marginal{T}
-    }) where { T <: Real }
+    },
+    ::Nothing) where { T <: Real }
     ##
     m_x_out, cov_x_out = mean(marginals[1]), cov(marginals[1])
     m_z, var_z = mean(marginals[2]), var(marginals[2])
