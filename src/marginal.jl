@@ -36,10 +36,10 @@ inversemean(marginal::Marginal{T}) where { T <: Real } = 1.0 / getdata(marginal)
 
 ## Vector-based delta function marginal
 
-Distributions.mean(marginal::Marginal{T}) where { T <: Vector } = getdata(marginal)
-Distributions.var(marginal::Marginal{T}) where { T <: Vector }  = zero(T)
-Distributions.std(marginal::Marginal{T}) where { T <: Vector }  = zero(T)
-Distributions.cov(marginal::Marginal{T}) where { T <: Vector }  = zero(T)
+Distributions.mean(marginal::Marginal{V}) where { T, V <: Vector{T} } = getdata(marginal)
+Distributions.var(marginal::Marginal{V})  where { T, V <: Vector{T} } = zeros(T, (ndims(marginal), ))
+Distributions.std(marginal::Marginal{V})  where { T, V <: Vector{T} } = zeros(T, (ndims(marginal), ))
+Distributions.cov(marginal::Marginal{V})  where { T, V <: Vector{T} } = zeros(T, (ndims(marginal), ndims(marginal)))
 
 Base.precision(marginal::Marginal{T}) where { T <: Vector } = Inf
 Base.ndims(marginal::Marginal{T})     where { T <: Vector } = length(getdata(marginal))

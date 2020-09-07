@@ -56,7 +56,7 @@ function rule(
     ::Type{ Val{:mean} }, 
     ::Marginalisation, 
     ::Nothing, 
-    marginals::Tuple{Marginal{ <: PDMat{T} }, Marginal{MvNormalMeanCovariance{T}}}, 
+    marginals::Tuple{ Marginal{ <: PDMat{T} }, Marginal{MvNormalMeanCovariance{T}}}, 
     ::Nothing) where { T <: Real }
     ##
     return MvNormalMeanCovariance(mean(marginals[2]), getdata(marginals[1]))
