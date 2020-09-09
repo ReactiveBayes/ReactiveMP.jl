@@ -35,6 +35,6 @@ end
 ## marginal rules
 
 function marginalrule(::Type{ <: NormalMeanPrecision }, ::Type{ Val{ :out_mean_precision } }, messages::Tuple{Message{NormalMeanPrecision{T}}, Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
-    q_out = Message(NormalMeanPrecision(mean(messages[2]), mean(messages[3]))) * messages[1]
+    q_out = Message(NormalMeanPrecision(getdata(messages[2]), getdata(messages[3]))) * messages[1]
     return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
 end

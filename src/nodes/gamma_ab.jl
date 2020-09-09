@@ -22,6 +22,6 @@ end
 ## marginalrules 
 
 function marginalrule(::Type{ <: GammaAB }, ::Type{ Val{ :out_a_b } }, messages::Tuple{Message{GammaAB{T}}, Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
-    q_out = Message(GammaAB(mean(messages[2]), mean(messages[3]))) * messages[1]
+    q_out = Message(GammaAB(getdata(messages[2]), getdata(messages[3]))) * messages[1]
     return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
 end
