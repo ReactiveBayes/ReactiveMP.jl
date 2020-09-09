@@ -4,6 +4,9 @@ using Distributions
 
 include("helpers.jl")
 
+include("approximations.jl")
+include("approximations/gausshermite.jl")
+
 include("distributions/dirac.jl")
 include("distributions/gamma_ab.jl")
 include("distributions/normal_mean_precision.jl")
@@ -16,8 +19,6 @@ include("marginal.jl")
 
 as_marginal(message::Message)  = Marginal(getdata(message))
 as_message(marginal::Marginal) = Message(getdata(marginal))
-
-include("approximations/gausshermite.jl")
 
 include("messages/dummy.jl")
 include("messages/delta.jl")

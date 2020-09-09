@@ -2,19 +2,18 @@ export make_node, rule
 
 import Distributions: Normal
 
-# BP rule
+function make_node(::Type{ <: Normal })
+    return FactorNode(Normal, Stochastic, (:out, :mean, :std), ((1, 2, 3), ), nothing)
+end
 
-# TODO
-make_node(::Type{ <: Normal{T} }) where T = FactorNode(Normal{T}, Stochastic, (:mean, :std, :value), ((1, 2, 3), ), nothing)
-
-function make_node(::Type{ <: Normal{T} }, mean, std, value) where T 
-    node = make_node(Normal{T})
+function make_node(::Type{ <: Normal }, out, mean, std)
+    node = make_node(Normal)
+    connect!(node, :out, out)
     connect!(node, :mean, mean)
     connect!(node, :std, std)
-    connect!(node, :value, value)
     return node
 end
 
-function rule(::Type{ <: Normal{T} }, ::Type{ Val{:value} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, marginals::Nothing, meta) where { T <: Real }
-    return Normal{T}(mean(messages[1]), sqrt(mean(messages[2])))
+function rule(::Type{ <: Normal }, ::Type{ Val{ :out } }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
+    return Normal(mean(messages[1]), mean(messages[2]))
 end

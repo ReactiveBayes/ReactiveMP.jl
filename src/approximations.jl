@@ -1,0 +1,3 @@
+export AbstractApproximationMethod
+
+abstract type AbstractApproximationMethod end
