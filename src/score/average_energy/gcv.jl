@@ -4,10 +4,10 @@ function score(
     marginals::Tuple{
         Marginal{ <: MvNormalMeanCovariance{T} },
         Marginal{ <: NormalMeanVariance{T} },
-        Marginal{T},
-        Marginal{T}
+        Marginal{ <: Dirac{T} },
+        Marginal{ <: Dirac{T} }
     },
-    ::Nothing) where { T <: Real }
+    ::Nothing) where T
     ##
     m_yx, cov_yx = mean(marginals[1]), cov(marginals[1])
     m_z, var_z = mean(marginals[2]), var(marginals[2])

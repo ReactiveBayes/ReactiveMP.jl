@@ -16,24 +16,13 @@ end
 
 function rule(
     ::Type{ <: MvNormalMeanCovariance }, 
-    ::Type{ Val{:out} }, 
+    ::Type{ <: Union{ Val{:out}, Val{:mean} } }, 
     ::Marginalisation, 
-    messages::Tuple{ Message{ <: AbstractVector{T} }, Message{ <: AbstractPDMat{T} } }, 
+    messages::Tuple{ Message{ <: Dirac }, Message{ <: Dirac } }, 
     ::Nothing, 
-    ::Nothing) where { T <: Real }
+    ::Nothing)
     ##
-    return MvNormalMeanCovariance(getdata(messages[1]), getdata(messages[2]))
-end
-
-function rule(
-    ::Type{ <: MvNormalMeanCovariance }, 
-    ::Type{ Val{:mean} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: AbstractVector{T} }, Message{ <: AbstractPDMat{T} } }, 
-    ::Nothing, 
-    ::Nothing) where { T <: Real }
-    ##
-    return MvNormalMeanCovariance(getdata(messages[1]), getdata(messages[2]))
+    return MvNormalMeanCovariance(mean(messages[1]), mean(messages[2]))
 end
 
 function rule(
@@ -41,10 +30,10 @@ function rule(
     ::Type{ Val{:out} }, 
     ::Marginalisation, 
     ::Nothing, 
-    marginals::Tuple{ Marginal{ <: MvNormalMeanCovariance{T} }, Marginal{ <: AbstractPDMat{T} } }, 
-    ::Nothing) where { T <: Real }
+    marginals::Tuple{ Marginal{ <: MvNormalMeanCovariance }, Marginal{ <: Dirac } }, 
+    ::Nothing)
     ##
-    return MvNormalMeanCovariance(mean(marginals[1]), getdata(marginals[2]))
+    return MvNormalMeanCovariance(mean(marginals[1]), mean(marginals[2]))
 end
 
 function rule(
@@ -52,30 +41,30 @@ function rule(
     ::Type{ Val{:mean} }, 
     ::Marginalisation, 
     ::Nothing, 
-    marginals::Tuple{ Marginal{ <: MvNormalMeanCovariance{T} }, Marginal{ <: AbstractPDMat{T} } }, 
-    ::Nothing) where { T <: Real }
+    marginals::Tuple{ Marginal{ <: MvNormalMeanCovariance }, Marginal{ <: Dirac } }, 
+    ::Nothing)
     ##
-    return MvNormalMeanCovariance(mean(marginals[1]), getdata(marginals[2]))
+    return MvNormalMeanCovariance(mean(marginals[1]), mean(marginals[2]))
 end
 
 function rule(
     ::Type{ <: MvNormalMeanCovariance }, 
     ::Type{ Val{:out} }, 
     ::Marginalisation, 
-    messages::Tuple{ Message{ <: MvNormalMeanCovariance{T} } }, 
-    marginals::Tuple{ Marginal{ <: AbstractPDMat{T} } }, 
-    ::Nothing) where { T <: Real }
+    messages::Tuple{ Message{ <: MvNormalMeanCovariance } }, 
+    marginals::Tuple{ Marginal{ <: Dirac } }, 
+    ::Nothing)
     ##
-    return MvNormalMeanCovariance(mean(messages[1]), cov(messages[1]) + getdata(marginals[1]))
+    return MvNormalMeanCovariance(mean(messages[1]), cov(messages[1]) + mean(marginals[1]))
 end
 
 function rule(
     ::Type{ <: MvNormalMeanCovariance }, 
     ::Type{ Val{:mean} }, 
     ::Marginalisation, 
-    messages::Tuple{ Message{ <: MvNormalMeanCovariance{T} } }, 
-    marginals::Tuple{ Marginal{ <: AbstractPDMat{T} } }, 
-    ::Nothing) where { T <: Real }
+    messages::Tuple{ Message{ <: MvNormalMeanCovariance } }, 
+    marginals::Tuple{ Marginal{ <: Dirac } }, 
+    ::Nothing)
     ##
-    return MvNormalMeanCovariance(mean(messages[1]), cov(messages[1]) + getdata(marginals[1]))
+    return MvNormalMeanCovariance(mean(messages[1]), cov(messages[1]) + mean(marginals[1]))
 end

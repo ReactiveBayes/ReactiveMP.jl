@@ -3,7 +3,7 @@ export NormalMeanPrecision
 import Distributions: mean, var, std, pdf
 import Base: precision
 
-struct NormalMeanPrecision{T}
+struct NormalMeanPrecision{T <: Real}
     mean      :: T
     precision :: T
 end

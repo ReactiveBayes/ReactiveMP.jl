@@ -2,7 +2,7 @@ export ExponentialLinearQuadratic
 
 import Distributions: mean, var, cov, pdf, logpdf
 
-struct ExponentialLinearQuadratic{T}
+struct ExponentialLinearQuadratic{T <: Real}
     a :: T
     b :: T
     c :: T

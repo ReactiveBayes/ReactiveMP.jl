@@ -4,7 +4,7 @@ import Distributions: mean, var, cov, std
 import LinearAlgebra: diag
 import Base: ndims
 
-struct MvNormalMeanCovariance{T}
+struct MvNormalMeanCovariance{T <: Real}
     mean       :: Vector{T}
     covariance :: PDMat{T,Array{T,2}}
 end

@@ -73,8 +73,8 @@ function rule(
     ::Type{ KernelGCV }, 
     ::Union{ Type{Val{:y}}, Type{Val{:x}} }, 
     ::Marginalisation, 
-    messages::Tuple{Message{ <: MvNormalMeanCovariance{T}}}, 
-    marginals::Tuple{Marginal{ <: MvNormalMeanCovariance{T}}},
+    messages::Tuple{ Message{ <: MvNormalMeanCovariance{T} } }, 
+    marginals::Tuple{ Marginal{ <: MvNormalMeanCovariance{T} } },
     meta::KernelGCVMetadata) where { T <: Real }
     ##
     mean_m, cov_m = mean(messages[1]), cov(messages[1])
@@ -94,8 +94,8 @@ end
 function marginalrule(
     ::Type{ <: KernelGCV }, 
     ::Type{ Val{:y_x} }, 
-    messages::Tuple{Message{ <: MvNormalMeanCovariance{T}},Message{<:MvNormalMeanCovariance{T}}}, 
-    marginals::Tuple{Marginal{ <: MvNormalMeanCovariance{T} }}, 
+    messages::Tuple{ Message{ <: MvNormalMeanCovariance{T}}, Message{ <:MvNormalMeanCovariance{T} } }, 
+    marginals::Tuple{ Marginal{ <: MvNormalMeanCovariance{T} } }, 
     meta::KernelGCVMetadata) where { T <: Real }
     ##
 

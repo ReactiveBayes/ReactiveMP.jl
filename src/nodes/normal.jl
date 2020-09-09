@@ -14,6 +14,13 @@ function make_node(::Type{ <: Normal }, out, mean, std)
     return node
 end
 
-function rule(::Type{ <: Normal }, ::Type{ Val{ :out } }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
+function rule(
+    ::Type{ <: Normal }, 
+    ::Type{ Val{ :out } }, 
+    ::Marginalisation, 
+    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
+    ::Nothing, 
+    ::Nothing) where T
+    ##
     return Normal(mean(messages[1]), mean(messages[2]))
 end

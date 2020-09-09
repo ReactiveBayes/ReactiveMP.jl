@@ -15,35 +15,32 @@ end
 
 ## rules
 
-function rule(::Type{ <: NormalMeanVariance }, ::Type{ Val{:out} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
+function rule(
+    ::Type{ <: NormalMeanVariance }, 
+    ::Type{ <: Union{ Val{:mean}, Val{:out} } }, 
+    ::Marginalisation, 
+    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
+    ::Nothing, 
+    ::Nothing) where T
     return NormalMeanVariance(mean(messages[1]), mean(messages[2]))
 end
 
-function rule(::Type{ <: NormalMeanVariance }, ::Type{ Val{:mean} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
-    return NormalMeanVariance(mean(messages[1]), mean(messages[2]))
-end
-
-function rule(::Type{ <: NormalMeanVariance }, ::Type{ Val{:out} }, ::Marginalisation, messages::Tuple{Message{ <: NormalMeanVariance{T} }, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
+function rule(
+    ::Type{ <: NormalMeanVariance }, 
+    ::Type{ <: Union{ Val{:mean}, Val{:out} } }, 
+    ::Marginalisation, 
+    messages::Tuple{ Message{ <: NormalMeanVariance{T} }, Message{ <: Dirac{T} } }, 
+    ::Nothing, 
+    ::Nothing) where T
     return NormalMeanVariance(mean(messages[1]), var(messages[1]) + mean(messages[2]))
 end
 
 function rule(
     ::Type{ <: NormalMeanVariance }, 
-    ::Type{ Val{:mean} }, 
+    ::Type{ <: Union{ Val{:mean}, Val{:out} } }, 
     ::Marginalisation, 
     ::Nothing, 
-    marginals::Tuple{Marginal,Marginal}, 
-    ::Nothing)
-    ##
-    return NormalMeanVariance(mean(marginals[1]), mean(marginals[2]))
-end
-
-function rule(
-    ::Type{ <: NormalMeanVariance }, 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    ::Nothing, 
-    marginals::Tuple{Marginal, Marginal}, 
+    marginals::Tuple{ Marginal, Marginal }, 
     ::Nothing)
     ##
     return NormalMeanVariance(mean(marginals[1]), mean(marginals[2]))
@@ -52,21 +49,21 @@ end
 function marginalrule(
     ::Type{ <: NormalMeanVariance }, 
     ::Type{ Val{:out_mean_variance} }, 
-    messages::Tuple{Message{NormalMeanVariance{Float64}}, Message{Float64},Message{Float64}}, 
+    messages::Tuple{ Message{ <: NormalMeanVariance{T} }, Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
     ::Nothing,
-    ::Nothing)
+    ::Nothing) where T
     ##
-    q_out = Message(NormalMeanVariance(getdata(messages[2]), getdata(messages[3]))) * messages[1]
+    q_out = Message(NormalMeanVariance(mean(messages[2]), mean(messages[3]))) * messages[1]
     return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
 end
 
 function marginalrule(
     ::Type{ <: NormalMeanVariance }, 
     ::Type{ Val{:out_mean_variance} }, 
-    messages::Tuple{Message{Float64}, Message{NormalMeanVariance{Float64}}, Message{Float64}}, 
+    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: NormalMeanVariance{T} }, Message{ <: Dirac{T} } }, 
     ::Nothing,
-    ::Nothing)
+    ::Nothing) where T
     ##
-    q_mean = Message(NormalMeanVariance(getdata(messages[1]), getdata(messages[3]))) * messages[2]
+    q_mean = Message(NormalMeanVariance(mean(messages[1]), mean(messages[3]))) * messages[2]
     return (getdata(messages[1]), getdata(q_mean), getdata(messages[3]))
 end

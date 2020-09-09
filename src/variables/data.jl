@@ -31,7 +31,11 @@ function messagein(datavar::DataVariable, index::Int)
     return datavar.props.messagein
 end
 
-update!(datavar::DataVariable, data) = next!(messageout(datavar, 1), as_message(data))
+update!(datavar::DataVariable, data)                 = next!(messageout(datavar, 1), as_message(data))
+update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar, 1), as_message(Dirac(data)))
+update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), as_message(Dirac(data)))
+update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), as_message(Dirac(data)))
+
 finish!(datavar::DataVariable)       = complete!(messageout(datavar, 1))
 
 _getmarginal(datavar::DataVariable)                                = datavar.props.marginal

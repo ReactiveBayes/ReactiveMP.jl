@@ -15,13 +15,26 @@ end
 
 ## rules
 
-function rule(::Type{ <: GammaAB }, ::Type{ Val{:out} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
+function rule(
+    ::Type{ <: GammaAB }, 
+    ::Type{ Val{:out} }, 
+    ::Marginalisation, 
+    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
+    ::Nothing, 
+    ::Nothing) where T
+    ##
     return GammaAB(mean(messages[1]), mean(messages[2]))
 end
 
 ## marginalrules 
 
-function marginalrule(::Type{ <: GammaAB }, ::Type{ Val{ :out_a_b } }, messages::Tuple{Message{GammaAB{T}}, Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
-    q_out = Message(GammaAB(getdata(messages[2]), getdata(messages[3]))) * messages[1]
+function marginalrule(
+    ::Type{ <: GammaAB }, 
+    ::Type{ Val{ :out_a_b } }, 
+    messages::Tuple{ Message{ <: GammaAB{T} }, Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
+    ::Nothing, 
+    ::Nothing) where T
+    ##
+    q_out = Message(GammaAB(mean(messages[2]), mean(messages[3]))) * messages[1]
     return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
 end
