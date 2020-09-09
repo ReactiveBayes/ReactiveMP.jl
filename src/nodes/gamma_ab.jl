@@ -1,30 +1,27 @@
 export make_node, rule
 
-function GammaABNode(::Type{T} = Float64; factorisation = ((1, 2, 3), )) where T
-    return FactorNode(GammaAB{T}, Stochastic, (:a, :b, :out), factorisation, nothing)
+
+function make_node(::Type{ <: GammaAB }; factorisation = ((1, 2, 3), ))
+    return FactorNode(GammaAB, Stochastic, (:out, :a, :b), factorisation, nothing)
 end
 
-function make_node(::Type{ <: GammaAB{T} }; factorisation = ((1, 2, 3), )) where T
-    return GammaABNode(T, factorisation = factorisation)
-end
-
-function make_node(::Type{ <: GammaAB{T} }, a, b, out; factorisation = ((1, 2, 3), )) where T
-    node = make_node(GammaAB{T}, factorisation = factorisation)
+function make_node(::Type{ <: GammaAB }, out, a, b; factorisation = ((1, 2, 3), ))
+    node = make_node(GammaAB, factorisation = factorisation)
+    connect!(node, :out, out)
     connect!(node, :a, a)
     connect!(node, :b, b)
-    connect!(node, :out, out)
     return node
 end
 
 ## rules
 
-function rule(::Type{ <: GammaAB{T} }, ::Type{ Val{:out} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, marginals::Nothing, meta) where { T <: Real }
-    return GammaAB{T}(mean(messages[1]), mean(messages[2]))
+function rule(::Type{ <: GammaAB }, ::Type{ Val{:out} }, ::Marginalisation, messages::Tuple{Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
+    return GammaAB(mean(messages[1]), mean(messages[2]))
 end
 
 ## marginalrules 
 
-function marginalrule(::Type{ <: GammaAB{T} }, ::Type{ Val{ :a_b_out } }, messages::Tuple{Message{T}, Message{T}, Message{GammaAB{T}}}, ::Nothing, ::Nothing) where { T <: Real }
-    q_out = Message(GammaAB(getdata(messages[1]), getdata(messages[2]))) * messages[3]
-    return (getdata(messages[1]), getdata(messages[2]), getdata(q_out))
+function marginalrule(::Type{ <: GammaAB }, ::Type{ Val{ :out_a_b } }, messages::Tuple{Message{GammaAB{T}}, Message{T}, Message{T}}, ::Nothing, ::Nothing) where { T <: Real }
+    q_out = Message(GammaAB(mean(messages[2]), mean(messages[3]))) * messages[1]
+    return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
 end
