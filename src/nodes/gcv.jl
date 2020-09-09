@@ -2,26 +2,22 @@ export make_node, rule, GCV
 
 struct GCV end
 
-function GCVNode()
-    return FactorNode(GCV, Stochastic, ( :x, :y, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ), nothing)
-end
-
 function make_node(::Type{ GCV })
-    return GCVNode()
+    return FactorNode(GCV, Stochastic, ( :y, :x, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ), nothing)
 end
 
-function make_node(::Type{ GCV }, x, z, κ, ω, y)
-    node = GCVNode()
+function make_node(::Type{ GCV }, y, x, z, κ, ω)
+    node = make_node(GCV)
+    connect!(node, :y, y)
     connect!(node, :x, x)
     connect!(node, :z, z)
     connect!(node, :κ, κ)
     connect!(node, :ω, ω)
-    connect!(node, :y, y)
     return node
 end
 
 # Message for backward ν_x
-function rule(::Type{ <: GCV }, ::Type{ Val{:x} }, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function rule(::Type{ GCV }, ::Type{ Val{:x} }, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
     m_y = messages[1]
     q_z = marginals[1]
     q_κ = marginals[2]
@@ -35,7 +31,7 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:x} }, ::Marginalisation, messages::
 end
 
 # Message for forward ν_y
-function rule(::Type{ <: GCV }, ::Type{ Val{:y} }, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+function rule(::Type{ GCV }, ::Type{ Val{:y} }, ::Marginalisation, messages::Tuple{Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
 
     m_x = messages[1]
     q_z = marginals[1]
@@ -50,13 +46,13 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:y} }, ::Marginalisation, messages::
 end
 
 # Message for upward ν_z
-function rule(::Type{ <: GCV }, ::Type{ Val{:z} }, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
-    q_xy = marginals[1]
+function rule(::Type{ GCV }, ::Type{ Val{:z} }, ::Marginalisation, ::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+    q_yx = marginals[1]
     q_κ  = marginals[2]
     q_ω  = marginals[3]
 
-    Λ = Matrix(cov(q_xy))
-    m = mean(q_xy)
+    Λ = Matrix(cov(q_yx))
+    m = mean(q_yx)
 
     γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
     γ_4 = (m[1] - m[2]) ^ 2 + Λ[1, 1] + Λ[2, 2] - Λ[1, 2] - Λ[2, 1]
@@ -71,13 +67,13 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:z} }, ::Marginalisation, messages::
 end
 
 # Message for backward ν_κ
-function rule(::Type{ <: GCV }, ::Type{ Val{:κ} }, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
-    q_xy = marginals[1]
+function rule(::Type{ GCV }, ::Type{ Val{:κ} }, ::Marginalisation, ::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+    q_yx = marginals[1]
     q_z  = marginals[2]
     q_ω  = marginals[3]
 
-    Λ = Matrix(cov(q_xy))
-    m = mean(q_xy)
+    Λ = Matrix(cov(q_yx))
+    m = mean(q_yx)
 
     γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
     γ_4 = (m[1] - m[2]) ^ 2 + Λ[1, 1] + Λ[2, 2] - Λ[1, 2] - Λ[2, 1]
@@ -91,13 +87,13 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:κ} }, ::Marginalisation, messages:
 end
 
 # Message for backward ν_ω
-function rule(::Type{ <: GCV }, ::Type{ Val{:ω} }, ::Marginalisation, messages::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
-    q_xy = marginals[1]
+function rule(::Type{ GCV }, ::Type{ Val{:ω} }, ::Marginalisation, ::Nothing, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+    q_yx = marginals[1]
     q_z  = marginals[2]
     q_κ  = marginals[3]
 
-    Λ = Matrix(cov(q_xy))
-    m = mean(q_xy)
+    Λ = Matrix(cov(q_yx))
+    m = mean(q_yx)
 
     γ_1 = mean(q_z) ^ 2 * var(q_κ) + mean(q_κ) ^ 2 * var(q_z) + var(q_z) * var(q_κ)
     γ_2 = exp(-mean(q_κ) * mean(q_z) + 0.5 * γ_1)
@@ -112,9 +108,9 @@ function rule(::Type{ <: GCV }, ::Type{ Val{:ω} }, ::Marginalisation, messages:
 end
 
 # Marginal for q_xy
-function marginalrule(::Type{ <: GCV }, ::Type{ Val{:x_y} }, messages::Tuple{Message, Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
-    m_x = messages[1]
-    m_y = messages[2]
+function marginalrule(::Type{ GCV }, ::Type{ Val{:y_x} }, messages::Tuple{Message, Message}, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
+    m_y = messages[1]
+    m_x = messages[2]
 
     q_z = marginals[1]
     q_κ = marginals[2]
@@ -125,9 +121,9 @@ function marginalrule(::Type{ <: GCV }, ::Type{ Val{:x_y} }, messages::Tuple{Mes
     γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
     γ23 = γ_2 * γ_3
 
-    W = PDMat([ (precision(m_x) + γ23) -γ23; -γ23 (precision(m_y) + γ23) ])
+    W = PDMat([ (precision(m_y) + γ23) -γ23; -γ23 (precision(m_x) + γ23) ])
     Λ = inv(W)
-    m = Λ * [ mean(m_x) * precision(m_x); mean(m_y) * precision(m_y) ]
+    m = Λ * [ mean(m_y) * precision(m_y); mean(m_x) * precision(m_x) ]
 
     return MvNormalMeanCovariance(m, Λ)
 end
