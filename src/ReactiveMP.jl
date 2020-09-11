@@ -44,6 +44,8 @@ include("nodes/addition.jl")
 include("nodes/gcv.jl")
 include("nodes/kernel_gcv.jl")
 
+include("rules/prototypes.jl")
+
 include("actors/prior.jl")
 
 include("model.jl")
