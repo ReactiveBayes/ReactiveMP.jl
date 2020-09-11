@@ -18,7 +18,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :out,
+    on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_in1::Dirac{T}, m_in2::Dirac{T}) where T,
     marginals   => Nothing,
@@ -30,7 +30,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :out,
+    on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_in1::Normal{T}, m_in2::Normal{T}) where T,
     marginals   => Nothing,
@@ -42,7 +42,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :out,
+    on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_in1::Normal{T}, m_in2::Dirac{T}) where T,
     marginals   => Nothing,
@@ -54,7 +54,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :out,
+    on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_in1::Dirac{T}, m_in2::Normal{T}) where T,
     marginals   => Nothing,
@@ -68,7 +68,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in1,
+    on          => :in1,
     vconstraint => Marginalisation,
     messages    => (m_out::Dirac{T}, m_in2::Dirac{T}) where T,
     marginals   => Nothing,
@@ -80,7 +80,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in1,
+    on          => :in1,
     vconstraint => Marginalisation,
     messages    => (m_out::Normal{T}, m_in2::Normal{T}) where T,
     marginals   => Nothing,
@@ -92,7 +92,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in1,
+    on          => :in1,
     vconstraint => Marginalisation,
     messages    => (m_out::Dirac{T}, m_in2::Normal{T}) where T,
     marginals   => Nothing,
@@ -104,7 +104,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in1,
+    on          => :in1,
     vconstraint => Marginalisation,
     messages    => (m_out::Normal{T}, m_in2::Dirac{T}) where T,
     marginals   => Nothing,
@@ -118,7 +118,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in2,
+    on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::Dirac{T}, m_in1::Dirac{T}) where T,
     marginals   => Nothing,
@@ -130,7 +130,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in2,
+    on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::Normal{T}, m_in1::Normal{T}) where T,
     marginals   => Nothing,
@@ -142,7 +142,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in2,
+    on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::Dirac{T}, m_in1::Normal{T}) where T,
     marginals   => Nothing,
@@ -154,7 +154,7 @@ end
 
 @rule(
     form        => typeof(+),
-    edge        => :in2,
+    on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::Normal{T}, m_in1::Dirac{T}) where T,
     marginals   => Nothing,

@@ -15,79 +15,77 @@ end
 
 ## rules
 
-function rule(
-    ::Type{ <: NormalMeanPrecision }, 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    ::Type{ Val{ (:mean, :precision) } },
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing,
-    ::Nothing, 
-    ::Nothing) where T
-    return NormalMeanPrecision(mean(messages[1]), mean(messages[2]))
-end
+@rule(
+    form        => Type{ <: NormalMeanPrecision },
+    on          => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_mean::Dirac{T}, m_precision::Dirac{T}) where { T <: Real },
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return NormalMeanPrecision(mean(m_mean), mean(m_precision))
+    end
+)
 
-function rule(
-    ::Type{ <: NormalMeanPrecision }, 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    ::Nothing,
-    ::Nothing,
-    ::Type{ Val{ (:mean, :precision) } }, 
-    marginals::Tuple{Marginal, Marginal}, 
-    ::Nothing)
-    ##
-    return NormalMeanPrecision(mean(marginals[1]), mean(marginals[2]))
-end
+@rule(
+    form        => Type{ <: NormalMeanPrecision },
+    on          => :out,
+    vconstraint => Marginalisation,
+    messages    => Nothing,
+    marginals   => (q_mean::Any, q_precision::Any),
+    meta        => Nothing,
+    begin
+        return NormalMeanPrecision(mean(q_mean), mean(q_precision))
+    end
+)
 
-function rule(
-    ::Type{ <: NormalMeanPrecision }, 
-    ::Type{ Val{:mean} }, 
-    ::Marginalisation, 
-    ::Type{ Val{ (:out, :precision) } },
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    return NormalMeanPrecision(mean(messages[1]), mean(messages[2]))
-end
+@rule(
+    form        => Type{ <: NormalMeanPrecision },
+    on          => :mean,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Dirac{T}, m_precision::Dirac{T}) where { T <: Real },
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return NormalMeanPrecision(mean(m_out), mean(m_precision))
+    end
+)
 
-function rule(
-    ::Type{ <: NormalMeanPrecision }, 
-    ::Type{ Val{:mean} }, 
-    ::Marginalisation, 
-    ::Nothing,
-    ::Nothing, 
-    ::Type{ Val{ (:out, :precision) } }, 
-    marginals::Tuple{Marginal, Marginal}, 
-    ::Nothing)
-    ##
-    return NormalMeanPrecision(mean(marginals[1]), mean(marginals[2]))
-end
+@rule(
+    form        => Type{ <: NormalMeanPrecision },
+    on          => :mean,
+    vconstraint => Marginalisation,
+    messages    => Nothing,
+    marginals   => (q_out::Any, q_precision::Any),
+    meta        => Nothing,
+    begin
+        return NormalMeanPrecision(mean(q_out), mean(q_precision))
+    end
+)
 
-function rule(
-    ::Type{ <: NormalMeanPrecision }, 
-    ::Type{ Val{:precision} }, 
-    ::Marginalisation,
-    ::Nothing, 
-    ::Nothing,
-    ::Type{ Val{ (:out, :mean) } }, 
-    marginals::Tuple{Marginal, Marginal}, 
-    ::Nothing)
-    ##
-    diff = mean(marginals[1]) - mean(marginals[2])
-    return GammaAB(3.0 / 2.0, 1.0 / 2.0 * (var(marginals[2]) + var(marginals[1]) + diff^2))
-end
+@rule(
+    form        => Type{ <: NormalMeanPrecision },
+    on          => :precision,
+    vconstraint => Marginalisation,
+    messages    => Nothing,
+    marginals   => (q_out::Any, q_mean::Any),
+    meta        => Nothing,
+    begin
+        diff = mean(marginals[1]) - mean(marginals[2])
+        return GammaAB(3.0 / 2.0, 1.0 / 2.0 * (var(marginals[2]) + var(marginals[1]) + diff^2))
+    end
+)
 
 ## marginal rules
 
-function marginalrule(
-    ::Type{ <: NormalMeanPrecision }, 
-    ::Type{ Val{ :out_mean_precision } }, 
-    ::Type{ Val{ (:out, :mean, :precision) } },
-    messages::Tuple{ Message{ <: NormalMeanPrecision{T} }, Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing,
-    ::Nothing) where T
-    q_out = Message(NormalMeanPrecision(mean(messages[2]), mean(messages[3]))) * messages[1]
-    return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
-end
+@marginalrule(
+    form        => Type{ <: NormalMeanPrecision },
+    on          => :out_mean_precision,
+    messages    => (m_out::NormalMeanPrecision{T}, m_mean::Dirac{T}, m_precision::Dirac{T}) where { T <: Real },
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        q_out = Message(NormalMeanPrecision(mean(m_mean), mean(m_precision))) * m_out
+        return (getdata(q_out), getdata(m_mean), getdata(m_precision))
+    end
+)

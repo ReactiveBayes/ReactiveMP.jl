@@ -15,30 +15,28 @@ end
 
 ## rules
 
-function rule(
-    ::Type{ <: GammaAB }, 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    ::Type{ Val{ (:a, :b) } },
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing,
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    return GammaAB(mean(messages[1]), mean(messages[2]))
-end
+@rule(
+    form        => Type{ <: GammaAB },
+    on          => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_a::Dirac{T}, m_b::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return GammaAB(mean(m_a), mean(m_b))
+    end
+)
 
 ## marginalrules 
 
-function marginalrule(
-    ::Type{ <: GammaAB }, 
-    ::Type{ Val{ :out_a_b } }, 
-    ::Type{ Val{ (:out, :a, :b) } },
-    messages::Tuple{ Message{ <: GammaAB{T} }, Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing,
-    ::Nothing) where T
-    ##
-    q_out = Message(GammaAB(mean(messages[2]), mean(messages[3]))) * messages[1]
-    return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
-end
+@marginalrule(
+    form        => Type{ <: GammaAB },
+    on          => :out_a_b,
+    messages    => (m_out::GammaAB{T}, m_a::Dirac{T}, m_b::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        q_out = Message(GammaAB(mean(m_a), mean(m_b))) * m_out
+        return (getdata(q_out), getdata(m_a), getdata(m_b))
+    end
+)

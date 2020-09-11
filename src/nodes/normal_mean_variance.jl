@@ -15,55 +15,98 @@ end
 
 ## rules
 
-function rule(
-    ::Type{ <: NormalMeanVariance }, 
-    ::Type{ <: Union{ Val{:mean}, Val{:out} } }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    return NormalMeanVariance(mean(messages[1]), mean(messages[2]))
-end
+@rule(
+    form        => Type{ <: NormalMeanVariance }, 
+    on          => :mean,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Dirac{T}, m_variance::Dirac{T}) where { T <: Real },
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin 
+        return NormalMeanVariance(mean(m_out), mean(m_variance))
+    end
+)
 
-function rule(
-    ::Type{ <: NormalMeanVariance }, 
-    ::Type{ <: Union{ Val{:mean}, Val{:out} } }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: NormalMeanVariance{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    return NormalMeanVariance(mean(messages[1]), var(messages[1]) + mean(messages[2]))
-end
+@rule(
+    form        => Type{ <: NormalMeanVariance }, 
+    on          => :mean,
+    vconstraint => Marginalisation,
+    messages    => (m_out::NormalMeanVariance{T}, m_variance::Dirac{T}) where { T <: Real },
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin 
+        return NormalMeanVariance(mean(m_out), var(m_out) + mean(m_variance))
+    end
+)
 
-function rule(
-    ::Type{ <: NormalMeanVariance }, 
-    ::Type{ <: Union{ Val{:mean}, Val{:out} } }, 
-    ::Marginalisation, 
-    ::Nothing, 
-    marginals::Tuple{ Marginal, Marginal }, 
-    ::Nothing)
-    ##
-    return NormalMeanVariance(mean(marginals[1]), mean(marginals[2]))
-end
+@rule(
+    form        => Type{ <: NormalMeanVariance }, 
+    on          => :mean,
+    vconstraint => Marginalisation,
+    messages    => Nothing,
+    marginals   => (q_out::Any, q_variance::Any),
+    meta        => Nothing,
+    begin 
+        return NormalMeanVariance(mean(q_out), mean(q_variance))
+    end
+)
 
-function marginalrule(
-    ::Type{ <: NormalMeanVariance }, 
-    ::Type{ Val{:out_mean_variance} }, 
-    messages::Tuple{ Message{ <: NormalMeanVariance{T} }, Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing,
-    ::Nothing) where T
-    ##
-    q_out = Message(NormalMeanVariance(mean(messages[2]), mean(messages[3]))) * messages[1]
-    return (getdata(q_out), getdata(messages[2]), getdata(messages[3]))
-end
+@rule(
+    form        => Type{ <: NormalMeanVariance }, 
+    on          => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_mean::Dirac{T}, m_variance::Dirac{T}) where { T <: Real },
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin 
+        return NormalMeanVariance(mean(m_mean), mean(m_variance))
+    end
+)
 
-function marginalrule(
-    ::Type{ <: NormalMeanVariance }, 
-    ::Type{ Val{:out_mean_variance} }, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: NormalMeanVariance{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing,
-    ::Nothing) where T
-    ##
-    q_mean = Message(NormalMeanVariance(mean(messages[1]), mean(messages[3]))) * messages[2]
-    return (getdata(messages[1]), getdata(q_mean), getdata(messages[3]))
-end
+@rule(
+    form        => Type{ <: NormalMeanVariance }, 
+    on          => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_mean::NormalMeanVariance{T}, m_variance::Dirac{T}) where { T <: Real },
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin 
+        return NormalMeanVariance(mean(m_mean), var(m_mean) + mean(m_variance))
+    end
+)
+
+@rule(
+    form        => Type{ <: NormalMeanVariance }, 
+    on          => :out,
+    vconstraint => Marginalisation,
+    messages    => Nothing,
+    marginals   => (q_mean::Any, q_variance::Any),
+    meta        => Nothing,
+    begin 
+        return NormalMeanVariance(mean(q_mean), mean(q_variance))
+    end
+)
+
+@marginalrule(
+    form      => Type{ <: NormalMeanVariance },
+    on        => :out_mean_variance,
+    messages  => (m_out::NormalMeanVariance{T}, m_mean::Dirac{T}, m_variance::Dirac{T}) where { T <: Real },
+    marginals => Nothing,
+    meta      => Nothing,
+    begin 
+        q_out = Message(NormalMeanVariance(mean(m_mean), mean(m_variance))) * m_out
+        return (getdata(q_out), getdata(m_mean), getdata(m_variance))
+    end
+)
+
+@marginalrule(
+    form      => Type{ <: NormalMeanVariance },
+    on        => :out_mean_variance,
+    messages  => (m_out::Dirac{T}, m_mean::NormalMeanVariance{T}, m_variance::Dirac{T}) where { T <: Real },
+    marginals => Nothing,
+    meta      => Nothing,
+    begin 
+        q_mean = Message(NormalMeanVariance(mean(m_out), mean(m_variance))) * m_mean
+        return (getdata(m_out), getdata(q_mean), getdata(m_variance))
+    end
+)

@@ -2,25 +2,26 @@ export @rule
 
 using MacroTools
 
-function __extract_fform_macro_rule(fform::Expr)
+function __extract_fform_macro_rule(fform)
     @capture(fform, (form => form_)) || 
         error("Invalid rule macro call: functional form of rule should have a (form => Type{ <: Distribution } or typeof(fn)) signature")
     return form
 end
 
-function __extract_edge_macro_rule(edge::Expr)
-    @capture(edge, (edge => :name_)) ||
-        error("Invalid rule macro call: edge specification of rule should have a (edge => :name) signature")
+function __extract_on_macro_rule(on)
+    @capture(on, (on => :name_)) ||
+        error("Invalid rule macro call: on specification of rule should have a (on => :name) signature")
     return :(Type{ Val{ $(QuoteNode(name)) } })
 end
 
-function __extract_vconstraint_macro_rule(vconstraint::Expr)
+function __extract_vconstraint_macro_rule(vconstraint)
+    vconstraint !== :Nothing || return vconstraint
     @capture(vconstraint, (vconstraint => Constraint_)) ||
         error("Invalid rule macro call: edge specification of rule should have a (vconstraint => Constraint) signature")
     return Constraint
 end
 
-function __extract_messages_macro_rule(messages::Expr)
+function __extract_messages_macro_rule(messages)
     if @capture(messages, (messages => Nothing))
         return [], nothing
     end
@@ -91,7 +92,7 @@ function __extract_meta_macro_rule(meta::Expr)
     return Meta
 end
 
-macro rule(fform, edge, vconstraint, messages, marginals, meta, fn)
+function __make_rule(name, fform, on, vconstraint, messages, marginals, meta, fn)
     
     messages_where_Ts, messages_specs = __extract_messages_macro_rule(messages)
     
@@ -108,12 +109,12 @@ macro rule(fform, edge, vconstraint, messages, marginals, meta, fn)
     marginals_types_val = marginals_types !== nothing ? :(Tuple{ $(marginals_types...) }) : (:(Nothing))
     
     messages_init_block  = messages_names !== nothing ? map(i_name -> :($(Symbol(:m_, i_name[2])) = messages[$(i_name[1])]), enumerate(messages_names)) : [ :nothing ]
-    marginals_init_block = marginals_names !== nothing ? map(i_name -> :($(Symbol(:m_, i_name[2])) = marginals[$(i_name[1])]), enumerate(marginals_names)) : [ :nothing ]
+    marginals_init_block = marginals_names !== nothing ? map(i_name -> :($(Symbol(:q_, i_name[2])) = marginals[$(i_name[1])]), enumerate(marginals_names)) : [ :nothing ]
     
     result = quote
-        function ReactiveMP.rule(
+        function ReactiveMP.$(name)(
             fform::$(__extract_fform_macro_rule(fform)),
-            edge::$(__extract_edge_macro_rule(edge)),
+            on::$(__extract_on_macro_rule(on)),
             vconstraint::$(__extract_vconstraint_macro_rule(vconstraint)),
             ::$(messages_names_val),
             messages::$(messages_types_val),
@@ -128,4 +129,12 @@ macro rule(fform, edge, vconstraint, messages, marginals, meta, fn)
     end
     
     return esc(result)
+end
+
+macro rule(fform, on, vconstraint, messages, marginals, meta, fn)
+    __make_rule(:rule, fform, on, vconstraint, messages, marginals, meta, fn)
+end
+
+macro marginalrule(fform, on, messages, marginals, meta, fn)
+    __make_rule(:marginalrule, fform, on, :Nothing, messages, marginals, meta, fn)
 end
