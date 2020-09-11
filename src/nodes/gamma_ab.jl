@@ -19,7 +19,9 @@ function rule(
     ::Type{ <: GammaAB }, 
     ::Type{ Val{:out} }, 
     ::Marginalisation, 
+    ::Type{ Val{ (:a, :b) } },
     messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
+    ::Nothing,
     ::Nothing, 
     ::Nothing) where T
     ##
@@ -31,8 +33,10 @@ end
 function marginalrule(
     ::Type{ <: GammaAB }, 
     ::Type{ Val{ :out_a_b } }, 
+    ::Type{ Val{ (:out, :a, :b) } },
     messages::Tuple{ Message{ <: GammaAB{T} }, Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
     ::Nothing, 
+    ::Nothing,
     ::Nothing) where T
     ##
     q_out = Message(GammaAB(mean(messages[2]), mean(messages[3]))) * messages[1]

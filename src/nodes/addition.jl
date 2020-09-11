@@ -16,168 +16,150 @@ end
 
 ### Out ###
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    return Dirac(mean(messages[1]) + mean(messages[2]))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_in1::Dirac{T}, m_in2::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Dirac(mean(m_in1) + mean(m_in2))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Normal{T} }, Message{ <: Normal{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    in1d = messages[1]
-    in2d = messages[2]
-    return Normal(mean(in1d) + mean(in2d), sqrt(var(in1d) + var(in2d)))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_in1::Normal{T}, m_in2::Normal{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_in1) + mean(m_in2), sqrt(var(m_in1) + var(m_in2)))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Normal{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ## 
-    in1d = messages[1]
-    in2v = messages[2]
-    return Normal(mean(in1d) + mean(in2v), std(in1d))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_in1::Normal{T}, m_in2::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_in1) + mean(m_in2), std(m_in1))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:out} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Normal{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    in1v = messages[1]
-    in2d = messages[2]
-    return Normal(mean(in2d) + mean(in1v), std(in2d))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :out,
+    vconstraint => Marginalisation,
+    messages    => (m_in1::Dirac{T}, m_in2::Normal{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_in1) + mean(m_in2), std(m_in2))
+    end
+)
 
 ### In 1 ###
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in1} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    return Dirac(mean(messages[1]) - mean(messages[2]))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in1,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Dirac{T}, m_in2::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Dirac(mean(m_out) - mean(m_in2))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in1} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Normal{T} }, Message{ <: Normal{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    outd = messages[1]
-    in2d = messages[2]
-    return Normal(mean(outd) - mean(in2d), sqrt(var(outd) + var(in2d)))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in1,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Normal{T}, m_in2::Normal{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_out) - mean(m_in2), sqrt(var(m_out) + var(m_in2)))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in1} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Normal{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    outv = messages[1]
-    in2d = messages[2]
-    return Normal(mean(outv) - mean(in2d), std(in2d))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in1,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Dirac{T}, m_in2::Normal{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_out) - mean(m_in2), std(m_in2))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in1} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Normal{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    outd = messages[1]
-    in2v = messages[2]
-    return Normal(mean(outd) - mean(in2v), std(outd))
-end
-
-## In 1 NVM 
-
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in1} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: NormalMeanVariance{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    outv = messages[1]
-    in2d = messages[2]
-    return NormalMeanVariance(mean(outv) - mean(in2d), var(in2d))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in1,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Normal{T}, m_in2::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_out) - mean(m_in2), std(m_out))
+    end
+)
 
 ### In 2 ###
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in2} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    return Dirac(mean(messages[1]) - mean(messages[2]))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in2,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Dirac{T}, m_in1::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Dirac(mean(m_out) - mean(m_in1))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in2} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Normal{T} }, Message{ <: Normal{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    outd = messages[1]
-    in1d = messages[2]
-    return Normal(mean(outd) - mean(in1d), sqrt(var(outd) + var(in1d)))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in2,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Normal{T}, m_in1::Normal{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_out) - mean(m_in1), sqrt(var(m_out) + var(m_in1)))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in2} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Dirac{T} }, Message{ <: Normal{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    outv = messages[1]
-    in1d = messages[2]
-    return Normal(mean(outv) - mean(in1d), std(in1d))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in2,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Dirac{T}, m_in1::Normal{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_out) - mean(m_in1), std(m_in1))
+    end
+)
 
-function rule(
-    ::typeof(+), 
-    ::Type{ Val{:in2} }, 
-    ::Marginalisation, 
-    messages::Tuple{ Message{ <: Normal{T} }, Message{ <: Dirac{T} } }, 
-    ::Nothing, 
-    ::Nothing) where T
-    ##
-    outd = messages[1]
-    in1v = messages[2]
-    return Normal(mean(outd) - mean(in1v), std(outd))
-end
+@rule(
+    form        => typeof(+),
+    edge        => :in2,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Normal{T}, m_in1::Dirac{T}) where T,
+    marginals   => Nothing,
+    meta        => Nothing,
+    begin
+        return Normal(mean(m_out) - mean(m_in1), std(m_out))
+    end
+)

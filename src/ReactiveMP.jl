@@ -32,6 +32,8 @@ include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 
+include("rule.jl")
+
 include("node.jl")
 include("nodes/normal.jl")
 include("nodes/normal_mean_variance.jl")
