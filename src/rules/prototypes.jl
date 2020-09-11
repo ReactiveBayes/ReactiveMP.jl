@@ -25,6 +25,7 @@ include("normal/out.jl")
 
 include("normal_mean_precision/out.jl")
 include("normal_mean_precision/mean.jl")
+include("normal_mean_precision/precision.jl")
 include("normal_mean_precision/marginals.jl")
 
 include("normal_mean_variance/out.jl")
