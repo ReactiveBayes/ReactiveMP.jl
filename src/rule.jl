@@ -120,7 +120,8 @@ function __make_rule(name, fform, on, vconstraint, messages, marginals, meta, fn
             messages::$(messages_types_val),
             ::$(marginals_names_val),
             marginals::$(marginals_types_val),
-            meta::$(__extract_meta_macro_rule(meta))
+            meta::$(__extract_meta_macro_rule(meta)),
+            __node
         ) where { $(messages_where_Ts...), $(marginals_where_Ts...) }
             $(messages_init_block...)
             $(marginals_init_block...)

@@ -225,7 +225,7 @@ function activate!(model, factornode::FactorNode)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
-        mapping     = map(Message, (d) -> as_message(gate!(gate, factornode, variable, rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta))))
+        mapping     = switch_map(Any, (d) -> cast_to_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta, factornode))) |> map(Message, (d) -> as_message(gate!(gate, factornode, variable, d)))
         vmessageout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
 
         set!(messageout(variable), vmessageout |> share_replay(1))
