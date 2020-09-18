@@ -9,6 +9,6 @@
         kernelfunction = get_kernelfn(meta)
         Λ_out = approximate_kernel_expectation(get_approximation(meta), (s) -> inv(kernelfunction(s)), q_z)
 
-        return MvNormalMeanCovariance(mean(m_x), cov(m_x) + inv(PDMat(Λ_out)))
+        return MvNormalMeanCovariance(mean(m_x), cov(m_x) + inv(PDMat(Matrix(Hermitian(Λ_out)))))
     end
 )

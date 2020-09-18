@@ -14,7 +14,7 @@
         wy = Λy * mean(m_y)
         wx = Λx * mean(m_x)
 
-        C = inv(PDMat([ Λ + Λy -Λ; -Λ Λ + Λx ]))
+        C = inv(PDMat(Matrix(Hermitian([ Λ + Λy -Λ; -Λ Λ + Λx ]))))
         m = C * [ wy ; wx ]
 
         return MvNormalMeanCovariance(m, C)
