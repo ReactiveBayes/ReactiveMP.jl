@@ -35,6 +35,7 @@ end
 
 @symmetrical function multiply_messages(m1::Message{ <: MvNormalMeanCovariance }, m2::Message{ <: FnWithApproximation })
     m2data = getdata(m2)
+    
     m, V = approximate_meancov(m2data.approximation, (s) -> exp(m2data.fn(s)), getdata(m1))
-    return Message(MvNormalMeanCovariance(m, PDMat(V)))
+    return Message(MvNormalMeanCovariance(m, PDMat(Matrix(Hermitian(V)))))
 end
