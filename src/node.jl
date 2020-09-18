@@ -217,7 +217,7 @@ function activate!(model, factornode::FactorNode)
 
         if length(clusterdeps) !== 0 
             cluster_names       = Val{ tuple(clustername.(clusterdeps)...) }
-            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach())
+            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushNew())
         end
 
         gate        = message_gate(model)
@@ -277,7 +277,7 @@ function getmarginal!(factornode::FactorNode, cluster)
 
         if length(clusterdeps) !== 0 
             cluster_names       = Val{ tuple(clustername.(clusterdeps)...) }
-            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach())
+            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushNew())
         end
 
         fform       = functionalform(factornode)
