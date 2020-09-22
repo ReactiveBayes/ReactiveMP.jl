@@ -25,7 +25,7 @@ end
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.props.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
-_makemarginal(randomvar::RandomVariable) = combineLatest(randomvar.inputmsgs..., strategy = PushNew()) |> reduce_to_marginal
+_makemarginal(randomvar::RandomVariable) = combineLatest(randomvar.inputmsgs..., strategy = PushEach()) |> reduce_to_marginal
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === length(randomvar.inputmsgs) + 1
