@@ -2,6 +2,7 @@ export ghcubature
 
 import FastGaussQuadrature: gausshermite
 import LinearAlgebra: mul!, axpy!
+import PDMats: AbstractPDMat
 
 using Distributions
 
@@ -27,7 +28,7 @@ const precomputed_sigma_pointsweights = (
     ([-4.499990707309391, -3.669950373404453, -2.9671669279056054, -2.3257324861738606, -1.7199925751864926, -1.136115585210924, -0.5650695832555779, -3.552713678800501e-15, 0.5650695832555779, 1.136115585210924, 1.7199925751864926, 2.3257324861738606, 2.9671669279056054, 3.669950373404453, 4.499990707309391], [1.5224758042535364e-9, 1.059115547711077e-6, 0.00010000444123250023, 0.0027780688429127603, 0.030780033872546228, 0.1584889157959356, 0.4120286874988987, 0.5641003087264174, 0.4120286874988987, 0.1584889157959356, 0.030780033872546228, 0.0027780688429127603, 0.00010000444123250023, 1.059115547711077e-6, 1.5224758042535364e-9])
 )
 
-struct GaussHermiteCubature{PI, WI}
+struct GaussHermiteCubature{PI, WI} <: AbstractApproximationMethod
     p     :: Int
     piter :: PI
     witer :: WI
@@ -45,7 +46,7 @@ function getweights(gh::GaussHermiteCubature, mean::T, variance::T) where { T <:
     end
 end
 
-function getweights(gh::GaussHermiteCubature, mean::Vector{T}, covariance::PDMat{T}) where { T <: Real }
+function getweights(gh::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractPDMat{T}) where { T <: Real }
     sqrtpi = (pi ^ (length(mean) / 2))
     return Base.Generator(product(repeated(gh.witer, length(mean))...)) do pweight
         return prod(pweight) / sqrtpi
@@ -59,7 +60,7 @@ function getpoints(gh::GaussHermiteCubature, mean::T, variance::T) where { T <: 
     end
 end
 
-function getpoints(cubature::GaussHermiteCubature, mean::Vector{T}, covariance::PDMat{T}) where { T <: Real }
+function getpoints(cubature::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractPDMat{T}) where { T <: Real }
     sqrtP = sqrt(Matrix(covariance))
     sqrt2 = sqrt(2)
 
@@ -107,7 +108,7 @@ function approximate_meancov(gh::GaussHermiteCubature, g::Function, m::T, v::T) 
     return mean, var
 end
 
-function approximate_meancov(cubature::GaussHermiteCubature, g::Function, m::Vector{T}, P::PDMat{T}) where { T <: Real }
+function approximate_meancov(cubature::GaussHermiteCubature, g::Function, m::AbstractVector{T}, P::AbstractPDMat{T}) where { T <: Real }
     ndims = length(m)
 
     weights = getweights(cubature, m, P)
@@ -146,7 +147,7 @@ function approximate_kernel_expectation(cubature::GaussHermiteCubature, g::Funct
     return approximate_kernel_expectation(cubature, g, mean(distribution), cov(distribution))
 end
 
-function approximate_kernel_expectation(cubature::GaussHermiteCubature, g::Function, m::Vector{T}, P::PDMat{T}) where { T <: Real }
+function approximate_kernel_expectation(cubature::GaussHermiteCubature, g::Function, m::AbstractVector{T}, P::AbstractPDMat{T}) where { T <: Real }
     ndims = length(m)
 
     weights = getweights(cubature, m, P)

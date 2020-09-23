@@ -27,28 +27,18 @@ Distributions.cov(message::Message)  = Distributions.cov(getdata(message))
 Base.precision(message::Message) = precision(getdata(message))
 Base.ndims(message::Message)     = ndims(getdata(message))
 
-## Delta function message
+logmean(message::Message)     = log(mean(message))
+inversemean(message::Message) = 1.0 / mean(message)
 
-Distributions.mean(message::Message{T}) where { T <: Real } = getdata(message)
-Distributions.var(message::Message{T}) where { T <: Real }  = zero(T)
-Distributions.std(message::Message{T}) where { T <: Real }  = zero(T)
-Distributions.cov(message::Message{T}) where { T <: Real }  = zero(T)
+## Utiliy nothing message
 
-Base.precision(message::Message{T}) where { T <: Real } = Inf
-Base.ndims(message::Message{T})     where { T <: Real } = 1
+function multiply_messages(m1::Message{Nothing}, m2::Message{Nothing})
+    return Message(nothing)
+end
 
-logmean(message::Message{T}) where { T <: Real }     = log(getdata(message))
-inversemean(message::Message{T}) where { T <: Real } = 1.0 / getdata(message)
-
-## Vector-based delta function message
-
-Distributions.mean(message::Message{T}) where { T <: Vector } = getdata(message)
-Distributions.var(message::Message{T}) where { T <: Vector }  = zero(T)
-Distributions.std(message::Message{T}) where { T <: Vector }  = zero(T)
-Distributions.cov(message::Message{T}) where { T <: Vector }  = zero(T)
-
-Base.precision(message::Message{T}) where { T <: Vector } = Inf
-Base.ndims(message::Message{T})     where { T <: Vector } = length(getdata(message))
+@symmetrical function multiply_messages(::Message{Nothing}, message)
+    return message
+end
 
 ## Utility functions
 

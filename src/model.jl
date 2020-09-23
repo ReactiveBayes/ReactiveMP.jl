@@ -35,3 +35,10 @@ getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
 
 activate!(model::Model) = foreach(n -> activate!(model, n), getnodes(model))
+
+# Utility functions
+
+datavar(model::Model, args...; kwargs...)   = add!(model, datavar(args...; kwargs...))
+constvar(model::Model, args...; kwargs...)  = add!(model, constvar(args...; kwargs...))
+randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
+make_node(model::Model, args...; kwargs...) = add!(model, make_node(args...; kwargs...))

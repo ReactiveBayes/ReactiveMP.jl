@@ -13,7 +13,10 @@ struct ConstVariable{M} <: AbstractVariable
     props      :: ConstVariableProps
 end
 
-constvar(name::Symbol, constval) = ConstVariable(name, of(Message(constval)), ConstVariableProps())
+constvar(name::Symbol, constval)                 = ConstVariable(name, of(Message(constval)), ConstVariableProps())
+constvar(name::Symbol, constval::Real)           = constvar(name, Dirac(constval))
+constvar(name::Symbol, constval::AbstractVector) = constvar(name, Dirac(constval))
+constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, Dirac(constval))
 
 degree(::ConstVariable) = 1
 

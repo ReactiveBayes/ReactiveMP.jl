@@ -1,6 +1,7 @@
 export skipindex, @symmetrical
 
 using SpecialFunctions
+using Rocket
 
 import Base: IteratorSize, HasLength
 import Base: IteratorEltype, HasEltype
@@ -77,3 +78,9 @@ end
 function labsgamma(x::Number)
     return SpecialFunctions.logabsgamma(x)[1]
 end
+
+cast_to_subscribable(some::T) where T = cast_to_subscribable(as_subscribable(T), some)
+
+cast_to_subscribable(::InvalidSubscribableTrait, some)   = of(some)
+cast_to_subscribable(::SimpleSubscribableTrait, some)    = some
+cast_to_subscribable(::ScheduledSubscribableTrait, some) = some

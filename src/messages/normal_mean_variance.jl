@@ -1,5 +1,5 @@
 
-function multiply_messages(m1::Message{N}, m2::Message{N}) where { N <: NormalMeanVariance }
+function multiply_messages(m1::Message{ <: NormalMeanVariance{T} }, m2::Message{ <: NormalMeanVariance{T} }) where { T <: Real }
     m1data = getdata(m1)
     m2data = getdata(m2)
 
@@ -9,7 +9,7 @@ function multiply_messages(m1::Message{N}, m2::Message{N}) where { N <: NormalMe
     var1 = var(m1data)
     var2 = var(m2data)
 
-    result = N((mean1 * var2 + mean2 * var1) / (var2 + var1), (var1 * var2) / (var1 + var2))
+    result = NormalMeanVariance((mean1 * var2 + mean2 * var1) / (var2 + var1), (var1 * var2) / (var1 + var2))
 
     return Message(result)
 end

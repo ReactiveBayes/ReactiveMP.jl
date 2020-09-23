@@ -4,7 +4,7 @@ import Distributions: mean, var, std, cov, pdf
 import PDMats: PDMat
 import Base: precision
 
-struct NormalMeanVariance{T}
+struct NormalMeanVariance{T <: Real}
     mean     :: T
     variance :: T
 end
