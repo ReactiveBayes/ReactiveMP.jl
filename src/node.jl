@@ -217,7 +217,7 @@ function activate!(model, factornode::FactorNode)
 
         if length(clusterdeps) !== 0 
             cluster_names       = Val{ tuple(clustername.(clusterdeps)...) }
-            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach())
+            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushNew())
         end
 
         gate        = message_gate(model)
@@ -225,7 +225,11 @@ function activate!(model, factornode::FactorNode)
         vtag        = tag(variable)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
-        mapping     = switch_map(Any, (d) -> cast_to_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta, factornode))) |> map(Message, (d) -> as_message(gate!(gate, factornode, variable, d)))
+        mapping     = switch_map(Message, (d) -> begin
+            message = rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta, factornode)
+            return cast_to_subscribable(message) |> map(Message, (d) -> as_message(gate!(gate, factornode, variable, d)))
+        end) 
+        
         vmessageout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
 
         set!(messageout(variable), vmessageout |> share_replay(1))
@@ -277,7 +281,7 @@ function getmarginal!(factornode::FactorNode, cluster)
 
         if length(clusterdeps) !== 0 
             cluster_names       = Val{ tuple(clustername.(clusterdeps)...) }
-            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushEach())
+            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushNew())
         end
 
         fform       = functionalform(factornode)
