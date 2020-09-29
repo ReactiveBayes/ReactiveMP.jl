@@ -1,6 +1,14 @@
 export Model, add!
+export getnodes, getrandom, getconstant, getdata
+export activate!
+# export MarginalsEagerUpdate, MarginalsPureUpdate
 
 import Base: show
+
+# Marginals update strategies 
+
+# struct MarginalsEagerUpdate end
+# struct MarginalsPureUpdate end
 
 struct Model{T}
     message_gate :: T
@@ -11,9 +19,11 @@ struct Model{T}
     data     :: Vector{DataVariable}
 end
 
-Base.show(io::IO, model::Model) = print(io, "Model()")
+Base.show(io::IO, ::Model) = print(io, "Model()")
 
-Model(message_gate::T) where T = Model{T}(
+Model(; 
+    message_gate::T = DefaultMessageGate()
+) where { T } = Model{T}(
     message_gate, 
     Vector{FactorNode}(), 
     Vector{RandomVariable}(),

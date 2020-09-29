@@ -53,7 +53,11 @@ const __as_message_operator  = Rocket.map(Message, as_message)
 
 as_message()  = __as_message_operator
 
-const reduce_to_message  = Rocket.map(Message, (messages) -> reduce_messages(messages))
+function __reduce_to_message(messages)
+    return as_message(reduce_messages(messages))
+end
+
+const reduce_to_message  = Rocket.map(Message, __reduce_to_message)
 
 ## Gates
 

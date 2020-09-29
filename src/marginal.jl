@@ -33,7 +33,11 @@ const __as_marginal_operator = Rocket.map(Marginal, as_marginal)
 
 as_marginal() = __as_marginal_operator
 
-const reduce_to_marginal = Rocket.map(Marginal, (messages) -> as_marginal(reduce_messages(messages)))
+function __reduce_to_marginal(messages)
+    return as_marginal(reduce_messages(messages))
+end
+
+const reduce_to_marginal = Rocket.map(Marginal, __reduce_to_marginal)
 
 ## Marginal observable
 

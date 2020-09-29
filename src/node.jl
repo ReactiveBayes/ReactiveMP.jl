@@ -7,7 +7,6 @@ export make_node
 export Marginalisation
 export sdtype, isdeterministic, isstochastic
 
-using BenchmarkTools
 using Rocket
 
 import Base: show
