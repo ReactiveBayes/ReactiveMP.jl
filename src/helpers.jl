@@ -3,6 +3,7 @@ export skipindex, @symmetrical
 using SpecialFunctions
 using Rocket
 
+import Base: show
 import Base: IteratorSize, HasLength
 import Base: IteratorEltype, HasEltype
 import Base: eltype, length, size
@@ -89,18 +90,29 @@ reduce_with_sum(array) = reduce(+, array)
 
 ## 
 
-import Base: +, -, convert, float, isfinite, isinf, *, /
+import Base: +, -, *, /, convert, float, isfinite, isinf
 
-struct Infinity end
+struct Infinity 
+    degree :: Int
+end
 
-const ∞ = Infinity()
+degree(a::Infinity) = a.degree
 
-struct InfCountingReal{T} <: Real
+const ∞ = Infinity(1)
+
+Base.:+(a::Infinity, b::Infinity) = Infinity(degree(a) + degree(b))
+Base.:-(a::Infinity, b::Infinity) = Infinity(degree(a) - degree(b))
+Base.:*(a::Infinity, b::Infinity) = Infinity(degree(a) * degree(b))
+Base.:/(a::Infinity, b::Infinity) = error("Its not possible to divide Infinities")
+
+@symmetrical Base.:*(a::Infinity, b::Int) = Infinity(degree(a) * b)
+
+struct InfCountingReal{ T <: Real } <: Real
     value :: T
     infs  :: Int
 end
 
-InfCountingReal(value::T) where T = InfCountingReal{T}(value, 0)
+InfCountingReal(value::T) where { T <: Real } = InfCountingReal{T}(value, 0)
 
 value(a::InfCountingReal) = a.value
 infs(a::InfCountingReal)  = a.infs
@@ -108,18 +120,20 @@ infs(a::InfCountingReal)  = a.infs
 isfinite(a::InfCountingReal) = infs(a) === 0
 isinf(a::InfCountingReal)    = !(isfinite(a))
 
-@symmetrical Base.+(a::InfCountingReal, b::Infinity) = InfCountingReal(a.value, a.infs + 1)
-@symmetrical Base.-(a::InfCountingReal, b::Infinity) = InfCountingReal(a.value, a.infs - 1)
-@symmetrical Base.*(a::InfCountingReal, b::Infinity) = error("Its not possible to multiply on Infinity")
-@symmetrical Base./(a::InfCountingReal, b::Infinity) = error("Its not possible to divide by Infinity")
+@symmetrical Base.:+(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) + degree(b))
+@symmetrical Base.:-(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) - degree(b))
+@symmetrical Base.:*(::InfCountingReal, ::Infinity) = error("Its not possible to multiply on Infinity")
+@symmetrical Base.:/(::InfCountingReal, ::Infinity) = error("Its not possible to divide by Infinity")
 
-@symmetrical Base.+(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value + b), a.infs)
-@symmetrical Base.-(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value - b), a.infs)
-@symmetrical Base.*(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value * b), a.infs)
-@symmetrical Base./(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value / b), a.infs)
+@symmetrical Base.:+(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) + b), infs(a))
+@symmetrical Base.:-(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) - b), infs(a))
+@symmetrical Base.:*(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) * b), infs(a))
+@symmetrical Base.:/(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) / b), infs(a))
 
 Base.convert(::Type{T}, a::InfCountingReal) where { T <: Real } = isfinite(a) ? convert(T, value(a)) : Inf
 
 Base.float(a::InfCountingReal) = convert(Float64, a)
+
+Base.show(io::IO, a::InfCountingReal) = print(io, "InfCountingReal($(value(a)), $(infs(a)))")
 
 
