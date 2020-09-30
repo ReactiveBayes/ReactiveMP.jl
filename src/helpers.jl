@@ -110,12 +110,13 @@ Base.show(io::IO, a::Infinity) = print(io, "$(degree(a))∞")
 
 @symmetrical Base.:*(a::Infinity, b::Int) = Infinity(degree(a) * b)
 
-struct InfCountingReal{ T <: Real } <: Real
+struct InfCountingReal{ T <: Real }
     value :: T
     infs  :: Int
 end
 
 InfCountingReal(value::T) where { T <: Real } = InfCountingReal{T}(value, 0)
+InfCountingReal(inf::Infinity) = InfCountingReal{Float64}(zero(Float64), degree(inf))
 
 value(a::InfCountingReal) = a.value
 infs(a::InfCountingReal)  = a.infs
@@ -133,6 +134,9 @@ isinf(a::InfCountingReal)    = !(isfinite(a))
 @symmetrical Base.:-(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) - b), infs(a))
 @symmetrical Base.:*(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) * b), infs(a))
 @symmetrical Base.:/(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) / b), infs(a))
+
+Base.:+(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) + value(b)), infs(a) + infs(b))
+Base.:-(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) - value(b)), infs(a) - infs(b))
 
 Base.convert(::Type{T}, a::InfCountingReal) where { T <: Real } = isfinite(a) ? convert(T, value(a)) : Inf
 

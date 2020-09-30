@@ -6,13 +6,3 @@ function score(::AverageEnergy, ::Type{ <: NormalMeanVariance }, marginals::Tupl
 
     return 0.5 * log(2*pi) + 0.5 * logmean(marginals[3]) + 0.5 * inversemean(marginals[3])*(v_out + v_mean + (m_out - m_mean)^2)
 end
-
-# see common.jl
-# function score(
-#     ::AverageEnergy, 
-#     ::Type{ <: NormalMeanVariance }, 
-#     marginals::Tuple{ Marginal{ <: Tuple } },
-#     ::Nothing)
-#     ##
-#     return score(AverageEnergy(), NormalMeanVariance, map(as_marginal, getdata(marginals[1])), nothing)
-# end
