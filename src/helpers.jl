@@ -90,7 +90,7 @@ reduce_with_sum(array) = reduce(+, array)
 
 ## 
 
-import Base: +, -, *, /, convert, float, isfinite, isinf
+import Base: +, -, *, /, convert, float, isfinite, isinf, zero
 
 struct Infinity 
     degree :: Int
@@ -102,8 +102,11 @@ const ∞ = Infinity(1)
 
 Base.:+(a::Infinity, b::Infinity) = Infinity(degree(a) + degree(b))
 Base.:-(a::Infinity, b::Infinity) = Infinity(degree(a) - degree(b))
-Base.:*(a::Infinity, b::Infinity) = Infinity(degree(a) * degree(b))
-Base.:/(a::Infinity, b::Infinity) = error("Its not possible to divide Infinities")
+Base.:+(a::Infinity)              = Infinity(+degree(a))
+Base.:-(a::Infinity)              = Infinity(-degree(a))
+Base.zero(::Type{Infinity})       = Infinity(0)
+
+Base.show(io::IO, a::Infinity) = print(io, "$(degree(a))∞")
 
 @symmetrical Base.:*(a::Infinity, b::Int) = Infinity(degree(a) * b)
 
@@ -120,10 +123,11 @@ infs(a::InfCountingReal)  = a.infs
 isfinite(a::InfCountingReal) = infs(a) === 0
 isinf(a::InfCountingReal)    = !(isfinite(a))
 
+@symmetrical Base.:+(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(b, degree(a))
+@symmetrical Base.:-(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(-b, degree(a))
+
 @symmetrical Base.:+(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) + degree(b))
 @symmetrical Base.:-(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) - degree(b))
-@symmetrical Base.:*(::InfCountingReal, ::Infinity) = error("Its not possible to multiply on Infinity")
-@symmetrical Base.:/(::InfCountingReal, ::Infinity) = error("Its not possible to divide by Infinity")
 
 @symmetrical Base.:+(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) + b), infs(a))
 @symmetrical Base.:-(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) - b), infs(a))
@@ -133,7 +137,8 @@ isinf(a::InfCountingReal)    = !(isfinite(a))
 Base.convert(::Type{T}, a::InfCountingReal) where { T <: Real } = isfinite(a) ? convert(T, value(a)) : Inf
 
 Base.float(a::InfCountingReal) = convert(Float64, a)
+Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero(T))
 
-Base.show(io::IO, a::InfCountingReal) = print(io, "InfCountingReal($(value(a)), $(infs(a)))")
+Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal{$(T)}($(value(a)), $(infs(a))∞)")
 
 
