@@ -84,3 +84,42 @@ cast_to_subscribable(some::T) where T = cast_to_subscribable(as_subscribable(T),
 cast_to_subscribable(::InvalidSubscribableTrait, some)   = of(some)
 cast_to_subscribable(::SimpleSubscribableTrait, some)    = some
 cast_to_subscribable(::ScheduledSubscribableTrait, some) = some
+
+reduce_with_sum(array) = reduce(+, array)
+
+## 
+
+import Base: +, -, convert, float, isfinite, isinf, *, /
+
+struct Infinity end
+
+const ∞ = Infinity()
+
+struct InfCountingReal{T} <: Real
+    value :: T
+    infs  :: Int
+end
+
+InfCountingReal(value::T) where T = InfCountingReal{T}(value, 0)
+
+value(a::InfCountingReal) = a.value
+infs(a::InfCountingReal)  = a.infs
+
+isfinite(a::InfCountingReal) = infs(a) === 0
+isinf(a::InfCountingReal)    = !(isfinite(a))
+
+@symmetrical Base.+(a::InfCountingReal, b::Infinity) = InfCountingReal(a.value, a.infs + 1)
+@symmetrical Base.-(a::InfCountingReal, b::Infinity) = InfCountingReal(a.value, a.infs - 1)
+@symmetrical Base.*(a::InfCountingReal, b::Infinity) = error("Its not possible to multiply on Infinity")
+@symmetrical Base./(a::InfCountingReal, b::Infinity) = error("Its not possible to divide by Infinity")
+
+@symmetrical Base.+(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value + b), a.infs)
+@symmetrical Base.-(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value - b), a.infs)
+@symmetrical Base.*(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value * b), a.infs)
+@symmetrical Base./(a::InfCountingReal{T}, b) where T = InfCountingReal{T}(convert(T, a.value / b), a.infs)
+
+Base.convert(::Type{T}, a::InfCountingReal) where { T <: Real } = isfinite(a) ? convert(T, value(a)) : Inf
+
+Base.float(a::InfCountingReal) = convert(Float64, a)
+
+
