@@ -10,8 +10,9 @@ import Base: show
 # struct MarginalsEagerUpdate end
 # struct MarginalsPureUpdate end
 
-struct Model{T}
+struct Model{T, S}
     message_gate :: T
+    message_out_transformer :: S
 
     nodes    :: Vector{FactorNode}
     random   :: Vector{RandomVariable}
@@ -22,16 +23,19 @@ end
 Base.show(io::IO, ::Model) = print(io, "Model()")
 
 Model(; 
-    message_gate::T = DefaultMessageGate()
-) where { T } = Model{T}(
+    message_gate::T            = DefaultMessageGate(),
+    message_out_transformer::S = DefaultMessageOutTransformer()
+) where { T, S } = Model{T, S}(
     message_gate, 
+    message_out_transformer,
     Vector{FactorNode}(), 
     Vector{RandomVariable}(),
     Vector{ConstVariable}(),
     Vector{DataVariable}()
 )
 
-message_gate(model::Model) = model.message_gate
+message_gate(model::Model)            = model.message_gate
+message_out_transformer(model::Model) = model.message_out_transformer
 
 # placeholder for future
 add!(model, node::FactorNode)        = begin push!(model.nodes, node); return node end

@@ -228,10 +228,10 @@ function activate!(model, factornode::FactorNode)
             message = rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta, factornode)
             return cast_to_subscribable(message) |> map(Message, (d) -> as_message(gate!(gate, factornode, variable, d)))
         end) 
-        
-        vmessageout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
+         
+        vmessageout = apply(message_out_transformer(model), combineLatest(msgs_observable, clusters_observable, strategy = PushEach()))
 
-        set!(messageout(variable), vmessageout |> share_replay(1))
+        set!(messageout(variable), vmessageout |> mapping |> share_replay(1))
         set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
     end
 end

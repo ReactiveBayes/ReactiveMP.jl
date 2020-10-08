@@ -3,6 +3,7 @@ module ReactiveMP
 using Distributions
 
 include("helpers.jl")
+include("stream.jl")
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
