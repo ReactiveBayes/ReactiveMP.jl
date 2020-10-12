@@ -4,6 +4,7 @@ using Distributions
 using Rocket
 
 import Base: ndims, precision
+import Base: map
 
 struct Marginal{D}
     data :: D
@@ -23,6 +24,16 @@ Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
 
 logmean(marginal::Marginal)     = log(mean(marginal))
 inversemean(marginal::Marginal) = 1.0 / mean(marginal)
+
+## Factorised marginal
+
+struct FactorizedMarginal{ T <: Tuple }
+    factors :: T
+end
+
+FactorizedMarginal(data::Vararg) = FactorizedMarginal(map(as_marginal, data))
+
+getfactors(fmarginal::FactorizedMarginal) = fmarginal.factors
 
 ## Utility functions
 

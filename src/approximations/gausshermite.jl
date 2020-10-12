@@ -61,7 +61,7 @@ function getpoints(gh::GaussHermiteCubature, mean::T, variance::T) where { T <: 
 end
 
 function getpoints(cubature::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractPDMat{T}) where { T <: Real }
-    sqrtP = sqrt(Matrix(covariance))
+    sqrtP = sqrt(Hermitian(covariance))
     sqrt2 = sqrt(2)
 
     tbuffer = similar(mean)
@@ -71,92 +71,4 @@ function getpoints(cubature::GaussHermiteCubature, mean::AbstractVector{T}, cova
         copyto!(tbuffer, mean)
         return mul!(tbuffer, sqrtP, pbuffer, sqrt2, 1.0) # point = m + sqrt2 * sqrtP * p
     end
-end
-
-function approximate_meancov(gh::GaussHermiteCubature, g::Function, distribution)
-    return approximate_meancov(gh, g, mean(distribution), cov(distribution))
-end
-
-function approximate_meancov(gh::GaussHermiteCubature, g::Function, m::T, v::T) where { T <: Real }
-    weights = getweights(gh, m, v)
-    points  = getpoints(gh, m, v)
-
-    cs   = Vector{eltype(m)}(undef, length(weights))
-    norm = 0.0
-    mean = 0.0
-
-    for (index, (weight, point)) in enumerate(zip(weights, points))
-        gv = g(point)
-        cv = weight * gv
-
-        mean += point * cv
-        norm += cv
-
-        @inbounds cs[index] = cv
-    end
-
-    mean /= norm
-
-    var = 0.0
-    for (index, (point, c)) in enumerate(zip(points, cs))
-        point -= mean
-        var += c * point ^ 2
-    end
-
-    var /= norm
-
-    return mean, var
-end
-
-function approximate_meancov(cubature::GaussHermiteCubature, g::Function, m::AbstractVector{T}, P::AbstractPDMat{T}) where { T <: Real }
-    ndims = length(m)
-
-    weights = getweights(cubature, m, P)
-    points  = getpoints(cubature, m, P)
-
-    cs = similar(m, eltype(m), length(weights))
-    norm = 0.0
-    mean = zeros(ndims)
-
-    for (index, (weight, point)) in enumerate(zip(weights, points))
-        gv = g(point)
-        cv = weight * gv
-
-        # mean = mean + point * weight * g(point)
-        broadcast!(*, point, point, cv)  # point *= cv
-        broadcast!(+, mean, mean, point) # mean += point
-        norm += cv
-
-        @inbounds cs[index] = cv
-    end
-
-    broadcast!(/, mean, mean, norm)
-
-    cov = zeros(ndims, ndims)
-    foreach(enumerate(zip(points, cs))) do (index, (point, c))
-        broadcast!(-, point, point, mean)                # point -= mean
-        mul!(cov, point, reshape(point, (1, ndims)), c, 1.0) # cov = cov + c * (point)⋅(point)' where c = weight * g(point)
-    end
-
-    broadcast!(/, cov, cov, norm)
-
-    return mean, cov
-end
-
-function approximate_kernel_expectation(cubature::GaussHermiteCubature, g::Function, distribution)
-    return approximate_kernel_expectation(cubature, g, mean(distribution), cov(distribution))
-end
-
-function approximate_kernel_expectation(cubature::GaussHermiteCubature, g::Function, m::AbstractVector{T}, P::AbstractPDMat{T}) where { T <: Real }
-    ndims = length(m)
-
-    weights = getweights(cubature, m, P)
-    points  = getpoints(cubature, m, P)
-
-    gbar = zeros(ndims, ndims)
-    foreach(zip(weights, points)) do (weight, point)
-        axpy!(weight, g(point), gbar) # gbar = gbar + weight * g(point)
-    end
-
-    return gbar
 end

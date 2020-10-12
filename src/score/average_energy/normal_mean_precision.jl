@@ -7,12 +7,3 @@ function score(::AverageEnergy, ::Type{ <: NormalMeanPrecision }, marginals::Tup
 
     return 0.5 * log(2π) - 0.5 * logmean(marginals[3]) + 0.5 * mean(marginals[3]) * (v_out + v_mean + (m_out - m_mean)^2)
 end
-
-# see common.jl
-# function score(
-#     ::AverageEnergy, 
-#     ::Type{ <: NormalMeanPrecision }, 
-#     marginals::Tuple{ Marginal{ Tuple{NormalMeanPrecision{T}, T, T} } }, 
-#     ::Nothing) where { T <: Real }
-#     return score(AverageEnergy(), NormalMeanPrecision, map(as_marginal, getdata(marginals[1])), nothing)
-# end

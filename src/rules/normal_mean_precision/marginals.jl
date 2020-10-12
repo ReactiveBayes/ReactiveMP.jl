@@ -5,7 +5,7 @@
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        q_out = Message(NormalMeanPrecision(mean(m_mean), mean(m_precision))) * m_out
-        return (getdata(q_out), getdata(m_mean), getdata(m_precision))
+        q_out = as_message(NormalMeanPrecision(mean(m_mean), mean(m_precision))) * m_out
+        return FactorizedMarginal(q_out, m_mean, m_precision)
     end
 )

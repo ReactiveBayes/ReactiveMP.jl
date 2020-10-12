@@ -7,6 +7,7 @@ include("stream.jl")
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
+include("approximations/sphericalradial.jl")
 
 include("distributions/dirac.jl")
 include("distributions/gamma_ab.jl")
@@ -27,6 +28,8 @@ include("messages/normal_mean_variance.jl")
 include("messages/mv_normal_mean_covariance.jl")
 include("messages/gamma_ab.jl")
 include("messages/exp_linear_quadratic.jl")
+include("messages/wishart.jl")
+include("messages/wishart_inverse.jl")
 
 include("variable.jl")
 include("variables/random.jl")
@@ -44,6 +47,8 @@ include("nodes/gamma_ab.jl")
 include("nodes/addition.jl")
 include("nodes/gcv.jl")
 include("nodes/kernel_gcv.jl")
+include("nodes/wishart.jl")
+include("nodes/wishart_inverse.jl")
 
 include("rules/prototypes.jl")
 

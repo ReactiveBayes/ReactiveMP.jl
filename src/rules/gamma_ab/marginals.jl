@@ -6,6 +6,6 @@
     meta        => Nothing,
     begin
         q_out = Message(GammaAB(mean(m_a), mean(m_b))) * m_out
-        return (getdata(q_out), getdata(m_a), getdata(m_b))
+        return FactorizedMarginal(q_out, m_a, m_b)
     end
 )
