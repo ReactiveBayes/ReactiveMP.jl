@@ -5,7 +5,7 @@
     marginals => Nothing,
     meta      => Nothing,
     begin 
-        q_out = Message(NormalMeanVariance(mean(m_mean), mean(m_variance))) * m_out
+        q_out = as_message(NormalMeanVariance(mean(m_mean), mean(m_variance))) * m_out
         return FactorizedMarginal(q_out, m_mean, m_variance)
     end
 )
@@ -17,7 +17,7 @@
     marginals => Nothing,
     meta      => Nothing,
     begin 
-        q_mean = Message(NormalMeanVariance(mean(m_out), mean(m_variance))) * m_mean
+        q_mean = as_message(NormalMeanVariance(mean(m_out), mean(m_variance))) * m_mean
         return FactorizedMarginal(m_out, q_mean, m_variance)
     end
 )

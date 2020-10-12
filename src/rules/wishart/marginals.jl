@@ -5,7 +5,7 @@
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        q_out = Message(Wishart(mean(m_ν), mean(m_S))) * m_out
+        q_out = as_message(Wishart(mean(m_ν), mean(m_S))) * m_out
         return FactorizedMarginal(q_out, m_ν, m_S)
     end
 )
