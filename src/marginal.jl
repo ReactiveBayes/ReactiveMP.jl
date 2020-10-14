@@ -1,8 +1,10 @@
 export Marginal, getdata, as_marginal
+export FactorizedMarginal
 
 using Distributions
 using Rocket
 
+import Distributions: mean, var, std, cov, entropy
 import Base: ndims, precision
 import Base: map
 
@@ -14,16 +16,17 @@ getdata(marginal::Marginal) = marginal.data
 
 ## Marginal
 
-Distributions.mean(marginal::Marginal) = Distributions.mean(getdata(marginal))
-Distributions.var(marginal::Marginal)  = Distributions.var(getdata(marginal))
-Distributions.std(marginal::Marginal)  = Distributions.std(getdata(marginal))
-Distributions.cov(marginal::Marginal)  = Distributions.cov(getdata(marginal))
+Distributions.mean(marginal::Marginal)    = Distributions.mean(getdata(marginal))
+Distributions.var(marginal::Marginal)     = Distributions.var(getdata(marginal))
+Distributions.std(marginal::Marginal)     = Distributions.std(getdata(marginal))
+Distributions.cov(marginal::Marginal)     = Distributions.cov(getdata(marginal))
+Distributions.entropy(marginal::Marginal) = Distributions.entropy(getdata(marginal))
 
 Base.precision(marginal::Marginal) = precision(getdata(marginal))
 Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
 
 logmean(marginal::Marginal)     = log(mean(marginal))
-inversemean(marginal::Marginal) = 1.0 / mean(marginal)
+inversemean(marginal::Marginal) = inv(mean(marginal))
 
 ## Factorised marginal
 

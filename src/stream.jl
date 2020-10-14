@@ -1,10 +1,14 @@
 export StreamTransformer
-export DiscontinueStreamTransformer, AsyncStreamTransformer
+export EmptyStreamTransformer, DiscontinueStreamTransformer, AsyncStreamTransformer
 export DefaultMessageOutTransformer
 
 import Base: +
 
 abstract type StreamTransformer end
+
+struct EmptyStreamTransformer <: StreamTransformer end
+
+apply(::EmptyStreamTransformer, stream) = stream
 
 struct DiscontinueStreamTransformer <: StreamTransformer end
 

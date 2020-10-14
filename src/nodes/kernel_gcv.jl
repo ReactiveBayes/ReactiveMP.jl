@@ -37,5 +37,6 @@ end
     m2data = getdata(m2)
     
     m, V = approximate_meancov(m2data.approximation, (s) -> exp(m2data.fn(s)), getdata(m1))
+
     return Message(MvNormalMeanCovariance(m, PDMat(Matrix(Hermitian(V)))))
 end

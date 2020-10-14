@@ -2,10 +2,11 @@ export Message, getdata, as_message
 export multiply_messages
 export DefaultMessageGate, LoggerMessageGate, TransformMessageGate, MessageGatesComposition
 
-import Base: *, +, ndims, precision
-
 using Distributions
 using Rocket
+
+import Distributions: mean, var, std, cov, entropy
+import Base: *, +, ndims, precision
 
 struct Message{D}
     data :: D
@@ -19,16 +20,17 @@ function multiply_messages end
 
 Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
-Distributions.mean(message::Message) = Distributions.mean(getdata(message))
-Distributions.var(message::Message)  = Distributions.var(getdata(message))
-Distributions.std(message::Message)  = Distributions.std(getdata(message))
-Distributions.cov(message::Message)  = Distributions.cov(getdata(message))
+Distributions.mean(message::Message)    = Distributions.mean(getdata(message))
+Distributions.var(message::Message)     = Distributions.var(getdata(message))
+Distributions.std(message::Message)     = Distributions.std(getdata(message))
+Distributions.cov(message::Message)     = Distributions.cov(getdata(message))
+Distributions.entropy(message::Message) = Distributions.entropy(getdata(message))
 
 Base.precision(message::Message) = precision(getdata(message))
 Base.ndims(message::Message)     = ndims(getdata(message))
 
 logmean(message::Message)     = log(mean(message))
-inversemean(message::Message) = 1.0 / mean(message)
+inversemean(message::Message) = inv(mean(message))
 
 ## Utiliy nothing message
 

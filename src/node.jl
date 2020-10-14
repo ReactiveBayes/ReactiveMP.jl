@@ -2,7 +2,6 @@ export VariableNode, varnode, name, messageout, messagein
 export FactorNode, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised, getvariable
 export getcluster, clusters, clusterindex
 export deps, connect!, activate!
-export rule
 export make_node
 export Marginalisation
 export sdtype, isdeterministic, isstochastic
@@ -297,9 +296,6 @@ function getmarginal!(factornode::FactorNode, cluster)
     throw("Unsupported marginal size: $(length(cluster))")
 end
 
-## rule
-
-function rule end
-function marginalrule end
+## make_node
 
 function make_node end

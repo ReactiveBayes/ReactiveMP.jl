@@ -1,4 +1,16 @@
-export @rule
+export rule, marginalrule
+export @rule, @marginalrule
+
+
+"""
+    Documentation placeholder
+"""
+function rule end
+
+"""
+    Documentation placeholder
+"""
+function marginalrule end
 
 using MacroTools
 
@@ -65,6 +77,9 @@ function __extract_meta_macro_rule(meta::Expr)
     return Meta
 end
 
+"""
+    Documentation placeholder
+"""
 macro rule(fform, on, vconstraint, messages, marginals, meta, fn)
     
     m_names, m_types, m_init_block, m_where_Ts = __extract_fn_args_macro_rule(messages; specname = :messages, prefix = :m_, proxytype = :Message)
@@ -91,6 +106,9 @@ macro rule(fform, on, vconstraint, messages, marginals, meta, fn)
     return esc(result)
 end
 
+"""
+    Documentation placeholder
+"""
 macro marginalrule(fform, on, messages, marginals, meta, fn)
     
     m_names, m_types, m_init_block, m_where_Ts = __extract_fn_args_macro_rule(messages; specname = :messages, prefix = :m_, proxytype = :Message)
