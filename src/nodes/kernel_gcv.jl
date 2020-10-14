@@ -40,3 +40,11 @@ end
 
     return Message(MvNormalMeanCovariance(m, PDMat(Matrix(Hermitian(V)))))
 end
+
+@symmetrical function multiply_messages(m1::Message{ <: MvNormalMeanPrecision }, m2::Message{ <: FnWithApproximation })
+    m2data = getdata(m2)
+    
+    m, V = approximate_meancov(m2data.approximation, (s) -> exp(m2data.fn(s)), getdata(m1))
+
+    return Message(MvNormalMeanPrecision(m, inv(PDMat(Matrix(Hermitian(V))))))
+end

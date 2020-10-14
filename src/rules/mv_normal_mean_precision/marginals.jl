@@ -5,7 +5,7 @@
     marginals => Nothing,
     meta => Nothing,
     begin
-        q_out = prod(ProdPreserveParametrisation(), m_out, MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)))
+        q_out = m_out * as_message(MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)))
         return FactorizedMarginal(q_out, m_μ, m_Λ)
     end
 )
@@ -17,7 +17,7 @@
     marginals => Nothing,
     meta => Nothing,
     begin
-        q_μ = prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_Λ)))
+        q_μ = m_μ * as_message(MvNormalMeanPrecision(mean(m_out), mean(m_Λ)))
         return FactorizedMarginal(m_out, q_μ, m_Λ)
     end
 )

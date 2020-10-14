@@ -24,7 +24,7 @@
 
 @rule(
     form        => Type{ <: MvNormalMeanPrecision },
-    on          => :mean,
+    on          => :μ,
     vconstraint => Marginalisation,
     messages    => (m_out::MvNormalMeanPrecision, ),
     marginals   => (q_Λ::Any, ),
