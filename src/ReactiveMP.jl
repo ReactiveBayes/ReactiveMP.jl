@@ -9,11 +9,13 @@ include("approximations.jl")
 include("approximations/gausshermite.jl")
 include("approximations/sphericalradial.jl")
 
+include("distributions.jl")
 include("distributions/dirac.jl")
 include("distributions/gamma_ab.jl")
 include("distributions/normal_mean_precision.jl")
 include("distributions/normal_mean_variance.jl")
 include("distributions/mv_normal_mean_covariance.jl")
+include("distributions/mv_normal_mean_precision.jl")
 include("distributions/exp_linear_quadratic.jl")
 
 include("message.jl")

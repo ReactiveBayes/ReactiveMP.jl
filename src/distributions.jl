@@ -1,0 +1,6 @@
+export ProdPreserveParametrisation, ProdBestSuitableParametrisation
+
+import Base: prod
+
+struct ProdPreserveParametrisation end
+struct ProdBestSuitableParametrisation end
