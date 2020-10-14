@@ -19,7 +19,7 @@ getdata(message::Message)   = message.data
 function multiply_messages end
 
 # TODO
-multiply_messages(left::Message, right::Message) = as_message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)))
+# multiply_messages(left::Message, right::Message) = as_message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)))
 
 Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 

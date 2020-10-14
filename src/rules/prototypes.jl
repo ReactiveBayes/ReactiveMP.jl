@@ -20,6 +20,11 @@ include("kernel_gcv/marginals.jl")
 
 include("mv_normal_mean_covariance/out.jl")
 include("mv_normal_mean_covariance/mean.jl")
+include("mv_normal_mean_covariance/marginals.jl")
+
+include("mv_normal_mean_precision/out.jl")
+include("mv_normal_mean_precision/mean.jl")
+include("mv_normal_mean_precision/marginals.jl")
 
 include("normal/out.jl")
 

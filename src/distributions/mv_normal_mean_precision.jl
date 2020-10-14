@@ -1,7 +1,7 @@
 export MvNormalMeanPrecision
 
 import PDMats: AbstractPDMat
-import Distributions: mean, var, cov, std, distrname, AbstractMvNormal
+import Distributions: mean, var, cov, std, logdetcov, distrname, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, UniformScaling
 import Base: ndims, precision, length, size, prod
 
@@ -25,6 +25,8 @@ Base.precision(dist::MvNormalMeanPrecision) = dist.Λ
 Base.length(dist::MvNormalMeanPrecision)    = length(mean(dist))
 Base.ndims(dist::MvNormalMeanPrecision)     = length(dist)
 Base.size(dist::MvNormalMeanPrecision)      = (length(dist), )
+
+Distributions.logdetcov(dist::MvNormalMeanPrecision) = logdet(cov(dist))
 
 function Base.prod(::ProdPreserveParametrisation, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     Λ = precision(left) + precision(right)
