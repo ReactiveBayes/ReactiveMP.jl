@@ -31,6 +31,7 @@ include("messages/mv_normal_mean_covariance.jl")
 include("messages/mv_normal_mean_precision.jl")
 include("messages/gamma_ab.jl")
 include("messages/exp_linear_quadratic.jl")
+include("messages/wishart.jl")
 
 include("variable.jl")
 include("variables/random.jl")
@@ -49,6 +50,7 @@ include("nodes/gamma_ab.jl")
 include("nodes/addition.jl")
 include("nodes/gcv.jl")
 include("nodes/kernel_gcv.jl")
+include("nodes/wishart.jl")
 
 include("rules/prototypes.jl")
 
@@ -63,6 +65,7 @@ include("score/average_energy/gamma_ab.jl")
 include("score/average_energy/normal_mean_precision.jl")
 include("score/average_energy/normal_mean_variance.jl")
 include("score/average_energy/gcv.jl")
+include("score/average_energy/wishart.jl")
 
 include("score/differential_entropy/common.jl")
 include("score/differential_entropy/dirac.jl")

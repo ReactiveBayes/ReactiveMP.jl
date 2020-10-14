@@ -10,11 +10,7 @@ struct MvNormalMeanPrecision{ T <: Real, M <: AbstractVector{T}, P <: AbstractPD
     Λ :: P
 end
 
-MvNormalMeanPrecision(μ::AbstractVector{<:Real}, Λ::AbstractMatrix{<:Real}) = begin
-    @assert all(d -> !isinf(d) && !isnan(d), μ)
-    @assert all(d -> !isinf(d) && !isnan(d), Λ)
-    MvNormalMeanPrecision(μ, PDMat(Λ))
-end
+MvNormalMeanPrecision(μ::AbstractVector{<:Real}, Λ::AbstractMatrix{<:Real}) = MvNormalMeanPrecision(μ, PDMat(Λ))
 MvNormalMeanPrecision(μ::AbstractVector{<:Real}, Λ::Diagonal{<:Real})       = MvNormalMeanPrecision(μ, PDiagMat(diag(Λ)))
 MvNormalMeanPrecision(μ::AbstractVector{<:Real}, Λ::UniformScaling{<:Real}) = MvNormalMeanPrecision(μ, ScalMat(length(μ), Λ.λ))
 
