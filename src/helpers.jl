@@ -146,3 +146,4 @@ Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero
 Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal{$(T)}($(value(a)), $(infs(a))∞)")
 
 
+

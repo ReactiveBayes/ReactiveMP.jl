@@ -1,8 +1,12 @@
 export AbstractApproximationMethod
+export approximation_name, approximation_short_name
 
 import PDMats: AbstractPDMat
 
 abstract type AbstractApproximationMethod end
+
+function approximation_name end
+function approximation_short_name end
 
 function approximate_meancov(method::AbstractApproximationMethod, g::Function, distribution)
     return approximate_meancov(method, g, mean(distribution), cov(distribution))

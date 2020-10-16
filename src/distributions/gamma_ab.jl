@@ -2,7 +2,7 @@ export GammaAB
 
 import Distributions: mean, var
 
-struct GammaAB{T <: Real}
+struct GammaAB{T <: Real} 
     a :: T
     b :: T
 end

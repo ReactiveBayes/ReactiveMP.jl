@@ -8,6 +8,7 @@ include("stream.jl")
 include("approximations.jl")
 include("approximations/gausshermite.jl")
 include("approximations/sphericalradial.jl")
+include("approximations/laplace.jl")
 
 include("distributions.jl")
 include("distributions/dirac.jl")

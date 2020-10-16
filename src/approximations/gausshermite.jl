@@ -34,6 +34,9 @@ struct GaussHermiteCubature{PI, WI} <: AbstractApproximationMethod
     witer :: WI
 end
 
+approximation_name(approx::GaussHermiteCubature)       = "GaussHermite($(approx.p))"
+approximation_short_name(approx::GaussHermiteCubature) = "GH$(approx.p)"
+
 function ghcubature(p::Int)
     points, weights = p <= length(precomputed_sigma_pointsweights) ? precomputed_sigma_pointsweights[p] : gausshermite(p)
 

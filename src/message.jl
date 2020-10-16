@@ -6,7 +6,7 @@ using Distributions
 using Rocket
 
 import Distributions: mean, var, std, cov, entropy
-import Base: *, +, ndims, precision
+import Base: *, +, ndims, precision, length
 
 struct Message{D}
     data :: D

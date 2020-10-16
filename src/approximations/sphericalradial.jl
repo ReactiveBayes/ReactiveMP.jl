@@ -2,6 +2,9 @@ export srcubature
 
 struct SphericalRadialCubature <: AbstractApproximationMethod end
 
+approximation_name(::SphericalRadialCubature)       = "SphericalRadial"
+approximation_short_name(::SphericalRadialCubature) = "SR"
+
 function srcubature()
     return SphericalRadialCubature()
 end
