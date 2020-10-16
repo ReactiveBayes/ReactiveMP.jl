@@ -7,5 +7,6 @@ demo/*.jl
 .idea
 
 **/*.mem
+**/private*
 
 examples/*Compiled
