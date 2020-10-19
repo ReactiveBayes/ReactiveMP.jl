@@ -26,8 +26,6 @@ as_marginal(message::Message)  = Marginal(getdata(message))
 as_message(marginal::Marginal) = Message(getdata(marginal))
 
 include("messages/normal.jl")
-include("messages/normal_mean_precision.jl")
-include("messages/normal_mean_variance.jl")
 include("messages/mv_normal_mean_covariance.jl")
 include("messages/mv_normal_mean_precision.jl")
 include("messages/gamma_ab.jl")

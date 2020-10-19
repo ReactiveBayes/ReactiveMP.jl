@@ -3,6 +3,7 @@ export MvNormalMeanCovariance
 import Distributions: mean, var, cov, std
 import LinearAlgebra: diag
 import Base: ndims
+import PDMats: PDMat
 
 struct MvNormalMeanCovariance{T <: Real}
     mean       :: Vector{T}
