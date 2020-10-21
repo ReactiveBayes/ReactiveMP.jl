@@ -72,7 +72,7 @@ function approximate_meancov(::LaplaceApproximation, g::Function, distribution)
     # end
 
     # m = Optim.minimizer(result)
-    c = -inv(Matrix(Hermitian(ForwardDiff.hessian(logf, m))))
+    c = -cholinv(ForwardDiff.hessian(logf, m))
 
     return m ,c
 end

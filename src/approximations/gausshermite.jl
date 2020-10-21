@@ -49,7 +49,7 @@ function getweights(gh::GaussHermiteCubature, mean::T, variance::T) where { T <:
     end
 end
 
-function getweights(gh::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractPDMat{T}) where { T <: Real }
+function getweights(gh::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractMatrix{T}) where { T <: Real }
     sqrtpi = (pi ^ (length(mean) / 2))
     return Base.Generator(product(repeated(gh.witer, length(mean))...)) do pweight
         return prod(pweight) / sqrtpi
@@ -63,8 +63,8 @@ function getpoints(gh::GaussHermiteCubature, mean::T, variance::T) where { T <: 
     end
 end
 
-function getpoints(cubature::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractPDMat{T}) where { T <: Real }
-    sqrtP = sqrt(Hermitian(covariance))
+function getpoints(cubature::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractMatrix{T}) where { T <: Real }
+    sqrtP = sqrt(Matrix(covariance))
     sqrt2 = sqrt(2)
 
     tbuffer = similar(mean)

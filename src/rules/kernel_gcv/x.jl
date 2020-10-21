@@ -7,9 +7,9 @@
     meta        => KernelGCVMetadata,
     begin 
         kernelfunction = get_kernelfn(meta)
-        Λ_out = approximate_kernel_expectation(get_approximation(meta), (s) -> inv(kernelfunction(s)), q_z)
+        Λ_out = approximate_kernel_expectation(get_approximation(meta), (s) -> cholinv(kernelfunction(s)), q_z)
 
-        return MvNormalMeanCovariance(mean(m_y), cov(m_y) + inv(PDMat(Matrix(Hermitian(Λ_out)))))
+        return MvNormalMeanCovariance(mean(m_y), cov(m_y) + cholinv(Λ_out))
     end
 )
 
@@ -22,8 +22,8 @@
     meta        => KernelGCVMetadata,
     begin 
         kernelfunction = get_kernelfn(meta)
-        Λ_out = approximate_kernel_expectation(get_approximation(meta), (s) -> inv(kernelfunction(s)), q_z)
+        Λ_out = approximate_kernel_expectation(get_approximation(meta), (s) -> cholinv(kernelfunction(s)), q_z)
 
-        return MvNormalMeanPrecision(mean(m_y), inv(cov(m_y) + inv(PDMat(Matrix(Hermitian(Λ_out))))))
+        return MvNormalMeanPrecision(mean(m_y), cholinv(cov(m_y) + cholinv(Λ_out)))
     end
 )

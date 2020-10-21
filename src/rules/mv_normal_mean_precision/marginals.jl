@@ -37,8 +37,8 @@
 
         W_bar = mean(q_Λ)
         
-        Λ  = PDMat(Matrix(Hermitian([ W_y + W_bar -W_bar; -W_bar W_m + W_bar ])))
-        μ  = inv(Λ) * [ xi_y; xi_m ]
+        Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
+        μ  = cholinv(Λ) * [ xi_y; xi_m ]
         
         return MvNormalMeanPrecision(μ, Λ)
     end

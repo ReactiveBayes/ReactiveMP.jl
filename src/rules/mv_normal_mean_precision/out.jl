@@ -30,7 +30,6 @@
     marginals   => (q_Λ::Any, ),
     meta        => Nothing,
     begin
-        # @show inv(mean(q_Λ))
-        return MvNormalMeanPrecision(mean(m_μ), Matrix(Hermitian(inv(Matrix(Hermitian(cov(m_μ) + inversemean(q_Λ)))))))
+        return MvNormalMeanPrecision(mean(m_μ), cholinv(cov(m_μ) + cholinv(mean(q_Λ))))
     end
 )

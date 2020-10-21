@@ -25,7 +25,7 @@
     
         logpdf = (z) -> begin
             gz = kernelfunction(z)
-            return -0.5*(logdet(gz) + tr(inv(gz)*psi))
+            return -0.5*(logdet(gz) + tr(cholinv(gz)*psi))
         end
     
         return FnWithApproximation(logpdf, get_approximation(meta))
@@ -59,7 +59,7 @@
     
         logpdf = (z) -> begin
             gz = kernelfunction(z)
-            return -0.5*(logdet(gz) + tr(inv(gz)*psi))
+            return -0.5*(logdet(gz) + tr(cholinv(gz)*psi))
         end
     
         return FnWithApproximation(logpdf, get_approximation(meta))

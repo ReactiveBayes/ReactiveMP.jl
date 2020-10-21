@@ -1,8 +1,6 @@
 export AbstractApproximationMethod
 export approximation_name, approximation_short_name
 
-import PDMats: AbstractPDMat
-
 abstract type AbstractApproximationMethod end
 
 function approximation_name end
@@ -43,7 +41,7 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
     return mean, var
 end
 
-function approximate_meancov(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractPDMat{T}) where { T <: Real }
+function approximate_meancov(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractMatrix{T}) where { T <: Real }
     ndims = length(m)
 
     weights = getweights(method, m, P)
@@ -82,7 +80,7 @@ function approximate_kernel_expectation(method::AbstractApproximationMethod, g::
     return approximate_kernel_expectation(method, g, mean(distribution), cov(distribution))
 end
 
-function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractPDMat{T}) where { T <: Real }
+function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractMatrix{T}) where { T <: Real }
     ndims = length(m)
 
     weights = getweights(method, m, P)
