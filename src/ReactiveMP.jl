@@ -5,6 +5,9 @@ using Distributions
 include("helpers.jl")
 include("stream.jl")
 
+include("algebra/helpers.jl")
+include("algebra/cholinv.jl")
+
 include("approximations.jl")
 include("approximations/gausshermite.jl")
 include("approximations/sphericalradial.jl")
