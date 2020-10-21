@@ -26,7 +26,7 @@
     form => Type{ <: MvNormalMeanPrecision },
     on   => :out_μ,
     messages => (m_out::MvNormalMeanPrecision, m_μ::MvNormalMeanPrecision),
-    marginals => (q_Λ::Dirac, ),
+    marginals => (q_Λ::Any, ),
     meta => Nothing,
     begin
         W_y  = precision(m_out)

@@ -1,8 +1,8 @@
-module RocketTest
+module ReactiveMPTest
 
-using Test, Documenter, Rocket
+using Test, Documenter, ReactiveMP
 
-# doctest(Rocket)
+# doctest(ReactiveMP)
 
 @testset "ReactiveMP" begin
 

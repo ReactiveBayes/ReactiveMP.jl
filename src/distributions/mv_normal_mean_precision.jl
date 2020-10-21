@@ -18,7 +18,7 @@ Distributions.distrname(::MvNormalMeanPrecision) = "MvNormalMeanPrecision"
 
 Distributions.mean(dist::MvNormalMeanPrecision)      = dist.μ
 Distributions.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))
-Distributions.cov(dist::MvNormalMeanPrecision)       = inv(dist.Λ)
+Distributions.cov(dist::MvNormalMeanPrecision)       = PDMat(Matrix(Hermitian(inv(Hermitian(dist.Λ)))))
 Distributions.std(dist::MvNormalMeanPrecision)       = sqrt(Matrix(cov(dist)))
 
 # TODO
