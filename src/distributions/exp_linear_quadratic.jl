@@ -1,22 +1,21 @@
 export ExponentialLinearQuadratic
 
-import Distributions: mean, var, cov, pdf, logpdf
+import Distributions: pdf, logpdf, ContinuousUnivariateDistribution
 
-struct ExponentialLinearQuadratic{T <: Real}
+struct ExponentialLinearQuadratic{T <: Real} <: ContinuousUnivariateDistribution
     a :: T
     b :: T
     c :: T
     d :: T
 end
 
-function Distributions.pdf(distribution::ExponentialLinearQuadratic, x)
-    return exp(logpdf(distribution, x))
-end
+ExponentialLinearQuadratic(a::Real, b::Real, c::Real, d::Real)             = ExponentialLinearQuadratic(promote(a, b, c, d)...)
+ExponentialLinearQuadratic(a::Integer, b::Integer, c::Integer, d::Integer) = ExponentialLinearQuadratic(float(a), float(b), float(c), float(d))
 
-function Distributions.logpdf(distribution::ExponentialLinearQuadratic, x)
-    a = distribution.a
-    b = distribution.b
-    c = distribution.c
-    d = distribution.d
-    return -0.5 * (a * x + b * exp(c * x + d * x ^ 2 / 2.0))
+Distributions.pdf(dist::ExponentialLinearQuadratic, x)    = exp(logpdf(dist, x))
+Distributions.logpdf(dist::ExponentialLinearQuadratic, x) = -0.5 * (dist.a * x + dist.b * exp(dist.c * x + dist.d * x ^ 2 / 2.0))
+
+function prod(::ProdPreserveParametrisation, left::NormalMeanVariance{T}, right::ExponentialLinearQuadratic{T}) where T
+    mean, var = approximate_meancov(ghcubature(5), (z) -> pdf(right, z), left)
+    return NormalMeanVariance(mean, var)
 end

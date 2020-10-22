@@ -3,8 +3,8 @@ include("addition/out.jl")
 include("addition/in1.jl")
 include("addition/in2.jl")
 
-include("gamma_ab/out.jl")
-include("gamma_ab/marginals.jl")
+include("gamma/out.jl")
+include("gamma/marginals.jl")
 
 include("gcv/x.jl")
 include("gcv/y.jl")

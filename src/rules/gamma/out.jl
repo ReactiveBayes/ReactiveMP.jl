@@ -1,11 +1,11 @@
 @rule(
-    form        => Type{ <: GammaAB },
+    form        => Type{ <: Gamma },
     on          => :out,
     vconstraint => Marginalisation,
-    messages    => (m_a::Dirac{T}, m_b::Dirac{T}) where T,
+    messages    => (m_α::Dirac{T}, m_θ::Dirac{T}) where T,
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        return GammaAB(mean(m_a), mean(m_b))
+        return Gamma(mean(m_α), mean(m_θ))
     end
 )
