@@ -64,7 +64,7 @@ function getpoints(gh::GaussHermiteCubature, mean::T, variance::T) where { T <: 
 end
 
 function getpoints(cubature::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractMatrix{T}) where { T <: Real }
-    sqrtP = sqrt(Matrix(covariance))
+    sqrtP = cholsqrt(covariance)
     sqrt2 = sqrt(2)
 
     tbuffer = similar(mean)

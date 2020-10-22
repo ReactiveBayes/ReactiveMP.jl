@@ -48,8 +48,8 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
     points  = getpoints(method, m, P)
 
     cs = similar(m, eltype(m), length(weights))
-    norm = 0.0
-    mean = zeros(ndims)
+    norm = zero(T)
+    mean = zeros(T, ndims)
 
     for (index, (weight, point)) in enumerate(zip(weights, points))
         gv = g(point)
@@ -65,7 +65,7 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
 
     broadcast!(/, mean, mean, norm)
 
-    cov = zeros(ndims, ndims)
+    cov = zeros(T, ndims, ndims)
     foreach(enumerate(zip(points, cs))) do (index, (point, c))
         broadcast!(-, point, point, mean)                # point -= mean
         mul!(cov, point, reshape(point, (1, ndims)), c, 1.0) # cov = cov + c * (point)⋅(point)' where c = weight * g(point)

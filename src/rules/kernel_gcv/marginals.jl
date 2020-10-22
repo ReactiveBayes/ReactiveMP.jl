@@ -1,7 +1,7 @@
 @marginalrule(
     form      => Type{ <: KernelGCV },
     on        => :y_x,
-    messages  => (m_y::MvNormalMeanCovariance{T}, m_x::MvNormalMeanCovariance{T}) where { T <: Real },
+    messages  => (m_y::MvNormalMeanCovariance{T}, m_x::MvNormalMeanCovariance{T}) where { T },
     marginals => (q_z::MvNormalMeanCovariance{T}, ),
     meta      => KernelGCVMetadata,
     begin
@@ -24,7 +24,7 @@
 @marginalrule(
     form      => Type{ <: KernelGCV },
     on        => :y_x,
-    messages  => (m_y::MvNormalMeanPrecision{T}, m_x::MvNormalMeanPrecision{T}) where { T <: Real },
+    messages  => (m_y::MvNormalMeanPrecision{T}, m_x::MvNormalMeanPrecision{T}) where { T },
     marginals => (q_z::MvNormalMeanPrecision{T}, ),
     meta      => KernelGCVMetadata,
     begin

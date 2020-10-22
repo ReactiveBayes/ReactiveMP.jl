@@ -48,13 +48,5 @@ import LinearAlgebra: cholesky
     
     m, V = approximate_meancov(m2data.approximation, (s) -> exp(m2data.fn(s)), getdata(m1))
 
-    try 
-        cholesky(Matrix(Hermitian(inv(Matrix(Hermitian(V))))))
-    catch _
-        @show m1
-        @show Matrix(Hermitian(V))
-        rethrow()
-    end
-
-    return Message(MvNormalMeanPrecision(m, Matrix(Hermitian(inv(PDMat(Matrix(Hermitian(V))))))))
+    return Message(MvNormalMeanPrecision(m, cholinv(V)))
 end

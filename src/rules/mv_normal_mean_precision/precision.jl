@@ -10,7 +10,7 @@
         (m_out, v_out)   = mean(q_out), cov(q_out)
 
         df = ndims(q_μ) + 2.0
-        S  = cholinv(v_mean + v_out + (m_mean - m_out)*(m_mean - m_out)')
+        S  = Matrix(Hermitian(cholinv(v_mean + v_out + (m_mean - m_out)*(m_mean - m_out)')))
 
         return Wishart(df, S)
     end

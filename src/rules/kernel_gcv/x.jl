@@ -2,7 +2,7 @@
     form        => Type{ KernelGCV },
     on          => :x,
     vconstraint => Marginalisation,
-    messages    => (m_y::MvNormalMeanCovariance{T}, ) where { T <: Real },
+    messages    => (m_y::MvNormalMeanCovariance{T}, ) where { T },
     marginals   => (q_z::MvNormalMeanCovariance{T}, ),
     meta        => KernelGCVMetadata,
     begin 
@@ -17,7 +17,7 @@
     form        => Type{ KernelGCV },
     on          => :x,
     vconstraint => Marginalisation,
-    messages    => (m_y::MvNormalMeanPrecision{T}, ) where { T <: Real },
+    messages    => (m_y::MvNormalMeanPrecision{T}, ) where { T },
     marginals   => (q_z::MvNormalMeanPrecision{T}, ),
     meta        => KernelGCVMetadata,
     begin 

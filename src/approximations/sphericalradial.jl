@@ -18,7 +18,7 @@ end
 
 function getpoints(::SphericalRadialCubature, mean::AbstractVector{T}, covariance::AbstractMatrix{T}) where { T <: Real }
     d = length(mean)
-    L = sqrt(Matrix(covariance))
+    L = cholsqrt(covariance)
 
     tmpbuffer = zeros(d)
     sigma_points = Base.Generator(1:2d + 1) do i
