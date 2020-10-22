@@ -2,9 +2,9 @@ export make_node, rule, KernelGCV, KernelGCVMetadata
 
 import LinearAlgebra: logdet, tr
 
-struct KernelGCVMetadata
-    kernelFn      :: Function
-    approximation :: AbstractApproximationMethod
+struct KernelGCVMetadata{F, A}
+    kernelFn      :: F
+    approximation :: A
 end
 
 get_kernelfn(meta::KernelGCVMetadata)      = meta.kernelFn
@@ -28,9 +28,9 @@ end
 
 ## rules
 
-struct FnWithApproximation
-    fn            :: Function
-    approximation :: AbstractApproximationMethod
+struct FnWithApproximation{F, A}
+    fn            :: F
+    approximation :: A
 end
 
 @symmetrical function multiply_messages(m1::Message{ <: MvNormalMeanCovariance }, m2::Message{ <: FnWithApproximation })

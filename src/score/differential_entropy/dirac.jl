@@ -1,4 +1,4 @@
 
-function score(::DifferentialEntropy, marginal::Marginal{ <: Dirac }) where { T <: Real }
+function score(::DifferentialEntropy, ::Marginal{ <: Dirac })
     return ∞
 end
