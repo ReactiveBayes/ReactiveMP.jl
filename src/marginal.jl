@@ -28,7 +28,7 @@ Distributions.logpdf(marginal::Marginal, x) = Distributions.logpdf(getdata(margi
 
 Base.precision(marginal::Marginal) = precision(getdata(marginal))
 Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
-Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
+Base.length(marginal::Marginal)    = length(getdata(marginal))
 Base.size(marginal::Marginal)      = size(getdata(marginal))
 
 logmean(marginal::Marginal)     = log(mean(marginal))
