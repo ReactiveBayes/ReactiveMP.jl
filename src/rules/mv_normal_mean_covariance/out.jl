@@ -2,11 +2,11 @@
     form        => Type{ <: MvNormalMeanCovariance },
     on          => :out,
     vconstraint => Marginalisation,
-    messages    => (m_mean::Dirac, m_covariance::Dirac),
+    messages    => (m_μ::Dirac, m_Σ::Dirac),
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        return MvNormalMeanCovariance(mean(m_mean), mean(m_covariance))
+        return MvNormalMeanCovariance(mean(m_μ), mean(m_Σ))
     end
 )
 
@@ -15,10 +15,10 @@
     on          => :out,
     vconstraint => Marginalisation,
     messages    => Nothing,
-    marginals   => (q_mean::Any, q_covariance::Any),
+    marginals   => (q_μ::Any, q_Σ::Any),
     meta        => Nothing,
     begin
-        return MvNormalMeanCovariance(mean(q_mean), mean(q_covariance))
+        return MvNormalMeanCovariance(mean(q_μ), mean(q_Σ))
     end
 )
 
@@ -26,10 +26,10 @@
     form        => Type{ <: MvNormalMeanCovariance },
     on          => :out,
     vconstraint => Marginalisation,
-    messages    => (m_mean::MvNormalMeanCovariance, ),
-    marginals   => (q_covariance::Any, ),
+    messages    => (m_μ::MvNormalMeanCovariance, ),
+    marginals   => (q_Σ::Any, ),
     meta        => Nothing,
     begin
-        return MvNormalMeanCovariance(mean(m_mean), cov(m_mean) + mean(q_covariance))
+        return MvNormalMeanCovariance(mean(m_μ), cov(m_μ) + mean(q_Σ))
     end
 )

@@ -2,13 +2,13 @@ export make_node, rule
 
 
 function make_node(::Type{ <: NormalMeanPrecision }; factorisation = ((1, 2, 3), ))
-    return FactorNode(NormalMeanPrecision, Stochastic, (:out, :mean, :precision), factorisation, nothing)
+    return FactorNode(NormalMeanPrecision, Stochastic, (:out, :μ, :τ), factorisation, nothing)
 end
 
-function make_node(::Type{ <: NormalMeanPrecision }, out, mean, precision; factorisation = ((1, 2, 3), ))
+function make_node(::Type{ <: NormalMeanPrecision }, out, μ, τ; factorisation = ((1, 2, 3), ))
     node = make_node(NormalMeanPrecision, factorisation = factorisation)
     connect!(node, :out, out)
-    connect!(node, :mean, mean)
-    connect!(node, :precision, precision)
+    connect!(node, :μ, μ)
+    connect!(node, :τ, τ)
     return node
 end

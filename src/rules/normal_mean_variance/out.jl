@@ -2,11 +2,11 @@
     form        => Type{ <: NormalMeanVariance }, 
     on          => :out,
     vconstraint => Marginalisation,
-    messages    => (m_mean::Dirac{T}, m_variance::Dirac{T}) where { T <: Real },
+    messages    => (m_μ::Dirac{T}, m_v::Dirac{T}) where { T <: Real },
     marginals   => Nothing,
     meta        => Nothing,
     begin 
-        return NormalMeanVariance(mean(m_mean), mean(m_variance))
+        return NormalMeanVariance(mean(m_μ), mean(m_v))
     end
 )
 
@@ -14,11 +14,11 @@
     form        => Type{ <: NormalMeanVariance }, 
     on          => :out,
     vconstraint => Marginalisation,
-    messages    => (m_mean::NormalMeanVariance{T}, m_variance::Dirac{T}) where { T <: Real },
+    messages    => (m_μ::NormalMeanVariance{T}, m_v::Dirac{T}) where { T <: Real },
     marginals   => Nothing,
     meta        => Nothing,
     begin 
-        return NormalMeanVariance(mean(m_mean), var(m_mean) + mean(m_variance))
+        return NormalMeanVariance(mean(m_μ), var(m_μ) + mean(m_v))
     end
 )
 
@@ -27,9 +27,9 @@
     on          => :out,
     vconstraint => Marginalisation,
     messages    => Nothing,
-    marginals   => (q_mean::Any, q_variance::Any),
+    marginals   => (q_μ::Any, q_v::Any),
     meta        => Nothing,
     begin 
-        return NormalMeanVariance(mean(q_mean), mean(q_variance))
+        return NormalMeanVariance(mean(q_μ), mean(q_v))
     end
 )

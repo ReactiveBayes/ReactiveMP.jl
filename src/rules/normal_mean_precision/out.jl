@@ -2,11 +2,11 @@
     form        => Type{ <: NormalMeanPrecision },
     on          => :out,
     vconstraint => Marginalisation,
-    messages    => (m_mean::Dirac{T}, m_precision::Dirac{T}) where { T <: Real },
+    messages    => (m_μ::Dirac{T}, m_τ::Dirac{T}) where { T <: Real },
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        return NormalMeanPrecision(mean(m_mean), mean(m_precision))
+        return NormalMeanPrecision(mean(m_μ), mean(m_τ))
     end
 )
 
@@ -15,9 +15,9 @@
     on          => :out,
     vconstraint => Marginalisation,
     messages    => Nothing,
-    marginals   => (q_mean::Any, q_precision::Any),
+    marginals   => (q_μ::Any, q_τ::Any),
     meta        => Nothing,
     begin
-        return NormalMeanPrecision(mean(q_mean), mean(q_precision))
+        return NormalMeanPrecision(mean(q_μ), mean(q_τ))
     end
 )
