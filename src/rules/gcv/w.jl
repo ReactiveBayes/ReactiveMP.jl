@@ -6,7 +6,7 @@
     marginals   => (q_y_x::Any, q_z::Any, q_κ::Any),
     meta        => Nothing,
     begin 
-        Λ = Matrix(cov(q_y_x))
+        Λ = cov(q_y_x)
         m = mean(q_y_x)
 
         γ_1 = mean(q_z) ^ 2 * var(q_κ) + mean(q_κ) ^ 2 * var(q_z) + var(q_z) * var(q_κ)

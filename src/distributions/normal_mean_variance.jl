@@ -12,6 +12,8 @@ NormalMeanVariance(μ::Integer, v::Integer) = NormalMeanVariance(float(μ), floa
 NormalMeanVariance(μ::T) where {T <: Real} = NormalMeanVariance(μ, one(T))
 NormalMeanVariance()                       = NormalMeanVariance(0.0, 1.0)
 
+Distributions.@distr_support NormalMeanVariance -Inf Inf
+
 Distributions.mean(dist::NormalMeanVariance)      = dist.μ
 Distributions.median(dist::NormalMeanVariance)    = dist.μ
 Distributions.mode(dist::NormalMeanVariance)      = dist.μ

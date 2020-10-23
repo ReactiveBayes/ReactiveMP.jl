@@ -12,6 +12,8 @@ NormalMeanPrecision(μ::Integer, v::Integer) = NormalMeanPrecision(float(μ), fl
 NormalMeanPrecision(μ::T) where {T <: Real} = NormalMeanPrecision(μ, one(T))
 NormalMeanPrecision()                       = NormalMeanPrecision(0.0, 1.0)
 
+Distributions.@distr_support NormalMeanPrecision -Inf Inf
+
 Distributions.mean(dist::NormalMeanPrecision)      = dist.μ
 Distributions.median(dist::NormalMeanPrecision)    = dist.μ
 Distributions.mode(dist::NormalMeanPrecision)      = dist.μ

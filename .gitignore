@@ -8,5 +8,6 @@ demo/*.jl
 
 **/*.mem
 **/private*
+**/.DS_Store
 
 examples/*Compiled

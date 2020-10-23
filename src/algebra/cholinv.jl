@@ -1,5 +1,6 @@
 export cholinv, cholsqrt
 
+using LinearAlgebra
 using PositiveFactorizations
 
 cholinv(x)           = inv(cholesky(PositiveFactorizations.Positive, Hermitian(x)))

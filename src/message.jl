@@ -19,7 +19,7 @@ getdata(message::Message)   = message.data
 function multiply_messages end
 
 # TODO
-# multiply_messages(left::Message, right::Message) = as_message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)))
+multiply_messages(left::Message, right::Message) = as_message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)))
 
 Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
@@ -41,7 +41,7 @@ function multiply_messages(m1::Message{Nothing}, m2::Message{Nothing})
     return Message(nothing)
 end
 
-@symmetrical function multiply_messages(::Message{Nothing}, message)
+@symmetrical function multiply_messages(::Message{Nothing}, message::Message)
     return message
 end
 

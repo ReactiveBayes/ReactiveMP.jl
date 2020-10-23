@@ -28,14 +28,6 @@ include("marginal.jl")
 as_marginal(message::Message)  = Marginal(getdata(message))
 as_message(marginal::Marginal) = Message(getdata(marginal))
 
-include("messages/normal.jl")
-include("messages/mv_normal_mean_covariance.jl")
-include("messages/mv_normal_mean_precision.jl")
-include("messages/normal_mean_precision.jl")
-include("messages/gamma.jl")
-include("messages/exp_linear_quadratic.jl")
-include("messages/wishart.jl")
-
 include("variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
@@ -72,8 +64,5 @@ include("score/average_energy/wishart.jl")
 
 include("score/differential_entropy/common.jl")
 include("score/differential_entropy/dirac.jl")
-include("score/differential_entropy/normal_mean_precision.jl")
-include("score/differential_entropy/normal_mean_variance.jl")
-include("score/differential_entropy/mv_normal_mean_covariance.jl")
 
 end

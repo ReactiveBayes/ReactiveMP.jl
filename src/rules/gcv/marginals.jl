@@ -10,8 +10,7 @@
         γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
         γ23 = γ_2 * γ_3
 
-        W = PDMat([ (precision(m_y) + γ23) -γ23; -γ23 (precision(m_x) + γ23) ])
-        Λ = inv(W)
+        Λ = cholinv([ (precision(m_y) + γ23) -γ23; -γ23 (precision(m_x) + γ23) ])
         m = Λ * [ mean(m_y) * precision(m_y); mean(m_x) * precision(m_x) ]
 
         return MvNormalMeanCovariance(m, Λ)

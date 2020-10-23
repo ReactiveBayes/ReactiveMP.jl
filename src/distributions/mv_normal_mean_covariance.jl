@@ -1,19 +1,65 @@
 export MvNormalMeanCovariance
 
-import Distributions: mean, var, cov, std
-import LinearAlgebra: diag
-import Base: ndims
-import PDMats: PDMat
+import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
+import LinearAlgebra: diag, Diagonal, dot
+import Base: ndims, precision, length, size, prod
 
-struct MvNormalMeanCovariance{T <: Real}
-    mean       :: Vector{T}
-    covariance :: PDMat{T,Array{T,2}}
+struct MvNormalMeanCovariance{ T <: Real, M <: AbstractVector{T}, P <: AbstractMatrix{T} } <: AbstractMvNormal
+    μ :: M
+    Σ :: P
 end
 
-Distributions.mean(nmc::MvNormalMeanCovariance) = nmc.mean
-Distributions.var(nmc::MvNormalMeanCovariance)  = diag(cov(nmc))
-Distributions.cov(nmc::MvNormalMeanCovariance)  = nmc.covariance
-Distributions.std(nmc::MvNormalMeanCovariance)  = sqrt(Matrix(cov(nmc)))
+function MvNormalMeanCovariance(μ::AbstractVector{ <: Real}, Σ::AbstractMatrix{ <: Real }) 
+    T = promote_type(eltype(μ), eltype(Λ))
+    return MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
+end
 
-Base.ndims(nmc::MvNormalMeanCovariance) = length(mean(nmc))
+MvNormalMeanCovariance(μ::AbstractVector{ <: Integer}, Σ::AbstractMatrix{ <: Integer }) = MvNormalMeanCovariance(float.(μ), float.(Σ))
+MvNormalMeanCovariance(μ::AbstractVector, Σ::AbstractVector)                            = MvNormalMeanCovariance(μ, Diagonal(Σ))
+MvNormalMeanCovariance(μ::AbstractVector{T}) where T                                    = MvNormalMeanCovariance(μ, convert(AbstractArray{T}, ones(length(μ))))
+
+Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
+
+Distributions.mean(dist::MvNormalMeanCovariance)      = dist.μ
+Distributions.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
+Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ
+Distributions.invcov(dist::MvNormalMeanCovariance)    = cholinv(dist.Σ)
+Distributions.std(dist::MvNormalMeanCovariance)       = sqrt(cov(dist))
+Distributions.logdetcov(dist::MvNormalMeanCovariance) = logdet(cov(dist))
+
+Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector) = sqmahal!(similar(mean(dist)), dist, x)
+
+function Distributions.sqmahal!(r, dist::MvNormalMeanCovariance, x::AbstractVector)
+    μ = mean(dist)
+    for i in 1:length(r)
+        @inbounds r[i] = μ[i] - x[i]
+    end
+    return xT_A_x(r, invcov(dist))
+end
+
+Base.eltype(::MvNormalMeanCovariance{T})     where T = T 
+Base.precision(dist::MvNormalMeanCovariance)         = invcov(dist)
+Base.length(dist::MvNormalMeanCovariance)            = length(mean(dist))
+Base.ndims(dist::MvNormalMeanCovariance)             = length(dist)
+Base.size(dist::MvNormalMeanCovariance)              = (length(dist), )
+
+function convert(::Type{ <: MvNormalMeanCovariance{T} }, d::MvNormalMeanCovariance) where { T <: Real }
+    MvNormalMeanCovariance(convert(AbstractArray{T}, d.μ), convert(AbstractArray{T}, d.Σ))
+end
+
+function convert(::Type{ <: MvNormalMeanCovariance{T} }, μ::AbstractVector, Σ::AbstractMatrix) where { T <: Real }
+    MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
+end
+
+vague(::Type{ <: MvNormalMeanCovariance }, dims::Int) = MvNormalMeanCovariance(zeros(dims), 1.0e20 .* ones(dims))
+
+function Base.prod(::ProdPreserveParametrisation, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
+    invcovleft  = invcov(left)
+    invcovright = invcov(right)
+    Σ = cholinv(invcovleft + invcovright)
+    μ = Σ * (invcovleft * mean(left) + invcovright * mean(right))
+    return MvNormalMeanCovariance(μ, Σ)
+end
+
+
 
