@@ -66,7 +66,7 @@ function __extract_fn_args_macro_rule(fn_specification; specname, prefix, proxyt
     args_names_val = args_names !== nothing ? :(Type{ Val{ $(tuple(args_names...)) } }) : (:(Nothing))
     args_types     = specs !== nothing ? map(a -> :($(proxytype){ <: $(a[2]) }), specs) : nothing
     args_types_val = args_types !== nothing ? :(Tuple{ $(args_types...) }) : (:(Nothing))
-    init_block     = args_names !== nothing ? map(i_name -> :($(Symbol(prefix, i_name[2])) = $(specname)[$(i_name[1])]), enumerate(args_names)) : [ :nothing ]
+    init_block     = args_names !== nothing ? map(i_name -> :($(Symbol(prefix, i_name[2])) = getdata($(specname)[$(i_name[1])])), enumerate(args_names)) : [ :nothing ]
     
     return args_names_val, args_types_val, init_block, where_Ts
 end

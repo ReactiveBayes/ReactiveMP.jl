@@ -5,8 +5,7 @@
     marginals => Nothing,
     meta => Nothing,
     begin
-        q_out = m_out * as_message(MvNormalMeanCovariance(mean(m_mean), mean(m_covariance)))
-        return FactorizedMarginal(q_out, m_mean, m_covariance)
+        return (prod(ProdPreserveParametrisation(MvNormalMeanCovariance(mean(m_mean), mean(m_covariance))), m_out), m_mean, m_covariance)
     end
 )
 
@@ -17,8 +16,7 @@
     marginals => Nothing,
     meta => Nothing,
     begin
-        q_mean = m_mean * as_message(MvNormalMeanCovariance(mean(m_out), mean(m_covariance)))
-        return FactorizedMarginal(m_out, q_mean, m_covariance)
+        return (m_out, prod(ProdPreserveParametrisation(), m_mean, MvNormalMeanCovariance(mean(m_out), mean(m_covariance))), m_covariance)
     end
 )
 
@@ -29,20 +27,20 @@
     marginals => (q_covariance::Dirac, ),
     meta => Nothing,
     begin
-        W_y  = inv(cov(m_out))
+        W_y  = invcov(m_out)
         xi_y = W_y * mean(m_out)
 
-        W_m  = inv(cov(m_mean))
+        W_m  = invcov(m_mean)
         xi_m = W_m * mean(m_mean)
 
-        W_bar = inv(mean(q_covariance))
+        W_bar = cholinv(mean(q_covariance))
         
         xi = [ xi_y; xi_m ]
-        W  = PDMat(Matrix(Hermitian([ W_y+W_bar -W_bar; -W_bar W_m+W_bar ])))
+        W  = [ W_y+W_bar -W_bar; -W_bar W_m+W_bar ]
         
-        c = inv(W)
-        m = c * xi
+        Σ = cholinv(W)
+        μ = Σ * xi
         
-        return MvNormalMeanCovariance(m, c)
+        return MvNormalMeanCovariance(μ, Σ)
     end
 )

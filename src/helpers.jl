@@ -140,19 +140,7 @@ Base.eltype(::InfCountingReal{T}) where T = T
 Base.:+(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) + value(b)), infs(a) + infs(b))
 Base.:-(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) - value(b)), infs(a) - infs(b))
 
-# function Base.:+(a::InfCountingReal{T1}, b::InfCountingReal{T2}) where { T1, T2 } 
-#     T = promote_type(T1, T2)
-#     return convert(InfCountingReal{T}, a) + convert(InfCountingReal{T}, b)
-# end
-
-# function Base.:-(a::InfCountingReal{T1}, b::InfCountingReal{T2})  where { T1, T2 }
-#     T = promote_type(T1, T2)
-#     return convert(InfCountingReal{T}, a) - convert(InfCountingReal{T}, b)
-# end
-
 Base.convert(::Type{T}, a::InfCountingReal) where { T <: Real } = isfinite(a) ? convert(T, value(a)) : Inf
-
-# Base.convert(::Type{InfCountingReal{T}}, a::InfCountingReal) where { T <: Real } = InfCountingReal{T}(convert(T, value(a)), infs(a))
 
 Base.float(a::InfCountingReal) = convert(Float64, a)
 Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero(T))

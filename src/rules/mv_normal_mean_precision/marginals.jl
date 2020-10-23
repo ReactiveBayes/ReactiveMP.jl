@@ -5,8 +5,7 @@
     marginals => Nothing,
     meta => Nothing,
     begin
-        q_out = m_out * as_message(MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)))
-        return FactorizedMarginal(q_out, m_μ, m_Λ)
+        return (prod(ProdPreserveParametrisation(), MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)), m_out), m_μ, m_Λ)
     end
 )
 
@@ -17,8 +16,7 @@
     marginals => Nothing,
     meta => Nothing,
     begin
-        q_μ = m_μ * as_message(MvNormalMeanPrecision(mean(m_out), mean(m_Λ)))
-        return FactorizedMarginal(m_out, q_μ, m_Λ)
+        return (m_out, prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_Λ))), m_Λ)
     end
 )
 
@@ -29,10 +27,10 @@
     marginals => (q_Λ::Any, ),
     meta => Nothing,
     begin
-        W_y  = precision(m_out)
+        W_y  = invcov(m_out)
         xi_y = W_y * mean(m_out)
 
-        W_m  = precision(m_μ)
+        W_m  = invcov(m_μ)
         xi_m = W_m * mean(m_μ)
 
         W_bar = mean(q_Λ)

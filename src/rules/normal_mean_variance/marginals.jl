@@ -5,8 +5,7 @@
     marginals => Nothing,
     meta      => Nothing,
     begin 
-        q_out = as_message(NormalMeanVariance(mean(m_mean), mean(m_variance))) * m_out
-        return FactorizedMarginal(q_out, m_mean, m_variance)
+        return (prod(ProdPreserveParametrisation(), NormalMeanVariance(mean(m_mean), mean(m_variance)), m_out), m_mean, m_variance)
     end
 )
 
@@ -17,7 +16,6 @@
     marginals => Nothing,
     meta      => Nothing,
     begin 
-        q_mean = as_message(NormalMeanVariance(mean(m_out), mean(m_variance))) * m_mean
-        return FactorizedMarginal(m_out, q_mean, m_variance)
+        return (m_out, prod(ProdPreserveParametrisation(), m_mean, NormalMeanVariance(mean(m_out), mean(m_variance))), m_variance)
     end
 )
