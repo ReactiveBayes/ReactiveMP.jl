@@ -1,29 +1,21 @@
 
+import StatsFuns: logπ
 
+@average_energy(
+    form      => Type{ <: Wishart },
+    marginals => (q_out::Any, q_ν::Any, q_S::Any),
+    meta      => Nothing,
+    begin
+        d = dim(q_out)
 
-function score(::AverageEnergy, ::Type{ <: Wishart }, marginals::Tuple{Marginal, Marginal, Marginal}, ::Nothing)
-    
-    marg_out = marginals[1]
-    marg_v   = marginals[3]
-    marg_nu  = marginals[2]
+        m_q_ν   = mean(q_ν)
+        m_q_S   = mean(q_S)
+        m_q_out = mean(q_out)
 
-    d = size(getdata(marg_out))[1]
-
-    0.5*mean(marg_nu)*logdet(mean(marg_v)) +
-    0.5*mean(marg_nu)*d*log(2) +
-    0.25*d*(d - 1.0)*log(pi) +
-    sum([labsgamma(0.5*(mean(marg_nu) + 1.0 - i)) for i=1:d]) -
-    0.5*(mean(marg_nu) - d - 1.0)*logdet(mean(marg_out)) +
-    0.5*tr(inversemean(marg_v)*mean(marg_out))
-end
-
-
-# function averageEnergy(::Type{Wishart}, marg_out::ProbabilityDistribution{MatrixVariate}, marg_v::ProbabilityDistribution{MatrixVariate}, marg_nu::ProbabilityDistribution{Univariate, PointMass})
-#     d = dims(marg_out)[1]
-#     0.5*marg_nu.params[:m]*unsafeDetLogMean(marg_v) +
-#     0.5*marg_nu.params[:m]*d*log(2) +
-#     0.25*d*(d - 1.0)*log(pi) +
-#     sum([labsgamma(0.5*(marg_nu.params[:m] + 1.0 - i)) for i=1:d]) -
-#     0.5*(marg_nu.params[:m] - d - 1.0)*unsafeDetLogMean(marg_out) +
-#     0.5*tr(unsafeInverseMean(marg_v)*unsafeMean(marg_out))
-# end
+        return 0.5 * (
+            m_q_ν * (logdet(m_q_S) + d * log(2)) - 
+            logdet(m_q_out) * (m_q_ν- d - 1.0) + 
+            tr(cholinv(m_q_S) * m_q_out) + 0.5 * d * (d - 1) * logπ
+        ) + mapreduce(i -> labsgamma(0.5 * (m_q_ν + 1.0 - i)), +, 1:d)
+    end
+)

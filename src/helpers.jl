@@ -148,4 +148,15 @@ Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero
 Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal{$(T)}($(value(a)), $(infs(a))∞)")
 
 
+# Symbol helpers
+
+__extract_val_type(::Type{ Type{ Val{ S } } }) where S = S
+
+@generated function split_underscored_symbol(symbol_val)
+    S = __extract_val_type(symbol_val)
+    R = tuple(map(Symbol, split(string(S), "_"))...)
+    return :(Val{ $R }) 
+end
+
+
 

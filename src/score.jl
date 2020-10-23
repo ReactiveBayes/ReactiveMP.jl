@@ -1,4 +1,5 @@
 export score, AverageEnergy, DifferentialEntropy, BetheFreeEnergy
+export @average_energy
 
 function score end
 
@@ -12,10 +13,15 @@ function score(::BetheFreeEnergy, model, scheduler)
 end
 
 function score(::Type{T}, ::BetheFreeEnergy, model::Model, scheduler) where T
-    average_energies = map(filter(isstochastic, getnodes(model))) do node
-        marginals = combineLatest(map(cluster -> getmarginal!(node, cluster), clusters(node)), PushEach())
-        mapping   = (m) -> InfCountingReal(score(AverageEnergy(), functionalform(node), m, metadata(node))) - mapreduce(d -> score(DifferentialEntropy(), d), +, m)
-        return marginals |> schedule_on(scheduler) |> map(InfCountingReal{T}, mapping)
+
+    node_energies = map(filter(isstochastic, getnodes(model))) do node
+        marginal_names   = Val{ tuple(clusternames(node)...) } 
+        marginals_stream = combineLatest(map(cluster -> getmarginal!(node, cluster), clusters(node)), PushEach())
+        return marginals_stream |> schedule_on(scheduler) |> map(InfCountingReal{T}, (marginals) -> begin 
+            average_energy   = InfCountingReal(score(AverageEnergy(), functionalform(node), marginal_names, marginals, metadata(node)))
+            clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
+            return average_energy - clusters_entropy
+        end)
     end
 
     differential_entropies = map(getrandom(model)) do random 
@@ -24,7 +30,7 @@ function score(::Type{T}, ::BetheFreeEnergy, model::Model, scheduler) where T
         return getmarginal(random) |> schedule_on(scheduler) |> map(InfCountingReal{T}, mapping)
     end
 
-    energies_sum     = collectLatest(InfCountingReal{T}, average_energies, InfCountingReal{T}, reduce_with_sum) 
+    energies_sum     = collectLatest(InfCountingReal{T}, node_energies, InfCountingReal{T}, reduce_with_sum) 
     entropies_sum    = collectLatest(InfCountingReal{T}, differential_entropies, InfCountingReal{T}, reduce_with_sum) 
     diracs_entropies = Infinity(length(getdata(model)) + length(getconstant(model)))
 
@@ -32,4 +38,21 @@ function score(::Type{T}, ::BetheFreeEnergy, model::Model, scheduler) where T
 end
 
 
-
+macro average_energy(fform, marginals, meta, fn)
+    q_names, q_types, q_init_block, q_where_Ts = __extract_fn_args_macro_rule(marginals; specname = :marginals, prefix = :q_, proxytype = :Marginal)
+    
+    result = quote
+        function ReactiveMP.score(
+            ::AverageEnergy,
+            fform           :: $(__extract_fform_macro_rule(fform)),
+            marginals_names :: $(q_names),
+            marginals       :: $(q_types),
+            meta            :: $(__extract_meta_macro_rule(meta))
+        ) where { $(q_where_Ts...) }
+            $(q_init_block...)
+            $(fn)
+        end
+    end
+    
+    return esc(result)
+end
