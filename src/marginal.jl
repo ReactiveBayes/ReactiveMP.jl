@@ -3,9 +3,7 @@ export Marginal, getdata, as_marginal
 using Distributions
 using Rocket
 
-import Distributions: mean, var, std, cov, entropy
-import Base: ndims, precision
-import Base: map
+import Base: ndims, precision, length, size
 
 struct Marginal{D}
     data :: D
@@ -15,14 +13,23 @@ getdata(marginal::Marginal) = marginal.data
 
 ## Marginal
 
-Distributions.mean(marginal::Marginal)    = Distributions.mean(getdata(marginal))
-Distributions.var(marginal::Marginal)     = Distributions.var(getdata(marginal))
-Distributions.std(marginal::Marginal)     = Distributions.std(getdata(marginal))
-Distributions.cov(marginal::Marginal)     = Distributions.cov(getdata(marginal))
-Distributions.entropy(marginal::Marginal) = Distributions.entropy(getdata(marginal))
+Distributions.mean(marginal::Marginal)      = Distributions.mean(getdata(marginal))
+Distributions.median(marginal::Marginal)    = Distributions.median(getdata(marginal))
+Distributions.mode(marginal::Marginal)      = Distributions.mode(getdata(marginal))
+Distributions.var(marginal::Marginal)       = Distributions.var(getdata(marginal))
+Distributions.std(marginal::Marginal)       = Distributions.std(getdata(marginal))
+Distributions.cov(marginal::Marginal)       = Distributions.cov(getdata(marginal))
+Distributions.invcov(marginal::Marginal)    = Distributions.invcov(getdata(marginal))
+Distributions.logdetcov(marginal::Marginal) = Distributions.logdetcov(getdata(marginal))
+Distributions.entropy(marginal::Marginal)   = Distributions.entropy(getdata(marginal))
+
+Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)
+Distributions.logpdf(marginal::Marginal, x) = Distributions.logpdf(getdata(marginal), x)
 
 Base.precision(marginal::Marginal) = precision(getdata(marginal))
 Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
+Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
+Base.size(marginal::Marginal)      = size(getdata(marginal))
 
 logmean(marginal::Marginal)     = log(mean(marginal))
 inversemean(marginal::Marginal) = inv(mean(marginal))
