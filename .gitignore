@@ -1,13 +1,22 @@
 .ipynb_checkpoints
 
+docs/build
+
 demo/.ipynb_checkpoints
 demo/*incomplete.ipynb
 demo/*.jl
 
 .idea
 
+**/*.aux
+**/*.log
+**/*.synctex.*
+**/*.cov
 **/*.mem
 **/private*
+
+Coverage.ipynb
+
 **/.DS_Store
 
 examples/*Compiled
