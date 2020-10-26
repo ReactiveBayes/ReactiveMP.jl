@@ -1,14 +1,15 @@
 export Dirac
 
-import Distributions: mean, var, cov, std, pdf, logpdf
+import Distributions: mean, var, cov, std, pdf, logpdf, entropy
 import Base: ndims, precision
 
 struct Dirac{T}
     point :: T
 end
 
-Distributions.pdf(::Dirac)    = throw("pdf(::Dirac) is not implemented")
-Distributions.logpdf(::Dirac) = throw("logpdf(::Dirac) is not implemented")
+Distributions.pdf(::Dirac)     = throw("pdf(::Dirac) is not implemented")
+Distributions.logpdf(::Dirac)  = throw("logpdf(::Dirac) is not implemented")
+Distributions.entropy(::Dirac) = -∞
 
 # Real-based univariate dirac's delta
 

@@ -36,9 +36,9 @@ include("variables/constant.jl")
 include("variables/data.jl")
 
 include("rule.jl")
+include("score.jl")
 
 include("node.jl")
-include("nodes/normal.jl")
 include("nodes/normal_mean_variance.jl")
 include("nodes/normal_mean_precision.jl")
 include("nodes/mv_normal_mean_covariance.jl")
@@ -54,18 +54,5 @@ include("rules/prototypes.jl")
 include("actors/prior.jl")
 
 include("model.jl")
-
-include("score.jl")
-
-include("score/average_energy/common.jl")
-include("score/average_energy/gamma.jl")
-include("score/average_energy/normal_mean_precision.jl")
-include("score/average_energy/mv_normal_mean_precision.jl")
-include("score/average_energy/normal_mean_variance.jl")
-include("score/average_energy/gcv.jl")
-include("score/average_energy/wishart.jl")
-
-include("score/differential_entropy/common.jl")
-include("score/differential_entropy/dirac.jl")
 
 end

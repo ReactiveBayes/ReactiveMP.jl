@@ -33,20 +33,20 @@ struct FnWithApproximation{F, A}
     approximation :: A
 end
 
-@symmetrical function multiply_messages(m1::Message{ <: MvNormalMeanCovariance }, m2::Message{ <: FnWithApproximation })
-    m2data = getdata(m2)
-    
-    m, V = approximate_meancov(m2data.approximation, (s) -> exp(m2data.fn(s)), getdata(m1))
-
-    return Message(MvNormalMeanCovariance(m, PDMat(Matrix(Hermitian(V)))))
+function prod(::ProdPreserveParametrisation, left::MvNormalMeanCovariance, right::FnWithApproximation)
+    μ, Σ = approximate_meancov(m2data.approximation, (s) -> exp(right.fn(s)), left)
+    return MvNormalMeanCovariance(μ, Σ)
 end
 
-import LinearAlgebra: cholesky
+function prod(::ProdPreserveParametrisation, left::FnWithApproximation, right::MvNormalMeanCovariance)
+    return prod(ProdPreserveParametrisation(), right, left)
+end
 
-@symmetrical function multiply_messages(m1::Message{ <: MvNormalMeanPrecision }, m2::Message{ <: FnWithApproximation })
-    m2data = getdata(m2)
-    
-    m, V = approximate_meancov(m2data.approximation, (s) -> exp(m2data.fn(s)), getdata(m1))
+function prod(::ProdPreserveParametrisation, left::MvNormalMeanPrecision, right::FnWithApproximation)
+    μ, Σ = approximate_meancov(m2data.approximation, (s) -> exp(right.fn(s)), left)
+    return MvNormalMeanPrecision(μ, cholinv(Σ))
+end
 
-    return Message(MvNormalMeanPrecision(m, cholinv(V)))
+function prod(::ProdPreserveParametrisation, left::FnWithApproximation, right::MvNormalMeanPrecision)
+    return prod(ProdPreserveParametrisation(), right, left)
 end
