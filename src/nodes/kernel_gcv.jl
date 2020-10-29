@@ -18,7 +18,7 @@ function KernelGCVNode(metadata::KernelGCVMetadata)
     return FactorNode(KernelGCV, Stochastic, ( :y, :x, :z ), ( ( 1, 2 ), ( 3, ) ), metadata)
 end
 
-function make_node(::Type{ KernelGCV }, metadata::KernelGCVMetadata, y, x, z)
+function make_node(::Type{ KernelGCV }, metadata::KernelGCVMetadata, y::AbstractVariable, x::AbstractVariable, z::AbstractVariable)
     node = KernelGCVNode(metadata)
     connect!(node, :y, y)
     connect!(node, :x, x)

@@ -1,4 +1,4 @@
-export Dirac
+export Dirac, getpointmass
 
 import Distributions: mean, var, cov, std, pdf, logpdf, entropy
 import Base: ndims, precision
@@ -6,6 +6,8 @@ import Base: ndims, precision
 struct Dirac{T}
     point :: T
 end
+
+getpointmass(dist::Dirac) = dist.point
 
 Distributions.pdf(::Dirac)     = throw("pdf(::Dirac) is not implemented")
 Distributions.logpdf(::Dirac)  = throw("logpdf(::Dirac) is not implemented")

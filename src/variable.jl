@@ -33,4 +33,10 @@ function name(variable::AbstractVariable)
     return variable.name
 end
 
-## RandomVariable
+## Helper functions
+
+as_variable(name::Symbol, x)                   = constvar(name, x)
+as_variable(name::Symbol, v::AbstractVariable) = v
+
+as_variable(model, name::Symbol, x)                   = constvar(model, name, x)
+as_variable(model, name::Symbol, v::AbstractVariable) = v

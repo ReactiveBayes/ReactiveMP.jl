@@ -2,7 +2,7 @@ export VariableNode, varnode, name, messageout, messagein
 export FactorNode, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised, getvariable
 export getcluster, clusters, clusterindex
 export deps, connect!, activate!
-export make_node
+export make_node, AutoVar
 export Marginalisation
 export sdtype, isdeterministic, isstochastic
 
@@ -299,3 +299,21 @@ end
 ## make_node
 
 function make_node end
+
+struct AutoVar
+    name :: Symbol
+end
+
+getname(autovar::AutoVar) = autovar.name
+
+function make_node(fform, autovar::AutoVar, args...; kwargs...)
+    var  = randomvar(getname(autovar))
+    node = make_node(fform, var, args...; kwargs...)
+    return node, var
+end
+
+# TODO: extend this case for more cases
+function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+    var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), inputs)...))
+    return nothing, var
+end

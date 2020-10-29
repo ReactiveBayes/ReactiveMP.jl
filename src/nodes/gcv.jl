@@ -6,7 +6,7 @@ function make_node(::Type{ GCV })
     return FactorNode(GCV, Stochastic, ( :y, :x, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ), nothing)
 end
 
-function make_node(::Type{ GCV }, y, x, z, κ, ω)
+function make_node(::Type{ GCV }, y::AbstractVariable, x::AbstractVariable, z::AbstractVariable, κ::AbstractVariable, ω::AbstractVariable)
     node = make_node(GCV)
     connect!(node, :y, y)
     connect!(node, :x, x)

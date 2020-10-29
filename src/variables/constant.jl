@@ -1,4 +1,4 @@
-export constvar
+export constvar, getconstant
 
 mutable struct ConstVariableProps
     messagein :: Union{Nothing, LazyObservable{Message}}
@@ -7,24 +7,25 @@ mutable struct ConstVariableProps
     ConstVariableProps() = new(nothing, nothing)
 end
 
-struct ConstVariable{M} <: AbstractVariable
+struct ConstVariable{C} <: AbstractVariable
     name       :: Symbol
-    messageout :: M
+    constant   :: C
     props      :: ConstVariableProps
 end
 
-constvar(name::Symbol, constval)                 = ConstVariable(name, of(Message(constval)), ConstVariableProps())
+constvar(name::Symbol, constval)                 = ConstVariable(name, constval, ConstVariableProps())
 constvar(name::Symbol, constval::Real)           = constvar(name, Dirac(constval))
 constvar(name::Symbol, constval::AbstractVector) = constvar(name, Dirac(constval))
 constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, Dirac(constval))
 
 degree(::ConstVariable) = 1
 
+getconstant(constvar::ConstVariable) = constvar.constant
 getlastindex(::ConstVariable) = 1
 
 function messageout(constvar::ConstVariable, index::Int)
     @assert index === 1
-    return constvar.messageout
+    return of(as_message(constvar.constant))
 end
 
 function messagein(constvar::ConstVariable, index::Int)
@@ -34,7 +35,7 @@ end
 
 _getmarginal(constvar::ConstVariable)                                = constvar.props.marginal
 _setmarginal!(constvar::ConstVariable, marginal::MarginalObservable) = constvar.props.marginal = marginal
-_makemarginal(constvar::ConstVariable)                               = constvar.messageout |> map(Marginal, as_marginal)
+_makemarginal(constvar::ConstVariable)                               = of(as_marginal(constvar.constant))
 
 function setmessagein!(constvar::ConstVariable, index::Int, messagein)
     @assert index === 1 && constvar.props.messagein === nothing

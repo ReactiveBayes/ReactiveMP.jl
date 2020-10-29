@@ -38,10 +38,12 @@ message_gate(model::Model)            = model.message_gate
 message_out_transformer(model::Model) = model.message_out_transformer
 
 # placeholder for future
-add!(model, node::FactorNode)        = begin push!(model.nodes, node); return node end
-add!(model, random::RandomVariable)  = begin push!(model.random, random); return random end
-add!(model, constant::ConstVariable) = begin push!(model.constant, constant); return constant end
-add!(model, data::DataVariable)      = begin push!(model.data, data); return data end
+add!(model::Model, node::FactorNode)        = begin push!(model.nodes, node); return node end
+add!(model::Model, random::RandomVariable)  = begin push!(model.random, random); return random end
+add!(model::Model, constant::ConstVariable) = begin push!(model.constant, constant); return constant end
+add!(model::Model, data::DataVariable)      = begin push!(model.data, data); return data end
+add!(model::Model, ::Nothing)               = begin return nothing end
+add!(model::Model, collection::Tuple)       = begin foreach((d) -> add!(model, d), collection); return collection end
 
 getnodes(model::Model)    = model.nodes
 getrandom(model::Model)   = model.random
