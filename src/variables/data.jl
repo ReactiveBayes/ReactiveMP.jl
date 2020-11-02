@@ -17,6 +17,18 @@ function datavar(name::Symbol, ::Type{D}; subject::S = Subject(Message{D})) wher
     return DataVariable{S, D}(name, subject, DataVariableProps())
 end
 
+function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = Subject(Message{D})) where { S, D }
+    return datavar(name, D, dims...; subject = subject)
+end
+
+function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = Subject(Message{D})) where { S, D }
+    vars = Array{DataVariable{S, D}}(undef, dims)
+    for i in 1:length(vars)
+        vars[i] = datavar(Symbol(name, :_, i), D; subject = similar(subject))
+    end
+    return vars
+end
+
 degree(::DataVariable) = 1
 
 getlastindex(::DataVariable) = 1

@@ -2,7 +2,6 @@ export ghcubature
 
 import FastGaussQuadrature: gausshermite
 import LinearAlgebra: mul!, axpy!
-import PDMats: AbstractPDMat
 
 using Distributions
 

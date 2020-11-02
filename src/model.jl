@@ -44,6 +44,7 @@ add!(model::Model, constant::ConstVariable) = begin push!(model.constant, consta
 add!(model::Model, data::DataVariable)      = begin push!(model.data, data); return data end
 add!(model::Model, ::Nothing)               = begin return nothing end
 add!(model::Model, collection::Tuple)       = begin foreach((d) -> add!(model, d), collection); return collection end
+add!(model::Model, array::AbstractArray)    = begin foreach((d) -> add!(model, d), array); return array end
 
 getnodes(model::Model)    = model.nodes
 getrandom(model::Model)   = model.random
