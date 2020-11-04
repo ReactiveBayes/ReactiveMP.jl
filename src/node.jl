@@ -317,3 +317,38 @@ function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: ConstVa
     var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), inputs)...))
     return nothing, var
 end
+
+## macro helpers
+
+macro node(fform, fformtype, ntype, interfaces)
+    
+    @capture(interfaces, (names__, )) || error("Invalid names speicifcation syntax")
+    
+    names_quoted_tuple = Expr(:tuple, map(name -> Expr(:quote, name), names)...)
+    names_indices = Expr(:tuple, map(i -> i, 1:length(names))...)
+    
+    interface_args        = map(name -> :($name::AbstractVariable), names)
+    interface_connections = map(name -> :(connect!(node, $(Expr(:quote, name)), $name)), names)
+    
+    interface_name_getters = map(name -> :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, fform)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(Expr(:quote, name))), names)
+    interfaces_splitter    = :(ReactiveMP.split_interfaces(::Type{ Val{ ($(Expr(:quote, Symbol(ReactiveMP.with_separator(:_, names)...))), ) } }) = Val{ $names_quoted_tuple })
+    
+    res = quote
+        
+        function ReactiveMP.make_node(::$fformtype; factorisation = ($names_indices, ), meta = nothing)
+            return FactorNode($fform, $ntype, $names_quoted_tuple, factorisation, meta)
+        end
+        
+        function make_node(::$fformtype, $(interface_args...); factorisation = ((1, 2, 3), ), meta = nothing)
+            node = make_node($fform, factorisation = factorisation, meta = meta)
+            $(interface_connections...)
+            return node
+        end
+
+        $(interfaces_splitter)
+        $(interface_name_getters...)
+
+    end
+    
+    return esc(res)
+end
