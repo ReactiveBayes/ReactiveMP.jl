@@ -5,6 +5,7 @@ export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
 export getmarginal, setmarginal!, activate!, name
 export as_message, as_marginal
+export as_variable
 
 using Rocket
 

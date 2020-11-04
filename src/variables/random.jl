@@ -12,7 +12,22 @@ struct RandomVariable <: AbstractVariable
     props     :: RandomVariableProps
 end
 
-randomvar(name::Symbol) = RandomVariable(name, Vector{Union{Nothing, LazyObservable{Message}}}(), RandomVariableProps())
+function randomvar(name::Symbol) 
+    return RandomVariable(name, Vector{Union{Nothing, LazyObservable{Message}}}(), RandomVariableProps())
+end
+
+function randomvar(name::Symbol, dims::Tuple)
+    return randomvar(name, dims...)
+end
+
+function randomvar(name::Symbol, dims::Vararg{Int})
+    vars = Array{RandomVariable}(undef, dims)
+    # TODO: performance is not great, probably this piece of code can be refactored to be more efficient
+    iterate_axes_recursively(vars, 1) do index
+        @inbounds vars[index...] = randomvar(Symbol(name, :_, with_separator(:_, index)...))
+    end
+    return vars
+end
 
 degree(randomvar::RandomVariable) = length(randomvar.inputmsgs)
 
