@@ -6,6 +6,7 @@ export make_node, AutoVar
 export Marginalisation
 export sdtype, isdeterministic, isstochastic
 export MeanField, FullFactorisation
+export @node
 
 using Rocket
 
