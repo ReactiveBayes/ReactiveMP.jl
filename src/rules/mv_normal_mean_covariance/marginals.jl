@@ -1,31 +1,31 @@
 @marginalrule(
-    form => Type{ <: MvNormalMeanCovariance },
-    on   => :out_μ_Σ,
-    messages => (m_out::MvNormalMeanCovariance, m_μ::Dirac, m_Σ::Dirac),
+    formtype  => MvNormalMeanCovariance,
+    on        => :out_μ_Σ,
+    messages  => (m_out::MvNormalMeanCovariance, m_μ::Dirac, m_Σ::Dirac),
     marginals => Nothing,
-    meta => Nothing,
+    meta      => Nothing,
     begin
         return (prod(ProdPreserveParametrisation(MvNormalMeanCovariance(mean(m_μ), mean(m_Σ))), m_out), m_μ, m_Σ)
     end
 )
 
 @marginalrule(
-    form => Type{ <: MvNormalMeanCovariance },
-    on   => :out_μ_Σ,
-    messages => (m_out::Dirac, m_μ::MvNormalMeanCovariance, m_Σ::Dirac),
+    formtype  => MvNormalMeanCovariance,
+    on        => :out_μ_Σ,
+    messages  => (m_out::Dirac, m_μ::MvNormalMeanCovariance, m_Σ::Dirac),
     marginals => Nothing,
-    meta => Nothing,
+    meta      => Nothing,
     begin
         return (m_out, prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanCovariance(mean(m_μ), mean(m_Σ))), m_Σ)
     end
 )
 
 @marginalrule(
-    form => Type{ <: MvNormalMeanCovariance },
-    on   => :out_μ,
-    messages => (m_out::MvNormalMeanCovariance, m_μ::MvNormalMeanCovariance),
+    formtype  => MvNormalMeanCovariance,
+    on        => :out_μ,
+    messages  => (m_out::MvNormalMeanCovariance, m_μ::MvNormalMeanCovariance),
     marginals => (q_Σ::Dirac, ),
-    meta => Nothing,
+    meta      => Nothing,
     begin
         W_y  = invcov(m_out)
         xi_y = W_y * mean(m_out)

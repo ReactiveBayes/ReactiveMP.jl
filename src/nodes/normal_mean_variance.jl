@@ -2,17 +2,16 @@ export make_node, rule
 
 import StatsFuns: log2π
 
-function make_node(::Type{ <: NormalMeanVariance }; factorisation = ((1, 2, 3), ))
-    return FactorNode(NormalMeanVariance, Stochastic, (:out, :μ, :v), factorisation, nothing)
-end
-
-function make_node(::Type{ <: NormalMeanVariance }, out::AbstractVariable, μ::AbstractVariable, v::AbstractVariable; factorisation = ((1, 2, 3), ))
-    node = make_node(NormalMeanVariance, factorisation = factorisation)
-    connect!(node, :out, out)
-    connect!(node, :μ, μ)
-    connect!(node, :v, v)
-    return node
-end
+@node(
+    form       => NormalMeanVariance,
+    formtype   => NormalMeanVariance,
+    sdtype     => Stochastic,
+    interfaces => [
+        out,
+        (μ, aliases = [ mean ]),
+        (v, aliases = [ var ])
+    ]
+)
 
 @average_energy(
     form      => Type{ <: NormalMeanVariance },

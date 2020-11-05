@@ -1,21 +1,46 @@
 using MacroTools
 
+
 function __extract_fform_macro_rule(fform)
     @capture(fform, (form => form_)) || 
         error("Error in macro: functional form of rule should have a (form => Type{ <: Distribution } or typeof(fn)) signature")
     return form
 end
 
+function __extract_fformtype_macro_rule(fformtype)
+    if @capture(fformtype, (formtype => typeof(formtype_)))
+        return :(typeof($formtype))
+    elseif @capture(fformtype, (formtype => Type{ <: formtype_ }))
+        return :(Type{ <: $formtype })
+    elseif @capture(fformtype, (formtype => Type{ formtype_ }))
+        return :(Type{ <: $formtype })
+    elseif @capture(fformtype, (formtype => formtype_))
+        return :(Type{ <: $formtype })
+    else
+        error("Error in macro: functional form type should have a (form => Type{ FunctionalFormType } or typeof(fn) for functions) signature")
+    end
+end
+
+function __extract_sdtype_macro_rule(sdtype)
+    if @capture(sdtype, (sdtype => Deterministic))
+        return (:Deterministic)
+    elseif @capture(sdtype, (sdtype => Stochastic))
+        return (:Stochastic)
+    else
+        error("Error in macro: sdtype specification should have a (sdtype => Deterministic or Stochastic) signature")
+    end
+end
+
 function __extract_on_macro_rule(on)
     @capture(on, (on => :name_)) ||
-        error("Error in macro: on specification of rule should have a (on => :name) signature")
+        error("Error in macro: on specification should have a (on => :name) signature")
     return :(Type{ Val{ $(QuoteNode(name)) } })
 end
 
 function __extract_vconstraint_macro_rule(vconstraint)
     vconstraint !== :Nothing || return vconstraint
     @capture(vconstraint, (vconstraint => Constraint_)) ||
-        error("Error in macro: edge specification of rule should have a (vconstraint => Constraint) signature")
+        error("Error in macro: edge specification should have a (vconstraint => Constraint) signature")
     return Constraint
 end
 
@@ -25,7 +50,7 @@ function __extract_fn_args_macro_rule(fn_specification; specname, prefix, proxyt
     end
     
     @capture(fn_specification, (name_ => args_specification_)) && name === specname ||
-        error("Error in macro: $(specname) specification of rule should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
+        error("Error in macro: $(specname) specification should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
     
     where_Ts = []
     
@@ -35,13 +60,13 @@ function __extract_fn_args_macro_rule(fn_specification; specname, prefix, proxyt
     end
     
     @capture(args_specification, (entries__, )) ||
-        error("Error in macro: messages specification of rule should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
+        error("Error in macro: messages specification should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
     
     length(entries) !== 0 || error("Error in macro: $(specname) length should be greater than zero")
     
     specs = map(entries) do entry
         @capture(entry, name_::Type_) || 
-            error("Error in macro: messages specification of rule should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
+            error("Error in macro: messages specification should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
         return (name, Type)
     end
 
@@ -59,6 +84,26 @@ end
 
 function __extract_meta_macro_rule(meta::Expr)
     @capture(meta, (meta => Meta_)) ||
-        error("Invalid rule macro call: meta specification of rule should have a (meta => Type) signature")
+        error("Invalid rule macro call: meta specification should have a (meta => Type) signature")
     return Meta
+end
+
+function __extract_interfaces_macro_rule(interfaces)
+    interfacelist = []
+
+    @capture(interfaces, (interfaces => [ args__ ])) ||
+        error("Invalid rule macro call: interfaces specification should have a (interfaces => [ ... ]) signature")
+
+    foreach(args) do arg
+        if @capture(arg, name_Symbol) 
+            push!(interfacelist, (name = name, aliases = []))
+        elseif @capture(arg, (name_Symbol, aliases = [ aliases__ ]))
+            @assert all(a -> a isa Symbol, aliases)
+            push!(interfacelist, (name = name, aliases = aliases))
+        else
+            error("Invalid macro call: interface specification should have a 'name' or (name, aliases = [ alias1, alias2,... ]) signature")
+        end
+    end 
+
+    return interfacelist
 end

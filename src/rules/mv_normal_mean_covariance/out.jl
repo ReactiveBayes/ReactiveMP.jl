@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ <: MvNormalMeanCovariance },
+    formtype    => MvNormalMeanCovariance,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_μ::Dirac, m_Σ::Dirac),
@@ -11,7 +11,7 @@
 )
 
 @rule(
-    form        => Type{ <: MvNormalMeanCovariance },
+    formtype    => MvNormalMeanCovariance,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => Nothing,
@@ -23,7 +23,7 @@
 )
 
 @rule(
-    form        => Type{ <: MvNormalMeanCovariance },
+    formtype    => MvNormalMeanCovariance,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_μ::MvNormalMeanCovariance, ),

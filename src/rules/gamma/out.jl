@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ <: Gamma },
+    formtype    => Gamma,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_α::Dirac{T}, m_θ::Dirac{T}) where T,

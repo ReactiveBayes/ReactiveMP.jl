@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ <: Normal },
+    formtype    => Normal,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_mean::Dirac{T}, m_std::Dirac{T}) where { T <: Real },

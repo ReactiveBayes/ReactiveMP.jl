@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ <: NormalMeanVariance }, 
+    formtype    => NormalMeanVariance,
     on          => :μ,
     vconstraint => Marginalisation,
     messages    => (m_out::Dirac{T}, m_v::Dirac{T}) where { T <: Real },
@@ -11,7 +11,7 @@
 )
 
 @rule(
-    form        => Type{ <: NormalMeanVariance }, 
+    formtype    => NormalMeanVariance,
     on          => :μ,
     vconstraint => Marginalisation,
     messages    => (m_out::NormalMeanVariance{T}, m_v::Dirac{T}) where { T <: Real },
@@ -23,7 +23,7 @@
 )
 
 @rule(
-    form        => Type{ <: NormalMeanVariance }, 
+    formtype    => NormalMeanVariance,
     on          => :μ,
     vconstraint => Marginalisation,
     messages    => Nothing,

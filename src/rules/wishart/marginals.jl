@@ -1,5 +1,5 @@
 @marginalrule(
-    form        => Type{ <: Wishart },
+    formtype    => Wishart,
     on          => :out_ν_S,
     messages    => (m_out::Wishart, m_ν::Dirac, m_S::Dirac),
     marginals   => Nothing,

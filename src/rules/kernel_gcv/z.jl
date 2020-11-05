@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ KernelGCV },
+    formtype    => KernelGCV,
     on          => :z,
     vconstraint => Marginalisation,
     messages    => Nothing,
@@ -33,7 +33,7 @@
 )
 
 @rule(
-    form        => Type{ KernelGCV },
+    formtype    => KernelGCV,
     on          => :z,
     vconstraint => Marginalisation,
     messages    => Nothing,

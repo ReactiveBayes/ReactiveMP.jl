@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ KernelGCV },
+    formtype    => KernelGCV,
     on          => :y,
     vconstraint => Marginalisation,
     messages    => (m_x::MvNormalMeanCovariance{T}, ) where { T },
@@ -14,7 +14,7 @@
 )
 
 @rule(
-    form        => Type{ KernelGCV },
+    formtype    => KernelGCV,
     on          => :y,
     vconstraint => Marginalisation,
     messages    => (m_x::MvNormalMeanPrecision, ),

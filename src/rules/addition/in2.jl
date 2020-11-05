@@ -1,5 +1,5 @@
 @rule(
-    form        => typeof(+),
+    formtype    => typeof(+),
     on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::Dirac{T}, m_in1::Dirac{T}) where T,
@@ -11,7 +11,7 @@
 )
 
 @rule(
-    form        => typeof(+),
+    formtype    => typeof(+),
     on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::NormalMeanVariance{T}, m_in1::NormalMeanVariance{T}) where T,
@@ -23,7 +23,7 @@
 )
 
 @rule(
-    form        => typeof(+),
+    formtype    => typeof(+),
     on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::Dirac{T}, m_in1::NormalMeanVariance{T}) where T,
@@ -35,7 +35,7 @@
 )
 
 @rule(
-    form        => typeof(+),
+    formtype    => typeof(+),
     on          => :in2,
     vconstraint => Marginalisation,
     messages    => (m_out::NormalMeanVariance{T}, m_in1::Dirac{T}) where T,

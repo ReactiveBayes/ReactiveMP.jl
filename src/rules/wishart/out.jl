@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ <: Wishart },
+    formtype    => Wishart,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_ν::Dirac, m_S::Dirac),
@@ -11,7 +11,7 @@
 )
 
 @rule(
-    form        => Type{ <: Wishart },
+    formtype    => Wishart,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => Nothing,

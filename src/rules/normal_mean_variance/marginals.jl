@@ -1,5 +1,5 @@
 @marginalrule(
-    form      => Type{ <: NormalMeanVariance },
+    formtype  => NormalMeanVariance,
     on        => :out_μ_v,
     messages  => (m_out::NormalMeanVariance{T}, m_μ::Dirac{T}, m_v::Dirac{T}) where { T <: Real },
     marginals => Nothing,
@@ -10,7 +10,7 @@
 )
 
 @marginalrule(
-    form      => Type{ <: NormalMeanVariance },
+    formtype  => NormalMeanVariance,
     on        => :out_μ_v,
     messages  => (m_out::Dirac{T}, m_μ::NormalMeanVariance{T}, m_v::Dirac{T}) where { T <: Real },
     marginals => Nothing,

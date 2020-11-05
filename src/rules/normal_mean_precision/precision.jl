@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ <: NormalMeanPrecision },
+    formtype    => NormalMeanPrecision,
     on          => :τ,
     vconstraint => Marginalisation,
     messages    => Nothing,

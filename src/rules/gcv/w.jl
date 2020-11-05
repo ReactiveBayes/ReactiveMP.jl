@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ GCV }, 
+    formtype    => GCV, 
     on          => :ω,
     vconstraint => Marginalisation,
     messages    => Nothing,

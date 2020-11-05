@@ -1,5 +1,5 @@
 @marginalrule(
-    form        => Type{ <: Gamma },
+    formtype    => Gamma,
     on          => :out_α_θ,
     messages    => (m_out::Gamma{T}, m_α::Dirac{T}, m_θ::Dirac{T}) where T,
     marginals   => Nothing,

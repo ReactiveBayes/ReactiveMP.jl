@@ -1,5 +1,5 @@
 @rule(
-    form        => Type{ <: NormalMeanPrecision },
+    formtype    => NormalMeanPrecision,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => (m_μ::Dirac{T}, m_τ::Dirac{T}) where { T <: Real },
@@ -11,7 +11,7 @@
 )
 
 @rule(
-    form        => Type{ <: NormalMeanPrecision },
+    formtype    => NormalMeanPrecision,
     on          => :out,
     vconstraint => Marginalisation,
     messages    => Nothing,

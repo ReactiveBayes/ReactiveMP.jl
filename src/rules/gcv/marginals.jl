@@ -1,5 +1,5 @@
 @marginalrule(
-    form       => Type{ GCV }, 
+    formtype   => GCV, 
     on         => :y_x,
     messages   => (m_y::Any, m_x::Any),
     marginals  => (q_z::Any, q_κ::Any, q_ω::Any),

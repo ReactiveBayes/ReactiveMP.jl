@@ -1,5 +1,5 @@
 @marginalrule(
-    form        => Type{ <: NormalMeanPrecision },
+    formtype    => NormalMeanPrecision,
     on          => :out_μ_τ,
     messages    => (m_out::NormalMeanPrecision{T}, m_μ::Dirac{T}, m_τ::Dirac{T}) where { T <: Real },
     marginals   => Nothing,
@@ -10,7 +10,7 @@
 )
 
 @marginalrule(
-    form        => Type{ <: NormalMeanPrecision },
+    formtype    => NormalMeanPrecision,
     on          => :out_mean_precision,
     messages    => (m_out::Dirac{T}, m_μ::NormalMeanPrecision{T}, m_τ::Dirac{T}) where { T <: Real },
     marginals   => Nothing,

@@ -5,6 +5,7 @@ export deps, connect!, activate!
 export make_node, AutoVar
 export Marginalisation
 export sdtype, isdeterministic, isstochastic
+export MeanField, FullFactorisation
 
 using Rocket
 
@@ -25,6 +26,11 @@ isstochastic(::Stochastic)            = true
 isstochastic(::Type{ Stochastic })    = true
 isstochastic(::Deterministic)         = false
 isstochastic(::Type{ Deterministic }) = false
+
+## Generic factorisation constraints
+
+struct MeanField end
+struct FullFactorisation end
 
 ## Variable constraints
 
@@ -300,6 +306,15 @@ end
 
 function make_node end
 
+function interface_get_index end
+function interface_get_name end
+
+function collect_factorisation end
+
+collect_factorisation(::Any, factorisation::Tuple) = factorisation
+
+## AutoVar
+
 struct AutoVar
     name :: Symbol
 end
@@ -318,35 +333,65 @@ function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: ConstVa
     return nothing, var
 end
 
+# TODO
+# function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: Union{ <: ConstVariable{ <: Dirac }, <: DataVariable{ <: Any, <: Dirac } } })
+    # combineLatest + map
+# end
+
 ## macro helpers
 
-macro node(fform, fformtype, ntype, interfaces)
+macro node(fform, fformtype, fsdtype, finterfaces)
+
+    form       = __extract_fform_macro_rule(fform)
+    formtype   = __extract_fformtype_macro_rule(fformtype)
+    sdtype     = __extract_sdtype_macro_rule(fsdtype)
+    interfaces = __extract_interfaces_macro_rule(finterfaces)
     
-    @capture(interfaces, (names__, )) || error("Invalid names speicifcation syntax")
+    names = map(d -> d[:name], interfaces)
     
-    names_quoted_tuple = Expr(:tuple, map(name -> Expr(:quote, name), names)...)
-    names_indices = Expr(:tuple, map(i -> i, 1:length(names))...)
+    names_quoted_tuple     = Expr(:tuple, map(name -> Expr(:quote, name), names)...)
+    names_indices          = Expr(:tuple, map(i -> i, 1:length(names))...)
+    names_splitted_indices = Expr(:tuple, map(i -> Expr(:tuple, i), 1:length(names))...)
     
     interface_args        = map(name -> :($name::AbstractVariable), names)
     interface_connections = map(name -> :(connect!(node, $(Expr(:quote, name)), $name)), names)
+
+    interface_name_getters = map(enumerate(interfaces)) do (index, interface)
+        name    = interface[:name]
+        aliases = interface[:aliases]
+
+        index_getter  = :(ReactiveMP.interface_get_index(::Type{ Val{ $(Expr(:quote, form)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(index))
+        name_getter   = :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, form)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(Expr(:quote, name)))
+        alias_getters = map(aliases) do alias
+            return :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, form)) } }, ::Type{ Val{ $(Expr(:quote, alias)) } }) = $(Expr(:quote, name)))
+        end
     
-    interface_name_getters = map(name -> :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, fform)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(Expr(:quote, name))), names)
-    interfaces_splitter    = :(ReactiveMP.split_interfaces(::Type{ Val{ ($(Expr(:quote, Symbol(ReactiveMP.with_separator(:_, names)...))), ) } }) = Val{ $names_quoted_tuple })
+        return quote
+            $index_getter
+            $name_getter
+            $(alias_getters...)
+        end
+    end
+
+    factorisation_collectors = quote
+        collect_factorisation(::$formtype, ::FullFactorisation) = ($names_indices, )
+        collect_factorisation(::$formtype, ::MeanField) = $names_splitted_indices
+    end
     
     res = quote
         
-        function ReactiveMP.make_node(::$fformtype; factorisation = ($names_indices, ), meta = nothing)
-            return FactorNode($fform, $ntype, $names_quoted_tuple, factorisation, meta)
+        function ReactiveMP.make_node(::$formtype; factorisation = ($names_indices, ), meta = nothing)
+            return FactorNode($form, $sdtype, $names_quoted_tuple, collect_factorisation($form, factorisation), meta)
         end
         
-        function make_node(::$fformtype, $(interface_args...); factorisation = ((1, 2, 3), ), meta = nothing)
-            node = make_node($fform, factorisation = factorisation, meta = meta)
+        function ReactiveMP.make_node(::$formtype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing)
+            node = make_node($form, factorisation = factorisation, meta = meta)
             $(interface_connections...)
             return node
         end
 
-        $(interfaces_splitter)
         $(interface_name_getters...)
+        $factorisation_collectors
 
     end
     
