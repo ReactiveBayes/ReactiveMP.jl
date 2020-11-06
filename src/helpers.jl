@@ -32,18 +32,6 @@ Base.size(iter::SkipIndexIterator)                  = (length(iter), )
 
 Base.getindex(iter::SkipIndexIterator, i) = i < skip(iter) ? @inbounds(iter.iterator[i]) : @inbounds(iter.iterator[i + 1])
 
-## Iterator helpers
-
-struct SeparatorIterator{T, S, I} <: AbstractArray{T, 1}
-    separator :: S
-    iterable  :: I
-end
- 
-with_separator(separator::S, iterable::I) where { S, I } = SeparatorIterator{ eltype(I), S, I }(separator, iterable)
- 
-Base.size(iter::SeparatorIterator) = (2length(iter.iterable) - 1, )
-Base.getindex(iter::SeparatorIterator, index) = mod(index, 2) === 1 ? iter.iterable[index ÷ 2 + 1] : iter.separator
-
 """
     @symmetrical `function_definition`
 Duplicate a method definition with the order of the first two arguments swapped.

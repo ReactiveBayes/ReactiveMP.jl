@@ -23,9 +23,8 @@ end
 
 function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = Subject(Message{D})) where { S, D }
     vars = Array{DataVariable{S, D}}(undef, dims)
-    # TODO: performance is not great, probably this piece of code can be refactored to be more efficient
     for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = datavar(Symbol(name, :_, with_separator(:_, index)...), D; subject = similar(subject))
+        @inbounds vars[index] = datavar(Symbol(name, :_, Symbol(join(index.I, :_))), D; subject = similar(subject))
     end
     return vars
 end

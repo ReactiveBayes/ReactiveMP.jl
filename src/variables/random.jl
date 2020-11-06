@@ -22,9 +22,8 @@ end
 
 function randomvar(name::Symbol, dims::Vararg{Int})
     vars = Array{RandomVariable}(undef, dims)
-    # TODO: performance is not great, probably this piece of code can be refactored to be more efficient
     for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = randomvar(Symbol(name, :_, with_separator(:_, index)...))
+        @inbounds vars[index] = randomvar(Symbol(name, :_, Symbol(join(index.I, :_))))
     end
     return vars
 end
