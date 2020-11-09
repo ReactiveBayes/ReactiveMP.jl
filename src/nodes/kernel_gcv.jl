@@ -10,21 +10,30 @@ end
 get_kernelfn(meta::KernelGCVMetadata)      = meta.kernelFn
 get_approximation(meta::KernelGCVMetadata) = meta.approximation
 
-struct KernelGCV
-    meta :: KernelGCVMetadata
-end
+struct KernelGCV end
 
-function KernelGCVNode(metadata::KernelGCVMetadata)
-    return FactorNode(KernelGCV, Stochastic, ( :y, :x, :z ), ( ( 1, 2 ), ( 3, ) ), metadata)
-end
+@node(
+    form       => KernelGCV,
+    formtype   => KernelGCV,
+    sdtype     => Stochastic,
+    interfaces => [ y, x, z ]
+)
 
-function make_node(::Type{ KernelGCV }, metadata::KernelGCVMetadata, y::AbstractVariable, x::AbstractVariable, z::AbstractVariable)
-    node = KernelGCVNode(metadata)
-    connect!(node, :y, y)
-    connect!(node, :x, x)
-    connect!(node, :z, z)
-    return node
-end
+# struct KernelGCV
+#     meta :: KernelGCVMetadata
+# end
+
+# function KernelGCVNode(metadata::KernelGCVMetadata)
+#     return FactorNode(KernelGCV, Stochastic, ( :y, :x, :z ), ( ( 1, 2 ), ( 3, ) ), metadata)
+# end
+
+# function make_node(::Type{ KernelGCV }, metadata::KernelGCVMetadata, y::AbstractVariable, x::AbstractVariable, z::AbstractVariable)
+#     node = KernelGCVNode(metadata)
+#     connect!(node, :y, y)
+#     connect!(node, :x, x)
+#     connect!(node, :z, z)
+#     return node
+# end
 
 ## rules
 
@@ -34,7 +43,7 @@ struct FnWithApproximation{F, A}
 end
 
 function prod(::ProdPreserveParametrisation, left::MvNormalMeanCovariance, right::FnWithApproximation)
-    μ, Σ = approximate_meancov(m2data.approximation, (s) -> exp(right.fn(s)), left)
+    μ, Σ = approximate_meancov(right.approximation, (s) -> exp(right.fn(s)), left)
     return MvNormalMeanCovariance(μ, Σ)
 end
 
@@ -43,7 +52,7 @@ function prod(::ProdPreserveParametrisation, left::FnWithApproximation, right::M
 end
 
 function prod(::ProdPreserveParametrisation, left::MvNormalMeanPrecision, right::FnWithApproximation)
-    μ, Σ = approximate_meancov(m2data.approximation, (s) -> exp(right.fn(s)), left)
+    μ, Σ = approximate_meancov(right.approximation, (s) -> exp(right.fn(s)), left)
     return MvNormalMeanPrecision(μ, cholinv(Σ))
 end
 
