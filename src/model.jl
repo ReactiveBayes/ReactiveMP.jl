@@ -51,7 +51,26 @@ getrandom(model::Model)   = model.random
 getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
 
-activate!(model::Model) = foreach(n -> activate!(model, n), getnodes(model))
+function activate!(model::Model) 
+    filter!(getrandom(model)) do randomvar
+        @assert degree(randomvar) !== 1 "Loose random variable has been found: $(name(randomvar))"
+        return degree(randomvar) >= 2
+    end
+
+    foreach(getdata(model)) do datavar
+        if !isconnected(datavar)
+            @warn "Unused data variable has been found: $(name(datavar))"
+        end
+    end
+
+    foreach(getconstant(model)) do constvar
+        if !isconnected(constvar)
+            @warn "Unused constant variable has been found: $(name(datavar))"
+        end
+    end
+
+    foreach(n -> activate!(model, n), getnodes(model))
+end
 
 # Utility functions
 

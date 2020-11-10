@@ -1,4 +1,4 @@
-export constvar, getconstant
+export constvar, getconstant, isconnected
 
 mutable struct ConstVariableProps
     messagein :: Union{Nothing, LazyObservable{Message}}
@@ -19,6 +19,8 @@ constvar(name::Symbol, constval::AbstractVector) = constvar(name, Dirac(constval
 constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, Dirac(constval))
 
 degree(::ConstVariable) = 1
+
+isconnected(constvar::ConstVariable) = constvar.props.messagein !== nothing
 
 getconstant(constvar::ConstVariable) = constvar.constant
 getlastindex(::ConstVariable) = 1

@@ -1,4 +1,4 @@
-export datavar
+export datavar, isconnected
 
 mutable struct DataVariableProps
     messagein :: Union{Nothing, LazyObservable{Message}}
@@ -30,6 +30,8 @@ function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = Subjec
 end
 
 degree(::DataVariable) = 1
+
+isconnected(datavar::DataVariable) = datavar.props.messagein !== nothing
 
 getlastindex(::DataVariable) = 1
 
