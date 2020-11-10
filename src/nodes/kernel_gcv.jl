@@ -1,4 +1,4 @@
-export make_node, rule, KernelGCV, KernelGCVMetadata
+export make_node, KernelGCV, KernelGCVMetadata
 
 import LinearAlgebra: logdet, tr
 
@@ -13,29 +13,10 @@ get_approximation(meta::KernelGCVMetadata) = meta.approximation
 struct KernelGCV end
 
 @node(
-    form       => KernelGCV,
     formtype   => KernelGCV,
     sdtype     => Stochastic,
     interfaces => [ y, x, z ]
 )
-
-# struct KernelGCV
-#     meta :: KernelGCVMetadata
-# end
-
-# function KernelGCVNode(metadata::KernelGCVMetadata)
-#     return FactorNode(KernelGCV, Stochastic, ( :y, :x, :z ), ( ( 1, 2 ), ( 3, ) ), metadata)
-# end
-
-# function make_node(::Type{ KernelGCV }, metadata::KernelGCVMetadata, y::AbstractVariable, x::AbstractVariable, z::AbstractVariable)
-#     node = KernelGCVNode(metadata)
-#     connect!(node, :y, y)
-#     connect!(node, :x, x)
-#     connect!(node, :z, z)
-#     return node
-# end
-
-## rules
 
 struct FnWithApproximation{F, A}
     fn            :: F

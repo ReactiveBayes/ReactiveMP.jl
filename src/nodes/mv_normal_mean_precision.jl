@@ -1,21 +1,8 @@
-export make_node, rule
+export make_node
 
 import StatsFuns: log2π
 
-# function make_node(::Type{ <: MvNormalMeanPrecision }; factorisation = ((1, 2, 3), ))
-#     return FactorNode(MvNormalMeanPrecision, Stochastic, (:out, :μ, :Λ), factorisation, nothing)
-# end
-
-# function make_node(::Type{ <: MvNormalMeanPrecision }, out::AbstractVariable, μ::AbstractVariable, Λ::AbstractVariable; factorisation = ((1, 2, 3), ))
-#     node = make_node(MvNormalMeanPrecision, factorisation = factorisation)
-#     connect!(node, :out, out)
-#     connect!(node, :μ, μ)
-#     connect!(node, :Λ, Λ)
-#     return node
-# end
-
 @node(
-    form       => MvNormalMeanPrecision,
     formtype   => MvNormalMeanPrecision,
     sdtype     => Stochastic,
     interfaces => [
@@ -26,7 +13,7 @@ import StatsFuns: log2π
 )
 
 @average_energy(
-    form      => Type{ <: MvNormalMeanPrecision },
+    formtype  => MvNormalMeanPrecision,
     marginals => (q_out::Any, q_μ::Any, q_Λ::Any),
     meta      => Nothing,
     begin
@@ -38,7 +25,7 @@ import StatsFuns: log2π
 )
 
 @average_energy(
-    form      => Type{ <: MvNormalMeanPrecision },
+    formtype  => MvNormalMeanPrecision,
     marginals => (q_out_μ::Any, q_Λ::Any),
     meta      => Nothing,
     begin

@@ -50,13 +50,13 @@ score(::DifferentialEntropy, marginal::Marginal)             = entropy(marginal)
 
 ## Average enery macro helper
 
-macro average_energy(fform, marginals, meta, fn)
+macro average_energy(fformtype, marginals, meta, fn)
     q_names, q_types, q_init_block, q_where_Ts = __extract_fn_args_macro_rule(marginals; specname = :marginals, prefix = :q_, proxytype = :Marginal)
     
     result = quote
         function ReactiveMP.score(
             ::AverageEnergy,
-            fform           :: $(__extract_fform_macro_rule(fform)),
+            fform           :: $(__extract_fformtype_macro_rule(fformtype)),
             marginals_names :: $(q_names),
             marginals       :: $(q_types),
             meta            :: $(__extract_meta_macro_rule(meta))

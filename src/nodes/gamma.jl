@@ -1,19 +1,17 @@
-export make_node, rule
+export make_node
 
-function make_node(::Type{ <: Gamma }; factorisation = ((1, 2, 3), ))
-    return FactorNode(Gamma, Stochastic, (:out, :α, :θ), factorisation, nothing)
-end
-
-function make_node(::Type{ <: Gamma }, out::AbstractVariable, α::AbstractVariable, θ::AbstractVariable; factorisation = ((1, 2, 3), ))
-    node = make_node(Gamma, factorisation = factorisation)
-    connect!(node, :out, out)
-    connect!(node, :α, α)
-    connect!(node, :θ, θ)
-    return node
-end
+@node(
+    formtype   => Gamma,
+    sdtype     => Stochastic,
+    interfaces => [ 
+        out, 
+        (α, aliases = [ shape ]), 
+        (θ, aliases = [ scale ])
+    ]
+)
 
 @average_energy(
-    form      => Type{ <: Gamma },
+    formtype  => Gamma,
     marginals => (q_out::Any, q_α::Any, q_θ::Any),
     meta      => Nothing,
     begin

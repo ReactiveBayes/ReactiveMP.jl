@@ -334,6 +334,12 @@ function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: ConstVa
     return nothing, var
 end
 
+# TODO: This can intersect with T = Distributions, what to do?
+# function make_node(::Type{ T }, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...) where T
+#     var  = constvar(getname(autovar), T(map((d) -> getpointmass(getconstant(d)), inputs)...))
+#     return nothing, var
+# end
+
 # TODO
 # function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: Union{ <: ConstVariable{ <: Dirac }, <: DataVariable{ <: Any, <: Dirac } } })
     # combineLatest + map
@@ -341,9 +347,9 @@ end
 
 ## macro helpers
 
-macro node(fform, fformtype, fsdtype, finterfaces)
+macro node(fformtype, fsdtype, finterfaces)
 
-    form       = __extract_fform_macro_rule(fform)
+    form       = __extract_fform_macro_rule(fformtype)
     formtype   = __extract_fformtype_macro_rule(fformtype)
     sdtype     = __extract_sdtype_macro_rule(fsdtype)
     interfaces = __extract_interfaces_macro_rule(finterfaces)

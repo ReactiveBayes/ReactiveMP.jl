@@ -3,7 +3,6 @@ export make_node, rule
 import StatsFuns: log2π
 
 @node(
-    form       => NormalMeanVariance,
     formtype   => NormalMeanVariance,
     sdtype     => Stochastic,
     interfaces => [
@@ -14,7 +13,7 @@ import StatsFuns: log2π
 )
 
 @average_energy(
-    form      => Type{ <: NormalMeanVariance },
+    formtype  => NormalMeanVariance,
     marginals => (q_out::Any, q_μ::Any, q_v::Any),
     meta      => Nothing,
     begin

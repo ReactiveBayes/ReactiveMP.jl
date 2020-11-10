@@ -1,23 +1,15 @@
-export make_node, rule, GCV
+export make_node, GCV
 
 struct GCV end
 
-function make_node(::Type{ GCV })
-    return FactorNode(GCV, Stochastic, ( :y, :x, :z, :κ, :ω ), ( ( 1, 2 ), ( 3, ), ( 4, ), ( 5, ) ), nothing)
-end
-
-function make_node(::Type{ GCV }, y::AbstractVariable, x::AbstractVariable, z::AbstractVariable, κ::AbstractVariable, ω::AbstractVariable)
-    node = make_node(GCV)
-    connect!(node, :y, y)
-    connect!(node, :x, x)
-    connect!(node, :z, z)
-    connect!(node, :κ, κ)
-    connect!(node, :ω, ω)
-    return node
-end
+@node(
+    formtype   => GCV,
+    sdtype     => Stochastic,
+    interfaces => [ y, x, z, κ, ω ]
+)
 
 @average_energy(
-    form      => Type{ <: GCV },
+    formtype  => GCV,
     marginals => (q_y_x::MvNormalMeanCovariance{T}, q_z::NormalMeanVariance{T}, q_κ::Dirac{T}, q_ω::Dirac{T}) where T,
     meta      => Nothing,
     begin

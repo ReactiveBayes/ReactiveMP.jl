@@ -1,10 +1,18 @@
 using MacroTools
 
 
-function __extract_fform_macro_rule(fform)
-    @capture(fform, (form => form_)) || 
-        error("Error in macro: functional form of rule should have a (form => Type{ <: Distribution } or typeof(fn)) signature")
-    return form
+function __extract_fform_macro_rule(fformtype)
+    if @capture(fformtype, (formtype => typeof(form_)))
+        return form
+    elseif @capture(fformtype, (formtype => Type{ <: form_ }))
+        return form
+    elseif @capture(fformtype, (formtype => Type{ form_ }))
+        return form
+    elseif @capture(fformtype, (formtype => form_))
+        return form
+    else
+        error("Error in macro: functional form of rule should have a (formtype => Type{ <: Distribution } or typeof(fn)) signature")
+    end
 end
 
 function __extract_fformtype_macro_rule(fformtype)
