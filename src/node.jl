@@ -1,6 +1,7 @@
 export NodeInterface, name, messageout, messagein
-export FactorNode, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised, getvariable
-export getcluster, clusters, clusterindex
+export FactorNode, functionalform, interfaces, factorisation, locamarginals, localmarginalnames
+export iscontain, isfactorised, getinterface
+export clusters, clusterindex
 export deps, connect!, activate!
 export make_node, AutoVar
 export Marginalisation
@@ -244,8 +245,9 @@ struct FactorNodeLocalMarginals{M}
     marginals :: M
 end
 
-function FactorNodeLocalMarginals(interfaces, factorisation)
-    marginals  = map(cname -> FactorNodeLocalMarginal(cname), clusternames(interfaces, factorisation))
+function FactorNodeLocalMarginals(variablenames, factorisation)
+    marginalnames = map(fcluster -> clustername(map(i -> variablenames[i], fcluster)), factorisation)
+    marginals     = map(mname -> FactorNodeLocalMarginal(mname), marginalnames)
     return FactorNodeLocalMarginals(marginals)
 end
 
@@ -275,9 +277,9 @@ function FactorNode(fform::Type{F}, sdtype::T, interfaces::I, factorisation::C, 
     return FactorNode{Type{F}, T, I, C, M, A}(fform, sdtype, interfaces, factorisation, localmarginals, metadata)
 end
 
-function FactorNode(fform, sdtype, variables::NTuple{N, Symbol}, factorisation, metadata) where N
-    interfaces     = map(variable -> NodeInterface(variable), variables)
-    localmarginals = FactorNodeLocalMarginals(variables, factorisation)
+function FactorNode(fform, sdtype, varnames::NTuple{N, Symbol}, factorisation, metadata) where N
+    interfaces     = map(varname -> NodeInterface(varname), varnames)
+    localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
     return FactorNode(fform, sdtype, interfaces, factorisation, localmarginals, metadata)
 end
 
@@ -287,119 +289,125 @@ function Base.show(io::IO, factornode::FactorNode)
     println(io, string(" sdtype          : ", sdtype(factornode)))
     println(io, string(" interfaces      : ", interfaces(factornode)))
     println(io, string(" factorisation   : ", factorisation(factornode)))
-    println(io, string(" local marginals : ", name.(factornode.localmarginals.marginals)))
+    println(io, string(" local marginals : ", localmarginalnames(factornode)))
     println(io, string(" metadata        : ", metadata(factornode)))
 end
 
-functionalform(factornode::FactorNode) = factornode.fform
-sdtype(factornode::FactorNode)         = factornode.sdtype
-interfaces(factornode::FactorNode)     = factornode.interfaces
-factorisation(factornode::FactorNode)  = factornode.factorisation
-localmarginals(factornode::FactorNode) = factornode.localmarginals
-metadata(factornode::FactorNode)       = factornode.metadata
+functionalform(factornode::FactorNode)     = factornode.fform
+sdtype(factornode::FactorNode)             = factornode.sdtype
+interfaces(factornode::FactorNode)         = factornode.interfaces
+factorisation(factornode::FactorNode)      = factornode.factorisation
+localmarginals(factornode::FactorNode)     = factornode.localmarginals
+localmarginalnames(factornode::FactorNode) = map(name, factornode.localmarginals.marginals)
+metadata(factornode::FactorNode)           = factornode.metadata
 
 isstochastic(factornode::FactorNode)    = isstochastic(sdtype(factornode))
 isdeterministic(factornode::FactorNode) = isdeterministic(sdtype(factornode))
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
-clusternames(factornode::FactorNode)                              = map(clustername, clusters(factornode))
-clusternames(variables::NTuple{N, Symbol}, factorisation) where N = map(clustername, map(q -> map(v -> variables[v], q), factorisation))
+# Cluster is reffered to a tuple of node interfaces 
+clusters(factornode::FactorNode)                     = map(factor -> map(i -> begin return @inbounds interfaces(factornode)[i] end, factor), factorisation(factornode))
 
-getcluster(factornode::FactorNode, i)                = @inbounds factornode.factorisation[i]
-clusters(factornode::FactorNode)                     = map(factor -> map(i -> begin return @inbounds factornode.variables[i] end, factor), factorisation(factornode))
-clusterindex(factornode::FactorNode, v::Symbol)      = clusterindex(factornode, varindex(factornode, v))
-clusterindex(factornode::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(factornode))
-
+clusterindex(factornode::FactorNode, v::Symbol)                              = clusterindex(factornode, (v, ))
+clusterindex(factornode::FactorNode, vindex::Int)                            = clusterindex(factornode, (vindex, ))
 clusterindex(factornode::FactorNode, vars::NTuple{N, NodeInterface}) where N = clusterindex(factornode, map(v -> name(v), vars))
-clusterindex(factornode::FactorNode, vars::NTuple{N, Symbol}) where N       = clusterindex(factornode, map(v -> varindex(factornode, v), vars))
-clusterindex(factornode::FactorNode, vars::NTuple{N, Int}) where N          = findfirst(cluster -> all(v -> v ∈ cluster, vars), factorisation(factornode))
+clusterindex(factornode::FactorNode, vars::NTuple{N, Symbol})        where N = clusterindex(factornode, map(v -> interfaceindex(factornode, v), vars))
 
-varclusterindex(cluster, vindex::Int) = findfirst(index -> index === vindex, cluster)
-
-function getvariable(factornode::FactorNode, v::Symbol)
-    vindex = varindex(factornode, v)
-    @assert vindex !== nothing
-    return @inbounds interfaces(factornode)[vindex]
+function interfaceindex(factornode::FactorNode, iname::Symbol) 
+    iindex = findfirst(interface -> name(interface) === iname, interfaces(factornode))
+    return iindex !== nothing ? iindex : error("Unknown interface ':$(iname)' for $(functionalform(factornode)) node")
 end
 
-varindex(factornode::FactorNode, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), interfaces(factornode)))
-iscontain(factornode::FactorNode, v::Symbol)   = varindex(factornode, v) !== nothing
-isfactorised(factornode::FactorNode, f)        = findfirst(d -> d == f, factorisation(factornode)) !== nothing
-
-function connect!(factornode::FactorNode, v::Symbol, variable) 
-    return connect!(factornode::FactorNode, v::Symbol, variable, getlastindex(variable))
+function clusterindex(factornode::FactorNode, vars::NTuple{N, Int}) where N 
+    cindex = findfirst(cluster -> all(v -> v ∈ cluster, vars), factorisation(factornode))
+    return cindex !== nothing ? cindex : error("Unknown cluster '$(vars)' for $(functionalform(factornode)) node")
 end
 
-function connect!(factornode::FactorNode, v::Symbol, variable, index)
-    vindex = varindex(factornode, v)
+function varclusterindex(cluster, iindex::Int) 
+    vcindex = findfirst(index -> index === iindex, cluster)
+    return vcindex !== nothing ? vcindex : error("Invalid cluster '$(vars)' for a given interface index '$(iindex)'")
+end
 
-    @assert vindex !== nothing
+getinterface(factornode::FactorNode, iname::Symbol)   = @inbounds interfaces(factornode)[ interfaceindex(factornode, iname) ]
+iscontain(factornode::FactorNode, iname::Symbol)      = findfirst(interface -> name(interface) === iname, interfaces(factornode)) !== nothing
+isfactorised(factornode::FactorNode, factor)          = findfirst(f -> f == factor, factorisation(factornode)) !== nothing
+
+function connect!(factornode::FactorNode, iname::Symbol, variable) 
+    return connect!(factornode::FactorNode, iname::Symbol, variable, getlastindex(variable))
+end
+
+function connect!(factornode::FactorNode, iname::Symbol, variable, index)
+    vinterface = getinterface(factornode, iname)
+    connectvariable!(vinterface, variable, index)
+    setmessagein!(variable, index, messageout(vinterface))
+end
+
+function functional_dependencies(factornode::FactorNode, iname::Symbol)
+    return functional_dependencies(factornode, interfaceindex(factornode, iname))
+end
+
+function functional_dependencies(factornode::FactorNode, iindex::Int)
+    cindex  = clusterindex(factornode, iindex)
 
     nodeinterfaces = interfaces(factornode)
-    varinterface   = @inbounds nodeinterfaces[vindex]
+    nodeclusters   = factorisation(factornode)
+    cluster        = @inbounds nodeclusters[ cindex ]
 
-    connectvariable!(varinterface, variable, index)
-    setmessagein!(variable, index, messageout(varinterface))
+    vcindex = varclusterindex(cluster, iindex)    
+
+    message_dependencies = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(cluster, vcindex))
+    cluster_dependencies = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(nodeclusters, cindex))
+
+    return tuple(message_dependencies...), tuple(cluster_dependencies...)
 end
 
-function deps(factornode::FactorNode, v::Symbol)
-    vindex = varindex(factornode, v)
-    cindex = clusterindex(factornode, vindex)
+function get_messages_observable(factornode, message_dependencies)
+    msgs_names      = nothing
+    msgs_observable = of(nothing)
 
-    @assert vindex !== nothing
-    @assert cindex !== nothing
+    if length(message_dependencies) !== 0
+        msgs_names      = Val{ map(name, message_dependencies) }
+        msgs_observable = combineLatest(map(m -> messagein(m), message_dependencies), PushNew())
+    end
 
-    vars = interfaces(factornode)
-    cls  = factorisation(factornode)
+    return msgs_names, msgs_observable
+end
 
-    factor  = @inbounds cls[cindex]
-    vcindex = varclusterindex(factor, vindex)
+function get_clusters_observable(factornode, cluster_dependencies)
+    cluster_names       = nothing
+    clusters_observable = of(nothing)
 
-    @assert vcindex !== nothing
+    if length(cluster_dependencies) !== 0 
+        cluster_names       = Val{ map(clustername, cluster_dependencies) }
+        clusters_observable = combineLatest(map(cluster -> getmarginal!(factornode, cluster), cluster_dependencies), PushNew())
+    end
 
-    # TODO Consider to change this line with map/map
-    # TODO benchmark it
-    mdeps       = map(inds -> map(i -> begin return @inbounds vars[i] end, inds), skipindex(factor, vcindex))
-    clusterdeps = map(inds -> map(i -> begin return @inbounds vars[i] end, inds), skipindex(cls, cindex))
-
-    return mdeps, clusterdeps
+    return cluster_names, clusters_observable
 end
 
 function activate!(model, factornode::FactorNode)
-    for variable in interfaces(factornode)
-        mdeps, clusterdeps = deps(factornode, name(variable))
+    for (iindex, interface) in enumerate(interfaces(factornode))
+        message_dependencies, cluster_dependencies = functional_dependencies(factornode, iindex)
 
-        msgs_names      = nothing
-        msgs_observable = of(nothing)
-
-        cluster_names       = nothing
-        clusters_observable = of(nothing)
-
-        if length(mdeps) !== 0
-            msgs_names      = Val{ tuple(name.(mdeps)...) }
-            msgs_observable = combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew())
-        end
-
-        if length(clusterdeps) !== 0 
-            cluster_names       = Val{ tuple(clustername.(clusterdeps)...) }
-            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushNew())
-        end
+        msgs_names, msgs_observable        = get_messages_observable(factornode, message_dependencies)
+        cluster_names, clusters_observable = get_clusters_observable(factornode, cluster_dependencies)
 
         gate        = message_gate(model)
         fform       = functionalform(factornode)
-        vtag        = tag(variable)
+        vtag        = tag(interface)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
-        mapping     = switch_map(Message, (d) -> begin
-            message = rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta, factornode)
-            return cast_to_subscribable(message) |> map(Message, (d) -> as_message(gate!(gate, factornode, variable, d)))
-        end) 
          
         vmessageout = apply(message_out_transformer(model), combineLatest(msgs_observable, clusters_observable, strategy = PushEach()))
 
-        set!(messageout(variable), vmessageout |> mapping |> share_replay(1))
-        set!(messagein(variable), messageout(connectedvar(variable), connectedvarindex(variable)))
+        mapping = (d) -> begin
+            message = rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta, factornode)
+            return cast_to_subscribable(message) |> map(Message, (d) -> as_message(gate!(gate, factornode, interface, d)))
+        end
+
+        set!(messageout(interface), vmessageout |> switch_map(Message, mapping) |> share_replay(1))
+        set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
     end
 end
 
