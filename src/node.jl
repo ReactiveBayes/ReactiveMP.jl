@@ -204,30 +204,43 @@ connectedvarindex(interface::NodeInterface) = interface.props.connected_index
 
 ## FactorNodeLocalMarginals
 
-struct FactorNodeLocalMarginals{N}
-    marginals :: NTuple{ N, Tuple{ Symbol, Ref{ Union{ Nothing, MarginalObservable } } } }
+mutable struct FactorNodeLocalMarginalProps
+    stream :: Union{Nothing, MarginalObservable}
+
+    FactorNodeLocalMarginalProps() = new(nothing)
 end
 
-function FactorNodeLocalMarginals(variables, factorisation)
-    names = clusternames(variables, factorisation)
-    init  = map(n -> (n, Ref{Union{Nothing, MarginalObservable}}(nothing)), names)
-    N     = length(factorisation)
-    return FactorNodeLocalMarginals{N}(NTuple{N, Tuple{Symbol, Ref{Union{Nothing, MarginalObservable}}}}(init))
+struct FactorNodeLocalMarginal 
+    name  :: Symbol
+    props :: FactorNodeLocalMarginalProps
+
+    FactorNodeLocalMarginal(name::Symbol) = new(name, FactorNodeLocalMarginalProps())
 end
 
-@inline function __findindex(lm::FactorNodeLocalMarginals, s::Symbol)
-    index = findnext(d -> d[1] === s, lm.marginals, 1)
-    if index === nothing
-        throw("Invalid marginal id: $s")
-    end
-    return index
+name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
+
+getstream(localmarginal::FactorNodeLocalMarginal) = localmarginal.props.stream
+setstream!(localmarginal::FactorNodeLocalMarginal, observable::MarginalObservable) = localmarginal.props.stream = observable
+
+struct FactorNodeLocalMarginals{M}
+    marginals :: M
 end
 
-Base.getindex(lm::FactorNodeLocalMarginals, s::Symbol)     = @inbounds lm.marginals[__findindex(lm, s)][2][]
-Base.setindex!(lm::FactorNodeLocalMarginals, v, s::Symbol) = @inbounds lm.marginals[__findindex(lm, s)][2][] = v
+function FactorNodeLocalMarginals(interfaces, factorisation)
+    marginals  = map(cname -> FactorNodeLocalMarginal(cname), clusternames(interfaces, factorisation))
+    return FactorNodeLocalMarginals(marginals)
+end
 
-Base.firstindex(::FactorNodeLocalMarginals)           = 1
-Base.lastindex(::FactorNodeLocalMarginals{N}) where N = N
+@inline function __findindex(localmarginals::FactorNodeLocalMarginals, cname::Symbol)
+    index = findnext(lmarginal -> name(lmarginal) === cname, localmarginals.marginals, 1)
+    return index !== nothing ? index : throw("Invalid local marginal id: $s")
+end
+
+Base.getindex(localmarginals::FactorNodeLocalMarginals, cname::Symbol)              = @inbounds getstream(localmarginals.marginals[__findindex(localmarginals, cname)])
+Base.setindex!(localmarginals::FactorNodeLocalMarginals, observable, cname::Symbol) = @inbounds setstream!(localmarginals.marginals[__findindex(localmarginals, cname)], observable)
+
+Base.firstindex(localmarginals::FactorNodeLocalMarginals) = firstindex(localmarginals.marginals)
+Base.lastindex(localmarginals::FactorNodeLocalMarginals)  = lastindex(localmarginals.marginals)
 
 ## FactorNode
 
