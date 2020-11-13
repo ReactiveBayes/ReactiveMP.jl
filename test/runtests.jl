@@ -11,6 +11,8 @@ using Test, Documenter, ReactiveMP
     include("distributions/test_normal_mean_precision.jl")
     include("distributions/test_mv_normal_mean_precision.jl")
 
+    include("test_node.jl")
+
     @testset "Detect ambiguities" begin
         @test length(Test.detect_ambiguities(Rocket)) == 0
     end

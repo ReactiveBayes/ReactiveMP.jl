@@ -1,4 +1,4 @@
-module RocketTeardownTest
+module ReactiveMPDistributionsTest
 
 using Test
 using ReactiveMP 

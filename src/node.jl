@@ -1,10 +1,10 @@
-export VariableNode, varnode, name, messageout, messagein
+export NodeInterface, name, messageout, messagein
 export FactorNode, functionalform, variables, factorisation, factors, varindex, iscontain, isfactorised, getvariable
 export getcluster, clusters, clusterindex
 export deps, connect!, activate!
 export make_node, AutoVar
 export Marginalisation
-export sdtype, isdeterministic, isstochastic
+export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
 export MeanField, FullFactorisation
 export @node
 
@@ -15,8 +15,41 @@ import Base: getindex, setindex!, firstindex, lastindex
 
 ## Node types
 
+"""
+    Deterministic
+
+`Deterministic` object used to parametrize factor node object with determinstic type of relationship between variables.
+
+See also: [`Stochastic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref)
+"""
 struct Deterministic end
+
+"""
+    Stochastic
+
+`Stochastic` object used to parametrize factor node object with stochastic type of relationship between variables.
+
+See also: [`Deterministic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref)
+"""
 struct Stochastic end
+
+"""
+    isdeterministic(node)
+
+Function used to check if factor node object is deterministic or not. Returns true or false.
+
+See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isstochastic`](@ref)
+"""
+function isdeterministic end
+
+"""
+    isstochastic(node)
+
+Function used to check if factor node object is stochastic or not. Returns true or false.
+
+See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@ref)
+"""
+function isstochastic end
 
 isdeterministic(::Deterministic)         = true
 isdeterministic(::Type{ Deterministic }) = true
@@ -30,50 +63,144 @@ isstochastic(::Type{ Deterministic }) = false
 
 ## Generic factorisation constraints
 
+"""
+    MeanField
+
+Generic factorisation constraint used to specify a mean-field factorisation for recognition distribution `q`.
+
+See also: [`FullFactorisation`](@ref)
+"""
 struct MeanField end
+
+"""
+    FullFactorisation
+
+Generic factorisation constraint used to specify a full factorisation for recognition distribution `q`.
+
+See also: [`MeanField`](@ref)
+"""
 struct FullFactorisation end
+
+"""
+    collect_factorisation(nodetype, factorisation)
+
+This function converts given factorisation to a correct internal factorisation representation for a given node. 
+
+# Examples 
+
+```julia
+
+using ReactiveMP
+
+f = ReactiveMP.collect_factorisation(NormalMeanVariance, MeanField()) # ((1,), (2, ), (3, ))
+```
+
+See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
+"""
+function collect_factorisation end
+
+collect_factorisation(::Any, factorisation::Tuple) = factorisation
 
 ## Variable constraints
 
 struct Marginalisation end
 
-## VariableNode Props
+## NodeInterface Props
 
-mutable struct VariableNodeProps
+mutable struct NodeInterfaceProps
     connected_variable :: Union{Nothing, AbstractVariable}
     connected_index    :: Int
 
-    VariableNodeProps() = new(nothing, 0)
+    NodeInterfaceProps() = new(nothing, 0)
 end
 
-## VariableNode
+## NodeInterface
 
-struct VariableNode
+"""
+    NodeInterface
+
+`NodeInterface` object represents a single node-variable connection.
+
+See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
+"""
+struct NodeInterface
     name  :: Symbol
     m_out :: LazyObservable{Message}
     m_in  :: LazyObservable{Message}
-    props :: VariableNodeProps
+    props :: NodeInterfaceProps
 
-    VariableNode(name::Symbol) = new(name, lazy(Message), lazy(Message), VariableNodeProps())
+    NodeInterface(name::Symbol) = new(name, lazy(Message), lazy(Message), NodeInterfaceProps())
 end
 
-Base.show(io::IO, varnode::VariableNode) = print(io, name(varnode))
+Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
 
-varnode(name::Symbol) = VariableNode(name)
+"""
+    name(interface)
 
+Returns a name of the interface.
+
+See also: [`NodeInterface`](@ref), [`tag`](@ref)
+"""
 name(symbol::Symbol)              = symbol
-name(varnode::VariableNode)       = name(varnode.name)
-tag(varnode::VariableNode)        = Val{name(varnode)}
-messageout(varnode::VariableNode) = varnode.m_out
-messagein(varnode::VariableNode)  = varnode.m_in
+name(interface::NodeInterface)    = name(interface.name)
 
-function connectvariable!(varnode::VariableNode, variable, index)
-    varnode.props.connected_variable = variable
-    varnode.props.connected_index    = index
+"""
+    tag(interface)
+
+Returns a tag of the interface in the form of `Val{ name(interface) }`. 
+The major difference between tag and name is that it is possible to dispath on interface's tag in message computation rule.
+
+See also: [`NodeInterface`](@ref), [`name`](@ref), [`activate!`](@ref)
+"""
+tag(interface::NodeInterface)     = Val{ name(interface) }
+
+"""
+    messageout(interface)
+
+Returns an outbound messages stream from the given interface.
+
+See also: [`NodeInterface`](@ref), [`messagein`](@ref)
+"""
+messageout(interface::NodeInterface) = interface.m_out
+
+"""
+    messagein(interface)
+
+Returns an inbound messages stream from the given interface.
+
+See also: [`NodeInterface`](@ref), [`messageout`](@ref)
+"""
+messagein(interface::NodeInterface)  = interface.m_in
+
+"""
+    connectvariable!(interface, variable, index)
+
+Connects a variable with the interface and given index. Index is used to distinguish this connection from others in case if variable is connected to multiple interfaces.
+
+See also: [`NodeInterface`](@ref), [`connectedvar`](@ref), [`connectedvarindex`](@ref)
+"""
+function connectvariable!(interface::NodeInterface, variable, index)
+    interface.props.connected_variable = variable
+    interface.props.connected_index    = index
 end
 
-connectedvar(varnode::VariableNode)      = varnode.props.connected_variable
-connectedvarindex(varnode::VariableNode) = varnode.props.connected_index
+"""
+    connectedvar(interface)
+
+Returns connected variable for the interface.
+
+See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvarindex`](@ref)
+"""
+connectedvar(interface::NodeInterface)      = interface.props.connected_variable
+
+"""
+    connectedvarindex(interface)
+
+Returns an index of connected variable for the interface.
+
+See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref)
+"""
+connectedvarindex(interface::NodeInterface) = interface.props.connected_index
 
 ## FactorNodeLocalMarginals
 
@@ -106,7 +233,7 @@ Base.lastindex(::FactorNodeLocalMarginals{N}) where N = N
 
 struct FactorNode{F, T, N, C, M, A}
     fform         :: F
-    variables     :: NTuple{N, VariableNode}
+    variables     :: NTuple{N, NodeInterface}
     factorisation :: C
     marginals     :: M
     metadata      :: A
@@ -116,13 +243,13 @@ end
 function FactorNode(fform::Type{F}, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C, metadata::A) where { F, N, C, T, A }
     localmarginals = FactorNodeLocalMarginals(variables, factorisation)
     M = typeof(localmarginals)
-    return FactorNode{Type{F}, T, N, C, M, A}(fform, map(v -> varnode(v), variables), factorisation, localmarginals, metadata)
+    return FactorNode{Type{F}, T, N, C, M, A}(fform, map(v -> NodeInterface(v), variables), factorisation, localmarginals, metadata)
 end
 
 function FactorNode(fform::F, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C, metadata::A) where { F, N, C, T, A }
     localmarginals = FactorNodeLocalMarginals(variables, factorisation)
     M = typeof(localmarginals)
-    return FactorNode{F, T, N, C, M, A}(fform, map(v -> varnode(v), variables), factorisation, localmarginals, metadata)
+    return FactorNode{F, T, N, C, M, A}(fform, map(v -> NodeInterface(v), variables), factorisation, localmarginals, metadata)
 end
 
 functionalform(factornode::FactorNode) = factornode.fform
@@ -150,7 +277,7 @@ clusters(factornode::FactorNode)                     = map(factor -> map(i -> be
 clusterindex(factornode::FactorNode, v::Symbol)      = clusterindex(factornode, varindex(factornode, v))
 clusterindex(factornode::FactorNode, vindex::Int)    = findfirst(cluster -> vindex ∈ cluster, factorisation(factornode))
 
-clusterindex(factornode::FactorNode, vars::NTuple{N, VariableNode}) where N = clusterindex(factornode, map(v -> name(v), vars))
+clusterindex(factornode::FactorNode, vars::NTuple{N, NodeInterface}) where N = clusterindex(factornode, map(v -> name(v), vars))
 clusterindex(factornode::FactorNode, vars::NTuple{N, Symbol}) where N       = clusterindex(factornode, map(v -> varindex(factornode, v), vars))
 clusterindex(factornode::FactorNode, vars::NTuple{N, Int}) where N          = findfirst(cluster -> all(v -> v ∈ cluster, vars), factorisation(factornode))
 
@@ -309,10 +436,6 @@ function make_node end
 
 function interface_get_index end
 function interface_get_name end
-
-function collect_factorisation end
-
-collect_factorisation(::Any, factorisation::Tuple) = factorisation
 
 ## AutoVar
 
