@@ -210,6 +210,19 @@ mutable struct FactorNodeLocalMarginalProps
     FactorNodeLocalMarginalProps() = new(nothing)
 end
 
+"""
+    FactorNodeLocalMarginal
+
+# Fields
+1. name  :: Symbol - name of local marginal, e.g. `μ`. Name is `_` separated in case of joint, eg. `μ_τ`
+2. props :: FactorNodeLocalMarginalProps - mutable object which is holding a stream of marginals or nothing
+
+This object represents local marginals for some specific factor node. 
+Local marginal can be joint in case of structured factorisation. 
+Local to factor node marginal also can be shared with a corresponding marginal of some random variable.
+
+See also: [`FactorNodeLocalMarginals`](@ref)
+"""
 struct FactorNodeLocalMarginal 
     name  :: Symbol
     props :: FactorNodeLocalMarginalProps
@@ -222,6 +235,11 @@ name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
 getstream(localmarginal::FactorNodeLocalMarginal) = localmarginal.props.stream
 setstream!(localmarginal::FactorNodeLocalMarginal, observable::MarginalObservable) = localmarginal.props.stream = observable
 
+"""
+    FactorNodeLocalMarginals
+
+This object acts as an iterable and indexable proxy for local marginals for some node. 
+"""
 struct FactorNodeLocalMarginals{M}
     marginals :: M
 end
@@ -244,41 +262,44 @@ Base.lastindex(localmarginals::FactorNodeLocalMarginals)  = lastindex(localmargi
 
 ## FactorNode
 
-struct FactorNode{F, T, N, C, M, A}
-    fform         :: F
-    variables     :: NTuple{N, NodeInterface}
-    factorisation :: C
-    marginals     :: M
-    metadata      :: A
+struct FactorNode{F, T, I, C, M, A}
+    fform          :: F
+    sdtype         :: T
+    interfaces     :: I
+    factorisation  :: C
+    localmarginals :: M
+    metadata       :: A
 end
 
-# Additional method specific for Type{F} needed here to bypass Julia's DataType type
-function FactorNode(fform::Type{F}, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C, metadata::A) where { F, N, C, T, A }
-    localmarginals = FactorNodeLocalMarginals(variables, factorisation)
-    M = typeof(localmarginals)
-    return FactorNode{Type{F}, T, N, C, M, A}(fform, map(v -> NodeInterface(v), variables), factorisation, localmarginals, metadata)
+function FactorNode(fform::Type{F}, sdtype::T, interfaces::I, factorisation::C, localmarginals::M, metadata::A) where { F, T, I, C, M, A }
+    return FactorNode{Type{F}, T, I, C, M, A}(fform, sdtype, interfaces, factorisation, localmarginals, metadata)
 end
 
-function FactorNode(fform::F, ::Type{T}, variables::NTuple{N, Symbol}, factorisation::C, metadata::A) where { F, N, C, T, A }
+function FactorNode(fform, sdtype, variables::NTuple{N, Symbol}, factorisation, metadata) where N
+    interfaces     = map(variable -> NodeInterface(variable), variables)
     localmarginals = FactorNodeLocalMarginals(variables, factorisation)
-    M = typeof(localmarginals)
-    return FactorNode{F, T, N, C, M, A}(fform, map(v -> NodeInterface(v), variables), factorisation, localmarginals, metadata)
+    return FactorNode(fform, sdtype, interfaces, factorisation, localmarginals, metadata)
+end
+
+function Base.show(io::IO, factornode::FactorNode)
+    println(io, "FactorNode:")
+    println(io, string(" form            : ", functionalform(factornode)))
+    println(io, string(" sdtype          : ", sdtype(factornode)))
+    println(io, string(" interfaces      : ", interfaces(factornode)))
+    println(io, string(" factorisation   : ", factorisation(factornode)))
+    println(io, string(" local marginals : ", name.(factornode.localmarginals.marginals)))
+    println(io, string(" metadata        : ", metadata(factornode)))
 end
 
 functionalform(factornode::FactorNode) = factornode.fform
-variables(factornode::FactorNode)      = factornode.variables
+sdtype(factornode::FactorNode)         = factornode.sdtype
+interfaces(factornode::FactorNode)     = factornode.interfaces
 factorisation(factornode::FactorNode)  = factornode.factorisation
+localmarginals(factornode::FactorNode) = factornode.localmarginals
+metadata(factornode::FactorNode)       = factornode.metadata
 
-sdtype(::N) where { N <: FactorNode } = sdtype(N)
-sdtype(::Type{ <: FactorNode{F, T} }) where { F, T } = T
-
-isstochastic(::N)    where { N <: FactorNode }         = isstochastic(N)
-isstochastic(::Type{ N })    where { N <: FactorNode } = isstochastic(sdtype(N))
-
-isdeterministic(::N) where { N <: FactorNode }         = isdeterministic(N)
-isdeterministic(::Type{ N }) where { N <: FactorNode } = isdeterministic(sdtype(N))
-
-metadata(factornode::FactorNode) = factornode.metadata
+isstochastic(factornode::FactorNode)    = isstochastic(sdtype(factornode))
+isdeterministic(factornode::FactorNode) = isdeterministic(sdtype(factornode))
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
@@ -299,10 +320,10 @@ varclusterindex(cluster, vindex::Int) = findfirst(index -> index === vindex, clu
 function getvariable(factornode::FactorNode, v::Symbol)
     vindex = varindex(factornode, v)
     @assert vindex !== nothing
-    return @inbounds variables(factornode)[vindex]
+    return @inbounds interfaces(factornode)[vindex]
 end
 
-varindex(factornode::FactorNode, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), variables(factornode)))
+varindex(factornode::FactorNode, v::Symbol)    = findfirst(d -> d === v, map(v -> name(v), interfaces(factornode)))
 iscontain(factornode::FactorNode, v::Symbol)   = varindex(factornode, v) !== nothing
 isfactorised(factornode::FactorNode, f)        = findfirst(d -> d == f, factorisation(factornode)) !== nothing
 
@@ -315,11 +336,11 @@ function connect!(factornode::FactorNode, v::Symbol, variable, index)
 
     @assert vindex !== nothing
 
-    varnodes = variables(factornode)
-    varnode  = @inbounds varnodes[vindex]
+    nodeinterfaces = interfaces(factornode)
+    varinterface   = @inbounds nodeinterfaces[vindex]
 
-    connectvariable!(varnode, variable, index)
-    setmessagein!(variable, index, messageout(varnode))
+    connectvariable!(varinterface, variable, index)
+    setmessagein!(variable, index, messageout(varinterface))
 end
 
 function deps(factornode::FactorNode, v::Symbol)
@@ -329,7 +350,7 @@ function deps(factornode::FactorNode, v::Symbol)
     @assert vindex !== nothing
     @assert cindex !== nothing
 
-    vars = variables(factornode)
+    vars = interfaces(factornode)
     cls  = factorisation(factornode)
 
     factor  = @inbounds cls[cindex]
@@ -346,7 +367,7 @@ function deps(factornode::FactorNode, v::Symbol)
 end
 
 function activate!(model, factornode::FactorNode)
-    for variable in variables(factornode)
+    for variable in interfaces(factornode)
         mdeps, clusterdeps = deps(factornode, name(variable))
 
         msgs_names      = nothing
@@ -383,7 +404,7 @@ function activate!(model, factornode::FactorNode)
 end
 
 function setmarginal!(factornode::FactorNode, name::Symbol, v)
-    marginal = factornode.marginals[name]
+    marginal = factornode.localmarginals[name]
     if marginal === nothing
         throw("Marginal with name $(name) does not exist on factor node $(factornode)")
     end
@@ -393,21 +414,21 @@ end
 function getmarginal!(factornode::FactorNode, cluster)
     cname = clustername(cluster)
 
-    if factornode.marginals[cname] !== nothing
-        return factornode.marginals[cname]
+    if factornode.localmarginals[cname] !== nothing
+        return factornode.localmarginals[cname]
     end
 
     if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
         vmarginal = getmarginal(connectedvar(cluster[1]))
-        factornode.marginals[cname] = vmarginal
+        factornode.localmarginals[cname] = vmarginal
         return vmarginal
     else
         cmarginal = MarginalObservable()
-        factornode.marginals[cname] = cmarginal
+        factornode.localmarginals[cname] = cmarginal
         # TODO generalise as a separate function
         mdeps = cluster
 
-        vars = variables(factornode)
+        vars = interfaces(factornode)
         cls  = factorisation(factornode)
 
         cindex      = clusterindex(factornode, cluster)
