@@ -225,13 +225,15 @@ Local to factor node marginal also can be shared with a corresponding marginal o
 See also: [`FactorNodeLocalMarginals`](@ref)
 """
 struct FactorNodeLocalMarginal 
+    index :: Int
     name  :: Symbol
     props :: FactorNodeLocalMarginalProps
 
-    FactorNodeLocalMarginal(name::Symbol) = new(name, FactorNodeLocalMarginalProps())
+    FactorNodeLocalMarginal(index::Int, name::Symbol) = new(index, name, FactorNodeLocalMarginalProps())
 end
 
-name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
+index(localmarginal::FactorNodeLocalMarginal) = localmarginal.index
+name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
 
 getstream(localmarginal::FactorNodeLocalMarginal) = localmarginal.props.stream
 setstream!(localmarginal::FactorNodeLocalMarginal, observable::MarginalObservable) = localmarginal.props.stream = observable
@@ -246,21 +248,11 @@ struct FactorNodeLocalMarginals{M}
 end
 
 function FactorNodeLocalMarginals(variablenames, factorisation)
-    marginalnames = map(fcluster -> clustername(map(i -> variablenames[i], fcluster)), factorisation)
-    marginals     = map(mname -> FactorNodeLocalMarginal(mname), marginalnames)
+    marginal_names = map(fcluster -> clustername(map(i -> variablenames[i], fcluster)), factorisation)
+    index          = 0 # its better not to use zip here to preserve tuple-like structure
+    marginals      = map((mname) -> begin index += 1; FactorNodeLocalMarginal(index, mname) end, marginal_names)
     return FactorNodeLocalMarginals(marginals)
 end
-
-@inline function __findindex(localmarginals::FactorNodeLocalMarginals, cname::Symbol)
-    index = findnext(lmarginal -> name(lmarginal) === cname, localmarginals.marginals, 1)
-    return index !== nothing ? index : throw("Invalid local marginal id: $s")
-end
-
-Base.getindex(localmarginals::FactorNodeLocalMarginals, cname::Symbol)              = @inbounds getstream(localmarginals.marginals[__findindex(localmarginals, cname)])
-Base.setindex!(localmarginals::FactorNodeLocalMarginals, observable, cname::Symbol) = @inbounds setstream!(localmarginals.marginals[__findindex(localmarginals, cname)], observable)
-
-Base.firstindex(localmarginals::FactorNodeLocalMarginals) = firstindex(localmarginals.marginals)
-Base.lastindex(localmarginals::FactorNodeLocalMarginals)  = lastindex(localmarginals.marginals)
 
 ## FactorNode
 
@@ -297,8 +289,8 @@ functionalform(factornode::FactorNode)     = factornode.fform
 sdtype(factornode::FactorNode)             = factornode.sdtype
 interfaces(factornode::FactorNode)         = factornode.interfaces
 factorisation(factornode::FactorNode)      = factornode.factorisation
-localmarginals(factornode::FactorNode)     = factornode.localmarginals
-localmarginalnames(factornode::FactorNode) = map(name, factornode.localmarginals.marginals)
+localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
+localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode))
 metadata(factornode::FactorNode)           = factornode.metadata
 
 isstochastic(factornode::FactorNode)    = isstochastic(sdtype(factornode))
@@ -330,6 +322,9 @@ function varclusterindex(cluster, iindex::Int)
 end
 
 getinterface(factornode::FactorNode, iname::Symbol)   = @inbounds interfaces(factornode)[ interfaceindex(factornode, iname) ]
+
+getclusterinterfaces(factornode::FactorNode, cindex::Int) = @inbounds map(i -> interfaces(factornode)[i], factorisation(factornode)[ cindex ])
+
 iscontain(factornode::FactorNode, iname::Symbol)      = findfirst(interface -> name(interface) === iname, interfaces(factornode)) !== nothing
 isfactorised(factornode::FactorNode, factor)          = findfirst(f -> f == factor, factorisation(factornode)) !== nothing
 
@@ -352,14 +347,14 @@ function functional_dependencies(factornode::FactorNode, iindex::Int)
 
     nodeinterfaces     = interfaces(factornode)
     nodeclusters       = factorisation(factornode)
-    # nodelocalmarginals = localmarginals(factornode)
+    nodelocalmarginals = localmarginals(factornode)
 
     varcluster = @inbounds nodeclusters[ cindex ]
 
-    message_dependencies = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(varcluster, varclusterindex(varcluster, iindex)))
-    cluster_dependencies = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(nodeclusters, cindex))
+    message_dependencies  = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(varcluster, varclusterindex(varcluster, iindex)))
+    marginal_dependencies = skipindex(nodelocalmarginals, cindex)
 
-    return tuple(message_dependencies...), tuple(cluster_dependencies...)
+    return tuple(message_dependencies...), tuple(marginal_dependencies...)
 end
 
 function get_messages_observable(factornode, message_dependencies)
@@ -374,25 +369,24 @@ function get_messages_observable(factornode, message_dependencies)
     return msgs_names, msgs_observable
 end
 
-function get_clusters_observable(factornode, cluster_dependencies)
-    cluster_names       = nothing
-    clusters_observable = of(nothing)
+function get_marginals_observable(factornode, marginal_dependencies)
+    marginal_names       = nothing
+    marginals_observable = of(nothing)
 
-    if length(cluster_dependencies) !== 0 
-        cluster_names       = Val{ map(clustername, cluster_dependencies) }
-        clusters_observable = combineLatest(map(cluster -> getmarginal!(factornode, cluster), cluster_dependencies), PushNew())
+    if length(marginal_dependencies) !== 0 
+        marginal_names       = Val{ map(name, marginal_dependencies) }
+        marginals_observable = combineLatest(map(marginal -> getmarginal!(factornode, marginal), marginal_dependencies), PushNew())
     end
 
-    return cluster_names, clusters_observable
+    return marginal_names, marginals_observable
 end
 
-# TODO It is possible to operate on local marginals instead of a clusters
 function activate!(model, factornode::FactorNode)
     for (iindex, interface) in enumerate(interfaces(factornode))
-        message_dependencies, cluster_dependencies = functional_dependencies(factornode, iindex)
+        message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
 
-        msgs_names, msgs_observable        = get_messages_observable(factornode, message_dependencies)
-        cluster_names, clusters_observable = get_clusters_observable(factornode, cluster_dependencies)
+        msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
+        marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
         gate        = message_gate(model)
         fform       = functionalform(factornode)
@@ -400,10 +394,10 @@ function activate!(model, factornode::FactorNode)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
          
-        vmessageout = apply(message_out_transformer(model), combineLatest(msgs_observable, clusters_observable, strategy = PushEach()))
+        vmessageout = apply(message_out_transformer(model), combineLatest(msgs_observable, marginals_observable, strategy = PushEach()))
 
         mapping = (d) -> begin
-            message = rule(fform, vtag, vconstraint, msgs_names, d[1], cluster_names, d[2], meta, factornode)
+            message = rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode)
             return cast_to_subscribable(message) |> map(Message, (d) -> as_message(gate!(gate, factornode, interface, d)))
         end
 
@@ -412,60 +406,48 @@ function activate!(model, factornode::FactorNode)
     end
 end
 
-function setmarginal!(factornode::FactorNode, name::Symbol, v)
-    marginal = factornode.localmarginals[name]
-    if marginal === nothing
-        throw("Marginal with name $(name) does not exist on factor node $(factornode)")
-    end
-    setmarginal!(marginal, v)
+function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
+    lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
+    @assert lindex !== nothing "Invalid local marginal id: $s"
+    lmarginal = @inbounds localmarginals(factornode)[ lindex ]
+    setmarginal!(getstream(lmarginal), marginal)
 end
 
-function getmarginal!(factornode::FactorNode, cluster)
-    cname = clustername(cluster)
+function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal)
+    cached_stream = getstream(localmarginal)
 
-    if factornode.localmarginals[cname] !== nothing
-        return factornode.localmarginals[cname]
+    if cached_stream !== nothing
+        return cached_stream
     end
 
-    if length(cluster) === 1 # Cluster contains only one variable, we can take marginal over this variable
-        vmarginal = getmarginal(connectedvar(cluster[1]))
-        factornode.localmarginals[cname] = vmarginal
+    clusterindex = index(localmarginal)
+
+    marginalname = name(localmarginal)
+    marginalsize = @inbounds length(factorisation(factornode)[ clusterindex ])
+
+    if marginalsize === 1 
+        # Cluster contains only one variable, we can take marginal over this variable
+        vmarginal = getmarginal(connectedvar(getinterface(factornode, marginalname)))
+        setstream!(localmarginal, vmarginal)
         return vmarginal
     else
         cmarginal = MarginalObservable()
-        factornode.localmarginals[cname] = cmarginal
-        # TODO generalise as a separate function
-        mdeps = cluster
 
-        vars = interfaces(factornode)
-        cls  = factorisation(factornode)
+        message_dependencies  = tuple(getclusterinterfaces(factornode, clusterindex)...)
+        marginal_dependencies = tuple(skipindex(localmarginals(factornode), clusterindex)...)
 
-        cindex      = clusterindex(factornode, cluster)
-        clusterdeps = map(inds -> map(i -> vars[i], inds), skipindex(cls, cindex))
-
-        msgs_names      = nothing
-        msgs_observable = of(nothing)
-
-        cluster_names       = nothing
-        clusters_observable = of(nothing)
-
-        if length(mdeps) !== 0
-            msgs_names      = Val{ tuple(name.(mdeps)...) }
-            msgs_observable = combineLatest(map(m -> messagein(m), mdeps)..., strategy = PushNew())
-        end
-
-        if length(clusterdeps) !== 0 
-            cluster_names       = Val{ tuple(clustername.(clusterdeps)...) }
-            clusters_observable = combineLatest(map(c -> getmarginal!(factornode, c), clusterdeps)..., strategy = PushNew())
-        end
+        msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
+        marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
         fform       = functionalform(factornode)
-        vtag        = Val{ clustername(cluster) }
+        vtag        = Val{ name(localmarginal) }
         meta        = metadata(factornode)
-        mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], cluster_names, d[2], meta, factornode)))
-        marginalout = combineLatest(msgs_observable, clusters_observable, strategy = PushEach()) |> discontinue() |> mapping
+        mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, d[2], meta, factornode)))
+        marginalout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach()) |> discontinue() |> mapping
 
         connect!(cmarginal, marginalout |> share_replay(1))
+
+        setstream!(localmarginal, cmarginal)
 
         return cmarginal
     end

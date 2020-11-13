@@ -16,7 +16,7 @@ function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where T
 
     node_energies = map(filter(isstochastic, getnodes(model))) do node
         marginal_names   = Val{ localmarginalnames(node) } 
-        marginals_stream = combineLatest(map(cluster -> getmarginal!(node, cluster), clusters(node)), PushEach())
+        marginals_stream = combineLatest(map(cluster -> getmarginal!(node, cluster), localmarginals(node)), PushEach())
         return marginals_stream |> schedule_on(scheduler) |> map(InfCountingReal{T}, (marginals) -> begin 
             average_energy   = InfCountingReal(score(AverageEnergy(), functionalform(node), marginal_names, marginals, metadata(node)))
             clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
