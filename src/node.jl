@@ -307,7 +307,7 @@ isdeterministic(factornode::FactorNode) = isdeterministic(sdtype(factornode))
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
 # Cluster is reffered to a tuple of node interfaces 
-clusters(factornode::FactorNode)                     = map(factor -> map(i -> begin return @inbounds interfaces(factornode)[i] end, factor), factorisation(factornode))
+clusters(factornode::FactorNode) = map(factor -> map(i -> begin return @inbounds interfaces(factornode)[i] end, factor), factorisation(factornode))
 
 clusterindex(factornode::FactorNode, v::Symbol)                              = clusterindex(factornode, (v, ))
 clusterindex(factornode::FactorNode, vindex::Int)                            = clusterindex(factornode, (vindex, ))
@@ -350,13 +350,13 @@ end
 function functional_dependencies(factornode::FactorNode, iindex::Int)
     cindex  = clusterindex(factornode, iindex)
 
-    nodeinterfaces = interfaces(factornode)
-    nodeclusters   = factorisation(factornode)
-    cluster        = @inbounds nodeclusters[ cindex ]
+    nodeinterfaces     = interfaces(factornode)
+    nodeclusters       = factorisation(factornode)
+    # nodelocalmarginals = localmarginals(factornode)
 
-    vcindex = varclusterindex(cluster, iindex)    
+    varcluster = @inbounds nodeclusters[ cindex ]
 
-    message_dependencies = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(cluster, vcindex))
+    message_dependencies = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(varcluster, varclusterindex(varcluster, iindex)))
     cluster_dependencies = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(nodeclusters, cindex))
 
     return tuple(message_dependencies...), tuple(cluster_dependencies...)
@@ -386,6 +386,7 @@ function get_clusters_observable(factornode, cluster_dependencies)
     return cluster_names, clusters_observable
 end
 
+# TODO It is possible to operate on local marginals instead of a clusters
 function activate!(model, factornode::FactorNode)
     for (iindex, interface) in enumerate(interfaces(factornode))
         message_dependencies, cluster_dependencies = functional_dependencies(factornode, iindex)
@@ -468,8 +469,6 @@ function getmarginal!(factornode::FactorNode, cluster)
 
         return cmarginal
     end
-
-    throw("Unsupported marginal size: $(length(cluster))")
 end
 
 ## make_node
