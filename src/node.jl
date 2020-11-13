@@ -408,7 +408,7 @@ end
 
 function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
     lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
-    @assert lindex !== nothing "Invalid local marginal id: $s"
+    @assert lindex !== nothing "Invalid local marginal id: $cname"
     lmarginal = @inbounds localmarginals(factornode)[ lindex ]
     setmarginal!(getstream(lmarginal), marginal)
 end
