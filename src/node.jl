@@ -6,7 +6,7 @@ export deps, connect!, activate!
 export make_node, AutoVar
 export Marginalisation
 export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
-export MeanField, FullFactorisation
+export MeanField, FullFactorisation, collect_factorisation
 export @node
 
 using Rocket
@@ -530,8 +530,8 @@ macro node(fformtype, fsdtype, finterfaces)
     end
 
     factorisation_collectors = quote
-        collect_factorisation(::$formtype, ::FullFactorisation) = ($names_indices, )
-        collect_factorisation(::$formtype, ::MeanField) = $names_splitted_indices
+        ReactiveMP.collect_factorisation(::$formtype, ::FullFactorisation) = ($names_indices, )
+        ReactiveMP.collect_factorisation(::$formtype, ::MeanField) = $names_splitted_indices
     end
     
     res = quote

@@ -30,9 +30,9 @@ function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where T
         return getmarginal(random) |> schedule_on(scheduler) |> map(InfCountingReal{T}, mapping)
     end
 
-    energies_sum     = collectLatest(InfCountingReal{T}, node_energies, InfCountingReal{T}, reduce_with_sum)
+    energies_sum     = collectLatest(InfCountingReal{T}, node_energies, InfCountingReal{T}, reduce_with_sum) 
     entropies_sum    = collectLatest(InfCountingReal{T}, differential_entropies, InfCountingReal{T}, reduce_with_sum)
-    diracs_entropies = Infinity(length(filter(isconnected, getdata(model))) + length(filter(isconnected, getconstant(model))))
+    diracs_entropies = Infinity(mapreduce(degree, +, values(getdata(model)), init = 0) + mapreduce(degree, +, values(getconstant(model)), init = 0))
 
     return combineLatest((energies_sum, entropies_sum), PushNew()) |> map(T, d -> convert(T, d[1] + d[2] - diracs_entropies))
 end
