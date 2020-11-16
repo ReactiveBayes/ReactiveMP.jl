@@ -18,12 +18,11 @@ function degree end
 function getmarginal(variable::AbstractVariable)
     vmarginal = _getmarginal(variable)
     if vmarginal === nothing
-        nmarginal = MarginalObservable()
-        connect!(nmarginal, _makemarginal(variable) |> share_replay(1))
+        nmarginal = as_marginal_observable(_makemarginal(variable))
         _setmarginal!(variable, nmarginal)
         return nmarginal
     end
-    return vmarginal
+    return as_marginal_observable(vmarginal)
 end
 
 function setmarginal!(variable::AbstractVariable, marginal)

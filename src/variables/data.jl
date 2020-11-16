@@ -44,6 +44,13 @@ update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar,
 update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), as_message(Dirac(data)))
 update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), as_message(Dirac(data)))
 
+function update!(datavars::AbstractVector{ <: DataVariable }, data::AbstractVector)
+    @assert size(datavars) === size(data) "Invalid update! call: size of datavar array and data should match"
+    foreach(zip(datavars, data)) do (var, d)
+        update!(var, d)
+    end
+end
+
 finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
 _getmarginal(datavar::DataVariable)                                = datavar.messageout |> map(Marginal, as_marginal)

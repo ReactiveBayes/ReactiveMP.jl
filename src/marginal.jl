@@ -57,6 +57,14 @@ struct MarginalObservable <: Subscribable{Marginal}
     stream  :: LazyObservable{Marginal}
 end
 
+as_marginal_observable(observable::MarginalObservable) = observable
+
+function as_marginal_observable(observable)
+    output = MarginalObservable()
+    connect!(output, observable |> share_replay(1))
+    return output
+end
+
 MarginalObservable() = MarginalObservable(ReplaySubject(Marginal, 1), lazy(Marginal))
 
 function Rocket.on_subscribe!(observable::MarginalObservable, actor)
