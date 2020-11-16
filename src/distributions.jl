@@ -1,6 +1,7 @@
 export ProdPreserveParametrisation, ProdBestSuitableParametrisation
 export default_prod_strategy, vague
 export mean, median, mode, var, std, cov, invcov, entropy, pdf, logpdf
+export logmean, inversemean, mirroredlogmean
 
 import Distributions: mean, median, mode, var, std, cov, invcov, entropy, pdf, logpdf
 
@@ -64,3 +65,13 @@ prod(::ProdBestSuitableParametrisation, left, right) = prod(ProdPreserveParametr
 `vague` function returns uninformative probability distribution of a given type and can be used to set an uninformative priors in a model.
 """
 function vague end
+
+function logmean end
+
+logmean(something) = log(mean(something))
+
+function inversemean end
+
+inversemean(something) = inv(mean(something))
+
+function mirroredlogmean end

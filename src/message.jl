@@ -40,8 +40,9 @@ Base.length(message::Message)    = length(getdata(message))
 Base.ndims(message::Message)     = ndims(getdata(message))
 Base.size(message::Message)      = size(getdata(message))
 
-logmean(message::Message)     = log(mean(message))
-inversemean(message::Message) = inv(mean(message))
+logmean(message::Message)         = logmean(getdata(message))
+inversemean(message::Message)     = inversemean(getdata(message))
+mirroredlogmean(message::Message) = mirroredlogmean(getdata(message))
 
 ## Utiliy nothing message
 

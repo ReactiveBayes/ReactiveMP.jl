@@ -31,8 +31,9 @@ Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
 Base.length(marginal::Marginal)    = length(getdata(marginal))
 Base.size(marginal::Marginal)      = size(getdata(marginal))
 
-logmean(marginal::Marginal)     = log(mean(marginal))
-inversemean(marginal::Marginal) = inv(mean(marginal))
+logmean(marginal::Marginal)         = logmean(getdata(marginal))
+inversemean(marginal::Marginal)     = inversemean(getdata(marginal))
+mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
 
 ## Utility functions
 

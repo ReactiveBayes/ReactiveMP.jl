@@ -6,6 +6,12 @@ include("addition/in2.jl")
 include("gamma/out.jl")
 include("gamma/marginals.jl")
 
+include("beta/out.jl")
+include("beta/marginals.jl")
+
+include("bernoulli/p.jl")
+include("bernoulli/marginals.jl")
+
 include("gcv/x.jl")
 include("gcv/y.jl")
 include("gcv/z.jl")
