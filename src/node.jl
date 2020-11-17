@@ -3,8 +3,9 @@ export FactorNode, functionalform, interfaces, factorisation, locamarginals, loc
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export deps, connect!, activate!
-export make_node, AutoVar
+export make_node, on_make_node, AutoVar
 export Marginalisation
+export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
 export MeanField, FullFactorisation, collect_factorisation
 export @node
@@ -13,6 +14,14 @@ using Rocket
 
 import Base: show
 import Base: getindex, setindex!, firstindex, lastindex
+
+## Node traits
+
+struct ValidNodeFunctionalForm end
+struct UndefinedNodeFunctionalForm end
+
+as_node_functional_form(::Function) = ValidNodeFunctionalForm()
+as_node_functional_form(some)       = UndefinedNodeFunctionalForm()
 
 ## Node types
 
@@ -61,6 +70,10 @@ isstochastic(::Stochastic)            = true
 isstochastic(::Type{ Stochastic })    = true
 isstochastic(::Deterministic)         = false
 isstochastic(::Type{ Deterministic }) = false
+
+function sdtype end
+
+sdtype(::Function) = Deterministic()
 
 ## Generic factorisation constraints
 
@@ -256,23 +269,22 @@ end
 
 ## FactorNode
 
-struct FactorNode{F, T, I, C, M, A}
+struct FactorNode{F, I, C, M, A}
     fform          :: F
-    sdtype         :: T
     interfaces     :: I
     factorisation  :: C
     localmarginals :: M
     metadata       :: A
 end
 
-function FactorNode(fform::Type{F}, sdtype::T, interfaces::I, factorisation::C, localmarginals::M, metadata::A) where { F, T, I, C, M, A }
-    return FactorNode{Type{F}, T, I, C, M, A}(fform, sdtype, interfaces, factorisation, localmarginals, metadata)
+function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A) where { F, I, C, M, A }
+    return FactorNode{Type{F}, I, C, M, A}(fform, interfaces, factorisation, localmarginals, metadata)
 end
 
-function FactorNode(fform, sdtype, varnames::NTuple{N, Symbol}, factorisation, metadata) where N
+function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata) where N
     interfaces     = map(varname -> NodeInterface(varname), varnames)
     localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
-    return FactorNode(fform, sdtype, interfaces, factorisation, localmarginals, metadata)
+    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata)
 end
 
 function Base.show(io::IO, factornode::FactorNode)
@@ -286,7 +298,7 @@ function Base.show(io::IO, factornode::FactorNode)
 end
 
 functionalform(factornode::FactorNode)     = factornode.fform
-sdtype(factornode::FactorNode)             = factornode.sdtype
+sdtype(factornode::FactorNode)             = sdtype(functionalform(factornode))
 interfaces(factornode::FactorNode)         = factornode.interfaces
 factorisation(factornode::FactorNode)      = factornode.factorisation
 localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
@@ -455,18 +467,16 @@ end
 
 ## make_node
 
-function make_node end
-
-function interface_get_index end
-function interface_get_name end
-
-## AutoVar
-
 struct AutoVar
     name :: Symbol
 end
 
 getname(autovar::AutoVar) = autovar.name
+
+function make_node end
+
+function interface_get_index end
+function interface_get_name end
 
 function make_node(fform, autovar::AutoVar, args...; kwargs...)
     var  = randomvar(getname(autovar))
@@ -474,17 +484,15 @@ function make_node(fform, autovar::AutoVar, args...; kwargs...)
     return node, var
 end
 
-# TODO: extend this case for more cases
-function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } })
     var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), inputs)...))
     return nothing, var
 end
 
-# TODO: This can intersect with T = Distributions, what to do?
-# function make_node(::Type{ T }, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...) where T
-#     var  = constvar(getname(autovar), T(map((d) -> getpointmass(getconstant(d)), inputs)...))
-#     return nothing, var
-# end
+function make_node(::Type{ T }, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } }) where T
+    var  = constvar(getname(autovar), T(map((d) -> getpointmass(getconstant(d)), inputs)...))
+    return nothing, var
+end
 
 # TODO
 # function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: Union{ <: ConstVariable{ <: Dirac }, <: DataVariable{ <: Any, <: Dirac } } })
@@ -533,11 +541,32 @@ macro node(fformtype, fsdtype, finterfaces)
         ReactiveMP.collect_factorisation(::$formtype, ::FullFactorisation) = ($names_indices, )
         ReactiveMP.collect_factorisation(::$formtype, ::MeanField) = $names_splitted_indices
     end
+
+    make_node_const_mapping = if sdtype === :Stochastic
+        quote
+            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+                var  = randomvar(getname(autovar))
+                node = make_node(fform, var, args...; kwargs...)
+                return node, var
+            end
+        end
+    elseif sdtype === :Deterministic
+        quote
+            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+                var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), args)...))
+                return nothing, var
+            end
+        end
+    end
     
     res = quote
+
+        ReactiveMP.as_node_functional_form(::$formtype) = ValidNodeFunctionalForm()
+
+        ReactiveMP.sdtype(::$formtype) = ($sdtype)()
         
         function ReactiveMP.make_node(::$formtype; factorisation = ($names_indices, ), meta = nothing)
-            return FactorNode($form, $sdtype, $names_quoted_tuple, collect_factorisation($form, factorisation), meta)
+            return FactorNode($form, $names_quoted_tuple, collect_factorisation($form, factorisation), meta)
         end
         
         function ReactiveMP.make_node(::$formtype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing)
@@ -546,6 +575,13 @@ macro node(fformtype, fsdtype, finterfaces)
             return node
         end
 
+        function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: AbstractVariable }; kwargs...)
+            var  = randomvar(getname(autovar))
+            node = make_node(fform, var, args...; kwargs...)
+            return node, var
+        end
+
+        $(make_node_const_mapping)
         $(interface_name_getters...)
         $factorisation_collectors
 

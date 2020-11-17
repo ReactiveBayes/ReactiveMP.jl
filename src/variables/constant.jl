@@ -1,6 +1,7 @@
 export constvar, getconstant, isconnected
 
 import Rocket: SingleObservable, AsapScheduler
+import Base: getindex
 
 mutable struct ConstVariableProps
     nconnected :: Int
@@ -22,6 +23,8 @@ constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, Dirac(constval
 
 degree(constvar::ConstVariable) = nconnected(constvar)
 name(constvar::ConstVariable)   = constvar.name
+
+Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 
 isconnected(constvar::ConstVariable) = constvar.props.nconnected !== 0
 nconnected(constvar::ConstVariable)  = constvar.props.nconnected

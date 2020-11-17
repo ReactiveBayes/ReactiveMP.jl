@@ -73,12 +73,7 @@ function activate!(model::Model)
         end
     end
 
-    foreach(values(getconstant(model))) do constvar
-        if !isconnected(constvar)
-            @warn "Unused constant variable has been found: $(name(datavar))"
-        end
-    end
-
+    filter!(c -> isconnected(last(c)), getconstant(model))
     foreach(n -> activate!(model, n), getnodes(model))
 end
 
@@ -86,6 +81,14 @@ end
 
 randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
 make_node(model::Model, args...; kwargs...) = add!(model, make_node(args...; kwargs...))
+
+function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+    node, var = if haskey(getconstant(model), getname(autovar))
+        nothing, getconstant(model)[ getname(autovar) ]
+    else
+        add!(model, make_node(fform, autovar, args...; kwargs...))
+    end
+end
 
 constvar(model::Model, name::Symbol, constval)  = get!(() -> constvar(name, constval), getconstant(model), name)
 datavar(model::Model, name::Symbol, type::Type) = get!(() -> datavar(name, type), getdata(model), name)
