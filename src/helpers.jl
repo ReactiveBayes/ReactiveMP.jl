@@ -162,5 +162,8 @@ __extract_val_type(::Type{ Type{ Val{ S } } }) where S = S
     return :(Val{ $R }) 
 end
 
+# NamedTuple helpers
 
+fields(::NamedTuple{ F }) where F  = F
+hasfield(field::Symbol, ntuple::NamedTuple) = field ∈ fields(ntuple)
 

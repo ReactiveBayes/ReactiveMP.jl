@@ -1,4 +1,5 @@
-export Model, add!
+export ModelOptions, model_options
+export Model
 export getnodes, getrandom, getconstant, getdata
 export activate!
 # export MarginalsEagerUpdate, MarginalsPureUpdate
@@ -10,33 +11,65 @@ import Base: show
 # struct MarginalsEagerUpdate end
 # struct MarginalsPureUpdate end
 
-struct Model{T, S}
-    message_gate :: T
-    message_out_transformer :: S
+# Model Options
 
+struct ModelOptions{T, S, F}
+    message_gate            :: T
+    message_out_transformer :: S
+    default_factorisation   :: F
+end
+
+model_options() = model_options(NamedTuple{()}(()))
+
+function model_options(options::NamedTuple)
+    message_gate            = DefaultMessageGate()
+    message_out_transformer = DefaultMessageOutTransformer()
+    default_factorisation   = FullFactorisation()
+
+    if haskey(options, :message_gate)
+        message_gate = options[:message_gate]
+    end
+
+    if haskey(options, :message_out_transformer)
+        message_out_transformer = options[:message_out_transformer]
+    end
+
+    if haskey(options, :default_factorisation)
+        default_factorisation = options[:default_factorisation]
+    end
+
+    for key::Symbol in setdiff(union(fieldnames(ModelOptions), fields(options)), fieldnames(ModelOptions))
+        @warn "Unknown option key: $key = $(options[key])"
+    end
+
+    return ModelOptions(
+        message_gate,
+        message_out_transformer,
+        default_factorisation
+    )
+end
+
+message_gate(options::ModelOptions)            = options.message_gate
+message_out_transformer(options::ModelOptions) = options.message_out_transformer
+default_factorisation(options::ModelOptions)   = options.default_factorisation
+
+# Model
+
+struct Model{O}
+    options  :: O
     nodes    :: Vector{FactorNode}
     random   :: Vector{RandomVariable}
     constant :: Dict{Symbol, ConstVariable}
     data     :: Dict{Symbol, DataVariable}
 end
 
-Base.show(io::IO, ::Model) = print(io, "Model()")
+Base.show(io::IO, model::Model) = print(io, "Model($(getoptions(model)))")
 
-Model(; 
-    message_gate::T            = DefaultMessageGate(),
-    message_out_transformer::S = DefaultMessageOutTransformer()
-) where { T, S } = Model{T, S}(
-    message_gate, 
-    message_out_transformer,
-    Vector{FactorNode}(), 
-    Vector{RandomVariable}(),
-    Dict{Symbol, ConstVariable}(),
-    Dict{Symbol, DataVariable}()
-)
+Model() = Model(model_options())
+Model(options::NamedTuple) = Model(model_options(options))
+Model(options::O) where { O <: ModelOptions } = Model{O}(options, Vector{FactorNode}(), Vector{RandomVariable}(), Dict{Symbol, ConstVariable}(), Dict{Symbol, DataVariable}())
 
-message_gate(model::Model)            = model.message_gate
-message_out_transformer(model::Model) = model.message_out_transformer
-
+getoptions(model::Model)  = model.options
 getnodes(model::Model)    = model.nodes
 getrandom(model::Model)   = model.random
 getconstant(model::Model) = model.constant
@@ -80,13 +113,16 @@ end
 # Utility functions
 
 randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
-make_node(model::Model, args...; kwargs...) = add!(model, make_node(args...; kwargs...))
 
-function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
+    return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
+end
+
+function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; factorisation = default_factorisation(getoptions(model)), kwargs...)
     node, var = if haskey(getconstant(model), getname(autovar))
         nothing, getconstant(model)[ getname(autovar) ]
     else
-        add!(model, make_node(fform, autovar, args...; kwargs...))
+        add!(model, make_node(fform, autovar, args...; factorisation = factorisation, kwargs...))
     end
 end
 

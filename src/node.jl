@@ -400,13 +400,13 @@ function activate!(model, factornode::FactorNode)
         msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
-        gate        = message_gate(model)
+        gate        = message_gate(getoptions(model))
         fform       = functionalform(factornode)
         vtag        = tag(interface)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
          
-        vmessageout = apply(message_out_transformer(model), combineLatest(msgs_observable, marginals_observable, strategy = PushEach()))
+        vmessageout = apply(message_out_transformer(getoptions(model)), combineLatest(msgs_observable, marginals_observable, strategy = PushEach()))
 
         mapping = (d) -> begin
             message = rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode)
@@ -478,19 +478,16 @@ function make_node end
 function interface_get_index end
 function interface_get_name end
 
-function make_node(fform, autovar::AutoVar, args...; kwargs...)
-    var  = randomvar(getname(autovar))
-    node = make_node(fform, var, args...; kwargs...)
-    return node, var
-end
+make_node(fform, ::AutoVar, ::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
+make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...)        = error("Unknown functional form '$(fform)' used for node specification.")
 
-function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } })
-    var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), inputs)...))
+function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } })
+    var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), args)...))
     return nothing, var
 end
 
-function make_node(::Type{ T }, autovar::AutoVar, inputs::Vararg{ <: ConstVariable{ <: Dirac } }) where T
-    var  = constvar(getname(autovar), T(map((d) -> getpointmass(getconstant(d)), inputs)...))
+function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }) where T
+    var  = constvar(getname(autovar), T(map((d) -> getpointmass(getconstant(d)), args)...))
     return nothing, var
 end
 
