@@ -1,6 +1,5 @@
 export Message, getdata, as_message
 export multiply_messages
-export DefaultMessageGate, LoggerMessageGate, TransformMessageGate, MessageGatesComposition
 
 using Distributions
 using Rocket
@@ -72,37 +71,3 @@ function __reduce_to_message(messages)
 end
 
 const reduce_to_message  = Rocket.map(Message, __reduce_to_message)
-
-## Gates
-
-abstract type MessageGate end
-
-struct DefaultMessageGate <: MessageGate end
-
-gate!(::DefaultMessageGate, node, variable, message)  = message
-
-struct LoggerMessageGate <: MessageGate end
-
-function gate!(::LoggerMessageGate, node, variable, message)
-    println(string("From variable ", variable, " of node ", functionalform(node), " => ", message));
-    return message
-end
-
-struct TransformMessageGate{F} <: MessageGate
-    transformFn::F
-end
-
-gate!(tg::TransformMessageGate, node, variable, message) = tg.transformFn(node, variable, message)
-
-struct MessageGatesComposition{C} <: MessageGate
-    composition :: C
-end
-
-gate!(gc::MessageGatesComposition, node, variable, message) = foldl((m, g) -> gate!(g, node, variable, m), gc.composition, init = message)
-
-Base.:+(gate1::MessageGate,     gate2::MessageGate)                     = MessageGatesComposition((gate1, gate2))
-Base.:+(gate1::MessageGatesComposition, gate2::MessageGate)             = MessageGatesComposition((gate1.composition..., gate2))
-Base.:+(gate1::MessageGate,     gate2::MessageGatesComposition)         = MessageGatesComposition((gate1, gate2.composition...))
-Base.:+(gate1::MessageGatesComposition, gate2::MessageGatesComposition) = MessageGatesComposition((gate1.composition..., gate2.composition...))
-
-gate!(::MessageGate, node, variable, message) = gate!(DefaultMessageGate(), node, variable, message)

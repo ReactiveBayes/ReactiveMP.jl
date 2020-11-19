@@ -269,22 +269,23 @@ end
 
 ## FactorNode
 
-struct FactorNode{F, I, C, M, A}
+struct FactorNode{F, I, C, M, A, P}
     fform          :: F
     interfaces     :: I
     factorisation  :: C
     localmarginals :: M
     metadata       :: A
+    portal         :: P
 end
 
-function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A) where { F, I, C, M, A }
-    return FactorNode{Type{F}, I, C, M, A}(fform, interfaces, factorisation, localmarginals, metadata)
+function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A, portal::P) where { F, I, C, M, A, P }
+    return FactorNode{Type{F}, I, C, M, A, P}(fform, interfaces, factorisation, localmarginals, metadata, portal)
 end
 
-function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata) where N
+function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, portal) where N
     interfaces     = map(varname -> NodeInterface(varname), varnames)
     localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
-    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata)
+    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, portal)
 end
 
 function Base.show(io::IO, factornode::FactorNode)
@@ -295,15 +296,17 @@ function Base.show(io::IO, factornode::FactorNode)
     println(io, string(" factorisation   : ", factorisation(factornode)))
     println(io, string(" local marginals : ", localmarginalnames(factornode)))
     println(io, string(" metadata        : ", metadata(factornode)))
+    println(io, string(" portal          : ", outbound_message_portal(factornode)))
 end
 
-functionalform(factornode::FactorNode)     = factornode.fform
-sdtype(factornode::FactorNode)             = sdtype(functionalform(factornode))
-interfaces(factornode::FactorNode)         = factornode.interfaces
-factorisation(factornode::FactorNode)      = factornode.factorisation
-localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
-localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode))
-metadata(factornode::FactorNode)           = factornode.metadata
+functionalform(factornode::FactorNode)          = factornode.fform
+sdtype(factornode::FactorNode)                  = sdtype(functionalform(factornode))
+interfaces(factornode::FactorNode)              = factornode.interfaces
+factorisation(factornode::FactorNode)           = factornode.factorisation
+localmarginals(factornode::FactorNode)          = factornode.localmarginals.marginals
+localmarginalnames(factornode::FactorNode)      = map(name, localmarginals(factornode))
+metadata(factornode::FactorNode)                = factornode.metadata
+outbound_message_portal(factornode::FactorNode) = factornode.portal
 
 isstochastic(factornode::FactorNode)    = isstochastic(sdtype(factornode))
 isdeterministic(factornode::FactorNode) = isdeterministic(sdtype(factornode))
@@ -400,20 +403,21 @@ function activate!(model, factornode::FactorNode)
         msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
-        gate        = message_gate(getoptions(model))
         fform       = functionalform(factornode)
         vtag        = tag(interface)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
-         
-        vmessageout = apply(message_out_transformer(getoptions(model)), combineLatest(msgs_observable, marginals_observable, strategy = PushEach()))
+        
+        vmessageout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach())
+        vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
 
-        mapping = (d) -> begin
-            message = rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode)
-            return cast_to_subscribable(message) |> map(Message, (d) -> as_message(gate!(gate, factornode, interface, d)))
-        end
+        vmessageout = vmessageout |> switch_map(Message, (d) -> begin 
+            return cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
+        end)
 
-        set!(messageout(interface), vmessageout |> switch_map(Message, mapping) |> share_replay(1))
+        vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
+
+        set!(messageout(interface), vmessageout |> share_replay(1))
         set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
     end
 end
@@ -562,12 +566,12 @@ macro node(fformtype, fsdtype, finterfaces)
 
         ReactiveMP.sdtype(::$formtype) = ($sdtype)()
         
-        function ReactiveMP.make_node(::$formtype; factorisation = ($names_indices, ), meta = nothing)
-            return FactorNode($form, $names_quoted_tuple, collect_factorisation($form, factorisation), meta)
+        function ReactiveMP.make_node(::$formtype; factorisation = ($names_indices, ), meta = nothing, portal = EmptyStreamPortal())
+            return FactorNode($form, $names_quoted_tuple, collect_factorisation($form, factorisation), meta, portal)
         end
         
-        function ReactiveMP.make_node(::$formtype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing)
-            node = make_node($form, factorisation = factorisation, meta = meta)
+        function ReactiveMP.make_node(::$formtype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = EmptyStreamPortal())
+            node = make_node($form, factorisation = factorisation, meta = meta, portal = portal)
             $(interface_connections...)
             return node
         end

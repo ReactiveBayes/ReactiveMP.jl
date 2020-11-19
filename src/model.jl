@@ -13,25 +13,19 @@ import Base: show
 
 # Model Options
 
-struct ModelOptions{T, S, F}
-    message_gate            :: T
-    message_out_transformer :: S
+struct ModelOptions{P, F}
+    outbound_message_portal :: P
     default_factorisation   :: F
 end
 
 model_options() = model_options(NamedTuple{()}(()))
 
 function model_options(options::NamedTuple)
-    message_gate            = DefaultMessageGate()
-    message_out_transformer = DefaultMessageOutTransformer()
+    outbound_message_portal = DefaultMessageOutPortal()
     default_factorisation   = FullFactorisation()
 
-    if haskey(options, :message_gate)
-        message_gate = options[:message_gate]
-    end
-
-    if haskey(options, :message_out_transformer)
-        message_out_transformer = options[:message_out_transformer]
+    if haskey(options, :outbound_message_portal)
+        outbound_message_portal = options[:outbound_message_portal]
     end
 
     if haskey(options, :default_factorisation)
@@ -43,14 +37,12 @@ function model_options(options::NamedTuple)
     end
 
     return ModelOptions(
-        message_gate,
-        message_out_transformer,
+        outbound_message_portal,
         default_factorisation
     )
 end
 
-message_gate(options::ModelOptions)            = options.message_gate
-message_out_transformer(options::ModelOptions) = options.message_out_transformer
+outbound_message_portal(options::ModelOptions) = options.outbound_message_portal
 default_factorisation(options::ModelOptions)   = options.default_factorisation
 
 # Model

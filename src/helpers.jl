@@ -84,11 +84,11 @@ function labsbeta(x::Number, y::Number)
     return SpecialFunctions.logabsbeta(x, y)[1]
 end
 
-cast_to_subscribable(some::T) where T = cast_to_subscribable(as_subscribable(T), some)
+cast_to_message_subscribable(some::T) where T = cast_to_message_subscribable(as_subscribable(T), some)
 
-cast_to_subscribable(::InvalidSubscribableTrait, some)   = of(some)
-cast_to_subscribable(::SimpleSubscribableTrait, some)    = some
-cast_to_subscribable(::ScheduledSubscribableTrait, some) = some
+cast_to_message_subscribable(::InvalidSubscribableTrait, some)   = of(as_message(some))
+cast_to_message_subscribable(::SimpleSubscribableTrait, some)    = some |> map(Message, as_message)
+cast_to_message_subscribable(::ScheduledSubscribableTrait, some) = some |> map(Message, as_message)
 
 reduce_with_sum(array) = reduce(+, array)
 

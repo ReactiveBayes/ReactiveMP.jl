@@ -4,7 +4,7 @@ using Distributions
 
 include("macrotools.jl")
 include("helpers.jl")
-include("stream.jl")
+include("portal.jl")
 
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
