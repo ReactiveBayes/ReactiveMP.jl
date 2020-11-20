@@ -485,19 +485,22 @@ function interface_get_name end
 make_node(fform, ::AutoVar, ::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
 make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...)        = error("Unknown functional form '$(fform)' used for node specification.")
 
-function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } })
+function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
     var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), args)...))
     return nothing, var
 end
 
-function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }) where T
+function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...) where T
     var  = constvar(getname(autovar), T(map((d) -> getpointmass(getconstant(d)), args)...))
     return nothing, var
 end
 
-# TODO
-# function make_node(fform::Function, autovar::AutoVar, inputs::Vararg{ <: Union{ <: ConstVariable{ <: Dirac }, <: DataVariable{ <: Any, <: Dirac } } })
-    # combineLatest + map
+function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: Dirac } }; kwargs...)
+    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, getdata), args)...), PushNew()) |> map(Message, (d...) -> as_message(fform(d...)))
+    var     = datavar(getname(autovar), Any, subject = subject)
+    return nothing, var
+end
+
 # end
 
 ## macro helpers
@@ -566,11 +569,11 @@ macro node(fformtype, fsdtype, finterfaces)
 
         ReactiveMP.sdtype(::$formtype) = ($sdtype)()
         
-        function ReactiveMP.make_node(::$formtype; factorisation = ($names_indices, ), meta = nothing, portal = EmptyStreamPortal())
+        function ReactiveMP.make_node(::$formtype; factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
             return FactorNode($form, $names_quoted_tuple, collect_factorisation($form, factorisation), meta, portal)
         end
         
-        function ReactiveMP.make_node(::$formtype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = EmptyStreamPortal())
+        function ReactiveMP.make_node(::$formtype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
             node = make_node($form, factorisation = factorisation, meta = meta, portal = portal)
             $(interface_connections...)
             return node

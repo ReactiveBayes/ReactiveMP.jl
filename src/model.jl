@@ -21,7 +21,7 @@ end
 model_options() = model_options(NamedTuple{()}(()))
 
 function model_options(options::NamedTuple)
-    outbound_message_portal = DefaultMessageOutPortal()
+    outbound_message_portal = DefaultOutboundMessagePortal()
     default_factorisation   = FullFactorisation()
 
     if haskey(options, :outbound_message_portal)
@@ -94,7 +94,7 @@ function activate!(model::Model)
 
     foreach(values(getdata(model))) do datavar
         if !isconnected(datavar)
-            @warn "Unused data variable has been found: $(name(datavar))"
+            @warn "Unused data variable has been found: '$(name(datavar))'. Ignore if '$(name(datavar))' has been used in deterministic nonlinear tranformation."
         end
     end
 

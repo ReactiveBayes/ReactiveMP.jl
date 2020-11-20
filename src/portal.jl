@@ -1,58 +1,56 @@
-export StreamPortal
-export EmptyStreamPortal, DiscontinueStreamPortal, AsyncStreamPortal, LoggerStreamPortal, MapStreamPortal
-export DefaultMessageOutPortal
+export AbstractPortal
+export EmptyPortal, DiscontinuemPortal, AsyncPortal, LoggerPortal, MapPortal
+export DefaultOutboundMessagePortal
 
 import Base: +
 
-function message_out_portal end
-
-DefaultMessageOutPortal() = DiscontinueStreamPortal()
+DefaultOutboundMessagePortal() = DiscontinuePortal()
 
 ## Abstract Stream Portal
 
-abstract type AbstractStreamPortal end
+abstract type AbstractPortal end
 
 ## Empty portal
 
-struct EmptyStreamPortal <: AbstractStreamPortal end
+struct EmptyPortal <: AbstractPortal end
 
-apply(::EmptyStreamPortal, factornode, tag, stream) = stream
+apply(::EmptyPortal, factornode, tag, stream) = stream
 
 ## Discontinue portal
 
-struct DiscontinueStreamPortal <: AbstractStreamPortal end
+struct DiscontinuePortal <: AbstractPortal end
 
-apply(::DiscontinueStreamPortal, factornode, tag, stream) = stream |> discontinue()
+apply(::DiscontinuePortal, factornode, tag, stream) = stream |> discontinue()
 
 ## Async portal
 
-struct AsyncStreamPortal <: AbstractStreamPortal end
+struct AsyncPortal <: AbstractPortal end
 
-apply(::AsyncStreamPortal, factornode, tag, stream) = stream |> async()
+apply(::AsyncPortal, factornode, tag, stream) = stream |> async()
 
 ## Logger portal
 
-struct LoggerStreamPortal <: AbstractStreamPortal end
+struct LoggerPortal <: AbstractPortal end
 
-apply(::LoggerStreamPortal, factornode, tag, stream) = stream |> tap((v) -> println("[Log][$(functionalform(factornode))][$(tag)]: $v"))
+apply(::LoggerPortal, factornode, tag, stream) = stream |> tap((v) -> println("[Log][$(functionalform(factornode))][$(tag)]: $v"))
 
 ## Map portal
 
-struct MapStreamPortal{F} <: AbstractStreamPortal 
+struct MapPortal{F} <: AbstractPortal 
     mappingFn :: F
 end
 
-apply(portal::MapStreamPortal, factornode, tag, stream) = stream |> map((v) -> portal.mappingFn(factornode, tag, v))
+apply(portal::MapPortal, factornode, tag, stream) = stream |> map((v) -> portal.mappingFn(factornode, tag, v))
 
 ## Composite portal
 
-struct CompositeStreamPortal{T} <: AbstractStreamPortal
+struct CompositePortal{T} <: AbstractPortal
     portals :: T
 end
 
-apply(composite::CompositeStreamPortal, factornode, tag, stream) = reduce((stream, portal) -> apply(portal, factornode, tag, stream), composite.portals, init = stream)
+apply(composite::CompositePortal, factornode, tag, stream) = reduce((stream, portal) -> apply(portal, factornode, tag, stream), composite.portals, init = stream)
 
-Base.:+(left::AbstractStreamPortal,  right::AbstractStreamPortal)  = CompositeStreamPortal((left, right))
-Base.:+(left::AbstractStreamPortal,  right::CompositeStreamPortal) = CompositeStreamPortal((left, right.transformers...))
-Base.:+(left::CompositeStreamPortal, right::AbstractStreamPortal)  = CompositeStreamPortal((left.transformers..., right))
-Base.:+(left::CompositeStreamPortal, right::CompositeStreamPortal) = CompositeStreamPortal((left.transformers..., right.transformers...))
+Base.:+(left::AbstractPortal,  right::AbstractPortal)  = CompositePortal((left, right))
+Base.:+(left::AbstractPortal,  right::CompositePortal) = CompositePortal((left, right.transformers...))
+Base.:+(left::CompositePortal, right::AbstractPortal)  = CompositePortal((left.transformers..., right))
+Base.:+(left::CompositePortal, right::CompositePortal) = CompositePortal((left.transformers..., right.transformers...))

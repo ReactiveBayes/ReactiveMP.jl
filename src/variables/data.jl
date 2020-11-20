@@ -6,14 +6,14 @@ mutable struct DataVariableProps
     DataVariableProps() = new(0)
 end
 
-struct DataVariable{S, D} <: AbstractVariable
+struct DataVariable{D, S} <: AbstractVariable
     name       :: Symbol
     messageout :: S
     props      :: DataVariableProps
 end
 
 function datavar(name::Symbol, ::Type{D}; subject::S = Subject(Message{D})) where { S, D }
-    return DataVariable{S, D}(name, subject, DataVariableProps())
+    return DataVariable{D, S}(name, subject, DataVariableProps())
 end
 
 function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = Subject(Message{D})) where { S, D }
@@ -21,7 +21,7 @@ function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = Subject(Mess
 end
 
 function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = Subject(Message{D})) where { S, D }
-    vars = Array{DataVariable{S, D}}(undef, dims)
+    vars = Array{DataVariable{D, S}}(undef, dims)
     for index in CartesianIndices(axes(vars))
         @inbounds vars[index] = datavar(Symbol(name, :_, Symbol(join(index.I, :_))), D; subject = similar(subject))
     end
