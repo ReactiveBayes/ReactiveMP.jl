@@ -27,7 +27,7 @@ Distributions.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
 Distributions.std(dist::MvNormalMeanPrecision)       = sqrt(cov(dist))
 Distributions.logdetcov(dist::MvNormalMeanPrecision) = -logdet(invcov(dist))
 
-Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(mean(dist)), dist, x)
+Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanPrecision, x::AbstractVector)
     μ = mean(dist)
