@@ -63,15 +63,15 @@ function approximate_meancov(::LaplaceApproximation, g::Function, distribution)
     logf   = (z) -> logg(z) + logd(z)
     d_logf = (z) -> ForwardDiff.gradient(logf, z)
 
-    m = gradientOptimization(logf, d_logf, mean(distribution), 0.01)
+    # m = gradientOptimization(logf, d_logf, mean(distribution), 0.01)
 
-    # result = optimize((d) -> -(logf(d)), mean(distribution), LBFGS())
-    # if !Optim.converged(result)
-    #     @show result
-    #     throw("LaplaceApproximation: convergence failed")
-    # end
+    result = optimize((d) -> -(logf(d)), mean(distribution), LBFGS())
+    if !Optim.converged(result)
+        @show result
+        throw("LaplaceApproximation: convergence failed")
+    end
 
-    # m = Optim.minimizer(result)
+    m = Optim.minimizer(result)
     c = -cholinv(ForwardDiff.hessian(logf, m))
 
     return m ,c
