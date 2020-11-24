@@ -34,8 +34,8 @@ Base.convert(::Type{ NormalMeanPrecision{T} }, dist::NormalMeanPrecision{S}) whe
 
 vague(::Type{ <: NormalMeanPrecision }) = NormalMeanPrecision(0.0, 1.0e-20)
 
-function Base.prod(::ProdPreserveParametrisation, left::NormalMeanPrecision{T}, right::NormalMeanPrecision{T}) where T 
+function Base.prod(::ProdPreserveParametrisation, left::NormalMeanPrecision, right::NormalMeanPrecision) 
     p = precision(left) + precision(right)
     μ = (mean(left) * precision(left) + mean(right) * precision(right)) / p
-    return NormalMeanPrecision{T}(μ, p)
+    return NormalMeanPrecision(μ, p)
 end

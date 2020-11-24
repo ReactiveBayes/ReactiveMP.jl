@@ -3,6 +3,9 @@ include("addition/out.jl")
 include("addition/in1.jl")
 include("addition/in2.jl")
 
+include("multiplication/out.jl")
+include("multiplication/in.jl")
+
 include("gamma/out.jl")
 include("gamma/marginals.jl")
 

@@ -34,8 +34,8 @@ Base.convert(::Type{ NormalMeanVariance{T} }, dist::NormalMeanVariance{S}) where
 
 vague(::Type{ <: NormalMeanVariance }) = NormalMeanVariance(0.0, 1.0e20)
 
-function Base.prod(::ProdPreserveParametrisation, left::NormalMeanVariance{T}, right::NormalMeanVariance{T}) where T 
+function Base.prod(::ProdPreserveParametrisation, left::NormalMeanVariance, right::NormalMeanVariance)
     μ = (mean(left) * var(right) + mean(right) * var(left)) / (var(right) + var(left))
     v = (var(left) * var(right)) / (var(left) + var(right))
-    return NormalMeanVariance{T}(μ, v)
+    return NormalMeanVariance(μ, v)
 end

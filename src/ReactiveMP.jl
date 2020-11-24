@@ -40,6 +40,8 @@ include("rule.jl")
 include("score.jl")
 
 include("node.jl")
+
+# Stochastic nodes
 include("nodes/normal_mean_variance.jl")
 include("nodes/normal_mean_precision.jl")
 include("nodes/mv_normal_mean_covariance.jl")
@@ -47,10 +49,13 @@ include("nodes/mv_normal_mean_precision.jl")
 include("nodes/gamma.jl")
 include("nodes/beta.jl")
 include("nodes/bernoulli.jl")
-include("nodes/addition.jl")
 include("nodes/gcv.jl")
 include("nodes/kernel_gcv.jl")
 include("nodes/wishart.jl")
+
+# Deterministic nodes
+include("nodes/addition.jl")
+include("nodes/multiplication.jl")
 
 include("rules/prototypes.jl")
 
