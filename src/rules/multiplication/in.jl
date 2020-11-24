@@ -18,10 +18,9 @@
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        A = mean(m_A)
+        A_inv = cholinv(mean(m_A))
         m = mean(m_out)
-        W = invcov(m_out)
-        Σ = cholinv(A' * W * A)
-        return Dist(Σ * A' * W * m, Σ)
+        P = cov(m_out)
+        return Dist(A_inv * m, A_inv * P * A_inv')
     end
 )
