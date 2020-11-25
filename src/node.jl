@@ -485,13 +485,13 @@ function interface_get_name end
 make_node(fform, ::AutoVar, ::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
 make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...)        = error("Unknown functional form '$(fform)' used for node specification.")
 
-function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
-    var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), args)...))
+function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...)
+    var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
     return nothing, var
 end
 
-function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...) where T
-    var  = constvar(getname(autovar), T(map((d) -> getpointmass(getconstant(d)), args)...))
+function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...) where T
+    var  = constvar(getname(autovar), T(map((d) -> getconst(d), args)...))
     return nothing, var
 end
 
@@ -557,7 +557,7 @@ macro node(fformtype, fsdtype, finterfaces)
     elseif sdtype === :Deterministic
         quote
             function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
-                var  = constvar(getname(autovar), fform(map((d) -> getpointmass(getconstant(d)), args)...))
+                var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
                 return nothing, var
             end
         end

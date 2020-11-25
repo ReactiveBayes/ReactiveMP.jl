@@ -10,7 +10,7 @@ struct MvNormalMeanCovariance{ T <: Real, M <: AbstractVector{T}, P <: AbstractM
 end
 
 function MvNormalMeanCovariance(μ::AbstractVector{ <: Real}, Σ::AbstractMatrix{ <: Real }) 
-    T = promote_type(eltype(μ), eltype(Λ))
+    T = promote_type(eltype(μ), eltype(Σ))
     return MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
 end
 

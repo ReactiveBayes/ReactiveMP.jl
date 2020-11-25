@@ -3,7 +3,7 @@ export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
-export getmarginal, setmarginal!, activate!, name
+export getmarginal, getmarginals, setmarginal!, activate!, name
 export as_message, as_marginal
 export as_variable
 
@@ -14,6 +14,8 @@ abstract type AbstractVariable end
 function degree end
 
 ## Common functions
+
+getmarginals(vector::AbstractVector{ <: AbstractVariable }) = map(getmarginal, vector)
 
 function getmarginal(variable::AbstractVariable)
     vmarginal = _getmarginal(variable)

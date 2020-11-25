@@ -1,4 +1,4 @@
-export constvar, getconstant, isconnected
+export constvar, getconst, isconnected
 
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex
@@ -29,7 +29,9 @@ Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constv
 isconnected(constvar::ConstVariable) = constvar.props.nconnected !== 0
 nconnected(constvar::ConstVariable)  = constvar.props.nconnected
 
-getconstant(constvar::ConstVariable) = constvar.constant
+getconst(constvar::ConstVariable{ <: Dirac }) = getpointmass(constvar.constant)
+getconst(constvar::ConstVariable)             = constvar.constant
+
 getlastindex(::ConstVariable) = 1
 
 messageout(constvar::ConstVariable, ::Int) = constvar.messageout
