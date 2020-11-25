@@ -33,19 +33,11 @@ degree(randomvar::RandomVariable) = length(randomvar.inputmsgs)
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-messageout(randomvar::RandomVariable, index::Int) = begin
-    # TODO combineLatest is more efficient with small number of inputmsgs
-    return collectLatest(Message, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
-    # return combineLatest(skipindex(randomvar.inputmsgs, index)..., strategy = PushEach()) |> map(Message, __reduce_to_message)
-end
+messageout(randomvar::RandomVariable, index::Int) = collectLatest(Message, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.props.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
-_makemarginal(randomvar::RandomVariable) = begin
-    # TODO combineLatest is more efficient with small number of inputmsgs
-    return collectLatest(Message, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
-    # return combineLatest(randomvar.inputmsgs..., strategy = PushEach()) |> map(Marginal, __reduce_to_marginal)
-end
+_makemarginal(randomvar::RandomVariable)                               = collectLatest(Message, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === length(randomvar.inputmsgs) + 1
