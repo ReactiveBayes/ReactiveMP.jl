@@ -35,7 +35,7 @@ getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = begin
     # TODO combineLatest is more efficient with small number of inputmsgs
-    return collectLatest(Message, skipindex(randomvar.inputmsgs, index), Message, __reduce_to_message)
+    return collectLatest(Message, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
     # return combineLatest(skipindex(randomvar.inputmsgs, index)..., strategy = PushEach()) |> map(Message, __reduce_to_message)
 end
 
@@ -43,7 +43,7 @@ _getmarginal(randomvar::RandomVariable)                                = randomv
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
 _makemarginal(randomvar::RandomVariable) = begin
     # TODO combineLatest is more efficient with small number of inputmsgs
-    return collectLatest(Message, randomvar.inputmsgs, Marginal, __reduce_to_marginal)
+    return collectLatest(Message, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
     # return combineLatest(randomvar.inputmsgs..., strategy = PushEach()) |> map(Marginal, __reduce_to_marginal)
 end
 
