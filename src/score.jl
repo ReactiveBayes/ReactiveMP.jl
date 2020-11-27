@@ -39,14 +39,14 @@ end
 
 ## Average energy function helpers
 
-function score(::AverageEnergy, fform, ::Type{ Val{ N } }, marginals::Tuple{ <: Marginal{ <: Tuple } }, meta) where N
-    return score(AverageEnergy(), fform, split_underscored_symbol(Val{ N[1] }), map(as_marginal, getdata(marginals[1])), meta)
+function score(::AverageEnergy, fform, ::Type{ <: Val }, marginals::Tuple{ <: Marginal{ <: NamedTuple{ N } } }, meta) where N
+    return score(AverageEnergy(), fform, Val{ N }, map(as_marginal, values(getdata(marginals[1]))), meta)
 end
 
 ## Differential entropy function helpers
 
-score(::DifferentialEntropy, marginal::Marginal{ <: Tuple }) = mapreduce((d) -> score(DifferentialEntropy(), as_marginal(d)), +, getdata(marginal))
-score(::DifferentialEntropy, marginal::Marginal)             = entropy(marginal)
+score(::DifferentialEntropy, marginal::Marginal{ <: NamedTuple }) = mapreduce((d) -> score(DifferentialEntropy(), as_marginal(d)), +, getdata(marginal))
+score(::DifferentialEntropy, marginal::Marginal)                  = entropy(marginal)
 
 ## Average enery macro helper
 

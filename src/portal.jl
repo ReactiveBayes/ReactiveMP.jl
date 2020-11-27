@@ -1,10 +1,10 @@
 export AbstractPortal
-export EmptyPortal, DiscontinuemPortal, AsyncPortal, LoggerPortal, MapPortal
+export EmptyPortal, DiscontinuePortal, AsyncPortal, LoggerPortal, InitVaguePortal, MapPortal
 export DefaultOutboundMessagePortal
 
 import Base: +
 
-DefaultOutboundMessagePortal() = DiscontinuePortal()
+DefaultOutboundMessagePortal() = EmptyPortal()
 
 ## Abstract Stream Portal
 
@@ -34,6 +34,12 @@ struct LoggerPortal <: AbstractPortal end
 
 apply(::LoggerPortal, factornode, tag, stream) = stream |> tap((v) -> println("[Log][$(functionalform(factornode))][$(tag)]: $v"))
 
+## Initialize with vague portal
+
+struct InitVaguePortal <: AbstractPortal end
+
+apply(::InitVaguePortal, factornode, tag, stream) = stream |> start_with(as_message(vague(conjugate_type(functionalform(factornode), tag))))
+
 ## Map portal
 
 struct MapPortal{F} <: AbstractPortal 
@@ -51,6 +57,6 @@ end
 apply(composite::CompositePortal, factornode, tag, stream) = reduce((stream, portal) -> apply(portal, factornode, tag, stream), composite.portals, init = stream)
 
 Base.:+(left::AbstractPortal,  right::AbstractPortal)  = CompositePortal((left, right))
-Base.:+(left::AbstractPortal,  right::CompositePortal) = CompositePortal((left, right.transformers...))
-Base.:+(left::CompositePortal, right::AbstractPortal)  = CompositePortal((left.transformers..., right))
-Base.:+(left::CompositePortal, right::CompositePortal) = CompositePortal((left.transformers..., right.transformers...))
+Base.:+(left::AbstractPortal,  right::CompositePortal) = CompositePortal((left, right.portals...))
+Base.:+(left::CompositePortal, right::AbstractPortal)  = CompositePortal((left.portals..., right))
+Base.:+(left::CompositePortal, right::CompositePortal) = CompositePortal((left.portals..., right.portals...))

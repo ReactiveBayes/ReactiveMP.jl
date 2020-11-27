@@ -15,7 +15,7 @@ function MvNormalMeanCovariance(μ::AbstractVector{ <: Real}, Σ::AbstractMatrix
 end
 
 MvNormalMeanCovariance(μ::AbstractVector{ <: Integer}, Σ::AbstractMatrix{ <: Integer }) = MvNormalMeanCovariance(float.(μ), float.(Σ))
-MvNormalMeanCovariance(μ::AbstractVector, Σ::AbstractVector)                            = MvNormalMeanCovariance(μ, Diagonal(Σ))
+MvNormalMeanCovariance(μ::AbstractVector, Σ::AbstractVector)                            = MvNormalMeanCovariance(μ, Matrix(Diagonal(Σ)))
 MvNormalMeanCovariance(μ::AbstractVector{T}) where T                                    = MvNormalMeanCovariance(μ, convert(AbstractArray{T}, ones(length(μ))))
 
 Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"

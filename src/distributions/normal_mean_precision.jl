@@ -29,8 +29,8 @@ Distributions.logpdf(dist::NormalMeanPrecision, x::Real) = -(log2π - log(precis
 Base.precision(dist::NormalMeanPrecision{T}) where T = invcov(dist)
 Base.eltype(::NormalMeanPrecision{T})        where T = T
 
-Base.convert(::Type{ NormalMeanPrecision{T} }, μ::S, v::S)                   where { T <: Real, S <: Real } = NormalMeanPrecision(T(μ), T(v))
-Base.convert(::Type{ NormalMeanPrecision{T} }, dist::NormalMeanPrecision{S}) where { T <: Real, S <: Real } = NormalMeanPrecision(T(mean(dist)), T(var(dist)))
+Base.convert(::Type{ NormalMeanPrecision{T} }, μ::Real, p::Real)          where { T <: Real } = NormalMeanPrecision(T(μ), T(p))
+Base.convert(::Type{ NormalMeanPrecision{T} }, dist::NormalMeanPrecision) where { T <: Real } = NormalMeanPrecision(T(mean(dist)), T(precision(dist)))
 
 vague(::Type{ <: NormalMeanPrecision }) = NormalMeanPrecision(0.0, 1.0e-20)
 

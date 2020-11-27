@@ -77,6 +77,11 @@ using ReactiveMP
 
     @testset "Base methods" begin
         @test convert(NormalMeanVariance{Float32}, NormalMeanVariance()) === NormalMeanVariance{Float32}(0f0, 1f0)
+        @test convert(NormalMeanVariance{Float64}, NormalMeanVariance(0.0, 10.0)) == NormalMeanVariance{Float64}(0.0, 10.0)
+        @test convert(NormalMeanVariance{Float64}, NormalMeanVariance(0.0, 0.1)) == NormalMeanVariance{Float64}(0.0, 0.1)
+        @test convert(NormalMeanVariance{Float64}, 0, 1) == NormalMeanVariance{Float64}(0.0, 1.0)
+        @test convert(NormalMeanVariance{Float64}, 0, 10) == NormalMeanVariance{Float64}(0.0, 10.0)
+        @test convert(NormalMeanVariance{Float64}, 0, 0.1) == NormalMeanVariance{Float64}(0.0, 0.1)
     end
 
     @testset "prod" begin

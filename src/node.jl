@@ -469,6 +469,10 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
     end
 end
 
+
+## TODO
+function conjugate_type end
+
 ## make_node
 
 struct AutoVar

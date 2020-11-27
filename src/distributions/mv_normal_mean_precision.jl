@@ -15,7 +15,7 @@ function MvNormalMeanPrecision(μ::AbstractVector{ <: Real}, Λ::AbstractMatrix{
 end
 
 MvNormalMeanPrecision(μ::AbstractVector{ <: Integer}, Λ::AbstractMatrix{ <: Integer }) = MvNormalMeanPrecision(float.(μ), float.(Λ))
-MvNormalMeanPrecision(μ::AbstractVector, Λ::AbstractVector)                            = MvNormalMeanPrecision(μ, Diagonal(Λ))
+MvNormalMeanPrecision(μ::AbstractVector, Λ::AbstractVector)                            = MvNormalMeanPrecision(μ, Matrix(Diagonal(Λ)))
 MvNormalMeanPrecision(μ::AbstractVector{T}) where T                                    = MvNormalMeanPrecision(μ, convert(AbstractArray{T}, ones(length(μ))))
 
 Distributions.distrname(::MvNormalMeanPrecision) = "MvNormalMeanPrecision"
@@ -24,7 +24,7 @@ Distributions.mean(dist::MvNormalMeanPrecision)      = dist.μ
 Distributions.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
-Distributions.std(dist::MvNormalMeanPrecision)       = sqrt(cov(dist))
+Distributions.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
 Distributions.logdetcov(dist::MvNormalMeanPrecision) = -logdet(invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)

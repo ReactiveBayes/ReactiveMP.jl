@@ -5,7 +5,7 @@
     marginals => Nothing,
     meta      => Nothing,
     begin
-        return (prod(ProdPreserveParametrisation(), MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)), m_out), m_μ, m_Λ)
+        return (out = prod(ProdPreserveParametrisation(), MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)), m_out), μ = m_μ, Λ = m_Λ)
     end
 )
 
@@ -16,7 +16,7 @@
     marginals => Nothing,
     meta      => Nothing,
     begin
-        return (m_out, prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_Λ))), m_Λ)
+        return (out = m_out, μ = prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_Λ))), Λ = m_Λ)
     end
 )
 

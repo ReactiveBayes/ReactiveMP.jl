@@ -5,7 +5,7 @@
     marginals => Nothing,
     meta      => Nothing,
     begin 
-        return (prod(ProdPreserveParametrisation(), NormalMeanVariance(mean(m_μ), mean(m_v)), m_out), m_μ, m_v)
+        return (out = prod(ProdPreserveParametrisation(), NormalMeanVariance(mean(m_μ), mean(m_v)), m_out), μ = m_μ, v = m_v)
     end
 )
 
@@ -16,6 +16,6 @@
     marginals => Nothing,
     meta      => Nothing,
     begin 
-        return (m_out, prod(ProdPreserveParametrisation(), m_μ, NormalMeanVariance(mean(m_out), mean(m_v))), m_v)
+        return (out = m_out, μ = prod(ProdPreserveParametrisation(), m_μ, NormalMeanVariance(mean(m_out), mean(m_v))), v = m_v)
     end
 )

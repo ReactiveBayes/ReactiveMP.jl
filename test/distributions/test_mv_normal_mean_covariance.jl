@@ -30,7 +30,7 @@ using ReactiveMP
         @test invcov(dist)    ≈  inv(Σ)
         @test precision(dist) ≈  inv(Σ)
         @test cov(dist)       == Σ
-        @test std(dist)       ≈ sqrt(Σ)
+        @test std(dist)       ≈ cholsqrt(Σ)
         
         @test length(dist) == 3
         @test entropy(dist) ≈ 5.361886000915401
@@ -43,6 +43,7 @@ using ReactiveMP
 
     @testset "Base methods" begin
         @test convert(MvNormalMeanCovariance{Float32}, MvNormalMeanCovariance([ 0.0, 0.0 ])) == MvNormalMeanCovariance([ 0f0, 0f0 ], [ 1f0, 1f0 ])
+        @test convert(MvNormalMeanCovariance{Float64}, [ 0.0, 0.0 ], [ 2 0; 0 3 ]) == MvNormalMeanCovariance([ 0.0, 0.0 ], [ 2.0 0.0; 0.0 3.0 ])
     end
 
     @testset "prod" begin

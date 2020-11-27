@@ -5,6 +5,6 @@
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        return (prod(ProdPreserveParametrisation(), Gamma(mean(m_α), mean(m_θ)), m_out), m_α, m_θ)
+        return (out = prod(ProdPreserveParametrisation(), Gamma(mean(m_α), mean(m_θ)), m_out), α = m_α, θ = m_θ)
     end
 )

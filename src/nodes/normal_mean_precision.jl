@@ -12,6 +12,10 @@ import StatsFuns: log2π
     ]
 )
 
+conjugate_type(::Type{ <: NormalMeanPrecision }, ::Type{ Val{ :out } }) = NormalMeanPrecision
+conjugate_type(::Type{ <: NormalMeanPrecision }, ::Type{ Val{ :μ } })   = NormalMeanPrecision
+conjugate_type(::Type{ <: NormalMeanPrecision }, ::Type{ Val{ :τ } })   = Gamma
+
 @average_energy(
     formtype  => NormalMeanPrecision,
     marginals => (q_out::Any, q_μ::Any, q_τ::Any),

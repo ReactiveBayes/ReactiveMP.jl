@@ -12,6 +12,10 @@ import StatsFuns: log2π
     ]
 )
 
+conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :out } }) = MvNormalMeanPrecision
+conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :μ } })   = MvNormalMeanPrecision
+conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :Λ } })   = Wishart
+
 @average_energy(
     formtype  => MvNormalMeanPrecision,
     marginals => (q_out::Any, q_μ::Any, q_Λ::Any),

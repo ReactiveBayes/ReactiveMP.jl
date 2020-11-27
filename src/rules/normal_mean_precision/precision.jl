@@ -10,3 +10,16 @@
         return Gamma(3.0 / 2.0, 2.0 / (var(q_out) + var(q_μ) + diff^2))
     end
 )
+
+@rule(
+    formtype    => NormalMeanPrecision,
+    on          => :τ,
+    vconstraint => Marginalisation,
+    messages    => Nothing,
+    marginals   => (q_out_μ::Any, ),
+    meta        => Nothing,
+    begin
+        m, V = mean(q_out_μ), cov(q_out_μ)
+        return Gamma(1.5, inv(0.5 * (V[1,1] - V[1,2] - V[2,1] + V[2,2] + abs2(m[1] - m[2]))))
+    end
+)

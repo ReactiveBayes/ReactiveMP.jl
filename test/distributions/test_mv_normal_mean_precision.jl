@@ -29,8 +29,8 @@ using ReactiveMP
         @test mode(dist)      == μ
         @test invcov(dist)    == Λ
         @test precision(dist) == Λ
-        @test cov(dist)       ≈ inv(Λ)
-        @test std(dist)       ≈ sqrt(inv(Λ))
+        @test cov(dist)       ≈ cholinv(Λ)
+        @test std(dist)       ≈ cholsqrt(cholinv(Λ))
         
         @test length(dist) == 3
         @test entropy(dist) ≈ 3.1517451983126357
@@ -43,6 +43,7 @@ using ReactiveMP
 
     @testset "Base methods" begin
         @test convert(MvNormalMeanPrecision{Float32}, MvNormalMeanPrecision([ 0.0, 0.0 ])) == MvNormalMeanPrecision([ 0f0, 0f0 ], [ 1f0, 1f0 ])
+        @test convert(MvNormalMeanPrecision{Float64}, [ 0.0, 0.0 ], [ 2 0; 0 3 ]) == MvNormalMeanPrecision([ 0.0, 0.0 ], [ 2.0 0.0; 0.0 3.0 ])
     end
 
     @testset "prod" begin

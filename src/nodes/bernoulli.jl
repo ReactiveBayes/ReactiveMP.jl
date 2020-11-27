@@ -9,6 +9,9 @@ export make_node
     ]
 )
 
+conjugate_type(::Type{ <: Bernoulli }, ::Type{ Val{ :out } }) = Bernoulli
+conjugate_type(::Type{ <: Bernoulli }, ::Type{ Val{ :θ } })   = Beta
+
 @average_energy(
     formtype  => Bernoulli,
     marginals => (q_out::Any, q_p::Any),

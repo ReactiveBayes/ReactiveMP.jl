@@ -5,6 +5,6 @@
     marginals   => Nothing,
     meta        => Nothing,
     begin
-        return (prod(ProdPreserveParametrisation(), Wishart(mean(m_ν), mean(m_S)), m_out), m_ν, m_S)
+        return (out = prod(ProdPreserveParametrisation(), Wishart(mean(m_ν), mean(m_S)), m_out), ν = m_ν, S = m_S)
     end
 )

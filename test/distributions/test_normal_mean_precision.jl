@@ -76,7 +76,12 @@ using ReactiveMP
     end
 
     @testset "Base methods" begin
-        @test convert(NormalMeanPrecision{Float32}, NormalMeanPrecision()) === NormalMeanPrecision{Float32}(0f0, 1f0)
+        @test convert(NormalMeanPrecision{Float32}, NormalMeanPrecision()) == NormalMeanPrecision{Float32}(0f0, 1f0)
+        @test convert(NormalMeanPrecision{Float64}, NormalMeanPrecision(0.0, 10.0)) == NormalMeanPrecision{Float64}(0.0, 10.0)
+        @test convert(NormalMeanPrecision{Float64}, NormalMeanPrecision(0.0, 0.1)) == NormalMeanPrecision{Float64}(0.0, 0.1)
+        @test convert(NormalMeanPrecision{Float64}, 0, 1) == NormalMeanPrecision{Float64}(0.0, 1.0)
+        @test convert(NormalMeanPrecision{Float64}, 0, 10) == NormalMeanPrecision{Float64}(0.0, 10.0)
+        @test convert(NormalMeanPrecision{Float64}, 0, 0.1) == NormalMeanPrecision{Float64}(0.0, 0.1)
     end
 
     @testset "prod" begin
