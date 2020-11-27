@@ -14,9 +14,6 @@ getdata(message::Message)   = message.data
 
 ## Message
 
-function multiply_messages end
-
-# TODO
 multiply_messages(left::Message, right::Message) = as_message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)))
 
 Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
@@ -43,16 +40,6 @@ logmean(message::Message)         = logmean(getdata(message))
 inversemean(message::Message)     = inversemean(getdata(message))
 mirroredlogmean(message::Message) = mirroredlogmean(getdata(message))
 
-## Utiliy nothing message
-
-function multiply_messages(m1::Message{Nothing}, m2::Message{Nothing})
-    return Message(nothing)
-end
-
-@symmetrical function multiply_messages(::Message{Nothing}, message::Message)
-    return message
-end
-
 ## Utility functions
 
 as_message(data)               = Message(data)
@@ -60,7 +47,7 @@ as_message(message::Message)   = message
 
 ## Operators
 
-reduce_messages(messages) = reduce(*, messages; init = Message(nothing))
+reduce_messages(messages) = reduce(*, messages; init = Message(missing))
 
 const __as_message_operator  = Rocket.map(Message, as_message)
 

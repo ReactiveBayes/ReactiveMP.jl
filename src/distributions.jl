@@ -59,6 +59,11 @@ See also: [`default_prod_strategy`](@ref), [`ProdPreserveParametrisation`](@ref)
 """
 prod(::ProdBestSuitableParametrisation, left, right) = prod(ProdPreserveParametrisation(), left, right)
 
+prod(::ProdPreserveParametrisation, left::Missing, right) = right
+prod(::ProdPreserveParametrisation, left, right::Missing) = left
+prod(::ProdPreserveParametrisation, ::Missing, ::Missing) = missing
+
+
 """
     vague(distribution_type, [ dims... ])
 

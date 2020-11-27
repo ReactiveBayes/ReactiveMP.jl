@@ -88,7 +88,7 @@ end
 
 function activate!(model::Model) 
     filter!(getrandom(model)) do randomvar
-        @assert degree(randomvar) !== 1 "Loose random variable has been found: $(name(randomvar))"
+        @assert degree(randomvar) !== 1 "Half-edge has been found: $(name(randomvar)). To terminate half-edges 'Uninformative' node can be used."
         return degree(randomvar) >= 2
     end
 
