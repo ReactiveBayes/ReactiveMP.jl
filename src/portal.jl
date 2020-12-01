@@ -1,5 +1,5 @@
 export AbstractPortal
-export EmptyPortal, DiscontinuePortal, AsyncPortal, LoggerPortal, InitVaguePortal, MapPortal
+export EmptyPortal, DiscontinuePortal, AsyncPortal, ScheduleOnPortal, LoggerPortal, InitVaguePortal, MapPortal
 export DefaultOutboundMessagePortal
 
 import Base: +
@@ -27,6 +27,14 @@ apply(::DiscontinuePortal, factornode, tag, stream) = stream |> discontinue()
 struct AsyncPortal <: AbstractPortal end
 
 apply(::AsyncPortal, factornode, tag, stream) = stream |> async()
+
+## ScheduleOn portal
+
+struct ScheduleOnPortal{S} <: AbstractPortal
+    scheduler :: S
+end
+
+apply(portal::ScheduleOnPortal, factornode, tag, stream) = stream |> schedule_on(portal.scheduler)
 
 ## Logger portal
 
