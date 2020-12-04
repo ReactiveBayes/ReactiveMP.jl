@@ -409,15 +409,15 @@ function activate!(model, factornode::FactorNode)
         meta        = metadata(factornode)
         
         vmessageout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach())
-        vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
 
         vmessageout = vmessageout |> switch_map(Message, (d) -> begin 
             return cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
         end)
 
+        vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
         vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
 
-        set!(messageout(interface), vmessageout |> share_replay(1))
+        set!(messageout(interface), vmessageout |> share_recent())
         set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
     end
 end
@@ -459,9 +459,9 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         vtag        = Val{ name(localmarginal) }
         meta        = metadata(factornode)
         mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, d[2], meta, factornode)))
-        marginalout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach()) |> discontinue() |> mapping
+        marginalout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach()) |> mapping
 
-        connect!(cmarginal, marginalout |> share_replay(1))
+        connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 
         setstream!(localmarginal, cmarginal)
 

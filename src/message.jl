@@ -4,13 +4,15 @@ export multiply_messages
 using Distributions
 using Rocket
 
-import Base: *, +, ndims, precision, length, size
+import Base: *, +, ndims, precision, length, size, show
 
 struct Message{D}
     data :: D
 end
 
 getdata(message::Message)   = message.data
+
+Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ")"))
 
 ## Message
 

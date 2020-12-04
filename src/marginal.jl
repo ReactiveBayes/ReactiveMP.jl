@@ -53,7 +53,7 @@ const reduce_to_marginal = Rocket.map(Marginal, __reduce_to_marginal)
 ## Marginal observable
 
 struct MarginalObservable <: Subscribable{Marginal}
-    subject :: Rocket.ReplaySubjectInstance{ Marginal, Subject{ Marginal,AsapScheduler,AsapScheduler } }
+    subject :: Rocket.RecentSubjectInstance{ Marginal, Subject{ Marginal,AsapScheduler,AsapScheduler } }
     stream  :: LazyObservable{Marginal}
 end
 
@@ -61,11 +61,11 @@ as_marginal_observable(observable::MarginalObservable) = observable
 
 function as_marginal_observable(observable)
     output = MarginalObservable()
-    connect!(output, observable |> share_replay(1))
+    connect!(output, observable)
     return output
 end
 
-MarginalObservable() = MarginalObservable(ReplaySubject(Marginal, 1), lazy(Marginal))
+MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
 
 function Rocket.on_subscribe!(observable::MarginalObservable, actor)
     return subscribe!(observable.stream, actor)
