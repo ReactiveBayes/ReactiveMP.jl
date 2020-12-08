@@ -40,9 +40,13 @@ function __extract_sdtype_macro_rule(sdtype)
 end
 
 function __extract_on_macro_rule(on)
-    @capture(on, (on => :name_)) ||
-        error("Error in macro: on specification should have a (on => :name) signature")
-    return :(Type{ Val{ $(QuoteNode(name)) } })
+    if @capture(on, (on => :name_))
+        return :(Type{ Val{ $(QuoteNode(name)) } }), []
+    elseif @capture(on, (on => (:name_, index_type_)))
+        return :(Tuple{ Val{$(QuoteNode(name))}, Val{$(index_type)} }), [ index_type ]
+    else
+        error("Error in macro: on specification should have a (on => :name) or (on => (:name, index)) signature")
+    end
 end
 
 function __extract_vconstraint_macro_rule(vconstraint)
@@ -58,11 +62,12 @@ end
 
 function __apply_proxy_type(type::Expr, proxytype)
     if @capture(type, NTuple{N_, T_})
-        return :(NTuple{ $N, <: $(proxytype){ <: $(T) } })
+        return :(NTuple{ $N, <: $(__apply_proxy_type(T, proxytype)) })
     elseif @capture(type, Tuple{ T__ })
         return :(Tuple{ $(map(t -> :( <: $(__apply_proxy_type(t, proxytype))), T)...) })
+    else 
+        return :($(proxytype){ <: $(type) })
     end
-    error("Cannot parse expression $(type)")
 end
 
 function __extract_fn_args_macro_rule(fn_specification; specname, prefix, proxytype)

@@ -227,7 +227,7 @@ Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedIn
 
 name(interface::IndexedNodeInterface)  = name(interface.interface)
 index(interface::IndexedNodeInterface) = interface.index
-tag(interface::IndexedNodeInterface)   = (Val{ name(interface) }, Val{ index(interface) })
+tag(interface::IndexedNodeInterface)   = (Val{ name(interface) }(), Val{ index(interface) }())
 
 messageout(interface::IndexedNodeInterface) = messageout(interface.interface)
 messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)

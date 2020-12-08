@@ -15,6 +15,7 @@ include("beta/out.jl")
 include("beta/marginals.jl")
 
 include("bernoulli/p.jl")
+include("bernoulli/out.jl")
 include("bernoulli/marginals.jl")
 
 include("gcv/x.jl")
@@ -54,3 +55,4 @@ include("wishart/marginals.jl")
 
 include("normal_mixture/out.jl")
 include("normal_mixture/switch.jl")
+include("normal_mixture/m.jl")
