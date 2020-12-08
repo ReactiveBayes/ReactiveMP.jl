@@ -10,7 +10,8 @@ struct Message{D}
     data :: D
 end
 
-getdata(message::Message)   = message.data
+getdata(message::Message)                          = message.data
+getdata(messages::NTuple{ N, <: Message }) where N = map(getdata, messages)
 
 Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ")"))
 

@@ -51,3 +51,6 @@ include("normal_mean_variance/marginals.jl")
 
 include("wishart/out.jl")
 include("wishart/marginals.jl")
+
+include("normal_mixture/out.jl")
+include("normal_mixture/switch.jl")

@@ -52,6 +52,19 @@ function __extract_vconstraint_macro_rule(vconstraint)
     return Constraint
 end
 
+function __apply_proxy_type(type::Symbol, proxytype)
+    return :($(proxytype){ <: $(type) })
+end
+
+function __apply_proxy_type(type::Expr, proxytype)
+    if @capture(type, NTuple{N_, T_})
+        return :(NTuple{ $N, <: $(proxytype){ <: $(T) } })
+    elseif @capture(type, Tuple{ T__ })
+        return :(Tuple{ $(map(t -> :( <: $(__apply_proxy_type(t, proxytype))), T)...) })
+    end
+    error("Cannot parse expression $(type)")
+end
+
 function __extract_fn_args_macro_rule(fn_specification; specname, prefix, proxytype)
     if @capture(fn_specification, (name_ => Nothing)) && name === specname
         return :Nothing, :Nothing, [], []
@@ -83,7 +96,7 @@ function __extract_fn_args_macro_rule(fn_specification; specname, prefix, proxyt
 
     args_names     = specs !== nothing ? map(a -> begin @views Symbol(string(a[1])[3:end]) end, specs) : nothing
     args_names_val = args_names !== nothing ? :(Type{ Val{ $(tuple(args_names...)) } }) : (:(Nothing))
-    args_types     = specs !== nothing ? map(a -> :($(proxytype){ <: $(a[2]) }), specs) : nothing
+    args_types     = specs !== nothing ? map(a -> __apply_proxy_type(a[2], proxytype), specs) : nothing
     args_types_val = args_types !== nothing ? :(Tuple{ $(args_types...) }) : (:(Nothing))
     init_block     = args_names !== nothing ? map(i_name -> :($(Symbol(prefix, i_name[2])) = getdata($(specname)[$(i_name[1])])), enumerate(args_names)) : [ :nothing ]
     

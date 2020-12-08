@@ -49,7 +49,7 @@ default_factorisation(options::ModelOptions)   = options.default_factorisation
 
 struct Model{O}
     options  :: O
-    nodes    :: Vector{FactorNode}
+    nodes    :: Vector{AbstractFactorNode}
     random   :: Vector{RandomVariable}
     constant :: Dict{Symbol, ConstVariable}
     data     :: Dict{Symbol, DataVariable}
@@ -68,11 +68,11 @@ getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
 
 # placeholder for future
-add!(model::Model, node::FactorNode)        = begin push!(model.nodes, node); return node end
-add!(model::Model, random::RandomVariable)  = begin push!(model.random, random); return random end
-add!(model::Model, ::Nothing)               = nothing
-add!(model::Model, collection::Tuple)       = begin foreach((d) -> add!(model, d), collection); return collection end
-add!(model::Model, array::AbstractArray)    = begin foreach((d) -> add!(model, d), array); return array end
+add!(model::Model, node::AbstractFactorNode) = begin push!(model.nodes, node); return node end
+add!(model::Model, random::RandomVariable)   = begin push!(model.random, random); return random end
+add!(model::Model, ::Nothing)                = nothing
+add!(model::Model, collection::Tuple)        = begin foreach((d) -> add!(model, d), collection); return collection end
+add!(model::Model, array::AbstractArray)     = begin foreach((d) -> add!(model, d), array); return array end
 
 function add!(model::Model, constant::ConstVariable)
     @assert !haskey(getconstant(model), name(constant)) "ConstVariable with name '$(name(constant))' has already been added to a model"

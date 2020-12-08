@@ -9,7 +9,8 @@ struct Marginal{D}
     data :: D
 end
 
-getdata(marginal::Marginal) = marginal.data
+getdata(marginal::Marginal)                          = marginal.data
+getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
 ## Marginal
 

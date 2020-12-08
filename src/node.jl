@@ -216,6 +216,26 @@ See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](
 """
 connectedvarindex(interface::NodeInterface) = interface.props.connected_index
 
+## IndexedNodeInterface
+## Used for dynamic number of inputs
+struct IndexedNodeInterface
+    index     :: Int
+    interface :: NodeInterface
+end
+
+Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", name(interface), ",", index(interface), ")"))
+
+name(interface::IndexedNodeInterface)  = name(interface.interface)
+index(interface::IndexedNodeInterface) = interface.index
+tag(interface::IndexedNodeInterface)   = (Val{ name(interface) }, Val{ index(interface) })
+
+messageout(interface::IndexedNodeInterface) = messageout(interface.interface)
+messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)
+
+connectvariable!(interface::IndexedNodeInterface, variable, index) = connectvariable!(interface.interface, variable, index)
+connectedvar(interface::IndexedNodeInterface)                      = connectedvar(interface.interface)
+connectedvarindex(interface::IndexedNodeInterface)                 = connectedvarindex(interface.interface)
+
 ## FactorNodeLocalMarginals
 
 mutable struct FactorNodeLocalMarginalProps
@@ -269,7 +289,9 @@ end
 
 ## FactorNode
 
-struct FactorNode{F, I, C, M, A, P}
+abstract type AbstractFactorNode end
+
+struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
     interfaces     :: I
     factorisation  :: C
@@ -396,7 +418,7 @@ function get_marginals_observable(factornode, marginal_dependencies)
     return marginal_names, marginals_observable
 end
 
-function activate!(model, factornode::FactorNode)
+function activate!(model, factornode::AbstractFactorNode)
     for (iindex, interface) in enumerate(interfaces(factornode))
         message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
 
