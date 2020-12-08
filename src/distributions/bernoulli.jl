@@ -1,6 +1,6 @@
 export Bernoulli
 
-import Distributions: Bernoulli, succprob
+import Distributions: Bernoulli, succprob, failprob
 
 function prod(::ProdPreserveParametrisation, left::Bernoulli{T}, right::Bernoulli{T}) where T
     left_p  = succprob(left)
@@ -11,3 +11,5 @@ function prod(::ProdPreserveParametrisation, left::Bernoulli{T}, right::Bernoull
     @assert norm > 0 "Product of $(left) and $(right) results in non-normalizable distribution"
     return Bernoulli(pprod / norm)
 end
+
+meanvec(dist::Bernoulli) = (succprob(dist), failprob(dist))

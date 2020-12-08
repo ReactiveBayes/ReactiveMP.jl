@@ -37,14 +37,14 @@ struct NormalMixtureNode{N, F <: Union{ MeanField, FullFactorisation }, M, P} <:
     portal :: P
 end
 
-functionalform(factornode::NormalMixtureNode)          = NormalMixture
-sdtype(factornode::NormalMixtureNode)                  = Stochastic()           
-interfaces(factornode::NormalMixtureNode)              = (factornode.out, factornode.switch, factornode.means..., factornode.precs...)
-factorisation(factornode::NormalMixtureNode)           = factornode.factorisation       
-localmarginals(factornode::NormalMixtureNode)          = error("localmarginals() function is not implemented for NormalMixtureNode")           
-localmarginalnames(factornode::NormalMixtureNode)      = error("localmarginalnames() function is not implemented for NormalMixtureNode")     
-metadata(factornode::NormalMixtureNode)                = factornode.meta            
-outbound_message_portal(factornode::NormalMixtureNode) = factornode.portal   
+functionalform(factornode::NormalMixtureNode{N}) where N = NormalMixture{N}
+sdtype(factornode::NormalMixtureNode)                    = Stochastic()           
+interfaces(factornode::NormalMixtureNode)                = (factornode.out, factornode.switch, factornode.means..., factornode.precs...)
+factorisation(factornode::NormalMixtureNode)             = factornode.factorisation       
+localmarginals(factornode::NormalMixtureNode)            = error("localmarginals() function is not implemented for NormalMixtureNode")           
+localmarginalnames(factornode::NormalMixtureNode)        = error("localmarginalnames() function is not implemented for NormalMixtureNode")     
+metadata(factornode::NormalMixtureNode)                  = factornode.meta            
+outbound_message_portal(factornode::NormalMixtureNode)   = factornode.portal   
 
 setmarginal!(factornode::NormalMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")           
 getmarginal!(factornode::NormalMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")           
