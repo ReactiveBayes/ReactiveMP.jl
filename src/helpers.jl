@@ -119,8 +119,8 @@ struct InfCountingReal{ T <: Real }
     infs  :: Int
 end
 
-InfCountingReal(value::T) where { T <: Real } = InfCountingReal{T}(value, 0)
-InfCountingReal(inf::Infinity) = InfCountingReal{Float64}(zero(Float64), degree(inf))
+InfCountingReal(value::T)                 where { T <: Real } = InfCountingReal{T}(value, 0)
+InfCountingReal(::Type{T}, inf::Infinity) where { T <: Real } = InfCountingReal{T}(zero(T), degree(inf))
 
 value(a::InfCountingReal) = a.value
 infs(a::InfCountingReal)  = a.infs
@@ -145,6 +145,11 @@ Base.:+(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{
 Base.:-(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) - value(b)), infs(a) - infs(b))
 
 Base.convert(::Type{T}, a::InfCountingReal) where { T <: Real } = isfinite(a) ? convert(T, value(a)) : Inf
+
+Base.convert(::Type{ InfCountingReal{T} }, v::T)          where T = InfCountingReal(v)
+Base.convert(::Type{ InfCountingReal{T} }, inf::Infinity) where T = InfCountingReal(T, inf)
+
+Base.convert(::Type{ InfCountingReal{T} }, v::InfCountingReal{R}) where { T, R } = InfCountingReal{T}(convert(T, value(v)), infs(v))
 
 Base.float(a::InfCountingReal) = convert(Float64, a)
 Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero(T))

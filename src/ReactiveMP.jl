@@ -25,6 +25,7 @@ include("distributions/normal_mean_variance.jl")
 include("distributions/mv_normal_mean_covariance.jl")
 include("distributions/mv_normal_mean_precision.jl")
 include("distributions/exp_linear_quadratic.jl")
+include("distributions/wishart.jl")
 
 include("message.jl")
 include("marginal.jl")
@@ -39,7 +40,6 @@ include("variables/data.jl")
 
 include("rule.jl")
 include("score.jl")
-
 include("node.jl")
 
 # Stochastic nodes
@@ -60,7 +60,10 @@ include("nodes/normal_mixture.jl")
 include("nodes/addition.jl")
 include("nodes/multiplication.jl")
 
+
 include("rules/prototypes.jl")
+include("score/variable.jl")
+include("score/node.jl")
 
 include("actors/prior.jl")
 

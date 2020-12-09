@@ -287,9 +287,14 @@ function FactorNodeLocalMarginals(variablenames, factorisation)
     return FactorNodeLocalMarginals(marginals)
 end
 
-## FactorNode
+## AbstractFactorNode
 
 abstract type AbstractFactorNode end
+
+isstochastic(factornode::AbstractFactorNode)    = isstochastic(sdtype(factornode))
+isdeterministic(factornode::AbstractFactorNode) = isdeterministic(sdtype(factornode))
+
+## Generic Factor Node
 
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
@@ -329,9 +334,6 @@ localmarginals(factornode::FactorNode)          = factornode.localmarginals.marg
 localmarginalnames(factornode::FactorNode)      = map(name, localmarginals(factornode))
 metadata(factornode::FactorNode)                = factornode.metadata
 outbound_message_portal(factornode::FactorNode) = factornode.portal
-
-isstochastic(factornode::FactorNode)    = isstochastic(sdtype(factornode))
-isdeterministic(factornode::FactorNode) = isdeterministic(sdtype(factornode))
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
@@ -432,10 +434,11 @@ function activate!(model, factornode::AbstractFactorNode)
         
         vmessageout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach())
 
-        vmessageout = vmessageout |> switch_map(Message, (d) -> begin 
-            return cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
-        end)
+        mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
+            (d) -> cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
+        end
 
+        vmessageout = vmessageout |> switch_map(Message, mapping)
         vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
         vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
 
@@ -480,8 +483,12 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         fform       = functionalform(factornode)
         vtag        = Val{ name(localmarginal) }
         meta        = metadata(factornode)
-        mapping     = map(Marginal, (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, d[2], meta, factornode)))
-        marginalout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach()) |> mapping
+
+        mapping = let fform = fform, vtag = vtag, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
+            (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, d[2], meta, factornode))
+        end
+
+        marginalout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach()) |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 
