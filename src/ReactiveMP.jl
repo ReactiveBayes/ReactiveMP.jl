@@ -39,8 +39,12 @@ include("variables/constant.jl")
 include("variables/data.jl")
 
 include("rule.jl")
+
 include("score.jl")
 include("node.jl")
+
+include("score/variable.jl")
+include("score/node.jl")
 
 # Stochastic nodes
 include("nodes/uninformative.jl")
@@ -62,8 +66,6 @@ include("nodes/multiplication.jl")
 
 
 include("rules/prototypes.jl")
-include("score/variable.jl")
-include("score/node.jl")
 
 include("actors/prior.jl")
 

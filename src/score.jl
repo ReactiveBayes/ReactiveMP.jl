@@ -16,7 +16,7 @@ function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where T
 
     node_bound_free_energies     = map((node) -> score(T, FactorBoundFreeEnergy(), node, scheduler), getnodes(model))
     variable_bound_entropies     = map((v) -> score(T, VariableBoundEntropy(), v, scheduler), getrandom(model))
-    node_bound_free_energies_sum = collectLatest(InfCountingReal{T}, InfCountingReal{T}, node_bound_free_energies, reduce_with_sum) 
+    node_bound_free_energies_sum = collectLatest(InfCountingReal{T}, InfCountingReal{T}, node_bound_free_energies, reduce_with_sum)
     variable_bound_entropies_sum = collectLatest(InfCountingReal{T}, InfCountingReal{T}, variable_bound_entropies, reduce_with_sum)
 
     diracs_entropies = Infinity(mapreduce(degree, +, values(getdata(model)), init = 0) + mapreduce(degree, +, values(getconstant(model)), init = 0))

@@ -130,16 +130,30 @@ isinf(a::InfCountingReal)    = !(isfinite(a))
 
 Base.eltype(::InfCountingReal{T}) where T = T
 
-@symmetrical Base.:+(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(b, degree(a))
-@symmetrical Base.:-(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(-b, degree(a))
+Base.:+(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(b, degree(a))
+Base.:-(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(-b, degree(a))
 
-@symmetrical Base.:+(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) + degree(b))
-@symmetrical Base.:-(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) - degree(b))
+Base.:+(b::T, a::Infinity) where { T <: Real } = InfCountingReal{T}(b, +degree(a))
+Base.:-(b::T, a::Infinity) where { T <: Real } = InfCountingReal{T}(b, -degree(a))
 
-@symmetrical Base.:+(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) + b), infs(a))
-@symmetrical Base.:-(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) - b), infs(a))
-@symmetrical Base.:*(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) * b), infs(a))
-@symmetrical Base.:/(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) / b), infs(a))
+Base.:+(a::InfCountingReal{T}) where T = InfCountingReal{T}(+value(a), +infs(a))
+Base.:-(a::InfCountingReal{T}) where T = InfCountingReal{T}(-value(a), -infs(a))
+
+Base.:+(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) + degree(b))
+Base.:-(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) - degree(b))
+
+Base.:+(b::Infinity, a::InfCountingReal{T}) where T = InfCountingReal{T}(value(a), degree(b) + infs(a))
+Base.:-(b::Infinity, a::InfCountingReal{T}) where T = InfCountingReal{T}(value(a), degree(b) - infs(a))
+
+Base.:+(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) + b), infs(a))
+Base.:-(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) - b), infs(a))
+Base.:*(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) * b), infs(a))
+Base.:/(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) / b), infs(a))
+
+Base.:+(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b + value(a)), +infs(a))
+Base.:-(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b - value(a)), -infs(a))
+Base.:*(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b * value(a)), infs(a))
+Base.:/(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b / value(a)), infs(a))
 
 Base.:+(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) + value(b)), infs(a) + infs(b))
 Base.:-(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) - value(b)), infs(a) - infs(b))

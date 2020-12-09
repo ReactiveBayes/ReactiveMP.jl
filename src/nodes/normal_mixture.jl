@@ -22,9 +22,13 @@ struct NormalMixture{N} end
 # get_messages_observable(factornode, message_dependencies)
 # get_marginals_observable(factornode, marginal_dependencies)
 #
+# score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where T
+#
 # Base.show
 # 
-struct NormalMixtureNode{N, F <: Union{ MeanField, FullFactorisation }, M, P} <: AbstractFactorNode
+const NormalMixtureNodeFactorisationSupport = Union{MeanField, }
+
+struct NormalMixtureNode{N, F <: NormalMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
     factorisation :: F
     
     # Interfaces
@@ -111,6 +115,43 @@ function get_marginals_observable(
     return marginal_names, marginals_observable
 end
 
+# FreeEnergy related functions
+
+@average_energy(
+    formtype  => NormalMixture,
+    marginals => (q_out::Any, q_switch::Any, q_m::NTuple{N, Any}, q_p::NTuple{N, Any}) where N,
+    meta      => Nothing,
+    begin
+        z_bar = meanvec(q_switch)
+        return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
+    end
+)
+
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T, N }
+    
+    stream = combineLatest((
+        getmarginal(connectedvar(node.out)),
+        getmarginal(connectedvar(node.switch)),
+        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), node.means), PushEach()),
+        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), node.precs), PushEach())
+    ), PushEach())
+
+    mapping = let fform = functionalform(node), meta = metadata(node)
+        (d) -> begin 
+            average_energy  = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, d, meta)
+
+            out_entropy     = score(DifferentialEntropy(), d[1])
+            switch_entropy  = score(DifferentialEntropy(), d[2])
+            means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, d[3])
+            precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, d[4])
+
+            return convert(InfCountingReal{T}, average_energy - (out_entropy + switch_entropy + means_entropies + precs_entropies))
+        end
+    end
+
+    return stream |> schedule_on(scheduler) |> map(InfCountingReal{T}, mapping)
+end
+
 as_node_functional_form(::Type{ <: NormalMixture }) = ValidNodeFunctionalForm()
 
 # Node creation related functions
@@ -119,7 +160,7 @@ sdtype(::Type{ <: NormalMixture }) = Stochastic()
         
 function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, portal::P = EmptyPortal()) where { N, F, M, P }
     @assert N >= 2 "NormalMixtureNode requires at least two mixtures on input"
-    @assert typeof(factorisation) === MeanField || typeof(factorisation) === FullFactorisation "NormalMixtureNode supports either full factorisation or mean field factorisation"
+    @assert typeof(factorisation) <: NormalMixtureNodeFactorisationSupport "NormalMixtureNode supports only following factorisations: [ $(NormalMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out)
     switch = NodeInterface(:switch)
     means  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:m)), N)
