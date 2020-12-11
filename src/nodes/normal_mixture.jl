@@ -122,7 +122,7 @@ end
     marginals => (q_out::Any, q_switch::Any, q_m::NTuple{N, Any}, q_p::NTuple{N, Any}) where N,
     meta      => Nothing,
     begin
-        z_bar = meanvec(q_switch)
+        z_bar = probvec(q_switch)
         return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
     end
 )

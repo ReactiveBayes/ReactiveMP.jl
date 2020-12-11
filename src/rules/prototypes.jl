@@ -14,6 +14,12 @@ include("gamma/marginals.jl")
 include("beta/out.jl")
 include("beta/marginals.jl")
 
+include("dirichlet/marginals.jl")
+include("dirichlet/out.jl")
+
+include("categorical/out.jl")
+include("categorical/p.jl")
+
 include("bernoulli/p.jl")
 include("bernoulli/out.jl")
 include("bernoulli/marginals.jl")

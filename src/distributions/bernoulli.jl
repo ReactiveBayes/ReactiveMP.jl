@@ -2,7 +2,7 @@ export Bernoulli
 
 import Distributions: Bernoulli, succprob, failprob
 
-function prod(::ProdPreserveParametrisation, left::Bernoulli{T}, right::Bernoulli{T}) where T
+function prod(::ProdPreserveParametrisation, left::Bernoulli, right::Bernoulli)
     left_p  = succprob(left)
     right_p = succprob(right)
 
@@ -12,4 +12,4 @@ function prod(::ProdPreserveParametrisation, left::Bernoulli{T}, right::Bernoull
     return Bernoulli(pprod / norm)
 end
 
-meanvec(dist::Bernoulli) = (succprob(dist), failprob(dist))
+probvec(dist::Bernoulli) = (succprob(dist), failprob(dist))
