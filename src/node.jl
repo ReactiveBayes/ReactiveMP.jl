@@ -432,7 +432,7 @@ function activate!(model, factornode::AbstractFactorNode)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
         
-        vmessageout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach())
+        vmessageout = combineLatest((msgs_observable, marginals_observable), PushEach())
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
             (d) -> cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
@@ -488,7 +488,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
             (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, d[2], meta, factornode))
         end
 
-        marginalout = combineLatest(msgs_observable, marginals_observable, strategy = PushEach()) |> map(Marginal, mapping)
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushEach()) |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 
