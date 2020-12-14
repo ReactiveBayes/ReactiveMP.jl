@@ -5,7 +5,7 @@
     marginals => Nothing,
     meta      => Nothing,
     begin
-        return (out = prod(ProdPreserveParametrisation(MvNormalMeanCovariance(mean(m_μ), mean(m_Σ))), m_out), μ = m_μ, Σ = m_Σ)
+        return (out = prod(ProdPreserveParametrisation(), MvNormalMeanCovariance(mean(m_μ), mean(m_Σ)), m_out), μ = m_μ, Σ = m_Σ)
     end
 )
 
@@ -42,5 +42,16 @@
         μ = Σ * xi
         
         return MvNormalMeanCovariance(μ, Σ)
+    end
+)
+
+@marginalrule(
+    formtype  => MvNormalMeanCovariance,
+    on        => :out_μ,
+    messages  => (m_out::Dirac, m_μ::MvNormalMeanCovariance),
+    marginals => (q_Σ::Any, ),
+    meta      => Nothing,
+    begin
+        return (out = m_out, μ = prod(ProdPreserveParametrisation(), MvNormalMeanCovariance(mean(m_out), mean(q_Σ)), m_μ))
     end
 )

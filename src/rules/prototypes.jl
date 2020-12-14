@@ -1,10 +1,12 @@
 
 include("uninformative/out.jl")
 
+include("addition/marginals.jl")
 include("addition/out.jl")
 include("addition/in1.jl")
 include("addition/in2.jl")
 
+include("multiplication/marginals.jl")
 include("multiplication/out.jl")
 include("multiplication/in.jl")
 

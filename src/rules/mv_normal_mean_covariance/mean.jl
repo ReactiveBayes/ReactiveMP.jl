@@ -45,3 +45,16 @@
         return MvNormalMeanCovariance(mean(m_out), cov(m_out) + mean(q_Σ))
     end
 )
+
+#TODO check
+@rule(
+    formtype    => MvNormalMeanCovariance,
+    on          => :μ,
+    vconstraint => Marginalisation,
+    messages    => (m_out::Dirac, ),
+    marginals   => (q_Σ::Any, ),
+    meta        => Nothing,
+    begin
+        return MvNormalMeanCovariance(mean(m_out), mean(q_Σ))
+    end
+)
