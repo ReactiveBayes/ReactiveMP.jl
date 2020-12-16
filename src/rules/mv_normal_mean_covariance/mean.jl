@@ -1,60 +1,10 @@
-@rule(
-    formtype    => MvNormalMeanCovariance,
-    on          => :μ,
-    vconstraint => Marginalisation,
-    messages    => (m_out::Dirac, m_Σ::Dirac),
-    marginals   => Nothing,
-    meta        => Nothing,
-    begin
-        return MvNormalMeanCovariance(mean(m_out), mean(m_Σ))
-    end
-)
+export rule
 
-@rule(
-    formtype    => MvNormalMeanCovariance,
-    on          => :μ,
-    vconstraint => Marginalisation,
-    messages    => (m_out::MvNormalMeanCovariance, m_Σ::Dirac),
-    marginals   => Nothing,
-    meta        => Nothing,
-    begin
-        return MvNormalMeanCovariance(mean(m_out), cov(m_out) + mean(m_Σ))
-    end
-)
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (m_out::Dirac, m_Σ::Dirac) = MvNormalMeanCovariance(mean(m_out), mean(m_Σ))
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (m_out::MvNormalMeanCovariance, m_Σ::Dirac) = MvNormalMeanCovariance(mean(m_out), cov(m_out) + mean(m_Σ))
 
-@rule(
-    formtype    => MvNormalMeanCovariance,
-    on          => :μ,
-    vconstraint => Marginalisation,
-    messages    => Nothing,
-    marginals   => (q_out::Any, q_Σ::Any),
-    meta        => Nothing,
-    begin
-        return MvNormalMeanCovariance(mean(q_out), mean(q_Σ))
-    end
-)
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (q_out::Any, q_Σ::Any) = MvNormalMeanCovariance(mean(q_out), mean(q_Σ))
 
-@rule(
-    formtype    => MvNormalMeanCovariance,
-    on          => :μ,
-    vconstraint => Marginalisation,
-    messages    => (m_out::MvNormalMeanCovariance, ),
-    marginals   => (q_Σ::Any, ),
-    meta        => Nothing,
-    begin
-        return MvNormalMeanCovariance(mean(m_out), cov(m_out) + mean(q_Σ))
-    end
-)
-
-#TODO check
-@rule(
-    formtype    => MvNormalMeanCovariance,
-    on          => :μ,
-    vconstraint => Marginalisation,
-    messages    => (m_out::Dirac, ),
-    marginals   => (q_Σ::Any, ),
-    meta        => Nothing,
-    begin
-        return MvNormalMeanCovariance(mean(m_out), mean(q_Σ))
-    end
-)
+# TODO check
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (m_out::Dirac, q_Σ::Any) = MvNormalMeanCovariance(mean(m_out), mean(q_Σ))
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (m_out::MvNormalMeanCovariance, q_Σ::Any) = MvNormalMeanCovariance(mean(m_out), cov(m_out) + mean(q_Σ))

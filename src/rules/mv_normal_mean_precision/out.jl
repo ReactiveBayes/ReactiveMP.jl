@@ -1,35 +1,7 @@
-@rule(
-    formtype    => MvNormalMeanPrecision,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => (m_μ::Dirac, m_Λ::Dirac),
-    marginals   => Nothing,
-    meta        => Nothing,
-    begin
-        return MvNormalMeanPrecision(mean(m_μ), mean(m_Λ))
-    end
-)
+export rule
 
-@rule(
-    formtype    => MvNormalMeanPrecision,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => Nothing,
-    marginals   => (q_μ::Any, q_Λ::Any),
-    meta        => Nothing,
-    begin
-        return MvNormalMeanPrecision(mean(q_μ), mean(q_Λ))
-    end
-)
+@rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::Dirac, m_Λ::Dirac) = MvNormalMeanPrecision(mean(m_μ), mean(m_Λ))
 
-@rule(
-    formtype    => MvNormalMeanPrecision,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => (m_μ::MvNormalMeanPrecision, ),
-    marginals   => (q_Λ::Any, ),
-    meta        => Nothing,
-    begin
-        return MvNormalMeanPrecision(mean(m_μ), cholinv(cov(m_μ) + cholinv(mean(q_Λ))))
-    end
-)
+@rule MvNormalMeanPrecision(:out, Marginalisation) (q_μ::Any, q_Λ::Any) = MvNormalMeanPrecision(mean(q_μ), mean(q_Λ))
+
+@rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::MvNormalMeanPrecision, q_Λ::Any) = MvNormalMeanPrecision(mean(m_μ), cholinv(cov(m_μ) + cholinv(mean(q_Λ))))

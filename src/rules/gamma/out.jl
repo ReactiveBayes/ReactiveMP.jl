@@ -1,11 +1,3 @@
-@rule(
-    formtype    => Gamma,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => (m_α::Dirac{T}, m_θ::Dirac{T}) where T,
-    marginals   => Nothing,
-    meta        => Nothing,
-    begin
-        return Gamma(mean(m_α), mean(m_θ))
-    end
-)
+export rule
+
+@rule Gamma(:out, Marginalisation) (m_α::Dirac, m_θ::Dirac) = Gamma(mean(m_α), mean(m_θ))

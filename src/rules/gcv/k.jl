@@ -1,12 +1,7 @@
-@rule(
-    formtype    => GCV, 
-    on          => :κ,
-    vconstraint => Marginalisation,
-    messages    => Nothing,
-    marginals   => (q_y_x::Any, q_z::Any, q_ω::Any),
-    meta        => Nothing,
-    begin 
-        Λ = cov(q_y_x)
+export rule
+
+@rule GCV(:κ, Marginalisation) (q_y_x::Any, q_z::Any, q_ω::Any) = begin
+    Λ = cov(q_y_x)
         m = mean(q_y_x)
 
         γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
@@ -18,5 +13,4 @@
         d = var(q_z)
 
         return ExponentialLinearQuadratic(a, b, c, d)
-    end
-)
+end

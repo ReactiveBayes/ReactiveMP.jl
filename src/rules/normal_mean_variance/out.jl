@@ -1,35 +1,6 @@
-@rule(
-    formtype    => NormalMeanVariance,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => (m_μ::Dirac{T}, m_v::Dirac{T}) where { T <: Real },
-    marginals   => Nothing,
-    meta        => Nothing,
-    begin 
-        return NormalMeanVariance(mean(m_μ), mean(m_v))
-    end
-)
+export rule
 
-@rule(
-    formtype    => NormalMeanVariance,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => (m_μ::NormalMeanVariance{T}, m_v::Dirac{T}) where { T <: Real },
-    marginals   => Nothing,
-    meta        => Nothing,
-    begin 
-        return NormalMeanVariance(mean(m_μ), var(m_μ) + mean(m_v))
-    end
-)
+@rule NormalMeanVariance(:out, Marginalisation) (m_μ::Dirac, m_v::Dirac) = NormalMeanVariance(mean(m_μ), mean(m_v))
+@rule NormalMeanVariance(:out, Marginalisation) (m_μ::NormalMeanVariance, m_v::Dirac) = NormalMeanVariance(mean(m_μ), var(m_μ) + mean(m_v))
 
-@rule(
-    formtype    => NormalMeanVariance,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => Nothing,
-    marginals   => (q_μ::Any, q_v::Any),
-    meta        => Nothing,
-    begin 
-        return NormalMeanVariance(mean(q_μ), mean(q_v))
-    end
-)
+@rule NormalMeanVariance(:out, Marginalisation) (q_μ::Any, q_v::Any) = NormalMeanVariance(mean(q_μ), mean(q_v))

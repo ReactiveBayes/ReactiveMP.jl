@@ -1,11 +1,3 @@
-@rule(
-    formtype    => Dirichlet,
-    on          => :out,
-    vconstraint => Marginalisation,
-    messages    => (m_a::Dirac{ <: AbstractVector }, ),
-    marginals   => Nothing,
-    meta        => Nothing,
-    begin
-        return Dirichlet(mean(m_a))
-    end
-)
+export rule
+
+@rule Dirichlet(:out, Marginalisation) (m_a::Dirac{ <: AbstractVector }, ) = Dirichlet(mean(m_a))

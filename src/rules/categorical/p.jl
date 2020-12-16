@@ -1,11 +1,3 @@
-@rule(
-    formtype    => Categorical,
-    on          => :p,
-    vconstraint => Marginalisation,
-    messages    => Nothing,
-    marginals   => (q_out::Any, ),
-    meta        => Nothing,
-    begin
-        return Dirichlet(probvec(q_out) .+ one(eltype(probvec(q_out))))
-    end
-)
+export rule
+
+@rule Categorical(:p, Marginalisation) (q_out::Any, ) = Dirichlet(probvec(q_out) .+ one(eltype(probvec(q_out))))

@@ -1,45 +1,33 @@
-@marginalrule(
-    formtype  => KernelGCV,
-    on        => :y_x,
-    messages  => (m_y::MvNormalMeanCovariance{T}, m_x::MvNormalMeanCovariance{T}) where { T },
-    marginals => (q_z::MvNormalMeanCovariance{T}, ),
-    meta      => KernelGCVMetadata,
-    begin
-        kernelfunction = get_kernelfn(meta)
-        Λ = approximate_kernel_expectation(get_approximation(meta), (z) -> cholinv(kernelfunction(z)), q_z)
+export marginalrule
 
-        Λy = inv(cov(m_y))
-        Λx = inv(cov(m_x))
+@marginalrule KernelGCV(:y_x) (m_y::MvNormalMeanCovariance, m_x::MvNormalMeanCovariance, q_z::MvNormalMeanCovariance, meta::KernelGCVMetadata) = begin
+    kernelfunction = get_kernelfn(meta)
+    Λ = approximate_kernel_expectation(get_approximation(meta), (z) -> cholinv(kernelfunction(z)), q_z)
 
-        wy = Λy * mean(m_y)
-        wx = Λx * mean(m_x)
+    Λy = invcov(m_y)
+    Λx = invcov(m_x)
 
-        C = cholinv([ Λ + Λy -Λ; -Λ Λ + Λx ])
-        m = C * [ wy ; wx ]
+    wy = Λy * mean(m_y)
+    wx = Λx * mean(m_x)
 
-        return MvNormalMeanCovariance(m, C)
-    end
-)
+    C = cholinv([ Λ + Λy -Λ; -Λ Λ + Λx ])
+    m = C * [ wy ; wx ]
 
-@marginalrule(
-    formtype  => KernelGCV,
-    on        => :y_x,
-    messages  => (m_y::MvNormalMeanPrecision{T}, m_x::MvNormalMeanPrecision{T}) where { T },
-    marginals => (q_z::MvNormalMeanPrecision{T}, ),
-    meta      => KernelGCVMetadata,
-    begin
-        kernelfunction = get_kernelfn(meta)
-        C = approximate_kernel_expectation(get_approximation(meta), (z) -> cholinv(kernelfunction(z)), q_z)
+    return MvNormalMeanCovariance(m, C)  
+end
 
-        Cy = precision(m_y)
-        Cx = precision(m_x)
+@marginalrule KernelGCV(:y_x) (m_y::MvNormalMeanPrecision, m_x::MvNormalMeanPrecision, q_z::MvNormalMeanPrecision, meta::KernelGCVMetadata) = begin
+    kernelfunction = get_kernelfn(meta)
+    C = approximate_kernel_expectation(get_approximation(meta), (z) -> cholinv(kernelfunction(z)), q_z)
 
-        wy = Cy * mean(m_y)
-        wx = Cx * mean(m_x)
+    Cy = invcov(m_y)
+    Cx = invcov(m_x)
 
-        Λ = [ C + Cy -C; -C C + Cx ]
-        μ = cholinv(Λ) * [ wy ; wx ]
+    wy = Cy * mean(m_y)
+    wx = Cx * mean(m_x)
 
-        return MvNormalMeanPrecision(μ, Λ)
-    end
-)
+    Λ = [ C + Cy -C; -C C + Cx ]
+    μ = cholinv(Λ) * [ wy ; wx ]
+
+    return MvNormalMeanPrecision(μ, Λ)
+end
