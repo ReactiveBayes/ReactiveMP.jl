@@ -488,7 +488,8 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
             (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, d[2], meta, factornode))
         end
 
-        marginalout = combineLatest((msgs_observable, marginals_observable), PushEach()) |> map(Marginal, mapping)
+        # TODO: discontinue operater is needed for loopy belief propagation
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushEach()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 

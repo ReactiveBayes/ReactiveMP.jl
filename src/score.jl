@@ -40,6 +40,8 @@ score(::DifferentialEntropy, marginal::Marginal)                  = entropy(marg
 macro average_energy(fform, lambda)
     @capture(fform, fformtype_) || error("Error in macro. Functional form specification should in the form of 'fformtype_'")
 
+    fformtype = __extract_fformtype(fformtype)
+
     @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
     @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
 

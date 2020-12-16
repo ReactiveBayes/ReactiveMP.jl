@@ -17,6 +17,7 @@ function marginalrule end
 macro rule(fform, lambda)
     @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
+    fformtype = __extract_fformtype(fformtype)
     on_type, on_where_Ts = __extract_on_args_macro_rule(on)
 
     @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
@@ -62,6 +63,7 @@ macro marginalrule(fform, lambda)
 
     @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
 
+    fformtype = __extract_fformtype(fformtype)
     on_type, on_where_Ts = __extract_on_args_macro_rule(on)
 
     @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")

@@ -53,6 +53,20 @@ function __apply_proxy_type(type::Expr, proxytype)
     end
 end
 
+function __extract_fformtype(fform)
+    if @capture(fform, typeof(f_))
+        return fform
+    elseif @capture(fform, Type{ T_ })
+        return :(Type{ <: $T })
+    elseif @capture(fform, Type{ <: T_ })
+        return :(Type{ <: $T })
+    elseif @capture(fform, T_)
+        return :(Type{ <: $T })
+    else
+        error("Error in macro. fform specification is incorrect")
+    end
+end
+
 function __extract_on_args_macro_rule(on)
     if @capture(on, :name_)
         return :(Type{ Val{ $(QuoteNode(name)) } }), []
@@ -75,7 +89,7 @@ function __extract_fn_args_macro_rule(inputs; specname, prefix, proxytype)
         return :($(iname) = getdata($(specname)[$(index)]))
     end
 
-    out_names = length(names) === 0 ? :Nothing : :(Type{ Val{ $(tuple(names...)) } })
+    out_names = length(names) === 0 ? :Nothing : :(Type{ Val{ $(tuple(map(n -> Symbol(string(n)[(length(string(prefix)) + 1):end]), names)...)) } })
     out_types = length(types) === 0 ? :Nothing : :(Tuple{ $(types...) })
 
     return out_names, out_types, init_block
