@@ -39,23 +39,6 @@ function __extract_sdtype_macro_rule(sdtype)
     end
 end
 
-function __extract_on_macro_rule(on)
-    if @capture(on, (on => :name_))
-        return :(Type{ Val{ $(QuoteNode(name)) } }), []
-    elseif @capture(on, (on => (:name_, index_type_)))
-        return :(Tuple{ Val{$(QuoteNode(name))}, Val{$(index_type)} }), [ index_type ]
-    else
-        error("Error in macro: on specification should have a (on => :name) or (on => (:name, index)) signature")
-    end
-end
-
-function __extract_vconstraint_macro_rule(vconstraint)
-    vconstraint !== :Nothing || return vconstraint
-    @capture(vconstraint, (vconstraint => Constraint_)) ||
-        error("Error in macro: edge specification should have a (vconstraint => Constraint) signature")
-    return Constraint
-end
-
 function __apply_proxy_type(type::Symbol, proxytype)
     return :($(proxytype){ <: $(type) })
 end
@@ -70,48 +53,32 @@ function __apply_proxy_type(type::Expr, proxytype)
     end
 end
 
-function __extract_fn_args_macro_rule(fn_specification; specname, prefix, proxytype)
-    if @capture(fn_specification, (name_ => Nothing)) && name === specname
-        return :Nothing, :Nothing, [], []
+function __extract_on_args_macro_rule(on)
+    if @capture(on, :name_)
+        return :(Type{ Val{ $(QuoteNode(name)) } }), []
+    elseif @capture(on, (:name_, index_type_))
+        return :(Tuple{ Val{$(QuoteNode(name))}, Val{$(index_type)} }), [ index_type ]
+    else
+        error("Error in macro. on specification is incorrect")
     end
-    
-    @capture(fn_specification, (name_ => args_specification_)) && name === specname ||
-        error("Error in macro: $(specname) specification should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
-    
-    where_Ts = []
-    
-    while @capture(args_specification, next_args_specification_ where { Ts__ })
-        append!(where_Ts, Ts)
-        args_specification = next_args_specification
-    end
-    
-    @capture(args_specification, (entries__, )) ||
-        error("Error in macro: messages specification should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
-    
-    length(entries) !== 0 || error("Error in macro: $(specname) length should be greater than zero")
-    
-    specs = map(entries) do entry
-        @capture(entry, name_::Type_) || 
-            error("Error in macro: messages specification should have a ($(specname) => (in1::Type1, in2::Type2) [ where ... ]) or Nothing signature") 
-        return (name, Type)
-    end
-
-    all(d -> startswith(string(d[1]), string(prefix)), specs) || error("Error in macro: All names in $(specname) should be prefixed with $(prefix)")
-    all(d -> length(string(d[1])) > 2, specs) || error("Error in macro: Empty name in $(specname) specification")
-
-    args_names     = specs !== nothing ? map(a -> begin @views Symbol(string(a[1])[3:end]) end, specs) : nothing
-    args_names_val = args_names !== nothing ? :(Type{ Val{ $(tuple(args_names...)) } }) : (:(Nothing))
-    args_types     = specs !== nothing ? map(a -> __apply_proxy_type(a[2], proxytype), specs) : nothing
-    args_types_val = args_types !== nothing ? :(Tuple{ $(args_types...) }) : (:(Nothing))
-    init_block     = args_names !== nothing ? map(i_name -> :($(Symbol(prefix, i_name[2])) = getdata($(specname)[$(i_name[1])])), enumerate(args_names)) : [ :nothing ]
-    
-    return args_names_val, args_types_val, init_block, where_Ts
 end
 
-function __extract_meta_macro_rule(meta::Expr)
-    @capture(meta, (meta => Meta_)) ||
-        error("Invalid rule macro call: meta specification should have a (meta => Type) signature")
-    return Meta
+function __extract_fn_args_macro_rule(inputs; specname, prefix, proxytype)
+    finputs = filter((i) -> startswith(string(first(i)), string(prefix)), inputs)
+
+    names  = map(first, finputs)
+    types  = map((i) -> __apply_proxy_type(last(i), proxytype), finputs)
+
+    @assert all((n) -> length(string(n)) > 2, names)  || error("Empty $(specname) name found in arguments")
+
+    init_block = map(enumerate(names)) do (index, iname)
+        return :($(iname) = getdata($(specname)[$(index)]))
+    end
+
+    out_names = length(names) === 0 ? :Nothing : :(Type{ Val{ $(tuple(names...)) } })
+    out_types = length(types) === 0 ? :Nothing : :(Tuple{ $(types...) })
+
+    return out_names, out_types, init_block
 end
 
 function __extract_interfaces_macro_rule(interfaces)

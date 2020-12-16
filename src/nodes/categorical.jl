@@ -1,4 +1,4 @@
-export make_node
+export make_node, score
 
 @node(
     formtype   => Categorical,
@@ -6,11 +6,4 @@ export make_node
     interfaces => [ out, p ]
 )
 
-@average_energy(
-    formtype  => Categorical,
-    marginals => (q_out::Categorical, q_p::Dirichlet),
-    meta      => Nothing,
-    begin
-        -sum(mean(q_out) .* logmean(q_p))
-    end
-)
+@average_energy Categorical (q_out::Categorical, q_p::Dirichlet) = -sum(mean(q_out) .* logmean(q_p))

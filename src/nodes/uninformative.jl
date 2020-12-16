@@ -1,4 +1,4 @@
-export make_node, Loose
+export Uninformative, make_node
 
 struct Uninformative end
 

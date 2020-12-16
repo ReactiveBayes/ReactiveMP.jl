@@ -1,4 +1,4 @@
-export NormalMixture, NormalMixtureNode
+export NormalMixture, NormalMixtureNode, score
 
 # Normal Mixture Functional Form
 struct NormalMixture{N} end
@@ -117,15 +117,10 @@ end
 
 # FreeEnergy related functions
 
-@average_energy(
-    formtype  => NormalMixture,
-    marginals => (q_out::Any, q_switch::Any, q_m::NTuple{N, Any}, q_p::NTuple{N, Any}) where N,
-    meta      => Nothing,
-    begin
-        z_bar = probvec(q_switch)
-        return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
-    end
-)
+@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, Any}, q_p::NTuple{N, Any}) where N = begin
+    z_bar = probvec(q_switch)
+    return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
+end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T, N }
     
