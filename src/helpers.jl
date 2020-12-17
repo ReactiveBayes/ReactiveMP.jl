@@ -108,11 +108,17 @@ Base.:+(a::Infinity, b::Infinity) = Infinity(degree(a) + degree(b))
 Base.:-(a::Infinity, b::Infinity) = Infinity(degree(a) - degree(b))
 Base.:+(a::Infinity)              = Infinity(+degree(a))
 Base.:-(a::Infinity)              = Infinity(-degree(a))
+
+Base.:*(::Infinity, ::Real)     = error("Infinity multiplication is disallowed")
+Base.:*(::Real, ::Infinity)     = error("Infinity multiplication is disallowed")
+Base.:*(::Infinity, ::Infinity) = error("Infinity multiplication is disallowed")
+Base.:/(::Infinity, ::Real)     = error("Infinity division is disallowed")
+Base.:/(::Real, ::Infinity)     = error("Infinity division is disallowed")
+Base.:/(::Infinity, ::Infinity) = error("Infinity division is disallowed")
+
 Base.zero(::Type{Infinity})       = Infinity(0)
 
-Base.show(io::IO, a::Infinity) = print(io, "$(degree(a))∞")
-
-@symmetrical Base.:*(a::Infinity, b::Int) = Infinity(degree(a) * b)
+Base.show(io::IO, a::Infinity) = print(io, "Infinity($(degree(a)))")
 
 struct InfCountingReal{ T <: Real }
     value :: T
@@ -125,51 +131,50 @@ InfCountingReal(::Type{T}, inf::Infinity) where { T <: Real } = InfCountingReal{
 value(a::InfCountingReal) = a.value
 infs(a::InfCountingReal)  = a.infs
 
-isfinite(a::InfCountingReal) = infs(a) === 0
-isinf(a::InfCountingReal)    = !(isfinite(a))
+Base.isfinite(a::InfCountingReal) = infs(a) === 0
+Base.isinf(a::InfCountingReal)    = !(isfinite(a))
 
-Base.eltype(::InfCountingReal{T}) where T = T
+Base.eltype(::Type{ <: InfCountingReal{T} }) where T = T
+Base.eltype(::InfCountingReal{T})            where T = T
 
-Base.:+(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(b, degree(a))
-Base.:-(a::Infinity, b::T) where { T <: Real } = InfCountingReal{T}(-b, degree(a))
+Base.:+(a::Infinity, b::Real) = InfCountingReal(b, degree(a))
+Base.:-(a::Infinity, b::Real) = InfCountingReal(-b, degree(a))
+Base.:+(b::Real, a::Infinity) = InfCountingReal(b, +degree(a))
+Base.:-(b::Real, a::Infinity) = InfCountingReal(b, -degree(a))
 
-Base.:+(b::T, a::Infinity) where { T <: Real } = InfCountingReal{T}(b, +degree(a))
-Base.:-(b::T, a::Infinity) where { T <: Real } = InfCountingReal{T}(b, -degree(a))
+Base.:+(a::InfCountingReal) = InfCountingReal(+value(a), +infs(a))
+Base.:-(a::InfCountingReal) = InfCountingReal(-value(a), -infs(a))
 
-Base.:+(a::InfCountingReal{T}) where T = InfCountingReal{T}(+value(a), +infs(a))
-Base.:-(a::InfCountingReal{T}) where T = InfCountingReal{T}(-value(a), -infs(a))
+Base.:+(a::InfCountingReal, b::Infinity) = InfCountingReal(value(a), infs(a) + degree(b))
+Base.:-(a::InfCountingReal, b::Infinity) = InfCountingReal(value(a), infs(a) - degree(b))
 
-Base.:+(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) + degree(b))
-Base.:-(a::InfCountingReal{T}, b::Infinity) where T = InfCountingReal{T}(value(a), infs(a) - degree(b))
+Base.:+(b::Infinity, a::InfCountingReal) = InfCountingReal(+value(a), degree(b) + infs(a))
+Base.:-(b::Infinity, a::InfCountingReal) = InfCountingReal(-value(a), degree(b) - infs(a))
 
-Base.:+(b::Infinity, a::InfCountingReal{T}) where T = InfCountingReal{T}(value(a), degree(b) + infs(a))
-Base.:-(b::Infinity, a::InfCountingReal{T}) where T = InfCountingReal{T}(value(a), degree(b) - infs(a))
+Base.:+(a::InfCountingReal, b::Real) = InfCountingReal(value(a) + b, infs(a))
+Base.:-(a::InfCountingReal, b::Real) = InfCountingReal(value(a) - b, infs(a))
+Base.:+(b::Real, a::InfCountingReal) = InfCountingReal(b + value(a), +infs(a))
+Base.:-(b::Real, a::InfCountingReal) = InfCountingReal(b - value(a), -infs(a))
 
-Base.:+(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) + b), infs(a))
-Base.:-(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) - b), infs(a))
-Base.:*(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) * b), infs(a))
-Base.:/(a::InfCountingReal{T}, b::Real) where T = InfCountingReal{T}(convert(T, value(a) / b), infs(a))
+Base.:*(::InfCountingReal, ::Real) = error("InfCountingReal multiplication is dissalowed")
+Base.:/(::InfCountingReal, ::Real) = error("InfCountingReal division is dissalowed")
+Base.:*(::Real, ::InfCountingReal) = error("InfCountingReal multiplication is dissalowed")
+Base.:/(::Real, ::InfCountingReal) = error("InfCountingReal division is dissalowed")
 
-Base.:+(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b + value(a)), +infs(a))
-Base.:-(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b - value(a)), -infs(a))
-Base.:*(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b * value(a)), infs(a))
-Base.:/(b::Real, a::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, b / value(a)), infs(a))
+Base.:+(a::InfCountingReal, b::InfCountingReal) = InfCountingReal(value(a) + value(b), infs(a) + infs(b))
+Base.:-(a::InfCountingReal, b::InfCountingReal) = InfCountingReal(value(a) - value(b), infs(a) - infs(b))
 
-Base.:+(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) + value(b)), infs(a) + infs(b))
-Base.:-(a::InfCountingReal{T}, b::InfCountingReal{T}) where T = InfCountingReal{T}(convert(T, value(a) - value(b)), infs(a) - infs(b))
+Base.convert(::Type{ InfCountingReal },    v::T)                  where { T <: Real }            = InfCountingReal(v)
+Base.convert(::Type{ InfCountingReal{T} }, v::T)                  where { T <: Real }            = InfCountingReal(v)
+Base.convert(::Type{ InfCountingReal{T} }, v::R)                  where { T <: Real, R <: Real } = InfCountingReal(convert(T, v))
+Base.convert(::Type{ InfCountingReal{T} }, inf::Infinity)         where { T <: Real }            = InfCountingReal(T, inf)
+Base.convert(::Type{ InfCountingReal{T} }, v::InfCountingReal{R}) where { T <: Real, R <: Real } = InfCountingReal{T}(convert(T, value(v)), infs(v))
 
-Base.convert(::Type{T}, a::InfCountingReal) where { T <: Real } = isfinite(a) ? convert(T, value(a)) : Inf
+Base.float(a::InfCountingReal) = isfinite(a) ? value(a) : Inf
 
-Base.convert(::Type{ InfCountingReal{T} }, v::T)          where T = InfCountingReal(v)
-Base.convert(::Type{ InfCountingReal{T} }, inf::Infinity) where T = InfCountingReal(T, inf)
-
-Base.convert(::Type{ InfCountingReal{T} }, v::InfCountingReal{R}) where { T, R } = InfCountingReal{T}(convert(T, value(v)), infs(v))
-
-Base.float(a::InfCountingReal) = convert(Float64, a)
 Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero(T))
 
-Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal{$(T)}($(value(a)), $(infs(a))∞)")
-
+Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal($(value(a)), $(infs(a))∞)")
 
 # Symbol helpers
 
