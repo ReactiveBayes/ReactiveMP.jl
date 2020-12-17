@@ -135,7 +135,9 @@ Base.isfinite(a::InfCountingReal) = infs(a) === 0
 Base.isinf(a::InfCountingReal)    = !(isfinite(a))
 
 Base.eltype(::Type{ <: InfCountingReal{T} }) where T = T
-Base.eltype(::InfCountingReal{T})            where T = T
+Base.eltype(::Type{ <: InfCountingReal })            = Real
+
+Base.eltype(::T) where { T <: InfCountingReal } = eltype(T)
 
 Base.:+(a::Infinity, b::Real) = InfCountingReal(b, degree(a))
 Base.:-(a::Infinity, b::Real) = InfCountingReal(-b, degree(a))

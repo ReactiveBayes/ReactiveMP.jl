@@ -8,16 +8,21 @@ struct DifferentialEntropy end
 
 struct BetheFreeEnergy end
 
-function score(::BetheFreeEnergy, model, scheduler)
+# Default version is differentiable
+# Specialized versions like score(Float64, ...) are not differentiable, but could be faster
+score(::BetheFreeEnergy, model, scheduler)                                = score(InfCountingReal, BetheFreeEnergy(), model, scheduler)
+score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: Real } = score(InfCountingReal{T}, BetheFreeEnergy(), model, scheduler)
 
-    node_bound_free_energies     = map((node) -> score(FactorBoundFreeEnergy(), node, scheduler), getnodes(model))
-    variable_bound_entropies     = map((v) -> score(VariableBoundEntropy(), v, scheduler), getrandom(model))
-    node_bound_free_energies_sum = collectLatest(InfCountingReal, InfCountingReal, node_bound_free_energies, reduce_with_sum)
-    variable_bound_entropies_sum = collectLatest(InfCountingReal, InfCountingReal, variable_bound_entropies, reduce_with_sum)
+function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: InfCountingReal }
+
+    node_bound_free_energies     = map((node) -> score(T, FactorBoundFreeEnergy(), node, scheduler), getnodes(model))
+    variable_bound_entropies     = map((v) -> score(T, VariableBoundEntropy(), v, scheduler), getrandom(model))
+    node_bound_free_energies_sum = collectLatest(T, T, node_bound_free_energies, reduce_with_sum)
+    variable_bound_entropies_sum = collectLatest(T, T, variable_bound_entropies, reduce_with_sum)
 
     diracs_entropies = Infinity(mapreduce(degree, +, values(getdata(model)), init = 0) + mapreduce(degree, +, values(getconstant(model)), init = 0))
 
-    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |> map(Real, d -> float(d[1] + d[2] - diracs_entropies))
+    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |> map(eltype(T), d -> float(d[1] + d[2] - diracs_entropies))
 end
 
 ## Average energy function helpers
