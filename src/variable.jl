@@ -37,12 +37,8 @@ end
 
 ## Helper functions
 
-as_variable(name::Symbol, x)                   = constvar(name, x)
-as_variable(name::Symbol, v::AbstractVariable) = v
-as_variable(name::Symbol, t::Tuple)            = tuple(map((d) -> as_variable(Symbol(name, d[1]), d[2]), enumerate(t))...)
-
-as_variable(model, name::Symbol, x)                   = constvar(model, name, x)
-as_variable(model, name::Symbol, v::AbstractVariable) = v
-as_variable(model, name::Symbol, t::Tuple)            = tuple(map((d) -> as_variable(model, Symbol(name, d[1]), d[2]), enumerate(t))...)
+as_variable(x)                   = constvar(gensym(:as_var), x)
+as_variable(v::AbstractVariable) = v
+as_variable(t::Tuple)            = map(as_variable, t)
 
 

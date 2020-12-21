@@ -21,6 +21,18 @@ constvar(name::Symbol, constval::Real)           = constvar(name, Dirac(constval
 constvar(name::Symbol, constval::AbstractVector) = constvar(name, Dirac(constval))
 constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, Dirac(constval))
 
+function constvar(name::Symbol, fn::Function, dims::Tuple)
+    return constvar(name, fn, dims...)
+end
+
+function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
+    vars = Array{ConstVariable}(undef, dims)
+    for index in CartesianIndices(axes(vars))
+        @inbounds vars[index] = constvar(Symbol(name, :_, Symbol(join(index.I, :_))), fn(convert(Tuple, index)))
+    end
+    return vars
+end
+
 degree(constvar::ConstVariable) = nconnected(constvar)
 name(constvar::ConstVariable)   = constvar.name
 

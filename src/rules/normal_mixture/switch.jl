@@ -13,3 +13,10 @@ end
     end
     return Categorical(softmax(U))
 end
+
+@rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::NTuple{N, MvNormalMeanCovariance}, q_p::NTuple{N, Wishart}) where { N } = begin
+    U = map(zip(q_m, q_p)) do (m, p)
+        return -score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map(as_marginal, (q_out, m, p)), nothing)
+    end
+    return Categorical(softmax(U))
+end

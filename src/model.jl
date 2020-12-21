@@ -51,15 +51,15 @@ struct Model{O}
     options  :: O
     nodes    :: Vector{AbstractFactorNode}
     random   :: Vector{RandomVariable}
-    constant :: Dict{Symbol, ConstVariable}
-    data     :: Dict{Symbol, DataVariable}
+    constant :: Vector{ConstVariable}
+    data     :: Vector{DataVariable}
 end
 
 Base.show(io::IO, model::Model) = print(io, "Model($(getoptions(model)))")
 
 Model() = Model(model_options())
 Model(options::NamedTuple) = Model(model_options(options))
-Model(options::O) where { O <: ModelOptions } = Model{O}(options, Vector{FactorNode}(), Vector{RandomVariable}(), Dict{Symbol, ConstVariable}(), Dict{Symbol, DataVariable}())
+Model(options::O) where { O <: ModelOptions } = Model{O}(options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}())
 
 getoptions(model::Model)  = model.options
 getnodes(model::Model)    = model.nodes
@@ -67,24 +67,16 @@ getrandom(model::Model)   = model.random
 getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
 
-# placeholder for future
-add!(model::Model, node::AbstractFactorNode) = begin push!(model.nodes, node); return node end
-add!(model::Model, random::RandomVariable)   = begin push!(model.random, random); return random end
-add!(model::Model, ::Nothing)                = nothing
-add!(model::Model, collection::Tuple)        = begin foreach((d) -> add!(model, d), collection); return collection end
-add!(model::Model, array::AbstractArray)     = begin foreach((d) -> add!(model, d), array); return array end
-
-function add!(model::Model, constant::ConstVariable)
-    @assert !haskey(getconstant(model), name(constant)) "ConstVariable with name '$(name(constant))' has already been added to a model"
-    model.constant[ name(constant) ] = constant
-    return constant
-end
-
-function add!(model::Model, data::DataVariable)
-    @assert !haskey(getdata(model), name(data)) "DataVariable with name '$(name(data))' has already been added to a model"
-    model.data[ name(data) ] = data
-    return data
-end
+add!(model::Model, node::AbstractFactorNode)  = begin push!(model.nodes, node); return node end
+add!(model::Model, randomvar::RandomVariable) = begin push!(model.random, randomvar); return randomvar end
+add!(model::Model, constvar::ConstVariable)   = begin push!(model.constant, constvar); return constvar end
+add!(model::Model, datavar::DataVariable)     = begin push!(model.data, datavar); return datavar end
+add!(model::Model, ::Nothing)                 = nothing
+add!(model::Model, collection::Tuple)         = begin foreach((d) -> add!(model, d), collection); return collection end
+add!(model::Model, array::AbstractArray)      = begin foreach((d) -> add!(model, d), array); return array end
+add!(model::Model, array::AbstractArray{ <: RandomVariable }) = begin append!(model.random, array); return array end
+add!(model::Model, array::AbstractArray{ <: ConstVariable })  = begin append!(model.constant, array); return array end
+add!(model::Model, array::AbstractArray{ <: DataVariable })   = begin append!(model.data, array); return array end
 
 function activate!(model::Model) 
     filter!(getrandom(model)) do randomvar
@@ -92,38 +84,42 @@ function activate!(model::Model)
         return degree(randomvar) >= 2
     end
 
-    foreach(values(getdata(model))) do datavar
+    foreach(getdata(model)) do datavar
         if !isconnected(datavar)
             @warn "Unused data variable has been found: '$(name(datavar))'. Ignore if '$(name(datavar))' has been used in deterministic nonlinear tranformation."
         end
     end
 
-    filter!(c -> isconnected(last(c)), getconstant(model))
+    filter!(c -> isconnected(c), getconstant(model))
     foreach(n -> activate!(model, n), getnodes(model))
 end
 
 # Utility functions
 
-randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
+randomvar(model::Model, args...) = add!(model, randomvar(args...))
+constvar(model::Model, args...)  = add!(model, constvar(args...))
+datavar(model::Model, args...)   = add!(model, datavar(args...))
+
+as_variable(model::Model, x)                   = add!(model, as_variable(x))
+as_variable(model::Model, v::AbstractVariable) = v
+as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d), t)
 
 function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
     return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
 end
 
-function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; factorisation = default_factorisation(getoptions(model)), kwargs...)
-    node, var = if haskey(getconstant(model), getname(autovar))
-        nothing, getconstant(model)[ getname(autovar) ]
-    else
-        add!(model, make_node(fform, autovar, args...; factorisation = factorisation, kwargs...))
-    end
-end
+# TODO: Feature rejected due to a bug with invalid constant reusing. Should be revisited later.
+# function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; factorisation = default_factorisation(getoptions(model)), kwargs...)
+#     node, var = if haskey(getconstant(model), getname(autovar))
+#         nothing, getconstant(model)[ getname(autovar) ]
+#     else
+#         add!(model, make_node(fform, autovar, args...; factorisation = factorisation, kwargs...))
+#     end
+# end
 
-constvar(model::Model, name::Symbol, constval)  = get!(() -> constvar(name, constval), getconstant(model), name)
-datavar(model::Model, name::Symbol, type::Type) = get!(() -> datavar(name, type), getdata(model), name)
-
-function datavar(model::Model, nameprefix::Symbol, type::Type, dims...) 
-    datavars = datavar(nameprefix, type, dims...)
-    dictvars = Dict(zip(map(name, datavars), datavars))
-    mergewith!((l, r) -> error("DataVariable with name $(name(l)) has already been added to the model"), getdata(model), dictvars)
-    return datavars
-end
+# function datavar(model::Model, nameprefix::Symbol, type::Type, dims...) 
+#     datavars = datavar(nameprefix, type, dims...)
+#     dictvars = Dict(zip(map(name, datavars), datavars))
+#     mergewith!((l, r) -> error("DataVariable with name $(name(l)) has already been added to the model"), getdata(model), dictvars)
+#     return datavars
+# end

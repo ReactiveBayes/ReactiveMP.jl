@@ -122,7 +122,7 @@ end
     return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T, N }
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
     
     stream = combineLatest((
         getmarginal(connectedvar(node.out)),
@@ -140,11 +140,11 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMix
             means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, d[3])
             precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, d[4])
 
-            return convert(InfCountingReal{T}, average_energy - (out_entropy + switch_entropy + means_entropies + precs_entropies))
+            return convert(T, average_energy - (out_entropy + switch_entropy + means_entropies + precs_entropies))
         end
     end
 
-    return stream |> schedule_on(scheduler) |> map(InfCountingReal{T}, mapping)
+    return stream |> schedule_on(scheduler) |> map(T, mapping)
 end
 
 as_node_functional_form(::Type{ <: NormalMixture }) = ValidNodeFunctionalForm()
