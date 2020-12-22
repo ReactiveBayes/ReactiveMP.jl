@@ -40,8 +40,8 @@ apply(portal::ScheduleOnPortal, factornode, tag, stream) = stream |> schedule_on
 
 struct LoggerPortal <: AbstractPortal end
 
-apply(::LoggerPortal, factornode, ::Type{ <: Val{ T } }, stream) where T = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T)]: $v"))
-apply(::LoggerPortal, factornode, ::Tuple{ Val{ T }, Val{ K } }, stream) where { T, K } = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T):$(K)]: $v"))
+apply(::LoggerPortal, factornode, tag::Type{ <: Val{ T } },    stream) where { T } = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T)]: $v"))
+apply(::LoggerPortal, factornode, tag::Tuple{ Val{ T }, Int }, stream) where { T } = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T):$(tag[2])]: $v"))
 
 ## Initialize with vague portal
 

@@ -69,9 +69,9 @@ end
 
 function __extract_on_args_macro_rule(on)
     if @capture(on, :name_)
-        return :(Type{ Val{ $(QuoteNode(name)) } }), []
-    elseif @capture(on, (:name_, index_type_))
-        return :(Tuple{ Val{$(QuoteNode(name))}, Val{$(index_type)} }), [ index_type ]
+        return :(Type{ Val{ $(QuoteNode(name)) } }), nothing
+    elseif @capture(on, (:name_, index_))
+        return :(Tuple{ Val{$(QuoteNode(name))}, Int}), index
     else
         error("Error in macro. on specification is incorrect")
     end

@@ -18,7 +18,9 @@ macro rule(fform, lambda)
     @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
     fformtype = __extract_fformtype(fformtype)
-    on_type, on_where_Ts = __extract_on_args_macro_rule(on)
+    on_type, on_index = __extract_on_args_macro_rule(on)
+
+    on_index_init = on_index === nothing ? :(nothing) : :($on_index = on[2])
 
     @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
     @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
@@ -46,7 +48,8 @@ macro rule(fform, lambda)
             marginals       :: $(q_types),
             meta            :: $(metatype),
             __node
-        ) where { $(whereargs...), $(on_where_Ts...) }
+        ) where { $(whereargs...) }
+            $(on_index_init)
             $(m_init_block...)
             $(q_init_block...)
             $(body)
@@ -64,7 +67,9 @@ macro marginalrule(fform, lambda)
     @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
 
     fformtype = __extract_fformtype(fformtype)
-    on_type, on_where_Ts = __extract_on_args_macro_rule(on)
+    on_type, on_index = __extract_on_args_macro_rule(on)
+
+    on_index_init = on_index === nothing ? :(nothing) : :($on_index = on[2])
 
     @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
     @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
@@ -91,7 +96,8 @@ macro marginalrule(fform, lambda)
             marginals       :: $(q_types),
             meta            :: $(metatype),
             __node
-        ) where { $(whereargs...), $(on_where_Ts...) }
+        ) where { $(whereargs...) }
+            $(on_index_init)
             $(m_init_block...)
             $(q_init_block...)
             $(body)
