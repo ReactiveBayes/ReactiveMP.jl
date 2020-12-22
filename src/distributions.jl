@@ -71,12 +71,6 @@ prod(::ProdPreserveParametrisation, ::Missing, ::Missing) = missing
 """
 function vague end
 
-function logmean end
-
-logmean(something) = log(mean(something))
-
-function inversemean end
-
-inversemean(something) = inv(mean(something))
-
-function mirroredlogmean end
+inversemean(something)     = error("Inverse expectation is not defined for $(something)")
+logmean(something)         = error("Logarithmic expectation is not defined for $(something)")
+mirroredlogmean(something) = error("Mirrored Logarithmic expectation is not defined for $(something)")

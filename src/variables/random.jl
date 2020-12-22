@@ -37,7 +37,10 @@ messageout(randomvar::RandomVariable, index::Int) = collectLatest(Message, Messa
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.props.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
-_makemarginal(randomvar::RandomVariable)                               = collectLatest(Message, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
+_makemarginal(randomvar::RandomVariable)                               = begin 
+    # combineLatest(tuple(randomvar.inputmsgs...), PushEach()) |> discontinue() |> map(Marginal, __reduce_to_marginal)
+    collectLatest(Message, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
+end
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === length(randomvar.inputmsgs) + 1

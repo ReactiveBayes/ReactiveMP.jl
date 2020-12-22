@@ -11,5 +11,5 @@ export make_node
 )
 
 @average_energy Gamma (q_out::Any, q_α::Any, q_θ::Any) = begin
-    return labsgamma(mean(q_α)) + mean(q_α) * log(mean(q_θ)) - (mean(q_α) - 1.0) * log(mean(q_out)) + inv(mean(q_θ)) * mean(q_out)
+    return labsgamma(mean(q_α)) + mean(q_α) * logmean(q_θ) - (mean(q_α) - 1.0) * logmean(q_out) + inv(mean(q_θ)) * mean(q_out)
 end

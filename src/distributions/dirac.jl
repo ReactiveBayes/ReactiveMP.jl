@@ -9,6 +9,9 @@ end
 
 getpointmass(dist::Dirac) = dist.point
 
+logmean(dist::Dirac)     = log(mean(dist))
+inversemean(dist::Dirac) = cholinv(mean(dist))
+
 Base.getindex(dist::Dirac, index) = Base.getindex(getpointmass(dist), index)
 
 Distributions.pdf(::Dirac)     = throw("pdf(::Dirac) is not implemented")
