@@ -1,61 +1,16 @@
-export AbstractPortal
-export EmptyPortal, DiscontinuePortal, AsyncPortal, ScheduleOnPortal, LoggerPortal, InitVaguePortal, MapPortal
-export DefaultOutboundMessagePortal
+export AbstractPortal, EmptyPortal, CompositePortal, apply
 
 import Base: +
-
-DefaultOutboundMessagePortal() = EmptyPortal()
 
 ## Abstract Stream Portal
 
 abstract type AbstractPortal end
 
-## Empty portal
+## Default portal
 
 struct EmptyPortal <: AbstractPortal end
 
 apply(::EmptyPortal, factornode, tag, stream) = stream
-
-## Discontinue portal
-
-struct DiscontinuePortal <: AbstractPortal end
-
-apply(::DiscontinuePortal, factornode, tag, stream) = stream |> discontinue()
-
-## Async portal
-
-struct AsyncPortal <: AbstractPortal end
-
-apply(::AsyncPortal, factornode, tag, stream) = stream |> async()
-
-## ScheduleOn portal
-
-struct ScheduleOnPortal{S} <: AbstractPortal
-    scheduler :: S
-end
-
-apply(portal::ScheduleOnPortal, factornode, tag, stream) = stream |> schedule_on(portal.scheduler)
-
-## Logger portal
-
-struct LoggerPortal <: AbstractPortal end
-
-apply(::LoggerPortal, factornode, tag::Type{ <: Val{ T } },    stream) where { T } = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T)]: $v"))
-apply(::LoggerPortal, factornode, tag::Tuple{ Val{ T }, Int }, stream) where { T } = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T):$(tag[2])]: $v"))
-
-## Initialize with vague portal
-
-struct InitVaguePortal <: AbstractPortal end
-
-apply(::InitVaguePortal, factornode, tag, stream) = stream |> start_with(as_message(vague(conjugate_type(functionalform(factornode), tag))))
-
-## Map portal
-
-struct MapPortal{F} <: AbstractPortal 
-    mappingFn :: F
-end
-
-apply(portal::MapPortal, factornode, tag, stream) = stream |> map((v) -> portal.mappingFn(factornode, tag, v))
 
 ## Composite portal
 

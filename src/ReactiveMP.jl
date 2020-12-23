@@ -5,6 +5,8 @@ using Distributions
 include("macrotools.jl")
 include("helpers.jl")
 include("math.jl")
+
+include("variable.jl")
 include("portal.jl")
 
 include("algebra/helpers.jl")
@@ -35,10 +37,15 @@ include("marginal.jl")
 as_marginal(message::Message)  = Marginal(getdata(message))
 as_message(marginal::Marginal) = Message(getdata(marginal))
 
-include("variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
+
+include("portals/async.jl")
+include("portals/discontinue.jl")
+include("portals/logger.jl")
+include("portals/scheduled.jl")
+include("portals/vague.jl")
 
 include("rule.jl")
 

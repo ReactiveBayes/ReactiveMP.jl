@@ -216,6 +216,15 @@ See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](
 """
 connectedvarindex(interface::NodeInterface) = interface.props.connected_index
 
+"""
+    inbound_portal(interface)
+
+Returns an instance of inbound portal of connected variable for the interface
+
+    See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref)
+"""
+inbound_portal(interface::NodeInterface) = inbound_portal(connectedvar(interface))
+
 ## IndexedNodeInterface
 ## Used for dynamic number of inputs
 struct IndexedNodeInterface
@@ -235,6 +244,7 @@ messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)
 connectvariable!(interface::IndexedNodeInterface, variable, index) = connectvariable!(interface.interface, variable, index)
 connectedvar(interface::IndexedNodeInterface)                      = connectedvar(interface.interface)
 connectedvarindex(interface::IndexedNodeInterface)                 = connectedvarindex(interface.interface)
+inbound_portal(interface::IndexedNodeInterface)                    = inbound_portal(interface.interface)
 
 ## FactorNodeLocalMarginals
 
@@ -433,6 +443,7 @@ function activate!(model, factornode::AbstractFactorNode)
         meta        = metadata(factornode)
         
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushEach())
+        vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
             (d) -> cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))

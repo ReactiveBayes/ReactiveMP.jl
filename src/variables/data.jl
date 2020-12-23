@@ -53,6 +53,8 @@ end
 
 finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
+inbound_portal(::DataVariable) = EmptyPortal()
+
 _getmarginal(datavar::DataVariable)                                = datavar.messageout |> map(Marginal, as_marginal)
 _setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = error("It is not possible to set a marginal stream for datavar")
 _makemarginal(datavar::DataVariable)                               = error("It is not possible to make marginal stream for datavar")

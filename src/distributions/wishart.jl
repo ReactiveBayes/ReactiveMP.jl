@@ -3,7 +3,7 @@ export Wishart
 import Distributions: Wishart
 import Base: ndims
 
-vague(::Type{ <: Wishart }, dims::Int) = Wishart(dims, Matrix(Diagonal(1.0e-20 .* ones(dims))))
+vague(::Type{ <: Wishart }, dims::Int) = Wishart(dims, Matrix(Diagonal(huge .* ones(dims))))
 
 Base.ndims(dist::Wishart) = size(dist)[1]
 

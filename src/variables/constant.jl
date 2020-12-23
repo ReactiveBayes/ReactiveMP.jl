@@ -49,6 +49,8 @@ getlastindex(::ConstVariable) = 1
 messageout(constvar::ConstVariable, ::Int) = constvar.messageout
 messagein(constvar::ConstVariable, ::Int)  = error("It is not possible to get a reference for inbound message for constvar")
 
+inbound_portal(::ConstVariable) = EmptyPortal()
+
 _getmarginal(constvar::ConstVariable) = of(as_marginal(constvar.constant))
 
 _setmarginal!(::ConstVariable, ::MarginalObservable) = error("It is not possible to set a marginal stream for constvar")

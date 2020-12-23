@@ -21,7 +21,7 @@ end
 model_options() = model_options(NamedTuple{()}(()))
 
 function model_options(options::NamedTuple)
-    outbound_message_portal = DefaultOutboundMessagePortal()
+    outbound_message_portal = EmptyPortal()
     default_factorisation   = FullFactorisation()
 
     if haskey(options, :outbound_message_portal)
