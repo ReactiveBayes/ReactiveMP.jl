@@ -19,3 +19,5 @@ function prod(::ProdPreserveParametrisation, left::NormalMeanVariance{T}, right:
     mean, var = approximate_meancov(ghcubature(5), (z) -> pdf(right, z), left)
     return NormalMeanVariance(mean, var)
 end
+
+
