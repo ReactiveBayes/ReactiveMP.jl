@@ -443,7 +443,7 @@ function activate!(model, factornode::AbstractFactorNode)
         vconstraint = Marginalisation()
         meta        = metadata(factornode)
         
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushEach())
+        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
         vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
@@ -498,7 +498,8 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         meta        = metadata(factornode)
 
         mapping = let fform = fform, vtag = vtag, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, d[2], meta, factornode))
+            #TODO
+            (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, getlast(d[2]), meta, factornode))
         end
 
         # TODO: discontinue operater is needed for loopy belief propagation
