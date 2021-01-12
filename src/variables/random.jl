@@ -9,7 +9,7 @@ end
 
 struct RandomVariable <: AbstractVariable
     name      :: Symbol
-    inputmsgs :: Vector{LazyObservable{Message}}
+    inputmsgs :: Vector{LazyObservable{DefferedMessage}}
     props     :: RandomVariableProps
 end
 
@@ -41,7 +41,7 @@ inbound_portal!(randomvar::RandomVariable, portal) = randomvar.props.portal = po
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.props.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
-_makemarginal(randomvar::RandomVariable)                               = collectLatest(Message, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
+_makemarginal(randomvar::RandomVariable)                               = collectLatest(DefferedMessage, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === length(randomvar.inputmsgs) + 1

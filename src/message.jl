@@ -15,11 +15,32 @@ getdata(messages::NTuple{ N, <: Message }) where N = map(getdata, messages)
 
 Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ")"))
 
+mutable struct DefferedMessageProps
+    cache :: Any
+end
+
+struct DefferedMessage{R, F}
+    dependencies :: R
+    mappingFn    :: F
+    props        :: DefferedMessageProps
+end
+
+DefferedMessage(deps::R, mappingFn::F) where { R, F } = DefferedMessage(deps, mappingFn, DefferedMessageProps(nothing))
+
+function getdata(message::DefferedMessage)
+    if message.props.cache !== nothing
+        return message.props.cache
+    end
+    message.props.cache = message.mappingFn(message.dependencies)
+    return message.props.cache
+end
+
 ## Message
 
 multiply_messages(left::Message, right::Message) = as_message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)))
 
-Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
+Base.:*(m1::Message, m2::Message)         = multiply_messages(m1, m2)
+Base.:*(m1::Message, m2::DefferedMessage) = multiply_messages(m1, as_message(getdata(m2)))
 
 Distributions.mean(message::Message)      = Distributions.mean(getdata(message))
 Distributions.median(message::Message)    = Distributions.median(getdata(message))

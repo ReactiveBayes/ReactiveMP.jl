@@ -139,11 +139,11 @@ See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@re
 """
 struct NodeInterface
     name  :: Symbol
-    m_out :: LazyObservable{Message}
+    m_out :: LazyObservable{DefferedMessage}
     m_in  :: LazyObservable{Message}
     props :: NodeInterfaceProps
 
-    NodeInterface(name::Symbol) = new(name, lazy(Message), lazy(Message), NodeInterfaceProps())
+    NodeInterface(name::Symbol) = new(name, lazy(DefferedMessage), lazy(Message), NodeInterfaceProps())
 end
 
 Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
@@ -424,7 +424,8 @@ function get_marginals_observable(factornode, marginal_dependencies)
 
     if length(marginal_dependencies) !== 0 
         marginal_names       = Val{ map(name, marginal_dependencies) }
-        marginals_observable = combineLatest(map(marginal -> getmarginal!(factornode, marginal), marginal_dependencies), PushNew())
+        marginals_streams    = map(marginal -> getmarginal!(factornode, marginal), marginal_dependencies)
+        marginals_observable = combineLatest(marginals_streams, PushNew()) |> map_to(marginals_streams)
     end
 
     return marginal_names, marginals_observable
@@ -446,10 +447,11 @@ function activate!(model, factornode::AbstractFactorNode)
         vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (d) -> cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
+            # (d) -> cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
+            (d) -> rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, getlast.(d[2]), meta, factornode)
         end
 
-        vmessageout = vmessageout |> switch_map(Message, mapping)
+        vmessageout = vmessageout |> switch_map(DefferedMessage, (deps) -> of(DefferedMessage(deps, mapping)))
         vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
         vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
 
