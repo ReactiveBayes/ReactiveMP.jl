@@ -2,8 +2,9 @@ export datavar, isconnected
 
 mutable struct DataVariableProps
     nconnected :: Int
+    marginal   :: Union{Nothing, MarginalObservable}
 
-    DataVariableProps() = new(0)
+    DataVariableProps() = new(0, nothing)
 end
 
 struct DataVariable{D, S} <: AbstractVariable
@@ -55,9 +56,9 @@ finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
 inbound_portal(::DataVariable) = EmptyPortal()
 
-_getmarginal(datavar::DataVariable)                                = datavar.messageout |> map(Marginal, as_marginal)
-_setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = error("It is not possible to set a marginal stream for datavar")
-_makemarginal(datavar::DataVariable)                               = error("It is not possible to make marginal stream for datavar")
+_getmarginal(datavar::DataVariable)                                = datavar.props.marginal
+_setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.props.marginal = marginal # error("It is not possible to set a marginal stream for datavar")
+_makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, as_marginal) # error("It is not possible to make marginal stream for datavar")
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.props.nconnected += 1

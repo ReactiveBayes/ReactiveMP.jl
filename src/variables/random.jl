@@ -34,7 +34,7 @@ degree(randomvar::RandomVariable) = length(randomvar.inputmsgs)
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-messageout(randomvar::RandomVariable, index::Int) = collectLatest(Message, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
+messageout(randomvar::RandomVariable, index::Int) = collectLatest(DefferedMessage, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
 
 inbound_portal(randomvar::RandomVariable)          = randomvar.props.portal
 inbound_portal!(randomvar::RandomVariable, portal) = randomvar.props.portal = portal

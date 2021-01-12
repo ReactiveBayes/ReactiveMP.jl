@@ -73,6 +73,10 @@ function getlast(observable::MarginalObservable)
     return Rocket.getrecent(observable.subject)
 end
 
+function getlast(observables::Tuple) where N
+    return getlast.(observables)
+end
+
 function Rocket.on_subscribe!(observable::MarginalObservable, actor)
     return subscribe!(observable.stream, actor)
 end

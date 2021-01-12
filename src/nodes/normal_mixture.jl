@@ -90,7 +90,11 @@ function get_marginals_observable(
         getmarginal(connectedvar(varinterface)),
         combineLatest(map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces), PushNew()),
         combineLatest(map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces), PushNew())
-    ), PushEach()) |> discontinue()
+    ), PushNew()) |> map_to((
+        getmarginal(connectedvar(varinterface)),
+        map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces),
+        map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces)
+    ))
 
     return marginal_names, marginals_observable
 end
@@ -105,12 +109,18 @@ function get_marginals_observable(
     precsinterfaces = marginal_dependencies[4]
 
     marginal_names = Val{ (name(outinterface), name(switchinterface), name(meansinterfaces[1]), name(precsinterfaces[1])) }
+
     marginals_observable = combineLatest((
         getmarginal(connectedvar(outinterface)),
         getmarginal(connectedvar(switchinterface)),
         combineLatest(map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces), PushNew()),
         combineLatest(map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces), PushNew())
-    ), PushEach()) |> discontinue()
+    ), PushNew()) |> map_to((
+        getmarginal(connectedvar(outinterface)),
+        getmarginal(connectedvar(switchinterface)),
+        map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces),
+        map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces)
+    ))
 
     return marginal_names, marginals_observable
 end

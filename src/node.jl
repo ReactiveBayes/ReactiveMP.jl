@@ -448,10 +448,10 @@ function activate!(model, factornode::AbstractFactorNode)
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
             # (d) -> cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
-            (d) -> rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, getlast.(d[2]), meta, factornode)
+            (d) -> rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, getlast(d[2]), meta, factornode)
         end
 
-        vmessageout = vmessageout |> switch_map(DefferedMessage, (deps) -> of(DefferedMessage(deps, mapping)))
+        vmessageout = vmessageout |> map(DefferedMessage, (deps) -> DefferedMessage(deps, mapping))
         vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
         vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
 
