@@ -139,11 +139,11 @@ See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@re
 """
 struct NodeInterface
     name  :: Symbol
-    m_out :: LazyObservable{DefferedMessage}
-    m_in  :: LazyObservable{Message}
+    m_out :: LazyObservable{AbstractMessage}
+    m_in  :: LazyObservable{AbstractMessage}
     props :: NodeInterfaceProps
 
-    NodeInterface(name::Symbol) = new(name, lazy(DefferedMessage), lazy(Message), NodeInterfaceProps())
+    NodeInterface(name::Symbol) = new(name, lazy(AbstractMessage), lazy(AbstractMessage), NodeInterfaceProps())
 end
 
 Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
@@ -431,6 +431,14 @@ function get_marginals_observable(factornode, marginal_dependencies)
     return marginal_names, marginals_observable
 end
 
+
+# Variational Message Passing
+apply_mapping(msgs_observable, marginals_observable, mapping) = (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], mapping)
+
+# Fallback for Belief Propagation
+apply_mapping(msgs_observable, marginals_observable::SingleObservable{Nothing}, mapping) = mapping
+
+
 function activate!(model, factornode::AbstractFactorNode)
     for (iindex, interface) in enumerate(interfaces(factornode))
         message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
@@ -447,11 +455,12 @@ function activate!(model, factornode::AbstractFactorNode)
         vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            # (d) -> cast_to_message_subscribable(rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, d[2], meta, factornode))
-            (d) -> rule(fform, vtag, vconstraint, msgs_names, d[1], marginal_names, getlast(d[2]), meta, factornode)
+            (dependencies) -> as_message(rule(fform, vtag, vconstraint, msgs_names, dependencies[1], marginal_names, dependencies[2], meta, factornode))
         end
 
-        vmessageout = vmessageout |> map(DefferedMessage, (deps) -> DefferedMessage(deps, mapping))
+        mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
+
+        vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
         vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
 
@@ -498,11 +507,10 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         meta        = metadata(factornode)
 
         mapping = let fform = fform, vtag = vtag, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            #TODO
-            (d) -> as_marginal(marginalrule(fform, vtag, msgs_names, d[1], marginal_names, getlast(d[2]), meta, factornode))
+            (dependencies) -> as_marginal(marginalrule(fform, vtag, msgs_names, dependencies[1], marginal_names, getrecent(dependencies[2]), meta, factornode))
         end
 
-        # TODO: discontinue operater is needed for loopy belief propagation
+        # TODO: discontinue operater is needed for loopy belief propagation? Check
         marginalout = combineLatest((msgs_observable, marginals_observable), PushEach()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here

@@ -9,12 +9,12 @@ end
 
 struct RandomVariable <: AbstractVariable
     name      :: Symbol
-    inputmsgs :: Vector{LazyObservable{DefferedMessage}}
+    inputmsgs :: Vector{LazyObservable{AbstractMessage}}
     props     :: RandomVariableProps
 end
 
 function randomvar(name::Symbol) 
-    return RandomVariable(name, Vector{LazyObservable{Message}}(), RandomVariableProps())
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), RandomVariableProps())
 end
 
 function randomvar(name::Symbol, dims::Tuple)
@@ -34,14 +34,14 @@ degree(randomvar::RandomVariable) = length(randomvar.inputmsgs)
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-messageout(randomvar::RandomVariable, index::Int) = collectLatest(DefferedMessage, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
+messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
 
 inbound_portal(randomvar::RandomVariable)          = randomvar.props.portal
 inbound_portal!(randomvar::RandomVariable, portal) = randomvar.props.portal = portal
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.props.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
-_makemarginal(randomvar::RandomVariable)                               = collectLatest(DefferedMessage, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
+_makemarginal(randomvar::RandomVariable)                               = collectLatest(AbstractMessage, Marginal, randomvar.inputmsgs, __reduce_to_marginal)
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === length(randomvar.inputmsgs) + 1

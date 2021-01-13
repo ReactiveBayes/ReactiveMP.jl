@@ -69,13 +69,9 @@ end
 
 MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
 
-function getlast(observable::MarginalObservable)
-    return Rocket.getrecent(observable.subject)
-end
-
-function getlast(observables::Tuple) where N
-    return getlast.(observables)
-end
+getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
+getrecent(observables::Tuple)             = getrecent.(observables)                       
+getrecent(::Nothing)                      = nothing
 
 function Rocket.on_subscribe!(observable::MarginalObservable, actor)
     return subscribe!(observable.stream, actor)
