@@ -193,3 +193,7 @@ end
 fields(::NamedTuple{ F }) where F  = F
 hasfield(field::Symbol, ntuple::NamedTuple) = field ∈ fields(ntuple)
 
+# Rocket.jl extensions
+
+combineSourceUpdates(sources::Tuple, strategy) = combineLatest(sources, strategy) |> map_to(sources)
+

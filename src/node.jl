@@ -425,7 +425,7 @@ function get_marginals_observable(factornode, marginal_dependencies)
     if length(marginal_dependencies) !== 0 
         marginal_names       = Val{ map(name, marginal_dependencies) }
         marginals_streams    = map(marginal -> getmarginal!(factornode, marginal), marginal_dependencies)
-        marginals_observable = combineLatest(marginals_streams, PushNew()) |> map_to(marginals_streams)
+        marginals_observable = combineSourceUpdates(marginals_streams, PushNew())
     end
 
     return marginal_names, marginals_observable
