@@ -1,10 +1,10 @@
 export marginalrule
 
-@marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::MvNormalMeanCovariance, m_μ::Dirac, m_Σ::Dirac) = begin
+@marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::MvNormalMeanCovariance, m_μ::PointMass, m_Σ::PointMass) = begin
     return (out = prod(ProdPreserveParametrisation(), MvNormalMeanCovariance(mean(m_μ), mean(m_Σ)), m_out), μ = m_μ, Σ = m_Σ)
 end   
 
-@marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::Dirac, m_μ::MvNormalMeanCovariance, m_Σ::Dirac) = begin
+@marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::PointMass, m_μ::MvNormalMeanCovariance, m_Σ::PointMass) = begin
     return (out = m_out, μ = prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanCovariance(mean(m_μ), mean(m_Σ))), Σ = m_Σ)
 end
 
@@ -26,6 +26,6 @@ end
     return MvNormalMeanCovariance(μ, Σ)
 end
 
-@marginalrule MvNormalMeanCovariance(:out_μ) (m_out::Dirac, m_μ::MvNormalMeanCovariance, q_Σ::Any) = begin
+@marginalrule MvNormalMeanCovariance(:out_μ) (m_out::PointMass, m_μ::MvNormalMeanCovariance, q_Σ::Any) = begin
     return (out = m_out, μ = prod(ProdPreserveParametrisation(), MvNormalMeanCovariance(mean(m_out), mean(q_Σ)), m_μ))
 end

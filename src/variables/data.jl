@@ -41,9 +41,9 @@ messageout(datavar::DataVariable, ::Int) = datavar.messageout
 messagein(datavar::DataVariable, ::Int)  = error("It is not possible to get a reference for inbound message for datavar")
 
 update!(datavar::DataVariable, data)                 = next!(messageout(datavar, 1), as_message(data))
-update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar, 1), as_message(Dirac(data)))
-update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), as_message(Dirac(data)))
-update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), as_message(Dirac(data)))
+update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar, 1), as_message(PointMass(data)))
+update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), as_message(PointMass(data)))
+update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), as_message(PointMass(data)))
 
 function update!(datavars::AbstractVector{ <: DataVariable }, data::AbstractVector)
     @assert size(datavars) === size(data) "Invalid update! call: size of datavar array and data should match"

@@ -8,7 +8,7 @@ struct GCV end
     interfaces => [ y, x, z, κ, ω ]
 )
 
-@average_energy GCV (q_y_x::MvNormalMeanCovariance, q_z::NormalMeanVariance, q_κ::Dirac, q_ω::Dirac) = begin
+@average_energy GCV (q_y_x::MvNormalMeanCovariance, q_z::NormalMeanVariance, q_κ::PointMass, q_ω::PointMass) = begin
     m_yx, cov_yx = mean(q_y_x), cov(q_y_x)
     m_z, var_z = mean(q_z), var(q_z)
     m_κ, var_κ = mean(q_κ), var(q_κ)

@@ -1,4 +1,5 @@
-export NormalMixture, NormalMixtureNode, score
+export NormalMixture, NormalMixtureNode
+export GaussianMixture, GaussianMixtureNode
 
 # Normal Mixture Functional Form
 struct NormalMixture{N} end
@@ -40,6 +41,9 @@ struct NormalMixtureNode{N, F <: NormalMixtureNodeFactorisationSupport, M, P} <:
     meta   :: M
     portal :: P
 end
+
+const GaussianMixture     = NormalMixture
+const GaussianMixtureNode = NormalMixtureNode
 
 functionalform(factornode::NormalMixtureNode{N}) where N = NormalMixture{N}
 sdtype(factornode::NormalMixtureNode)                    = Stochastic()           
@@ -86,11 +90,15 @@ function get_marginals_observable(
     precsinterfaces = marginal_dependencies[3]
 
     marginal_names = Val{ (name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1])) }
-    marginals_observable = combineSourceUpdates((
+    marginals_observable = combineLatest((
         getmarginal(connectedvar(varinterface)),
         combineLatest(map((prec) -> getmarginal(connectedvar(prec)), reverse(precsinterfaces)), PushNew()),
         combineLatest(map((mean) -> getmarginal(connectedvar(mean)), reverse(meansinterfaces)), PushNew()),
-    ), PushNew())
+    ), PushNew()) |> map_to((
+        getmarginal(connectedvar(varinterface)),
+        map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces),
+        map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces)
+    ))
 
     return marginal_names, marginals_observable
 end
@@ -106,12 +114,17 @@ function get_marginals_observable(
 
     marginal_names = Val{ (name(outinterface), name(switchinterface), name(meansinterfaces[1]), name(precsinterfaces[1])) }
 
-    marginals_observable = combineSourceUpdates((
+    marginals_observable = combineLatest((
         getmarginal(connectedvar(outinterface)),
         getmarginal(connectedvar(switchinterface)),
         combineLatest(map((prec) -> getmarginal(connectedvar(prec)), reverse(precsinterfaces)), PushNew()),
         combineLatest(map((mean) -> getmarginal(connectedvar(mean)), reverse(meansinterfaces)), PushNew()),
-    ), PushNew())
+    ), PushNew()) |> map_to((
+        getmarginal(connectedvar(outinterface)),
+        getmarginal(connectedvar(switchinterface)),
+        map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces),
+        map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces)
+    ))
 
     return marginal_names, marginals_observable
 end

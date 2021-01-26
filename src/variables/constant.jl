@@ -17,9 +17,9 @@ struct ConstVariable{C, M} <: AbstractVariable
 end
 
 constvar(name::Symbol, constval)                 = ConstVariable(name, constval, of(as_message(constval)), ConstVariableProps())
-constvar(name::Symbol, constval::Real)           = constvar(name, Dirac(constval))
-constvar(name::Symbol, constval::AbstractVector) = constvar(name, Dirac(constval))
-constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, Dirac(constval))
+constvar(name::Symbol, constval::Real)           = constvar(name, PointMass(constval))
+constvar(name::Symbol, constval::AbstractVector) = constvar(name, PointMass(constval))
+constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, PointMass(constval))
 
 function constvar(name::Symbol, fn::Function, dims::Tuple)
     return constvar(name, fn, dims...)
@@ -41,8 +41,8 @@ Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constv
 isconnected(constvar::ConstVariable) = constvar.props.nconnected !== 0
 nconnected(constvar::ConstVariable)  = constvar.props.nconnected
 
-getconst(constvar::ConstVariable{ <: Dirac }) = getpointmass(constvar.constant)
-getconst(constvar::ConstVariable)             = constvar.constant
+getconst(constvar::ConstVariable{ <: PointMass }) = getpointmass(constvar.constant)
+getconst(constvar::ConstVariable)                 = constvar.constant
 
 getlastindex(::ConstVariable) = 1
 

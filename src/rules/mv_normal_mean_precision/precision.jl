@@ -1,6 +1,6 @@
 export rule
 
-@rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out::Dirac, q_μ::MvNormalMeanPrecision) = begin
+@rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out::PointMass, q_μ::MvNormalMeanPrecision) = begin
     (m_mean, v_mean) = mean(q_μ), cov(q_μ)
     (m_out, v_out)   = mean(q_out), cov(q_out)
 

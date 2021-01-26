@@ -18,6 +18,19 @@ include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 
 include("distributions.jl")
+include("distributions/pointmass.jl")
+include("distributions/gamma.jl")
+include("distributions/categorical.jl")
+include("distributions/dirichlet.jl")
+include("distributions/beta.jl")
+include("distributions/bernoulli.jl")
+include("distributions/normal_mean_precision.jl")
+include("distributions/normal_mean_variance.jl")
+include("distributions/mv_normal_mean_covariance.jl")
+include("distributions/mv_normal_mean_precision.jl")
+include("distributions/normal.jl")
+include("distributions/exp_linear_quadratic.jl")
+include("distributions/wishart.jl")
 
 include("message.jl")
 include("marginal.jl")
@@ -42,22 +55,6 @@ include("node.jl")
 
 include("score/variable.jl")
 include("score/node.jl")
-
-# Distributions
-
-include("distributions/dirac.jl")
-include("distributions/gamma.jl")
-include("distributions/categorical.jl")
-include("distributions/dirichlet.jl")
-include("distributions/beta.jl")
-include("distributions/bernoulli.jl")
-include("distributions/normal_mean_precision.jl")
-include("distributions/normal_mean_variance.jl")
-include("distributions/mv_normal_mean_covariance.jl")
-include("distributions/mv_normal_mean_precision.jl")
-include("distributions/normal.jl")
-include("distributions/exp_linear_quadratic.jl")
-include("distributions/wishart.jl")
 
 # Stochastic nodes
 include("nodes/uninformative.jl")

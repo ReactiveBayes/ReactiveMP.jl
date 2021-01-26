@@ -1,3 +1,3 @@
 export rule
 
-@rule Beta(:out, Marginalisation) (m_a::Dirac, m_b::Dirac) = Beta(mean(m_a), mean(m_b))
+@rule Beta(:out, Marginalisation) (m_a::PointMass, m_b::PointMass) = Beta(mean(m_a), mean(m_b))

@@ -109,7 +109,7 @@ function make_node(model::Model, args...; factorisation = default_factorisation(
 end
 
 # TODO: Feature rejected due to a bug with invalid constant reusing. Should be revisited later.
-# function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; factorisation = default_factorisation(getoptions(model)), kwargs...)
+# function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; factorisation = default_factorisation(getoptions(model)), kwargs...)
 #     node, var = if haskey(getconstant(model), getname(autovar))
 #         nothing, getconstant(model)[ getname(autovar) ]
 #     else

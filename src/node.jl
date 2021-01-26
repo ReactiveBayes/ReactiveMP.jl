@@ -551,7 +551,7 @@ function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable
     return nothing, var
 end
 
-function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: Dirac } }; kwargs...)
+function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
     subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, getdata), args)...), PushNew()) |> map(Message, (d...) -> as_message(fform(d...)))
     var     = datavar(getname(autovar), Any, subject = subject)
     return nothing, var
@@ -604,7 +604,7 @@ macro node(fformtype, fsdtype, finterfaces)
 
     make_node_const_mapping = if sdtype === :Stochastic
         quote
-            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
                 var  = randomvar(getname(autovar))
                 node = make_node(fform, var, args...; kwargs...)
                 return node, var
@@ -612,7 +612,7 @@ macro node(fformtype, fsdtype, finterfaces)
         end
     elseif sdtype === :Deterministic
         quote
-            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: Dirac } }; kwargs...)
+            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
                 var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
                 return nothing, var
             end

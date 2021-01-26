@@ -1,10 +1,10 @@
 export marginalrule
 
-@marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::NormalDistributionsFamily, m_μ::Dirac, m_τ::Dirac) = begin
+@marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::NormalDistributionsFamily, m_μ::PointMass, m_τ::PointMass) = begin
     return (out = prod(ProdPreserveParametrisation(), NormalMeanPrecision(mean(m_μ), mean(m_τ)), m_out), μ = m_μ, τ = m_τ)
 end
 
-@marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::Dirac, m_μ::NormalDistributionsFamily, m_τ::Dirac) = begin
+@marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::PointMass, m_μ::NormalDistributionsFamily, m_τ::PointMass) = begin
     return (out = m_out, μ = prod(ProdPreserveParametrisation(), m_μ, NormalMeanPrecision(mean(m_out), mean(m_τ))), τ = m_τ)
 end
 

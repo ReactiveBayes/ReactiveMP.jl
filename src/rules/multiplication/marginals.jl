@@ -1,6 +1,6 @@
 export marginalrule
 
-@marginalrule typeof(*)(:A_in) (m_out::MvNormalMeanCovariance, m_A::Dirac, m_in::MvNormalMeanCovariance) = begin
+@marginalrule typeof(*)(:A_in) (m_out::MvNormalMeanCovariance, m_A::PointMass, m_in::MvNormalMeanCovariance) = begin
     # TODO with @call_rule macro or smth
     A_inv = cholinv(mean(m_A))
     m = mean(m_out)

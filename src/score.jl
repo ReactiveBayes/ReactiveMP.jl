@@ -20,9 +20,9 @@ function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: InfC
     node_bound_free_energies_sum = collectLatest(T, T, node_bound_free_energies, reduce_with_sum)
     variable_bound_entropies_sum = collectLatest(T, T, variable_bound_entropies, reduce_with_sum)
 
-    diracs_entropies = Infinity(mapreduce(degree, +, getdata(model), init = 0) + mapreduce(degree, +, getconstant(model), init = 0))
+    point_entropies = Infinity(mapreduce(degree, +, getdata(model), init = 0) + mapreduce(degree, +, getconstant(model), init = 0))
 
-    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |> map(eltype(T), d -> float(d[1] + d[2] - diracs_entropies))
+    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |> map(eltype(T), d -> float(d[1] + d[2] - point_entropies))
 end
 
 ## Average energy function helpers
