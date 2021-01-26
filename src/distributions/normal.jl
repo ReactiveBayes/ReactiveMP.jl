@@ -1,4 +1,5 @@
 export GaussianMeanPrecision, GaussianMeanVariance
+export MvGaussianMeanPrecision, MvGaussianMeanCovariance
 export NormalDistributionsFamily, MvNormalDistributionsFamily
 
 const GaussianMeanPrecision    = NormalMeanPrecision
