@@ -83,4 +83,6 @@ include("actors/prior.jl")
 
 include("model.jl")
 
+include("fixes.jl")
+
 end
