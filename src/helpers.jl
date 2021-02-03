@@ -193,6 +193,18 @@ end
 fields(::NamedTuple{ F }) where F  = F
 hasfield(field::Symbol, ntuple::NamedTuple) = field ∈ fields(ntuple)
 
+# Tuple helpers
+
+function swap_indices_tuple(tuple::Tuple, i, j)
+    @assert j > i 
+    return (tuple[1:i-1]..., tuple[j], tuple[i+1:j-1]..., tuple[i], tuple[j+1:end]...)
+end
+
+function swap_indices_array(array::AbstractArray, i, j)
+    @assert j > i 
+    return [ array[1:i-1]..., array[j], array[i+1:j-1]..., array[i], array[j+1:end]... ]
+end
+
 # Rocket.jl extensions
 
 combineSourceUpdates(sources::Tuple, strategy) = combineLatest(sources, strategy) |> map_to(sources)

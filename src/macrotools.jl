@@ -114,3 +114,11 @@ function __extract_interfaces_macro_rule(interfaces)
 
     return interfacelist
 end
+
+function __rearrange_tupled_arguments(name::Symbol, length::Int, swap::Tuple{Int, Int})
+    arguments = map(i -> :($(name)[$i]), 1:length)
+    tmp = arguments[ first(swap) ]
+    arguments[ first(swap) ] = arguments[ last(swap) ]
+    arguments[ last(swap) ]  = tmp
+    return Expr(:tuple, arguments...)
+end

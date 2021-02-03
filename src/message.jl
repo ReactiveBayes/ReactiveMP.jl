@@ -46,7 +46,6 @@ Base.ndims(message::Message)     = ndims(getdata(message))
 Base.size(message::Message)      = size(getdata(message))
 
 probvec(message::Message)         = probvec(getdata(message))
-
 weightedmean(message::Message)    = weightedmean(getdata(message))
 logmean(message::Message)         = logmean(getdata(message))
 inversemean(message::Message)     = inversemean(getdata(message))
