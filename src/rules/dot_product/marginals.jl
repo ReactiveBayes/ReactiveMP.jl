@@ -1,5 +1,9 @@
 export marginalrule
 
-@marginalrule typeof(+)(:in1_in2) (m_out::NormalMeanVariance, m_in1::NormalMeanVariance, m_in2::PointMass) = begin
-    (in1 = prod(ProdPreserveParametrisation(), NormalMeanVariance(mean(m_out) - mean(m_in2), var(m_out)), m_in1), in2 = m_in2)
+@marginalrule typeof(dot)(:out_in2) (m_out::NormalMeanPrecision, m_in1::PointMass, m_in2::MvNormalMeanPrecision) = begin
+    m_in1 = mean(m_in1)
+    m = mean(m_out)
+    P = precision(m_out)
+    q_in = prod(ProdPreserveParametrisation(), m_in2, MvNormalMeanPrecision(m_in1 * m, m_in1 * P * m_in1'))
+    return (in1 = m_in1, in2 = q_in)
 end
