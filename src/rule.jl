@@ -15,7 +15,12 @@ function marginalrule end
     Documentation placeholder
 """
 macro rule(fform, lambda)
-    @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
+    @capture(fform, fformtype_(on_, vconstraint_, options__)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_, options__)'")
+
+    options = map(options) do option
+        @capture(option, name_ = value_)
+        return (name, value)
+    end
 
     fformtype = __extract_fformtype(fformtype)
     on_type, on_index = __extract_on_args_macro_rule(on)
