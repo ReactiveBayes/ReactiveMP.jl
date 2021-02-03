@@ -1,5 +1,11 @@
 export rule
 
-@rule Bernoulli(:p, Marginalisation) (m_out::PointMass{T}, ) where T = Beta(one(T) + mean(m_out), 2 * one(T) - mean(m_out))
+@rule Bernoulli(:p, Marginalisation) (m_out::PointMass, ) = begin 
+    r = mean(m_out)
+    Beta(one(r) + r, 2one(r) - r)
+end
 
-@rule Bernoulli(:p, Marginalisation) (q_out::Any, ) = Beta(1.0 + mean(q_out), 2.0 - mean(q_out))
+@rule Bernoulli(:p, Marginalisation) (q_out::Bernoulli, ) = begin 
+    r = first(probvec(q_out))
+    return Beta(one(r) + r, 2one(r) - r)
+end

@@ -25,7 +25,7 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    stream = combineLatest(map((cluster) -> getmarginal!(node, cluster), localmarginals(node)), PushNew())
+    stream = combineLatest(map((cluster) -> getmarginal!(node, cluster) |> schedule_on(scheduler), localmarginals(node)), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{ localmarginalnames(node) }
         (marginals) -> begin 
@@ -35,5 +35,5 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractF
         end
     end
 
-    return stream |> schedule_on(scheduler) |> map(T, mapping)
+    return stream |> map(T, mapping)
 end
