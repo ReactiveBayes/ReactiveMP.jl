@@ -71,6 +71,7 @@ prod(::ProdPreserveParametrisation, ::Missing, ::Missing) = missing
 """
 function vague end
 
+weightedmean(something)    = error("Weighted mean is not defined for $(something)")
 inversemean(something)     = error("Inverse expectation is not defined for $(something)")
 logmean(something)         = error("Logarithmic expectation is not defined for $(something)")
 mirroredlogmean(something) = error("Mirrored Logarithmic expectation is not defined for $(something)")

@@ -20,7 +20,10 @@ MvNormalMeanPrecision(μ::AbstractVector{T}) where T                            
 
 Distributions.distrname(::MvNormalMeanPrecision) = "MvNormalMeanPrecision"
 
+weightedmean(dist::MvNormalMeanPrecision) = precision(dist) * mean(dist)
+
 Distributions.mean(dist::MvNormalMeanPrecision)      = dist.μ
+Distributions.mode(dist::MvNormalMeanPrecision)      = mean(dist)
 Distributions.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
@@ -43,15 +46,11 @@ Base.length(dist::MvNormalMeanPrecision)            = length(mean(dist))
 Base.ndims(dist::MvNormalMeanPrecision)             = length(dist)
 Base.size(dist::MvNormalMeanPrecision)              = (length(dist), )
 
-function convert(::Type{ <: MvNormalMeanPrecision{T} }, d::MvNormalMeanPrecision) where { T <: Real }
-    MvNormalMeanPrecision(convert(AbstractArray{T}, d.μ), convert(AbstractArray{T}, d.Λ))
-end
-
 function convert(::Type{ <: MvNormalMeanPrecision{T} }, μ::AbstractVector, Λ::AbstractMatrix) where { T <: Real }
     MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{ <: MvNormalMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), 1.0e-20 .* ones(dims))
+vague(::Type{ <: MvNormalMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), tiny .* ones(dims))
 
 function Base.prod(::ProdPreserveParametrisation, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     Λ = invcov(left) + invcov(right)

@@ -4,38 +4,39 @@ import StatsFuns: log2π, invsqrt2π
 
 struct NormalMeanPrecision{T <: Real} <: ContinuousUnivariateDistribution
     μ :: T
-    p :: T
+    w :: T
 end
 
-NormalMeanPrecision(μ::Real, v::Real)       = NormalMeanPrecision(promote(μ, v)...)
-NormalMeanPrecision(μ::Integer, v::Integer) = NormalMeanPrecision(float(μ), float(v))
-NormalMeanPrecision(μ::T) where {T <: Real} = NormalMeanPrecision(μ, one(T))
+NormalMeanPrecision(μ::Real, w::Real)       = NormalMeanPrecision(promote(μ, w)...)
+NormalMeanPrecision(μ::Integer, w::Integer) = NormalMeanPrecision(float(μ), float(w))
+NormalMeanPrecision(μ::Real)                = NormalMeanPrecision(μ, one(μ))
 NormalMeanPrecision()                       = NormalMeanPrecision(0.0, 1.0)
 
 Distributions.@distr_support NormalMeanPrecision -Inf Inf
 
-Distributions.mean(dist::NormalMeanPrecision)      = dist.μ
-Distributions.median(dist::NormalMeanPrecision)    = dist.μ
-Distributions.mode(dist::NormalMeanPrecision)      = dist.μ
-Distributions.var(dist::NormalMeanPrecision)       = inv(dist.p)
-Distributions.std(dist::NormalMeanPrecision)       = sqrt(var(dist))
-Distributions.cov(dist::NormalMeanPrecision)       = var(dist)
-Distributions.invcov(dist::NormalMeanPrecision)    = dist.p
-Distributions.entropy(dist::NormalMeanPrecision)   = (1 + log2π - log(precision(dist))) / 2
+weightedmean(dist::NormalMeanPrecision) = precision(dist) * mean(dist)
+
+Distributions.mean(dist::NormalMeanPrecision)    = dist.μ
+Distributions.median(dist::NormalMeanPrecision)  = mean(dist)
+Distributions.mode(dist::NormalMeanPrecision)    = mean(dist)
+Distributions.var(dist::NormalMeanPrecision)     = inv(dist.w)
+Distributions.std(dist::NormalMeanPrecision)     = sqrt(var(dist))
+Distributions.cov(dist::NormalMeanPrecision)     = var(dist)
+Distributions.invcov(dist::NormalMeanPrecision)  = dist.w
+Distributions.entropy(dist::NormalMeanPrecision) = (1 + log2π - log(precision(dist))) / 2
 
 Distributions.pdf(dist::NormalMeanPrecision, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) * precision(dist) / 2)) * sqrt(precision(dist))
 Distributions.logpdf(dist::NormalMeanPrecision, x::Real) = -(log2π - log(precision(dist)) + abs2(x - mean(dist)) * precision(dist)) / 2
 
-Base.precision(dist::NormalMeanPrecision{T}) where T = invcov(dist)
-Base.eltype(::NormalMeanPrecision{T})        where T = T
+Base.precision(dist::NormalMeanPrecision)     = invcov(dist)
+Base.eltype(::NormalMeanPrecision{T}) where T = T
 
-Base.convert(::Type{ NormalMeanPrecision{T} }, μ::Real, p::Real)          where { T <: Real } = NormalMeanPrecision(T(μ), T(p))
-Base.convert(::Type{ NormalMeanPrecision{T} }, dist::NormalMeanPrecision) where { T <: Real } = NormalMeanPrecision(T(mean(dist)), T(precision(dist)))
+Base.convert(::Type{ NormalMeanPrecision{T} }, μ::Real, w::Real) where { T <: Real } = NormalMeanPrecision(T(μ), T(w))
 
-vague(::Type{ <: NormalMeanPrecision }) = NormalMeanPrecision(0.0, 1.0e-20)
+vague(::Type{ <: NormalMeanPrecision }) = NormalMeanPrecision(0.0, tiny)
 
 function Base.prod(::ProdPreserveParametrisation, left::NormalMeanPrecision, right::NormalMeanPrecision) 
-    p = precision(left) + precision(right)
-    μ = (mean(left) * precision(left) + mean(right) * precision(right)) / p
-    return NormalMeanPrecision(μ, p)
+    w = precision(left) + precision(right)
+    μ = (mean(left) * precision(left) + mean(right) * precision(right)) / w
+    return NormalMeanPrecision(μ, w)
 end

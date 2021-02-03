@@ -20,6 +20,8 @@ MvNormalMeanCovariance(μ::AbstractVector{T}) where T                           
 
 Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
 
+weightedmean(dist::MvNormalMeanCovariance) = invcov(dist) * mean(dist)
+
 Distributions.mean(dist::MvNormalMeanCovariance)      = dist.μ
 Distributions.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ
@@ -43,15 +45,11 @@ Base.length(dist::MvNormalMeanCovariance)            = length(mean(dist))
 Base.ndims(dist::MvNormalMeanCovariance)             = length(dist)
 Base.size(dist::MvNormalMeanCovariance)              = (length(dist), )
 
-function convert(::Type{ <: MvNormalMeanCovariance{T} }, d::MvNormalMeanCovariance) where { T <: Real }
-    MvNormalMeanCovariance(convert(AbstractArray{T}, d.μ), convert(AbstractArray{T}, d.Σ))
-end
-
 function convert(::Type{ <: MvNormalMeanCovariance{T} }, μ::AbstractVector, Σ::AbstractMatrix) where { T <: Real }
     MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
 end
 
-vague(::Type{ <: MvNormalMeanCovariance }, dims::Int) = MvNormalMeanCovariance(zeros(dims), 1.0e20 .* ones(dims))
+vague(::Type{ <: MvNormalMeanCovariance }, dims::Int) = MvNormalMeanCovariance(zeros(dims), huge .* ones(dims))
 
 function Base.prod(::ProdPreserveParametrisation, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     invcovleft  = invcov(left)
