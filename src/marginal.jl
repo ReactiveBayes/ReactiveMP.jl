@@ -35,6 +35,7 @@ Base.length(marginal::Marginal)    = length(getdata(marginal))
 Base.size(marginal::Marginal)      = size(getdata(marginal))
 
 probvec(marginal::Marginal)         = probvec(getdata(marginal))
+weightedmean(marginal::Marginal)    = weightedmean(getdata(marginal))
 logmean(marginal::Marginal)         = logmean(getdata(marginal))
 inversemean(marginal::Marginal)     = inversemean(getdata(marginal))
 mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
