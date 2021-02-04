@@ -1,12 +1,8 @@
-export make_node, GCV, score
+export GCV
 
 struct GCV end
 
-@node(
-    formtype   => GCV,
-    sdtype     => Stochastic,
-    interfaces => [ y, x, z, κ, ω ]
-)
+@node GCV Stochastic [ y, x, z, κ, ω ]
 
 @average_energy GCV (q_y_x::MvNormalMeanCovariance, q_z::NormalMeanVariance, q_κ::PointMass, q_ω::PointMass) = begin
     m_yx, cov_yx = mean(q_y_x), cov(q_y_x)

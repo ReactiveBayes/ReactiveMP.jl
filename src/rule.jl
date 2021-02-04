@@ -30,6 +30,7 @@ function __write_rule_output(body::Function, fformtype, on_type, vconstraint, m_
     end
 end
 
+import .MacroHelpers
 
 """
     Documentation placeholder
@@ -42,7 +43,7 @@ macro rule(fform, lambda)
         return (name, value)
     end
 
-    fformtype = __extract_fformtype(fformtype)
+    fuppertype = MacroHelpers.upper_type(fformtype)
     on_type, on_index = __extract_on_args_macro_rule(on)
 
     on_index_init = on_index === nothing ? :(nothing) : :($on_index = on[2])
@@ -57,14 +58,14 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block = __extract_fn_args_macro_rule(inputs, specname = :messages, prefix = :m_, proxytype = :Message)
-    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs, specname = :marginals, prefix = :q_, proxytype = :Marginal)
+    m_names, m_types, m_init_block = __extract_fn_args_macro_rule(inputs, specname = :messages, prefix = :m_, proxy = :Message)
+    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs, specname = :marginals, prefix = :q_, proxy = :Marginal)
 
     metatype = metatype === nothing ? :Nothing : metatype
 
     output = quote
         $(
-            __write_rule_output(fformtype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
+            __write_rule_output(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
@@ -120,7 +121,7 @@ macro rule(fform, lambda)
                 output = quote
                     $output
                     $(
-                        __write_rule_output(fformtype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
+                        __write_rule_output(fuppertype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
                             return quote
                                 return ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginal_names, $(marginals), meta, __node)
                             end
@@ -143,7 +144,7 @@ macro marginalrule(fform, lambda)
 
     @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
 
-    fformtype = __extract_fformtype(fformtype)
+    fuppertype = MacroHelpers.upper_type(fformtype)
     on_type, on_index = __extract_on_args_macro_rule(on)
 
     on_index_init = on_index === nothing ? :(nothing) : :($on_index = on[2])
@@ -158,14 +159,14 @@ macro marginalrule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block = __extract_fn_args_macro_rule(inputs, specname = :messages, prefix = :m_, proxytype = :Message)
-    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs, specname = :marginals, prefix = :q_, proxytype = :Marginal)
+    m_names, m_types, m_init_block = __extract_fn_args_macro_rule(inputs, specname = :messages, prefix = :m_, proxy = :Message)
+    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs, specname = :marginals, prefix = :q_, proxy = :Marginal)
 
     metatype = metatype === nothing ? :Nothing : metatype
 
     output = quote
         function ReactiveMP.marginalrule(
-            fform           :: $(fformtype),
+            fform           :: $(fuppertype),
             on              :: $(on_type),
             messages_names  :: $(m_names),
             messages        :: $(m_types),

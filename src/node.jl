@@ -561,12 +561,28 @@ end
 
 ## macro helpers
 
-macro node(fformtype, fsdtype, finterfaces)
+import .MacroHelpers
 
-    form       = __extract_fform_macro_rule(fformtype)
-    formtype   = __extract_fformtype_macro_rule(fformtype)
-    sdtype     = __extract_sdtype_macro_rule(fsdtype)
-    interfaces = __extract_interfaces_macro_rule(finterfaces)
+macro node(fformtype, sdtype, interfaces_list)
+
+    fbottomtype = MacroHelpers.bottom_type(fformtype)
+    fuppertype  = MacroHelpers.upper_type(fformtype)
+
+    @assert sdtype ∈ [ :Stochastic, :Deterministic ] "Invalid sdtype $(sdtype). Can be either Stochastic or Deterministic."
+
+    @capture(interfaces_list, [ interfaces_args__ ]) ||
+        error("Invalid interfaces specification.")
+
+    interfaces = map(interfaces_args) do arg
+        if @capture(arg, name_Symbol)
+            return (name = name, aliases = [])
+        elseif @capture(arg, (name_Symbol, aliases = [ aliases__ ]))
+            @assert all(a -> a isa Symbol, aliases)
+            return (name = name, aliases = aliases)
+        else
+            error("Interface specification should have a 'name' or (name, aliases = [ alias1, alias2,... ]) signature.")
+        end
+    end 
     
     names = map(d -> d[:name], interfaces)
     
@@ -581,12 +597,12 @@ macro node(fformtype, fsdtype, finterfaces)
         name    = interface[:name]
         aliases = interface[:aliases]
 
-        index_name_getter  = :(ReactiveMP.interface_get_index(::Type{ Val{ $(Expr(:quote, form)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(index))
-        name_symbol_getter = :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, form)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(Expr(:quote, name)))
-        name_index_getter  = :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, form)) } }, ::Type{ Val{ $index } }) = $(Expr(:quote, name)))
+        index_name_getter  = :(ReactiveMP.interface_get_index(::Type{ Val{ $(Expr(:quote, fbottomtype)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(index))
+        name_symbol_getter = :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, fbottomtype)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(Expr(:quote, name)))
+        name_index_getter  = :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, fbottomtype)) } }, ::Type{ Val{ $index } }) = $(Expr(:quote, name)))
 
         alias_getters = map(aliases) do alias
-            return :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, form)) } }, ::Type{ Val{ $(Expr(:quote, alias)) } }) = $(Expr(:quote, name)))
+            return :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, fbottomtype)) } }, ::Type{ Val{ $(Expr(:quote, alias)) } }) = $(Expr(:quote, name)))
         end
     
         return quote
@@ -598,13 +614,13 @@ macro node(fformtype, fsdtype, finterfaces)
     end
 
     factorisation_collectors = quote
-        ReactiveMP.collect_factorisation(::$formtype, ::FullFactorisation) = ($names_indices, )
-        ReactiveMP.collect_factorisation(::$formtype, ::MeanField) = $names_splitted_indices
+        ReactiveMP.collect_factorisation(::$fuppertype, ::FullFactorisation) = ($names_indices, )
+        ReactiveMP.collect_factorisation(::$fuppertype, ::MeanField) = $names_splitted_indices
     end
 
     make_node_const_mapping = if sdtype === :Stochastic
         quote
-            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
+            function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
                 var  = randomvar(getname(autovar))
                 node = make_node(fform, var, args...; kwargs...)
                 return node, var
@@ -612,30 +628,32 @@ macro node(fformtype, fsdtype, finterfaces)
         end
     elseif sdtype === :Deterministic
         quote
-            function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
+            function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
                 var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
                 return nothing, var
             end
         end
+    else
+        error("Unreachable in @node macro.") 
     end
     
     res = quote
 
-        ReactiveMP.as_node_functional_form(::$formtype) = ValidNodeFunctionalForm()
+        ReactiveMP.as_node_functional_form(::$fuppertype) = ValidNodeFunctionalForm()
 
-        ReactiveMP.sdtype(::$formtype) = ($sdtype)()
+        ReactiveMP.sdtype(::$fuppertype) = ($sdtype)()
         
-        function ReactiveMP.make_node(::$formtype; factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
-            return FactorNode($form, $names_quoted_tuple, collect_factorisation($form, factorisation), meta, portal)
+        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
+            return FactorNode($fbottomtype, $names_quoted_tuple, collect_factorisation($fbottomtype, factorisation), meta, portal)
         end
         
-        function ReactiveMP.make_node(::$formtype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
-            node = make_node($form, factorisation = factorisation, meta = meta, portal = portal)
+        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
+            node = make_node($fbottomtype, factorisation = factorisation, meta = meta, portal = portal)
             $(interface_connections...)
             return node
         end
 
-        function ReactiveMP.make_node(fform::$formtype, autovar::AutoVar, args::Vararg{ <: AbstractVariable }; kwargs...)
+        function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: AbstractVariable }; kwargs...)
             var  = randomvar(getname(autovar))
             node = make_node(fform, var, args...; kwargs...)
             return node, var

@@ -3,15 +3,7 @@ export make_node, score
 import StatsFuns: logπ
 import Distributions: Wishart
 
-@node(
-    formtype   => Wishart,
-    sdtype     => Stochastic,
-    interfaces => [
-        out,
-        (ν, aliases = [ df ]),
-        (S, aliases = [ scale ])
-    ]
-)
+@node Wishart Stochastic [ out, (ν, aliases = [ df ]), (S, aliases = [ scale ]) ]
 
 @average_energy Wishart (q_out::Any, q_ν::Any, q_S::Any) = begin
     d = dim(q_out)

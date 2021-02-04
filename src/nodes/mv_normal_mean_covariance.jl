@@ -1,14 +1,5 @@
-export make_node, conjugate_type, score
 
-@node(
-    formtype   => MvNormalMeanCovariance,
-    sdtype     => Stochastic,
-    interfaces => [ 
-        out, 
-        (μ, aliases = [ mean ]), 
-        (Σ, aliases = [ cov ]) 
-    ]
-)
+@node MvNormalMeanCovariance Stochastic [ out, (μ, aliases = [ mean ]), (Σ, aliases = [ cov ]) ]
 
 conjugate_type(::Type{ <: MvNormalMeanCovariance }, ::Type{ Val{ :out } }) = MvNormalMeanCovariance
 conjugate_type(::Type{ <: MvNormalMeanCovariance }, ::Type{ Val{ :μ } })   = MvNormalMeanCovariance

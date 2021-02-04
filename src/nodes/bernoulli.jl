@@ -1,13 +1,5 @@
-export make_node, conjugate_type, score
 
-@node(
-    formtype   => Bernoulli,
-    sdtype     => Stochastic,
-    interfaces => [ 
-        out, 
-        (p, aliases = [ θ ]), 
-    ]
-)
+@node Bernoulli Stochastic [ out, (p, aliases = [ θ ]) ]
 
 conjugate_type(::Type{ <: Bernoulli }, ::Type{ Val{ :out } }) = Bernoulli
 conjugate_type(::Type{ <: Bernoulli }, ::Type{ Val{ :θ } })   = Beta

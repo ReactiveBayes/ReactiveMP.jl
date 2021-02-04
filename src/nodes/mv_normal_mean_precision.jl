@@ -1,16 +1,6 @@
-export make_node, conjugate_type, score
-
 import StatsFuns: log2π
 
-@node(
-    formtype   => MvNormalMeanPrecision,
-    sdtype     => Stochastic,
-    interfaces => [
-        out,
-        (μ, aliases = [ mean ]),
-        (Λ, aliases = [ invcov, precision ])
-    ]
-)
+@node MvNormalMeanPrecision Stochastic [ out, (μ, aliases = [ mean ]), (Λ, aliases = [ invcov, precision ]) ]
 
 conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :out } }) = MvNormalMeanPrecision
 conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :μ } })   = MvNormalMeanPrecision

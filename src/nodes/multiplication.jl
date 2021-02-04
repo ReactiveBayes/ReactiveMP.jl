@@ -1,7 +1,2 @@
-export make_node
 
-@node(
-    formtype   => typeof(*),
-    sdtype     => Deterministic,
-    interfaces => [ out, A, in ]
-)
+@node typeof(*) Deterministic [ out, A, in ]

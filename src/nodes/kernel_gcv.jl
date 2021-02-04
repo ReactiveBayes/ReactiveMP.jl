@@ -1,4 +1,4 @@
-export make_node, KernelGCV, KernelGCVMetadata
+export KernelGCV, KernelGCVMetadata
 
 import LinearAlgebra: logdet, tr
 
@@ -12,11 +12,7 @@ get_approximation(meta::KernelGCVMetadata) = meta.approximation
 
 struct KernelGCV end
 
-@node(
-    formtype   => KernelGCV,
-    sdtype     => Stochastic,
-    interfaces => [ y, x, z ]
-)
+@node KernelGCV Stochastic [ y, x, z ]
 
 struct FnWithApproximation{F, A}
     fn            :: F

@@ -1,70 +1,85 @@
 using MacroTools
 
 
-function __extract_fform_macro_rule(fformtype)
-    if @capture(fformtype, (formtype => typeof(form_)))
-        return form
-    elseif @capture(fformtype, (formtype => Type{ <: form_ }))
-        return form
-    elseif @capture(fformtype, (formtype => Type{ form_ }))
-        return form
-    elseif @capture(fformtype, (formtype => form_))
-        return form
+
+
+module MacroHelpers
+
+using MacroTools
+
+"""
+    ensure_symbol(input)
+
+This function ensures that the given argument has a Symbol type
+"""
+ensure_symbol(input::Symbol) = input
+ensure_symbol(input) = error("$(input) is not a symbol.")
+
+"""
+    bottom_type(type)
+
+This function returns `T` expression for the following input expressions:
+1. typeof(T)
+2. Type{ <: T }
+3. Type{ T }
+4. T
+
+# Arguments
+- `type`: Type expression to be lowered
+
+# See also: [`extract_fformtype`](@ref), [`upper_type`](@ref)
+"""
+function bottom_type(type)
+    @capture(type, (typeof(T_)) | (Type{ <: T_ }) | (Type{ T_ }) | (T_)) || 
+        error("Expression $(type) doesnt seem to be a valid type expression.")
+    return T
+end
+
+"""
+    upper_type(type)
+
+This function returns `Type{ <: T }` expression for the following input expressions:
+1. typeof(T)
+2. Type{ <: T }
+3. Type{ T }
+4. T
+
+# Arguments
+- `type`: Type expression to be extended
+
+# See also: [`extract_fformtype`](@ref), [`bottom_type`](@ref)
+"""
+function upper_type(type)
+    if @capture(type, typeof(T_))
+        return :(typeof($(ensure_symbol(T))))
     else
-        error("Error in macro: functional form of rule should have a (formtype => Type{ <: Distribution } or typeof(fn)) signature")
+        return :(Type{ <: $(bottom_type(type)) })
     end
 end
 
-function __extract_fformtype_macro_rule(fformtype)
-    if @capture(fformtype, (formtype => typeof(formtype_)))
-        return :(typeof($formtype))
-    elseif @capture(fformtype, (formtype => Type{ <: formtype_ }))
-        return :(Type{ <: $formtype })
-    elseif @capture(fformtype, (formtype => Type{ formtype_ }))
-        return :(Type{ <: $formtype })
-    elseif @capture(fformtype, (formtype => formtype_))
-        return :(Type{ <: $formtype })
-    else
-        error("Error in macro: functional form type should have a (form => Type{ FunctionalFormType } or typeof(fn) for functions) signature")
-    end
+"""
+    proxy_type(proxy, type)
+
+Returns a type wrapped with a proxy type in a form of `ProxyType{ <: Type }`.
+
+# Arguments
+- `proxy`: Proxy type used to wrap `type`
+- `type`: Type to be wrapped
+"""
+function proxy_type(proxy::Symbol, type::Symbol)
+    return :($(proxy){ <: $(type) })
 end
 
-function __extract_sdtype_macro_rule(sdtype)
-    if @capture(sdtype, (sdtype => Deterministic))
-        return (:Deterministic)
-    elseif @capture(sdtype, (sdtype => Stochastic))
-        return (:Stochastic)
-    else
-        error("Error in macro: sdtype specification should have a (sdtype => Deterministic or Stochastic) signature")
-    end
-end
-
-function __apply_proxy_type(type::Symbol, proxytype)
-    return :($(proxytype){ <: $(type) })
-end
-
-function __apply_proxy_type(type::Expr, proxytype)
+function proxy_type(proxy::Symbol, type::Expr)
     if @capture(type, NTuple{N_, T_})
-        return :(NTuple{ $N, <: $(__apply_proxy_type(T, proxytype)) })
+        return :(NTuple{ $N, <: $(proxy_type(proxy, T)) })
     elseif @capture(type, Tuple{ T__ })
-        return :(Tuple{ $(map(t -> :( <: $(__apply_proxy_type(t, proxytype))), T)...) })
+        return :(Tuple{ $(map(t -> :( <: $(proxy_type(proxy, t))), T)...) })
     else 
-        return :($(proxytype){ <: $(type) })
+        return :($(proxy){ <: $(type) })
     end
 end
 
-function __extract_fformtype(fform)
-    if @capture(fform, typeof(f_))
-        return fform
-    elseif @capture(fform, Type{ T_ })
-        return :(Type{ <: $T })
-    elseif @capture(fform, Type{ <: T_ })
-        return :(Type{ <: $T })
-    elseif @capture(fform, T_)
-        return :(Type{ <: $T })
-    else
-        error("Error in macro. fform specification is incorrect")
-    end
 end
 
 function __extract_on_args_macro_rule(on)
@@ -77,11 +92,11 @@ function __extract_on_args_macro_rule(on)
     end
 end
 
-function __extract_fn_args_macro_rule(inputs; specname, prefix, proxytype)
+function __extract_fn_args_macro_rule(inputs; specname, prefix, proxy)
     finputs = filter((i) -> startswith(string(first(i)), string(prefix)), inputs)
 
     names  = map(first, finputs)
-    types  = map((i) -> __apply_proxy_type(last(i), proxytype), finputs)
+    types  = map((i) -> MacroHelpers.proxy_type(proxy, last(i)), finputs)
 
     @assert all((n) -> length(string(n)) > 2, names)  || error("Empty $(specname) name found in arguments")
 
@@ -93,26 +108,6 @@ function __extract_fn_args_macro_rule(inputs; specname, prefix, proxytype)
     out_types = length(types) === 0 ? :Nothing : :(Tuple{ $(types...) })
 
     return out_names, out_types, init_block
-end
-
-function __extract_interfaces_macro_rule(interfaces)
-    interfacelist = []
-
-    @capture(interfaces, (interfaces => [ args__ ])) ||
-        error("Invalid rule macro call: interfaces specification should have a (interfaces => [ ... ]) signature")
-
-    foreach(args) do arg
-        if @capture(arg, name_Symbol) 
-            push!(interfacelist, (name = name, aliases = []))
-        elseif @capture(arg, (name_Symbol, aliases = [ aliases__ ]))
-            @assert all(a -> a isa Symbol, aliases)
-            push!(interfacelist, (name = name, aliases = aliases))
-        else
-            error("Invalid macro call: interface specification should have a 'name' or (name, aliases = [ alias1, alias2,... ]) signature")
-        end
-    end 
-
-    return interfacelist
 end
 
 function __rearrange_tupled_arguments(name::Symbol, length::Int, swap::Tuple{Int, Int})

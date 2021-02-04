@@ -38,10 +38,11 @@ score(::DifferentialEntropy, marginal::Marginal)                  = entropy(marg
 
 ## Average enery macro helper
 
-macro average_energy(fform, lambda)
-    @capture(fform, fformtype_) || error("Error in macro. Functional form specification should in the form of 'fformtype_'")
+import .MacroHelpers
 
-    fformtype = __extract_fformtype(fformtype)
+macro average_energy(fformtype, lambda)
+
+    fuppertype = MacroHelpers.upper_type(fformtype)
 
     @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
     @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
@@ -53,14 +54,14 @@ macro average_energy(fform, lambda)
         return (iname, itype)
     end
 
-    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs; specname = :marginals, prefix = :q_, proxytype = :Marginal)
+    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs; specname = :marginals, prefix = :q_, proxy = :Marginal)
 
     metatype = metatype === nothing ? :Nothing : metatype
     
     result = quote
         function ReactiveMP.score(
             ::AverageEnergy,
-            fform           :: $(fformtype),
+            fform           :: $(fuppertype),
             marginals_names :: $(q_names),
             marginals       :: $(q_types),
             meta            :: $(metatype)

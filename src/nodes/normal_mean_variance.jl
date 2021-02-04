@@ -1,16 +1,6 @@
-export make_node, conjugate_type, score
-
 import StatsFuns: log2π
 
-@node(
-    formtype   => NormalMeanVariance,
-    sdtype     => Stochastic,
-    interfaces => [
-        out,
-        (μ, aliases = [ mean ]),
-        (v, aliases = [ var ])
-    ]
-)
+@node NormalMeanVariance Stochastic [ out, (μ, aliases = [ mean ]), (v, aliases = [ var ]) ]
 
 conjugate_type(::Type{ <: NormalMeanVariance }, ::Type{ Val{ :out } }) = NormalMeanVariance
 conjugate_type(::Type{ <: NormalMeanVariance }, ::Type{ Val{ :μ } })   = NormalMeanVariance

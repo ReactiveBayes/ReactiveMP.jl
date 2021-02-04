@@ -1,9 +1,5 @@
-export Uninformative, make_node
+export Uninformative
 
 struct Uninformative end
 
-@node(
-    formtype   => Uninformative,
-    sdtype     => Deterministic,
-    interfaces => [ out ]
-)
+@node Uninformative Deterministic [ out ]
