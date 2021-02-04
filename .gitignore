@@ -20,3 +20,5 @@ Coverage.ipynb
 **/.DS_Store
 
 examples/*Compiled
+
+Manifest.toml
