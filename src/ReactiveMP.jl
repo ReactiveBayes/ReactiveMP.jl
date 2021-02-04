@@ -2,7 +2,7 @@ module ReactiveMP
 
 using Distributions
 
-include("macrotools.jl")
+include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
 

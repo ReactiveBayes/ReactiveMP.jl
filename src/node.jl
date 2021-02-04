@@ -575,16 +575,16 @@ macro node(fformtype, sdtype, interfaces_list)
 
     interfaces = map(interfaces_args) do arg
         if @capture(arg, name_Symbol)
-            return (name = name, aliases = [])
+            return (name, [])
         elseif @capture(arg, (name_Symbol, aliases = [ aliases__ ]))
             @assert all(a -> a isa Symbol, aliases)
-            return (name = name, aliases = aliases)
+            return (name, aliases)
         else
             error("Interface specification should have a 'name' or (name, aliases = [ alias1, alias2,... ]) signature.")
         end
     end 
     
-    names = map(d -> d[:name], interfaces)
+    names = map(d -> first(d), interfaces)
     
     names_quoted_tuple     = Expr(:tuple, map(name -> Expr(:quote, name), names)...)
     names_indices          = Expr(:tuple, map(i -> i, 1:length(names))...)
@@ -594,8 +594,8 @@ macro node(fformtype, sdtype, interfaces_list)
     interface_connections = map(name -> :(connect!(node, $(Expr(:quote, name)), $name)), names)
 
     interface_name_getters = map(enumerate(interfaces)) do (index, interface)
-        name    = interface[:name]
-        aliases = interface[:aliases]
+        name    = first(interface)
+        aliases = last(interface)
 
         index_name_getter  = :(ReactiveMP.interface_get_index(::Type{ Val{ $(Expr(:quote, fbottomtype)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(index))
         name_symbol_getter = :(ReactiveMP.interface_get_name(::Type{ Val{ $(Expr(:quote, fbottomtype)) } }, ::Type{ Val{ $(Expr(:quote, name)) } }) = $(Expr(:quote, name)))

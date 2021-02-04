@@ -41,22 +41,22 @@ score(::DifferentialEntropy, marginal::Marginal)                  = entropy(marg
 import .MacroHelpers
 
 macro average_energy(fformtype, lambda)
+    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || 
+        error("Error in macro. Lambda body specification is incorrect")
+
+    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || 
+        error("Error in macro. Lambda body arguments speicifcation is incorrect")
 
     fuppertype = MacroHelpers.upper_type(fformtype)
-
-    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
-    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
-
-    whereargs = whereargs === nothing ? [] : whereargs
+    whereargs  = whereargs === nothing ? [] : whereargs
+    metatype   = metatype === nothing ? :Any : metatype
 
     inputs = map(inputs) do input
         @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
         return (iname, itype)
     end
 
-    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs; specname = :marginals, prefix = :q_, proxy = :Marginal)
-
-    metatype = metatype === nothing ? :Nothing : metatype
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :Marginal)
     
     result = quote
         function ReactiveMP.score(

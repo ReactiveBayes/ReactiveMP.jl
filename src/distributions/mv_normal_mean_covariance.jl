@@ -49,7 +49,7 @@ function convert(::Type{ <: MvNormalMeanCovariance{T} }, μ::AbstractVector, Σ:
     MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
 end
 
-vague(::Type{ <: MvNormalMeanCovariance }, dims::Int) = MvNormalMeanCovariance(zeros(dims), huge .* ones(dims))
+vague(::Type{ <: MvNormalMeanCovariance }, dims::Int) = MvNormalMeanCovariance(zeros(dims), fill(huge, dims))
 
 function Base.prod(::ProdPreserveParametrisation, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     invcovleft  = invcov(left)

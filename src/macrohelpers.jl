@@ -82,34 +82,6 @@ end
 
 end
 
-function __extract_on_args_macro_rule(on)
-    if @capture(on, :name_)
-        return :(Type{ Val{ $(QuoteNode(name)) } }), nothing
-    elseif @capture(on, (:name_, index_))
-        return :(Tuple{ Val{$(QuoteNode(name))}, Int}), index
-    else
-        error("Error in macro. on specification is incorrect")
-    end
-end
-
-function __extract_fn_args_macro_rule(inputs; specname, prefix, proxy)
-    finputs = filter((i) -> startswith(string(first(i)), string(prefix)), inputs)
-
-    names  = map(first, finputs)
-    types  = map((i) -> MacroHelpers.proxy_type(proxy, last(i)), finputs)
-
-    @assert all((n) -> length(string(n)) > 2, names)  || error("Empty $(specname) name found in arguments")
-
-    init_block = map(enumerate(names)) do (index, iname)
-        return :($(iname) = getdata($(specname)[$(index)]))
-    end
-
-    out_names = length(names) === 0 ? :Nothing : :(Type{ Val{ $(tuple(map(n -> Symbol(string(n)[(length(string(prefix)) + 1):end]), names)...)) } })
-    out_types = length(types) === 0 ? :Nothing : :(Tuple{ $(types...) })
-
-    return out_names, out_types, init_block
-end
-
 function __rearrange_tupled_arguments(name::Symbol, length::Int, swap::Tuple{Int, Int})
     arguments = map(i -> :($(name)[$i]), 1:length)
     tmp = arguments[ first(swap) ]

@@ -50,7 +50,7 @@ function convert(::Type{ <: MvNormalMeanPrecision{T} }, μ::AbstractVector, Λ::
     MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{ <: MvNormalMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), tiny .* ones(dims))
+vague(::Type{ <: MvNormalMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
 
 function Base.prod(::ProdPreserveParametrisation, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     Λ = invcov(left) + invcov(right)

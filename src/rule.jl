@@ -2,15 +2,48 @@ export rule, marginalrule
 export @rule, @marginalrule
 
 """
-    Documentation placeholder
+    rule
+
+This function is used to compute an outbound message for a given node
 """
 function rule end
 
 """
-    Documentation placeholder
+    marginalrule
+
+This function is used to compute local joint marginal for a given node
 """
 function marginalrule end
 
+# Macro code
+
+function rule_macro_parse_on_tag(on)
+    if @capture(on, :name_)
+        return :(Type{ Val{ $(QuoteNode(name)) } }), nothing, nothing
+    elseif @capture(on, (:name_, index_))
+        return :(Tuple{ Val{$(QuoteNode(name))}, Int}), index, :($index = on[2])
+    else
+        error("Error in macro. on specification is incorrect")
+    end
+end
+
+function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
+    finputs = filter((i) -> startswith(string(first(i)), string(prefix)), inputs)
+
+    names  = map(first, finputs)
+    types  = map((i) -> MacroHelpers.proxy_type(proxy, last(i)), finputs)
+
+    @assert all((n) -> length(string(n)) > 2, names)  || error("Empty $(specname) name found in arguments")
+
+    init_block = map(enumerate(names)) do (index, iname)
+        return :($(iname) = getdata($(specname)[$(index)]))
+    end
+
+    out_names = length(names) === 0 ? :Nothing : :(Type{ Val{ $(tuple(map(n -> Symbol(string(n)[(length(string(prefix)) + 1):end]), names)...)) } })
+    out_types = length(types) === 0 ? :Nothing : :(Tuple{ $(types...) })
+
+    return out_names, out_types, init_block
+end
 
 function __write_rule_output(body::Function, fformtype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
     return quote
@@ -36,32 +69,32 @@ import .MacroHelpers
     Documentation placeholder
 """
 macro rule(fform, lambda)
-    @capture(fform, fformtype_(on_, vconstraint_, options__)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_, options__)'")
+    @capture(fform, fformtype_(on_, vconstraint_, options__)) || 
+        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_, options__)'")
 
+    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || 
+        error("Error in macro. Lambda body specification is incorrect")
+
+    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || 
+        error("Error in macro. Lambda body arguments speicifcation is incorrect")
+
+    fuppertype                       = MacroHelpers.upper_type(fformtype)
+    on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
+    whereargs                        = whereargs === nothing ? [] : whereargs
+    metatype                         = metatype === nothing ? :Any : metatype
+    
     options = map(options) do option
         @capture(option, name_ = value_)
         return (name, value)
     end
-
-    fuppertype = MacroHelpers.upper_type(fformtype)
-    on_type, on_index = __extract_on_args_macro_rule(on)
-
-    on_index_init = on_index === nothing ? :(nothing) : :($on_index = on[2])
-
-    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
-    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
-
-    whereargs = whereargs === nothing ? [] : whereargs
 
     inputs = map(inputs) do input
         @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block = __extract_fn_args_macro_rule(inputs, specname = :messages, prefix = :m_, proxy = :Message)
-    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs, specname = :marginals, prefix = :q_, proxy = :Marginal)
-
-    metatype = metatype === nothing ? :Nothing : metatype
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :Message)
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :Marginal)
 
     output = quote
         $(
@@ -141,28 +174,27 @@ end
     Documentation placeholder
 """
 macro marginalrule(fform, lambda)
+    @capture(fform, fformtype_(on_)) || 
+        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
 
-    @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
+    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || 
+        error("Error in macro. Lambda body specification is incorrect")
 
-    fuppertype = MacroHelpers.upper_type(fformtype)
-    on_type, on_index = __extract_on_args_macro_rule(on)
+    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || 
+        error("Error in macro. Lambda body arguments speicifcation is incorrect")
 
-    on_index_init = on_index === nothing ? :(nothing) : :($on_index = on[2])
-
-    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
-    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
-
-    whereargs = whereargs === nothing ? [] : whereargs
+    fuppertype                       = MacroHelpers.upper_type(fformtype)
+    on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
+    whereargs                        = whereargs === nothing ? [] : whereargs
+    metatype                         = metatype === nothing ? :Any : metatype
 
     inputs = map(inputs) do input
         @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block = __extract_fn_args_macro_rule(inputs, specname = :messages, prefix = :m_, proxy = :Message)
-    q_names, q_types, q_init_block = __extract_fn_args_macro_rule(inputs, specname = :marginals, prefix = :q_, proxy = :Marginal)
-
-    metatype = metatype === nothing ? :Nothing : metatype
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :Message)
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :Marginal)
 
     output = quote
         function ReactiveMP.marginalrule(

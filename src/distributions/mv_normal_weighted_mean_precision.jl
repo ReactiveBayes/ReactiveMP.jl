@@ -50,7 +50,7 @@ function convert(::Type{ <: MvNormalWeightedMeanPrecision{T} }, xi::AbstractVect
     MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{ <: MvNormalWeightedMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), tiny .* ones(dims))
+vague(::Type{ <: MvNormalWeightedMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
 
 function Base.prod(::ProdPreserveParametrisation, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right) 
