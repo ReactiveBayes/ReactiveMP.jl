@@ -25,12 +25,13 @@ using ReactiveMP
         Λ    = [ 1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5 ]
         dist = MvNormalMeanPrecision(μ, Λ)
 
-        @test mean(dist)      == μ
-        @test mode(dist)      == μ
-        @test invcov(dist)    == Λ
-        @test precision(dist) == Λ
-        @test cov(dist)       ≈ cholinv(Λ)
-        @test std(dist)       ≈ cholsqrt(cholinv(Λ))
+        @test mean(dist)         == μ
+        @test mode(dist)         == μ
+        @test weightedmean(dist) == Λ * μ
+        @test invcov(dist)       == Λ
+        @test precision(dist)    == Λ
+        @test cov(dist)          ≈ cholinv(Λ)
+        @test std(dist)          ≈ cholsqrt(cholinv(Λ))
         
         @test length(dist) == 3
         @test entropy(dist) ≈ 3.1517451983126357
@@ -44,6 +45,13 @@ using ReactiveMP
     @testset "Base methods" begin
         @test convert(MvNormalMeanPrecision{Float32}, MvNormalMeanPrecision([ 0.0, 0.0 ])) == MvNormalMeanPrecision([ 0f0, 0f0 ], [ 1f0, 1f0 ])
         @test convert(MvNormalMeanPrecision{Float64}, [ 0.0, 0.0 ], [ 2 0; 0 3 ]) == MvNormalMeanPrecision([ 0.0, 0.0 ], [ 2.0 0.0; 0.0 3.0 ])
+
+        @test length(MvNormalMeanPrecision([ 0.0, 0.0 ]))      === 2
+        @test length(MvNormalMeanPrecision([ 0.0, 0.0, 0.0 ])) === 3
+        @test ndims(MvNormalMeanPrecision([ 0.0, 0.0 ]))       === 2
+        @test ndims(MvNormalMeanPrecision([ 0.0, 0.0, 0.0 ]))  === 3
+        @test size(MvNormalMeanPrecision([ 0.0, 0.0 ]))        === (2, )
+        @test size(MvNormalMeanPrecision([ 0.0, 0.0, 0.0 ]))   === (3, )
     end
 
     @testset "prod" begin

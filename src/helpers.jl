@@ -178,6 +178,11 @@ Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero
 
 Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal($(value(a)), $(infs(a))∞)")
 
+# Union helpers
+
+union_types(x::Union) = (x.a, union_types(x.b)...)
+union_types(x::Type)  = (x,)
+
 # Symbol helpers
 
 __extract_val_type(::Type{ Type{ Val{ S } } }) where S = S

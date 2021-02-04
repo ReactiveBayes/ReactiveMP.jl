@@ -25,12 +25,13 @@ using ReactiveMP
         Σ    = [ 1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5 ]
         dist = MvNormalMeanCovariance(μ, Σ)
 
-        @test mean(dist)      == μ
-        @test mode(dist)      == μ
-        @test invcov(dist)    ≈  inv(Σ)
-        @test precision(dist) ≈  inv(Σ)
-        @test cov(dist)       == Σ
-        @test std(dist)       ≈ cholsqrt(Σ)
+        @test mean(dist)         == μ
+        @test mode(dist)         == μ
+        @test weightedmean(dist) == cholinv(Σ) * μ
+        @test invcov(dist)       ≈  cholinv(Σ)
+        @test precision(dist)    ≈  cholinv(Σ)
+        @test cov(dist)          == Σ
+        @test std(dist)          ≈ cholsqrt(Σ)
         
         @test length(dist) == 3
         @test entropy(dist) ≈ 5.361886000915401
@@ -44,6 +45,13 @@ using ReactiveMP
     @testset "Base methods" begin
         @test convert(MvNormalMeanCovariance{Float32}, MvNormalMeanCovariance([ 0.0, 0.0 ])) == MvNormalMeanCovariance([ 0f0, 0f0 ], [ 1f0, 1f0 ])
         @test convert(MvNormalMeanCovariance{Float64}, [ 0.0, 0.0 ], [ 2 0; 0 3 ]) == MvNormalMeanCovariance([ 0.0, 0.0 ], [ 2.0 0.0; 0.0 3.0 ])
+
+        @test length(MvNormalMeanCovariance([ 0.0, 0.0 ]))      === 2
+        @test length(MvNormalMeanCovariance([ 0.0, 0.0, 0.0 ])) === 3
+        @test ndims(MvNormalMeanCovariance([ 0.0, 0.0 ]))       === 2
+        @test ndims(MvNormalMeanCovariance([ 0.0, 0.0, 0.0 ]))  === 3
+        @test size(MvNormalMeanCovariance([ 0.0, 0.0 ]))        === (2, )
+        @test size(MvNormalMeanCovariance([ 0.0, 0.0, 0.0 ]))   === (3, )
     end
 
     @testset "prod" begin

@@ -9,13 +9,17 @@ using Test, Documenter, ReactiveMP
     include("test_distributions.jl")
     include("distributions/test_normal_mean_variance.jl")
     include("distributions/test_normal_mean_precision.jl")
+    include("distributions/test_normal_weighted_mean_precision.jl")
+    include("distributions/test_mv_normal_mean_covariance.jl")
     include("distributions/test_mv_normal_mean_precision.jl")
+    include("distributions/test_mv_normal_weighted_mean_precision.jl")
+    include("distributions/test_normal.jl")
 
     include("test_node.jl")
 
-    @testset "Detect ambiguities" begin
-        @test length(Test.detect_ambiguities(Rocket)) == 0
-    end
+    # @testset "Detect ambiguities" begin
+    #     @test length(Test.detect_ambiguities(ReactiveMP)) == 0
+    # end
 end
 
 end
