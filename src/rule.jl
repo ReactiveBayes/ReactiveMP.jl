@@ -156,7 +156,7 @@ macro rule(fform, lambda)
                     $(
                         __write_rule_output(fuppertype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
                             return quote
-                                return ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginal_names, $(marginals), meta, __node)
+                                return ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginals_names, $(marginals), meta, __node)
                             end
                         end 
                     )
