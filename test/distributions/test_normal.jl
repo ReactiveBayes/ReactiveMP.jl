@@ -3,6 +3,7 @@ module NormalTest
 using Test
 using ReactiveMP
 using Random
+using LinearAlgebra
 
 @testset "Normal" begin
     
@@ -27,11 +28,11 @@ using Random
             @test logpdf(left, 0.0)  ≈ logpdf(right, 0.0)
         end
 
-        types = ReactiveMP.union_types(UnivariateNormalDistributionsFamily)
+        types = ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})
         rng   = MersenneTwister(1234)
 
         for type in types 
-            left = type(rand(rng, Float64), rand(rng, Float64))
+            left = convert(type, rand(rng, Float64), rand(rng, Float64))
             for type in types
                 right = convert(type, left)
                 check_basic_statistics(left, right)
@@ -65,13 +66,13 @@ using Random
             @test logpdf(left, fill(0.0, dims))  ≈ logpdf(right, fill(0.0, dims))
         end
 
-        types = ReactiveMP.union_types(MultivariateNormalDistributionsFamily)
+        types = ReactiveMP.union_types(MultivariateNormalDistributionsFamily{Float64})
         dims  = (2, 3, 5)
         rng   = MersenneTwister(1234)
 
         for dim in dims
             for type in types 
-                left = type(rand(rng, Float64, dim), rand(rng, Float64, dim))
+                left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(rand(rng, Float64, dim))))
                 for type in types
                     right = convert(type, left)
                     check_basic_statistics(left, right, dim)
