@@ -70,6 +70,7 @@ include("dot_product/out.jl")
 include("dot_product/in1.jl")
 include("dot_product/in2.jl")
 
+include("transition/marginals.jl")
 include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")

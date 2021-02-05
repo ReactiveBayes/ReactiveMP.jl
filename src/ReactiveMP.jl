@@ -34,6 +34,7 @@ include("distributions/mv_normal_weighted_mean_precision.jl")
 include("distributions/normal.jl")
 include("distributions/exp_linear_quadratic.jl")
 include("distributions/wishart.jl")
+include("distributions/contingency.jl")
 include("distributions/common.jl")
 
 include("message.jl")
