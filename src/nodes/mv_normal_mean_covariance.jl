@@ -7,9 +7,8 @@ conjugate_type(::Type{ <: MvNormalMeanCovariance }, ::Type{ Val{ :Σ } })   = In
 
 @average_energy MvNormalMeanCovariance (q_out::Any, q_μ::Any, q_Σ::Any) = begin
     (m_mean, v_mean) = mean(q_μ), cov(q_μ)
-        (m_out, v_out)   = mean(q_out), cov(q_out)
-
-        0.5 * (ndims(q_out) * log2π + logdet(mean(q_Σ)) + tr(cholinv(mean(q_Σ))*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)')))
+    (m_out, v_out)   = mean(q_out), cov(q_out)
+    0.5 * (ndims(q_out) * log2π + logdet(mean(q_Σ)) + tr(cholinv(mean(q_Σ))*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)')))
 end
 
 @average_energy MvNormalMeanCovariance (q_out_μ::Any, q_Σ::Any) = begin
