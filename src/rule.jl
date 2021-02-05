@@ -1,17 +1,46 @@
 export rule, marginalrule
 export @rule, @marginalrule
 
+using MacroTools
+
 """
-    rule
+    rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node)
 
 This function is used to compute an outbound message for a given node
+
+# Arguments
+
+- `fform`: Functional form of the node in form of a type of the node, e.g. `::Type{ <: NormalMeanVariance }` or `::typeof(+)`
+- `on`: Outbound interface's tag for which a message has to be computed, e.g. `::Type{ Val{:μ} }` or `::Type{ Val{:μ} }`
+- `vconstraint`: Variable constraints for an outbound interface, e.g. `Marginalisation` or `MomentMatching`
+- `mnames`: Ordered messages names in form of the Val type, eg. ::Type{ Val{ (:mean, :precision) } }
+- `messages`: Tuple of message of the same length as `mnames` used to compute an outbound message
+- `qnames`: Ordered marginal names in form of the Val type, eg. ::Type{ Val{ (:mean, :precision) } }
+- `marginals`: Tuple of marginals of the same length as `qnames` used to compute an outbound message
+- `meta`: Extra meta information
+- `__node`: Node reference
+
+See also: [`@rule`](@ref), [`marginalrule`], [`@marginalrule`](@ref)
 """
 function rule end
 
 """
-    marginalrule
+    marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node)
 
-This function is used to compute local joint marginal for a given node
+This function is used to compute a local joint marginal for a given node
+
+# Arguments
+
+- `fform`: Functional form of the node in form of a type of the node, e.g. `::Type{ <: NormalMeanVariance }` or `::typeof(+)`
+- `on`: Local joint marginal tag , e.g. `::Type{ Val{ :mean_precision } }` or `::Type{ Val{ :out_mean_precision } }`
+- `mnames`: Ordered messages names in form of the Val type, eg. ::Type{ Val{ (:mean, :precision) } }
+- `messages`: Tuple of message of the same length as `mnames` used to compute an outbound message
+- `qnames`: Ordered marginal names in form of the Val type, eg. ::Type{ Val{ (:mean, :precision) } }
+- `marginals`: Tuple of marginals of the same length as `qnames` used to compute an outbound message
+- `meta`: Extra meta information
+- `__node`: Node reference
+
+See also: [`rule`], [`@rule`](@ref) [`@marginalrule`](@ref)
 """
 function marginalrule end
 
@@ -45,10 +74,10 @@ function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     return out_names, out_types, init_block
 end
 
-function __write_rule_output(body::Function, fformtype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
+function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
     return quote
         function ReactiveMP.rule(
-            fform           :: $(fformtype),
+            fform           :: $(fuppertype),
             on              :: $(on_type),
             vconstraint     :: $(vconstraint),
             messages_names  :: $(m_names),
@@ -62,6 +91,25 @@ function __write_rule_output(body::Function, fformtype, on_type, vconstraint, m_
         end
     end
 end
+
+function marginalrule_function_expression(body::Function, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs)
+    return quote
+        function ReactiveMP.marginalrule(
+            fform           :: $(fuppertype),
+            on              :: $(on_type),
+            messages_names  :: $(m_names),
+            messages        :: $(m_types),
+            marginals_names :: $(q_names),
+            marginals       :: $(q_types),
+            meta            :: $(metatype),
+            __node
+        ) where { $(whereargs...) }
+            $(body())
+        end
+    end
+end
+
+
 
 import .MacroHelpers
 
@@ -84,7 +132,7 @@ macro rule(fform, lambda)
     metatype                         = metatype === nothing ? :Any : metatype
     
     options = map(options) do option
-        @capture(option, name_ = value_)
+        @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")x
         return (name, value)
     end
 
@@ -98,7 +146,7 @@ macro rule(fform, lambda)
 
     output = quote
         $(
-            __write_rule_output(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
+            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
@@ -113,9 +161,10 @@ macro rule(fform, lambda)
 
         # Symmetrical option
         if first(option) === :symmetrical
-            @capture(last(option), [ names__ ]) || error("Invalid symmetrical names specification. Name should be a symbol.")
+            @capture(last(option), [ names__ ]) || 
+                error("Invalid symmetrical names specification. Name should be a symbol.")
 
-            @assert length(names) > 1 "Invalid symmetrical names specification. Length of names should be grater than 1."
+            @assert length(names) > 1 "Invalid symmetrical names specification. Length of names should be greater than 1."
 
             names = map(names) do name
                 @capture(name, :s_) || error("Invalid symmetrical name specification. Name should be a symbol.")
@@ -142,11 +191,11 @@ macro rule(fform, lambda)
 
             foreach(swaps) do swap 
 
-                messages  = is_messages ? __rearrange_tupled_arguments(:messages, length(m_init_block), swap) : :(messages)
-                marginals = is_marginals ? __rearrange_tupled_arguments(:marginals, length(m_init_block), swap) : :(marginals)
+                messages  = is_messages ? MacroHelpers.rearranged_tuple(:messages, length(m_init_block), swap) : :(messages)
+                marginals = is_marginals ? MacroHelpers.rearranged_tuple(:marginals, length(m_init_block), swap) : :(marginals)
 
-                swapped_m_types = is_messages ? :(Tuple{$(swap_indices_array(m_types.args[2:end], first(swap), last(swap))...)}) : m_types
-                swapped_q_types = is_marginals ? :(Tuple{$(swap_indices_array(q_types.args[2:end], first(swap), last(swap))...)}) : q_types
+                swapped_m_types = is_messages ? :(Tuple{$(swapped(m_types.args[2:end], first(swap), last(swap))...)}) : m_types
+                swapped_q_types = is_marginals ? :(Tuple{$(swapped(q_types.args[2:end], first(swap), last(swap))...)}) : q_types
 
                 @assert !is_messages || swapped_m_types != m_types "Message types are the same after arguments swap for indices = $(swap)"
                 @assert !is_marginals || swapped_q_types != q_types "Marginal types are the same after arguments swap for indices = $(swap)"
@@ -154,10 +203,8 @@ macro rule(fform, lambda)
                 output = quote
                     $output
                     $(
-                        __write_rule_output(fuppertype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
-                            return quote
-                                return ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginals_names, $(marginals), meta, __node)
-                            end
+                        rule_function_expression(fuppertype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
+                            return :(ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginals_names, $(marginals), meta, __node))
                         end 
                     )
                 end
@@ -165,6 +212,7 @@ macro rule(fform, lambda)
         else 
             error("Unknown option: $(first(option)) in rule specification")
         end
+        
     end
 
     return esc(output)
@@ -197,21 +245,16 @@ macro marginalrule(fform, lambda)
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :Marginal)
 
     output = quote
-        function ReactiveMP.marginalrule(
-            fform           :: $(fuppertype),
-            on              :: $(on_type),
-            messages_names  :: $(m_names),
-            messages        :: $(m_types),
-            marginals_names :: $(q_names),
-            marginals       :: $(q_types),
-            meta            :: $(metatype),
-            __node
-        ) where { $(whereargs...) }
-            $(on_index_init)
-            $(m_init_block...)
-            $(q_init_block...)
-            $(body)
-        end
+        $(
+            marginalrule_function_expression(fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs) do 
+                return quote
+                    $(on_index_init)
+                    $(m_init_block...)
+                    $(q_init_block...)
+                    $(body)
+                end
+            end
+        )
     end
     
     return esc(output)

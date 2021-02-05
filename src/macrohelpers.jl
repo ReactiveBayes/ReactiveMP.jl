@@ -1,8 +1,3 @@
-using MacroTools
-
-
-
-
 module MacroHelpers
 
 using MacroTools
@@ -80,12 +75,15 @@ function proxy_type(proxy::Symbol, type::Expr)
     end
 end
 
+"""
+    rearranged_tuple(name::Symbol, length::Int, swap::Tuple{Int, Int})
+"""
+function rearranged_tuple(name::Symbol, length::Int, swap::Tuple{Int, Int})
+    args = map(i -> :($(name)[$i]), 1:length)
+    i, j = first(swap), last(swap)
+    args[i], args[j] = args[j], args[i]
+    return Expr(:tuple, args...)
 end
 
-function __rearrange_tupled_arguments(name::Symbol, length::Int, swap::Tuple{Int, Int})
-    arguments = map(i -> :($(name)[$i]), 1:length)
-    tmp = arguments[ first(swap) ]
-    arguments[ first(swap) ] = arguments[ last(swap) ]
-    arguments[ last(swap) ]  = tmp
-    return Expr(:tuple, arguments...)
 end
+
