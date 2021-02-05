@@ -31,7 +31,7 @@ Distributions.logpdf(dist::NormalWeightedMeanPrecision, x::Real) = -(log2π - lo
 Base.precision(dist::NormalWeightedMeanPrecision)     = invcov(dist)
 Base.eltype(::NormalWeightedMeanPrecision{T}) where T = T
 
-Base.convert(::Type{ NormalWeightedMeanPrecision{T} }, xi::Real, w::Real) where { T <: Real } = NormalWeightedMeanPrecision(T(xi), T(w))
+Base.convert(::Type{ NormalWeightedMeanPrecision{T} }, xi::Real, w::Real) where { T <: Real } = NormalWeightedMeanPrecision(convert(T, xi), convert(T, w))
 
 vague(::Type{ <: NormalWeightedMeanPrecision }) = NormalWeightedMeanPrecision(0.0, tiny)
 

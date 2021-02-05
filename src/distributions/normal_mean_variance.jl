@@ -31,7 +31,7 @@ Distributions.logpdf(dist::NormalMeanVariance, x::Real) = -(log2π + log(var(dis
 Base.precision(dist::NormalMeanVariance{T}) where T = invcov(dist)
 Base.eltype(::NormalMeanVariance{T})        where T = T
 
-Base.convert(::Type{ NormalMeanVariance{T} }, μ::Real, v::Real) where { T <: Real } = NormalMeanVariance(T(μ), T(v))
+Base.convert(::Type{ NormalMeanVariance{T} }, μ::Real, v::Real) where { T <: Real } = NormalMeanVariance(convert(T, μ), convert(T, v))
 
 vague(::Type{ <: NormalMeanVariance }) = NormalMeanVariance(0.0, huge)
 
