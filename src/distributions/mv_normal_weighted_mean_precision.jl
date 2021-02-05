@@ -52,6 +52,10 @@ end
 
 vague(::Type{ <: MvNormalWeightedMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
 
+function Base.prod(::ProdBestSuitableParametrisation, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
+    return prod(ProdPreserveParametrisation(), left, right)
+end
+
 function Base.prod(::ProdPreserveParametrisation, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right) 
     Λ  = invcov(left) + invcov(right)
