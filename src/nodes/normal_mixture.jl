@@ -148,16 +148,22 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMix
         getmarginal(connectedvar(node.switch)),
         combineLatest(map((mean) -> getmarginal(connectedvar(mean)), node.means), PushEach()),
         combineLatest(map((prec) -> getmarginal(connectedvar(prec)), node.precs), PushEach())
-    ), PushEach())
+    ), PushEach()) |> map_to((
+        getmarginal(connectedvar(node.out)),
+        getmarginal(connectedvar(node.switch)),
+        map((mean) -> getmarginal(connectedvar(mean)), node.means),
+        map((prec) -> getmarginal(connectedvar(prec)), node.precs)
+    ))
 
     mapping = let fform = functionalform(node), meta = metadata(node)
-        (d) -> begin 
-            average_energy  = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, d, meta)
+        (marginals) -> begin 
+            recent_marginals = getrecent.(marginals)
+            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, recent_marginals, meta)
 
-            out_entropy     = score(DifferentialEntropy(), d[1])
-            switch_entropy  = score(DifferentialEntropy(), d[2])
-            means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, d[3])
-            precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, d[4])
+            out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
+            switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
+            means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
+            precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
 
             return convert(T, average_energy - (out_entropy + switch_entropy + means_entropies + precs_entropies))
         end
