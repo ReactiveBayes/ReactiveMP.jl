@@ -19,6 +19,8 @@ include("beta/marginals.jl")
 include("dirichlet/marginals.jl")
 include("dirichlet/out.jl")
 
+include("matrix_dirichlet/out.jl")
+
 include("categorical/out.jl")
 include("categorical/p.jl")
 
@@ -62,3 +64,13 @@ include("wishart/marginals.jl")
 include("normal_mixture/switch.jl")
 include("normal_mixture/m.jl")
 include("normal_mixture/p.jl")
+
+include("dot_product/marginals.jl")
+include("dot_product/out.jl")
+include("dot_product/in1.jl")
+include("dot_product/in2.jl")
+
+include("transition/marginals.jl")
+include("transition/out.jl")
+include("transition/in.jl")
+include("transition/a.jl")

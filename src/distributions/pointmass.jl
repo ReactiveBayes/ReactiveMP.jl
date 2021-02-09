@@ -26,6 +26,8 @@ Distributions.var(distribution::PointMass{T})  where { T <: Real } = zero(T)
 Distributions.std(distribution::PointMass{T})  where { T <: Real } = zero(T)
 Distributions.cov(distribution::PointMass{T})  where { T <: Real } = zero(T)
 
+probvec(distribution::PointMass{T})  where { T <: Real } = error("probvec for univariate point mass is not implemented")
+
 Base.precision(::PointMass{T}) where { T <: Real } = Inf
 Base.ndims(::PointMass{T})     where { T <: Real } = 1
 
@@ -36,6 +38,8 @@ Distributions.var(distribution::PointMass{V})  where { T, V <: AbstractVector{T}
 Distributions.std(distribution::PointMass{V})  where { T, V <: AbstractVector{T} } = zeros(T, (ndims(distribution), ))
 Distributions.cov(distribution::PointMass{V})  where { T, V <: AbstractVector{T} } = zeros(T, (ndims(distribution), ndims(distribution)))
 
+probvec(distribution::PointMass{V})  where { T, V <: AbstractVector{T} } = mean(distribution)
+
 Base.precision(distribution::PointMass{V}) where { T, V <: AbstractVector{T} } = one(T) ./ var(distribution)
 Base.ndims(distribution::PointMass{V})     where { T, V <: AbstractVector{T} } = length(mean(distribution))
 
@@ -45,6 +49,8 @@ Distributions.mean(distribution::PointMass{M}) where { T, M <: AbstractMatrix{T}
 Distributions.var(distribution::PointMass{M})  where { T, M <: AbstractMatrix{T} } = zeros(T, ndims(distribution))
 Distributions.std(distribution::PointMass{M})  where { T, M <: AbstractMatrix{T} } = zeros(T, ndims(distribution))
 Distributions.cov(distribution::PointMass{M})  where { T, M <: AbstractMatrix{T} } = throw("Distributions.cov(::PointMass{ <: AbstractMatrix }) is not implemented")
+
+probvec(distribution::PointMass{M}) where { T, M <: AbstractMatrix{T} } = error("probvec for matrix variate point mass is not implemented")
 
 Base.precision(distribution::PointMass{M}) where { T, M <: AbstractMatrix{T} } = one(T) ./ var(distribution)
 Base.ndims(distribution::PointMass{M})     where { T, M <: AbstractMatrix{T} } = size(mean(distribution))

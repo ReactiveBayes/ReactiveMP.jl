@@ -1,6 +1,5 @@
 export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
-export NormalDistributionsFamily, MvNormalDistributionsFamily
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
 
@@ -28,7 +27,15 @@ function Base.convert(::Type{ NormalMeanVariance{T} }, dist::UnivariateNormalDis
 end
 
 function Base.convert(::Type{ MvNormalMeanCovariance{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real } 
-    return MvNormalMeanCovariance(convert(AbstractArray{T}, mean(dist)), convert(AbstractArray{T}, cov(dist)))
+    return convert(MvNormalMeanCovariance{T, AbstractArray{T, 1}}, dist)
+end
+
+function Base.convert(::Type{ MvNormalMeanCovariance{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} } 
+    return convert(MvNormalMeanCovariance{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
+end
+
+function Base.convert(::Type{ MvNormalMeanCovariance{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} } 
+    return MvNormalMeanCovariance(convert(M, mean(dist)), convert(P, cov(dist)))
 end
 
 function Base.convert(::Type{ NormalMeanVariance }, dist::UnivariateNormalDistributionsFamily{T}) where { T <: Real }
@@ -46,7 +53,15 @@ function Base.convert(::Type{ NormalMeanPrecision{T} }, dist::UnivariateNormalDi
 end
 
 function Base.convert(::Type{ MvNormalMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real } 
-    return MvNormalMeanPrecision(convert(AbstractArray{T}, mean(dist)), convert(AbstractArray{T}, precision(dist)))
+    return convert(MvNormalMeanPrecision{T, AbstractArray{T, 1}}, dist)
+end
+
+function Base.convert(::Type{ MvNormalMeanPrecision{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} } 
+    return convert(MvNormalMeanPrecision{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
+end
+
+function Base.convert(::Type{ MvNormalMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} } 
+    return MvNormalMeanPrecision(convert(M, mean(dist)), convert(P, precision(dist)))
 end
 
 function Base.convert(::Type{ NormalMeanPrecision }, dist::UnivariateNormalDistributionsFamily{T}) where { T <: Real }
@@ -64,7 +79,15 @@ function Base.convert(::Type{ NormalWeightedMeanPrecision{T} }, dist::Univariate
 end
 
 function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real } 
-    return MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, weightedmean(dist)), convert(AbstractArray{T}, precision(dist)))
+    return convert(MvNormalWeightedMeanPrecision{T, AbstractArray{T, 1}}, dist)
+end
+
+function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} } 
+    return convert(MvNormalWeightedMeanPrecision{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
+end
+
+function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} } 
+    return MvNormalWeightedMeanPrecision(convert(M, weightedmean(dist)), convert(P, precision(dist)))
 end
 
 function Base.convert(::Type{ NormalWeightedMeanPrecision }, dist::UnivariateNormalDistributionsFamily{T}) where { T <: Real }
@@ -74,6 +97,8 @@ end
 function Base.convert(::Type{ MvNormalWeightedMeanPrecision }, dist::MultivariateNormalDistributionsFamily{T}) where { T <: Real }
     return convert(MvNormalWeightedMeanPrecision{T}, dist)
 end
+
+# Common convert methods
 
 # Exstensions of prod methods
 

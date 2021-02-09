@@ -4,3 +4,7 @@ export rule
     rho = clamp.(exp.(logmean(q_p)), tiny, Inf) # Softens the parameter
     return Categorical(rho ./ sum(rho))
 end
+
+@rule Categorical(:out, Marginalisation) (m_p::PointMass, ) = begin
+    return Categorical(mean(m_p))
+end
