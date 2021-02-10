@@ -20,6 +20,7 @@ end
 
 Distributions.shape(dist::GammaShapeRate) = dist.a
 Distributions.rate(dist::GammaShapeRate) = dist.b
+Distributions.scale(dist::GammaShapeRate) = inv(dist.b)
 
 Distributions.mean(dist::GammaShapeRate) = shape(dist)/ rate(dist)
 
