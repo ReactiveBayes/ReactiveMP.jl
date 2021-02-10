@@ -13,6 +13,9 @@ include("multiplication/in.jl")
 include("gamma/out.jl")
 include("gamma/marginals.jl")
 
+include("gamma_shape_rate/out.jl")
+include("gamma_shape_rate/marginals.jl")
+
 include("beta/out.jl")
 include("beta/marginals.jl")
 
