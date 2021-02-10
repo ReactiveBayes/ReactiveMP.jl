@@ -1,25 +1,48 @@
-export Gamma
+export Gamma, GammaShapeScale, GammaDistributionsFamily
 
+import SpecialFunctions: digamma
 import Distributions: Gamma, shape, scale
 
-vague(::Type{ <: Gamma }) = Gamma(1.0, huge)
+const GammaShapeScale             = Gamma
+const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
 
-function prod(::ProdPreserveParametrisation, left::Gamma{T}, right::Gamma{T}) where T
-    return Gamma(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
-end
-
-function logmean(dist::Gamma)
+function logmean(dist::GammaShapeScale)
     k, θ = params(dist)
     return digamma(k) + log(θ)
 end
 
-Base.convert(::Type{<:Gamma}, dist::GammaShapeRate) = Gamma(shape(dist), scale(dist))
-Base.convert(::Type{<:GammaShapeRate}, dist::Gamma) = GammaShapeRate(shape(dist), rate(dist))
+vague(::Type{ <: GammaShapeScale }) = GammaShapeScale(1.0, huge)
 
-function prod(::ProdPreserveParametrisation, left::GammaShapeRate, right::Gamma)
+function prod(::ProdPreserveParametrisation, left::GammaShapeScale, right::GammaShapeScale)
+    return GammaShapeScale(shape(left) + shape(right) - 1.0, (scale(left) * scale(right)) / (scale(left) + scale(right)))
+end
+
+# Conversion to shape - scale parametrisation
+
+function Base.convert(::Type{ GammaShapeScale{T} }, dist::GammaDistributionsFamily) where T
+    return GammaShapeScale(convert(T, shape(dist)), convert(T, scale(dist)))
+end
+
+function Base.convert(::Type{ GammaShapeScale }, dist::GammaDistributionsFamily{T}) where T
+    return convert(GammaShapeScale{T}, dist)
+end
+
+# Conversion to shape - rate parametrisation
+
+function Base.convert(::Type{ GammaShapeRate{T} }, dist::GammaDistributionsFamily) where T
+    return GammaShapeRate(convert(T, shape(dist)), convert(T, rate(dist)))
+end
+
+function Base.convert(::Type{ GammaShapeRate }, dist::GammaDistributionsFamily{T}) where T
+    return convert(GammaShapeRate{T}, dist)
+end
+
+# Extensions of prod methods
+
+function prod(::ProdPreserveParametrisation, left::GammaShapeRate, right::GammaShapeScale)
     return GammaShapeRate(shape(left) + shape(right) - 1.0, rate(left) + rate(right))
 end
 
-function prod(::ProdPreserveParametrisation, left::Gamma, right::GammaShapeRate)
-    return convert(Gamma, prod(ProdPreserveParametrisation(), right, left))
+function prod(::ProdPreserveParametrisation, left::GammaShapeScale, right::GammaShapeRate)
+    return GammaShapeScale(shape(left) + shape(right) - 1.0, (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
