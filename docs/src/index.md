@@ -7,6 +7,7 @@ Welcome to the documentation for ReactiveMP.jl.
 ```@contents
 Pages = [
   "getting-started.md",
+  "extending.md",
   "distributions.md"
 ]
 Depth = 2
