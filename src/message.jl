@@ -30,6 +30,7 @@ Distributions.median(message::Message)    = Distributions.median(getdata(message
 Distributions.mode(message::Message)      = Distributions.mode(getdata(message))
 Distributions.shape(message::Message)     = Distributions.shape(getdata(message))
 Distributions.scale(message::Message)     = Distributions.scale(getdata(message))
+Distributions.rate(message::Message)     = Distributions.rate(getdata(message))
 Distributions.var(message::Message)       = Distributions.var(getdata(message))
 Distributions.std(message::Message)       = Distributions.std(getdata(message))
 Distributions.cov(message::Message)       = Distributions.cov(getdata(message))

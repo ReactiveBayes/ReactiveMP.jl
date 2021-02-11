@@ -1,9 +1,9 @@
 export ProdPreserveParametrisation, ProdBestSuitableParametrisation
 export default_prod_strategy, vague
-export mean, median, mode, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
+export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 export weightedmean, logmean, inversemean, mirroredlogmean
 
-import Distributions: mean, median, mode, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
+import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 
 import Base: prod
 

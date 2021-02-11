@@ -19,6 +19,7 @@ Distributions.median(marginal::Marginal)    = Distributions.median(getdata(margi
 Distributions.mode(marginal::Marginal)      = Distributions.mode(getdata(marginal))
 Distributions.shape(marginal::Marginal)     = Distributions.shape(getdata(marginal))
 Distributions.scale(marginal::Marginal)     = Distributions.scale(getdata(marginal))
+Distributions.rate(marginal::Marginal)      = Distributions.rate(getdata(marginal))
 Distributions.var(marginal::Marginal)       = Distributions.var(getdata(marginal))
 Distributions.std(marginal::Marginal)       = Distributions.std(getdata(marginal))
 Distributions.cov(marginal::Marginal)       = Distributions.cov(getdata(marginal))
@@ -73,7 +74,7 @@ end
 MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
 
 getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
-getrecent(observables::Tuple)             = getrecent.(observables)                       
+getrecent(observables::Tuple)             = getrecent.(observables)
 getrecent(::Nothing)                      = nothing
 
 function Rocket.on_subscribe!(observable::MarginalObservable, actor)
