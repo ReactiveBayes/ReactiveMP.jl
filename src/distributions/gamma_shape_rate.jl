@@ -1,7 +1,7 @@
 export GammaShapeRate
 
 import Distributions: Gamma, shape, rate
-import SpecialFunctions: loggamma, digamma
+import SpecialFunctions: loggamma, digamma, gamma
 
 struct GammaShapeRate{T <: Real}
     a :: T
@@ -37,3 +37,6 @@ vague(::Type{ <: GammaShapeRate }) = GammaShapeRate(1.0, tiny)
 function prod(::ProdPreserveParametrisation, left::GammaShapeRate{T}, right::GammaShapeRate{T}) where T
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
+
+Distributions.pdf(dist::GammaShapeRate, x::Real)    = (rate(dist)^shape(dist)) / gamma(shape(dist)) * x^(shape(dist)-1)*exp(-rate(dist) * x)
+Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist)-1)*log(x) - rate(dist)*x
