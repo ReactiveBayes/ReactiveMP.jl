@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using Random
 using LinearAlgebra
+using Distributions
 
 @testset "Normal" begin
     
@@ -79,6 +80,26 @@ using LinearAlgebra
                 end
             end
         end
+
+    end
+
+    @testset "Variate forms promotions" begin
+        
+        @test promote_variate_type(Univariate, NormalMeanVariance)          === NormalMeanVariance
+        @test promote_variate_type(Univariate, NormalMeanPrecision)         === NormalMeanPrecision
+        @test promote_variate_type(Univariate, NormalWeightedMeanPrecision) === NormalWeightedMeanPrecision
+
+        @test promote_variate_type(Multivariate, NormalMeanVariance)          === MvNormalMeanCovariance
+        @test promote_variate_type(Multivariate, NormalMeanPrecision)         === MvNormalMeanPrecision
+        @test promote_variate_type(Multivariate, NormalWeightedMeanPrecision) === MvNormalWeightedMeanPrecision
+
+        @test promote_variate_type(Univariate, MvNormalMeanCovariance)        === NormalMeanVariance
+        @test promote_variate_type(Univariate, MvNormalMeanPrecision)         === NormalMeanPrecision
+        @test promote_variate_type(Univariate, MvNormalWeightedMeanPrecision) === NormalWeightedMeanPrecision
+
+        @test promote_variate_type(Multivariate, MvNormalMeanCovariance)        === MvNormalMeanCovariance
+        @test promote_variate_type(Multivariate, MvNormalMeanPrecision)         === MvNormalMeanPrecision
+        @test promote_variate_type(Multivariate, MvNormalWeightedMeanPrecision) === MvNormalWeightedMeanPrecision
 
     end
 

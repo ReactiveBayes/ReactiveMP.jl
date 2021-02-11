@@ -46,7 +46,9 @@ Base.length(dist::MvNormalMeanPrecision)            = length(mean(dist))
 Base.ndims(dist::MvNormalMeanPrecision)             = length(dist)
 Base.size(dist::MvNormalMeanPrecision)              = (length(dist), )
 
-function convert(::Type{ <: MvNormalMeanPrecision{T} }, μ::AbstractVector, Λ::AbstractMatrix) where { T <: Real }
+Base.convert(::Type{ <: MvNormalMeanPrecision }, μ::AbstractVector, Λ::AbstractMatrix) = MvNormalMeanPrecision(μ, Λ)
+
+function Base.convert(::Type{ <: MvNormalMeanPrecision{T} }, μ::AbstractVector, Λ::AbstractMatrix) where { T <: Real }
     MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
 

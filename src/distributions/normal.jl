@@ -20,6 +20,19 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 
 import Base: prod, convert
 
+# Variate forms promotion
+
+promote_variate_type(::Type{ Univariate },   ::Type{ F }) where { F <: UnivariateNormalDistributionsFamily }   = F
+promote_variate_type(::Type{ Multivariate }, ::Type{ F }) where { F <: MultivariateNormalDistributionsFamily } = F
+
+promote_variate_type(::Type{ Univariate }, ::Type{ <: MvNormalMeanCovariance })        = NormalMeanVariance
+promote_variate_type(::Type{ Univariate }, ::Type{ <: MvNormalMeanPrecision })         = NormalMeanPrecision
+promote_variate_type(::Type{ Univariate }, ::Type{ <: MvNormalWeightedMeanPrecision }) = NormalWeightedMeanPrecision
+
+promote_variate_type(::Type{ Multivariate }, ::Type{ <: NormalMeanVariance })          = MvNormalMeanCovariance
+promote_variate_type(::Type{ Multivariate }, ::Type{ <: NormalMeanPrecision })         = MvNormalMeanPrecision
+promote_variate_type(::Type{ Multivariate }, ::Type{ <: NormalWeightedMeanPrecision }) = MvNormalWeightedMeanPrecision
+
 # Conversion to mean - variance parametrisation
 
 function Base.convert(::Type{ NormalMeanVariance{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real } 

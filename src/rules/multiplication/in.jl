@@ -2,12 +2,8 @@ export rule
 
 @rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass) = PointMass(mean(m_in1) * mean(m_in2))
 
-@rule typeof(*)(:in, Marginalisation) (m_out::NormalMeanVariance, m_A::PointMass) = begin
-    A_inv = cholinv(mean(m_A))
-    return NormalMeanVariance(A_inv * mean(m_out), A_inv * cov(m_out) * A_inv')
-end
-
-@rule typeof(*)(:in, Marginalisation) (m_out::MvNormalMeanCovariance, m_A::PointMass) = begin
-    A_inv = cholinv(mean(m_A))
-    return MvNormalMeanCovariance(A_inv * mean(m_out), A_inv * cov(m_out) * A_inv')
+@rule typeof(*)(:in, Marginalisation) (m_out::F, m_A::PointMass) where { F <: NormalDistributionsFamily } = begin
+    A = mean(m_A)
+    W = A' * precision(m_out) * A
+    return convert(promote_variate_type(F, NormalWeightedMeanPrecision), A' * weightedmean(m_out), W)
 end

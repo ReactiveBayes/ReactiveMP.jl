@@ -3,7 +3,7 @@ export GammaShapeRate
 import Distributions: Gamma, shape, rate
 import SpecialFunctions: loggamma, digamma, gamma
 
-struct GammaShapeRate{T <: Real}
+struct GammaShapeRate{T <: Real} <: ContinuousUnivariateDistribution
     a :: T
     b :: T
 end
@@ -29,6 +29,8 @@ function logmean(dist::GammaShapeRate)
     a, b = params(dist)
     return digamma(a) - log(b)
 end
+
+Base.eltype(::GammaShapeRate{T}) where T = T
 
 Base.convert(::Type{ GammaShapeRate{T} }, a::Real, b::Real) where { T <: Real } = GammaShapeRate(convert(T, a), convert(T, b))
 

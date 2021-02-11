@@ -45,8 +45,11 @@ Base.length(dist::MvNormalMeanCovariance)            = length(mean(dist))
 Base.ndims(dist::MvNormalMeanCovariance)             = length(dist)
 Base.size(dist::MvNormalMeanCovariance)              = (length(dist), )
 
-function convert(::Type{ <: MvNormalMeanCovariance{T} }, μ::AbstractVector, Σ::AbstractMatrix) where { T <: Real }
-    MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
+
+Base.convert(::Type{ <: MvNormalMeanCovariance }, μ::AbstractVector, Σ::AbstractMatrix) = MvNormalMeanCovariance(μ, Σ)
+
+function Base.convert(::Type{ <: MvNormalMeanCovariance{T} }, μ::AbstractVector, Σ::AbstractMatrix) where { T <: Real }
+    return MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
 end
 
 vague(::Type{ <: MvNormalMeanCovariance }, dims::Int) = MvNormalMeanCovariance(zeros(dims), fill(huge, dims))
