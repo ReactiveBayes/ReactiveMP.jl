@@ -11,6 +11,8 @@ getpointmass(dist::PointMass) = dist.point
 
 logmean(dist::PointMass)     = log(mean(dist))
 inversemean(dist::PointMass) = cholinv(mean(dist))
+labsgamma(dist::PointMass)   = labsgamma(mean(dist))
+labsbeta(dist::PointMass)    = labsbeta(mean(dist))
 
 Base.getindex(dist::PointMass, index) = Base.getindex(getpointmass(dist), index)
 

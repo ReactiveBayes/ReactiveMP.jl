@@ -11,6 +11,11 @@ function logmean(dist::GammaShapeScale)
     return digamma(k) + log(θ)
 end
 
+function labsgamma(x::GammaDistributionsFamily)
+    α, β = shape(x), rate(x)
+    return 0.5*log2π - 0.5*(digamma(α) - log(β)) + mean(x)*(1+digamma(α+1)-log(β))
+end
+
 vague(::Type{ <: GammaShapeScale }) = GammaShapeScale(1.0, huge)
 
 function prod(::ProdPreserveParametrisation, left::GammaShapeScale, right::GammaShapeScale)
@@ -44,5 +49,7 @@ function prod(::ProdPreserveParametrisation, left::GammaShapeRate, right::GammaS
 end
 
 function prod(::ProdPreserveParametrisation, left::GammaShapeScale, right::GammaShapeRate)
-    return GammaShapeScale(shape(left) + shape(right) - 1.0, (scale(left) * scale(right)) / (scale(left) + scale(right)))
+    # @show left
+    # @show right
+    return GammaShapeScale(shape(left) + shape(right) - 1.0, (scale(left) * scale(right)) / (scale(left) + scale(right)), check_args = true)
 end

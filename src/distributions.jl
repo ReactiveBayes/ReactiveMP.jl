@@ -1,7 +1,7 @@
 export ProdPreserveParametrisation, ProdBestSuitableParametrisation
 export default_prod_strategy, vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
-export weightedmean, logmean, inversemean, mirroredlogmean
+export weightedmean, logmean, inversemean, mirroredlogmean, logabsgamma, logabsbeta
 export variate_form, value_support, promote_variate_type
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
@@ -76,6 +76,8 @@ weightedmean(something)    = error("Weighted mean is not defined for $(something
 inversemean(something)     = error("Inverse expectation is not defined for $(something)")
 logmean(something)         = error("Logarithmic expectation is not defined for $(something)")
 mirroredlogmean(something) = error("Mirrored Logarithmic expectation is not defined for $(something)")
+labsgamma(something)       = error("labsgamma is not defined for $(something)")
+labsbeta(something)        = error("labsbeta is not defined for $(something)")
 
 """
     variate_form(distribution_or_type)
