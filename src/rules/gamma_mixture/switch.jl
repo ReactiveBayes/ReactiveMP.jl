@@ -9,5 +9,8 @@
         d = mean(q_b[k]) * mean(q_out)
         return exp(x + y - z - d)
     end
+
+    ρ = clamp.(ρ, tiny, 1.0 - tiny)
+
     return Categorical(ρ ./ sum(ρ))
 end
