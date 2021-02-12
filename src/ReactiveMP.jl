@@ -79,6 +79,7 @@ include("nodes/gcv.jl")
 include("nodes/kernel_gcv.jl")
 include("nodes/wishart.jl")
 include("nodes/normal_mixture.jl")
+include("nodes/gamma_mixture.jl")
 include("nodes/dot_product.jl")
 include("nodes/transition.jl")
 

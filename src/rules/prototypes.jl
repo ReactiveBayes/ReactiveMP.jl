@@ -68,6 +68,10 @@ include("normal_mixture/switch.jl")
 include("normal_mixture/m.jl")
 include("normal_mixture/p.jl")
 
+include("gamma_mixture/switch.jl")
+include("gamma_mixture/a.jl")
+include("gamma_mixture/b.jl")
+
 include("dot_product/marginals.jl")
 include("dot_product/out.jl")
 include("dot_product/in1.jl")

@@ -179,8 +179,8 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = M
     @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "GammaMixtureNode supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out)
     switch = NodeInterface(:switch)
-    as  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:m)), N)
-    bs  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:p)), N)
+    as  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a)), N)
+    bs  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b)), N)
     return GammaMixtureNode{N, F, M, P}(factorisation, out, switch, as, bs, meta, portal)
 end
 
