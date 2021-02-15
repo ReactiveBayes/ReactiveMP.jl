@@ -20,7 +20,5 @@
         return -score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α, :β) }, map(as_marginal, (q_out, a, b)), nothing)
     end
 
-    # @show U
-
     return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
 end

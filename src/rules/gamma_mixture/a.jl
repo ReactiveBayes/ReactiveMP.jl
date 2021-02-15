@@ -10,7 +10,7 @@ end
 
 
 function computeZ1(approximation::GaussLaguerreQuadrature, f::Function)
-    g = (x) -> exp(x)*f(x)
+    g = (x) -> exp(x) * f(x)
     
     points  = getpoints(approximation, nothing, nothing)
     weights = getweights(approximation, nothing, nothing)
@@ -31,19 +31,26 @@ function prod(::ProdPreserveParametrisation, left::GammaAConjugate, right::Gamma
 end
 
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaAConjugate)
-    f = (x) -> exp(right.γ * x - right.π * loggamma(x) - right.r) * exp((shape(left) - 1) * log(x) - rate(left) * x)
+    f = (x) -> exp(right.γ * x - right.π * loggamma(x) - right.r) * exp((shape(left) - 1) * log(x) - rate(left) * x + shape(left)*log(rate(left)) - loggamma(shape(left)))
     gl = glquadrature(right.a)
     Z = computeZ1(gl, f)
     m = computeZ1(gl, x -> x * f(x) / Z)
-    v = computeZ1(gl, x -> (x - m) ^ 2 * f(x) / Z)
+    v = clamp(computeZ1(gl, x -> (x - m) ^ 2 * f(x) / Z), 1e-5, huge)
     # s = computeZ1(gl, x -> (x - m) ^ 3 * f(x) / Z)
 
+    # zz1 = computeZ1(glquadrature(150), (x) -> exp(right.γ * x - right.π * loggamma(x) - right.r))
+    # @show zz1
+
+    # @show left
+    # @show right
+
     a = m ^ 2 / v
-    # a = (2 / s) ^ 2
     b = m / v
 
-    # @show right.π, right.γ, right.r, shape(left), rate(left)
     # @show a, b
+
+    # @show right.π, right.γ, right.r, shape(left), rate(left)
+    # @show Z, m, v, a, b, right.r
 
     return GammaShapeRate(a, b)
 end
@@ -55,6 +62,10 @@ end
     γ = π * β
     Z = computeZ1(glquadrature(150), (x) -> exp(γ * x - π * loggamma(x)))
     r = log(Z)
+
+    # zz2 = computeZ1(glquadrature(150), (x) -> exp(γ * x - π * loggamma(x) - r))
+    # @show zz2
+
     return GammaAConjugate(π, γ, r, 150)
     # TODO: Needs further discussion, doublecheck
     # â = mean(q_out) * mean(q_b[k])
