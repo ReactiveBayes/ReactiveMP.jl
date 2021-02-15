@@ -14,6 +14,7 @@ include("algebra/cholinv.jl")
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
+include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 
