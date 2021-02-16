@@ -9,16 +9,16 @@ struct GammaAConjugate{T <: Real}
 end
 
 
-function computeZ1(approximation::GaussLaguerreQuadrature, f::Function)
-    g = (x) -> exp(x) * f(x)
-    
+function computeZ1(approximation::GaussLaguerreQuadrature, g::Function)
+    # g = (x) -> exp(x) * f(x)
+
     points  = getpoints(approximation, nothing, nothing)
     weights = getweights(approximation, nothing, nothing)
-    
+
     Z = mapreduce(+, zip(points, weights)) do (p, w)
         return w * g(p)
     end
-    
+
     return Z
 end
 
@@ -31,11 +31,15 @@ function prod(::ProdPreserveParametrisation, left::GammaAConjugate, right::Gamma
 end
 
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaAConjugate)
-    f = (x) -> exp(right.γ * x - right.π * loggamma(x) - right.r) * exp((shape(left) - 1) * log(x) - rate(left) * x + shape(left)*log(rate(left)) - loggamma(shape(left)))
+    alpha = 1.0
+    f = (x) -> exp((right.γ * x - right.π * loggamma(x) + (shape(left) - 1) * log(x)))
     gl = glquadrature(right.a)
-    Z = computeZ1(gl, f)
-    m = computeZ1(gl, x -> x * f(x) / Z)
-    v = clamp(computeZ1(gl, x -> (x - m) ^ 2 * f(x) / Z), 1e-5, huge)
+    Z = computeZ1(gl, x -> f(x/rate(left))/rate(left))
+    m = computeZ1(gl, x -> (x/rate(left) ) * f(x/rate(left)) / (Z ))
+    v = alpha*computeZ1(gl, x -> (x/rate(left)  - m) ^ 2 * f(x/rate(left)) / (Z))
+
+    @show m,v
+    # v = clamp(computeZ1(gl, x -> (x - m) ^ 2 * f(x) / Z), var(left), huge)
     # s = computeZ1(gl, x -> (x - m) ^ 3 * f(x) / Z)
 
     # zz1 = computeZ1(glquadrature(150), (x) -> exp(right.γ * x - right.π * loggamma(x) - right.r))
@@ -44,7 +48,7 @@ function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, rig
     # @show left
     # @show right
 
-    a = m ^ 2 / v
+    a = m ^ 2 / (v*rate(left))
     b = m / v
 
     # @show a, b
@@ -60,13 +64,13 @@ end
     π = probvec(q_switch)[k]
     β = logmean(q_out) + logmean(q_b[k])
     γ = π * β
-    Z = computeZ1(glquadrature(150), (x) -> exp(γ * x - π * loggamma(x)))
+    Z = computeZ1(glquadrature(120), (x) -> exp(γ * x - π * loggamma(x)))
     r = log(Z)
 
     # zz2 = computeZ1(glquadrature(150), (x) -> exp(γ * x - π * loggamma(x) - r))
     # @show zz2
 
-    return GammaAConjugate(π, γ, r, 150)
+    return GammaAConjugate(π, γ, r, 120)
     # TODO: Needs further discussion, doublecheck
     # â = mean(q_out) * mean(q_b[k])
     # â = mean(getrecent(ReactiveMP.getmarginal(connectedvar(__node.as[k]))))
