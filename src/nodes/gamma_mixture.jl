@@ -1,4 +1,4 @@
-export GammaMixture, GammaMixtureNode
+export GammaMixture, GammaMixtureNode, GammaMixtureNodeMetadata
 
 # Gamma Mixture Functional Form
 struct GammaMixture{N} end
@@ -28,7 +28,13 @@ struct GammaMixture{N} end
 #
 const GammaMixtureNodeFactorisationSupport = Union{MeanField, }
 
-struct GammaMixtureNode{N, F <: GammaMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
+struct GammaMixtureNodeMetadata{A}
+    shape_likelihood_approximation :: A
+end
+
+get_shape_likelihood_approximation(meta::GammaMixtureNodeMetadata) = meta.shape_likelihood_approximation
+
+struct GammaMixtureNode{N, F <: GammaMixtureNodeFactorisationSupport, M <: GammaMixtureNodeMetadata, P} <: AbstractFactorNode
     factorisation :: F
 
     # Interfaces
@@ -52,6 +58,11 @@ outbound_message_portal(factornode::GammaMixtureNode)   = factornode.portal
 
 setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
 getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
+
+## Metadata 
+
+get_or_default_meta(fform::Type{ <: GammaMixture }, meta::GammaMixtureNodeMetadata) = meta
+get_or_default_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
 
 ## activate!
 
@@ -174,9 +185,10 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = M
     @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "GammaMixtureNode supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out)
     switch = NodeInterface(:switch)
-    as  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a)), N)
-    bs  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b)), N)
-    return GammaMixtureNode{N, F, M, P}(factorisation, out, switch, as, bs, meta, portal)
+    as   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a)), N)
+    bs   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b)), N)
+    meta = get_or_default_meta(GammaMixture, meta)
+    return GammaMixtureNode{N, F, typeof(meta), P}(factorisation, out, switch, as, bs, meta, portal)
 end
 
 function ReactiveMP.make_node(::Type{ <: GammaMixture }, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, portal = EmptyPortal()) where { N}
