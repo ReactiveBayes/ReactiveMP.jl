@@ -76,14 +76,6 @@ function swap_arguments(fn::Expr)
     return swapped
 end
 
-function labsgamma(x::Number)
-    return SpecialFunctions.logabsgamma(x)[1]
-end
-
-function labsbeta(x::Number, y::Number)
-    return SpecialFunctions.logabsbeta(x, y)[1]
-end
-
 cast_to_message_subscribable(some::T) where T = cast_to_message_subscribable(as_subscribable(T), some)
 
 cast_to_message_subscribable(::InvalidSubscribableTrait, some)   = of(as_message(some))

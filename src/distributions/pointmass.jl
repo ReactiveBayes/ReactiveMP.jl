@@ -2,6 +2,7 @@ export PointMass, getpointmass
 
 import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
 import Base: ndims, precision, getindex
+import SpecialFunctions: loggamma, logbeta
 
 struct PointMass{P}
     point :: P
@@ -9,10 +10,9 @@ end
 
 getpointmass(dist::PointMass) = dist.point
 
-logmean(dist::PointMass)     = log(mean(dist))
-inversemean(dist::PointMass) = cholinv(mean(dist))
-labsgamma(dist::PointMass)   = labsgamma(mean(dist))
-labsbeta(dist::PointMass)    = labsbeta(mean(dist))
+logmean(dist::PointMass)      = log(mean(dist))
+inversemean(dist::PointMass)  = cholinv(mean(dist))
+loggammamean(dist::PointMass) = loggamma(mean(dist))
 
 Base.getindex(dist::PointMass, index) = Base.getindex(getpointmass(dist), index)
 

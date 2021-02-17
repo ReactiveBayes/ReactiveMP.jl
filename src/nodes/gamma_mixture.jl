@@ -127,46 +127,41 @@ end
 
 # FreeEnergy related functions
 
-# @average_energy GammaMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, GammaMeanVariance}, q_p::NTuple{N, Gamma}) where N = begin
-#     z_bar = probvec(q_switch)
-#     return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), GammaMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
-# end
-#
-# @average_energy GammaMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, MvGammaMeanCovariance}, q_p::NTuple{N, Wishart}) where N = begin
-#     z_bar = probvec(q_switch)
-#     return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), MvGammaMeanPrecision, Val{ (:out, :μ, :Λ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
-# end
+@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, GammaShapeRate}, q_b::NTuple{N, GammaShapeRate}) where N = begin
+    z_bar = probvec(q_switch)
+    return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α , :β) }, map(as_marginal, (q_out, q_a[i], q_b[i])), nothing), +, 1:N, init = 0.0)
+end
 
-# function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
-#
-#     stream = combineLatest((
-#         getmarginal(connectedvar(node.out)),
-#         getmarginal(connectedvar(node.switch)),
-#         combineLatest(map((shape) -> getmarginal(connectedvar(shape)), node.as), PushEach()),
-#         combineLatest(map((rate) -> getmarginal(connectedvar(rate)), node.bs), PushEach())
-#     ), PushEach()) |> map_to((
-#         getmarginal(connectedvar(node.out)),
-#         getmarginal(connectedvar(node.switch)),
-#         map((shape) -> getmarginal(connectedvar(shape)), node.as),
-#         map((rate) -> getmarginal(connectedvar(rate)), node.bs)
-#     ))
-#
-#     mapping = let fform = functionalform(node), meta = metadata(node)
-#         (marginals) -> begin
-#             recent_marginals = getrecent.(marginals)
-#             average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, recent_marginals, meta)
-#
-#             out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
-#             switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
-#             as_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
-#             bs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
-#
-#             return convert(T, average_energy - (out_entropy + switch_entropy + as_entropies + bs_entropies))
-#         end
-#     end
-#
-#     return stream |> schedule_on(scheduler) |> map(T, mapping)
-# end
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
+
+    stream = combineLatest((
+        getmarginal(connectedvar(node.out)),
+        getmarginal(connectedvar(node.switch)),
+        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushEach()),
+        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushEach())
+    ), PushEach()) |> map_to((
+        getmarginal(connectedvar(node.out)),
+        getmarginal(connectedvar(node.switch)),
+        map((as) -> getmarginal(connectedvar(as)), node.as),
+        map((bs) -> getmarginal(connectedvar(bs)), node.bs)
+    ))
+
+    mapping = let fform = functionalform(node), meta = metadata(node)
+        (marginals) -> begin
+            recent_marginals = getrecent.(marginals)
+            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :a, :b) }, recent_marginals, meta)
+
+            out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
+            switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
+            a_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
+            b_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
+
+            return convert(T, average_energy - (out_entropy + switch_entropy + a_entropies + b_entropies))
+        end
+    end
+
+    return stream |> schedule_on(scheduler) |> map(T, mapping)
+end
 
 as_node_functional_form(::Type{ <: GammaMixture }) = ValidNodeFunctionalForm()
 
@@ -219,40 +214,3 @@ function ReactiveMP.make_node(fform::Type{ <: GammaMixture }, autovar::AutoVar, 
     node = make_node(fform, var, args...; kwargs...)
     return node, var
 end
-
-@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, GammaShapeRate}, q_b::NTuple{N, GammaShapeRate}) where N = begin
-    z_bar = probvec(q_switch)
-    return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α , :β) }, map(as_marginal, (q_out, q_a[i], q_b[i])), nothing), +, 1:N, init = 0.0)
-end
-
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
-
-    stream = combineLatest((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushEach()),
-        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushEach())
-    ), PushEach()) |> map_to((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        map((as) -> getmarginal(connectedvar(as)), node.as),
-        map((bs) -> getmarginal(connectedvar(bs)), node.bs)
-    ))
-
-    mapping = let fform = functionalform(node), meta = metadata(node)
-        (marginals) -> begin
-            recent_marginals = getrecent.(marginals)
-            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :a, :b) }, recent_marginals, meta)
-
-            out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
-            switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
-            a_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
-            b_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
-
-            return convert(T, average_energy - (out_entropy + switch_entropy + a_entropies + b_entropies))
-        end
-    end
-
-    return stream |> schedule_on(scheduler) |> map(T, mapping)
-end
-as_node_functional_form(::Type{ <: GammaMixture }) = ValidNodeFunctionalForm()

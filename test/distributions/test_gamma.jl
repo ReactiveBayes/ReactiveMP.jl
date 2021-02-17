@@ -129,6 +129,9 @@ using Random
             @test pdf(left, 10.0)    ≈ pdf(right, 10.0)
             @test logpdf(left, 1.0)  ≈ logpdf(right, 1.0)
             @test logpdf(left, 10.0) ≈ logpdf(right, 10.0)
+            @test logmean(left)      ≈ logmean(right)
+            @test loggammamean(left) ≈ loggammamean(right)
+            @test meanlogmean(left)  ≈ meanlogmean(right)
         end
 
         types = ReactiveMP.union_types(GammaDistributionsFamily{Float64})

@@ -2,6 +2,7 @@ export Gamma, GammaShapeScale, GammaDistributionsFamily
 
 import SpecialFunctions: digamma
 import Distributions: Gamma, shape, scale
+import StatsFuns: log2π
 
 const GammaShapeScale             = Gamma
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
@@ -11,9 +12,14 @@ function logmean(dist::GammaShapeScale)
     return digamma(k) + log(θ)
 end
 
-function labsgamma(x::GammaDistributionsFamily)
-    α, β = shape(x), rate(x)
-    return 0.5*log2π - 0.5*(digamma(α) - log(β)) + mean(x)*(1+digamma(α+1)-log(β))
+function loggammamean(dist::GammaShapeScale)
+    k, θ = params(dist)
+    return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (1 + digamma(k + 1) + log(θ))
+end
+
+function meanlogmean(dist::GammaShapeScale)
+    k, θ = params(dist)
+    return mean(dist) * (digamma(k + 1) + log(θ))
 end
 
 vague(::Type{ <: GammaShapeScale }) = GammaShapeScale(1.0, huge)

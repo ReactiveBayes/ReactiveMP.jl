@@ -20,5 +20,8 @@
         return -score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α, :β) }, map(as_marginal, (q_out, a, b)), nothing)
     end
 
-    return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
+    ρ = clamp.(softmax(U), tiny, 1.0 - tiny)
+    ρ = ρ ./ sum(ρ)
+
+    return Categorical(ρ)
 end

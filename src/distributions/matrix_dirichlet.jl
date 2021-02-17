@@ -1,6 +1,6 @@
 export MatrixDirichlet
 
-import SpecialFunctions: digamma
+import SpecialFunctions: digamma, loggamma
 
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T} }
     a :: A
@@ -14,7 +14,7 @@ vague(::Type{ <: MatrixDirichlet }, dims::Tuple)       = MatrixDirichlet(ones(di
 function Distributions.entropy(dist::MatrixDirichlet)
     return mapreduce(+, eachcol(dist.a)) do column
         scolumn = sum(column)
-        -sum((column .- 1.0) .* (digamma.(column) .- digamma.(scolumn))) - labsgamma(scolumn) + sum(labsgamma.(column))
+        -sum((column .- 1.0) .* (digamma.(column) .- digamma.(scolumn))) - loggamma(scolumn) + sum(loggamma.(column))
     end
 end
 
