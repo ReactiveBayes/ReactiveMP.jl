@@ -49,7 +49,7 @@ function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::
 end
 
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-    C, m, v = approximate_prod_expectations(right.approximation, left, right)
+    C, m , v = approximate_prod_expectations(right.approximation, left, right)
 
     a = m ^ 2 / v
     b = m / v
