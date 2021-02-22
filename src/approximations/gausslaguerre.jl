@@ -1,6 +1,7 @@
 export GaussLaguerreQuadrature
 
 using DomainIntegrals
+using FastGaussQuadrature
 
 import Base: ==
 
@@ -9,7 +10,8 @@ struct GaussLaguerreQuadrature{ R <: DomainIntegrals.HalfLineRule } <: AbstractA
     rule :: R
 end
 
-GaussLaguerreQuadrature(n::Int) = GaussLaguerreQuadrature(Q_GaussLaguerre(n))
+GaussLaguerreQuadrature(::Type{T}, n::Int) where T = GaussLaguerreQuadrature(DomainIntegrals.HalfLineRule(FastGaussQuadrature.gausslaguerre(n, zero(T))...))
+GaussLaguerreQuadrature(n::Int)                    = GaussLaguerreQuadrature(DomainIntegrals.HalfLineRule(FastGaussQuadrature.gausslaguerre(n)...))
 
 approximation_name(approx::GaussLaguerreQuadrature)       = "GaussLaguerre($(approx.rule))"
 approximation_short_name(approx::GaussLaguerreQuadrature) = "GL$(approx.rule)"

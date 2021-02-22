@@ -9,6 +9,8 @@ struct Marginal{D}
     data :: D
 end
 
+Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ")"))
+
 getdata(marginal::Marginal)                          = marginal.data
 getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
