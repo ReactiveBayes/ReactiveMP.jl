@@ -463,6 +463,7 @@ function activate!(model, factornode::AbstractFactorNode)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
         vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
+        vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
         set!(messageout(interface), vmessageout |> share_recent())
         set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
