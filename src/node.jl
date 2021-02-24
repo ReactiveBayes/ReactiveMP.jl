@@ -1,5 +1,5 @@
 export NodeInterface, name, messageout, messagein
-export FactorNode, functionalform, interfaces, factorisation, locamarginals, localmarginalnames
+export FactorNode, functionalform, interfaces, factorisation, locamarginals, localmarginalnames, metadata
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export deps, connect!, activate!

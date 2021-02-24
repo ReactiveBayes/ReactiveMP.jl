@@ -3,7 +3,7 @@ module ReactiveMPNodeTest
 using Test
 using ReactiveMP 
 
-@testset "Node" begin
+@testset "FactorNode" begin
 
     @testset begin
         @test isdeterministic(Deterministic()) === true

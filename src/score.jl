@@ -10,7 +10,9 @@ struct BetheFreeEnergy end
 
 # Default version is differentiable
 # Specialized versions like score(Float64, ...) are not differentiable, but could be faster
+score(::BetheFreeEnergy, model)                                           = score(BetheFreeEnergy(), model, AsapScheduler())
 score(::BetheFreeEnergy, model, scheduler)                                = score(InfCountingReal, BetheFreeEnergy(), model, scheduler)
+score(::Type{T}, ::BetheFreeEnergy, model) where { T <: Real }            = score(T, BetheFreeEnergy(), model, AsapScheduler())
 score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: Real } = score(InfCountingReal{T}, BetheFreeEnergy(), model, scheduler)
 
 function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: InfCountingReal }
