@@ -6,6 +6,7 @@ version = "0.5.0"
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DomainIntegrals = "cc6bae93-f070-4015-88fd-838f9505a86c"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

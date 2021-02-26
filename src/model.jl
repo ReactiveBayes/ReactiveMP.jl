@@ -13,16 +13,25 @@ import Base: show
 
 # Model Options
 
-struct ModelOptions{P, F}
-    outbound_message_portal :: P
-    default_factorisation   :: F
+struct ModelOptions{P, F, S}
+    outbound_message_portal    :: P
+    default_factorisation      :: F
+    global_reactive_scheduler  :: S
 end
 
 model_options() = model_options(NamedTuple{()}(()))
 
+available_option_names(::Type{ <: ModelOptions }) = (
+    :outbound_message_portal, 
+    :default_factorisation,
+    :global_reactive_scheduler, 
+    :limit_stack_depth
+)
+
 function model_options(options::NamedTuple)
-    outbound_message_portal = EmptyPortal()
-    default_factorisation   = FullFactorisation()
+    outbound_message_portal   = EmptyPortal()
+    default_factorisation     = FullFactorisation()
+    global_reactive_scheduler = AsapScheduler()
 
     if haskey(options, :outbound_message_portal)
         outbound_message_portal = options[:outbound_message_portal]
@@ -32,18 +41,26 @@ function model_options(options::NamedTuple)
         default_factorisation = options[:default_factorisation]
     end
 
-    for key::Symbol in setdiff(union(fieldnames(ModelOptions), fields(options)), fieldnames(ModelOptions))
+    if haskey(options, :global_reactive_scheduler)
+        global_reactive_scheduler = options[:global_reactive_scheduler]
+    elseif haskey(options, :limit_stack_depth)
+        global_reactive_scheduler = LimitStackScheduler(options[:limit_stack_depth]...)
+    end
+
+    for key::Symbol in setdiff(union(available_option_names(ModelOptions), fields(options)), available_option_names(ModelOptions))
         @warn "Unknown option key: $key = $(options[key])"
     end
 
     return ModelOptions(
         outbound_message_portal,
-        default_factorisation
+        default_factorisation,
+        global_reactive_scheduler
     )
 end
 
-outbound_message_portal(options::ModelOptions) = options.outbound_message_portal
-default_factorisation(options::ModelOptions)   = options.default_factorisation
+global_reactive_scheduler(options::ModelOptions) = options.global_reactive_scheduler
+outbound_message_portal(options::ModelOptions)   = options.outbound_message_portal
+default_factorisation(options::ModelOptions)     = options.default_factorisation
 
 # Model
 

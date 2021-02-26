@@ -201,7 +201,3 @@ function swapped(array::AbstractArray, i, j)
     return array
 end
 
-# Rocket.jl extensions
-
-combineSourceUpdates(sources::Tuple, strategy) = combineLatest(sources, strategy) |> map_to(sources)
-

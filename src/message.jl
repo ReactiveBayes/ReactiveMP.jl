@@ -67,6 +67,8 @@ end
 
 VariationalMessage(messages::R, marginals::S, mappingFn::F) where { R, S, F } = VariationalMessage(messages, marginals, mappingFn, VariationalMessageProps(nothing))
 
+Base.show(io::IO, message::VariationalMessage) = print(io, string("VariationalMessage(:postponed)"))
+
 getcache(vmessage::VariationalMessage)                    = vmessage.props.cache
 setcache!(vmessage::VariationalMessage, message::Message) = vmessage.props.cache = message
 
