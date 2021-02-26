@@ -13,13 +13,15 @@ getpointmass(dist::PointMass) = dist.point
 logmean(dist::PointMass)      = log(mean(dist))
 inversemean(dist::PointMass)  = cholinv(mean(dist))
 loggammamean(dist::PointMass) = loggamma(mean(dist))
+logmean(dist::PointMass{T}) where T <: Vector = log.(mean(dist))
+
 
 Base.getindex(dist::PointMass, index) = Base.getindex(getpointmass(dist), index)
 
 Distributions.insupport(dist::PointMass, x::Real) = x == getpointmass(dist)
 Distributions.pdf(dist::PointMass, x::Real)       = Distributions.insupport(dist, x) ? 1.0 : 0.0
 Distributions.logpdf(dist::PointMass, x::Real)    = Distributions.insupport(dist, x) ? 0.0 : -Inf
-Distributions.entropy(::PointMass) = -∞ 
+Distributions.entropy(::PointMass) = -∞
 
 # Real-based univariate point mass
 
