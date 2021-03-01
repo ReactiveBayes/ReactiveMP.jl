@@ -1,6 +1,6 @@
 export rule
 
-@rule GCV(:z, Marginalisation) (q_y_x::Any, q_κ::Any, q_ω::Any) = begin
+@rule GCV(:z, Marginalisation) (q_y_x::Any, q_κ::Any, q_ω::Any, meta::Any) = begin
     Λ = cov(q_y_x)
     m = mean(q_y_x)
 
@@ -13,5 +13,5 @@ export rule
     c = -a
     d = var(q_κ)
 
-    return ExponentialLinearQuadratic(a, b, c, d)
+    return ExponentialLinearQuadratic(get_variance_approximation(GCV, meta), a, b, c, d)
 end

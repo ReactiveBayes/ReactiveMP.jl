@@ -13,15 +13,15 @@ struct DataVariable{D, S} <: AbstractVariable
     props      :: DataVariableProps
 end
 
-function datavar(name::Symbol, ::Type{D}; subject::S = Subject(Union{Message{Missing}, Message{D}})) where { S, D }
+function datavar(name::Symbol, ::Type{D}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     return DataVariable{D, S}(name, subject, DataVariableProps())
 end
 
-function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = Subject(Union{Message{Missing}, Message{D}})) where { S, D }
+function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     return datavar(name, D, dims...; subject = subject)
 end
 
-function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = Subject(Union{Message{Missing}, Message{D}})) where { S, D }
+function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     vars = Array{DataVariable{D, S}}(undef, dims)
     for index in CartesianIndices(axes(vars))
         @inbounds vars[index] = datavar(Symbol(name, :_, Symbol(join(index.I, :_))), D; subject = similar(subject))
@@ -44,6 +44,8 @@ update!(datavar::DataVariable, data)                 = next!(messageout(datavar,
 update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar, 1), as_message(PointMass(data)))
 update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), as_message(PointMass(data)))
 update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), as_message(PointMass(data)))
+
+resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 
 function update!(datavars::AbstractVector{ <: DataVariable }, data::AbstractVector)
     @assert size(datavars) === size(data) "Invalid update! call: size of datavar array and data should match"

@@ -1,7 +1,7 @@
 export ModelOptions, model_options
 export Model
 export getnodes, getrandom, getconstant, getdata
-export activate!
+export activate!, repeat!
 # export MarginalsEagerUpdate, MarginalsPureUpdate
 
 import Base: show
@@ -123,6 +123,20 @@ as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d
 
 function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
     return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
+end
+
+# Repeat [ EXPERIMENTAL ]
+
+repeat!(model::Model, count::Int) = repeat!((_) -> nothing, model, count)
+
+function repeat!(callback::Function, model::Model, count::Int)
+    for _ in 1:count
+        foreach(getdata(model)) do datavar
+            resend!(datavar)
+        end
+        callback(model)
+    end
+    
 end
 
 # TODO: Feature rejected due to a bug with invalid constant reusing. Should be revisited later.
