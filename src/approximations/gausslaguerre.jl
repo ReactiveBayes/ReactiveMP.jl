@@ -43,9 +43,10 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
     p    = getlength(approximation)
     x    = getpoints(approximation)
     logw = getlogweights(approximation)
+    T    = eltype(logw)
 
     # calculate the ln(wi) + logf(xi) terms
-    logresult = Vector{Float64}(undef, p)
+    logresult = Vector{T}(undef, p)
     for i = 1:p
         logresult[i] = logw[i] + fn(x[i])
     end
@@ -58,5 +59,5 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
 end
 
 function Base.:(==)(left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}) where R 
-    return length(weights(left.rule)) == length(weights(right.rule))
+    return getlength(left) == getlength(right)
 end
