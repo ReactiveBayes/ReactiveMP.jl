@@ -67,9 +67,9 @@ function functional_dependencies(factornode::NormalMixtureNode{N, F}, iindex::In
     elseif iindex === 2
         (factornode.out, factornode.means, factornode.precs)
     elseif 2 < iindex <= N + 2
-        (factornode.out, factornode.switch, tuple(skipindex(factornode.means, iindex - 2)...), factornode.precs)
+        (factornode.out, factornode.switch, factornode.precs[ iindex - 2 ])
     elseif N + 2 < iindex <= 2N + 2
-        (factornode.out, factornode.switch, factornode.means, tuple(skipindex(factornode.precs, iindex - N - 2)...))
+        (factornode.out, factornode.switch, factornode.means[ iindex - N - 2 ])
     else
         error("Bad index in functional_dependencies for NormalMixtureNode")
     end
@@ -105,33 +105,25 @@ end
 
 function get_marginals_observable(
     factornode::NormalMixtureNode{N, F}, 
-    marginal_dependencies::Tuple{ NodeInterface, NodeInterface, NTuple{N1, IndexedNodeInterface}, NTuple{N2, IndexedNodeInterface} }) where { N, N1, N2, F <: MeanField }
+    marginal_dependencies::Tuple{ NodeInterface, NodeInterface, IndexedNodeInterface }) where { N, F <: MeanField }
 
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
-    meansinterfaces = marginal_dependencies[3]
-    precsinterfaces = marginal_dependencies[4]
+    varinterface    = marginal_dependencies[3]
 
-    marginal_names = Val{ (name(outinterface), name(switchinterface), name(meansinterfaces[1]), name(precsinterfaces[1])) }
-
-    marginals_observable = combineLatest((
+    marginal_names       = Val{ (name(outinterface), name(switchinterface), name(varinterface)) }
+    marginals_observable = combineLatestUpdates((
         getmarginal(connectedvar(outinterface)),
         getmarginal(connectedvar(switchinterface)),
-        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), reverse(precsinterfaces)), PushNew()),
-        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), reverse(meansinterfaces)), PushNew()),
-    ), PushNew()) |> map_to((
-        getmarginal(connectedvar(outinterface)),
-        getmarginal(connectedvar(switchinterface)),
-        map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces),
-        map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces)
-    ))
+        getmarginal(connectedvar(varinterface)),
+    ), PushNew())
 
     return marginal_names, marginals_observable
 end
 
 # FreeEnergy related functions
 
-@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, NormalMeanVariance}, q_p::NTuple{N, Gamma}) where N = begin
+@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, NormalMeanVariance}, q_p::NTuple{N, GammaDistributionsFamily}) where N = begin
     z_bar = probvec(q_switch)
     return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
 end
@@ -148,7 +140,7 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMix
         getmarginal(connectedvar(node.switch)),
         combineLatest(map((mean) -> getmarginal(connectedvar(mean)), node.means), PushEach()),
         combineLatest(map((prec) -> getmarginal(connectedvar(prec)), node.precs), PushEach())
-    ), PushEach()) |> map_to((
+    ), PushNew()) |> map_to((
         getmarginal(connectedvar(node.out)),
         getmarginal(connectedvar(node.switch)),
         map((mean) -> getmarginal(connectedvar(mean)), node.means),

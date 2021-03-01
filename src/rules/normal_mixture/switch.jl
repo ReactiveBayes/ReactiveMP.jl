@@ -8,14 +8,14 @@ export rule
 #     return Bernoulli(clamp(softmax((U1, U2))[1], tiny, 1.0 - tiny))
 # end
 
-@rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::NTuple{N, NormalMeanVariance}, q_p::NTuple{N, Gamma}) where { N } = begin
+@rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::NTuple{N, UnivariateNormalDistributionsFamily}, q_p::NTuple{N, GammaDistributionsFamily}) where { N } = begin
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, m, p)), nothing)
     end
     return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
 end
 
-@rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::NTuple{N, MvNormalMeanCovariance}, q_p::NTuple{N, Wishart}) where { N } = begin
+@rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::NTuple{N, MultivariateNormalDistributionsFamily}, q_p::NTuple{N, Wishart}) where { N } = begin
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map(as_marginal, (q_out, m, p)), nothing)
     end
