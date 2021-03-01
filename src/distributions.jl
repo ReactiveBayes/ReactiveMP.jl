@@ -1,7 +1,7 @@
 export ProdPreserveParametrisation, ProdBestSuitableParametrisation
 export default_prod_strategy, vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
-export weightedmean, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
+export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
 export variate_form, value_support, promote_variate_type
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
@@ -72,6 +72,7 @@ prod(::ProdPreserveParametrisation, ::Missing, ::Missing) = missing
 """
 function vague end
 
+probvec(something)         = error("Probability vector function probvec() is not defined for $(something)")
 weightedmean(something)    = error("Weighted mean is not defined for $(something)")
 inversemean(something)     = error("Inverse expectation is not defined for $(something)")
 logmean(something)         = error("Logarithmic expectation is not defined for $(something)")
