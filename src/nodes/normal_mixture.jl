@@ -138,8 +138,8 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMix
     stream = combineLatest((
         getmarginal(connectedvar(node.out)),
         getmarginal(connectedvar(node.switch)),
-        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), node.means), PushEach()),
-        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), node.precs), PushEach())
+        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), node.means), PushNew()),
+        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), node.precs), PushNew())
     ), PushNew()) |> map_to((
         getmarginal(connectedvar(node.out)),
         getmarginal(connectedvar(node.switch)),

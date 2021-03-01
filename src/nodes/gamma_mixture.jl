@@ -140,9 +140,9 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixt
     stream = combineLatest((
         getmarginal(connectedvar(node.out)),
         getmarginal(connectedvar(node.switch)),
-        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushEach()),
-        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushEach())
-    ), PushEach()) |> map_to((
+        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushNew()),
+        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushNew())
+    ), PushNew()) |> map_to((
         getmarginal(connectedvar(node.out)),
         getmarginal(connectedvar(node.switch)),
         map((as) -> getmarginal(connectedvar(as)), node.as),
