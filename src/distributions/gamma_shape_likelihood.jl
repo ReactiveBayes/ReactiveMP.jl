@@ -6,7 +6,7 @@ import SpecialFunctions: loggamma
 struct GammaShapeLikelihood{T <: Real, A}
     p :: T
     γ :: T # p * β
-    
+
     approximation :: A
 end
 
@@ -58,11 +58,7 @@ function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::
 end
 
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-<<<<<<< HEAD
-    C, m , v = approximate_prod_expectations(right.approximation, left, right)
-=======
     _, m, v = approximate_prod_expectations(right.approximation, left, right)
->>>>>>> fbf78ce105ef26dfd85d306b75e9982eb48743cd
 
     a = m ^ 2 / v
     b = m / v
