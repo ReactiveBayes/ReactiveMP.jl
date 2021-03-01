@@ -74,11 +74,11 @@ function functional_dependencies(factornode::GammaMixtureNode{N, F}, iindex::Int
     elseif iindex === 2
         (factornode.out, factornode.as, factornode.bs)
     elseif 2 < iindex <= N + 2
-        (factornode.out, factornode.switch, tuple(skipindex(factornode.as, iindex - 2)...), factornode.bs)
+        (factornode.out, factornode.switch, factornode.bs[iindex - 2])
     elseif N + 2 < iindex <= 2N + 2
-        (factornode.out, factornode.switch, factornode.as, tuple(skipindex(factornode.bs, iindex - N - 2)...))
+        (factornode.out, factornode.switch, factornode.as[iindex - N - 2])
     else
-        error("Bad index in functional_dependencies for GammaMixtureNode")
+        error("Invalid index in functional_dependencies for GammaMixtureNode")
     end
 
     return message_dependencies, marginal_dependencies
@@ -92,7 +92,7 @@ function get_marginals_observable(
     factornode::GammaMixtureNode{N, F},
     marginal_dependencies::Tuple{ NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface} }) where { N, F <: MeanField }
 
-    varinterface    = marginal_dependencies[1]
+    varinterface = marginal_dependencies[1]
     asinterfaces = marginal_dependencies[2]
     bsinterfaces = marginal_dependencies[3]
 
@@ -112,26 +112,18 @@ end
 
 function get_marginals_observable(
     factornode::GammaMixtureNode{N, F},
-    marginal_dependencies::Tuple{ NodeInterface, NodeInterface, NTuple{N1, IndexedNodeInterface}, NTuple{N2, IndexedNodeInterface} }) where { N, N1, N2, F <: MeanField }
+    marginal_dependencies::Tuple{ NodeInterface, NodeInterface, IndexedNodeInterface }) where { N, F <: MeanField }
 
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
-    asinterfaces = marginal_dependencies[3]
-    bsinterfaces = marginal_dependencies[4]
+    varinterface    = marginal_dependencies[3]
 
-    marginal_names = Val{ (name(outinterface), name(switchinterface), name(asinterfaces[1]), name(bsinterfaces[1])) }
-
-    marginals_observable = combineLatest((
+    marginal_names       = Val{ (name(outinterface), name(switchinterface), name(varinterface)) }
+    marginals_observable = combineLatestUpdates((
         getmarginal(connectedvar(outinterface)),
         getmarginal(connectedvar(switchinterface)),
-        combineLatest(map((rate) -> getmarginal(connectedvar(rate)), reverse(bsinterfaces)), PushNew()),
-        combineLatest(map((shape) -> getmarginal(connectedvar(shape)), reverse(asinterfaces)), PushNew()),
-    ), PushNew()) |> map_to((
-        getmarginal(connectedvar(outinterface)),
-        getmarginal(connectedvar(switchinterface)),
-        map((shape) -> getmarginal(connectedvar(shape)), asinterfaces),
-        map((rate) -> getmarginal(connectedvar(rate)), bsinterfaces)
-    ))
+        getmarginal(connectedvar(varinterface))
+    ), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -148,9 +140,9 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixt
     stream = combineLatest((
         getmarginal(connectedvar(node.out)),
         getmarginal(connectedvar(node.switch)),
-        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushEach()),
-        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushEach())
-    ), PushEach()) |> map_to((
+        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushNew()),
+        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushNew())
+    ), PushNew()) |> map_to((
         getmarginal(connectedvar(node.out)),
         getmarginal(connectedvar(node.switch)),
         map((as) -> getmarginal(connectedvar(as)), node.as),

@@ -1,25 +1,54 @@
 module ReactiveMPTest
 
 using Test, Documenter, ReactiveMP
+using TestSetExtensions
+
+include("test_helpers.jl")
+
+using .ReactiveMPTestingHelpers
 
 # doctest(ReactiveMP)
 
-@testset "ReactiveMP" begin
+@testset ExtendedTestSet "ReactiveMP" begin
 
-    include("test_distributions.jl")
-    include("distributions/test_normal_mean_variance.jl")
-    include("distributions/test_normal_mean_precision.jl")
-    include("distributions/test_normal_weighted_mean_precision.jl")
-    include("distributions/test_mv_normal_mean_covariance.jl")
-    include("distributions/test_mv_normal_mean_precision.jl")
-    include("distributions/test_mv_normal_weighted_mean_precision.jl")
-    include("distributions/test_normal.jl")
+    enabled_tests = lowercase.(ARGS)
 
-    include("test_node.jl")
+    function key_to_filename(key)
+        splitted = split(key, ":")
+        return string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
+    end
 
-    # @testset "Detect ambiguities" begin
-    #     @test length(Test.detect_ambiguities(ReactiveMP)) == 0
-    # end
+    function filename_to_key(filename)
+        splitted   = split(filename, "/")
+        path, name = splitted[1:end - 1], splitted[end]
+        return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
+    end
+
+    function addtests(filename)
+        key = filename_to_key(filename)
+        if isempty(enabled_tests) || key in enabled_tests
+            include(filename)
+        end
+    end
+
+    @testset "Testset helpers" begin
+        @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) == "distributions/test_normal_mean_variance.jl"
+        @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) == "distributions:normal_mean_variance"
+    end
+
+    addtests("test_distributions.jl")
+    addtests("distributions/test_normal_mean_variance.jl")
+    addtests("distributions/test_normal_mean_precision.jl")
+    addtests("distributions/test_normal_weighted_mean_precision.jl")
+    addtests("distributions/test_mv_normal_mean_covariance.jl")
+    addtests("distributions/test_mv_normal_mean_precision.jl")
+    addtests("distributions/test_mv_normal_weighted_mean_precision.jl")
+    addtests("distributions/test_normal.jl")
+    addtests("distributions/test_gamma.jl")
+
+    addtests("test_node.jl")
+    addtests("nodes/test_addition.jl")
+
 end
 
 end

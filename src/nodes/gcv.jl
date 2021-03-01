@@ -1,6 +1,15 @@
-export GCV
+export GCV, GCVMetadata
+
+const DefaultGCVNodeVarianceApproximation = GaussHermiteCubature(20)
+
+struct GCVMetadata{ A <: AbstractApproximationMethod }
+    approximation :: A
+end
 
 struct GCV end
+
+get_variance_approximation(::Type{ <: GCV }, meta::GCVMetadata) = meta.approximation
+get_variance_approximation(::Type{ <: GCV }, meta::Nothing)     = DefaultGCVNodeVarianceApproximation
 
 @node GCV Stochastic [ y, x, z, κ, ω ]
 
