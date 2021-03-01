@@ -1,6 +1,5 @@
 import SpecialFunctions: loggamma
 
-using FastGaussQuadrature: gausslaguerre
 """
     ν(x) ∝ exp(p*β*x - π*logГ(x)) ≡ exp(γ*x - p*logГ(x))
 """
@@ -15,47 +14,20 @@ function approximate_prod_expectations(approximation::GaussLaguerreQuadrature, l
     b = rate(left)
 
     """
-    This function calculates the log of the Gauss-laguerre integral by making use of the log of the integrable function.
-    ln ( ∫ exp(-x)f(x) dx ) 
-    ≈ ln ( ∑ wi * f(xi) ) 
-    = ln ( ∑ exp( ln(wi) + logf(xi) ) )
-    = ln ( ∑ exp( yi ) )
-    = max(yi) + ln ( ∑ exp( yi - max(yi) ) )
-    where we make use of the numerically stable log-sum-exp trick: https://en.wikipedia.org/wiki/LogSumExp
-    """
-    function loggausslaguerre(logCf, p)
-
-        # calculate weights and points
-        x, w = gausslaguerre(p)
-
-        # calculate the ln(wi) + logf(xi) terms
-        logresult = Array{Float64,1}(undef, p)
-        for i = 1:p
-            logresult[i] = log(w[i]) + logCf(x[i])
-        end
-
-        # log-sum-exp trick, calculate maximum
-        max_logresult = maximum(logresult)
-
-        # return log sum exp
-        return max_logresult + log(sum(exp.(logresult .- max_logresult)))
-    end
-
-    """
     q(x)    ∝ v(x)*v(x)
             ∝ exp(γ*x - p*ln(Г(x))) * exp((a-1)*ln(x) - b*x)
             = exp(-x) * exp((γ-b+1)*x + (a-1)*ln(x) - p*ln(Г(x)))
     """
-    f = let p = right.p, a = shape(left), γ=right.γ, b=b
-        x -> exp((γ-b+1)*x - p * loggamma(x) + (a - 1) * log(x))
+    f = let p = right.p, a = shape(left), γ = right.γ, b = b
+        x -> exp((γ - b + 1) * x - p * loggamma(x) + (a - 1) * log(x))
     end
-    logf = let p = right.p, a = shape(left), γ=right.γ, b=b
-        x -> (γ-b+1)*x - p * loggamma(x) + (a - 1) * log(x)
+
+    logf = let p = right.p, a = shape(left), γ = right.γ, b = b
+        x -> (γ - b + 1) * x - p * loggamma(x) + (a - 1) * log(x)
     end
 
     # calculate log-normalization constant
-    p = length(approximation.rule.x)
-    logC =  loggausslaguerre(logf, p)
+    logC = log_approximate(approximation, logf)
 
     # mean function without explicitly calculating the normalization constant
     mf = let logf = logf, logC = logC
