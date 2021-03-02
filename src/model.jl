@@ -2,6 +2,7 @@ export ModelOptions, model_options
 export Model
 export getnodes, getrandom, getconstant, getdata
 export activate!, repeat!
+export UntilConvergence
 # export MarginalsEagerUpdate, MarginalsPureUpdate
 
 import Base: show
@@ -125,7 +126,7 @@ function make_node(model::Model, args...; factorisation = default_factorisation(
     return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
 end
 
-# Repeat [ EXPERIMENTAL ]
+# Repeat variational message passing iterations [ EXPERIMENTAL ]
 
 repeat!(model::Model, count::Int) = repeat!((_) -> nothing, model, count)
 
@@ -136,7 +137,45 @@ function repeat!(callback::Function, model::Model, count::Int)
         end
         callback(model)
     end
-    
+end
+
+struct UntilConvergence{S, F}
+    score_type :: S
+    tolerance  :: F
+    maxcount   :: Int
+end
+
+
+UntilConvergence(score::S; tolerance::F = 1e-6, maxcount::Int = 10_000) where { S, F <: Real } = UntilConvergence{S, F}(score, tolerance, maxcount)
+UntilConvergence(; kwargs...)                                                                  = UntilConvergence(BetheFreeEnergy(); kwargs...)
+
+function repeat!(callback::Function, model::Model, criterion::UntilConvergence{S, F}) where { S, F }
+
+    stopping_fn = let tolerance = criterion.tolerance
+        (p) -> abs(p[1] - p[2]) < tolerance
+    end
+
+    source = score(F, criterion.score_type, model, AsapScheduler()) |> pairwise() |> map(Bool, stopping_fn)
+
+    is_satisfied     = false
+    iterations_count = 0
+
+    subscription = subscribe!(source, lambda(
+        on_next     = (v) -> is_satisfied = v,
+        on_complete = (v) -> is_satisfied = true
+    ))
+
+    while !is_satisfied && iterations_count < criterion.maxcount
+        foreach(getdata(model)) do datavar
+            resend!(datavar)
+        end
+        callback(model)
+        iterations_count += 1
+    end
+
+    unsubscribe!(subscription)
+
+    return iterations_count
 end
 
 # TODO: Feature rejected due to a bug with invalid constant reusing. Should be revisited later.
