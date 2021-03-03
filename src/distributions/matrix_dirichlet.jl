@@ -2,7 +2,7 @@ export MatrixDirichlet
 
 import SpecialFunctions: digamma, loggamma
 
-struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T} }
+struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T} } <: ContinuousMatrixDistribution
     a :: A
 end
 

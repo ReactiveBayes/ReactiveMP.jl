@@ -25,13 +25,12 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    stream = combineLatestUpdates(map((cluster) -> getmarginal!(node, cluster) , localmarginals(node)), PushNew())
+    stream = combineLatest(map((cluster) -> getmarginal!(node, cluster) , localmarginals(node)), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{ localmarginalnames(node) }
         (marginals) -> begin 
-            recent_marginals = getrecent.(marginals)
-            average_energy   = score(AverageEnergy(), fform, marginal_names, recent_marginals, meta)
-            clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, recent_marginals)
+            average_energy   = score(AverageEnergy(), fform, marginal_names, marginals, meta)
+            clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
             return convert(T, average_energy - clusters_entropy)
         end
     end

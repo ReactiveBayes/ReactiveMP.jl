@@ -17,7 +17,7 @@ function degree end
 
 inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to change an inbound portal for $(variable)")
 
-getmarginals(vector::AbstractVector{ <: AbstractVariable }) = map(getmarginal, vector)
+getmarginals(vector::AbstractVector{ <: AbstractVariable }) = collectLatest(map(getmarginal, vector))
 
 function getmarginal(variable::AbstractVariable)
     vmarginal = _getmarginal(variable)

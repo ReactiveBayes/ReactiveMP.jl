@@ -2,6 +2,7 @@ export ModelOptions, model_options
 export Model
 export getnodes, getrandom, getconstant, getdata
 export activate!, repeat!
+export UntilConvergence
 # export MarginalsEagerUpdate, MarginalsPureUpdate
 
 import Base: show
@@ -113,9 +114,9 @@ end
 
 # Utility functions
 
-randomvar(model::Model, args...) = add!(model, randomvar(args...))
-constvar(model::Model, args...)  = add!(model, constvar(args...))
-datavar(model::Model, args...)   = add!(model, datavar(args...))
+randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
+constvar(model::Model, args...; kwargs...)  = add!(model, constvar(args...; kwargs...))
+datavar(model::Model, args...; kwargs...)   = add!(model, datavar(args...; kwargs...))
 
 as_variable(model::Model, x)                   = add!(model, as_variable(x))
 as_variable(model::Model, v::AbstractVariable) = v
@@ -125,9 +126,9 @@ function make_node(model::Model, args...; factorisation = default_factorisation(
     return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
 end
 
-# Repeat [ EXPERIMENTAL ]
+# Repeat variational message passing iterations [ EXPERIMENTAL ]
 
-repeat!(model::Model, count::Int) = repeat!((_) -> nothing, model, count)
+repeat!(model::Model, criterion) = repeat!((_) -> nothing, model, criterion)
 
 function repeat!(callback::Function, model::Model, count::Int)
     for _ in 1:count
@@ -136,7 +137,53 @@ function repeat!(callback::Function, model::Model, count::Int)
         end
         callback(model)
     end
-    
+end
+
+struct UntilConvergence{S, F}
+    score_type :: S
+    tolerance  :: F
+    maxcount   :: Int
+    mincount   :: Int
+end
+
+UntilConvergence(score::S; tolerance::F = 1e-6, maxcount::Int = 10_000, mincount::Int = 0) where { S, F <: Real } = UntilConvergence{S, F}(score, tolerance, maxcount, mincount)
+UntilConvergence(; kwargs...)                                                                                     = UntilConvergence(BetheFreeEnergy(); kwargs...)
+
+function repeat!(callback::Function, model::Model, criterion::UntilConvergence{S, F}) where { S, F }
+
+    stopping_fn = let tolerance = criterion.tolerance
+        (p) -> abs(p[1] - p[2]) < tolerance
+    end
+
+    source = score(F, criterion.score_type, model, AsapScheduler()) |> pairwise() |> map(Bool, stopping_fn)
+
+    is_satisfied     = false
+    iterations_count = 0
+
+    subscription = subscribe!(source, lambda(
+        on_next     = (v) -> is_satisfied = v,
+        on_complete = (v) -> is_satisfied = true
+    ))
+
+    while !is_satisfied
+        foreach(getdata(model)) do datavar
+            resend!(datavar)
+        end
+        callback(model)
+        iterations_count += 1
+
+        if iterations_count <= criterion.mincount
+            is_satisfied = false
+        end
+
+        if iterations_count >= criterion.maxcount
+            is_satisfied = true
+        end
+    end
+
+    unsubscribe!(subscription)
+
+    return iterations_count
 end
 
 # TODO: Feature rejected due to a bug with invalid constant reusing. Should be revisited later.

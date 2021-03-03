@@ -1,9 +1,10 @@
 export rule
 
 @rule GCV(:x, Marginalisation) (m_y::Any, q_z::Any, q_κ::Any, q_ω::Any) = begin
-    γ_1 = mean(q_z) ^ 2 * var(q_κ) + mean(q_κ) ^ 2 * var(q_z) + var(q_z) * var(q_κ)
-    γ_2 = exp(-mean(q_κ) * mean(q_z) + 0.5 * γ_1)
-    γ_3 = exp(-mean(q_ω) + 0.5 * var(q_ω))
 
-    return NormalMeanVariance(mean(m_y), var(m_y) + 1.0 / (γ_2 * γ_3))
+    ksi = mean(q_κ) ^ 2 * var(q_z) + mean(q_z) ^ 2 * var(q_κ) + var(q_z) * var(q_κ)
+    A = exp(-mean(q_ω) + var(q_ω) / 2)
+    B = exp(-mean(q_κ) * mean(q_z) + ksi / 2)
+
+    return NormalMeanVariance(mean(m_y), var(m_y) + inv(A * B))
 end
