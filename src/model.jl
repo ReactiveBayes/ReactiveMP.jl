@@ -114,9 +114,9 @@ end
 
 # Utility functions
 
-randomvar(model::Model, args...) = add!(model, randomvar(args...))
-constvar(model::Model, args...)  = add!(model, constvar(args...))
-datavar(model::Model, args...)   = add!(model, datavar(args...))
+randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
+constvar(model::Model, args...; kwargs...)  = add!(model, constvar(args...; kwargs...))
+datavar(model::Model, args...; kwargs...)   = add!(model, datavar(args...; kwargs...))
 
 as_variable(model::Model, x)                   = add!(model, as_variable(x))
 as_variable(model::Model, v::AbstractVariable) = v
@@ -128,7 +128,7 @@ end
 
 # Repeat variational message passing iterations [ EXPERIMENTAL ]
 
-repeat!(model::Model, count::Int) = repeat!((_) -> nothing, model, count)
+repeat!(model::Model, criterion) = repeat!((_) -> nothing, model, criterion)
 
 function repeat!(callback::Function, model::Model, count::Int)
     for _ in 1:count

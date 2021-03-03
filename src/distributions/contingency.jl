@@ -1,6 +1,6 @@
 export Contingency
 
-struct Contingency{ T, P <: AbstractMatrix{T} }
+struct Contingency{ T, P <: AbstractMatrix{T} } <: ContinuousMatrixDistribution
     p :: P
 end
 

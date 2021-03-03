@@ -37,6 +37,7 @@ Distributions.cov(message::Message)       = Distributions.cov(getdata(message))
 Distributions.invcov(message::Message)    = Distributions.invcov(getdata(message))
 Distributions.logdetcov(message::Message) = Distributions.logdetcov(getdata(message))
 Distributions.entropy(message::Message)   = Distributions.entropy(getdata(message))
+Distributions.params(message::Message)    = Distributions.params(getdata(message))
 
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)

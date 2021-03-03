@@ -8,6 +8,7 @@ struct PointMass{P}
     point :: P
 end
 
+as_marginal(distribution::PointMass)  = Marginal(distribution)
 getpointmass(distribution::PointMass) = distribution.point
 
 logmean(distribution::PointMass)      = log(mean(distribution))

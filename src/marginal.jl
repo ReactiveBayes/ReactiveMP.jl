@@ -28,6 +28,7 @@ Distributions.cov(marginal::Marginal)       = Distributions.cov(getdata(marginal
 Distributions.invcov(marginal::Marginal)    = Distributions.invcov(getdata(marginal))
 Distributions.logdetcov(marginal::Marginal) = Distributions.logdetcov(getdata(marginal))
 Distributions.entropy(marginal::Marginal)   = Distributions.entropy(getdata(marginal))
+Distributions.params(marginal::Marginal)    = Distributions.params(getdata(marginal))
 
 Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)
 Distributions.logpdf(marginal::Marginal, x) = Distributions.logpdf(getdata(marginal), x)
@@ -45,18 +46,21 @@ mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
 
 ## Utility functions
 
-as_marginal(data)               = Marginal(data)
-as_marginal(marginal::Marginal) = marginal
+as_marginal(distribution::Distribution) = Marginal(distribution)
+as_marginal(ntuple::NamedTuple)         = Marginal(ntuple)
+as_marginal(marginal::Marginal)         = marginal
 
 const __as_marginal_operator = Rocket.map(Marginal, as_marginal)
 
 as_marginal() = __as_marginal_operator
 
-function __reduce_to_marginal(messages)
-    return as_marginal(reduce_messages(messages))
-end
+reduce_to_marginal(messages) = foldl_reduce_to_marginal(messages)
 
-const reduce_to_marginal = Rocket.map(Marginal, __reduce_to_marginal)
+foldl_reduce_to_marginal(messages) = as_marginal(mapfoldl(as_message, *, messages; init = Message(missing)))
+foldr_reduce_to_marginal(messages) = as_marginal(mapfoldr(as_message, *, messages; init = Message(missing)))
+all_reduce_to_marginal(messages)   = as_marginal(prod_all(map(as_message, messages)))
+
+prod_all(messages) = foldl(*, messages; init = Message(missing))
 
 ## Marginal observable
 
