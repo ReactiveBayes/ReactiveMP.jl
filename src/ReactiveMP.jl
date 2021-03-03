@@ -10,6 +10,8 @@ include("math.jl")
 include("variable.jl")
 include("portal.jl")
 
+include("actors/score.jl")
+
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
 

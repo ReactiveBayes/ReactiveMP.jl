@@ -143,11 +143,11 @@ struct UntilConvergence{S, F}
     score_type :: S
     tolerance  :: F
     maxcount   :: Int
+    mincount   :: Int
 end
 
-
-UntilConvergence(score::S; tolerance::F = 1e-6, maxcount::Int = 10_000) where { S, F <: Real } = UntilConvergence{S, F}(score, tolerance, maxcount)
-UntilConvergence(; kwargs...)                                                                  = UntilConvergence(BetheFreeEnergy(); kwargs...)
+UntilConvergence(score::S; tolerance::F = 1e-6, maxcount::Int = 10_000, mincount::Int = 0) where { S, F <: Real } = UntilConvergence{S, F}(score, tolerance, maxcount, mincount)
+UntilConvergence(; kwargs...)                                                                                     = UntilConvergence(BetheFreeEnergy(); kwargs...)
 
 function repeat!(callback::Function, model::Model, criterion::UntilConvergence{S, F}) where { S, F }
 
@@ -165,12 +165,20 @@ function repeat!(callback::Function, model::Model, criterion::UntilConvergence{S
         on_complete = (v) -> is_satisfied = true
     ))
 
-    while !is_satisfied && iterations_count < criterion.maxcount
+    while !is_satisfied
         foreach(getdata(model)) do datavar
             resend!(datavar)
         end
         callback(model)
         iterations_count += 1
+
+        if iterations_count <= criterion.mincount
+            is_satisfied = false
+        end
+
+        if iterations_count >= criterion.maxcount
+            is_satisfied = true
+        end
     end
 
     unsubscribe!(subscription)
