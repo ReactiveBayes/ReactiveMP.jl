@@ -1,7 +1,7 @@
 export CMatrix, CMatrixTran
 
 import Base: *
-import LinearAlgebra: transpose
+import LinearAlgebra: transpose, inv
 
 struct CMatrix{ R <: Real, T <: AbstractArray{R} }
     t :: T
@@ -24,6 +24,25 @@ LinearAlgebra.transpose(t::CMatrixTran) = CMatrix(t.t)
 
 LinearAlgebra.adjoint(t::CMatrix)     = CMatrixTran(t.t)
 LinearAlgebra.adjoint(t::CMatrixTran) = CMatrix(t.t)
+
+function as_Matrix(t::CMatrix)
+    dim = length(t.t)
+    S = Matrix{Float64}(I, dim, dim)
+    for i in dim:-1:2
+           S[i,:] = S[i-1, :]
+    end
+    S[1, :] = zeros(dim)
+    u = zeros(dim); u[1] = 1.0
+    S + u*transpose(t.t)
+end
+
+function as_Matrix(t::CMatrixTran)
+    return transpose(as_Matrix(transpose(t.t)))
+end
+
+function LinearAlgebra.inv(t::Union{CMatrix, CMatrixTran})
+    inv(as_Matrix(t))
+end
 
 function Base.:*(tm::CMatrix, v::AbstractVector)
     r = similar(v)

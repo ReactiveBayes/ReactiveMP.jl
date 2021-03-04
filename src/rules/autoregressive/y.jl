@@ -12,6 +12,6 @@ export rule
 
     my = mA*inv(D)*inv(Vx)*mx
     Vy = mA*inv(D)*mA' + mV
-
+    
     return convert(promote_variate_type(F, NormalMeanVariance), my, Vy)
 end

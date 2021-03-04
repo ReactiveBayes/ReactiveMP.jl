@@ -8,6 +8,9 @@ struct PointMass{P}
     point :: P
 end
 
+variate_form(distribution::PointMass{V})  where { T, V <: AbstractVector{T} }　= Multivariate
+variate_form(distribution::PointMass{T})  where { T <: Real }　= Univariate
+
 getpointmass(distribution::PointMass) = distribution.point
 
 logmean(distribution::PointMass)      = log(mean(distribution))

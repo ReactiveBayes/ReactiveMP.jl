@@ -5,15 +5,16 @@ export rule
 
     myx, Vyx = mean(q_y_x), cov(q_y_x)
 
-    my, Vy = myx[1:order], Vyx[1:order,1:order]
-    mx, Vx = myx[order+1:end], Vyx[order+1:end, order+1:end]
-    Vxy    = Vyx[order+1:end,1:order]
+    my, Vy = arslice(F, myx, 1:order), arslice(F, Vyx, 1:order, 1:order)
+    mx, Vx = arslice(F, myx, order+1:2order), arslice(F, Vyx, order+1:2order, order+1:2order)
+    Vyx    = arslice(F, Vyx, order+1:2order, 1:order)
 
     mγ = mean(q_γ)
 
     D = mγ * (Vx + mx * mx')
-    c = zeros(order); c[1] = 1.0
-    mθ, Vθ = cholinv(D) * (Vxy + mx * my') * mγ * c, cholinv(D)
+    c = uvector(F, order)
 
+    mθ, Vθ = cholinv(D) * (Vyx + mx * my') * mγ * c, cholinv(D)
+    
     return convert(promote_variate_type(F, NormalMeanVariance), mθ, Vθ)
 end

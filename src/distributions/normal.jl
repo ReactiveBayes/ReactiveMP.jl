@@ -35,19 +35,19 @@ promote_variate_type(::Type{ Multivariate }, ::Type{ <: NormalWeightedMeanPrecis
 
 # Conversion to mean - variance parametrisation
 
-function Base.convert(::Type{ NormalMeanVariance{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real } 
+function Base.convert(::Type{ NormalMeanVariance{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real }
     return NormalMeanVariance(convert(T, mean(dist)), convert(T, var(dist)))
 end
 
-function Base.convert(::Type{ MvNormalMeanCovariance{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real } 
+function Base.convert(::Type{ MvNormalMeanCovariance{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real }
     return convert(MvNormalMeanCovariance{T, AbstractArray{T, 1}}, dist)
 end
 
-function Base.convert(::Type{ MvNormalMeanCovariance{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} } 
+function Base.convert(::Type{ MvNormalMeanCovariance{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} }
     return convert(MvNormalMeanCovariance{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
 end
 
-function Base.convert(::Type{ MvNormalMeanCovariance{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} } 
+function Base.convert(::Type{ MvNormalMeanCovariance{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} }
     return MvNormalMeanCovariance(convert(M, mean(dist)), convert(P, cov(dist)))
 end
 
@@ -61,19 +61,19 @@ end
 
 # Conversion to mean - precision parametrisation
 
-function Base.convert(::Type{ NormalMeanPrecision{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real } 
+function Base.convert(::Type{ NormalMeanPrecision{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real }
     return NormalMeanPrecision(convert(T, mean(dist)), convert(T, precision(dist)))
 end
 
-function Base.convert(::Type{ MvNormalMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real } 
+function Base.convert(::Type{ MvNormalMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real }
     return convert(MvNormalMeanPrecision{T, AbstractArray{T, 1}}, dist)
 end
 
-function Base.convert(::Type{ MvNormalMeanPrecision{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} } 
+function Base.convert(::Type{ MvNormalMeanPrecision{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} }
     return convert(MvNormalMeanPrecision{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
 end
 
-function Base.convert(::Type{ MvNormalMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} } 
+function Base.convert(::Type{ MvNormalMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} }
     return MvNormalMeanPrecision(convert(M, mean(dist)), convert(P, precision(dist)))
 end
 
@@ -87,19 +87,19 @@ end
 
 # Conversion to weighted mean - precision parametrisation
 
-function Base.convert(::Type{ NormalWeightedMeanPrecision{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real } 
+function Base.convert(::Type{ NormalWeightedMeanPrecision{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real }
     return NormalWeightedMeanPrecision(convert(T, weightedmean(dist)), convert(T, precision(dist)))
 end
 
-function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real } 
+function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real }
     return convert(MvNormalWeightedMeanPrecision{T, AbstractArray{T, 1}}, dist)
 end
 
-function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} } 
+function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T} }
     return convert(MvNormalWeightedMeanPrecision{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
 end
 
-function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} } 
+function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} }
     return MvNormalWeightedMeanPrecision(convert(M, weightedmean(dist)), convert(P, precision(dist)))
 end
 
@@ -121,7 +121,7 @@ function Base.prod(::ProdPreserveParametrisation, left::NormalMeanVariance, righ
     return NormalMeanVariance(μ, v)
 end
 
-function Base.prod(::ProdPreserveParametrisation, left::NormalMeanPrecision, right::UnivariateNormalDistributionsFamily) 
+function Base.prod(::ProdPreserveParametrisation, left::NormalMeanPrecision, right::UnivariateNormalDistributionsFamily)
     p = precision(left) + precision(right)
     μ = (mean(left) * precision(left) + mean(right) * precision(right)) / p
     return NormalMeanPrecision(μ, p)
@@ -134,22 +134,15 @@ end
 function Base.prod(::ProdBestSuitableParametrisation, left::L, right::R) where { L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily }
     wleft  = convert(NormalWeightedMeanPrecision, left)
     wright = convert(NormalWeightedMeanPrecision, right)
-    return prod(ProdBestSuitableParametrisation(), wleft, wright) 
+    return prod(ProdBestSuitableParametrisation(), wleft, wright)
 end
 
 function Base.prod(::ProdBestSuitableParametrisation, left::L, right::R) where { L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily }
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(ProdBestSuitableParametrisation(), wleft, wright) 
+    return prod(ProdBestSuitableParametrisation(), wleft, wright)
 end
 
 function Base.prod(::ProdPreserveParametrisation, left::L, right::R) where { L <: NormalDistributionsFamily, R <: NormalDistributionsFamily }
     return convert(L, prod(ProdBestSuitableParametrisation(), left, right))
 end
-
-
-
-
-
-
-
