@@ -1,5 +1,7 @@
 export AR, Autoregressive, ARsafe, ARunsafe, ARMeta
 
+import StatsFuns: log2π
+
 struct AR end
 
 const Autoregressive = AR
@@ -41,10 +43,10 @@ is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
     order = getorder(meta)
 
     mx, Vx   = ar_slice(getvform(meta), myx, order+1:2order), ar_slice(getvform(meta), Vyx, order+1:2order, order+1:2order)
-    my1, Vy1 = myx[1], Vyx[1]
+    my1, Vy1 = first(myx), first(Vyx)
     Vy1x     = ar_slice(getvform(meta), Vyx, 1, order+1:2order)
-    
-    AE = -0.5*(logmean(q_γ)) + 0.5*log(2*pi) + 0.5*mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)
+
+    AE = -0.5*(logmean(q_γ)) + 0.5log2π + 0.5*mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)
 
     # correction
     if is_multivariate(meta)
