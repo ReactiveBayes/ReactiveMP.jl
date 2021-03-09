@@ -512,7 +512,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         end
 
         # TODO: discontinue operater is needed for loopy belief propagation? Check
-        marginalout = combineLatest((msgs_observable, marginals_observable), PushEach()) |> discontinue() |> map(Marginal, mapping)
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 

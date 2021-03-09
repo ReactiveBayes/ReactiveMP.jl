@@ -3,6 +3,7 @@ export Marginal, getdata, as_marginal
 using Distributions
 using Rocket
 
+import Rocket: getrecent
 import Base: ndims, precision, length, size
 
 struct Marginal{D}
@@ -40,9 +41,11 @@ Base.size(marginal::Marginal)      = size(getdata(marginal))
 
 probvec(marginal::Marginal)         = probvec(getdata(marginal))
 weightedmean(marginal::Marginal)    = weightedmean(getdata(marginal))
-logmean(marginal::Marginal)         = logmean(getdata(marginal))
 inversemean(marginal::Marginal)     = inversemean(getdata(marginal))
+logmean(marginal::Marginal)         = logmean(getdata(marginal))
+meanlogmean(marginal::Marginal)     = meanlogmean(getdata(marginal))
 mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
+loggammamean(marginal::Marginal)    = loggammamean(getdata(marginal))
 
 ## Utility functions
 
@@ -79,9 +82,9 @@ end
 
 MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
 
-getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
-getrecent(observables::Tuple)             = getrecent.(observables)
-getrecent(::Nothing)                      = nothing
+Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
+Rocket.getrecent(observables::Tuple)             = Rocket.getrecent.(observables)
+Rocket.getrecent(::Nothing)                      = nothing
 
 function Rocket.on_subscribe!(observable::MarginalObservable, actor)
     return subscribe!(observable.stream, actor)

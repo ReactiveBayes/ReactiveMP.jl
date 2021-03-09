@@ -4,6 +4,7 @@ export multiply_messages
 using Distributions
 using Rocket
 
+import Rocket: getrecent
 import Base: *, +, ndims, precision, length, size, show
 
 abstract type AbstractMessage end
@@ -30,7 +31,7 @@ Distributions.median(message::Message)    = Distributions.median(getdata(message
 Distributions.mode(message::Message)      = Distributions.mode(getdata(message))
 Distributions.shape(message::Message)     = Distributions.shape(getdata(message))
 Distributions.scale(message::Message)     = Distributions.scale(getdata(message))
-Distributions.rate(message::Message)     = Distributions.rate(getdata(message))
+Distributions.rate(message::Message)      = Distributions.rate(getdata(message))
 Distributions.var(message::Message)       = Distributions.var(getdata(message))
 Distributions.std(message::Message)       = Distributions.std(getdata(message))
 Distributions.cov(message::Message)       = Distributions.cov(getdata(message))
@@ -49,9 +50,11 @@ Base.size(message::Message)      = size(getdata(message))
 
 probvec(message::Message)         = probvec(getdata(message))
 weightedmean(message::Message)    = weightedmean(getdata(message))
-logmean(message::Message)         = logmean(getdata(message))
 inversemean(message::Message)     = inversemean(getdata(message))
+logmean(message::Message)         = logmean(getdata(message))
+meanlogmean(message::Message)     = meanlogmean(getdata(message))
 mirroredlogmean(message::Message) = mirroredlogmean(getdata(message))
+loggammamean(message::Message)    = loggammamean(getdata(message))
 
 ## Variational Message
 
