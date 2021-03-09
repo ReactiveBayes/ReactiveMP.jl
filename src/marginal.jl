@@ -16,38 +16,6 @@ Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(ma
 
 getdata(marginal::Marginal) = marginal.data
 
-## Marginal
-
-Distributions.mean(marginal::Marginal)      = Distributions.mean(getdata(marginal))
-Distributions.median(marginal::Marginal)    = Distributions.median(getdata(marginal))
-Distributions.mode(marginal::Marginal)      = Distributions.mode(getdata(marginal))
-Distributions.shape(marginal::Marginal)     = Distributions.shape(getdata(marginal))
-Distributions.scale(marginal::Marginal)     = Distributions.scale(getdata(marginal))
-Distributions.rate(marginal::Marginal)      = Distributions.rate(getdata(marginal))
-Distributions.var(marginal::Marginal)       = Distributions.var(getdata(marginal))
-Distributions.std(marginal::Marginal)       = Distributions.std(getdata(marginal))
-Distributions.cov(marginal::Marginal)       = Distributions.cov(getdata(marginal))
-Distributions.invcov(marginal::Marginal)    = Distributions.invcov(getdata(marginal))
-Distributions.logdetcov(marginal::Marginal) = Distributions.logdetcov(getdata(marginal))
-Distributions.entropy(marginal::Marginal)   = Distributions.entropy(getdata(marginal))
-Distributions.params(marginal::Marginal)    = Distributions.params(getdata(marginal))
-
-Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)
-Distributions.logpdf(marginal::Marginal, x) = Distributions.logpdf(getdata(marginal), x)
-
-Base.precision(marginal::Marginal) = precision(getdata(marginal))
-Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
-Base.length(marginal::Marginal)    = length(getdata(marginal))
-Base.size(marginal::Marginal)      = size(getdata(marginal))
-
-probvec(marginal::Marginal)         = probvec(getdata(marginal))
-weightedmean(marginal::Marginal)    = weightedmean(getdata(marginal))
-inversemean(marginal::Marginal)     = inversemean(getdata(marginal))
-logmean(marginal::Marginal)         = logmean(getdata(marginal))
-meanlogmean(marginal::Marginal)     = meanlogmean(getdata(marginal))
-mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
-loggammamean(marginal::Marginal)    = loggammamean(getdata(marginal))
-
 ## Initial Marginal
 
 struct InitialMarginal{D}
@@ -60,9 +28,43 @@ getdata(marginal::InitialMarginal) = marginal.data
 
 as_marginal(imarginal::InitialMarginal) = Marginal(getdata(imarginal))
 
-## Utility functions
+## Aliases
 
 const MarginalOrInitialMarginal = Union{ Marginal, InitialMarginal }
+
+## Statistics 
+
+Distributions.mean(marginal::MarginalOrInitialMarginal)      = Distributions.mean(getdata(marginal))
+Distributions.median(marginal::MarginalOrInitialMarginal)    = Distributions.median(getdata(marginal))
+Distributions.mode(marginal::MarginalOrInitialMarginal)      = Distributions.mode(getdata(marginal))
+Distributions.shape(marginal::MarginalOrInitialMarginal)     = Distributions.shape(getdata(marginal))
+Distributions.scale(marginal::MarginalOrInitialMarginal)     = Distributions.scale(getdata(marginal))
+Distributions.rate(marginal::MarginalOrInitialMarginal)      = Distributions.rate(getdata(marginal))
+Distributions.var(marginal::MarginalOrInitialMarginal)       = Distributions.var(getdata(marginal))
+Distributions.std(marginal::MarginalOrInitialMarginal)       = Distributions.std(getdata(marginal))
+Distributions.cov(marginal::MarginalOrInitialMarginal)       = Distributions.cov(getdata(marginal))
+Distributions.invcov(marginal::MarginalOrInitialMarginal)    = Distributions.invcov(getdata(marginal))
+Distributions.logdetcov(marginal::MarginalOrInitialMarginal) = Distributions.logdetcov(getdata(marginal))
+Distributions.entropy(marginal::MarginalOrInitialMarginal)   = Distributions.entropy(getdata(marginal))
+Distributions.params(marginal::MarginalOrInitialMarginal)    = Distributions.params(getdata(marginal))
+
+Distributions.pdf(marginal::MarginalOrInitialMarginal, x)    = Distributions.pdf(getdata(marginal), x)
+Distributions.logpdf(marginal::MarginalOrInitialMarginal, x) = Distributions.logpdf(getdata(marginal), x)
+
+Base.precision(marginal::MarginalOrInitialMarginal) = precision(getdata(marginal))
+Base.ndims(marginal::MarginalOrInitialMarginal)     = ndims(getdata(marginal))
+Base.length(marginal::MarginalOrInitialMarginal)    = length(getdata(marginal))
+Base.size(marginal::MarginalOrInitialMarginal)      = size(getdata(marginal))
+
+probvec(marginal::MarginalOrInitialMarginal)         = probvec(getdata(marginal))
+weightedmean(marginal::MarginalOrInitialMarginal)    = weightedmean(getdata(marginal))
+inversemean(marginal::MarginalOrInitialMarginal)     = inversemean(getdata(marginal))
+logmean(marginal::MarginalOrInitialMarginal)         = logmean(getdata(marginal))
+meanlogmean(marginal::MarginalOrInitialMarginal)     = meanlogmean(getdata(marginal))
+mirroredlogmean(marginal::MarginalOrInitialMarginal) = mirroredlogmean(getdata(marginal))
+loggammamean(marginal::MarginalOrInitialMarginal)    = loggammamean(getdata(marginal))
+
+## Utility functions
 
 getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
