@@ -1,5 +1,5 @@
 export NodeInterface, name, messageout, messagein
-export FactorNode, functionalform, interfaces, factorisation, locamarginals, localmarginalnames, metadata
+export FactorNode, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export deps, connect!, activate!
@@ -424,7 +424,7 @@ function get_marginals_observable(factornode, marginal_dependencies)
 
     if length(marginal_dependencies) !== 0 
         marginal_names       = Val{ map(name, marginal_dependencies) }
-        marginals_streams    = map(marginal -> getmarginal!(factornode, marginal), marginal_dependencies)
+        marginals_streams    = map(marginal -> getmarginal!(factornode, IncludeInitial(), marginal), marginal_dependencies)
         marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
     end
 
@@ -477,11 +477,11 @@ function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
     setmarginal!(getstream(lmarginal), marginal)
 end
 
-function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal)
+function getmarginal!(factornode::FactorNode, skip_strategy::Union{ SkipInitial, IncludeInitial }, localmarginal::FactorNodeLocalMarginal)
     cached_stream = getstream(localmarginal)
 
     if cached_stream !== nothing
-        return cached_stream
+        return as_marginal_observable(skip_strategy, cached_stream)
     end
 
     clusterindex = index(localmarginal)
@@ -491,9 +491,9 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
 
     if marginalsize === 1 
         # Cluster contains only one variable, we can take marginal over this variable
-        vmarginal = getmarginal(connectedvar(getinterface(factornode, marginalname)))
+        vmarginal = getmarginal(IncludeInitial(), connectedvar(getinterface(factornode, marginalname)))
         setstream!(localmarginal, vmarginal)
-        return vmarginal
+        return as_marginal_observable(skip_strategy, vmarginal)
     else
         cmarginal = MarginalObservable()
 
@@ -518,7 +518,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
 
         setstream!(localmarginal, cmarginal)
 
-        return cmarginal
+        return as_marginal_observable(skip_strategy, cmarginal)
     end
 end
 

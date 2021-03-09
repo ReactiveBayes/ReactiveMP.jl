@@ -91,13 +91,13 @@ function get_marginals_observable(
 
     marginal_names = Val{ (name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1])) }
     marginals_observable = combineLatest((
-        getmarginal(connectedvar(varinterface)),
-        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), reverse(precsinterfaces)), PushNew()),
-        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), reverse(meansinterfaces)), PushNew()),
+        getmarginal(IncludeInitial(), connectedvar(varinterface)),
+        combineLatest(map((prec) -> getmarginal(IncludeInitial(), connectedvar(prec)), reverse(precsinterfaces)), PushNew()),
+        combineLatest(map((mean) -> getmarginal(IncludeInitial(), connectedvar(mean)), reverse(meansinterfaces)), PushNew()),
     ), PushNew()) |> map_to((
-        getmarginal(connectedvar(varinterface)),
-        map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces),
-        map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces)
+        getmarginal(IncludeInitial(), connectedvar(varinterface)),
+        map((mean) -> getmarginal(IncludeInitial(), connectedvar(mean)), meansinterfaces),
+        map((prec) -> getmarginal(IncludeInitial(), connectedvar(prec)), precsinterfaces)
     ))
 
     return marginal_names, marginals_observable
@@ -113,9 +113,9 @@ function get_marginals_observable(
 
     marginal_names       = Val{ (name(outinterface), name(switchinterface), name(varinterface)) }
     marginals_observable = combineLatestUpdates((
-        getmarginal(connectedvar(outinterface)),
-        getmarginal(connectedvar(switchinterface)),
-        getmarginal(connectedvar(varinterface)),
+        getmarginal(IncludeInitial(), connectedvar(outinterface)),
+        getmarginal(IncludeInitial(), connectedvar(switchinterface)),
+        getmarginal(IncludeInitial(), connectedvar(varinterface)),
     ), PushNew())
 
     return marginal_names, marginals_observable
@@ -136,32 +136,26 @@ end
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
     
     stream = combineLatest((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), node.means), PushNew()),
-        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), node.precs), PushNew())
-    ), PushNew()) |> map_to((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        map((mean) -> getmarginal(connectedvar(mean)), node.means),
-        map((prec) -> getmarginal(connectedvar(prec)), node.precs)
-    ))
+        getmarginal(SkipInitial(), connectedvar(node.out)) |> schedule_on(scheduler),
+        getmarginal(SkipInitial(), connectedvar(node.switch)) |> schedule_on(scheduler),
+        combineLatest(map((mean) -> getmarginal(SkipInitial(), connectedvar(mean)) |> schedule_on(scheduler), node.means), PushNew()),
+        combineLatest(map((prec) -> getmarginal(SkipInitial(), connectedvar(prec)) |> schedule_on(scheduler), node.precs), PushNew())
+    ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin 
-            recent_marginals = getrecent.(marginals)
-            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, recent_marginals, meta)
+            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, marginals, meta)
 
-            out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
-            switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
-            means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
-            precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
+            out_entropy     = score(DifferentialEntropy(), marginals[1])
+            switch_entropy  = score(DifferentialEntropy(), marginals[2])
+            means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
+            precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
 
             return convert(T, average_energy - (out_entropy + switch_entropy + means_entropies + precs_entropies))
         end
     end
 
-    return stream |> schedule_on(scheduler) |> map(T, mapping)
+    return stream |> map(T, mapping)
 end
 
 as_node_functional_form(::Type{ <: NormalMixture }) = ValidNodeFunctionalForm()

@@ -1,4 +1,6 @@
 export Marginal, getdata, as_marginal
+export InitialMarginal, MarginalOrInitialMarginal
+export SkipInitial, IncludeInitial
 
 using Distributions
 using Rocket
@@ -12,8 +14,7 @@ end
 
 Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ")"))
 
-getdata(marginal::Marginal)                          = marginal.data
-getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
+getdata(marginal::Marginal) = marginal.data
 
 ## Marginal
 
@@ -47,7 +48,23 @@ meanlogmean(marginal::Marginal)     = meanlogmean(getdata(marginal))
 mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
 loggammamean(marginal::Marginal)    = loggammamean(getdata(marginal))
 
+## Initial Marginal
+
+struct InitialMarginal{D}
+    data :: D
+end
+
+Base.show(io::IO, marginal::InitialMarginal) = print(io, string("InitialMarginal(", getdata(marginal), ")"))
+
+getdata(marginal::InitialMarginal) = marginal.data
+
+as_marginal(imarginal::InitialMarginal) = Marginal(getdata(imarginal))
+
 ## Utility functions
+
+const MarginalOrInitialMarginal = Union{ Marginal, InitialMarginal }
+
+getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
 as_marginal(distribution::Distribution) = Marginal(distribution)
 as_marginal(ntuple::NamedTuple)         = Marginal(ntuple)
@@ -67,22 +84,26 @@ prod_all(messages) = foldl(*, messages; init = Message(missing))
 
 ## Marginal observable
 
-struct MarginalObservable <: Subscribable{Marginal}
-    subject :: Rocket.RecentSubjectInstance{ Marginal, Subject{ Marginal,AsapScheduler,AsapScheduler } }
-    stream  :: LazyObservable{Marginal}
+struct SkipInitial end
+struct IncludeInitial end
+
+struct MarginalObservable <: Subscribable{ MarginalOrInitialMarginal }
+    subject :: Rocket.RecentSubjectInstance{ MarginalOrInitialMarginal, Subject{ MarginalOrInitialMarginal, AsapScheduler, AsapScheduler } }
+    stream  :: LazyObservable{ MarginalOrInitialMarginal }
 end
 
-as_marginal_observable(observable::MarginalObservable) = observable
+MarginalObservable() = MarginalObservable(RecentSubject(MarginalOrInitialMarginal), lazy(MarginalOrInitialMarginal))
 
-function as_marginal_observable(observable)
+as_marginal_observable(::SkipInitial, observable::MarginalObservable)    = observable |> filter(r -> typeof(r) <: Marginal) |> map(Marginal, v -> v)
+as_marginal_observable(::IncludeInitial, observable::MarginalObservable) = observable
+
+function as_marginal_observable(skip_strategy::Union{ SkipInitial, IncludeInitial }, observable)
     output = MarginalObservable()
     connect!(output, observable)
-    return output
+    return as_marginal_observable(skip_strategy, output)
 end
 
-MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
-
-Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
+Rocket.getrecent(observable::MarginalObservable) = as_marginal(Rocket.getrecent(observable.subject))
 Rocket.getrecent(observables::Tuple)             = Rocket.getrecent.(observables)
 Rocket.getrecent(::Nothing)                      = nothing
 
@@ -96,6 +117,6 @@ function connect!(marginal::MarginalObservable, source)
 end
 
 function setmarginal!(marginal::MarginalObservable, value)
-    next!(marginal.subject, as_marginal(value))
+    next!(marginal.subject, InitialMarginal(value))
     return nothing
 end
