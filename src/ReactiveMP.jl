@@ -7,8 +7,16 @@ include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
 
+include("message.jl")
+include("marginal.jl")
+
+as_marginal(message::Message)  = as_marginal(getdata(message))
+as_message(marginal::Marginal) = Message(getdata(marginal))
+
 include("variable.jl")
 include("portal.jl")
+
+include("actors/score.jl")
 
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
@@ -42,12 +50,6 @@ include("distributions/exp_linear_quadratic.jl")
 include("distributions/wishart.jl")
 include("distributions/contingency.jl")
 include("distributions/common.jl")
-
-include("message.jl")
-include("marginal.jl")
-
-as_marginal(message::Message)  = Marginal(getdata(message))
-as_message(marginal::Marginal) = Message(getdata(marginal))
 
 include("variables/random.jl")
 include("variables/constant.jl")

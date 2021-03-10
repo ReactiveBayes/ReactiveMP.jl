@@ -98,13 +98,13 @@ function get_marginals_observable(
 
     marginal_names = Val{ (name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1])) }
     marginals_observable = combineLatest((
-        getmarginal(connectedvar(varinterface)),
-        combineLatest(map((rate) -> getmarginal(connectedvar(rate)), reverse(bsinterfaces)), PushNew()),
-        combineLatest(map((shape) -> getmarginal(connectedvar(shape)), reverse(asinterfaces)), PushNew()),
+        getmarginal(IncludeInitial(), connectedvar(varinterface)),
+        combineLatest(map((rate) -> getmarginal(IncludeInitial(), connectedvar(rate)), reverse(bsinterfaces)), PushNew()),
+        combineLatest(map((shape) -> getmarginal(IncludeInitial(), connectedvar(shape)), reverse(asinterfaces)), PushNew()),
     ), PushNew()) |> map_to((
-        getmarginal(connectedvar(varinterface)),
-        map((shape) -> getmarginal(connectedvar(shape)), asinterfaces),
-        map((rate) -> getmarginal(connectedvar(rate)), bsinterfaces)
+        getmarginal(IncludeInitial(), connectedvar(varinterface)),
+        map((shape) -> getmarginal(IncludeInitial(), connectedvar(shape)), asinterfaces),
+        map((rate) -> getmarginal(IncludeInitial(), connectedvar(rate)), bsinterfaces)
     ))
 
     return marginal_names, marginals_observable
@@ -120,9 +120,9 @@ function get_marginals_observable(
 
     marginal_names       = Val{ (name(outinterface), name(switchinterface), name(varinterface)) }
     marginals_observable = combineLatestUpdates((
-        getmarginal(connectedvar(outinterface)),
-        getmarginal(connectedvar(switchinterface)),
-        getmarginal(connectedvar(varinterface))
+        getmarginal(IncludeInitial(), connectedvar(outinterface)),
+        getmarginal(IncludeInitial(), connectedvar(switchinterface)),
+        getmarginal(IncludeInitial(), connectedvar(varinterface))
     ), PushNew())
 
     return marginal_names, marginals_observable
@@ -138,32 +138,26 @@ end
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
 
     stream = combineLatest((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushNew()),
-        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushNew())
-    ), PushNew()) |> map_to((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        map((as) -> getmarginal(connectedvar(as)), node.as),
-        map((bs) -> getmarginal(connectedvar(bs)), node.bs)
-    ))
+        getmarginal(SkipInitial(), connectedvar(node.out)) |> schedule_on(scheduler),
+        getmarginal(SkipInitial(), connectedvar(node.switch)) |> schedule_on(scheduler),
+        combineLatest(map((as) -> getmarginal(SkipInitial(), connectedvar(as)) |> schedule_on(scheduler), node.as), PushNew()),
+        combineLatest(map((bs) -> getmarginal(SkipInitial(), connectedvar(bs)) |> schedule_on(scheduler), node.bs), PushNew())
+    ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin
-            recent_marginals = getrecent.(marginals)
-            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :a, :b) }, recent_marginals, meta)
+            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :a, :b) }, marginals, meta)
 
-            out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
-            switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
-            a_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
-            b_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
+            out_entropy     = score(DifferentialEntropy(), marginals[1])
+            switch_entropy  = score(DifferentialEntropy(), marginals[2])
+            a_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
+            b_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
 
             return convert(T, average_energy - (out_entropy + switch_entropy + a_entropies + b_entropies))
         end
     end
 
-    return stream |> schedule_on(scheduler) |> map(T, mapping)
+    return stream |> map(T, mapping)
 end
 
 as_node_functional_form(::Type{ <: GammaMixture }) = ValidNodeFunctionalForm()

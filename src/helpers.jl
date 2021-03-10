@@ -126,8 +126,8 @@ infs(a::InfCountingReal)  = a.infs
 Base.isfinite(a::InfCountingReal) = infs(a) === 0
 Base.isinf(a::InfCountingReal)    = !(isfinite(a))
 
-Base.eltype(::Type{ <: InfCountingReal{T} }) where T = T
-Base.eltype(::Type{ <: InfCountingReal })            = Real
+Base.eltype(::Type{ InfCountingReal{T} }) where T = T
+Base.eltype(::Type{ InfCountingReal })            = Real
 
 Base.eltype(::T) where { T <: InfCountingReal } = eltype(T)
 

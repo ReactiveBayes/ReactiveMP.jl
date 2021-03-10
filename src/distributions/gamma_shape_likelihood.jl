@@ -10,6 +10,8 @@ struct GammaShapeLikelihood{T <: Real, A}
     approximation :: A
 end
 
+Base.show(io::IO, distribution::GammaShapeLikelihood{T}) where T = print(io, "GammaShapeLikelihood{$T}(π = $(distribution.p), γ = $(distribution.γ))")
+
 function approximate_prod_expectations(approximation::GaussLaguerreQuadrature, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
     b = rate(left)
 
