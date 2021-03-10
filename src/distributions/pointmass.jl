@@ -8,8 +8,11 @@ struct PointMass{P}
     point :: P
 end
 
-variate_form(distribution::PointMass{V})  where { T, V <: AbstractVector{T} }　= Multivariate
-variate_form(distribution::PointMass{T})  where { T <: Real }　= Univariate
+variate_form(::PointMass{T})  where { T <: Real }　                = Univariate
+variate_form(::PointMass{V})  where { T, V <: AbstractVector{T} }　= Multivariate
+variate_form(::PointMass{M})  where { T, M <: AbstractMatrix{T} }　= Matrixvariate
+
+##
 
 getpointmass(distribution::PointMass) = distribution.point
 
