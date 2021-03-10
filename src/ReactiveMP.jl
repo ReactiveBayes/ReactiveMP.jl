@@ -1,7 +1,5 @@
 module ReactiveMP
 
-using Distributions
-
 include("rocket.jl")
 include("graphppl.jl")
 include("macrohelpers.jl")

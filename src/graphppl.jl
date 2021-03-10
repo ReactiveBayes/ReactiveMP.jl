@@ -1,6 +1,9 @@
-export ReactiveMPBackend, @model
+export ReactiveMPBackend, @model, fquote, ensure_type
 
+using MacroTools
 using GraphPPL
+
+import GraphPPL: fquote, ensure_type
 
 macro model(model_specification)
     return esc(:(@model [] $model_specification))
@@ -17,15 +20,15 @@ function GraphPPL.write_argument_guard(::ReactiveMPBackend, argument::Symbol)
 end
 
 function GraphPPL.write_randomvar_expression(::ReactiveMPBackend, model, varexp, arguments)
-    return :($varexp = ReactiveMP.randomvar($model, $(GraphPPL.fquote(varexp)), $(arguments...)))
+    return :($varexp = ReactiveMP.randomvar($model, $(fquote(varexp)), $(arguments...)))
 end
 
 function GraphPPL.write_datavar_expression(::ReactiveMPBackend, model, varexpr, type, arguments)
-    return :($varexpr = ReactiveMP.datavar($model, $(GraphPPL.fquote(varexpr)), ReactiveMP.PointMass{ $type }, $(arguments...)))
+    return :($varexpr = ReactiveMP.datavar($model, $(fquote(varexpr)), ReactiveMP.PointMass{ ensure_type($(type)) }, $(arguments...)))
 end
 
 function GraphPPL.write_constvar_expression(::ReactiveMPBackend, model, varexpr, arguments)
-    return :($varexpr = ReactiveMP.constvar($model, $(GraphPPL.fquote(varexpr)), $(arguments...)))
+    return :($varexpr = ReactiveMP.constvar($model, $(fquote(varexpr)), $(arguments...)))
 end
 
 function GraphPPL.write_as_variable(::ReactiveMPBackend, model, varexpr)
