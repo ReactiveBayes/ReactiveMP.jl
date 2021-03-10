@@ -8,12 +8,19 @@ struct PointMass{P}
     point :: P
 end
 
-as_marginal(distribution::PointMass)  = Marginal(distribution)
+variate_form(::PointMass{T})  where { T <: Real }　                = Univariate
+variate_form(::PointMass{V})  where { T, V <: AbstractVector{T} }　= Multivariate
+variate_form(::PointMass{M})  where { T, M <: AbstractMatrix{T} }　= Matrixvariate
+
+##
+
 getpointmass(distribution::PointMass) = distribution.point
 
-logmean(distribution::PointMass)      = log(mean(distribution))
-inversemean(distribution::PointMass)  = cholinv(mean(distribution))
-loggammamean(distribution::PointMass) = loggamma(mean(distribution))
+##
+
+as_marginal(distribution::PointMass) = Marginal(distribution)
+
+##
 
 Base.getindex(distribution::PointMass, index) = Base.getindex(getpointmass(distribution), index)
 
