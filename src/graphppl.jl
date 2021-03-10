@@ -17,15 +17,15 @@ function GraphPPL.write_argument_guard(::ReactiveMPBackend, argument::Symbol)
 end
 
 function GraphPPL.write_randomvar_expression(::ReactiveMPBackend, model, varexp, arguments)
-    return :($varexp = ReactiveMP.randomvar($model, $(fquote(varexp)), $(arguments...)))
+    return :($varexp = ReactiveMP.randomvar($model, $(GraphPPL.fquote(varexp)), $(arguments...)))
 end
 
 function GraphPPL.write_datavar_expression(::ReactiveMPBackend, model, varexpr, type, arguments)
-    return :($varexpr = ReactiveMP.datavar($model, $(fquote(varexpr)), ReactiveMP.PointMass{ $type }, $(arguments...)))
+    return :($varexpr = ReactiveMP.datavar($model, $(GraphPPL.fquote(varexpr)), ReactiveMP.PointMass{ $type }, $(arguments...)))
 end
 
 function GraphPPL.write_constvar_expression(::ReactiveMPBackend, model, varexpr, arguments)
-    return :($varexpr = ReactiveMP.constvar($model, $(fquote(varexpr)), $(arguments...)))
+    return :($varexpr = ReactiveMP.constvar($model, $(GraphPPL.fquote(varexpr)), $(arguments...)))
 end
 
 function GraphPPL.write_as_variable(::ReactiveMPBackend, model, varexpr)
@@ -37,7 +37,7 @@ function GraphPPL.write_make_node_expression(::ReactiveMPBackend, model, fform, 
 end
 
 function GraphPPL.write_autovar_make_node_expression(::ReactiveMPBackend, model, fform, variables, options, nodeexpr, varexpr, autovarid)
-    return :(($nodeexpr, $varexpr) = ReactiveMP.make_node($model, $fform, ReactiveMP.AutoVar($(fquote(autovarid))), $(variables...); $(options...)))
+    return :(($nodeexpr, $varexpr) = ReactiveMP.make_node($model, $fform, ReactiveMP.AutoVar($(GraphPPL.fquote(autovarid))), $(variables...); $(options...)))
 end
 
 function GraphPPL.write_node_options(::ReactiveMPBackend, fform, variables, options)
