@@ -20,6 +20,8 @@ include("actors/score.jl")
 
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
+include("algebra/companion_matrix.jl")
+
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
@@ -87,6 +89,7 @@ include("nodes/normal_mixture.jl")
 include("nodes/gamma_mixture.jl")
 include("nodes/dot_product.jl")
 include("nodes/transition.jl")
+include("nodes/autoregressive.jl")
 
 
 # Deterministic nodes
