@@ -96,7 +96,7 @@ end
 
 MarginalObservable() = MarginalObservable(RecentSubject(MarginalOrInitialMarginal), lazy(MarginalOrInitialMarginal))
 
-as_marginal_observable(::SkipInitial, observable::MarginalObservable)    = observable |> filter(r -> typeof(r) <: Marginal) |> map(Marginal, v -> v)
+as_marginal_observable(::SkipInitial, observable::MarginalObservable)    = observable |> filter_type(Marginal)
 as_marginal_observable(::IncludeInitial, observable::MarginalObservable) = observable
 
 function as_marginal_observable(skip_strategy::Union{ SkipInitial, IncludeInitial }, observable)
