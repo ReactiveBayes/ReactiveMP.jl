@@ -12,6 +12,8 @@ end
 
 Base.show(io::IO, distribution::GammaShapeLikelihood{T}) where T = print(io, "GammaShapeLikelihood{$T}(π = $(distribution.p), γ = $(distribution.γ))")
 
+Distributions.logpdf(distribution::GammaShapeLikelihood, x) = distribution.γ * x - distribution.p * loggamma(x)
+
 function approximate_prod_expectations(approximation::GaussLaguerreQuadrature, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
     b = rate(left)
 
