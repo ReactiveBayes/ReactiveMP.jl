@@ -11,6 +11,7 @@ export MeanField, FullFactorisation, collect_factorisation
 export @node
 
 using Rocket
+using TupleTools
 
 import Base: show
 import Base: getindex, setindex!, firstindex, lastindex
@@ -400,8 +401,8 @@ function functional_dependencies(factornode::FactorNode, iindex::Int)
 
     varcluster = @inbounds nodeclusters[ cindex ]
 
-    message_dependencies  = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(varcluster, varclusterindex(varcluster, iindex)))
-    marginal_dependencies = skipindex(nodelocalmarginals, cindex)
+    message_dependencies  = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex)))
+    marginal_dependencies = TupleTools.deleteat(nodelocalmarginals, cindex)
 
     return tuple(message_dependencies...), tuple(marginal_dependencies...)
 end
@@ -498,7 +499,7 @@ function getmarginal!(factornode::FactorNode, skip_strategy::Union{ SkipInitial,
         cmarginal = MarginalObservable()
 
         message_dependencies  = tuple(getclusterinterfaces(factornode, clusterindex)...)
-        marginal_dependencies = tuple(skipindex(localmarginals(factornode), clusterindex)...)
+        marginal_dependencies = tuple(TupleTools.deleteat(localmarginals(factornode), clusterindex)...)
 
         msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
