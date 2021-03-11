@@ -539,6 +539,10 @@ function make_node end
 function interface_get_index end
 function interface_get_name end
 
+function interface_get_name(::Type{ Val{ Node } }, ::Type{ Val{ Interface } }) where { Node, Interface }
+    error("Node $Node has no interface named $Interface")
+end
+
 make_node(fform, ::AutoVar, ::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
 make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...)        = error("Unknown functional form '$(fform)' used for node specification.")
 

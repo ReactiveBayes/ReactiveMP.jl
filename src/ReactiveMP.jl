@@ -1,7 +1,6 @@
 module ReactiveMP
 
 include("rocket.jl")
-include("graphppl.jl")
 include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
@@ -20,7 +19,6 @@ include("actors/score.jl")
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
 include("algebra/companion_matrix.jl")
-
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
