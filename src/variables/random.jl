@@ -53,7 +53,7 @@ prod_strategy(randomvar::RandomVariable) = randomvar.prod_strategy
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
+messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), reduce_messages)
 
 inbound_portal(randomvar::RandomVariable)          = randomvar.props.portal
 inbound_portal!(randomvar::RandomVariable, portal) = randomvar.props.portal = portal

@@ -40,10 +40,9 @@ getlastindex(::DataVariable) = 1
 messageout(datavar::DataVariable, ::Int) = datavar.messageout
 messagein(datavar::DataVariable, ::Int)  = error("It is not possible to get a reference for inbound message for datavar")
 
-update!(datavar::DataVariable, data)                 = next!(messageout(datavar, 1), as_message(data))
-update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar, 1), as_message(PointMass(data)))
-update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), as_message(PointMass(data)))
-update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), as_message(PointMass(data)))
+update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
+update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
+update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 
@@ -60,7 +59,7 @@ inbound_portal(::DataVariable) = EmptyPortal()
 
 _getmarginal(datavar::DataVariable)                                = datavar.props.marginal
 _setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.props.marginal = marginal
-_makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, as_marginal)
+_makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, (m) -> Marginal(m, false, false))
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.props.nconnected += 1

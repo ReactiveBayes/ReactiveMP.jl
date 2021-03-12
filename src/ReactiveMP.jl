@@ -8,8 +8,8 @@ include("math.jl")
 include("message.jl")
 include("marginal.jl")
 
-as_marginal(message::Message)  = as_marginal(getdata(message))
-as_message(marginal::Marginal) = Message(getdata(marginal))
+as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
 include("variable.jl")
 include("portal.jl")

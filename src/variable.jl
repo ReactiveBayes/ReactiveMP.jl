@@ -3,7 +3,7 @@ export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
-export getmarginal, getmarginals, setmarginal!, activate!, name
+export getmarginal, getmarginals, setmarginal!, setmarginals!, activate!, name
 export as_message, as_marginal
 export as_variable
 
@@ -32,6 +32,16 @@ end
 
 function setmarginal!(variable::AbstractVariable, marginal)
     setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+end
+
+function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginal)
+    setmarginals!(variables, Iterators.repeated(marginal, length(variables)))
+end
+
+function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginals::AbstractVector)
+    foreach(zip(variables, marginals)) do (variable, marginal)
+        setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+    end
 end
 
 function name(variable::AbstractVariable)
