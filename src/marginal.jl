@@ -56,14 +56,22 @@ loggammamean(marginal::Marginal)    = loggammamean(getdata(marginal))
 
 getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
-# as_marginal(distribution::Distribution) = Marginal(distribution)
-# as_marginal(ntuple::NamedTuple)         = Marginal(ntuple)
-as_marginal(marginal::Marginal)         = marginal
+as_marginal(marginal::Marginal) = marginal
 
 foldl_reduce_to_marginal(messages) = as_marginal(mapfoldl(as_message, *, messages))
 foldr_reduce_to_marginal(messages) = as_marginal(mapfoldr(as_message, *, messages))
-all_reduce_to_marginal(messages)   = as_marginal(prod_all(map(as_message, messages)))
 
+function all_reduce_to_marginal(messages) 
+
+    # We propagate clamped message, in case if both are clamped
+    is_prod_clamped = __check_all(is_clamped, messages)
+    # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
+    is_prod_initial = !is_prod_clamped && __check_all(v -> is_clamped(v) || is_initial(v), messages)
+
+    return Marginal(prod_all(map(as_message, messages)), is_prod_clamped, is_prod_initial)
+end
+
+# Fallback option
 prod_all(messages) = foldl(*, messages)
 
 ## Marginal observable

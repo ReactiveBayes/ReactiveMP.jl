@@ -44,7 +44,7 @@ update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar,
 update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 
-resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
+resend!(datavar::DataVariable) = update!(datavar, getdata(Rocket.getrecent(messageout(datavar, 1))))
 
 function update!(datavars::AbstractVector{ <: DataVariable }, data::AbstractVector)
     @assert size(datavars) === size(data) "Invalid update! call: size of datavar array and data should match"

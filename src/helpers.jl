@@ -201,3 +201,7 @@ function swapped(array::AbstractArray, i, j)
     return array
 end
 
+## 
+
+__check_all(fn::Function, iterator)  = all(fn, iterator)
+__check_all(fn::Function, ::Nothing) = true

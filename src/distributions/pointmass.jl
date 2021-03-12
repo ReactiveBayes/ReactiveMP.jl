@@ -18,10 +18,6 @@ getpointmass(distribution::PointMass) = distribution.point
 
 ##
 
-as_marginal(distribution::PointMass) = Marginal(distribution)
-
-##
-
 Base.getindex(distribution::PointMass, index) = Base.getindex(getpointmass(distribution), index)
 
 Distributions.insupport(distribution::PointMass, x::Real) = x == getpointmass(distribution)

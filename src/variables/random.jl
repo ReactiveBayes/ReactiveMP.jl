@@ -31,15 +31,15 @@ struct RandomVariable{S} <: AbstractVariable
     prod_strategy :: S
 end
 
-function randomvar(name::Symbol; prod_strategy = AllAtOnceProdStrategy()) 
+function randomvar(name::Symbol; prod_strategy = FoldLeftProdStrategy()) 
     return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), RandomVariableProps(), prod_strategy)
 end
 
-function randomvar(name::Symbol, dims::Tuple; prod_strategy = AllAtOnceProdStrategy())
+function randomvar(name::Symbol, dims::Tuple; prod_strategy = FoldLeftProdStrategy())
     return randomvar(name, dims...; prod_strategy = prod_strategy)
 end
 
-function randomvar(name::Symbol, dims::Vararg{Int}; prod_strategy = AllAtOnceProdStrategy())
+function randomvar(name::Symbol, dims::Vararg{Int}; prod_strategy = FoldLeftProdStrategy())
     vars = Array{RandomVariable}(undef, dims)
     for index in CartesianIndices(axes(vars))
         @inbounds vars[index] = randomvar(Symbol(name, :_, Symbol(join(index.I, :_))); prod_strategy = prod_strategy)

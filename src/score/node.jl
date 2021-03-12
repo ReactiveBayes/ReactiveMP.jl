@@ -16,7 +16,15 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
 
     mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
         (messages) -> begin
-            marginal = as_marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node))
+
+            # Marginal is clamped if all of the inputs are clamped
+            is_marginal_clamped = __check_all(is_clamped, messages)
+
+            # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
+            is_marginal_initial = !is_marginal_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages))
+
+            marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), is_marginal_clamped, is_marginal_initial)
+            
             return convert(T, -score(DifferentialEntropy(), marginal))
         end
     end

@@ -91,18 +91,7 @@ setcache!(vmessage::VariationalMessage, message::Message) = vmessage.props.cache
 __check_all(fn::Function, iterator)  = all(fn, iterator)
 __check_all(fn::Function, ::Nothing) = true
 
-function compute_message(vmessage::VariationalMessage) 
-    messages  = vmessage.messages
-    marginals = getrecent(vmessage.marginals)
-
-    # Variational message is clamped if all of the inputs are clamped
-    is_vm_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
-
-    # Variational messages is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_vm_initial = !is_vm_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
-
-    return Message(vmessage.mappingFn((messages, marginals)), is_vm_clamped, is_vm_initial)
-end
+compute_message(vmessage::VariationalMessage) = vmessage.mappingFn((vmessage.messages, getrecent(vmessage.marginals)))
 
 function materialize!(vmessage::VariationalMessage)
     cache = getcache(vmessage)
