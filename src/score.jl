@@ -1,24 +1,34 @@
 export score, AverageEnergy, DifferentialEntropy, BetheFreeEnergy
 export @average_energy
 
+abstract type AbstractScoreObjective end
+
 function score end
-
-struct AverageEnergy end
-struct DifferentialEntropy end
-
-struct BetheFreeEnergy end
 
 # Default version is differentiable
 # Specialized versions like score(Float64, ...) are not differentiable, but could be faster
-score(::BetheFreeEnergy, model)                                           = score(BetheFreeEnergy(), model, AsapScheduler())
-score(::BetheFreeEnergy, model, scheduler)                                = score(InfCountingReal, BetheFreeEnergy(), model, scheduler)
-score(::Type{T}, ::BetheFreeEnergy, model) where { T <: Real }            = score(T, BetheFreeEnergy(), model, AsapScheduler())
-score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: Real } = score(InfCountingReal{T}, BetheFreeEnergy(), model, scheduler)
+score(objective::AbstractScoreObjective, model)                                           = score(objective, model, AsapScheduler())
+score(objective::AbstractScoreObjective, model, scheduler)                                = score(InfCountingReal, objective, model, scheduler)
+score(::Type{T}, objective::AbstractScoreObjective, model) where { T <: Real }            = score(T, objective, model, AsapScheduler())
+score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where { T <: Real } = score(InfCountingReal{T}, objective, model, scheduler)
 
-function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: InfCountingReal }
+# Bethe Free Energy objective
 
-    node_bound_free_energies     = map((node) -> score(T, FactorBoundFreeEnergy(), node, scheduler), getnodes(model))
-    variable_bound_entropies     = map((v) -> score(T, VariableBoundEntropy(), v, scheduler), getrandom(model))
+struct AverageEnergy       end
+struct DifferentialEntropy end
+
+struct BetheFreeEnergy{S} <: AbstractScoreObjective
+    marginal_skip_strategy :: S
+end
+
+BetheFreeEnergy() = BetheFreeEnergy(SkipInitial())
+
+marginal_skip_strategy(objective::BetheFreeEnergy) = objective.marginal_skip_strategy
+
+function score(::Type{T}, objective::BetheFreeEnergy, model, scheduler) where { T <: InfCountingReal }
+
+    node_bound_free_energies     = map((node) -> score(T, objective, FactorBoundFreeEnergy(), node, scheduler), getnodes(model))
+    variable_bound_entropies     = map((v) -> score(T, objective, VariableBoundEntropy(), v, scheduler), getrandom(model))
     node_bound_free_energies_sum = collectLatest(T, T, node_bound_free_energies, reduce_with_sum)
     variable_bound_entropies_sum = collectLatest(T, T, variable_bound_entropies, reduce_with_sum)
 

@@ -83,6 +83,11 @@ struct SkipInitial           <: MarginalSkipStrategy end
 struct SkipClampedAndInitial <: MarginalSkipStrategy end
 struct IncludeAll            <: MarginalSkipStrategy end
 
+apply_skip_filter(observable, ::SkipClamped)           = observable |> filter(v -> !is_clamped(v))
+apply_skip_filter(observable, ::SkipInitial)           = observable |> filter(v -> !is_initial(v))
+apply_skip_filter(observable, ::SkipClampedAndInitial) = observable |> filter(v -> !is_initial(v) && !is_clamped(v))
+apply_skip_filter(observable, ::IncludeAll)            = observable
+
 struct MarginalObservable <: Subscribable{ Marginal }
     subject :: Rocket.RecentSubjectInstance{ Marginal, Subject{ Marginal, AsapScheduler, AsapScheduler } }
     stream  :: LazyObservable{ Marginal }
@@ -90,12 +95,8 @@ end
 
 MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))   
 
-as_marginal_observable(observable::MarginalObservable, ::SkipClamped)           = observable |> filter(v -> !is_clamped(v))
-as_marginal_observable(observable::MarginalObservable, ::SkipInitial)           = observable |> filter(v -> !is_initial(v))
-as_marginal_observable(observable::MarginalObservable, ::SkipClampedAndInitial) = observable |> filter(v -> !is_initial(v))
-as_marginal_observable(observable::MarginalObservable, ::IncludeAll)            = observable
-
-as_marginal_observable(observable) = as_marginal_observable(observable, IncludeAll())
+as_marginal_observable(observable::MarginalObservable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(observable, skip_strategy)
+as_marginal_observable(observable)                                                          = as_marginal_observable(observable, IncludeAll())
 
 function as_marginal_observable(observable, skip_strategy::MarginalSkipStrategy)
     output = MarginalObservable()

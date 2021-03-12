@@ -4,12 +4,12 @@ import Base: tail
 
 struct FactorBoundFreeEnergy end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    return score(T, FactorBoundFreeEnergy(), sdtype(node), node, scheduler)
+function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
+    return score(T, objective, FactorBoundFreeEnergy(), sdtype(node), node, scheduler)
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    stream = combineLatest(map((interface) -> messagein(interface) |> filter(v -> !is_initial(v)) |> schedule_on(scheduler), interfaces(node)), PushNew())
+function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
+    stream = combineLatest(map((interface) -> apply_skip_filter(messagein(interface), marginal_skip_strategy(objective)) |> schedule_on(scheduler), interfaces(node)), PushNew())
 
     vtag       = Val{ clustername(tail(interfaces(node))) }
     msgs_names = Val{ map(name, interfaces(node)) }
@@ -25,8 +25,8 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
     return stream |> map(T, mapping)
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    stream = combineLatest(map((cluster) -> getmarginal!(node, cluster, SkipInitial()) |> schedule_on(scheduler), localmarginals(node)), PushNew())
+function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
+    stream = combineLatest(map((cluster) -> getmarginal!(node, cluster, marginal_skip_strategy(objective)) |> schedule_on(scheduler), localmarginals(node)), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{ localmarginalnames(node) }
         (marginals) -> begin 
