@@ -19,19 +19,19 @@ inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to
 
 getmarginals(vector::AbstractVector{ <: AbstractVariable }) = collectLatest(map(getmarginal, vector))
 
-getmarginal(variable::AbstractVariable) = getmarginal(SkipInitial(), variable)
+getmarginal(variable::AbstractVariable) = getmarginal(variable, SkipInitial())
 
-function getmarginal(skip_strategy::Union{ SkipInitial, IncludeInitial }, variable::AbstractVariable)
+function getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy)
     vmarginal = _getmarginal(variable)
     if vmarginal === nothing
-        vmarginal = as_marginal_observable(IncludeInitial(), _makemarginal(variable))
+        vmarginal = as_marginal_observable(_makemarginal(variable))
         _setmarginal!(variable, vmarginal)
     end
-    return as_marginal_observable(skip_strategy, vmarginal)
+    return as_marginal_observable(vmarginal, skip_strategy)
 end
 
 function setmarginal!(variable::AbstractVariable, marginal)
-    setmarginal!(getmarginal(IncludeInitial(), variable), marginal)
+    setmarginal!(getmarginal(variable, IncludeAll()), marginal)
 end
 
 function name(variable::AbstractVariable)

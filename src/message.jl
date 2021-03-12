@@ -1,4 +1,4 @@
-export Message, getdata, as_message
+export Message, getdata, is_clamped, is_initial, as_message
 export multiply_messages
 
 using Distributions
@@ -10,11 +10,16 @@ import Base: *, +, ndims, precision, length, size, show
 abstract type AbstractMessage end
 
 struct Message{D} <: AbstractMessage
-    data :: D
+    data       :: D
+    is_clamped :: Bool
+    is_initial :: Bool
 end
 
-getdata(message::Message)                          = message.data
-getdata(messages::NTuple{ N, <: Message }) where N = map(getdata, messages)
+getdata(message::Message)    = message.data
+is_clamped(message::Message) = message.is_clamped
+is_initial(message::Message) = message.is_initial
+
+getdata(messages::NTuple{ N, <: Message })    where N = map(getdata, messages)
 
 materialize!(message::Message) = message
 
@@ -22,7 +27,14 @@ Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(messa
 
 ## Message
 
-multiply_messages(left::Message, right::Message) = as_message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)))
+function multiply_messages(left::Message, right::Message) 
+    # We propagate clamped message, in case if both are clamped
+    is_prod_clamped = is_clamped(left) && is_clamped(right)
+    # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
+    is_prod_initial = !is_prod_clamped && (is_initial(left) || is_clamped(left)) && (is_initial(right) || is_clamped(right))
+
+    return Message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
+end
 
 Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
@@ -71,12 +83,23 @@ end
 
 VariationalMessage(messages::R, marginals::S, mappingFn::F) where { R, S, F } = VariationalMessage(messages, marginals, mappingFn, VariationalMessageProps(nothing))
 
-Base.show(io::IO, message::VariationalMessage) = print(io, string("VariationalMessage(:postponed)"))
+Base.show(io::IO, ::VariationalMessage) = print(io, string("VariationalMessage(:postponed)"))
 
 getcache(vmessage::VariationalMessage)                    = vmessage.props.cache
 setcache!(vmessage::VariationalMessage, message::Message) = vmessage.props.cache = message
 
-compute_message(vmessage::VariationalMessage) = as_message(vmessage.mappingFn((vmessage.messages, getrecent(vmessage.marginals))))
+function compute_message(vmessage::VariationalMessage) 
+    messages  = vmessage.messages
+    marginals = getrecent(vmessage.marginals)
+
+    # Variational message is clamped if all of the inputs are clamped
+    is_clamped = all(is_clamped, messages) && all(is_clamped, marginals)
+
+    # Variational messages is initial if it is not clamped and all of the inputs are either clamped or initial
+    is_initial = !is_clamped && (all(m -> is_clamped(m) || is_initial(m), messages) && all(m -> is_clamped(m) || is_initial(m), marginal))
+
+    return Message(vmessage.mappingFn((messages, marginals)), is_clamped, is_initial)
+end
 
 function materialize!(vmessage::VariationalMessage)
     cache = getcache(vmessage)
@@ -90,20 +113,9 @@ end
 
 ## Utility functions
 
-as_message(data)                         = Message(data)
 as_message(message::Message)             = message
 as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 
 ## Operators
 
-reduce_messages(messages) = mapreduce(as_message, *, messages; init = Message(missing))
-
-const __as_message_operator  = Rocket.map(Message, as_message)
-
-as_message()  = __as_message_operator
-
-function __reduce_to_message(messages)
-    return as_message(reduce_messages(messages))
-end
-
-const reduce_to_message  = Rocket.map(Message, __reduce_to_message)
+reduce_messages(messages) = mapreduce(as_message, *, messages)

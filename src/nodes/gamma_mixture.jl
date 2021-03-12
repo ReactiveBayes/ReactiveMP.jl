@@ -98,13 +98,13 @@ function get_marginals_observable(
 
     marginal_names = Val{ (name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1])) }
     marginals_observable = combineLatest((
-        getmarginal(IncludeInitial(), connectedvar(varinterface)),
-        combineLatest(map((rate) -> getmarginal(IncludeInitial(), connectedvar(rate)), reverse(bsinterfaces)), PushNew()),
-        combineLatest(map((shape) -> getmarginal(IncludeInitial(), connectedvar(shape)), reverse(asinterfaces)), PushNew()),
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        combineLatest(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
+        combineLatest(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)), PushNew()),
     ), PushNew()) |> map_to((
-        getmarginal(IncludeInitial(), connectedvar(varinterface)),
-        map((shape) -> getmarginal(IncludeInitial(), connectedvar(shape)), asinterfaces),
-        map((rate) -> getmarginal(IncludeInitial(), connectedvar(rate)), bsinterfaces)
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces),
+        map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces)
     ))
 
     return marginal_names, marginals_observable
@@ -120,9 +120,9 @@ function get_marginals_observable(
 
     marginal_names       = Val{ (name(outinterface), name(switchinterface), name(varinterface)) }
     marginals_observable = combineLatestUpdates((
-        getmarginal(IncludeInitial(), connectedvar(outinterface)),
-        getmarginal(IncludeInitial(), connectedvar(switchinterface)),
-        getmarginal(IncludeInitial(), connectedvar(varinterface))
+        getmarginal(connectedvar(outinterface), IncludeAll()),
+        getmarginal(connectedvar(switchinterface), IncludeAll()),
+        getmarginal(connectedvar(varinterface), IncludeAll())
     ), PushNew())
 
     return marginal_names, marginals_observable
@@ -138,10 +138,10 @@ end
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
 
     stream = combineLatest((
-        getmarginal(SkipInitial(), connectedvar(node.out)) |> schedule_on(scheduler),
-        getmarginal(SkipInitial(), connectedvar(node.switch)) |> schedule_on(scheduler),
-        combineLatest(map((as) -> getmarginal(SkipInitial(), connectedvar(as)) |> schedule_on(scheduler), node.as), PushNew()),
-        combineLatest(map((bs) -> getmarginal(SkipInitial(), connectedvar(bs)) |> schedule_on(scheduler), node.bs), PushNew())
+        getmarginal(connectedvar(node.out), SkipInitial()) |> schedule_on(scheduler),
+        getmarginal(connectedvar(node.switch), SkipInitial()) |> schedule_on(scheduler),
+        combineLatest(map((as) -> getmarginal(connectedvar(as), SkipInitial()) |> schedule_on(scheduler), node.as), PushNew()),
+        combineLatest(map((bs) -> getmarginal(connectedvar(bs), SkipInitial()) |> schedule_on(scheduler), node.bs), PushNew())
     ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
