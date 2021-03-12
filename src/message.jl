@@ -88,9 +88,6 @@ Base.show(io::IO, ::VariationalMessage) = print(io, string("VariationalMessage(:
 getcache(vmessage::VariationalMessage)                    = vmessage.props.cache
 setcache!(vmessage::VariationalMessage, message::Message) = vmessage.props.cache = message
 
-__check_all(fn::Function, iterator)  = all(fn, iterator)
-__check_all(fn::Function, ::Nothing) = true
-
 compute_message(vmessage::VariationalMessage) = vmessage.mappingFn((vmessage.messages, getrecent(vmessage.marginals)))
 
 function materialize!(vmessage::VariationalMessage)

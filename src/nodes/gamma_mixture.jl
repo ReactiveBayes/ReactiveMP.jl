@@ -132,7 +132,9 @@ end
 
 @average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, GammaShapeRate}, q_b::NTuple{N, GammaShapeRate}) where N = begin
     z_bar = probvec(q_switch)
-    return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α , :β) }, map(as_marginal, (q_out, q_a[i], q_b[i])), nothing), +, 1:N, init = 0.0)
+    return mapreduce(+, 1:N, init = 0.0) do 
+        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α , :β) }, map((q) -> Marginal(q, false, false), (q_out, q_a[i], q_b[i])), nothing)
+    end
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }

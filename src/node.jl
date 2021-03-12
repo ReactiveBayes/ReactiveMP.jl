@@ -584,10 +584,13 @@ end
 
 function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
     # TODO
-    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, (d::Tuple) -> begin 
-        as_message(PointMass(fform(d...)))
-    end)
+    message_cb = let fform = fform
+        (d::Tuple) -> Message(fform(d...), false, false)
+    end
+
+    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, message_cb)
     var     = datavar(getname(autovar), Any, subject = subject)
+    
     return nothing, var
 end
 

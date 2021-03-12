@@ -9,22 +9,15 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, sch
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    stream = combineLatest(map((interface) -> messagein(interface) |> schedule_on(scheduler), interfaces(node)), PushNew())
+    stream = combineLatest(map((interface) -> messagein(interface) |> filter(v -> !is_initial(v)) |> schedule_on(scheduler), interfaces(node)), PushNew())
 
     vtag       = Val{ clustername(tail(interfaces(node))) }
     msgs_names = Val{ map(name, interfaces(node)) }
 
     mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
         (messages) -> begin
-
-            # Marginal is clamped if all of the inputs are clamped
-            is_marginal_clamped = __check_all(is_clamped, messages)
-
-            # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
-            is_marginal_initial = !is_marginal_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages))
-
-            marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), is_marginal_clamped, is_marginal_initial)
-            
+            # We do not really care about (is_clamped, is_initial) at this stage, so it can be (false, false)
+            marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), false, false)
             return convert(T, -score(DifferentialEntropy(), marginal))
         end
     end
