@@ -425,7 +425,7 @@ function get_marginals_observable(factornode, marginal_dependencies)
 
     if length(marginal_dependencies) !== 0 
         marginal_names       = Val{ map(name, marginal_dependencies) }
-        marginals_streams    = map(marginal -> getmarginal!(factornode, IncludeInitial(), marginal), marginal_dependencies)
+        marginals_streams    = map(marginal -> getmarginal!(factornode, marginal, IncludeAll()), marginal_dependencies)
         marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
     end
 
@@ -438,7 +438,6 @@ apply_mapping(msgs_observable, marginals_observable, mapping) = (dependencies) -
 
 # Fallback for Belief Propagation
 apply_mapping(msgs_observable, marginals_observable::SingleObservable{Nothing}, mapping) = mapping
-
 
 function activate!(model, factornode::AbstractFactorNode)
     for (iindex, interface) in enumerate(interfaces(factornode))
@@ -456,7 +455,18 @@ function activate!(model, factornode::AbstractFactorNode)
         vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (dependencies) -> as_message(rule(fform, vtag, vconstraint, msgs_names, dependencies[1], marginal_names, dependencies[2], meta, factornode))
+            (dependencies) -> begin 
+                messages  = dependencies[1]
+                marginals = dependencies[2]
+
+                # Message is clamped if all of the inputs are clamped
+                is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+
+                # Message is initial if it is not clamped and all of the inputs are either clamped or initial
+                is_message_initial = !is_message_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+
+                return Message(rule(fform, vtag, vconstraint, msgs_names, messages, marginal_names, marginals, meta, factornode), is_message_clamped, is_message_initial)
+            end
         end
 
         mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
@@ -478,11 +488,15 @@ function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
     setmarginal!(getstream(lmarginal), marginal)
 end
 
-function getmarginal!(factornode::FactorNode, skip_strategy::Union{ SkipInitial, IncludeInitial }, localmarginal::FactorNodeLocalMarginal)
+function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal) 
+    return getmarginal!(factornode, localmarginal, IncludeAll())
+end
+
+function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal, skip_strategy::MarginalSkipStrategy)
     cached_stream = getstream(localmarginal)
 
     if cached_stream !== nothing
-        return as_marginal_observable(skip_strategy, cached_stream)
+        return as_marginal_observable(cached_stream, skip_strategy)
     end
 
     clusterindex = index(localmarginal)
@@ -492,9 +506,9 @@ function getmarginal!(factornode::FactorNode, skip_strategy::Union{ SkipInitial,
 
     if marginalsize === 1 
         # Cluster contains only one variable, we can take marginal over this variable
-        vmarginal = getmarginal(IncludeInitial(), connectedvar(getinterface(factornode, marginalname)))
+        vmarginal = getmarginal(connectedvar(getinterface(factornode, marginalname)), IncludeAll())
         setstream!(localmarginal, vmarginal)
-        return as_marginal_observable(skip_strategy, vmarginal)
+        return as_marginal_observable(vmarginal, skip_strategy)
     else
         cmarginal = MarginalObservable()
 
@@ -509,7 +523,18 @@ function getmarginal!(factornode::FactorNode, skip_strategy::Union{ SkipInitial,
         meta        = metadata(factornode)
 
         mapping = let fform = fform, vtag = vtag, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (dependencies) -> as_marginal(marginalrule(fform, vtag, msgs_names, dependencies[1], marginal_names, getrecent(dependencies[2]), meta, factornode))
+            (dependencies) -> begin 
+                messages  = dependencies[1]
+                marginals = getrecent(dependencies[2])
+
+                # Marginal is clamped if all of the inputs are clamped
+                is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+
+                # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
+                is_marginal_initial = !is_marginal_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+
+                return Marginal(marginalrule(fform, vtag, msgs_names, messages, marginal_names, marginals, meta, factornode), is_marginal_clamped, is_marginal_initial)
+            end
         end
 
         # TODO: discontinue operater is needed for loopy belief propagation? Check
@@ -519,7 +544,7 @@ function getmarginal!(factornode::FactorNode, skip_strategy::Union{ SkipInitial,
 
         setstream!(localmarginal, cmarginal)
 
-        return as_marginal_observable(skip_strategy, cmarginal)
+        return as_marginal_observable(cmarginal, skip_strategy)
     end
 end
 
@@ -559,10 +584,13 @@ end
 
 function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
     # TODO
-    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, (d::Tuple) -> begin 
-        as_message(PointMass(fform(d...)))
-    end)
+    message_cb = let fform = fform
+        (d::Tuple) -> Message(fform(d...), false, false)
+    end
+
+    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, message_cb)
     var     = datavar(getname(autovar), Any, subject = subject)
+    
     return nothing, var
 end
 

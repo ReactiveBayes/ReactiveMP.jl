@@ -6,5 +6,5 @@ function score(::Type{T}, ::VariableBoundEntropy, variable::RandomVariable, sche
     mapping = let d = degree(variable)
         (m) -> convert(T, (d - 1) * score(DifferentialEntropy(), m))
     end
-    return getmarginal(SkipInitial(), variable) |> schedule_on(scheduler) |> map(T, mapping)
+    return getmarginal(variable, SkipInitial()) |> schedule_on(scheduler) |> map(T, mapping)
 end

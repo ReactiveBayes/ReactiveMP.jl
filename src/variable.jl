@@ -3,8 +3,7 @@ export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
-export getmarginal, getmarginals, setmarginal!, activate!, name
-export as_message, as_marginal
+export getmarginal, getmarginals, setmarginal!, setmarginals!, activate!, name
 export as_variable
 
 using Rocket
@@ -19,19 +18,29 @@ inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to
 
 getmarginals(vector::AbstractVector{ <: AbstractVariable }) = collectLatest(map(getmarginal, vector))
 
-getmarginal(variable::AbstractVariable) = getmarginal(SkipInitial(), variable)
+getmarginal(variable::AbstractVariable) = getmarginal(variable, SkipInitial())
 
-function getmarginal(skip_strategy::Union{ SkipInitial, IncludeInitial }, variable::AbstractVariable)
+function getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy)
     vmarginal = _getmarginal(variable)
     if vmarginal === nothing
-        vmarginal = as_marginal_observable(IncludeInitial(), _makemarginal(variable))
+        vmarginal = as_marginal_observable(_makemarginal(variable))
         _setmarginal!(variable, vmarginal)
     end
-    return as_marginal_observable(skip_strategy, vmarginal)
+    return as_marginal_observable(vmarginal, skip_strategy)
 end
 
 function setmarginal!(variable::AbstractVariable, marginal)
-    setmarginal!(getmarginal(IncludeInitial(), variable), marginal)
+    setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+end
+
+function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginal)
+    setmarginals!(variables, Iterators.repeated(marginal, length(variables)))
+end
+
+function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginals::AbstractVector)
+    foreach(zip(variables, marginals)) do (variable, marginal)
+        setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+    end
 end
 
 function name(variable::AbstractVariable)

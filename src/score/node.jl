@@ -9,14 +9,15 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, sch
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    stream = combineLatest(map((interface) -> messagein(interface) |> schedule_on(scheduler), interfaces(node)), PushNew())
+    stream = combineLatest(map((interface) -> messagein(interface) |> filter(v -> !is_initial(v)) |> schedule_on(scheduler), interfaces(node)), PushNew())
 
     vtag       = Val{ clustername(tail(interfaces(node))) }
     msgs_names = Val{ map(name, interfaces(node)) }
 
     mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
         (messages) -> begin
-            marginal = as_marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node))
+            # We do not really care about (is_clamped, is_initial) at this stage, so it can be (false, false)
+            marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), false, false)
             return convert(T, -score(DifferentialEntropy(), marginal))
         end
     end
@@ -25,7 +26,7 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
-    stream = combineLatest(map((cluster) -> getmarginal!(node, SkipInitial(), cluster) |> schedule_on(scheduler), localmarginals(node)), PushNew())
+    stream = combineLatest(map((cluster) -> getmarginal!(node, cluster, SkipInitial()) |> schedule_on(scheduler), localmarginals(node)), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{ localmarginalnames(node) }
         (marginals) -> begin 

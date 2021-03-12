@@ -30,13 +30,28 @@ end
 ## Average energy function helpers
 
 function score(::AverageEnergy, fform, ::Type{ <: Val }, marginals::Tuple{ <: Marginal{ <: NamedTuple{ N } } }, meta) where N
-    return score(AverageEnergy(), fform, Val{ N }, map(as_marginal, values(getdata(marginals[1]))), meta)
+    joint = marginals[1]
+
+    transform = let is_joint_clamped = is_clamped(joint), is_joint_initial = is_initial(joint)
+        (data) -> Marginal(data, is_joint_clamped, is_joint_initial)
+    end
+
+    return score(AverageEnergy(), fform, Val{ N }, map(transform, values(getdata(joint))), meta)
 end
 
 ## Differential entropy function helpers
 
-score(::DifferentialEntropy, marginal::Marginal{ <: NamedTuple }) = mapreduce((d) -> score(DifferentialEntropy(), as_marginal(d)), +, getdata(marginal))
-score(::DifferentialEntropy, marginal::Marginal)                  = entropy(marginal)
+score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
+
+function score(::DifferentialEntropy, marginal::Marginal{ <: NamedTuple }) 
+
+    compute_score = let is_marginal_clamped = is_clamped(marginal), is_marginal_initial = is_initial(marginal)
+        (data) -> score(DifferentialEntropy(), Marginal(data, is_marginal_clamped, is_marginal_initial))
+    end
+
+    return mapreduce(compute_score, +, values(getdata(marginal)))
+end
+
 
 ## Average enery macro helper
 

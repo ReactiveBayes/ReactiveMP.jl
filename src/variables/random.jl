@@ -31,15 +31,15 @@ struct RandomVariable{S} <: AbstractVariable
     prod_strategy :: S
 end
 
-function randomvar(name::Symbol; prod_strategy = AllAtOnceProdStrategy()) 
+function randomvar(name::Symbol; prod_strategy = FoldLeftProdStrategy()) 
     return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), RandomVariableProps(), prod_strategy)
 end
 
-function randomvar(name::Symbol, dims::Tuple; prod_strategy = AllAtOnceProdStrategy())
+function randomvar(name::Symbol, dims::Tuple; prod_strategy = FoldLeftProdStrategy())
     return randomvar(name, dims...; prod_strategy = prod_strategy)
 end
 
-function randomvar(name::Symbol, dims::Vararg{Int}; prod_strategy = AllAtOnceProdStrategy())
+function randomvar(name::Symbol, dims::Vararg{Int}; prod_strategy = FoldLeftProdStrategy())
     vars = Array{RandomVariable}(undef, dims)
     for index in CartesianIndices(axes(vars))
         @inbounds vars[index] = randomvar(Symbol(name, :_, Symbol(join(index.I, :_))); prod_strategy = prod_strategy)
@@ -53,7 +53,7 @@ prod_strategy(randomvar::RandomVariable) = randomvar.prod_strategy
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), __reduce_to_message)
+messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), reduce_messages)
 
 inbound_portal(randomvar::RandomVariable)          = randomvar.props.portal
 inbound_portal!(randomvar::RandomVariable, portal) = randomvar.props.portal = portal
