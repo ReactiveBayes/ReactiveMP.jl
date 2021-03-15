@@ -16,8 +16,8 @@ The framework is in active development stage. API may change in the near future.
 
 ReactiveMP.jl has been designed with a focus on efficiency, scalability and maximum performance. Below is a benchmark comparison between Rocket.jl and [Turing.jl](https://github.com/TuringLang/Turing.jl) on a Linear Multivariate Gaussian State Space Model. It is worth to note that this model is a conjugate model, hence message passing has a big advantage over general-purpose probabilistic programming packages like Turing.jl. However it is important to have different solutions for different problems and ReactiveMP.jl is better suitable for conjugate models, uses less memory and provides much better performance. While being faster ReactiveMP.jl also gives more accurate inference estimates for model hidden states and parameters since message passing uses analytical rules for marginalisation and integrals evaluation.
 
-Code is available in [benchmarks folder](https://github.com/biaslab/Rocket.jl/tree/master/benchmarks):
+Code is available in [benchmarks folder](https://github.com/biaslab/ReactiveMP.jl/tree/master/benchmarks):
 
-![ReactiveMP.jl vs Turing.jl](benchmarks/plots/lgssm_comparison.svg?raw=true&sanitize=true "ReactiveMP.jl vs Turing.jl")
+![ReactiveMP.jl vs Turing.jl](benchmarks/plots/lgssm_comparison.svg?raw=true&sanitize=true "ReactiveMP.jl vs Turing.jl") ![ReactiveMP.jl Benchmark](benchmarks/plots/lgssm_scaling.svg?raw=true&sanitize=true "ReactiveMP.jl Scalability")
 
-![ReactiveMP.jl Benchmark](benchmarks/plots/lgssm_scaling.svg?raw=true&sanitize=true "ReactiveMP.jl Scalability")
+
