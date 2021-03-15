@@ -24,7 +24,7 @@ function score(::Type{T}, ::BetheFreeEnergy, model, scheduler) where { T <: InfC
 
     point_entropies = Infinity(mapreduce(degree, +, getdata(model), init = 0) + mapreduce(degree, +, getconstant(model), init = 0))
 
-    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |> map(eltype(T), d -> float(d[1] + d[2] - point_entropies))
+    return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |> map(eltype(T), d -> float(d[1] + d[2]))
 end
 
 ## Average energy function helpers
@@ -43,10 +43,10 @@ score(::DifferentialEntropy, marginal::Marginal)                  = entropy(marg
 import .MacroHelpers
 
 macro average_energy(fformtype, lambda)
-    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) || 
+    @capture(lambda, (args_ where { whereargs__ } = body_) | (args_ = body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) || 
+    @capture(args, (inputs__, meta::metatype_) | (inputs__, )) ||
         error("Error in macro. Lambda body arguments speicifcation is incorrect")
 
     fuppertype = MacroHelpers.upper_type(fformtype)
@@ -59,7 +59,7 @@ macro average_energy(fformtype, lambda)
     end
 
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :Marginal)
-    
+
     result = quote
         function ReactiveMP.score(
             ::AverageEnergy,
@@ -72,6 +72,6 @@ macro average_energy(fformtype, lambda)
             $(body)
         end
     end
-    
+
     return esc(result)
 end

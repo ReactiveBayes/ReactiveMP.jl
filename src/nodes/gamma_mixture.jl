@@ -59,7 +59,7 @@ outbound_message_portal(factornode::GammaMixtureNode)   = factornode.portal
 setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
 getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
 
-## Metadata 
+## Metadata
 
 get_or_default_meta(fform::Type{ <: GammaMixture }, meta::GammaMixtureNodeMetadata) = meta
 get_or_default_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
@@ -130,7 +130,7 @@ end
 
 # FreeEnergy related functions
 
-@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, GammaShapeRate}, q_b::NTuple{N, GammaShapeRate}) where N = begin
+@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, Any}, q_b::NTuple{N, GammaShapeRate}) where N = begin
     z_bar = probvec(q_switch)
     return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α , :β) }, map(as_marginal, (q_out, q_a[i], q_b[i])), nothing), +, 1:N, init = 0.0)
 end
