@@ -18,6 +18,6 @@ ReactiveMP.jl has been designed with a focus on efficiency, scalability and maxi
 
 Code is available in [benchmarks folder](https://github.com/biaslab/ReactiveMP.jl/tree/master/benchmarks):
 
-![ReactiveMP.jl vs Turing.jl](benchmarks/plots/lgssm_comparison.svg?raw=true&sanitize=true "ReactiveMP.jl vs Turing.jl") ![ReactiveMP.jl Benchmark](benchmarks/plots/lgssm_scaling.svg?raw=true&sanitize=true "ReactiveMP.jl Scalability")
+![ReactiveMP.jl Benchmark](benchmarks/plots/lgssm.svg?raw=true&sanitize=true "ReactiveMP.jl Benchmark")
 
 
