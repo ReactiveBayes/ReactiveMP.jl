@@ -1,4 +1,4 @@
-export NodeInterface, name, messageout, messagein
+export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
 export FactorNode, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
@@ -72,6 +72,13 @@ isstochastic(::Type{ Stochastic })    = true
 isstochastic(::Deterministic)         = false
 isstochastic(::Type{ Deterministic }) = false
 
+"""
+    sdtype(object)
+
+Returns either `Deterministic` or `Stochastic` for a given object (if defined).
+
+See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref)
+"""
 function sdtype end
 
 sdtype(::Function) = Deterministic()
@@ -101,20 +108,9 @@ struct FullFactorisation end
 
 This function converts given factorisation to a correct internal factorisation representation for a given node. 
 
-# Examples 
-
-```julia
-
-using ReactiveMP
-
-f = ReactiveMP.collect_factorisation(NormalMeanVariance, MeanField()) # ((1,), (2, ), (3, ))
-```
-
 See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
 """
 function collect_factorisation end
-
-collect_factorisation(::Any, factorisation::Tuple) = factorisation
 
 ## Variable constraints
 
@@ -165,7 +161,7 @@ name(interface::NodeInterface)    = name(interface.name)
 Returns a tag of the interface in the form of `Val{ name(interface) }`. 
 The major difference between tag and name is that it is possible to dispath on interface's tag in message computation rule.
 
-See also: [`NodeInterface`](@ref), [`name`](@ref), [`activate!`](@ref)
+See also: [`NodeInterface`](@ref), [`name`](@ref)
 """
 tag(interface::NodeInterface)     = Val{ name(interface) }
 
@@ -226,8 +222,14 @@ Returns an instance of inbound portal of connected variable for the interface
 """
 inbound_portal(interface::NodeInterface) = inbound_portal(connectedvar(interface))
 
-## IndexedNodeInterface
-## Used for dynamic number of inputs
+"""
+    IndexedNodeInterface
+
+`IndexedNodeInterface` object represents a repetative node-variable connection. 
+Used in cases when node may connect different number of random variables with the same name, e.g. means and precisions of Gaussian Mixture node.
+
+See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
+"""
 struct IndexedNodeInterface
     index     :: Int
     interface :: NodeInterface
@@ -600,6 +602,29 @@ end
 
 import .MacroHelpers
 
+"""
+    @node(fformtype, sdtype, interfaces_list)
+
+`@node` macro creates a node for a `fformtype` type object 
+
+# Examples
+```julia
+
+struct MyNormalDistribution 
+    mean :: Float64
+    var  :: Float64
+end
+
+@node MyNormalDistribution Stochastic [ out, mean, var ]
+```
+
+```julia 
+
+@node typeof(+) Deterministic [ out, in1, in2 ]
+```
+
+See also: [`make_node`](@ref), [`Stochastic`](@ref), [`Deterministic`](@ref)
+"""
 macro node(fformtype, sdtype, interfaces_list)
 
     fbottomtype = MacroHelpers.bottom_type(fformtype)
@@ -614,12 +639,14 @@ macro node(fformtype, sdtype, interfaces_list)
         if @capture(arg, name_Symbol)
             return (name, [])
         elseif @capture(arg, (name_Symbol, aliases = [ aliases__ ]))
-            @assert all(a -> a isa Symbol, aliases)
+            @assert all(a -> a isa Symbol && !isequal(a, name), aliases)
             return (name, aliases)
         else
             error("Interface specification should have a 'name' or (name, aliases = [ alias1, alias2,... ]) signature.")
         end
     end 
+
+    @assert length(interfaces) !== 0 "Node should have at least one interface."
     
     names = map(d -> first(d), interfaces)
     
@@ -628,8 +655,11 @@ macro node(fformtype, sdtype, interfaces_list)
     names_splitted_indices = Expr(:tuple, map(i -> Expr(:tuple, i), 1:length(names))...)
     
     interface_args        = map(name -> :($name::AbstractVariable), names)
-    interface_connections = map(name -> :(connect!(node, $(Expr(:quote, name)), $name)), names)
+    interface_connections = map(name -> :(ReactiveMP.connect!(node, $(Expr(:quote, name)), $name)), names)
 
+    # Here we create helpers function for GraphPPL.jl interfacing
+    # They are used to convert interface names from `where { q = q(x, y)q(z) }` to an equivalent tuple respresentation, e.g. `((1, 2), (3, ))`
+    # The general recipe to get a proper index is to call `interface_get_index(Val{ :NodeTypeName }, interface_get_name(Val{ :NodeTypeName }, Val{ :name_expression }))`
     interface_name_getters = map(enumerate(interfaces)) do (index, interface)
         name    = first(interface)
         aliases = last(interface)
@@ -650,23 +680,39 @@ macro node(fformtype, sdtype, interfaces_list)
         end
     end
 
-    factorisation_collectors = quote
-        ReactiveMP.collect_factorisation(::$fuppertype, ::FullFactorisation) = ($names_indices, )
-        ReactiveMP.collect_factorisation(::$fuppertype, ::MeanField) = $names_splitted_indices
+    # By default every argument passed to a factorisation option of the node is transformed by 
+    # `collect_factorisation` function to have a tuple like structure.
+    # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects 
+    # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a FullFactorisation equivalent
+    factorisation_collectors = if sdtype === :Stochastic 
+        quote
+            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = factorisation
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = $names_splitted_indices
+        end
+        
+    elseif sdtype === :Deterministic
+        quote
+            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = ($names_indices, )
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = ($names_indices, )
+        end
+    else
+        error("Unreachable in @node macro.") 
     end
 
     make_node_const_mapping = if sdtype === :Stochastic
         quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
-                var  = randomvar(getname(autovar))
-                node = make_node(fform, var, args...; kwargs...)
+            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
+                var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
+                node = ReactiveMP.make_node(fform, var, args...; kwargs...)
                 return node, var
             end
         end
     elseif sdtype === :Deterministic
         quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
-                var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
+            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
+                var  = ReactiveMP.constvar(ReactiveMP.getname(autovar), fform(map((d) -> ReactiveMP.getconst(d), args)...))
                 return nothing, var
             end
         end
@@ -676,23 +722,23 @@ macro node(fformtype, sdtype, interfaces_list)
     
     res = quote
 
-        ReactiveMP.as_node_functional_form(::$fuppertype) = ValidNodeFunctionalForm()
+        ReactiveMP.as_node_functional_form(::$fuppertype) = ReactiveMP.ValidNodeFunctionalForm()
 
-        ReactiveMP.sdtype(::$fuppertype) = ($sdtype)()
+        ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
         
-        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
-            return FactorNode($fbottomtype, $names_quoted_tuple, collect_factorisation($fbottomtype, factorisation), meta, portal)
+        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), meta, portal)
         end
         
-        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
-            node = make_node($fbottomtype, factorisation = factorisation, meta = meta, portal = portal)
+        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())
+            node = ReactiveMP.make_node($fbottomtype, factorisation = factorisation, meta = meta, portal = portal)
             $(interface_connections...)
             return node
         end
 
-        function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: AbstractVariable }; kwargs...)
-            var  = randomvar(getname(autovar))
-            node = make_node(fform, var, args...; kwargs...)
+        function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable }; kwargs...)
+            var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
+            node = ReactiveMP.make_node(fform, var, args...; kwargs...)
             return node, var
         end
 
