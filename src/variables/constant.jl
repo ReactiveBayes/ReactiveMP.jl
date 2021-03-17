@@ -33,8 +33,9 @@ function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
     return vars
 end
 
-degree(constvar::ConstVariable) = nconnected(constvar)
-name(constvar::ConstVariable)   = constvar.name
+degree(constvar::ConstVariable)     = nconnected(constvar)
+name(constvar::ConstVariable)       = constvar.name
+constraint(constvar::ConstVariable) = ClampedVariable()
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 

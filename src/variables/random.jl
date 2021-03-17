@@ -24,30 +24,33 @@ end
 
 ## Random variable implementation
 
-struct RandomVariable{S} <: AbstractVariable
+struct RandomVariable{C, S} <: AbstractVariable
     name          :: Symbol
     inputmsgs     :: Vector{LazyObservable{AbstractMessage}}
     props         :: RandomVariableProps
+    constraint    :: C
     prod_strategy :: S
 end
 
-function randomvar(name::Symbol; prod_strategy = FoldLeftProdStrategy()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), RandomVariableProps(), prod_strategy)
+function randomvar(name::Symbol; constraint = Marginalisation(), prod_strategy = FoldLeftProdStrategy()) 
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), RandomVariableProps(), constraint, prod_strategy)
 end
 
-function randomvar(name::Symbol, dims::Tuple; prod_strategy = FoldLeftProdStrategy())
-    return randomvar(name, dims...; prod_strategy = prod_strategy)
+function randomvar(name::Symbol, dims::Tuple; constraint = Marginalisation(), prod_strategy = FoldLeftProdStrategy())
+    return randomvar(name, dims...; constraint = constraint, prod_strategy = prod_strategy)
 end
 
-function randomvar(name::Symbol, dims::Vararg{Int}; prod_strategy = FoldLeftProdStrategy())
+function randomvar(name::Symbol, dims::Vararg{Int}; constraint = Marginalisation(), prod_strategy = FoldLeftProdStrategy())
     vars = Array{RandomVariable}(undef, dims)
     for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = randomvar(Symbol(name, :_, Symbol(join(index.I, :_))); prod_strategy = prod_strategy)
+        @inbounds vars[index] = randomvar(Symbol(name, :_, Symbol(join(index.I, :_))); constraint = constraint, prod_strategy = prod_strategy)
     end
     return vars
 end
 
 degree(randomvar::RandomVariable)        = length(randomvar.inputmsgs)
+name(randomvar::RandomVariable)          = randomvar.name
+constraint(randomvar::RandomVariable)    = randomvar.constraint
 prod_strategy(randomvar::RandomVariable) = randomvar.prod_strategy
 
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1

@@ -4,7 +4,6 @@ export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export deps, connect!, activate!
 export make_node, on_make_node, AutoVar
-export Marginalisation
 export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
 export MeanField, FullFactorisation, collect_factorisation
@@ -135,10 +134,6 @@ See also: [`collect_meta`](@ref), [`FactorNode`](@ref)
 function default_meta end
 
 default_meta(any) = nothing
-
-## Variable constraints
-
-struct Marginalisation end
 
 ## NodeInterface Props
 
@@ -474,7 +469,7 @@ function activate!(model, factornode::AbstractFactorNode)
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)
-        vconstraint = Marginalisation()
+        vconstraint = constraint(connectedvar(interface))
         meta        = metadata(factornode)
         
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach

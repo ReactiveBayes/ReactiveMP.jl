@@ -1,4 +1,5 @@
 export AbstractVariable, degree
+export ClampedVariable, Marginalisation, ExpectationMaximisation, EM
 export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
@@ -10,9 +11,17 @@ using Rocket
 
 abstract type AbstractVariable end
 
-function degree end
+## Variable constraints
+
+struct ClampedVariable end
+struct Marginalisation end
+struct ExpectationMaximisation end
+
+const EM = ExpectationMaximisation
 
 ## Common functions
+
+function degree end
 
 inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to change an inbound portal for $(variable)")
 
