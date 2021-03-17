@@ -218,6 +218,45 @@ macro rule(fform, lambda)
     return esc(output)
 end
 
+macro call_rule(fform, args)
+    @capture(fform, fformtype_(on_, vconstraint_)) || 
+        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
+
+    @capture(args, (inputs__, meta = meta_) | (inputs__, )) || 
+        error("Error in macro. Arguments specification is incorrect")
+
+    fuppertype                       = MacroHelpers.upper_type(fformtype)
+    fbottomtype                      = MacroHelpers.bottom_type(fformtype)
+    on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
+
+    inputs = map(inputs) do input
+        @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
+        return (iname, ivalue)
+    end
+
+    messages  = map(i -> (Symbol(string(first(i))[3:end]), last(i)), filter(i -> startswith(string(first(i)), "m_"), inputs))
+    marginals = map(i -> (Symbol(string(first(i))[3:end]), last(i)), filter(i -> startswith(string(first(i)), "q_"), inputs))
+
+    foreach((message) -> begin @assert length(string(first(message))) !== 0 "Empty message argument name" end, messages)
+    foreach((marginal) -> begin @assert length(string(first(marginal))) !== 0 "Empty marginal argument name" end, marginals)
+
+    m_names, m_values = tuple(first.(messages)...), tuple(last.(messages)...)
+    q_names, q_values = tuple(first.(marginals)...), tuple(last.(marginals)...)
+
+    m_names_arg  = isempty(m_names) ? :nothing : :(Val{ $(m_names) })
+    m_values_arg = isempty(m_names) ? :nothing : :($(map(m_value -> :(as_message($m_value)), m_values)...), )
+    q_names_arg  = isempty(q_names) ? :nothing : :(Val{ $(q_names) })
+    q_values_arg = isempty(q_names) ? :nothing : :($(map(q_value -> :(as_marginal($q_value)), q_values)...), )
+
+    on_arg = MacroHelpers.bottom_type(on_type)
+
+    output = quote
+        rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, nothing)
+    end
+
+    return esc(output)
+end
+
 """
     Documentation placeholder
 """

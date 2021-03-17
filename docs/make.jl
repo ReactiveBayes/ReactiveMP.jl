@@ -8,7 +8,10 @@ makedocs(
         "Home"            => "index.md",
         "Getting started" => "getting-started.md",
         "Extending"       => "extending.md",
-        "Distributions"   => "distributions.md"
+        "Distributions"   => "distributions.md",
+        "API"             => [
+            "Node" => "api/node.md"
+        ]
         # "TODO"         => "todo.md",
         # "Contributing" => "contributing.md",
         # "Utils"        => "utils.md"

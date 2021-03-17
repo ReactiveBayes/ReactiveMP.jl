@@ -1,16 +1,16 @@
-export NodeInterface, name, messageout, messagein
-export FactorNode, functionalform, interfaces, factorisation, locamarginals, localmarginalnames, metadata
+export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
+export FactorNode, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export deps, connect!, activate!
 export make_node, on_make_node, AutoVar
-export Marginalisation
 export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
 export MeanField, FullFactorisation, collect_factorisation
 export @node
 
 using Rocket
+using TupleTools
 
 import Base: show
 import Base: getindex, setindex!, firstindex, lastindex
@@ -71,6 +71,13 @@ isstochastic(::Type{ Stochastic })    = true
 isstochastic(::Deterministic)         = false
 isstochastic(::Type{ Deterministic }) = false
 
+"""
+    sdtype(object)
+
+Returns either `Deterministic` or `Stochastic` for a given object (if defined).
+
+See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref)
+"""
 function sdtype end
 
 sdtype(::Function) = Deterministic()
@@ -100,24 +107,33 @@ struct FullFactorisation end
 
 This function converts given factorisation to a correct internal factorisation representation for a given node. 
 
-# Examples 
-
-```julia
-
-using ReactiveMP
-
-f = ReactiveMP.collect_factorisation(NormalMeanVariance, MeanField()) # ((1,), (2, ), (3, ))
-```
-
 See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
 """
 function collect_factorisation end
 
-collect_factorisation(::Any, factorisation::Tuple) = factorisation
+"""
+    collect_meta(nodetype, meta)
 
-## Variable constraints
+This function converts given meta object to a correct internal meta representation for a given node. 
+Fallbacks to `default_meta` in case if meta is `nothing`.
 
-struct Marginalisation end
+See also: [`default_meta`](@ref), [`FactorNode`](@ref)
+"""
+function collect_meta end
+
+collect_meta(T::Any, ::Nothing) = default_meta(T)
+collect_meta(T::Any, meta::Any) = meta
+
+"""
+    default_meta(nodetype)
+
+Returns default meta object for a given node type.
+
+See also: [`collect_meta`](@ref), [`FactorNode`](@ref)
+"""
+function default_meta end
+
+default_meta(any) = nothing
 
 ## NodeInterface Props
 
@@ -164,7 +180,7 @@ name(interface::NodeInterface)    = name(interface.name)
 Returns a tag of the interface in the form of `Val{ name(interface) }`. 
 The major difference between tag and name is that it is possible to dispath on interface's tag in message computation rule.
 
-See also: [`NodeInterface`](@ref), [`name`](@ref), [`activate!`](@ref)
+See also: [`NodeInterface`](@ref), [`name`](@ref)
 """
 tag(interface::NodeInterface)     = Val{ name(interface) }
 
@@ -225,8 +241,14 @@ Returns an instance of inbound portal of connected variable for the interface
 """
 inbound_portal(interface::NodeInterface) = inbound_portal(connectedvar(interface))
 
-## IndexedNodeInterface
-## Used for dynamic number of inputs
+"""
+    IndexedNodeInterface
+
+`IndexedNodeInterface` object represents a repetative node-variable connection. 
+Used in cases when node may connect different number of random variables with the same name, e.g. means and precisions of Gaussian Mixture node.
+
+See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
+"""
 struct IndexedNodeInterface
     index     :: Int
     interface :: NodeInterface
@@ -400,8 +422,8 @@ function functional_dependencies(factornode::FactorNode, iindex::Int)
 
     varcluster = @inbounds nodeclusters[ cindex ]
 
-    message_dependencies  = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), skipindex(varcluster, varclusterindex(varcluster, iindex)))
-    marginal_dependencies = skipindex(nodelocalmarginals, cindex)
+    message_dependencies  = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex)))
+    marginal_dependencies = TupleTools.deleteat(nodelocalmarginals, cindex)
 
     return tuple(message_dependencies...), tuple(marginal_dependencies...)
 end
@@ -424,7 +446,7 @@ function get_marginals_observable(factornode, marginal_dependencies)
 
     if length(marginal_dependencies) !== 0 
         marginal_names       = Val{ map(name, marginal_dependencies) }
-        marginals_streams    = map(marginal -> getmarginal!(factornode, marginal), marginal_dependencies)
+        marginals_streams    = map(marginal -> getmarginal!(factornode, marginal, IncludeAll()), marginal_dependencies)
         marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
     end
 
@@ -438,7 +460,6 @@ apply_mapping(msgs_observable, marginals_observable, mapping) = (dependencies) -
 # Fallback for Belief Propagation
 apply_mapping(msgs_observable, marginals_observable::SingleObservable{Nothing}, mapping) = mapping
 
-
 function activate!(model, factornode::AbstractFactorNode)
     for (iindex, interface) in enumerate(interfaces(factornode))
         message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
@@ -448,14 +469,25 @@ function activate!(model, factornode::AbstractFactorNode)
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)
-        vconstraint = Marginalisation()
+        vconstraint = constraint(connectedvar(interface))
         meta        = metadata(factornode)
         
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
         vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
 
         mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (dependencies) -> as_message(rule(fform, vtag, vconstraint, msgs_names, dependencies[1], marginal_names, dependencies[2], meta, factornode))
+            (dependencies) -> begin 
+                messages  = dependencies[1]
+                marginals = dependencies[2]
+
+                # Message is clamped if all of the inputs are clamped
+                is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+
+                # Message is initial if it is not clamped and all of the inputs are either clamped or initial
+                is_message_initial = !is_message_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+
+                return Message(rule(fform, vtag, vconstraint, msgs_names, messages, marginal_names, marginals, meta, factornode), is_message_clamped, is_message_initial)
+            end
         end
 
         mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
@@ -477,11 +509,15 @@ function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
     setmarginal!(getstream(lmarginal), marginal)
 end
 
-function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal)
+function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal) 
+    return getmarginal!(factornode, localmarginal, IncludeAll())
+end
+
+function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal, skip_strategy::MarginalSkipStrategy)
     cached_stream = getstream(localmarginal)
 
     if cached_stream !== nothing
-        return cached_stream
+        return as_marginal_observable(cached_stream, skip_strategy)
     end
 
     clusterindex = index(localmarginal)
@@ -491,14 +527,14 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
 
     if marginalsize === 1 
         # Cluster contains only one variable, we can take marginal over this variable
-        vmarginal = getmarginal(connectedvar(getinterface(factornode, marginalname)))
+        vmarginal = getmarginal(connectedvar(getinterface(factornode, marginalname)), IncludeAll())
         setstream!(localmarginal, vmarginal)
-        return vmarginal
+        return as_marginal_observable(vmarginal, skip_strategy)
     else
         cmarginal = MarginalObservable()
 
         message_dependencies  = tuple(getclusterinterfaces(factornode, clusterindex)...)
-        marginal_dependencies = tuple(skipindex(localmarginals(factornode), clusterindex)...)
+        marginal_dependencies = tuple(TupleTools.deleteat(localmarginals(factornode), clusterindex)...)
 
         msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
@@ -508,17 +544,28 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         meta        = metadata(factornode)
 
         mapping = let fform = fform, vtag = vtag, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (dependencies) -> as_marginal(marginalrule(fform, vtag, msgs_names, dependencies[1], marginal_names, getrecent(dependencies[2]), meta, factornode))
+            (dependencies) -> begin 
+                messages  = dependencies[1]
+                marginals = getrecent(dependencies[2])
+
+                # Marginal is clamped if all of the inputs are clamped
+                is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+
+                # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
+                is_marginal_initial = !is_marginal_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+
+                return Marginal(marginalrule(fform, vtag, msgs_names, messages, marginal_names, marginals, meta, factornode), is_marginal_clamped, is_marginal_initial)
+            end
         end
 
         # TODO: discontinue operater is needed for loopy belief propagation? Check
-        marginalout = combineLatest((msgs_observable, marginals_observable), PushEach()) |> discontinue() |> map(Marginal, mapping)
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 
         setstream!(localmarginal, cmarginal)
 
-        return cmarginal
+        return as_marginal_observable(cmarginal, skip_strategy)
     end
 end
 
@@ -539,6 +586,10 @@ function make_node end
 function interface_get_index end
 function interface_get_name end
 
+function interface_get_name(::Type{ Val{ Node } }, ::Type{ Val{ Interface } }) where { Node, Interface }
+    error("Node $Node has no interface named $Interface")
+end
+
 make_node(fform, ::AutoVar, ::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
 make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...)        = error("Unknown functional form '$(fform)' used for node specification.")
 
@@ -554,10 +605,13 @@ end
 
 function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
     # TODO
-    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, (d::Tuple) -> begin 
-        as_message(PointMass(fform(d...)))
-    end)
+    message_cb = let fform = fform
+        (d::Tuple) -> Message(fform(d...), false, false)
+    end
+
+    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, message_cb)
     var     = datavar(getname(autovar), Any, subject = subject)
+    
     return nothing, var
 end
 
@@ -567,6 +621,29 @@ end
 
 import .MacroHelpers
 
+"""
+    @node(fformtype, sdtype, interfaces_list)
+
+`@node` macro creates a node for a `fformtype` type object 
+
+# Examples
+```julia
+
+struct MyNormalDistribution 
+    mean :: Float64
+    var  :: Float64
+end
+
+@node MyNormalDistribution Stochastic [ out, mean, var ]
+```
+
+```julia 
+
+@node typeof(+) Deterministic [ out, in1, in2 ]
+```
+
+See also: [`make_node`](@ref), [`Stochastic`](@ref), [`Deterministic`](@ref)
+"""
 macro node(fformtype, sdtype, interfaces_list)
 
     fbottomtype = MacroHelpers.bottom_type(fformtype)
@@ -581,12 +658,14 @@ macro node(fformtype, sdtype, interfaces_list)
         if @capture(arg, name_Symbol)
             return (name, [])
         elseif @capture(arg, (name_Symbol, aliases = [ aliases__ ]))
-            @assert all(a -> a isa Symbol, aliases)
+            @assert all(a -> a isa Symbol && !isequal(a, name), aliases)
             return (name, aliases)
         else
             error("Interface specification should have a 'name' or (name, aliases = [ alias1, alias2,... ]) signature.")
         end
     end 
+
+    @assert length(interfaces) !== 0 "Node should have at least one interface."
     
     names = map(d -> first(d), interfaces)
     
@@ -595,8 +674,11 @@ macro node(fformtype, sdtype, interfaces_list)
     names_splitted_indices = Expr(:tuple, map(i -> Expr(:tuple, i), 1:length(names))...)
     
     interface_args        = map(name -> :($name::AbstractVariable), names)
-    interface_connections = map(name -> :(connect!(node, $(Expr(:quote, name)), $name)), names)
+    interface_connections = map(name -> :(ReactiveMP.connect!(node, $(Expr(:quote, name)), $name)), names)
 
+    # Here we create helpers function for GraphPPL.jl interfacing
+    # They are used to convert interface names from `where { q = q(x, y)q(z) }` to an equivalent tuple respresentation, e.g. `((1, 2), (3, ))`
+    # The general recipe to get a proper index is to call `interface_get_index(Val{ :NodeTypeName }, interface_get_name(Val{ :NodeTypeName }, Val{ :name_expression }))`
     interface_name_getters = map(enumerate(interfaces)) do (index, interface)
         name    = first(interface)
         aliases = last(interface)
@@ -617,23 +699,39 @@ macro node(fformtype, sdtype, interfaces_list)
         end
     end
 
-    factorisation_collectors = quote
-        ReactiveMP.collect_factorisation(::$fuppertype, ::FullFactorisation) = ($names_indices, )
-        ReactiveMP.collect_factorisation(::$fuppertype, ::MeanField) = $names_splitted_indices
+    # By default every argument passed to a factorisation option of the node is transformed by 
+    # `collect_factorisation` function to have a tuple like structure.
+    # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects 
+    # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a FullFactorisation equivalent
+    factorisation_collectors = if sdtype === :Stochastic 
+        quote
+            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = factorisation
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = $names_splitted_indices
+        end
+        
+    elseif sdtype === :Deterministic
+        quote
+            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = ($names_indices, )
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = ($names_indices, )
+        end
+    else
+        error("Unreachable in @node macro.") 
     end
 
     make_node_const_mapping = if sdtype === :Stochastic
         quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
-                var  = randomvar(getname(autovar))
-                node = make_node(fform, var, args...; kwargs...)
+            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
+                var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
+                node = ReactiveMP.make_node(fform, var, args...; kwargs...)
                 return node, var
             end
         end
     elseif sdtype === :Deterministic
         quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; kwargs...)
-                var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
+            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
+                var  = ReactiveMP.constvar(ReactiveMP.getname(autovar), fform(map((d) -> ReactiveMP.getconst(d), args)...))
                 return nothing, var
             end
         end
@@ -643,23 +741,23 @@ macro node(fformtype, sdtype, interfaces_list)
     
     res = quote
 
-        ReactiveMP.as_node_functional_form(::$fuppertype) = ValidNodeFunctionalForm()
+        ReactiveMP.as_node_functional_form(::$fuppertype) = ReactiveMP.ValidNodeFunctionalForm()
 
-        ReactiveMP.sdtype(::$fuppertype) = ($sdtype)()
+        ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
         
-        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
-            return FactorNode($fbottomtype, $names_quoted_tuple, collect_factorisation($fbottomtype, factorisation), meta, portal)
+        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), portal)
         end
         
-        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = EmptyPortal())
-            node = make_node($fbottomtype, factorisation = factorisation, meta = meta, portal = portal)
+        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())
+            node = ReactiveMP.make_node($fbottomtype, factorisation = factorisation, meta = meta, portal = portal)
             $(interface_connections...)
             return node
         end
 
-        function ReactiveMP.make_node(fform::$fuppertype, autovar::AutoVar, args::Vararg{ <: AbstractVariable }; kwargs...)
-            var  = randomvar(getname(autovar))
-            node = make_node(fform, var, args...; kwargs...)
+        function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable }; kwargs...)
+            var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
+            node = ReactiveMP.make_node(fform, var, args...; kwargs...)
             return node, var
         end
 

@@ -1,11 +1,15 @@
 module ReactiveMP
 
-using Distributions
-
 include("rocket.jl")
 include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
+
+include("message.jl")
+include("marginal.jl")
+
+as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
 include("variable.jl")
 include("portal.jl")
@@ -14,6 +18,7 @@ include("actors/score.jl")
 
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
+include("algebra/companion_matrix.jl")
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
@@ -42,12 +47,6 @@ include("distributions/exp_linear_quadratic.jl")
 include("distributions/wishart.jl")
 include("distributions/contingency.jl")
 include("distributions/common.jl")
-
-include("message.jl")
-include("marginal.jl")
-
-as_marginal(message::Message)  = Marginal(getdata(message))
-as_message(marginal::Marginal) = Message(getdata(marginal))
 
 include("variables/random.jl")
 include("variables/constant.jl")
@@ -87,6 +86,7 @@ include("nodes/normal_mixture.jl")
 include("nodes/gamma_mixture.jl")
 include("nodes/dot_product.jl")
 include("nodes/transition.jl")
+include("nodes/autoregressive.jl")
 
 
 # Deterministic nodes

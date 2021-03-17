@@ -59,7 +59,7 @@ outbound_message_portal(factornode::GammaMixtureNode)   = factornode.portal
 setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
 getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
 
-## Metadata 
+## Metadata
 
 get_or_default_meta(fform::Type{ <: GammaMixture }, meta::GammaMixtureNodeMetadata) = meta
 get_or_default_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
@@ -98,13 +98,13 @@ function get_marginals_observable(
 
     marginal_names = Val{ (name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1])) }
     marginals_observable = combineLatest((
-        getmarginal(connectedvar(varinterface)),
-        combineLatest(map((rate) -> getmarginal(connectedvar(rate)), reverse(bsinterfaces)), PushNew()),
-        combineLatest(map((shape) -> getmarginal(connectedvar(shape)), reverse(asinterfaces)), PushNew()),
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        combineLatest(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
+        combineLatest(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)), PushNew()),
     ), PushNew()) |> map_to((
-        getmarginal(connectedvar(varinterface)),
-        map((shape) -> getmarginal(connectedvar(shape)), asinterfaces),
-        map((rate) -> getmarginal(connectedvar(rate)), bsinterfaces)
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces),
+        map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces)
     ))
 
     return marginal_names, marginals_observable
@@ -120,9 +120,9 @@ function get_marginals_observable(
 
     marginal_names       = Val{ (name(outinterface), name(switchinterface), name(varinterface)) }
     marginals_observable = combineLatestUpdates((
-        getmarginal(connectedvar(outinterface)),
-        getmarginal(connectedvar(switchinterface)),
-        getmarginal(connectedvar(varinterface))
+        getmarginal(connectedvar(outinterface), IncludeAll()),
+        getmarginal(connectedvar(switchinterface), IncludeAll()),
+        getmarginal(connectedvar(varinterface), IncludeAll())
     ), PushNew())
 
     return marginal_names, marginals_observable
@@ -130,40 +130,38 @@ end
 
 # FreeEnergy related functions
 
-@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, GammaShapeRate}, q_b::NTuple{N, GammaShapeRate}) where N = begin
+@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, Any}, q_b::NTuple{N, GammaShapeRate}) where N = begin
     z_bar = probvec(q_switch)
-    return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α , :β) }, map(as_marginal, (q_out, q_a[i], q_b[i])), nothing), +, 1:N, init = 0.0)
+    return mapreduce(+, 1:N, init = 0.0) do i
+        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α , :β) }, map((q) -> Marginal(q, false, false), (q_out, q_a[i], q_b[i])), nothing)
+    end
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
+function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
+
+    skip_strategy = marginal_skip_strategy(objective)
 
     stream = combineLatest((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        combineLatest(map((as) -> getmarginal(connectedvar(as)), node.as), PushNew()),
-        combineLatest(map((bs) -> getmarginal(connectedvar(bs)), node.bs), PushNew())
-    ), PushNew()) |> map_to((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        map((as) -> getmarginal(connectedvar(as)), node.as),
-        map((bs) -> getmarginal(connectedvar(bs)), node.bs)
-    ))
+        getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
+        getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
+        combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew()),
+        combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew())
+    ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin
-            recent_marginals = getrecent.(marginals)
-            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :a, :b) }, recent_marginals, meta)
+            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :a, :b) }, marginals, meta)
 
-            out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
-            switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
-            a_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
-            b_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
+            out_entropy     = score(DifferentialEntropy(), marginals[1])
+            switch_entropy  = score(DifferentialEntropy(), marginals[2])
+            a_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
+            b_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
 
             return convert(T, average_energy - (out_entropy + switch_entropy + a_entropies + b_entropies))
         end
     end
 
-    return stream |> schedule_on(scheduler) |> map(T, mapping)
+    return stream |> map(T, mapping)
 end
 
 as_node_functional_form(::Type{ <: GammaMixture }) = ValidNodeFunctionalForm()
@@ -171,6 +169,8 @@ as_node_functional_form(::Type{ <: GammaMixture }) = ValidNodeFunctionalForm()
 # Node creation related functions
 
 sdtype(::Type{ <: GammaMixture }) = Stochastic()
+
+collect_factorisation(::Type{ <: GammaMixture }, factorisation) = factorisation
 
 function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, portal::P = EmptyPortal()) where { N, F, M, P }
     @assert N >= 2 "GammaMixtureNode requires at least two mixtures on input"
@@ -184,7 +184,7 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = M
 end
 
 function ReactiveMP.make_node(::Type{ <: GammaMixture }, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, portal = EmptyPortal()) where { N}
-    node = make_node(GammaMixture{N}, factorisation = factorisation, meta = meta, portal = portal)
+    node = make_node(GammaMixture{N}, factorisation = collect_factorisation(GammaMixture, factorisation), meta = collect_meta(GammaMixture, meta), portal = portal)
 
     # out
     out_index = getlastindex(out)

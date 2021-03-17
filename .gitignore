@@ -6,6 +6,7 @@ docs/Manifest.toml
 demo/.ipynb_checkpoints
 demo/*incomplete.ipynb
 demo/*.jl
+demo/*WIP*
 
 .idea
 

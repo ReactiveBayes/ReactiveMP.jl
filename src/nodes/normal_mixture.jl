@@ -91,13 +91,13 @@ function get_marginals_observable(
 
     marginal_names = Val{ (name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1])) }
     marginals_observable = combineLatest((
-        getmarginal(connectedvar(varinterface)),
-        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), reverse(precsinterfaces)), PushNew()),
-        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), reverse(meansinterfaces)), PushNew()),
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        combineLatest(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
+        combineLatest(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)), PushNew()),
     ), PushNew()) |> map_to((
-        getmarginal(connectedvar(varinterface)),
-        map((mean) -> getmarginal(connectedvar(mean)), meansinterfaces),
-        map((prec) -> getmarginal(connectedvar(prec)), precsinterfaces)
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces),
+        map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces)
     ))
 
     return marginal_names, marginals_observable
@@ -113,9 +113,9 @@ function get_marginals_observable(
 
     marginal_names       = Val{ (name(outinterface), name(switchinterface), name(varinterface)) }
     marginals_observable = combineLatestUpdates((
-        getmarginal(connectedvar(outinterface)),
-        getmarginal(connectedvar(switchinterface)),
-        getmarginal(connectedvar(varinterface)),
+        getmarginal(connectedvar(outinterface), IncludeAll()),
+        getmarginal(connectedvar(switchinterface), IncludeAll()),
+        getmarginal(connectedvar(varinterface), IncludeAll()),
     ), PushNew())
 
     return marginal_names, marginals_observable
@@ -125,43 +125,43 @@ end
 
 @average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, NormalMeanVariance}, q_p::NTuple{N, GammaDistributionsFamily}) where N = begin
     z_bar = probvec(q_switch)
-    return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
+    return mapreduce(+, 1:N, init = 0.0) do i
+        return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
+    end
 end
 
 @average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, MvNormalMeanCovariance}, q_p::NTuple{N, Wishart}) where N = begin
     z_bar = probvec(q_switch)
-    return mapreduce((i) -> z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map(as_marginal, (q_out, q_m[i], q_p[i])), nothing), +, 1:N, init = 0.0)
+    return mapreduce(+, 1:N, init = 0.0) do i
+        return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
+    end
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
+function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
     
+    skip_strategy = marginal_skip_strategy(objective)
+
     stream = combineLatest((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        combineLatest(map((mean) -> getmarginal(connectedvar(mean)), node.means), PushNew()),
-        combineLatest(map((prec) -> getmarginal(connectedvar(prec)), node.precs), PushNew())
-    ), PushNew()) |> map_to((
-        getmarginal(connectedvar(node.out)),
-        getmarginal(connectedvar(node.switch)),
-        map((mean) -> getmarginal(connectedvar(mean)), node.means),
-        map((prec) -> getmarginal(connectedvar(prec)), node.precs)
-    ))
+        getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
+        getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
+        combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew()),
+        combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew())
+    ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin 
-            recent_marginals = getrecent.(marginals)
-            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, recent_marginals, meta)
+            average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, marginals, meta)
 
-            out_entropy     = score(DifferentialEntropy(), recent_marginals[1])
-            switch_entropy  = score(DifferentialEntropy(), recent_marginals[2])
-            means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[3])
-            precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, recent_marginals[4])
+            out_entropy     = score(DifferentialEntropy(), marginals[1])
+            switch_entropy  = score(DifferentialEntropy(), marginals[2])
+            means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
+            precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
 
             return convert(T, average_energy - (out_entropy + switch_entropy + means_entropies + precs_entropies))
         end
     end
 
-    return stream |> schedule_on(scheduler) |> map(T, mapping)
+    return stream |> map(T, mapping)
 end
 
 as_node_functional_form(::Type{ <: NormalMixture }) = ValidNodeFunctionalForm()
@@ -169,6 +169,8 @@ as_node_functional_form(::Type{ <: NormalMixture }) = ValidNodeFunctionalForm()
 # Node creation related functions
 
 sdtype(::Type{ <: NormalMixture }) = Stochastic()
+
+collect_factorisation(::Type{ <: NormalMixture }, factorisation) = factorisation
         
 function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, portal::P = EmptyPortal()) where { N, F, M, P }
     @assert N >= 2 "NormalMixtureNode requires at least two mixtures on input"
@@ -181,7 +183,7 @@ function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = 
 end
 
 function ReactiveMP.make_node(::Type{ <: NormalMixture }, out::AbstractVariable, switch::AbstractVariable, means::NTuple{N, AbstractVariable}, precs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, portal = EmptyPortal()) where { N}
-    node = make_node(NormalMixture{N}, factorisation = factorisation, meta = meta, portal = portal)
+    node = make_node(NormalMixture{N}, factorisation = collect_factorisation(NormalMixture, factorisation), meta = collect_meta(NormalMixture, meta), portal = portal)
 
     # out
     out_index = getlastindex(out)

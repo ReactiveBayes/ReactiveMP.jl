@@ -1,4 +1,6 @@
 
+include("common/em.jl")
+
 include("uninformative/out.jl")
 
 include("addition/marginals.jl")
@@ -67,6 +69,7 @@ include("wishart/marginals.jl")
 include("normal_mixture/switch.jl")
 include("normal_mixture/m.jl")
 include("normal_mixture/p.jl")
+include("normal_mixture/out.jl")
 
 include("gamma_mixture/switch.jl")
 include("gamma_mixture/a.jl")
@@ -82,3 +85,9 @@ include("transition/marginals.jl")
 include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")
+
+include("autoregressive/y.jl")
+include("autoregressive/x.jl")
+include("autoregressive/theta.jl")
+include("autoregressive/gamma.jl")
+include("autoregressive/marginals.jl")

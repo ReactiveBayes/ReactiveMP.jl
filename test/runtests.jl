@@ -15,13 +15,17 @@ using .ReactiveMPTestingHelpers
 
     function key_to_filename(key)
         splitted = split(key, ":")
-        return string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
+        return length(splitted) === 1 ? string("test_", first(splitted), ".jl") : string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
     end
 
     function filename_to_key(filename)
         splitted   = split(filename, "/")
-        path, name = splitted[1:end - 1], splitted[end]
-        return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
+        if length(splitted) === 1
+            return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
+        else
+            path, name = splitted[1:end - 1], splitted[end]
+            return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
+        end
     end
 
     function addtests(filename)
@@ -34,6 +38,8 @@ using .ReactiveMPTestingHelpers
     @testset "Testset helpers" begin
         @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) == "distributions/test_normal_mean_variance.jl"
         @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) == "distributions:normal_mean_variance"
+        @test key_to_filename(filename_to_key("test_message.jl")) == "test_message.jl"
+        @test filename_to_key(key_to_filename("message")) == "message"
     end
 
     addtests("test_distributions.jl")
@@ -48,6 +54,8 @@ using .ReactiveMPTestingHelpers
 
     addtests("test_node.jl")
     addtests("nodes/test_addition.jl")
+
+    addtests("test_message.jl")
 
 end
 

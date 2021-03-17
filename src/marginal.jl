@@ -1,20 +1,26 @@
-export Marginal, getdata, as_marginal
+export Marginal, getdata, is_clamped, is_initial, as_marginal
+export InitialMarginal, MarginalOrInitialMarginal
+export SkipClamped, SkipInitial, SkipClampedAndInitial, IncludeAll
 
 using Distributions
 using Rocket
 
+import Rocket: getrecent
 import Base: ndims, precision, length, size
 
 struct Marginal{D}
-    data :: D
+    data       :: D
+    is_clamped :: Bool
+    is_initial :: Bool
 end
 
 Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ")"))
 
-getdata(marginal::Marginal)                          = marginal.data
-getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
+getdata(marginal::Marginal)    = marginal.data
+is_clamped(marginal::Marginal) = marginal.is_clamped
+is_initial(marginal::Marginal) = marginal.is_initial
 
-## Marginal
+## Statistics 
 
 Distributions.mean(marginal::Marginal)      = Distributions.mean(getdata(marginal))
 Distributions.median(marginal::Marginal)    = Distributions.median(getdata(marginal))
@@ -40,48 +46,71 @@ Base.size(marginal::Marginal)      = size(getdata(marginal))
 
 probvec(marginal::Marginal)         = probvec(getdata(marginal))
 weightedmean(marginal::Marginal)    = weightedmean(getdata(marginal))
-logmean(marginal::Marginal)         = logmean(getdata(marginal))
 inversemean(marginal::Marginal)     = inversemean(getdata(marginal))
+logmean(marginal::Marginal)         = logmean(getdata(marginal))
+meanlogmean(marginal::Marginal)     = meanlogmean(getdata(marginal))
 mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
+loggammamean(marginal::Marginal)    = loggammamean(getdata(marginal))
 
 ## Utility functions
 
-as_marginal(distribution::Distribution) = Marginal(distribution)
-as_marginal(ntuple::NamedTuple)         = Marginal(ntuple)
-as_marginal(marginal::Marginal)         = marginal
+getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
-const __as_marginal_operator = Rocket.map(Marginal, as_marginal)
+as_marginal(marginal::Marginal) = marginal
 
-as_marginal() = __as_marginal_operator
+foldl_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(mapfoldl(as_message, (left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
+foldr_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(mapfoldr(as_message, (left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
 
-reduce_to_marginal(messages) = foldl_reduce_to_marginal(messages)
+function all_reduce_to_marginal(prod_parametrisation) 
 
-foldl_reduce_to_marginal(messages) = as_marginal(mapfoldl(as_message, *, messages; init = Message(missing)))
-foldr_reduce_to_marginal(messages) = as_marginal(mapfoldr(as_message, *, messages; init = Message(missing)))
-all_reduce_to_marginal(messages)   = as_marginal(prod_all(map(as_message, messages)))
+    return let prod_parametrisation = prod_parametrisation
+        (messages) -> begin
+            # We propagate clamped message, in case if both are clamped
+            is_prod_clamped = __check_all(is_clamped, messages)
+            # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
+            is_prod_initial = !is_prod_clamped && __check_all(v -> is_clamped(v) || is_initial(v), messages)
 
-prod_all(messages) = foldl(*, messages; init = Message(missing))
+            return Marginal(prod_all(prod_parametrisation, map(as_message, messages)), is_prod_clamped, is_prod_initial)
+        end
+    end
+end
+
+# Fallback option
+prod_all(prod_parametrisation, messages) = getdata(foldl((left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
 
 ## Marginal observable
 
-struct MarginalObservable <: Subscribable{Marginal}
-    subject :: Rocket.RecentSubjectInstance{ Marginal, Subject{ Marginal,AsapScheduler,AsapScheduler } }
-    stream  :: LazyObservable{Marginal}
+abstract type MarginalSkipStrategy end
+
+struct SkipClamped           <: MarginalSkipStrategy end
+struct SkipInitial           <: MarginalSkipStrategy end
+struct SkipClampedAndInitial <: MarginalSkipStrategy end
+struct IncludeAll            <: MarginalSkipStrategy end
+
+apply_skip_filter(observable, ::SkipClamped)           = observable |> filter(v -> !is_clamped(v))
+apply_skip_filter(observable, ::SkipInitial)           = observable |> filter(v -> !is_initial(v))
+apply_skip_filter(observable, ::SkipClampedAndInitial) = observable |> filter(v -> !is_initial(v) && !is_clamped(v))
+apply_skip_filter(observable, ::IncludeAll)            = observable
+
+struct MarginalObservable <: Subscribable{ Marginal }
+    subject :: Rocket.RecentSubjectInstance{ Marginal, Subject{ Marginal, AsapScheduler, AsapScheduler } }
+    stream  :: LazyObservable{ Marginal }
 end
 
-as_marginal_observable(observable::MarginalObservable) = observable
+MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))   
 
-function as_marginal_observable(observable)
+as_marginal_observable(observable::MarginalObservable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(observable, skip_strategy)
+as_marginal_observable(observable)                                                          = as_marginal_observable(observable, IncludeAll())
+
+function as_marginal_observable(observable, skip_strategy::MarginalSkipStrategy)
     output = MarginalObservable()
     connect!(output, observable)
-    return output
+    return as_marginal_observable(output, skip_strategy)
 end
 
-MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
-
-getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
-getrecent(observables::Tuple)             = getrecent.(observables)
-getrecent(::Nothing)                      = nothing
+Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
+Rocket.getrecent(observables::Tuple)             = Rocket.getrecent.(observables)
+Rocket.getrecent(::Nothing)                      = nothing
 
 function Rocket.on_subscribe!(observable::MarginalObservable, actor)
     return subscribe!(observable.stream, actor)
@@ -93,6 +122,6 @@ function connect!(marginal::MarginalObservable, source)
 end
 
 function setmarginal!(marginal::MarginalObservable, value)
-    next!(marginal.subject, as_marginal(value))
+    next!(marginal.subject, Marginal(value, false, true))
     return nothing
 end

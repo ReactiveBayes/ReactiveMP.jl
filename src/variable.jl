@@ -1,36 +1,72 @@
 export AbstractVariable, degree
+export ClampedVariable, Marginalisation, ExpectationMaximisation, EM
 export RandomVariable, randomvar
 export SimpleRandomVariable, simplerandomvar
 export ConstVariable, constvar
 export DataVariable, datavar, update!, finish!
-export getmarginal, getmarginals, setmarginal!, activate!, name
-export as_message, as_marginal
+export getmarginal, getmarginals, setmarginal!, setmarginals!, activate!, name
 export as_variable
 
 using Rocket
 
 abstract type AbstractVariable end
 
-function degree end
+## Variable constraints
+
+abstract type AbstractVariableConstraint end
+
+struct ClampedVariable         <: AbstractVariableConstraint end
+struct Marginalisation         <: AbstractVariableConstraint end
+struct ExpectationMaximisation <: AbstractVariableConstraint end
+
+const EM = ExpectationMaximisation
+
+is_clamped(variable::AbstractVariable)   = is_clamped(constraint(variable))
+is_clamped(::AbstractVariableConstraint) = false
+is_clamped(::ClampedVariable)            = true
+
+is_marginalisation_constrained(variable::AbstractVariable)   = is_marginalisation_constrained(constraint(variable))
+is_marginalisation_constrained(::AbstractVariableConstraint) = false
+is_marginalisation_constrained(::Marginalisation)            = true
+
+is_expectation_maximisation_constrained(variable::AbstractVariable)   = is_expectation_maximisation_constrained(constraint(variable))
+is_expectation_maximisation_constrained(::AbstractVariableConstraint) = false
+is_expectation_maximisation_constrained(::ExpectationMaximisation)    = true
+
+prod_parametrisation(::Marginalisation)         = ProdPreserveParametrisation()
+prod_parametrisation(::ExpectationMaximisation) = ProdExpectationMaximisation()
 
 ## Common functions
+
+function degree end
 
 inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to change an inbound portal for $(variable)")
 
 getmarginals(vector::AbstractVector{ <: AbstractVariable }) = collectLatest(map(getmarginal, vector))
 
-function getmarginal(variable::AbstractVariable)
+getmarginal(variable::AbstractVariable) = getmarginal(variable, SkipInitial())
+
+function getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy)
     vmarginal = _getmarginal(variable)
     if vmarginal === nothing
-        nmarginal = as_marginal_observable(_makemarginal(variable))
-        _setmarginal!(variable, nmarginal)
-        return nmarginal
+        vmarginal = as_marginal_observable(_makemarginal(variable))
+        _setmarginal!(variable, vmarginal)
     end
-    return as_marginal_observable(vmarginal)
+    return as_marginal_observable(vmarginal, skip_strategy)
 end
 
 function setmarginal!(variable::AbstractVariable, marginal)
-    setmarginal!(getmarginal(variable), marginal)
+    setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+end
+
+function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginal)
+    setmarginals!(variables, Iterators.repeated(marginal, length(variables)))
+end
+
+function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginals::AbstractVector)
+    foreach(zip(variables, marginals)) do (variable, marginal)
+        setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+    end
 end
 
 function name(variable::AbstractVariable)
