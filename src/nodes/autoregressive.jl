@@ -35,6 +35,8 @@ is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 
 @node AR Stochastic [ y, x, θ, γ ]
 
+default_meta(::Type{ AR }) = error("Autoregressive node requires meta flag explicitly specified")
+
 @average_energy AR (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
     mθ, Vθ   = mean(q_θ), cov(q_θ)
     myx, Vyx = mean(q_y_x), cov(q_y_x)

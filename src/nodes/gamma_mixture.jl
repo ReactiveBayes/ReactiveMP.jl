@@ -170,6 +170,8 @@ as_node_functional_form(::Type{ <: GammaMixture }) = ValidNodeFunctionalForm()
 
 sdtype(::Type{ <: GammaMixture }) = Stochastic()
 
+collect_factorisation(::Type{ <: GammaMixture }, factorisation) = factorisation
+
 function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, portal::P = EmptyPortal()) where { N, F, M, P }
     @assert N >= 2 "GammaMixtureNode requires at least two mixtures on input"
     @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "GammaMixtureNode supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
@@ -182,7 +184,7 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = M
 end
 
 function ReactiveMP.make_node(::Type{ <: GammaMixture }, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, portal = EmptyPortal()) where { N}
-    node = make_node(GammaMixture{N}, factorisation = factorisation, meta = meta, portal = portal)
+    node = make_node(GammaMixture{N}, factorisation = collect_factorisation(GammaMixture, factorisation), meta = collect_meta(GammaMixture, meta), portal = portal)
 
     # out
     out_index = getlastindex(out)

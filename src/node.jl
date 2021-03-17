@@ -112,6 +112,30 @@ See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
 """
 function collect_factorisation end
 
+"""
+    collect_meta(nodetype, meta)
+
+This function converts given meta object to a correct internal meta representation for a given node. 
+Fallbacks to `default_meta` in case if meta is `nothing`.
+
+See also: [`default_meta`](@ref), [`FactorNode`](@ref)
+"""
+function collect_meta end
+
+collect_meta(T::Any, ::Nothing) = default_meta(T)
+collect_meta(T::Any, meta::Any) = meta
+
+"""
+    default_meta(nodetype)
+
+Returns default meta object for a given node type.
+
+See also: [`collect_meta`](@ref), [`FactorNode`](@ref)
+"""
+function default_meta end
+
+default_meta(any) = nothing
+
 ## Variable constraints
 
 struct Marginalisation end
@@ -727,7 +751,7 @@ macro node(fformtype, sdtype, interfaces_list)
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
         
         function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())
-            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), meta, portal)
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), portal)
         end
         
         function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())

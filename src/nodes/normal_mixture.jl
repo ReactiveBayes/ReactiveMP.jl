@@ -169,6 +169,8 @@ as_node_functional_form(::Type{ <: NormalMixture }) = ValidNodeFunctionalForm()
 # Node creation related functions
 
 sdtype(::Type{ <: NormalMixture }) = Stochastic()
+
+collect_factorisation(::Type{ <: NormalMixture }, factorisation) = factorisation
         
 function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, portal::P = EmptyPortal()) where { N, F, M, P }
     @assert N >= 2 "NormalMixtureNode requires at least two mixtures on input"
@@ -181,7 +183,7 @@ function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = 
 end
 
 function ReactiveMP.make_node(::Type{ <: NormalMixture }, out::AbstractVariable, switch::AbstractVariable, means::NTuple{N, AbstractVariable}, precs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, portal = EmptyPortal()) where { N}
-    node = make_node(NormalMixture{N}, factorisation = factorisation, meta = meta, portal = portal)
+    node = make_node(NormalMixture{N}, factorisation = collect_factorisation(NormalMixture, factorisation), meta = collect_meta(NormalMixture, meta), portal = portal)
 
     # out
     out_index = getlastindex(out)
