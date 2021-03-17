@@ -67,6 +67,7 @@ include("wishart/marginals.jl")
 include("normal_mixture/switch.jl")
 include("normal_mixture/m.jl")
 include("normal_mixture/p.jl")
+include("normal_mixture/out.jl")
 
 include("gamma_mixture/switch.jl")
 include("gamma_mixture/a.jl")
