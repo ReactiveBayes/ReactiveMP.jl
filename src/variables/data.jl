@@ -61,7 +61,7 @@ inbound_portal(::DataVariable) = EmptyPortal()
 
 _getmarginal(datavar::DataVariable)                                = datavar.props.marginal
 _setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.props.marginal = marginal
-_makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, (m) -> Marginal(m, false, false))
+_makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, as_marginal)
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.props.nconnected += 1

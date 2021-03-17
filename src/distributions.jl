@@ -1,5 +1,5 @@
 export ProdPreserveParametrisation, ProdBestSuitableParametrisation
-export default_prod_strategy, vague
+export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
 export variate_form, value_support, promote_variate_type
@@ -15,7 +15,7 @@ import Base: prod
 `ProdPreserveParametrisation` is one of the strategies for `prod` function. This strategy assumes the same output factorisation (if possible).
 Should be used mostly to preserve distribution parametrisation across a model.
 
-See also: [`prod`](@ref), [`default_prod_strategy`](@ref), [`ProdBestSuitableParametrisation`](@ref)
+See also: [`prod`](@ref), [`ProdBestSuitableParametrisation`](@ref), [`ProdExpectationMaximisation`](@ref)
 """
 struct ProdPreserveParametrisation end
 
@@ -25,18 +25,18 @@ struct ProdPreserveParametrisation end
 `ProdBestSuitableParametrisation` is one of the strategies for `prod` function. This strategy does not make any assumptions about output factorisation.
 Can be used to speedup computations in some cases.
 
-See also: [`prod`](@ref), [`default_prod_strategy`](@ref), [`ProdPreserveParametrisation`](@ref)
+See also: [`prod`](@ref), [`ProdPreserveParametrisation`](@ref), [`ProdExpectationMaximisation`](@ref)
 """
 struct ProdBestSuitableParametrisation end
 
 """
-    default_prod_strategy()
+    ProdExpectationMaximisation
 
-Returns a default prod strategy.
+`ProdExpectationMaximisation` is one of the strategies for `prod` function. This strategy assumes that the output of prod is a point mass distribution.
 
 See also: [`prod`](@ref), [`ProdPreserveParametrisation`](@ref), [`ProdBestSuitableParametrisation`](@ref)
 """
-default_prod_strategy() = ProdPreserveParametrisation()
+struct ProdExpectationMaximisation end
 
 """
     prod(strategy, left, right)

@@ -27,16 +27,16 @@ Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(messa
 
 ## Message
 
-function multiply_messages(left::Message, right::Message) 
+function multiply_messages(prod_parametrisation, left::Message, right::Message) 
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
     is_prod_initial = !is_prod_clamped && (is_initial(left) || is_clamped(left)) && (is_initial(right) || is_clamped(right))
 
-    return Message(prod(ProdPreserveParametrisation(), getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
+    return Message(prod(prod_parametrisation, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
 end
 
-Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
+# Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
 Distributions.mean(message::Message)      = Distributions.mean(getdata(message))
 Distributions.median(message::Message)    = Distributions.median(getdata(message))

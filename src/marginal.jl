@@ -58,21 +58,25 @@ getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 
-foldl_reduce_to_marginal(messages) = as_marginal(mapfoldl(as_message, *, messages))
-foldr_reduce_to_marginal(messages) = as_marginal(mapfoldr(as_message, *, messages))
+foldl_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(mapfoldl(as_message, (left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
+foldr_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(mapfoldr(as_message, (left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
 
-function all_reduce_to_marginal(messages) 
+function all_reduce_to_marginal(prod_parametrisation) 
 
-    # We propagate clamped message, in case if both are clamped
-    is_prod_clamped = __check_all(is_clamped, messages)
-    # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
-    is_prod_initial = !is_prod_clamped && __check_all(v -> is_clamped(v) || is_initial(v), messages)
+    return let prod_parametrisation = prod_parametrisation
+        (messages) -> begin
+            # We propagate clamped message, in case if both are clamped
+            is_prod_clamped = __check_all(is_clamped, messages)
+            # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
+            is_prod_initial = !is_prod_clamped && __check_all(v -> is_clamped(v) || is_initial(v), messages)
 
-    return Marginal(prod_all(map(as_message, messages)), is_prod_clamped, is_prod_initial)
+            return Marginal(prod_all(prod_parametrisation, map(as_message, messages)), is_prod_clamped, is_prod_initial)
+        end
+    end
 end
 
 # Fallback option
-prod_all(messages) = foldl(*, messages)
+prod_all(prod_parametrisation, messages) = getdata(foldl((left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
 
 ## Marginal observable
 

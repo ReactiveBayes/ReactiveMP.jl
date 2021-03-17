@@ -23,7 +23,7 @@ Base.getindex(distribution::PointMass, index) = Base.getindex(getpointmass(distr
 Distributions.insupport(distribution::PointMass, x::Real) = x == getpointmass(distribution)
 Distributions.pdf(distribution::PointMass, x::Real)       = Distributions.insupport(distribution, x) ? 1.0 : 0.0
 Distributions.logpdf(distribution::PointMass, x::Real)    = Distributions.insupport(distribution, x) ? 0.0 : -Inf
-Distributions.entropy(::PointMass) = 0
+Distributions.entropy(::PointMass) = 0.0
 
 # Real-based univariate point mass
 

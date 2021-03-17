@@ -19,6 +19,9 @@ struct ExpectationMaximisation end
 
 const EM = ExpectationMaximisation
 
+prod_parametrisation(::Marginalisation)         = ProdPreserveParametrisation()
+prod_parametrisation(::ExpectationMaximisation) = ProdExpectationMaximisation()
+
 ## Common functions
 
 function degree end

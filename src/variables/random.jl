@@ -9,9 +9,9 @@ struct FoldRightProdStrategy end
 # Fallbacks to FoldLeftProdStrategy in case if there is no suitable method
 struct AllAtOnceProdStrategy end
 
-strategy_fn(::FoldLeftProdStrategy)  = foldl_reduce_to_marginal
-strategy_fn(::FoldRightProdStrategy) = foldr_reduce_to_marginal
-strategy_fn(::AllAtOnceProdStrategy) = all_reduce_to_marginal
+strategy_fn(::FoldLeftProdStrategy, prod_parametrisation)  = foldl_reduce_to_marginal(prod_parametrisation)
+strategy_fn(::FoldRightProdStrategy, prod_parametrisation) = foldr_reduce_to_marginal(prod_parametrisation)
+strategy_fn(::AllAtOnceProdStrategy, prod_parametrisation) = all_reduce_to_marginal(prod_parametrisation)
 
 ## Random variable props
 
@@ -48,10 +48,11 @@ function randomvar(name::Symbol, dims::Vararg{Int}; constraint = Marginalisation
     return vars
 end
 
-degree(randomvar::RandomVariable)        = length(randomvar.inputmsgs)
-name(randomvar::RandomVariable)          = randomvar.name
-constraint(randomvar::RandomVariable)    = randomvar.constraint
-prod_strategy(randomvar::RandomVariable) = randomvar.prod_strategy
+degree(randomvar::RandomVariable)               = length(randomvar.inputmsgs)
+name(randomvar::RandomVariable)                 = randomvar.name
+constraint(randomvar::RandomVariable)           = randomvar.constraint
+prod_strategy(randomvar::RandomVariable)        = randomvar.prod_strategy
+prod_parametrisation(randomvar::RandomVariable) = prod_parametrisation(constraint(randomvar))
 
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 
@@ -63,7 +64,7 @@ inbound_portal!(randomvar::RandomVariable, portal) = randomvar.props.portal = po
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.props.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
-_makemarginal(randomvar::RandomVariable)                               = collectLatest(AbstractMessage, Marginal, randomvar.inputmsgs, strategy_fn(prod_strategy(randomvar)))
+_makemarginal(randomvar::RandomVariable)                               = collectLatest(AbstractMessage, Marginal, randomvar.inputmsgs, strategy_fn(prod_strategy(randomvar), prod_parametrisation(randomvar)))
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === length(randomvar.inputmsgs) + 1

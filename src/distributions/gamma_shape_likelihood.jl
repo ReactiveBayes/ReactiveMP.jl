@@ -53,6 +53,8 @@ function approximate_prod_expectations(approximation::GaussLaguerreQuadrature, l
     return logC, m, v
 end
 
+# Preserve Gamma Distribution
+
 function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::GammaShapeLikelihood)
     @assert left.approximation == right.approximation "Different approximation types for $(left) and $(right) messages"
     return GammaShapeLikelihood(left.p + right.p, left.γ + right.γ, left.approximation)
@@ -62,16 +64,27 @@ function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::
     return prod(ProdPreserveParametrisation(), right, left)
 end
 
-# function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-#     _, m, v = approximate_prod_expectations(right.approximation, left, right)
-#
-#     a = m ^ 2 / v
-#     b = m / v
-#
-#     return GammaShapeRate(a, b)
-# end
-
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
+    _, m, v = approximate_prod_expectations(right.approximation, left, right)
+
+    a = m ^ 2 / v
+    b = m / v
+
+    return GammaShapeRate(a, b)
+end
+
+# Expectation maximisation
+
+function prod(::ProdExpectationMaximisation, left::GammaShapeLikelihood, right::GammaShapeLikelihood)
+    @assert left.approximation == right.approximation "Different approximation types for $(left) and $(right) messages"
+    return GammaShapeLikelihood(left.p + right.p, left.γ + right.γ, left.approximation)
+end
+
+function prod(::ProdExpectationMaximisation, left::GammaShapeLikelihood, right::GammaDistributionsFamily)
+    return prod(ProdPreserveParametrisation(), right, left)
+end
+
+function prod(::ProdExpectationMaximisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
 
     a, b = shape(left), rate(left)
     γ, p = right.γ, right.p
