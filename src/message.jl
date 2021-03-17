@@ -107,4 +107,5 @@ as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 
 ## Operators
 
-reduce_messages(messages) = mapreduce(as_message, *, messages)
+# TODO
+reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdPreserveParametrisation(), left, right), messages)
