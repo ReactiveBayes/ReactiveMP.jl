@@ -1,12 +1,13 @@
 import SpecialFunctions: loggamma
+using Optim
 
 """
-    ν(x) ∝ exp(p*β*x - π*logГ(x)) ≡ exp(γ*x - p*logГ(x))
+    ν(x) ∝ exp(p*β*x - p*logГ(x)) ≡ exp(γ*x - p*logГ(x))
 """
 struct GammaShapeLikelihood{T <: Real, A}
     p :: T
     γ :: T # p * β
-    
+
     approximation :: A
 end
 
@@ -61,11 +62,25 @@ function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::
     return prod(ProdPreserveParametrisation(), right, left)
 end
 
+# function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
+#     _, m, v = approximate_prod_expectations(right.approximation, left, right)
+#
+#     a = m ^ 2 / v
+#     b = m / v
+#
+#     return GammaShapeRate(a, b)
+# end
+
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-    _, m, v = approximate_prod_expectations(right.approximation, left, right)
 
-    a = m ^ 2 / v
-    b = m / v
+    a, b = shape(left), rate(left)
+    γ, p = right.γ, right.p
+    f(x) = (a-1)*log(x[1]) - b*x[1] + γ*x[1] - p*loggamma(x[1]) - loggamma(a) + a*log(b)
+    x_0 = [mean(left)]
+    res = optimize(x -> -f(x), [ 0.0 ], [ Inf ], x_0, Fminbox(GradientDescent()))
+    # res = optimize(x -> -f(x), x_0, Newton())
+    â = Optim.minimizer(res)[1]
+    # @show â
 
-    return GammaShapeRate(a, b)
+    return PointMass(â)
 end
