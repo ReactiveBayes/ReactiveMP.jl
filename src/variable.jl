@@ -13,11 +13,25 @@ abstract type AbstractVariable end
 
 ## Variable constraints
 
-struct ClampedVariable end
-struct Marginalisation end
-struct ExpectationMaximisation end
+abstract type AbstractVariableConstraint end
+
+struct ClampedVariable         <: AbstractVariableConstraint end
+struct Marginalisation         <: AbstractVariableConstraint end
+struct ExpectationMaximisation <: AbstractVariableConstraint end
 
 const EM = ExpectationMaximisation
+
+is_clamped(variable::AbstractVariable)   = is_clamped(constraint(variable))
+is_clamped(::AbstractVariableConstraint) = false
+is_clamped(::ClampedVariable)            = true
+
+is_marginalisation_constrained(variable::AbstractVariable)   = is_marginalisation_constrained(constraint(variable))
+is_marginalisation_constrained(::AbstractVariableConstraint) = false
+is_marginalisation_constrained(::Marginalisation)            = true
+
+is_expectation_maximisation_constrained(variable::AbstractVariable)   = is_expectation_maximisation_constrained(constraint(variable))
+is_expectation_maximisation_constrained(::AbstractVariableConstraint) = false
+is_expectation_maximisation_constrained(::ExpectationMaximisation)    = true
 
 prod_parametrisation(::Marginalisation)         = ProdPreserveParametrisation()
 prod_parametrisation(::ExpectationMaximisation) = ProdExpectationMaximisation()

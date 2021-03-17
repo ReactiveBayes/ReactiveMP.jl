@@ -101,11 +101,14 @@ Base.:-(a::Infinity, b::Infinity) = Infinity(degree(a) - degree(b))
 Base.:+(a::Infinity)              = Infinity(+degree(a))
 Base.:-(a::Infinity)              = Infinity(-degree(a))
 
-Base.:*(::Infinity, ::Real)     = error("Infinity multiplication is disallowed")
-Base.:*(::Real, ::Infinity)     = error("Infinity multiplication is disallowed")
+Base.:*(i::Infinity, d::Int) = Infinity(degree(i) * d)
+Base.:*(d::Int, i::Infinity) = Infinity(degree(i) * d)
+
+Base.:*(::Infinity, ::Real)     = error("Infinity multiplication on real numbers is disallowed")
+Base.:*(::Real, ::Infinity)     = error("Infinity multiplication on real numbers is disallowed")
 Base.:*(::Infinity, ::Infinity) = error("Infinity multiplication is disallowed")
-Base.:/(::Infinity, ::Real)     = error("Infinity division is disallowed")
-Base.:/(::Real, ::Infinity)     = error("Infinity division is disallowed")
+Base.:/(::Infinity, ::Real)     = error("Infinity division on real numbers is disallowed")
+Base.:/(::Real, ::Infinity)     = error("Infinity division on real numbers is disallowed")
 Base.:/(::Infinity, ::Infinity) = error("Infinity division is disallowed")
 
 Base.zero(::Type{Infinity})       = Infinity(0)
