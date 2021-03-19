@@ -20,6 +20,10 @@ getdata(marginal::Marginal)    = marginal.data
 is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
 
+# TupleTools.prod is a more efficient version of Base.all for NTuple here
+is_clamped(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_clamped, marginals))
+is_initial(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_initial, marginals))
+
 ## Statistics 
 
 Distributions.mean(marginal::Marginal)      = Distributions.mean(getdata(marginal))
