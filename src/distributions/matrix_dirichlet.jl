@@ -8,8 +8,9 @@ end
 
 Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a, dims = 1)
 
-vague(::Type{ <: MatrixDirichlet }, dims::Vararg{Int}) = MatrixDirichlet(ones(dims...))
-vague(::Type{ <: MatrixDirichlet }, dims::Tuple)       = MatrixDirichlet(ones(dims))
+vague(::Type{ <: MatrixDirichlet }, dims::Int)              = MatrixDirichlet(ones(dims, dims))
+vague(::Type{ <: MatrixDirichlet }, dims1::Int, dims2::Int) = MatrixDirichlet(ones(dims1, dims2))
+vague(::Type{ <: MatrixDirichlet }, dims::Tuple)            = MatrixDirichlet(ones(dims))
 
 function Distributions.entropy(dist::MatrixDirichlet)
     return mapreduce(+, eachcol(dist.a)) do column
