@@ -12,7 +12,6 @@ using Random
 
     @testset "vague" begin
         @test_throws MethodError vague(Categorical)
-        @test_throws ArgumentError vague(Categorical, 0)
 
         d1 = vague(Categorical, 2)
 
