@@ -49,6 +49,7 @@ using .ReactiveMPTestingHelpers
     addtests("distributions/test_categorical.jl")
     addtests("distributions/test_contingency.jl")
     addtests("distributions/test_dirichlet.jl")
+    addtests("distributions/test_dirichlet_matrix.jl")
     addtests("distributions/test_normal_mean_variance.jl")
     addtests("distributions/test_normal_mean_precision.jl")
     addtests("distributions/test_normal_weighted_mean_precision.jl")

@@ -33,6 +33,9 @@ using Random
         @test GammaShapeScale(1f0, 2f0) == GammaShapeScale{Float32}(1f0, 2f0)
         @test GammaShapeScale(1f0, 2)   == GammaShapeScale{Float32}(1f0, 2f0)
         @test GammaShapeScale(1f0, 2.0) == GammaShapeScale{Float64}(1.0, 2.0)
+
+        @test eltype(GammaShapeRate(1.0, 2.0)) === Float64
+        @test eltype(GammaShapeRate(1f0, 2f0)) === Float32
     end
 
     @testset "vague" begin
