@@ -57,6 +57,8 @@ using .ReactiveMPTestingHelpers
 
     addtests("test_message.jl")
 
+    addtests("test_variable.jl")
+
 end
 
 end

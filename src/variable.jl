@@ -42,7 +42,8 @@ function degree end
 
 inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to change an inbound portal for $(variable)")
 
-getmarginals(vector::AbstractVector{ <: AbstractVariable }) = collectLatest(map(getmarginal, vector))
+# Helper functions
+# Getters
 
 getmarginal(variable::AbstractVariable) = getmarginal(variable, SkipInitial())
 
@@ -55,18 +56,26 @@ function getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStra
     return as_marginal_observable(vmarginal, skip_strategy)
 end
 
+getmarginals(variables::AbstractArray{ <: AbstractVariable })                                      = getmarginals(variables, SkipInitial())
+getmarginals(variables::AbstractArray{ <: AbstractVariable }, skip_strategy::MarginalSkipStrategy) = collectLatest(map(v -> getmarginal(v, skip_strategy), variables))
+
+# Setters
+
 function setmarginal!(variable::AbstractVariable, marginal)
     setmarginal!(getmarginal(variable, IncludeAll()), marginal)
 end
 
-function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginal)
-    setmarginals!(variables, Iterators.repeated(marginal, length(variables)))
-end
+setmarginals!(variables::AbstractArray{ <: AbstractVariable }, marginal::Distribution)    = _setmarginals!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
+setmarginals!(variables::AbstractArray{ <: AbstractVariable }, marginals)                 = _setmarginals!(Base.IteratorSize(marginals), variables, marginals)
 
-function setmarginals!(variables::AbstractVector{ <: AbstractVariable }, marginals::AbstractVector)
+function _setmarginals!(::Base.IteratorSize, variables::AbstractArray{ <: AbstractVariable }, marginals)
     foreach(zip(variables, marginals)) do (variable, marginal)
         setmarginal!(getmarginal(variable, IncludeAll()), marginal)
     end
+end
+
+function _setmarginals!(::Any, variables::AbstractArray{ <: AbstractVariable }, marginals)
+    error("setmarginals!() failed. Default value is neither an iterable object nor a distribution.")
 end
 
 function name(variable::AbstractVariable)

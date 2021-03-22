@@ -62,8 +62,11 @@ getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 
-foldl_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldl((left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
-foldr_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldr((left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
+# Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
+# We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
+# We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
+foldl_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldl((left, right) -> multiply_messages(prod_parametrisation, left, right), Base.Generator(as_message, messages)))
+foldr_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldr((left, right) -> multiply_messages(prod_parametrisation, left, right), Base.Generator(as_message, messages)))
 
 function all_reduce_to_marginal(prod_parametrisation) 
     return let prod_parametrisation = prod_parametrisation
