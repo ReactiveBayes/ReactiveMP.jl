@@ -29,14 +29,22 @@ using Distributions
             @test logpdf(left, 0.0)  ≈ logpdf(right, 0.0)
         end
 
-        types = ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})
+        types  = ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})
+        etypes = ReactiveMP.union_types(UnivariateNormalDistributionsFamily)
+
         rng   = MersenneTwister(1234)
 
         for type in types 
             left = convert(type, rand(rng, Float64), rand(rng, Float64))
-            for type in types
+            for type in [ types..., etypes... ]
                 right = convert(type, left)
                 check_basic_statistics(left, right)
+
+                p1 = prod(ProdPreserveParametrisation(), left, right)
+                @test typeof(p1) <: typeof(left)
+
+                p2 = prod(ProdBestSuitableParametrisation(), left, right)
+                check_basic_statistics(p1, p2)
             end
         end
 
@@ -67,16 +75,24 @@ using Distributions
             @test logpdf(left, fill(0.0, dims))  ≈ logpdf(right, fill(0.0, dims))
         end
 
-        types = ReactiveMP.union_types(MultivariateNormalDistributionsFamily{Float64})
+        types  = ReactiveMP.union_types(MultivariateNormalDistributionsFamily{Float64})
+        etypes = ReactiveMP.union_types(MultivariateNormalDistributionsFamily)
+
         dims  = (2, 3, 5)
         rng   = MersenneTwister(1234)
 
         for dim in dims
             for type in types 
                 left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(rand(rng, Float64, dim))))
-                for type in types
+                for type in [ types..., etypes... ]
                     right = convert(type, left)
                     check_basic_statistics(left, right, dim)
+
+                    p1 = prod(ProdPreserveParametrisation(), left, right)
+                    @test typeof(p1) <: typeof(left)
+
+                    p2 = prod(ProdBestSuitableParametrisation(), left, right)
+                    check_basic_statistics(p1, p2, dim)
                 end
             end
         end

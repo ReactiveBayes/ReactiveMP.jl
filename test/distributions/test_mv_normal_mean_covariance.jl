@@ -2,10 +2,14 @@ module MvNormalMeanCovarianceTest
 
 using Test
 using ReactiveMP
+using LinearAlgebra
+using Distributions
 
 @testset "MvNormalMeanCovariance" begin
 
     @testset "Constructor" begin
+        @test MvNormalMeanCovariance <: AbstractMvNormal
+
         @test MvNormalMeanCovariance([ 1.0, 1.0 ]) == MvNormalMeanCovariance([ 1.0, 1.0 ], [ 1.0, 1.0 ])
         @test MvNormalMeanCovariance([ 1.0, 2.0 ]) == MvNormalMeanCovariance([ 1.0, 2.0 ], [ 1.0, 1.0 ])
         @test MvNormalMeanCovariance([ 1, 2 ])     == MvNormalMeanCovariance([ 1.0, 2.0 ], [ 1.0, 1.0 ])
@@ -17,6 +21,10 @@ using ReactiveMP
         @test eltype(MvNormalMeanCovariance([ 1, 1 ], [ 1, 1 ]))         === Float64
         @test eltype(MvNormalMeanCovariance([ 1f0, 1f0 ]))               === Float32
         @test eltype(MvNormalMeanCovariance([ 1f0, 1f0 ], [ 1f0, 1f0 ])) === Float32
+    end
+
+    @testset "distrname" begin
+        @test ReactiveMP.distrname(MvNormalMeanCovariance(zeros(2))) === "MvNormalMeanCovariance"
     end
 
     @testset "Stats methods" begin
@@ -54,6 +62,24 @@ using ReactiveMP
         @test size(MvNormalMeanCovariance([ 0.0, 0.0, 0.0 ]))   === (3, )
     end
 
+    @testset "vague" begin
+        @test_throws MethodError vague(MvNormalMeanCovariance)
+
+        d1 = vague(MvNormalMeanCovariance, 2)
+
+        @test typeof(d1) <: MvNormalMeanCovariance
+        @test mean(d1)  == zeros(2)
+        @test cov(d1)   == Matrix(Diagonal(ReactiveMP.huge * ones(2)))
+        @test ndims(d1) == 2
+
+        d2 = vague(MvNormalMeanCovariance, 3)
+
+        @test typeof(d2) <: MvNormalMeanCovariance
+        @test mean(d2)  == zeros(3)
+        @test cov(d2)   == Matrix(Diagonal(ReactiveMP.huge * ones(3)))
+        @test ndims(d2) == 3
+    end
+
     @testset "prod" begin
         
         @test prod(ProdPreserveParametrisation(), MvNormalMeanCovariance([ -1, -1 ], [ 2, 2 ]), MvNormalMeanCovariance([ 1, 1 ], [ 2, 4 ])) ≈ MvNormalMeanCovariance([ 0, -1/3 ], [ 1, 4/3 ])
@@ -64,6 +90,15 @@ using ReactiveMP
 
         @test prod(ProdPreserveParametrisation(), dist, dist) ≈ MvNormalMeanCovariance([0.20, 3.00, 4.00], [0.75 -0.05 0.05; -0.05 0.90 6.83e-19; 0.05 6.83e-19 1.75])
 
+    end
+
+    @testset "Primitive types conversion" begin
+        @test convert(MvNormalMeanCovariance, zeros(2), Matrix(Diagonal(ones(2)))) == MvNormalMeanCovariance(zeros(2), Matrix(Diagonal(ones(2))))
+        @test begin
+            m = rand(5)
+            c = Matrix(Symmetric(rand(5, 5)))
+            convert(MvNormalMeanCovariance, m, c) == MvNormalMeanCovariance(m, c)
+        end
     end
 
 end

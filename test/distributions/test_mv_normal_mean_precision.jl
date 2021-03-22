@@ -2,10 +2,14 @@ module MvNormalMeanPrecisionTest
 
 using Test
 using ReactiveMP
+using LinearAlgebra
+using Distributions
 
 @testset "MvNormalMeanPrecision" begin
 
     @testset "Constructor" begin
+        @test MvNormalMeanPrecision <: AbstractMvNormal
+
         @test MvNormalMeanPrecision([ 1.0, 1.0 ]) == MvNormalMeanPrecision([ 1.0, 1.0 ], [ 1.0, 1.0 ])
         @test MvNormalMeanPrecision([ 1.0, 2.0 ]) == MvNormalMeanPrecision([ 1.0, 2.0 ], [ 1.0, 1.0 ])
         @test MvNormalMeanPrecision([ 1, 2 ])     == MvNormalMeanPrecision([ 1.0, 2.0 ], [ 1.0, 1.0 ])
@@ -17,6 +21,10 @@ using ReactiveMP
         @test eltype(MvNormalMeanPrecision([ 1, 1 ], [ 1, 1 ]))         === Float64
         @test eltype(MvNormalMeanPrecision([ 1f0, 1f0 ]))               === Float32
         @test eltype(MvNormalMeanPrecision([ 1f0, 1f0 ], [ 1f0, 1f0 ])) === Float32
+    end
+
+    @testset "distrname" begin
+        @test ReactiveMP.distrname(MvNormalMeanPrecision(zeros(2))) === "MvNormalMeanPrecision"
     end
 
     @testset "Stats methods" begin
@@ -54,6 +62,24 @@ using ReactiveMP
         @test size(MvNormalMeanPrecision([ 0.0, 0.0, 0.0 ]))   === (3, )
     end
 
+    @testset "vague" begin
+        @test_throws MethodError vague(MvNormalMeanPrecision)
+
+        d1 = vague(MvNormalMeanPrecision, 2)
+
+        @test typeof(d1) <: MvNormalMeanPrecision
+        @test mean(d1)   == zeros(2)
+        @test invcov(d1) == Matrix(Diagonal(ReactiveMP.tiny * ones(2)))
+        @test ndims(d1) == 2
+
+        d2 = vague(MvNormalMeanPrecision, 3)
+
+        @test typeof(d2) <: MvNormalMeanPrecision
+        @test mean(d2)   == zeros(3)
+        @test invcov(d2) == Matrix(Diagonal(ReactiveMP.tiny * ones(3)))
+        @test ndims(d2)  == 3
+    end
+
     @testset "prod" begin
         
         @test prod(ProdPreserveParametrisation(), MvNormalMeanPrecision([ -1, -1 ], [ 2, 2 ]), MvNormalMeanPrecision([ 1, 1 ], [ 2, 4 ])) ≈ MvNormalMeanPrecision([ 0, 1/3 ], [ 4, 6 ])
@@ -64,6 +90,15 @@ using ReactiveMP
 
         @test prod(ProdPreserveParametrisation(), dist, dist) ≈ MvNormalMeanPrecision([0.20, 3.00, 4.00], [ 3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
 
+    end
+
+    @testset "Primitive types conversion" begin
+        @test convert(MvNormalMeanPrecision, zeros(2), Matrix(Diagonal(ones(2)))) == MvNormalMeanPrecision(zeros(2), Matrix(Diagonal(ones(2))))
+        @test begin
+            m = rand(5)
+            c = Matrix(Symmetric(rand(5, 5)))
+            convert(MvNormalMeanPrecision, m, c) == MvNormalMeanPrecision(m, c)
+        end
     end
 
 end
