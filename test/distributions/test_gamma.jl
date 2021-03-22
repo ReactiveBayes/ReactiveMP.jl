@@ -35,6 +35,11 @@ using Random
         @test GammaShapeScale(1f0, 2.0) == GammaShapeScale{Float64}(1.0, 2.0)
     end
 
+    @testset "vague" begin
+        vague(GammaShapeScale) == Gamma(1.0, ReactiveMP.huge)
+        vague(GammaShapeRate)  == Gamma(1.0, ReactiveMP.tiny)
+    end
+
     @testset "Stats methods for GammaShapeScale" begin
 
         dist1 = GammaShapeScale(1.0, 1.0)
@@ -117,6 +122,12 @@ using Random
         @test convert(GammaShapeRate{Float64}, 1, 1) == GammaShapeRate{Float64}(1.0, 1.0)
         @test convert(GammaShapeRate{Float64}, 1, 10) == GammaShapeRate{Float64}(1.0, 10.0)
         @test convert(GammaShapeRate{Float64}, 1.0, 0.1) == GammaShapeRate{Float64}(1.0, 0.1)
+
+        @test convert(GammaShapeRate, GammaShapeRate(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 2.0)
+        @test convert(GammaShapeScale, GammaShapeRate(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 1.0 / 2.0)
+
+        @test convert(GammaShapeRate, GammaShapeScale(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 1.0 / 2.0)
+        @test convert(GammaShapeScale, GammaShapeScale(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 2.0)
 
         check_basic_statistics = (left, right) -> begin
             @test mean(left)         ≈ mean(right)

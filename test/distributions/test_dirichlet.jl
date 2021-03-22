@@ -51,6 +51,9 @@ using Random
 
         @test promote_variate_type(Multivariate, Dirichlet)  === Dirichlet
         @test promote_variate_type(Matrixvariate, Dirichlet) === MatrixDirichlet
+
+        @test promote_variate_type(Multivariate, MatrixDirichlet)  === Dirichlet
+        @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
     end
 
 end
