@@ -101,6 +101,17 @@ using ReactiveMP
         @test convert(NormalMeanPrecision{Float64}, 0, 1) == NormalMeanPrecision{Float64}(0.0, 1.0)
         @test convert(NormalMeanPrecision{Float64}, 0, 10) == NormalMeanPrecision{Float64}(0.0, 10.0)
         @test convert(NormalMeanPrecision{Float64}, 0, 0.1) == NormalMeanPrecision{Float64}(0.0, 0.1)
+        @test convert(NormalMeanPrecision, 0, 1) == NormalMeanPrecision{Float64}(0.0, 1.0)
+        @test convert(NormalMeanPrecision, 0, 10) == NormalMeanPrecision{Float64}(0.0, 10.0)
+        @test convert(NormalMeanPrecision, 0, 0.1) == NormalMeanPrecision{Float64}(0.0, 0.1)
+    end
+
+    @testset "vague" begin
+        d1 = vague(NormalMeanPrecision)
+
+        @test typeof(d1) <: NormalMeanPrecision
+        @test mean(d1)      == 0.0
+        @test precision(d1) == ReactiveMP.tiny
     end
 
     @testset "prod" begin

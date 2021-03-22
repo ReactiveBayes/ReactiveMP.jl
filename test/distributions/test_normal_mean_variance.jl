@@ -101,6 +101,17 @@ using ReactiveMP
         @test convert(NormalMeanVariance{Float64}, 0, 1) == NormalMeanVariance{Float64}(0.0, 1.0)
         @test convert(NormalMeanVariance{Float64}, 0, 10) == NormalMeanVariance{Float64}(0.0, 10.0)
         @test convert(NormalMeanVariance{Float64}, 0, 0.1) == NormalMeanVariance{Float64}(0.0, 0.1)
+        @test convert(NormalMeanVariance, 0, 1) == NormalMeanVariance{Float64}(0.0, 1.0)
+        @test convert(NormalMeanVariance, 0, 10) == NormalMeanVariance{Float64}(0.0, 10.0)
+        @test convert(NormalMeanVariance, 0, 0.1) == NormalMeanVariance{Float64}(0.0, 0.1)
+    end
+
+    @testset "vague" begin
+        d1 = vague(NormalMeanVariance)
+
+        @test typeof(d1) <: NormalMeanVariance
+        @test mean(d1)      == 0.0
+        @test var(d1)       == ReactiveMP.huge
     end
 
     @testset "prod" begin
