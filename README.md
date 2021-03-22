@@ -4,13 +4,13 @@ ReactiveMP.jl is a Julia package for automatic Bayesian inference on a factor gr
 
 The current version supports belief propagation (sum-product message passing) and variational message passing (both Mean-Field and Structured VMP).
 
+# Development
+
+The framework is in active development stage and should not be considered as production ready. The core and API may be changed in the near future.
+
 # Getting Started
 
 There are demos available to get you started in the `demo/` folder. Comparative benchmarks are available in the `benchmarks/` folder.
-
-# Development
-
-The framework is in active development stage. API may change in the near future.
 
 ## ReactiveMP.jl is fast
 

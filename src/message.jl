@@ -27,6 +27,8 @@ Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(messa
 
 ## Message
 
+Base.:*(left::Message, right::Message) = multiply_messages(ProdPreserveParametrisation(), left, right)
+
 function multiply_messages(prod_parametrisation, left::Message, right::Message) 
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)

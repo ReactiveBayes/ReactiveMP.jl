@@ -20,6 +20,10 @@ getdata(marginal::Marginal)    = marginal.data
 is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
 
+# TupleTools.prod is a more efficient version of Base.all for NTuple here
+is_clamped(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_clamped, marginals))
+is_initial(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_initial, marginals))
+
 ## Statistics 
 
 Distributions.mean(marginal::Marginal)      = Distributions.mean(getdata(marginal))
@@ -58,25 +62,26 @@ getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 
-foldl_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(mapfoldl(as_message, (left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
-foldr_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(mapfoldr(as_message, (left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
+# Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
+# We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
+# We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
+foldl_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldl((left, right) -> multiply_messages(prod_parametrisation, left, right), Base.Generator(as_message, messages)))
+foldr_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldr((left, right) -> multiply_messages(prod_parametrisation, left, right), Base.Generator(as_message, messages)))
 
 function all_reduce_to_marginal(prod_parametrisation) 
-
     return let prod_parametrisation = prod_parametrisation
         (messages) -> begin
             # We propagate clamped message, in case if both are clamped
             is_prod_clamped = __check_all(is_clamped, messages)
             # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
             is_prod_initial = !is_prod_clamped && __check_all(v -> is_clamped(v) || is_initial(v), messages)
-
-            return Marginal(prod_all(prod_parametrisation, map(as_message, messages)), is_prod_clamped, is_prod_initial)
+            return Marginal(prod_all(prod_parametrisation, Base.Generator(getdata, messages)), is_prod_clamped, is_prod_initial)
         end
     end
 end
 
 # Fallback option
-prod_all(prod_parametrisation, messages) = getdata(foldl((left, right) -> multiply_messages(prod_parametrisation, left, right), messages))
+prod_all(prod_parametrisation, inputs) = foldl((left, right) -> prod(prod_parametrisation, left, right), inputs)
 
 ## Marginal observable
 
