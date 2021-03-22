@@ -43,6 +43,7 @@ using .ReactiveMPTestingHelpers
     end
 
     addtests("test_distributions.jl")
+    addtests("distributions/test_bernoulli.jl.jl")
     addtests("distributions/test_normal_mean_variance.jl")
     addtests("distributions/test_normal_mean_precision.jl")
     addtests("distributions/test_normal_weighted_mean_precision.jl")
