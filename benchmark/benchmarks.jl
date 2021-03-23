@@ -12,7 +12,7 @@ include("models/lgssm1.jl")
 
 SUITE["models"]["lgssm1"] = BenchmarkGroup([ "linear", "gaussian", "ssm", "univariate" ])
 
-for lgssm1_size in [ 100, 200, 300, 400, 500 ]
+for lgssm1_size in [ 100, 500 ]
     # Model creation benchmark
     SUITE["models"]["lgssm1"]["creation_$lgssm1_size"]  = @benchmarkable LGSSM1Benchmark.lgssm($lgssm1_size)
     # Inference benchmark
@@ -26,7 +26,7 @@ include("models/lgssm2.jl")
 
 SUITE["models"]["lgssm2"] = BenchmarkGroup([ "linear", "gaussian", "ssm", "multivariate" ])
 
-for lgssm2_size in [ 100, 200, 300, 400, 500 ]
+for lgssm2_size in [ 100, 500 ]
     # Model creation benchmark
     SUITE["models"]["lgssm2"]["creation_$lgssm2_size"]  = @benchmarkable LGSSM2Benchmark.lgssm($lgssm2_size)
     # Inference benchmark
