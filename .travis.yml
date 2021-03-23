@@ -27,7 +27,7 @@ jobs:
         - julia --project=benchmark -e 'using BenchmarkCI; BenchmarkCI.judge()'
         - julia --project=benchmark -e 'using BenchmarkCI; BenchmarkCI.displayjudgement()'
       script:
-        - julia -e 'using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = "BENCHMARK_KEY"); '
+        - julia --project=benchmark -e 'using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = "BENCHMARK_KEY"); '
       after_success: skip
     - stage: coverage
       julia: 1.5
