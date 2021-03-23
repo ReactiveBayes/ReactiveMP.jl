@@ -32,6 +32,6 @@ for lgssm2_size in [ 100, 200, 300, 400, 500 ]
     # Model creation benchmark
     SUITE["models"]["lgssm2"]["creation_100"]  = @benchmarkable LGSSM2Benchmark.lgssm($lgssm2_size)
     # Inference benchmark
-    SUITE["models"]["lgssm2"]["inference_100"] = @benchmarkable LGSSM2Benchmark.benchmark(input) setup=(input=LGSSM1Benchmark.generate_input(rng, lgssm2_size))
+    SUITE["models"]["lgssm2"]["inference_100"] = @benchmarkable LGSSM2Benchmark.benchmark(input) setup=(input=LGSSM2Benchmark.generate_input(rng, lgssm2_size))
 end
 # ------------------------------------------------------------ #
