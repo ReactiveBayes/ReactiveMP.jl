@@ -62,7 +62,7 @@ function benchmark(input)
 
     subscription = subscribe!(marginals, xbuffer)
     
-    update!(y, observations)
+    update!(y, input)
 
     unsubscribe!(subscription)
     
