@@ -20,12 +20,6 @@ jobs:
       script:
         - julia -e 'import Pkg; Pkg.test("ReactiveMP")'
       after_success: skip
-    - stage: coverage
-      julia: 1.5
-      script:
-        - julia -e 'import Pkg; Pkg.test("ReactiveMP", coverage=true, julia_args=["--inline=no"])';
-        - julia -e 'import Pkg; cd(Pkg.dir("ReactiveMP")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-      after_success: skip
     - stage: benchmarks
       julia: 1.5
       before_script:
@@ -34,6 +28,12 @@ jobs:
         - julia -e 'using BenchmarkCI; BenchmarkCI.judge()'
         - julia -e 'using BenchmarkCI; BenchmarkCI.displayjudgement()'
         - julia -e 'using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = "BENCHMARK_KEY"); '
+      after_success: skip
+    - stage: coverage
+      julia: 1.5
+      script:
+        - julia -e 'import Pkg; Pkg.test("ReactiveMP", coverage=true, julia_args=["--inline=no"])';
+        - julia -e 'import Pkg; cd(Pkg.dir("ReactiveMP")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
       after_success: skip
     - stage: documentation
       julia: 1.5
@@ -44,6 +44,6 @@ jobs:
 
 stages:
   - test
-  - coverage
   - benchmarks
+  - coverage
   - documentation
