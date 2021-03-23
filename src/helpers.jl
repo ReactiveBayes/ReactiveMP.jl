@@ -9,6 +9,8 @@ import Base: IteratorEltype, HasEltype
 import Base: eltype, length, size
 import Base: IndexStyle, IndexLinear, getindex
 
+import Rocket: similar_typeof
+
 struct SkipIndexIterator{T, I} <: AbstractVector{T}
     iterator :: I
     skip     :: Int
@@ -30,7 +32,10 @@ Base.eltype(::Type{<:SkipIndexIterator{T}}) where T = T
 Base.length(iter::SkipIndexIterator)                = length(iter.iterator) - 1
 Base.size(iter::SkipIndexIterator)                  = (length(iter), )
 
-Base.getindex(iter::SkipIndexIterator, i) = i < skip(iter) ? @inbounds(iter.iterator[i]) : @inbounds(iter.iterator[i + 1])
+Base.getindex(iter::SkipIndexIterator, i::Int)               = i < skip(iter) ? @inbounds(iter.iterator[i]) : @inbounds(iter.iterator[i + 1])
+Base.getindex(iter::SkipIndexIterator, i::CartesianIndex{1}) = Base.getindex(iter, first(i.I))
+
+Rocket.similar_typeof(::SkipIndexIterator, ::Type{L}) where L = Vector{L}
 
 """
     @symmetrical `function_definition`
