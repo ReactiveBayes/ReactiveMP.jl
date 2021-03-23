@@ -100,6 +100,17 @@ using ReactiveMP
         @test convert(NormalWeightedMeanPrecision{Float64}, 0, 1) == NormalWeightedMeanPrecision{Float64}(0.0, 1.0)
         @test convert(NormalWeightedMeanPrecision{Float64}, 0, 10) == NormalWeightedMeanPrecision{Float64}(0.0, 10.0)
         @test convert(NormalWeightedMeanPrecision{Float64}, 0, 0.1) == NormalWeightedMeanPrecision{Float64}(0.0, 0.1)
+        @test convert(NormalWeightedMeanPrecision, 0, 1) == NormalWeightedMeanPrecision{Float64}(0.0, 1.0)
+        @test convert(NormalWeightedMeanPrecision, 0, 10) == NormalWeightedMeanPrecision{Float64}(0.0, 10.0)
+        @test convert(NormalWeightedMeanPrecision, 0, 0.1) == NormalWeightedMeanPrecision{Float64}(0.0, 0.1)
+    end
+
+    @testset "vague" begin
+        d1 = vague(NormalWeightedMeanPrecision)
+
+        @test typeof(d1) <: NormalWeightedMeanPrecision
+        @test mean(d1)      == 0.0
+        @test precision(d1) == ReactiveMP.tiny
     end
 
     @testset "prod" begin
@@ -107,6 +118,9 @@ using ReactiveMP
         @test prod(ProdPreserveParametrisation(), NormalWeightedMeanPrecision(-1, 1/1), NormalWeightedMeanPrecision(1, 1/1)) ≈ NormalWeightedMeanPrecision(0, 2)
         @test prod(ProdPreserveParametrisation(), NormalWeightedMeanPrecision(-1, 1/2), NormalWeightedMeanPrecision(1, 1/4)) ≈ NormalWeightedMeanPrecision(0, 3/4)
         @test prod(ProdPreserveParametrisation(), NormalWeightedMeanPrecision(2, 1/2), NormalWeightedMeanPrecision(0, 1/10)) ≈ NormalWeightedMeanPrecision(2, 3/5)
+        @test prod(ProdBestSuitableParametrisation(), NormalWeightedMeanPrecision(-1, 1/1), NormalWeightedMeanPrecision(1, 1/1)) ≈ NormalWeightedMeanPrecision(0, 2)
+        @test prod(ProdBestSuitableParametrisation(), NormalWeightedMeanPrecision(-1, 1/2), NormalWeightedMeanPrecision(1, 1/4)) ≈ NormalWeightedMeanPrecision(0, 3/4)
+        @test prod(ProdBestSuitableParametrisation(), NormalWeightedMeanPrecision(2, 1/2), NormalWeightedMeanPrecision(0, 1/10)) ≈ NormalWeightedMeanPrecision(2, 3/5)
 
     end
 

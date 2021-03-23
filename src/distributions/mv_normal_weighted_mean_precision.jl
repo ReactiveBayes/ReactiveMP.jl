@@ -9,7 +9,7 @@ struct MvNormalWeightedMeanPrecision{ T <: Real, M <: AbstractVector{T}, P <: Ab
     Λ  :: P
 end
 
-function MvNormalWeightedMeanPrecision(xi::AbstractVector{ <: Real}, Λ::AbstractMatrix{ <: Real }) 
+function MvNormalWeightedMeanPrecision(xi::AbstractVector{ <: Real }, Λ::AbstractMatrix{ <: Real }) 
     T = promote_type(eltype(xi), eltype(Λ))
     return MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
@@ -52,7 +52,7 @@ function Base.convert(::Type{ <: MvNormalWeightedMeanPrecision{T} }, xi::Abstrac
     MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{ <: MvNormalWeightedMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
+vague(::Type{ <: MvNormalWeightedMeanPrecision }, dims::Int) = MvNormalWeightedMeanPrecision(zeros(dims), fill(tiny, dims))
 
 function Base.prod(::ProdBestSuitableParametrisation, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     return prod(ProdPreserveParametrisation(), left, right)

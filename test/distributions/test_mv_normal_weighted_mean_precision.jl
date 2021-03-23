@@ -2,10 +2,14 @@ module MvNormalWeightedMeanPrecisionTest
 
 using Test
 using ReactiveMP
+using LinearAlgebra
+using Distributions
 
 @testset "MvNormalWeightedMeanPrecision" begin
 
     @testset "Constructor" begin
+        @test MvNormalWeightedMeanPrecision <: AbstractMvNormal
+
         @test MvNormalWeightedMeanPrecision([ 1.0, 1.0 ]) == MvNormalWeightedMeanPrecision([ 1.0, 1.0 ], [ 1.0, 1.0 ])
         @test MvNormalWeightedMeanPrecision([ 1.0, 2.0 ]) == MvNormalWeightedMeanPrecision([ 1.0, 2.0 ], [ 1.0, 1.0 ])
         @test MvNormalWeightedMeanPrecision([ 1, 2 ])     == MvNormalWeightedMeanPrecision([ 1.0, 2.0 ], [ 1.0, 1.0 ])
@@ -17,6 +21,10 @@ using ReactiveMP
         @test eltype(MvNormalWeightedMeanPrecision([ 1, 1 ], [ 1, 1 ]))         === Float64
         @test eltype(MvNormalWeightedMeanPrecision([ 1f0, 1f0 ]))               === Float32
         @test eltype(MvNormalWeightedMeanPrecision([ 1f0, 1f0 ], [ 1f0, 1f0 ])) === Float32
+    end
+
+    @testset "distrname" begin
+        @test ReactiveMP.distrname(MvNormalWeightedMeanPrecision(zeros(2))) === "MvNormalWeightedMeanPrecision"
     end
 
     @testset "Stats methods" begin
@@ -54,16 +62,44 @@ using ReactiveMP
         @test size(MvNormalWeightedMeanPrecision([ 0.0, 0.0, 0.0 ]))   === (3, )
     end
 
+    @testset "vague" begin
+        @test_throws MethodError vague(MvNormalWeightedMeanPrecision)
+
+        d1 = vague(MvNormalWeightedMeanPrecision, 2)
+
+        @test typeof(d1) <: MvNormalWeightedMeanPrecision
+        @test mean(d1)   == zeros(2)
+        @test invcov(d1) == Matrix(Diagonal(ReactiveMP.tiny * ones(2)))
+        @test ndims(d1) == 2
+
+        d2 = vague(MvNormalWeightedMeanPrecision, 3)
+
+        @test typeof(d2) <: MvNormalWeightedMeanPrecision
+        @test mean(d2)   == zeros(3)
+        @test invcov(d2) == Matrix(Diagonal(ReactiveMP.tiny * ones(3)))
+        @test ndims(d2)  == 3
+    end
+
     @testset "prod" begin
         
-        @test prod(ProdPreserveParametrisation(), MvNormalWeightedMeanPrecision([ -1, -1 ], [ 2, 2 ]), MvNormalWeightedMeanPrecision([ 1, 1 ], [ 2, 4 ])) ≈ MvNormalWeightedMeanPrecision([ 0, 0 ], [ 4, 6 ])
+        @test prod(ProdPreserveParametrisation(), MvNormalWeightedMeanPrecision([ -1, -1 ], [ 2, 2 ]), MvNormalWeightedMeanPrecision([ 1, 1 ], [ 2, 4 ]))     ≈ MvNormalWeightedMeanPrecision([ 0, 0 ], [ 4, 6 ])
+        @test prod(ProdBestSuitableParametrisation(), MvNormalWeightedMeanPrecision([ -1, -1 ], [ 2, 2 ]), MvNormalWeightedMeanPrecision([ 1, 1 ], [ 2, 4 ])) ≈ MvNormalWeightedMeanPrecision([ 0, 0 ], [ 4, 6 ])
 
         xi   = [ 0.2, 3.0, 4.0 ]
         Λ    = [ 1.5 -0.1 0.1; -0.1 1.8 0.0; 0.1 0.0 3.5 ]
         dist = MvNormalWeightedMeanPrecision(xi, Λ)
 
-        @test prod(ProdPreserveParametrisation(), dist, dist) ≈ MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [ 3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
+        @test prod(ProdPreserveParametrisation(), dist, dist)     ≈ MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [ 3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
+        @test prod(ProdBestSuitableParametrisation(), dist, dist) ≈ MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [ 3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
+    end
 
+    @testset "Primitive types conversion" begin
+        @test convert(MvNormalWeightedMeanPrecision, zeros(2), Matrix(Diagonal(ones(2)))) == MvNormalWeightedMeanPrecision(zeros(2), Matrix(Diagonal(ones(2))))
+        @test begin
+            m = rand(5)
+            c = Matrix(Symmetric(rand(5, 5)))
+            convert(MvNormalWeightedMeanPrecision, m, c) == MvNormalWeightedMeanPrecision(m, c)
+        end
     end
 
 end

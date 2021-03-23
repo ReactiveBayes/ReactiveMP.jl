@@ -9,7 +9,7 @@ struct MvNormalMeanPrecision{ T <: Real, M <: AbstractVector{T}, P <: AbstractMa
     Λ :: P
 end
 
-function MvNormalMeanPrecision(μ::AbstractVector{ <: Real}, Λ::AbstractMatrix{ <: Real }) 
+function MvNormalMeanPrecision(μ::AbstractVector{ <: Real }, Λ::AbstractMatrix{ <: Real }) 
     T = promote_type(eltype(μ), eltype(Λ))
     return MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
