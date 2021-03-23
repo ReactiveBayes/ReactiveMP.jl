@@ -23,9 +23,8 @@ jobs:
     - stage: benchmarks
       julia: 1.5
       before_script:
-        - julia -e 'import Pkg; Pkg.add([ "BenchmarkCI", "BenchmarkTools", "PkgBenchmark" ]);'
-        - julia -e 'using BenchmarkCI; BenchmarkCI.judge()'
-        - julia -e 'using BenchmarkCI; BenchmarkCI.displayjudgement()'
+        - julia --project=benchmark -e 'using BenchmarkCI; BenchmarkCI.judge()'
+        - julia --project=benchmark -e 'using BenchmarkCI; BenchmarkCI.displayjudgement()'
       script:
         - julia -e 'using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = "BENCHMARK_KEY"); '
       after_success: skip
