@@ -23,6 +23,7 @@ jobs:
     - stage: benchmarks
       julia: 1.5
       before_script:
+        - julia --project=benchmark -e 'import Pkg; Pkg.instantiate()'
         - julia --project=benchmark -e 'using BenchmarkCI; BenchmarkCI.judge()'
         - julia --project=benchmark -e 'using BenchmarkCI; BenchmarkCI.displayjudgement()'
       script:
