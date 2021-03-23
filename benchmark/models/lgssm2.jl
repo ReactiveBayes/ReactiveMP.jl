@@ -6,6 +6,7 @@ using Rocket
 using ReactiveMP
 using GraphPPL
 using Distributions
+using LinearAlgebra
 
 @model function lgssm(n)
     θ = π / 35
