@@ -6,8 +6,6 @@ const SUITE = BenchmarkGroup()
 
 SUITE["models"] = BenchmarkGroup([ "models", "ssm", "graphppl" ])
 
-rng = MersenneTwister(1234)
-
 # Simple Linear Gaussian State Space Model Benchmarks 
 # ------------------------------------------------------------ #
 include("models/lgssm1.jl")
@@ -18,7 +16,7 @@ for lgssm1_size in [ 100, 200, 300, 400, 500 ]
     # Model creation benchmark
     SUITE["models"]["lgssm1"]["creation_100"]  = @benchmarkable LGSSM1Benchmark.lgssm($lgssm1_size)
     # Inference benchmark
-    SUITE["models"]["lgssm1"]["inference_100"] = @benchmarkable LGSSM1Benchmark.benchmark(input) setup=(input=LGSSM1Benchmark.generate_input(rng, lgssm1_size))
+    SUITE["models"]["lgssm1"]["inference_100"] = @benchmarkable LGSSM1Benchmark.benchmark(input) setup=(input=LGSSM1Benchmark.generate_input(MersenneTwister(1234), $lgssm1_size))
 end
 # ------------------------------------------------------------ #
 
@@ -32,6 +30,6 @@ for lgssm2_size in [ 100, 200, 300, 400, 500 ]
     # Model creation benchmark
     SUITE["models"]["lgssm2"]["creation_100"]  = @benchmarkable LGSSM2Benchmark.lgssm($lgssm2_size)
     # Inference benchmark
-    SUITE["models"]["lgssm2"]["inference_100"] = @benchmarkable LGSSM2Benchmark.benchmark(input) setup=(input=LGSSM2Benchmark.generate_input(rng, lgssm2_size))
+    SUITE["models"]["lgssm2"]["inference_100"] = @benchmarkable LGSSM2Benchmark.benchmark(input) setup=(input=LGSSM2Benchmark.generate_input(MersenneTwister(1234), $lgssm2_size))
 end
 # ------------------------------------------------------------ #
