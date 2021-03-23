@@ -45,4 +45,5 @@ jobs:
 stages:
   - test
   - coverage
+  - benchmarks
   - documentation
