@@ -1,4 +1,4 @@
-.ipynb_checkpoints
+**/.ipynb_checkpoints
 
 docs/build
 docs/Manifest.toml
@@ -26,5 +26,5 @@ examples/*Compiled
 **/Manifest.toml
 !benchmark/Manifest.toml
 
-.benchmarkci
+**/.benchmarkci
 benchmark/*.json
