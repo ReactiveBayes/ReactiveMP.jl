@@ -25,12 +25,12 @@ using Distributions
     return x, y
 end
 
-generate_input(rng, n) = collect(1:n) + rand(rng, Normal(0.0, sqrt(P)), n);
+generate_input(rng, n) = collect(1:n) + rand(rng, Normal(0.0, sqrt(1.0)), n);
 
 function benchmark(input)
     n = length(input)
     
-    _, (x, y) = smoothing(n);
+    _, (x, y) = lgssm(n);
 
     x_buffer  = buffer(Marginal, n)
     marginals = getmarginals(x)

@@ -24,6 +24,7 @@ Coverage.ipynb
 examples/*Compiled
 
 **/Manifest.toml
+!benchmark/Manifest.toml
 
 .benchmarkci
 benchmark/*.json
