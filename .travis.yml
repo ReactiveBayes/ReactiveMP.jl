@@ -25,7 +25,7 @@ jobs:
       script:
         - cd benchmark
         - julia --project=. -e 'using Pkg; Pkg.instantiate()'
-        - julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.judge(target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3`), pkdir = "$(pwd())/../")'
+        - julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.judge(target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3`), pkgdir = "$(pwd())/../")'
         - julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.displayjudgement()'
         - julia --project=. -e 'using Base64; using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.jl.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = String(Base64.base64decode(ENV["BENCHMARK_KEY"]))); '
         - cd ..
