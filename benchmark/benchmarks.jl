@@ -4,7 +4,7 @@ using ReactiveMP
 
 import Pkg;
 
-# Pkg.instantiate()
+Pkg.instantiate()
 Pkg.status()
 
 # Define a parent BenchmarkGroup to contain our suite
