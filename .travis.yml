@@ -22,14 +22,13 @@ jobs:
       after_success: skip
     - stage: benchmarks
       julia: 1.5
-      before_script:
+      script:
         - cd benchmark
         - julia --project=. -e 'using Pkg; Pkg.instantiate()'
-        - julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.judge(target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3`), script = "$(pwd())/benchmarks.jl")'
+        - julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.judge(target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3`), pkdir = "$(pwd())/../")'
         - julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.displayjudgement()'
+        - julia --project=. -e 'using Base64; using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.jl.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = String(Base64.base64decode(ENV["BENCHMARK_KEY"]))); '
         - cd ..
-      script:
-        - julia --project=benchmark -e 'using Base64; using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.jl.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = String(Base64.base64decode(ENV["BENCHMARK_KEY"]))); '
       after_success: skip
     - stage: coverage
       julia: 1.5
