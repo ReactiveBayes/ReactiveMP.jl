@@ -40,3 +40,5 @@ for lgssm2_size in [ 100, 500 ]
     SUITE["models"]["lgssm2"]["inference_$lgssm2_size"] = @benchmarkable LGSSM2Benchmark.benchmark(input) setup=(input=LGSSM2Benchmark.generate_input(MersenneTwister(1234), $lgssm2_size))
 end
 # ------------------------------------------------------------ #
+
+BenchmarkTools.warmup(suite)
