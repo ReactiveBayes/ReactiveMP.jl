@@ -41,4 +41,4 @@ for lgssm2_size in [ 100, 500 ]
 end
 # ------------------------------------------------------------ #
 
-BenchmarkTools.warmup(suite)
+BenchmarkTools.warmup(SUITE)
