@@ -4,7 +4,7 @@ using ReactiveMP
 
 import Pkg;
 
-Pkg.resolve()
+# Pkg.resolve()
 Pkg.instantiate()
 Pkg.status()
 
