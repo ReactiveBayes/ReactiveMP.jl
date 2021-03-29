@@ -13,27 +13,19 @@ strategy_fn(::FoldLeftProdStrategy, prod_parametrisation)  = foldl_reduce_to_mar
 strategy_fn(::FoldRightProdStrategy, prod_parametrisation) = foldr_reduce_to_marginal(prod_parametrisation)
 strategy_fn(::AllAtOnceProdStrategy, prod_parametrisation) = all_reduce_to_marginal(prod_parametrisation)
 
-## Random variable props
-
-mutable struct RandomVariableProps
-    marginal :: Union{Nothing, MarginalObservable}
-    portal   :: AbstractPortal 
-
-    RandomVariableProps() = new(nothing, EmptyPortal())
-end
-
 ## Random variable implementation
 
-struct RandomVariable{C, S} <: AbstractVariable
+mutable struct RandomVariable{C, S} <: AbstractVariable
     name          :: Symbol
     inputmsgs     :: Vector{LazyObservable{AbstractMessage}}
-    props         :: RandomVariableProps
     constraint    :: C
     prod_strategy :: S
+    marginal      :: Union{Nothing, MarginalObservable}
+    portal        :: AbstractPortal
 end
 
 function randomvar(name::Symbol; constraint = Marginalisation(), prod_strategy = FoldLeftProdStrategy()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), RandomVariableProps(), constraint, prod_strategy)
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), constraint, prod_strategy, nothing, EmptyPortal())
 end
 
 function randomvar(name::Symbol, dims::Tuple; constraint = Marginalisation(), prod_strategy = FoldLeftProdStrategy())
@@ -59,11 +51,11 @@ getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), reduce_messages)
 
-inbound_portal(randomvar::RandomVariable)          = randomvar.props.portal
-inbound_portal!(randomvar::RandomVariable, portal) = randomvar.props.portal = portal
+inbound_portal(randomvar::RandomVariable)          = randomvar.portal
+inbound_portal!(randomvar::RandomVariable, portal) = randomvar.portal = portal
 
-_getmarginal(randomvar::RandomVariable)                                = randomvar.props.marginal
-_setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.props.marginal = marginal
+_getmarginal(randomvar::RandomVariable)                                = randomvar.marginal
+_setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.marginal = marginal
 _makemarginal(randomvar::RandomVariable)                               = collectLatest(AbstractMessage, Marginal, randomvar.inputmsgs, strategy_fn(prod_strategy(randomvar), prod_parametrisation(randomvar)))
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)

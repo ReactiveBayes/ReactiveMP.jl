@@ -135,15 +135,6 @@ function default_meta end
 
 default_meta(any) = nothing
 
-## NodeInterface Props
-
-mutable struct NodeInterfaceProps
-    connected_variable :: Union{Nothing, AbstractVariable}
-    connected_index    :: Int
-
-    NodeInterfaceProps() = new(nothing, 0)
-end
-
 ## NodeInterface
 
 """
@@ -153,13 +144,14 @@ end
 
 See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
-struct NodeInterface
-    name  :: Symbol
-    m_out :: LazyObservable{AbstractMessage}
-    m_in  :: LazyObservable{AbstractMessage}
-    props :: NodeInterfaceProps
+mutable struct NodeInterface
+    name               :: Symbol
+    m_out              :: LazyObservable{AbstractMessage}
+    m_in               :: LazyObservable{AbstractMessage}
+    connected_variable :: Union{Nothing, AbstractVariable}
+    connected_index    :: Int
 
-    NodeInterface(name::Symbol) = new(name, lazy(AbstractMessage), lazy(AbstractMessage), NodeInterfaceProps())
+    NodeInterface(name::Symbol) = new(name, lazy(AbstractMessage), lazy(AbstractMessage), nothing, 0)
 end
 
 Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
@@ -210,8 +202,8 @@ Connects a variable with the interface and given index. Index is used to disting
 See also: [`NodeInterface`](@ref), [`connectedvar`](@ref), [`connectedvarindex`](@ref)
 """
 function connectvariable!(interface::NodeInterface, variable, index)
-    interface.props.connected_variable = variable
-    interface.props.connected_index    = index
+    interface.connected_variable = variable
+    interface.connected_index    = index
 end
 
 """
@@ -221,7 +213,7 @@ Returns connected variable for the interface.
 
 See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvarindex`](@ref)
 """
-connectedvar(interface::NodeInterface)      = interface.props.connected_variable
+connectedvar(interface::NodeInterface)      = interface.connected_variable
 
 """
     connectedvarindex(interface)
@@ -230,7 +222,7 @@ Returns an index of connected variable for the interface.
 
 See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref)
 """
-connectedvarindex(interface::NodeInterface) = interface.props.connected_index
+connectedvarindex(interface::NodeInterface) = interface.connected_index
 
 """
     inbound_portal(interface)
@@ -270,18 +262,8 @@ inbound_portal(interface::IndexedNodeInterface)                    = inbound_por
 
 ## FactorNodeLocalMarginals
 
-mutable struct FactorNodeLocalMarginalProps
-    stream :: Union{Nothing, MarginalObservable}
-
-    FactorNodeLocalMarginalProps() = new(nothing)
-end
-
 """
     FactorNodeLocalMarginal
-
-# Fields
-1. name  :: Symbol - name of local marginal, e.g. `μ`. Name is `_` separated in case of joint, eg. `μ_τ`
-2. props :: FactorNodeLocalMarginalProps - mutable object which is holding a stream of marginals or nothing
 
 This object represents local marginals for some specific factor node. 
 Local marginal can be joint in case of structured factorisation. 
@@ -289,19 +271,19 @@ Local to factor node marginal also can be shared with a corresponding marginal o
 
 See also: [`FactorNodeLocalMarginals`](@ref)
 """
-struct FactorNodeLocalMarginal 
-    index :: Int
-    name  :: Symbol
-    props :: FactorNodeLocalMarginalProps
+mutable struct FactorNodeLocalMarginal 
+    index  :: Int
+    name   :: Symbol
+    stream :: Union{Nothing, MarginalObservable}
 
-    FactorNodeLocalMarginal(index::Int, name::Symbol) = new(index, name, FactorNodeLocalMarginalProps())
+    FactorNodeLocalMarginal(index::Int, name::Symbol) = new(index, name, nothing)
 end
 
 index(localmarginal::FactorNodeLocalMarginal) = localmarginal.index
 name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
 
-getstream(localmarginal::FactorNodeLocalMarginal) = localmarginal.props.stream
-setstream!(localmarginal::FactorNodeLocalMarginal, observable::MarginalObservable) = localmarginal.props.stream = observable
+getstream(localmarginal::FactorNodeLocalMarginal) = localmarginal.stream
+setstream!(localmarginal::FactorNodeLocalMarginal, observable::MarginalObservable) = localmarginal.stream = observable
 
 """
     FactorNodeLocalMarginals
