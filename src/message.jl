@@ -72,23 +72,19 @@ loggammamean(message::Message)    = loggammamean(getdata(message))
 
 ## Variational Message
 
-mutable struct VariationalMessageProps
-    cache :: Union{Nothing, Message}
-end
-
-struct VariationalMessage{R, S, F} <: AbstractMessage
+mutable struct VariationalMessage{R, S, F} <: AbstractMessage
     messages   :: R
     marginals  :: S
     mappingFn  :: F
-    props      :: VariationalMessageProps
+    cache      :: Union{Nothing, Message}
 end
 
-VariationalMessage(messages::R, marginals::S, mappingFn::F) where { R, S, F } = VariationalMessage(messages, marginals, mappingFn, VariationalMessageProps(nothing))
+VariationalMessage(messages::R, marginals::S, mappingFn::F) where { R, S, F } = VariationalMessage(messages, marginals, mappingFn, nothing)
 
 Base.show(io::IO, ::VariationalMessage) = print(io, string("VariationalMessage(:postponed)"))
 
-getcache(vmessage::VariationalMessage)                    = vmessage.props.cache
-setcache!(vmessage::VariationalMessage, message::Message) = vmessage.props.cache = message
+getcache(vmessage::VariationalMessage)                    = vmessage.cache
+setcache!(vmessage::VariationalMessage, message::Message) = vmessage.cache = message
 
 compute_message(vmessage::VariationalMessage) = vmessage.mappingFn((vmessage.messages, getrecent(vmessage.marginals)))
 
