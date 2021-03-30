@@ -55,4 +55,19 @@ for hgf1_size in [ 100, 500, 1000 ]
 end
 # ------------------------------------------------------------ #
 
+# Hidden Markov Model Benchmarks 
+# ------------------------------------------------------------ #
+include("models/hmm1.jl")
+
+SUITE["models"]["hmm1"] = BenchmarkGroup([ "hmm", "ssm", "discrete" ])
+
+
+for hmm1_size in [ 100, 500 ]
+    # Creation Benchmark
+    SUITE["models"]["hmm1"]["creation_$hmm1_size"]  = @benchmarkable HMM1Benchmark.hmm($hmm1_size)
+    # Inference benchmark
+    SUITE["models"]["hmm1"]["inference_$hmm1_size"] = @benchmarkable HMM1Benchmark.benchmark(input) setup=(input=HMM1Benchmark.generate_input(MersenneTwister(1234), $hmm1_size))
+end
+# ------------------------------------------------------------ #
+
 BenchmarkTools.warmup(SUITE)
