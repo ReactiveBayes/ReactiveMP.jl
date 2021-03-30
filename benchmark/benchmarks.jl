@@ -41,4 +41,18 @@ for lgssm2_size in [ 100, 500 ]
 end
 # ------------------------------------------------------------ #
 
+# Hierarchical Gaussian Filter Model Benchmarks 
+# ------------------------------------------------------------ #
+include("models/hgf1.jl")
+
+SUITE["models"]["hgf1"] = BenchmarkGroup([ "hierarchical", "gaussian", "ssm", "univariate" ])
+
+SUITE["models"]["hgf1"]["creation"]  = @benchmarkable HGF1Benchmark.hgf()
+
+for hgf1_size in [ 100, 500, 1000 ]
+    # Inference benchmark
+    SUITE["models"]["hgf1"]["inference_$hgf1_size"] = @benchmarkable HGF1Benchmark.benchmark(input) setup=(input=HGF1Benchmark.generate_input(MersenneTwister(1234), $hgf1_size))
+end
+# ------------------------------------------------------------ #
+
 BenchmarkTools.warmup(SUITE)
