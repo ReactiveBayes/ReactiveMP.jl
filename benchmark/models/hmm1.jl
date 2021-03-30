@@ -44,12 +44,12 @@ function generate_input(rng, n)
     # Initial state
     s_0 = [1.0, 0.0, 0.0] 
     # Generate some data
-    s = Vector{Vector{Float64}}(undef, n_samples) # one-hot encoding of the states
-    x = Vector{Vector{Float64}}(undef, n_samples) # one-hot encoding of the observations
+    s = Vector{Vector{Float64}}(undef, n) # one-hot encoding of the states
+    x = Vector{Vector{Float64}}(undef, n) # one-hot encoding of the observations
     
     s_prev = s_0
     
-    for t = 1:n_samples
+    for t = 1:n
         a = A * s_prev
         s[t] = rand_vec(rng, Categorical(a ./ sum(a)))
         b = B * s[t]
