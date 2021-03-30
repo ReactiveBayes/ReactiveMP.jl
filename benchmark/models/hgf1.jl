@@ -106,8 +106,8 @@ function benchmark(input)
         
         release!(ms_scheduler)
         
-        current_zt = mz[end]
-        current_xt = mx[end]
+        current_zt = getvalues(mz)[end]
+        current_xt = getvalues(mx)[end]
     end
     
     unsubscribe!(s_mz)
