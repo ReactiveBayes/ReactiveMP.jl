@@ -83,7 +83,7 @@ function benchmark(input)
     end
     
     for i in 1:20
-        update!(x, data)
+        update!(x, input)
     end
     
     unsubscribe!(ssub)
