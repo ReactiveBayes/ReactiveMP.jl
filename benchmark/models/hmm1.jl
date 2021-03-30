@@ -63,7 +63,7 @@ end
 function benchmark(input)
     n = length(input)
     
-    model, (s, x, A, B) = transition_model(n)
+    model, (s, x, A, B) = hmm(n)
     
     sbuffer = keep(Vector{Marginal})
     Abuffer = keep(Marginal)
