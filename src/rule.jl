@@ -69,7 +69,7 @@ function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     end
 
     out_names = length(names) === 0 ? :Nothing : :(Type{ Val{ $(tuple(map(n -> Symbol(string(n)[(length(string(prefix)) + 1):end]), names)...)) } })
-    out_types = length(types) === 0 ? :Nothing : :(Tuple{ $(types...) })
+    out_types = length(types) === 0 ? :Nothing : :(Tuple{ $(map(t -> :(<:$t), types)...) })
 
     return out_names, out_types, init_block
 end
