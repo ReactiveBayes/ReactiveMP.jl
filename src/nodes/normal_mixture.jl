@@ -112,8 +112,8 @@ function get_marginals_observable(::NormalMixtureNode{N, F}, marginal_dependenci
     marginal_names = Val{ (name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1])) }
     marginals_observable = combineLatest((
         getmarginal(connectedvar(varinterface), IncludeAll()),
-        collectLatest(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces))),
-        collectLatest(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces))),
+        collectLatest(Marginal, Nothing, map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)), _ -> nothing),
+        collectLatest(Marginal, Nothing, map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)), _ -> nothing),
     ), PushNew()) |> map_to((
         getmarginal(connectedvar(varinterface), IncludeAll()),
         map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces),
@@ -168,7 +168,7 @@ end
 end
 
 __normal_mixture_collect_interfaces_score(marginals::NTuple)         = combineLatest(marginals, PushNew())
-__normal_mixture_collect_interfaces_score(marginals::AbstractVector) = collectLatest(marginals)
+__normal_mixture_collect_interfaces_score(marginals::AbstractVector) = collectLatest(Marginal, AbstractVector{Marginal}, marginals, identity)
 
 function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
     
