@@ -443,35 +443,22 @@ apply_mapping(msgs_observable, marginals_observable, mapping) = (dependencies) -
 apply_mapping(msgs_observable, marginals_observable::SingleObservable{Nothing}, mapping) = mapping
 
 function activate!(model, factornode::AbstractFactorNode)
+    fform = functionalform(factornode)
+    meta  = metadata(factornode)
+
     for (iindex, interface) in enumerate(interfaces(factornode))
         message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
 
         msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
-        fform       = functionalform(factornode)
         vtag        = tag(interface)
         vconstraint = constraint(connectedvar(interface))
-        meta        = metadata(factornode)
         
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
         vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
 
-        mapping = let fform = fform, vtag = vtag, vconstraint = vconstraint, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (dependencies) -> begin 
-                messages  = dependencies[1]
-                marginals = dependencies[2]
-
-                # Message is clamped if all of the inputs are clamped
-                is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
-
-                # Message is initial if it is not clamped and all of the inputs are either clamped or initial
-                is_message_initial = !is_message_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
-
-                return Message(rule(fform, vtag, vconstraint, msgs_names, messages, marginal_names, marginals, meta, factornode), is_message_clamped, is_message_initial)
-            end
-        end
-
+        mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
         mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
 
         vmessageout = vmessageout |> map(AbstractMessage, mapping)

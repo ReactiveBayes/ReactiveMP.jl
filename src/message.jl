@@ -107,3 +107,58 @@ as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 
 # TODO
 reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdPreserveParametrisation(), left, right), messages)
+
+## Message Mapping structure
+## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
+## We create a lambda-like callable structure to improve type inference and make it more stable
+## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
+
+struct MessageMapping{F, E, T, C, N, M, A, R}
+    fform           :: E
+    vtag            :: T
+    vconstraint     :: C
+    msgs_names      :: N
+    marginals_names :: M
+    meta            :: A
+    factornode      :: R
+end
+
+message_mapping_fform(m::MessageMapping{F}) where F = F
+message_mapping_fform(m::MessageMapping{F}) where F <: Function = m.fform
+
+function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { F, T, C, N, M, A, R }
+    return MessageMapping{F, Nothing, T, C, N, M, A, R}(nothing, vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+end
+
+function MessageMapping(fn::E, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { E <: Function, T, C, N, M, A, R} 
+    return MessageMapping{E, E, T, C, N, M, A, R}(fn, vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+end
+
+function (mapping::MessageMapping)(dependencies)
+    messages  = dependencies[1]
+    marginals = dependencies[2]
+
+    # Message is clamped if all of the inputs are clamped
+    is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+
+    # Message is initial if it is not clamped and all of the inputs are either clamped or initial
+    is_message_initial = !is_message_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+
+    message = rule(
+        message_mapping_fform(mapping), 
+        mapping.vtag, 
+        mapping.vconstraint, 
+        mapping.msgs_names, 
+        messages, 
+        mapping.marginals_names, 
+        marginals, 
+        mapping.meta, 
+        mapping.factornode
+    )
+
+    return Message(message, is_message_clamped, is_message_initial)
+end
+
+Base.map(::Type{T}, mapping::M) where { T, M <: MessageMapping } = Rocket.MapOperator{T, M}(mapping)
+
+
