@@ -61,8 +61,8 @@ getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMargina
 
 ## Metadata
 
-get_or_default_meta(fform::Type{ <: GammaMixture }, meta::GammaMixtureNodeMetadata) = meta
-get_or_default_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
+collect_meta(fform::Type{ <: GammaMixture }, meta::GammaMixtureNodeMetadata) = meta
+collect_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
 
 ## activate!
 
@@ -179,7 +179,7 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = M
     switch = NodeInterface(:switch)
     as   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a)), N)
     bs   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b)), N)
-    meta = get_or_default_meta(GammaMixture, meta)
+    meta = collect_meta(GammaMixture, meta)
     return GammaMixtureNode{N, F, typeof(meta), P}(factorisation, out, switch, as, bs, meta, portal)
 end
 

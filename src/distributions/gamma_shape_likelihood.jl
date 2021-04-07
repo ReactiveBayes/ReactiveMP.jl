@@ -16,66 +16,61 @@ Base.show(io::IO, distribution::GammaShapeLikelihood{T}) where T = print(io, "Ga
 
 Distributions.logpdf(distribution::GammaShapeLikelihood, x) = distribution.γ * x - distribution.p * loggamma(x)
 
-# function approximate_prod_expectations(approximation::GaussLaguerreQuadrature, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-#     b = rate(left)
+function approximate_prod_expectations(approximation::GaussLaguerreQuadrature, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
+    b = rate(left)
 
-#     """
-#     q(x)    ∝ v(x)*v(x)
-#             ∝ exp(γ*x - p*ln(Г(x))) * exp((a-1)*ln(x) - b*x)
-#             = exp(-x) * exp((γ-b+1)*x + (a-1)*ln(x) - p*ln(Г(x)))
-#     """
-#     f = let p = right.p, a = shape(left), γ = right.γ, b = b
-#         x -> exp((γ - b + 1) * x - p * loggamma(x) + (a - 1) * log(x))
-#     end
+    """
+    q(x)    ∝ v(x)*v(x)
+            ∝ exp(γ*x - p*ln(Г(x))) * exp((a-1)*ln(x) - b*x)
+            = exp(-x) * exp((γ-b+1)*x + (a-1)*ln(x) - p*ln(Г(x)))
+    """
+    f = let p = right.p, a = shape(left), γ = right.γ, b = b
+        x -> exp((γ - b + 1) * x - p * loggamma(x) + (a - 1) * log(x))
+    end
 
-#     logf = let p = right.p, a = shape(left), γ = right.γ, b = b
-#         x -> (γ - b + 1) * x - p * loggamma(x) + (a - 1) * log(x)
-#     end
+    logf = let p = right.p, a = shape(left), γ = right.γ, b = b
+        x -> (γ - b + 1) * x - p * loggamma(x) + (a - 1) * log(x)
+    end
 
-#     # calculate log-normalization constant
-#     logC = log_approximate(approximation, logf)
+    # calculate log-normalization constant
+    logC = log_approximate(approximation, logf)
 
-#     # mean function without explicitly calculating the normalization constant
-#     mf = let logf = logf, logC = logC
-#         x -> x * exp(logf(x) - logC)
-#     end
+    # mean function without explicitly calculating the normalization constant
+    mf = let logf = logf, logC = logC
+        x -> x * exp(logf(x) - logC)
+    end
 
-#     # calculate mean
-#     m = approximate(approximation, mf)
+    # calculate mean
+    m = approximate(approximation, mf)
 
-#     # variance function without explicitly calculating the normalization constant
-#     vf = let logf = logf, logC = logC, m = m
-#         x -> (x - m) ^ 2 * exp(logf(x) - logC)
-#     end
+    # variance function without explicitly calculating the normalization constant
+    vf = let logf = logf, logC = logC, m = m
+        x -> (x - m) ^ 2 * exp(logf(x) - logC)
+    end
 
-#     # calculate variance
-#     v = approximate(approximation, vf)
+    # calculate variance
+    v = approximate(approximation, vf)
 
-#     return logC, m, v
-# end
-function approximate_prod_expectations(left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-    b = scale(left)
-    a = shape(left)
+    return m, v
+end
 
+function approximate_prod_expectations(approximation::ImportanceSamplingApproximation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
+ 
     f = let p = right.p, γ = right.γ
         x -> exp(γ * x - p * loggamma(x))
     end
 
-    sampling_dist = Distributions.Gamma(a,b)
-    # @show sampling_dist
-    samples = rand(sampling_dist, 10000)
-    transformed_samples = f.(samples) 
-    # @show transformed_samples
-    normalization = sum(transformed_samples)
-    weights = transformed_samples ./ sum(transformed_samples)
+    sampling_distribution = GammaShapeScale(shape(left), scale(left))
+    samples               = getsamples(approximation, sampling_distribution)
+    transformed_samples   = f.(samples) 
+    normalization         = sum(transformed_samples)
+    weights               = transformed_samples ./ normalization
     
-    m = sum(weights .* samples)
-    v = sum(weights .* (samples .- m) .^ 2)
-    # @show m,v
+    m = mapreduce(r -> r[1] * r[2], +, zip(weights, samples))
+    v = mapreduce(r -> r[1] * (r[2] - m) ^ 2, +, zip(weights, samples))
+
     return m, v
 end
-
-
 
 # Preserve Gamma Distribution
 
@@ -89,7 +84,7 @@ function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::
 end
 
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-    m, v = approximate_prod_expectations(left, right)
+    m, v = approximate_prod_expectations(right.approximation, left, right)
 
     a = m ^ 2 / v
     b = m / v
@@ -112,12 +107,13 @@ function prod(::ProdExpectationMaximisation, left::GammaDistributionsFamily, rig
 
     a, b = shape(left), rate(left)
     γ, p = right.γ, right.p
+
     f(x) = (a-1)*log(x[1]) - b*x[1] + γ*x[1] - p*loggamma(x[1]) - loggamma(a) + a*log(b)
-    x_0 = [mean(left)]
+
+    x_0 = [ mean(left) ]
     res = optimize(x -> -f(x), [ 0.0 ], [ Inf ], x_0, Fminbox(GradientDescent()))
-    # res = optimize(x -> -f(x), x_0, Newton())
+
     â = Optim.minimizer(res)[1]
-    # @show â
 
     return PointMass(â)
 end
