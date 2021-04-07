@@ -14,7 +14,7 @@ end
 
 function loggammamean(dist::GammaShapeScale)
     k, θ = params(dist)
-    return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (1 + digamma(k + 1) + log(θ))
+    return 0.5 * (log2π - (digamma(k) + log(θ))) - mean(dist) * (1 + digamma(k + 1) + log(θ))
 end
 
 function meanlogmean(dist::GammaShapeScale)

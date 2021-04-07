@@ -13,6 +13,7 @@ end
 
 probvec(dist::Dirichlet) = params(dist)[1]
 
+# probvec is not normalised
 logmean(dist::Dirichlet) = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
 
 # Variate forms promotion

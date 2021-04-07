@@ -81,7 +81,7 @@ function prod(::ProdExpectationMaximisation, left::GammaShapeLikelihood, right::
 end
 
 function prod(::ProdExpectationMaximisation, left::GammaShapeLikelihood, right::GammaDistributionsFamily)
-    return prod(ProdPreserveParametrisation(), right, left)
+    return prod(ProdExpectationMaximisation(), right, left)
 end
 
 function prod(::ProdExpectationMaximisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
