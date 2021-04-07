@@ -60,14 +60,18 @@ function approximate_prod_expectations(approximation::ImportanceSamplingApproxim
         x -> exp(γ * x - p * loggamma(x))
     end
 
-    sampling_distribution = GammaShapeScale(shape(left), scale(left))
-    samples               = getsamples(approximation, sampling_distribution)
-    transformed_samples   = f.(samples) 
-    normalization         = sum(transformed_samples)
-    weights               = transformed_samples ./ normalization
-    
-    m = mapreduce(r -> r[1] * r[2], +, zip(weights, samples))
-    v = mapreduce(r -> r[1] * (r[2] - m) ^ 2, +, zip(weights, samples))
+    m, v = approximate_meancov(approximation, f, GammaShapeScale(shape(left), scale(left)))
+
+    return m, v
+end
+
+function approximate_prod_expectations(approximation::ParallelImportanceSamplingApproximation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
+ 
+    f = let p = right.p, γ = right.γ
+        x -> exp(γ * x - p * loggamma(x))
+    end
+
+    m, v = approximate_meancov(approximation, f, GammaShapeScale(shape(left), scale(left)))
 
     return m, v
 end
