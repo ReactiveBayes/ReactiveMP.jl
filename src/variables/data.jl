@@ -1,20 +1,14 @@
 export datavar, isconnected
 
-mutable struct DataVariableProps
-    nconnected :: Int
-    marginal   :: Union{Nothing, MarginalObservable}
-
-    DataVariableProps() = new(0, nothing)
-end
-
-struct DataVariable{D, S} <: AbstractVariable
+mutable struct DataVariable{D, S} <: AbstractVariable
     name       :: Symbol
     messageout :: S
-    props      :: DataVariableProps
+    nconnected :: Int
+    marginal   :: Union{Nothing, MarginalObservable}
 end
 
 function datavar(name::Symbol, ::Type{D}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return DataVariable{D, S}(name, subject, DataVariableProps())
+    return DataVariable{D, S}(name, subject, 0, nothing)
 end
 
 function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
@@ -33,8 +27,8 @@ degree(datavar::DataVariable)     = nconnected(datavar)
 name(datavar::DataVariable)       = datavar.name
 constraint(datavar::DataVariable) = ClampedVariable()
 
-isconnected(datavar::DataVariable) = datavar.props.nconnected !== 0
-nconnected(datavar::DataVariable)  = datavar.props.nconnected
+isconnected(datavar::DataVariable) = datavar.nconnected !== 0
+nconnected(datavar::DataVariable)  = datavar.nconnected
 
 getlastindex(::DataVariable) = 1
 
@@ -59,11 +53,11 @@ finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
 inbound_portal(::DataVariable) = EmptyPortal()
 
-_getmarginal(datavar::DataVariable)                                = datavar.props.marginal
-_setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.props.marginal = marginal
+_getmarginal(datavar::DataVariable)                                = datavar.marginal
+_setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.marginal = marginal
 _makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, as_marginal)
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
-    datavar.props.nconnected += 1
+    datavar.nconnected += 1
     return nothing
 end
