@@ -1,4 +1,5 @@
 import SpecialFunctions: loggamma
+using Distributions
 using Optim
 
 """
@@ -50,7 +51,18 @@ function approximate_prod_expectations(approximation::GaussLaguerreQuadrature, l
     # calculate variance
     v = approximate(approximation, vf)
 
-    return logC, m, v
+    return m, v
+end
+
+function approximate_prod_expectations(approximation::ImportanceSamplingApproximation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
+ 
+    f = let p = right.p, γ = right.γ
+        x -> exp(γ * x - p * loggamma(x))
+    end
+
+    m, v = approximate_meancov(approximation, f, GammaShapeScale(shape(left), scale(left)))
+
+    return m, v
 end
 
 # Preserve Gamma Distribution
@@ -65,7 +77,7 @@ function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::
 end
 
 function prod(::ProdPreserveParametrisation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
-    _, m, v = approximate_prod_expectations(right.approximation, left, right)
+    m, v = approximate_prod_expectations(right.approximation, left, right)
 
     a = m ^ 2 / v
     b = m / v
@@ -88,12 +100,13 @@ function prod(::ProdExpectationMaximisation, left::GammaDistributionsFamily, rig
 
     a, b = shape(left), rate(left)
     γ, p = right.γ, right.p
+
     f(x) = (a-1)*log(x[1]) - b*x[1] + γ*x[1] - p*loggamma(x[1]) - loggamma(a) + a*log(b)
-    x_0 = [mean(left)]
+
+    x_0 = [ mean(left) ]
     res = optimize(x -> -f(x), [ 0.0 ], [ Inf ], x_0, Fminbox(GradientDescent()))
-    # res = optimize(x -> -f(x), x_0, Newton())
+
     â = Optim.minimizer(res)[1]
-    # @show â
 
     return PointMass(â)
 end

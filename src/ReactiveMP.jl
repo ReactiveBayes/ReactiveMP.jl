@@ -25,6 +25,7 @@ include("approximations/gausshermite.jl")
 include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
+include("approximations/importance.jl")
 
 include("distributions.jl")
 include("distributions/pointmass.jl")
