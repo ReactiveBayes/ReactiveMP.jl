@@ -65,17 +65,6 @@ function approximate_prod_expectations(approximation::ImportanceSamplingApproxim
     return m, v
 end
 
-function approximate_prod_expectations(approximation::ParallelImportanceSamplingApproximation, left::GammaDistributionsFamily, right::GammaShapeLikelihood)
- 
-    f = let p = right.p, γ = right.γ
-        x -> exp(γ * x - p * loggamma(x))
-    end
-
-    m, v = approximate_meancov(approximation, f, GammaShapeScale(shape(left), scale(left)))
-
-    return m, v
-end
-
 # Preserve Gamma Distribution
 
 function prod(::ProdPreserveParametrisation, left::GammaShapeLikelihood, right::GammaShapeLikelihood)
