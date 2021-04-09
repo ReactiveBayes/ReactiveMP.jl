@@ -91,3 +91,9 @@ include("autoregressive/x.jl")
 include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
+
+include("complex_normal/out.jl")
+include("complex_normal/mean.jl")
+
+include("gaussian_scale/X.jl")
+include("gaussian_scale/xi.jl")
