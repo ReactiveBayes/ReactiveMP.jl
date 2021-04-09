@@ -58,7 +58,8 @@ loggammamean(marginal::Marginal)    = loggammamean(getdata(marginal))
 
 ## Utility functions
 
-getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
+getdata(marginals::NTuple{ N, <: Marginal })      where N = map(getdata, marginals)
+getdata(marginals::AbstractVector{ <: Marginal })         = map(getdata, marginals) 
 
 as_marginal(marginal::Marginal) = marginal
 
@@ -115,6 +116,7 @@ end
 
 Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
 Rocket.getrecent(observables::Tuple)             = Rocket.getrecent.(observables)
+Rocket.getrecent(observables::AbstractVector)    = Rocket.getrecent.(observables)
 Rocket.getrecent(::Nothing)                      = nothing
 
 @inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(observable.stream, actor)

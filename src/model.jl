@@ -118,9 +118,10 @@ randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwa
 constvar(model::Model, args...; kwargs...)  = add!(model, constvar(args...; kwargs...))
 datavar(model::Model, args...; kwargs...)   = add!(model, datavar(args...; kwargs...))
 
-as_variable(model::Model, x)                   = add!(model, as_variable(x))
-as_variable(model::Model, v::AbstractVariable) = v
-as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d), t)
+as_variable(model::Model, x)                                      = add!(model, as_variable(x))
+as_variable(model::Model, v::AbstractVariable)                    = v
+as_variable(model::Model, t::Tuple)                               = map((d) -> as_variable(model, d), t)
+as_variable(model::Model, t::AbstractVector{ <: RandomVariable }) = map((d) -> as_variable(model, d), t)
 
 function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
     return add!(model, make_node(args...; factorisation = factorisation, kwargs...))

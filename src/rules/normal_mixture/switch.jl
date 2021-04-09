@@ -21,3 +21,17 @@ end
     end
     return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
 end
+
+@rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::AbstractVector{ UnivariateNormalDistributionsFamily }, q_p::AbstractVector{ GammaDistributionsFamily }) where { N } = begin
+    U = map(zip(q_m, q_p)) do (m, p)
+        return -score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map((q) -> Marginal(q, false , false), (q_out, m, p)), nothing)
+    end
+    return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
+end
+
+@rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::AbstractVector{ MultivariateNormalDistributionsFamily }, q_p::AbstractVector{ Wishart }) where { N } = begin
+    U = map(zip(q_m, q_p)) do (m, p)
+        return -score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map((q) -> Marginal(q, false, false), (q_out, m, p)), nothing)
+    end
+    return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
+end

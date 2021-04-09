@@ -19,7 +19,8 @@ getdata(message::Message)    = message.data
 is_clamped(message::Message) = message.is_clamped
 is_initial(message::Message) = message.is_initial
 
-getdata(messages::NTuple{ N, <: Message })    where N = map(getdata, messages)
+getdata(messages::NTuple{ N, <: Message })      where N = map(getdata, messages)
+getdata(messages::AbstractVector{ <: Message })         = map(getdata, messages)
 
 materialize!(message::Message) = message
 

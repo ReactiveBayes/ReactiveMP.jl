@@ -260,6 +260,10 @@ connectedvar(interface::IndexedNodeInterface)                      = connectedva
 connectedvarindex(interface::IndexedNodeInterface)                 = connectedvarindex(interface.interface)
 inbound_portal(interface::IndexedNodeInterface)                    = inbound_portal(interface.interface)
 
+##
+
+function node_interfaces_names end
+
 ## FactorNodeLocalMarginals
 
 """
@@ -709,6 +713,7 @@ macro node(fformtype, sdtype, interfaces_list)
     end
     
     res = quote
+        ReactiveMP.node_interfaces_names(::$fuppertype) = $names_quoted_tuple
 
         ReactiveMP.as_node_functional_form(::$fuppertype) = ReactiveMP.ValidNodeFunctionalForm()
 
