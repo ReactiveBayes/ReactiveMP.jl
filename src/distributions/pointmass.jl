@@ -9,6 +9,7 @@ struct PointMass{P}
 end
 
 variate_form(::PointMass{T})  where { T <: Real }　                = Univariate
+variate_form(::PointMass{T})  where { T <: Complex }　             = Univariate
 variate_form(::PointMass{V})  where { T, V <: AbstractVector{T} }　= Multivariate
 variate_form(::PointMass{M})  where { T, M <: AbstractMatrix{T} }　= Matrixvariate
 
@@ -29,9 +30,13 @@ Distributions.pdf(distribution::PointMass{T}, x::Real)       where { T <: Real }
 Distributions.logpdf(distribution::PointMass{T}, x::Real)    where { T <: Real } = Distributions.insupport(distribution, x) ? 0.0 : -Inf
 
 Distributions.mean(distribution::PointMass{T}) where { T <: Real } = getpointmass(distribution)
+Distributions.mean(distribution::PointMass{T}) where { T <: Complex } = getpointmass(distribution)
 Distributions.var(distribution::PointMass{T})  where { T <: Real } = zero(T)
+Distributions.var(distribution::PointMass{T})  where { T <: Complex } = zero(T)
 Distributions.std(distribution::PointMass{T})  where { T <: Real } = zero(T)
+Distributions.std(distribution::PointMass{T})  where { T <: Complex } = zero(T)
 Distributions.cov(distribution::PointMass{T})  where { T <: Real } = zero(T)
+Distributions.cov(distribution::PointMass{T})  where { T <: Complex } = zero(T)
 
 probvec(distribution::PointMass{T})         where { T <: Real } = error("probvec(::PointMass{ <: Real }) is not defined")
 logmean(distribution::PointMass{T})         where { T <: Real } = log(mean(distribution))
