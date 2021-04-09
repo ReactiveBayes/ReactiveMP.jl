@@ -1,6 +1,6 @@
 export rule
 
-@rule GCV(:X, Marginalisation) (q_xi::Any) = begin
+@rule GS(:X, Marginalisation) (q_xi::Any, ) = begin
 
     mean_xi, var_xi = mean(q_xi), var(q_xi)
 
