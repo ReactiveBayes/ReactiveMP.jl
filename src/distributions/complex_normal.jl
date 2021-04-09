@@ -10,6 +10,7 @@ end
 
 ComplexNormal(μ::Complex, Γ::Complex, C::Complex)   = ComplexNormal(promote(μ, Γ, C)...)
 ComplexNormal(μ::Real, Γ::Real, C::Real)            = ComplexNormal(complex(μ), complex(Γ), complex(C))
+ComplexNormal(μ::Union{Real,Complex}, Γ::Union{Real,Complex}, C::Union{Real,Complex})            = ComplexNormal(complex(μ), complex(Γ), complex(C))
 ComplexNormal(μ::Real, Γ::Real)         	        = ComplexNormal(μ, Γ, zero(μ))
 ComplexNormal(μ::Real)                              = ComplexNormal(μ, one(μ), zero(μ))
 ComplexNormal(μ::Complex, Γ::Complex)         	    = ComplexNormal(μ, Γ, zero(μ))
