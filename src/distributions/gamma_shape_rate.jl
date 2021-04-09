@@ -33,7 +33,7 @@ end
 
 function loggammamean(dist::GammaShapeRate)
     a, b = params(dist)
-    return 0.5 * (log2π - (digamma(a) - log(b))) - mean(dist) * (1 + digamma(a + 1) - log(b))
+    return 0.5 * (log2π - (digamma(a) - log(b))) + mean(dist) * (-1 + digamma(a + 1) - log(b))
 end
 
 function meanlogmean(dist::GammaShapeRate)
