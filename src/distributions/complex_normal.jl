@@ -24,11 +24,11 @@ weightedmean(dist::ComplexNormal) = precision(dist) * mean(dist)
 Distributions.mean(dist::ComplexNormal)    = dist.μ
 Distributions.median(dist::ComplexNormal)  = mean(dist)
 Distributions.mode(dist::ComplexNormal)    = mean(dist)
-Distributions.var(dist::ComplexNormal)     = inv(dist.Γ)
+Distributions.var(dist::ComplexNormal)     = dist.Γ
 Distributions.std(dist::ComplexNormal)     = sqrt(var(dist))
 Distributions.cov(dist::ComplexNormal)     = var(dist)
-Distributions.invcov(dist::ComplexNormal)  = dist.Γ
-Distributions.entropy(dist::ComplexNormal) = 1 + logπ - log(real(precision(dist)))
+Distributions.invcov(dist::ComplexNormal)  = inv(dist.Γ)
+Distributions.entropy(dist::ComplexNormal) = 1 + logπ + log(real(cov(dist)))
 
 # Distributions.pdf(dist::ComplexNormal, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) * precision(dist) / 2)) * sqrt(precision(dist))
 # Distributions.logpdf(dist::ComplexNormal, x::Real) = -(log2π - log(precision(dist)) + abs2(x - mean(dist)) * precision(dist)) / 2
