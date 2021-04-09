@@ -37,6 +37,7 @@ messagein(datavar::DataVariable, ::Int)  = error("It is not possible to get a re
 
 update!(datavar::DataVariable, ::Missing)            = next!(messageout(datavar, 1), Message(missing, false, false))
 update!(datavar::DataVariable, data::Real)           = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
+update!(datavar::DataVariable, data::Complex)        = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 update!(datavar::DataVariable, data::AbstractVector) = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 update!(datavar::DataVariable, data::AbstractMatrix) = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 
