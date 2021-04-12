@@ -2,18 +2,19 @@ export GCV, GCVMetadata
 
 import StatsFuns: log2π
 
-const DefaultGCVNodeVarianceApproximation = GaussHermiteCubature(20)
-
 struct GCVMetadata{ A <: AbstractApproximationMethod }
     approximation :: A
 end
 
+get_approximation(meta::GCVMetadata) = meta.approximation
+
 struct GCV end
 
-get_variance_approximation(::Type{ <: GCV }, meta::GCVMetadata) = meta.approximation
-get_variance_approximation(::Type{ <: GCV }, meta::Nothing)     = DefaultGCVNodeVarianceApproximation
-
 @node GCV Stochastic [ y, x, z, κ, ω ]
+
+const DefaultGCVNodeMetadata = GCVMetadata(GaussHermiteCubature(21))
+
+default_meta(::Type{ GCV }) = DefaultGCVNodeMetadata
 
 @average_energy GCV (q_y_x::MultivariateNormalDistributionsFamily, q_z::NormalDistributionsFamily, q_κ::Any, q_ω::Any) = begin
     m, c = mean(q_y_x), cov(q_y_x)
