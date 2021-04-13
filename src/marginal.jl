@@ -24,6 +24,11 @@ is_initial(marginal::Marginal) = marginal.is_initial
 is_clamped(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_clamped, marginals))
 is_initial(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_initial, marginals))
 
+# function for dealing with arrays of marginals
+is_clamped(array::Array{ <: Marginal, N }) where N = all(is_clamped, array)
+is_initial(array::Array{ <: Marginal, N }) where N = all(is_initial, array)
+
+
 ## Statistics 
 
 Distributions.mean(marginal::Marginal)      = Distributions.mean(getdata(marginal))
