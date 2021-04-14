@@ -49,6 +49,7 @@ include("distributions/wishart.jl")
 include("distributions/contingency.jl")
 include("distributions/common.jl")
 include("distributions/complex_normal.jl")
+include("distributions/mv_complex_normal.jl")
 
 include("variables/random.jl")
 include("variables/constant.jl")

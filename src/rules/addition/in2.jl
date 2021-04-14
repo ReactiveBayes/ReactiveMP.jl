@@ -10,3 +10,7 @@ export rule
     p1, p2 = precision(m_out), precision(m_in1)
     return NormalMeanPrecision(mean(m_out) - mean(m_in1), p1 * p2 / (p1 + p2))
 end
+
+@rule typeof(+)(:in2, Marginalisation) (m_out::ComplexNormal, m_in1::ComplexNormal) = ComplexNormal(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::ComplexNormal) = ComplexNormal(mean(m_out) - mean(m_in1), var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::ComplexNormal, m_in1::PointMass) = ComplexNormal(mean(m_out) - mean(m_in1), var(m_out))
