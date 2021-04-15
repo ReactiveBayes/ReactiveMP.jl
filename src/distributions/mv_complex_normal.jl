@@ -38,7 +38,7 @@ Distributions.var(dist::MvComplexNormal)     = dist.Γ
 # Distributions.std(dist::ComplexNormal)     = sqrt(var(dist))
 Distributions.cov(dist::MvComplexNormal)     = var(dist)
 # Distributions.invcov(dist::ComplexNormal)  = inv(dist.Γ)
-# Distributions.entropy(dist::ComplexNormal) = 1 + logπ + log(real(cov(dist)))
+# Distributions.entropy(dist::MvComplexNormal) = 1 + logπ + log(real(cov(dist)))
 
 # # Distributions.pdf(dist::ComplexNormal, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) * precision(dist) / 2)) * sqrt(precision(dist))
 # # Distributions.logpdf(dist::ComplexNormal, x::Real) = -(log2π - log(precision(dist)) + abs2(x - mean(dist)) * precision(dist)) / 2

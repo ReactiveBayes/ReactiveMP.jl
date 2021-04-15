@@ -45,5 +45,5 @@ vague(::Type{ <: ComplexNormal }) = ComplexNormal(0.0, tiny, 0.0)
 function Base.prod(::ProdPreserveParametrisation, left::ComplexNormal, right::ComplexNormal) 
     w = real(precision(left) + precision(right))
     μ = (mean(left) * real(precision(left)) + mean(right) * real(precision(right))) / w
-    return ComplexNormal(μ, w, 0)
+    return ComplexNormal(μ, 1/w, 0)
 end
