@@ -33,6 +33,10 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
 
     normalization = sum(approximation.bweights)
 
+    if iszero(normalization)
+        return mean(distribution), var(distribution)
+    end
+
     map!(Base.Fix2(/, normalization), approximation.bweights, approximation.bweights)
     
     m = mapreduce(prod, +, zip(approximation.bweights, approximation.bsamples))
@@ -42,6 +46,10 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
     end
 
     v = mapreduce(_v, +, zip(approximation.bweights, approximation.bsamples))
+
+    if isnan(m) || isnan(v) || isinf(m) || iszero(v)
+        return mean(distribution), var(distribution)
+    end
 
     return m, v
 
