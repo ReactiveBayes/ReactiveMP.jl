@@ -4,7 +4,7 @@ export rule
     
     m, v = mean(q_y_x), cov(q_y_x)
 
-    A = exp(-mean(q_ω) + 0.5 * var(q_ω))
+    A = exp(-mean(q_ω) + var(q_ω) / 2)
     psi = (m[1] - m[2]) ^ 2 + v[1, 1] + v[2, 2] - v[1, 2] - v[2, 1]
 
     a = mean(q_z)
