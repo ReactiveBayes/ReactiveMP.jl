@@ -61,8 +61,11 @@ getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMargina
 
 ## Metadata
 
+const DefaultGammaMixtureMetadata = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
+
+collect_meta(fform::Type{ <: GammaMixture }, meta::Any)                      = error("Invalid meta object $(meta) passed to GammaMixture node.")
 collect_meta(fform::Type{ <: GammaMixture }, meta::GammaMixtureNodeMetadata) = meta
-collect_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
+collect_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = DefaultGammaMixtureMetadata
 
 ## activate!
 
