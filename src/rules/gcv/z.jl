@@ -13,3 +13,18 @@ export rule
 
     return ExponentialLinearQuadratic(get_approximation(meta), a, b, c, d)
 end
+
+@rule GCV(:z, Marginalisation) (q_y::Any,q_x::Any, q_κ::Any, q_ω::Any, meta::GCVMetadata) = begin
+
+    my, vy = mean(q_y), cov(q_y)
+    mx, vx = mean(q_x), cov(q_x)
+    psi = (my - mx) ^ 2 + vy+ vx
+    A = exp(-mean(q_ω)+var(q_ω) / 2)
+
+    a = mean(q_κ)
+    b = psi * A
+    c = -mean(q_κ)
+    d = var(q_κ)
+
+    return ExponentialLinearQuadratic(get_approximation(meta), a, b, c, d)
+end

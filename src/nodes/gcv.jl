@@ -26,3 +26,15 @@ default_meta(::Type{ GCV }) = DefaultGCVNodeMetadata
 
     0.5 * log2π + 0.5 * (mean(q_z) * mean(q_κ) + mean(q_ω)) + 0.5 * (psi * A * B)
 end
+
+@average_energy GCV (q_y::NormalDistributionsFamily,q_x::NormalDistributionsFamily, q_z::NormalDistributionsFamily, q_κ::Any, q_ω::Any) = begin
+    my,vy = mean(q_y), cov(q_y)
+    mx,vx = mean(q_x), cov(q_x)
+
+    ksi = (mean(q_κ) ^ 2) * var(q_z) + (mean(q_z) ^ 2) * var(q_κ) + var(q_κ) * var(q_z)
+    psi = (my - mx) ^ 2 + vy+vx
+    A = exp(-mean(q_ω) + var(q_ω) / 2)
+    B = exp(-mean(q_κ) * mean(q_z) + ksi / 2)
+
+    0.5 * log2π + 0.5 * (mean(q_z) * mean(q_κ) + mean(q_ω)) + 0.5 * (psi * A * B)
+end
