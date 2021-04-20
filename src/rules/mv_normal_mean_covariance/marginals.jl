@@ -5,7 +5,7 @@ export marginalrule
 end   
 
 @marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::PointMass, m_μ::MvNormalMeanCovariance, m_Σ::PointMass) = begin
-    return (out = m_out, μ = prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanCovariance(mean(m_μ), mean(m_Σ))), Σ = m_Σ)
+    return (out = m_out, μ = prod(ProdPreserveParametrisation(), m_μ, MvNormalMeanCovariance(mean(m_out), mean(m_Σ))), Σ = m_Σ)
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ) (m_out::MvNormalMeanCovariance, m_μ::MvNormalMeanCovariance, q_Σ::Any) = begin
