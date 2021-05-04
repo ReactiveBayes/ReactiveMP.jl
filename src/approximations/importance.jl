@@ -47,7 +47,7 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
 
         if n_eff < N / 10
             # We use rsamples as a temporary buffer here
-            copyto!(approximation.rsamples, 0, approximation.bsamples, 0, N)
+            copyto!(approximation.rsamples, 1, approximation.bsamples, 1, N)
             # Here rsamples are equal to bsamples, but during sampling bsamples will be overwritten
             sample!(approximation.rng, approximation.rsamples, Weights(approximation.bweights), approximation.bsamples)
             fill!(approximation.bweights, 1 / N)
