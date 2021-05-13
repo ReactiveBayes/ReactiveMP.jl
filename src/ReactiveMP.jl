@@ -27,6 +27,10 @@ include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
 
+include("constraints/form/prod.jl")
+include("constraints/form/prod_no_constraints.jl")
+include("constraints/form/prod_preserve_type.jl")
+
 include("distributions.jl")
 include("distributions/pointmass.jl")
 include("distributions/gamma_shape_rate.jl")

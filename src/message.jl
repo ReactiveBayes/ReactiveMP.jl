@@ -98,58 +98,6 @@ function materialize!(vmessage::VariationalMessage)
     return message
 end
 
-## Messages Product
-
-"""
-    MessagesProduct
-
-If inference backend cannot return an analytical solution for a product of two messages it may fallback to MessagesProduct structure
-`MessagesProduct` is useful to propagate the exact forms of two messages until it hits some approximation method for form-constraint.
-However `MessagesProduct` cannot be used to compute statistics such as mean or variance. 
-It has to be approximated before using in actual inference procedure.
-
-Backend exploits form constraints specification which usually help to deal with intractable messages products. 
-User may use EM form constraint with a specific optimisation algorithm or it may approximate intractable product with Gaussian Distribution
-using for example Laplace approximation 
-
-See also: [`prod`](@ref)
-"""
-struct MessagesProduct{ L, R }
-    left  :: L
-    right :: R
-end
-
-Distributions.mean(product::MessagesProduct)      = error("mean() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.median(product::MessagesProduct)    = error("median() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.mode(product::MessagesProduct)      = error("mode() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.shape(product::MessagesProduct)     = error("shape() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.scale(product::MessagesProduct)     = error("scale() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.rate(product::MessagesProduct)      = error("rate() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.var(product::MessagesProduct)       = error("var() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.std(product::MessagesProduct)       = error("std() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.cov(product::MessagesProduct)       = error("cov() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.invcov(product::MessagesProduct)    = error("invcov() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.logdetcov(product::MessagesProduct) = error("logdetcov() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.entropy(product::MessagesProduct)   = error("entropy() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Distributions.params(product::MessagesProduct)    = error("params() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-
-Distributions.pdf(product::MessagesProduct, x)    = Distributions.pdf(product.left, x) * Distributions.pdf(product.right, x)
-Distributions.logpdf(product::MessagesProduct, x) = Distributions.logpdf(product.left, x) + Distributions.logpdf(product.right, x)
-
-Base.precision(product::MessagesProduct) = error("precision() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Base.length(product::MessagesProduct)    = error("length() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Base.ndims(product::MessagesProduct)     = error("ndims() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-Base.size(product::MessagesProduct)      = error("size() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-
-probvec(product::MessagesProduct)         = error("probvec() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-weightedmean(product::MessagesProduct)    = error("weightedmean() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-inversemean(product::MessagesProduct)     = error("inversemean() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-logmean(product::MessagesProduct)         = error("logmean() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-meanlogmean(product::MessagesProduct)     = error("meanlogmean() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-mirroredlogmean(product::MessagesProduct) = error("mirroredlogmean() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-loggammamean(product::MessagesProduct)    = error("loggammamean() is not defined for $(product). MessagesProduct structure has to be approximated and cannot be used in inference procedure.")
-
-
 ## Utility functions
 
 as_message(message::Message)             = message
