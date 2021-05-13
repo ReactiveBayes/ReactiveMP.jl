@@ -37,50 +37,6 @@ Base.getindex(iter::SkipIndexIterator, i::CartesianIndex{1}) = Base.getindex(ite
 
 Rocket.similar_typeof(::SkipIndexIterator, ::Type{L}) where L = Vector{L}
 
-"""
-    @symmetrical `function_definition`
-Duplicate a method definition with the order of the first two arguments swapped.
-This macro is used to duplicate methods that are symmetrical in their first two input arguments,
-but require explicit definitions for the different argument orders.
-Example:
-    @symmetrical function prod!(x, y, z)
-        ...
-    end
-"""
-macro symmetrical(fn::Expr)
-    # Check if macro is applied to a function definition
-    # Valid function definitions include:
-    # 1. foo([ args... ]) [ where ... [ where ... [ ... ] ] ] = :block
-    # 2. function foo([ args... ]) [ where ... [ where ... [ ... ] ] ]
-    #        :block
-    #    end
-    if (fn.head === :(=) || fn.head === :function) &&
-        (fn.args[1] isa Expr && fn.args[2] isa Expr) &&
-        (fn.args[2].head === :block)
-        return esc(quote
-            $fn
-            $(swap_arguments(fn))
-        end)
-    else
-        error("@symmetrical macro can be applied only to function definitions")
-    end
-end
-
-function swap_arguments(fn::Expr)
-    swapped = copy(fn)
-
-    if swapped.args[1].head === :where
-        swapped.args[1] = swap_arguments(swapped.args[1])
-    elseif swapped.args[1].head === :call && length(fn.args[1].args) >= 3 # Note: >= 3, because the first argument is a function name
-        swapped.args[1].args[2] = fn.args[1].args[3]
-        swapped.args[1].args[3] = fn.args[1].args[2]
-    else
-        error("Function method passed for @symmetrical macro must have more than 2 arguments")
-    end
-
-    return swapped
-end
-
 cast_to_message_subscribable(some::T) where T = cast_to_message_subscribable(as_subscribable(T), some)
 
 cast_to_message_subscribable(::InvalidSubscribableTrait, some)   = of(as_message(some))
@@ -213,3 +169,49 @@ end
 
 __check_all(fn::Function, iterator)  = all(fn, iterator)
 __check_all(fn::Function, ::Nothing) = true
+
+## Meta utils
+
+"""
+    @symmetrical `function_definition`
+Duplicate a method definition with the order of the first two arguments swapped.
+This macro is used to duplicate methods that are symmetrical in their first two input arguments,
+but require explicit definitions for the different argument orders.
+Example:
+    @symmetrical function prod!(x, y, z)
+        ...
+    end
+"""
+macro symmetrical(fn::Expr)
+    # Check if macro is applied to a function definition
+    # Valid function definitions include:
+    # 1. foo([ args... ]) [ where ... [ where ... [ ... ] ] ] = :block
+    # 2. function foo([ args... ]) [ where ... [ where ... [ ... ] ] ]
+    #        :block
+    #    end
+    if (fn.head === :(=) || fn.head === :function) &&
+        (fn.args[1] isa Expr && fn.args[2] isa Expr) &&
+        (fn.args[2].head === :block)
+        return esc(quote
+            $fn
+            $(swap_arguments(fn))
+        end)
+    else
+        error("@symmetrical macro can be applied only to function definitions")
+    end
+end
+
+function swap_arguments(fn::Expr)
+    swapped = copy(fn)
+
+    if swapped.args[1].head === :where
+        swapped.args[1] = swap_arguments(swapped.args[1])
+    elseif swapped.args[1].head === :call && length(fn.args[1].args) >= 3 # Note: >= 3, because the first argument is a function name
+        swapped.args[1].args[2] = fn.args[1].args[3]
+        swapped.args[1].args[3] = fn.args[1].args[2]
+    else
+        error("Function method passed for @symmetrical macro must have more than 2 arguments")
+    end
+
+    return swapped
+end

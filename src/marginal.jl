@@ -26,35 +26,35 @@ is_initial(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is
 
 ## Statistics 
 
-Distributions.mean(marginal::Marginal)      = Distributions.mean(getdata(marginal))
-Distributions.median(marginal::Marginal)    = Distributions.median(getdata(marginal))
-Distributions.mode(marginal::Marginal)      = Distributions.mode(getdata(marginal))
-Distributions.shape(marginal::Marginal)     = Distributions.shape(getdata(marginal))
-Distributions.scale(marginal::Marginal)     = Distributions.scale(getdata(marginal))
-Distributions.rate(marginal::Marginal)      = Distributions.rate(getdata(marginal))
-Distributions.var(marginal::Marginal)       = Distributions.var(getdata(marginal))
-Distributions.std(marginal::Marginal)       = Distributions.std(getdata(marginal))
-Distributions.cov(marginal::Marginal)       = Distributions.cov(getdata(marginal))
-Distributions.invcov(marginal::Marginal)    = Distributions.invcov(getdata(marginal))
-Distributions.logdetcov(marginal::Marginal) = Distributions.logdetcov(getdata(marginal))
-Distributions.entropy(marginal::Marginal)   = Distributions.entropy(getdata(marginal))
-Distributions.params(marginal::Marginal)    = Distributions.params(getdata(marginal))
-
 Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)
 Distributions.logpdf(marginal::Marginal, x) = Distributions.logpdf(getdata(marginal), x)
 
-Base.precision(marginal::Marginal) = precision(getdata(marginal))
-Base.ndims(marginal::Marginal)     = ndims(getdata(marginal))
-Base.length(marginal::Marginal)    = length(getdata(marginal))
-Base.size(marginal::Marginal)      = size(getdata(marginal))
-
-probvec(marginal::Marginal)         = probvec(getdata(marginal))
-weightedmean(marginal::Marginal)    = weightedmean(getdata(marginal))
-inversemean(marginal::Marginal)     = inversemean(getdata(marginal))
-logmean(marginal::Marginal)         = logmean(getdata(marginal))
-meanlogmean(marginal::Marginal)     = meanlogmean(getdata(marginal))
-mirroredlogmean(marginal::Marginal) = mirroredlogmean(getdata(marginal))
-loggammamean(marginal::Marginal)    = loggammamean(getdata(marginal))
+MacroHelpers.@proxy_methods Marginal getdata [
+    Distributions.mean,
+    Distributions.median,
+    Distributions.mode,
+    Distributions.shape,
+    Distributions.scale,
+    Distributions.rate,
+    Distributions.var,
+    Distributions.std,
+    Distributions.cov,
+    Distributions.invcov,
+    Distributions.logdetcov,
+    Distributions.entropy,
+    Distributions.params,
+    Base.precision,
+    Base.length,
+    Base.ndims,
+    Base.size,
+    probvec,
+    weightedmean,
+    inversemean,
+    logmean,
+    meanlogmean,
+    mirroredlogmean,
+    loggammamean
+]
 
 ## Utility functions
 

@@ -40,35 +40,35 @@ end
 
 # Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
-Distributions.mean(message::Message)      = Distributions.mean(getdata(message))
-Distributions.median(message::Message)    = Distributions.median(getdata(message))
-Distributions.mode(message::Message)      = Distributions.mode(getdata(message))
-Distributions.shape(message::Message)     = Distributions.shape(getdata(message))
-Distributions.scale(message::Message)     = Distributions.scale(getdata(message))
-Distributions.rate(message::Message)      = Distributions.rate(getdata(message))
-Distributions.var(message::Message)       = Distributions.var(getdata(message))
-Distributions.std(message::Message)       = Distributions.std(getdata(message))
-Distributions.cov(message::Message)       = Distributions.cov(getdata(message))
-Distributions.invcov(message::Message)    = Distributions.invcov(getdata(message))
-Distributions.logdetcov(message::Message) = Distributions.logdetcov(getdata(message))
-Distributions.entropy(message::Message)   = Distributions.entropy(getdata(message))
-Distributions.params(message::Message)    = Distributions.params(getdata(message))
-
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 
-Base.precision(message::Message) = precision(getdata(message))
-Base.length(message::Message)    = length(getdata(message))
-Base.ndims(message::Message)     = ndims(getdata(message))
-Base.size(message::Message)      = size(getdata(message))
-
-probvec(message::Message)         = probvec(getdata(message))
-weightedmean(message::Message)    = weightedmean(getdata(message))
-inversemean(message::Message)     = inversemean(getdata(message))
-logmean(message::Message)         = logmean(getdata(message))
-meanlogmean(message::Message)     = meanlogmean(getdata(message))
-mirroredlogmean(message::Message) = mirroredlogmean(getdata(message))
-loggammamean(message::Message)    = loggammamean(getdata(message))
+MacroHelpers.@proxy_methods Message getdata [
+    Distributions.mean,
+    Distributions.median,
+    Distributions.mode,
+    Distributions.shape,
+    Distributions.scale,
+    Distributions.rate,
+    Distributions.var,
+    Distributions.std,
+    Distributions.cov,
+    Distributions.invcov,
+    Distributions.logdetcov,
+    Distributions.entropy,
+    Distributions.params,
+    Base.precision,
+    Base.length,
+    Base.ndims,
+    Base.size,
+    probvec,
+    weightedmean,
+    inversemean,
+    logmean,
+    meanlogmean,
+    mirroredlogmean,
+    loggammamean
+]
 
 ## Variational Message
 
