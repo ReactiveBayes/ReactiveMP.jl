@@ -7,8 +7,6 @@ import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, inv
 
 import Base: prod
 
-
-
 """
     vague(distribution_type, [ dims... ])
 

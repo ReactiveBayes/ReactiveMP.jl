@@ -71,6 +71,10 @@ get_constraint(prod_generic::ProdGeneric) = prod_generic.prod_constraint
 
 ProdGeneric() = ProdGeneric(ProdAnalytical())
 
+prod(::ProdGeneric, ::Missing, right)     = right
+prod(::ProdGeneric, left, ::Missing)      = left
+prod(::ProdGeneric, ::Missing, ::Missing) = missing
+
 prod(generic::ProdGeneric, left::L, right::R) where { L, R } = prod(generic, prod_analytical_rule(L, R), left, right)
 
 prod(generic::ProdGeneric, ::ProdAnalyticalRuleAvailable, left, right) = prod(get_constraint(generic), left, right)
