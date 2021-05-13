@@ -111,38 +111,20 @@ function Base.convert(::Type{ MvNormalWeightedMeanPrecision }, dist::Multivariat
     return convert(MvNormalWeightedMeanPrecision{T}, dist)
 end
 
-# Common convert methods
-
-# Exstensions of prod methods
-
-function Base.prod(::ProdPreserveParametrisation, left::NormalMeanVariance, right::UnivariateNormalDistributionsFamily)
-    μ = (mean(left) * var(right) + mean(right) * var(left)) / (var(right) + var(left))
-    v = (var(left) * var(right)) / (var(left) + var(right))
-    return NormalMeanVariance(μ, v)
-end
-
-function Base.prod(::ProdPreserveParametrisation, left::NormalMeanPrecision, right::UnivariateNormalDistributionsFamily)
-    p = precision(left) + precision(right)
-    μ = (mean(left) * precision(left) + mean(right) * precision(right)) / p
-    return NormalMeanPrecision(μ, p)
-end
-
-# TODO add more prod implementations
-
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
-function Base.prod(::ProdBestSuitableParametrisation, left::L, right::R) where { L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily }
+prod_analytical_rule(::Type{ <: UnivariateNormalDistributionsFamily }, ::Type{ <: UnivariateNormalDistributionsFamily }) = ProdAnalyticalRuleAvailable()
+
+function Base.prod(::ProdAnalytical, left::L, right::R) where { L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily }
     wleft  = convert(NormalWeightedMeanPrecision, left)
     wright = convert(NormalWeightedMeanPrecision, right)
-    return prod(ProdBestSuitableParametrisation(), wleft, wright)
+    return prod(ProdAnalytical(), wleft, wright)
 end
 
-function Base.prod(::ProdBestSuitableParametrisation, left::L, right::R) where { L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily }
+prod_analytical_rule(::Type{ <: MultivariateNormalDistributionsFamily }, ::Type{ <: MultivariateNormalDistributionsFamily }) = ProdAnalyticalRuleAvailable()
+
+function Base.prod(::ProdAnalytical, left::L, right::R) where { L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily }
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
     return prod(ProdBestSuitableParametrisation(), wleft, wright)
-end
-
-function Base.prod(::ProdPreserveParametrisation, left::L, right::R) where { L <: NormalDistributionsFamily, R <: NormalDistributionsFamily }
-    return convert(L, prod(ProdBestSuitableParametrisation(), left, right))
 end

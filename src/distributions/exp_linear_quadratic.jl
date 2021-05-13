@@ -22,8 +22,9 @@ Distributions.cov(dist::ExponentialLinearQuadratic)             = var(dist)
 precision(dist::ExponentialLinearQuadratic)    = inv(var(dist))
 weightedmean(dist::ExponentialLinearQuadratic) = precision(dist)*mean(dist)
 
+prod_analytical_rule(::Type{ <: UnivariateNormalDistributionsFamily }, ::Type{ <: ExponentialLinearQuadratic }) = ProdAnalyticalRuleAvailable()
 
-function prod(::ProdPreserveParametrisation, left::UnivariateNormalDistributionsFamily, right::ExponentialLinearQuadratic)
+function prod(::ProdAnalytical, left::UnivariateNormalDistributionsFamily, right::ExponentialLinearQuadratic)
     mean, variance = approximate_meancov(right.approximation, (z) -> pdf(right, z), left)
     return NormalMeanVariance(mean, variance)
 end

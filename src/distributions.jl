@@ -64,8 +64,6 @@ prod(::ProdPreserveParametrisation, left::Missing, right) = right
 prod(::ProdPreserveParametrisation, left, right::Missing) = left
 prod(::ProdPreserveParametrisation, ::Missing, ::Missing) = missing
 
-prod_analytical_rule(::Type, ::Type) = ProdAnalyticalRuleUnknown()
-
 """
     vague(distribution_type, [ dims... ])
 

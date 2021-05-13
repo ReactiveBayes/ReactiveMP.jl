@@ -47,7 +47,10 @@ Base.convert(::Type{ GammaShapeRate{T} }, a::Real, b::Real) where { T <: Real } 
 
 vague(::Type{ <: GammaShapeRate }) = GammaShapeRate(1.0, tiny)
 
-function prod(::ProdPreserveParametrisation, left::GammaShapeRate{T}, right::GammaShapeRate{T}) where T
+prod_analytical_rule(::Type{ <: GammaShapeRate }, ::Type{ <: GammaShapeRate }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
+    T = promote_type(eltype(left), eltype(right))
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 

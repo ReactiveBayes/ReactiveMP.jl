@@ -6,16 +6,16 @@ import Base: prod
     ProdPreserveType{T}
 
 `ProdPreserveType` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in some specific form.
-By default it fallbacks to a `ProdNoConstraints` strategy and converts an output to a prespecified type but can be overwritten for some distributions
+By default it fallbacks to a `ProdAnalytical` strategy and converts an output to a prespecified type but can be overwritten for some distributions
 for better performance.
 
-See also: [`prod`](@ref), [`ProdNoConstraints`](@ref), [`ProdPreserveTypeLeft`](@ref), [`ProdPreserveTypeRight`](@ref)
+See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveTypeLeft`](@ref), [`ProdPreserveTypeRight`](@ref)
 """
 struct ProdPreserveType{T} end
 
 ProdPreserveType(::Type{T}) where T = ProdPreserveType{T}()
 
-prod(::ProdPreserveType{T}, left, right) where T = convert(T, prod(ProdNoConstraints(), left, right))
+prod(::ProdPreserveType{T}, left, right) where T = convert(T, prod(ProdAnalytical(), left, right))
 
 """
     ProdPreserveTypeLeft

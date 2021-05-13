@@ -1,12 +1,15 @@
 export MatrixDirichlet
 
 import SpecialFunctions: digamma, loggamma
+import Base: eltype
 
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T} } <: ContinuousMatrixDistribution
     a :: A
 end
 
 Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a, dims = 1)
+
+Base.eltype(::MatrixDirichlet{T}) where T = T
 
 vague(::Type{ <: MatrixDirichlet }, dims::Int)              = MatrixDirichlet(ones(dims, dims))
 vague(::Type{ <: MatrixDirichlet }, dims1::Int, dims2::Int) = MatrixDirichlet(ones(dims1, dims2))
@@ -21,6 +24,9 @@ end
 
 logmean(dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a, dims = 1))
 
-function prod(::ProdPreserveParametrisation, left::MatrixDirichlet, right::MatrixDirichlet)
-    return MatrixDirichlet(left.a + right.a .- 1.0)
+prod_analytical_rule(::Type{ <: MatrixDirichlet }, ::Type{ <: MatrixDirichlet }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::MatrixDirichlet, right::MatrixDirichlet)
+    T = promote_type(eltype(left), eltype(right))
+    return MatrixDirichlet(left.a + right.a .- one(T))
 end

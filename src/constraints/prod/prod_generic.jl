@@ -1,10 +1,6 @@
-export ProdAnalyticalRuleAvailable, ProdAnalyticalRuleUnknown
 export DistProduct, ProdGeneric
 
 import Base: prod, show
-
-struct ProdAnalyticalRuleAvailable end
-struct ProdAnalyticalRuleUnknown end
 
 """
     DistProduct
@@ -65,7 +61,7 @@ loggammamean(product::DistProduct)    = error("loggammamean() is not defined for
 
 `ProdGeneric` is one of the strategies for `prod` function. This strategy mimics `prod_constraint` constraint but does not fail in case of no analytical rule is available.
 
-See also: [`prod`](@ref), [`ProdNoConstraints`](@ref), [`ProdPreserveType`](@ref)
+See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveType`](@ref)
 """
 struct ProdGeneric{C} 
     prod_constraint :: C
@@ -73,7 +69,7 @@ end
 
 get_constraint(prod_generic::ProdGeneric) = prod_generic.prod_constraint
 
-ProdGeneric() = ProdGeneric(ProdNoConstraints())
+ProdGeneric() = ProdGeneric(ProdAnalytical())
 
 prod(generic::ProdGeneric, left::L, right::R) where { L, R } = prod(generic, prod_analytical_rule(L, R), left, right)
 
