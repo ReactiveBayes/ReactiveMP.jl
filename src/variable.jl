@@ -33,7 +33,7 @@ is_expectation_maximisation_constrained(variable::AbstractVariable)   = is_expec
 is_expectation_maximisation_constrained(::AbstractVariableConstraint) = false
 is_expectation_maximisation_constrained(::ExpectationMaximisation)    = true
 
-prod_parametrisation(::Marginalisation)         = ProdPreserveParametrisation()
+prod_parametrisation(::Marginalisation)         = ProdAnalytical()
 prod_parametrisation(::ExpectationMaximisation) = ProdExpectationMaximisation()
 
 ## Common functions

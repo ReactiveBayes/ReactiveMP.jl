@@ -126,5 +126,5 @@ prod_analytical_rule(::Type{ <: MultivariateNormalDistributionsFamily }, ::Type{
 function Base.prod(::ProdAnalytical, left::L, right::R) where { L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily }
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(ProdBestSuitableParametrisation(), wleft, wright)
+    return prod(ProdAnalytical(), wleft, wright)
 end

@@ -27,7 +27,7 @@ Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(messa
 
 ## Message
 
-Base.:*(left::Message, right::Message) = multiply_messages(ProdPreserveParametrisation(), left, right)
+Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
 function multiply_messages(prod_parametrisation, left::Message, right::Message) 
     # We propagate clamped message, in case if both are clamped
@@ -106,7 +106,7 @@ as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 ## Operators
 
 # TODO
-reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdPreserveParametrisation(), left, right), messages)
+reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdAnalytical(), left, right), messages)
 
 ## Message Mapping structure
 ## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file

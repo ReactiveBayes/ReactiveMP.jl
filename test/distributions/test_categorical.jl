@@ -25,13 +25,9 @@ using Random
     end
 
     @testset "prod" begin
-        @test prod(ProdPreserveParametrisation(), Categorical([ 0.1, 0.4, 0.5 ]), Categorical([ 1/3, 1/3, 1/3 ])) == Categorical([ 0.1, 0.4, 0.5 ])
-        @test prod(ProdPreserveParametrisation(), Categorical([ 0.1, 0.4, 0.5 ]), Categorical([ 0.8, 0.1, 0.1 ])) == Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
-        @test prod(ProdPreserveParametrisation(), Categorical([ 0.2, 0.6, 0.2 ]), Categorical([ 0.8, 0.1, 0.1 ])) == Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
-        
-        @test prod(ProdBestSuitableParametrisation(), Categorical([ 0.1, 0.4, 0.5 ]), Categorical([ 1/3, 1/3, 1/3 ])) == Categorical([ 0.1, 0.4, 0.5 ])
-        @test prod(ProdBestSuitableParametrisation(), Categorical([ 0.1, 0.4, 0.5 ]), Categorical([ 0.8, 0.1, 0.1 ])) == Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
-        @test prod(ProdBestSuitableParametrisation(), Categorical([ 0.2, 0.6, 0.2 ]), Categorical([ 0.8, 0.1, 0.1 ])) == Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
+        @test prod(ProdAnalytical(), Categorical([ 0.1, 0.4, 0.5 ]), Categorical([ 1/3, 1/3, 1/3 ])) == Categorical([ 0.1, 0.4, 0.5 ])
+        @test prod(ProdAnalytical(), Categorical([ 0.1, 0.4, 0.5 ]), Categorical([ 0.8, 0.1, 0.1 ])) == Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
+        @test prod(ProdAnalytical(), Categorical([ 0.2, 0.6, 0.2 ]), Categorical([ 0.8, 0.1, 0.1 ])) == Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
     end
 
     @testset "probvec" begin

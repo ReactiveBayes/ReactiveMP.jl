@@ -115,12 +115,9 @@ using ReactiveMP
 
     @testset "prod" begin
         
-        @test prod(ProdPreserveParametrisation(), NormalWeightedMeanPrecision(-1, 1/1), NormalWeightedMeanPrecision(1, 1/1)) ≈ NormalWeightedMeanPrecision(0, 2)
-        @test prod(ProdPreserveParametrisation(), NormalWeightedMeanPrecision(-1, 1/2), NormalWeightedMeanPrecision(1, 1/4)) ≈ NormalWeightedMeanPrecision(0, 3/4)
-        @test prod(ProdPreserveParametrisation(), NormalWeightedMeanPrecision(2, 1/2), NormalWeightedMeanPrecision(0, 1/10)) ≈ NormalWeightedMeanPrecision(2, 3/5)
-        @test prod(ProdBestSuitableParametrisation(), NormalWeightedMeanPrecision(-1, 1/1), NormalWeightedMeanPrecision(1, 1/1)) ≈ NormalWeightedMeanPrecision(0, 2)
-        @test prod(ProdBestSuitableParametrisation(), NormalWeightedMeanPrecision(-1, 1/2), NormalWeightedMeanPrecision(1, 1/4)) ≈ NormalWeightedMeanPrecision(0, 3/4)
-        @test prod(ProdBestSuitableParametrisation(), NormalWeightedMeanPrecision(2, 1/2), NormalWeightedMeanPrecision(0, 1/10)) ≈ NormalWeightedMeanPrecision(2, 3/5)
+        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1/1), NormalWeightedMeanPrecision(1, 1/1)) ≈ NormalWeightedMeanPrecision(0, 2)
+        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1/2), NormalWeightedMeanPrecision(1, 1/4)) ≈ NormalWeightedMeanPrecision(0, 3/4)
+        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(2, 1/2), NormalWeightedMeanPrecision(0, 1/10)) ≈ NormalWeightedMeanPrecision(2, 3/5)
 
     end
 

@@ -57,13 +57,9 @@ using Random
         d2 = MatrixDirichlet([ 1.2 3.3; 4.0 5.0; 2.0 1.1 ])
         d3 = MatrixDirichlet([ 1.0 1.0; 1.0 1.0; 1.0 1.0 ])
 
-        @test prod(ProdPreserveParametrisation(), d1, d2) == MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test prod(ProdPreserveParametrisation(), d1, d3) == MatrixDirichlet([0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001])
-        @test prod(ProdPreserveParametrisation(), d2, d3) == MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
-        
-        @test prod(ProdBestSuitableParametrisation(), d1, d2) == MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test prod(ProdBestSuitableParametrisation(), d1, d3) == MatrixDirichlet([0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001])
-        @test prod(ProdBestSuitableParametrisation(), d2, d3) == MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+        @test prod(ProdAnalytical(), d1, d2) == MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
+        @test prod(ProdAnalytical(), d1, d3) == MatrixDirichlet([0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001])
+        @test prod(ProdAnalytical(), d2, d3) == MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
     end
 
     @testset "promote_variate_type" begin

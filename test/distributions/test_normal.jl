@@ -40,11 +40,17 @@ using Distributions
                 right = convert(type, left)
                 check_basic_statistics(left, right)
 
-                p1 = prod(ProdPreserveParametrisation(), left, right)
+                p1 = prod(ProdPreserveTypeLeft(), left, right)
                 @test typeof(p1) <: typeof(left)
 
-                p2 = prod(ProdBestSuitableParametrisation(), left, right)
+                p2 = prod(ProdPreserveTypeRight(), left, right)
+                @test typeof(p2) <: typeof(right)
+
+                p3 = prod(ProdAnalytical(), left, right)
+
                 check_basic_statistics(p1, p2)
+                check_basic_statistics(p2, p3)
+                check_basic_statistics(p1, p3)
             end
         end
 
@@ -88,11 +94,17 @@ using Distributions
                     right = convert(type, left)
                     check_basic_statistics(left, right, dim)
 
-                    p1 = prod(ProdPreserveParametrisation(), left, right)
+                    p1 = prod(ProdPreserveTypeLeft(), left, right)
                     @test typeof(p1) <: typeof(left)
 
-                    p2 = prod(ProdBestSuitableParametrisation(), left, right)
+                    p2 = prod(ProdPreserveTypeRight(), left, right)
+                    @test typeof(p2) <: typeof(right)
+
+                    p3 = prod(ProdAnalytical(), left, right)
+
                     check_basic_statistics(p1, p2, dim)
+                    check_basic_statistics(p2, p3, dim)
+                    check_basic_statistics(p1, p3, dim)
                 end
             end
         end

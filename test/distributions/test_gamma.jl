@@ -162,29 +162,29 @@ using Random
 
     @testset "prod" begin
 
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(1, 1), GammaShapeScale(1, 1)) == GammaShapeScale(1, 1/2)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(1, 2), GammaShapeScale(1, 1)) == GammaShapeScale(1, 2/3)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(1, 2), GammaShapeScale(1, 2)) == GammaShapeScale(1, 1)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(2, 2), GammaShapeScale(1, 2)) == GammaShapeScale(2, 1)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(2, 2), GammaShapeScale(2, 2)) == GammaShapeScale(3, 1)
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 1), GammaShapeScale(1, 1)) == GammaShapeScale(1, 1/2)
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeScale(1, 1)) == GammaShapeScale(1, 2/3)
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeScale(1, 2)) == GammaShapeScale(1, 1)
+        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeScale(1, 2)) == GammaShapeScale(2, 1)
+        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeScale(2, 2)) == GammaShapeScale(3, 1)
 
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(1, 1), GammaShapeRate(1, 1)) == GammaShapeRate(1, 2)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(1, 2), GammaShapeRate(1, 1)) == GammaShapeRate(1, 3)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(1, 2), GammaShapeRate(1, 2)) == GammaShapeRate(1, 4)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(2, 2), GammaShapeRate(1, 2)) == GammaShapeRate(2, 4)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(2, 2), GammaShapeRate(2, 2)) == GammaShapeRate(3, 4)
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 1), GammaShapeRate(1, 1)) == GammaShapeRate(1, 2)
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeRate(1, 1)) == GammaShapeRate(1, 3)
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeRate(1, 2)) == GammaShapeRate(1, 4)
+        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeRate(1, 2)) == GammaShapeRate(2, 4)
+        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeRate(2, 2)) == GammaShapeRate(3, 4)
 
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(1, 1), GammaShapeRate(1, 1)) == GammaShapeScale(1, 1/2)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(1, 2), GammaShapeRate(1, 1)) == GammaShapeScale(1, 2/3)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(1, 2), GammaShapeRate(1, 2)) == GammaShapeScale(1, 2/5)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(2, 2), GammaShapeRate(1, 2)) == GammaShapeScale(2, 2/5)
-        @test prod(ProdPreserveParametrisation(), GammaShapeScale(2, 2), GammaShapeRate(2, 2)) == GammaShapeScale(3, 2/5)
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 1), GammaShapeRate(1, 1)) == GammaShapeScale(1, 1/2)
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeRate(1, 1)) == GammaShapeScale(1, 2/3)
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeRate(1, 2)) == GammaShapeScale(1, 2/5)
+        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeRate(1, 2)) == GammaShapeScale(2, 2/5)
+        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeRate(2, 2)) == GammaShapeScale(3, 2/5)
 
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(1, 1), GammaShapeScale(1, 1)) == GammaShapeRate(1, 2)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(1, 2), GammaShapeScale(1, 1)) == GammaShapeRate(1, 3)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(1, 2), GammaShapeScale(1, 2)) == GammaShapeRate(1, 5/2)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(2, 2), GammaShapeScale(1, 2)) == GammaShapeRate(2, 5/2)
-        @test prod(ProdPreserveParametrisation(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5/2)
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 1), GammaShapeScale(1, 1)) == GammaShapeRate(1, 2)
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeScale(1, 1)) == GammaShapeRate(1, 3)
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeScale(1, 2)) == GammaShapeRate(1, 5/2)
+        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(1, 2)) == GammaShapeRate(2, 5/2)
+        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5/2)
 
     end
 

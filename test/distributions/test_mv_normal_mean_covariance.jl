@@ -82,13 +82,13 @@ using Distributions
 
     @testset "prod" begin
         
-        @test prod(ProdPreserveParametrisation(), MvNormalMeanCovariance([ -1, -1 ], [ 2, 2 ]), MvNormalMeanCovariance([ 1, 1 ], [ 2, 4 ])) ≈ MvNormalMeanCovariance([ 0, -1/3 ], [ 1, 4/3 ])
+        @test prod(ProdAnalytical(), MvNormalMeanCovariance([ -1, -1 ], [ 2, 2 ]), MvNormalMeanCovariance([ 1, 1 ], [ 2, 4 ])) ≈ MvNormalMeanCovariance([ 0, -1/3 ], [ 1, 4/3 ])
 
         μ    = [ 0.2, 3.0, 4.0 ]
         Σ    = [ 1.5 -0.1 0.1; -0.1 1.8 0.0; 0.1 0.0 3.5 ]
         dist = MvNormalMeanCovariance(μ, Σ)
 
-        @test prod(ProdPreserveParametrisation(), dist, dist) ≈ MvNormalMeanCovariance([0.20, 3.00, 4.00], [0.75 -0.05 0.05; -0.05 0.90 6.83e-19; 0.05 6.83e-19 1.75])
+        @test prod(ProdAnalytical(), dist, dist) ≈ MvNormalMeanCovariance([0.20, 3.00, 4.00], [0.75 -0.05 0.05; -0.05 0.90 6.83e-19; 0.05 6.83e-19 1.75])
 
     end
 

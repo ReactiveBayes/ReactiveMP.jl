@@ -26,7 +26,7 @@ vague(::Type{ <: GammaShapeScale }) = GammaShapeScale(1.0, huge)
 
 prod_analytical_rule(::Type{ <: GammaShapeScale }, ::Type{ <: GammaShapeScale }) = ProdAnalyticalRuleAvailable()
 
-function prod(::ProdPreserveParametrisation, left::GammaShapeScale, right::GammaShapeScale)
+function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)
     T = promote_type(eltype(left), eltype(right))
     return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
