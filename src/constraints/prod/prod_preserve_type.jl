@@ -1,5 +1,7 @@
 export ProdPreserveType, ProdPreserveTypeLeft, ProdPreserveTypeRight
 
+import Base: prod
+
 """
     ProdPreserveType{T}
 
