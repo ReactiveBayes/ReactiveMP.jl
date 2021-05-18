@@ -22,16 +22,17 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [compat]
-julia = "≥ 1.0.0"
+DomainIntegrals = "0.3.2"
+julia = "≥ 1.5.0"
 
 [extras]
-Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 BenchmarkCI = "20533458-34a3-403d-a444-e18f38190b5b"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 
 [targets]
 test = ["Test", "TestSetExtensions", "Coverage", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark"]
