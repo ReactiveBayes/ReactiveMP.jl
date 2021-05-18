@@ -12,5 +12,5 @@ struct UnspecifiedFormConstraint end
 
 default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLast()
 
-constrain_form(::UnspecifiedFormConstraint, something)              = something
-constrain_form(::UnspecifiedFormConstraint, something::DistProduct) = error("`DistProduct` object cannot be used as a functional form in inference backend")
+constrain_form(::UnspecifiedFormConstraint, something)                            = something
+constrain_form(::UnspecifiedFormConstraint, something::Message{ <: DistProduct }) = error("`DistProduct` object cannot be used as a functional form in inference backend")
