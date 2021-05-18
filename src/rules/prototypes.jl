@@ -97,3 +97,7 @@ include("complex_normal/mean.jl")
 
 include("gaussian_scale/X.jl")
 include("gaussian_scale/xi.jl")
+
+include("nonlinear/out.jl")
+include("nonlinear/x.jl")
+include("nonlinear/marginals.jl")

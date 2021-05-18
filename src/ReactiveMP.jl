@@ -92,7 +92,7 @@ include("nodes/transition.jl")
 include("nodes/autoregressive.jl")
 include("nodes/complex_normal.jl")
 include("nodes/gaussian_scale.jl")
-
+include("nodes/nonlinear.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
