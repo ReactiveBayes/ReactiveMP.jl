@@ -14,6 +14,10 @@ GammaShapeRate(a::Integer, b::Integer) = GammaShapeRate(float(a), float(b))
 GammaShapeRate(a::Real)                = GammaShapeRate(a, one(a))
 GammaShapeRate()                       = GammaShapeRate(1.0, 1.0)
 
+Distributions.@distr_support GammaShapeRate 0 Inf
+
+Distributions.support(dist::GammaShapeRate) = Distributions.RealInterval(minimum(dist), maximum(dist))
+
 Distributions.shape(dist::GammaShapeRate)  = dist.a
 Distributions.rate(dist::GammaShapeRate)   = dist.b
 Distributions.scale(dist::GammaShapeRate)  = inv(dist.b)

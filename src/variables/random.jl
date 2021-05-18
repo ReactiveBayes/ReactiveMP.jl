@@ -42,7 +42,7 @@ form_check_strategy(randomvar::RandomVariable) = _form_check_strategy(randomvar.
 _form_check_strategy(::FormConstraintCheckPickDefault, randomvar::RandomVariable) = default_form_check_strategy(form_constraint(randomvar))
 _form_check_strategy(form_check_strategy, randomvar::RandomVariable)              = form_check_strategy
 
-messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), form_constraint(randomvar), form_check_strategy(randomvar))
+messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), UnspecifiedFormConstraint(), default_form_check_strategy(UnspecifiedFormConstraint()))
 marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), form_constraint(randomvar), form_check_strategy(randomvar))
 
 getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1

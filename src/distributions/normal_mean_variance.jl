@@ -14,6 +14,8 @@ NormalMeanVariance()                       = NormalMeanVariance(0.0, 1.0)
 
 Distributions.@distr_support NormalMeanVariance -Inf Inf
 
+Distributions.support(dist::NormalMeanVariance) = Distributions.RealInterval(minimum(dist), maximum(dist))
+
 weightedmean(dist::NormalMeanVariance) = precision(dist) * mean(dist)
 
 Distributions.mean(dist::NormalMeanVariance)      = dist.μ

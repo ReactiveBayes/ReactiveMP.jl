@@ -27,6 +27,15 @@ Base.show(io::IO, product::DistProduct) = print(io, "DistProduct(", getleft(prod
 getleft(product::DistProduct)  = product.left
 getright(product::DistProduct) = product.right
 
+function Distributions.support(product::DistProduct)
+    lsupport = Distributions.support(getleft(product))
+    rsupport = Distributions.support(getright(product))
+    if lsupport != rsupport
+        error("Product $product has different support for left and right entries.")
+    end
+    return lsupport
+end
+
 Distributions.mean(product::DistProduct)      = error("mean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
 Distributions.median(product::DistProduct)    = error("median() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
 Distributions.mode(product::DistProduct)      = error("mode() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
@@ -56,6 +65,18 @@ logmean(product::DistProduct)         = error("logmean() is not defined for $(pr
 meanlogmean(product::DistProduct)     = error("meanlogmean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
 mirroredlogmean(product::DistProduct) = error("mirroredlogmean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
 loggammamean(product::DistProduct)    = error("loggammamean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
+
+variate_form(::P)                         where { P <: DistProduct } = variate_form(P)
+variate_form(::Type{ DistProduct{L, R} }) where { L, R }             = _check_dist_product_variate_form(variate_form(L), variate_form(R))
+
+_check_dist_product_variate_form(::Type{ F }, ::Type{ F })   where { F <: VariateForm }                     = F
+_check_dist_product_variate_form(::Type{ F1 }, ::Type{ F2 }) where { F1 <: VariateForm, F2 <: VariateForm } = error("DistProduct has different variate forms for left ($F1) and right ($F2) entries.")
+
+value_support(::P)                         where { P <: DistProduct } = value_support(P)
+value_support(::Type{ DistProduct{L, R} }) where { L, R }             = _check_dist_product_value_support(value_support(L), value_support(R))
+
+_check_dist_product_value_support(::Type{ S }, ::Type{ S })   where { S <: ValueSupport }                      = S
+_check_dist_product_value_support(::Type{ S1 }, ::Type{ S2 }) where { S1 <: ValueSupport, S2 <: ValueSupport } = error("DistProduct has different value supports for left ($S1) and right ($S2) entries.")
 
 """
     ProdGeneric{C}

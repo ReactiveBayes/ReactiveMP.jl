@@ -14,6 +14,8 @@ NormalMeanPrecision()                       = NormalMeanPrecision(0.0, 1.0)
 
 Distributions.@distr_support NormalMeanPrecision -Inf Inf
 
+Distributions.support(dist::NormalMeanPrecision) = Distributions.RealInterval(minimum(dist), maximum(dist))
+
 weightedmean(dist::NormalMeanPrecision) = precision(dist) * mean(dist)
 
 Distributions.mean(dist::NormalMeanPrecision)    = dist.μ

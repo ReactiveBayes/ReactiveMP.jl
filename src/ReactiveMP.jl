@@ -5,6 +5,8 @@ include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
 
+include("distributions.jl")
+
 include("constraints/prod/prod.jl")
 include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
@@ -12,6 +14,7 @@ include("constraints/prod/prod_preserve_type.jl")
 
 include("constraints/form/form.jl")
 include("constraints/form/form_unspecified.jl")
+include("constraints/form/form_point_mass.jl")
 
 include("message.jl")
 include("marginal.jl")
@@ -35,7 +38,6 @@ include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
 
-include("distributions.jl")
 include("distributions/pointmass.jl")
 include("distributions/gamma_shape_rate.jl")
 include("distributions/gamma.jl")
