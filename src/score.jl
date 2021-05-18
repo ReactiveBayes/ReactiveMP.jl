@@ -34,9 +34,8 @@ function score(::Type{T}, objective::BetheFreeEnergy, model, scheduler) where { 
 
     data_point_entropies_n     = mapreduce(degree, +, getdata(model), init = 0)
     constant_point_entropies_n = mapreduce(degree, +, getconstant(model), init = 0)
-    em_point_entropies_n       = length(filter(is_expectation_maximisation_constrained, getrandom(model)))
 
-    point_entropies = Infinity(data_point_entropies_n + constant_point_entropies_n + em_point_entropies_n)
+    point_entropies = Infinity(data_point_entropies_n + constant_point_entropies_n)
 
     return combineLatest((node_bound_free_energies_sum, variable_bound_entropies_sum), PushNew()) |> map(eltype(T), d -> float(d[1] + d[2] - point_entropies))
 end
