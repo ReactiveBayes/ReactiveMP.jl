@@ -27,6 +27,28 @@ is_moment_matching(variable::AbstractVariable)        = is_moment_matching(local
 is_moment_matching(::AbstractVariableLocalConstraint) = false
 is_moment_matching(::MomentMatching)                  = true
 
+## Messages to Marginal product strategies
+
+struct FoldLeftProdStrategy end
+struct FoldRightProdStrategy end
+
+struct CustomProdStrategy{F}
+    prod_callback_generator :: F
+end
+
+"""
+    prod_fn(strategy, constraint)
+
+Returns a suitable prod computation function for a given strategy and constraint
+
+See also: [`FoldLeftProdStrategy`](@ref), [`FoldRightProdStrategy`](@ref), [`CustomProdStrategy`](@ref)
+"""
+function prod_fn end
+
+prod_fn(::FoldLeftProdStrategy, prod_constraint)       = foldl_reduce_to_marginal(prod_constraint)
+prod_fn(::FoldRightProdStrategy, prod_constraint)      = foldr_reduce_to_marginal(prod_constraint)
+prod_fn(strategy::CustomProdStrategy, prod_constraint) = strategy.prod_callback_generator(prod_constraint)
+
 ## Common functions
 
 function degree end

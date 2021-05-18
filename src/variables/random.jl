@@ -1,18 +1,6 @@
 export randomvar, simplerandomvar
 export FoldLeftProdStrategy, FoldRightProdStrategy, AllAtOnceProdStrategy
 
-# Messages to Marginal product strategies
-
-struct FoldLeftProdStrategy end
-struct FoldRightProdStrategy end
-
-# Fallbacks to FoldLeftProdStrategy in case if there is no suitable method
-struct AllAtOnceProdStrategy end
-
-strategy_fn(::FoldLeftProdStrategy, prod_constraint)  = foldl_reduce_to_marginal(prod_constraint)
-strategy_fn(::FoldRightProdStrategy, prod_constraint) = foldr_reduce_to_marginal(prod_constraint)
-strategy_fn(::AllAtOnceProdStrategy, prod_constraint) = all_reduce_to_marginal(prod_constraint)
-
 ## Random variable implementation
 
 mutable struct RandomVariable{C, P, S} <: AbstractVariable
@@ -57,7 +45,7 @@ inbound_portal!(randomvar::RandomVariable, portal) = randomvar.portal = (randomv
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.marginal = marginal
-_makemarginal(randomvar::RandomVariable)                               = collectLatest(AbstractMessage, Marginal, randomvar.inputmsgs, strategy_fn(prod_strategy(randomvar), prod_constraint(randomvar)))
+_makemarginal(randomvar::RandomVariable)                               = collectLatest(AbstractMessage, Marginal, randomvar.inputmsgs, prod_fn(prod_strategy(randomvar), prod_constraint(randomvar)))
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === length(randomvar.inputmsgs) + 1
