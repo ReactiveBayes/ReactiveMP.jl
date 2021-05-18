@@ -38,6 +38,15 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     return Message(prod(prod_parametrisation, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
 end
 
+# Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
+# We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
+# We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
+prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) = (messages) -> foldl((left, right) -> constrain_form(form_constraint, multiply_messages(prod_constraint, left, right)), Base.Generator(as_message, messages))
+prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) = (messages) -> constrain_form(form_constraint, foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
+
+prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) = (messages) -> foldr((left, right) -> constrain_form(form_constraint, multiply_messages(prod_constraint, left, right)), Base.Generator(as_message, messages))
+prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) = (messages) -> constrain_form(form_constraint, foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
+
 # Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)

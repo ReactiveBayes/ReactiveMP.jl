@@ -1,5 +1,6 @@
 export DistProduct, ProdGeneric
 
+import Distributions
 import Base: prod, show
 
 """

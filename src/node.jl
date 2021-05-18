@@ -453,7 +453,7 @@ function activate!(model, factornode::AbstractFactorNode)
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
         vtag        = tag(interface)
-        vconstraint = local_constraint(connectedvar(interface))::AbstractVariableLocalConstraint
+        vconstraint = local_constraint(connectedvar(interface))
         
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
         vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)

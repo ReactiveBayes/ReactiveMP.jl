@@ -37,17 +37,23 @@ struct CustomProdStrategy{F}
 end
 
 """
-    prod_fn(strategy, constraint)
+    messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
 
-Returns a suitable prod computation function for a given strategy and constraint
+Returns a suitable prod computation function for a given strategy and constraints
 
 See also: [`FoldLeftProdStrategy`](@ref), [`FoldRightProdStrategy`](@ref), [`CustomProdStrategy`](@ref)
 """
-function prod_fn end
+function messages_prod_fn end
 
-prod_fn(::FoldLeftProdStrategy, prod_constraint)       = foldl_reduce_to_marginal(prod_constraint)
-prod_fn(::FoldRightProdStrategy, prod_constraint)      = foldr_reduce_to_marginal(prod_constraint)
-prod_fn(strategy::CustomProdStrategy, prod_constraint) = strategy.prod_callback_generator(prod_constraint)
+messages_prod_fn(::FoldLeftProdStrategy, prod_constraint, form_constraint, form_check_strategy)       = prod_foldl_reduce(prod_constraint, form_constraint, form_check_strategy)
+messages_prod_fn(::FoldRightProdStrategy, prod_constraint, form_constraint, form_check_strategy)      = prod_foldr_reduce(prod_constraint, form_constraint, form_check_strategy)
+messages_prod_fn(strategy::CustomProdStrategy, prod_constraint, form_constraint, form_check_strategy) = strategy.prod_callback_generator(prod_constraint, form_constraint, form_check_strategy)
+
+function marginal_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
+    return let prod_fn = messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
+        return (messages) -> as_marginal(prod_fn(messages))
+    end
+end
 
 ## Common functions
 

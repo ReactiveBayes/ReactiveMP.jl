@@ -62,34 +62,6 @@ getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 
-# Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
-# We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
-# We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
-foldl_reduce_to_marginal(prod_constraint) = (messages) -> as_marginal(foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
-foldr_reduce_to_marginal(prod_constraint) = (messages) -> as_marginal(foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
-
-# TODO: I removed this code because basically it fallback to a foldl strategy and there is now ay to easily override this behaviour 
-# TODO: by relying on Julia's multiple dispatch. It is to hard to dispatch on Base.Generator or array of messages
-# TODO: Reconsider this approach in the future but it is better just to use CustomProdStrategy
-# TODO: Probably can be easily removed but I will keep this for the time being 
-
-# function all_reduce_to_marginal(prod_constraint) 
-#     return let prod_constraint = prod_constraint
-#         (messages) -> begin
-#             # We propagate clamped message, in case if both are clamped
-#             is_prod_clamped = __check_all(is_clamped, messages)
-#             # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
-#             is_prod_initial = !is_prod_clamped && __check_all(v -> is_clamped(v) || is_initial(v), messages)
-#             return Marginal(prod_all(prod_constraint, Base.Generator(getdata, messages)), is_prod_clamped, is_prod_initial)
-#         end
-#     end
-# end
-
-# # Fallback option
-# prod_all(prod_constraint, inputs) = foldl((left, right) -> prod(prod_constraint, left, right), inputs)
-
-# TODO: See: `all_reduce_to_marginal`
-
 ## Marginal observable
 
 abstract type MarginalSkipStrategy end
