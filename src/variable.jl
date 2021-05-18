@@ -1,11 +1,7 @@
 export AbstractVariable, degree
-export ClampedVariable, Marginalisation, ExpectationMaximisation, EM
-export RandomVariable, randomvar
-export SimpleRandomVariable, simplerandomvar
-export ConstVariable, constvar
-export DataVariable, datavar, update!, finish!
-export getmarginal, getmarginals, setmarginal!, setmarginals!, activate!, name
-export as_variable
+export AbstractVariableLocalConstraint, ClampedVariable, Marginalisation
+export is_clamped, is_marginalisation, is_moment_matching
+export getmarginal, getmarginals, setmarginal!, setmarginals!, name, as_variable
 
 using Rocket
 
@@ -13,28 +9,23 @@ abstract type AbstractVariable end
 
 ## Variable constraints
 
-abstract type AbstractVariableConstraint end
+abstract type AbstractVariableLocalConstraint end
 
-struct ClampedVariable         <: AbstractVariableConstraint end
-struct Marginalisation         <: AbstractVariableConstraint end
-struct ExpectationMaximisation <: AbstractVariableConstraint end
+struct ClampedVariable <: AbstractVariableLocalConstraint end
+struct Marginalisation <: AbstractVariableLocalConstraint end
+struct MomentMatching  <: AbstractVariableLocalConstraint end # TODO: WIP
 
-const EM = ExpectationMaximisation
+is_clamped(variable::AbstractVariable)        = is_clamped(local_constraint(variable))
+is_clamped(::AbstractVariableLocalConstraint) = false
+is_clamped(::ClampedVariable)                 = true
 
-is_clamped(variable::AbstractVariable)   = is_clamped(constraint(variable))
-is_clamped(::AbstractVariableConstraint) = false
-is_clamped(::ClampedVariable)            = true
+is_marginalisation(variable::AbstractVariable)        = is_marginalisation(local_constraint(variable))
+is_marginalisation(::AbstractVariableLocalConstraint) = false
+is_marginalisation(::Marginalisation)                 = true
 
-is_marginalisation_constrained(variable::AbstractVariable)   = is_marginalisation_constrained(constraint(variable))
-is_marginalisation_constrained(::AbstractVariableConstraint) = false
-is_marginalisation_constrained(::Marginalisation)            = true
-
-is_expectation_maximisation_constrained(variable::AbstractVariable)   = is_expectation_maximisation_constrained(constraint(variable))
-is_expectation_maximisation_constrained(::AbstractVariableConstraint) = false
-is_expectation_maximisation_constrained(::ExpectationMaximisation)    = true
-
-prod_parametrisation(::Marginalisation)         = ProdAnalytical()
-prod_parametrisation(::ExpectationMaximisation) = ProdExpectationMaximisation()
+is_moment_matching(variable::AbstractVariable)        = is_moment_matching(local_constraint(variable))
+is_moment_matching(::AbstractVariableLocalConstraint) = false
+is_moment_matching(::MomentMatching)                  = true
 
 ## Common functions
 

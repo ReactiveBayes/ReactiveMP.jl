@@ -23,9 +23,9 @@ function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = Recent
     return vars
 end
 
-degree(datavar::DataVariable)     = nconnected(datavar)
-name(datavar::DataVariable)       = datavar.name
-constraint(datavar::DataVariable) = ClampedVariable()
+degree(datavar::DataVariable)    = nconnected(datavar)
+name(datavar::DataVariable)      = datavar.name
+local_constraint(::DataVariable) = ClampedVariable()
 
 isconnected(datavar::DataVariable) = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)  = datavar.nconnected

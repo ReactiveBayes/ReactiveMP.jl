@@ -65,23 +65,23 @@ as_marginal(marginal::Marginal) = marginal
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
 # We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
-foldl_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldl((left, right) -> multiply_messages(prod_parametrisation, left, right), Base.Generator(as_message, messages)))
-foldr_reduce_to_marginal(prod_parametrisation) = (messages) -> as_marginal(foldr((left, right) -> multiply_messages(prod_parametrisation, left, right), Base.Generator(as_message, messages)))
+foldl_reduce_to_marginal(prod_constraint) = (messages) -> as_marginal(foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
+foldr_reduce_to_marginal(prod_constraint) = (messages) -> as_marginal(foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
 
-function all_reduce_to_marginal(prod_parametrisation) 
-    return let prod_parametrisation = prod_parametrisation
+function all_reduce_to_marginal(prod_constraint) 
+    return let prod_constraint = prod_constraint
         (messages) -> begin
             # We propagate clamped message, in case if both are clamped
             is_prod_clamped = __check_all(is_clamped, messages)
             # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
             is_prod_initial = !is_prod_clamped && __check_all(v -> is_clamped(v) || is_initial(v), messages)
-            return Marginal(prod_all(prod_parametrisation, Base.Generator(getdata, messages)), is_prod_clamped, is_prod_initial)
+            return Marginal(prod_all(prod_constraint, Base.Generator(getdata, messages)), is_prod_clamped, is_prod_initial)
         end
     end
 end
 
 # Fallback option
-prod_all(prod_parametrisation, inputs) = foldl((left, right) -> prod(prod_parametrisation, left, right), inputs)
+prod_all(prod_constraint, inputs) = foldl((left, right) -> prod(prod_constraint, left, right), inputs)
 
 ## Marginal observable
 
