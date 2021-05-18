@@ -4,6 +4,7 @@ export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean
 export variate_form, value_support, promote_variate_type
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
+import Distributions: VariateForm, ValueSupport, Distribution
 
 import Base: prod
 

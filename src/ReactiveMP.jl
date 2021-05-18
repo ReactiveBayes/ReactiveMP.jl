@@ -5,19 +5,19 @@ include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
 
+include("constraints/prod/prod.jl")
+include("constraints/form/form.jl")
+
+include("message.jl")
+include("marginal.jl")
 include("distributions.jl")
 
-include("constraints/prod/prod.jl")
 include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
 
-include("constraints/form/form.jl")
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
-
-include("message.jl")
-include("marginal.jl")
 
 as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
