@@ -23,7 +23,7 @@ as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message),
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
 include("variable.jl")
-include("portal.jl")
+include("pipeline.jl")
 
 include("actors/score.jl")
 
@@ -63,11 +63,11 @@ include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 
-include("portals/async.jl")
-include("portals/discontinue.jl")
-include("portals/logger.jl")
-include("portals/scheduled.jl")
-include("portals/vague.jl")
+include("pipeline/async.jl")
+include("pipeline/discontinue.jl")
+include("pipeline/logger.jl")
+include("pipeline/scheduled.jl")
+include("pipeline/vague.jl")
 
 include("rule.jl")
 
