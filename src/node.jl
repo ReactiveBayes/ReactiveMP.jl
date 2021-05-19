@@ -225,13 +225,13 @@ See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](
 connectedvarindex(interface::NodeInterface) = interface.connected_index
 
 """
-    inbound_portal(interface)
+    get_pipeline_stages(interface)
 
-Returns an instance of inbound portal of connected variable for the interface
+Returns an instance of pipeline stages of connected variable for the given interface
 
-    See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref)
+See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref), [`add_inbound_pipeline_stage!`](@ref)
 """
-inbound_portal(interface::NodeInterface) = inbound_portal(connectedvar(interface))
+get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(connectedvar(interface))
 
 """
     IndexedNodeInterface
@@ -258,7 +258,7 @@ messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)
 connectvariable!(interface::IndexedNodeInterface, variable, index) = connectvariable!(interface.interface, variable, index)
 connectedvar(interface::IndexedNodeInterface)                      = connectedvar(interface.interface)
 connectedvarindex(interface::IndexedNodeInterface)                 = connectedvarindex(interface.interface)
-inbound_portal(interface::IndexedNodeInterface)                    = inbound_portal(interface.interface)
+get_pipeline_stages(interface::IndexedNodeInterface)               = get_pipeline_stages(interface.interface)
 
 ## FactorNodeLocalMarginals
 
@@ -316,17 +316,17 @@ struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     factorisation  :: C
     localmarginals :: M
     metadata       :: A
-    portal         :: P
+    pipeline       :: P
 end
 
-function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A, portal::P) where { F, I, C, M, A, P }
-    return FactorNode{Type{F}, I, C, M, A, P}(fform, interfaces, factorisation, localmarginals, metadata, portal)
+function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A, pipeline::P) where { F, I, C, M, A, P }
+    return FactorNode{Type{F}, I, C, M, A, P}(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
 end
 
-function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, portal) where N
+function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, pipeline) where N
     interfaces     = map(varname -> NodeInterface(varname), varnames)
     localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
-    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, portal)
+    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
 end
 
 function Base.show(io::IO, factornode::FactorNode)
@@ -337,7 +337,7 @@ function Base.show(io::IO, factornode::FactorNode)
     println(io, string(" factorisation   : ", factorisation(factornode)))
     println(io, string(" local marginals : ", localmarginalnames(factornode)))
     println(io, string(" metadata        : ", metadata(factornode)))
-    println(io, string(" portal          : ", outbound_message_portal(factornode)))
+    println(io, string(" pipeline        : ", get_pipeline_stages(factornode)))
 end
 
 functionalform(factornode::FactorNode)          = factornode.fform
@@ -347,7 +347,7 @@ factorisation(factornode::FactorNode)           = factornode.factorisation
 localmarginals(factornode::FactorNode)          = factornode.localmarginals.marginals
 localmarginalnames(factornode::FactorNode)      = map(name, localmarginals(factornode))
 metadata(factornode::FactorNode)                = factornode.metadata
-outbound_message_portal(factornode::FactorNode) = factornode.portal
+get_pipeline_stages(factornode::FactorNode)     = factornode.pipeline
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
@@ -456,14 +456,14 @@ function activate!(model, factornode::AbstractFactorNode)
         vconstraint = local_constraint(connectedvar(interface))
         
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
-        vmessageout = apply(inbound_portal(interface), factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
         mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
         mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
 
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply(outbound_message_portal(getoptions(model)), factornode, vtag, vmessageout)
-        vmessageout = apply(outbound_message_portal(factornode), factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(get_pipeline_stages(factornode), factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
         set!(messageout(interface), vmessageout |> share_recent())
@@ -714,12 +714,12 @@ macro node(fformtype, sdtype, interfaces_list)
 
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
         
-        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())
-            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), portal)
+        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, pipeline = ReactiveMP.EmptyPipelineStage())
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), pipeline)
         end
         
-        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, portal = ReactiveMP.EmptyPortal())
-            node = ReactiveMP.make_node($fbottomtype, factorisation = factorisation, meta = meta, portal = portal)
+        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, pipeline = ReactiveMP.EmptyPipelineStage())
+            node = ReactiveMP.make_node($fbottomtype, factorisation = factorisation, meta = meta, pipeline = pipeline)
             $(interface_connections...)
             return node
         end

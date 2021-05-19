@@ -51,7 +51,7 @@ end
 
 finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
-inbound_portal(::DataVariable) = EmptyPortal()
+get_pipeline_stages(::DataVariable) = EmptyPipelineStage()
 
 _getmarginal(datavar::DataVariable)                                = datavar.marginal
 _setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.marginal = marginal

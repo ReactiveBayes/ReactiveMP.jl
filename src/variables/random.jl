@@ -6,7 +6,7 @@ mutable struct RandomVariable <: AbstractVariable
     name                :: Symbol
     inputmsgs           :: Vector{LazyObservable{AbstractMessage}} 
     marginal            :: Union{Nothing, MarginalObservable}
-    portal              :: AbstractPortal
+    pipeline            :: AbstractPipelineStage
     local_constraint    
     prod_constraint     
     prod_strategy       
@@ -14,18 +14,18 @@ mutable struct RandomVariable <: AbstractVariable
     form_check_strategy
 end
 
-function randomvar(name::Symbol; local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, EmptyPortal(), local_constraint, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+function randomvar(name::Symbol; pipeline = EmptyPipelineStage(), local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, pipeline, local_constraint, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
-function randomvar(name::Symbol, dims::Tuple; local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
-    return randomvar(name, dims...; local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
+function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
+    return randomvar(name, dims...; pipeline = pipeline, local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
 end
 
-function randomvar(name::Symbol, dims::Vararg{Int}; local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
+function randomvar(name::Symbol, dims::Vararg{Int}; pipeline = EmptyPipelineStage(), local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
     vars = Array{RandomVariable}(undef, dims)
     for i in CartesianIndices(axes(vars))
-        @inbounds vars[i] = randomvar(Symbol(name, :_, Symbol(join(i.I, :_))); local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
+        @inbounds vars[i] = randomvar(Symbol(name, :_, Symbol(join(i.I, :_))); pipeline = pipeline, local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
     end
     return vars
 end
@@ -49,8 +49,8 @@ getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
 
-inbound_portal(randomvar::RandomVariable)          = randomvar.portal
-inbound_portal!(randomvar::RandomVariable, portal) = randomvar.portal = (randomvar.portal + portal)
+get_pipeline_stages(randomvar::RandomVariable)        = randomvar.pipeline
+add_pipeline_stage!(randomvar::RandomVariable, stage) = randomvar.pipeline = (randomvar.pipeline + stage)
 
 _getmarginal(randomvar::RandomVariable)                                = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomvar.marginal = marginal

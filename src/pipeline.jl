@@ -53,7 +53,7 @@ apply_pipeline_stage(composite::CompositePipelineStage, factornode, tag, stream)
 Base.:+(left::EmptyPipelineStage,     right::EmptyPipelineStage)     = EmptyPipelineStage()
 Base.:+(left::EmptyPipelineStage,     right::AbstractPipelineStage)  = right
 Base.:+(left::AbstractPipelineStage,  right::EmptyPipelineStage)     = left
-Base.:+(left::AbstractPipelineStage,  right::AbstractPipelineStage)  = CompositePortal((left, right))
-Base.:+(left::AbstractPipelineStage,  right::CompositePipelineStage) = CompositePortal((left, right.portals...))
-Base.:+(left::CompositePipelineStage, right::AbstractPipelineStage)  = CompositePortal((left.portals..., right))
-Base.:+(left::CompositePipelineStage, right::CompositePipelineStage) = CompositePortal((left.portals..., right.portals...))
+Base.:+(left::AbstractPipelineStage,  right::AbstractPipelineStage)  = CompositePipelineStage((left, right))
+Base.:+(left::AbstractPipelineStage,  right::CompositePipelineStage) = CompositePipelineStage((left, right.stages...))
+Base.:+(left::CompositePipelineStage, right::AbstractPipelineStage)  = CompositePipelineStage((left.stages..., right))
+Base.:+(left::CompositePipelineStage, right::CompositePipelineStage) = CompositePipelineStage((left.stages..., right.stages...))

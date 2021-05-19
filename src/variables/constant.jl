@@ -44,7 +44,7 @@ getlastindex(::ConstVariable) = 1
 messageout(constvar::ConstVariable, ::Int) = constvar.messageout
 messagein(constvar::ConstVariable, ::Int)  = error("It is not possible to get a reference for inbound message for constvar")
 
-inbound_portal(::ConstVariable) = EmptyPortal()
+get_pipeline_stages(::ConstVariable) = EmptyPipelineStage()
 
 _getmarginal(constvar::ConstVariable) = of(Marginal(constvar.constant, true, false))
 

@@ -60,7 +60,7 @@ end
 
 function degree end
 
-inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to change an inbound portal for $(variable)")
+add_pipeline_stage!(variable::AbstractVariable, stage) = error("Its not possible to add a new pipeline stage for $(variable)")
 
 # Helper functions
 # Getters

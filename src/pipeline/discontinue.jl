@@ -9,4 +9,4 @@ See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`Emp
 """
 struct DiscontinuePipelineStage <: AbstractPipelineStage end
 
-apply_pipeline_stage(::DiscontinuePortal, factornode, tag, stream) = stream |> discontinue()
+apply_pipeline_stage(::DiscontinuePipelineStage, factornode, tag, stream) = stream |> discontinue()

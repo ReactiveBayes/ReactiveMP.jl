@@ -15,7 +15,7 @@ import Base: show
 # Model Options
 
 struct ModelOptions{P, F, S}
-    outbound_message_portal    :: P
+    pipeline                   :: P
     default_factorisation      :: F
     global_reactive_scheduler  :: S
 end
@@ -23,19 +23,19 @@ end
 model_options() = model_options(NamedTuple{()}(()))
 
 available_option_names(::Type{ <: ModelOptions }) = (
-    :outbound_message_portal, 
+    :pipeline, 
     :default_factorisation,
     :global_reactive_scheduler, 
     :limit_stack_depth
 )
 
 function model_options(options::NamedTuple)
-    outbound_message_portal   = EmptyPortal()
+    pipeline                  = EmptyPipelineStage()
     default_factorisation     = FullFactorisation()
     global_reactive_scheduler = AsapScheduler()
 
-    if haskey(options, :outbound_message_portal)
-        outbound_message_portal = options[:outbound_message_portal]
+    if haskey(options, :pipeline)
+        pipeline = options[:pipeline]
     end
 
     if haskey(options, :default_factorisation)
@@ -53,14 +53,14 @@ function model_options(options::NamedTuple)
     end
 
     return ModelOptions(
-        outbound_message_portal,
+        pipeline,
         default_factorisation,
         global_reactive_scheduler
     )
 end
 
 global_reactive_scheduler(options::ModelOptions) = options.global_reactive_scheduler
-outbound_message_portal(options::ModelOptions)   = options.outbound_message_portal
+get_pipeline_stages(options::ModelOptions)       = options.pipeline
 default_factorisation(options::ModelOptions)     = options.default_factorisation
 
 # Model

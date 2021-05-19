@@ -23,7 +23,8 @@ Internal API
 ReactiveMP.connectvariable!
 ReactiveMP.connectedvar
 ReactiveMP.connectedvarindex
-ReactiveMP.inbound_portal
+ReactiveMP.get_pipeline_stages
+ReactiveMP.add_pipeline_stage!
 ReactiveMP.FactorNodeLocalMarginal
 ReactiveMP.FactorNodeLocalMarginals
 ```
