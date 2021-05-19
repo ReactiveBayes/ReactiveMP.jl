@@ -24,8 +24,11 @@ end
 
 vague(::Type{ <: GammaShapeScale }) = GammaShapeScale(1.0, huge)
 
-function prod(::ProdPreserveParametrisation, left::GammaShapeScale, right::GammaShapeScale)
-    return GammaShapeScale(shape(left) + shape(right) - 1.0, (scale(left) * scale(right)) / (scale(left) + scale(right)))
+prod_analytical_rule(::Type{ <: GammaShapeScale }, ::Type{ <: GammaShapeScale }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)
+    T = promote_type(eltype(left), eltype(right))
+    return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
 # Conversion to shape - scale parametrisation
@@ -50,12 +53,15 @@ end
 
 # Extensions of prod methods
 
-function prod(::ProdPreserveParametrisation, left::GammaShapeRate, right::GammaShapeScale)
-    return GammaShapeRate(shape(left) + shape(right) - 1.0, rate(left) + rate(right))
+prod_analytical_rule(::Type{ <: GammaShapeRate }, ::Type{ <: GammaShapeScale }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{ <: GammaShapeScale }, ::Type{ <: GammaShapeRate }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeScale)
+    T = promote_type(eltype(left), eltype(right))
+    return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
-function prod(::ProdPreserveParametrisation, left::GammaShapeScale, right::GammaShapeRate)
-    # @show left
-    # @show right
-    return GammaShapeScale(shape(left) + shape(right) - 1.0, (scale(left) * scale(right)) / (scale(left) + scale(right)), check_args = true)
+function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeRate)
+    T = promote_type(eltype(left), eltype(right))
+    return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end

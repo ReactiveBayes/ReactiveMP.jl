@@ -14,7 +14,7 @@ struct NormalMixture{N} end
 # localmarginals(factornode::FactorNode)          
 # localmarginalnames(factornode::FactorNode)      
 # metadata(factornode::FactorNode)                
-# outbound_message_portal(factornode::FactorNode)       
+# get_pipeline_stages(factornode::FactorNode)       
 #
 # setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
 # getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal)
@@ -38,8 +38,8 @@ struct NormalMixtureNode{N, F <: NormalMixtureNodeFactorisationSupport, M, P} <:
     means  :: NTuple{N, IndexedNodeInterface}
     precs  :: NTuple{N, IndexedNodeInterface}
 
-    meta   :: M
-    portal :: P
+    meta     :: M
+    pipeline :: P
 end
 
 const GaussianMixture     = NormalMixture
@@ -52,7 +52,7 @@ factorisation(factornode::NormalMixtureNode)             = factornode.factorisat
 localmarginals(factornode::NormalMixtureNode)            = error("localmarginals() function is not implemented for NormalMixtureNode")           
 localmarginalnames(factornode::NormalMixtureNode)        = error("localmarginalnames() function is not implemented for NormalMixtureNode")     
 metadata(factornode::NormalMixtureNode)                  = factornode.meta            
-outbound_message_portal(factornode::NormalMixtureNode)   = factornode.portal   
+get_pipeline_stages(factornode::NormalMixtureNode)       = factornode.pipeline
 
 setmarginal!(factornode::NormalMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")           
 getmarginal!(factornode::NormalMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")           
@@ -172,18 +172,18 @@ sdtype(::Type{ <: NormalMixture }) = Stochastic()
 
 collect_factorisation(::Type{ <: NormalMixture }, factorisation) = factorisation
         
-function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, portal::P = EmptyPortal()) where { N, F, M, P }
+function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = EmptyPipelineStage()) where { N, F, M, P }
     @assert N >= 2 "NormalMixtureNode requires at least two mixtures on input"
     @assert typeof(factorisation) <: NormalMixtureNodeFactorisationSupport "NormalMixtureNode supports only following factorisations: [ $(NormalMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out)
     switch = NodeInterface(:switch)
     means  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:m)), N)
     precs  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:p)), N)
-    return NormalMixtureNode{N, F, M, P}(factorisation, out, switch, means, precs, meta, portal)
+    return NormalMixtureNode{N, F, M, P}(factorisation, out, switch, means, precs, meta, pipeline)
 end
 
-function ReactiveMP.make_node(::Type{ <: NormalMixture }, out::AbstractVariable, switch::AbstractVariable, means::NTuple{N, AbstractVariable}, precs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, portal = EmptyPortal()) where { N}
-    node = make_node(NormalMixture{N}, factorisation = collect_factorisation(NormalMixture, factorisation), meta = collect_meta(NormalMixture, meta), portal = portal)
+function ReactiveMP.make_node(::Type{ <: NormalMixture }, out::AbstractVariable, switch::AbstractVariable, means::NTuple{N, AbstractVariable}, precs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = EmptyPipelineStage()) where { N}
+    node = make_node(NormalMixture{N}, factorisation = collect_factorisation(NormalMixture, factorisation), meta = collect_meta(NormalMixture, meta), pipeline = pipeline)
 
     # out
     out_index = getlastindex(out)

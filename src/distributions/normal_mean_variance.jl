@@ -14,6 +14,8 @@ NormalMeanVariance()                       = NormalMeanVariance(0.0, 1.0)
 
 Distributions.@distr_support NormalMeanVariance -Inf Inf
 
+Distributions.support(dist::NormalMeanVariance) = Distributions.RealInterval(minimum(dist), maximum(dist))
+
 weightedmean(dist::NormalMeanVariance) = precision(dist) * mean(dist)
 
 Distributions.mean(dist::NormalMeanVariance)      = dist.μ
@@ -36,7 +38,9 @@ Base.convert(::Type{ NormalMeanVariance{T} }, μ::Real, v::Real) where { T <: Re
 
 vague(::Type{ <: NormalMeanVariance }) = NormalMeanVariance(0.0, huge)
 
-function Base.prod(::ProdPreserveParametrisation, left::NormalMeanVariance, right::NormalMeanVariance)
+prod_analytical_rule(::Type{ <: NormalMeanVariance }, ::Type{ <: NormalMeanVariance }) = ProdAnalyticalRuleAvailable()
+
+function Base.prod(::ProdAnalytical, left::NormalMeanVariance, right::NormalMeanVariance)
     μ = (mean(left) * var(right) + mean(right) * var(left)) / (var(right) + var(left))
     v = (var(left) * var(right)) / (var(left) + var(right))
     return NormalMeanVariance(μ, v)

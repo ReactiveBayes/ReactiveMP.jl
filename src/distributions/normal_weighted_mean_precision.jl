@@ -14,6 +14,8 @@ NormalWeightedMeanPrecision()                        = NormalWeightedMeanPrecisi
 
 Distributions.@distr_support NormalWeightedMeanPrecision -Inf Inf
 
+Distributions.support(dist::NormalWeightedMeanPrecision) = Distributions.RealInterval(minimum(dist), maximum(dist))
+
 weightedmean(dist::NormalWeightedMeanPrecision) = dist.xi
 
 Distributions.mean(dist::NormalWeightedMeanPrecision)    = var(dist) * weightedmean(dist)
@@ -36,11 +38,9 @@ Base.convert(::Type{ NormalWeightedMeanPrecision{T} }, xi::Real, w::Real) where 
 
 vague(::Type{ <: NormalWeightedMeanPrecision }) = NormalWeightedMeanPrecision(0.0, tiny)
 
-function Base.prod(::ProdBestSuitableParametrisation, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision) 
-    return prod(ProdPreserveParametrisation(), left, right)
-end
+prod_analytical_rule(::Type{ <: NormalWeightedMeanPrecision }, ::Type{ <: NormalWeightedMeanPrecision }) = ProdAnalyticalRuleAvailable()
 
-function Base.prod(::ProdPreserveParametrisation, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision) 
+function Base.prod(::ProdAnalytical, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision) 
     xi = weightedmean(left) + weightedmean(right)
     w  = precision(left) + precision(right)
     return NormalWeightedMeanPrecision(xi, w)

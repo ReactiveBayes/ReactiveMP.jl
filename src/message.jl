@@ -27,7 +27,7 @@ Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(messa
 
 ## Message
 
-Base.:*(left::Message, right::Message) = multiply_messages(ProdPreserveParametrisation(), left, right)
+Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
 function multiply_messages(prod_parametrisation, left::Message, right::Message) 
     # We propagate clamped message, in case if both are clamped
@@ -38,37 +38,46 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     return Message(prod(prod_parametrisation, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
 end
 
-# Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
+# Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
+# We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
+# We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
+prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) = (messages) -> foldl((left, right) -> constrain_form(form_constraint, multiply_messages(prod_constraint, left, right)), Base.Generator(as_message, messages))
+prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) = (messages) -> constrain_form(form_constraint, foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
 
-Distributions.mean(message::Message)      = Distributions.mean(getdata(message))
-Distributions.median(message::Message)    = Distributions.median(getdata(message))
-Distributions.mode(message::Message)      = Distributions.mode(getdata(message))
-Distributions.shape(message::Message)     = Distributions.shape(getdata(message))
-Distributions.scale(message::Message)     = Distributions.scale(getdata(message))
-Distributions.rate(message::Message)      = Distributions.rate(getdata(message))
-Distributions.var(message::Message)       = Distributions.var(getdata(message))
-Distributions.std(message::Message)       = Distributions.std(getdata(message))
-Distributions.cov(message::Message)       = Distributions.cov(getdata(message))
-Distributions.invcov(message::Message)    = Distributions.invcov(getdata(message))
-Distributions.logdetcov(message::Message) = Distributions.logdetcov(getdata(message))
-Distributions.entropy(message::Message)   = Distributions.entropy(getdata(message))
-Distributions.params(message::Message)    = Distributions.params(getdata(message))
+prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) = (messages) -> foldr((left, right) -> constrain_form(form_constraint, multiply_messages(prod_constraint, left, right)), Base.Generator(as_message, messages))
+prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) = (messages) -> constrain_form(form_constraint, foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)))
+
+# Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 
-Base.precision(message::Message) = precision(getdata(message))
-Base.length(message::Message)    = length(getdata(message))
-Base.ndims(message::Message)     = ndims(getdata(message))
-Base.size(message::Message)      = size(getdata(message))
-
-probvec(message::Message)         = probvec(getdata(message))
-weightedmean(message::Message)    = weightedmean(getdata(message))
-inversemean(message::Message)     = inversemean(getdata(message))
-logmean(message::Message)         = logmean(getdata(message))
-meanlogmean(message::Message)     = meanlogmean(getdata(message))
-mirroredlogmean(message::Message) = mirroredlogmean(getdata(message))
-loggammamean(message::Message)    = loggammamean(getdata(message))
+MacroHelpers.@proxy_methods Message getdata [
+    Distributions.mean,
+    Distributions.median,
+    Distributions.mode,
+    Distributions.shape,
+    Distributions.scale,
+    Distributions.rate,
+    Distributions.var,
+    Distributions.std,
+    Distributions.cov,
+    Distributions.invcov,
+    Distributions.logdetcov,
+    Distributions.entropy,
+    Distributions.params,
+    Base.precision,
+    Base.length,
+    Base.ndims,
+    Base.size,
+    probvec,
+    weightedmean,
+    inversemean,
+    logmean,
+    meanlogmean,
+    mirroredlogmean,
+    loggammamean
+]
 
 ## Variational Message
 
@@ -106,7 +115,7 @@ as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 ## Operators
 
 # TODO
-reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdPreserveParametrisation(), left, right), messages)
+reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdAnalytical(), left, right), messages)
 
 ## Message Mapping structure
 ## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file

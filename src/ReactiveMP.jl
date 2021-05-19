@@ -5,14 +5,25 @@ include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
 
+include("constraints/prod/prod.jl")
+include("constraints/form/form.jl")
+
 include("message.jl")
 include("marginal.jl")
+include("distributions.jl")
+
+include("constraints/prod/prod_analytical.jl")
+include("constraints/prod/prod_generic.jl")
+include("constraints/prod/prod_preserve_type.jl")
+
+include("constraints/form/form_unspecified.jl")
+include("constraints/form/form_point_mass.jl")
 
 as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
 include("variable.jl")
-include("portal.jl")
+include("pipeline.jl")
 
 include("actors/score.jl")
 
@@ -27,7 +38,6 @@ include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
 
-include("distributions.jl")
 include("distributions/pointmass.jl")
 include("distributions/gamma_shape_rate.jl")
 include("distributions/gamma.jl")
@@ -53,11 +63,11 @@ include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 
-include("portals/async.jl")
-include("portals/discontinue.jl")
-include("portals/logger.jl")
-include("portals/scheduled.jl")
-include("portals/vague.jl")
+include("pipeline/async.jl")
+include("pipeline/discontinue.jl")
+include("pipeline/logger.jl")
+include("pipeline/scheduled.jl")
+include("pipeline/vague.jl")
 
 include("rule.jl")
 

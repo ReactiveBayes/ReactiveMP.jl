@@ -19,13 +19,9 @@ using Random
     end
 
     @testset "prod" begin
-        @test prod(ProdPreserveParametrisation(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
-        @test prod(ProdPreserveParametrisation(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
-        @test prod(ProdPreserveParametrisation(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
-        
-        @test prod(ProdBestSuitableParametrisation(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
-        @test prod(ProdBestSuitableParametrisation(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
-        @test prod(ProdBestSuitableParametrisation(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
+        @test prod(ProdAnalytical(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
+        @test prod(ProdAnalytical(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
+        @test prod(ProdAnalytical(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
     end
 
     @testset "logmean" begin

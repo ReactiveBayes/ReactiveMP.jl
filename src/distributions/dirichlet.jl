@@ -5,7 +5,9 @@ import SpecialFunctions: digamma
 
 vague(::Type{ <: Dirichlet }, dims::Int) = Dirichlet(ones(dims))
 
-function prod(::ProdPreserveParametrisation, left::Dirichlet, right::Dirichlet)
+prod_analytical_rule(::Type{ <: Dirichlet }, ::Type{ <: Dirichlet }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)
     mvec = mvec .- one(eltype(mvec))
     return Dirichlet(mvec)

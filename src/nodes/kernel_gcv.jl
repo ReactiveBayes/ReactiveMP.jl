@@ -14,25 +14,21 @@ struct KernelGCV end
 
 @node KernelGCV Stochastic [ y, x, z ]
 
+# TODO: Remove in favor of Generic Functional Message
 struct FnWithApproximation{F, A}
     fn            :: F
     approximation :: A
 end
 
-function prod(::ProdPreserveParametrisation, left::MvNormalMeanCovariance, right::FnWithApproximation)
+prod_analytical_rule(::Type{ <: MultivariateNormalDistributionsFamily }, ::Type{ <: FnWithApproximation }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::MultivariateNormalDistributionsFamily, right::FnWithApproximation)
     μ, Σ = approximate_meancov(right.approximation, (s) -> exp(right.fn(s)), left)
     return MvNormalMeanCovariance(μ, Σ)
 end
 
-function prod(::ProdPreserveParametrisation, left::FnWithApproximation, right::MvNormalMeanCovariance)
-    return prod(ProdPreserveParametrisation(), right, left)
-end
+prod_analytical_rule(::Type{ <: FnWithApproximation }, ::Type{ <: MultivariateNormalDistributionsFamily }) = ProdAnalyticalRuleAvailable()
 
-function prod(::ProdPreserveParametrisation, left::MvNormalMeanPrecision, right::FnWithApproximation)
-    μ, Σ = approximate_meancov(right.approximation, (s) -> exp(right.fn(s)), left)
-    return MvNormalMeanPrecision(μ, cholinv(Σ))
-end
-
-function prod(::ProdPreserveParametrisation, left::FnWithApproximation, right::MvNormalMeanPrecision)
-    return prod(ProdPreserveParametrisation(), right, left)
+function prod(::ProdAnalytical, left::FnWithApproximation, right::MultivariateNormalDistributionsFamily)
+    return prod(ProdAnalytical(), right, left)
 end

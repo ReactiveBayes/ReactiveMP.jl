@@ -14,6 +14,10 @@ GammaShapeRate(a::Integer, b::Integer) = GammaShapeRate(float(a), float(b))
 GammaShapeRate(a::Real)                = GammaShapeRate(a, one(a))
 GammaShapeRate()                       = GammaShapeRate(1.0, 1.0)
 
+Distributions.@distr_support GammaShapeRate 0 Inf
+
+Distributions.support(dist::GammaShapeRate) = Distributions.RealInterval(minimum(dist), maximum(dist))
+
 Distributions.shape(dist::GammaShapeRate)  = dist.a
 Distributions.rate(dist::GammaShapeRate)   = dist.b
 Distributions.scale(dist::GammaShapeRate)  = inv(dist.b)
@@ -47,7 +51,10 @@ Base.convert(::Type{ GammaShapeRate{T} }, a::Real, b::Real) where { T <: Real } 
 
 vague(::Type{ <: GammaShapeRate }) = GammaShapeRate(1.0, tiny)
 
-function prod(::ProdPreserveParametrisation, left::GammaShapeRate{T}, right::GammaShapeRate{T}) where T
+prod_analytical_rule(::Type{ <: GammaShapeRate }, ::Type{ <: GammaShapeRate }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
+    T = promote_type(eltype(left), eltype(right))
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 

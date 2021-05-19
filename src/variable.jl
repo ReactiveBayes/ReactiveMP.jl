@@ -1,11 +1,8 @@
 export AbstractVariable, degree
-export ClampedVariable, Marginalisation, ExpectationMaximisation, EM
-export RandomVariable, randomvar
-export SimpleRandomVariable, simplerandomvar
-export ConstVariable, constvar
-export DataVariable, datavar, update!, finish!
-export getmarginal, getmarginals, setmarginal!, setmarginals!, activate!, name
-export as_variable
+export AbstractVariableLocalConstraint, ClampedVariable, Marginalisation
+export is_clamped, is_marginalisation, is_moment_matching
+export FoldLeftProdStrategy, FoldRightProdStrategy, CustomProdStrategy
+export getmarginal, getmarginals, setmarginal!, setmarginals!, name, as_variable
 
 using Rocket
 
@@ -13,34 +10,57 @@ abstract type AbstractVariable end
 
 ## Variable constraints
 
-abstract type AbstractVariableConstraint end
+abstract type AbstractVariableLocalConstraint end
 
-struct ClampedVariable         <: AbstractVariableConstraint end
-struct Marginalisation         <: AbstractVariableConstraint end
-struct ExpectationMaximisation <: AbstractVariableConstraint end
+struct ClampedVariable <: AbstractVariableLocalConstraint end
+struct Marginalisation <: AbstractVariableLocalConstraint end
+struct MomentMatching  <: AbstractVariableLocalConstraint end # TODO: WIP
 
-const EM = ExpectationMaximisation
+is_clamped(variable::AbstractVariable)        = is_clamped(local_constraint(variable))
+is_clamped(::AbstractVariableLocalConstraint) = false
+is_clamped(::ClampedVariable)                 = true
 
-is_clamped(variable::AbstractVariable)   = is_clamped(constraint(variable))
-is_clamped(::AbstractVariableConstraint) = false
-is_clamped(::ClampedVariable)            = true
+is_marginalisation(variable::AbstractVariable)        = is_marginalisation(local_constraint(variable))
+is_marginalisation(::AbstractVariableLocalConstraint) = false
+is_marginalisation(::Marginalisation)                 = true
 
-is_marginalisation_constrained(variable::AbstractVariable)   = is_marginalisation_constrained(constraint(variable))
-is_marginalisation_constrained(::AbstractVariableConstraint) = false
-is_marginalisation_constrained(::Marginalisation)            = true
+is_moment_matching(variable::AbstractVariable)        = is_moment_matching(local_constraint(variable))
+is_moment_matching(::AbstractVariableLocalConstraint) = false
+is_moment_matching(::MomentMatching)                  = true
 
-is_expectation_maximisation_constrained(variable::AbstractVariable)   = is_expectation_maximisation_constrained(constraint(variable))
-is_expectation_maximisation_constrained(::AbstractVariableConstraint) = false
-is_expectation_maximisation_constrained(::ExpectationMaximisation)    = true
+## Messages to Marginal product strategies
 
-prod_parametrisation(::Marginalisation)         = ProdPreserveParametrisation()
-prod_parametrisation(::ExpectationMaximisation) = ProdExpectationMaximisation()
+struct FoldLeftProdStrategy end
+struct FoldRightProdStrategy end
+
+struct CustomProdStrategy{F}
+    prod_callback_generator :: F
+end
+
+"""
+    messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
+
+Returns a suitable prod computation function for a given strategy and constraints
+
+See also: [`FoldLeftProdStrategy`](@ref), [`FoldRightProdStrategy`](@ref), [`CustomProdStrategy`](@ref)
+"""
+function messages_prod_fn end
+
+messages_prod_fn(::FoldLeftProdStrategy, prod_constraint, form_constraint, form_check_strategy)       = prod_foldl_reduce(prod_constraint, form_constraint, form_check_strategy)
+messages_prod_fn(::FoldRightProdStrategy, prod_constraint, form_constraint, form_check_strategy)      = prod_foldr_reduce(prod_constraint, form_constraint, form_check_strategy)
+messages_prod_fn(strategy::CustomProdStrategy, prod_constraint, form_constraint, form_check_strategy) = strategy.prod_callback_generator(prod_constraint, form_constraint, form_check_strategy)
+
+function marginal_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
+    return let prod_fn = messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
+        return (messages) -> as_marginal(prod_fn(messages))
+    end
+end
 
 ## Common functions
 
 function degree end
 
-inbound_portal!(variable::AbstractVariable, portal) = error("Its not possible to change an inbound portal for $(variable)")
+add_pipeline_stage!(variable::AbstractVariable, stage) = error("Its not possible to add a new pipeline stage for $(variable)")
 
 # Helper functions
 # Getters

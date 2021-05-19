@@ -4,6 +4,6 @@ export marginalrule
     A = mean(m_A)
     W = A' * precision(m_out) * A
     b_in = convert(promote_variate_type(F, NormalWeightedMeanPrecision), A' * weightedmean(m_out), W)    
-    q_in = prod(ProdBestSuitableParametrisation(), b_in, m_in)
+    q_in = prod(ProdAnalytical(), b_in, m_in)
     return (A = m_A, in = q_in)
 end

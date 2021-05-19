@@ -1,4 +1,4 @@
-export datavar, isconnected
+export DataVariable, datavar, isconnected, update!
 
 mutable struct DataVariable{D, S} <: AbstractVariable
     name       :: Symbol
@@ -17,15 +17,15 @@ end
 
 function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     vars = Array{DataVariable{D, S}}(undef, dims)
-    for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = datavar(Symbol(name, :_, Symbol(join(index.I, :_))), D; subject = similar(subject))
+    for i in CartesianIndices(axes(vars))
+        @inbounds vars[i] = datavar(Symbol(name, :_, Symbol(join(i.I, :_))), D; subject = similar(subject))
     end
     return vars
 end
 
-degree(datavar::DataVariable)     = nconnected(datavar)
-name(datavar::DataVariable)       = datavar.name
-constraint(datavar::DataVariable) = ClampedVariable()
+degree(datavar::DataVariable)    = nconnected(datavar)
+name(datavar::DataVariable)      = datavar.name
+local_constraint(::DataVariable) = ClampedVariable()
 
 isconnected(datavar::DataVariable) = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)  = datavar.nconnected
@@ -51,7 +51,7 @@ end
 
 finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
-inbound_portal(::DataVariable) = EmptyPortal()
+get_pipeline_stages(::DataVariable) = EmptyPipelineStage()
 
 _getmarginal(datavar::DataVariable)                                = datavar.marginal
 _setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.marginal = marginal

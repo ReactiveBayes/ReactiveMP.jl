@@ -14,6 +14,8 @@ NormalMeanPrecision()                       = NormalMeanPrecision(0.0, 1.0)
 
 Distributions.@distr_support NormalMeanPrecision -Inf Inf
 
+Distributions.support(dist::NormalMeanPrecision) = Distributions.RealInterval(minimum(dist), maximum(dist))
+
 weightedmean(dist::NormalMeanPrecision) = precision(dist) * mean(dist)
 
 Distributions.mean(dist::NormalMeanPrecision)    = dist.μ
@@ -36,7 +38,9 @@ Base.convert(::Type{ NormalMeanPrecision{T} }, μ::Real, w::Real) where { T <: R
 
 vague(::Type{ <: NormalMeanPrecision }) = NormalMeanPrecision(0.0, tiny)
 
-function Base.prod(::ProdPreserveParametrisation, left::NormalMeanPrecision, right::NormalMeanPrecision) 
+prod_analytical_rule(::Type{ <: NormalMeanPrecision }, ::Type{ <: NormalMeanPrecision }) = ProdAnalyticalRuleAvailable()
+
+function Base.prod(::ProdAnalytical, left::NormalMeanPrecision, right::NormalMeanPrecision) 
     w = precision(left) + precision(right)
     μ = (mean(left) * precision(left) + mean(right) * precision(right)) / w
     return NormalMeanPrecision(μ, w)

@@ -1,4 +1,4 @@
-export constvar, getconst, isconnected
+export ConstVariable, constvar, getconst, isconnected
 
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex
@@ -21,15 +21,15 @@ end
 
 function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
     vars = Array{ConstVariable}(undef, dims)
-    for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = constvar(Symbol(name, :_, Symbol(join(index.I, :_))), fn(convert(Tuple, index)))
+    for i in CartesianIndices(axes(vars))
+        @inbounds vars[i] = constvar(Symbol(name, :_, Symbol(join(i.I, :_))), fn(convert(Tuple, i)))
     end
     return vars
 end
 
 degree(constvar::ConstVariable)     = nconnected(constvar)
 name(constvar::ConstVariable)       = constvar.name
-constraint(constvar::ConstVariable) = ClampedVariable()
+local_constraint(::ConstVariable)   = ClampedVariable()
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 
@@ -44,7 +44,7 @@ getlastindex(::ConstVariable) = 1
 messageout(constvar::ConstVariable, ::Int) = constvar.messageout
 messagein(constvar::ConstVariable, ::Int)  = error("It is not possible to get a reference for inbound message for constvar")
 
-inbound_portal(::ConstVariable) = EmptyPortal()
+get_pipeline_stages(::ConstVariable) = EmptyPipelineStage()
 
 _getmarginal(constvar::ConstVariable) = of(Marginal(constvar.constant, true, false))
 

@@ -54,7 +54,9 @@ end
 
 vague(::Type{ <: MvNormalMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
 
-function Base.prod(::ProdPreserveParametrisation, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
+prod_analytical_rule(::Type{ <: MvNormalMeanPrecision }, ::Type{ <: MvNormalMeanPrecision }) = ProdAnalyticalRuleAvailable()
+
+function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     Λ = invcov(left) + invcov(right)
     μ = cholinv(Λ) * (invcov(left) * mean(left) + invcov(right) * mean(right))
     return MvNormalMeanPrecision(μ, Λ)

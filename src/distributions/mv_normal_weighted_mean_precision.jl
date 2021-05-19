@@ -54,11 +54,9 @@ end
 
 vague(::Type{ <: MvNormalWeightedMeanPrecision }, dims::Int) = MvNormalWeightedMeanPrecision(zeros(dims), fill(tiny, dims))
 
-function Base.prod(::ProdBestSuitableParametrisation, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
-    return prod(ProdPreserveParametrisation(), left, right)
-end
+prod_analytical_rule(::Type{ <: MvNormalWeightedMeanPrecision }, ::Type{ <: MvNormalWeightedMeanPrecision }) = ProdAnalyticalRuleAvailable()
 
-function Base.prod(::ProdPreserveParametrisation, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
+function Base.prod(::ProdAnalytical, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right) 
     Λ  = invcov(left) + invcov(right)
     return MvNormalWeightedMeanPrecision(xi, Λ)

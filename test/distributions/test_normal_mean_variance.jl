@@ -116,9 +116,9 @@ using ReactiveMP
 
     @testset "prod" begin
         
-        @test prod(ProdPreserveParametrisation(), NormalMeanVariance(-1, 1), NormalMeanVariance(1, 1)) ≈ NormalMeanVariance(0.0, 0.5)
-        @test prod(ProdPreserveParametrisation(), NormalMeanVariance(-1, 2), NormalMeanVariance(1, 4)) ≈ NormalMeanVariance(-1/3, 4/3)
-        @test prod(ProdPreserveParametrisation(), NormalMeanVariance(2, 2), NormalMeanVariance(0, 10)) ≈ NormalMeanVariance(5/3, 5/3)
+        @test prod(ProdAnalytical(), NormalMeanVariance(-1, 1), NormalMeanVariance(1, 1)) ≈ NormalMeanVariance(0.0, 0.5)
+        @test prod(ProdAnalytical(), NormalMeanVariance(-1, 2), NormalMeanVariance(1, 4)) ≈ NormalMeanVariance(-1/3, 4/3)
+        @test prod(ProdAnalytical(), NormalMeanVariance(2, 2), NormalMeanVariance(0, 10)) ≈ NormalMeanVariance(5/3, 5/3)
 
     end
 

@@ -4,7 +4,9 @@ import Distributions: Bernoulli, succprob, failprob
 
 vague(::Type{ <: Bernoulli }) = Bernoulli(0.5)
 
-function prod(::ProdPreserveParametrisation, left::Bernoulli, right::Bernoulli)
+prod_analytical_rule(::Type{ <: Bernoulli }, ::Type{ <: Bernoulli }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::Bernoulli, right::Bernoulli)
     left_p  = succprob(left)
     right_p = succprob(right)
 

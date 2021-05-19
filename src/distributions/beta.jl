@@ -5,10 +5,13 @@ import SpecialFunctions: digamma
 
 vague(::Type{ <: Beta }) = Beta(1.0, 1.0)
 
-function prod(::ProdPreserveParametrisation, left::Beta{T}, right::Beta{T}) where T
-    left_a, left_b = params(left)
+prod_analytical_rule(::Type{ <: Beta }, ::Type{ <: Beta }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::Beta, right::Beta)
+    left_a, left_b   = params(left)
     right_a, right_b = params(right)
-    return Beta(left_a + right_a - one(Float64), left_b + right_b - one(Float64))
+    T                = promote_type(eltype(left), eltype(right))
+    return Beta(left_a + right_a - one(T), left_b + right_b - one(T))
 end
 
 function logmean(dist::Beta) 

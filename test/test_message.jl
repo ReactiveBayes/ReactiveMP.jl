@@ -31,8 +31,8 @@ import Base.Iterators: repeated, product
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
 
-        @test getdata(Message(dist1, false, false) * Message(dist2, false, false))    == prod(ProdPreserveParametrisation(), dist1, dist2)
-        @test getdata(Message(dist2, false, false) * Message(dist1, false, false))    == prod(ProdPreserveParametrisation(), dist2, dist1)
+        @test getdata(Message(dist1, false, false) * Message(dist2, false, false))    == prod(ProdAnalytical(), dist1, dist2)
+        @test getdata(Message(dist2, false, false) * Message(dist1, false, false))    == prod(ProdAnalytical(), dist2, dist1)
 
         for (left_is_initial, right_is_initial) in product(repeated([ true, false ], 2)...)
             @test is_clamped(Message(dist1, true, left_is_initial) * Message(dist2, false, right_is_initial)) == false
