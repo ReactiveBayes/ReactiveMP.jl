@@ -1,5 +1,6 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
+export mean_cov, mean_invcov, mean_precision, weightedmean_cov, weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
 export variate_form, value_support, promote_variate_type
 
@@ -14,6 +15,14 @@ import Base: prod
 `vague` function returns uninformative probability distribution of a given type and can be used to set an uninformative priors in a model.
 """
 function vague end
+
+mean_cov(something)         = (mean(something), cov(something))
+mean_invcov(something)      = (mean(something), invcov(something))
+mean_precision(something)   = mean_invcov(something)
+
+weightedmean_cov(something)       = (weightedmean(something), cov(something))
+weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
+weightedmean_precision(something) = weightedmean_invcov(something)
 
 probvec(something)         = error("Probability vector function probvec() is not defined for $(something)")
 weightedmean(something)    = error("Weighted mean is not defined for $(something)")
