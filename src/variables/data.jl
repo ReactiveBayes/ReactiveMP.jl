@@ -1,4 +1,4 @@
-export DataVariable, datavar, isconnected
+export DataVariable, datavar, isconnected, update!
 
 mutable struct DataVariable{D, S} <: AbstractVariable
     name       :: Symbol

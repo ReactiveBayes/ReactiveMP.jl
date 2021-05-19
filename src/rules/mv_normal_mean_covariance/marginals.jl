@@ -8,7 +8,7 @@ end
     return (out = m_out, μ = prod(ProdAnalytical(), m_μ, MvNormalMeanCovariance(mean(m_out), mean(m_Σ))), Σ = m_Σ)
 end
 
-@marginalrule MvNormalMeanCovariance(:out_μ) (m_out::MvNormalMeanCovariance, m_μ::MvNormalMeanCovariance, q_Σ::Any) = begin
+@marginalrule MvNormalMeanCovariance(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, q_Σ::Any) = begin
     W_y  = invcov(m_out)
     xi_y = W_y * mean(m_out)
 
@@ -44,6 +44,6 @@ end
     return (out_μ = MvNormalMeanCovariance(μ, Σ), Σ = m_Σ)
 end
 
-@marginalrule MvNormalMeanCovariance(:out_μ) (m_out::PointMass, m_μ::MvNormalMeanCovariance, q_Σ::Any) = begin
+@marginalrule MvNormalMeanCovariance(:out_μ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_Σ::Any) = begin
     return (out = m_out, μ = prod(ProdAnalytical(), MvNormalMeanCovariance(mean(m_out), mean(q_Σ)), m_μ))
 end
