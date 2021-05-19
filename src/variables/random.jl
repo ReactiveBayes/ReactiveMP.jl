@@ -1,5 +1,4 @@
-export randomvar, simplerandomvar
-export FoldLeftProdStrategy, FoldRightProdStrategy, AllAtOnceProdStrategy
+export RandomVariable, randomvar, simplerandomvar
 
 ## Random variable implementation
 

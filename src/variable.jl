@@ -1,6 +1,7 @@
 export AbstractVariable, degree
 export AbstractVariableLocalConstraint, ClampedVariable, Marginalisation
 export is_clamped, is_marginalisation, is_moment_matching
+export FoldLeftProdStrategy, FoldRightProdStrategy, CustomProdStrategy
 export getmarginal, getmarginals, setmarginal!, setmarginals!, name, as_variable
 
 using Rocket

@@ -1,4 +1,4 @@
-export constvar, getconst, isconnected
+export ConstVariable, constvar, getconst, isconnected
 
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex
