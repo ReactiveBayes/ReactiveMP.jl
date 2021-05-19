@@ -3,20 +3,20 @@ export FoldLeftProdStrategy, FoldRightProdStrategy, AllAtOnceProdStrategy
 
 ## Random variable implementation
 
-mutable struct RandomVariable{C, P, S, F, H} <: AbstractVariable
+mutable struct RandomVariable <: AbstractVariable
     name                :: Symbol
-    inputmsgs           :: Vector{LazyObservable{AbstractMessage}}
-    local_constraint    :: C
-    prod_constraint     :: P
-    prod_strategy       :: S
-    form_constraint     :: F
-    form_check_strategy :: H
+    inputmsgs           :: Vector{LazyObservable{AbstractMessage}} 
     marginal            :: Union{Nothing, MarginalObservable}
     portal              :: AbstractPortal
+    local_constraint    
+    prod_constraint     
+    prod_strategy       
+    form_constraint     
+    form_check_strategy
 end
 
 function randomvar(name::Symbol; local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), local_constraint, prod_constraint, prod_strategy, form_constraint, form_check_strategy, nothing, EmptyPortal())
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, EmptyPortal(), local_constraint, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
 function randomvar(name::Symbol, dims::Tuple; local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
@@ -25,8 +25,8 @@ end
 
 function randomvar(name::Symbol, dims::Vararg{Int}; local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
     vars = Array{RandomVariable}(undef, dims)
-    for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = randomvar(Symbol(name, :_, Symbol(join(index.I, :_))); local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
+    for i in CartesianIndices(axes(vars))
+        @inbounds vars[i] = randomvar(Symbol(name, :_, Symbol(join(i.I, :_))); local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
     end
     return vars
 end

@@ -17,8 +17,8 @@ end
 
 function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     vars = Array{DataVariable{D, S}}(undef, dims)
-    for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = datavar(Symbol(name, :_, Symbol(join(index.I, :_))), D; subject = similar(subject))
+    for i in CartesianIndices(axes(vars))
+        @inbounds vars[i] = datavar(Symbol(name, :_, Symbol(join(i.I, :_))), D; subject = similar(subject))
     end
     return vars
 end

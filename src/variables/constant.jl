@@ -21,8 +21,8 @@ end
 
 function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
     vars = Array{ConstVariable}(undef, dims)
-    for index in CartesianIndices(axes(vars))
-        @inbounds vars[index] = constvar(Symbol(name, :_, Symbol(join(index.I, :_))), fn(convert(Tuple, index)))
+    for i in CartesianIndices(axes(vars))
+        @inbounds vars[i] = constvar(Symbol(name, :_, Symbol(join(i.I, :_))), fn(convert(Tuple, i)))
     end
     return vars
 end
