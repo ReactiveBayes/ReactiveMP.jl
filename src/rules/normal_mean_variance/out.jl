@@ -1,6 +1,7 @@
 export rule
 
-# Belief Propagation
+# Belief Propagation                #
+# --------------------------------- #
 @rule NormalMeanVariance(:out, Marginalisation) (m_μ::PointMass, m_v::PointMass) = NormalMeanVariance(mean(m_μ), mean(m_v))
 
 @rule NormalMeanVariance(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, m_v::PointMass) = begin 
@@ -8,5 +9,6 @@ export rule
     return NormalMeanVariance(m_μ_mean, m_μ_cov + mean(m_v))
 end
 
-# Variational
+# Variational                       # 
+# --------------------------------- #
 @rule NormalMeanVariance(:out, Marginalisation) (q_μ::Any, q_v::Any) = NormalMeanVariance(mean(q_μ), mean(q_v))
