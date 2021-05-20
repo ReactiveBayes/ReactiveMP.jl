@@ -8,7 +8,7 @@ import ReactiveMP: @call_rule
 
 @testset "rules:NormalMeanVariance:mean" begin
 
-    @testset "Belief Propagation" begin
+    @testset "Belief Propagation: (m_μ::PointMass, m_v::PointMass)" begin
         
         @test (@call_rule NormalMeanVariance(:μ, Marginalisation) (m_out = PointMass(-1.0), m_v = PointMass(2.0))) == NormalMeanVariance{Float64}(-1.0, 2.0)
         @test (@call_rule NormalMeanVariance(:μ, Marginalisation) (m_out = PointMass(1.0), m_v = PointMass(2.0)))  == NormalMeanVariance{Float64}(1.0, 2.0)
