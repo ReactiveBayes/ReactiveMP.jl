@@ -22,6 +22,12 @@ Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
 
 weightedmean(dist::MvNormalMeanCovariance) = invcov(dist) * mean(dist)
 
+function weightedmean_invcov(dist::MvNormalMeanCovariance)
+    W = invcov(dist)
+    xi = W * mean(dist)
+    return (xi, W)
+end
+
 Distributions.mean(dist::MvNormalMeanCovariance)      = dist.μ
 Distributions.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ

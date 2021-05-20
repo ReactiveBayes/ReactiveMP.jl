@@ -9,16 +9,13 @@ end
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, q_Σ::Any) = begin
-    W_y  = invcov(m_out)
-    xi_y = W_y * mean(m_out)
-
-    W_m  = invcov(m_μ)
-    xi_m = W_m * mean(m_μ)
+    xi_out, W_out = weightedmean_precision(m_out)
+    xi_m, W_m = weightedmean_precision(m_μ)
 
     W_bar = cholinv(mean(q_Σ))
     
-    xi = [ xi_y; xi_m ]
-    W  = [ W_y+W_bar -W_bar; -W_bar W_m+W_bar ]
+    xi = [ xi_out; xi_m ]
+    W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
     
     Σ = cholinv(W)
     μ = Σ * xi
@@ -27,16 +24,13 @@ end
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_Σ::PointMass) = begin
-    W_y  = invcov(m_out)
-    xi_y = W_y * mean(m_out)
-
-    W_m  = invcov(m_μ)
-    xi_m = W_m * mean(m_μ)
+    xi_out, W_out = weightedmean_precision(m_out)
+    xi_m, W_m = weightedmean_precision(m_μ)
 
     W_bar = cholinv(mean(m_Σ))
     
-    xi = [ xi_y; xi_m ]
-    W  = [ W_y+W_bar -W_bar; -W_bar W_m+W_bar ]
+    xi = [ xi_out; xi_m ]
+    W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
     
     Σ = cholinv(W)
     μ = Σ * xi

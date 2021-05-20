@@ -22,7 +22,8 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [compat]
-julia = "≥ 1.0.0"
+DomainIntegrals = "0.3.2"
+julia = "≥ 1.5.0"
 
 [extras]
 BenchmarkCI = "20533458-34a3-403d-a444-e18f38190b5b"

@@ -40,6 +40,12 @@ using Distributions
         @test precision(dist)    ≈  cholinv(Σ)
         @test cov(dist)          == Σ
         @test std(dist)          ≈ cholsqrt(Σ)
+        @test all(mean_cov(dist) .≈ (μ, Σ))
+        @test all(mean_invcov(dist) .≈ (μ, cholinv(Σ)))
+        @test all(mean_precision(dist) .≈ (μ, cholinv(Σ)))
+        @test all(weightedmean_cov(dist) .≈ (cholinv(Σ) * μ, Σ))
+        @test all(weightedmean_invcov(dist) .≈ (cholinv(Σ) * μ, cholinv(Σ)))
+        @test all(weightedmean_precision(dist) .≈ (cholinv(Σ) * μ, cholinv(Σ)))
         
         @test length(dist) == 3
         @test entropy(dist) ≈ 5.361886000915401
