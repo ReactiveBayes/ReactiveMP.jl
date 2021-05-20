@@ -244,14 +244,14 @@ macro call_rule(fform, args)
     q_names, q_values = tuple(first.(marginals)...), tuple(last.(marginals)...)
 
     m_names_arg  = isempty(m_names) ? :nothing : :(Val{ $(m_names) })
-    m_values_arg = isempty(m_names) ? :nothing : :($(map(m_value -> :(as_message($m_value)), m_values)...), )
+    m_values_arg = isempty(m_names) ? :nothing : :($(map(m_value -> :(ReactiveMP.Message($m_value, false, false)), m_values)...), )
     q_names_arg  = isempty(q_names) ? :nothing : :(Val{ $(q_names) })
-    q_values_arg = isempty(q_names) ? :nothing : :($(map(q_value -> :(as_marginal($q_value)), q_values)...), )
+    q_values_arg = isempty(q_names) ? :nothing : :($(map(q_value -> :(ReactiveMP.Marginal($q_value, false, false)), q_values)...), )
 
     on_arg = MacroHelpers.bottom_type(on_type)
 
     output = quote
-        rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, nothing)
+        ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, nothing)
     end
 
     return esc(output)
