@@ -2,7 +2,7 @@ export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 export mean_cov, mean_invcov, mean_precision, weightedmean_cov, weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
-export variate_form, value_support, promote_variate_type
+export variate_form, value_support, promote_variate_type, convert_eltype
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 import Distributions: VariateForm, ValueSupport, Distribution
@@ -65,3 +65,7 @@ function promote_variate_type end
 
 promote_variate_type(::D, T)         where { D <: Distribution } = promote_variate_type(variate_form(D), T)
 promote_variate_type(::Type{ D }, T) where { D <: Distribution } = promote_variate_type(variate_form(D), T)
+
+function convert_eltype end
+
+convert_eltype(::Type{ T }, distribution::Distribution) where { T <: Distribution } = convert(T, distribution)

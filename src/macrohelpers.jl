@@ -112,6 +112,10 @@ macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
     return esc(output)
 end
 
+function expression_convert_eltype(eltype::Type{T}, expr::Expr) where T
+    @capture(expr, f_(args__)) || error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call.")
+    return :(ReactiveMP.convert_eltype($f{$T}, $expr))
+end
 
 end
 
