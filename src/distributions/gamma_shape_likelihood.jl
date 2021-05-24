@@ -16,7 +16,7 @@ Base.show(io::IO, distribution::GammaShapeLikelihood{T}) where T = print(io, "Ga
 
 Distributions.logpdf(distribution::GammaShapeLikelihood, x) = distribution.γ * x - distribution.p * loggamma(x)
 
-prod_analytical_rule(::Type{ <: GammaShapeLikelihood },     ::Type{ <: GammaShapeLikelihood })     = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{ <: GammaShapeLikelihood }, ::Type{ <: GammaShapeLikelihood }) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeLikelihood, right::GammaShapeLikelihood)
     @assert left.approximation == right.approximation "Different approximation types for $(left) and $(right) messages"

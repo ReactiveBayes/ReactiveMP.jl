@@ -7,6 +7,7 @@ version = "0.5.0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainIntegrals = "cc6bae93-f070-4015-88fd-838f9505a86c"
+DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -23,6 +24,7 @@ TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [compat]
 DomainIntegrals = "0.3.2"
+DomainSets = "0.5.2"
 julia = "≥ 1.5.0"
 
 [extras]

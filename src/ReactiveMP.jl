@@ -57,7 +57,7 @@ include("distributions/normal.jl")
 include("distributions/exp_linear_quadratic.jl")
 include("distributions/wishart.jl")
 include("distributions/contingency.jl")
-include("distributions/common.jl")
+include("distributions/function.jl")
 
 include("variables/random.jl")
 include("variables/constant.jl")
