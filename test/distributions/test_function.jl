@@ -9,7 +9,16 @@ import DomainSets
 
 @testset "Generic Functional Distributions" begin
 
-    @testset "ContinuousUnivariateLogPdf" begin 
+    @testset "ContinuousUnivariateLogPdf" begin
+        
+        @testset "Constructor" begin 
+            f  = (x) -> -x ^ 2
+            d1 = ContinuousUnivariateLogPdf(f)
+            d2 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), f)
+
+            @test typeof(d1) === typeof(d2)
+            @test d1 ≈ d2
+        end
 
         @testset "pdf/logpdf" begin 
             d1 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> -x ^ 2)
@@ -146,6 +155,7 @@ import DomainSets
             c2 = convert(ContinuousUnivariateLogPdf, c)
             @test typeof(c2) <: ContinuousUnivariateLogPdf
             @test isapprox(c2, ContinuousUnivariateLogPdf(d, l), atol = 1e-12)
+
         end
 
     end

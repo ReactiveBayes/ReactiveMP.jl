@@ -70,6 +70,7 @@ using .ReactiveMPTestingHelpers
 
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
+    addtests("rules/normal_mean_variance/test_var.jl")
     
 
 end

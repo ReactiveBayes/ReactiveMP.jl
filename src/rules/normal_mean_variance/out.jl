@@ -1,4 +1,3 @@
-export rule
 
 # Belief Propagation                #
 # --------------------------------- #

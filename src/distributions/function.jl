@@ -25,6 +25,8 @@ struct ContinuousUnivariateLogPdf{ D <: DomainSets.Domain, F } <: ContinuousUniv
     logpdf :: F
 end
 
+ContinuousUnivariateLogPdf(f::Function) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), f)
+
 (dist::ContinuousUnivariateLogPdf)(x::Real)                      = logpdf(dist, x)
 (dist::ContinuousUnivariateLogPdf)(x::AbstractVector{ <: Real }) = logpdf(dist, x)
 
@@ -93,5 +95,7 @@ function culogpdf__isapprox(domain::DomainSets.HalfLine, left::ContinuousUnivari
     return isapprox(zero(eltype(domain)), DomainIntegrals.integral(Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x))); kwargs...)
 end
 
-
-
+# We do not check typeof of a different functions because in most of the cases lambdas have different types, but it does not really mean that objects are different
+function is_typeof_equal(left::ContinuousUnivariateLogPdf{D, F1}, right::ContinuousUnivariateLogPdf{D, F2}) where { D, F1 <: Function, F2 <: Function }
+    return true
+end

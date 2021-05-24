@@ -295,7 +295,7 @@ macro test_rules(options, on, test_sequence)
                 begin
                     local $test_output_s = ReactiveMP.@call_rule($on, $input)
                     @test isapprox( $test_output_s, $output; atol = 1e-12) 
-                    @test typeof($test_output_s) === typeof($output)
+                    @test ReactiveMP.is_typeof_equal($test_output_s, $output)
                 end
             end
         ]
@@ -340,7 +340,7 @@ macro test_rules(options, on, test_sequence)
                     begin 
                         local $output_s = ReactiveMP.@call_rule($on, $(m_f32_input[1]))
                         @test isapprox($output_s, $m_f32_output; atol = 1e-12)     
-                        @test typeof($output_s) === typeof($m_f32_output)
+                        @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
                     end
                 end)
             end
@@ -361,7 +361,7 @@ macro test_rules(options, on, test_sequence)
                     begin 
                         local $output_s = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
                         @test isapprox($output_s, $m_bigf_output; atol = 1e-12)     
-                        @test typeof($output_s) === typeof($m_bigf_output)
+                        @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output)
                     end
                 end)
             end
