@@ -18,6 +18,12 @@ Distributions.support(dist::NormalMeanVariance) = Distributions.RealInterval(min
 
 weightedmean(dist::NormalMeanVariance) = precision(dist) * mean(dist)
 
+function weightedmean_invcov(dist::NormalMeanVariance)
+    w = invcov(dist)
+    xi = w * mean(dist)
+    return (xi, w)
+end
+
 Distributions.mean(dist::NormalMeanVariance)      = dist.μ
 Distributions.median(dist::NormalMeanVariance)    = mean(dist)
 Distributions.mode(dist::NormalMeanVariance)      = mean(dist)

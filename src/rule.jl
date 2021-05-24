@@ -339,7 +339,7 @@ macro test_rules(options, on, test_sequence)
                 push!(test_rule.args, quote 
                     begin 
                         local $output_s = ReactiveMP.@call_rule($on, $(m_f32_input[1]))
-                        @test isapprox($output_s, $m_f32_output; atol = 1e-12)     
+                        @test isapprox($output_s, $m_f32_output; atol = 1e-6)     
                         @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
                     end
                 end)

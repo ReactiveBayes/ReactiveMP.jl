@@ -18,6 +18,12 @@ Distributions.support(dist::NormalWeightedMeanPrecision) = Distributions.RealInt
 
 weightedmean(dist::NormalWeightedMeanPrecision) = dist.xi
 
+function mean_cov(dist::NormalWeightedMeanPrecision)
+    v = cov(dist)
+    μ = v * weightedmean(dist)
+    return (μ, v)
+end
+
 Distributions.mean(dist::NormalWeightedMeanPrecision)    = var(dist) * weightedmean(dist)
 Distributions.median(dist::NormalWeightedMeanPrecision)  = mean(dist)
 Distributions.mode(dist::NormalWeightedMeanPrecision)    = mean(dist)
