@@ -64,6 +64,8 @@ Base.precision(dist::ContinuousUnivariateLogPdf) = error("precision() is not def
 
 Base.convert(::Type{ ContinuousUnivariateLogPdf }, domain::D, logpdf::F) where { D <: DomainSets.Domain, F } = ContinuousUnivariateLogPdf{D, F}(domain, logpdf)
 
+convert_eltype(::Type{ ContinuousUnivariateLogPdf }, ::Type{ T }, dist::ContinuousUnivariateLogPdf) where { T <: Real } = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
+
 vague(::Type{ <: ContinuousUnivariateLogPdf }) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
 
 prod_analytical_rule(::Type{ <: ContinuousUnivariateLogPdf }, ::Type{ <: ContinuousUnivariateLogPdf }) = ProdAnalyticalRuleAvailable()

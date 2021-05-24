@@ -68,4 +68,4 @@ promote_variate_type(::Type{ D }, T) where { D <: Distribution } = promote_varia
 
 function convert_eltype end
 
-convert_eltype(::Type{ T }, distribution::Distribution) where { T <: Distribution } = convert(T, distribution)
+convert_eltype(::Type{ D }, ::Type{ E }, distribution::Distribution) where { D <: Distribution, E } = convert(D{E}, distribution)
