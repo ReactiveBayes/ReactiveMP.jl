@@ -1,4 +1,4 @@
-module RulesNormalMeanVarianceOutTest
+module RulesNormalMeanVarianceVarTest
 
 using Test
 using ReactiveMP
