@@ -101,3 +101,7 @@ include("gaussian_scale/xi.jl")
 include("nonlinear/out.jl")
 include("nonlinear/x.jl")
 include("nonlinear/marginals.jl")
+
+include("algonquin/out.jl")
+include("algonquin/s.jl")
+include("algonquin/n.jl")
