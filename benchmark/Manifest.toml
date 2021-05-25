@@ -10,9 +10,9 @@ uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 
 [[ArrayInterface]]
 deps = ["IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
-git-tree-sha1 = "af516010f3d8c690d2207b12445aaa45da63e9fb"
+git-tree-sha1 = "4e988d6883cf3935e267f93f53cfc34792e0700f"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "3.1.14"
+version = "3.1.15"
 
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
