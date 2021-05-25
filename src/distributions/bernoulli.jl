@@ -4,6 +4,8 @@ import Distributions: Bernoulli, succprob, failprob
 
 vague(::Type{ <: Bernoulli }) = Bernoulli(0.5)
 
+probvec(dist::Bernoulli) = (succprob(dist), failprob(dist))
+
 prod_analytical_rule(::Type{ <: Bernoulli }, ::Type{ <: Bernoulli }) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Bernoulli, right::Bernoulli)
@@ -16,4 +18,9 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Bernoulli)
     return Bernoulli(pprod / norm)
 end
 
-probvec(dist::Bernoulli) = (succprob(dist), failprob(dist))
+prod_analytical_rule(::Type{ <: Bernoulli }, ::Type{ <: Categorical }) = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
+    @assert length(probvec(right)) === 2 "Improper Bernoulli x Categorical product"
+    return prod(ProdPreserveType(Bernoulli), left, Bernoulli(first(probvec(right))))
+end

@@ -215,3 +215,8 @@ function swap_arguments(fn::Expr)
 
     return swapped
 end
+
+## Other helpers 
+
+# We override this function for some specific types
+is_typeof_equal(left, right) = typeof(left) === typeof(right)

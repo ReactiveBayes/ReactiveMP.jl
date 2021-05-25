@@ -61,12 +61,21 @@ using .ReactiveMPTestingHelpers
     addtests("distributions/test_pointmass.jl")
     addtests("distributions/test_wishart.jl")
 
+    addtests("test_message.jl")
+    
+    addtests("test_variable.jl")
+
     addtests("test_node.jl")
     addtests("nodes/test_addition.jl")
 
-    addtests("test_message.jl")
+    addtests("rules/normal_mean_variance/test_out.jl")
+    addtests("rules/normal_mean_variance/test_mean.jl")
+    addtests("rules/normal_mean_variance/test_var.jl")
 
-    addtests("test_variable.jl")
+    addtests("rules/normal_mean_precision/test_out.jl")
+    addtests("rules/normal_mean_precision/test_mean.jl")
+    addtests("rules/normal_mean_precision/test_precision.jl")
+    
 
 end
 

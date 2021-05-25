@@ -1,7 +1,7 @@
 export PointMass, getpointmass
 
 import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
-import Base: ndims, precision, getindex
+import Base: ndims, precision, getindex, convert
 import SpecialFunctions: loggamma, logbeta
 
 struct PointMass{P}
@@ -42,6 +42,8 @@ loggammamean(distribution::PointMass{T})    where { T <: Real } = loggamma(mean(
 Base.precision(::PointMass{T}) where { T <: Real } = Inf
 Base.ndims(::PointMass{T})     where { T <: Real } = 1
 
+convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: Real } = PointMass(convert(T, getpointmass(distribution)))
+
 # AbstractVector-based multivariate point mass
 
 Distributions.insupport(distribution::PointMass{V}, x::AbstractVector) where { T, V <: AbstractVector{T} } = x == getpointmass(distribution)
@@ -62,6 +64,9 @@ loggammamean(distribution::PointMass{V})    where { T, V <: AbstractVector{T} } 
 Base.precision(distribution::PointMass{V}) where { T, V <: AbstractVector{T} } = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{V})     where { T, V <: AbstractVector{T} } = length(mean(distribution))
 
+convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: AbstractVector }           = PointMass(convert(AbstractVector{T}, getpointmass(distribution)))
+convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: AbstractVector, R <: AbstractVector } = PointMass(convert(T, getpointmass(distribution)))
+
 # AbstractMatrix-based matrixvariate point mass
 
 Distributions.insupport(distribution::PointMass{M}, x::AbstractMatrix) where { T, M <: AbstractMatrix{T} } = x == getpointmass(distribution)
@@ -81,3 +86,6 @@ loggammamean(distribution::PointMass{M})    where { T, M <: AbstractMatrix{T} } 
 
 Base.precision(distribution::PointMass{M}) where { T, M <: AbstractMatrix{T} } = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{M})     where { T, M <: AbstractMatrix{T} } = size(mean(distribution))
+
+convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: AbstractMatrix }           = PointMass(convert(AbstractMatrix{T}, getpointmass(distribution)))
+convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: AbstractMatrix, R <: AbstractMatrix } = PointMass(convert(T, getpointmass(distribution)))
