@@ -4,6 +4,8 @@ export @rule, @marginalrule
 using MacroTools
 using .MacroHelpers
 
+import Base: showerror
+
 """
     rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node)
 
@@ -24,6 +26,92 @@ This function is used to compute an outbound message for a given node
 See also: [`@rule`](@ref), [`marginalrule`], [`@marginalrule`](@ref)
 """
 function rule end
+
+struct RuleMethodError
+    fform
+    on
+    vconstraint
+    mnames
+    messages
+    qnames
+    marginals
+    meta
+    node
+end
+
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) = throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
+
+function Base.showerror(io::IO, error::RuleMethodError)
+
+    rule_method_error_extract_fform(f::Function) = string("typeof(", f, ")")
+    rule_method_error_extract_fform(f)           = string(f)
+
+    rule_method_error_extract_on(::Type{ Val{ T } }) where T = T
+
+    rule_method_error_extract_vconstraint(something) = typeof(something)
+
+    rule_method_error_extract_names(::Type{ Val{ T } }) where T = T
+    rule_method_error_extract_names(::Nothing)                  = ()
+    
+    rule_method_error_extract_types(t::Tuple)   = map(e -> typeof(getdata(e)), t)
+    rule_method_error_extract_types(t::Nothing) = ()
+
+    rule_method_error_extract_meta(something) = string("meta::", typeof(something))
+    rule_method_error_extract_meta(::Nothing) = ""
+
+    print(io, "RuleMethodError: no method matching rule for the given arguments")
+
+    try 
+        spec_fform       = rule_method_error_extract_fform(error.fform)
+        spec_on          = rule_method_error_extract_on(error.on)
+        spec_vconstraint = rule_method_error_extract_vconstraint(error.vconstraint)
+
+        m_names   = rule_method_error_extract_names(error.mnames)
+        m_indices = map(n -> interfaceindex(error.node, n), m_names)
+        q_names   = rule_method_error_extract_names(error.qnames)
+        q_indices = map(n -> interfaceindex(error.node, n), q_names)
+
+        spec_m_names = map(e -> string("m_", e), m_names)
+        spec_m_types = rule_method_error_extract_types(error.messages)
+        spec_q_names = map(e -> string("q_", e), q_names)
+        spec_q_types = rule_method_error_extract_types(error.marginals)
+
+        spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
+        spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
+
+        spec = Vector(undef, length(interfaces(error.node)))
+
+        fill!(spec, nothing)
+
+        
+        for (i, j) in enumerate(m_indices)
+            spec[j] = spec_m[i]
+        end
+
+        for (i, j) in enumerate(q_indices)
+            spec[j] = spec_q[i]
+        end
+
+        filter!(!isnothing, spec)
+
+        arguments_spec = join(spec, ",")
+        meta_spec      = rule_method_error_extract_meta(error.meta)
+
+        possible_fix_definition = """
+        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
+            return ...
+        end
+        """
+
+        println(io, "\n\nPossible fix, define:\n")
+        println(io, possible_fix_definition)
+    catch uerror
+        println(io, "Unexpected error occured during Base.showerror(::RuleMethodError)")
+        println(io, uerror)
+    end
+end
+
+
 
 """
     marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node)
