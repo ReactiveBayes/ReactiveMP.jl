@@ -22,11 +22,18 @@ function prod(::ProdPreserveParametrisation, left::NormalLikelihood, right::Norm
 end
 
 function prod(::ProdPreserveParametrisation, left::NormalDistributionsFamily, right::NormalLikelihood)
+    
     ms, vs = mean(left), cov(left)
-    logf = (x) -> right.logp(x) - 1/2/vs*(x - ms)^2
+
+    logf = (x) -> right.logp(x) - 1/2/vs*(x-ms)^2
+
     minms = Optim.minimizer(optimize(x->-logf(first(x)), [ms], LBFGS()))[1]
     minvs = ForwardDiff.hessian(x->-logf(first(x)), [minms])[1,1]
-    #m, v = approximate_prod_expectations(right.approximation, left, right)
+
+    if minvs < 0
+        println(minms, minvs)
+        minvs = 1e20
+    end
 
     return NormalMeanPrecision(minms, 1/minvs)
 end

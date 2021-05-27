@@ -16,10 +16,8 @@ struct GaussianScaleSum end
     # calculate average energy
     U = logπ + 
         log(exp(ms) + exp(mn)) + 
-        (vx + abs2(mx))/(exp(ms) + exp(mn))
+        (real(vx) + abs2(mx))/(exp(ms) + exp(mn))
 
     # return average energy
     return U
 end
-
-sigmoid(x) = 1 / (1 + exp(-x))

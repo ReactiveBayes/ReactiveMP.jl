@@ -8,7 +8,7 @@ export rule
 
     # calculate outward message
     f = let mn = mn, mx = mx, vx = vx
-        s -> -log(exp(s) + exp(mn)) - (vx + abs2(mx))/ (exp(s) + exp(mn))
+        s -> -log(exp(s) + exp(mn)) - (real(vx) + abs2(mx))/ (exp(s) + exp(mn))
     end
 
     return NormalLikelihood(f, LaplaceApproximation())
