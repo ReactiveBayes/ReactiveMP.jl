@@ -50,6 +50,7 @@ include("distributions/contingency.jl")
 include("distributions/common.jl")
 include("distributions/complex_normal.jl")
 include("distributions/mv_complex_normal.jl")
+include("distributions/normal_likelihood.jl")
 
 include("variables/random.jl")
 include("variables/constant.jl")
@@ -94,6 +95,7 @@ include("nodes/complex_normal.jl")
 include("nodes/gaussian_scale.jl")
 include("nodes/nonlinear.jl")
 include("nodes/algonquin.jl")
+include("nodes/gaussian_scale_sum.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
