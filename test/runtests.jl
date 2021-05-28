@@ -78,7 +78,7 @@ using .ReactiveMPTestingHelpers
 
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
-    Raddtests("rules/mv_normal_mean_precision/test_precision.jl")    
+    addtests("rules/mv_normal_mean_precision/test_precision.jl")    
 
 end
 
