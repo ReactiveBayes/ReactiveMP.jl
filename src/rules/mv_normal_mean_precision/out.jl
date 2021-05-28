@@ -9,4 +9,4 @@ end
 
 @rule MvNormalMeanPrecision(:out, Marginalisation) (q_μ::Any, q_Λ::Any) = MvNormalMeanPrecision(mean(q_μ), mean(q_Λ))
 
-@rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::MvNormalMeanPrecision, q_Λ::Any) = MvNormalMeanPrecision(mean(m_μ), cholinv(cov(m_μ) + cholinv(mean(q_Λ))))
+@rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::MvNormalMeanPrecision, q_Λ::Any) = MvNormalMeanCovariance(mean(m_μ), cov(m_μ) + cholinv(mean(q_Λ)))
