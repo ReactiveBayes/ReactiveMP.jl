@@ -12,6 +12,7 @@ export rule
 end
 
 @rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = begin
-    c1, c2 = cov(m_out), cov(m_in1)
-    return MvNormalMeanCovariance(mean(m_out) - mean(m_in1), c1 + c2)
+    mout, vout = mean_cov(m_out)
+    m1, v1 = mean_cov(m_in1)
+    return MvNormalMeanCovariance(mout- m1, vout + v1)
 end
