@@ -47,13 +47,30 @@ import ReactiveMP: @test_rules
     @testset "Variational: (q_μ::Any, q_Σ::Any)" begin
 
         @test_rules [ with_float_conversions = true ] MvNormalMeanCovariance(:out, Marginalisation) [
-            (input = (q_μ = PointMass([2.0; 1.0]), q_Σ = PointMass([2.0 1.0; 5.0 5.0])), output = MvNormalMeanCovariance([2.0; 1.0], [2.0 1.0; 5.0 5.0]))
+            (input = (q_μ = PointMass([ -1.0 ]), q_Σ = PointMass([ 2.0 ])), output = MvNormalMeanCovariance([ -1.0 ], [ 2.0 ])),
+            (input = (q_μ = PointMass([  1.0 ]), q_Σ = PointMass([ 2.0 ])), output = MvNormalMeanCovariance([  1.0 ], [ 2.0 ])),
+            (input = (q_μ = PointMass([ 2.0 ]),  q_Σ = PointMass([ 1.0 ])), output = MvNormalMeanCovariance([  2.0 ], [ 1.0 ])),
+            (input = (q_μ = PointMass([ 1.0, 3.0 ]),  q_Σ = PointMass([ 3.0 2.0; 2.0 4.0 ])),   output = MvNormalMeanCovariance([ 1.0, 3.0 ], [ 3.0 2.0; 2.0 4.0 ])),
+            (input = (q_μ = PointMass([ -1.0, 2.0 ]), q_Σ = PointMass([ 7.0 -1.0; -1.0 9.0 ])), output = MvNormalMeanCovariance([ -1.0, 2.0 ], [ 7.0 -1.0; -1.0 9.0 ])),
+            (input = (q_μ = PointMass([ 0.0, 0.0 ]),  q_Σ = PointMass([ 1.0 0.0; 0.0 1.0 ])),   output = MvNormalMeanCovariance([ 0.0, 0.0 ], [ 1.0 0.0; 0.0 1.0 ]))
         ]
 
         @test_rules [ with_float_conversions = true ] MvNormalMeanCovariance(:out, Marginalisation) [
-            (input = (q_μ = MvNormalMeanCovariance([2.0; 1.0], [3.0 2.0; 2.0 4.0]), q_Σ = PointMass([6.0 4.0; 4.0 8.0])), output = MvNormalMeanCovariance([2.0; 1.0], [6.0 4.0; 4.0 8.0]))
+            (input = (q_μ = MvNormalMeanCovariance([ 2.0, 1.0 ], [ 3.0 2.0; 2.0 4.0 ]), q_Σ = PointMass([ 6.0 4.0; 4.0 8.0 ])), output = MvNormalMeanCovariance([ 2.0, 1.0 ], [ 6.0 4.0; 4.0 8.0 ])),
+            (input = (q_μ = MvNormalMeanPrecision([ 2.0, 1.0 ], [ 3.0 2.0; 2.0 4.0 ]), q_Σ = PointMass([ 6.0 4.0; 4.0 8.0 ])), output = MvNormalMeanCovariance([ 2.0, 1.0 ], [ 6.0 4.0; 4.0 8.0 ])),
+            (input = (q_μ = MvNormalWeightedMeanPrecision([ 2.0, 1.0 ], [ 3.0 2.0; 2.0 4.0 ]), q_Σ = PointMass([ 6.0 4.0; 4.0 8.0 ])), output = MvNormalMeanCovariance([ 3/4, -1/8 ], [ 6.0 4.0; 4.0 8.0 ])),
         ]
 
+    end
+
+    @testset "Structured variational: (m_μ::PointMass, q_Σ::Any)" begin
+        
+        @test_rules [ with_float_conversions = true ] MvNormalMeanCovariance(:out, Marginalisation) [
+            (input = (m_μ = PointMass([ 1.0, 3.0 ]),  q_Σ = PointMass([ 3.0 2.0; 2.0 4.0 ])),   output = MvNormalMeanCovariance([ 1.0, 3.0 ], [ 3.0 2.0; 2.0 4.0 ])),
+            (input = (m_μ = PointMass([ -1.0, 2.0 ]), q_Σ = PointMass([ 7.0 -1.0; -1.0 9.0 ])), output = MvNormalMeanCovariance([ -1.0, 2.0 ], [ 7.0 -1.0; -1.0 9.0 ])),
+            (input = (m_μ = PointMass([ 0.0, 0.0 ]),  q_Σ = PointMass([ 1.0 0.0; 0.0 1.0 ])),   output = MvNormalMeanCovariance([ 0.0, 0.0 ], [ 1.0 0.0; 0.0 1.0 ])),
+        ]
+        
     end
 
     @testset "Structured variational: (m_μ::MultivariateNormalDistributionsFamily, q_Σ::Any)" begin
