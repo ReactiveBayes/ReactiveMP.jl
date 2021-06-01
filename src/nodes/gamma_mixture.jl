@@ -28,13 +28,7 @@ struct GammaMixture{N} end
 #
 const GammaMixtureNodeFactorisationSupport = Union{MeanField, }
 
-struct GammaMixtureNodeMetadata{A}
-    shape_likelihood_approximation :: A
-end
-
-get_shape_likelihood_approximation(meta::GammaMixtureNodeMetadata) = meta.shape_likelihood_approximation
-
-struct GammaMixtureNode{N, F <: GammaMixtureNodeFactorisationSupport, M <: GammaMixtureNodeMetadata, P} <: AbstractFactorNode
+struct GammaMixtureNode{N, F <: GammaMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
     factorisation :: F
 
     # Interfaces
@@ -58,14 +52,6 @@ get_pipeline_stages(factornode::GammaMixtureNode)       = factornode.pipeline
 
 setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
 getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
-
-## Metadata
-
-const DefaultGammaMixtureMetadata = GammaMixtureNodeMetadata(GaussLaguerreQuadrature(32))
-
-collect_meta(fform::Type{ <: GammaMixture }, meta::Any)                      = error("Invalid meta object $(meta) passed to GammaMixture node.")
-collect_meta(fform::Type{ <: GammaMixture }, meta::GammaMixtureNodeMetadata) = meta
-collect_meta(fform::Type{ <: GammaMixture }, meta::Nothing)                  = DefaultGammaMixtureMetadata
 
 ## activate!
 
