@@ -9,3 +9,9 @@ export rule
     p1, p2 = precision(m_in1), precision(m_in2)
     return NormalMeanPrecision(mean(m_in1) + mean(m_in2), p1 * p2 / (p1 + p2))
 end
+
+@rule typeof(+)(:out, Marginalisation) (m_in1::MultivariateNormalDistributionsFamily, m_in2::MultivariateNormalDistributionsFamily) = begin
+    m1, v1 = mean_cov(m_in1)
+    m2, v2 = mean_cov(m_in2)
+    return MvNormalMeanCovariance(m1 + m2, v1 + v2)
+end

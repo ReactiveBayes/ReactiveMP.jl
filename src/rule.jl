@@ -354,6 +354,11 @@ macro test_rules(options, on, test_sequence)
     @capture(options, [ option_entries__ ]) || error("Invalid options specification. Options should be in the form on an array.")
     
     with_float_conversions = false
+
+    float64_atol  = 1e-12
+    float32_atol  = 1e-6
+    bigfloat_atol = 1e-12
+
     
     foreach(option_entries) do option_entry 
         @capture(option_entry, (key_ = value_)) || error("Invalid option entry specification: $(option_entry). Option entry should be in the form of a 'key = value' pair.")
@@ -365,6 +370,12 @@ macro test_rules(options, on, test_sequence)
             else
                 error("Unknown value $(value) for option $(key). Can be either true or false.")
             end
+        elseif key === :float64_atol
+            float64_atol = float(value)
+        elseif key === :float32_atol
+            float32_atol = float(value)
+        elseif key === :bigfloat_atol
+            bigfloat_atol = float(value)
         else 
             error("Unknown option $(key)")
         end
@@ -382,7 +393,7 @@ macro test_rules(options, on, test_sequence)
             quote 
                 begin
                     local $test_output_s = ReactiveMP.@call_rule($on, $input)
-                    @test isapprox( $test_output_s, $output; atol = 1e-12) 
+                    @test isapprox( $test_output_s, $output; atol = $float64_atol) 
                     @test ReactiveMP.is_typeof_equal($test_output_s, $output)
                 end
             end
@@ -427,7 +438,7 @@ macro test_rules(options, on, test_sequence)
                 push!(test_rule.args, quote 
                     begin 
                         local $output_s = ReactiveMP.@call_rule($on, $(m_f32_input[1]))
-                        @test isapprox($output_s, $m_f32_output; atol = 1e-6)     
+                        @test isapprox($output_s, $m_f32_output; atol = $float32_atol)     
                         @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
                     end
                 end)
@@ -448,7 +459,7 @@ macro test_rules(options, on, test_sequence)
                 push!(test_rule.args, quote
                     begin 
                         local $output_s = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
-                        @test isapprox($output_s, $m_bigf_output; atol = 1e-12)     
+                        @test isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
                         @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output)
                     end
                 end)
