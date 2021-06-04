@@ -28,110 +28,6 @@ See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
 """
 function rule end
 
-struct RuleMethodError
-    fform
-    on
-    vconstraint
-    mnames
-    messages
-    qnames
-    marginals
-    meta
-    node
-end
-
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) = throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
-
-mutable struct NodeErrorStub 
-    counter :: Int
-end
-
-NodeErrorStub() = NodeErrorStub(0)
-
-function ReactiveMP.interfaceindex(stub::NodeErrorStub, iname::Symbol)
-    stub.counter = stub.counter + 1
-    return stub.counter
-end
-
-function ReactiveMP.interfaces(stub::NodeErrorStub)
-    return fill(nothing, stub.counter)
-end
-
-function Base.showerror(io::IO, error::RuleMethodError)
-
-    rule_method_error_extract_fform(f::Function) = string("typeof(", f, ")")
-    rule_method_error_extract_fform(f)           = string(f)
-
-    rule_method_error_extract_on(::Type{ Val{ T } })         where T = T
-    rule_method_error_extract_on(on::Tuple{ Val{ T }, Int }) where T = string("(:", rule_method_error_extract_on(typeof(on[1])), ", k)")
-
-    rule_method_error_extract_vconstraint(something) = typeof(something)
-
-    rule_method_error_extract_names(::Type{ Val{ T } }) where T = T
-    rule_method_error_extract_names(::Nothing)                  = ()
-    
-    rule_method_error_extract_types(t::Tuple)   = map(e -> typeof(getdata(e)), t)
-    rule_method_error_extract_types(t::Nothing) = ()
-
-    rule_method_error_extract_meta(something) = string("meta::", typeof(something))
-    rule_method_error_extract_meta(::Nothing) = ""
-
-    print(io, "RuleMethodError: no method matching rule for the given arguments")
-
-    try 
-        node = error.node !== nothing ? error.node : NodeErrorStub()
-
-        spec_fform       = rule_method_error_extract_fform(error.fform)
-        spec_on          = rule_method_error_extract_on(error.on)
-        spec_vconstraint = rule_method_error_extract_vconstraint(error.vconstraint)
-
-        m_names   = rule_method_error_extract_names(error.mnames)
-        m_indices = map(n -> interfaceindex(node, n), m_names)
-        q_names   = rule_method_error_extract_names(error.qnames)
-        q_indices = map(n -> interfaceindex(node, n), q_names)
-
-        spec_m_names = map(e -> string("m_", e), m_names)
-        spec_m_types = rule_method_error_extract_types(error.messages)
-        spec_q_names = map(e -> string("q_", e), q_names)
-        spec_q_types = rule_method_error_extract_types(error.marginals)
-
-        spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
-        spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
-
-        spec = Vector(undef, length(interfaces(node)))
-
-        fill!(spec, nothing)
-
-        
-        for (i, j) in enumerate(m_indices)
-            spec[j] = spec_m[i]
-        end
-
-        for (i, j) in enumerate(q_indices)
-            spec[j] = spec_q[i]
-        end
-
-        filter!(!isnothing, spec)
-
-        arguments_spec = join(spec, ", ")
-        meta_spec      = rule_method_error_extract_meta(error.meta)
-
-        possible_fix_definition = """
-        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
-            return ...
-        end
-        """
-
-        println(io, "\n\nPossible fix, define:\n")
-        println(io, possible_fix_definition)
-    catch uerror
-        println(io, "Unexpected error occured during Base.showerror(::RuleMethodError)")
-        println(io, uerror)
-    end
-end
-
-
-
 """
     marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node)
 
@@ -495,7 +391,7 @@ macro test_rules(options, on, test_sequence)
             quote 
                 begin
                     local $test_output_s = ReactiveMP.@call_rule($on, $input)
-                    @test isapprox( $test_output_s, $output; atol = $float64_atol) 
+                    @test ReactiveMP.custom_isapprox( $test_output_s, $output; atol = $float64_atol) 
                     @test ReactiveMP.is_typeof_equal($test_output_s, $output)
                 end
             end
@@ -540,7 +436,7 @@ macro test_rules(options, on, test_sequence)
                 push!(test_rule.args, quote 
                     begin 
                         local $output_s = ReactiveMP.@call_rule($on, $(m_f32_input[1]))
-                        @test isapprox($output_s, $m_f32_output; atol = $float32_atol)     
+                        @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)     
                         @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
                     end
                 end)
@@ -561,7 +457,7 @@ macro test_rules(options, on, test_sequence)
                 push!(test_rule.args, quote
                     begin 
                         local $output_s = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
-                        @test isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
+                        @test ReactiveMP.custom_isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
                         @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output)
                     end
                 end)
@@ -695,7 +591,7 @@ macro test_marginalrules(options, on, test_sequence)
             quote 
                 begin
                     local $test_output_s = ReactiveMP.@call_marginalrule($on, $input)
-                    @test isapprox( $test_output_s, $output; atol = $float64_atol) 
+                    @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol) 
                     @test ReactiveMP.is_typeof_equal($test_output_s, $output)
                 end
             end
@@ -740,7 +636,7 @@ macro test_marginalrules(options, on, test_sequence)
                 push!(test_rule.args, quote 
                     begin 
                         local $output_s = ReactiveMP.@call_marginalrule($on, $(m_f32_input[1]))
-                        @test isapprox($output_s, $m_f32_output; atol = $float32_atol)     
+                        @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)     
                         @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
                     end
                 end)
@@ -761,7 +657,7 @@ macro test_marginalrules(options, on, test_sequence)
                 push!(test_rule.args, quote
                     begin 
                         local $output_s = ReactiveMP.@call_marginalrule($on, $(m_bigf_input[1]))
-                        @test isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
+                        @test ReactiveMP.custom_isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
                         @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output)
                     end
                 end)
@@ -774,6 +670,177 @@ macro test_marginalrules(options, on, test_sequence)
     return esc(block)
 end
 
-macro test_rules(on, test_sequence)
-    return :(@test_rules [] $on $test_sequence)
+macro test_marginalrules(on, test_sequence)
+    return :(@test_marginalrules [] $on $test_sequence)
+end
+
+# Errors 
+
+mutable struct NodeErrorStub 
+    counter :: Int
+end
+
+NodeErrorStub() = NodeErrorStub(0)
+
+function interfaceindex(stub::NodeErrorStub, iname::Symbol)
+    stub.counter = stub.counter + 1
+    return stub.counter
+end
+
+function interfaces(stub::NodeErrorStub)
+    return fill(nothing, stub.counter)
+end
+
+rule_method_error_extract_fform(f::Function) = string("typeof(", f, ")")
+rule_method_error_extract_fform(f)           = string(f)
+
+rule_method_error_extract_on(::Type{ Val{ T } })         where T = T
+rule_method_error_extract_on(on::Tuple{ Val{ T }, Int }) where T = string("(:", rule_method_error_extract_on(typeof(on[1])), ", k)")
+
+rule_method_error_extract_vconstraint(something) = typeof(something)
+
+rule_method_error_extract_names(::Type{ Val{ T } }) where T = T
+rule_method_error_extract_names(::Nothing)                  = ()
+
+rule_method_error_extract_types(t::Tuple)   = map(e -> typeof(getdata(e)), t)
+rule_method_error_extract_types(t::Nothing) = ()
+
+rule_method_error_extract_meta(something) = string("meta::", typeof(something))
+rule_method_error_extract_meta(::Nothing) = ""
+
+struct RuleMethodError
+    fform
+    on
+    vconstraint
+    mnames
+    messages
+    qnames
+    marginals
+    meta
+    node
+end
+
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) = throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
+
+function Base.showerror(io::IO, error::RuleMethodError)
+
+    print(io, "RuleMethodError: no method matching rule for the given arguments")
+
+    try 
+        node = error.node !== nothing ? error.node : NodeErrorStub()
+
+        spec_fform       = rule_method_error_extract_fform(error.fform)
+        spec_on          = rule_method_error_extract_on(error.on)
+        spec_vconstraint = rule_method_error_extract_vconstraint(error.vconstraint)
+
+        m_names   = rule_method_error_extract_names(error.mnames)
+        m_indices = map(n -> interfaceindex(node, n), m_names)
+        q_names   = rule_method_error_extract_names(error.qnames)
+        q_indices = map(n -> interfaceindex(node, n), q_names)
+
+        spec_m_names = map(e -> string("m_", e), m_names)
+        spec_m_types = rule_method_error_extract_types(error.messages)
+        spec_q_names = map(e -> string("q_", e), q_names)
+        spec_q_types = rule_method_error_extract_types(error.marginals)
+
+        spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
+        spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
+
+        spec = Vector(undef, length(interfaces(node)))
+
+        fill!(spec, nothing)
+
+        
+        for (i, j) in enumerate(m_indices)
+            spec[j] = spec_m[i]
+        end
+
+        for (i, j) in enumerate(q_indices)
+            spec[j] = spec_q[i]
+        end
+
+        filter!(!isnothing, spec)
+
+        arguments_spec = join(spec, ", ")
+        meta_spec      = rule_method_error_extract_meta(error.meta)
+
+        possible_fix_definition = """
+        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
+            return ...
+        end
+        """
+
+        println(io, "\n\nPossible fix, define:\n")
+        println(io, possible_fix_definition)
+    catch uerror
+        println(io, "Unexpected error occured during Base.showerror(::RuleMethodError)")
+        println(io, uerror)
+    end
+end
+
+struct MarginalRuleMethodError
+    fform
+    on
+    mnames
+    messages
+    qnames
+    marginals
+    meta
+    node
+end
+
+marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) = throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
+
+function Base.showerror(io::IO, error::MarginalRuleMethodError)
+
+    print(io, "MarginalRuleMethodError: no method matching rule for the given arguments")
+
+    try 
+        node = error.node !== nothing ? error.node : NodeErrorStub()
+
+        spec_fform       = rule_method_error_extract_fform(error.fform)
+        spec_on          = rule_method_error_extract_on(error.on)
+
+        m_names   = rule_method_error_extract_names(error.mnames)
+        m_indices = map(n -> interfaceindex(node, n), m_names)
+        q_names   = rule_method_error_extract_names(error.qnames)
+        q_indices = map(n -> interfaceindex(node, n), q_names)
+
+        spec_m_names = map(e -> string("m_", e), m_names)
+        spec_m_types = rule_method_error_extract_types(error.messages)
+        spec_q_names = map(e -> string("q_", e), q_names)
+        spec_q_types = rule_method_error_extract_types(error.marginals)
+
+        spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
+        spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
+
+        spec = Vector(undef, length(interfaces(node)))
+
+        fill!(spec, nothing)
+        
+        for (i, j) in enumerate(m_indices)
+            spec[j] = spec_m[i]
+        end
+
+        for (i, j) in enumerate(q_indices)
+            spec[j] = spec_q[i]
+        end
+
+        filter!(!isnothing, spec)
+
+        arguments_spec = join(spec, ", ")
+        meta_spec      = rule_method_error_extract_meta(error.meta)
+
+        possible_fix_definition = """
+        @marginalrule $(spec_fform)(:$spec_on) ($arguments_spec, $meta_spec) = begin 
+            return ...
+        end
+        """
+
+        println(io, "\n\nPossible fix, define:\n")
+        println(io, possible_fix_definition)
+    catch uerror
+        println(io, "Unexpected error occured during Base.showerror(::MarginalRuleMethodError)")
+        println(io, uerror)
+    end
 end

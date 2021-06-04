@@ -113,8 +113,16 @@ macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
 end
 
 function expression_convert_eltype(eltype::Type{T}, expr::Expr) where T
-    @capture(expr, f_(args__)) || error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call.")
-    return :(ReactiveMP.convert_eltype($f, $T, $expr))
+    if @capture(expr, f_(args__)) 
+        return :(ReactiveMP.convert_eltype($f, $T, $expr))
+    elseif @capture(expr, (elems__, ))
+        entries = map(elems) do elem
+            @capture(elem, (name_ = value_)) || error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements.")
+            return (name, value)
+        end
+        return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
+    end
+    error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements.")
 end
 
 end

@@ -1,7 +1,7 @@
 export PointMass, getpointmass
 
 import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
-import Base: ndims, precision, getindex, convert
+import Base: ndims, precision, getindex, convert, isapprox
 import SpecialFunctions: loggamma, logbeta
 
 struct PointMass{P}
@@ -89,3 +89,7 @@ Base.ndims(distribution::PointMass{M})     where { T, M <: AbstractMatrix{T} } =
 
 convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: AbstractMatrix }           = PointMass(convert(AbstractMatrix{T}, getpointmass(distribution)))
 convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: AbstractMatrix, R <: AbstractMatrix } = PointMass(convert(T, getpointmass(distribution)))
+
+Base.isapprox(left::PointMass, right::PointMass; kwargs...) = Base.isapprox(getpointmass(left), getpointmass(right); kwargs...)
+Base.isapprox(left::PointMass, right; kwargs...) = false
+Base.isapprox(left, right::PointMass; kwargs...) = false
