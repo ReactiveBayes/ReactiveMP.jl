@@ -83,6 +83,9 @@ using .ReactiveMPTestingHelpers
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
     addtests("rules/mv_normal_mean_precision/test_precision.jl")  
 
+    addtests("rules/wishart/test_marginals.jl")
+    addtests("rules/wishart/test_out.jl")
+
 end
 
 end
