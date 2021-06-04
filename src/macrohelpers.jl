@@ -61,11 +61,11 @@ Returns a type wrapped with a proxy type in a form of `ProxyType{ <: Type }`.
 - `proxy`: Proxy type used to wrap `type`
 - `type`: Type to be wrapped
 """
-function proxy_type(proxy::Symbol, type::Symbol)
+function proxy_type(proxy, type::Symbol)
     return :($(proxy){ <: $(type) })
 end
 
-function proxy_type(proxy::Symbol, type::Expr)
+function proxy_type(proxy, type::Expr)
     if @capture(type, NTuple{N_, T_})
         return :(NTuple{ $N, <: $(proxy_type(proxy, T)) })
     elseif @capture(type, Tuple{ T__ })
