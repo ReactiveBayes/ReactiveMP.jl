@@ -16,7 +16,7 @@ Distributions.support(dist::GammaShapeLikelihood) = Distributions.RealInterval(m
 
 Base.show(io::IO, distribution::GammaShapeLikelihood{T}) where T = print(io, "GammaShapeLikelihood{$T}(π = $(distribution.p), γ = $(distribution.γ))")
 
-Distributions.logpdf(distribution::GammaShapeLikelihood, x) = distribution.γ * x - distribution.p * loggamma(x)
+Distributions.logpdf(distribution::GammaShapeLikelihood, x::Real) = distribution.γ * x - distribution.p * loggamma(x)
 
 prod_analytical_rule(::Type{ <: GammaShapeLikelihood }, ::Type{ <: GammaShapeLikelihood }) = ProdAnalyticalRuleAvailable()
 
