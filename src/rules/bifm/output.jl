@@ -1,6 +1,6 @@
 export rule
 
-@rule BIFM(:output, Marginalisation) (m_input::Marginal{MvNormalMeanCovariance}, m_zprev::Marginal{MvNormalMeanCovariance}, m_znext::Marginal{MvNormalMeanCovariance}, meta::BIFMMeta) = begin 
+@rule BIFM(:output, Marginalisation) (m_input::MvNormalMeanCovariance, m_zprev::Marginal{MvNormalMeanCovariance}, m_znext::MvNormalMeanCovariance, meta::BIFMMeta) = begin 
     # todo: optimize for speed
 
     # fetch statistics
