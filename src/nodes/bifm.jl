@@ -1,3 +1,4 @@
+export BIFM, BIFMMeta
 
 struct BIFM end
 
