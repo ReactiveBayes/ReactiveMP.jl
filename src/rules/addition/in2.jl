@@ -15,3 +15,13 @@ end
     c1, c2 = cov(m_out), cov(m_in1)
     return MvNormalMeanCovariance(mean(m_out) - mean(m_in1), c1 + c2)
 end
+
+@rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::PointMass) = begin
+    m1, c1 = cov(m_out)
+    return MvNormalMeanCovariance(m1 - mean(m_in1), c1)
+end
+
+@rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::MultivariateNormalDistributionsFamily) = begin
+    m1, c1 = mean_cov(m_in1)
+    return MvNormalMeanCovariance(mean(m_out) - m1, c1)
+end
