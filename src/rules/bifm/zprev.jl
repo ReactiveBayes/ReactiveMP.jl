@@ -2,7 +2,7 @@ export rule
 
 # Compute backwards information filter using input, output, and previous backwards information filter
 
-@rule BIFM(:zprev, Marginalisation) (m_output::MvNormalWeightedMeanPrecision, m_input::MvNormalWeightedMeanPrecision, m_znext::MvNormalWeightedMeanPrecision, meta::BIFMMeta) = begin
+@rule BIFM(:zprev, Marginalisation) (m_output::MultivariateNormalDistributionsFamily, m_input::MultivariateNormalDistributionsFamily, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta) = begin
     # todo: optimize for speed
 
     # fetch statistics
@@ -12,11 +12,11 @@ export rule
     A, B, C = getA(meta), getB(meta), getC(meta)          # A, B, C
 
     # calculate intermediate quantities
-    ξ_z = C.T * ξ_output + ξ_znext
-    W_z = C.T * W_output * C + W_znext
-    H = cholinv(W_input + B.T * W_z * B)
-    ξ_ztilde = ξ_z + W_z * B * H * (-ξ_input - B.T * ξ_z)
-    W_ztilde = W_z - W_z * B * H * B.T * W_z
+    ξ_z = C' * ξ_output + ξ_znext
+    W_z = C' * W_output * C + W_znext
+    H = cholinv(W_input + B' * W_z * B)
+    ξ_ztilde = ξ_z + W_z * B * H * (-ξ_input - B' * ξ_z)
+    W_ztilde = W_z - W_z * B * H * B' * W_z
 
     # save required intermediate quantities
     setH!(meta, H)
@@ -24,8 +24,8 @@ export rule
     setWz!(meta, W_z)
 
     # calculate outgoing message to zprev
-    ξ_zprev = A,T * ξ_ztilde    
-    W_zprev = A.T * W_ztilde * A
+    ξ_zprev = A' * ξ_ztilde    
+    W_zprev = A' * W_ztilde * A
 
     # return message
     return MvNormalWeightedMeanPrecision(ξ_zprev, W_zprev)
