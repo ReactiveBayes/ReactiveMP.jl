@@ -1,3 +1,4 @@
+export BIFM, BIFMMeta
 
 struct BIFM end
 
@@ -13,9 +14,12 @@ mutable struct BIFMMeta
 end
 
 function BIFMMeta(A::Array{Real, 2}, B::Array{Real, 2}, C::Array{Real, 2})
-    # todo: check dimensions A, B, C
-    # A: n x n, B: n x m, C: d x n.
-    return BIFMMeta(A, B, C, nothing, nothing, nothing)
+    # check whether the dimensionality of transition matrices makes sense
+    @assert size(A,1) == size(B,1)
+    @assert size(A,1) == size(C,2)
+
+    # return default Meta data for BIFM node
+    return BIFMMeta(A, B, C, nothing, nothing)
 end
 
 getA(meta::BIFMMeta)                = meta.A

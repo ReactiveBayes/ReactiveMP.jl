@@ -58,6 +58,7 @@ include("distributions/exp_linear_quadratic.jl")
 include("distributions/wishart.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
+include("distributions/marginal_distribution.jl")
 
 include("variables/random.jl")
 include("variables/constant.jl")
@@ -98,6 +99,7 @@ include("nodes/gamma_mixture.jl")
 include("nodes/dot_product.jl")
 include("nodes/transition.jl")
 include("nodes/autoregressive.jl")
+include("nodes/bifm_helper.jl")
 
 
 # Deterministic nodes

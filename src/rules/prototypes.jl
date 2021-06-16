@@ -90,3 +90,6 @@ include("autoregressive/x.jl")
 include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
+
+include("bifm_helper/input.jl")
+include("bifm_helper/output.jl")
