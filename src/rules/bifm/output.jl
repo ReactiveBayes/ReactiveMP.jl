@@ -1,24 +1,16 @@
 export rule
 
-@rule BIFM(:output, Marginalisation) (m_input::Marginal{MvNormalMeanCovariance}, m_zprev::Marginal{MvNormalMeanCovariance}, m_znext::Marginal{MvNormalMeanCovariance}, meta::BIFMMeta) = begin 
+@rule BIFM(:output, Marginalisation) (m_znext::Marginal{MvNormalMeanCovariance, meta::BIFMMeta) = begin
     # todo: optimize for speed
 
     # fetch statistics
-    ξ_input, W_input = weightedmean_precision(m_input)
-    ξ_znext, W_znext = weightedmean_precision(m_znext)
-    A, B, C = getA(meta), getB(meta), getC(meta)
-
-    # calculate intermediate quantities
-    H = cholinv(W_input + B.T * W_znext * B)
-    ξ_ztilde = ξ_znext + W_znext * B * H * (-ξ_input - B.T * ξ_znext)
-    W_ztilde = W_znext - W_znext * B * H * B.T * W_znext
-
-    # save required intermediate quantities
-    # todo: save H
-    # todo: save ξ_ztilde
+    mean_znext, V_znext = mean_cov(m_znext)
+    C = getC(meta)
 
     # calculate outgoing message to zprev
-    ξ_zprev = A.T * ξ_ztilde
-    W_zprev = A.T * W_ztilde * A
+    mean_output = C * mean_znext
+    V_output = C * V_znext * C.T
 
+    # return outgoing marginal
+    return MvNormalMeanCovariance(mean_output, V_output)
 end

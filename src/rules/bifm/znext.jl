@@ -1,24 +1,24 @@
 export rule
 
-@rule BIFM(:znext, Marginalisation) (m_output::MvNormalWeightedMeanPrecision, m_input::MvNormalWeightedMeanPrecision, m_zprev::Marginal{MvNormalWeightedMeanPrecision}, meta::BIFMMeta) = begin 
+@rule BIFM(:znext, Marginalisation) (m_output::MvNormalWeightedMeanPrecision, m_input::MvNormalWeightedMeanPrecision, m_zprev::Marginal{MvNormalMeanCovariance}, m_znext::MvNormalWeightedMeanPrecision, meta::BIFMMeta) = begin
     # todo: optimize for speed
 
     # fetch statistics
-    ξ_input, W_input = weightedmean_precision(m_input)
-    ξ_znext, W_znext = weightedmean_precision(m_znext)
-    A, B, C = getA(meta), getB(meta), getC(meta)
+    μu, Σu = mean_cov(m_input)
+    ξ_output, W_output = weightedmean_precision(m_output)
+    mean_zprev, V_prev = mean_cov(m_zprev)
+    A, B, H, ξztilde, Wz = getA(meta), getB(meta), getC(meta), getH(meta), getξztilde(meta), getWz(meta)
 
     # calculate intermediate quantities
-    H = cholinv(W_input + B.T * W_znext * B)
-    ξ_ztilde = ξ_znext + W_znext * B * H * (-ξ_input - B.T * ξ_znext)
-    W_ztilde = W_znext - W_znext * B * H * B.T * W_znext
+    F = I - Wz * B * H * B.T
 
-    # save required intermediate quantities
-    # todo: save H
-    # todo: save ξ_ztilde
+    mz1 = A * mean_zprev
+    Vz1 = A * V_zprev * V.T
 
-    # calculate outgoing message to zprev
-    ξ_zprev = A.T * ξ_ztilde
-    W_zprev = A.T * W_ztilde * A
+    m_znext = F.T * mz1 + B * Σu * B.T * ξ_output + B *  μu
+    V_znext = F.T * Vz1 * F + B * H * B.T
+
+    # return outgoing marginal
+    return MvNormalMeanCovariance(m_znext, V_znext)
 
 end
