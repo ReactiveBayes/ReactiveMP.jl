@@ -124,3 +124,8 @@ function setmarginal!(marginal::MarginalObservable, value)
     next!(marginal.subject, Marginal(value, false, true))
     return nothing
 end
+
+# product of distribution message with marginal message returns the marginal directly
+function prod(::ProdAnalytical, left::Marginal, right::Distribution{F, S}) where { F <: VariateForm, S <: ValueSupport }
+    return getdata(left)
+end
