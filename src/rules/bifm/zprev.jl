@@ -12,27 +12,20 @@ export rule
     A, B, C = getA(meta), getB(meta), getC(meta)          # A, B, C
 
     # calculate intermediate quantities
-    H = cholinv(W_input + B.T * W_znext * B)
-    ξ_ztilde = ξ_znext + W_znext * B * H * (-ξ_input - B.T * ξ_znext)
-    W_ztilde = W_znext - W_znext * B * H * B.T * W_znext
+    ξ_z = C.T * ξ_output + ξ_znext
+    W_z = C.T * W_output * C + W_znext
+    H = cholinv(W_input + B.T * W_z * B)
+    ξ_ztilde = ξ_z + W_z * B * H * (-ξ_input - B.T * ξ_z)
+    W_ztilde = W_z - W_z * B * H * B.T * W_z
 
     # save required intermediate quantities
-    # save H
-    setH!(H)
-
-    # save ξ_ztilde
-    setξztilde!(ξ_ztilde)
-
-    # calculated intermediate quantities
-    ξ_z1 = A.T * ξ_ztilde
-    W_z1 = A.T * W_ztilde * A
+    setH!(meta, H)
+    setξztilde!(meta, ξ_ztilde)
+    setWz!(meta, W_z)
 
     # calculate outgoing message to zprev
-    ξ_zprev = C.T * ξ_output + ξ_z1       # ξzk
-    W_zprev = C.T * W_output * C + W_z1   # Wzk
-
-    # save Wz
-    setWz!(W_zprev)
+    ξ_zprev = A,T * ξ_ztilde    
+    W_zprev = A.T * W_ztilde * A
 
     # return message
     return MvNormalWeightedMeanPrecision(ξ_zprev, W_zprev)

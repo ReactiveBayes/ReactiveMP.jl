@@ -1,16 +1,27 @@
 export rule
 
-@rule BIFM(:output, Marginalisation) (m_znext::Marginal{MvNormalMeanCovariance, meta::BIFMMeta) = begin
+@rule BIFM(:output, Marginalisation) (m_input::MvNormalWeightedMeanPrecision, m_zprev::MarginalDistribution{MvNormalMeanCovariance}, m_znext::MvNormalWeightedMeanPrecision, meta::BIFMMeta) = begin
     # todo: optimize for speed
 
     # fetch statistics
-    mean_znext, V_znext = mean_cov(m_znext)
-    C = getC(meta)
+    μ_u, V_u = mean_cov(m_input)
+    ξ_output, W_output = weightedmean_precision(m_output)
+    μ_zprev, V_zprev = mean_cov(m_zprev)
+    A, B, C, H, ξ_ztilde, Wz = getA(meta), getB(meta), getC(meta), getH(meta), getξztilde(meta), getWz(meta)
 
-    # calculate outgoing message to zprev
-    mean_output = C * mean_znext
+    # calculate intermediate quantities
+    F = I - Wz * B * H * B.T
+
+    m_ztilde = A * μ_zprev
+    V_ztilde = A * V_zprev * A.T
+
+    m_znext = F.T * m_ztilde + B * V_u * B.T * ξ_ztilde + B * μ_u
+    V_znext = F.T * V_ztilde * F + B * H * B.T
+
+    # calculate outgoing message to output
+    m_output = C * m_znext
     V_output = C * V_znext * C.T
 
     # return outgoing marginal
-    return MvNormalMeanCovariance(mean_output, V_output)
+    return MarginalDistribution(MvNormalMeanCovariance(m_output, V_output))
 end
