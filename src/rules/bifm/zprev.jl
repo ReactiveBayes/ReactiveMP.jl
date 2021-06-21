@@ -19,12 +19,13 @@ export rule
     W_ztilde = W_z - W_z * B * H * B' * W_z
 
     # save required intermediate quantities
+    setξz!(meta, ξ_z)
     setH!(meta, H)
     setξztilde!(meta, ξ_ztilde)
     setWz!(meta, W_z)
 
     # calculate outgoing message to zprev
-    ξ_zprev = A' * ξ_ztilde    
+    ξ_zprev = A' * ξ_ztilde
     W_zprev = A' * W_ztilde * A
 
     # return message
