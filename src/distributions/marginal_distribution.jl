@@ -38,3 +38,7 @@ loggammamean(dist::MarginalDistribution)            = loggammamean(dist.dist)
 function prod(::ProdAnalytical, left::MarginalDistribution, right::Distribution{F, S}) where { F <: VariateForm, S <: ValueSupport }
     return getdist(left)
 end
+
+function prod(::ProdAnalytical, left::Distribution{F, S}, right::MarginalDistribution) where { F <: VariateForm, S <: ValueSupport }
+    return getdist(right)
+end
