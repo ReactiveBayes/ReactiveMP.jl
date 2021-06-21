@@ -85,8 +85,8 @@ Now let's see how to specify this model using GraphPPL's package syntax.
     # In this example we create a sequence of inputs that accepts Float64
     y = datavar(Float64, n)
     
-    # We endow θ parameter of our model with uninformative prior
-    θ ~ Beta(1.0, 1.0)
+    # We endow θ parameter of our model with some prior
+    θ ~ Beta(2.0, 7.0)
     
     # We assume that outcome of each coin flip is governed by the Bernoulli distribution
     for i in 1:n
@@ -151,10 +151,19 @@ println("std:  ", std(θestimated))
 nothing #hide
 ```
 
+```@example coin
+using Plots, SpecialFunctions; theme(:default)
+
+rθ = range(0, 1, length = 1000)
+p1 = plot(rθ, (x) -> pdf(Beta(2.0, 7.0), x), title="Prior", fillalpha=0.3, fillrange = 0, label="P(θ)", c=1,)
+p2 = plot(rθ, (x) -> pdf(θestimated, x), title="Posterior", fillalpha=0.3, fillrange = 0, label="P(θ|y)", c=3)
+plot(p1, p2, layout = @layout([a; b]))
+```
+
 `ReactiveMP.jl` scales very well for large models and factor graphs. We may use more points for better estimates:
 
 ```@example coin
-dataset = float.(rand(rng, Bernoulli(p), 100_000))
+dataset = float.(rand(rng, Bernoulli(p), 10_000))
 ```
 
 ```@example coin
@@ -165,4 +174,13 @@ dataset = float.(rand(rng, Bernoulli(p), 100_000))
 println("mean: ", mean(θestimated))
 println("std:  ", std(θestimated))
 nothing #hide
+```
+
+```@example coin
+using Plots, SpecialFunctions; theme(:default)
+
+rθ = range(0, 1, length = 1000)
+p1 = plot(rθ, (x) -> pdf(Beta(2.0, 7.0), x), title="Prior", fillalpha=0.3, fillrange = 0, label="P(θ)", c=1,)
+p2 = plot(rθ, (x) -> pdf(θestimated, x), title="Posterior", fillalpha=0.3, fillrange = 0, label="P(θ|y)", c=3)
+plot(p1, p2, layout = @layout([a; b]))
 ```
