@@ -17,3 +17,9 @@ end
     m2, v2 = mean_cov(m_in2)
     return MvNormalMeanCovariance(mout- m2, vout + v2)
 end
+
+@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in2::MultivariateNormalDistributionsFamily) = begin
+    mout = mean(m_out)
+    m2, v2 = mean_cov(m_in2)
+    return MvNormalMeanCovariance(mout- m2, v2)
+end
