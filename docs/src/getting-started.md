@@ -102,7 +102,7 @@ end
 
 As you can see, `GraphPPL.jl` offers a model specification syntax that resembles closely to the mathematical equations defined above. We use `datavar` function to create "clamped" variables that take specific values at a later date. `θ ~ Beta(1.0, 1.0)` expression creates random variable `θ` and assigns it as an output of `Beta` node in the corresponding FFG. 
 
-### Inference specification
+### Inference execution
 
 Once we have defined our model, the next step is to use `ReactiveMP.jl` API to infer quantities of interests. To do this, we need to specify inference procedure. `ReactiveMP.jl` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with statis datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
 
@@ -152,35 +152,49 @@ nothing #hide
 ```
 
 ```@example coin
-using Plots, SpecialFunctions; theme(:default)
+using Plots, LaTeXStrings; theme(:default)
 
 rθ = range(0, 1, length = 1000)
-p1 = plot(rθ, (x) -> pdf(Beta(2.0, 7.0), x), title="Prior", fillalpha=0.3, fillrange = 0, label="P(θ)", c=1,)
-p2 = plot(rθ, (x) -> pdf(θestimated, x), title="Posterior", fillalpha=0.3, fillrange = 0, label="P(θ|y)", c=3)
-plot(p1, p2, layout = @layout([a; b]))
+
+p1 = plot(rθ, (x) -> pdf(Beta(2.0, 7.0), x), title="Prior", fillalpha=0.3, fillrange = 0, label=L"P\:(\theta)", c=1,)
+p2 = plot(rθ, (x) -> pdf(θestimated, x), title="Posterior", fillalpha=0.3, fillrange = 0, label=L"P\:(\theta|y)", c=3)
+
+plot(p1, p2, layout = @layout([ a; b ]))
 ```
 
-`ReactiveMP.jl` scales very well for large models and factor graphs. We may use more points for better estimates:
+In our dataset we used 10 coin flips to estimate the bias of a coin. It resulted in a vague posterior distribution, however `ReactiveMP.jl` scales very well for large models and factor graphs. We may use more coin flips in our dataset for better posterior distribution estimates:
 
 ```@example coin
-dataset = float.(rand(rng, Bernoulli(p), 10_000))
+dataset_100   = float.(rand(rng, Bernoulli(p), 100))
+dataset_1000  = float.(rand(rng, Bernoulli(p), 1000))
+dataset_10000 = float.(rand(rng, Bernoulli(p), 10000))
+nothing # hide
 ```
 
 ```@example coin
-θestimated = inference(dataset)
-```
-
-```@example coin
-println("mean: ", mean(θestimated))
-println("std:  ", std(θestimated))
+θestimated_100   = inference(dataset_100)
+θestimated_1000  = inference(dataset_1000)
+θestimated_10000 = inference(dataset_10000)
 nothing #hide
 ```
 
 ```@example coin
-using Plots, SpecialFunctions; theme(:default)
+p3 = plot(title = "Posterior", legend = :topleft)
 
-rθ = range(0, 1, length = 1000)
-p1 = plot(rθ, (x) -> pdf(Beta(2.0, 7.0), x), title="Prior", fillalpha=0.3, fillrange = 0, label="P(θ)", c=1,)
-p2 = plot(rθ, (x) -> pdf(θestimated, x), title="Posterior", fillalpha=0.3, fillrange = 0, label="P(θ|y)", c=3)
-plot(p1, p2, layout = @layout([a; b]))
+p3 = plot!(p3, rθ, (x) -> pdf(θestimated_100, x), fillalpha = 0.3, fillrange = 0, label = L"P\:(\theta\:|y_{1:100})", c = 4)
+p3 = plot!(p3, rθ, (x) -> pdf(θestimated_1000, x), fillalpha = 0.3, fillrange = 0, label = L"P\:(\theta\:|y_{1:1000})", c = 5)
+p3 = plot!(p3, rθ, (x) -> pdf(θestimated_10000, x), fillalpha = 0.3, fillrange = 0, label = L"P\:(\theta\:|y_{1:10000})", c = 6)
+
+plot(p1, p3, layout = @layout([ a; b ]))
 ```
+
+With larger dataset our posterior marginal estimate becomes more and more accurate and represents real value of the bias of a coin.
+
+```@example coin
+println("mean: ", mean(θestimated_10000))
+println("std:  ", std(θestimated_10000))
+nothing #hide
+```
+
+## Where to go next?
+There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) available in `ReactiveMP.jl` repository that demonstrate the more advanced features of `ReactiveMP.jl`. Alternatively, you can head to the [User guide](@ref) which provides more detailed information of how to use `ReactiveMP.jl` to solve inference problems.
