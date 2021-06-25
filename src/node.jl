@@ -417,29 +417,28 @@ struct WithInboundFunctionalDependencies{I, S}
     start_with :: S
 end
 
-struct PluginStartWithMessage{M, S}
+struct InterfacePluginStartWithMessage{M, S}
     msg        :: M
     start_with :: S
 end
 
-name(p::PluginStartWithMessage)      = name(p.msg)
-messagein(p::PluginStartWithMessage) = messagein(p.start_with, p)
+name(p::InterfacePluginStartWithMessage)      = name(p.msg)
+messagein(p::InterfacePluginStartWithMessage) = messagein(p.start_with, p)
 
-messagein(::Nothing, p::PluginStartWithMessage) = messagein(p.msg)
-messagein(something, p::PluginStartWithMessage) = messagein(p.msg) |> start_with(Message(something, false, true))
+messagein(::Nothing, p::InterfacePluginStartWithMessage) = messagein(p.msg)
+messagein(something, p::InterfacePluginStartWithMessage) = messagein(p.msg) |> start_with(Message(something, false, true))
 
 function message_dependencies(dependencies::WithInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex) 
 
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
     if depindex !== nothing
-        iterator_cb = let nodeinterfaces = nodeinterfaces, depindex = depindex
+        mapindex = let nodeinterfaces = nodeinterfaces, depindex = depindex
             (i) -> begin 
                 interface = @inbounds nodeinterfaces[i]
-                return i === iindex ? PluginStartWithMessage(interface, dependencies.start_with[depindex]) : interface
+                return i === iindex ? InterfacePluginStartWithMessage(interface, dependencies.start_with[depindex]) : interface
             end
         end 
-
-        return map(inds -> map(iterator_cb, inds), varcluster)
+        return map(inds -> map(mapindex, inds), varcluster)
     else
         return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, iindex)
     end
