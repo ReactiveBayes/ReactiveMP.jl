@@ -102,7 +102,7 @@ end
 
 As you can see, `GraphPPL.jl` offers a model specification syntax that resembles closely to the mathematical equations defined above. We use `datavar` function to create "clamped" variables that take specific values at a later date. `θ ~ Beta(1.0, 1.0)` expression creates random variable `θ` and assigns it as an output of `Beta` node in the corresponding FFG. 
 
-### Inference execution
+### Inference specification
 
 Once we have defined our model, the next step is to use `ReactiveMP.jl` API to infer quantities of interests. To do this, we need to specify inference procedure. `ReactiveMP.jl` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with statis datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
 
@@ -140,6 +140,10 @@ function inference(data)
     return mθ
 end
 ```
+
+### Inference execution
+
+Here after everything is ready we just call our `inference` function to get a posterior marginal distribution over `θ` parameter in the model.
 
 ```@example coin
 θestimated = inference(dataset)
