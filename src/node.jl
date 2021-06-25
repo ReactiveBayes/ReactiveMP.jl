@@ -429,12 +429,13 @@ messagein(::Nothing, p::PluginStartWithMessage) = messagein(p.msg)
 messagein(something, p::PluginStartWithMessage) = messagein(p.msg) |> start_with(Message(something, false, true))
 
 function message_dependencies(dependencies::WithInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex) 
-    if iindex ∈ dependencies.indices
 
-        iterator_cb = let nodeinterfaces = nodeinterfaces
+    depindex = findfirst((i) -> i === iindex, dependencies.indices)
+    if depindex !== nothing
+        iterator_cb = let nodeinterfaces = nodeinterfaces, depindex = depindex
             (i) -> begin 
                 interface = @inbounds nodeinterfaces[i]
-                return i === iindex ? PluginStartWithMessage(interface, Gamma(1.0, 1.0)) : interface
+                return i === iindex ? PluginStartWithMessage(interface, dependencies.start_with[depindex]) : interface
             end
         end 
 
