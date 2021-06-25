@@ -7,7 +7,7 @@ export make_node, on_make_node, AutoVar
 export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
 export MeanField, FullFactorisation, collect_factorisation
-export DefaultFunctionalDependencies, WithInboundFunctionalDependencies
+export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies
 export @node
 
 using Rocket
@@ -407,12 +407,20 @@ function marginal_dependencies end
 """
 struct DefaultFunctionalDependencies end
 
-message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, varcluster, iindex)      = map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex)))
-marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmarginals, varcluster, cindex) = TupleTools.deleteat(nodelocalmarginals, cindex)
+function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+    # First we remove current edge index from the list of dependencies
+    vdependencies = TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex))
+    # Second we map interface indices to the actual interfaces
+    return map(inds -> map(i -> begin return @inbounds nodeinterfaces[i] end, inds), vdependencies)
+end
+
+function marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+    return TupleTools.deleteat(nodelocalmarginals, cindex)
+end
 
 ### With inbound
 
-struct WithInboundFunctionalDependencies{I, S}
+struct RequireInboundFunctionalDependencies{I, S}
     indices    :: I
     start_with :: S
 end
@@ -428,13 +436,19 @@ messagein(p::InterfacePluginStartWithMessage) = messagein(p.start_with, p)
 messagein(::Nothing, p::InterfacePluginStartWithMessage) = messagein(p.msg)
 messagein(something, p::InterfacePluginStartWithMessage) = messagein(p.msg) |> start_with(Message(something, false, true))
 
-function message_dependencies(dependencies::WithInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex) 
+function message_dependencies(dependencies::RequireInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex) 
 
+    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
+
+    # If we have `depindex` in our `indices` we include it in our list of functional dependencies. It effectively forces rule to require inbound message
     if depindex !== nothing
+        # `mapindex` is a lambda function here
         mapindex = let nodeinterfaces = nodeinterfaces, depindex = depindex
             (i) -> begin 
                 interface = @inbounds nodeinterfaces[i]
+                # InterfacePluginStartWithMessage is a proxy structure for `name` and `messagein` method for an interface
+                # It returns the same name but modifies `messagein` to return an observable with `start_with` operator
                 return i === iindex ? InterfacePluginStartWithMessage(interface, dependencies.start_with[depindex]) : interface
             end
         end 
@@ -444,7 +458,7 @@ function message_dependencies(dependencies::WithInboundFunctionalDependencies, n
     end
 end
 
-function marginal_dependencies(::WithInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
     return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex)
 end
 
@@ -610,6 +624,10 @@ function make_node end
 
 function interface_get_index end
 function interface_get_name end
+
+function interface_get_index(::Type{ Val{ Node } }, ::Type{ Val{ Interface } }) where { Node, Interface }
+    error("Node $Node has no interface named $Interface")
+end
 
 function interface_get_name(::Type{ Val{ Node } }, ::Type{ Val{ Interface } }) where { Node, Interface }
     error("Node $Node has no interface named $Interface")
@@ -788,6 +806,7 @@ macro node(fformtype, sdtype, interfaces_list)
 
         $(make_node_const_mapping)
         $(interface_name_getters...)
+
         $factorisation_collectors
 
     end
