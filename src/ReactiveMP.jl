@@ -64,11 +64,11 @@ include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 
-include("pipeline/stages/async.jl")
-include("pipeline/stages/discontinue.jl")
-include("pipeline/stages/logger.jl")
-include("pipeline/stages/scheduled.jl")
-include("pipeline/stages/vague.jl")
+include("pipeline/async.jl")
+include("pipeline/discontinue.jl")
+include("pipeline/logger.jl")
+include("pipeline/scheduled.jl")
+include("pipeline/vague.jl")
 
 include("rule.jl")
 
