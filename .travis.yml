@@ -6,6 +6,13 @@ os:
 notifications:
   email: false
 
+# safelist
+branches:
+  only:
+  - master
+  - develop
+  - gh-pages
+
 julia:
   - 1.5
   - 1.6
@@ -14,12 +21,15 @@ julia:
 jobs:
   allow_failures:
     - julia: nightly
+    - env:
+      - CAN_FAIL=true
   include:
     - stage: test
       script:
         - julia -e 'import Pkg; Pkg.test("ReactiveMP")'
       after_success: skip
     - stage: benchmarks
+      env: CAN_FAIL=true
       julia: 1.6
       script:
         - cd benchmark
