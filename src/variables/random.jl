@@ -44,7 +44,7 @@ _form_check_strategy(form_check_strategy, randomvar::RandomVariable)            
 messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), UnspecifiedFormConstraint(), default_form_check_strategy(UnspecifiedFormConstraint()))
 marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), form_constraint(randomvar), form_check_strategy(randomvar))
 
-getlastindex(randomvar::RandomVariable) = length(randomvar.inputmsgs) + 1
+getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
 messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
@@ -57,9 +57,12 @@ _setmarginal!(randomvar::RandomVariable, marginal::MarginalObservable) = randomv
 _makemarginal(randomvar::RandomVariable)                               = collectLatest(AbstractMessage, Marginal, randomvar.inputmsgs, marginal_prod_fn(randomvar))
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
-    if index === length(randomvar.inputmsgs) + 1
+    if index === degree(randomvar) + 1
         push!(randomvar.inputmsgs, messagein)
     else
-        throw("TODO error message: setmessagein! in ::RandomVariable")
+        throw_setmessagein!(randomvar, index)
     end
 end
+
+# https://github.com/JuliaLang/julia/issues/29688
+throw_setmessagein!(randomvar, index) = throw("Inconsistent state in setmessagein! function for random variable $(randomvar). `index` should be equal to `degree(randomvar) + 1 = $(degree(randomvar) + 1)`, $(index) is given instead")
