@@ -1,7 +1,5 @@
 module ReactiveMP
 
-using Optim: UnivariateOptimizationResults
-using Base: kwarg_decl, NamedTuple
 include("rocket.jl")
 include("macrohelpers.jl")
 include("helpers.jl")
