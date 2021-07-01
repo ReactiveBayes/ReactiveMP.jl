@@ -12,6 +12,10 @@ export rule
     return NormalMeanPrecision(mean(m_out) - mean(m_in2), p1 * p2 / (p1 + p2))
 end
 
+@rule typeof(+)(:in1, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in2::UnivariateNormalDistributionsFamily) = begin
+    return NormalMeanVariance(mean(m_out) - mean(m_in2), var(m_out) + var(m_in2))
+end
+
 @rule typeof(+)(:in1, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in2::MultivariateNormalDistributionsFamily) = begin
     mout, vout = mean_cov(m_out)
     m2, v2 = mean_cov(m_in2)
