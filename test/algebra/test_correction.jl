@@ -26,6 +26,24 @@ using LinearAlgebra
         D = rand(rng, n, n)
         E = ReactiveMP.correction!(TinyCorrection(), D)
         @test D === E
+
+
+        v = 1e-10 * rand(rng)
+        F = ReactiveMP.correction!(FixedCorrection(v), copy(A))
+        @test A ≈ F
+        @test mapreduce((d) -> d[1] + v === d[2], &, zip(diag(A), diag(F)))
+
+        G = rand(rng, n, n)
+        H = ReactiveMP.correction!(FixedCorrection(v), G)
+        @test G === H
+
+        J   = ReactiveMP.correction!(ClampEigenValuesCorrection(10.0), copy(A))
+        S_J = svd(J)
+
+        @test mapreduce((d) -> d >= 10.0 || d ≈ 10.0, &, S_J.S)
+
+        K = ReactiveMP.correction!(ClampEigenValuesCorrection(1e-12), copy(A))
+        @test K ≈ A
     end
     
 end
