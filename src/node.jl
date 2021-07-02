@@ -7,7 +7,7 @@ export make_node, on_make_node, AutoVar
 export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
 export MeanField, FullFactorisation, collect_factorisation
-export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies
+export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, RequireEverythingFunctionalDependencies
 export @node
 
 using Rocket
@@ -481,6 +481,20 @@ end
 
 function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
     return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex)
+end
+
+### Everything
+
+struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
+
+function ReactiveMP.message_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+    # Return all node interfaces including the edge we are trying to compuate a message on
+    return nodeinterfaces
+end
+
+function ReactiveMP.marginal_dependencies(::RequireEverythingFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+    # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
+    return nodelocalmarginals 
 end
 
 ### Generic
