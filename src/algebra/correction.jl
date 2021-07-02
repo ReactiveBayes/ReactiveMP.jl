@@ -6,8 +6,11 @@ abstract type AbstractCorrection end
 
 """
     correction!(strategy, matrix)
+    correction!(strategy, real)
 
-Modifies the `matrix` with a specified correction strategy. Matrix must be squared.
+Modifies the `matrix` with a specified correction strategy. Matrix must be squared. 
+Also supports real values, with the same strategies.
+
 See also: [`NoCorrection`](@ref), [`TinyCorrection`](@ref)
 """
 function correction! end
@@ -21,10 +24,8 @@ See also: [`correction!`](@ref), [`TinyCorrection`](@ref)
 """
 struct NoCorrection <: AbstractCorrection end
 
-function correction!(::NoCorrection, matrix)
-    return matrix
-end
-
+correction!(::NoCorrection, value::Real)            = value
+correction!(::NoCorrection, matrix::AbstractMatrix) = matrix
 
 """
     TinyCorrection
@@ -35,7 +36,9 @@ See also: [`correction!`](@ref), [`NoCorrection`](@ref), [`FixedCorrection`](@re
 """
 struct TinyCorrection <: AbstractCorrection end
 
-function correction!(::TinyCorrection, matrix)
+correction!(::TinyCorrection, value::Real) = clamp(value, tiny, Inf)
+
+function correction!(::TinyCorrection, matrix::AbstractMatrix)
     s = size(matrix)
     @assert length(s) == 2 && s[1] === s[2]
     for i in 1:s[1]
@@ -58,7 +61,9 @@ struct FixedCorrection{T} <: AbstractCorrection
     v :: T
 end
 
-function correction!(correction::FixedCorrection, matrix)
+correction!(correction::FixedCorrection, value::Real) = clamp(value, correction.v, Inf)
+
+function correction!(correction::FixedCorrection, matrix::AbstractMatrix)
     s = size(matrix)
     @assert length(s) == 2 && s[1] === s[2]
     for i in 1:s[1]
@@ -81,7 +86,9 @@ struct ClampEigenValuesCorrection{T} <: AbstractCorrection
     v :: T
 end
 
-function correction!(correction::ClampEigenValuesCorrection, matrix)
+correction!(correction::ClampEigenValuesCorrection, value::Real) = clamp(value, correction.v, Inf)
+
+function correction!(correction::ClampEigenValuesCorrection, matrix::AbstractMatrix)
     s = size(matrix)
     @assert length(s) == 2 && s[1] === s[2]
 
