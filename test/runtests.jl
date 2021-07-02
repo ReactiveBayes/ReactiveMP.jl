@@ -42,6 +42,8 @@ using .ReactiveMPTestingHelpers
         @test filename_to_key(key_to_filename("message")) == "message"
     end
 
+    addtests("algebra/test_correction.jl")
+
     addtests("test_distributions.jl")
     addtests("distributions/test_common.jl")
     addtests("distributions/test_bernoulli.jl")

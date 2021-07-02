@@ -10,3 +10,5 @@ cholinv(x::Real)     = inv(x)
 cholsqrt(x)           = Matrix(cholesky(PositiveFactorizations.Positive, x).L)
 cholsqrt(x::Diagonal) = Diagonal(sqrt.(diag(x)))
 cholsqrt(x::Real)     = sqrt(x)
+
+
