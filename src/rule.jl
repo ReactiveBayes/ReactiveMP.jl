@@ -746,17 +746,17 @@ function Base.showerror(io::IO, error::RuleMethodError)
         spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
         spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-        spec = Vector(undef, length(interfaces(node)))
+        spec = Vector(undef, 2length(interfaces(node)))
 
         fill!(spec, nothing)
 
         
         for (i, j) in enumerate(m_indices)
-            spec[j] = spec_m[i]
+            spec[2j - 1] = spec_m[i]
         end
 
         for (i, j) in enumerate(q_indices)
-            spec[j] = spec_q[i]
+            spec[2j] = spec_q[i]
         end
 
         filter!(!isnothing, spec)
@@ -775,6 +775,15 @@ function Base.showerror(io::IO, error::RuleMethodError)
     catch uerror
         println(io, "Unexpected error occured during Base.showerror(::RuleMethodError)")
         println(io, uerror)
+        println(io, "rule.fform: ", error.fform)
+        println(io, "rule.on: ", error.on)
+        println(io, "rule.vconstraint: ", error.vconstraint)
+        println(io, "rule.mnames: ", error.mnames)
+        println(io, "rule.messages: ", error.messages)
+        println(io, "rule.qnames: ", error.qnames)
+        println(io, "rule.marginals: ", error.ffmarginalsrm)
+        println(io, "rule.meta: ", error.meta)
+        println(io, "rule.node: ", error.node)
     end
 end
 
@@ -814,16 +823,16 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
         spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
         spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-        spec = Vector(undef, length(interfaces(node)))
+        spec = Vector(undef, 2length(interfaces(node)))
 
         fill!(spec, nothing)
         
         for (i, j) in enumerate(m_indices)
-            spec[j] = spec_m[i]
+            spec[2j - 1] = spec_m[i]
         end
 
         for (i, j) in enumerate(q_indices)
-            spec[j] = spec_q[i]
+            spec[2j] = spec_q[i]
         end
 
         filter!(!isnothing, spec)
@@ -842,5 +851,13 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
     catch uerror
         println(io, "Unexpected error occured during Base.showerror(::MarginalRuleMethodError)")
         println(io, uerror)
+        println(io, "rule.fform: ", error.fform)
+        println(io, "rule.on: ", error.on)
+        println(io, "rule.mnames: ", error.mnames)
+        println(io, "rule.messages: ", error.messages)
+        println(io, "rule.qnames: ", error.qnames)
+        println(io, "rule.marginals: ", error.ffmarginalsrm)
+        println(io, "rule.meta: ", error.meta)
+        println(io, "rule.node: ", error.node)
     end
 end
