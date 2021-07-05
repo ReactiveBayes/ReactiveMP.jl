@@ -58,9 +58,11 @@ getmarginal!(factornode::DenseReLUNode, localmarginal::FactorNodeLocalMarginal) 
 
 ## activate!
 
-struct DenseReLUFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end 
+struct DenseReLUNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end 
 
-function functional_dependencies(::DenseReLUFunctionalDependencies, factornode::DenseReLUNode{N, F}, iindex::Int) where { N, F <: MeanField }
+default_functional_dependencies_pipeline(::Type{ <: DenseReLU }) = DenseReLUNodeFunctionalDependencies()
+
+function functional_dependencies(::DenseReLUNodeFunctionalDependencies, factornode::DenseReLUNode{N, F}, iindex::Int) where { N, F <: MeanField }
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1 
@@ -185,7 +187,7 @@ sdtype(::Type{ <: DenseReLU }) = Stochastic()
 
 collect_factorisation(::Type{ <: DenseReLU }, factorisation) = factorisation
         
-function ReactiveMP.make_node(::Type{ <: DenseReLU{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = FactorNodePipeline(DenseReLUFunctionalDependencies())) where { N, F, M, P }
+function ReactiveMP.make_node(::Type{ <: DenseReLU{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
     # @assert N >= 2 "DenseReLU requires at least two mixtures on input"
     @assert typeof(factorisation) <: DenseReLUNodeFactorisationSupport "DenseReLUNode supports only following factorisations: [ $(DenseReLUNodeFactorisationSupport) ]"
     output  = NodeInterface(:output)
@@ -196,8 +198,9 @@ function ReactiveMP.make_node(::Type{ <: DenseReLU{N} }; factorisation::F = Mean
     return DenseReLUNode{N, F, M, P}(factorisation, output, input, w, z, f, meta, pipeline)
 end
 
-function ReactiveMP.make_node(::Type{ <: DenseReLU }, output::AbstractVariable, input::AbstractVariable, w::NTuple{N, AbstractVariable}, z::NTuple{N, AbstractVariable}, f::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = FactorNodePipeline(DenseReLUFunctionalDependencies())) where { N}
-    node = make_node(DenseReLU{N}, factorisation = collect_factorisation(DenseReLU, factorisation), meta = collect_meta(DenseReLU, meta), pipeline = pipeline)
+function ReactiveMP.make_node(::Type{ <: DenseReLU }, output::AbstractVariable, input::AbstractVariable, w::NTuple{N, AbstractVariable}, z::NTuple{N, AbstractVariable}, f::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = nothing) where { N}
+
+    node = make_node(DenseReLU{N}, factorisation = collect_factorisation(DenseReLU, factorisation), meta = collect_meta(DenseReLU, meta), pipeline = collect_pipeline(DenseReLU, pipeline))
 
     # output
     output_index = getlastindex(output)
