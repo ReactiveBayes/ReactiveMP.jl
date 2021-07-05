@@ -16,3 +16,4 @@ end
 function normalize_sum(x::Array{Float64,1}) 
     x ./ sum(x)
 end
+sigmoid(x) = 1/(1+exp(-x))
