@@ -90,3 +90,7 @@ include("autoregressive/x.jl")
 include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
+
+include("denserelu/f.jl")
+include("denserelu/w.jl")
+include("denserelu/z.jl")
