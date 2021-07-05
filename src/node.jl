@@ -401,17 +401,19 @@ struct FactorNodePipeline{F <: AbstractNodeFunctionalDependenciesPipeline, S <: 
     extra_stages            :: S
 end
 
-FactorNodePipeline()                                                                    = FactorNodePipeline(EmptyPipelineStage())
-FactorNodePipeline(stages::AbstractPipelineStage)                                       = FactorNodePipeline(DefaultFunctionalDependencies(), stages)
-FactorNodePipeline(functional_dependencies::AbstractNodeFunctionalDependenciesPipeline) = FactorNodePipeline(functional_dependencies, EmptyPipelineStage())
-FactorNodePipeline(nodepipeline::FactorNodePipeline) = nodepipeline
-
 get_pipeline_dependencies(pipeline::FactorNodePipeline) = pipeline.functional_dependencies
 get_pipeline_stages(pipeline::FactorNodePipeline)       = pipeline.extra_stages
 
 function Base.show(io::IO, pipeline::FactorNodePipeline)
     print(io, "FactorNodePipeline(functional_dependencies = $(pipeline.functional_dependencies), extra_stages = $(pipeline.extra_stages)")
 end
+
+function collect_pipeline end
+
+collect_pipeline(T::Any, ::Nothing)                                       = FactorNodePipeline(default_functional_dependencies_pipeline(T), EmptyPipelineStage())
+collect_pipeline(T::Any, stage::AbstractPipelineStage)                    = FactorNodePipeline(default_functional_dependencies_pipeline(T), stage)
+collect_pipeline(T::Any, fdp::AbstractNodeFunctionalDependenciesPipeline) = FactorNodePipeline(fdp, EmptyPipelineStage())
+collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipeline
 
 ## Functional Dependencies 
 
@@ -496,6 +498,10 @@ function ReactiveMP.marginal_dependencies(::RequireEverythingFunctionalDependenc
     # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
     return nodelocalmarginals 
 end
+
+### 
+
+default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
 
 ### Generic
 
@@ -826,11 +832,11 @@ macro node(fformtype, sdtype, interfaces_list)
 
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
         
-        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, pipeline = ReactiveMP.FactorNodePipeline())
-            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), pipeline)
+        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, pipeline = nothing)
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), ReactiveMP.collect_pipeline($fbottomtype, pipeline))
         end
         
-        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, pipeline = ReactiveMP.FactorNodePipeline())
+        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, pipeline = nothing)
             node = ReactiveMP.make_node($fbottomtype, factorisation = factorisation, meta = meta, pipeline = pipeline)
             $(interface_connections...)
             return node
