@@ -54,7 +54,40 @@ metadata(factornode::DenseReLUNode)                  = factornode.meta
 getpipeline(factornode::DenseReLUNode)       = factornode.pipeline
 
 setmarginal!(factornode::DenseReLUNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for DenseReLUNode")           
-getmarginal!(factornode::DenseReLUNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for DenseReLUNode")           
+getmarginal!(factornode::DenseReLUNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for DenseReLUNode")       
+
+
+## meta data
+
+mutable struct DenseReLUMeta{T}
+    C :: T
+    α :: T
+    β :: T
+    γ :: T
+    ξ :: Array{T, 1}
+end
+
+function DenseReLUMeta(C::T1, α::T2, β::T3, γ::T4, N::Int64) where { T1, T2, T3, T4 }
+    T = promote_type(T1, T2, T3, T4, Float64)
+    ξ = ones(T, N)
+    return DenseReLUMeta{T}(C, α, β, γ, ξ)
+end
+
+getC(meta::DenseReLUMeta)               = meta.C
+getα(meta::DenseReLUMeta)               = meta.α
+getβ(meta::DenseReLUMeta)               = meta.β
+getγ(meta::DenseReLUMeta)               = meta.γ
+getξ(meta::DenseReLUMeta)               = meta.ξ
+getξk(meta::DenseReLUMeta, k::Int64)    = meta.ξ[k]
+
+function setξ!(meta::DenseReLUMeta, ξ)
+    meta.ξ = ξ
+end
+
+function setξk!(meta::DenseReLUMeta, k::Int64, ξ)
+    meta.ξ[k] = ξ
+end
+
 
 ## activate!
 
@@ -138,48 +171,68 @@ end
 
 # FreeEnergy related functions
 
-# @average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, NormalMeanVariance}, q_p::NTuple{N, GammaDistributionsFamily}) where N = begin
-#     z_bar = probvec(q_switch)
-#     return mapreduce(+, 1:N, init = 0.0) do i
-#         return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
-#     end
-# end
+@average_energy DenseReLU (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
 
-# @average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, MvNormalMeanCovariance}, q_p::NTuple{N, Wishart}) where N = begin
-#     z_bar = probvec(q_switch)
-#     return mapreduce(+, 1:N, init = 0.0) do i
-#         return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
-#     end
-# end
+    # fetch statistics once
+    my, vy      = mean_cov(q_output)
+    mx, vx      = mean_cov(q_input)
 
-# function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
+    # fetch meta data once
+    C           = getC(meta)
+    α           = getα(meta)
+    β           = getβ(meta)
+    γ           = getγ(meta)
+
+    # average energy calculation
+    U =  mapreduce(+, 1:N, init = 0.0) do k
+
+        # fetch statistics per round
+        mw, vw      = mean_cov(q_w[k])
+        pz          = mean(q_z[k])
+        mf, vf      = mean_cov(q_f[k])
+
+        # fetch meta data per round
+        ξk          = getξk(meta, k)
+
+        # perform calculation
+        return  0.5 * (log2π - log(γ) + γ * (vy[k] + pz*vf + abs2(my[k] - pz*mf))) +
+                0.5 * (log2π - log(β) + β * (vf + mf^2 - 2*mf*dot(mw, mx) + tr( (mx*mx' + vx)*(mw*mw' + vw) ))) +
+                0.5 * (C*mf + ξk) - pz*mf*C - log(sigmoid(ξk)) + (sigmoid(ξk) - 0.5)/2/ξk*(C^2*mf - ξk^2)
+
+    end
+
+end
+
+function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::DenseReLUNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
     
-#     skip_strategy = marginal_skip_strategy(objective)
+    skip_strategy = marginal_skip_strategy(objective)
 
-#     stream = combineLatest((
-#         getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
-#         getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-#         combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew()),
-#         combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew())
-#     ), PushNew())
+    stream = combineLatest((
+        getmarginal(connectedvar(node.output), skip_strategy) |> schedule_on(scheduler),
+        getmarginal(connectedvar(node.input), skip_strategy) |> schedule_on(scheduler),
+        combineLatest(map((w) -> getmarginal(connectedvar(w), skip_strategy) |> schedule_on(scheduler), node.w), PushNew()),
+        combineLatest(map((z) -> getmarginal(connectedvar(z), skip_strategy) |> schedule_on(scheduler), node.z), PushNew()),
+        combineLatest(map((f) -> getmarginal(connectedvar(f), skip_strategy) |> schedule_on(scheduler), node.f), PushNew())
+    ), PushNew())
 
-#     mapping = let fform = functionalform(node), meta = metadata(node)
-#         (marginals) -> begin 
-#             average_energy   = score(AverageEnergy(), fform, Val{ (:out, :switch, :m, :p) }, marginals, meta)
+    mapping = let fform = functionalform(node), meta = metadata(node)
+        (marginals) -> begin 
+            average_energy      = score(AverageEnergy(), fform, Val{ (:output, :input, :w, :z, :f) }, marginals, meta)
 
-#             out_entropy     = score(DifferentialEntropy(), marginals[1])
-#             switch_entropy  = score(DifferentialEntropy(), marginals[2])
-#             means_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
-#             precs_entropies = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
+            output_entropy      = score(DifferentialEntropy(), marginals[1])
+            input_entropy       = score(DifferentialEntropy(), marginals[2])
+            w_entropies         = mapreduce((w) -> score(DifferentialEntropy(), w), +, marginals[3])
+            z_entropies         = mapreduce((z) -> score(DifferentialEntropy(), z), +, marginals[4])
+            f_entropies         = mapreduce((f) -> score(DifferentialEntropy(), f), +, marginals[5])
 
-#             return convert(T, average_energy - (out_entropy + switch_entropy + means_entropies + precs_entropies))
-#         end
-#     end
+            return convert(T, average_energy - (output_entropy + input_entropy + w_entropies + z_entropies + f_entropies))
+        end
+    end
 
-#     return stream |> map(T, mapping)
-# end
-#
-# as_node_functional_form(::Type{ <: NormalMixture }) = ValidNodeFunctionalForm()
+    return stream |> map(T, mapping)
+end
+
+as_node_functional_form(::Type{ <: DenseReLU }) = ValidNodeFunctionalForm()
 
 # Node creation related functions
 
@@ -240,34 +293,4 @@ function ReactiveMP.make_node(fform::Type{ <: DenseReLU }, autovar::AutoVar, arg
     var  = randomvar(getname(autovar))
     node = make_node(fform, var, args...; kwargs...)
     return node, var
-end
-
-
-mutable struct DenseReLUMeta{T}
-    C :: T
-    α :: T
-    β :: T
-    γ :: T
-    ξ :: Array{T, 1}
-end
-
-function DenseReLUMeta(C::T1, α::T2, β::T3, γ::T4, N::Int64) where { T1, T2, T3, T4 }
-    T = promote_type(T1, T2, T3, T4, Float64)
-    ξ = ones(T, N)
-    return DenseReLUMeta{T}(C, α, β, γ, ξ)
-end
-
-getC(meta::DenseReLUMeta)               = meta.C
-getα(meta::DenseReLUMeta)               = meta.α
-getβ(meta::DenseReLUMeta)               = meta.β
-getγ(meta::DenseReLUMeta)               = meta.γ
-getξ(meta::DenseReLUMeta)               = meta.ξ
-getξk(meta::DenseReLUMeta, k::Int64)    = meta.ξ[k]
-
-function setξ!(meta::DenseReLUMeta, ξ)
-    meta.ξ = ξ
-end
-
-function setξk!(meta::DenseReLUMeta, k::Int64, ξ)
-    meta.ξ[k] = ξ
 end
