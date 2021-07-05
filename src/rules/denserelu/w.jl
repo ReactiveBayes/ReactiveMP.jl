@@ -4,14 +4,14 @@ export rule
     
     # extract required statistics
     mf = mean(q_f)
-    mx, vx = meancov(q_input)
+    mx, vx = mean_cov(q_input)
 
     # extract parameters
     β = getβ(meta)
 
     # calculate new statistics
-    tmp = mx*mx'+ Vx
-    mw = mf * mx'*cholinv(tmp)
+    tmp = mx*mx'+ vx
+    mw = mf *cholinv(tmp)*mx
     ww = β*tmp
 
     # return message

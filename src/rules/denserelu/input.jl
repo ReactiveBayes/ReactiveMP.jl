@@ -1,9 +1,9 @@
 export rule
 
-@rule DenseReLU(:input, Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_w::MultivariateNormalDistributionsFamily, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) = begin
+@rule DenseReLU(:input, Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
     # extract required statistics
-    mw, vw = meancov.(q_w)
+    mw, vw = unzip(mean_cov.(q_w))
     mf = mean.(q_f)
 
     # extract parameters
@@ -24,3 +24,6 @@ export rule
     return MvNormalMeanPrecision(mf, wf)
 
 end
+
+# helper for broadcasting with multiple return values
+unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
