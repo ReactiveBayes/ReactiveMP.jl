@@ -48,14 +48,18 @@ factorisation(factornode::GammaMixtureNode)             = factornode.factorisati
 localmarginals(factornode::GammaMixtureNode)            = error("localmarginals() function is not implemented for GammaMixtureNode")
 localmarginalnames(factornode::GammaMixtureNode)        = error("localmarginalnames() function is not implemented for GammaMixtureNode")
 metadata(factornode::GammaMixtureNode)                  = factornode.meta
-get_pipeline_stages(factornode::GammaMixtureNode)       = factornode.pipeline
+getpipeline(factornode::GammaMixtureNode)               = factornode.pipeline
 
 setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
 getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
 
 ## activate!
 
-function functional_dependencies(factornode::GammaMixtureNode{N, F}, iindex::Int) where { N, F <: MeanField }
+struct GammaMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
+
+default_functional_dependencies_pipeline(::Type{ <: GammaMixtureNodeFunctionalDependencies }) = GammaMixtureNodeFunctionalDependencies()
+
+function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N, F}, iindex::Int) where { N, F <: MeanField }
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -161,7 +165,7 @@ sdtype(::Type{ <: GammaMixture }) = Stochastic()
 
 collect_factorisation(::Type{ <: GammaMixture }, factorisation) = factorisation
 
-function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = EmptyPipelineStage()) where { N, F, M, P }
+function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
     @assert N >= 2 "GammaMixtureNode requires at least two mixtures on input"
     @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "GammaMixtureNode supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out)
@@ -172,8 +176,8 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = M
     return GammaMixtureNode{N, F, typeof(meta), P}(factorisation, out, switch, as, bs, meta, pipeline)
 end
 
-function ReactiveMP.make_node(::Type{ <: GammaMixture }, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = EmptyPipelineStage()) where { N}
-    node = make_node(GammaMixture{N}, factorisation = collect_factorisation(GammaMixture, factorisation), meta = collect_meta(GammaMixture, meta), pipeline = pipeline)
+function ReactiveMP.make_node(::Type{ <: GammaMixture }, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = nothing) where { N}
+    node = make_node(GammaMixture{N}, factorisation = collect_factorisation(GammaMixture, factorisation), meta = collect_meta(GammaMixture, meta), pipeline = collect_pipeline(GammaMixture, pipeline))
 
     # out
     out_index = getlastindex(out)
