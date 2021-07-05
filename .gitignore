@@ -10,6 +10,8 @@ demo/*WIP*
 
 .idea
 
+.vscode
+
 **/*.aux
 **/*.log
 **/*.synctex.*
