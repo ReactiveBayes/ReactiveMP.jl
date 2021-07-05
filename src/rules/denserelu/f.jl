@@ -1,25 +1,25 @@
 export rule
 
-@rule DenseReLU(:f, Marginalisation) (q_output::PointMass, q_input::PointMass, q_w::NormalMeanPrecision, q_z::Bernoulli, meta::DenseReLUMeta) = begin
+@rule DenseReLU((:f, k), Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_w::MultivariateNormalDistributionsFamily, q_z::Bernoulli, meta::DenseReLUMeta) = begin
     
     # extract required statistics
-    mz = mean(q_z)
+    pz = mean(q_z)
     mw = mean(q_w)
     mx = mean(q_input)
-    my = mean(q_output)
+    my = mean(q_output)[k]
 
     # extract parameters
     C = getC(meta)
     β = getβ(meta)
     γ = getγ(meta)
-    ξ = getξ(meta)
+    ξ = getξ(meta)[k]
     
     # calculate new statistics
-    wf = γ*mz + β + 2*C^2*(sigmoid(ξ) - 1)/2/ξ
-    mf = 1/wf*(γ*mz*my + β*mw*mx + C*mz - C/2)
-    setξ!(meta, sqrt(mf^2 + 1/wf))
+    wf = γ*pz + β + 2*C^2*(sigmoid(ξ) - 1)/2/ξ
+    mf = 1/wf*(γ*pz*my + β*dot(mw,mx) + C*pz - C/2)
+    setξk!(meta, k, sqrt(mf^2 + 1/wf))
 
     # return message
-    return GaussianMeanPrecision(mf, wf)
+    return NormalMeanPrecision(mf, wf)
 
 end

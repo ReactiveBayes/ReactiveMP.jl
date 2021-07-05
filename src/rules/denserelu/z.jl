@@ -1,19 +1,19 @@
 export rule
 
-@rule DenseReLU(:z, Marginalisation) (q_output::PointMass, q_input::PointMass, q_w::NormalMeanPrecision, q_f::NormalMeanPrecision, meta::DenseReLUMeta) = begin
+@rule DenseReLU((:z, k), Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_w::MultivariateNormalDistributionsFamily, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
     
     # extract required statistics
-    mf = mean(q_f)
+    mf, vf = meancov(q_f)
+    my = mean(q_output)
 
     # extract parameters
+    γ = getγ(meta)
     C = getC(meta)
 
     # calculate new statistics
-    p = sigmoid(C * mf)
+    p = sigmoid(γ*my*mf + C*mf - γ/2*(mf^2 + vf))
 
     # return message
     return Bernoulli(p)
 
 end
-
-sigmoid(x) = 1/(1+exp(-x))
