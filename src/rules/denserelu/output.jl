@@ -2,8 +2,11 @@ export rule
 
 @rule DenseReLU(:output, Marginalisation) (q_input::NormalDistributionsFamily, q_w::NTuple{N, NormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
+    # check whether a bias term is included
+    use_bias = getuse_bias(meta)
+
     # assert whether the dimensions are correct
-    @assert sum(length(q_input) .!= length.(q_w)) == 0 """
+    @assert sum(length(q_input) + 1*use_bias .!= length.(q_w)) == 0 """
         The dimensionality of the input vector does not correspond to the dimensionality of the random variables representing the weights.
 
         The input variable x of dimensionality $(length(q_input)) looks like
@@ -30,8 +33,11 @@ end
 
 @rule DenseReLU(:output, Marginalisation) (q_input::NormalDistributionsFamily, q_w::NTuple{1, NormalDistributionsFamily}, q_z::NTuple{1, Bernoulli}, q_f::NTuple{1, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) = begin
     
+    # check whether a bias term is included
+    use_bias = getuse_bias(meta)
+
     # assert whether the dimensions are correct
-    @assert sum(length(q_input) .!= length.(q_w)) == 0 """
+    @assert sum(length(q_input) + 1*use_bias .!= length.(q_w)) == 0 """
         The dimensionality of the input vector does not correspond to the dimensionality of the random variables representing the weights.
 
         The input variable x of dimensionality $(length(q_input)) looks like

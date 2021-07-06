@@ -2,6 +2,9 @@ export rule
 
 @rule DenseReLU(:input, Marginalisation) (q_output::NormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
+    # check whether a bias term is included
+    use_bias = getuse_bias(meta)
+
     # assert whether the dimensions are correct
     @assert length(q_output) == length(q_w) """
         The dimensionality of the output vector does not correspond to the number of random variables representing the weights.
@@ -44,12 +47,15 @@ export rule
     mx = cholinv(tmp) * tmp2
 
     # return message
-    return MvNormalMeanPrecision(mx, wx)
+    return use_bias ? MvNormalMeanPrecision(mx[1:end-1], wx[1:end-1, 1:end-1]) : MvNormalMeanPrecision(mx, wx)
 
 end
 
 @rule DenseReLU(:input, Marginalisation) (q_output::NormalDistributionsFamily, q_w::NTuple{N, UnivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
+    # check whether a bias term is included
+    use_bias = getuse_bias(meta)
+
     # assert whether the dimensions are correct
     @assert length(q_output) == length(q_w) """
         The dimensionality of the output vector does not correspond to the number of random variables representing the weights.
@@ -80,19 +86,39 @@ end
     # extract parameters
     β = getβ(meta)
     
-    # calculate new statistics
-    dim_in = length(mw[1])
-    tmp = 0.0
-    tmp2 = 0.0
-    for k = 1:dim_in
-        @inbounds tmp += mw[k]^2 + vw[k]
-        @inbounds tmp2 += mf[k]*mw[k]
-    end
-    wx = β .* tmp
-    mx = cholinv(tmp) * tmp2
+    if use_bias
 
-    # return message
-    return NormalMeanPrecision(mx, wx)
+       # calculate new statistics
+        dim_in = length(mw[1])
+        tmp = zeros(dim_in, dim_in)
+        tmp2 = zeros(dim_in)
+        for k = 1:dim_in
+            @inbounds tmp += mw[k] * mw[k]' + vw[k]
+            @inbounds tmp2 += mf[k]*mw[k]
+        end
+        wx = β .* tmp
+        mx = cholinv(tmp) * tmp2
+
+        # return message
+        return MvNormalMeanPrecision(mx[1:end-1], wx[1:end-1, 1:end-1])
+
+    else
+
+        # calculate new statistics
+        dim_in =length(mw[1])
+        tmp = 0.0
+        tmp2 = 0.0
+        for k = 1:dim_in
+            @inbounds tmp += mw[k]^2 + vw[k]
+            @inbounds tmp2 += mf[k]*mw[k]
+        end
+        wx = β .* tmp
+        mx = cholinv(tmp) * tmp2
+
+        # return message
+        return NormalMeanPrecision(mx, wx)
+
+    end
 
 end
 

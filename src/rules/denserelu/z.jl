@@ -1,9 +1,12 @@
 export rule
 
 @rule DenseReLU((:z, k), Marginalisation) (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NormalDistributionsFamily, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
-    
+        
+    # check whether a bias term is included
+    use_bias = getuse_bias(meta)
+
     # assert whether the dimensions are correct
-    @assert length(q_input) == length(q_w) """
+    @assert length(q_input) + 1*use_bias == length(q_w) """
         The dimensionality of the input vector does not correspond to the dimensionality of the weights.
 
         The input variable x of dimensionality $(length(q_input)) looks like
