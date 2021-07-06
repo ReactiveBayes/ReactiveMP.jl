@@ -237,9 +237,17 @@ end
 
 @average_energy DenseReLU (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NTuple{N, NormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
 
+    # check whether a bias term is included
+    use_bias = getuse_bias(meta)
+
     # fetch statistics once
     my, vy      = mean_cov(q_output)
     mx, vx      = mean_cov(q_input)
+    if use_bias
+        mx = vcat(mx,1)
+        vx = hcat(vcat(vx, zeros(1,length(mx)-1)), zeros(length(mx)))
+        vx[end, end] = tiny
+    end
 
     # fetch meta data once
     C           = getC(meta)
