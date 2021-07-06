@@ -1,6 +1,6 @@
 export rule
 
-@rule DenseReLU((:z, k), Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_w::MultivariateNormalDistributionsFamily, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
+@rule DenseReLU((:z, k), Marginalisation) (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NormalDistributionsFamily, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
     
     # assert whether the dimensions are correct
     @assert length(q_input) == length(q_w) """
