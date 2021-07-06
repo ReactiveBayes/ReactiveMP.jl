@@ -234,7 +234,7 @@ end
 
 # FreeEnergy related functions
 
-@average_energy DenseReLU (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
+@average_energy DenseReLU (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NTuple{N, NormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
 
     # fetch statistics once
     my, vy      = mean_cov(q_output)
