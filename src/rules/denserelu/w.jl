@@ -15,7 +15,7 @@ export rule
     if use_bias
         mx = vcat(mx,1)
         vx = hcat(vcat(vx, zeros(1,length(mx)-1)), zeros(length(mx)))
-        vx[end, end] = 1e-20
+        vx[end, end] = tiny
     end
 
     # extract parameters
@@ -45,7 +45,7 @@ end
     if use_bias
         mx = vcat(mx,1)
         vx = hcat(vcat(vx, zeros(1,length(mx)-1)), zeros(length(mx)))
-        vx[end, end] = 1e-10
+        vx[end, end] = tiny
     end
 
     # extract parameters
