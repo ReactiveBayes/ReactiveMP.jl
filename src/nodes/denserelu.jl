@@ -227,6 +227,11 @@ function get_marginals_observable(
     return marginal_names, marginals_observable
 end
 
+function ReactiveMP.interfaceindex(factornode::DenseReLUNode, iname::Symbol)
+    iindex = findfirst(interface -> name(interface) === iname, interfaces(factornode))
+    return iindex !== nothing ? iindex : error("Unknown interface ':$(iname)' for $(functionalform(factornode)) node")
+end
+
 # FreeEnergy related functions
 
 @average_energy DenseReLU (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
