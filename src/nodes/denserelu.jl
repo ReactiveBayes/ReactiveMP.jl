@@ -60,21 +60,48 @@ getmarginal!(factornode::DenseReLUNode, localmarginal::FactorNodeLocalMarginal) 
 ## meta data
 
 mutable struct DenseReLUMeta{T}
+    dim_out :: Int64
     C :: T
-    α :: T
     β :: T
     γ :: T
     ξ :: Array{T, 1}
 end
 
-function DenseReLUMeta(C::T1, α::T2, β::T3, γ::T4, N::Int64) where { T1, T2, T3, T4 }
-    T = promote_type(T1, T2, T3, T4, Float64)
-    ξ = ones(T, N)
-    return DenseReLUMeta{T}(C, α, β, γ, ξ)
+@doc raw"""
+## General information
+The `DenseReLUMeta` structure contains the meta data of the corresponding `DenseReLU` factor node.
+
+## Function arguments
+The `DenseReLUMeta(...)` constructor function requires the following input argument:
+- `dim_out` [Required] - The output dimension of the node.
+Furthermore the `DenseReLUMeta(...)` constructor function allows the following keyword arguments:
+- `C` [default = 1.0] - The horizontal scaling of the sigmoid function. For a large value of `C` the sigmoid function approximates the Heaviside function, which is used for approximating the ReLU function.
+- `β` [default = 10.0] - The process noise precision of ``f_n``. The intermediate variable ``f_n`` is modeled as ``p(f_n \mid W_n, x) = \mathcal{N}(f_n \mid W_n^\top x, \beta^{-1})``.
+- `γ` [default = 10.0] - The process noise precision of ``y_n``. The output variable ``y_n`` is modeled as ``p(y_n \mid z_n, f_n) = \mathcal{N}(y_n \mid z_n f_n, \gamma^{-1})``.
+
+## Examples
+The `DenseReLUMeta` structure is passed when defining the corresponding `DenseReLU` factor node:
+
+```julia
+y ~ DenseReLU(x, w, z, f) where { meta = DenseReLUMeta(3) }
+```
+
+In this example we specify that the random variable at the output has dimensionality 3. All other hyperparameters are set to their default values as specified above. Alternatively, these hyperparameters can be set manually when desired, for example:
+
+```julia
+y ~ DenseReLU(x, w, z, f) where { meta = DenseReLUMeta(3; β=100.0) }
+```
+
+"""
+function DenseReLUMeta(dim_out::Int64; C::T1=1.0, β::T2=10.0, γ::T3=10.0) where { T1, T2, T3 }
+    T = promote_type(T1, T2, T3, Float64)
+    ξ = ones(T, dim_out)
+    return DenseReLUMeta{T}(dim_out, C, β, γ, ξ)
 end
 
+
+getdimout(meta::DenseReLUMeta)          = meta.dim_out
 getC(meta::DenseReLUMeta)               = meta.C
-getα(meta::DenseReLUMeta)               = meta.α
 getβ(meta::DenseReLUMeta)               = meta.β
 getγ(meta::DenseReLUMeta)               = meta.γ
 getξ(meta::DenseReLUMeta)               = meta.ξ
@@ -179,7 +206,6 @@ end
 
     # fetch meta data once
     C           = getC(meta)
-    α           = getα(meta)
     β           = getβ(meta)
     γ           = getγ(meta)
 
