@@ -125,7 +125,7 @@ y ~ DenseReLU(x, w, z, f) where { meta = DenseReLUMeta(3; β=100.0) }
 ```
 
 """
-function DenseReLUMeta(dim_out::Int64; C::T1=1.0, β::T2=100.0, γ::T3=100.0) where { T1, T2, T3 }
+function DenseReLUMeta(dim_out::Int64; C::T1=1.0, β::T2=10.0, γ::T3=10.0) where { T1, T2, T3 }
     T = promote_type(T1, T2, T3, Float64)
     ξ = ones(T, dim_out)
     return DenseReLUMeta{T}(dim_out, C, β, γ, ξ)
