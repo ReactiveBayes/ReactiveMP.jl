@@ -15,7 +15,7 @@ export rule
     ξ = getξ(meta)[k]
     
     # calculate new statistics
-    wf = γ*pz + β + 2*C^2*(sigmoid(ξ) - 1)/2/ξ
+    wf = γ*pz + β + 2*C^2*(sigmoid(ξ) - 0.5)/2/ξ
     mf = 1/wf*(γ*pz*my + β*dot(mw,mx) + C*pz - C/2)
     setξk!(meta, k, sqrt(mf^2 + 1/wf))
 
