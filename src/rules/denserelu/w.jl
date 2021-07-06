@@ -2,6 +2,8 @@ export rule
 
 @rule DenseReLU((:w, k), Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_z::Bernoulli, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
     
+    # no dimensionality test required, because of typing.
+
     # extract required statistics
     mf = mean(q_f)
     mx, vx = mean_cov(q_input)

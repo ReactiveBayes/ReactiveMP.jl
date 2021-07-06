@@ -2,6 +2,16 @@ export rule
 
 @rule DenseReLU((:f, k), Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_w::MultivariateNormalDistributionsFamily, q_z::Bernoulli, meta::DenseReLUMeta) = begin
     
+    # assert whether the dimensions are correct
+    @assert length(q_input) == length(q_w) """
+        The dimensionality of the input vector does not correspond to the dimensionality of the weights.
+        
+        The input variable x of dimensionality $(length(q_input)) looks like
+        $(q_input)  
+        and the weigth variable w of dimensionality $(length(q_w)) looks like 
+        $(q_w)
+    """
+
     # extract required statistics
     pz = mean(q_z)
     mw = mean(q_w)

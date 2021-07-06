@@ -78,7 +78,7 @@ factorisation(factornode::DenseReLUNode)             = factornode.factorisation
 localmarginals(factornode::DenseReLUNode)            = error("localmarginals() function is not implemented for DenseReLUNode")           
 localmarginalnames(factornode::DenseReLUNode)        = error("localmarginalnames() function is not implemented for DenseReLUNode")     
 metadata(factornode::DenseReLUNode)                  = factornode.meta            
-getpipeline(factornode::DenseReLUNode)       = factornode.pipeline
+getpipeline(factornode::DenseReLUNode)               = factornode.pipeline
 
 setmarginal!(factornode::DenseReLUNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for DenseReLUNode")           
 getmarginal!(factornode::DenseReLUNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for DenseReLUNode")       
