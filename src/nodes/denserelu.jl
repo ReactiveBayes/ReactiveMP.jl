@@ -102,7 +102,7 @@ The `DenseReLUMeta` structure contains the meta data of the corresponding `Dense
 The `DenseReLUMeta(...)` constructor function requires the following input argument:
 - `dim_out` [Required] - The output dimension of the node.
 Furthermore the `DenseReLUMeta(...)` constructor function allows the following keyword arguments:
-- `C` [default = 10.0] - The horizontal scaling of the sigmoid function. For a large value of `C` the sigmoid function approximates the Heaviside function, which is used for approximating the ReLU function.
+- `C` [default = 1.0] - The horizontal scaling of the sigmoid function. For a large value of `C` the sigmoid function approximates the Heaviside function, which is used for approximating the ReLU function.
 - `β` [default = 100.0] - The process noise precision of ``f_n``. The intermediate variable ``f_n`` is modeled as ``p(f_n \mid W_n, x) = \mathcal{N}(f_n \mid W_n^\top x, \beta^{-1})``.
 - `γ` [default = 100.0] - The process noise precision of ``y_n``. The output variable ``y_n`` is modeled as ``p(y_n \mid z_n, f_n) = \mathcal{N}(y_n \mid z_n f_n, \gamma^{-1})``.
 
@@ -125,7 +125,7 @@ y ~ DenseReLU(x, w, z, f) where { meta = DenseReLUMeta(3; β=100.0) }
 ```
 
 """
-function DenseReLUMeta(dim_out::Int64; C::T1=10.0, β::T2=100.0, γ::T3=100.0) where { T1, T2, T3 }
+function DenseReLUMeta(dim_out::Int64; C::T1=1.0, β::T2=100.0, γ::T3=100.0) where { T1, T2, T3 }
     T = promote_type(T1, T2, T3, Float64)
     ξ = ones(T, dim_out)
     return DenseReLUMeta{T}(dim_out, C, β, γ, ξ)
