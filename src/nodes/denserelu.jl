@@ -3,6 +3,33 @@
 export DenseReLU, DenseReLUNode, DenseReLUMeta
 
 # DenseReLU Functional Form
+@doc raw"""
+## General information
+The `DenseReLU` function creates the `DenseReLU` factor node. For options regarding this node, please have a look at the `DenseReLUMeta` constructor function.
+
+> **Important**: This function can only be used inside of the `@model` macro from `GraphPPL.jl` when defining a probabilistic model. The corresponding function calls and styling applies.
+
+## Function arguments
+The `DenseReLU(x, w, z, f)` function requires the following input argument:
+- `x` [Required] - Random variable of dimension ``M`` specifying the input of the `DenseReLU` node.
+- `w` [Required] - Tuple of random variables specifying the weights of the `DenseReLU` node. The tuple should have length ``N``, corresponding to the dimension of the output, and each element inside the tuple should have dimension ``M``.
+- `z` [Required] - Tuple of random variables specifying the probability of the corresponding variable `f` being larger than 0. The tuple should be of length ``N``.
+- `f` [Required] - Tuple of random variables specifying the "unfolded" multiplication of variables `x` and `W`. The tuple should be of length ``N``.
+
+## Return values
+The `DenseReLU(...)` function returns the random variable:
+- `y` - Random variable of dimension ``N`` specifying the output of the `DenseReLU` node.
+
+## Examples
+Inside of the `@model` macro of `GraphPPL.jl`, the `DenseReLU` factor node can be defined as:
+
+```julia
+y ~ DenseReLU(x, w, z, f) where { meta = DenseReLUMeta(3; β=100.0) }
+```
+
+Here the `DenseReLUMeta` object encodes hyperparameter settings of this node.
+
+"""
 struct DenseReLU{N} end
 
 # Special node
@@ -75,9 +102,14 @@ The `DenseReLUMeta` structure contains the meta data of the corresponding `Dense
 The `DenseReLUMeta(...)` constructor function requires the following input argument:
 - `dim_out` [Required] - The output dimension of the node.
 Furthermore the `DenseReLUMeta(...)` constructor function allows the following keyword arguments:
-- `C` [default = 1.0] - The horizontal scaling of the sigmoid function. For a large value of `C` the sigmoid function approximates the Heaviside function, which is used for approximating the ReLU function.
-- `β` [default = 10.0] - The process noise precision of ``f_n``. The intermediate variable ``f_n`` is modeled as ``p(f_n \mid W_n, x) = \mathcal{N}(f_n \mid W_n^\top x, \beta^{-1})``.
-- `γ` [default = 10.0] - The process noise precision of ``y_n``. The output variable ``y_n`` is modeled as ``p(y_n \mid z_n, f_n) = \mathcal{N}(y_n \mid z_n f_n, \gamma^{-1})``.
+- `C` [default = 10.0] - The horizontal scaling of the sigmoid function. For a large value of `C` the sigmoid function approximates the Heaviside function, which is used for approximating the ReLU function.
+- `β` [default = 100.0] - The process noise precision of ``f_n``. The intermediate variable ``f_n`` is modeled as ``p(f_n \mid W_n, x) = \mathcal{N}(f_n \mid W_n^\top x, \beta^{-1})``.
+- `γ` [default = 100.0] - The process noise precision of ``y_n``. The output variable ``y_n`` is modeled as ``p(y_n \mid z_n, f_n) = \mathcal{N}(y_n \mid z_n f_n, \gamma^{-1})``.
+
+## Return values
+The `DenseReLUMeta(...)` constructor function returns the `DenseReLUMeta` structure, containing all above arguments passed in the constructor function call. 
+Furthermore the `DenseReLUMeta` structure also contains the following elements:
+- `ξ` - Array with a length equal to the output dimension, specifying the expansion point of the Bernoulli distribution in the node. Default values are set to `ones(dim_out)`.
 
 ## Examples
 The `DenseReLUMeta` structure is passed when defining the corresponding `DenseReLU` factor node:
@@ -93,12 +125,11 @@ y ~ DenseReLU(x, w, z, f) where { meta = DenseReLUMeta(3; β=100.0) }
 ```
 
 """
-function DenseReLUMeta(dim_out::Int64; C::T1=1.0, β::T2=10.0, γ::T3=10.0) where { T1, T2, T3 }
+function DenseReLUMeta(dim_out::Int64; C::T1=10.0, β::T2=100.0, γ::T3=100.0) where { T1, T2, T3 }
     T = promote_type(T1, T2, T3, Float64)
     ξ = ones(T, dim_out)
     return DenseReLUMeta{T}(dim_out, C, β, γ, ξ)
 end
-
 
 getdimout(meta::DenseReLUMeta)          = meta.dim_out
 getC(meta::DenseReLUMeta)               = meta.C
