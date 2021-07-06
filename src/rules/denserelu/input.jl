@@ -1,6 +1,6 @@
 export rule
 
-@rule DenseReLU(:input, Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
+@rule DenseReLU(:input, Marginalisation) (q_output::NormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
     # assert whether the dimensions are correct
     @assert length(q_output) == length(q_w) """
@@ -40,15 +40,15 @@ export rule
         @inbounds tmp += mw[k] * mw[k]' + vw[k]
         @inbounds tmp2 += mf[k]*mw[k]
     end
-    wf = β .* tmp
-    mf = cholinv(tmp) * tmp2
+    wx = β .* tmp
+    mx = cholinv(tmp) * tmp2
 
     # return message
-    return MvNormalMeanPrecision(mf, wf)
+    return MvNormalMeanPrecision(mx, wx)
 
 end
 
-@rule DenseReLU(:input, Marginalisation) (q_output::MultivariateNormalDistributionsFamily, q_w::NTuple{N, UnivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
+@rule DenseReLU(:input, Marginalisation) (q_output::NormalDistributionsFamily, q_w::NTuple{N, UnivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
     # assert whether the dimensions are correct
     @assert length(q_output) == length(q_w) """
@@ -88,11 +88,11 @@ end
         @inbounds tmp += mw[k]^2 + vw[k]
         @inbounds tmp2 += mf[k]*mw[k]
     end
-    wf = β .* tmp
-    mf = cholinv(tmp) * tmp2
+    wx = β .* tmp
+    mx = cholinv(tmp) * tmp2
 
     # return message
-    return NormalMeanPrecision(mf, wf)
+    return NormalMeanPrecision(mx, wx)
 
 end
 
