@@ -235,7 +235,7 @@ end
 
 # FreeEnergy related functions
 
-@average_energy DenseReLU (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NTuple{N, NormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
+@average_energy DenseReLU (q_output::Union{NormalDistributionsFamily, PointMass}, q_input::Union{NormalDistributionsFamily, PointMass}, q_w::NTuple{N, NormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
 
     # check whether a bias term is included
     use_bias = getusebias(meta)

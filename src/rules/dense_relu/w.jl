@@ -1,6 +1,6 @@
 export rule
 
-@rule DenseReLU((:w, k), Marginalisation) (q_output::NormalDistributionsFamily, q_input::MultivariateNormalDistributionsFamily, q_z::Bernoulli, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
+@rule DenseReLU((:w, k), Marginalisation) (q_output::Union{NormalDistributionsFamily, PointMass}, q_input::Union{MultivariateNormalDistributionsFamily, PointMass{V}}, q_z::Bernoulli, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) where { V <: AbstractVector }= begin
     
     # no dimensionality test required, because of typing.
 
@@ -31,7 +31,7 @@ export rule
 
 end
 
-@rule DenseReLU((:w, k), Marginalisation) (q_output::NormalDistributionsFamily, q_input::UnivariateNormalDistributionsFamily, q_z::Bernoulli, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
+@rule DenseReLU((:w, k), Marginalisation) (q_output::Union{NormalDistributionsFamily, PointMass}, q_input::Union{UnivariateNormalDistributionsFamily, PointMass{T}}, q_z::Bernoulli, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) where { T <: Real }= begin
     
     # no dimensionality test required, because of typing.
 

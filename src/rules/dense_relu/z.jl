@@ -1,6 +1,6 @@
 export rule
 
-@rule DenseReLU((:z, k), Marginalisation) (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NormalDistributionsFamily, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
+@rule DenseReLU((:z, k), Marginalisation) (q_output::Union{NormalDistributionsFamily, PointMass}, q_input::Union{NormalDistributionsFamily, PointMass}, q_w::NormalDistributionsFamily, q_f::UnivariateNormalDistributionsFamily, meta::DenseReLUMeta) = begin
         
     # check whether a bias term is included
     use_bias = getusebias(meta)
