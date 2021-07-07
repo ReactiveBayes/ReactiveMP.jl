@@ -3,7 +3,7 @@ export rule
 @rule DenseReLU((:f, k), Marginalisation) (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NormalDistributionsFamily, q_z::Bernoulli, meta::DenseReLUMeta) = begin
     
     # check whether a bias term is included
-    use_bias = getuse_bias(meta)
+    use_bias = getusebias(meta)
 
     # assert whether the dimensions are correct
     @assert length(q_input) + 1*use_bias == length(q_w) """

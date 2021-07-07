@@ -5,7 +5,7 @@ export rule
     # no dimensionality test required, because of typing.
 
     # check whether a bias term is included
-    use_bias = getuse_bias(meta)
+    use_bias = getusebias(meta)
 
     # extract required statistics
     mf = mean(q_f)
@@ -36,7 +36,7 @@ end
     # no dimensionality test required, because of typing.
 
     # check whether a bias term is included
-    use_bias = getuse_bias(meta)
+    use_bias = getusebias(meta)
 
     # extract required statistics
     mf = mean(q_f)

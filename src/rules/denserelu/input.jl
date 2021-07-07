@@ -3,7 +3,7 @@ export rule
 @rule DenseReLU(:input, Marginalisation) (q_output::NormalDistributionsFamily, q_w::NTuple{N, MultivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
     # check whether a bias term is included
-    use_bias = getuse_bias(meta)
+    use_bias = getusebias(meta)
 
     # assert whether the dimensions are correct
     @assert length(q_output) == length(q_w) """
@@ -54,7 +54,7 @@ end
 @rule DenseReLU(:input, Marginalisation) (q_output::NormalDistributionsFamily, q_w::NTuple{N, UnivariateNormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where { N } = begin
     
     # check whether a bias term is included
-    use_bias = getuse_bias(meta)
+    use_bias = getusebias(meta)
 
     # assert whether the dimensions are correct
     @assert length(q_output) == length(q_w) """

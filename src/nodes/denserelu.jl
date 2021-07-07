@@ -137,7 +137,7 @@ getβ(meta::DenseReLUMeta)               = meta.β
 getγ(meta::DenseReLUMeta)               = meta.γ
 getξ(meta::DenseReLUMeta)               = meta.ξ
 getξk(meta::DenseReLUMeta, k::Int64)    = meta.ξ[k]
-getuse_bias(meta::DenseReLUMeta)        = meta.use_bias
+getusebias(meta::DenseReLUMeta)        = meta.use_bias
 
 function setξ!(meta::DenseReLUMeta, ξ)
     meta.ξ = ξ
@@ -238,7 +238,7 @@ end
 @average_energy DenseReLU (q_output::NormalDistributionsFamily, q_input::NormalDistributionsFamily, q_w::NTuple{N, NormalDistributionsFamily}, q_z::NTuple{N, Bernoulli}, q_f::NTuple{N, UnivariateNormalDistributionsFamily}, meta::DenseReLUMeta) where N = begin
 
     # check whether a bias term is included
-    use_bias = getuse_bias(meta)
+    use_bias = getusebias(meta)
 
     # fetch statistics once
     my, vy      = mean_cov(q_output)
@@ -312,7 +312,10 @@ sdtype(::Type{ <: DenseReLU }) = Stochastic()
 collect_factorisation(::Type{ <: DenseReLU }, factorisation) = factorisation
         
 function ReactiveMP.make_node(::Type{ <: DenseReLU{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
-    # @assert N >= 2 "DenseReLU requires at least two mixtures on input"
+    println(M)
+    if M == DenseReLUMeta{Float64}
+        @assert N == getdimout(meta) "The output dimension of the DenseReLU node does not coincide with the output dimension specified in the meta data object."
+    end
     @assert typeof(factorisation) <: DenseReLUNodeFactorisationSupport "DenseReLUNode supports only following factorisations: [ $(DenseReLUNodeFactorisationSupport) ]"
     output  = NodeInterface(:output)
     input   = NodeInterface(:input)
