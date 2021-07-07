@@ -312,7 +312,6 @@ sdtype(::Type{ <: DenseReLU }) = Stochastic()
 collect_factorisation(::Type{ <: DenseReLU }, factorisation) = factorisation
         
 function ReactiveMP.make_node(::Type{ <: DenseReLU{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
-    println(M)
     if M == DenseReLUMeta{Float64}
         @assert N == getdimout(meta) "The output dimension of the DenseReLU node does not coincide with the output dimension specified in the meta data object."
     end
