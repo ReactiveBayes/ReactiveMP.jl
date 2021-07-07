@@ -1,7 +1,7 @@
 export PointMass, getpointmass
 
 import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
-import Base: ndims, precision, getindex, convert, isapprox
+import Base: ndims, precision, getindex, convert, isapprox, length
 import SpecialFunctions: loggamma, logbeta
 
 struct PointMass{P}
@@ -41,6 +41,7 @@ loggammamean(distribution::PointMass{T})    where { T <: Real } = loggamma(mean(
 
 Base.precision(::PointMass{T}) where { T <: Real } = Inf
 Base.ndims(::PointMass{T})     where { T <: Real } = 1
+Base.length(::PointMass{T})    where { T <: Real } = 1
 
 convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: Real } = PointMass(convert(T, getpointmass(distribution)))
 
@@ -63,6 +64,7 @@ loggammamean(distribution::PointMass{V})    where { T, V <: AbstractVector{T} } 
 
 Base.precision(distribution::PointMass{V}) where { T, V <: AbstractVector{T} } = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{V})     where { T, V <: AbstractVector{T} } = length(mean(distribution))
+Base.length(distribution::PointMass{V})    where { T, V <: AbstractVector{T} } = length(mean(distribution))
 
 convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: AbstractVector }           = PointMass(convert(AbstractVector{T}, getpointmass(distribution)))
 convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: AbstractVector, R <: AbstractVector } = PointMass(convert(T, getpointmass(distribution)))
