@@ -1,4 +1,17 @@
 
+@rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, ) = begin
+    
+    # extract parameters
+    p = mean(m_out)
+
+    # calculate outward message
+    f = let (z) -> log(1 - p + (2*p - 1)*normcdf(z))
+
+    # return message
+    return ContinuousUnivariateLogPdf(f)
+
+end
+
 @rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, m_in::UnivariateNormalDistributionsFamily) = begin
 
     # extract parameters
