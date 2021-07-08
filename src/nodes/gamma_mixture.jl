@@ -57,7 +57,7 @@ getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMargina
 
 struct GammaMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-default_functional_dependencies_pipeline(::Type{ <: GammaMixtureNodeFunctionalDependencies }) = GammaMixtureNodeFunctionalDependencies()
+default_functional_dependencies_pipeline(::Type{ <: GammaMixture }) = GammaMixtureNodeFunctionalDependencies()
 
 function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N, F}, iindex::Int) where { N, F <: MeanField }
     message_dependencies = ()
