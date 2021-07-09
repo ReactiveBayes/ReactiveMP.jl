@@ -5,7 +5,7 @@
     p = mean(m_out)
 
     # calculate outward message
-    f = let (z) -> log(1 - p + (2*p - 1)*normcdf(z))
+    f = (z) -> log(1 - p + (2*p - 1)*normcdf(z))
 
     # return message
     return ContinuousUnivariateLogPdf(f)
