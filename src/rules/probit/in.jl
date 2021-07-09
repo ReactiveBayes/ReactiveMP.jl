@@ -37,10 +37,10 @@ end
     vpz = min(max(vpz, tiny), vz-tiny) # ensure variance of marginal is not larger than the variance of the cavity distribution.
 
     # calculate parameters of outgoing message
-    vz_out = 1/(1/vpz - 1/vz)
-    mz_out = vz_out*(mpz/vpz - mz/vz)
+    wz_out = 1/vpz - 1/vz
+    ξz_out = mpz/vpz - mz/vz
 
     # return message
-    return NormalMeanVariance(mz_out, vz_out)
+    return NormalWeightedMeanPrecision(ξz_out, wz_out)
 
 end
