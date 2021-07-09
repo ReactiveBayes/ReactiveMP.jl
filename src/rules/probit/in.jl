@@ -22,14 +22,14 @@ end
     # calculate auxiliary variables
     γ = mz/sqrt(1+vz)
 
-    # calculate moments of g
-    mom1_g = normcdf(γ)*mz + vz*normpdf(γ)/sqrt(1+vz)
-    mom2_g = 2*mz*mom1_g + (vz - mz^2)*normcdf(γ) + vz^2*γ*normpdf(γ)/(1+vz)
+    # calculate unnormalized moments of g
+    umom1_g = normcdf(γ)*mz + vz*normpdf(γ)/sqrt(1+vz)
+    umom2_g = 2*mz*umom1_g + (vz - mz^2)*normcdf(γ) - vz^2*γ*normpdf(γ)/(1+vz)
 
     # calculate moments of posterior
     mom0_pz = 1 - p + (2*p - 1)*normcdf(γ)
-    mom1_pz = 1/mom0_pz*((1-p)*mz + (2*p-1)*mom1_g)
-    mom2_pz = 1/mom0_pz*((1-p)*(vz + mz^2) + (2*p-1)*mom2_g)
+    mom1_pz = 1/mom0_pz*((1-p)*mz + (2*p-1)*umom1_g)
+    mom2_pz = 1/mom0_pz*((1-p)*(vz + mz^2) + (2*p-1)*umom2_g)
 
     # calculate parameters of posterior
     mpz = mom1_pz
