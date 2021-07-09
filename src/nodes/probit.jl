@@ -10,6 +10,8 @@ end
 
 getp(meta::ProbitMeta) = meta.p
 
+ProbitMeta(; p = 32) = ProbitMeta(p)
+
 @node Probit Stochastic [ out, in ]
 
 default_meta(::Type{ Probit }) = ProbitMeta(32)
@@ -21,7 +23,7 @@ default_meta(::Type{ Probit }) = ProbitMeta(32)
     m, v = mean_var(q_in)
 
     # specify function=
-    h = (x) -> -p*log(normcdf(x)) - (1-p)*log(normcdf(-x))
+    h = (x) -> p*log(normcdf(x)) + (1-p)*log(normcdf(-x))
 
     # calculate average average energy (default of 32 points)
     gh_cubature = GaussHermiteCubature(meta.p)
