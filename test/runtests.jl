@@ -69,6 +69,7 @@ using .ReactiveMPTestingHelpers
 
     addtests("test_node.jl")
     addtests("nodes/test_addition.jl")
+    addtests("nodes/test_probit.jl")
 
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
@@ -84,6 +85,9 @@ using .ReactiveMPTestingHelpers
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
     addtests("rules/mv_normal_mean_precision/test_precision.jl")  
+
+    addtests("rules/probit/test_out.jl")
+    addtests("rules/probit/test_in.jl")
 
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
