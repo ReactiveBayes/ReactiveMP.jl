@@ -1,4 +1,4 @@
-export GammaMixture, GammaMixtureNode, GammaMixtureNodeMetadata
+export GammaMixture, GammaMixtureNode
 
 # Gamma Mixture Functional Form
 struct GammaMixture{N} end

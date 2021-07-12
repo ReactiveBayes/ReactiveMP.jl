@@ -2,8 +2,8 @@ export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
 export FactorNode, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
-export deps, connect!, activate!
-export make_node, on_make_node, AutoVar
+export connect!, activate!
+export make_node, AutoVar
 export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
 export MeanField, FullFactorisation, collect_factorisation
