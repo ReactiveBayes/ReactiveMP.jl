@@ -17,7 +17,7 @@ end
     # extract parameters
     mz, vz = mean_cov(m_in)
     p = mean(m_out)
-    @assert p >=0 && p <=1 "The Probit node only accepts messages on its output with values between 0 and 1."
+    @assert p >= zero(p) && p <= one(p) "The Probit node only accepts messages on its output with values between 0 and 1."
 
     # calculate auxiliary variables
     γ = mz/sqrt(1+vz)
@@ -34,7 +34,7 @@ end
     # calculate parameters of posterior
     mpz = mom1_pz
     vpz = mom2_pz - mom1_pz^2
-    vpz = min(max(vpz, tiny), vz-tiny) # ensure variance of marginal is not larger than the variance of the cavity distribution.
+    vpz = convert(promote_type(typeof(vz), typeof(vpz)), min(max(vpz, tiny), vz-tiny)) # ensure variance of marginal is not larger than the variance of the cavity distribution.
 
     # calculate parameters of outgoing message
     wz_out = 1/vpz - 1/vz

@@ -12,10 +12,13 @@ import ReactiveMP: @test_rules
 @testset "rules:Probit:in" begin
 
     @testset "Belief Propagation: (m_out::PointMass, )" begin
-        
-        m_out = PointMass(1)
-        m_in = ReactiveMP.@call_rule(Probit(:in, Marginalisation), (m_out=m_out,))
-        @test typeof(m_in) <: ContinuousUnivariateLogPdf
+
+        @test_rules [ with_float_conversions = true ] Probit(:in, Marginalisation) [
+            (input = (m_out = PointMass(1.0), ), output = ContinuousUnivariateLogPdf((z) -> log(normcdf(z)))),
+            (input = (m_out = PointMass(0.8), ), output = ContinuousUnivariateLogPdf((z) -> log(0.2 + 0.6*normcdf(z)))),
+            (input = (m_out = PointMass(0.5), ), output = ContinuousUnivariateLogPdf((z) -> log(0.5))),
+            (input = (m_out = PointMass(0.0), ), output = ContinuousUnivariateLogPdf((z) -> log(1 - normcdf(z)))),
+        ]
 
     end
 
