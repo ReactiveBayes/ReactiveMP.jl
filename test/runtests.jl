@@ -3,6 +3,9 @@ module ReactiveMPTest
 using Test, Documenter, ReactiveMP
 using TestSetExtensions
 
+using Aqua
+Aqua.test_all(ReactiveMP; ambiguities=false)
+
 include("test_helpers.jl")
 
 using .ReactiveMPTestingHelpers

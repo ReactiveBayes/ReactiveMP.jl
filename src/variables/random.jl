@@ -1,4 +1,4 @@
-export RandomVariable, randomvar, simplerandomvar
+export RandomVariable, randomvar
 
 ## Random variable implementation
 
