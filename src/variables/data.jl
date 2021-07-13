@@ -25,7 +25,6 @@ end
 
 degree(datavar::DataVariable)    = nconnected(datavar)
 name(datavar::DataVariable)      = datavar.name
-local_constraint(::DataVariable) = ClampedVariable()
 
 isconnected(datavar::DataVariable) = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)  = datavar.nconnected

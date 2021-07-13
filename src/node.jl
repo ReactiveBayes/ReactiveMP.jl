@@ -138,6 +138,21 @@ default_meta(any) = nothing
 
 ## NodeInterface
 
+## NodeInterface constraints
+
+abstract type AbstractInterfaceLocalConstraint end
+
+struct Marginalisation <: AbstractInterfaceLocalConstraint end
+struct MomentMatching  <: AbstractInterfaceLocalConstraint end # TODO: WIP
+
+is_marginalisation(::AbstractInterfaceLocalConstraint) = false
+is_marginalisation(::Marginalisation)                  = true
+
+is_moment_matching(::AbstractInterfaceLocalConstraint) = false
+is_moment_matching(::MomentMatching)                   = true
+
+default_interface_local_constraint(factornode, edge) = Marginalisation()
+
 """
     NodeInterface
 
@@ -147,15 +162,16 @@ See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@re
 """
 mutable struct NodeInterface
     name               :: Symbol
+    local_constraint   :: AbstractInterfaceLocalConstraint   
     m_out              :: LazyObservable{AbstractMessage}
     m_in               :: LazyObservable{AbstractMessage}
     connected_variable :: Union{Nothing, AbstractVariable}
     connected_index    :: Int
 
-    NodeInterface(name::Symbol) = new(name, lazy(AbstractMessage), lazy(AbstractMessage), nothing, 0)
+    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, lazy(AbstractMessage), lazy(AbstractMessage), nothing, 0)
 end
 
-Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
+Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ",", local_constraint(interface), ")"))
 
 """
     name(interface)
@@ -166,6 +182,15 @@ See also: [`NodeInterface`](@ref), [`tag`](@ref)
 """
 name(symbol::Symbol)              = symbol
 name(interface::NodeInterface)    = name(interface.name)
+
+"""
+    local_constraint(interface)
+
+Returns a local constraint of the interface.
+
+See also: [`AbstractInterfaceLocalConstraint`](@ref), [`Marginalisation`](@ref), [`MomentMatching`](@ref)
+"""
+local_constraint(interface::NodeInterface) = interface.local_constraint
 
 """
     tag(interface)
@@ -247,11 +272,12 @@ struct IndexedNodeInterface
     interface :: NodeInterface
 end
 
-Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", name(interface), ",", index(interface), ")"))
+Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", name(interface), ",", local_constraint(interface), ",", index(interface), ")"))
 
-name(interface::IndexedNodeInterface)  = name(interface.interface)
-index(interface::IndexedNodeInterface) = interface.index
-tag(interface::IndexedNodeInterface)   = (Val{ name(interface) }(), index(interface))
+name(interface::IndexedNodeInterface)             = name(interface.interface)
+local_constraint(interface::IndexedNodeInterface) = local_constraint(interface.interface)
+index(interface::IndexedNodeInterface)            = interface.index    
+tag(interface::IndexedNodeInterface)              = (Val{ name(interface) }(), index(interface))
 
 messageout(interface::IndexedNodeInterface) = messageout(interface.interface)
 messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)
@@ -325,7 +351,7 @@ function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmargin
 end
 
 function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, pipeline) where N
-    interfaces     = map(varname -> NodeInterface(varname), varnames)
+    interfaces     = map(varname -> NodeInterface(varname, default_interface_local_constraint(fform, Val(varname))), varnames)
     localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
     return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
 end
@@ -567,7 +593,7 @@ function activate!(model, factornode::AbstractFactorNode)
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
         vtag        = tag(interface)
-        vconstraint = local_constraint(connectedvar(interface))
+        vconstraint = local_constraint(interface)
         
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
         vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)

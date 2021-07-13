@@ -7,32 +7,30 @@ mutable struct RandomVariable <: AbstractVariable
     inputmsgs           :: Vector{LazyObservable{AbstractMessage}} 
     marginal            :: Union{Nothing, MarginalObservable}
     pipeline            :: AbstractPipelineStage
-    local_constraint    
     prod_constraint     
     prod_strategy       
     form_constraint     
     form_check_strategy
 end
 
-function randomvar(name::Symbol; pipeline = EmptyPipelineStage(), local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, pipeline, local_constraint, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+function randomvar(name::Symbol; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
-function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
-    return randomvar(name, dims...; pipeline = pipeline, local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
+function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
+    return randomvar(name, dims...; pipeline = pipeline, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
 end
 
-function randomvar(name::Symbol, dims::Vararg{Int}; pipeline = EmptyPipelineStage(), local_constraint = Marginalisation(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
+function randomvar(name::Symbol, dims::Vararg{Int}; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
     vars = Array{RandomVariable}(undef, dims)
     for i in CartesianIndices(axes(vars))
-        @inbounds vars[i] = randomvar(Symbol(name, :_, Symbol(join(i.I, :_))); pipeline = pipeline, local_constraint = local_constraint, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
+        @inbounds vars[i] = randomvar(Symbol(name, :_, Symbol(join(i.I, :_))); pipeline = pipeline, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
     end
     return vars
 end
 
 degree(randomvar::RandomVariable)              = length(randomvar.inputmsgs)
 name(randomvar::RandomVariable)                = randomvar.name
-local_constraint(randomvar::RandomVariable)    = randomvar.local_constraint
 prod_constraint(randomvar::RandomVariable)     = randomvar.prod_constraint
 prod_strategy(randomvar::RandomVariable)       = randomvar.prod_strategy
 form_constraint(randomvar::RandomVariable)     = randomvar.form_constraint
