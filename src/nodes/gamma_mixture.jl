@@ -168,10 +168,10 @@ collect_factorisation(::Type{ <: GammaMixture }, factorisation) = factorisation
 function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
     @assert N >= 2 "GammaMixtureNode requires at least two mixtures on input"
     @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "GammaMixtureNode supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
-    out    = NodeInterface(:out)
-    switch = NodeInterface(:switch)
-    as   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a)), N)
-    bs   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b)), N)
+    out    = NodeInterface(:out, Marginalisation())
+    switch = NodeInterface(:switch, Marginalisation())
+    as   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a, Marginalisation())), N)
+    bs   = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b, Marginalisation())), N)
     meta = collect_meta(GammaMixture, meta)
     return GammaMixtureNode{N, F, typeof(meta), P}(factorisation, out, switch, as, bs, meta, pipeline)
 end

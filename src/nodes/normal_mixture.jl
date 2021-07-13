@@ -179,10 +179,10 @@ collect_factorisation(::Type{ <: NormalMixture }, factorisation) = factorisation
 function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
     @assert N >= 2 "NormalMixtureNode requires at least two mixtures on input"
     @assert typeof(factorisation) <: NormalMixtureNodeFactorisationSupport "NormalMixtureNode supports only following factorisations: [ $(NormalMixtureNodeFactorisationSupport) ]"
-    out    = NodeInterface(:out)
-    switch = NodeInterface(:switch)
-    means  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:m)), N)
-    precs  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:p)), N)
+    out    = NodeInterface(:out, Marginalisation())
+    switch = NodeInterface(:switch, Marginalisation())
+    means  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:m, Marginalisation())), N)
+    precs  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:p, Marginalisation())), N)
     return NormalMixtureNode{N, F, M, P}(factorisation, out, switch, means, precs, meta, pipeline)
 end
 
