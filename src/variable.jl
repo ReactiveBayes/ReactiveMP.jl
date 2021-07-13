@@ -8,26 +8,6 @@ using Rocket
 
 abstract type AbstractVariable end
 
-## Variable constraints
-
-abstract type AbstractVariableLocalConstraint end
-
-struct ClampedVariable <: AbstractVariableLocalConstraint end
-struct Marginalisation <: AbstractVariableLocalConstraint end
-struct MomentMatching  <: AbstractVariableLocalConstraint end # TODO: WIP
-
-is_clamped(variable::AbstractVariable)        = is_clamped(local_constraint(variable))
-is_clamped(::AbstractVariableLocalConstraint) = false
-is_clamped(::ClampedVariable)                 = true
-
-is_marginalisation(variable::AbstractVariable)        = is_marginalisation(local_constraint(variable))
-is_marginalisation(::AbstractVariableLocalConstraint) = false
-is_marginalisation(::Marginalisation)                 = true
-
-is_moment_matching(variable::AbstractVariable)        = is_moment_matching(local_constraint(variable))
-is_moment_matching(::AbstractVariableLocalConstraint) = false
-is_moment_matching(::MomentMatching)                  = true
-
 ## Messages to Marginal product strategies
 
 struct FoldLeftProdStrategy end
