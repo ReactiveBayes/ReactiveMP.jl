@@ -32,7 +32,7 @@ import ReactiveMP: @test_rules
 
     @testset "Expectation Propagation: (m_out::PointMass, m_in::UnivariateNormalDistributionsFamily)" begin
         
-        @test_rules [ with_float_conversions = true ] Probit(:in, Marginalisation) [
+        @test_rules [ with_float_conversions = true ] Probit(:in, MomentMatching) [
             (input = (m_out = PointMass(1.0), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(0.672361658269399, 0.329500399396070) ), 
             (input = (m_out = PointMass(1.0), m_in = NormalMeanPrecision(1.0, 2.0) ), output = NormalWeightedMeanPrecision(0.672361658269399, 0.329500399396070) ), 
             (input = (m_out = PointMass(1.0), m_in = NormalWeightedMeanPrecision(2.0, 2.0) ), output = NormalWeightedMeanPrecision(0.672361658269399, 0.329500399396070) ),
@@ -45,7 +45,7 @@ import ReactiveMP: @test_rules
 
     @testset "Expectation Propagation: (m_out::Bernoulli, m_in::UnivariateNormalDistributionsFamily)" begin
         
-        @test_rules [ with_float_conversions = true ] Probit(:in, Marginalisation) [
+        @test_rules [ with_float_conversions = true ] Probit(:in, MomentMatching) [
             (input = (m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(0.672361658269399, 0.329500399396070) ), 
             (input = (m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(0.672361658269399, 0.329500399396070) ), 
             (input = (m_out = Bernoulli(1.0), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(0.672361658269399, 0.329500399396070) ), 
