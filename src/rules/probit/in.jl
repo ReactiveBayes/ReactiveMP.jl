@@ -45,6 +45,6 @@ end
 
 end
 
-@rule Probit(:in, Marginalisation) (m_out::Missing, m_in::NormalMeanPrecision{Float64}, meta::ProbitMeta) = begin 
+@rule Probit(:in, Marginalisation) (m_out::Missing, ) = begin 
     return NormalMeanPrecision(0.0, tiny)
 end
