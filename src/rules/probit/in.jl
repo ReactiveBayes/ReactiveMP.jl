@@ -12,7 +12,7 @@
 
 end
 
-@rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, m_in::UnivariateNormalDistributionsFamily) = begin
+@rule Probit(:in, MomentMatching) (m_out::Union{PointMass, Bernoulli}, m_in::UnivariateNormalDistributionsFamily) = begin
 
     # extract parameters
     mz, vz = mean_cov(m_in)
