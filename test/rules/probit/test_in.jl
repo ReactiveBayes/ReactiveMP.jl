@@ -22,14 +22,6 @@ import ReactiveMP: @test_rules
 
     end
 
-    @testset "Belief Propagation: (m_out::Missing, )" begin
-
-        @test_rules [ with_float_conversions = true ] Probit(:in, Marginalisation) [
-            (input = (m_out = Missing(), ), output = NormalWeightedMeanPrecision(0.0, tiny) )
-        ]
-
-    end
-
     @testset "Expectation Propagation: (m_out::PointMass, m_in::UnivariateNormalDistributionsFamily)" begin
         
         @test_rules [ with_float_conversions = true ] Probit(:in, MomentMatching) [

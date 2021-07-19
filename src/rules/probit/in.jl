@@ -44,7 +44,3 @@ end
     return NormalWeightedMeanPrecision(ξz_out, wz_out)
 
 end
-
-@rule Probit(:in, Marginalisation) (m_out::Missing, ) = begin 
-    return NormalMeanPrecision(0.0, tiny)
-end

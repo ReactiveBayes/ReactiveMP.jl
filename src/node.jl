@@ -1,4 +1,5 @@
 export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
+export AbstractInterfaceLocalConstraint, Marginalisation, MomentMatching
 export FactorNode, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
