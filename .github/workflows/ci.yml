@@ -45,18 +45,22 @@ jobs:
     name: Benchmarks
     runs-on: ubuntu-latest
     needs: test
+    env: 
+      working-directory: './benchmark'
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.6'
-      - run: cd benchmark
       - run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+        working-directory: ${{ env.working-directory }}
       - run: julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.judge(target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3`), pkgdir = "$(pwd())/../")'
+        working-directory: ${{ env.working-directory }}
       - run: julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.displayjudgement()'
+        working-directory: ${{ env.working-directory }}
       - run: julia --project=. -e 'using Base64; using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.jl.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = String(Base64.base64decode(ENV["BENCHMARK_KEY"]))); '
-      - run: cd ..
+        working-directory: ${{ env.working-directory }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BENCHMARK_KEY: ${{ secrets.BENCHMARK_KEY }}
