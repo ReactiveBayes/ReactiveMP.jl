@@ -9,6 +9,7 @@ demo/*.jl
 demo/*WIP*
 
 .idea
+.vscode
 
 **/*.aux
 **/*.log
