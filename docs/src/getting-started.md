@@ -2,29 +2,29 @@
 
 `ReactiveMP.jl` is a Julia package for Bayesian Inference on Factor Graphs by Message Passing. It supports both exact and variational inference algorithms.
 
-`ReactiveMP.jl` package is a successor of the [`ForneyLab.jl`](https://github.com/biaslab/ForneyLab.jl) package. It follows the same ideas and concepts for message-passing based inference, but uses new reactive and efficient message passing implementation under the hood. The API between two packages is different due to a better flexibility, performance and new reactive approach for solving inference problems.
+`ReactiveMP` package is a successor of the [`ForneyLab`](https://github.com/biaslab/ForneyLab.jl) package. It follows the same ideas and concepts for message-passing based inference, but uses new reactive and efficient message passing implementation under the hood. The API between two packages is different due to a better flexibility, performance and new reactive approach for solving inference problems.
 
-This page provides the necessary information you need to get started with `ReactiveMP.jl`. We will show the general approach to solving inference problems with `ReactiveMP.jl` by means of a running example: inferring the bias of a coin.
+This page provides the necessary information you need to get started with `ReactiveMP`. We will show the general approach to solving inference problems with `ReactiveMP` by means of a running example: inferring the bias of a coin.
 
 ## Installation
 
-Install `ReactiveMP.jl` through the Julia package manager:
+Install `ReactiveMP` through the Julia package manager:
 ```julia
 ] add ReactiveMP
 ```
 
 !!! note
-    For best user experience you also need to install `GraphPPL.jl`, `Rocket.jl` and `Distributions.jl` packages.
+    For best user experience you also need to install `GraphPPL`, `Rocket` and `Distributions` packages.
 
 ## Example: Inferring the bias of a coin
-The `ReactiveMP.jl` approach to solving inference problems consists of three phases:
+The `ReactiveMP` approach to solving inference problems consists of three phases:
 
-1. [Model specification](@ref): `ReactiveMP.jl` uses `GraphPPL.jl` package for model specification part. It offers a domain-specific language to specify your probabilistic model.
-2. [Inference specification](@ref): `ReactiveMP.jl` inference API has been designed to be as flexible as possible and it is compatible both with asynchronous infinite data streams and with static datasets. For most of the use cases it consists of the same simple building blocks. In this example we will show one of the many possible ways to infer your quantities of interest.
-3. [Inference execution](@ref): Given model specification and inference procedure it is pretty straightforward to use reactive API from `Rocket.jl` to pass data to the inference backend and to run actual inference.
+1. [Model specification](@ref): `ReactiveMP` uses `GraphPPL` package for model specification part. It offers a domain-specific language to specify your probabilistic model.
+2. [Inference specification](@ref): `ReactiveMP` inference API has been designed to be as flexible as possible and it is compatible both with asynchronous infinite data streams and with static datasets. For most of the use cases it consists of the same simple building blocks. In this example we will show one of the many possible ways to infer your quantities of interest.
+3. [Inference execution](@ref): Given model specification and inference procedure it is pretty straightforward to use reactive API from `Rocket` to pass data to the inference backend and to run actual inference.
 
 ### Coin flip simulation
-Let's start by creating some dataset. One approach could be flipping a coin N times and recording each outcome. Here, however, we will simulate this process by sampling some values from a Bernoulli distribution using streams from `Rocket.jl` library. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
+Let's start by creating some dataset. One approach could be flipping a coin N times and recording each outcome. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
 
 First lets setup our environment by importing all needed packages:
 
@@ -100,11 +100,11 @@ end
 
 ```
 
-As you can see, `GraphPPL.jl` offers a model specification syntax that resembles closely to the mathematical equations defined above. We use `datavar` function to create "clamped" variables that take specific values at a later date. `θ ~ Beta(1.0, 1.0)` expression creates random variable `θ` and assigns it as an output of `Beta` node in the corresponding FFG. 
+As you can see, `GraphPPL` offers a model specification syntax that resembles closely to the mathematical equations defined above. We use `datavar` function to create "clamped" variables that take specific values at a later date. `θ ~ Beta(2.0, 7.0)` expression creates random variable `θ` and assigns it as an output of `Beta` node in the corresponding FFG. 
 
 ### Inference specification
 
-Once we have defined our model, the next step is to use `ReactiveMP.jl` API to infer quantities of interests. To do this, we need to specify inference procedure. `ReactiveMP.jl` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with statis datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
+Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this, we need to specify inference procedure. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with statis datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
 
 1. Return variables of interests from model specification
 2. Subscribe on variables of interests posterior marginal updates
@@ -166,7 +166,7 @@ p2 = plot(rθ, (x) -> pdf(θestimated, x), title="Posterior", fillalpha=0.3, fil
 plot(p1, p2, layout = @layout([ a; b ]))
 ```
 
-In our dataset we used 10 coin flips to estimate the bias of a coin. It resulted in a vague posterior distribution, however `ReactiveMP.jl` scales very well for large models and factor graphs. We may use more coin flips in our dataset for better posterior distribution estimates:
+In our dataset we used 10 coin flips to estimate the bias of a coin. It resulted in a vague posterior distribution, however `ReactiveMP` scales very well for large models and factor graphs. We may use more coin flips in our dataset for better posterior distribution estimates:
 
 ```@example coin
 dataset_100   = float.(rand(rng, Bernoulli(p), 100))
@@ -201,4 +201,4 @@ nothing #hide
 ```
 
 ## Where to go next?
-There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) available in `ReactiveMP.jl` repository that demonstrate the more advanced features of `ReactiveMP.jl`. Alternatively, you can head to the [User guide](@ref) which provides more detailed information of how to use `ReactiveMP.jl` to solve inference problems.
+There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) available in `ReactiveMP` repository that demonstrate the more advanced features of the package. Alternatively, you can head to the [User guide](@ref) which provides more detailed information of how to use `ReactiveMP` to solve inference problems.
