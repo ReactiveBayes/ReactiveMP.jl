@@ -1,18 +1,10 @@
-# User guide
-
-This user guide outlines the usage of `ReactiveMP` for solving inference problems. The content is divided in several parts:
-
-- [Specifying a model](@ref user-guide-model-specification)
-- [Specifying an inference procedure](@ref user-guide-inference-specification)
-- [Inference execution](@ref user-guide-inference-execution)
-
-## [User guide: Model Specification](@id user-guide-model-specification)
+# [Model Specification](@id user-guide-model-specification)
 
 Probabilistic models incorporate elements of randomness to describe an event or phenomenon by using random variables and probability theory. A probabilistic model can be represented visually by using probabilistic graphical models (PGMs). A factor graph is a type of PGM that is well suited to cast inference tasks in terms of graphical manipulations.
 
 `GraphPPL.jl` is a Julia package presenting a model specification language for probabilistic models.
 
-## Model specification
+## `@model` macro
 
 The `ReactiveMP` uses `GraphPPL` library to simplify model specification. It is not necessary but highly recommended to use `ReactiveMP` in a combination with `GraphPPL` model specification library.
 The `GraphPPL` library exports a single `@model` macro for model specification. The `@model` macro accepts two arguments: model options (optionally) and the model specification itself in a form of regular Julia function. 
@@ -90,7 +82,7 @@ Here we create a linear gaussian state space model with latent random variables 
 end
 ```
     
-## Graph variables creation
+## Model variables
 
 ### Constants
 
@@ -151,7 +143,7 @@ x = randomvar((n, m)) # It is also possible to use a tuple for dimensionality, i
 
 The second way to create a random variable is to use the `~` operator. If the random variable hasn't been created yet, `~` operator will be creat it automatically during the creation of the node. Read more about the `~` operator in the next section.
 
-## Node creation
+## Factor nodes
 
 Factor nodes (or local functions) are used to define a relationship between random variables and/or constants and data inputs. In most of the cases a factor node defines a probability distribution over selected random variables. 
 
@@ -282,7 +274,3 @@ To assign a factor node's local pipeline we use a `pipeline` option:
 ```julia
 y ~ NormalMeanVariance(m, v) where { pipeline = LoggerPipelineStage() } # Logs all outbound messages with `LoggerPipelineStage`
 ```
-
-## [User guide: Inference specification](@id user-guide-inference-specification)
-
-## [User guide: Inference execution](@id user-guide-inference-execution)

@@ -26,16 +26,15 @@ Given a probabilistic model, ReactiveMP allows for an efficient message-passing 
 - For an introduction to message passing and FFGs, see [The Factor Graph Approach to Model-Based Signal Processing](https://ieeexplore.ieee.org/document/4282128/) by Loeliger et al. (2007).
 
 ## How to get started?
-Head to the [Getting started](@ref) section to get up and running with ForneyLab.
+Head to the [Getting started](@ref user-guide-getting-started) section to get up and running with ForneyLab.
 
 ## Table of Contents
 
 ```@contents
 Pages = [
-  "getting-started.md",
-  "user-guide.md",
-  "extending.md",
-  "distributions.md"
+  "man/getting-started.md",
+  "man/model-specification.md",
+  "extra/contributing.md"
 ]
 Depth = 2
 ```

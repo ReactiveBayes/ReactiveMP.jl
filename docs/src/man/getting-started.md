@@ -1,4 +1,4 @@
-# Getting started
+# [Getting started](@id user-guide-getting-started)
 
 `ReactiveMP.jl` is a Julia package for Bayesian Inference on Factor Graphs by Message Passing. It supports both exact and variational inference algorithms.
 
@@ -201,4 +201,4 @@ nothing #hide
 ```
 
 ## Where to go next?
-There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) available in `ReactiveMP` repository that demonstrate the more advanced features of the package. Alternatively, you can head to the [User guide](@ref) which provides more detailed information of how to use `ReactiveMP` to solve inference problems.
+There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) available in `ReactiveMP` repository that demonstrate the more advanced features of the package. Alternatively, you can head to the [Model specification](@ref user-guide-model-specification) which provides more detailed information of how to use `ReactiveMP` and `GraphPPL` to specify probabilistic models.

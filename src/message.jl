@@ -7,8 +7,51 @@ using Rocket
 import Rocket: getrecent
 import Base: *, +, ndims, precision, length, size, show
 
+"""
+    AbstractMessage
+
+An abstract supertype for all concrete message types.
+
+See also: [`Message`](@ref)
+"""
 abstract type AbstractMessage end
 
+"""
+    Message{D} <: AbstractMessage
+
+`Message` structure encodes a **Belief Propagation** message, which holds some `data` that usually a probability distribution, but can also be an arbitrary object.
+Message acts as a proxy structure to `data` object and proxies most of the statistical functions, e.g. `mean`, `mode`, `cov` etc.
+
+# Arguments
+- `data::D`: message always holds some data object associated with it
+- `is_clamped::Bool`, specifies if this message is clamped
+- `is_initial::Bool`, specifies if this message is initial
+
+# Example 
+
+```jldoctest
+julia> distribution = Gamma(10.0, 2.0)
+Gamma{Float64}(α=10.0, θ=2.0)
+
+julia> message = Message(distribution, false, true)
+Message(Gamma{Float64}(α=10.0, θ=2.0))
+
+julia> mean(message) 
+20.0
+
+julia> getdata(message)
+Gamma{Float64}(α=10.0, θ=2.0)
+
+julia> is_clamped(message)
+false
+
+julia> is_initial(message)
+true
+
+```
+
+See also: [`AbstractMessage`](@ref)
+"""
 struct Message{D} <: AbstractMessage
     data       :: D
     is_clamped :: Bool
