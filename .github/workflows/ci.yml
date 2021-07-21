@@ -47,7 +47,7 @@ jobs:
     needs: test
     env: 
       working-directory: './benchmark'
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
+    if: (github.ref == 'refs/heads/develop') && !contains(github.event.head_commit.message, '[skip benchmark]') && !contains(github.event.head_commit.message, 'docs()')
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
