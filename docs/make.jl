@@ -13,16 +13,9 @@ makedocs(
             "Model Specification" => "man/model-specification.md"
         ],
         "Library" => [
-            "Message" => "lib/message.md"
+            "Messages" => "lib/message.md"
         ],
-        # "Extending"       => "extending.md",
-        # "Distributions"   => "distributions.md",
-        # "API"             => [
-        #     "Node" => "api/node.md"
-        # ],
-        # "TODO"         => "todo.md",
         "Contributing" => "extra/contributing.md",
-        # "Utils"        => "utils.md"
     ],
     format   = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true"
