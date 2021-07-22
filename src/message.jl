@@ -17,6 +17,15 @@ See also: [`Message`](@ref)
 abstract type AbstractMessage end
 
 """
+    materialize!(message::AbstractMessage)
+
+Materializes an abstract message and converts it to be of type `Message`.
+
+See also: [`Message`](@ref)
+"""
+function materialize! end
+
+"""
     Message{D} <: AbstractMessage
 
 `Message` structure encodes a **Belief Propagation** message, which holds some `data` that usually a probability distribution, but can also be an arbitrary object.
@@ -62,13 +71,11 @@ getdata(message::Message)    = message.data
 is_clamped(message::Message) = message.is_clamped
 is_initial(message::Message) = message.is_initial
 
-getdata(messages::NTuple{ N, <: Message })    where N = map(getdata, messages)
+getdata(messages::NTuple{ N, <: Message }) where N = map(getdata, messages)
 
 materialize!(message::Message) = message
 
 Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ")"))
-
-## Message
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
