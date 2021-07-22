@@ -14,6 +14,8 @@ AbstractMessage
 
 ## Belief propagation message
 
+Belief propagation messages are encoded with type `Message`. 
+
 ![message](../assets/img/message.svg)
 
 ```@docs

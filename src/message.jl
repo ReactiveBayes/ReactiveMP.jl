@@ -59,7 +59,7 @@ true
 
 ```
 
-See also: [`AbstractMessage`](@ref)
+See also: [`AbstractMessage`](@ref), [`materialize!`](@ref)
 """
 struct Message{D} <: AbstractMessage
     data       :: D

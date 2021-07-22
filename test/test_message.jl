@@ -3,6 +3,7 @@ module ReactiveMPMessageTest
 using Test
 using ReactiveMP 
 using Distributions
+using Random
 
 import InteractiveUtils: methodswith
 import Base: methods
@@ -20,6 +21,7 @@ import ReactiveMP: materialize!
             @test is_clamped(msg) === clamped
             @test is_initial(msg) === initial
             @test materialize!(msg) === msg
+            @test occursin("Message", repr(msg))
         end
 
     end
@@ -61,7 +63,14 @@ import ReactiveMP: materialize!
     
     @testset "Statistics" begin 
 
-        distributions = [ Gamma(10.0, 2.0), Wishart(4.0, [ 2.0 -0.5; -0.5 1.0 ]), MvNormalMeanPrecision([ 2.0, -1.0 ], [ 7.0 -1.0; -1.0 3.0 ]) ]
+        distributions = [ 
+            Gamma(10.0, 2.0), 
+            NormalMeanVariance(-10.0, 10.0), 
+            Wishart(4.0, [ 2.0 -0.5; -0.5 1.0 ]), 
+            MvNormalMeanPrecision([ 2.0, -1.0 ], [ 7.0 -1.0; -1.0 3.0 ]), 
+            Bernoulli(0.5),
+            Categorical([ 0.8, 0.2 ])
+        ]
 
         # Here we get all methods defined for a particular type of a distribution
         dists_methods = map(d -> methodswith(eval(nameof(typeof(d)))), distributions)
@@ -106,6 +115,34 @@ import ReactiveMP: materialize!
             ms = methods(method, (T, ))
             if !isempty(ms) && all(m -> m ∈ distribution_methods, ms)
                 @test method(message) == method(distribution)
+            end
+        end
+
+        _getpoint(rng, distritubution) = _getpoint(rng, variate_form(distritubution), distritubution)
+        _getpoint(rng, ::Type{ <: Univariate }, distribution) = 10rand(rng)
+        _getpoint(rng, ::Type{ <: Multivariate }, distribution) = 10 .* rand(rng, 2)
+
+        distributions2   = [ 
+            Gamma(10.0, 2.0), 
+            NormalMeanVariance(-10.0, 1.0), 
+            MvNormalMeanPrecision([ 2.0, -1.0 ], [ 7.0 -1.0; -1.0 3.0 ]), 
+            Bernoulli(0.5),
+            Categorical([ 0.8, 0.2 ])
+        ]
+        
+        methods_to_test2 = [
+            Distributions.pdf,
+            Distributions.logpdf, 
+        ]
+
+        rng = MersenneTwister(1234)
+
+        for distribution in distributions2, method in methods_to_test2
+            message = Message(distribution, false, false)
+            
+            for _ in 1:3
+                point = _getpoint(rng, distribution)
+                @test method(message, point) === method(distribution, point)
             end
         end
 
