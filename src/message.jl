@@ -1,4 +1,5 @@
-export Message, getdata, is_clamped, is_initial, as_message
+export AbstractMessage, Message, VariationalMessage
+export getdata, is_clamped, is_initial, as_message
 export multiply_messages
 
 using Distributions

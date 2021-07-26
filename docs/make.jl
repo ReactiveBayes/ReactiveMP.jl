@@ -17,7 +17,8 @@ makedocs(
             "Model Specification" => "man/model-specification.md"
         ],
         "Library" => [
-            "Messages" => "lib/message.md"
+            "Messages"     => "lib/message.md",
+            "Factor nodes" => "lib/node.md"
         ],
         "Contributing" => "extra/contributing.md",
     ],

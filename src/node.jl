@@ -1,3 +1,6 @@
+export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
+export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
+export MeanField, FullFactorisation, collect_factorisation
 export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
 export AbstractInterfaceLocalConstraint, Marginalisation, MomentMatching
 export FactorNode, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
@@ -5,9 +8,6 @@ export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export connect!, activate!
 export make_node, AutoVar
-export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
-export sdtype, Deterministic, Stochastic, isdeterministic, isstochastic
-export MeanField, FullFactorisation, collect_factorisation
 export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, RequireEverythingFunctionalDependencies
 export @node
 
@@ -19,8 +19,33 @@ import Base: getindex, setindex!, firstindex, lastindex
 
 ## Node traits
 
+"""
+    ValidNodeFunctionalForm   
+
+Trait specification for an object that can be used in model specification as a factor node.
+
+See also: [`as_node_functional_form`](@ref), [`UndefinedNodeFunctionalForm`](@ref)
+"""
 struct ValidNodeFunctionalForm end
+
+"""
+    UndefinedNodeFunctionalForm
+
+Trait specification for an object that can **not** be used in model specification as a factor node.
+
+See also: [`as_node_functional_form`](@ref), [`ValidNodeFunctionalForm`](@ref)
+"""
 struct UndefinedNodeFunctionalForm end
+
+"""
+    as_node_functional_form(object)
+
+Determines `object` node functional form trait specification.
+Returns either `ValidNodeFunctionalForm()` or `UndefinedNodeFunctionalForm()`.
+
+See also: [`ValidNodeFunctionalForm`](@ref), [`UndefinedNodeFunctionalForm`](@ref)
+"""
+function as_node_functional_form end
 
 as_node_functional_form(::Function) = ValidNodeFunctionalForm()
 as_node_functional_form(some)       = UndefinedNodeFunctionalForm()
@@ -32,7 +57,7 @@ as_node_functional_form(some)       = UndefinedNodeFunctionalForm()
 
 `Deterministic` object used to parametrize factor node object with determinstic type of relationship between variables.
 
-See also: [`Stochastic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref)
+See also: [`Stochastic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref), [`sdtype`](@ref)
 """
 struct Deterministic end
 
@@ -41,7 +66,7 @@ struct Deterministic end
 
 `Stochastic` object used to parametrize factor node object with stochastic type of relationship between variables.
 
-See also: [`Deterministic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref)
+See also: [`Deterministic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref), [`sdtype`](@ref)
 """
 struct Stochastic end
 
@@ -50,7 +75,7 @@ struct Stochastic end
 
 Function used to check if factor node object is deterministic or not. Returns true or false.
 
-See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isstochastic`](@ref)
+See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isstochastic`](@ref), [`sdtype`](@ref)
 """
 function isdeterministic end
 
@@ -59,7 +84,7 @@ function isdeterministic end
 
 Function used to check if factor node object is stochastic or not. Returns true or false.
 
-See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@ref)
+See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@ref), [`sdtype`](@ref)
 """
 function isstochastic end
 

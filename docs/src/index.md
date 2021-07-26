@@ -34,6 +34,8 @@ Head to the [Getting started](@ref user-guide-getting-started) section to get up
 Pages = [
   "man/getting-started.md",
   "man/model-specification.md",
+  "lib/message.md",
+  "lib/node.md",
   "extra/contributing.md"
 ]
 Depth = 2
