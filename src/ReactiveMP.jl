@@ -1,7 +1,5 @@
 module ReactiveMP
 
-using Optim: abs_tol
-using Base: Float64
 include("rocket.jl")
 include("macrohelpers.jl")
 include("helpers.jl")
