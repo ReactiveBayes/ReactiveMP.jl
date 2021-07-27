@@ -368,6 +368,10 @@ macro test_rules(options, on, test_sequence)
             else
                 error("Unknown value $(value) for option $(key). Can be either true or false.")
             end
+        elseif key === :atol
+            float64_atol  = float(value)
+            float32_atol  = float(value)
+            bigfloat_atol = float(value)
         elseif key === :float64_atol
             float64_atol = float(value)
         elseif key === :float32_atol
@@ -568,6 +572,10 @@ macro test_marginalrules(options, on, test_sequence)
             else
                 error("Unknown value $(value) for option $(key). Can be either true or false.")
             end
+        elseif key === :atol
+            float64_atol  = float(value)
+            float32_atol  = float(value)
+            bigfloat_atol = float(value)
         elseif key === :float64_atol
             float64_atol = float(value)
         elseif key === :float32_atol

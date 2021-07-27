@@ -44,12 +44,29 @@ import ReactiveMP: @test_rules
             (input = (m_out = Bernoulli(0.8), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(0.427017495944859, 0.199141999223396) ), 
             (input = (m_out = Bernoulli(0.8), m_in = NormalMeanPrecision(1.0, 2.0) ), output = NormalWeightedMeanPrecision(0.427017495944859, 0.199141999223396) ), 
             (input = (m_out = Bernoulli(0.8), m_in = NormalWeightedMeanPrecision(2.0, 2.0) ), output = NormalWeightedMeanPrecision(0.427017495944859, 0.199141999223396) ), 
-            (input = (m_out = Bernoulli(0.5), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(4.0e-12, 4.0e-12) ), 
-            (input = (m_out = Bernoulli(0.5), m_in = NormalMeanPrecision(1.0, 2.0) ), output = NormalWeightedMeanPrecision(4.0e-12, 4.0e-12) ), 
-            (input = (m_out = Bernoulli(0.5), m_in = NormalWeightedMeanPrecision(2.0, 2.0) ), output = NormalWeightedMeanPrecision(4.0e-12, 4.0e-12) ),
             (input = (m_out = Bernoulli(0.0), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(-0.821224653874111, 0.700344737736008) ), 
             (input = (m_out = Bernoulli(0.0), m_in = NormalMeanPrecision(1.0, 2.0) ), output = NormalWeightedMeanPrecision(-0.821224653874111, 0.700344737736008) ), 
             (input = (m_out = Bernoulli(0.0), m_in = NormalWeightedMeanPrecision(2.0, 2.0) ), output = NormalWeightedMeanPrecision(-0.821224653874111, 0.700344737736008) )
+        ]
+
+        # Test against an extreme case with m_out = Bernoulli(0.5)
+
+        @test_rules [ with_float_conversions = false, atol = 1e-13 ] Probit(:in, MomentMatching) [
+            (input = (m_out = Bernoulli(0.5), m_in = NormalMeanVariance(1.0, 0.5) ), output = NormalWeightedMeanPrecision(4.0 * tiny, 4.0 * tiny) ), 
+            (input = (m_out = Bernoulli(0.5), m_in = NormalMeanPrecision(1.0, 2.0) ), output = NormalWeightedMeanPrecision(4.0 * tiny, 4.0 * tiny) ), 
+            (input = (m_out = Bernoulli(0.5), m_in = NormalWeightedMeanPrecision(2.0, 2.0) ), output = NormalWeightedMeanPrecision(4.0 * tiny, 4.0 * tiny) ),
+        ]
+
+        @test_rules [ with_float_conversions = false, atol = 1e-7 ] Probit(:in, MomentMatching) [
+            (input = (m_out = Bernoulli(0.5f0), m_in = NormalMeanVariance(1.0f0, 0.5f0) ), output = NormalWeightedMeanPrecision(4f0 * tiny, 4f0 * tiny) ), 
+            (input = (m_out = Bernoulli(0.5f0), m_in = NormalMeanPrecision(1.0f0, 2.0f0) ), output = NormalWeightedMeanPrecision(4f0 * tiny, 4f0 * tiny) ), 
+            (input = (m_out = Bernoulli(0.5f0), m_in = NormalWeightedMeanPrecision(2.0f0, 2.0f0) ), output = NormalWeightedMeanPrecision(4f0 * tiny, 4f0 * tiny) ),
+        ]
+
+        @test_rules [ with_float_conversions = false, atol = 1e-25 ] Probit(:in, MomentMatching) [
+            (input = (m_out = Bernoulli(big"0.5"), m_in = NormalMeanVariance(big"1.0", big"0.5") ), output = NormalWeightedMeanPrecision(big"4.0" * tiny, big"4.0" * tiny) ), 
+            (input = (m_out = Bernoulli(big"0.5"), m_in = NormalMeanPrecision(big"1.0", big"2.0") ), output = NormalWeightedMeanPrecision(big"4.0" * tiny, big"4.0" * tiny) ), 
+            (input = (m_out = Bernoulli(big"0.5"), m_in = NormalWeightedMeanPrecision(big"2.0", big"2.0") ), output = NormalWeightedMeanPrecision(big"4.0" * tiny, big"4.0" * tiny) ),
         ]
         
     end 

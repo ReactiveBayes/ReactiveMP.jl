@@ -1,5 +1,6 @@
 module MacroHelpers
 
+using MacroTools: postwalk
 using MacroTools
 
 """
