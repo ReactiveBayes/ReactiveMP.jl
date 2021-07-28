@@ -12,12 +12,12 @@ export rule
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map((q) -> Marginal(q, false , false), (q_out, m, p)), nothing)
     end
-    return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
+    return Categorical(clamp.(softmax(U), tiny, one(eltype(U)) - tiny))
 end
 
 @rule NormalMixture{N}(:switch, Marginalisation) (q_out::Any, q_m::NTuple{N, MultivariateNormalDistributionsFamily}, q_p::NTuple{N, Wishart}) where { N } = begin
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map((q) -> Marginal(q, false, false), (q_out, m, p)), nothing)
     end
-    return Categorical(clamp.(softmax(U), tiny, 1.0 - tiny))
+    return Categorical(clamp.(softmax(U), tiny, one(eltype(U)) - tiny))
 end

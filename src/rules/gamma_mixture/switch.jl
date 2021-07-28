@@ -5,7 +5,7 @@
         return -score(AverageEnergy(), GammaShapeRate, Val{ (:out, :α, :β) }, map((q) -> Marginal(q, false, false), (q_out, a, b)), nothing)
     end
 
-    ρ = clamp.(softmax(U), tiny, 1.0 - tiny)
+    ρ = clamp.(softmax(U), tiny, one(eltype(U)) - tiny)
     ρ = ρ ./ sum(ρ)
 
     return Categorical(ρ)

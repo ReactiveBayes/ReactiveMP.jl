@@ -18,7 +18,8 @@ makedocs(
         ],
         "Library" => [
             "Messages"     => "lib/message.md",
-            "Factor nodes" => "lib/node.md"
+            "Factor nodes" => "lib/node.md",
+            "Math utils"   => "lib/math.md"
         ],
         "Contributing" => "extra/contributing.md",
     ],

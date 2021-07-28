@@ -36,6 +36,7 @@ Pages = [
   "man/model-specification.md",
   "lib/message.md",
   "lib/node.md",
+  "lib/math.md",
   "extra/contributing.md"
 ]
 Depth = 2
