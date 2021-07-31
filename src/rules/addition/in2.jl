@@ -2,9 +2,9 @@
 @rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::PointMass) = PointMass(mean(m_out) - mean(m_in1))
 @rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::NormalDistributionsFamily) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_in1))
 @rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::NormalMeanPrecision) = NormalMeanPrecision(mean(m_out) - mean(m_in1), precision(m_in1))
-@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in1::UnivariateNormalDistributionsFamily) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_in1))
-@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), cov(m_in1))
-@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), cov(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::UnivariateNormalDistributionsFamily) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), cov(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), cov(m_in1))
 
 
 # NormalDistributionsFamily
