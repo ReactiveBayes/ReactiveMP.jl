@@ -12,8 +12,8 @@
 @rule typeof(+)(:in2, Marginalisation) (m_out::NormalDistributionsFamily, m_in1::PointMass) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out))
 @rule typeof(+)(:in2, Marginalisation) (m_out::NormalDistributionsFamily, m_in1::NormalMeanPrecision) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
 @rule typeof(+)(:in2, Marginalisation) (m_out::NormalDistributionsFamily, m_in1::UnivariateNormalDistributionsFamily) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
-@rule typeof(+)(:in2, Marginalisation) (m_out::NormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) + mean(m_in1), var(m_out) + var(m_in1))
-@rule typeof(+)(:in2, Marginalisation) (m_out::NormalDistributionsFamily, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) + mean(m_in1), var(m_out) + var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::NormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::NormalDistributionsFamily, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
 
 
 # UnivariateNormalDistributionsFamily
@@ -21,8 +21,8 @@
 @rule typeof(+)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::NormalDistributionsFamily) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out))
 @rule typeof(+)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::NormalMeanPrecision) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_in1) + var(m_out))
 @rule typeof(+)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::UnivariateNormalDistributionsFamily) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
-@rule typeof(+)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) + mean(m_in1), var(m_out) + var(m_in1))
-@rule typeof(+)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) + mean(m_in1), var(m_out) + var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
 
 
 # MultivariateNormalDistributionsFamily
@@ -30,8 +30,8 @@
 @rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::NormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), var(m_out))
 @rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::NormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
 @rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::UnivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) - mean(m_in2), var(m_out) + var(m_in1))
-@rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) + mean(m_in2), var(m_out) + var(m_in1))
-@rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) + mean(m_in2), var(m_out) + var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = MvNormalMeanCovariance(mean(m_out) - mean(m_in2), var(m_out) + var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::MvNormalMeanPrecision) = MvNormalMeanCovariance(mean(m_out) - mean(m_in2), var(m_out) + var(m_in1))
 
 
 # First argument precision --> return precision parameterization
