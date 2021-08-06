@@ -644,6 +644,17 @@ function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
     setmarginal!(getstream(lmarginal), marginal)
 end
 
+# Here for user convenience and to be consistent with variables we don't put '!' at the of the function name
+# However the underlying function may modify `factornode`, see `getmarginal!`
+getmarginal(factornode::FactorNode, cname::Symbol) = getmarginal(factornode, cname, IncludeAll())
+
+function getmarginal(factornode::FactorNode, cname::Symbol, skip_strategy::MarginalSkipStrategy)
+    lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
+    @assert lindex !== nothing "Invalid local marginal id: $cname"
+    lmarginal = @inbounds localmarginals(factornode)[ lindex ]
+    return getmarginal!(factornode, lmarginal, skip_strategy)
+end
+
 function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal) 
     return getmarginal!(factornode, localmarginal, IncludeAll())
 end
