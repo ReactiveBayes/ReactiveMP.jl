@@ -48,6 +48,11 @@ Base.promote_rule(::Type{ HugeNumber }, ::Type{ Float32 })                   = F
 Base.promote_rule(::Type{ HugeNumber }, ::Type{ Float64 })                   = Float64
 Base.promote_rule(::Type{ HugeNumber }, ::Type{ BigFloat })                  = BigFloat
 
+##
+
+Base.promote_type(::Type{T}, ::Type{ TinyNumber }, ::Type{ HugeNumber }) where T = promote_type(promote_type(T, TinyNumber), HugeNumber)
+Base.promote_type(::Type{T}, ::Type{ HugeNumber }, ::Type{ TinyNumber }) where T = promote_type(promote_type(T, HugeNumber), TinyNumber)
+
 # 
 
 """

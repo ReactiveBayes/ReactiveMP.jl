@@ -23,6 +23,9 @@ is_initial(marginal::Marginal) = marginal.is_initial
 is_clamped(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_clamped, marginals))
 is_initial(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_initial, marginals))
 
+is_clamped(marginals::Tuple)  = TupleTools.prod(map(is_clamped, marginals))
+is_initial(marginals::Tuple)  = TupleTools.prod(map(is_initial, marginals))
+
 ## Statistics 
 
 Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)
