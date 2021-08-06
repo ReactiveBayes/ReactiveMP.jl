@@ -655,6 +655,9 @@ function getmarginal(factornode::FactorNode, cname::Symbol, skip_strategy::Margi
     return getmarginal!(factornode, lmarginal, skip_strategy)
 end
 
+getmarginals(factornodes::AbstractArray{ <: AbstractFactorNode }, cname::Symbol)                                      = getmarginals(factornodes, cname, SkipInitial())
+getmarginals(factornodes::AbstractArray{ <: AbstractFactorNode }, cname::Symbol, skip_strategy::MarginalSkipStrategy) = collectLatest(map(n -> getmarginal(n, cname, skip_strategy), factornodes))
+
 function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal) 
     return getmarginal!(factornode, localmarginal, IncludeAll())
 end
