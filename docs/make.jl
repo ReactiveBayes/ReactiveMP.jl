@@ -13,8 +13,9 @@ makedocs(
     pages    = [
         "Introduction"    => "index.md",
         "User guide" => [ 
-            "Getting Started" => "man/getting-started.md",
-            "Model Specification" => "man/model-specification.md"
+            "Getting Started"     => "man/getting-started.md",
+            "Model Specification" => "man/model-specification.md",
+            "Inference execution" => "man/inference-execution.md"
         ],
         "Library" => [
             "Messages"     => "lib/message.md",

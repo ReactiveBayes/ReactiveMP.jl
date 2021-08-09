@@ -115,7 +115,7 @@ end
 !!! note
     `::ConstVariable` does not restrict an input type of an argument and does not interfere with multiple dispatch. In this example `c` can have any type, e.g. `Int`.
 
-### Data variables
+### [Data variables](@id user-guide-model-specification-data-variables)
 
 It is important to have a mechanism to pass data values to the model. You can create data inputs with `datavar()` function. As a first argument it accepts a type specification and optional dimensionality (as additional arguments or as a tuple).
 

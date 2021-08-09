@@ -201,4 +201,4 @@ nothing #hide
 ```
 
 ## Where to go next?
-There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) available in `ReactiveMP` repository that demonstrate the more advanced features of the package. Alternatively, you can head to the [Model specification](@ref user-guide-model-specification) which provides more detailed information of how to use `ReactiveMP` and `GraphPPL` to specify probabilistic models.
+There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) available in `ReactiveMP` repository that demonstrate the more advanced features of the package. Alternatively, you can head to the [Model specification](@ref user-guide-model-specification) which provides more detailed information of how to use `ReactiveMP` and `GraphPPL` to specify probabilistic models. [Inference execution](@ref user-guide-inference-execution) section provides a documentation about `ReactiveMP` API for running reactive Bayesian inference.
