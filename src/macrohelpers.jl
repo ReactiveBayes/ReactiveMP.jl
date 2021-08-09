@@ -71,7 +71,7 @@ function proxy_type(proxy, type::Expr)
         error("Vararg{T, N} is forbidden in @rule macro, use NTuple{N, T} instead.")
     elseif @capture(type, NTuple{N_, T_})
         # return :(NTuple{ $N, <: $(proxy_type(proxy, T)) }) # This doesn't work in all of the cases
-        return :(Tuple{ Vararg{X, N} where X <: $(proxy_type(proxy, T)) })
+        return :(Tuple{ Vararg{X, $N} where X <: $(proxy_type(proxy, T)) })
     elseif @capture(type, Tuple{ T__ })
         return :(Tuple{ $(map(t -> :( <: $(proxy_type(proxy, t))), T)...) })
     else 
