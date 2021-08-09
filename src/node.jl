@@ -646,7 +646,8 @@ end
 
 # Here for user convenience and to be consistent with variables we don't put '!' at the of the function name
 # However the underlying function may modify `factornode`, see `getmarginal!`
-getmarginal(factornode::FactorNode, cname::Symbol) = getmarginal(factornode, cname, IncludeAll())
+# In contrast with internal `getmarginal!` function this version uses `SkipInitial` strategy
+getmarginal(factornode::FactorNode, cname::Symbol) = getmarginal(factornode, cname, SkipInitial())
 
 function getmarginal(factornode::FactorNode, cname::Symbol, skip_strategy::MarginalSkipStrategy)
     lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
