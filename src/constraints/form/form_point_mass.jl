@@ -1,4 +1,4 @@
-export PointMassFormConstraint
+export PointMassFormConstraint, call_optimizer, call_starting_point
 
 using Distributions
 using Optim
@@ -13,22 +13,28 @@ or different arguments for `Optim.jl` package.
 
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
-struct PointMassFormConstraint{F}
-    optimizer :: F
+struct PointMassFormConstraint{F, P}
+    optimizer      :: F
+    starting_point :: P   
 end
 
-PointMassFormConstraint() = PointMassFormConstraint(default_point_mass_form_constraint_optimizer)
+PointMassFormConstraint(; optimizer = default_point_mass_form_constraint_optimizer, starting_point = default_point_mass_form_constraint_starting_point) = PointMassFormConstraint(optimizer, starting_point)
 
 default_form_check_strategy(::PointMassFormConstraint) = FormConstraintCheckLast()
+
+is_point_mass_form_constraint(::PointMassFormConstraint) = true
+
+call_optimizer(pmconstraint::PointMassFormConstraint, data)      = pmconstraint.optimizer(variate_form(data), value_support(data), pmconstraint, data)
+call_starting_point(pmconstraint::PointMassFormConstraint, data) = pmconstraint.starting_point(variate_form(data), value_support(data), pmconstraint, data)
 
 function constrain_form(pmconstraint::PointMassFormConstraint, message::Message) 
     data       = ReactiveMP.getdata(message)
     is_clamped = ReactiveMP.is_clamped(message)
     is_initial = ReactiveMP.is_initial(message)
-    return Message(pmconstraint.optimizer(variate_form(data), value_support(data), data), is_clamped, is_initial)
+    return Message(call_optimizer(pmconstraint, data), is_clamped, is_initial)
 end
 
-function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Type{ Continuous }, distribution)
+function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
 
     target = let distribution = distribution 
         (x) -> -logpdf(distribution, x[1])
@@ -37,14 +43,27 @@ function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Ty
     support = Distributions.support(distribution)
 
     result = if isinf(Distributions.minimum(support)) && isinf(Distributions.maximum(support))
-        optimize(target, zeros(1), LBFGS())
+        optimize(target, call_starting_point(constraint, distribution), LBFGS())
     else
-        error("TODO optimise function in point mass constraint")
+        lb = [ Distributions.minimum(support) ]
+        rb = [ Distributions.maximum(support) ]
+        optimize(target, lb, rb, call_starting_point(constraint, distribution), Fminbox(GradientDescent()))
     end
 
     if Optim.converged(result)
         return PointMass(Optim.minimizer(result)[1])
     else
         error("Optimisation procedure for point mass estimation did not converge", result)
+    end
+end
+
+function default_point_mass_form_constraint_starting_point(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    support = Distributions.support(distribution)
+    lb      = Distributions.minimum(support)
+    rb      = Distributions.maximum(support)
+    return if isinf(lb) && isinf(rb)
+        return zeros(1)
+    else
+        error("No default starting point specified for a range [ $(lb), $(rb) ]")
     end
 end

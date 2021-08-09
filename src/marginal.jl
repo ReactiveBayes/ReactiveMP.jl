@@ -1,5 +1,4 @@
 export Marginal, getdata, is_clamped, is_initial, as_marginal
-export InitialMarginal, MarginalOrInitialMarginal
 export SkipClamped, SkipInitial, SkipClampedAndInitial, IncludeAll
 
 using Distributions

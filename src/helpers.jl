@@ -220,3 +220,24 @@ end
 
 # We override this function for some specific types
 is_typeof_equal(left, right) = typeof(left) === typeof(right)
+
+function custom_isapprox(left, right; kwargs...)
+    _isapprox = isapprox(left, right; kwargs...)
+    if !_isapprox
+        @warn "$left !≈ $right" 
+    end
+    return _isapprox
+end
+
+custom_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false
+
+function custom_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) where { K } 
+    _isapprox = true
+    for key in keys(left)
+        _isapprox = _isapprox && custom_isapprox(left[key], right[key]; kwargs...)
+    end
+    if !_isapprox
+        @warn "$left !≈ $right" 
+    end
+    return _isapprox
+end

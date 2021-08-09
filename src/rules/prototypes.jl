@@ -98,3 +98,6 @@ include("bifm/zprev.jl")
 
 include("bifm_helper/input.jl")
 include("bifm_helper/output.jl")
+
+include("probit/in.jl")
+include("probit/out.jl")

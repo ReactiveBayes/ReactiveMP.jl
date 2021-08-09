@@ -30,6 +30,7 @@ include("actors/score.jl")
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
 include("algebra/companion_matrix.jl")
+include("algebra/correction.jl")
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
@@ -102,6 +103,7 @@ include("nodes/transition.jl")
 include("nodes/autoregressive.jl")
 include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
+include("nodes/probit.jl")
 
 
 # Deterministic nodes
