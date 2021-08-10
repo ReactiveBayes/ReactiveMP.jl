@@ -6,20 +6,21 @@
     B                   = getB(meta)
     μu                  = getμu(meta)
     Σu                  = getΣu(meta)
-    ξz                  = getξz(meta)
-    Λz                  = getΛz(meta)
+    ξztilde             = getξztilde(meta)
+    Λztilde             = getΛztilde(meta)
 
-    # fetch statistic of incoming messages
-    μ_znext, Σ_znext    = mean_cov(m_zprev)
+    # fetch statistics from messages
+    μ_zprev, Σ_zprev    = mean_cov(m_zprev)
 
-    # calculate intermediate variables
-    ξztilde = Λz * μ_znext - ξz
-    Λztilde = Λz * (I - Σ_znext * Λz)
+    # calculate intermediate variables (with dual parameterization)
+    # see Wadehn 2016 - On sparsity by NUV-EM ...
+    ξtildex = Λztilde * (A * μ_zprev) - ξztilde
+    Λtildex = Λztilde - Λztilde * A * Σ_zprev * A' * Λztilde
     tmp = B * Σu
 
-    # calculate marginals of input
-    μ_in = μu - (Σu * (B' * ξztilde))
-    Σ_in = Σu - tmp' * Λztilde * tmp
+    # calculate marginals of input WRONG
+    μ_in = μu - (Σu * (B' * ξtildex))
+    Σ_in = Σu - tmp' * Λtildex * tmp
 
     # return input marginal
     return MarginalDistribution(MvNormalMeanCovariance(μ_in, Σ_in))

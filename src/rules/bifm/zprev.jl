@@ -22,6 +22,7 @@
     # save required intermediate quantities
     setH!(meta, H)
     setξztilde!(meta, ξ_ztilde)
+    setΛztilde!(meta, Λ_ztilde)
     setξz!(meta, ξ_z)
     setΛz!(meta, Λ_z)
     setBHBt!(meta, BHBt)

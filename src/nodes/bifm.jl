@@ -55,10 +55,11 @@ mutable struct BIFMMeta{T}
     "Transition matrix C: converting the latent state to the output."
     C :: Matrix{T}
     H :: Union{Matrix{T}, Nothing}
-    ξz :: Union{Vector{T}, Nothing}
-    ξztilde :: Union{Vector{T}, Nothing}
     BHBt :: Union{Matrix{T}, Nothing}
+    ξz :: Union{Vector{T}, Nothing}
     Λz :: Union{Matrix{T}, Nothing}
+    ξztilde :: Union{Vector{T}, Nothing}
+    Λztilde :: Union{Matrix{T}, Nothing}
     μu :: Union{Vector{T}, Nothing}
     Σu :: Union{Matrix{T}, Nothing}
 end
@@ -77,7 +78,7 @@ function BIFMMeta(A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}) where { T1,
     @assert size(A,1) == size(C,2)
 
     # return default metadata for BIFM node
-    return BIFMMeta{T}(A, B, C, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+    return BIFMMeta{T}(A, B, C, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
 end
 @doc raw"""
 Initialization of the BIFMMeta object can be performed by calling
@@ -95,30 +96,35 @@ function BIFMMeta(A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}, μu::Array{
     @assert size(μu,1) == size(B,2)
 
     # return default Meta data for BIFM node
-    return BIFMMeta{T}(A, B, C, nothing, nothing, nothing, nothing, nothing, μu, Σu)
+    return BIFMMeta{T}(A, B, C, nothing, nothing, nothing, nothing, nothing, nothing, μu, Σu)
 end
 
 getA(meta::BIFMMeta)                = meta.A
 getB(meta::BIFMMeta)                = meta.B
 getC(meta::BIFMMeta)                = meta.C
 getH(meta::BIFMMeta)                = meta.H
-getξztilde(meta::BIFMMeta)          = meta.ξztilde
 getBHBt(meta::BIFMMeta)             = meta.BHBt
+getξz(meta::BIFMMeta)               = meta.ξz
 getΛz(meta::BIFMMeta)               = meta.Λz
+getξztilde(meta::BIFMMeta)          = meta.ξztilde
+getΛztilde(meta::BIFMMeta)          = meta.Λztilde
 getμu(meta::BIFMMeta)               = meta.μu
 getΣu(meta::BIFMMeta)               = meta.Σu
-getξz(meta::BIFMMeta)               = meta.ξz
 
 function setH!(meta::BIFMMeta, H)
     meta.H = H
+end
+
+function setBHBt!(meta::BIFMMeta, BHBt)
+    meta.BHBt = BHBt
 end
 
 function setξztilde!(meta::BIFMMeta, ξztilde)
     meta.ξztilde = ξztilde
 end
 
-function setBHBt!(meta::BIFMMeta, BHBt)
-    meta.BHBt = BHBt
+function setΛztilde!(meta::BIFMMeta, Λztilde)
+    meta.Λztilde = Λztilde
 end
 
 function setξz!(meta::BIFMMeta, ξz)
