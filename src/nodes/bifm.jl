@@ -1,4 +1,4 @@
-export BIFM, BIFMMeta
+export BIFM, BIFMMeta, functional_dependencies
 
 @doc raw"""
 The BIFM node is a node that can be used as a substitution for a state space model. It includes all factor of the time slice to perform efficient inference.

@@ -1,24 +1,36 @@
 
 @rule BIFM(:out, Marginalisation) (m_in::MultivariateNormalDistributionsFamily, m_zprev::MarginalDistribution{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta) = begin
 
+    # fetch information from meta data
+    A       = getA(meta)
+    B       = getB(meta)
+    C       = getC(meta)
+    H       = getH(meta)
+    ξztilde = getξztilde(meta)
+    BHBt    = getBHBt(meta)
+    Λz      = getΛz(meta)
+
     # fetch statistics
-    μ_u, V_u = mean_cov(m_in)
-    μ_zprev, V_zprev = mean_cov(m_zprev)
-    A, B, C, H, ξ_ztilde, Wz = getA(meta), getB(meta), getC(meta), getH(meta), getξztilde(meta), getWz(meta)
+    μ_in, Σ_in       = mean_cov(m_in)
+    μ_zprev, Σ_zprev = mean_cov(m_zprev)
 
     # calculate intermediate quantities
-    F = I - Wz * B * H * B'
+    F = I - Λz * BHBt
 
-    m_ztilde = A * μ_zprev
-    V_ztilde = A * V_zprev * A'
+    μ_ztilde = A * μ_zprev
+    Σ_ztilde = A * Σ_zprev * A'
 
-    m_znext = F' * m_ztilde + B * V_u * B' * ξ_ztilde + B * μ_u
-    V_znext = F' * V_ztilde * F + B * H * B'
+    μ_znext = F' * μ_ztilde + (B * (Σ_in * (B' * ξ_ztilde))) + B * μ_in
+    Σ_znext = F' * Σ_ztilde * F + BHBt
+
+    # save required intermediate variables
+    setΣu!(meta, Σ_in)
 
     # calculate outgoing message to output
-    m_out = C * m_znext
-    V_out = C * V_znext * C'
+    μ_out = C * μ_znext
+    Σ_out = C * V_znext * C'
 
     # return outgoing marginal
-    return MarginalDistribution(MvNormalMeanCovariance(m_out, V_out))
+    return MarginalDistribution(MvNormalMeanCovariance(μ_out, Σ_out))
+
 end

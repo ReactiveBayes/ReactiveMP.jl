@@ -6,22 +6,26 @@
     B       = getB(meta)
     H       = getH(meta)
     ξztilde = getξztilde(meta)
-    Wz      = getWz(meta)
+    BHBt    = getBHBt(meta)
+    Λz      = getΛz(meta)
 
     # fetch statistics of incoming messages
     μ_in, Σ_in          = mean_cov(m_in)
-    ξ_out, Λ_out        = weightedmean_precision(m_out)
     μ_zprev, Σ_zprev    = mean_cov(m_zprev)
 
     # calculate intermediate quantities
-    F = I - Wz * B * H * B'
+    F = I - Λz * BHBt
 
     m_ztilde = A * μ_zprev
-    V_ztilde = A * V_zprev * A'
+    V_ztilde = A * Σ_zprev * A'
+
+    # save required intermediate variables
+    setΣu!(meta, Σ_in)
+    setμu!(meta, μ_in)
 
     # calculate statistics of outgoing marginal
-    μ_znext = F' * m_ztilde + B * V_u * B' * ξ_ztilde + B * μ_u
-    Σ_znext = F' * V_ztilde * F + B * H * B'
+    μ_znext = F' * m_ztilde + B * ((Σ_in * (B' * ξztilde)) + μ_in)
+    Σ_znext = F' * V_ztilde * F + BHBt
 
     # return outgoing marginal
     return MarginalDistribution(MvNormalMeanCovariance(μ_znext, Σ_znext))

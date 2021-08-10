@@ -2,8 +2,6 @@ import StatsFuns: log2π
 
 @node MvNormalWeightedMeanPrecision Stochastic [ out, (ξ, aliases = [ xi, weightedmean ]), (Λ, aliases = [ invcov, precision ]) ]
 
-conjugate_type(::Type{ <: MvNormalWeightedMeanPrecision }, ::Type{ Val{ :out } }) = MvNormalWeightedMeanPrecision
-conjugate_type(::Type{ <: MvNormalWeightedMeanPrecision }, ::Type{ Val{ :ξ } })   = MvNormalWeightedMeanPrecision
 conjugate_type(::Type{ <: MvNormalWeightedMeanPrecision }, ::Type{ Val{ :Λ } })   = Wishart
 
 @average_energy MvNormalWeightedMeanPrecision (q_out::Any, q_ξ::Any, q_Λ::Any) = begin

@@ -7,20 +7,21 @@
     μu                  = getμu(meta)
     Σu                  = getΣu(meta)
     ξz                  = getξz(meta)
-    Wz                  = getWz(meta)
+    Λz                  = getΛz(meta)
 
     # fetch statistic of incoming messages
-    mean_znext, V_znext = mean_cov(m_zprev)
-    ξz2, Wz2            = weightedmean_precision(m_zprev)
+    μ_znext, Σ_znext    = mean_cov(m_zprev)
 
     # calculate intermediate variables
-    ξztilde = Wz * mean_znext - ξz
-    Wztilde = Wz - Wz * V_znext * Wz
+    ξztilde = Λz * μ_znext - ξz
+    Λztilde = Λz * (I - Σ_znext * Λz)
+    tmp = B * Σu
 
     # calculate marginals of input
-    mean_in = μu - Σu * B' * ξztilde
-    V_in = Σu - Σu * B' * Wztilde * B * Σu
+    μ_in = μu - (Σu * (B' * ξztilde))
+    Σ_in = Σu - tmp' * Λztilde * tmp
 
     # return input marginal
-    return MarginalDistribution(MvNormalMeanCovariance(mean_in, V_in))
+    return MarginalDistribution(MvNormalMeanCovariance(μ_in, Σ_in))
+
 end
