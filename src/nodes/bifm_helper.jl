@@ -5,7 +5,7 @@ The BIFM\_helper node is a node required to perform efficient message passing in
 the BIFM node. It is required to switch from the backward pass with messages to the forward pass
 with marginals.
 
-```
+```julia
 out ~ BIFM_helper(in)
 ```
 
