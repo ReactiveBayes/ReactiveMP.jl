@@ -1,5 +1,8 @@
 export MarginalDistribution
 
+"""
+The MarginalDistribution is a wrapper around a distribution. By passing it as a message along an edge of the graph the corresponding marginal is calculated as the distribution of the MarginalDistribution. In a sense, the MarginalDistribution overwrites any distribution for calculating the marginal, such as is the case with the BIFM node/smoother.
+"""
 struct MarginalDistribution{T <: Distribution}
     dist :: T
 end
