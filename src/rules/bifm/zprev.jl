@@ -1,21 +1,18 @@
-export rule
 
-# Compute backwards information filter using input, output, and previous backwards information filter
-
-@rule BIFM(:zprev, Marginalisation) (m_output::MultivariateNormalDistributionsFamily, m_input::MultivariateNormalDistributionsFamily, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta) = begin
+@rule BIFM(:zprev, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta) = begin
     # todo: optimize for speed
 
     # fetch statistics
-    ξ_input, W_input = weightedmean_precision(m_input)    # ξu,    Wu
-    ξ_output, W_output = weightedmean_precision(m_output) # ξxk,   Wx
+    ξ_in, W_in = weightedmean_precision(m_in)    # ξu,    Wu
+    ξ_out, W_out = weightedmean_precision(m_out) # ξxk,   Wx
     ξ_znext, W_znext = weightedmean_precision(m_znext)    # ξzk+1, Wzk+1
     A, B, C = getA(meta), getB(meta), getC(meta)          # A, B, C
 
     # calculate intermediate quantities
-    ξ_z = C' * ξ_output + ξ_znext
-    W_z = C' * W_output * C + W_znext
-    H = cholinv(W_input + B' * W_z * B)
-    ξ_ztilde = ξ_z + W_z * B * H * (-ξ_input - B' * ξ_z)
+    ξ_z = C' * ξ_out + ξ_znext
+    W_z = C' * W_out * C + W_znext
+    H = cholinv(W_in + B' * W_z * B)
+    ξ_ztilde = ξ_z + W_z * B * H * (-ξ_in - B' * ξ_z)
     W_ztilde = W_z - W_z * B * H * B' * W_z
 
     # save required intermediate quantities

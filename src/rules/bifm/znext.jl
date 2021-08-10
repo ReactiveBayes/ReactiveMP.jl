@@ -1,13 +1,17 @@
-export rule
 
-@rule BIFM(:znext, Marginalisation) (m_output::MultivariateNormalDistributionsFamily, m_input::MultivariateNormalDistributionsFamily, m_zprev::MarginalDistribution{<:MultivariateNormalDistributionsFamily}, meta::BIFMMeta) = begin
-    # todo: optimize for speed
+@rule BIFM(:znext, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::MarginalDistribution{<:MultivariateNormalDistributionsFamily}, meta::BIFMMeta) = begin
 
-    # fetch statistics
-    μ_u, V_u = mean_cov(m_input)
-    ξ_output, W_output = weightedmean_precision(m_output)
-    μ_zprev, V_zprev = mean_cov(m_zprev)
-    A, B, H, ξ_ztilde, Wz = getA(meta), getB(meta), getH(meta), getξztilde(meta), getWz(meta)
+    # fetch information from meta data
+    A       = getA(meta)
+    B       = getB(meta)
+    H       = getH(meta)
+    ξztilde = getξztilde(meta)
+    Wz      = getWz(meta)
+
+    # fetch statistics of incoming messages
+    μ_in, Σ_in          = mean_cov(m_in)
+    ξ_out, Λ_out        = weightedmean_precision(m_out)
+    μ_zprev, Σ_zprev    = mean_cov(m_zprev)
 
     # calculate intermediate quantities
     F = I - Wz * B * H * B'
@@ -15,10 +19,11 @@ export rule
     m_ztilde = A * μ_zprev
     V_ztilde = A * V_zprev * A'
 
-    m_znext = F' * m_ztilde + B * V_u * B' * ξ_ztilde + B * μ_u
-    V_znext = F' * V_ztilde * F + B * H * B'
+    # calculate statistics of outgoing marginal
+    μ_znext = F' * m_ztilde + B * V_u * B' * ξ_ztilde + B * μ_u
+    Σ_znext = F' * V_ztilde * F + B * H * B'
 
     # return outgoing marginal
-    return MarginalDistribution(MvNormalMeanCovariance(m_znext, V_znext))
+    return MarginalDistribution(MvNormalMeanCovariance(μ_znext, Σ_znext))
 
 end
