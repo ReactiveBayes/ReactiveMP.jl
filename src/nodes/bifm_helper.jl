@@ -5,7 +5,9 @@ The BIFM\_helper node is a node required to perform efficient message passing in
 the BIFM node. It is required to switch from the backward pass with messages to the forward pass
 with marginals.
 
-    out ~ BIFM_helper(in)
+```
+out ~ BIFM_helper(in)
+```
 
 Interfaces:
 1. out - output of the BIFM_helper node, should be connected to the state space model.
