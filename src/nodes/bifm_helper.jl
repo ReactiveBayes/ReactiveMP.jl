@@ -18,7 +18,7 @@ struct BIFM_helper <: AbstractFactorNode end
 @node BIFM_helper Stochastic [ out, in ]
 
 # specify custom functional dependencies for BIFM_helper node
-function functional_dependencies(factornode::FactorNode{ <: Type{ReactiveMP.BIFM_helper} }, iindex::Int)
+function functional_dependencies(dependencies, factornode::FactorNode{ <: Type{BIFM_helper} }, iindex::Int)
     cindex             = clusterindex(factornode, iindex)
 
     nodeinterfaces     = interfaces(factornode)
