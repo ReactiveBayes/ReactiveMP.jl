@@ -1,6 +1,6 @@
 # distritbutions
 @rule typeof(+)(:out, Marginalisation) (m_in1::UnivariateNormalDistributionsFamily, m_in2::UnivariateNormalDistributionsFamily) = begin
-    min1, vin2 = mean_var(m_in1)
+    min1, vin1 = mean_var(m_in1)
     min2, vin2 = mean_var(m_in2)
     return NormalMeanVariance(min1 + min2, vin1 + vin2)
 end
