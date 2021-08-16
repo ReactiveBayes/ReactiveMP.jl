@@ -1,7 +1,13 @@
-export FlowModel, FlowLayer, NeuralNetwork, Parameter, PlanarMap, NiceFlowLayer, NiceFlowModel, FlowMeta
+export Flow, FlowModel, FlowLayer, NeuralNetwork, Parameter, PlanarMap, NiceFlowLayer, NiceFlowModel, FlowMeta
+export forward, forward!, backward, backward!, jacobian, inv_jacobian, det_jacobian, absdet_jacobian, logabsdet_jacobian
+## TODO: create a forward-jacobian joint function that calculates both at the same time
+## TODO: custom broadcasting for new methods
+## TODO: fix exports
 
 import Base: +, -, *, /, length, iterate
 import LinearAlgebra: dot
+
+struct Flow end
 
 @node Flow Deterministic [ out, in ]
 
@@ -27,8 +33,8 @@ struct NiceFlowModel{T <: NiceFlowLayer} <: FlowModel
     layers  :: Array{T, 1}
 end
 
-struct FlowMeta
-    model   :: FlowModel
+struct FlowMeta{T <: FlowModel}
+    model   :: T
 end
 
 default_meta(::Type{ Flow }) = error("Flow node requires meta flag to be explicitly specified")
@@ -410,4 +416,5 @@ absdetinv_jacobian(model::NiceFlowModel, output::Array{Float64,1}) = 1
 logdetinv_jacobian(model::NiceFlowModel, output::Array{Float64,1}) = 0
 logabsdetinv_jacobian(model::NiceFlowModel, output::Array{Float64,1}) = 0;
 
-## TODO: create a forward-jacobian joint function that calculates both at the same time
+## FlowMeta methods
+getmodel(meta::FlowMeta) = meta.model
