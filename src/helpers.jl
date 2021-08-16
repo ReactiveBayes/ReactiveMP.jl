@@ -92,7 +92,7 @@ struct OneDivNVector{N, T} end
 Base.show(io::IO, ::OneDivNVector{N, T}) where { N, T } = print(io, "OneDivNVector($T, $N)")
 
 function OneDivNVector(N::Int)
-    return OneDivN(Float64, N)
+    return OneDivNVector(Float64, N)
 end
 
 function OneDivNVector(::Type{T}, N::Int) where T
@@ -110,6 +110,7 @@ Base.size(::OneDivNVector{N})                 where N        = (N, )
 
 Base.iterate(::OneDivNVector{N, T})        where { N, T } = (one(T) / N, 1)
 Base.iterate(::OneDivNVector{N, T}, state) where { N, T } = state >= N ? nothing : (one(T) / N, state + 1)
+
 ## 
 
 import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
@@ -306,3 +307,9 @@ function custom_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) w
     end
     return _isapprox
 end
+
+## 
+
+deep_eltype(::Type{ T })  where { T <: Number } = T
+deep_eltype(::Type{ T })  where T               = deep_eltype(eltype(T))
+deep_eltype(::T)          where T               = deep_eltype(T)    
