@@ -58,7 +58,12 @@ _sample_list_ndims(::Type{ Matrixvariate }, sl::SampleList) = size(first(getsamp
 
 ## Statistics 
 
-# Distributions.mean
+_sample_list_zero(sl::SampleList) = zero(first(getweights(sl))) * zero(first(getsamples(sl)))
+
+Distributions.mean(sl::SampleList) = mapreduce(z -> z[1] .* z[2], +, zip(getweights(sl), getsamples(sl)); init = _sample_list_zero(sl))
+
+logmean(sl::SampleList)     = mapreduce(z -> z[1] .* log.(z[2]), +, zip(getweights(sl), getsamples(sl)); init = _sample_list_zero(sl))
+meanlogmean(sl::SampleList) = mapreduce(z -> z[1] .* z[2] .* log.(z[2]), +, zip(getweights(sl), getsamples(sl)); init = _sample_list_zero(sl))
 
 ## 
 

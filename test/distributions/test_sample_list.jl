@@ -83,6 +83,59 @@ import ReactiveMP: deep_eltype, getsamples, getweights
 
     end
 
+    @testset "Statistics" begin
+
+        rng = MersenneTwister(1234)
+
+        # All
+        for N in [ 5, 10, 100 ]
+
+            scalar_samples = rand(rng, N)
+            scalar_weights = rand(rng, N)
+            scalar_samplelist = SampleList(scalar_samples, scalar_weights)
+
+            @test mean(scalar_samplelist)    ≈ sum(scalar_weights .* scalar_samples)
+            @test logmean(scalar_samplelist) ≈ sum(scalar_weights .* log.(scalar_samples))
+            @test meanlogmean(scalar_samplelist) ≈ sum(scalar_weights .* scalar_samples .* log.(scalar_samples))
+
+            vector_samples = [ rand(rng, 2) for _ in 1:N ]
+            vector_weights = rand(rng, N)
+            vector_samplelist = SampleList(vector_samples, vector_weights)
+
+            @test mean(vector_samplelist)    ≈ sum(vector_weights .* vector_samples)
+            @test logmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> log.(e), (vector_samples)))
+            @test meanlogmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> e .* log.(e), (vector_samples)))
+
+            matrix_samples = [ rand(rng, 2, 2) for _ in 1:N ]
+            matrix_weights = rand(rng, N)
+            matrix_samplelist = SampleList(matrix_samples, matrix_weights)
+
+            @test mean(matrix_samplelist) ≈ sum(matrix_weights .* matrix_samples)
+            @test logmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> log.(e), matrix_samples))
+            @test meanlogmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> e .* log.(e), matrix_samples))
+
+        end
+
+        # Logmean and meanlogmean
+        uni_distribution = Gamma(rand(rng) + 1, rand(rng) + 2)
+        uni_samples      = rand(uni_distribution, 10_000)
+        uni_sample_list  = SampleList(uni_samples)
+
+        mv_distribution = Dirichlet(rand(rng, 3))
+        mv_samples      = [ rand(mv_distribution) for _ in 1:10_000 ]
+        mv_sample_list  = SampleList(mv_samples)
+
+        # TODO logmean for matrix variate distribution?
+
+        @test isapprox(logmean(uni_sample_list), logmean(uni_distribution); atol = 0.02)
+        @test isapprox(logmean(mv_sample_list), logmean(mv_distribution); atol = 1e-1)
+
+        # TODO meanlogmean for multivariate and matrix variate distribution?
+
+        @test isapprox(meanlogmean(uni_sample_list), meanlogmean(uni_distribution); atol = 0.25)
+ 
+    end
+
     @testset "vague" begin 
 
         @test variate_form(vague(SampleList))    === Univariate
