@@ -40,6 +40,7 @@ include("approximations/laplace.jl")
 include("approximations/importance.jl")
 
 include("distributions/pointmass.jl")
+include("distributions/uniform.jl")
 include("distributions/gamma_shape_rate.jl")
 include("distributions/gamma.jl")
 include("distributions/gamma_shape_likelihood.jl")

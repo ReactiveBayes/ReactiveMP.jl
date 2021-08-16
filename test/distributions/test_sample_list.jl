@@ -83,6 +83,42 @@ import ReactiveMP: deep_eltype, getsamples, getweights
 
     end
 
+    @testset "vague" begin 
+
+        @test variate_form(vague(SampleList))    === Univariate
+        @test variate_form(vague(SampleList, 2)) === Multivariate
+        @test variate_form(vague(SampleList, 2, 2)) === Matrixvariate
+        @test variate_form(vague(SampleList, (3, 4))) === Matrixvariate
+
+        @test ndims(vague(SampleList))    === 1
+        @test ndims(vague(SampleList, 2)) === 2
+        @test ndims(vague(SampleList, 2, 2)) === (2, 2)
+        @test ndims(vague(SampleList, (3, 4))) === (3, 4)
+
+        for nsamples in [ 10, 100, 1000 ]
+            @test variate_form(vague(SampleList; nsamples = nsamples))    === Univariate
+            @test variate_form(vague(SampleList, 2; nsamples = nsamples)) === Multivariate
+            @test variate_form(vague(SampleList, 2, 2; nsamples = nsamples)) === Matrixvariate
+            @test variate_form(vague(SampleList, (3, 4); nsamples = nsamples)) === Matrixvariate
+
+            @test length(vague(SampleList; nsamples = nsamples))    === nsamples
+            @test length(vague(SampleList, 2; nsamples = nsamples)) === nsamples
+            @test length(vague(SampleList, 2, 2; nsamples = nsamples)) === nsamples
+            @test length(vague(SampleList, (3, 4); nsamples = nsamples)) === nsamples
+
+            @test ndims(vague(SampleList; nsamples = nsamples))    === 1
+            @test ndims(vague(SampleList, 2; nsamples = nsamples)) === 2
+            @test ndims(vague(SampleList, 2, 2; nsamples = nsamples)) === (2, 2)
+            @test ndims(vague(SampleList, (3, 4); nsamples = nsamples)) === (3, 4)
+
+            @test size(vague(SampleList; nsamples = nsamples))    === (nsamples, )
+            @test size(vague(SampleList, 2; nsamples = nsamples)) === (nsamples, )
+            @test size(vague(SampleList, 2, 2; nsamples = nsamples)) === (nsamples, )
+            @test size(vague(SampleList, (3, 4); nsamples = nsamples)) === (nsamples, )
+        end
+
+    end
+
 end
 
 end

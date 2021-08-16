@@ -1,6 +1,6 @@
 export SampleList
 
-import Base: show
+import Base: show, ndims, length, size
 import Distributions: mean, var, cov, std
 
 """
@@ -48,6 +48,14 @@ _sample_list_variate_form(::Type{ M }) where { T <: Real, M <: AbstractMatrix{T}
 getsamples(sl::SampleList) = sl.samples
 getweights(sl::SampleList) = sl.weights
 
+Base.length(sl::SampleList)            = length(getsamples(sl))
+Base.ndims(sl::SampleList)             = _sample_list_ndims(variate_form(sl), sl)
+Base.size(sl::SampleList)              = (length(sl), )
+
+_sample_list_ndims(::Type{ Univariate }, sl::SampleList)    = 1
+_sample_list_ndims(::Type{ Multivariate }, sl::SampleList)  = length(first(getsamples(sl)))
+_sample_list_ndims(::Type{ Matrixvariate }, sl::SampleList) = size(first(getsamples(sl)))
+
 ## Statistics 
 
 # Distributions.mean
@@ -55,17 +63,21 @@ getweights(sl::SampleList) = sl.weights
 ## 
 
 vague(::Type{ SampleList }; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)                        = _vague_sample_list(Univariate, nsamples)
-vague(::Type{ SampleList }, dims::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)             = _vague_sample_list(Multivariate, ndims, nsamples)
-vague(::Type{ SampleList }, dims::Tuple{Int, Int}; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) = _vague_sample_list(Matrixvariate, ndims, nsamples)
+vague(::Type{ SampleList }, dims::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)             = _vague_sample_list(Multivariate, dims, nsamples)
+vague(::Type{ SampleList }, dims::Tuple{Int, Int}; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) = _vague_sample_list(Matrixvariate, dims, nsamples)
+vague(::Type{ SampleList }, dim1::Int, dim2::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) = _vague_sample_list(Matrixvariate, (dim1, dim2), nsamples)
 
-# function _vague_sample_list(::Univariate, length::Int)
-#     return SampleList(rand(length))
-# end
+function _vague_sample_list(::Type{ Univariate }, length::Int)
+    targetdist = vague(Uniform)
+    return SampleList(rand(targetdist, length))
+end
 
-# function _vague_sample_list(::Multivariate, dims::Int, length::Int)
-#     return SampleList([ rand(dims) for _ in 1:length ])
-# end
+function _vague_sample_list(::Type{ Multivariate }, dims::Int, length::Int)
+    targetdist = vague(Uniform)
+    return SampleList([ rand(targetdist, dims) for _ in 1:length ])
+end
 
-# function _vague_sample_list(::Matrixvariate, dims::Tuple{Int, Int}, length::Int)
-#     return SampleList([ randn(dims...) for _ in 1:length ])
-# end
+function _vague_sample_list(::Type{ Matrixvariate }, dims::Tuple{Int, Int}, length::Int)
+    targetdist = vague(Uniform)
+    return SampleList([ rand(targetdist, dims...) for _ in 1:length ])
+end
