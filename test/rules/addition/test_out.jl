@@ -1,4 +1,4 @@
-module AdditionNodeTest
+module RulesAdditionOutTest
 
 using Test
 using ReactiveMP
