@@ -47,6 +47,71 @@ reduce_with_sum(array) = reduce(+, array)
 
 ## 
 
+"""
+    OneDivNVector(N::Int)
+    OneDivNVector(::Type{T}, N::Int) where T
+
+Allocation-free version of `fill(one(T) / N, N)` vector.
+
+# Arguments 
+- `::Type{T}`: type of elements, optional, Float64 by default, should be a subtype of `Number`
+- `N::Int`: number of elements in a container, should be greater than zero
+
+# Examples
+
+```jldoctest
+julia> iter = OneDivNVector(3)
+OneDivNVector(Float64, 3)
+
+julia> length(iter)
+3
+
+julia> eltype(iter)
+Float64
+
+julia> collect(iter)
+3-element Vector{Float64}:
+ 0.3333333333333333
+ 0.3333333333333333
+ 0.3333333333333333
+
+julia> iter = OneDivNVector(Float32, 3)
+OneDivNVector(Float32, 3)
+
+julia> collect(iter)
+3-element Vector{Float32}:
+ 0.33333334
+ 0.33333334
+ 0.33333334
+```
+
+See also: [`SampleList`](@ref)
+"""
+struct OneDivNVector{N, T} end
+
+Base.show(io::IO, ::OneDivNVector{N, T}) where { N, T } = print(io, "OneDivNVector($T, $N)")
+
+function OneDivNVector(N::Int)
+    return OneDivNVector(Float64, N)
+end
+
+function OneDivNVector(::Type{T}, N::Int) where T
+    @assert N > 0 "OneDivNVector creation error: N should be greater than zero"
+    @assert T <: Number "OneDivNVector creation error: T should be a subtype of `Number`"
+    return OneDivNVector{N, T}()
+end
+
+Base.IteratorSize(::Type{ <: OneDivNVector })   = Base.HasLength()
+Base.IteratorEltype(::Type{ <: OneDivNVector }) = Base.HasEltype()
+
+Base.eltype(::Type{ <: OneDivNVector{N, T} }) where { N, T } = T
+Base.length(::OneDivNVector{N})               where N        = N
+Base.size(::OneDivNVector{N})                 where N        = (N, )
+
+Base.iterate(::OneDivNVector{N, T})        where { N, T } = (one(T) / N, 1)
+Base.iterate(::OneDivNVector{N, T}, state) where { N, T } = state >= N ? nothing : (one(T) / N, state + 1)
+## 
+
 import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
 
 struct Infinity 
