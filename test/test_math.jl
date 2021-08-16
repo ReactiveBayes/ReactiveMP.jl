@@ -19,6 +19,18 @@ using Random
         @test convert(Float64, huge)  == 1e+12
         @test convert(BigFloat, huge) == big"1e+24"
 
+        @test @inferred clamp(1f0, tiny, huge)  == 1f0
+        @test @inferred clamp(0f0, tiny, huge)  == 1f-6
+        @test @inferred clamp(1f13, tiny, huge) == 1f+6
+
+        @test @inferred clamp(1.0, tiny, huge)  == 1.0
+        @test @inferred clamp(0.0, tiny, huge)  == 1e-12
+        @test @inferred clamp(1e13, tiny, huge) == 1e12
+
+        @test @inferred clamp(big"1.0", tiny, huge)  == big"1.0"
+        @test @inferred clamp(big"0.0", tiny, huge)  == big"1e-24"
+        @test @inferred clamp(big"1e25", tiny, huge) == big"1e+24"
+
         for a in (1, 1.0, 0, 0.0, 1f0, 0f0, Int32(0), Int32(1), big"1", big"1.0", big"0", big"0.0")
             T = typeof(a)
             for v in [ tiny, huge ]

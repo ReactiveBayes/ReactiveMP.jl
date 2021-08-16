@@ -166,8 +166,18 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
     @assert all((n) -> length(string(n)) > lprefix, names)  || error("Empty $(specname) name found in arguments")
 
+    # Tuples are special cases
+    function apply_proxy(any, proxy) 
+        if any isa Expr && any.head === :tuple
+            output      = Expr(:tuple)
+            output.args = map(v -> apply_proxy(v, proxy), any.args)
+            return output
+        end
+        return :($(proxy)($any, false, false))
+    end
+
     names_arg  = isempty(names) ? :nothing : :(Val{ $(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...)) })
-    values_arg = isempty(names) ? :nothing : :($(map(value -> :($(proxy)($value, false, false)), values)...), )
+    values_arg = isempty(names) ? :nothing : :($(map(v -> apply_proxy(v, proxy), values)...), )
 
     return names_arg, values_arg
 end
