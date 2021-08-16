@@ -12,7 +12,7 @@ import ReactiveMP: @test_marginalrules
 
     @testset ":out_ν_S (m_out::Wishart, m_ν::PointMass, m_S::PointMass)" begin
         
-        @test_marginalrules [ with_float_conversions = true ] Wishart(:out_ν_S) [
+        @test_marginalrules [ with_float_conversions = true, float32_atol = 1e-5 ] Wishart(:out_ν_S) [
             (
                 input = (m_out = Wishart(3.0, [ 3.0 -1.0; -1.0 4.0 ]), m_ν = PointMass(2.0), m_S = PointMass([ 1.0 0.0; 0.0 1.0 ])), 
                 output = (out = Wishart(2.0, [ 14/19 -1/19; -1/19 15/19 ]), ν = PointMass(2.0), S = PointMass([ 1.0 0.0; 0.0 1.0 ]))

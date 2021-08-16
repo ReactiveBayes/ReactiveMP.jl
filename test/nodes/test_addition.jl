@@ -3,6 +3,7 @@ module AdditionNodeTest
 using Test
 using ReactiveMP
 using Random
+import ReactiveMP: @test_rules
 
 @testset "AdditionNode" begin
 
@@ -25,7 +26,5 @@ using Random
         @test localmarginalnames(node)      === (:out_in1_in2, )
         @test metadata(node)                === 1
     end
-
 end
-
 end
