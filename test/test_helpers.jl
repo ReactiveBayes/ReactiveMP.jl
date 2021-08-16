@@ -1,6 +1,9 @@
 module ReactiveMPTestingHelpers
 
+using Test
 using ReactiveMP
+
+import ReactiveMP: OneDivNVector
 
 @testset "Helpers" begin
     

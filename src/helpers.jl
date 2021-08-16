@@ -60,7 +60,7 @@ Allocation-free version of `fill(one(T) / N, N)` vector.
 # Examples
 
 ```jldoctest
-julia> iter = OneDivNVector(3)
+julia> iter = ReactiveMP.OneDivNVector(3)
 OneDivNVector(Float64, 3)
 
 julia> length(iter)
@@ -92,7 +92,7 @@ struct OneDivNVector{N, T} end
 Base.show(io::IO, ::OneDivNVector{N, T}) where { N, T } = print(io, "OneDivNVector($T, $N)")
 
 function OneDivNVector(N::Int)
-    return OneDivNVector(Float64, N)
+    return OneDivN(Float64, N)
 end
 
 function OneDivNVector(::Type{T}, N::Int) where T
