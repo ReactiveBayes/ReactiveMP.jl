@@ -74,7 +74,7 @@ end;
 
 ## PlanarMap methods
 function PlanarMap(u::T1, w::T1, b::T2) where { T1, T2 <: Real}
-    return PlanarMap(Parameter(u), Parameter(w), Parameter(floor(b)))
+    return PlanarMap(Parameter(u), Parameter(w), Parameter(float(b)))
 end
 function PlanarMap(dim::Int64)
     return PlanarMap(randn(dim), randn(dim), randn())
