@@ -19,7 +19,7 @@ import ReactiveMP: @test_rules
 
      @testset "Belief Propagation: (m_out::UnivariateNormalDistributionsFamily, m_in2::PointMass)" begin
 
-        @test_rules [ with_float_conversions = true ] typeof(-(:out, Marginalisation) [
+        @test_rules [ with_float_conversions = true ] typeof(-)(:out, Marginalisation) [
             (input = (m_in1 = NormalMeanVariance(1.0, 2.0),   m_in2 = PointMass(2.0)),  output = NormalMeanVariance(-1.0, 2.0)),
             (input = (m_in1 = NormalMeanVariance(-1.0, 3.0),  m_in2 = PointMass(-3.0)), output = NormalMeanVariance(2.0, 3.0)),
             (input = (m_in1 = NormalMeanPrecision(4.0, 7.0),  m_in2 = PointMass(1.0)),  output = NormalMeanPrecision(3.0, 7.0)),
