@@ -3,6 +3,9 @@ module ReactiveMPTest
 using Test, Documenter, ReactiveMP
 using TestSetExtensions
 
+using Aqua
+Aqua.test_all(ReactiveMP; ambiguities=false)
+
 include("test_helpers.jl")
 
 using .ReactiveMPTestingHelpers
@@ -42,6 +45,10 @@ using .ReactiveMPTestingHelpers
         @test filename_to_key(key_to_filename("message")) == "message"
     end
 
+    addtests("algebra/test_correction.jl")
+
+    addtests("test_math.jl")
+
     addtests("test_distributions.jl")
     addtests("distributions/test_common.jl")
     addtests("distributions/test_bernoulli.jl")
@@ -67,6 +74,11 @@ using .ReactiveMPTestingHelpers
 
     addtests("test_node.jl")
     addtests("nodes/test_addition.jl")
+    addtests("nodes/test_probit.jl")
+
+    addtests("rules/addition/test_in1.jl")
+    addtests("rules/addition/test_in2.jl")
+    addtests("rules/addition/test_out.jl")
 
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
@@ -82,6 +94,12 @@ using .ReactiveMPTestingHelpers
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
     addtests("rules/mv_normal_mean_precision/test_precision.jl")  
+
+    addtests("rules/probit/test_out.jl")
+    addtests("rules/probit/test_in.jl")
+
+    addtests("rules/wishart/test_marginals.jl")
+    addtests("rules/wishart/test_out.jl")
 
 end
 

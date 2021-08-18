@@ -1,5 +1,4 @@
 export Marginal, getdata, is_clamped, is_initial, as_marginal
-export InitialMarginal, MarginalOrInitialMarginal
 export SkipClamped, SkipInitial, SkipClampedAndInitial, IncludeAll
 
 using Distributions
@@ -21,8 +20,8 @@ is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
 
 # TupleTools.prod is a more efficient version of Base.all for NTuple here
-is_clamped(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_clamped, marginals))
-is_initial(marginals::NTuple{ N, <: Marginal }) where N = TupleTools.prod(map(is_initial, marginals))
+is_clamped(marginals::Tuple)  = TupleTools.prod(map(is_clamped, marginals))
+is_initial(marginals::Tuple)  = TupleTools.prod(map(is_initial, marginals))
 
 ## Statistics 
 
@@ -64,7 +63,7 @@ MacroHelpers.@proxy_methods Marginal getdata [
 
 ## Utility functions
 
-getdata(marginals::NTuple{ N, <: Marginal }) where N = map(getdata, marginals)
+getdata(marginals::Tuple) = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 

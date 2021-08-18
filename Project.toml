@@ -1,7 +1,7 @@
 name = "ReactiveMP"
 uuid = "a194aa59-28ba-4574-a09c-4a745416d6e3"
-authors = ["Dmitri Bagaev <bvdmitri@gmail.com>"]
-version = "0.5.0"
+authors = ["Dmitry Bagaev <bvdmitri@gmail.com>"]
+version = "1.0.4"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -12,7 +12,6 @@ FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 PositiveFactorizations = "85a6dd25-e78a-55b7-8502-1745935b8125"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -23,18 +22,32 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [compat]
+DataStructures = "0.17, 0.18"
+Distributions = "0.24, 0.25"
 DomainIntegrals = "0.3.2"
 DomainSets = "0.5.2"
-julia = "≥ 1.5.0"
+FastGaussQuadrature = "0.4"
+ForwardDiff = "0.10"
+MacroTools = "0.5"
+Optim = "1.0.0"
+PositiveFactorizations = "0.2"
+Rocket = "1.3.10"
+SpecialFunctions = "1.4"
+StatsBase = "0.33"
+StatsFuns = "0.9"
+TupleTools = "1.2.0"
+julia = "1.5.0"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkCI = "20533458-34a3-403d-a444-e18f38190b5b"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 
 [targets]
-test = ["Test", "TestSetExtensions", "Coverage", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark"]
+test = ["Test", "InteractiveUtils", "TestSetExtensions", "Coverage", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark", "Aqua"]
