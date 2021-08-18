@@ -1,3 +1,4 @@
+export rule
 
 # specific case with pointmass inputs
 @rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in2::PointMass) = PointMass(mean(m_out) - mean(m_in2))

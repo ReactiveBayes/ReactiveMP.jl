@@ -14,17 +14,9 @@ function MvNormalWeightedMeanPrecision(xi::AbstractVector{ <: Real }, Λ::Abstra
     return MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-function MvNormalWeightedMeanPrecision(xi::AbstractVector{ <: Integer}, Λ::AbstractMatrix{ <: Integer }) 
-    return MvNormalWeightedMeanPrecision(float.(xi), float.(Λ))
-end
-
-function MvNormalWeightedMeanPrecision(xi::AbstractVector, λ::AbstractVector)
-    return MvNormalWeightedMeanPrecision(xi, matrix_from_diagonal(promote_type(eltype(xi), eltype(λ)), λ))
-end
-
-function MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where T 
-    return MvNormalWeightedMeanPrecision(xi, convert(AbstractArray{T}, ones(length(xi))))
-end
+MvNormalWeightedMeanPrecision(xi::AbstractVector{ <: Integer}, Λ::AbstractMatrix{ <: Integer }) = MvNormalWeightedMeanPrecision(float.(xi), float.(Λ))
+MvNormalWeightedMeanPrecision(xi::AbstractVector, Λ::AbstractVector)                            = MvNormalWeightedMeanPrecision(xi, Matrix(Diagonal(Λ)))
+MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where T                                    = MvNormalWeightedMeanPrecision(xi, convert(AbstractArray{T}, ones(length(xi))))
 
 Distributions.distrname(::MvNormalWeightedMeanPrecision) = "MvNormalWeightedMeanPrecision"
 

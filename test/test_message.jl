@@ -2,28 +2,29 @@ module ReactiveMPMessageTest
 
 using Test
 using ReactiveMP 
-using Distributions
-using Random
 
-import InteractiveUtils: methodswith
-import Base: methods
 import Base.Iterators: repeated, product
-import ReactiveMP: materialize!
 
 @testset "Message" begin
 
-    @testset "Default methods" begin 
+    @testset "Constructor" begin 
         data    = PointMass(1)
 
-        for clamped in [ true, false ], initial in [ true, false ]
-            msg = Message(data, clamped, initial)
-            @test getdata(msg)    === data
-            @test is_clamped(msg) === clamped
-            @test is_initial(msg) === initial
-            @test materialize!(msg) === msg
-            @test occursin("Message", repr(msg))
-        end
+        @test getdata(Message(data, true, true))    === data
+        @test is_clamped(Message(data, true, true)) === true
+        @test is_initial(Message(data, true, true)) === true
 
+        @test getdata(Message(data, true, false))    === data
+        @test is_clamped(Message(data, true, false)) === true
+        @test is_initial(Message(data, true, false)) === false
+
+        @test getdata(Message(data, false, true))    === data
+        @test is_clamped(Message(data, false, true)) === false
+        @test is_initial(Message(data, false, true)) === true
+
+        @test getdata(Message(data, false, false))    === data
+        @test is_clamped(Message(data, false, false)) === false
+        @test is_initial(Message(data, false, false)) === false
     end
     
     @testset "multiply_messages" begin 
@@ -59,93 +60,6 @@ import ReactiveMP: materialize!
         @test is_initial(Message(dist2, true, false) * Message(dist1, true, true)) == false
         @test is_initial(Message(dist2, false, true) * Message(dist1, true, false)) == true
         @test is_initial(Message(dist2, true, false) * Message(dist1, false, true)) == true
-    end
-    
-    @testset "Statistics" begin 
-
-        distributions = [ 
-            Gamma(10.0, 2.0), 
-            NormalMeanVariance(-10.0, 10.0), 
-            Wishart(4.0, [ 2.0 -0.5; -0.5 1.0 ]), 
-            MvNormalMeanPrecision([ 2.0, -1.0 ], [ 7.0 -1.0; -1.0 3.0 ]), 
-            Bernoulli(0.5),
-            Categorical([ 0.8, 0.2 ])
-        ]
-
-        # Here we get all methods defined for a particular type of a distribution
-        dists_methods = map(d -> methodswith(eval(nameof(typeof(d)))), distributions)
-
-        methods_to_test = [
-            Distributions.mean,
-            Distributions.median,
-            Distributions.mode,
-            Distributions.shape,
-            Distributions.scale,
-            Distributions.rate,
-            Distributions.var,
-            Distributions.std,
-            Distributions.cov,
-            Distributions.invcov,
-            Distributions.logdetcov,
-            Distributions.entropy,
-            Distributions.params,
-            Base.precision,
-            Base.length,
-            Base.ndims,
-            Base.size,
-            mean_cov, 
-            mean_invcov, 
-            mean_precision, 
-            weightedmean_cov, 
-            weightedmean_invcov, 
-            weightedmean_precision,
-            probvec,
-            weightedmean,
-            inversemean,
-            logmean,
-            meanlogmean,
-            mirroredlogmean,
-            loggammamean
-        ]
-
-        for (distribution, distribution_methods) in zip(distributions, dists_methods), method in methods_to_test
-            T       = typeof(distribution)
-            message = Message(distribution, false, false)
-            # Here we check that a specialised method for a particular type T exist
-            ms = methods(method, (T, ))
-            if !isempty(ms) && all(m -> m ∈ distribution_methods, ms)
-                @test method(message) == method(distribution)
-            end
-        end
-
-        _getpoint(rng, distritubution) = _getpoint(rng, variate_form(distritubution), distritubution)
-        _getpoint(rng, ::Type{ <: Univariate }, distribution) = 10rand(rng)
-        _getpoint(rng, ::Type{ <: Multivariate }, distribution) = 10 .* rand(rng, 2)
-
-        distributions2   = [ 
-            Gamma(10.0, 2.0), 
-            NormalMeanVariance(-10.0, 1.0), 
-            MvNormalMeanPrecision([ 2.0, -1.0 ], [ 7.0 -1.0; -1.0 3.0 ]), 
-            Bernoulli(0.5),
-            Categorical([ 0.8, 0.2 ])
-        ]
-        
-        methods_to_test2 = [
-            Distributions.pdf,
-            Distributions.logpdf, 
-        ]
-
-        rng = MersenneTwister(1234)
-
-        for distribution in distributions2, method in methods_to_test2
-            message = Message(distribution, false, false)
-            
-            for _ in 1:3
-                point = _getpoint(rng, distribution)
-                @test method(message, point) === method(distribution, point)
-            end
-        end
-
     end
 
 end

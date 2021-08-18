@@ -1,6 +1,10 @@
+export rule
 
 # specific case with pointmass inputs
 @rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::PointMass) = PointMass(mean(m_out) - mean(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::PointMass, m_in1::NormalMeanVariance) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_in1))
+@rule typeof(+)(:in2, Marginalisation) (m_out::NormalMeanVariance, m_in1::PointMass) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out))
+@rule typeof(+)(:in2, Marginalisation) (m_out::NormalMeanVariance, m_in1::NormalMeanVariance) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out) + var(m_in1))
 
 # specific cases for mean-covariance parameterisation
 @rule typeof(+)(:in2, Marginalisation) (m_out::NormalMeanVariance, m_in1::PointMass) = NormalMeanVariance(mean(m_out) - mean(m_in1), var(m_out))

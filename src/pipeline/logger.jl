@@ -12,12 +12,9 @@ See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`Emp
 """
 struct LoggerPipelineStage{T} <: AbstractPipelineStage 
     output :: T
-    prefix :: String
 end
 
-LoggerPipelineStage()               = LoggerPipelineStage(Core.stdout, "Log")
-LoggerPipelineStage(output::IO)     = LoggerPipelineStage(output, "Log")
-LoggerPipelineStage(prefix::String) = LoggerPipelineStage(Core.stdout, prefix)
+LoggerPipelineStage() = LoggerPipelineStage(stdout)
 
-apply_pipeline_stage(stage::LoggerPipelineStage, factornode, tag::Type{ <: Val{ T } },    stream) where { T } = stream |> tap((v) -> Core.println(stage.output, "[$(stage.prefix)][$(functionalform(factornode))][$(T)]: $v"))
-apply_pipeline_stage(stage::LoggerPipelineStage, factornode, tag::Tuple{ Val{ T }, Int }, stream) where { T } = stream |> tap((v) -> Core.println(stage.output, "[$(stage.prefix)][$(functionalform(factornode))][$(T):$(tag[2])]: $v"))
+apply_pipeline_stage(::LoggerPipelineStage, factornode, tag::Type{ <: Val{ T } },    stream) where { T } = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T)]: $v"))
+apply_pipeline_stage(::LoggerPipelineStage, factornode, tag::Tuple{ Val{ T }, Int }, stream) where { T } = stream |> tap((v) -> Core.println("[Log][$(functionalform(factornode))][$(T):$(tag[2])]: $v"))

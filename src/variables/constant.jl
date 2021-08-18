@@ -29,6 +29,7 @@ end
 
 degree(constvar::ConstVariable)     = nconnected(constvar)
 name(constvar::ConstVariable)       = constvar.name
+local_constraint(::ConstVariable)   = ClampedVariable()
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 

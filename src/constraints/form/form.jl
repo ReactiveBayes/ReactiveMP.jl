@@ -1,5 +1,5 @@
 export FormConstraintCheckEach, FormConstraintCheckLast, FormConstraintCheckPickDefault
-export constrain_form, default_form_check_strategy, is_point_mass_form_constraint
+export constrain_form, default_form_check_strategy
 
 # Form constraints are preserved during execution of the `prod` function
 # There are two major strategies to check current functional form
@@ -48,23 +48,12 @@ See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), 
 function default_form_check_strategy end
 
 """
-    is_point_mass_form_constraint(form_constraint)
-
-Specifies whether form constraint always returns PointMass estimates or not. For a given `form_constraint` returns either `true` or `false`.
-
-See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`constrain_form`](@ref)
-"""
-function is_point_mass_form_constraint end
-
-"""
     constrain_form(form_constraint, something)
 
 Checks that the functional form of `something` object fits `form_constraint` constraint.
 If functional form of `something` object does not fit the given constraint this function 
 should try to approximate `something` object to be in line with the given `form_constraint`.
 
-See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`is_point_mass_form_constraint`](@ref)
+See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref)
 """
 function constrain_form end 
-
-

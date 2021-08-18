@@ -1,6 +1,5 @@
 module MacroHelpers
 
-using MacroTools: postwalk
 using MacroTools
 
 """
@@ -62,11 +61,11 @@ Returns a type wrapped with a proxy type in a form of `ProxyType{ <: Type }`.
 - `proxy`: Proxy type used to wrap `type`
 - `type`: Type to be wrapped
 """
-function proxy_type(proxy, type::Symbol)
+function proxy_type(proxy::Symbol, type::Symbol)
     return :($(proxy){ <: $(type) })
 end
 
-function proxy_type(proxy, type::Expr)
+function proxy_type(proxy::Symbol, type::Expr)
     if @capture(type, NTuple{N_, T_})
         return :(NTuple{ $N, <: $(proxy_type(proxy, T)) })
     elseif @capture(type, Tuple{ T__ })
@@ -114,16 +113,8 @@ macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
 end
 
 function expression_convert_eltype(eltype::Type{T}, expr::Expr) where T
-    if @capture(expr, f_(args__)) 
-        return :(ReactiveMP.convert_eltype($f, $T, $expr))
-    elseif @capture(expr, (elems__, ))
-        entries = map(elems) do elem
-            @capture(elem, (name_ = value_)) || error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements.")
-            return (name, value)
-        end
-        return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
-    end
-    error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements.")
+    @capture(expr, f_(args__)) || error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call.")
+    return :(ReactiveMP.convert_eltype($f, $T, $expr))
 end
 
 end
