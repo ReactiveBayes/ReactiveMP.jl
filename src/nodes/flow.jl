@@ -152,7 +152,7 @@ function jacobian(f::PlanarMap{T1}, input::T2) where { T1, T2 }
 
 end
 
-function jacobian(f::PlanarMap{T1}, input::T2) where { T1, T2 }
+function jacobian(f::PlanarMap{T1}, input::T2) where { T1, T2 <: Real}
 
     # fetch values 
     u, w, b = getvalues(f)

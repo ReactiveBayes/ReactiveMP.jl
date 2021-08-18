@@ -38,6 +38,7 @@ include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
+include("approximations/optimizers.jl")
 
 include("distributions/pointmass.jl")
 include("distributions/gamma_shape_rate.jl")
