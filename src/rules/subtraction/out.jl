@@ -50,7 +50,7 @@ end
 
 @rule typeof(-)(:out, Marginalisation) (m_in1::MultivariateNormalDistributionsFamily, m_in2::PointMass) = begin
     min1, vin1 = mean_cov(m_in1)
-    return MvNormalMeanCovariance(mean(m_in2) - min1, vin1)
+    return MvNormalMeanCovariance(min1 - mean(m_in2), vin1)
 end
 
 @rule typeof(-)(:out, Marginalisation) (m_in1::PointMass, m_in2::MultivariateNormalDistributionsFamily) = begin

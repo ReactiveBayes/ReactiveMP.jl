@@ -1,13 +1,13 @@
 # distritbutions
 @rule typeof(-)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::UnivariateNormalDistributionsFamily) = begin
-    min1, vin1 = mean_var(m_in1)
     mout, vout = mean_var(m_out)
+    min1, vin1 = mean_var(m_in1)
     return NormalMeanVariance(- mout + min1, vout + vin1)
 end
 
 @rule typeof(-)(:in2, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in1::MultivariateNormalDistributionsFamily) = begin
-    min1, vin1 = mean_cov(m_in1)
     mout, vout = mean_cov(m_out)
+    min1, vin1 = mean_cov(m_in1)
     return MvNormalMeanCovariance(- mout + min1, vout + vin1)
 end
 
