@@ -12,7 +12,7 @@ import ReactiveMP: @test_marginalrules
         @test_marginalrules [ with_float_conversions = false ] typeof(-)(:in1_in2) [
             (
                 input = (m_out = NormalMeanVariance(3, 4), m_in1 = NormalMeanVariance(2, 2), m_in2 = PointMass(2.0)), 
-                output = (in1 = NormalWeightedMeanPrecision(5/4, 3/4), in2 = PointMass(2.0))
+                output = (in1 = NormalWeightedMeanPrecision(9/4, 3/4), in2 = PointMass(2.0))
             ),
 
         ]
