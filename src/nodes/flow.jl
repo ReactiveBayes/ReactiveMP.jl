@@ -4,7 +4,7 @@ export forward, forward!, backward, backward!, jacobian, inv_jacobian, det_jacob
 ## TODO: custom broadcasting for new methods
 ## TODO: fix exports
 
-import Base: +, -, *, /, length, iterate
+import Base: +, -, *, /, length, iterate, eltype
 import LinearAlgebra: dot
 
 struct Flow end
@@ -19,10 +19,10 @@ mutable struct Parameter{T}
     value   :: T
 end
 
-struct PlanarMap{T1} <: NeuralNetwork
+struct PlanarMap{T1, T2 <: Real} <: NeuralNetwork
     u       :: Parameter{T1}
     w       :: Parameter{T1}
-    b       :: Parameter{Float64}
+    b       :: Parameter{T2}
 end
 
 struct NiceFlowLayer{T <: NeuralNetwork} <: FlowLayer
@@ -73,14 +73,18 @@ end;
 
 
 ## PlanarMap methods
-function PlanarMap(u::T1, w::T1, b::T2) where { T1, T2 <: Real}
-    return PlanarMap(Parameter(u), Parameter(w), Parameter(float(b)))
-end
+
+eltype(::NiceFlowModel{NiceFlowLayer{PlanarMap{T1,T2}}}) where { T1, T2 }= promote_type(T1, T2)
+eltype(::NiceFlowLayer{PlanarMap{T1,T2}}) where { T1, T2 }= promote_type(T1, T2)
+
 function PlanarMap(dim::Int64)
     return PlanarMap(randn(dim), randn(dim), randn())
 end
 function PlanarMap()
     return PlanarMap(randn(), randn(), randn())
+end
+function PlanarMap(u::T1, w::T1, b::T2) where { T1, T2 <: Real}
+    return PlanarMap{T1,T2}(Parameter(u), Parameter(w), Parameter(float(b)))
 end
 
 getu(f::PlanarMap)              = f.u
@@ -116,7 +120,7 @@ function forward(f::PlanarMap{T}, input::T) where { T }
 
 end
 
-function forward(f::PlanarMap{T}, input::T) where { T <: Real }
+function forward(f::PlanarMap{T1}, input::T2) where { T1 <: Real, T2 <: Real }
 
     # fetch values
     u, w, b = getvalues(f)
@@ -131,7 +135,7 @@ function forward(f::PlanarMap{T}, input::T) where { T <: Real }
 
 end
 
-function jacobian(f::PlanarMap{T}, input::T) where { T }
+function jacobian(f::PlanarMap{T1}, input::T2) where { T1, T2 }
 
     # fetch values 
     u, w, b = getvalues(f)
@@ -148,7 +152,7 @@ function jacobian(f::PlanarMap{T}, input::T) where { T }
 
 end
 
-function jacobian(f::PlanarMap{T}, input::T) where { T <: Real }
+function jacobian(f::PlanarMap{T1}, input::T2) where { T1, T2 }
 
     # fetch values 
     u, w, b = getvalues(f)
@@ -179,7 +183,7 @@ logabsdet_jacobian(f::PlanarMap{T}, input::T) where { T } = log(absdet_jacobian(
 getf(layer::NiceFlowLayer)              = layer.f
 getmap(layer::NiceFlowLayer)            = layer.f
 
-function forward(layer::NiceFlowLayer, input::Array{Float64,1}) 
+function forward(layer::NiceFlowLayer, input::Array{T,1}) where { T } 
 
     # check dimensionality
     @assert length(input) == 2 "The NiceFlowLayer currently only supports 2 dimensional inputs and outputs."
@@ -195,7 +199,7 @@ function forward(layer::NiceFlowLayer, input::Array{Float64,1})
     
 end
 
-function forward!(output::Array{Float64,1}, layer::NiceFlowLayer, input::Array{Float64,1})
+function forward!(output::Array{T1,1}, layer::NiceFlowLayer, input::Array{T2,1}) where { T1, T2 }
 
     # check dimensionality
     @assert length(input) == 2 "The NiceFlowLayer currently only supports 2 dimensional inputs and outputs."
@@ -210,7 +214,7 @@ function forward!(output::Array{Float64,1}, layer::NiceFlowLayer, input::Array{F
     
 end
 
-function backward(layer::NiceFlowLayer, output::Array{Float64,1})
+function backward(layer::NiceFlowLayer, output::Array{T,1}) where { T }
 
     # check dimensionality
     @assert length(output) == 2 "The NiceFlowLayer currently only supports 2 dimensional inputs and outputs."
@@ -226,7 +230,7 @@ function backward(layer::NiceFlowLayer, output::Array{Float64,1})
     
 end
 
-function backward!(input::Array{Float64,1}, layer::NiceFlowLayer, output::Array{Float64,1})
+function backward!(input::Array{T1,1}, layer::NiceFlowLayer, output::Array{T2,1}) where { T1, T2 }#TODO
 
     # check dimensionality
     @assert length(output) == 2 "The NiceFlowLayer currently only supports 2 dimensional inputs and outputs."
@@ -240,7 +244,7 @@ function backward!(input::Array{Float64,1}, layer::NiceFlowLayer, output::Array{
     
 end
 
-function jacobian(layer::NiceFlowLayer, input::Array{Float64,1})
+function jacobian(layer::NiceFlowLayer, input::Array{T1,1}) where { T1 }
 
     # check dimensionality
     @assert length(input) == 2 "The NiceFlowLayer currently only supports 2 dimensional inputs and outputs."
@@ -248,10 +252,12 @@ function jacobian(layer::NiceFlowLayer, input::Array{Float64,1})
     # fetch variables
     f = getf(layer)
 
+    T = promote_type(eltype(layer), T1)
+
     # determine result  
-    result = zeros(Float64, 2,2)
+    result = zeros(T, 2, 2)
     result[1,1] = 1.0
-    result[2,1] = jacobian(f,input[1])
+    result[2,1] = jacobian(f, input[1])
     result[2,2] = 1.0
     
     # return result
@@ -259,7 +265,7 @@ function jacobian(layer::NiceFlowLayer, input::Array{Float64,1})
     
 end
 
-function inv_jacobian(layer::NiceFlowLayer, output::Array{Float64,1})
+function inv_jacobian(layer::NiceFlowLayer, output::Array{T1,1}) where { T1 }
 
     # check dimensionality
     @assert length(output) == 2 "The NiceFlowLayer currently only supports 2 dimensional inputs and outputs."
@@ -267,8 +273,10 @@ function inv_jacobian(layer::NiceFlowLayer, output::Array{Float64,1})
     # fetch variables
     f = getf(layer)
 
+    T = promote_type(eltype(layer), T1)
+
     # determine result
-    result = zeros(Float64, 2,2)
+    result = zeros(T, 2, 2)
     result[1,1] = 1.0
     result[2,1] = -jacobian(f,output[1])
     result[2,2] = 1.0
@@ -296,14 +304,17 @@ getbackward(model::NiceFlowModel)       = (x) -> backward(model, x)
 getjacobian(model::NiceFlowModel)       = (x) -> jacobian(model, x)
 getinv_jacobian(model::NiceFlowModel)   = (x) -> inv_jacobian(model, x)
 
-function forward(model::NiceFlowModel, input::Array{Float64,1})
+function forward(model::NiceFlowModel, input::Array{T1,1}) where { T1 }
 
     # fetch layers
     layers = getlayers(model)
 
+    T = promote_type(eltype(model), T1)
+
     # allocate space for result
-    input_new = copy(input)
-    output = copy(input)
+    input_new = zeros(T, size(input))
+    input_new .= input
+    output = zeros(T, size(input))
     
     # pass result along the graph
     for k = 1:length(layers)
@@ -318,14 +329,17 @@ function forward(model::NiceFlowModel, input::Array{Float64,1})
     
 end
 
-function backward(model::NiceFlowModel, output::Array{Float64,1})
+function backward(model::NiceFlowModel{T1}, output::Array{T2,1}) where { T1, T2 }
 
     # fetch layers
     layers = getlayers(model)
 
+    T = promote_type(eltype(model), T2)
+
     # allocate space for result
-    output_new = copy(output)
-    input = copy(output)
+    output_new = zeros(T, size(output))
+    output_new .= output
+    input = zeros(T, size(output))
     
     # pass result along the graph
     for k = length(layers):-1:1
@@ -340,15 +354,19 @@ function backward(model::NiceFlowModel, output::Array{Float64,1})
     
 end
 
-function jacobian(model::NiceFlowModel, input::Array{Float64,1})
+function jacobian(model::NiceFlowModel, input::Array{T1,1}) where { T1 }
 
     # fetch layers
     layers = getlayers(model)
 
+    
+    T = promote_type(eltype(model), T1)
+
     # allocate space for output
-    input_new = copy(input)
-    output = copy(input)
-    J = zeros(Float64, 2,2)
+    input_new = zeros(T, size(input))
+    input_new .= input
+    output = zeros(T, size(input))
+    J = zeros(T, 2, 2)
     J[1,1] = 1.0
     J[2,2] = 1.0
     J_new = copy(J)
@@ -373,15 +391,18 @@ function jacobian(model::NiceFlowModel, input::Array{Float64,1})
 
 end
 
-function inv_jacobian(model::NiceFlowModel, output::Array{Float64,1})
+function inv_jacobian(model::NiceFlowModel, output::Array{T1,1}) where { T1 }
 
     # fetch layers
     layers = getlayers(model)
 
+    T = promote_type(eltype(model), T1)
+
     # allocate space for output
-    output_new = copy(output)
-    input = copy(output)
-    J = zeros(Float64, 2,2)
+    output_new = zeros(T, size(output))
+    output_new .= output
+    input = zeros(T, size(output))
+    J = zeros(T, 2, 2)
     J[1,1] = 1.0
     J[2,2] = 1.0
     J_new = copy(J)

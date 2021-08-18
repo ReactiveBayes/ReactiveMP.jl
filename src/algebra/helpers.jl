@@ -18,4 +18,4 @@ function normalize_sum(x::Array{Float64,1})
 end
 sigmoid(x) = 1/(1+exp(-x))
 
-dtanh(x::Float64) = 1 - tanh(x)^2
+dtanh(x) = 1 - tanh(x)^2
