@@ -111,6 +111,8 @@ Base.size(::OneDivNVector{N})                 where N        = (N, )
 Base.iterate(::OneDivNVector{N, T})        where { N, T } = (one(T) / N, 1)
 Base.iterate(::OneDivNVector{N, T}, state) where { N, T } = state >= N ? nothing : (one(T) / N, state + 1)
 
+Base.getindex(v::OneDivNVector{N, T}, index::Int) where { N, T } = 1 <= index <= N ? (one(T) / N) : throw(BoundsError(v, index))
+
 ## 
 
 import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
