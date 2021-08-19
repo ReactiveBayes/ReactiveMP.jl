@@ -98,13 +98,13 @@ function sample_list_mean_cov(::Type{ Multivariate }, sl::SampleList)
 end 
 
 function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
-    error("sample_list_mean_cov for Matrixvariate distribution is broken")
+    # error("sample_list_mean_cov for Matrixvariate distribution is broken")
 
     n  = length(sl)
     μ  = mean(sl)
 
-    cov1 = zeros(eltype(μ), first(ndims(sl)), last(ndims(sl)))
-    cov2 = zeros(eltype(μ), first(ndims(sl)), last(ndims(sl)))
+    U = zeros(eltype(μ), first(ndims(sl)), last(ndims(sl)))
+    V = zeros(eltype(μ), first(ndims(sl)), last(ndims(sl)))
 
     weights = getweights(sl)
     samples = getsamples(sl)
@@ -112,25 +112,23 @@ function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
     tmp = similar(μ)
     k   = length(tmp)
 
+    # First iteration
     for i in 1:n
         w = weights[i]
 
+        # Matrices can be indexed as vectors
         for j in 1:k
             tmp[j] = samples[i][j] - μ[j]
         end
 
-        # Fast equivalent of cov1 += w .* (tmp * tmp')
+        # Fast equivalent of U += w .* (tmp * tmp')
         # mul!(C, A, B, α, β) does C = A * B * α + C * β
-        mul!(cov1, tmp, tmp', w, 1)
-        mul!(cov2, tmp', tmp, w, 1)
+        mul!(U, tmp, tmp', w, 1)
+        mul!(V, tmp', tmp, w, 1)
     end
-
-    S = n / (n - 1)
-
-    cov1 .*= S
-    cov2 .*= S
-
-    Σ = kron(cov1, cov2)
+    
+    S = tr(U)
+    Σ = kron(V, U) ./ S
 
     return μ, Σ
 end 
