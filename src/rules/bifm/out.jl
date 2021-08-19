@@ -20,7 +20,7 @@
     μ_ztilde = A * μ_zprev
     Σ_ztilde = A * Σ_zprev * A'
 
-    μ_znext = F' * μ_ztilde + (B * (Σ_in * (B' * ξ_ztilde))) + B * μ_in
+    μ_znext = F' * μ_ztilde + (B * (Σ_in * (B' * ξztilde))) + B * μ_in
     Σ_znext = F' * Σ_ztilde * F + BHBt
 
     # save required intermediate variables
@@ -28,7 +28,7 @@
 
     # calculate outgoing message to output
     μ_out = C * μ_znext
-    Σ_out = C * V_znext * C'
+    Σ_out = C * Σ_znext * C'
 
     # return outgoing marginal
     return MarginalDistribution(MvNormalMeanCovariance(μ_out, Σ_out))
