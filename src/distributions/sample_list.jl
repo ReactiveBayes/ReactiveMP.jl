@@ -97,6 +97,8 @@ function sample_list_mean_cov(::Type{ Multivariate }, sl::SampleList)
     return μ, Σ
 end 
 
+# Maximum likelihood estimation of Covariance matrix for Matrixvariate samplelist
+# assumes that samples are drawn from Matrixnormal distribution
 function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
     # error("sample_list_mean_cov for Matrixvariate distribution is broken")
 
@@ -112,7 +114,6 @@ function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
     tmp = similar(μ)
     k   = length(tmp)
 
-    # First iteration
     for i in 1:n
         w = weights[i]
 
