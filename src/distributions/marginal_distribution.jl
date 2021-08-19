@@ -37,6 +37,10 @@ inversemean(dist::MarginalDistribution)             = inversemean(dist.dist)
 mirroredlogmean(dist::MarginalDistribution)         = mirroredlogmean(dist.dist)
 loggammamean(dist::MarginalDistribution)            = loggammamean(dist.dist)
 
+custom_isapprox(dist1::MarginalDistribution, dist2::MarginalDistribution; kwargs...)  = custom_isapprox(dist1.dist, dist2.dist; kwargs...)
+custom_isapprox(dist1::Any, dist2::MarginalDistribution; kwargs...)                   = custom_isapprox(dist1, dist2.dist; kwargs...)
+custom_isapprox(dist1::MarginalDistribution, dist2::Any; kwargs...)                   = custom_isapprox(dist1.dist, dist2; kwargs...)
+
 # product of distribution message with marginal message returns the marginal directly
 function prod(::ProdAnalytical, left::MarginalDistribution, right::Distribution{F, S}) where { F <: VariateForm, S <: ValueSupport }
     return getdist(left)
