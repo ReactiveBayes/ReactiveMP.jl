@@ -2,7 +2,7 @@ export BIFM, BIFMMeta, functional_dependencies
 
 @doc raw"""
 The BIFM node is a node that can be used as a substitution for a state space model. It includes all factor of the time slice to perform efficient inference.
-This node needs to be used in conjuction with the BIFM_helper node for efficient inference.
+This node needs to be used in conjuction with the BIFMHelper node for efficient inference.
 
 ```julia
 out ~ BIFM(in, zprev, znext)
@@ -19,7 +19,7 @@ Interfaces:
 ```julia
 # set priors
 z_prior ~ MvNormalMeanPrecision(zeros(latent_dim), diagm(ones(latent_dim)))
-z_tmp   ~ BIFM_helper(z_prior) where { q = MeanField()}
+z_tmp   ~ BIFMHelper(z_prior) where { q = MeanField()}
 
 # update last/previous hidden state
 z_prev = z_tmp

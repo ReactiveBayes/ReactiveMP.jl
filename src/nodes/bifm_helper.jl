@@ -1,24 +1,24 @@
-export BIFM_helper, functional_dependencies
+export BIFMHelper, functional_dependencies
 
 @doc raw"""
-The BIFM\_helper node is a node required to perform efficient message passing inconjuction with
+The BIFMHelper node is a node required to perform efficient message passing inconjuction with
 the BIFM node. It is required to switch from the backward pass with messages to the forward pass
 with marginals.
 
 ```julia
-out ~ BIFM_helper(in)
+out ~ BIFMHelper(in)
 ```
 
 Interfaces:
-1. out - output of the BIFM_helper node, should be connected to the state space model.
-2. in - input of the BIFM_helper node, should be connected to the prior for the latent state.
+1. out - output of the BIFMHelper node, should be connected to the state space model.
+2. in - input of the BIFMHelper node, should be connected to the prior for the latent state.
 """
-struct BIFM_helper <: AbstractFactorNode end
+struct BIFMHelper <: AbstractFactorNode end
 
-@node BIFM_helper Stochastic [ out, in ]
+@node BIFMHelper Stochastic [ out, in ]
 
-# specify custom functional dependencies for BIFM_helper node
-function functional_dependencies(dependencies, factornode::FactorNode{ <: Type{BIFM_helper} }, iindex::Int)
+# specify custom functional dependencies for BIFMHelper node
+function functional_dependencies(dependencies, factornode::FactorNode{ <: Type{BIFMHelper} }, iindex::Int)
     cindex             = clusterindex(factornode, iindex)
 
     nodeinterfaces     = interfaces(factornode)
@@ -38,6 +38,6 @@ function functional_dependencies(dependencies, factornode::FactorNode{ <: Type{B
     
 end
 
-@average_energy BIFM_helper (q_out::Any, q_in::Any) = begin
+@average_energy BIFMHelper (q_out::Any, q_in::Any) = begin
     return entropy(q_in)
 end
