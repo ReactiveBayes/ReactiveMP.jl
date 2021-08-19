@@ -22,7 +22,7 @@ import ReactiveMP: @test_rules
                         [9 0; 0 8]  # Σu
                         )
 
-        @test_rules [ with_float_conversions = true ] BIFM(:in, Marginalisation) [
+        @test_rules [ with_float_conversions = false ] BIFM(:in, Marginalisation) [
             (input = (m_out = MvNormalMeanPrecision([1,2], [2 0; 0 1]),     m_zprev = MarginalDistribution(MvNormalMeanPrecision([1,2], [1 0; 0 2])), m_znext = MvNormalMeanPrecision([1,2], [1 0; 0 2]), meta = meta),
                 output = MarginalDistribution(MvNormalMeanCovariance([-375, -172], [180801 0.0; 0.0 4487.999999999998]))),
             (input = (m_out = MvNormalMeanPrecision([3,4], [6 0; 0 1]),     m_zprev = MarginalDistribution(MvNormalMeanPrecision([1,6], [2 0; 0 2])), m_znext = MvNormalMeanPrecision([8,2], [2 0; 0 2]), meta = meta),

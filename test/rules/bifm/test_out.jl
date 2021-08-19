@@ -22,11 +22,11 @@ import ReactiveMP: @test_rules
                         [9.0 0; 0 8]  # Σu
                         )
 
-        @test_rules [ with_float_conversions = true ] BIFM(:out, Marginalisation) [
+        @test_rules [ with_float_conversions = false ] BIFM(:out, Marginalisation) [
             (input = (m_in = MvNormalMeanPrecision([1,2], [2 0; 0 1]),     m_zprev = MarginalDistribution(MvNormalMeanPrecision([1,2], [1 0; 0 2])), m_znext = MvNormalMeanPrecision([1,2], [1 0; 0 2]), meta = meta),
-                output = MarginalDistribution(MvNormalMeanCovariance([-280, -126], [107680.0 0.0; 0.0 3829.5]))),
+                output = MarginalDistribution(MvNormalMeanCovariance([-280, -126], [107680.0 0.0; 0.0 3829.4999999999986]))),
             (input = (m_in = MvNormalMeanPrecision([3,4], [6 0; 0 1]),     m_zprev = MarginalDistribution(MvNormalMeanPrecision([1,6], [2 0; 0 2])), m_znext = MvNormalMeanPrecision([8,2], [2 0; 0 2]), meta = meta),
-                output = MarginalDistribution(MvNormalMeanCovariance([-280, -462], [53888 0.0; 0.0 3829.5]))),
+                output = MarginalDistribution(MvNormalMeanCovariance([-280, -462], [53887.99999999999 0.0; 0.0 3829.4999999999986]))),
             (input = (m_in = MvNormalMeanPrecision([5,6], [2 0; 0 5]),     m_zprev = MarginalDistribution(MvNormalMeanPrecision([6,2], [1 0; 0 1])), m_znext = MvNormalMeanPrecision([1,9], [1 0; 0 1]), meta = meta),
                 output = MarginalDistribution(MvNormalMeanCovariance([-1872, -130.8], [107680.0 0.0; 0.0 7614.0])))
         ]
