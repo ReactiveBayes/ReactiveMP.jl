@@ -49,19 +49,19 @@ The BIFMMeta structure contains all characterizing information of the BIFM node.
 """
 mutable struct BIFMMeta{T}
     "Transition matrix A: converting the previous to the next latent state."
-    A :: Matrix{T}
+    A       :: Matrix{T}
     "Transition matrix B: converting the input to the latent state."
-    B :: Matrix{T}
+    B       :: Matrix{T}
     "Transition matrix C: converting the latent state to the output."
-    C :: Matrix{T}
-    H :: Union{Matrix{T}, Nothing}
-    BHBt :: Union{Matrix{T}, Nothing}
-    ξz :: Union{Vector{T}, Nothing}
-    Λz :: Union{Matrix{T}, Nothing}
+    C       :: Matrix{T}
+    H       :: Union{Matrix{T}, Nothing}
+    BHBt    :: Union{Matrix{T}, Nothing}
+    ξz      :: Union{Vector{T}, Nothing}
+    Λz      :: Union{Matrix{T}, Nothing}
     ξztilde :: Union{Vector{T}, Nothing}
     Λztilde :: Union{Matrix{T}, Nothing}
-    μu :: Union{Vector{T}, Nothing}
-    Σu :: Union{Matrix{T}, Nothing}
+    μu      :: Union{Vector{T}, Nothing}
+    Σu      :: Union{Matrix{T}, Nothing}
 end
 
 @doc raw"""

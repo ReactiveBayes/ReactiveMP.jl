@@ -37,3 +37,7 @@ function functional_dependencies(dependencies, factornode::FactorNode{ <: Type{B
     end
     
 end
+
+@average_energy BIFM_helper (q_out::Any, q_in::Any) = begin
+    return entropy(q_in)
+end

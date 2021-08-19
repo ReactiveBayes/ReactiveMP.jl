@@ -57,6 +57,8 @@ include("mv_normal_mean_precision/mean.jl")
 include("mv_normal_mean_precision/precision.jl")
 include("mv_normal_mean_precision/marginals.jl")
 
+include("mv_normal_weightedmean_precision/marginals.jl")
+
 include("normal_mean_precision/out.jl")
 include("normal_mean_precision/mean.jl")
 include("normal_mean_precision/precision.jl")
@@ -91,6 +93,7 @@ include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
 
+include("bifm/marginals.jl")
 include("bifm/in.jl")
 include("bifm/out.jl")
 include("bifm/znext.jl")
