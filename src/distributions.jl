@@ -1,6 +1,6 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
-export mean_cov, mean_var, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_invcov, weightedmean_precision
+export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
 export variate_form, value_support, promote_variate_type, convert_eltype
 
@@ -18,11 +18,13 @@ function vague end
 
 mean_cov(something)         = (mean(something), cov(something))
 mean_var(something)         = (mean(something), var(something))
+mean_std(something)         = (mean(something), std(something))
 mean_invcov(something)      = (mean(something), invcov(something))
 mean_precision(something)   = mean_invcov(something)
 
 weightedmean_cov(something)       = (weightedmean(something), cov(something))
 weightedmean_var(something)       = (weightedmean(something), var(something))
+weightedmean_std(something)       = (weightedmean(something), std(something))
 weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
 weightedmean_precision(something) = weightedmean_invcov(something)
 

@@ -19,6 +19,9 @@ const MultivariateGaussianDistributionsFamily = MultivariateNormalDistributionsF
 const GaussianDistributionsFamily             = NormalDistributionsFamily
 
 import Base: prod, convert
+import Random: rand!
+
+using LoopVectorization
 
 # Variate forms promotion
 
@@ -127,4 +130,20 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where { L <: Multivariat
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
     return prod(ProdAnalytical(), wleft, wright)
+end
+
+# Sample related
+
+function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}) where T
+    μ, σ = mean_std(dist)
+    return μ + σ * randn(rng, float(T))
+end
+
+function Random.rand!(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily, container::AbstractArray)
+    randn!(rng, container)
+    μ, σ = mean_std(dist)
+    @turbo for i in 1:length(container)
+        container[i] = μ + σ * container[i] 
+    end
+    container
 end

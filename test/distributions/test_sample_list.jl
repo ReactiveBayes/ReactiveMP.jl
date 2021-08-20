@@ -5,7 +5,10 @@ using ReactiveMP
 using Random
 using Distributions
 
-import ReactiveMP: deep_eltype, getsamples, getweights
+import ReactiveMP: deep_eltype, get_samples, get_weights
+import ReactiveMP: get_meta, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
+import ReactiveMP: call_logproposal, call_logintegrand
+
 
 @testset "SampleList" begin
 
@@ -17,55 +20,55 @@ import ReactiveMP: deep_eltype, getsamples, getweights
             scalar_samples    = rand(rng, type, N)
             scalar_samplelist = SampleList(scalar_samples)
 
-            @test collect(getsamples(scalar_samplelist)) == scalar_samples
-            @test collect(getweights(scalar_samplelist)) == fill(one(type) / N, N)
-            @test deep_eltype(getsamples(scalar_samplelist)) === type
-            @test eltype(getweights(scalar_samplelist))      === type
+            @test collect(get_samples(scalar_samplelist)) == scalar_samples
+            @test collect(get_weights(scalar_samplelist)) == fill(one(type) / N, N)
+            @test deep_eltype(get_samples(scalar_samplelist)) === type
+            @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
 
             scalar_weights    = rand(rng, type, N)
             scalar_samplelist = SampleList(scalar_samples, scalar_weights)
 
-            @test collect(getsamples(scalar_samplelist)) == scalar_samples
-            @test collect(getweights(scalar_samplelist)) == scalar_weights
-            @test deep_eltype(getsamples(scalar_samplelist)) === type
-            @test eltype(getweights(scalar_samplelist))      === type
+            @test collect(get_samples(scalar_samplelist)) == scalar_samples
+            @test collect(get_weights(scalar_samplelist)) == scalar_weights
+            @test deep_eltype(get_samples(scalar_samplelist)) === type
+            @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
 
             vector_samples    = [ rand(rng, type, 2) for _ in 1:N ]
             vector_samplelist = SampleList(vector_samples)
 
-            @test collect(getsamples(vector_samplelist)) == vector_samples
-            @test collect(getweights(vector_samplelist)) == fill(one(type) / N, N)
-            @test deep_eltype(getsamples(vector_samplelist)) === type
-            @test eltype(getweights(vector_samplelist))      === type
+            @test collect(get_samples(vector_samplelist)) == vector_samples
+            @test collect(get_weights(vector_samplelist)) == fill(one(type) / N, N)
+            @test deep_eltype(get_samples(vector_samplelist)) === type
+            @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
 
             vector_weights    = rand(rng, type, N)
             vector_samplelist = SampleList(vector_samples, vector_weights)
 
-            @test collect(getsamples(vector_samplelist)) == vector_samples
-            @test collect(getweights(vector_samplelist)) == vector_weights
-            @test deep_eltype(getsamples(vector_samplelist)) === type
-            @test eltype(getweights(vector_samplelist))      === type
+            @test collect(get_samples(vector_samplelist)) == vector_samples
+            @test collect(get_weights(vector_samplelist)) == vector_weights
+            @test deep_eltype(get_samples(vector_samplelist)) === type
+            @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
 
             matrix_samples    = [ rand(rng, type, 2, 2) for _ in 1:N ]
             matrix_samplelist = SampleList(matrix_samples)
 
-            @test collect(getsamples(matrix_samplelist)) == matrix_samples
-            @test collect(getweights(matrix_samplelist)) == fill(one(type) / N, N)
-            @test deep_eltype(getsamples(matrix_samplelist)) === type
-            @test eltype(getweights(matrix_samplelist))      === type
+            @test collect(get_samples(matrix_samplelist)) == matrix_samples
+            @test collect(get_weights(matrix_samplelist)) == fill(one(type) / N, N)
+            @test deep_eltype(get_samples(matrix_samplelist)) === type
+            @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
 
             matrix_weights    = rand(rng, type, N)
             matrix_samplelist = SampleList(matrix_samples, matrix_weights)
 
-            @test collect(getsamples(matrix_samplelist)) == matrix_samples
-            @test collect(getweights(matrix_samplelist)) == matrix_weights
-            @test deep_eltype(getsamples(matrix_samplelist)) === type
-            @test eltype(getweights(matrix_samplelist))      === type
+            @test collect(get_samples(matrix_samplelist)) == matrix_samples
+            @test collect(get_weights(matrix_samplelist)) == matrix_weights
+            @test deep_eltype(get_samples(matrix_samplelist)) === type
+            @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
         end
 
@@ -211,6 +214,36 @@ import ReactiveMP: deep_eltype, getsamples, getweights
             @test size(vague(SampleList, 2; nsamples = nsamples)) === (nsamples, )
             @test size(vague(SampleList, 2, 2; nsamples = nsamples)) === (nsamples, )
             @test size(vague(SampleList, (3, 4); nsamples = nsamples)) === (nsamples, )
+        end
+
+    end
+
+    @testset "SampleListMeta" begin 
+        @test_throws ErrorException get_meta(SampleList([ 0.1 ]))
+
+        rng = MersenneTwister(1234)
+
+        for uweights in [ rand(rng, 2), rand(rng, 2) ],
+            entropy in [ -75.6, 234.2 ],
+            logproposal in [ NormalMeanVariance(-3.0, 1.0), Gamma(2.0, 4.0), (x) -> x + 1.0 ],
+            logintegrand in [ NormalMeanPrecision(-1.0, 2.0), Beta(3.0, 4.0), (x) -> log(abs(x)) ]
+
+            meta = SampleListMeta(uweights, entropy, logproposal, logintegrand)
+            sl   = SampleList([ 0.1, 0.1 ], [ 0.5, 0.5 ], meta)
+
+            @test get_meta(sl) === meta
+            @test get_unnormalised_weights(sl) == uweights
+            @test get_entropy(sl) == entropy
+            @test get_logproposal(sl) == logproposal
+            @test get_logintegrand(sl) == logintegrand
+
+            some_random_numbers = rand(rng, 100)
+
+            __call(dist::Distribution, x) = logpdf(dist, x)
+            __call(dist::Function, x)     = dist(x)
+
+            @test map(e -> call_logproposal(sl, e), some_random_numbers) == map(e -> __call(logproposal, e), some_random_numbers)
+            @test map(e -> call_logintegrand(sl, e), some_random_numbers) == map(e -> __call(logintegrand, e), some_random_numbers)
         end
 
     end
