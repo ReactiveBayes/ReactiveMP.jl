@@ -97,39 +97,27 @@ function sample_list_mean_cov(::Type{ Multivariate }, sl::SampleList)
     return μ, Σ
 end 
 
-# Maximum likelihood estimation of Covariance matrix for Matrixvariate samplelist
-# assumes that samples are drawn from Matrixnormal distribution
 function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
-    # error("sample_list_mean_cov for Matrixvariate distribution is broken")
 
     n  = length(sl)
     μ  = mean(sl)
 
-    U = zeros(eltype(μ), first(ndims(sl)), last(ndims(sl)))
-    V = zeros(eltype(μ), first(ndims(sl)), last(ndims(sl)))
-
     weights = getweights(sl)
     samples = getsamples(sl)
 
-    tmp = similar(μ)
-    k   = length(tmp)
+    k   = length(μ)
+    rμ  = reshape(μ, k)
+    tmp = similar(rμ)
+    Σ   = zeros(eltype(rμ), length(rμ), length(rμ))
 
     for i in 1:n
-        w = weights[i]
-
-        # Matrices can be indexed as vectors
         for j in 1:k
             tmp[j] = samples[i][j] - μ[j]
         end
-
-        # Fast equivalent of U += w .* (tmp * tmp')
+        # Fast equivalent of Σ += w .* (tmp * tmp')
         # mul!(C, A, B, α, β) does C = A * B * α + C * β
-        mul!(U, tmp, tmp', w, 1)
-        mul!(V, tmp', tmp, w, 1)
+        mul!(Σ, tmp, tmp', weights[i], 1)
     end
-    
-    S = tr(U)
-    Σ = kron(V, U) ./ S
 
     return μ, Σ
 end 
@@ -144,9 +132,8 @@ function sample_list_mean_var(::Type{ Multivariate }, sl::SampleList)
 end 
 
 function sample_list_mean_var(::Type{ Matrixvariate }, sl::SampleList)
-    μ, W = sample_list_mean_cov(Matrixvariate, sl)
-    n    = isqrt(length(μ))
-    return μ, reshape(diag(W), n, n)
+    μ, Σ = sample_list_mean_cov(Matrixvariate, sl)
+    return μ, reshape(diag(Σ), size(μ))
 end 
 
 ##

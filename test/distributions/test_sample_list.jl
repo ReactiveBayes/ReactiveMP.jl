@@ -128,11 +128,11 @@ import ReactiveMP: deep_eltype, getsamples, getweights
         mv_sample_list  = SampleList(mv_samples)
 
         r1 = rand(rng, 3)
-        W1 = diageye(3) + 2r1*r1' # positive definite matrix
+        W1 = rand(3, 4)
         r2 = rand(rng, 3)
         W2 = diageye(3) + 2r2*r2' # positive definite matrix
-        r3 = rand(rng, 3)
-        W3 = diageye(3) + 2r3*r3' # positive definite matrix
+        r3 = rand(rng, 4)
+        W3 = diageye(4) + 2r3*r3' # positive definite matrix
         mxv_distribution = MatrixNormal(W1, W2, W3)
         mxv_samples      = [ rand(rng, mxv_distribution) for _ in 1:20_000 ]
         mxv_sample_list  = SampleList(mxv_samples)
@@ -166,6 +166,17 @@ import ReactiveMP: deep_eltype, getsamples, getweights
         # TODO meanlogmean for multivariate and matrix variate distribution?
 
         @test isapprox(meanlogmean(uni_sample_list), meanlogmean(uni_distribution); atol = 0.25)
+
+        r4 = rand(rng, 5)
+        W4 = diageye(5) + 2r4*r4' # positive definite matrix
+
+        mxv_distribution = Wishart(5, W4)
+        mxv_samples      = [ rand(rng, mxv_distribution) for _ in 1:20_000 ]
+        mxv_sample_list  = SampleList(mxv_samples)
+
+        @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
+        @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 3.0)
+        @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 10.0)
     end
 
     @testset "vague" begin 
