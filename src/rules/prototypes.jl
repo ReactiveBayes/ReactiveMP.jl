@@ -91,9 +91,10 @@ include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
 
+include("probit/marginals.jl")
 include("probit/in.jl")
 include("probit/out.jl")
 
+include("flow/marginals.jl")
 include("flow/in.jl")
 include("flow/out.jl")
-include("flow/marginals.jl")
