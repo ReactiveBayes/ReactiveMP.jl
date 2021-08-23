@@ -1,6 +1,6 @@
 export SampleList, SampleListMeta
 
-import Base: show, ndims, length, size
+import Base: show, ndims, length, size, precision
 import Distributions: mean, var, cov, std
 
 using LoopVectorization
@@ -102,9 +102,21 @@ Distributions.invcov(sl::SampleList)    = cholinv(cov(sl))
 Distributions.std(sl::SampleList)       = cholsqrt(cov(sl))
 Distributions.logdetcov(sl::SampleList) = logdet(cov(sl))
 
-logmean(sl::SampleList)     = sample_list_logmean(variate_form(sl), sl)
-meanlogmean(sl::SampleList) = sample_list_meanlogmean(variate_form(sl), sl)
+Base.precision(sl::SampleList) = invcov(sl)
 
+function mean_precision(sl::SampleList)
+    μ, Σ = mean_cov(sl)
+    return μ, cholinv(Σ)
+end
+
+function weightedmean_precision(sl::SampleList) 
+    μ, Λ = mean_precision(sl)
+    return Λ * μ, Λ
+end
+
+weightedmean(sl::SampleList)    = first(weightedmean_precision(sl))
+logmean(sl::SampleList)         = sample_list_logmean(variate_form(sl), sl)
+meanlogmean(sl::SampleList)     = sample_list_meanlogmean(variate_form(sl), sl)
 mirroredlogmean(sl::SampleList) = sample_list_mirroredlogmean(variate_form(sl), sl)
 
 ## 
@@ -211,13 +223,13 @@ end
 
 function sample_list_meanlogmean(::Type{ Univariate }, sl::SampleList)
     n = length(sl)
-    logμ = sample_list_zero_element(sl)
+    μlogμ = sample_list_zero_element(sl)
     weights = get_weights(sl)
     samples = get_samples(sl)
     @turbo for i in 1:n
-        logμ = logμ + weights[i] * samples[i] * log(samples[i])
+        μlogμ = μlogμ + weights[i] * samples[i] * log(samples[i])
     end
-    return logμ
+    return μlogμ
 end
 
 function sample_list_mirroredlogmean(::Type{ Univariate }, sl::SampleList)
@@ -292,16 +304,16 @@ end
 
 function sample_list_meanlogmean(::Type{ Multivariate }, sl::SampleList)
     n = length(sl)
-    logμ = sample_list_zero_element(sl)
+    μlogμ = sample_list_zero_element(sl)
     weights = get_weights(sl)
     samples = get_samples(sl)
-    k = length(logμ)
+    k = length(μlogμ)
     for i in 1:n
         @turbo for j in 1:k
-            logμ[j] = logμ[j] + weights[i] * samples[i][j] * log(samples[i][j])
+            μlogμ[j] = μlogμ[j] + weights[i] * samples[i][j] * log(samples[i][j])
         end
     end
-    return logμ
+    return μlogμ
 end
 
 function sample_list_vague(::Type{ Multivariate }, dims::Int, length::Int)
@@ -368,16 +380,16 @@ end
 
 function sample_list_meanlogmean(::Type{ Matrixvariate }, sl::SampleList)
     n = length(sl)
-    logμ = sample_list_zero_element(sl)
+    μlogμ = sample_list_zero_element(sl)
     weights = get_weights(sl)
     samples = get_samples(sl)
-    k = length(logμ)
+    k = length(μlogμ)
     for i in 1:n
         @turbo for j in 1:k
-            logμ[j] = logμ[j] + weights[i] * samples[i][j] * log(samples[i][j])
+            μlogμ[j] = μlogμ[j] + weights[i] * samples[i][j] * log(samples[i][j])
         end
     end
-    return logμ
+    return μlogμ
 end
 
 function sample_list_vague(::Type{ Matrixvariate }, dims::Tuple{Int, Int}, length::Int)

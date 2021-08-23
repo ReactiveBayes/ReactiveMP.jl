@@ -124,6 +124,10 @@ import ReactiveMP: call_logproposal, call_logintegrand
         uni_samples      = rand(rng, uni_distribution, 20_000)
         uni_sample_list  = SampleList(uni_samples)
 
+        uni_distribution2 = NormalMeanVariance(rand(rng) + 1, rand(rng) + 2)
+        uni_samples2      = rand(rng, uni_distribution2, 20_000)
+        uni_sample_list2  = SampleList(uni_samples2)
+
         r = rand(rng, 3)
         Σ = diageye(3) + 2r*r' # positive definite matrix
         mv_distribution = MvNormal(r, Σ)
@@ -143,6 +147,15 @@ import ReactiveMP: call_logproposal, call_logintegrand
         @test isapprox(mean(uni_sample_list), mean(uni_distribution), atol = 0.1)
         @test isapprox(mean(mv_sample_list), mean(mv_distribution), atol = 0.1)
         @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
+
+        @test isapprox(weightedmean(uni_sample_list2), weightedmean(uni_distribution2), atol = 0.1)
+        @test all(isapprox.(mean_var(uni_sample_list2), mean_var(uni_distribution2), atol = 0.1))
+        @test all(isapprox.(mean_cov(uni_sample_list2), mean_cov(uni_distribution2), atol = 0.1))
+        @test all(isapprox.(mean_precision(uni_sample_list2), mean_precision(uni_distribution2), atol = 0.1))
+        @test all(isapprox.(mean_invcov(uni_sample_list2), mean_invcov(uni_distribution2), atol = 0.1))
+        @test all(isapprox.(weightedmean_cov(uni_sample_list2), weightedmean_cov(uni_distribution2), atol = 0.1))
+        @test all(isapprox.(weightedmean_invcov(uni_sample_list2), weightedmean_invcov(uni_distribution2), atol = 0.1))
+        @test all(isapprox.(weightedmean_precision(uni_sample_list2), weightedmean_precision(uni_distribution2), atol = 0.1))   
 
         @test isapprox(var(uni_sample_list), var(uni_distribution), atol = 0.5)
         @test isapprox(cov(uni_sample_list), var(uni_distribution), atol = 0.5)
