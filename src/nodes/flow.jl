@@ -1,4 +1,4 @@
-export Flow, FlowModel, FlowLayer, NeuralNetwork, Parameter, PlanarMap, NiceFlowLayer, NiceFlowModel, FlowMeta
+export Flow, FlowModel, FlowLayer, NeuralNetwork, Parameter, PlanarMap, MirroredNiceFlowLayer, NiceFlowLayer, NiceFlowModel, FlowMeta
 export forward, forward!, backward, backward!, jacobian, inv_jacobian, det_jacobian, absdet_jacobian, logabsdet_jacobian
 ## TODO: create a forward-jacobian joint function that calculates both at the same time
 ## TODO: custom broadcasting for new methods
@@ -11,29 +11,33 @@ struct Flow end
 
 @node Flow Deterministic [ out, in ]
 
-abstract type FlowModel end
-abstract type FlowLayer end
-abstract type NeuralNetwork end
+abstract type AbstractFlowModel end
+abstract type AbstractFlowLayer end
+abstract type AbstractNeuralNetwork end
 
 mutable struct Parameter{T}
     value   :: T
 end
 
-struct PlanarMap{T1, T2 <: Real} <: NeuralNetwork
+struct PlanarMap{T1, T2 <: Real} <: AbstractNeuralNetwork
     u       :: Parameter{T1}
     w       :: Parameter{T1}
     b       :: Parameter{T2}
 end
 
-struct NiceFlowLayer{T <: NeuralNetwork} <: FlowLayer
+struct NiceFlowLayer{T <: AbstractNeuralNetwork} <: AbstractFlowLayer
     f       :: T
 end
 
-struct NiceFlowModel{T <: NiceFlowLayer} <: FlowModel
-    layers  :: Array{T, 1}
+struct MirroredNiceFlowLayer{T <: AbstractNeuralNetwork} <: AbstractFlowLayer
+    f       :: T
 end
 
-struct FlowMeta{T <: FlowModel}
+struct NiceFlowModel <: AbstractFlowModel
+    layers  :: Tuple{Vararg{T, N} where {T <: AbstractFlowLayer } } where { N }
+end
+
+struct FlowMeta{T <: AbstractFlowModel}
     model   :: T
 end
 
@@ -74,8 +78,13 @@ end;
 
 ## PlanarMap methods
 
-eltype(::NiceFlowModel{NiceFlowLayer{PlanarMap{T1,T2}}}) where { T1, T2 }= promote_type(T1, T2)
-eltype(::NiceFlowLayer{PlanarMap{T1,T2}}) where { T1, T2 }= promote_type(T1, T2)
+eltype(model::NiceFlowModel)                                = promote_type(map(eltype, model.layers)...)
+eltype(layer::NiceFlowLayer{T1}) where { T1 }               = eltype(T1)
+eltype(layer::MirroredNiceFlowLayer{T1}) where { T1 }       = eltype(T1)
+eltype(f::PlanarMap{T1,T2}) where { T1, T2 }                = promote_type(T1, T2)
+eltype(::Type{NiceFlowLayer{T1}}) where { T1 }              = eltype(T1)
+eltype(::Type{MirroredNiceFlowLayer{T1}}) where { T1 }      = eltype(T1)
+eltype(::Type{PlanarMap{T1,T2}}) where { T1, T2 }           = promote_type(T1, T2)
 
 function PlanarMap(dim::Int64)
     return PlanarMap(randn(dim), randn(dim), randn())
@@ -297,6 +306,124 @@ logdetinv_jacobian(layer::NiceFlowLayer, output::Array{Float64,1}) = 0
 logabsdetinv_jacobian(layer::NiceFlowLayer, output::Array{Float64,1}) = 0;
 
 
+## MirroredNiceFlowLayer methods
+getf(layer::MirroredNiceFlowLayer)              = layer.f
+getmap(layer::MirroredNiceFlowLayer)            = layer.f
+
+function forward(layer::MirroredNiceFlowLayer, input::Array{T,1}) where { T } 
+
+    # check dimensionality
+    @assert length(input) == 2 "The MirroredNiceFlowLayer currently only supports 2 dimensional inputs and outputs."
+
+    # fetch variables
+    f = getf(layer)
+
+    # determine result
+    result = [input[1] + forward(f, input[2]), input[2]]
+
+    # return result
+    return result
+    
+end
+
+function forward!(output::Array{T1,1}, layer::MirroredNiceFlowLayer, input::Array{T2,1}) where { T1, T2 }
+
+    # check dimensionality
+    @assert length(input) == 2 "The MirroredNiceFlowLayer currently only supports 2 dimensional inputs and outputs."
+
+    # fetch variables
+    f = getf(layer)
+
+    # determine result
+    output[1] = input[1] 
+    output[2] = input[2] 
+    output[1] += forward(f, input[2])
+    
+end
+
+function backward(layer::MirroredNiceFlowLayer, output::Array{T,1}) where { T }
+
+    # check dimensionality
+    @assert length(output) == 2 "The MirroredNiceFlowLayer currently only supports 2 dimensional inputs and outputs."
+
+    # fetch variables
+    f = getf(layer)
+
+    # determine result
+    result = [output[1] - forward(f, output[2]), output[2]]
+
+    # return result
+    return result
+    
+end
+
+function backward!(input::Array{T1,1}, layer::MirroredNiceFlowLayer, output::Array{T2,1}) where { T1, T2 }#TODO
+
+    # check dimensionality
+    @assert length(output) == 2 "The MirroredNiceFlowLayer currently only supports 2 dimensional inputs and outputs."
+
+    # fetch variables
+    f = getf(layer)
+
+    # determine result
+    input[1] = output[1] - forward(f, output[2])
+    input[2] = output[2]
+    
+end
+
+function jacobian(layer::MirroredNiceFlowLayer, input::Array{T1,1}) where { T1 }
+
+    # check dimensionality
+    @assert length(input) == 2 "The MirroredNiceFlowLayer currently only supports 2 dimensional inputs and outputs."
+
+    # fetch variables
+    f = getf(layer)
+
+    T = promote_type(eltype(layer), T1)
+
+    # determine result  
+    result = zeros(T, 2, 2)
+    result[1,1] = 1.0
+    result[1,2] = jacobian(f, input[1])
+    result[2,2] = 1.0
+    
+    # return result
+    return UpperTriangular(result)
+    
+end
+
+function inv_jacobian(layer::MirroredNiceFlowLayer, output::Array{T1,1}) where { T1 }
+
+    # check dimensionality
+    @assert length(output) == 2 "The MirroredNiceFlowLayer currently only supports 2 dimensional inputs and outputs."
+
+    # fetch variables
+    f = getf(layer)
+
+    T = promote_type(eltype(layer), T1)
+
+    # determine result
+    result = zeros(T, 2, 2)
+    result[1,1] = 1.0
+    result[1,2] = -jacobian(f,output[1])
+    result[2,2] = 1.0
+    
+    # return result
+    return UpperTriangular(result)
+
+end
+
+det_jacobian(layer::MirroredNiceFlowLayer, input::Array{Float64,1}) = 1
+absdet_jacobian(layer::MirroredNiceFlowLayer, input::Array{Float64,1}) = 1
+logdet_jacobian(layer::MirroredNiceFlowLayer, input::Array{Float64,1}) = 0
+logabsdet_jacobian(layer::MirroredNiceFlowLayer, input::Array{Float64,1}) = 0
+
+detinv_jacobian(layer::MirroredNiceFlowLayer, output::Array{Float64,1}) = 1
+absdetinv_jacobian(layer::MirroredNiceFlowLayer, output::Array{Float64,1}) = 1
+logdetinv_jacobian(layer::MirroredNiceFlowLayer, output::Array{Float64,1}) = 0
+logabsdetinv_jacobian(layer::MirroredNiceFlowLayer, output::Array{Float64,1}) = 0;
+
+
 ## NiceFlowModel methods
 getlayers(model::NiceFlowModel)         = model.layers
 getforward(model::NiceFlowModel)        = (x) -> forward(model, x)
@@ -329,12 +456,12 @@ function forward(model::NiceFlowModel, input::Array{T1,1}) where { T1 }
     
 end
 
-function backward(model::NiceFlowModel{T1}, output::Array{T2,1}) where { T1, T2 }
+function backward(model::NiceFlowModel, output::Array{T1,1}) where { T1 }
 
     # fetch layers
     layers = getlayers(model)
 
-    T = promote_type(eltype(model), T2)
+    T = promote_type(eltype(model), T1)
 
     # allocate space for result
     output_new = zeros(T, size(output))
