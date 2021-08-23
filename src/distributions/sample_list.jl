@@ -76,8 +76,36 @@ sample_list_variate_form(::Tuple{Int, Int}) = Matrixvariate
 
 ## Getters
 
-get_samples(sl::SampleList) = sl.samples
-get_weights(sl::SampleList) = sl.weights
+get_weights(sl::SampleList) = get_linear_weights(sl)
+get_samples(sl::SampleList) = get_samples(variate_form(sl), sl)
+
+get_samples(::Type{ Univariate }, sl::SampleList)   = get_linear_samples(sl)
+
+function get_samples(::Type{ Multivariate }, sl::SampleList)
+    d   = ndims(sl)
+    n   = length(sl)
+    lsl = get_linear_samples(sl)    
+    return Base.Generator(1:n) do i
+        first = (i - 1) * d + 1
+        last  = first + (d - 1)
+        return view(lsl, first:last)
+    end
+end
+
+function get_samples(::Type{ Matrixvariate }, sl::SampleList)
+    d   = ndims(sl)
+    k   = prod(d)
+    n   = length(sl)
+    lsl = get_linear_samples(sl)    
+    return Base.Generator(1:n) do i
+        first = (i - 1) * k + 1
+        last  = first + (k - 1)
+        return reshape(view(lsl, first:last), d)
+    end
+end
+
+get_linear_weights(sl::SampleList) = sl.weights
+get_linear_samples(sl::SampleList) = sl.samples
 get_meta(sl::SampleList)    = sample_list_check_meta(sl.meta)
 
 sample_list_check_meta(meta::Any)     = meta
@@ -91,7 +119,7 @@ get_logintegrand(sl::SampleList)         = get_logintegrand(get_meta(sl))
 call_logproposal(sl::SampleList, x)  = call_logproposal(get_logproposal(sl), x)
 call_logintegrand(sl::SampleList, x) = call_logintegrand(get_logintegrand(sl), x)
 
-Base.length(sl::SampleList)            = div(length(get_samples(sl)), prod(ndims(sl)))
+Base.length(sl::SampleList)            = div(length(get_linear_samples(sl)), prod(ndims(sl)))
 Base.ndims(sl::SampleList)             = sample_list_ndims(variate_form(sl), sl)
 Base.size(sl::SampleList)              = (length(sl), )
 
@@ -103,7 +131,7 @@ sample_list_ndims(::Type{ Matrixvariate }, sl::SampleList{ D }) where { D } = D
 
 # Returns a zeroed container for mean
 function sample_list_zero_element(sl::SampleList) 
-    T = promote_type(eltype(get_weights(sl)), eltype(get_samples(sl)))
+    T = promote_type(eltype(get_linear_weights(sl)), eltype(get_linear_samples(sl)))
     return sample_list_zero_element(variate_form(sl), T, sl)
 end
 
@@ -208,8 +236,8 @@ end
 function sample_list_mean(::Type{ Univariate }, sl::SampleList)
     n = length(sl)
     μ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     @turbo for i in 1:n
         μ = μ + weights[i] * samples[i]
     end
@@ -220,8 +248,8 @@ function sample_list_mean_cov(::Type{ Univariate }, sl::SampleList)
     n  = length(sl)
     μ  = mean(sl)
     σ² = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     @turbo for i in 1:n
         σ² = σ² + weights[i] * abs2(samples[i] - μ)
     end 
@@ -236,8 +264,8 @@ end
 function sample_list_logmean(::Type{ Univariate }, sl::SampleList)
     n = length(sl)
     logμ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     @turbo for i in 1:n
         logμ = logμ + weights[i] * log(samples[i])
     end
@@ -247,8 +275,8 @@ end
 function sample_list_meanlogmean(::Type{ Univariate }, sl::SampleList)
     n = length(sl)
     μlogμ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     @turbo for i in 1:n
         μlogμ = μlogμ + weights[i] * samples[i] * log(samples[i])
     end
@@ -256,9 +284,9 @@ function sample_list_meanlogmean(::Type{ Univariate }, sl::SampleList)
 end
 
 function sample_list_mirroredlogmean(::Type{ Univariate }, sl::SampleList)
-    samples = get_samples(sl)
+    samples = get_linear_samples(sl)
     @assert all(0 .<= sl .< 1) "mirroredlogmean does not apply to variables outside of the range [0, 1]"
-    return mapreduce(z -> z[1] * log(1 - z[2]), +, zip(get_weights(sl), get_samples(sl)); init = sample_list_zero_element(sl))
+    return mapreduce(z -> z[1] * log(1 - z[2]), +, zip(get_linear_weights(sl), get_linear_samples(sl)); init = sample_list_zero_element(sl))
 end
 
 function sample_list_vague(::Type{ Univariate }, length::Int)
@@ -271,13 +299,11 @@ end
 function sample_list_mean(::Type{ Multivariate }, sl::SampleList) 
     n = length(sl)
     μ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     k = length(μ)
-    for i in 1:n
-        @turbo for j in 1:k
-            μ[j] = μ[j] + (weights[i] * samples[i][j])
-        end
+    @turbo for i in 1:n, j in 1:k
+        μ[j] = μ[j] + (weights[i] * samples[(i - 1) * k + j])
     end
     return μ
 end
@@ -286,21 +312,22 @@ function sample_list_mean_cov(::Type{ Multivariate }, sl::SampleList)
     n  = length(sl)
     μ  = mean(sl)
 
-    Σ   = zeros(eltype(μ), length(μ), length(μ))
+    Σ  = zeros(eltype(μ), length(μ), length(μ))
 
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
 
     tmp = similar(μ)
     k   = length(tmp)
 
-    for i in 1:n 
-        @turbo for j in 1:k
-            tmp[j] = samples[i][j] - μ[j]
+    @turbo for i in 1:n
+        for j in 1:k
+            tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
-        # mul!(C, A, B, α, β) does C = A * B * α + C * β
-        mul!(Σ, tmp, tmp', weights[i], 1)
+        for h in 1:k, l in 1:k
+            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
+        end
     end
 
     return μ, Σ
@@ -314,13 +341,11 @@ end
 function sample_list_logmean(::Type{ Multivariate }, sl::SampleList)
     n = length(sl)
     logμ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     k = length(logμ)
-    for i in 1:n
-        @turbo for j in 1:k
-            logμ[j] = logμ[j] + weights[i] * log(samples[i][j])
-        end
+    @turbo for i in 1:n, j in 1:k
+        logμ[j] = logμ[j] + (weights[i] * log(samples[(i - 1) * k + j]))
     end
     return logμ
 end
@@ -328,13 +353,12 @@ end
 function sample_list_meanlogmean(::Type{ Multivariate }, sl::SampleList)
     n = length(sl)
     μlogμ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     k = length(μlogμ)
-    for i in 1:n
-        @turbo for j in 1:k
-            μlogμ[j] = μlogμ[j] + weights[i] * samples[i][j] * log(samples[i][j])
-        end
+    @turbo for i in 1:n, j in 1:k
+        cs = samples[(i - 1) * k + j]
+        μlogμ[j] = μlogμ[j] + (weights[i] * cs * log(cs))
     end
     return μlogμ
 end
@@ -348,14 +372,12 @@ end
 
 function sample_list_mean(::Type{ Matrixvariate }, sl::SampleList) 
     μ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
     n = length(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     k = length(μ)
-    @turbo for i in 1:n
-        for j in 1:k
-            μ[j] = μ[j] + (weights[i] * samples[(i - 1) * k + j])
-        end
+    @turbo for i in 1:n, j in 1:k
+        μ[j] = μ[j] + (weights[i] * samples[(i - 1) * k + j])
     end
     return μ
 end
@@ -363,8 +385,8 @@ end
 function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
     n  = length(sl)
     μ  = mean(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     k   = length(μ)
     rμ  = reshape(μ, k)
     tmp = similar(rμ)
@@ -375,8 +397,6 @@ function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
             tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
-        # mul!(C, A, B, α, β) does C = A * B * α + C * β
-        # mul!(Σ, tmp, tmp', weights[i], 1)
         for h in 1:k, l in 1:k
             Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
         end
@@ -393,13 +413,11 @@ end
 function sample_list_logmean(::Type{ Matrixvariate }, sl::SampleList)
     n = length(sl)
     logμ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     k = length(logμ)
-    for i in 1:n
-        @turbo for j in 1:k
-            logμ[j] = logμ[j] + weights[i] * log(samples[i][j])
-        end
+    @turbo for i in 1:n, j in 1:k
+        logμ[j] = logμ[j] + (weights[i] * log(samples[(i - 1) * k + j]))
     end
     return logμ
 end
@@ -407,13 +425,12 @@ end
 function sample_list_meanlogmean(::Type{ Matrixvariate }, sl::SampleList)
     n = length(sl)
     μlogμ = sample_list_zero_element(sl)
-    weights = get_weights(sl)
-    samples = get_samples(sl)
+    weights = get_linear_weights(sl)
+    samples = get_linear_samples(sl)
     k = length(μlogμ)
-    for i in 1:n
-        @turbo for j in 1:k
-            μlogμ[j] = μlogμ[j] + weights[i] * samples[i][j] * log(samples[i][j])
-        end
+    @turbo for i in 1:n, j in 1:k
+        cs = samples[(i - 1) * k + j]
+        μlogμ[j] = μlogμ[j] + (weights[i] * cs * log(cs))
     end
     return μlogμ
 end
