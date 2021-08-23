@@ -350,12 +350,12 @@ function sample_list_mean(::Type{ Matrixvariate }, sl::SampleList)
     μ = sample_list_zero_element(sl)
     weights = get_weights(sl)
     samples = get_samples(sl)
-    n = length(samples)
+    n = length(sl)
     k = length(μ)
-    @turbo for i in 0:(n - 1)
-        j = rem(i, k) + 1
-        l = div(i, k) + 1
-        μ[j] = μ[j] + (weights[l] * samples[i + 1])
+    @turbo for i in 1:n
+        for j in 1:k
+            μ[j] = μ[j] + (weights[i] * samples[(i - 1) * k + j])
+        end
     end
     return μ
 end
@@ -370,13 +370,16 @@ function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
     tmp = similar(rμ)
     Σ   = zeros(eltype(rμ), length(rμ), length(rμ))
 
-    for i in 1:n
-        @turbo for j in 1:k
-            tmp[j] = samples[i][j] - μ[j]
+    @turbo for i in 1:n
+        for j in 1:k
+            tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
         # mul!(C, A, B, α, β) does C = A * B * α + C * β
-        mul!(Σ, tmp, tmp', weights[i], 1)
+        # mul!(Σ, tmp, tmp', weights[i], 1)
+        for h in 1:k, l in 1:k
+            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
+        end
     end
 
     return μ, Σ
