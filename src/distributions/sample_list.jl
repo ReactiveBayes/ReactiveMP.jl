@@ -32,31 +32,47 @@ Generic distribution represented as a list of weighted samples.
 - `samples::S`
 - `weights::W`: optional, equivalent to `fill(1 / N, N)` by default, where `N` is the length of `samples` container
 """
-struct SampleList{S, W, M} 
+struct SampleList{D, S, W, M} 
     samples :: S
     weights :: W
     meta    :: M
 
-    function SampleList(samples::S, weights::W, meta::M = nothing) where { S, W, M }
-        @assert length(samples) === length(weights) "Invalid sample list samples and weights lengths. `samples` has length $(length(samples)), `weights` has length $(length(weights))"
+    function SampleList(::Val{D}, samples::S, weights::W, meta::M = nothing) where { D, S, W, M }
+        @assert div(length(samples), prod(D)) === length(weights) "Invalid sample list samples and weights lengths. `samples` has length $(length(samples)), `weights` has length $(length(weights))"
+        @assert eltype(samples) <: Number "Invalid eltype of samples container. Should be a subtype of `Number`, but $(eltype(samples)) has been found. Samples should be stored in a linear one dimensional vector even for multivariate and matrixvariate cases."
         @assert eltype(weights) <: Number "Invalid eltype of weights container. Should be a subtype of `Number`, but $(eltype(weights)) has been found."
-        return new{S, W, M}(samples, weights, meta)
+        return new{D, S, W, M}(samples, weights, meta)
     end
 end
 
 Base.show(io::IO, sl::SampleList) = print(io, "SampleList(", length(sl), ")")
 
-SampleList(samples::S) where S = SampleList(samples, OneDivNVector(deep_eltype(S), length(samples)))
+function SampleList(samples::S) where  { S <: AbstractArray }
+    return SampleList(samples, OneDivNVector(deep_eltype(S), length(samples)))
+end
+
+function SampleList(samples::AbstractVector{T}, weights) where { T <: Number }
+    @assert length(samples) !== 0 "Empty sample list"
+    return SampleList(Val(()), samples, weights);
+end
+
+function SampleList(samples::AbstractVector, weights)
+    @assert length(samples) !== 0 "Empty sample list"
+    D  = size(first(samples))
+    pD = prod(D)
+    linear_samples = collect(Iterators.flatten(Base.Generator(sample -> view(sample, 1:pD), samples)))
+    return SampleList(Val(D), linear_samples, weights);
+end
 
 const DEFAULT_SAMPLE_LIST_N_SAMPLES = 5000
 
 ## Variate forms
 
-variate_form(::SampleList{ S }) where S = sample_list_variate_form(eltype(S))
+variate_form(::SampleList{ D }) where D = sample_list_variate_form(D)
 
-sample_list_variate_form(::Type{ T }) where { T <: Real }                         = Univariate
-sample_list_variate_form(::Type{ V }) where { T <: Real, V <: AbstractVector{T} } = Multivariate
-sample_list_variate_form(::Type{ M }) where { T <: Real, M <: AbstractMatrix{T} } = Matrixvariate
+sample_list_variate_form(::Tuple{})         = Univariate
+sample_list_variate_form(::Tuple{Int})      = Multivariate
+sample_list_variate_form(::Tuple{Int, Int}) = Matrixvariate
 
 ## Getters
 
@@ -75,18 +91,25 @@ get_logintegrand(sl::SampleList)         = get_logintegrand(get_meta(sl))
 call_logproposal(sl::SampleList, x)  = call_logproposal(get_logproposal(sl), x)
 call_logintegrand(sl::SampleList, x) = call_logintegrand(get_logintegrand(sl), x)
 
-Base.length(sl::SampleList)            = length(get_samples(sl))
+Base.length(sl::SampleList)            = div(length(get_samples(sl)), prod(ndims(sl)))
 Base.ndims(sl::SampleList)             = sample_list_ndims(variate_form(sl), sl)
 Base.size(sl::SampleList)              = (length(sl), )
 
-sample_list_ndims(::Type{ Univariate }, sl::SampleList)    = 1
-sample_list_ndims(::Type{ Multivariate }, sl::SampleList)  = length(first(get_samples(sl)))
-sample_list_ndims(::Type{ Matrixvariate }, sl::SampleList) = size(first(get_samples(sl)))
+sample_list_ndims(::Type{ Univariate }, sl::SampleList{ D }) where { D }    = 1
+sample_list_ndims(::Type{ Multivariate }, sl::SampleList{ D }) where { D }  = first(D)
+sample_list_ndims(::Type{ Matrixvariate }, sl::SampleList{ D }) where { D } = D
 
 ## Statistics 
 
 # Returns a zeroed container for mean
-sample_list_zero_element(sl::SampleList) = zero(first(get_weights(sl))) * zero(first(get_samples(sl)))
+function sample_list_zero_element(sl::SampleList) 
+    T = promote_type(eltype(get_weights(sl)), eltype(get_samples(sl)))
+    return sample_list_zero_element(variate_form(sl), T, sl)
+end
+
+sample_list_zero_element(::Type{ Univariate }, ::Type{T}, sl::SampleList) where T   = zero(T)
+sample_list_zero_element(::Type{ Multivariate }, ::Type{T}, sl::SampleList) where T = zeros(T, ndims(sl))
+sample_list_zero_element(::Type{ Matrixvariate }, ::Type{T}, sl::SampleList) where T = zeros(T, ndims(sl))
 
 # Generic mean_cov
 
@@ -324,15 +347,15 @@ end
 ## Matrixvariate
 
 function sample_list_mean(::Type{ Matrixvariate }, sl::SampleList) 
-    n = length(sl)
     μ = sample_list_zero_element(sl)
     weights = get_weights(sl)
     samples = get_samples(sl)
+    n = length(samples)
     k = length(μ)
-    for i in 1:n
-        @turbo for j in 1:k
-            μ[j] = μ[j] + (weights[i] * samples[i][j])
-        end
+    @turbo for i in 0:(n - 1)
+        j = rem(i, k) + 1
+        l = div(i, k) + 1
+        μ[j] = μ[j] + (weights[l] * samples[i + 1])
     end
     return μ
 end
