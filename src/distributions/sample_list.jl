@@ -45,30 +45,42 @@ struct SampleList{D, S, W, M}
     end
 end
 
-Base.show(io::IO, sl::SampleList) = print(io, "SampleList(", length(sl), ")")
+Base.show(io::IO, sl::SampleList) = sample_list_show(io, variate_form(sl), sl)
 
-function SampleList(samples::S) where  { S <: AbstractArray }
+sample_list_show(io::IO, ::Type{Univariate}, sl::SampleList) = print(io, "SampleList(Univariate, ", length(sl), ")")
+sample_list_show(io::IO, ::Type{Multivariate}, sl::SampleList) = print(io, "SampleList(Multivariate(", ndims(sl),"), ", length(sl), ")")
+sample_list_show(io::IO, ::Type{Matrixvariate}, sl::SampleList) = print(io, "SampleList(Matrixvariate", ndims(sl), ", ", length(sl), ")")
+
+function SampleList(samples::S) where { S <: AbstractVector } 
     return SampleList(samples, OneDivNVector(deep_eltype(S), length(samples)))
 end
 
-function SampleList(samples::AbstractVector{T}, weights) where { T <: Number }
-    @assert length(samples) !== 0 "Empty sample list"
-    return SampleList(Val(()), samples, weights);
-end
-
-function SampleList(samples::AbstractVector, weights)
-    @assert length(samples) !== 0 "Empty sample list"
+function SampleList(samples::S, weights::W, meta::M = nothing) where { S, W, M }
+    @assert length(samples) !== 0 "Empty samples list"
     D  = size(first(samples))
-    pD = prod(D)
-    linear_samples = collect(Iterators.flatten(Base.Generator(sample -> view(sample, 1:pD), samples)))
-    return SampleList(Val(D), linear_samples, weights);
+    return SampleList(Val(D), sample_list_linearize(samples, prod(D)), weights, meta)
 end
 
 const DEFAULT_SAMPLE_LIST_N_SAMPLES = 5000
 
+## Utility functions
+
+Base.eltype(::Type{ <: SampleList{D, S} }) where { D, S } = sample_list_eltype(SampleList, D, S)
+
+sample_list_eltype(::Type{ SampleList }, ::Tuple{}, ::Type{S}) where S         = eltype(S)
+sample_list_eltype(::Type{ SampleList }, ::Tuple{Int}, ::Type{S}) where S      = Vector{ eltype(S) }
+sample_list_eltype(::Type{ SampleList }, ::Tuple{Int, Int}, ::Type{S}) where S = Matrix{ eltype(S) }
+
+deep_eltype(::Type{ <: SampleList{ D, S } }) where { D, S } = eltype(S)
+
+## Linearization functions
+
+sample_list_linearize(samples::AbstractVector{T}, size) where { T <: Number } = samples
+sample_list_linearize(samples::AbstractVector, size)                          = collect(Iterators.flatten(Base.Generator(sample -> view(sample, 1:size), samples)))
+
 ## Variate forms
 
-variate_form(::SampleList{ D }) where D = sample_list_variate_form(D)
+variate_form(::SampleList{ D }) where { D } = sample_list_variate_form(D)
 
 sample_list_variate_form(::Tuple{})         = Univariate
 sample_list_variate_form(::Tuple{Int})      = Multivariate
@@ -119,9 +131,9 @@ get_logintegrand(sl::SampleList)         = get_logintegrand(get_meta(sl))
 call_logproposal(sl::SampleList, x)  = call_logproposal(get_logproposal(sl), x)
 call_logintegrand(sl::SampleList, x) = call_logintegrand(get_logintegrand(sl), x)
 
-Base.length(sl::SampleList)            = div(length(get_linear_samples(sl)), prod(ndims(sl)))
-Base.ndims(sl::SampleList)             = sample_list_ndims(variate_form(sl), sl)
-Base.size(sl::SampleList)              = (length(sl), )
+Base.length(sl::SampleList) = div(length(get_linear_samples(sl)), prod(ndims(sl)))
+Base.ndims(sl::SampleList)  = sample_list_ndims(variate_form(sl), sl)
+Base.size(sl::SampleList)   = (length(sl), )
 
 sample_list_ndims(::Type{ Univariate }, sl::SampleList{ D }) where { D }    = 1
 sample_list_ndims(::Type{ Multivariate }, sl::SampleList{ D }) where { D }  = first(D)
@@ -229,6 +241,10 @@ function approximate_prod_with_sample_list(x, y; nsamples = DEFAULT_SAMPLE_LIST_
     return SampleList(samples, norm_weights, meta)
 end
 
+## Preallocation utilities
+
+preallocate_samples(::Type{T}, dims::Tuple, length::Int)    where T = Vector{T}(undef, length * prod(dims))
+
 ## Specific implementations
 
 ## Univariate
@@ -295,9 +311,11 @@ function sample_list_mirroredlogmean(::Type{ Univariate }, sl::SampleList)
     return mirμ
 end
 
-function sample_list_vague(::Type{ Univariate }, length::Int)
-    targetdist = vague(Uniform)
-    return SampleList(rand(targetdist, length))
+function sample_list_vague(::Type{ Univariate }, nsamples::Int)
+    targetdist   = vague(Uniform)
+    preallocated = preallocate_samples(Float64, (), nsamples)
+    rand!(targetdist, preallocated)
+    return SampleList(Val(()), preallocated, OneDivNVector(Float64, nsamples), nothing)
 end
 
 ## Multivariate
@@ -369,9 +387,11 @@ function sample_list_meanlogmean(::Type{ Multivariate }, sl::SampleList)
     return μlogμ
 end
 
-function sample_list_vague(::Type{ Multivariate }, dims::Int, length::Int)
-    targetdist = vague(Uniform)
-    return SampleList([ rand(targetdist, dims) for _ in 1:length ])
+function sample_list_vague(::Type{ Multivariate }, dims::Int, nsamples::Int)
+    targetdist   = vague(Uniform)
+    preallocated = preallocate_samples(Float64, (dims, ), nsamples)
+    rand!(targetdist, preallocated)
+    return SampleList(Val((dims, )), preallocated, OneDivNVector(Float64, nsamples), nothing)
 end
 
 ## Matrixvariate
@@ -441,7 +461,9 @@ function sample_list_meanlogmean(::Type{ Matrixvariate }, sl::SampleList)
     return μlogμ
 end
 
-function sample_list_vague(::Type{ Matrixvariate }, dims::Tuple{Int, Int}, length::Int)
-    targetdist = vague(Uniform)
-    return SampleList([ rand(targetdist, dims[1], dims[2]) for _ in 1:length ])
+function sample_list_vague(::Type{ Matrixvariate }, dims::Tuple{Int, Int}, nsamples::Int)
+    targetdist   = vague(Uniform)
+    preallocated = preallocate_samples(Float64, dims, nsamples)
+    rand!(targetdist, preallocated)
+    return SampleList(Val(dims), preallocated, OneDivNVector(Float64, nsamples), nothing)
 end

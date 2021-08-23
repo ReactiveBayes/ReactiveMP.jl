@@ -30,7 +30,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             @test collect(get_samples(scalar_samplelist)) == scalar_samples
             @test collect(get_weights(scalar_samplelist)) == fill(one(type) / N, N)
-            # @test deep_eltype(get_samples(scalar_samplelist)) === type
+            @test deep_eltype(scalar_samplelist)              === type
+            @test eltype(scalar_samplelist)                   === type
             @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
 
@@ -39,7 +40,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             @test collect(get_samples(scalar_samplelist)) == scalar_samples
             @test collect(get_weights(scalar_samplelist)) == scalar_weights
-            # @test deep_eltype(get_samples(scalar_samplelist)) === type
+            @test deep_eltype(scalar_samplelist)              === type
+            @test eltype(scalar_samplelist)                   === type
             @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
 
@@ -48,7 +50,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             @test collect(get_samples(vector_samplelist)) == vector_samples
             @test collect(get_weights(vector_samplelist)) == fill(one(type) / N, N)
-            # @test deep_eltype(get_samples(vector_samplelist)) === type
+            @test deep_eltype(vector_samplelist)              === type
+            @test eltype(vector_samplelist)                   === Vector{ type }
             @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
 
@@ -57,7 +60,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             @test collect(get_samples(vector_samplelist)) == vector_samples
             @test collect(get_weights(vector_samplelist)) == vector_weights
-            # @test deep_eltype(get_samples(vector_samplelist)) === type
+            @test deep_eltype(vector_samplelist)              === type
+            @test eltype(vector_samplelist)                   === Vector{ type }
             @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
 
@@ -66,7 +70,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             @test collect(get_samples(matrix_samplelist)) == matrix_samples
             @test collect(get_weights(matrix_samplelist)) == fill(one(type) / N, N)
-            # @test deep_eltype(get_samples(matrix_samplelist)) === type
+            @test deep_eltype(matrix_samplelist)              === type
+            @test eltype(matrix_samplelist)                   === Matrix{ type }
             @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
 
@@ -75,7 +80,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             @test collect(get_samples(matrix_samplelist)) == matrix_samples
             @test collect(get_weights(matrix_samplelist)) == matrix_weights
-            # @test deep_eltype(get_samples(matrix_samplelist)) === type
+            @test deep_eltype(matrix_samplelist)              === type
+            @test eltype(matrix_samplelist)                   === Matrix{ type }
             @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
         end
