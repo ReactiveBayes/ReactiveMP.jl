@@ -56,9 +56,10 @@ function SampleList(samples::S) where { S <: AbstractVector }
 end
 
 function SampleList(samples::S, weights::W, meta::M = nothing) where { S, W, M }
-    @assert length(samples) !== 0 "Empty samples list"
-    D  = size(first(samples))
-    return SampleList(Val(D), sample_list_linearize(samples, prod(D)), weights, meta)
+    nsamples = length(samples)
+    @assert nsamples !== 0 "Empty samples list"
+    D = size(first(samples))
+    return SampleList(Val(D), sample_list_linearize(samples, nsamples, prod(D)), weights, meta)
 end
 
 const DEFAULT_SAMPLE_LIST_N_SAMPLES = 5000
@@ -75,8 +76,23 @@ deep_eltype(::Type{ <: SampleList{ D, S } }) where { D, S } = eltype(S)
 
 ## Linearization functions
 
-sample_list_linearize(samples::AbstractVector{T}, size) where { T <: Number } = samples
-sample_list_linearize(samples::AbstractVector, size)                          = collect(Iterators.flatten(Base.Generator(sample -> view(sample, 1:size), samples)))
+# Here we cast an array of arrays into a single flat array of floats for better performance
+# There is a package for this called ArraysOfArrays.jl, but the performance of handwritten version is way better
+# We provide custom optimized mean/cov function for our implementation with LoopVectorization.jl package
+function sample_list_linearize end
+
+function sample_list_linearize(samples::AbstractVector{T}, nsamples, size) where { T <: Number } 
+    return samples
+end
+
+function sample_list_linearize(samples::AbstractVector, nsamples, size) 
+    T = deep_eltype(samples)
+    alloc = Vector{T}(undef, nsamples * size)
+    for i in 1:nsamples
+        copyto!(alloc, (i - 1) * size + 1, samples[i], 1, size)
+    end
+    return alloc
+end
 
 ## Variate forms
 
@@ -89,32 +105,7 @@ sample_list_variate_form(::Tuple{Int, Int}) = Matrixvariate
 ## Getters
 
 get_weights(sl::SampleList) = get_linear_weights(sl)
-get_samples(sl::SampleList) = get_samples(variate_form(sl), sl)
-
-get_samples(::Type{ Univariate }, sl::SampleList)   = get_linear_samples(sl)
-
-function get_samples(::Type{ Multivariate }, sl::SampleList)
-    d   = ndims(sl)
-    n   = length(sl)
-    lsl = get_linear_samples(sl)    
-    return Base.Generator(1:n) do i
-        first = (i - 1) * d + 1
-        last  = first + (d - 1)
-        return view(lsl, first:last)
-    end
-end
-
-function get_samples(::Type{ Matrixvariate }, sl::SampleList)
-    d   = ndims(sl)
-    k   = prod(d)
-    n   = length(sl)
-    lsl = get_linear_samples(sl)    
-    return Base.Generator(1:n) do i
-        first = (i - 1) * k + 1
-        last  = first + (k - 1)
-        return reshape(view(lsl, first:last), d)
-    end
-end
+get_samples(sl::SampleList) = error("SampleList `get_samples` is forbidden. Use broadcasting or map operations to transform sample list")
 
 get_linear_weights(sl::SampleList) = sl.weights
 get_linear_samples(sl::SampleList) = sl.samples
@@ -243,7 +234,7 @@ end
 
 ## Preallocation utilities
 
-preallocate_samples(::Type{T}, dims::Tuple, length::Int)    where T = Vector{T}(undef, length * prod(dims))
+preallocate_samples(::Type{T}, dims::Tuple, length::Int) where T = Vector{T}(undef, length * prod(dims))
 
 ## Specific implementations
 
@@ -343,6 +334,7 @@ function sample_list_mean_cov(::Type{ Multivariate }, sl::SampleList)
 
     tmp = similar(μ)
     k   = length(tmp)
+    s   = n / (n - 1)
 
     @turbo for i in 1:n
         for j in 1:k
@@ -350,7 +342,7 @@ function sample_list_mean_cov(::Type{ Multivariate }, sl::SampleList)
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
         for h in 1:k, l in 1:k
-            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
+            Σ[(h - 1) * k + l] += s * weights[i] * tmp[h] * tmp[l]
         end
     end
 
@@ -417,6 +409,7 @@ function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
     rμ  = reshape(μ, k)
     tmp = similar(rμ)
     Σ   = zeros(eltype(rμ), length(rμ), length(rμ))
+    s   = n / (n - 1)
 
     @turbo for i in 1:n
         for j in 1:k
@@ -424,7 +417,7 @@ function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
         for h in 1:k, l in 1:k
-            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
+            Σ[(h - 1) * k + l] += s * weights[i] * tmp[h] * tmp[l]
         end
     end
 

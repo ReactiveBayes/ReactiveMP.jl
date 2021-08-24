@@ -28,7 +28,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             scalar_samples    = rand(rng, type, N)
             scalar_samplelist = SampleList(scalar_samples)
 
-            @test collect(get_samples(scalar_samplelist)) == scalar_samples
+            @test_throws ErrorException get_samples(scalar_samplelist)
             @test collect(get_weights(scalar_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(scalar_samplelist)              === type
             @test eltype(scalar_samplelist)                   === type
@@ -38,7 +38,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             scalar_weights    = rand(rng, type, N)
             scalar_samplelist = SampleList(scalar_samples, scalar_weights)
 
-            @test collect(get_samples(scalar_samplelist)) == scalar_samples
+            @test_throws ErrorException get_samples(scalar_samplelist)
             @test collect(get_weights(scalar_samplelist)) == scalar_weights
             @test deep_eltype(scalar_samplelist)              === type
             @test eltype(scalar_samplelist)                   === type
@@ -48,7 +48,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             vector_samples    = [ rand(rng, type, 2) for _ in 1:N ]
             vector_samplelist = SampleList(vector_samples)
 
-            @test collect(get_samples(vector_samplelist)) == vector_samples
+            @test_throws ErrorException get_samples(vector_samplelist)
             @test collect(get_weights(vector_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(vector_samplelist)              === type
             @test eltype(vector_samplelist)                   === Vector{ type }
@@ -58,7 +58,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             vector_weights    = rand(rng, type, N)
             vector_samplelist = SampleList(vector_samples, vector_weights)
 
-            @test collect(get_samples(vector_samplelist)) == vector_samples
+            @test_throws ErrorException get_samples(vector_samplelist)
             @test collect(get_weights(vector_samplelist)) == vector_weights
             @test deep_eltype(vector_samplelist)              === type
             @test eltype(vector_samplelist)                   === Vector{ type }
@@ -68,7 +68,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             matrix_samples    = [ rand(rng, type, 2, 2) for _ in 1:N ]
             matrix_samplelist = SampleList(matrix_samples)
 
-            @test collect(get_samples(matrix_samplelist)) == matrix_samples
+            @test_throws ErrorException get_samples(matrix_samplelist)
             @test collect(get_weights(matrix_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(matrix_samplelist)              === type
             @test eltype(matrix_samplelist)                   === Matrix{ type }
@@ -78,7 +78,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             matrix_weights    = rand(rng, type, N)
             matrix_samplelist = SampleList(matrix_samples, matrix_weights)
 
-            @test collect(get_samples(matrix_samplelist)) == matrix_samples
+            @test_throws ErrorException get_samples(matrix_samplelist)
             @test collect(get_weights(matrix_samplelist)) == matrix_weights
             @test deep_eltype(matrix_samplelist)              === type
             @test eltype(matrix_samplelist)                   === Matrix{ type }
