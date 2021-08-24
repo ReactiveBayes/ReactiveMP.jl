@@ -3,6 +3,7 @@ export SampleList, SampleListMeta
 import Base: show, ndims, length, size, precision, getindex, broadcasted, map
 import Distributions: mean, var, cov, std
 
+using StaticArrays
 using LoopVectorization
 
 mutable struct SampleListCache{M, C}
@@ -88,11 +89,11 @@ const DEFAULT_SAMPLE_LIST_N_SAMPLES = 5000
 
 ## Utility functions
 
-Base.eltype(::Type{ <: SampleList{D, S} }) where { D, S } = sample_list_eltype(SampleList, D, S)
+Base.eltype(::Type{ <: SampleList{D, S, W} }) where { D, S, W } = Tuple{ sample_list_eltype(SampleList, D, S), eltype(W) }
 
-sample_list_eltype(::Type{ SampleList }, ::Tuple{}, ::Type{S}) where S         = eltype(S)
-sample_list_eltype(::Type{ SampleList }, ::Tuple{Int}, ::Type{S}) where S      = Vector{ eltype(S) }
-sample_list_eltype(::Type{ SampleList }, ::Tuple{Int, Int}, ::Type{S}) where S = Matrix{ eltype(S) }
+sample_list_eltype(::Type{ SampleList }, ndims::Tuple{}, ::Type{S}) where S         = eltype(S)
+sample_list_eltype(::Type{ SampleList }, ndims::Tuple{Int}, ::Type{S}) where S      = SVector{ ndims[1], eltype(S) }
+sample_list_eltype(::Type{ SampleList }, ndims::Tuple{Int, Int}, ::Type{S}) where S = SMatrix{ ndims[1], ndims[2], eltype(S), ndims[1] * ndims[2] }
 
 deep_eltype(::Type{ <: SampleList{ D, S } }) where { D, S } = eltype(S)
 
@@ -474,25 +475,30 @@ end
 
 ## Array operations, broadcasting and mapping
 
+Base.iterate(sl::SampleList)             = (sl[1], 2)
+Base.iterate(sl::SampleList, state::Int) = state <= length(sl) ? (sl[state], state + 1) : nothing
+
 @inline Base.getindex(sl::SampleList, i::Int) = sample_list_get_index(variate_form(sl), ndims(sl), sl, i)
 
 @inline function sample_list_get_index(::Type{ Univariate }, ndims, sl, i)
-    return get_linear_samples(sl)[i]
+    return (get_linear_samples(sl)[i], get_linear_weights(sl)[i])
 end
 
 @inline function sample_list_get_index(::Type{ Multivariate }, ndims, sl, i)
     samples = get_linear_samples(sl)
     left  = (i - 1) * ndims + 1
     right = left + ndims - 1
-    return view(samples, left:right)
+    # ndims is compile-time here
+    return (SVector{ndims}(view(samples, left:right)), get_linear_weights(sl)[i])
 end
 
-@inline function sample_list_get_index(::Type{ Multivariate }, ndims, sl, i)
+@inline function sample_list_get_index(::Type{ Matrixvariate }, ndims, sl, i)
     p = prod(ndims)
     samples = get_linear_samples(sl)
     left  = (i - 1) * p + 1
     right = left + p - 1
-    return reshape(view(samples, left:right), ndims)
+    # ndims are compile-time here
+    return (SMatrix{ ndims[1], ndims[2] }(reshape(view(samples, left:right), ndims)), get_linear_weights(sl)[i])
 end
 
 Base.map(f::Function, sl::SampleList) = Base.broadcasted(f, sl)
@@ -521,7 +527,9 @@ function sample_list_broadcasted_inplace(::Type{ Multivariate }, f!::Function, s
     @views for i in 1:n
         left  = (i - 1) * k + 1
         right = left + k - 1
-        f!(bsamples[left:right], samples[left:right])
+        output = SizedVector{k}(bsamples[left:right])
+        input  = SVector{k}(samples[left:right])
+        f!(output, input)
     end
     return SampleList(Val((k, )), bsamples, weights)
 end
@@ -534,7 +542,9 @@ function sample_list_broadcasted_inplace(::Type{ Matrixvariate }, f!::Function, 
     @views for i in 1:n
         left  = (i - 1) * p + 1
         right = left + p - 1
-        f!(reshape(bsamples[left:right], k), reshape(samples[left:right], k))
+        output = SizedMatrix{k[1],k[2]}(reshape(bsamples[left:right], k))
+        input  = SMatrix{k[1],k[2]}(reshape(samples[left:right], k))
+        f!(output, input)
     end
     return SampleList(Val(k), bsamples, weights)
 end

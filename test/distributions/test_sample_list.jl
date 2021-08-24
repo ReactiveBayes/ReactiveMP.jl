@@ -4,6 +4,8 @@ using Test
 using ReactiveMP
 using Random
 using Distributions
+using LinearAlgebra
+using StaticArrays
 
 import ReactiveMP: deep_eltype, get_samples, get_weights, sample_list_zero_element
 import ReactiveMP: get_meta, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
@@ -31,7 +33,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test_throws ErrorException get_samples(scalar_samplelist)
             @test collect(get_weights(scalar_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(scalar_samplelist)              === type
-            @test eltype(scalar_samplelist)                   === type
+            @test eltype(scalar_samplelist)                   === Tuple{type, type}
             @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
 
@@ -41,7 +43,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test_throws ErrorException get_samples(scalar_samplelist)
             @test collect(get_weights(scalar_samplelist)) == scalar_weights
             @test deep_eltype(scalar_samplelist)              === type
-            @test eltype(scalar_samplelist)                   === type
+            @test eltype(scalar_samplelist)                   === Tuple{type, type}
             @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
 
@@ -51,7 +53,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test_throws ErrorException get_samples(vector_samplelist)
             @test collect(get_weights(vector_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(vector_samplelist)              === type
-            @test eltype(vector_samplelist)                   === Vector{ type }
+            @test eltype(vector_samplelist)                   === Tuple{ SVector{ 2, type }, type }
             @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
 
@@ -61,7 +63,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test_throws ErrorException get_samples(vector_samplelist)
             @test collect(get_weights(vector_samplelist)) == vector_weights
             @test deep_eltype(vector_samplelist)              === type
-            @test eltype(vector_samplelist)                   === Vector{ type }
+            @test eltype(vector_samplelist)                   === Tuple{ SVector{ 2, type }, type }
             @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
 
@@ -71,7 +73,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test_throws ErrorException get_samples(matrix_samplelist)
             @test collect(get_weights(matrix_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(matrix_samplelist)              === type
-            @test eltype(matrix_samplelist)                   === Matrix{ type }
+            @test eltype(matrix_samplelist)                   === Tuple{ SMatrix{ 2, 2, type, 4 }, type }
             @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
 
@@ -81,7 +83,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test_throws ErrorException get_samples(matrix_samplelist)
             @test collect(get_weights(matrix_samplelist)) == matrix_weights
             @test deep_eltype(matrix_samplelist)              === type
-            @test eltype(matrix_samplelist)                   === Matrix{ type }
+            @test eltype(matrix_samplelist)                   === Tuple{ SMatrix{ 2, 2, type, 4 }, type }
             @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
         end
@@ -261,32 +263,69 @@ import ReactiveMP: call_logproposal, call_logintegrand
     end
 
     @testset "SampleListMeta" begin 
-        # @test_throws ErrorException get_meta(SampleList([ 0.1 ]))
+        @test_throws ErrorException get_meta(SampleList([ 0.1 ]))
 
-        # rng = MersenneTwister(1234)
+        rng = MersenneTwister(1234)
 
-        # for uweights in [ rand(rng, 2), rand(rng, 2) ],
-        #     entropy in [ -75.6, 234.2 ],
-        #     logproposal in [ NormalMeanVariance(-3.0, 1.0), Gamma(2.0, 4.0), (x) -> x + 1.0 ],
-        #     logintegrand in [ NormalMeanPrecision(-1.0, 2.0), Beta(3.0, 4.0), (x) -> log(abs(x)) ]
+        for uweights in [ rand(rng, 2), rand(rng, 2) ],
+            entropy in [ -75.6, 234.2 ],
+            logproposal in [ NormalMeanVariance(-3.0, 1.0), Gamma(2.0, 4.0), (x) -> x + 1.0 ],
+            logintegrand in [ NormalMeanPrecision(-1.0, 2.0), Beta(3.0, 4.0), (x) -> log(abs(x)) ]
 
-        #     meta = SampleListMeta(uweights, entropy, logproposal, logintegrand)
-        #     sl   = SampleList([ 0.1, 0.1 ], [ 0.5, 0.5 ], meta)
+            meta = SampleListMeta(uweights, entropy, logproposal, logintegrand)
+            sl   = SampleList([ 0.1, 0.1 ], [ 0.5, 0.5 ], meta)
 
-        #     @test get_meta(sl) === meta
-        #     @test get_unnormalised_weights(sl) == uweights
-        #     @test get_entropy(sl) == entropy
-        #     @test get_logproposal(sl) == logproposal
-        #     @test get_logintegrand(sl) == logintegrand
+            @test get_meta(sl) === meta
+            @test get_unnormalised_weights(sl) == uweights
+            @test get_entropy(sl) == entropy
+            @test get_logproposal(sl) == logproposal
+            @test get_logintegrand(sl) == logintegrand
 
-        #     some_random_numbers = rand(rng, 100)
+            some_random_numbers = rand(rng, 100)
 
-        #     __call(dist::Distribution, x) = logpdf(dist, x)
-        #     __call(dist::Function, x)     = dist(x)
+            __call(dist::Distribution, x) = logpdf(dist, x)
+            __call(dist::Function, x)     = dist(x)
 
-        #     @test map(e -> call_logproposal(sl, e), some_random_numbers) == map(e -> __call(logproposal, e), some_random_numbers)
-        #     @test map(e -> call_logintegrand(sl, e), some_random_numbers) == map(e -> __call(logintegrand, e), some_random_numbers)
-        # end
+            @test map(e -> call_logproposal(sl, e), some_random_numbers) == map(e -> __call(logproposal, e), some_random_numbers)
+            @test map(e -> call_logintegrand(sl, e), some_random_numbers) == map(e -> __call(logintegrand, e), some_random_numbers)
+        end
+
+    end
+
+    @testset "Iteration utilities" begin 
+        rng = MersenneTwister(123)
+
+        uni_distribution = Uniform(-10rand(rng), 10rand(rng))
+
+        μ = rand(rng, 3)
+        r1 = rand(rng, 3)
+        Σ = I + 2r1*r1'
+        mv_distribution = MvNormal(μ, Σ)
+
+        r2 = rand(rng, 3)
+        W = I + 2r2*r2'
+        mvx_distribution = Wishart(3, W)
+
+        for N in (500, 1000, 5_000)
+            for distribution in (uni_distribution, mv_distribution, mvx_distribution)
+                samples = [ rand(rng, distribution) for _ in 1:N ]
+                weights = ones(N) ./ N
+                samplelist = SampleList(samples, weights)
+
+                @test collect(samplelist) == collect(zip(samples, weights))
+                @test map(i -> samplelist[i], 1:N) == collect(zip(samples, weights))
+
+                f1 = (e) -> e .+ 1
+                f2 = (e) -> exp.(e)
+
+                for f in (f1, f2)
+                    @test collect(map(f, samplelist)) == collect(zip(map(f, samples), weights))
+                    @test collect(f.(samplelist)) == collect(zip(f.(samples), weights))
+                    @test map(i -> (f(samplelist[i][1]), samplelist[i][2]), 1:N) == collect(zip(f.(samples), weights))
+                end
+                
+            end
+        end
 
     end
 
