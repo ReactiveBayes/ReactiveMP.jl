@@ -105,7 +105,7 @@ function _backward(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Rea
     return result
     
 end
-backward(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = _backward(layer, input)
+backward(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = _backward(layer, output)
 Broadcast.broadcasted(::typeof(backward), layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = broadcast(_backward, Ref(layer), output)
 
 # inplace backward pass through the reverse, NICE layer
@@ -170,7 +170,7 @@ function _inv_jacobian(layer::ReverseNiceLayer, output::Array{T1,1}) where { T1 
     return UpperTriangular(result)
 
 end
-inv_jacobian(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = _inv_jacobian(layer, input)
+inv_jacobian(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = _inv_jacobian(layer, output)
 Broadcast.broadcasted(::typeof(inv_jacobian), layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = broadcast(_inv_jacobian, Ref(layer), output)
 
 # extra utility functions 
