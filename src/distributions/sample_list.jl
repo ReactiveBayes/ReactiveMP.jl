@@ -244,7 +244,7 @@ function approximate_prod_with_sample_list(x, y; nsamples = DEFAULT_SAMPLE_LIST_
     end
 
     # Normalise weights
-    for i in 1:nsamples
+    @turbo for i in 1:nsamples
         norm_weights[i] /= weights_sum
     end
 
@@ -258,8 +258,8 @@ function approximate_prod_with_sample_list(x, y; nsamples = DEFAULT_SAMPLE_LIST_
     entropy = H_x + H_y
 
     # Inform next step about the proposal and integrand to be used in entropy calculation in smoothing
-    logproposal  = x
-    logintegrand = y
+    logproposal  = xlogpdf
+    logintegrand = ylogpdf
 
     meta = SampleListMeta(raw_weights, entropy, logproposal, logintegrand)
 
