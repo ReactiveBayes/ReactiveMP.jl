@@ -5,6 +5,26 @@ import Distributions: mean, var, cov, std
 
 using LoopVectorization
 
+mutable struct SampleListCache{M, C}
+    mean :: M
+    cov  :: C
+    is_mean_cached :: Bool
+    is_cov_cached  :: Bool
+end
+
+SampleListCache(::Type{T}, dims::Tuple{})         where T = SampleListCache(zero(T), zero(T), false, false)
+SampleListCache(::Type{T}, dims::Tuple{Int})      where T = SampleListCache(zeros(T, first(dims)), zeros(T, first(dims), first(dims)), false, false)
+SampleListCache(::Type{T}, dims::Tuple{Int, Int}) where T = SampleListCache(zeros(T, dims), zeros(T, prod(dims), prod(dims)), false, false)
+
+is_mean_cached(cache::SampleListCache) = cache.is_mean_cached
+is_cov_cached(cache::SampleListCache)  = cache.is_cov_cached
+
+get_mean_storage(cache::SampleListCache) = cache.mean
+get_cov_storage(cache::SampleListCache)  = cache.cov
+
+cache_mean!(cache::SampleListCache, mean) = begin cache.mean = mean; cache.is_mean_cached = true; mean end
+cache_cov!(cache::SampleListCache, cov)   = begin cache.cov  = cov; cache.is_cov_cached = true; cov end
+
 struct SampleListMeta{W, E, LP, LI}
     unnormalisedweights :: W
     entropy             :: E
@@ -32,16 +52,18 @@ Generic distribution represented as a list of weighted samples.
 - `samples::S`
 - `weights::W`: optional, equivalent to `fill(1 / N, N)` by default, where `N` is the length of `samples` container
 """
-struct SampleList{D, S, W, M} 
+struct SampleList{D, S, W, C, M} 
     samples :: S
     weights :: W
+    cache   :: C
     meta    :: M
 
     function SampleList(::Val{D}, samples::S, weights::W, meta::M = nothing) where { D, S, W, M }
         @assert div(length(samples), prod(D)) === length(weights) "Invalid sample list samples and weights lengths. `samples` has length $(length(samples)), `weights` has length $(length(weights))"
         @assert eltype(samples) <: Number "Invalid eltype of samples container. Should be a subtype of `Number`, but $(eltype(samples)) has been found. Samples should be stored in a linear one dimensional vector even for multivariate and matrixvariate cases."
         @assert eltype(weights) <: Number "Invalid eltype of weights container. Should be a subtype of `Number`, but $(eltype(weights)) has been found."
-        return new{D, S, W, M}(samples, weights, meta)
+        cache = SampleListCache(promote_type(eltype(samples), eltype(weights)), D)
+        return new{D, S, W, typeof(cache), M}(samples, weights, cache, meta)
     end
 end
 
@@ -109,7 +131,10 @@ get_samples(sl::SampleList) = error("SampleList `get_samples` is forbidden. Use 
 
 get_linear_weights(sl::SampleList) = sl.weights
 get_linear_samples(sl::SampleList) = sl.samples
+get_cache(sl::SampleList)   = sl.cache
 get_meta(sl::SampleList)    = sample_list_check_meta(sl.meta)
+
+get_data(sl::SampleList) = (length(sl), get_linear_samples(sl), get_linear_weights(sl))
 
 sample_list_check_meta(meta::Any)     = meta
 sample_list_check_meta(meta::Nothing) = error("SampleList object has not associated meta information with it.")
@@ -236,32 +261,46 @@ end
 
 preallocate_samples(::Type{T}, dims::Tuple, length::Int) where T = Vector{T}(undef, length * prod(dims))
 
+## Cache utilities
+
+function sample_list_mean(::Type{ U }, sl::SampleList) where U
+    cache = get_cache(sl)
+    mean  = get_mean_storage(cache)
+    if !is_mean_cached(cache)
+        mean = cache_mean!(cache, sample_list_mean!(mean, U, sl))
+    end
+    return mean
+end
+
+function sample_list_mean_cov(::Type{ U }, sl::SampleList) where U
+    cache = get_cache(sl)
+    mean  = sample_list_mean(U, sl)
+    cov   = get_cov_storage(cache)
+    if !is_cov_cached(cache)
+        cov = cache_cov!(cache, sample_list_covm!(cov, mean, U, sl))
+    end
+    return (mean, cov)
+end
+
 ## Specific implementations
 
 ## Univariate
 
-function sample_list_mean(::Type{ Univariate }, sl::SampleList)
-    n = length(sl)
-    μ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
+function sample_list_mean!(μ, ::Type{ Univariate }, sl::SampleList)
+    n, samples, weights = get_data(sl)
     @turbo for i in 1:n
         μ += weights[i] * samples[i]
     end
     return μ
 end
 
-function sample_list_mean_cov(::Type{ Univariate }, sl::SampleList)
-    n  = length(sl)
-    μ  = mean(sl)
-    σ² = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
+function sample_list_covm!(σ², μ, ::Type{ Univariate }, sl::SampleList)
+    n, samples, weights = get_data(sl)
     @turbo for i in 1:n
         σ² += weights[i] * abs2(samples[i] - μ)
     end 
     σ² = (n / (n - 1)) * σ²
-    return μ, σ²
+    return σ²
 end 
 
 function sample_list_mean_var(::Type{ Univariate }, sl::SampleList)
@@ -269,10 +308,8 @@ function sample_list_mean_var(::Type{ Univariate }, sl::SampleList)
 end 
 
 function sample_list_logmean(::Type{ Univariate }, sl::SampleList)
-    n = length(sl)
+    n, samples, weights = get_data(sl)
     logμ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
     @turbo for i in 1:n
         logμ += weights[i] * log(samples[i])
     end
@@ -280,10 +317,8 @@ function sample_list_logmean(::Type{ Univariate }, sl::SampleList)
 end
 
 function sample_list_meanlogmean(::Type{ Univariate }, sl::SampleList)
-    n = length(sl)
+    n, samples, weights = get_data(sl)
     μlogμ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
     @turbo for i in 1:n
         μlogμ += weights[i] * samples[i] * log(samples[i])
     end
@@ -292,10 +327,8 @@ end
 
 function sample_list_mirroredlogmean(::Type{ Univariate }, sl::SampleList)
     @assert all(0 .<= sl .< 1) "mirroredlogmean does not apply to variables outside of the range [0, 1]"
-    n = length(sl)
+    n, samples, weights = get_data(sl)
     mirμ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
     @turbo for i in 1:n
         mirμ += weights[i] * log(1 - samples[i])
     end
@@ -311,11 +344,8 @@ end
 
 ## Multivariate
 
-function sample_list_mean(::Type{ Multivariate }, sl::SampleList) 
-    n = length(sl)
-    μ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
+function sample_list_mean!(μ, ::Type{ Multivariate }, sl::SampleList) 
+    n, samples, weights = get_data(sl)
     k = length(μ)
     @turbo for i in 1:n, j in 1:k
         μ[j] += (weights[i] * samples[(i - 1) * k + j])
@@ -323,30 +353,25 @@ function sample_list_mean(::Type{ Multivariate }, sl::SampleList)
     return μ
 end
 
-function sample_list_mean_cov(::Type{ Multivariate }, sl::SampleList)
-    n  = length(sl)
-    μ  = mean(sl)
-
-    Σ  = zeros(eltype(μ), length(μ), length(μ))
-
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
-
+function sample_list_covm!(Σ, μ, ::Type{ Multivariate }, sl::SampleList)
+    n, samples, weights = get_data(sl)
     tmp = similar(μ)
     k   = length(tmp)
-    s   = n / (n - 1)
-
+    
     @turbo for i in 1:n
         for j in 1:k
             tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
         for h in 1:k, l in 1:k
-            Σ[(h - 1) * k + l] += s * weights[i] * tmp[h] * tmp[l]
+            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
         end
     end
-
-    return μ, Σ
+    s = n / (n - 1)
+    @turbo for i in 1:length(Σ)
+        Σ[i] *= s
+    end
+    return Σ
 end 
 
 function sample_list_mean_var(::Type{ Multivariate }, sl::SampleList)
@@ -355,10 +380,8 @@ function sample_list_mean_var(::Type{ Multivariate }, sl::SampleList)
 end 
 
 function sample_list_logmean(::Type{ Multivariate }, sl::SampleList)
-    n = length(sl)
+    n, samples, weights = get_data(sl)
     logμ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
     k = length(logμ)
     @turbo for i in 1:n, j in 1:k
         logμ[j] += (weights[i] * log(samples[(i - 1) * k + j]))
@@ -367,10 +390,8 @@ function sample_list_logmean(::Type{ Multivariate }, sl::SampleList)
 end
 
 function sample_list_meanlogmean(::Type{ Multivariate }, sl::SampleList)
-    n = length(sl)
+    n, samples, weights = get_data(sl)
     μlogμ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
     k = length(μlogμ)
     @turbo for i in 1:n, j in 1:k
         cs = samples[(i - 1) * k + j]
@@ -388,11 +409,8 @@ end
 
 ## Matrixvariate
 
-function sample_list_mean(::Type{ Matrixvariate }, sl::SampleList) 
-    μ = sample_list_zero_element(sl)
-    n = length(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
+function sample_list_mean!(μ, ::Type{ Matrixvariate }, sl::SampleList) 
+    n, samples, weights = get_data(sl)
     k = length(μ)
     @turbo for i in 1:n, j in 1:k
         μ[j] += (weights[i] * samples[(i - 1) * k + j])
@@ -400,28 +418,25 @@ function sample_list_mean(::Type{ Matrixvariate }, sl::SampleList)
     return μ
 end
 
-function sample_list_mean_cov(::Type{ Matrixvariate }, sl::SampleList)
-    n  = length(sl)
-    μ  = mean(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
+function sample_list_covm!(Σ, μ, ::Type{ Matrixvariate }, sl::SampleList)
+    n, samples, weights = get_data(sl)
     k   = length(μ)
     rμ  = reshape(μ, k)
     tmp = similar(rμ)
-    Σ   = zeros(eltype(rμ), length(rμ), length(rμ))
-    s   = n / (n - 1)
-
     @turbo for i in 1:n
         for j in 1:k
             tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
         for h in 1:k, l in 1:k
-            Σ[(h - 1) * k + l] += s * weights[i] * tmp[h] * tmp[l]
+            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
         end
     end
-
-    return μ, Σ
+    s = n / (n - 1)
+    @turbo for i in 1:length(Σ)
+        Σ[i] *= s
+    end
+    return Σ
 end 
 
 function sample_list_mean_var(::Type{ Matrixvariate }, sl::SampleList)
@@ -430,10 +445,8 @@ function sample_list_mean_var(::Type{ Matrixvariate }, sl::SampleList)
 end
 
 function sample_list_logmean(::Type{ Matrixvariate }, sl::SampleList)
-    n = length(sl)
+    n, samples, weights = get_data(sl)
     logμ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
     k = length(logμ)
     @turbo for i in 1:n, j in 1:k
         logμ[j] += (weights[i] * log(samples[(i - 1) * k + j]))
@@ -442,10 +455,8 @@ function sample_list_logmean(::Type{ Matrixvariate }, sl::SampleList)
 end
 
 function sample_list_meanlogmean(::Type{ Matrixvariate }, sl::SampleList)
-    n = length(sl)
+    n, samples, weights = get_data(sl)
     μlogμ = sample_list_zero_element(sl)
-    weights = get_linear_weights(sl)
-    samples = get_linear_samples(sl)
     k = length(μlogμ)
     @turbo for i in 1:n, j in 1:k
         cs = samples[(i - 1) * k + j]

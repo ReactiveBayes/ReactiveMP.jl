@@ -111,25 +111,34 @@ import ReactiveMP: call_logproposal, call_logintegrand
             scalar_weights = rand(rng, N)
             scalar_samplelist = SampleList(scalar_samples, scalar_weights)
 
-            @test mean(scalar_samplelist)    ≈ sum(scalar_weights .* scalar_samples)
-            @test logmean(scalar_samplelist) ≈ sum(scalar_weights .* log.(scalar_samples))
-            @test meanlogmean(scalar_samplelist) ≈ sum(scalar_weights .* scalar_samples .* log.(scalar_samples))
+            # Checking i = 1:2 that cache is not corrupted
+            for i in 1:2
+                @test mean(scalar_samplelist)    ≈ sum(scalar_weights .* scalar_samples)
+                @test logmean(scalar_samplelist) ≈ sum(scalar_weights .* log.(scalar_samples))
+                @test meanlogmean(scalar_samplelist) ≈ sum(scalar_weights .* scalar_samples .* log.(scalar_samples))
+            end
 
             vector_samples = [ rand(rng, 2) for _ in 1:N ]
             vector_weights = rand(rng, N)
             vector_samplelist = SampleList(vector_samples, vector_weights)
 
-            @test mean(vector_samplelist)    ≈ sum(vector_weights .* vector_samples)
-            @test logmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> log.(e), (vector_samples)))
-            @test meanlogmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> e .* log.(e), (vector_samples)))
+            # Checking i = 1:2 that cache is not corrupted
+            for i in 1:2
+                @test mean(vector_samplelist)    ≈ sum(vector_weights .* vector_samples)
+                @test logmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> log.(e), (vector_samples)))
+                @test meanlogmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> e .* log.(e), (vector_samples)))
+            end
 
             matrix_samples = [ rand(rng, 2, 2) for _ in 1:N ]
             matrix_weights = rand(rng, N)
             matrix_samplelist = SampleList(matrix_samples, matrix_weights)
 
-            @test mean(matrix_samplelist) ≈ sum(matrix_weights .* matrix_samples)
-            @test logmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> log.(e), matrix_samples))
-            @test meanlogmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> e .* log.(e), matrix_samples))
+            # Checking i = 1:2 that cache is not corrupted
+            for i in 1:2
+                @test mean(matrix_samplelist) ≈ sum(matrix_weights .* matrix_samples)
+                @test logmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> log.(e), matrix_samples))
+                @test meanlogmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> e .* log.(e), matrix_samples))
+            end
 
         end
 
@@ -158,31 +167,34 @@ import ReactiveMP: call_logproposal, call_logintegrand
         mxv_samples      = [ rand(rng, mxv_distribution) for _ in 1:20_000 ]
         mxv_sample_list  = SampleList(mxv_samples)
 
-        @test isapprox(mean(uni_sample_list), mean(uni_distribution), atol = 0.1)
-        @test isapprox(mean(mv_sample_list), mean(mv_distribution), atol = 0.1)
-        @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
+        # Checking i = 1:2 that cache is not corrupted
+        for i in 1:2
+            @test isapprox(mean(uni_sample_list), mean(uni_distribution), atol = 0.1)
+            @test isapprox(mean(mv_sample_list), mean(mv_distribution), atol = 0.1)
+            @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
 
-        @test isapprox(weightedmean(uni_sample_list2), weightedmean(uni_distribution2), atol = 0.1)
-        @test all(isapprox.(mean_var(uni_sample_list2), mean_var(uni_distribution2), atol = 0.1))
-        @test all(isapprox.(mean_cov(uni_sample_list2), mean_cov(uni_distribution2), atol = 0.1))
-        @test all(isapprox.(mean_precision(uni_sample_list2), mean_precision(uni_distribution2), atol = 0.1))
-        @test all(isapprox.(mean_invcov(uni_sample_list2), mean_invcov(uni_distribution2), atol = 0.1))
-        @test all(isapprox.(weightedmean_cov(uni_sample_list2), weightedmean_cov(uni_distribution2), atol = 0.1))
-        @test all(isapprox.(weightedmean_invcov(uni_sample_list2), weightedmean_invcov(uni_distribution2), atol = 0.1))
-        @test all(isapprox.(weightedmean_precision(uni_sample_list2), weightedmean_precision(uni_distribution2), atol = 0.1))   
+            @test isapprox(weightedmean(uni_sample_list2), weightedmean(uni_distribution2), atol = 0.1)
+            @test all(isapprox.(mean_var(uni_sample_list2), mean_var(uni_distribution2), atol = 0.1))
+            @test all(isapprox.(mean_cov(uni_sample_list2), mean_cov(uni_distribution2), atol = 0.1))
+            @test all(isapprox.(mean_precision(uni_sample_list2), mean_precision(uni_distribution2), atol = 0.1))
+            @test all(isapprox.(mean_invcov(uni_sample_list2), mean_invcov(uni_distribution2), atol = 0.1))
+            @test all(isapprox.(weightedmean_cov(uni_sample_list2), weightedmean_cov(uni_distribution2), atol = 0.1))
+            @test all(isapprox.(weightedmean_invcov(uni_sample_list2), weightedmean_invcov(uni_distribution2), atol = 0.1))
+            @test all(isapprox.(weightedmean_precision(uni_sample_list2), weightedmean_precision(uni_distribution2), atol = 0.1))   
 
-        @test isapprox(var(uni_sample_list), var(uni_distribution), atol = 0.5)
-        @test isapprox(cov(uni_sample_list), var(uni_distribution), atol = 0.5)
-        @test isapprox(var(mv_sample_list), var(mv_distribution), atol = 0.1)
-        @test isapprox(cov(mv_sample_list), cov(mv_distribution), atol = 0.1)
-        @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 0.1)
-        @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 1.0)
+            @test isapprox(var(uni_sample_list), var(uni_distribution), atol = 0.5)
+            @test isapprox(cov(uni_sample_list), var(uni_distribution), atol = 0.5)
+            @test isapprox(var(mv_sample_list), var(mv_distribution), atol = 0.1)
+            @test isapprox(cov(mv_sample_list), cov(mv_distribution), atol = 0.1)
+            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 0.1)
+            @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 1.0)
 
-        @test isapprox(std(uni_sample_list), std(uni_distribution), atol = 0.2)
-        @test isapprox(std(mv_sample_list), cholsqrt(cov(mv_distribution)), atol = 0.2)
+            @test isapprox(std(uni_sample_list), std(uni_distribution), atol = 0.2)
+            @test isapprox(std(mv_sample_list), cholsqrt(cov(mv_distribution)), atol = 0.2)
 
-        @test isapprox(invcov(uni_sample_list), inv(var(uni_distribution)), atol = 0.2)
-        @test isapprox(invcov(mv_sample_list), cholinv(cov(mv_distribution)), atol = 0.2)
+            @test isapprox(invcov(uni_sample_list), inv(var(uni_distribution)), atol = 0.2)
+            @test isapprox(invcov(mv_sample_list), cholinv(cov(mv_distribution)), atol = 0.2)
+        end
 
         # TODO logmean for matrix variate distribution?
 
@@ -204,9 +216,12 @@ import ReactiveMP: call_logproposal, call_logintegrand
         mxv_samples      = [ rand(rng, mxv_distribution) for _ in 1:20_000 ]
         mxv_sample_list  = SampleList(mxv_samples)
 
-        @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
-        @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 3.0)
-        @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 10.0)
+        # Checking i = 1:2 that cache is not corrupted
+        for i in 1:2
+            @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
+            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 3.0)
+            @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 10.0)
+        end
     end
 
     @testset "vague" begin 
