@@ -1,6 +1,6 @@
 export SampleList, SampleListMeta
 
-import Base: show, ndims, length, size, precision
+import Base: show, ndims, length, size, precision, getindex, broadcasted, map
 import Distributions: mean, var, cov, std
 
 using LoopVectorization
@@ -470,4 +470,71 @@ function sample_list_vague(::Type{ Matrixvariate }, dims::Tuple{Int, Int}, nsamp
     preallocated = preallocate_samples(Float64, dims, nsamples)
     rand!(targetdist, preallocated)
     return SampleList(Val(dims), preallocated, OneDivNVector(Float64, nsamples), nothing)
+end
+
+## Array operations, broadcasting and mapping
+
+@inline Base.getindex(sl::SampleList, i::Int) = sample_list_get_index(variate_form(sl), ndims(sl), sl, i)
+
+@inline function sample_list_get_index(::Type{ Univariate }, ndims, sl, i)
+    return get_linear_samples(sl)[i]
+end
+
+@inline function sample_list_get_index(::Type{ Multivariate }, ndims, sl, i)
+    samples = get_linear_samples(sl)
+    left  = (i - 1) * ndims + 1
+    right = left + ndims - 1
+    return view(samples, left:right)
+end
+
+@inline function sample_list_get_index(::Type{ Multivariate }, ndims, sl, i)
+    p = prod(ndims)
+    samples = get_linear_samples(sl)
+    left  = (i - 1) * p + 1
+    right = left + p - 1
+    return reshape(view(samples, left:right), ndims)
+end
+
+Base.map(f::Function, sl::SampleList) = Base.broadcasted(f, sl)
+
+@inline samples_list_inplace_transform(::Type{ Univariate }, f::Function) = @inline (output, input) -> output[] = f(input)
+@inline samples_list_inplace_transform(::Type{ Multivariate }, f::Function) = @inline (output, input) -> copyto!(output, f(input))
+@inline samples_list_inplace_transform(::Type{ Matrixvariate }, f::Function) = @inline (output, input) -> copyto!(output, f(input))
+
+function Base.broadcasted(f::Function, sl::SampleList) 
+    return sample_list_broadcasted_inplace(variate_form(sl), samples_list_inplace_transform(variate_form(sl), f), sl)
+end
+
+function sample_list_broadcasted_inplace(::Type{ Univariate }, f!::Function, sl::SampleList)
+    n, samples, weights = get_data(sl)
+    bsamples = preallocate_samples(eltype(samples), (1, ), n)
+    for i in 1:n
+        f!(view(bsamples, i), samples[i])
+    end
+    return SampleList(Val(()), bsamples, weights)
+end
+
+function sample_list_broadcasted_inplace(::Type{ Multivariate }, f!::Function, sl::SampleList)
+    n, samples, weights = get_data(sl)
+    k = ndims(sl)
+    bsamples = preallocate_samples(eltype(samples), (k, ), n)
+    @views for i in 1:n
+        left  = (i - 1) * k + 1
+        right = left + k - 1
+        f!(bsamples[left:right], samples[left:right])
+    end
+    return SampleList(Val((k, )), bsamples, weights)
+end
+
+function sample_list_broadcasted_inplace(::Type{ Matrixvariate }, f!::Function, sl::SampleList)
+    n, samples, weights = get_data(sl)
+    k = ndims(sl)
+    p = prod(k)
+    bsamples = preallocate_samples(eltype(samples), k, n)
+    @views for i in 1:n
+        left  = (i - 1) * p + 1
+        right = left + p - 1
+        f!(reshape(bsamples[left:right], k), reshape(samples[left:right], k))
+    end
+    return SampleList(Val(k), bsamples, weights)
 end
