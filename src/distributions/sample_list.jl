@@ -212,19 +212,27 @@ vague(::Type{ SampleList }, dim1::Int, dim2::Int; nsamples::Int = DEFAULT_SAMPLE
 # `y` is integrand distribution
 function approximate_prod_with_sample_list(x, y; nsamples = DEFAULT_SAMPLE_LIST_N_SAMPLES, rng = Random.GLOBAL_RNG)
 
-    samples = rand(rng, x, nsamples)
+    xlogpdf, xsample = logpdf_sample_friendly(x)
+    ylogpdf, ysample = logpdf_sample_friendly(y)
 
     T            = promote_type(eltype(x), eltype(y))
-    raw_weights  = similar(samples, T) # un-normalised
-    norm_weights = similar(samples, T) # normalised
+    U            = variate_form(x)
+    xsize        = size(x)
+    preallocated = preallocate_samples(T, xsize, nsamples)
+    samples      = rand!(rng, xsample, reshape(preallocated, (xsize..., nsamples)))
+
+    raw_weights  = Vector{T}(undef, nsamples) # un-normalised
+    norm_weights = Vector{T}(undef, nsamples) # normalised
 
     H_x         = zero(T)
     weights_sum = zero(T)
 
-    @turbo for i in 1:nsamples
+    for i in 1:nsamples
+        # Static indexing from reshaped array
+        sample_i = static_getindex(U, xsize, samples, i)
         # Apply log-pdf functions to the samples
-        log_sample_x = logpdf(x, samples[i])
-        log_sample_y = logpdf(y, samples[i])
+        log_sample_x = logpdf(xlogpdf, sample_i)
+        log_sample_y = logpdf(ylogpdf, sample_i)
 
         raw_weight = exp(log_sample_y)
 
@@ -236,7 +244,7 @@ function approximate_prod_with_sample_list(x, y; nsamples = DEFAULT_SAMPLE_LIST_
     end
 
     # Normalise weights
-    @turbo for i in 1:nsamples
+    for i in 1:nsamples
         norm_weights[i] /= weights_sum
     end
 
@@ -255,8 +263,14 @@ function approximate_prod_with_sample_list(x, y; nsamples = DEFAULT_SAMPLE_LIST_
 
     meta = SampleListMeta(raw_weights, entropy, logproposal, logintegrand)
 
-    return SampleList(samples, norm_weights, meta)
+    return SampleList(Val(xsize), preallocated, norm_weights, meta)
 end
+
+## Lowlevel implementation below...
+
+static_getindex(::Type{ Univariate }, ndims::Tuple{}, samples, i)            = samples[i]
+static_getindex(::Type{ Multivariate }, ndims::Tuple{Int}, samples, i)       = view(samples, :, i)
+static_getindex(::Type{ Matrixvariate }, ndims::Tuple{Int, Int}, samples, i) = view(samples, :, :, i)
 
 ## Preallocation utilities
 

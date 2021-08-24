@@ -132,7 +132,23 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where { L <: Multivariat
     return prod(ProdAnalytical(), wleft, wright)
 end
 
+## Friendly functions
+
+function logpdf_sample_friendly(dist::UnivariateNormalDistributionsFamily)
+    μ, σ = mean_std(dist)
+    friendly = Normal(μ, σ)
+    return (friendly, friendly)
+end
+
+function logpdf_sample_friendly(dist::MultivariateNormalDistributionsFamily)
+    μ, Σ = mean_cov(dist)
+    friendly = MvNormal(μ, Σ)
+    return (friendly, friendly)
+end
+
 # Sample related
+
+## Univariate case
 
 function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}) where T
     μ, σ = mean_std(dist)
@@ -144,6 +160,25 @@ function Random.rand!(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamil
     μ, σ = mean_std(dist)
     @turbo for i in 1:length(container)
         container[i] = μ + σ * container[i] 
+    end
+    container
+end
+
+## Multivariate case
+
+function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}) where T
+    μ, L = mean_std(dist)
+    return μ + L * randn(rng, length(μ))
+end
+
+function Random.rand!(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily, container::AbstractArray)
+    preallocated = similar(container)
+    randn!(rng, reshape(preallocated, length(preallocated)))
+    μ, L = mean_std(dist)
+    # @show L, μ, container[:, 1]
+    @views for i in 1:size(preallocated)[2]
+        copyto!(container[:, i], μ)
+        mul!(container[:, i], L, preallocated[:, i], 1, 1)
     end
     container
 end

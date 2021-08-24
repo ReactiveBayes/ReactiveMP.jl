@@ -73,3 +73,12 @@ promote_variate_type(::Type{ D }, T) where { D <: Distribution } = promote_varia
 function convert_eltype end
 
 convert_eltype(::Type{ D }, ::Type{ E }, distribution::Distribution) where { D <: Distribution, E } = convert(D{E}, distribution)
+
+"""
+    logpdf_sample_friendly(distribution) 
+    
+`logpdf_sample_friendly` function takes as input a `distribution` and returns corresponding optimized two versions 
+for taking `logpdf()` and sampling with `rand!` respectively. By default returns the same distribution, but some distributions 
+may override default behaviour.
+"""
+logpdf_sample_friendly(something) = (something, something)
