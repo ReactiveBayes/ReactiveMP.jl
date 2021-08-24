@@ -101,7 +101,7 @@ include("nodes/dot_product.jl")
 include("nodes/transition.jl")
 include("nodes/autoregressive.jl")
 include("nodes/probit.jl")
-include("nodes/flow.jl")
+include("nodes/flow/flow.jl")
 
 
 # Deterministic nodes
