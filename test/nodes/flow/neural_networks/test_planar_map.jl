@@ -184,19 +184,19 @@ using ReactiveMP
 
     @testset "Jacobian" begin
         
-        # check forward function (univariate)
+        # check jacobian function (univariate)
         f = PlanarMap(1.0, 2.0, -3.0)
         @test jacobian(f, 1.5) == 3.0
         @test jacobian(f, 2.5) == 1.1413016497063289
         @test jacobian.(f, [1.5, 2.5]) == [3.0, 1.1413016497063289]
 
-        # check forward function (multivariate)
+        # check jacobian function (multivariate)
         f = PlanarMap([1.0, 2.0], [3.0, 4.0], 0.0)
         @test jacobian(f, [-4.0, 3.0]) == [4.0 4.0; 6.0 9.0]
         @test jacobian(f, [-2.0, 1.5]) == [4.0 4.0; 6.0 9.0]
         @test jacobian.(f, [[-4.0, 3.0], [-2.0, 1.5]]) == [[4.0 4.0; 6.0 9.0], [4.0 4.0; 6.0 9.0]]
 
-        # check forward! function (multivariate)
+        # check jacobian! function (multivariate)
         f = PlanarMap([1.0, 2.0], [3.0, 4.0], 0.0)
         output = zeros(2,2)
         jacobian!(output, f, [-4.0, 3.0]) 
