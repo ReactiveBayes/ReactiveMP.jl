@@ -1,4 +1,4 @@
-export UnspecifiedFormConstraint
+export SampleListFormConstraint
 
 """
     SampleListFormConstraint
@@ -9,9 +9,9 @@ See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
 struct SampleListFormConstraint <: AbstractFormConstraint end
 
-default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLast()
+default_form_check_strategy(::SampleListFormConstraint) = FormConstraintCheckLast()
 
-is_point_mass_form_constraint(::UnspecifiedFormConstraint) = false
+is_point_mass_form_constraint(::SampleListFormConstraint) = false
 
 constrain_form(::SampleListFormConstraint, something) = something
 
@@ -19,6 +19,6 @@ function constrain_form(constraint::SampleListFormConstraint, something::Message
     product       = getdata(something)
     left          = constrain_form(constraint, getleft(product))
     right         = constrain_form(constraint, getright(product))
-    approximation = approximate_prod_with_sample_list(left, right)
+    approximation = approximate_prod_with_sample_list(right, left) # right, left is intentional
     return Message(approximation, is_clamped(something), is_initial(something))
 end
