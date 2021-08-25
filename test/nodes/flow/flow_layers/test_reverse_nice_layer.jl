@@ -121,25 +121,13 @@ using ReactiveMP
         f = PlanarMap(1.0, 2.0, -3.0)
         layer = ReverseNiceLayer(f)
         @test det_jacobian(layer, [1.5, 6.9]) == 1.0
-        @test det_jacobian(layer, [1.5, 6.9]) == 1.0
+        @test det_jacobian(layer, [2.5, 6.4]) == 1.0
         @test absdet_jacobian(layer, [1.5, 6.9]) == 1.0
-        @test absdet_jacobian(layer, [1.5, 6.9]) == 1.0
+        @test absdet_jacobian(layer, [2.5, 6.4]) == 1.0
         @test logdet_jacobian(layer, [1.5, 6.9]) == 0.0
-        @test logdet_jacobian(layer, [1.5, 6.9]) == 0.0
+        @test logdet_jacobian(layer, [2.5, 6.4]) == 0.0
         @test logabsdet_jacobian(layer, [1.5, 6.9]) == 0.0
-        @test logabsdet_jacobian(layer, [1.5, 6.9]) == 0.0
-
-        # check utility functions jacobian (multivariate)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = ReverseNiceLayer(f)
-        @test detinv_jacobian(layer, [1.5, 6.9]) == 1.0
-        @test detinv_jacobian(layer, [1.5, 6.9]) == 1.0
-        @test absdetinv_jacobian(layer, [1.5, 6.9]) == 1.0
-        @test absdetinv_jacobian(layer, [1.5, 6.9]) == 1.0
-        @test logdetinv_jacobian(layer, [1.5, 6.9]) == 0.0
-        @test logdetinv_jacobian(layer, [1.5, 6.9]) == 0.0
-        @test logabsdetinv_jacobian(layer, [1.5, 6.9]) == 0.0
-        @test logabsdetinv_jacobian(layer, [1.5, 6.9]) == 0.0
+        @test logabsdet_jacobian(layer, [2.5, 6.4]) == 0.0
 
     end
 
