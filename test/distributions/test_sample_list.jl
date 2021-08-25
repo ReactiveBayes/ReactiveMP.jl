@@ -10,6 +10,7 @@ using StaticArrays
 import ReactiveMP: deep_eltype, get_samples, get_weights, sample_list_zero_element
 import ReactiveMP: get_meta, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
 import ReactiveMP: call_logproposal, call_logintegrand
+import ReactiveMP: transform_samples, transform_weights
 
 
 @testset "SampleList" begin
@@ -38,6 +39,9 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test variate_form(scalar_samplelist) === Univariate
 
             scalar_weights    = rand(rng, type, N)
+
+            @test_throws AssertionError SampleList(scalar_samples, scalar_weights)
+            scalar_weights ./= sum(scalar_weights)
             scalar_samplelist = SampleList(scalar_samples, scalar_weights)
 
             @test_throws ErrorException get_samples(scalar_samplelist)
@@ -58,6 +62,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test variate_form(vector_samplelist) === Multivariate
 
             vector_weights    = rand(rng, type, N)
+            @test_throws AssertionError SampleList(vector_samples, vector_weights)
+            vector_weights ./= sum(vector_weights)
             vector_samplelist = SampleList(vector_samples, vector_weights)
 
             @test_throws ErrorException get_samples(vector_samplelist)
@@ -78,6 +84,8 @@ import ReactiveMP: call_logproposal, call_logintegrand
             @test variate_form(matrix_samplelist) === Matrixvariate
 
             matrix_weights    = rand(rng, type, N)
+            @test_throws AssertionError SampleList(matrix_samples, matrix_weights)
+            matrix_weights ./= sum(matrix_weights)
             matrix_samplelist = SampleList(matrix_samples, matrix_weights)
 
             @test_throws ErrorException get_samples(matrix_samplelist)
@@ -111,6 +119,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             scalar_samples = rand(rng, N)
             scalar_weights = rand(rng, N)
+            scalar_weights ./= sum(scalar_weights)
             scalar_samplelist = SampleList(scalar_samples, scalar_weights)
 
             # Checking i = 1:2 that cache is not corrupted
@@ -122,6 +131,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             vector_samples = [ rand(rng, 2) for _ in 1:N ]
             vector_weights = rand(rng, N)
+            vector_weights ./= sum(vector_weights)
             vector_samplelist = SampleList(vector_samples, vector_weights)
 
             # Checking i = 1:2 that cache is not corrupted
@@ -133,6 +143,7 @@ import ReactiveMP: call_logproposal, call_logintegrand
 
             matrix_samples = [ rand(rng, 2, 2) for _ in 1:N ]
             matrix_weights = rand(rng, N)
+            matrix_weights ./= sum(matrix_weights)
             matrix_samplelist = SampleList(matrix_samples, matrix_weights)
 
             # Checking i = 1:2 that cache is not corrupted
@@ -306,6 +317,25 @@ import ReactiveMP: call_logproposal, call_logintegrand
         W = I + 2r2*r2'
         mvx_distribution = Wishart(3, W)
 
+        # Entity to entity
+        f1(e) = e .+ 1
+        f2(e) = exp.(e)
+
+        # Entity to Number
+        f3(e::Number) = e + 1
+        f3(e::AbstractVector) = norm(e .+ 1)
+        f3(e::AbstractMatrix) = det(e .+ 1)
+
+        # Entity to Vector
+        f4(e::Number)         = @SVector [ e, e ]
+        f4(e::AbstractVector) = reverse(e)
+        f4(e::AbstractMatrix) = diag(e)
+
+        # Entity to Matrix
+        f5(e::Number)         = @SMatrix [ e + 1 e; e e + 1 ]
+        f5(e::AbstractVector) = SMatrix{length(e), length(e)}(Diagonal(ones(length(e))))
+        f5(e::AbstractMatrix) = inv(e)
+
         for N in (500, 1000, 5_000)
             for distribution in (uni_distribution, mv_distribution, mvx_distribution)
                 samples = [ rand(rng, distribution) for _ in 1:N ]
@@ -313,15 +343,11 @@ import ReactiveMP: call_logproposal, call_logintegrand
                 samplelist = SampleList(samples, weights)
 
                 @test collect(samplelist) == collect(zip(samples, weights))
-                @test map(i -> samplelist[i], 1:N) == collect(zip(samples, weights))
+                @test map(i -> samplelist[i], 1:N) == collect(zip(samples, weights))                
 
-                f1 = (e) -> e .+ 1
-                f2 = (e) -> exp.(e)
-
-                for f in (f1, f2)
-                    @test collect(map(f, samplelist)) == collect(zip(map(f, samples), weights))
-                    @test collect(f.(samplelist)) == collect(zip(f.(samples), weights))
-                    @test map(i -> (f(samplelist[i][1]), samplelist[i][2]), 1:N) == collect(zip(f.(samples), weights))
+                for f in (f1, f2, f3, f4, f5)
+                    @test all(map(e -> all(e[1] .≈ e[2]), zip(collect(transform_samples(f, samplelist)), collect(zip(map(f, samples), weights)))))
+                    @test all(map(e -> all(e[1] .≈ e[2]), zip(map(i -> (f(samplelist[i][1]), samplelist[i][2]), 1:N), collect(zip(f.(samples), weights)))))
                 end
                 
             end

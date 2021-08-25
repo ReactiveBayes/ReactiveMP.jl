@@ -6,7 +6,7 @@ using Rocket
 import Base: show
 import Base: IteratorSize, HasLength
 import Base: IteratorEltype, HasEltype
-import Base: eltype, length, size
+import Base: eltype, length, size, sum
 import Base: IndexStyle, IndexLinear, getindex
 
 import Rocket: similar_typeof
@@ -104,6 +104,7 @@ end
 Base.IteratorSize(::Type{ <: OneDivNVector })   = Base.HasLength()
 Base.IteratorEltype(::Type{ <: OneDivNVector }) = Base.HasEltype()
 
+Base.sum(::OneDivNVector{ N, T }) where { N, T } = one(T) 
 Base.eltype(::Type{ <: OneDivNVector{N, T} }) where { N, T } = T
 Base.length(::OneDivNVector{N})               where N        = N
 Base.size(::OneDivNVector{N})                 where N        = (N, )
