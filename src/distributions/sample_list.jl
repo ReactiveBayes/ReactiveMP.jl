@@ -208,10 +208,14 @@ vague(::Type{ SampleList }, dims::Tuple{Int, Int}; nsamples::Int = DEFAULT_SAMPL
 vague(::Type{ SampleList }, dim1::Int, dim2::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)  = sample_list_vague(Matrixvariate, (dim1, dim2), nsamples)
 
 ## prod related stuff
+function approximate_prod_with_sample_list(x, y, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+    return approximate_prod_with_sample_list(Random.GLOBAL_RNG, x, y, nsamples)
+end
 
 # `x` is proposal distribution
 # `y` is integrand distribution
-function approximate_prod_with_sample_list(x, y; nsamples = DEFAULT_SAMPLE_LIST_N_SAMPLES, rng = Random.GLOBAL_RNG)
+function approximate_prod_with_sample_list(rng::AbstractRNG, x, y, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+    @assert nsamples >= 1 "Number of samples should be non-positive"
 
     xlogpdf, xsample = logpdf_sample_friendly(x)
     ylogpdf, ysample = logpdf_sample_friendly(y)
