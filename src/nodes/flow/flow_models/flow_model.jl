@@ -175,7 +175,7 @@ jacobian(model::FlowModel, input::Array{T,1}) where { T <: Real } = _jacobian(mo
 Broadcast.broadcasted(::typeof(jacobian), model::FlowModel, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
 
 # inplace jacobian of the Flow model
-function jacobian!(J_new::Array{T1,1}, model::FlowModel, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
+function jacobian!(J_new::Array{T1,2}, model::FlowModel, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
 
     # fetch layers
     layers = getlayers(model)
