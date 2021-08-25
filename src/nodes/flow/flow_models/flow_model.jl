@@ -57,7 +57,7 @@ function _forward(model::FlowModel, input::Array{T1,1}) where { T1 <: Real }
     
 end
 forward(model::FlowModel, input::Array{T,1}) where { T <: Real } = _forward(model, input)
-Broadcast.broadcasted(::typeof(forward), model::FlowModel, input::Array{T,1}) where { T <: Real } = broadcast(_forward, Ref(model), input)
+Broadcast.broadcasted(::typeof(forward), model::FlowModel, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_forward, Ref(model), input)
 
 # inplace forward pass through the Flow model
 function forward!(output::Array{T1,1}, model::FlowModel, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
@@ -109,7 +109,7 @@ function _backward(model::FlowModel, output::Array{T1,1}) where { T1 <: Real }
     
 end
 backward(model::FlowModel, output::Array{T,1}) where { T <: Real } = _backward(model, output)
-Broadcast.broadcasted(::typeof(backward), model::FlowModel, output::Array{T,1}) where { T <: Real } = broadcast(_backward, Ref(model), output)
+Broadcast.broadcasted(::typeof(backward), model::FlowModel, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_backward, Ref(model), output)
 
 # inplace backward pass through the Flow model
 function backward!(input::Array{T1,1}, model::FlowModel, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }
@@ -172,7 +172,7 @@ function _jacobian(model::FlowModel, input::Array{T1,1}) where { T1 <: Real }
 
 end
 jacobian(model::FlowModel, input::Array{T,1}) where { T <: Real } = _jacobian(model, input)
-Broadcast.broadcasted(::typeof(jacobian), model::FlowModel, input::Array{T,1}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
+Broadcast.broadcasted(::typeof(jacobian), model::FlowModel, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
 
 # inplace jacobian of the Flow model
 function jacobian!(J_new::Array{T1,1}, model::FlowModel, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
@@ -247,7 +247,7 @@ function _inv_jacobian(model::FlowModel, output::Array{T1,1}) where { T1 <: Real
     
 end
 inv_jacobian(model::FlowModel, output::Array{T,1}) where { T <: Real } = _inv_jacobian(model, output)
-Broadcast.broadcasted(::typeof(inv_jacobian), model::FlowModel, output::Array{T,1}) where { T <: Real } = broadcast(_inv_jacobian, Ref(model), output)
+Broadcast.broadcasted(::typeof(inv_jacobian), model::FlowModel, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_inv_jacobian, Ref(model), output)
 
 # inplace inverse jacobian of the Flow model
 function inv_jacobian!(J_new::Array{T1,2}, model::FlowModel, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }

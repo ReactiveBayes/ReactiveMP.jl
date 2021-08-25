@@ -71,7 +71,7 @@ function _forward(layer::NiceLayer, input::Array{T,1}) where { T <: Real }
     
 end
 forward(layer::NiceLayer, input::Array{T,1}) where { T <: Real } = _forward(layer, input)
-Broadcast.broadcasted(::typeof(forward), layer::NiceLayer, input::Array{T,1}) where { T <: Real } = broadcast(_forward, Ref(layer), input)
+Broadcast.broadcasted(::typeof(forward), layer::NiceLayer, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_forward, Ref(layer), input)
 
 # inplace forward pass through the NICE layer
 function forward!(output::Array{T1,1}, layer::NiceLayer, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
@@ -106,7 +106,7 @@ function _backward(layer::NiceLayer, output::Array{T,1}) where { T <: Real }
     
 end
 backward(layer::NiceLayer, output::Array{T,1}) where { T <: Real } = _backward(layer, output)
-Broadcast.broadcasted(::typeof(backward), layer::NiceLayer, output::Array{T,1}) where { T <: Real } = broadcast(_backward, Ref(layer), output)
+Broadcast.broadcasted(::typeof(backward), layer::NiceLayer, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_backward, Ref(layer), output)
 
 # inplace backward pass through the NICE layer
 function backward!(input::Array{T1,1}, layer::NiceLayer, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }
@@ -146,7 +146,7 @@ function _jacobian(layer::NiceLayer, input::Array{T1,1}) where { T1 <: Real }
     
 end
 jacobian(layer::NiceLayer, input::Array{T,1}) where { T <: Real } = _jacobian(layer, input)
-Broadcast.broadcasted(::typeof(jacobian), layer::NiceLayer, input::Array{T,1}) where { T <: Real } = broadcast(_forward, Ref(layer), input)
+Broadcast.broadcasted(::typeof(jacobian), layer::NiceLayer, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_forward, Ref(layer), input)
 
 # inverse jacobian of the NICE layer
 function _inv_jacobian(layer::NiceLayer, output::Array{T1,1}) where { T1 <: Real }
@@ -171,7 +171,7 @@ function _inv_jacobian(layer::NiceLayer, output::Array{T1,1}) where { T1 <: Real
 
 end
 inv_jacobian(layer::NiceLayer, output::Array{T,1}) where { T <: Real } = _inv_jacobian(layer, output)
-Broadcast.broadcasted(::typeof(inv_jacobian), layer::NiceLayer, output::Array{T,1}) where { T <: Real } = broadcast(_forward, Ref(layer), output)
+Broadcast.broadcasted(::typeof(inv_jacobian), layer::NiceLayer, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_forward, Ref(layer), output)
 
 # extra utility functions 
 det_jacobian(layer::NiceLayer, input::Array{T,1})           where { T <: Real}   = 1.0

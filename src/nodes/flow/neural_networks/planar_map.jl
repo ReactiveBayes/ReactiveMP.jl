@@ -23,6 +23,7 @@ mutable struct PlanarMap{T1, T2 <: Real} <: AbstractNeuralNetwork
     w       :: T1
     b       :: T2
     function PlanarMap(u::T1, w::T1, b::T2) where { T1, T2 <: Real}
+        @assert length(u) == length(w) "The parameters u and w in the PlanarMap structure should have equal length."
         return new{T1,T2}(u, w, float(b))
     end
 end
@@ -59,7 +60,6 @@ function setw!(f::PlanarMap{T1,T2}, w::T1) where { T1, T2 <: Real}
 end
 
 function setb!(f::PlanarMap{T1,T2}, b::T2) where { T1, T2 <: Real }
-    @assert length(f.b) == length(b) "The dimensionality of the current value of b and its new value do not match."
     f.b = b
 end
 
@@ -91,7 +91,7 @@ function _forward(f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real }
 
 end
 forward(f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real } = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real } = broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::PlanarMap{T1,T2}, input::Array{T1,1}) where { T1, T2 <: Real } = broadcast(_forward, Ref(f), input)
 
 
 # forward pass through the PlanarMap function (univariate input)
@@ -110,7 +110,7 @@ function _forward(f::PlanarMap{T,T}, input::T) where { T <: Real }
 
 end
 forward(f::PlanarMap{T,T}, input::T) where { T <: Real } = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarMap{T,T}, input::T) where { T <: Real } = broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::PlanarMap{T,T}, input::Array{T,1}) where { T <: Real } = broadcast(_forward, Ref(f), input)
 
 # inplace forward pass through the PlanarMap function (multivariate input)
 function forward!(output::T1, f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real }
@@ -146,7 +146,7 @@ function _jacobian(f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real}
 
 end
 jacobian(f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real } = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarMap{T1,T2}, input::Array{T1,1}) where { T1, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
 
 # jacobian of the PlanarMap function (univariate input)
 function _jacobian(f::PlanarMap{T,T}, input::T) where { T <: Real}
@@ -162,7 +162,7 @@ function _jacobian(f::PlanarMap{T,T}, input::T) where { T <: Real}
 
 end
 jacobian(f::PlanarMap{T,T}, input::T) where { T <: Real } = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarMap{T,T}, input::T) where { T <: Real } = broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarMap{T,T}, input::Array{T,1}) where { T <: Real } = broadcast(_jacobian, Ref(f), input)
 
 # inplace jacobian of the PlanarMap function (multivariate input)
 function jacobian!(output::Array{T2,2}, f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real}
@@ -186,7 +186,7 @@ function jacobian!(output::Array{T2,2}, f::PlanarMap{T1,T2}, input::T1) where { 
 
 end
 
-# detminant of the jacobian of the PlanarMap function (multivariate input)
+# determinant of the jacobian of the PlanarMap function (multivariate input)
 det_jacobian(f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real} = det(jacobian(f, input))
 
 # determinant of the jacobian of the PlanarMap function (univariate input)

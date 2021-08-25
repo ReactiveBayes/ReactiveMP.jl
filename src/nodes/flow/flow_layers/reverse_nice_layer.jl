@@ -71,7 +71,7 @@ function _forward(layer::ReverseNiceLayer, input::Array{T,1}) where { T <: Real 
     
 end
 forward(layer::ReverseNiceLayer, input::Array{T,1}) where { T <: Real } = _forward(layer, input)
-Broadcast.broadcasted(::typeof(forward), layer::ReverseNiceLayer, input::Array{T,1}) where { T <: Real } = broadcast(_forward, Ref(layer), input)
+Broadcast.broadcasted(::typeof(forward), layer::ReverseNiceLayer, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_forward, Ref(layer), input)
 
 # inplace forward pass through the reverse NICE layer
 function forward!(output::Array{T1,1}, layer::ReverseNiceLayer, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
@@ -106,7 +106,7 @@ function _backward(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Rea
     
 end
 backward(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = _backward(layer, output)
-Broadcast.broadcasted(::typeof(backward), layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = broadcast(_backward, Ref(layer), output)
+Broadcast.broadcasted(::typeof(backward), layer::ReverseNiceLayer, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_backward, Ref(layer), output)
 
 # inplace backward pass through the reverse, NICE layer
 function backward!(input::Array{T1,1}, layer::ReverseNiceLayer, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }
@@ -146,7 +146,7 @@ function _jacobian(layer::ReverseNiceLayer, input::Array{T1,1}) where { T1 <: Re
     
 end
 jacobian(layer::ReverseNiceLayer, input::Array{T,1}) where { T <: Real } = _jacobian(layer, input)
-Broadcast.broadcasted(::typeof(jacobian), layer::ReverseNiceLayer, input::Array{T,1}) where { T <: Real } = broadcast(_jacobian, Ref(layer), input)
+Broadcast.broadcasted(::typeof(jacobian), layer::ReverseNiceLayer, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_jacobian, Ref(layer), input)
 
 # inverse jacobian of the reverse NICE layer
 function _inv_jacobian(layer::ReverseNiceLayer, output::Array{T1,1}) where { T1 <: Real }
@@ -171,7 +171,7 @@ function _inv_jacobian(layer::ReverseNiceLayer, output::Array{T1,1}) where { T1 
 
 end
 inv_jacobian(layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = _inv_jacobian(layer, output)
-Broadcast.broadcasted(::typeof(inv_jacobian), layer::ReverseNiceLayer, output::Array{T,1}) where { T <: Real } = broadcast(_inv_jacobian, Ref(layer), output)
+Broadcast.broadcasted(::typeof(inv_jacobian), layer::ReverseNiceLayer, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_inv_jacobian, Ref(layer), output)
 
 # extra utility functions 
 det_jacobian(layer::ReverseNiceLayer, input::Array{T,1})            where { T <: Real } = 1
