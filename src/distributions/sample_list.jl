@@ -515,50 +515,53 @@ end
     return (SMatrix{ ndims[1], ndims[2] }(reshape(view(samples, left:right), ndims)), get_linear_weights(sl)[i])
 end
 
-Base.map(f::Function, sl::SampleList) = Base.broadcasted(f, sl)
+## Transformation routines
 
-@inline samples_list_inplace_transform(::Type{ Univariate }, f::Function) = @inline (output, input) -> output[] = f(input)
-@inline samples_list_inplace_transform(::Type{ Multivariate }, f::Function) = @inline (output, input) -> copyto!(output, f(input))
-@inline samples_list_inplace_transform(::Type{ Matrixvariate }, f::Function) = @inline (output, input) -> copyto!(output, f(input))
+transform_samples(f::Function, sl::SampleList) = sample_list_transform_samples(variate_form(sl), f, sl)
 
-function Base.broadcasted(f::Function, sl::SampleList) 
-    return sample_list_broadcasted_inplace(variate_form(sl), samples_list_inplace_transform(variate_form(sl), f), sl)
+@inline input_for_transform(::Type{ Univariate }, samples, size, left, right)    = samples[left]
+@inline input_for_transform(::Type{ Multivariate }, samples, size, left, right)  = SVector{size}(view(samples, left:right))
+@inline input_for_transform(::Type{ Matrixvariate }, samples, size, left, right) = SMatrix{size[1],size[2]}(reshape(view(samples, left:right), size))
+
+function sample_list_transform_samples(::Type{ U }, f::Function, sl::SampleList) where U
+    n, samples, weights = get_data(sl)
+    input_size = ndims(sl)
+    input_len  = prod(input_size)
+
+    # Here we simulate an original implementation of map function from Julia Base
+    # Trick here is to compute the first value so compiler may infer the actual output type
+    # Later on output_size and output_len are compile-time constants (given that `f` is type-stable)
+    first_item  = f(input_for_transform(U, samples, input_size, 1, input_len))
+
+    # After computing first value compiler knows the output type and size of this type
+    output_size = size(first_item)
+    output_len  = prod(output_size)
+
+    bsamples = preallocate_samples(eltype(samples), output_size, n)
+    copyto!(view(bsamples, 1:output_len), first_item)
+
+    # We then compute all values from 2 to n into a preallocated buffer
+    @views for i in 2:n
+        input_left  = (i - 1) * input_len + 1
+        input_right = input_left + input_len - 1
+        output_left = (i - 1) * output_len + 1
+        output_right = output_left + output_len - 1
+        # We use static matrix size to ensure that we do not allocate extra memory on a heap
+        # Instead we try to do all computations on stack as much as possible
+        # If `f` function is "bad" and still allocates matrices this optimisation doesn't really work well
+        copyto!(bsamples[output_left:output_right], f(input_for_transform(U, samples, input_size, input_left, input_right)))
+    end
+
+    # if `f` is type stable and returns StaticArray `output_size` is a compile-time constant
+    return SampleList(Val(output_size), bsamples, weights)
 end
 
-function sample_list_broadcasted_inplace(::Type{ Univariate }, f!::Function, sl::SampleList)
-    n, samples, weights = get_data(sl)
-    bsamples = preallocate_samples(eltype(samples), (1, ), n)
-    for i in 1:n
-        f!(view(bsamples, i), samples[i])
+function transform_weights(f::Function, sl::SampleList{ D, S, W, C, M }) where { D, S, W, C, M }
+    tweights = map((w) -> float(f(w)), get_weights(sl))
+    norm     = sum(tweights)
+    @turbo for i in 1:length(tweights)
+        tweights[i] /= norm
     end
-    return SampleList(Val(()), bsamples, weights)
-end
-
-function sample_list_broadcasted_inplace(::Type{ Multivariate }, f!::Function, sl::SampleList)
-    n, samples, weights = get_data(sl)
-    k = ndims(sl)
-    bsamples = preallocate_samples(eltype(samples), (k, ), n)
-    @views for i in 1:n
-        left  = (i - 1) * k + 1
-        right = left + k - 1
-        output = SizedVector{k}(bsamples[left:right])
-        input  = SVector{k}(samples[left:right])
-        f!(output, input)
-    end
-    return SampleList(Val((k, )), bsamples, weights)
-end
-
-function sample_list_broadcasted_inplace(::Type{ Matrixvariate }, f!::Function, sl::SampleList)
-    n, samples, weights = get_data(sl)
-    k = ndims(sl)
-    p = prod(k)
-    bsamples = preallocate_samples(eltype(samples), k, n)
-    @views for i in 1:n
-        left  = (i - 1) * p + 1
-        right = left + p - 1
-        output = SizedMatrix{k[1],k[2]}(reshape(bsamples[left:right], k))
-        input  = SMatrix{k[1],k[2]}(reshape(samples[left:right], k))
-        f!(output, input)
-    end
-    return SampleList(Val(k), bsamples, weights)
+    # Just in case this uses internal fields sl.samples
+    return SampleList(Val(D), sl.samples, tweights)
 end
