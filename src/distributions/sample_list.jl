@@ -171,12 +171,12 @@ sample_list_zero_element(::Type{ Matrixvariate }, ::Type{T}, sl::SampleList) whe
 
 # Generic mean_cov
 
-mean_cov(sl::SampleList) = sample_list_mean_cov(variate_form(sl), sl)
+mean_cov(sl::SampleList) = sample_list_mean_cov(sl, Val(true))
 mean_var(sl::SampleList) = sample_list_mean_var(variate_form(sl), sl)
 
 ##
 
-Distributions.mean(sl::SampleList)      = sample_list_mean(variate_form(sl), sl)
+Distributions.mean(sl::SampleList)      = sample_list_mean(sl, Val(true))
 Distributions.var(sl::SampleList)       = last(mean_var(sl))
 Distributions.cov(sl::SampleList)       = last(mean_cov(sl))
 Distributions.invcov(sl::SampleList)    = cholinv(cov(sl))
@@ -279,8 +279,23 @@ preallocate_samples(::Type{T}, dims::Tuple, length::Int) where T = Vector{T}(und
 
 ## Cache utilities
 
+sample_list_mean(sl::SampleList, cached)     = sample_list_mean(variate_form(sl), sl, cached)
+sample_list_mean_cov(sl::SampleList, cached) = sample_list_mean_cov(variate_form(sl), sl, cached)
+
+# Cache ignoring versions
+function sample_list_mean(::Type{ U }, sl::SampleList, ::Val{ false }) where U
+    return sample_list_mean!(fill!(similar(get_mean_storage(get_cache(sl))), zero(deep_eltype(sl))), U, sl)
+end
+
+function sample_list_mean_cov(::Type{ U }, sl::SampleList, ::Val{ false }) where U 
+    mean = sample_list_mean(U, sl, Val(false))
+    cov = fill!(similar(get_cov_storage(get_cache(sl))), zero(deep_eltype(sl)))
+    sample_list_covm!(cov, mean, U, sl)
+    return mean, cov
+end
+
 # By default we try to save mean in an internal cache
-function sample_list_mean(::Type{ U }, sl::SampleList) where U
+function sample_list_mean(::Type{ U }, sl::SampleList, ::Val{ true }) where U
     cache = get_cache(sl)
     mean  = get_mean_storage(cache)
     # If no cache present, compute and save
@@ -291,9 +306,9 @@ function sample_list_mean(::Type{ U }, sl::SampleList) where U
 end
 
 # By default we try to save cov in an internal cache
-function sample_list_mean_cov(::Type{ U }, sl::SampleList) where U
+function sample_list_mean_cov(::Type{ U }, sl::SampleList, ::Val{ true }) where U
     cache = get_cache(sl)
-    mean  = sample_list_mean(U, sl)
+    mean  = sample_list_mean(U, sl, Val(true))
     cov   = get_cov_storage(cache)
     # If no cache present, compute and save
     if !is_cov_cached(cache)
@@ -339,7 +354,7 @@ function sample_list_covm!(σ², μ, ::Type{ Univariate }, sl::SampleList)
 end 
 
 function sample_list_mean_var(::Type{ Univariate }, sl::SampleList)
-    return sample_list_mean_cov(Univariate, sl)
+    return sample_list_mean_cov(Univariate, sl, Val(true))
 end 
 
 function sample_list_logmean(::Type{ Univariate }, sl::SampleList)
@@ -410,7 +425,7 @@ function sample_list_covm!(Σ, μ, ::Type{ Multivariate }, sl::SampleList)
 end 
 
 function sample_list_mean_var(::Type{ Multivariate }, sl::SampleList)
-    μ, Σ = sample_list_mean_cov(Multivariate, sl)
+    μ, Σ = sample_list_mean_cov(Multivariate, sl, Val(true))
     return μ, diag(Σ)
 end 
 
@@ -475,7 +490,7 @@ function sample_list_covm!(Σ, μ, ::Type{ Matrixvariate }, sl::SampleList)
 end 
 
 function sample_list_mean_var(::Type{ Matrixvariate }, sl::SampleList)
-    μ, Σ = sample_list_mean_cov(Matrixvariate, sl)
+    μ, Σ = sample_list_mean_cov(Matrixvariate, sl, Val(true))
     return μ, reshape(diag(Σ), size(μ))
 end
 
