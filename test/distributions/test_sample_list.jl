@@ -10,7 +10,7 @@ using StaticArrays
 import ReactiveMP: deep_eltype, get_samples, get_weights, sample_list_zero_element
 import ReactiveMP: get_meta, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
 import ReactiveMP: call_logproposal, call_logintegrand
-import ReactiveMP: transform_samples, transform_weights
+import ReactiveMP: transform_samples, transform_weights!
 
 
 @testset "SampleList" begin
@@ -349,6 +349,18 @@ import ReactiveMP: transform_samples, transform_weights
                     @test all(map(e -> all(e[1] .≈ e[2]), zip(collect(transform_samples(f, samplelist)), collect(zip(map(f, samples), weights)))))
                     @test all(map(e -> all(e[1] .≈ e[2]), zip(map(i -> (f(samplelist[i][1]), samplelist[i][2]), 1:N), collect(zip(f.(samples), weights)))))
                 end
+
+                iter = N:-1:1
+                index = 0
+
+                old_weights = copy(weights)
+                
+                transform_weights!(w -> w * iter[ index += 1 ], samplelist)
+
+                newweights = map(prod, zip(old_weights, iter))
+                newweights ./= sum(newweights)
+
+                @test get_weights(samplelist) ≈ newweights
                 
             end
         end

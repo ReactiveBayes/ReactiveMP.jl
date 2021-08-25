@@ -269,9 +269,9 @@ end
 
 ## Lowlevel implementation below...
 
-static_getindex(::Type{ Univariate }, ndims::Tuple{}, samples, i)            = samples[i]
-static_getindex(::Type{ Multivariate }, ndims::Tuple{Int}, samples, i)       = view(samples, :, i)
-static_getindex(::Type{ Matrixvariate }, ndims::Tuple{Int, Int}, samples, i) = view(samples, :, :, i)
+@inline static_getindex(::Type{ Univariate }, ndims::Tuple{}, samples, i)            = samples[i]
+@inline static_getindex(::Type{ Multivariate }, ndims::Tuple{Int}, samples, i)       = view(samples, :, i)
+@inline static_getindex(::Type{ Matrixvariate }, ndims::Tuple{Int, Int}, samples, i) = view(samples, :, :, i)
 
 ## Preallocation utilities
 
@@ -279,19 +279,23 @@ preallocate_samples(::Type{T}, dims::Tuple, length::Int) where T = Vector{T}(und
 
 ## Cache utilities
 
+# By default we try to save mean in an internal cache
 function sample_list_mean(::Type{ U }, sl::SampleList) where U
     cache = get_cache(sl)
     mean  = get_mean_storage(cache)
+    # If no cache present, compute and save
     if !is_mean_cached(cache)
         mean = cache_mean!(cache, sample_list_mean!(mean, U, sl))
     end
     return mean
 end
 
+# By default we try to save cov in an internal cache
 function sample_list_mean_cov(::Type{ U }, sl::SampleList) where U
     cache = get_cache(sl)
     mean  = sample_list_mean(U, sl)
     cov   = get_cov_storage(cache)
+    # If no cache present, compute and save
     if !is_cov_cached(cache)
         cov = cache_cov!(cache, sample_list_covm!(cov, mean, U, sl))
     end
@@ -299,6 +303,21 @@ function sample_list_mean_cov(::Type{ U }, sl::SampleList) where U
 end
 
 ## Specific implementations
+
+# Compute mean in a preallocated container and return it
+function sample_list_mean! end
+# Compute covariance with known mean in a preallocated container and return it
+function sample_list_covm! end
+# Compute mean and variance 
+function sample_list_mean_var end
+# Compute E[log(x)]
+function sample_list_logmean end
+# Compute E[xlog(x)]
+function sample_list_meanlogmean end
+# Compute E[log(1 - x)]
+function sample_list_mirroredlogmean end
+# Return vague weak-informative sample list
+function sample_list_vague end
 
 ## Univariate
 
@@ -538,8 +557,8 @@ function sample_list_transform_samples(::Type{ U }, f::Function, sl::SampleList)
     output_size = size(first_item)
     output_len  = prod(output_size)
 
-    bsamples = preallocate_samples(eltype(samples), output_size, n)
-    copyto!(view(bsamples, 1:output_len), first_item)
+    preallocated = preallocate_samples(promote_type(eltype(first_item), eltype(samples)), output_size, n)
+    copyto!(view(preallocated, 1:output_len), first_item)
 
     # We then compute all values from 2 to n into a preallocated buffer
     @views for i in 2:n
@@ -550,19 +569,19 @@ function sample_list_transform_samples(::Type{ U }, f::Function, sl::SampleList)
         # We use static matrix size to ensure that we do not allocate extra memory on a heap
         # Instead we try to do all computations on stack as much as possible
         # If `f` function is "bad" and still allocates matrices this optimisation doesn't really work well
-        copyto!(bsamples[output_left:output_right], f(input_for_transform(U, samples, input_size, input_left, input_right)))
+        copyto!(preallocated[output_left:output_right], f(input_for_transform(U, samples, input_size, input_left, input_right)))
     end
 
     # if `f` is type stable and returns StaticArray `output_size` is a compile-time constant
-    return SampleList(Val(output_size), bsamples, weights)
+    return SampleList(Val(output_size), preallocated, weights)
 end
 
-function transform_weights(f::Function, sl::SampleList{ D, S, W, C, M }) where { D, S, W, C, M }
-    tweights = map((w) -> float(f(w)), get_weights(sl))
-    norm     = sum(tweights)
-    @turbo for i in 1:length(tweights)
-        tweights[i] /= norm
+function transform_weights!(f::Function, sl::SampleList)
+    n, _, weights = get_data(sl)
+    map!(f, weights, weights)
+    norm = sum(weights)
+    @turbo for i in 1:n
+        weights[i] /= norm
     end
-    # Just in case this uses internal fields sl.samples
-    return SampleList(Val(D), sl.samples, tweights)
+    return sl
 end
