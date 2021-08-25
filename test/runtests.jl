@@ -52,10 +52,10 @@ using .ReactiveMPTestingHelpers
     addtests("nodes/flow/test_flow.jl")
     addtests("nodes/test_addition.jl")
     addtests("nodes/test_probit.jl")
-
+    
+    addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")
     addtests("rules/flow/test_out.jl")
-    addtests("rules/flow/test_marginals.jl")
 
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
