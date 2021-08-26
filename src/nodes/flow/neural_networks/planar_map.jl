@@ -95,7 +95,7 @@ Broadcast.broadcasted(::typeof(forward), f::PlanarMap{T1,T2}, input::Array{T1,1}
 
 
 # forward pass through the PlanarMap function (univariate input)
-function _forward(f::PlanarMap{T,T}, input::T) where { T <: Real }
+function _forward(f::PlanarMap{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real }
 
     # fetch values
     u, w, b = getall(f)
@@ -109,8 +109,8 @@ function _forward(f::PlanarMap{T,T}, input::T) where { T <: Real }
     return result
 
 end
-forward(f::PlanarMap{T,T}, input::T) where { T <: Real } = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarMap{T,T}, input::Array{T,1}) where { T <: Real } = broadcast(_forward, Ref(f), input)
+forward(f::PlanarMap{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } = _forward(f, input)
+Broadcast.broadcasted(::typeof(forward), f::PlanarMap{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 <: Real } = broadcast(_forward, Ref(f), input)
 
 # inplace forward pass through the PlanarMap function (multivariate input)
 function forward!(output::T1, f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real }
@@ -149,7 +149,7 @@ jacobian(f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real } = _jacobian(f,
 Broadcast.broadcasted(::typeof(jacobian), f::PlanarMap{T1,T2}, input::Array{T1,1}) where { T1, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
 
 # jacobian of the PlanarMap function (univariate input)
-function _jacobian(f::PlanarMap{T,T}, input::T) where { T <: Real}
+function _jacobian(f::PlanarMap{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } 
 
     # fetch values 
     u, w, b = getall(f)
@@ -161,8 +161,8 @@ function _jacobian(f::PlanarMap{T,T}, input::T) where { T <: Real}
     return result
 
 end
-jacobian(f::PlanarMap{T,T}, input::T) where { T <: Real } = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarMap{T,T}, input::Array{T,1}) where { T <: Real } = broadcast(_jacobian, Ref(f), input)
+jacobian(f::PlanarMap{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } = _jacobian(f, input)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarMap{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 <: Real } = broadcast(_jacobian, Ref(f), input)
 
 # inplace jacobian of the PlanarMap function (multivariate input)
 function jacobian!(output::Array{T2,2}, f::PlanarMap{T1,T2}, input::T1) where { T1, T2 <: Real}
