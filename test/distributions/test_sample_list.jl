@@ -32,7 +32,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             scalar_samples    = rand(rng, type, N)
             scalar_samplelist = SampleList(scalar_samples)
 
-            @test_throws ErrorException get_samples(scalar_samplelist)
+            @test collect(get_samples(scalar_samplelist)) == first.(collect(scalar_samplelist))
             @test collect(get_weights(scalar_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(scalar_samplelist)              === type
             @test eltype(scalar_samplelist)                   === Tuple{type, type}
@@ -46,7 +46,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             scalar_weights ./= sum(scalar_weights)
             scalar_samplelist = SampleList(scalar_samples, scalar_weights)
 
-            @test_throws ErrorException get_samples(scalar_samplelist)
+            @test collect(get_samples(scalar_samplelist)) == first.(collect(scalar_samplelist))
             @test collect(get_weights(scalar_samplelist)) == scalar_weights
             @test deep_eltype(scalar_samplelist)              === type
             @test eltype(scalar_samplelist)                   === Tuple{type, type}
@@ -57,7 +57,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             vector_samples    = [ rand(rng, type, 2) for _ in 1:N ]
             vector_samplelist = SampleList(vector_samples)
 
-            @test_throws ErrorException get_samples(vector_samplelist)
+            @test collect(get_samples(vector_samplelist)) == first.(collect(vector_samplelist))
             @test collect(get_weights(vector_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(vector_samplelist)              === type
             @test eltype(vector_samplelist)                   === Tuple{ SVector{ 2, type }, type }
@@ -70,7 +70,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             vector_weights ./= sum(vector_weights)
             vector_samplelist = SampleList(vector_samples, vector_weights)
 
-            @test_throws ErrorException get_samples(vector_samplelist)
+            @test collect(get_samples(vector_samplelist)) == first.(collect(vector_samplelist))
             @test collect(get_weights(vector_samplelist)) == vector_weights
             @test deep_eltype(vector_samplelist)              === type
             @test eltype(vector_samplelist)                   === Tuple{ SVector{ 2, type }, type }
@@ -81,7 +81,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             matrix_samples    = [ rand(rng, type, 2, 2) for _ in 1:N ]
             matrix_samplelist = SampleList(matrix_samples)
 
-            @test_throws ErrorException get_samples(matrix_samplelist)
+            @test collect(get_samples(matrix_samplelist)) == first.(collect(matrix_samplelist))
             @test collect(get_weights(matrix_samplelist)) == fill(one(type) / N, N)
             @test deep_eltype(matrix_samplelist)              === type
             @test eltype(matrix_samplelist)                   === Tuple{ SMatrix{ 2, 2, type, 4 }, type }
@@ -94,7 +94,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             matrix_weights ./= sum(matrix_weights)
             matrix_samplelist = SampleList(matrix_samples, matrix_weights)
 
-            @test_throws ErrorException get_samples(matrix_samplelist)
+            @test collect(get_samples(matrix_samplelist)) == first.(collect(matrix_samplelist))
             @test collect(get_weights(matrix_samplelist)) == matrix_weights
             @test deep_eltype(matrix_samplelist)              === type
             @test eltype(matrix_samplelist)                   === Tuple{ SMatrix{ 2, 2, type, 4 }, type }
@@ -105,15 +105,15 @@ import ReactiveMP: approximate_prod_with_sample_list
 
         @test_throws AssertionError SampleList(rand(10), rand(5))
         @test_throws AssertionError SampleList(rand(5), rand(10))
-        @test_throws AssertionError SampleList(rand(5), [ nothing for _ in 1:5 ])
+        @test_throws AssertionError SampleList(rand(5), [ -1 for _ in 1:5 ])
 
         @test_throws AssertionError SampleList([ rand(10) for _ in 1:10 ], rand(5))
         @test_throws AssertionError SampleList([ rand(5) for _ in 1:5 ], rand(10))
-        @test_throws AssertionError SampleList([ rand(5) for _ in 1:5 ], [ nothing for _ in 1:5 ])
+        @test_throws AssertionError SampleList([ rand(5) for _ in 1:5 ], [ -1 for _ in 1:5 ])
 
         @test_throws AssertionError SampleList([ rand(10, 10) for _ in 1:10 ], rand(5))
         @test_throws AssertionError SampleList([ rand(5, 5) for _ in 1:5 ], rand(10))
-        @test_throws AssertionError SampleList([ rand(5, 5) for _ in 1:5 ], [ nothing for _ in 1:5 ])
+        @test_throws AssertionError SampleList([ rand(5, 5) for _ in 1:5 ], [ -1 for _ in 1:5 ])
 
     end
 
@@ -384,12 +384,11 @@ import ReactiveMP: approximate_prod_with_sample_list
         sizes  = [ 2_500, 5_000, 10_000 ]
         inputs = [
             (x = NormalMeanPrecision(3.0, 7.0), y = NormalMeanVariance(-4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
-            (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(-4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
+            (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
             (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 3e-1, 3e-1, 3e-1 ]),
-            (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [ 5e-1, 5e-1, 5e-1 ], cov_tol = [ 5e1, 5e1, 5e1 ], entropy_tol = [ 4e-1, 4e-1, 4e-1 ]),
+            (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [ 6e-1, 6e-1, 6e-1 ], cov_tol = [ 5e1, 5e1, 5e1 ], entropy_tol = [ 4e-1, 4e-1, 4e-1 ]),
             (x = Wishart(10.0, posdefm(rng, 3)), y = Wishart(5.0, posdefm(rng, 3)), mean_tol = [ 7e-1, 7e-1, 7e-1 ], cov_tol = [ 3e2, 3e2, 3e2 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
         ]
-
         
         for (i, N) in enumerate(sizes)
             for input in inputs
@@ -405,6 +404,27 @@ import ReactiveMP: approximate_prod_with_sample_list
                 @test norm(μᵣ .- μₐ) < input[:mean_tol][i]
                 @test norm(Σᵣ .- Σₐ) < input[:cov_tol][i]
                 @test abs(entropy(analytical) - entropy(approximation)) < input[:entropy_tol][i]
+
+                # Second order approximation here
+                if (variate_form(input[:x]) === Univariate)
+
+                    analytical2 = prod(ProdAnalytical(), analytical, input[:x])
+                    approximation2 = approximate_prod_with_sample_list(rng, input[:x], approximation, N)
+
+                    @test is_meta_present(approximation2) === true
+                    @test length(approximation2) === N
+
+                    μᵣ, Σᵣ = mean_cov(analytical2)
+                    μₐ, Σₐ = mean_cov(approximation2)
+
+                    if !(abs(entropy(analytical2) - entropy(approximation2)) < input[:entropy_tol][i])
+                        @show analytical2
+                    end
+                    
+                    @test norm(μᵣ .- μₐ) < input[:mean_tol][i]
+                    @test norm(Σᵣ .- Σₐ) < input[:cov_tol][i]
+                    @test abs(entropy(analytical2) - entropy(approximation2)) < input[:entropy_tol][i]
+                end
             end
         end
 
