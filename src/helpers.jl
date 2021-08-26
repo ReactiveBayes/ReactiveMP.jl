@@ -75,7 +75,7 @@ julia> collect(iter)
  0.3333333333333333
  0.3333333333333333
 
-julia> iter = OneDivNVector(Float32, 3)
+julia> iter = ReactiveMP.OneDivNVector(Float32, 3)
 OneDivNVector(Float32, 3)
 
 julia> collect(iter)

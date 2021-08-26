@@ -77,8 +77,32 @@ convert_eltype(::Type{ D }, ::Type{ E }, distribution::Distribution) where { D <
 """
     logpdf_sample_friendly(distribution) 
     
-`logpdf_sample_friendly` function takes as input a `distribution` and returns corresponding optimized two versions 
+`logpdf_sample_friendly` function takes as an input a `distribution` and returns corresponding optimized two versions 
 for taking `logpdf()` and sampling with `rand!` respectively. By default returns the same distribution, but some distributions 
-may override default behaviour.
+may override default behaviour for better efficiency.
+
+# Example
+
+```jldoctest
+julia> d = vague(MvNormalMeanPrecision, 2)
+MvNormalMeanPrecision(
+μ: [0.0, 0.0]
+Λ: [1.0e-12 0.0; 0.0 1.0e-12]
+)
+
+
+julia> ReactiveMP.logpdf_sample_friendly(d)
+(FullNormal(
+dim: 2
+μ: [0.0, 0.0]
+Σ: [1.0e12 -0.0; -0.0 1.0e12]
+)
+, FullNormal(
+dim: 2
+μ: [0.0, 0.0]
+Σ: [1.0e12 -0.0; -0.0 1.0e12]
+)
+)
+```
 """
 logpdf_sample_friendly(something) = (something, something)

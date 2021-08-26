@@ -39,7 +39,8 @@ promote_variate_type(::Type{ Multivariate }, ::Type{ <: NormalWeightedMeanPrecis
 # Conversion to mean - variance parametrisation
 
 function Base.convert(::Type{ NormalMeanVariance{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real }
-    return NormalMeanVariance(convert(T, mean(dist)), convert(T, var(dist)))
+    mean, var = mean_var(dist)
+    return NormalMeanVariance(convert(T, mean), convert(T, var))
 end
 
 function Base.convert(::Type{ MvNormalMeanCovariance{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real }
@@ -51,7 +52,8 @@ function Base.convert(::Type{ MvNormalMeanCovariance{T, M} }, dist::Multivariate
 end
 
 function Base.convert(::Type{ MvNormalMeanCovariance{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} }
-    return MvNormalMeanCovariance(convert(M, mean(dist)), convert(P, cov(dist)))
+    mean, cov = mean_cov(dist)
+    return MvNormalMeanCovariance(convert(M, mean), convert(P, cov))
 end
 
 function Base.convert(::Type{ NormalMeanVariance }, dist::UnivariateNormalDistributionsFamily{T}) where { T <: Real }
@@ -65,7 +67,8 @@ end
 # Conversion to mean - precision parametrisation
 
 function Base.convert(::Type{ NormalMeanPrecision{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real }
-    return NormalMeanPrecision(convert(T, mean(dist)), convert(T, precision(dist)))
+    mean, precision = mean_precision(dist)
+    return NormalMeanPrecision(convert(T, mean), convert(T, precision))
 end
 
 function Base.convert(::Type{ MvNormalMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real }
@@ -77,7 +80,8 @@ function Base.convert(::Type{ MvNormalMeanPrecision{T, M} }, dist::MultivariateN
 end
 
 function Base.convert(::Type{ MvNormalMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} }
-    return MvNormalMeanPrecision(convert(M, mean(dist)), convert(P, precision(dist)))
+    mean, precision = mean_precision(dist)
+    return MvNormalMeanPrecision(convert(M, mean), convert(P, precision))
 end
 
 function Base.convert(::Type{ NormalMeanPrecision }, dist::UnivariateNormalDistributionsFamily{T}) where { T <: Real }
@@ -91,7 +95,8 @@ end
 # Conversion to weighted mean - precision parametrisation
 
 function Base.convert(::Type{ NormalWeightedMeanPrecision{T} }, dist::UnivariateNormalDistributionsFamily) where { T <: Real }
-    return NormalWeightedMeanPrecision(convert(T, weightedmean(dist)), convert(T, precision(dist)))
+    weightedmean, precision = weightedmean_precision(dist)
+    return NormalWeightedMeanPrecision(convert(T, weightedmean), convert(T, precision))
 end
 
 function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real }
@@ -103,7 +108,8 @@ function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M} }, dist::Multi
 end
 
 function Base.convert(::Type{ MvNormalWeightedMeanPrecision{T, M, P} }, dist::MultivariateNormalDistributionsFamily) where { T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T} }
-    return MvNormalWeightedMeanPrecision(convert(M, weightedmean(dist)), convert(P, precision(dist)))
+    weightedmean, precision = weightedmean_precision(dist)
+    return MvNormalWeightedMeanPrecision(convert(M, weightedmean), convert(P, precision))
 end
 
 function Base.convert(::Type{ NormalWeightedMeanPrecision }, dist::UnivariateNormalDistributionsFamily{T}) where { T <: Real }
@@ -133,6 +139,9 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where { L <: Multivariat
 end
 
 ## Friendly functions
+
+logpdf_sample_friendly(dist::Normal)   = (dist, dist)
+logpdf_sample_friendly(dist::MvNormal) = (dist, dist)
 
 function logpdf_sample_friendly(dist::UnivariateNormalDistributionsFamily)
     μ, σ = mean_std(dist)
@@ -175,7 +184,6 @@ function Random.rand!(rng::AbstractRNG, dist::MultivariateNormalDistributionsFam
     preallocated = similar(container)
     randn!(rng, reshape(preallocated, length(preallocated)))
     μ, L = mean_std(dist)
-    # @show L, μ, container[:, 1]
     @views for i in 1:size(preallocated)[2]
         copyto!(container[:, i], μ)
         mul!(container[:, i], L, preallocated[:, i], 1, 1)
