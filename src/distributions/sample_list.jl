@@ -98,26 +98,6 @@ sample_list_eltype(::Type{ SampleList }, ndims::Tuple{Int, Int}, ::Type{S}) wher
 
 deep_eltype(::Type{ <: SampleList{ D, S } }) where { D, S } = eltype(S)
 
-## Linearization functions
-
-# Here we cast an array of arrays into a single flat array of floats for better performance
-# There is a package for this called ArraysOfArrays.jl, but the performance of handwritten version is way better
-# We provide custom optimized mean/cov function for our implementation with LoopVectorization.jl package
-function sample_list_linearize end
-
-function sample_list_linearize(samples::AbstractVector{T}, nsamples, size) where { T <: Number } 
-    return samples
-end
-
-function sample_list_linearize(samples::AbstractVector, nsamples, size) 
-    T = deep_eltype(samples)
-    alloc = Vector{T}(undef, nsamples * size)
-    for i in 1:nsamples
-        copyto!(alloc, (i - 1) * size + 1, samples[i], 1, size)
-    end
-    return alloc
-end
-
 ## Variate forms
 
 variate_form(::SampleList{ D }) where { D } = sample_list_variate_form(D)
@@ -200,6 +180,12 @@ logmean(sl::SampleList)         = sample_list_logmean(variate_form(sl), sl)
 meanlogmean(sl::SampleList)     = sample_list_meanlogmean(variate_form(sl), sl)
 mirroredlogmean(sl::SampleList) = sample_list_mirroredlogmean(variate_form(sl), sl)
 
+##
+
+# Differential entropy for SampleList
+# Entropy is pre-computed during computation of the marginal in `approximate_prod_with_sample_list` function
+Distributions.entropy(sl::SampleList) = get_entropy(get_meta(sl))
+
 ## 
 
 vague(::Type{ SampleList }; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)                        = sample_list_vague(Univariate, nsamples)
@@ -271,6 +257,12 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, x, y, nsamples::Int
     return SampleList(Val(xsize), preallocated, norm_weights, meta)
 end
 
+############################################################################################
+## Everything below this comment is a low-level implementation of SampleList 
+## It consists of various routines to compute statistics from internal list implementation
+## Here we also implement iteration utilities
+## ##########################################################################################
+
 ## Lowlevel implementation below...
 
 @inline static_getindex(::Type{ Univariate }, ndims::Tuple{}, samples, i)            = samples[i]
@@ -280,6 +272,26 @@ end
 ## Preallocation utilities
 
 preallocate_samples(::Type{T}, dims::Tuple, length::Int) where T = Vector{T}(undef, length * prod(dims))
+
+## Linearization functions
+
+# Here we cast an array of arrays into a single flat array of floats for better performance
+# There is a package for this called ArraysOfArrays.jl, but the performance of handwritten version is way better
+# We provide custom optimized mean/cov function for our implementation with LoopVectorization.jl package
+function sample_list_linearize end
+
+function sample_list_linearize(samples::AbstractVector{T}, nsamples, size) where { T <: Number } 
+    return samples
+end
+
+function sample_list_linearize(samples::AbstractVector, nsamples, size) 
+    T = deep_eltype(samples)
+    alloc = Vector{T}(undef, nsamples * size)
+    for i in 1:nsamples
+        copyto!(alloc, (i - 1) * size + 1, samples[i], 1, size)
+    end
+    return alloc
+end
 
 ## Cache utilities
 

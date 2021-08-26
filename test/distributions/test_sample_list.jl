@@ -11,6 +11,7 @@ import ReactiveMP: deep_eltype, get_samples, get_weights, sample_list_zero_eleme
 import ReactiveMP: get_meta, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
 import ReactiveMP: call_logproposal, call_logintegrand
 import ReactiveMP: transform_samples, transform_weights!
+import ReactiveMP: approximate_prod_with_sample_list
 
 
 @testset "SampleList" begin
@@ -362,6 +363,40 @@ import ReactiveMP: transform_samples, transform_weights!
 
                 @test get_weights(samplelist) ≈ newweights
                 
+            end
+        end
+
+    end
+
+    @testset "prod approximations" begin
+
+        rng = MersenneTwister(1234)
+
+        posdefm(rng, s) = begin r = rand(rng, s); I + 2r*r' end
+
+        sizes  = [ 2_500, 5_000, 10_000 ]
+        inputs = [
+            (x = NormalMeanPrecision(3.0, 7.0), y = NormalMeanVariance(-4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
+            (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(-4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
+            (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 3e-1, 3e-1, 3e-1 ]),
+            (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [ 5e-1, 5e-1, 5e-1 ], cov_tol = [ 5e1, 5e1, 5e1 ], entropy_tol = [ 4e-1, 4e-1, 4e-1 ]),
+            (x = Wishart(10.0, posdefm(rng, 3)), y = Wishart(5.0, posdefm(rng, 3)), mean_tol = [ 7e-1, 7e-1, 7e-1 ], cov_tol = [ 3e2, 3e2, 3e2 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
+        ]
+
+        
+        for (i, N) in enumerate(sizes)
+            for input in inputs
+                analytical = prod(ProdAnalytical(), input[:x], input[:y])
+                approximation = approximate_prod_with_sample_list(rng, input[:x], input[:y], N)
+
+                @test length(approximation) === N
+
+                μᵣ, Σᵣ = mean_cov(analytical)
+                μₐ, Σₐ = mean_cov(approximation)
+
+                @test norm(μᵣ .- μₐ) < input[:mean_tol][i]
+                @test norm(Σᵣ .- Σₐ) < input[:cov_tol][i]
+                @test abs(entropy(analytical) - entropy(approximation)) < input[:entropy_tol][i]
             end
         end
 
