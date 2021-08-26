@@ -327,8 +327,12 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, x::Any, y::SampleLi
         rweights[i] /= rweights_prod_sum
     end
     
+    
+    # Effective number of particles (Base.Generator is allocation free version of map)
+    # neff = sum(rweights .^ 2)
+    neff = 1 / mapreduce(abs2, +, rweights) 
+
     # Resample and readjust entropy approximation if required
-    neff = 1 / sum(Base.Generator(abs2, rweights)) # Effective number of particles (Base.Generator is allocation free version of map)
     if neff < nsamples / 10
         sample!(rng, samples, Weights(weights), rsamples)
         fillv = one(eltype(rweights)) / nsamples
