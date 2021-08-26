@@ -17,8 +17,26 @@ import ReactiveMP: deep_eltype
             @test length(iter) === len
             @test size(iter)   === (len, )
             @test collect(iter) == fill(one(type) / len, len)
+            @test vec(iter)     == fill(one(type) / len, len)
             @test sizeof(iter) === 0
 
+            sim = similar(iter)
+
+            @test sim === iter
+            @test eltype(sim) === type
+            @test length(sim) === len
+            @test size(sim)   === (len, )
+            @test collect(sim) == fill(one(type) / len, len)
+            @test vec(sim)     == fill(one(type) / len, len)
+            @test sizeof(sim) === 0
+
+            sim = similar(iter, Float16)
+            @test eltype(sim) === Float16
+            @test length(sim) === len
+            @test size(sim)   === (len, )
+            @test collect(sim) == fill(one(Float16) / len, len)
+            @test vec(sim)     == fill(one(Float16) / len, len)
+            @test sizeof(sim) === 0
         end
 
         @test eltype(OneDivNVector(3)) === Float64

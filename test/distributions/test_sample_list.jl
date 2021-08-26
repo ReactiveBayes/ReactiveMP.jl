@@ -8,7 +8,7 @@ using LinearAlgebra
 using StaticArrays
 
 import ReactiveMP: deep_eltype, get_samples, get_weights, sample_list_zero_element
-import ReactiveMP: get_meta, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
+import ReactiveMP: get_meta, is_meta_present, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
 import ReactiveMP: call_logproposal, call_logintegrand
 import ReactiveMP: transform_samples, transform_weights!
 import ReactiveMP: approximate_prod_with_sample_list
@@ -38,6 +38,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test eltype(scalar_samplelist)                   === Tuple{type, type}
             @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
+            @test is_meta_present(scalar_samplelist) === false
 
             scalar_weights    = rand(rng, type, N)
 
@@ -51,6 +52,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test eltype(scalar_samplelist)                   === Tuple{type, type}
             @test eltype(get_weights(scalar_samplelist))      === type
             @test variate_form(scalar_samplelist) === Univariate
+            @test is_meta_present(scalar_samplelist) === false
 
             vector_samples    = [ rand(rng, type, 2) for _ in 1:N ]
             vector_samplelist = SampleList(vector_samples)
@@ -61,6 +63,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test eltype(vector_samplelist)                   === Tuple{ SVector{ 2, type }, type }
             @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
+            @test is_meta_present(vector_samplelist) === false
 
             vector_weights    = rand(rng, type, N)
             @test_throws AssertionError SampleList(vector_samples, vector_weights)
@@ -73,6 +76,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test eltype(vector_samplelist)                   === Tuple{ SVector{ 2, type }, type }
             @test eltype(get_weights(vector_samplelist))      === type
             @test variate_form(vector_samplelist) === Multivariate
+            @test is_meta_present(vector_samplelist) === false
 
             matrix_samples    = [ rand(rng, type, 2, 2) for _ in 1:N ]
             matrix_samplelist = SampleList(matrix_samples)
@@ -83,6 +87,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test eltype(matrix_samplelist)                   === Tuple{ SMatrix{ 2, 2, type, 4 }, type }
             @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
+            @test is_meta_present(matrix_samplelist) === false
 
             matrix_weights    = rand(rng, type, N)
             @test_throws AssertionError SampleList(matrix_samples, matrix_weights)
@@ -95,6 +100,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test eltype(matrix_samplelist)                   === Tuple{ SMatrix{ 2, 2, type, 4 }, type }
             @test eltype(get_weights(matrix_samplelist))      === type
             @test variate_form(matrix_samplelist) === Matrixvariate
+            @test is_meta_present(matrix_samplelist) === false
         end
 
         @test_throws AssertionError SampleList(rand(10), rand(5))
@@ -292,6 +298,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test get_entropy(sl) == entropy
             @test get_logproposal(sl) == logproposal
             @test get_logintegrand(sl) == logintegrand
+            @test is_meta_present(sl) === true
 
             some_random_numbers = rand(rng, 100)
 
@@ -388,7 +395,8 @@ import ReactiveMP: approximate_prod_with_sample_list
             for input in inputs
                 analytical = prod(ProdAnalytical(), input[:x], input[:y])
                 approximation = approximate_prod_with_sample_list(rng, input[:x], input[:y], N)
-
+                
+                @test is_meta_present(approximation) === true
                 @test length(approximation) === N
 
                 μᵣ, Σᵣ = mean_cov(analytical)

@@ -3,7 +3,7 @@ export skipindex, @symmetrical
 using SpecialFunctions
 using Rocket
 
-import Base: show
+import Base: show, similar
 import Base: IteratorSize, HasLength
 import Base: IteratorEltype, HasEltype
 import Base: eltype, length, size, sum
@@ -113,6 +113,11 @@ Base.iterate(::OneDivNVector{N, T})        where { N, T } = (one(T) / N, 1)
 Base.iterate(::OneDivNVector{N, T}, state) where { N, T } = state >= N ? nothing : (one(T) / N, state + 1)
 
 Base.getindex(v::OneDivNVector{N, T}, index::Int) where { N, T } = 1 <= index <= N ? (one(T) / N) : throw(BoundsError(v, index))
+
+Base.similar(v::OneDivNVector) = v
+Base.similar(v::OneDivNVector{N}, ::Type{ T }) where { N, T } = OneDivNVector(T, N)
+
+Base.vec(::OneDivNVector{N, T}) where { N, T } = fill(one(T) / N, N)
 
 ## 
 

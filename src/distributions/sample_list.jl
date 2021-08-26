@@ -2,6 +2,7 @@ export SampleList, SampleListMeta
 
 import Base: show, ndims, length, size, precision, getindex, broadcasted, map
 import Distributions: mean, var, cov, std
+import StatsBase: Weights
 
 using StaticArrays
 using LoopVectorization
@@ -63,13 +64,13 @@ struct SampleList{D, S, W, C, M}
         @assert div(length(samples), prod(D)) === length(weights) "Invalid sample list samples and weights lengths. `samples` has length $(length(samples)), `weights` has length $(length(weights))"
         @assert eltype(samples) <: Number "Invalid eltype of samples container. Should be a subtype of `Number`, but $(eltype(samples)) has been found. Samples should be stored in a linear one dimensional vector even for multivariate and matrixvariate cases."
         @assert eltype(weights) <: Number "Invalid eltype of weights container. Should be a subtype of `Number`, but $(eltype(weights)) has been found."
-        @assert sum(weights) ≈ one(eltype(weights)) "Weights must sum up to one. sum(weights) = $(sum(weights))"
         cache = SampleListCache(promote_type(eltype(samples), eltype(weights)), D)
         return new{D, S, W, typeof(cache), M}(samples, weights, cache, meta)
     end
 end
 
-Base.show(io::IO, sl::SampleList) = sample_list_show(io, variate_form(sl), sl)
+Base.show(io::IO, sl::SampleList)         = sample_list_show(io, variate_form(sl), sl)
+Base.similar(sl::SampleList{ D }) where D = SampleList(Val(D), similar(sl.samples), similar(sl.weights))
 
 sample_list_show(io::IO, ::Type{Univariate}, sl::SampleList) = print(io, "SampleList(Univariate, ", length(sl), ")")
 sample_list_show(io::IO, ::Type{Multivariate}, sl::SampleList) = print(io, "SampleList(Multivariate(", ndims(sl),"), ", length(sl), ")")
@@ -82,6 +83,7 @@ end
 function SampleList(samples::S, weights::W, meta::M = nothing) where { S, W, M }
     nsamples = length(samples)
     @assert nsamples !== 0 "Empty samples list"
+    @assert sum(weights) ≈ one(eltype(weights)) "Weights must sum up to one. sum(weights) = $(sum(weights))"
     D = size(first(samples))
     return SampleList(Val(D), sample_list_linearize(samples, nsamples, prod(D)), weights, meta)
 end
@@ -109,12 +111,13 @@ sample_list_variate_form(::Tuple{Int, Int}) = Matrixvariate
 ## Getters
 
 get_weights(sl::SampleList) = get_linear_weights(sl)
-get_samples(sl::SampleList) = error("SampleList `get_samples` is forbidden. Use broadcasting or map operations to transform sample list")
+get_samples(sl::SampleList) = SamplesOnlyIterator(sl)
 
 get_linear_weights(sl::SampleList) = sl.weights
 get_linear_samples(sl::SampleList) = sl.samples
-get_cache(sl::SampleList)   = sl.cache
-get_meta(sl::SampleList)    = sample_list_check_meta(sl.meta)
+get_cache(sl::SampleList)          = sl.cache
+get_meta(sl::SampleList)           = sample_list_check_meta(sl.meta)
+is_meta_present(sl::SampleList)    = sl.meta !== nothing
 
 get_data(sl::SampleList) = (length(sl), get_linear_samples(sl), get_linear_weights(sl))
 
@@ -200,7 +203,7 @@ end
 
 # `x` is proposal distribution
 # `y` is integrand distribution
-function approximate_prod_with_sample_list(rng::AbstractRNG, x, y, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+function approximate_prod_with_sample_list(rng::AbstractRNG, x::Any, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     @assert nsamples >= 1 "Number of samples should be non-positive"
 
     xlogpdf, xsample = logpdf_sample_friendly(x)
@@ -255,6 +258,116 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, x, y, nsamples::Int
     meta = SampleListMeta(raw_weights, entropy, logproposal, logintegrand)
 
     return SampleList(Val(xsize), preallocated, norm_weights, meta)
+end
+
+# prod of a pdf (or distribution) message and a SampleList message
+# this function is capable to calculate entropy with SampleList messages in VMP setting
+function approximate_prod_with_sample_list(rng::AbstractRNG, x::Any, y::SampleList{ D }, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) where { D }
+
+    # TODO: In principle it is possible to implement different prod approximation for different nsamples
+    # TODO: This feature would be probably super rare in use so lets postpone it and mark as todo
+    @assert length(y) === nsamples "Unsupported SampleList prod approximation: nsamples should match"
+
+    # TODO: Is it possible to support different variate forms here? 
+    @assert variate_form(x) === variate_form(y) "Unsupported SampleList prod approximation: variate forms should match"
+
+    # Suppose in the previous time step m1(pdf) and m2(pdf) messages collided.
+    # The resulting collision m3 (sampleList) = m1*m2 is supposed to carry
+    # the proposal (m1) and integrand (m2) distributions. m1 is the message from which
+    # the samples are drawn. m2 is the message on which the samples are evaluated and
+    # weights are calculated. In case Particle Filtering (BP), entropy will not be calculated
+    # and in the first step there won't be any integrand information.
+    
+    xlogpdf, xsample = logpdf_sample_friendly(x)
+    
+    log_integrand = if is_meta_present(y) && get_logintegrand(y) !== nothing
+        # recall that we are calculating m3*m4. If m3 consists of integrand information
+        # update it: new_integrand = m2*m3. This allows us to collide arbitrary number of beliefs
+        # to approximate posterior and yet estimate the entropy.
+        let y_logintegrand = get_logintegrand(y)
+            (sample) -> call_logintegrand(y_logintegrand, sample) + logpdf(xlogpdf, sample)
+        end
+    else
+        # If there is no integrand information before, set it to m4
+        xlogpdf
+    end
+
+    samples = get_samples(y) # samples come from proposal (m1)
+    weights = get_weights(y)
+
+    # Resulting samples and weights will go here
+    rcontainer = similar(y)
+    # vec here just to convert `OneDivNVector` into an array just in case
+    # does nothing if `get_weights` returns an array
+    rsamples, rweights = get_samples(rcontainer), vec(get_weights(rcontainer)) 
+
+    rweights_raw      = similar(get_weights(y))
+    rweights_prod_sum = zero(eltype(get_weights(y)))
+
+    H_x = zero(eltype(rweights_raw))
+
+    # Compute sample weights
+    @turbo for i in 1:nsamples
+        log_sample_x    = logpdf(xlogpdf, samples[i]) # evaluate samples in logm4, i.e. logm4(s)
+        raw_weight      = exp(log_sample_x)       # m4(s)
+        raw_weight_prod = raw_weight * weights[i] # update the weights of posterior w_unnormalized = m4(s)*w_prev
+
+        rweights_raw[i] = raw_weight
+        rweights[i]     = raw_weight_prod
+
+        rweights_prod_sum += raw_weight_prod
+
+        H_x += raw_weight_prod * log_sample_x
+    end
+
+    H_x /= rweights_prod_sum
+
+    # Normalize prod weights
+    @turbo for i in 1:nsamples
+        rweights[i] /= rweights_prod_sum
+    end
+    
+    # Resample and readjust entropy approximation if required
+    neff = 1 / sum(Base.Generator(abs2, rweights)) # Effective number of particles (Base.Generator is allocation free version of map)
+    if neff < nsamples / 10
+        sample!(rng, samples, Weights(weights), rsamples)
+        fillv = one(eltype(rweights)) / nsamples
+        fill!(rweights, fillv)
+        # Readjust H_x after resampling
+        H_x = zero(eltype(rweights_raw))
+        for i in 1:nsamples
+            log_sample_x = logpdf(xlogpdf, rsamples[i])
+            H_x += (exp(log_sample_x) * fillv) * log_sample_x
+        end
+        # H_x /= 1 rweights are normalized at this point, no need to track of its sum
+    else
+        # Just copy the existing samples instead
+        copyto!(get_linear_samples(rsamples), get_linear_samples(samples))
+    end
+
+    meta = if is_meta_present(y) && get_logproposal(y) !== nothing && get_unnormalised_weights(y) !== nothing
+        y_unnormalised_weights     = get_unnormalised_weights(y)
+        r_unnormalised_weights     = similar(y_unnormalised_weights)
+        r_unnormalised_weights_sum = zero(eltype(r_unnormalised_weights))
+        @turbo for i in 1:nsamples
+            r_unnormalised_weights_prod = y_unnormalised_weights[i] * rweights_raw[i]
+            r_unnormalised_weights[i]   = r_unnormalised_weights_prod
+            r_unnormalised_weights_sum += r_unnormalised_weights_prod
+
+            H_x += rweights[i] * (call_logproposal(y, rsamples[i]) + log(y_unnormalised_weights[i]))
+        end
+
+        H_y = log(r_unnormalised_weights_sum) - log(nsamples)
+        H_x = -H_x
+
+        entropy = H_x + H_y
+
+        SampleListMeta(r_unnormalised_weights, entropy, get_logproposal(y), log_integrand)
+    else
+        SampleListMeta(nothing, nothing, nothing, log_integrand)
+    end
+
+    return SampleList(Val(D), get_linear_samples(rsamples), rweights, meta)
 end
 
 ############################################################################################
@@ -539,6 +652,32 @@ function sample_list_vague(::Type{ Matrixvariate }, dims::Tuple{Int, Int}, nsamp
 end
 
 ## Array operations, broadcasting and mapping
+
+struct SamplesOnlyIterator{T, L} <: AbstractVector{T}
+    samplelist :: L
+
+    function SamplesOnlyIterator(samplelist::L) where { L <: SampleList }
+        return new{ samples_type(eltype(samplelist)), L }(samplelist)
+    end
+end
+
+samples_type(::Type{ T }) where { L, R, T <: Tuple{L, R} } = L
+
+@inline Base.size(iter::SamplesOnlyIterator) = (length(iter.samplelist), )
+@inline Base.getindex(iter::SamplesOnlyIterator, i::Int)    = first(getindex(iter.samplelist, i))
+
+@inline function Base.setindex!(iter::SamplesOnlyIterator, v, i::Int) 
+    samples    = get_linear_samples(iter.samplelist)
+    sample_len = prod(ndims(iter.samplelist))
+    left  = (i - 1) * sample_len + 1
+    right = left + sample_len - 1
+    copyto!(view(samples, left:right), v)
+    v
+end
+
+get_linear_samples(iter::SamplesOnlyIterator) = get_linear_samples(iter.samplelist)
+
+##
 
 Base.iterate(sl::SampleList)             = (sl[1], 2)
 Base.iterate(sl::SampleList, state::Int) = state <= length(sl) ? (sl[state], state + 1) : nothing
