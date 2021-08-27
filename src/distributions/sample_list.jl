@@ -7,6 +7,8 @@ import StatsBase: Weights
 using StaticArrays
 using LoopVectorization
 
+struct BootstrapImportanceSampling end
+
 mutable struct SampleListCache{M, C}
     mean :: M
     cov  :: C
@@ -196,14 +198,22 @@ vague(::Type{ SampleList }, dims::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAM
 vague(::Type{ SampleList }, dims::Tuple{Int, Int}; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) = sample_list_vague(Matrixvariate, dims, nsamples)
 vague(::Type{ SampleList }, dim1::Int, dim2::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)  = sample_list_vague(Matrixvariate, (dim1, dim2), nsamples)
 
+##
+
+sample_list_default_prod_strategy() = BootstrapImportanceSampling()
+
 ## prod related stuff
 function approximate_prod_with_sample_list(x, y, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     return approximate_prod_with_sample_list(Random.GLOBAL_RNG, x, y, nsamples)
 end
 
+function approximate_prod_with_sample_list(rng::AbstractRNG, x, y, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+    return approximate_prod_with_sample_list(rng, sample_list_default_prod_strategy(), x, y, nsamples)
+end
+
 # `x` is proposal distribution
 # `y` is integrand distribution
-function approximate_prod_with_sample_list(rng::AbstractRNG, x::Any, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::Any, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     @assert nsamples >= 1 "Number of samples should be non-positive"
 
     xlogpdf, xsample = logpdf_sample_friendly(x)
@@ -262,7 +272,7 @@ end
 
 # prod of a pdf (or distribution) message and a SampleList message
 # this function is capable to calculate entropy with SampleList messages in VMP setting
-function approximate_prod_with_sample_list(rng::AbstractRNG, x::Any, y::SampleList{ D }, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) where { D }
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::Any, y::SampleList{ D }, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) where { D }
 
     # TODO: In principle it is possible to implement different prod approximation for different nsamples
     # TODO: This feature would be probably super rare in use so lets postpone it and mark as todo
@@ -350,6 +360,7 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, x::Any, y::SampleLi
     end
 
     meta = if is_meta_present(y) && get_logproposal(y) !== nothing && get_unnormalised_weights(y) !== nothing
+
         y_unnormalised_weights     = get_unnormalised_weights(y)
         r_unnormalised_weights     = similar(y_unnormalised_weights)
         r_unnormalised_weights_sum = zero(eltype(r_unnormalised_weights))
