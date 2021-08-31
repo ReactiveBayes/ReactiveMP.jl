@@ -270,6 +270,14 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportan
     return SampleList(Val(xsize), preallocated, norm_weights, meta)
 end
 
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::SampleList, y::SampleList, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+    error("Unsupported SampleList × SampleList prod operation.")
+end
+
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::SampleList, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+    return approximate_prod_with_sample_list(rng, BootstrapImportanceSampling(), y, x, nsamples)
+end
+
 # prod of a pdf (or distribution) message and a SampleList message
 # this function is capable to calculate entropy with SampleList messages in VMP setting
 function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::Any, y::SampleList{ D }, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) where { D }
@@ -311,7 +319,7 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportan
     # does nothing if `get_weights` returns an array
     rsamples, rweights = get_samples(rcontainer), vec(get_weights(rcontainer)) 
 
-    rweights_raw      = similar(get_weights(y))
+    rweights_raw      = similar(rweights)
     rweights_prod_sum = zero(eltype(get_weights(y)))
 
     H_x = zero(eltype(rweights_raw))

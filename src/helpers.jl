@@ -87,7 +87,7 @@ julia> collect(iter)
 
 See also: [`SampleList`](@ref)
 """
-struct OneDivNVector{N, T} end
+struct OneDivNVector{N, T} <: AbstractVector{T} end
 
 Base.show(io::IO, ::OneDivNVector{N, T}) where { N, T } = print(io, "OneDivNVector($T, $N)")
 
