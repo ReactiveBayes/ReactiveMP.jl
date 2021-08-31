@@ -1,6 +1,7 @@
 ## TODO: pointmass rules
+## TODO: save sigma vectors in meta to limit allocations
 
-@rule Flow(:out, Marginalisation) (m_in::MvNormalMeanCovariance, meta::FlowMeta) = begin
+@rule Flow(:out, Marginalisation) (m_in::MvNormalMeanCovariance, meta::FlowMeta{M,Linearization}) where { M } = begin
     
     # extract parameters
     μ_in, Σ_in = mean_cov(m_in)
@@ -18,7 +19,7 @@
 
 end
 
-@rule Flow(:out, Marginalisation) (m_in::MvNormalMeanPrecision, meta::FlowMeta) = begin
+@rule Flow(:out, Marginalisation) (m_in::MvNormalMeanPrecision, meta::FlowMeta{M,Linearization}) where { M } = begin
     
     # extract parameters
     μ_in, Λ_in = mean_precision(m_in)
@@ -36,7 +37,7 @@ end
 
 end
 
-@rule Flow(:out, Marginalisation) (m_in::MvNormalWeightedMeanPrecision, meta::FlowMeta) = begin
+@rule Flow(:out, Marginalisation) (m_in::MvNormalWeightedMeanPrecision, meta::FlowMeta{M,Linearization}) where { M } = begin
     
     # extract parameters
     μ_in, Λ_in = mean_precision(m_in)
@@ -51,5 +52,51 @@ end
 
     # return distribution
     return MvNormalMeanPrecision(μ_out, Λ_out)
+
+end
+
+
+@rule Flow(:out, Marginalisation) (m_in::MultivariateNormalDistributionsFamily, meta::FlowMeta{M,Unscented}) where { M } = begin
+    
+    # extract parameters
+    μ_in, Σ_in = mean_cov(m_in)
+
+    # extract model
+    model = getmodel(meta)
+    T = eltype(model)
+
+    # extract parameters of linearization
+    approximation = getapproximation(meta)
+    λ  = getλ(approximation)
+    L  = getL(approximation)
+    Wm = getWm(approximation)
+    Wc = getWc(approximation)
+
+    # calculate sigma points/vectors    
+    sqrtΣ = sqrt((L + λ)*Σ_in)
+    χ = Vector{Vector{Float64}}(undef, 2*L + 1)
+    for k = 1:length(χ)
+        χ[k] = copy(μ_in)
+    end
+    for l = 2:L+1
+        χ[l]     .+= sqrtΣ[l-1,:]
+        χ[L + l] .-= sqrtΣ[l-1,:]
+    end
+
+    # transform sigma points
+    Y = forward.(model, χ)
+
+    # calculate new parameters
+    μ_out = zeros(T, L)
+    Σ_out = zeros(T, L, L)
+    for k = 1:2*L+1
+        μ_out .+= Wm[k] .* Y[k]
+    end
+    for k = 1:2*L+1
+        Σ_out .+= Wc[k] .* ( Y[k] - μ_out ) *  ( Y[k] - μ_out )'
+    end
+
+    # return distribution
+    return MvNormalMeanCovariance(μ_out, collect(Hermitian(Σ_out)))
 
 end
