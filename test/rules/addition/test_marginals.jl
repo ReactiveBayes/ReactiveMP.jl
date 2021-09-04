@@ -97,7 +97,7 @@ import ReactiveMP: @test_marginalrules
 
     @testset ":in1_in2 (m_out::MvNormalMeanCovariance, m_in1::MultivariateNormalDistributionsFamily, m_in2::PointMass)" begin
 
-        @test_marginalrules [ with_float_conversions = false ] typeof(+)(:in1_in2) [
+        @test_marginalrules [ with_float_conversions = true ] typeof(+)(:in1_in2) [
             (
                 input = (m_out = MvNormalMeanCovariance([2.0, 2.0], [2.0 0.0; 0.0 2.0]), m_in1 = MvNormalMeanCovariance([1.0, 3.0], [3.0 2.0; 2.0 4.0]), m_in2 = PointMass([1.0, 1.0])),
                 output = (in1 = MvNormalWeightedMeanPrecision([1/4, 11/8], [1.0 -1/4; -1/4 7/8]), in2 = PointMass([1.0, 1.0]))
@@ -137,7 +137,7 @@ import ReactiveMP: @test_marginalrules
 
     @testset ":in1_in2 (m_out::MvNormalWeightedMeanPrecision, m_in1::MultivariateNormalDistributionsFamily, m_in2::PointMass)" begin
 
-        @test_marginalrules [ with_float_conversions = false ] typeof(+)(:in1_in2) [
+        @test_marginalrules [ with_float_conversions = true ] typeof(+)(:in1_in2) [
             (
                 input = (m_out = MvNormalWeightedMeanPrecision([2.0, 2.0], [1.0 0.0; 0.0 1.0]), m_in1 = MvNormalMeanCovariance([2.0, 3.0], [3.0 2.0; 2.0 4.0]), m_in2 = PointMass([1.0, -1.0])),
                 output = (in1 = MvNormalWeightedMeanPrecision([5/4, 29/8], [3/2 -1/4; -1/4 11/8]), in2 = PointMass([1.0, -1.0]))
@@ -157,7 +157,7 @@ import ReactiveMP: @test_marginalrules
 
     @testset ":in1_in2 (m_out::MvNormalMeanCovariance, m_in1::PointMass, m_in2::PointMassMultivariateNormalDistributionsFamily)" begin
 
-        @test_marginalrules [ with_float_conversions = false ] typeof(+)(:in1_in2) [
+        @test_marginalrules [ with_float_conversions = true ] typeof(+)(:in1_in2) [
             (
                 input = (m_out = MvNormalMeanCovariance([2.0, 2.0], [2.0 0.0; 0.0 2.0]), m_in1 = PointMass([1.0, 1.0]), m_in2 = MvNormalMeanCovariance([1.0, 3.0], [3.0 2.0; 2.0 4.0])),
                 output = (in1 = PointMass([1.0, 1.0]), in2 = MvNormalWeightedMeanPrecision([1/4, 11/8], [1.0 -1/4; -1/4 7/8]))
@@ -217,7 +217,7 @@ import ReactiveMP: @test_marginalrules
 
     @testset ":in1_in2 (m_out::NormalDistributionsFamily, m_in1::NormalDistributionsFamily, m_in2::NormalDistributionsFamily)" begin
 
-        @test_marginalrules [ with_float_conversions = false ] typeof(+)(:in1_in2) [
+        @test_marginalrules [ with_float_conversions = true ] typeof(+)(:in1_in2) [
             (
                 input = (m_out = NormalMeanVariance(1.0, 2.0), m_in1 = NormalMeanVariance(3.0, 4.0), m_in2 = NormalMeanVariance(5.0, 6.0)),
                 output = (MvNormalWeightedMeanPrecision([5/4, 4/3], [3/4 1/2; 1/2 2/3]))
