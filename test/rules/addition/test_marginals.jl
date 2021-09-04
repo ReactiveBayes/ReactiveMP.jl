@@ -238,18 +238,18 @@ import ReactiveMP: @test_marginalrules
                 input = (m_out = MvNormalMeanCovariance([1.0, 2.0], [3.0 1.0; 1.0 2.0]), m_in1 = MvNormalMeanCovariance([2.0, 3.0], [3.0 1.0; 1.0 2.0]), m_in2 = MvNormalMeanCovariance([1.0, 2.0], [3.0 1.0; 1.0 2.0])),
                 output = (MvNormalWeightedMeanPrecision([1/5, 12/5, 0.0, 2.0], [[0.8 -0.4 0.4 -0.2; -0.4 1.2 -0.2 0.6]; [0.4 -0.2 0.8 -0.4; -0.2 0.6 -0.4 1.2]]))
             ),
-            #(
-            #    input = (m_out = MvNormalMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 2.0]), m_in1 = MvNormalMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 2.0]), m_in2 = MvNormalMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 2.0])),
-            #    output = (MvNormalWeightedMeanPrecision([[1/5, 12/5]; [0.0, 2.0]], [6.0 2.0; 2.0 8.0]))
-            #),
-            #(
-            #    input = (m_out = MvNormalWeightedMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 1.0]), m_in1 = MvNormalWeightedMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 1.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 1.0])),
-            #    output = (MvNormalWeightedMeanPrecision([[4.0, 6.0]; [4.0, 6.0]], [6.0 2.0; 2.0 8.0]))
-            #),
-            #(
-            #    input = (m_out = MvNormalMeanCovariance([1.0, 1.0], [3.0 1.0; 1.0 2.0]), m_in1 = MvNormalMeanPrecision([1.0, 1.0], [3.0 1.0; 1.0 2.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [3.0 1.0; 1.0 2.0])),
-            #    output = (MvNormalWeightedMeanPrecision([[4.0, 6.0]; [4.0, 6.0]], [6.0 2.0; 2.0 8.0]))
-            #),
+            (
+                input = (m_out = MvNormalMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 2.0]), m_in1 = MvNormalMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 2.0]), m_in2 = MvNormalMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 2.0])),
+                output = (MvNormalWeightedMeanPrecision([10.0, 10.0, 10.0, 10.0], [6.0 2.0 3.0 1.0; 2.0 4.0 1.0 2.0; 3.0 1.0 6.0 2.0; 1.0 2.0 2.0 4.0]))
+            ),
+            (
+                input = (m_out = MvNormalWeightedMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 1.0]), m_in1 = MvNormalWeightedMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 1.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, 2.0], [3.0 1.0; 1.0 1.0])),
+                output = (MvNormalWeightedMeanPrecision([2.0, 4.0, 2.0, 4.0], [6.0 2.0 3.0 1.0; 2.0 2.0 1.0 1.0; 3.0 1.0 6.0 2.0; 1.0 1.0 2.0 2.0]))
+            ),
+            (
+                input = (m_out = MvNormalMeanCovariance([1.0, 1.0], [3.0 1.0; 1.0 2.0]), m_in1 = MvNormalMeanPrecision([1.0, 1.0], [3.0 1.0; 1.0 2.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [3.0 1.0; 1.0 2.0])),
+                output = (MvNormalWeightedMeanPrecision([21/5, 17/5, 6/5, 7/5], [17/5 4/5 2/5 -1/5; 4/5 13/5 -1/5 3/5; 2/5 -1/5 17/5 4/5; -1/5 3/5 4/5 13/5]))
+            ),
 
         ]
 
