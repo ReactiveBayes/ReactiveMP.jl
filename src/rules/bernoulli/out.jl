@@ -1,7 +1,7 @@
 export rule
 
 @rule Bernoulli(:out, Marginalisation) (m_p::PointMass, ) = begin
-    return Bernoulli(mean(q_p))
+    return Bernoulli(mean(m_p))
 end
 
 @rule Bernoulli(:out, Marginalisation) (q_p::Beta, ) = begin
