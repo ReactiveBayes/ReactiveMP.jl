@@ -5,7 +5,7 @@ using ReactiveMP
 using Random
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:Addition" begin
+@testset "marginalrules:typeof(+)" begin
 
     @testset ":in1_in2 (m_out::UnivariateNormalDistributionsFamily, m_in1::UnivariateNormalDistributionsFamily, m_in2::PointMass)" begin
         
