@@ -34,7 +34,7 @@ end
 
 @marginalrule typeof(+)(:in1_in2) (m_out::MvNormalWeightedMeanPrecision, m_in1::PointMass, m_in2::MultivariateNormalDistributionsFamily) = begin
     xiout, Wout = weightedmean_precision(m_out)
-    return (in1 = m_in1, in2 = prod(ProdAnalytical(), MvNormalWeightedMeanPrecision(xiout - Wout*mean(m_in1), Wout), m_in2))
+    return (in1 = m_in1, in2 = prod(ProdAnalytical(), MvNormalWeightedMeanPrecision(xiout - Wout * mean(m_in1), Wout), m_in2))
 end
 
 @marginalrule typeof(+)(:in1_in2) (m_out::NormalDistributionsFamily, m_in1::NormalDistributionsFamily, m_in2::NormalDistributionsFamily) = begin
