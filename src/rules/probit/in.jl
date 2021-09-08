@@ -1,3 +1,4 @@
+using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
 
 @rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, ) = begin
     
@@ -18,6 +19,8 @@ end
     mz, vz = mean_cov(m_in)
     p = mean(m_out)
     @assert p >= zero(p) && p <= one(p) "The Probit node only accepts messages on its output with values between 0 and 1."
+
+    T = promote_type(eltype(m_out), eltype(m_in))
 
     # calculate auxiliary variables
     γ = mz/sqrt(1+vz)
@@ -45,6 +48,6 @@ end
     ξz_out = mpz/vpz - mz/vz
 
     # return message
-    return NormalWeightedMeanPrecision(ξz_out, wz_out)
+    return NormalWeightedMeanPrecision{T}(ξz_out, wz_out)
 
 end
