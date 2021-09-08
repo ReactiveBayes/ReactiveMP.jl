@@ -74,7 +74,7 @@ using .ReactiveMPTestingHelpers
 
     addtests("test_node.jl")
     addtests("nodes/test_addition.jl")
-	addtests("nodes/test_subtraction.jl")
+    addtests("nodes/test_subtraction.jl")
     addtests("nodes/test_probit.jl")
 
     addtests("rules/addition/test_marginals.jl")
