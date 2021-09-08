@@ -1,3 +1,4 @@
+using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
 
 @rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, ) = begin
     
@@ -19,17 +20,23 @@ end
     p = mean(m_out)
     @assert p >= zero(p) && p <= one(p) "The Probit node only accepts messages on its output with values between 0 and 1."
 
+    T = promote_type(eltype(m_out), eltype(m_in))
+
     # calculate auxiliary variables
     γ = mz/sqrt(1+vz)
 
-    # calculate unnormalized moments of g
-    umom1_g = normcdf(γ)*mz + vz*normpdf(γ)/sqrt(1+vz)
-    umom2_g = 2*mz*umom1_g + (vz - mz^2)*normcdf(γ) - vz^2*γ*normpdf(γ)/(1+vz)
-
-    # calculate moments of posterior
-    mom0_pz = 1 - p + (2*p - 1)*normcdf(γ)
-    mom1_pz = 1/mom0_pz*((1-p)*mz + (2*p-1)*umom1_g)
-    mom2_pz = 1/mom0_pz*((1-p)*(vz + mz^2) + (2*p-1)*umom2_g)
+    # calculate moments of g
+    if γ > 0 && p > 0.5
+        log_mom0_pz = logsumexp([log(1-p), log(2*p-1) + normlogccdf(-γ)])
+    elseif γ <= 0 && p > 0.5
+        log_mom0_pz = logsumexp([log(1-p), log(2*p-1) + normlogcdf(γ)])
+    elseif γ > 0 && p <= 0.5
+        log_mom0_pz = logsumexp([log(1-p) + normlogcdf(-γ), log(p) + normlogcdf(γ)])
+    else
+        log_mom0_pz = logsumexp([log(1-p) + normlogccdf(γ), log(p) + normlogcdf(γ)])
+    end
+    mom1_pz = mz + (2*p-1)*exp(log(vz) + normlogpdf(γ) - 0.5*log(1+vz) - log_mom0_pz)
+    mom2_pz = vz + mz^2 + (2*p-1)*2*mz*exp(log(vz) + normlogpdf(γ) - 0.5*log(1+vz) - log_mom0_pz) - (2p-1)*γ*exp(2*log(vz) + normlogpdf(γ) - log(1 + vz) - log_mom0_pz)
 
     # calculate parameters of posterior
     mpz = mom1_pz
@@ -41,6 +48,6 @@ end
     ξz_out = mpz/vpz - mz/vz
 
     # return message
-    return NormalWeightedMeanPrecision(ξz_out, wz_out)
+    return NormalWeightedMeanPrecision{T}(ξz_out, wz_out)
 
 end
