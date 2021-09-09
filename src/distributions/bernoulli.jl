@@ -4,8 +4,6 @@ import Distributions: Bernoulli, succprob, failprob
 
 vague(::Type{ <: Bernoulli }) = Bernoulli(0.5)
 
-Base.eltype(::Bernoulli{T}) where {T} = T
-
 probvec(dist::Bernoulli) = (succprob(dist), failprob(dist))
 
 prod_analytical_rule(::Type{ <: Bernoulli }, ::Type{ <: Bernoulli }) = ProdAnalyticalRuleAvailable()

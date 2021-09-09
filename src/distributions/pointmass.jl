@@ -44,9 +44,7 @@ Base.ndims(::PointMass{T})     where { T <: Real } = 1
 
 convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: Real } = PointMass(convert(T, getpointmass(distribution)))
 
-Base.eltype(::PointMass{T})              where { T <: Real }　                = T
-Base.eltype(::PointMass{V})              where { T, V <: AbstractVector{T} }　= T
-Base.eltype(::PointMass{M})              where { T, M <: AbstractMatrix{T} }　= T
+Base.eltype(::PointMass{T}) where { T } = T
 
 # AbstractVector-based multivariate point mass
 
