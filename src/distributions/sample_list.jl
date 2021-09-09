@@ -7,7 +7,9 @@ import StatsBase: Weights
 using StaticArrays
 using LoopVectorization
 
-struct BootstrapImportanceSampling end
+abstract type AbstractSampleListSamplingMethod end
+
+struct BootstrapImportanceSampling <: AbstractSampleListSamplingMethod end
 
 mutable struct SampleListCache{M, C}
     mean :: M
@@ -270,11 +272,11 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportan
     return SampleList(Val(xsize), preallocated, norm_weights, meta)
 end
 
-function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::SampleList, y::SampleList, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::AbstractSampleListSamplingMethod, x::SampleList, y::SampleList, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     error("Unsupported SampleList × SampleList prod operation.")
 end
 
-function approximate_prod_with_sample_list(rng::AbstractRNG, method, x::SampleList, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+function approximate_prod_with_sample_list(rng::AbstractRNG, method::AbstractSampleListSamplingMethod, x::SampleList, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     return approximate_prod_with_sample_list(rng, method, y, x, nsamples)
 end
 
