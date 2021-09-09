@@ -2,6 +2,7 @@ export GaussLaguerreQuadrature
 
 using DomainIntegrals
 using FastGaussQuadrature
+using StatsFuns: logsumexp
 
 import Base: ==
 
