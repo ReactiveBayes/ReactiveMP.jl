@@ -20,34 +20,33 @@ end
     p = mean(m_out)
     @assert p >= zero(p) && p <= one(p) "The Probit node only accepts messages on its output with values between 0 and 1."
 
-    T = promote_type(eltype(m_out), eltype(m_in))
-
     # calculate auxiliary variables
     γ = mz/sqrt(1+vz)
 
     # calculate moments of g
     if γ > 0 && p > 0.5
-        log_mom0_pz = logsumexp([log(1-p), log(2*p-1) + normlogccdf(-γ)])
+        log_mom0_pz = logsumexp((log(1-p), log(2*p-1) + normlogccdf(-γ)))
     elseif γ <= 0 && p > 0.5
-        log_mom0_pz = logsumexp([log(1-p), log(2*p-1) + normlogcdf(γ)])
+        log_mom0_pz = logsumexp((log(1-p), log(2*p-1) + normlogcdf(γ)))
     elseif γ > 0 && p <= 0.5
-        log_mom0_pz = logsumexp([log(1-p) + normlogcdf(-γ), log(p) + normlogcdf(γ)])
+        log_mom0_pz = logsumexp((log(1-p) + normlogcdf(-γ), log(p) + normlogcdf(γ)))
     else
-        log_mom0_pz = logsumexp([log(1-p) + normlogccdf(γ), log(p) + normlogcdf(γ)])
+        log_mom0_pz = logsumexp((log(1-p) + normlogccdf(γ), log(p) + normlogcdf(γ)))
     end
-    mom1_pz = mz + (2*p-1)*exp(log(vz) + normlogpdf(γ) - 0.5*log(1+vz) - log_mom0_pz)
-    mom2_pz = vz + mz^2 + (2*p-1)*2*mz*exp(log(vz) + normlogpdf(γ) - 0.5*log(1+vz) - log_mom0_pz) - (2p-1)*γ*exp(2*log(vz) + normlogpdf(γ) - log(1 + vz) - log_mom0_pz)
+    tmp = log(vz) + normlogpdf(γ) - log(1+vz)/2 - log_mom0_pz
+    mom1_pz = mz + (2*p-1)*exp(tmp)
+    mom2_pz = vz + mz^2 + (2*p-1)*2*mz*exp(tmp) - (2p-1)*γ*exp(log(vz) - log(1 + vz)/2 + tmp)
 
     # calculate parameters of posterior
     mpz = mom1_pz
     vpz = mom2_pz - mom1_pz^2
-    vpz = min(max(vpz, tiny), vz - tiny) # ensure variance of marginal is not larger than the variance of the cavity distribution.
+    vpz = clamp(vpz, tiny, vz)# ensure variance of marginal is not larger than the variance of the cavity distribution.
 
     # calculate parameters of outgoing message
-    wz_out = 1/vpz - 1/vz
+    wz_out = clamp(1/vpz - 1/vz, tiny, huge) # Ensure precision isn't too small or too large
     ξz_out = mpz/vpz - mz/vz
 
     # return message
-    return NormalWeightedMeanPrecision{T}(ξz_out, wz_out)
+    return NormalWeightedMeanPrecision(ξz_out, wz_out)
 
 end

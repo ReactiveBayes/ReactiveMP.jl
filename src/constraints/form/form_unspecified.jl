@@ -8,7 +8,7 @@ However it does not allow `DistProduct` to be a valid functional form in the inf
 
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
-struct UnspecifiedFormConstraint end
+struct UnspecifiedFormConstraint <: AbstractFormConstraint end
 
 default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLast()
 
