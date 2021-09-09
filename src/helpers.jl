@@ -219,7 +219,13 @@ end
 ## Other helpers 
 
 # We override this function for some specific types
-is_typeof_equal(left, right) = typeof(left) === typeof(right)
+function is_typeof_equal(left, right) 
+    _isequal = typeof(left) === typeof(right)
+    if !_isequal
+        @warn "typeof($left) !== typeof($right)"
+    end
+    return _isequal
+end
 
 function custom_isapprox(left, right; kwargs...)
     _isapprox = isapprox(left, right; kwargs...)
