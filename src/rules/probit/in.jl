@@ -35,8 +35,9 @@ end
     else
         log_mom0_pz = logsumexp([log(1-p) + normlogccdf(γ), log(p) + normlogcdf(γ)])
     end
-    mom1_pz = mz + (2*p-1)*exp(log(vz) + normlogpdf(γ) - 0.5*log(1+vz) - log_mom0_pz)
-    mom2_pz = vz + mz^2 + (2*p-1)*2*mz*exp(log(vz) + normlogpdf(γ) - 0.5*log(1+vz) - log_mom0_pz) - (2p-1)*γ*exp(2*log(vz) + normlogpdf(γ) - log(1 + vz) - log_mom0_pz)
+    tmp = log(vz) + normlogpdf(γ) - 0.5*log(1+vz) - log_mom0_pz
+    mom1_pz = mz + (2*p-1)*exp(tmp)
+    mom2_pz = vz + mz^2 + (2*p-1)*2*mz*exp(tmp) - (2p-1)*γ*exp(log(vz) - 0.5*log(1 + vz) + tmp)
 
     # calculate parameters of posterior
     mpz = mom1_pz
