@@ -4,7 +4,7 @@ using Test
 using ReactiveMP
 using Random
 using Distributions
-using StatsFuns: normcdf
+using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
 
 import ReactiveMP: @test_rules
 

@@ -1,19 +1,6 @@
 using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
 
-@rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, ) = begin
-    
-    # extract parameters
-    p = mean(m_out)
-
-    # calculate outward message
-    f = (z) -> log(1 - p + (2*p - 1)*normcdf(z))
-
-    # return message
-    return ContinuousUnivariateLogPdf(f)
-
-end
-
-@rule Probit(:in, MomentMatching) (m_out::Union{PointMass, Bernoulli}, m_in::UnivariateNormalDistributionsFamily) = begin
+@marginalrule Probit(:out_in) (m_out::PointMass, m_in::UnivariateNormalDistributionsFamily, meta::ProbitMeta) = begin 
 
     # extract parameters
     mz, vz = mean_cov(m_in)
@@ -39,14 +26,8 @@ end
 
     # calculate parameters of posterior
     mpz = mom1_pz
-    vpz = mom2_pz - mom1_pz^2
-    vpz = clamp(vpz, tiny, vz)# ensure variance of marginal is not larger than the variance of the cavity distribution.
+    vpz = clamp(mom2_pz - mom1_pz^2, tiny, vz) # ensure variance of marginal is not larger than the variance of the cavity distribution.
 
-    # calculate parameters of outgoing message
-    wz_out = clamp(1/vpz - 1/vz, tiny, huge) # Ensure precision isn't too small or too large
-    ξz_out = mpz/vpz - mz/vz
-
-    # return message
-    return NormalWeightedMeanPrecision(ξz_out, wz_out)
+    return (out = m_out, in = NormalMeanVariance(mpz, vpz))
 
 end

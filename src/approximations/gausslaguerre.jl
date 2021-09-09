@@ -2,6 +2,7 @@ export GaussLaguerreQuadrature
 
 using DomainIntegrals
 using FastGaussQuadrature
+using StatsFuns: logsumexp
 
 import Base: ==
 
@@ -51,11 +52,8 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
         logresult[i] = logw[i] + fn(x[i])
     end
 
-    # log-sum-exp trick, calculate maximum
-    max_logresult = maximum(logresult)
-
     # return log sum exp
-    return max_logresult + log(sum(exp.(logresult .- max_logresult)))
+    return logsumexp(logresult)
 end
 
 function Base.:(==)(left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}) where R 
