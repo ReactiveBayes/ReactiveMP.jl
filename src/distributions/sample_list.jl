@@ -274,8 +274,8 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportan
     error("Unsupported SampleList × SampleList prod operation.")
 end
 
-function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::SampleList, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
-    return approximate_prod_with_sample_list(rng, BootstrapImportanceSampling(), y, x, nsamples)
+function approximate_prod_with_sample_list(rng::AbstractRNG, method, x::SampleList, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
+    return approximate_prod_with_sample_list(rng, method, y, x, nsamples)
 end
 
 # prod of a pdf (or distribution) message and a SampleList message
