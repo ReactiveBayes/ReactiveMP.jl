@@ -26,8 +26,7 @@ using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
 
     # calculate parameters of posterior
     mpz = mom1_pz
-    vpz = mom2_pz - mom1_pz^2
-    vpz = min(max(vpz, tiny), vz - tiny) # ensure variance of marginal is not larger than the variance of the cavity distribution.
+    vpz = clamp(mom2_pz - mom1_pz^2, tiny, vz) # ensure variance of marginal is not larger than the variance of the cavity distribution.
 
     return (out = m_out, in = NormalMeanVariance(mpz, vpz))
 

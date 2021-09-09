@@ -40,10 +40,10 @@ end
     # calculate parameters of posterior
     mpz = mom1_pz
     vpz = mom2_pz - mom1_pz^2
-    vpz = min(max(vpz, tiny), vz - tiny) # ensure variance of marginal is not larger than the variance of the cavity distribution.
+    vpz = clamp(vpz, tiny, vz)# ensure variance of marginal is not larger than the variance of the cavity distribution.
 
     # calculate parameters of outgoing message
-    wz_out = 1/vpz - 1/vz
+    wz_out = clamp(1/vpz - 1/vz, tiny, huge) # Ensure precision isn't too small or too large
     ξz_out = mpz/vpz - mz/vz
 
     # return message
