@@ -67,6 +67,7 @@ using .ReactiveMPTestingHelpers
     addtests("distributions/test_normal.jl")
     addtests("distributions/test_pointmass.jl")
     addtests("distributions/test_wishart.jl")
+    addtests("distributions/test_sample_list.jl")
 
     addtests("test_message.jl")
     

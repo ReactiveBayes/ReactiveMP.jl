@@ -49,6 +49,7 @@ using Random
 
         @test mean(dist1)     === 1.0
         @test var(dist1)      === 1.0
+        @test cov(dist1)      === 1.0
         @test shape(dist1)    === 1.0
         @test scale(dist1)    === 1.0
         @test rate(dist1)     === 1.0
@@ -58,6 +59,7 @@ using Random
 
         @test mean(dist2)     === 2.0
         @test var(dist2)      === 4.0
+        @test cov(dist2)      === 4.0
         @test shape(dist2)    === 1.0
         @test scale(dist2)    === 2.0
         @test rate(dist2)     === inv(2.0)
@@ -67,6 +69,7 @@ using Random
 
         @test mean(dist3)     === 4.0
         @test var(dist3)      === 8.0
+        @test cov(dist3)      === 8.0
         @test shape(dist3)    === 2.0
         @test scale(dist3)    === 2.0
         @test rate(dist3)     === inv(2.0)
@@ -80,6 +83,7 @@ using Random
 
         @test mean(dist1)     === 1.0
         @test var(dist1)      === 1.0
+        @test cov(dist1)      === 1.0
         @test shape(dist1)    === 1.0
         @test scale(dist1)    === 1.0
         @test rate(dist1)     === 1.0
@@ -91,6 +95,7 @@ using Random
 
         @test mean(dist2)     === inv(2.0)
         @test var(dist2)      === inv(4.0)
+        @test cov(dist2)      === inv(4.0)
         @test shape(dist2)    === 1.0
         @test scale(dist2)    === inv(2.0)
         @test rate(dist2)     === 2.0
@@ -102,6 +107,7 @@ using Random
 
         @test mean(dist3)     === 1.0
         @test var(dist3)      === inv(2.0)
+        @test cov(dist3)      === inv(2.0)
         @test shape(dist3)    === 2.0
         @test scale(dist3)    === inv(2.0)
         @test rate(dist3)     === 2.0
@@ -135,6 +141,7 @@ using Random
         check_basic_statistics = (left, right) -> begin
             @test mean(left)         ≈ mean(right)
             @test var(left)          ≈ var(right)
+            @test cov(left)          ≈ cov(right)
             @test shape(left)        ≈ shape(right)
             @test scale(left)        ≈ scale(right)
             @test rate(left)         ≈ rate(right)

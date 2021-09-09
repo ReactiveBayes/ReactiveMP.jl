@@ -3,10 +3,10 @@ export skipindex, @symmetrical
 using SpecialFunctions
 using Rocket
 
-import Base: show
+import Base: show, similar
 import Base: IteratorSize, HasLength
 import Base: IteratorEltype, HasEltype
-import Base: eltype, length, size
+import Base: eltype, length, size, sum
 import Base: IndexStyle, IndexLinear, getindex
 
 import Rocket: similar_typeof
@@ -44,6 +44,80 @@ cast_to_message_subscribable(::SimpleSubscribableTrait, some)    = some |> map(M
 cast_to_message_subscribable(::ScheduledSubscribableTrait, some) = some |> map(Message, as_message)
 
 reduce_with_sum(array) = reduce(+, array)
+
+## 
+
+"""
+    OneDivNVector(N::Int)
+    OneDivNVector(::Type{T}, N::Int) where T
+
+Allocation-free version of `fill(one(T) / N, N)` vector.
+
+# Arguments 
+- `::Type{T}`: type of elements, optional, Float64 by default, should be a subtype of `Number`
+- `N::Int`: number of elements in a container, should be greater than zero
+
+# Examples
+
+```jldoctest
+julia> iter = ReactiveMP.OneDivNVector(3)
+OneDivNVector(Float64, 3)
+
+julia> length(iter)
+3
+
+julia> eltype(iter)
+Float64
+
+julia> collect(iter)
+3-element Vector{Float64}:
+ 0.3333333333333333
+ 0.3333333333333333
+ 0.3333333333333333
+
+julia> iter = ReactiveMP.OneDivNVector(Float32, 3)
+OneDivNVector(Float32, 3)
+
+julia> collect(iter)
+3-element Vector{Float32}:
+ 0.33333334
+ 0.33333334
+ 0.33333334
+```
+
+See also: [`SampleList`](@ref)
+"""
+struct OneDivNVector{N, T} <: AbstractVector{T} end
+
+Base.show(io::IO, ::OneDivNVector{N, T}) where { N, T } = print(io, "OneDivNVector($T, $N)")
+
+function OneDivNVector(N::Int)
+    return OneDivNVector(Float64, N)
+end
+
+function OneDivNVector(::Type{T}, N::Int) where T
+    @assert N > 0 "OneDivNVector creation error: N should be greater than zero"
+    @assert T <: Number "OneDivNVector creation error: T should be a subtype of `Number`"
+    return OneDivNVector{N, T}()
+end
+
+Base.IteratorSize(::Type{ <: OneDivNVector })   = Base.HasLength()
+Base.IteratorEltype(::Type{ <: OneDivNVector }) = Base.HasEltype()
+
+Base.sum(::OneDivNVector{ N, T }) where { N, T } = one(T) 
+Base.eltype(::Type{ <: OneDivNVector{N, T} }) where { N, T } = T
+Base.length(::OneDivNVector{N})               where N        = N
+Base.size(::OneDivNVector{N})                 where N        = (N, )
+
+Base.iterate(::OneDivNVector{N, T})        where { N, T } = (one(T) / N, 1)
+Base.iterate(::OneDivNVector{N, T}, state) where { N, T } = state >= N ? nothing : (one(T) / N, state + 1)
+
+Base.getindex(v::OneDivNVector{N, T}, index::Int) where { N, T } = 1 <= index <= N ? (one(T) / N) : throw(BoundsError(v, index))
+
+Base.similar(v::OneDivNVector) = v
+Base.similar(v::OneDivNVector{N}, ::Type{ T }) where { N, T } = OneDivNVector(T, N)
+
+Base.vec(::OneDivNVector{N, T}) where { N, T } = fill(one(T) / N, N)
 
 ## 
 
@@ -241,3 +315,9 @@ function custom_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) w
     end
     return _isapprox
 end
+
+## 
+
+deep_eltype(::Type{ T })  where { T <: Number } = T
+deep_eltype(::Type{ T })  where T               = deep_eltype(eltype(T))
+deep_eltype(::T)          where T               = deep_eltype(T)    
