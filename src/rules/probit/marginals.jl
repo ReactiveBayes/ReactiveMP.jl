@@ -1,4 +1,4 @@
-using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
+using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
 
 @marginalrule Probit(:out_in) (m_out::PointMass, m_in::UnivariateNormalDistributionsFamily, meta::ProbitMeta) = begin 
 

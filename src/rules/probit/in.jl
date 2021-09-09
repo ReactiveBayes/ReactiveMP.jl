@@ -1,4 +1,4 @@
-using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
+using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
 
 @rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, ) = begin
     
