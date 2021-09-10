@@ -23,6 +23,7 @@ mutable struct RadialMap{T1, T2 <: Real} <: AbstractNeuralNetwork
     α       :: T2
     β       :: T2
     function RadialMap(z0::T1, α::T2, β::T2) where { T1, T2 <: Real}
+        @assert α > 0
         return new{T1,T2}(z0, float(α), float(β))
     end
 end
@@ -31,14 +32,14 @@ end
 The `RadialMap(dim::Int64)` function creates a mutable `RadialMap` structure with parameters corresponding to input of dimensions `dim`. The parameters are each random sampled from a standard (multivariate) normal distribution.
 """
 function RadialMap(dim::Int64)
-    return RadialMap(randn(dim), randn(dim), randn())
+    return RadialMap(randn(dim), rand(dim), randn())
 end
 
 @doc raw"""
 The `RadialMap()` function creates a mutable `RadialMap` structure with parameters corresponding to input of dimension 1. The parameters are each random sampled from a standard normal distribution.
 """
 function RadialMap()
-    return RadialMap(randn(), randn(), randn())
+    return RadialMap(randn(), rand(), randn())
 end
 
 # get-functions for the RadialMap structure.
