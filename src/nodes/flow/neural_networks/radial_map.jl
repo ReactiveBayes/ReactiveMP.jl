@@ -32,7 +32,7 @@ end
 The `RadialMap(dim::Int64)` function creates a mutable `RadialMap` structure with parameters corresponding to input of dimensions `dim`. The parameters are each random sampled from a standard (multivariate) normal distribution.
 """
 function RadialMap(dim::Int64)
-    return RadialMap(randn(dim), rand(dim), randn())
+    return RadialMap(randn(dim), rand(), randn())
 end
 
 @doc raw"""
@@ -43,18 +43,18 @@ function RadialMap()
 end
 
 # get-functions for the RadialMap structure.
-getu(f::RadialMap)              = return f.z0
+getz0(f::RadialMap)             = return f.z0
 getα(f::RadialMap)              = return f.α
 getβ(f::RadialMap)              = return f.β
 getall(f::RadialMap)            = return f.z0, f.α, f.β
 
 # set-functions for the RadialMap structure
-function setu!(f::RadialMap{T1,T2}, z0::T1) where { T1, T2 <: Real}
-    @assert length(f.z0) == length(v) "The dimensionality of the current value of z0 and its new value do not match."
+function setz0!(f::RadialMap{T1,T2}, z0::T1) where { T1, T2 <: Real}
+    @assert length(f.z0) == length(z0) "The dimensionality of the current value of z0 and its new value do not match."
     f.z0 = z0
 end
 
-function setα!(f::RadialMap{T1,T2}, α::T1) where { T1, T2 <: Real}
+function setα!(f::RadialMap{T1,T2}, α::T2) where { T1, T2 <: Real}
     f.α = α
 end
 
@@ -85,7 +85,7 @@ function _forward(f::RadialMap{T1,T2}, input::T1) where { T1, T2 <: Real }
     denominator /= β
 
     result = copy(input)
-    results .-= z0
+    result .-= z0
     result ./= denominator
     result .+= input
 
@@ -132,7 +132,7 @@ function forward!(output::T1, f::RadialMap{T1,T2}, input::T1) where { T1, T2 <: 
     denominator = α + norm(input - z0) # Not sure whether this is the correct norm
     denominator /= β
 
-    output = copy(input)
+    output .= input
     output .-= z0
     output ./= denominator
     output .+= input
@@ -186,7 +186,7 @@ Broadcast.broadcasted(::typeof(jacobian), f::RadialMap{T1,T2}, input::Array{T3,1
 function jacobian!(output::Array{T2,2}, f::RadialMap{T1,T2}, input::T1) where { T1, T2 <: Real}
 
     # check whether the dimensionality is correct
-    @assert size(output) == (length(input), length(f.u)) "The dimensionality of the preallocated jacobian matrix seems incorrect."
+    @assert size(output) == (length(input), length(f.z0)) "The dimensionality of the preallocated jacobian matrix seems incorrect."
 
     # fetch values 
     z0, α, β = getall(f)
