@@ -31,15 +31,57 @@ using .ReactiveMPTestingHelpers
         # tests for meta data
         @testset "MetaData" begin
 
-            # create example meta data
-            meta = FlowMeta(FlowModel((NiceLayer(PlanarMap()),)))
-            
-            # check whether the Flow node has a default metadata structure
-            @test_throws ErrorException ReactiveMP.default_meta(Flow)
+            @testset "Default" begin
 
-            # check whether the getmodel function works
-            @test typeof(getmodel(meta)) <: ReactiveMP.AbstractFlowModel
-            @test getmodel(meta) == meta.model
+                # create example meta data
+                meta = FlowMeta(FlowModel((NiceLayer(PlanarMap()),)))
+                
+                # check whether the Flow node has a default metadata structure
+                @test_throws ErrorException ReactiveMP.default_meta(Flow)
+
+                # check whether the getmodel function works
+                @test typeof(getmodel(meta)) <: ReactiveMP.AbstractFlowModel
+                @test getmodel(meta) == meta.model
+                @test getapproximation(meta) == meta.approximation
+                @test getapproximation(meta) == Linearization()
+            end
+
+            @testset "Linearization" begin
+                
+                # create example meta data
+                meta = FlowMeta(FlowModel((NiceLayer(PlanarMap()),)), Linearization())
+                
+                # check whether the Flow node has a default metadata structure
+                @test_throws ErrorException ReactiveMP.default_meta(Flow)
+
+                # check whether the getmodel function works
+                @test typeof(getmodel(meta)) <: ReactiveMP.AbstractFlowModel
+                @test getmodel(meta) == meta.model
+                @test getapproximation(meta) == meta.approximation
+                @test typeof(getapproximation(meta)) == Linearization
+
+            end
+
+            @testset "Unscented" begin
+                
+                # create example meta data
+                meta = FlowMeta(FlowModel((NiceLayer(PlanarMap()),)), Unscented(3))
+                
+                # check whether the Flow node has a default metadata structure
+                @test_throws ErrorException ReactiveMP.default_meta(Flow)
+
+                # check whether the getmodel function works
+                @test typeof(getmodel(meta)) <: ReactiveMP.AbstractFlowModel
+                @test getmodel(meta) == meta.model
+                @test getapproximation(meta) == meta.approximation
+                @test typeof(getapproximation(meta)) == Unscented
+                @test getL(getapproximation(meta))   == 3
+                @test getα(getapproximation(meta))   == 1e-3
+                @test getβ(getapproximation(meta))   == 2.0
+                @test getκ(getapproximation(meta))   == 0.0
+                @test getλ(getapproximation(meta))   == 3e-6 - 3
+
+            end
         
         end
         

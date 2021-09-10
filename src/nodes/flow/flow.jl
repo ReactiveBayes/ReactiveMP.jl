@@ -1,5 +1,5 @@
 export Flow, FlowMeta
-export getmodel
+export getmodel, getapproximation
 
 # specify Flow factor node
 struct Flow end
