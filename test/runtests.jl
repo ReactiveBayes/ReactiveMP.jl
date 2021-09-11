@@ -88,7 +88,7 @@ using .ReactiveMPTestingHelpers
     addtests("rules/subtraction/test_in2.jl")
     addtests("rules/subtraction/test_out.jl")
 
-    # addtests("rules/bernoulli/test_out.jl")
+    addtests("rules/bernoulli/test_out.jl")
 	
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
