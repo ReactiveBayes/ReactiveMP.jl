@@ -27,7 +27,11 @@
     μ_znext = F' * m_ztilde + B * ((Σ_in * (B' * ξztilde)) + μ_in)
     Σ_znext = F' * V_ztilde * F + BHBt
 
+    # Actual return type depends on meta object as well, so we explicitly cast the result here
+    # Should be noop if type matches
+    T = promote_type(eltype(m_out), eltype(m_in), eltype(m_zprev))
+
     # return outgoing marginal
-    return ProdFinal(MvNormalMeanCovariance(μ_znext, Σ_znext))
+    return ProdFinal(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_znext, Σ_znext)))
 
 end

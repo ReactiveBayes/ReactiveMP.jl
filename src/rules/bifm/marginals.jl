@@ -33,7 +33,14 @@
     ξ4 = vcat(ξ_in, (ξ_zprev_marginal - ξ_zprev_message))
     Λ4 = cat(Λ_in, (Λ_zprev_marginal - Λ_zprev_message); dims=(1,2))
 
+    # Actual return type depends on meta object as well, so we explicitly cast the result here
+    # Should be noop if type matches
+    T = promote_type(eltype(m_out), eltype(m_in), eltype(m_zprev), eltype(m_znext))
+
     # return joint marginal
-    return prod(ProdAnalytical(), MvNormalWeightedMeanPrecision(ξ3, Λ3), MvNormalWeightedMeanPrecision(ξ4, Λ4))
+    left  = convert(MvNormalWeightedMeanPrecision{T}, MvNormalWeightedMeanPrecision(ξ3, Λ3))
+    right = convert(MvNormalWeightedMeanPrecision{T}, MvNormalWeightedMeanPrecision(ξ4, Λ4))
+    
+    return prod(ProdAnalytical(), left, right)
 
 end

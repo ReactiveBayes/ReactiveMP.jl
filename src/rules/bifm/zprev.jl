@@ -31,7 +31,11 @@
     ξ_zprev = A' * ξ_ztilde
     Λ_zprev = A' * Λ_ztilde * A
 
+    # Actual return type depends on meta object as well, so we explicitly cast the result here
+    # Should be noop if type matches
+    T = promote_type(eltype(m_out), eltype(m_in), eltype(m_znext))
+
     # return message
-    return MvNormalWeightedMeanPrecision(ξ_zprev, Λ_zprev)
+    return convert(MvNormalWeightedMeanPrecision{T}, MvNormalWeightedMeanPrecision(ξ_zprev, Λ_zprev))
 
 end

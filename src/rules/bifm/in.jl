@@ -22,7 +22,11 @@
     μ_in = μu - (Σu * (B' * ξtildex))
     Σ_in = Σu - tmp' * Λtildex * tmp
 
+    # Actual return type depends on meta object as well, so we explicitly cast the result here
+    # Should be noop if type matches
+    T = promote_type(eltype(m_out), eltype(m_zprev), eltype(m_znext))
+
     # return input marginal
-    return ProdFinal(MvNormalMeanCovariance(μ_in, Σ_in))
+    return ProdFinal(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_in, Σ_in)))
 
 end

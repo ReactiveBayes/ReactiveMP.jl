@@ -1,5 +1,7 @@
 export ProdFinal
 
+import Base: eltype
+
 """
     ProdFinal{T}
 
@@ -16,6 +18,7 @@ end
 ProdFinal(prod::ProdFinal) = prod
 
 Base.show(io::IO, prod::ProdFinal) = print(io, "ProdFinal(", getdist(prod), ")")
+Base.eltype(prod::ProdFinal)       = Base.eltype(getdist(prod))
 
 getdist(dist::ProdFinal) = dist.dist
 
@@ -60,6 +63,9 @@ Distributions.logpdf(prod::ProdFinal, x) = Distributions.logpdf(getdist(prod), x
 custom_isapprox(dist1::ProdFinal, dist2::ProdFinal; kwargs...)  = custom_isapprox(getdist(dist1), getdist(dist2); kwargs...)
 custom_isapprox(dist1::Any, dist2::ProdFinal; kwargs...)        = custom_isapprox(dist1, getdist(dist2); kwargs...)
 custom_isapprox(dist1::ProdFinal, dist2::Any; kwargs...)        = custom_isapprox(getdist(dist1), dist2; kwargs...)
+
+# This function is unsafe and uses internal fields of Julia types, but should be used only in tests
+convert_eltype(::Type{ <: ProdFinal }, ::Type{T}, prod::ProdFinal{D}) where { T, D } = ProdFinal(convert_eltype(D.name.wrapper, T, getdist(prod)))
 
 prod_analytical_rule(::Type{ <: ProdFinal }, ::Type) = ProdAnalyticalRuleAvailable()
 prod_analytical_rule(::Type, ::Type{ <: ProdFinal }) = ProdAnalyticalRuleAvailable()

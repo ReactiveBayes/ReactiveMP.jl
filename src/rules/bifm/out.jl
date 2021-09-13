@@ -30,7 +30,11 @@
     μ_out = C * μ_znext
     Σ_out = C * Σ_znext * C'
 
+    # Actual return type depends on meta object as well, so we explicitly cast the result here
+    # Should be noop if type matches
+    T = promote_type(eltype(m_in), eltype(m_zprev), eltype(m_znext))
+
     # return outgoing marginal
-    return ProdFinal(MvNormalMeanCovariance(μ_out, Σ_out))
+    return ProdFinal(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_out, Σ_out)))
 
 end
