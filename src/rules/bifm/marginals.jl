@@ -1,4 +1,4 @@
-@marginalrule BIFM(:in_zprev_znext) (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::MarginalDistribution{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta{Float64}) = begin 
+@marginalrule BIFM(:in_zprev_znext) (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta{Float64}) = begin 
     # Note: this rules is equal to the rule for the :in_zprev marginal. However, it yield identical performance with respect to the RTS smoother (aside from the additional prior on the last z)
 
     # fetch statistics from meta data

@@ -23,10 +23,10 @@ end
     return MvNormalWeightedMeanPrecision(ξ, Λ)
 end
 
-@marginalrule MvNormalMeanPrecision(:out_μ_Λ) (m_out::MarginalDistribution{<:NormalDistributionsFamily}, m_μ::PointMass, m_Λ::PointMass) = begin 
+@marginalrule MvNormalMeanPrecision(:out_μ_Λ) (m_out::ProdFinal, m_μ::PointMass, m_Λ::PointMass) = begin 
     return (out = getdist(m_out), μ = m_μ, Λ = m_Λ)
 end
 
-@marginalrule MvNormalMeanPrecision(:out_μ_Λ) (m_out::PointMass, m_μ::MarginalDistribution{<:NormalDistributionsFamily}, m_Λ::PointMass) = begin 
+@marginalrule MvNormalMeanPrecision(:out_μ_Λ) (m_out::PointMass, m_μ::ProdFinal, m_Λ::PointMass) = begin 
     return (out = m_out, μ = getdist(m_μ), Λ = m_Λ)
 end

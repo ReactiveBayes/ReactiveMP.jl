@@ -49,6 +49,8 @@ using .ReactiveMPTestingHelpers
 
     addtests("test_math.jl")
 
+    addtests("constraints/prod/test_prod_final.jl")
+
     addtests("test_distributions.jl")
     addtests("distributions/test_common.jl")
     addtests("distributions/test_bernoulli.jl")

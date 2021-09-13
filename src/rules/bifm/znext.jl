@@ -1,5 +1,5 @@
 
-@rule BIFM(:znext, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::MarginalDistribution{<:MultivariateNormalDistributionsFamily}, meta::BIFMMeta) = begin
+@rule BIFM(:znext, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily}, meta::BIFMMeta) = begin
 
     # fetch information from meta data
     A       = getA(meta)
@@ -28,6 +28,6 @@
     Σ_znext = F' * V_ztilde * F + BHBt
 
     # return outgoing marginal
-    return MarginalDistribution(MvNormalMeanCovariance(μ_znext, Σ_znext))
+    return ProdFinal(MvNormalMeanCovariance(μ_znext, Σ_znext))
 
 end
