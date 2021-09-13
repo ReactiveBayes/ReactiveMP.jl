@@ -14,6 +14,8 @@ Interfaces:
 3. zprev - previous latent state of the BIFM node
 4. znext - next latent state of the BIFM node
 
+*Note: When performing inference, first subscribe to the marginals (in the order: z, out, in) and then to the free energy score function.*
+
 ## Example
 
 ```julia

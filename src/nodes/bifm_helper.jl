@@ -12,6 +12,9 @@ out ~ BIFMHelper(in)
 Interfaces:
 1. out - output of the BIFMHelper node, should be connected to the state space model.
 2. in - input of the BIFMHelper node, should be connected to the prior for the latent state.
+
+*Note: When performing inference, first subscribe to the marginals (in the order: z, out, in) and then to the free energy score function.*
+
 """
 struct BIFMHelper <: AbstractFactorNode end
 
