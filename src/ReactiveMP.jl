@@ -19,6 +19,7 @@ include("constraints/prod/prod_final.jl")
 
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
+include("constraints/form/form_sample_list.jl")
 
 as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
@@ -41,6 +42,7 @@ include("approximations/laplace.jl")
 include("approximations/importance.jl")
 
 include("distributions/pointmass.jl")
+include("distributions/uniform.jl")
 include("distributions/gamma_shape_rate.jl")
 include("distributions/gamma.jl")
 include("distributions/gamma_shape_likelihood.jl")
@@ -60,6 +62,7 @@ include("distributions/exp_linear_quadratic.jl")
 include("distributions/wishart.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
+include("distributions/sample_list.jl")
 
 include("variables/random.jl")
 include("variables/constant.jl")
@@ -108,6 +111,7 @@ include("nodes/probit.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
+include("nodes/subtraction.jl")
 include("nodes/multiplication.jl")
 
 

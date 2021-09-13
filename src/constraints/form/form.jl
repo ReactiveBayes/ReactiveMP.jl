@@ -1,11 +1,17 @@
 export FormConstraintCheckEach, FormConstraintCheckLast, FormConstraintCheckPickDefault
 export constrain_form, default_form_check_strategy, is_point_mass_form_constraint
 
+using TupleTools
+
+import Base: +
+
 # Form constraints are preserved during execution of the `prod` function
 # There are two major strategies to check current functional form
 # We may check and preserve functional form of the result of the `prod` function
 # after each subsequent `prod` 
 # or we may want to wait after all `prod` functions in the equality chain have been executed 
+
+abstract type AbstractFormConstraint end
 
 """
     FormConstraintCheckEach
@@ -68,3 +74,32 @@ See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), 
 function constrain_form end 
 
 
+struct CompositeFormConstraint{C} <: AbstractFormConstraint
+    constraints :: C
+end
+
+constrain_form(composite::CompositeFormConstraint, something) = reduce((form, constraint) -> constrain_form(constraint, form), composite.constraints, init = something)
+
+function default_form_check_strategy(composite::CompositeFormConstraint)
+    strategies = map(default_form_check_strategy, composite.constraints)
+    if !(all(e -> e === first(strategies), TupleTools.tail(strategies)))
+        error("Different default form check strategy for composite form constraints found. Use `form_check_strategy` options to specify check strategy.")
+    end
+    return first(strategies)
+end
+
+function is_point_mass_form_constraint(composite::CompositeFormConstraint)
+    is_point_mass = map(is_point_mass_form_constraint, composite.constraints)
+    pmindex       = findnext(is_point_mass, 1)
+    if pmindex !== nothing && pmindex !== length(is_point_mass)
+        error("Composite form constraint supports point mass constraint only at the end of the form constrains specification.")
+    end
+    return last(is_point_mass)
+end
+
+Base.:+(constraint::AbstractFormConstraint) = constraint
+
+Base.:+(left::AbstractFormConstraint,  right::AbstractFormConstraint)  = CompositeFormConstraint((left, right))
+Base.:+(left::AbstractFormConstraint,  right::CompositeFormConstraint) = CompositeFormConstraint((left, right.constraints...))
+Base.:+(left::CompositeFormConstraint, right::AbstractFormConstraint)  = CompositeFormConstraint((left.constraints..., right))
+Base.:+(left::CompositeFormConstraint, right::CompositeFormConstraint) = CompositeFormConstraint((left.constraints..., right.constraints...))

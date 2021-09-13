@@ -1,11 +1,13 @@
 export Gamma, GammaShapeScale, GammaDistributionsFamily
 
 import SpecialFunctions: digamma
-import Distributions: Gamma, shape, scale
+import Distributions: Gamma, shape, scale, cov
 import StatsFuns: log2π
 
 const GammaShapeScale             = Gamma
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
+
+Distributions.cov(dist::GammaDistributionsFamily) = var(dist)
 
 function logmean(dist::GammaShapeScale)
     k, θ = params(dist)
@@ -64,4 +66,11 @@ end
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeRate)
     T = promote_type(eltype(left), eltype(right))
     return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
+end
+
+## Friendly functions
+
+function logpdf_sample_friendly(dist::GammaDistributionsFamily)
+    friendly = convert(GammaShapeScale, dist)
+    return (friendly, friendly)
 end

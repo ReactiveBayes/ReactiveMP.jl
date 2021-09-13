@@ -1,7 +1,7 @@
 export PointMass, getpointmass
 
 import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
-import Base: ndims, precision, getindex, convert, isapprox
+import Base: ndims, precision, getindex, convert, isapprox, eltype
 import SpecialFunctions: loggamma, logbeta
 
 struct PointMass{P}
@@ -43,6 +43,8 @@ Base.precision(::PointMass{T}) where { T <: Real } = Inf
 Base.ndims(::PointMass{T})     where { T <: Real } = 1
 
 convert_eltype(::Type{ PointMass }, ::Type{T}, distribution::PointMass{R}) where { T <: Real, R <: Real } = PointMass(convert(T, getpointmass(distribution)))
+
+Base.eltype(::PointMass{T}) where { T } = T
 
 # AbstractVector-based multivariate point mass
 

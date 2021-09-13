@@ -13,7 +13,7 @@ or different arguments for `Optim.jl` package.
 
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
-struct PointMassFormConstraint{F, P}
+struct PointMassFormConstraint{F, P} <: AbstractFormConstraint
     optimizer      :: F
     starting_point :: P   
 end

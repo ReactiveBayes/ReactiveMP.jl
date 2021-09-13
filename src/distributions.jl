@@ -1,6 +1,6 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
-export mean_cov, mean_var, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_invcov, weightedmean_precision
+export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
 export variate_form, value_support, promote_variate_type, convert_eltype
 
@@ -18,11 +18,13 @@ function vague end
 
 mean_cov(something)         = (mean(something), cov(something))
 mean_var(something)         = (mean(something), var(something))
+mean_std(something)         = (mean(something), std(something))
 mean_invcov(something)      = (mean(something), invcov(something))
 mean_precision(something)   = mean_invcov(something)
 
 weightedmean_cov(something)       = (weightedmean(something), cov(something))
 weightedmean_var(something)       = (weightedmean(something), var(something))
+weightedmean_std(something)       = (weightedmean(something), std(something))
 weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
 weightedmean_precision(something) = weightedmean_invcov(something)
 
@@ -71,3 +73,36 @@ promote_variate_type(::Type{ D }, T) where { D <: Distribution } = promote_varia
 function convert_eltype end
 
 convert_eltype(::Type{ D }, ::Type{ E }, distribution::Distribution) where { D <: Distribution, E } = convert(D{E}, distribution)
+
+"""
+    logpdf_sample_friendly(distribution) 
+    
+`logpdf_sample_friendly` function takes as an input a `distribution` and returns corresponding optimized two versions 
+for taking `logpdf()` and sampling with `rand!` respectively. By default returns the same distribution, but some distributions 
+may override default behaviour for better efficiency.
+
+# Example
+
+```jldoctest
+julia> d = vague(MvNormalMeanPrecision, 2)
+MvNormalMeanPrecision(
+μ: [0.0, 0.0]
+Λ: [1.0e-12 0.0; 0.0 1.0e-12]
+)
+
+
+julia> ReactiveMP.logpdf_sample_friendly(d)
+(FullNormal(
+dim: 2
+μ: [0.0, 0.0]
+Σ: [1.0e12 -0.0; -0.0 1.0e12]
+)
+, FullNormal(
+dim: 2
+μ: [0.0, 0.0]
+Σ: [1.0e12 -0.0; -0.0 1.0e12]
+)
+)
+```
+"""
+logpdf_sample_friendly(something) = (something, something)
