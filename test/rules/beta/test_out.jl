@@ -17,7 +17,7 @@ import ReactiveMP: @test_rules
 
     end
 
-    @testset "Belief Propagation: (q_a::PointMass, q_b::PointMass)" begin
+    @testset "Variational Message Passing: (q_a::PointMass, q_b::PointMass)" begin
 
         @test_rules [ with_float_conversions = true ] Beta(:out, Marginalisation) [
             (input = (q_a = PointMass(1.0), q_b = PointMass(2.0)), output = Beta(1.0, 2.0)),
