@@ -15,7 +15,7 @@ The FlowModel structure is the most generic type of Flow model, in which the lay
 
 Note: this model can be specialized by constraining the types of layers. This potentially allows for more efficient specialized methods that can deal with specifics of these layers, such as triangular jacobian matrices.
 """
-struct FlowModel{N,T<:NTuple{N,AbstractFlowLayer}} <: AbstractFlowModel
+struct FlowModel{N,T<:NTuple{N,AbstractCouplingLayer}} <: AbstractFlowModel
     layers  :: T
 end
 

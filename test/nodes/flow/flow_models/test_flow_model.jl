@@ -8,8 +8,8 @@ using ReactiveMP
     @testset "Constructor" begin
         
         # check for single layer
-        f = PlanarMap()
-        layer = NiceLayer(f)
+        f = PlanarFlow()
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test model.layers == (layer, )
         @test model.layers[1].f == f
@@ -18,10 +18,10 @@ using ReactiveMP
         @test model.layers[1].f.b == f.b
 
         # check for two layers
-        f1 = PlanarMap()
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap()
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow()
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow()
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test model.layers == (layer1, layer2)
         @test model.layers[1] == layer1
@@ -40,8 +40,8 @@ using ReactiveMP
     @testset "Get" begin
         
         # check get functions for single layer model
-        f = PlanarMap()
-        layer = NiceLayer(f)
+        f = PlanarFlow()
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test getlayers(model) == model.layers
         @test getlayers(model) == (layer, )
@@ -51,10 +51,10 @@ using ReactiveMP
         @test typeof(getinv_jacobian(model)) <: Function
 
         # check get functions for multi layer model
-        f1 = PlanarMap()
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap()
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow()
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow()
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test getlayers(model) == model.layers
         @test getlayers(model) == (layer1, layer2)
@@ -68,18 +68,18 @@ using ReactiveMP
     @testset "Base" begin
         
         # check base functions (single layer)
-        f = PlanarMap()
-        layer = NiceLayer(f)
+        f = PlanarFlow()
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test eltype(model) == Float64
         @test length(model) == 1
 
 
         # check base functions (multi layer)
-        f1 = PlanarMap()
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap()
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow()
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow()
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test eltype(model) == Float64
         @test length(model) == 2
@@ -89,26 +89,26 @@ using ReactiveMP
     @testset "Forward-Backward" begin
         
         # check forward function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test forward(model, [5.0, 1.5]) == [5.0, 7.4999983369439445]
         @test forward(model, [4.0, 2.5]) == [4.0, 7.499909204262595] 
         @test forward.(model, [[5.0, 1.5], [4.0, 2.5]]) == [[5.0, 7.4999983369439445], [4.0, 7.499909204262595] ]
 
         # check forward function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test forward(model, [5.0, 1.5]) == [13.49999833686844, 7.4999983369439445]
         @test forward(model, [4.0, 2.5]) == [12.499909204187064, 7.499909204262595]
         @test forward.(model, [[5.0, 1.5], [4.0, 2.5]]) == [[13.49999833686844, 7.4999983369439445], [12.499909204187064, 7.499909204262595]]
 
         # check forward! function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         output = zeros(2)
         forward!(output, model, [5.0, 1.5]) 
@@ -117,10 +117,10 @@ using ReactiveMP
         @test output == [4.0, 7.499909204262595]
 
         # check forward! function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         output = zeros(2)
         forward!(output, model, [5.0, 1.5]) 
@@ -129,26 +129,26 @@ using ReactiveMP
         @test output == [12.499909204187064, 7.499909204262595]
 
         # check backward function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test backward(model, [5.0, 7.4999983369439445]) == [5.0, 1.5]
         @test backward(model, [4.0, 7.499909204262595]) == [4.0, 2.5]
         @test backward.(model, [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]) == [[5.0, 1.5], [4.0, 2.5]]
 
         # check backward function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test backward(model, [13.49999833686844, 7.4999983369439445]) == [5.0, 1.5] 
         @test backward(model, [12.499909204187064, 7.499909204262595]) == [4.0, 2.5] 
         @test backward.(model, [[13.49999833686844, 7.4999983369439445], [12.499909204187064, 7.499909204262595]]) == [[5.0, 1.5], [4.0, 2.5]]
 
         # check backward! function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         output = zeros(2)
         backward!(output, model, [5.0, 7.4999983369439445]) 
@@ -157,10 +157,10 @@ using ReactiveMP
         @test output == [4.0, 2.5]
 
         # check backward! function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         output = zeros(2)
         backward!(output, model, [13.49999833686844, 7.4999983369439445]) 
@@ -173,16 +173,16 @@ using ReactiveMP
     @testset "Jacobian" begin
         
         # check jacobian function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test jacobian(model, [3.0, 1.5]) == [1.0 0.0; 1.0197320743308804 1.0]
         @test jacobian(model, [2.5, 5.0]) == [1.0 0.0; 1.1413016497063289 1.0]
         @test jacobian.(model, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]]
 
         # check jacobian! function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         output = zeros(2,2)
         jacobian!(output, model, [3.0, 1.5]) 
@@ -191,20 +191,20 @@ using ReactiveMP
         @test output == [1.0 0.0; 1.1413016497063289 1.0]
 
         # check jacobian function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test jacobian(model, [3.0, 1.5]) == [2.0398535034191605 1.0197320743308804; 1.0197320743308804 1.0]
         @test jacobian(model, [2.5, 5.0]) == [2.302569455622388 1.1413016497063289; 1.1413016497063289 1.0]
         @test jacobian.(model, [[3.0, 1.5], [2.5, 5.0]]) == [[2.0398535034191605 1.0197320743308804; 1.0197320743308804 1.0], [2.302569455622388 1.1413016497063289; 1.1413016497063289 1.0]]
 
         # check jacobian! function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         output = zeros(2,2)
         jacobian!(output, model, [3.0, 1.5]) 
@@ -213,16 +213,16 @@ using ReactiveMP
         @test output == [2.302569455622388 1.1413016497063289; 1.1413016497063289 1.0]
 
         # check inv_jacobian function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test inv_jacobian(model, [3.0, 1.5]) == [1.0 0.0; -1.0197320743308804 1.0]
         @test inv_jacobian(model, [2.5, 5.0]) == [1.0 0.0; -1.1413016497063289 1.0]
         @test inv_jacobian.(model, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]        
         
         # check inv_jacobian! function (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         output = zeros(2,2)
         inv_jacobian!(output, model, [3.0, 1.5]) 
@@ -231,10 +231,10 @@ using ReactiveMP
         @test output == [1.0 0.0; -1.1413016497063289 1.0]
 
         # check inv_jacobian! function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         output = zeros(2,2)
         inv_jacobian!(output, model, [3.0, 1.5]) 
@@ -243,10 +243,10 @@ using ReactiveMP
         @test output == [1.0 -1.1413016497063289; -1.0000000164893388 2.1413016685256387]
 
         # check inv_jacobian function (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test inv_jacobian(model, [3.0, 1.5]) == [1.0 -1.0197320743308804; -3.0 4.059196222992641]
         @test inv_jacobian(model, [2.5, 5.0]) == [1.0 -1.1413016497063289; -1.0000000164893388 2.1413016685256387]
@@ -257,8 +257,8 @@ using ReactiveMP
     @testset "Utility Jacobian" begin
         
         # check utility functions jacobian (single layer)
-        f = PlanarMap(1.0, 2.0, -3.0)
-        layer = NiceLayer(f)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        layer = AdditiveCouplingLayer(f)
         model = FlowModel( (layer, ) )
         @test det_jacobian(model, [1.5, 6.9]) == 1.0
         @test det_jacobian(model, [2.5, 6.4]) == 1.0
@@ -270,10 +270,10 @@ using ReactiveMP
         @test sum(isapprox.(logabsdet_jacobian(model, [2.5, 6.4]), (0.0, 1.0); atol=1e-10)) == 2
 
         # check utility functions jacobian (multiple layers)
-        f1 = PlanarMap(1.0, 2.0, -3.0)
-        layer1 = NiceLayer(f1)
-        f2 = PlanarMap(1.0, 2.0, -3.0)
-        layer2 = ReverseNiceLayer(f2)
+        f1 = PlanarFlow(1.0, 2.0, -3.0)
+        layer1 = AdditiveCouplingLayer(f1)
+        f2 = PlanarFlow(1.0, 2.0, -3.0)
+        layer2 = ReverseAdditiveCouplingLayer(f2)
         model = FlowModel( (layer1, layer2) )
         @test detinv_jacobian(model, [1.5, 6.9]) ≈ 1.0
         @test detinv_jacobian(model, [2.5, 6.4]) ≈ 1.0

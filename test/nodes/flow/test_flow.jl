@@ -34,7 +34,7 @@ using .ReactiveMPTestingHelpers
             @testset "Default" begin
 
                 # create example meta data
-                meta = FlowMeta(FlowModel((NiceLayer(PlanarMap()),)))
+                meta = FlowMeta(FlowModel((AdditiveCouplingLayer(PlanarFlow()),)))
                 
                 # check whether the Flow node has a default metadata structure
                 @test_throws ErrorException ReactiveMP.default_meta(Flow)
@@ -49,7 +49,7 @@ using .ReactiveMPTestingHelpers
             @testset "Linearization" begin
                 
                 # create example meta data
-                meta = FlowMeta(FlowModel((NiceLayer(PlanarMap()),)), Linearization())
+                meta = FlowMeta(FlowModel((AdditiveCouplingLayer(PlanarFlow()),)), Linearization())
                 
                 # check whether the Flow node has a default metadata structure
                 @test_throws ErrorException ReactiveMP.default_meta(Flow)
@@ -65,7 +65,7 @@ using .ReactiveMPTestingHelpers
             @testset "Unscented" begin
                 
                 # create example meta data
-                meta = FlowMeta(FlowModel((NiceLayer(PlanarMap()),)), Unscented(3))
+                meta = FlowMeta(FlowModel((AdditiveCouplingLayer(PlanarFlow()),)), Unscented(3))
                 
                 # check whether the Flow node has a default metadata structure
                 @test_throws ErrorException ReactiveMP.default_meta(Flow)
@@ -94,18 +94,19 @@ using .ReactiveMPTestingHelpers
         
     end
 
-    # test for layer specifics in the flow_layers folder
-    @testset "Layers" begin
+    # test for coupling layer specifics in the coupling_layers folder
+    @testset "Coupling layers" begin
         
-        addtests("flow_layers/test_nice_layer.jl")
-        addtests("flow_layers/test_reverse_nice_layer.jl")
+        addtests("coupling_layers/test_additive_coupling_layer.jl")
+        addtests("coupling_layers/test_reverse_additive_coupling_layer.jl")
 
     end
 
-    # test for neural network specifics in the neural_networks folder
-    @testset "NeuralNetworks" begin
+    # test for neural network specifics in the coupling_flows folder
+    @testset "Coupling flows" begin
         
-        addtests("neural_networks/test_planar_map.jl")
+        addtests("coupling_flows/test_planar_flow.jl")
+        addtests("coupling_flows/test_radial_flow.jl")
 
     end
 

@@ -7,8 +7,8 @@ struct Flow end
 
 # specify abstract types for Flow building blocks
 abstract type AbstractFlowModel end
-abstract type AbstractFlowLayer end
-abstract type AbstractNeuralNetwork end
+abstract type AbstractCouplingLayer end
+abstract type AbstractCouplingFlow end
 
 # specify abstract types of nonlinear approximation
 abstract type AbstractNonLinearApproximation end
@@ -40,12 +40,12 @@ getmodel(meta::FlowMeta)         = meta.model
 getapproximation(meta::FlowMeta) = meta.approximation
 
 # include neural networks
-include("neural_networks/planar_map.jl")
-include("neural_networks/radial_map.jl")
+include("coupling_flows/planar_flow.jl")
+include("coupling_flows/radial_flow.jl")
 
 # include layers
-include("flow_layers/nice_layer.jl")
-include("flow_layers/reverse_nice_layer.jl")
+include("coupling_layers/additive_coupling_layer.jl")
+include("coupling_layers/reverse_additive_coupling_layer.jl")
 
 # include models
 include("flow_models/flow_model.jl")
