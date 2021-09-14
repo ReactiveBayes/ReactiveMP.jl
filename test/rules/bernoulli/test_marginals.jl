@@ -7,7 +7,7 @@ import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:Bernoulli" begin
 
-     @testset "out, p: (m_out::PointMass, m_p::Beta)" begin
+     @testset "out_p: (m_out::PointMass, m_p::Beta)" begin
 
         @test_marginalrules [ with_float_conversions = true ] Bernoulli(:out_p) [
             (input = (m_out = PointMass(1.0), m_p = Beta(2.0, 1.0)), output = (out = PointMass(1.0), p = Beta(3.0, 1.0))),

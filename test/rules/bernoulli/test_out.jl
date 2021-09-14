@@ -16,7 +16,7 @@ import ReactiveMP: @test_rules
 
     end
 
-    @testset "Belief Propagation: (q_p::PointMass)" begin
+    @testset "Variational Message Passing: (q_p::PointMass)" begin
 
         @test_rules [ with_float_conversions = true ] Bernoulli(:out, Marginalisation) [
             (input = (q_p = PointMass(1.0),), output = Bernoulli(1.0)),
@@ -25,7 +25,7 @@ import ReactiveMP: @test_rules
 
     end
 
-    @testset "Belief Propagation: (q_p::Beta)" begin
+    @testset "Variational Message Passing: (q_p::Beta)" begin
 
         @test_rules [ with_float_conversions = true ] Bernoulli(:out, Marginalisation) [
             (input = (q_p = Beta(1.0, 1.0),), output = Bernoulli(0.5)),
