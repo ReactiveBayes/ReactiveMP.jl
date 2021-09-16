@@ -1,4 +1,4 @@
-export PermutationMatrix, PT_X_P
+export PermutationMatrix, PT_X_P, getind ,getindices
 
 import Base: *
 import LinearAlgebra: transpose , inv
@@ -128,9 +128,9 @@ end
 Base.:*(x::Adjoint{T, S}, P::PermutationMatrix) where { T, S <: AbstractVector } = (P'*x')'
 Base.:*(x::Adjoint{T, S}, P::Adjoint{T1, PermutationMatrix{T1}}) where { T, T1, S <: AbstractVector } = (P'*x')'
 Base.:*(x::Adjoint{T, S}, P::Transpose{T1, PermutationMatrix{T1}}) where { T, T1, S <: AbstractVector } = (P'*x')'
-Base.:*(x::Transpose{T, S}, P::PermutationMatrix) where { T, S <: AbstractVector } = tranpose(transpose(P)*transpose(x))
-Base.:*(x::Transpose{T, S}, P::Adjoint{T1, PermutationMatrix{T1}}) where { T, T1, S <: AbstractVector } = tranpose(transpose(P)*transpose(x))
-Base.:*(x::Transpose{T, S}, P::Transpose{T1, PermutationMatrix{T1}}) where { T, T1, S <: AbstractVector } = tranpose(transpose(P)*transpose(x))
+Base.:*(x::Transpose{T, S}, P::PermutationMatrix) where { T, S <: AbstractVector } = transpose(transpose(P)*transpose(x))
+Base.:*(x::Transpose{T, S}, P::Adjoint{T1, PermutationMatrix{T1}}) where { T, T1, S <: AbstractVector } = transpose(transpose(P)*transpose(x))
+Base.:*(x::Transpose{T, S}, P::Transpose{T1, PermutationMatrix{T1}}) where { T, T1, S <: AbstractVector } = transpose(transpose(P)*transpose(x))
 
 
 # matrix-Permutation multiplication
