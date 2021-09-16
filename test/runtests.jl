@@ -102,6 +102,10 @@ using .ReactiveMPTestingHelpers
     addtests("rules/subtraction/test_in2.jl")
     addtests("rules/subtraction/test_out.jl")
 
+    addtests("rules/bernoulli/test_out.jl")
+    addtests("rules/bernoulli/test_p.jl")
+    addtests("rules/bernoulli/test_marginals.jl")
+    
     addtests("rules/beta/test_out.jl")
     addtests("rules/beta/test_marginals.jl")
 
