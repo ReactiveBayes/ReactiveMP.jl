@@ -7,7 +7,8 @@ struct Flow end
 
 # specify abstract types for Flow building blocks
 abstract type AbstractFlowModel end
-abstract type AbstractCouplingLayer end
+abstract type AbstractLayer end
+abstract type AbstractCouplingLayer <: AbstractLayer end
 abstract type AbstractCouplingFlow end
 
 # specify abstract types of nonlinear approximation
