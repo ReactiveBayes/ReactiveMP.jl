@@ -94,11 +94,11 @@ using .ReactiveMPTestingHelpers
         
     end
 
-    # test for coupling layer specifics in the coupling_layers folder
-    @testset "Coupling layers" begin
+    # test for layer specifics in the layers folder
+    @testset "Layers" begin
         
-        addtests("coupling_layers/test_additive_coupling_layer.jl")
-        addtests("coupling_layers/test_reverse_additive_coupling_layer.jl")
+        addtests("layers/test_additive_coupling_layer.jl")
+        addtests("layers/test_reverse_additive_coupling_layer.jl")
 
     end
 

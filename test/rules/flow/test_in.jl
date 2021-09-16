@@ -10,7 +10,7 @@ import ReactiveMP: @test_rules
 
 @testset "rules:Flow:in" begin
 
-    model = FlowModel( (NiceLayer(PlanarMap(1.0, 2.0, 3.0)), ) )
+    model = FlowModel( (AdditiveCouplingLayer(PlanarFlow(1.0, 2.0, 3.0)), ) )
     meta  = FlowMeta(model)
     metaU = FlowMeta(model, Unscented(2))
     Ji1 = inv_jacobian(model, [3.0, -1.5])
