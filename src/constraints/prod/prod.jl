@@ -1,7 +1,8 @@
 export ProdAnalyticalRuleAvailable, ProdAnalyticalRuleUnknown
 export prod_analytical_rule
 
-import Base: prod
+import Base: show, prod
+import Distributions
 
 struct ProdAnalyticalRuleAvailable end
 struct ProdAnalyticalRuleUnknown end
