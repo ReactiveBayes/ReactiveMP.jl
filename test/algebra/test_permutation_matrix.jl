@@ -14,10 +14,24 @@ using LinearAlgebra
         P = PermutationMatrix(ind)
         @test P.ind == ind
 
-        for k = 1:10
+        for k = 2:10
             P = PermutationMatrix(k)
             @test length(P.ind) == k
         end
+
+        # check whether the first entry is one
+        for k = 1:100
+            P = PermutationMatrix(3)
+            @test P[1,1] == 0
+        end
+        ind = 0
+        for k = 1:1000
+            P = PermutationMatrix(3; switch_first=false)
+            if P[1,1] == 1
+                ind += 1
+            end
+        end
+        @test ind > 0
 
     end
     

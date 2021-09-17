@@ -26,10 +26,16 @@ struct PermutationMatrix{ T <: Int } <: AbstractMatrix{T}
 end
 
 @doc raw"""
-`PermutationMatrix(dim::T)` Generates a random permutation matrix of size (dim x dim).
+`PermutationMatrix(dim::T; switch_first::Bool=true)` Generates a random permutation matrix of size (dim x dim).
+The `switch_first` argument specifies whether the first index always has to be permuted.
 """
-function PermutationMatrix(dim::T) where { T <: Int }
+function PermutationMatrix(dim::T; switch_first::Bool=true) where { T <: Int }
     ind = shuffle(collect(1:dim))
+    if switch_first && ind[1] == 1
+        tmp = ind[2]
+        ind[2] = ind[1]
+        ind[1] = tmp
+    end
     return PermutationMatrix(ind)
 end
 
