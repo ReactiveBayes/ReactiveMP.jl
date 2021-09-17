@@ -47,6 +47,7 @@ include("coupling_flows/radial_flow.jl")
 # include layers
 include("layers/additive_coupling_layer.jl")
 include("layers/reverse_additive_coupling_layer.jl")
+include("layers/permutation_layer.jl")
 
 # include models
 include("flow_models/flow_model.jl")

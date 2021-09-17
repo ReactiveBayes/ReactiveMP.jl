@@ -99,6 +99,7 @@ using .ReactiveMPTestingHelpers
         
         addtests("layers/test_additive_coupling_layer.jl")
         addtests("layers/test_reverse_additive_coupling_layer.jl")
+        addtests("layers/test_permutation_layer.jl")
 
     end
 
