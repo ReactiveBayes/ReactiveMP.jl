@@ -3,6 +3,7 @@ module RulesExponentialOutTest
 using Test
 using ReactiveMP
 using Random
+using Distributions
 import ReactiveMP: @test_rules
 
 @testset "rules:Exponential:out" begin
