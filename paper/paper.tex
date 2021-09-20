@@ -1,0 +1,44 @@
+
+% JuliaCon proceedings template
+\documentclass{juliacon}
+\setcounter{page}{1}
+
+\begin{document}
+
+\input{header}
+
+\maketitle
+
+\begin{abstract}
+
+This is a guide for authors who are preparing papers for JuliaCon using the \LaTeX{} document
+preparation system and the \verb|juliacon|  class file.
+
+\end{abstract}
+
+\section{Introduction}
+
+Bayesian inference is one of the key computational mechanisms that underlies probabilistic model-based machine learning applications. 
+Unfortunately, for many practical models, Bayesian inference requires evaluating high-dimensional integrals that have no analytical solution. 
+As a result, Probabilistic Programming (PP) tools for Automated Approximate Bayesian Inference (AABI) have become popular, e.g., \textit{Turing.jl} \cite{ge2018t}, 
+\textit{ForneyLab.jl} \cite{ForneyLab.jl-2019} and others. These tools help researchers to specify probabilistic models in a high-level domain-specific language and 
+run AABI algorithms with minimal additional overhead. 
+
+We present \textbf{ReactiveMP.jl} package, which is a native Julia package for automated \textit{reactive} message passing-based (both exact and approximate) Bayesian inference and 
+Constrained Bethe Free Energy (CFBE) optimisation \cite{senoz_local_constraint_2021}. New package scales comfortably to inference tasks on factor graphs with tens of thousands of variables and millions of nodes. 
+The package comes with a collection of standard probabilistic models, including linear Gaussian state-space models, hidden Markov models, auto-regressive models and mixture models. 
+Moreover, ReactiveMP.jl API supports various processing modes such as offline learning, filtering of infinite data streams and protocols for handling missing data.
+
+ReactiveMP.jl provides an easy way to add new models, node functions and analytical message update rules to the existing platform. 
+The resulting inference procedures are differentiable with the \textit{ForwardDiff.jl} \cite{RevelsLubinPapamarkou2016}. As for computation time and memory usage, specifically for conjugate models, 
+the ReactiveMP.jl outperforms Turing.jl and ForneyLab.jl significantly by orders of magnitude. Performance benchmarks are available at the GitHub repository.
+
+\section{Acknowledgements}
+
+We acknowledge contributions from Albert Podusenko, Ismail Senoz, and Bart van Erp, and support from the whole BIASlab group during this project.
+
+\input{bib.tex}
+
+\end{document}
+
+% Inspired by the International Journal of Computer Applications template

@@ -1,0 +1,29 @@
+\begin{thebibliography}{1}
+
+\bibitem{ForneyLab.jl-2019}
+Marco Cox, Thijs van~de Laar, and Bert de~Vries.
+A factor graph approach to automated design of {Bayesian} signal processing
+  algorithms.
+{\em International Journal of Approximate Reasoning}, 104:185--204, January
+  2019.
+\href{http://dx.doi.org/10.1016/j.ijar.2018.11.002}{doi:10.1016/j.ijar.2018.11.002}.
+
+\bibitem{ge2018t}
+Hong Ge, Kai Xu, and Zoubin Ghahramani.
+Turing: a language for flexible probabilistic inference.
+In {\em International Conference on Artificial Intelligence and Statistics,
+  {AISTATS} 2018, 9-11 April 2018, Playa Blanca, Lanzarote, Canary Islands,
+  Spain}, pages 1682--1690, 2018.
+
+\bibitem{RevelsLubinPapamarkou2016}
+J.~{Revels}, M.~{Lubin}, and T.~{Papamarkou}.
+Forward-mode automatic differentiation in {J}ulia.
+{\em arXiv:1607.07892 [cs.MS]}, 2016.
+
+\bibitem{senoz_local_constraint_2021}
+İsmail Şenöz, Thijs van~de Laar, Dmitry Bagaev, and Bert de~Vries.
+Variational message passing and local constraint manipulation in factor graphs.
+{\em Entropy}, 23(7), 2021.
+\href{http://dx.doi.org/10.3390/e23070807}{doi:10.3390/e23070807}.
+
+\end{thebibliography}

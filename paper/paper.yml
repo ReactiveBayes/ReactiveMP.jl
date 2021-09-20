@@ -1,0 +1,19 @@
+title: "ReactiveMP.jl: A Julia Package for Reactive Message Passing-based Bayesian Inference"
+keywords:
+  - Bayesian Inference
+  - Julia
+  - Free Energy Minimisation
+  - Message Passing
+  - Reactive Programing
+  - Variational Inference
+authors:
+  - name: Dmitry Bagaev
+    orcid: 0000-0001-9655-7986
+    affiliation: 1
+  - name: Bert de Vries
+    affiliation: 1
+affiliations:
+  - name: Electrical Eng. Dept., Eindhoven Univ. of Technology, Eindhoven, The Netherlands
+    index: 1
+date: 20 September 2021
+bibliography: ref.bib
