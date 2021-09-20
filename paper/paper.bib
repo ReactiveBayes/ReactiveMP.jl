@@ -1,0 +1,52 @@
+@article{ForneyLab.jl-2019,
+ pages         = {185--204},
+ author        = {Cox, Marco and  van de Laar, Thijs and  de Vries, Bert},
+ month         = {January},
+ journal       = {International Journal of Approximate Reasoning},
+ title         = {A factor graph approach to automated design of {Bayesian} signal processing algorithms},
+ doi           = {10.1016/j.ijar.2018.11.002},
+ keywords      = {Bayesian inference, Message passing, Factor graphs, Julia, Probabilistic programming},
+ issn          = {0888-613X},
+ urldate       = {2018-11-16},
+ year          = {2019},
+ url           = {http://www.sciencedirect.com/science/article/pii/S0888613X18304298},
+ volume        = {104},
+ abstract      = {The benefits of automating design cycles for Bayesian inference-based algorithms are becoming increasingly recognized by the machine learning community. As a result, interest in probabilistic programming frameworks has much increased over the past few years. This paper explores a specific probabilistic programming paradigm, namely message passing in Forney-style factor graphs (FFGs), in the context of automated design of efficient Bayesian signal processing algorithms. To this end, we developed “ForneyLab”2 as a Julia toolbox for message passing-based inference in FFGs. We show by example how ForneyLab enables automatic derivation of Bayesian signal processing algorithms, including algorithms for parameter estimation and model comparison. Crucially, due to the modular makeup of the FFG framework, both the model specification and inference methods are readily extensible in ForneyLab. In order to test this framework, we compared variational message passing as implemented by ForneyLab with automatic differentiation variational inference (ADVI) and Monte Carlo methods as implemented by state-of-the-art tools “Edward” and “Stan”. In terms of performance, extensibility and stability issues, ForneyLab appears to enjoy an edge relative to its competitors for automated inference in state-space models.}
+}
+
+@inproceedings{ge2018t,
+  author    = {Hong Ge and
+               Kai Xu and
+               Zoubin Ghahramani},
+  title     = {Turing: a language for flexible probabilistic inference},
+  booktitle = {International Conference on Artificial Intelligence and Statistics,
+               {AISTATS} 2018, 9-11 April 2018, Playa Blanca, Lanzarote, Canary Islands,
+               Spain},
+  pages     = {1682--1690},
+  year      = {2018},
+  url       = {http://proceedings.mlr.press/v84/ge18b.html},
+  biburl    = {https://dblp.org/rec/bib/conf/aistats/GeXG18},
+}
+
+@article{RevelsLubinPapamarkou2016,
+    title = {Forward-Mode Automatic Differentiation in {J}ulia},
+   author = {{Revels}, J. and {Lubin}, M. and {Papamarkou}, T.},
+  journal = {arXiv:1607.07892 [cs.MS]},
+     year = {2016},
+      url = {https://arxiv.org/abs/1607.07892}
+}
+
+@article{senoz_local_constraint_2021,
+  author         = {Şenöz, İsmail and van de Laar, Thijs and Bagaev, Dmitry and de Vries, Bert},
+  title          = {Variational Message Passing and Local Constraint Manipulation in Factor Graphs},
+  journal        = {Entropy},
+  volume         = {23},
+  year           = {2021},
+  number         = {7},
+  article-number = {807},
+  url            = {https://www.mdpi.com/1099-4300/23/7/807},
+  pubmedid       = {34202913},
+  issn           = {1099-4300},
+  abstract       = {Accurate evaluation of Bayesian model evidence for a given data set is a fundamental problem in model development. Since evidence evaluations are usually intractable, in practice variational free energy (VFE) minimization provides an attractive alternative, as the VFE is an upper bound on negative model log-evidence (NLE). In order to improve tractability of the VFE, it is common to manipulate the constraints in the search space for the posterior distribution of the latent variables. Unfortunately, constraint manipulation may also lead to a less accurate estimate of the NLE. Thus, constraint manipulation implies an engineering trade-off between tractability and accuracy of model evidence estimation. In this paper, we develop a unifying account of constraint manipulation for variational inference in models that can be represented by a (Forney-style) factor graph, for which we identify the Bethe Free Energy as an approximation to the VFE. We derive well-known message passing algorithms from first principles, as the result of minimizing the constrained Bethe Free Energy (BFE). The proposed method supports evaluation of the BFE in factor graphs for model scoring and development of new message passing-based inference algorithms that potentially improve evidence estimation accuracy.},
+  doi            = {10.3390/e23070807}
+}
