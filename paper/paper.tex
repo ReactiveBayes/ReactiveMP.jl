@@ -11,12 +11,14 @@
 
 \begin{abstract}
 
-This is a guide for authors who are preparing papers for JuliaCon using the \LaTeX{} document
-preparation system and the \verb|juliacon|  class file.
+ReactiveMP.jl is a native Julia implementation of reactive message passing-based Bayesian inference in probabilistic graphical models. 
+The package supports a large range of standard probabilistic models and can be extended to custom novel nodes and message update rules. 
+In contrast to non-reactive (imperatively coded) Bayesian inference packages, ReactiveMP.jl scales easily to support inference on a standard laptop 
+for large models with tens of thousands of variables and millions of nodes.
 
 \end{abstract}
 
-\section{Introduction}
+\section{Background}
 
 Bayesian inference is one of the key computational mechanisms that underlies probabilistic model-based machine learning applications. 
 Unfortunately, for many practical models, Bayesian inference requires evaluating high-dimensional integrals that have no analytical solution. 
@@ -24,8 +26,20 @@ As a result, Probabilistic Programming (PP) tools for Automated Approximate Baye
 \textit{ForneyLab.jl} \cite{ForneyLab.jl-2019} and others. These tools help researchers to specify probabilistic models in a high-level domain-specific language and 
 run AABI algorithms with minimal additional overhead. 
 
-We present \textbf{ReactiveMP.jl} package, which is a native Julia package for automated \textit{reactive} message passing-based (both exact and approximate) Bayesian inference and 
-Constrained Bethe Free Energy (CFBE) optimisation \cite{senoz_local_constraint_2021}. New package scales comfortably to inference tasks on factor graphs with tens of thousands of variables and millions of nodes. 
+\section{Message Passing}
+
+An important issue in the development of PP frameworks is scalability of AABI algorithms for large models and large data sets. 
+One solution approach concerns message passing-based inference in factor graphs. In this framework, relationships between model variables are represented by a graph of sparsely connected nodes, 
+and inference proceeds efficiently by a sequence of nodes sending probabilistic messages to neighboring nodes. While the optimal message passing schedule is data-dependent, 
+all existing factor graph frameworks (e.g., Infer.Net, ForneyLab.jl) use preset message sequence schedules. The potential benefits of massively parallel and asynchronous r
+eactive message passing in a factor graph include scaling to large inference tasks, much smaller processing latency and processing of data samples that arrive at irregular time intervals.
+
+\section{Reactive Message Passing}
+
+We present \textbf{ReactiveMP.jl} package, which is a native Julia \cite{bezanson2017julia} package for automated \textit{reactive} message passing-based (both exact and approximate) Bayesian inference and corresponding
+Constrained Bethe Free Energy (CFBE) functional optimisation \cite{senoz_local_constraint_2021}. New implementation uses reactive programming approach, does not enforce any particular message-passing schedule, 
+supports real-time data inference and scales comfortably to inference tasks on factor graphs with tens of thousands of variables and millions of nodes.
+
 The package comes with a collection of standard probabilistic models, including linear Gaussian state-space models, hidden Markov models, auto-regressive models and mixture models. 
 Moreover, ReactiveMP.jl API supports various processing modes such as offline learning, filtering of infinite data streams and protocols for handling missing data.
 

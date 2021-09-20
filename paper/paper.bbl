@@ -1,5 +1,11 @@
 \begin{thebibliography}{1}
 
+\bibitem{bezanson2017julia}
+Jeff Bezanson, Alan Edelman, Stefan Karpinski, and Viral~B Shah.
+Julia: A fresh approach to numerical computing.
+{\em SIAM review}, 59(1):65--98, 2017.
+\href{http://dx.doi.org/10.1137/141000671}{doi:10.1137/141000671}.
+
 \bibitem{ForneyLab.jl-2019}
 Marco Cox, Thijs van~de Laar, and Bert de~Vries.
 A factor graph approach to automated design of {Bayesian} signal processing
