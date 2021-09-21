@@ -7,21 +7,26 @@ struct Flow end
 
 # specify abstract types for Flow building blocks
 abstract type AbstractFlowModel end
+abstract type AbstractCompiledFlowModel end
 abstract type AbstractLayer end
+abstract type AbstractLayerPlaceholder end
 abstract type AbstractCouplingLayer <: AbstractLayer end
 abstract type AbstractCouplingFlow end
+abstract type AbstractCouplingFlowEmpty end
+abstract type AbstractCouplingFlowPlaceholder end
 
 # specify abstract types of nonlinear approximation
 abstract type AbstractNonLinearApproximation end
 
 @doc raw"""
 The `FlowMeta` structure contains the meta data of the `Flow` factor node. More specifically, it contains the model of the `Flow` factor node. The `FlowMeta` structure can be constructed as `FlowMeta(model)`.
+Make sure that the flow model has been compiled.
 
 The `FlowMeta` structure is required for the `Flow` factor node and can be included with the Flow node as: ```
     y ~ Flow(x) where { meta = FlowMeta(...) }
 ```
 """
-struct FlowMeta{T <: AbstractFlowModel, A <: AbstractNonLinearApproximation}
+struct FlowMeta{T <: AbstractCompiledFlowModel, A <: AbstractNonLinearApproximation}
     model         :: T
     approximation :: A
 end
@@ -32,7 +37,7 @@ include("approximations/linearization.jl")
 include("approximations/unscented.jl")
 
 # structure constructors
-function FlowMeta(model::T) where { T <: AbstractFlowModel }
+function FlowMeta(model::T) where { T <: AbstractCompiledFlowModel }
     return FlowMeta(model, Linearization())
 end
 
@@ -46,7 +51,6 @@ include("coupling_flows/radial_flow.jl")
 
 # include layers
 include("layers/additive_coupling_layer.jl")
-include("layers/reverse_additive_coupling_layer.jl")
 include("layers/permutation_layer.jl")
 
 # include models

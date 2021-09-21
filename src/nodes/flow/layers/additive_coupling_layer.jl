@@ -1,4 +1,5 @@
 ## TODO: expand to arbitrarily sized inputs
+## TODO: simplify forward function through forward! (etc...)
 
 export AdditiveCouplingLayer
 export getf, getflow
@@ -43,8 +44,41 @@ This layer structure has been introduced in:
 Dinh, Laurent, David Krueger, and Yoshua Bengio. "Nice: Non-linear independent components estimation." _arXiv preprint_ arXiv:1410.8516 (2014).
 """
 struct AdditiveCouplingLayer{T <: AbstractCouplingFlow} <: AbstractCouplingLayer
-    f       :: T
+    dim           :: Int
+    f             :: T
+    partition_dim :: Int
 end
+struct AdditiveCouplingLayerEmpty{T <: AbstractCouplingFlowEmpty} <: AbstractCouplingLayer
+    dim           :: Int
+    f             :: T
+    partition_dim :: Int
+end
+struct AdditiveCouplingLayerPlaceholder{T <: AbstractCouplingFlowEmpty, B } <: AbstractLayerPlaceholder
+    f             :: T
+    partition_dim :: Int
+    permute       :: Val{B}
+end
+function AdditiveCouplingLayer(flow::T; partition_dim::Int=1, permute::Bool=true) where { T <: AbstractCouplingFlowPlaceholder }
+    ## TODO: generalize for arbitrary inputs
+    return AdditiveCouplingLayerPlaceholder(prepare(partition_dim, flow), partition_dim, Val(permute))
+end
+
+# include permute as value type for type stability
+function _prepare(dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, true}) where { T } 
+    return AdditiveCouplingLayerEmpty(dim, layer.f, layer.partition_dim), PermutationLayer(dim)
+end
+function _prepare(dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, false}) where { T } 
+    return AdditiveCouplingLayerEmpty(dim, layer.f, layer.partition_dim)
+end
+
+# compile layer # TODO: fix for multiple mappings
+compile(layer::AdditiveCouplingLayerEmpty)          = AdditiveCouplingLayer(layer.dim, compile(layer.f), layer.partition_dim)
+compile(layer::AdditiveCouplingLayerEmpty, params)  = AdditiveCouplingLayer(layer.dim, compile(layer.f, params), layer.partition_dim)
+
+# TODO fix according to nr of flows
+nr_params(layer::AdditiveCouplingLayer)             = nr_params(layer.f)
+nr_params(layer::AdditiveCouplingLayerPlaceholder)  = nr_params(layer.f)
+nr_params(layer::AdditiveCouplingLayerEmpty)        = nr_params(layer.f)
 
 # get-functions for the AdditiveCouplingLayer structure
 getf(layer::AdditiveCouplingLayer)     = layer.f

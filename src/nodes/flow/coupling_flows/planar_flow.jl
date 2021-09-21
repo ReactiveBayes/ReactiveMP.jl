@@ -1,3 +1,5 @@
+## TODO: simplify forward function through forward! (etc...)
+
 export PlanarFlow
 export getu, getw, getb, getall, setu!, setw!, setb!
 export forward, forward!
@@ -27,26 +29,45 @@ mutable struct PlanarFlow{T1, T2 <: Real} <: AbstractCouplingFlow
         return new{T1,T2}(u, w, float(b))
     end
 end
+struct PlanarFlowEmpty{B} <: AbstractCouplingFlowEmpty 
+    dim     :: Val{B}
+end
+struct PlanarFlowPlaceholder <: AbstractCouplingFlowPlaceholder end
+@doc raw"""
+The `PlanarFlow()` function creates a planar flow object. Its dimensionality is automatically set when wrapping this object inside a model. Its parameters are initialized during compilation.
+"""
+PlanarFlow() = PlanarFlowPlaceholder()
+function prepare(dim::Int, flow::PlanarFlowPlaceholder) 
+    return PlanarFlowEmpty(Val(dim))
+end
+
+# compile placeholder
+compile(f::PlanarFlowEmpty{1})          = PlanarFlow(randn(), randn(), randn())
+compile(f::PlanarFlowEmpty)             = PlanarFlow(randn(getdim(f)), randn(getdim(f)), randn())
+compile(f::PlanarFlowEmpty{1}, params)  = PlanarFlow(params[1], params[2], params[3])
+compile(f::PlanarFlowEmpty, params)     = PlanarFlow(params[1:f.dim], params[1+f.dim:2*f.dim], params[2*f.dim+1])
 
 @doc raw"""
 The `PlanarFlow(dim::Int64)` function creates a mutable `PlanarFlow` structure with parameters corresponding to input of dimensions `dim`. The parameters are each random sampled from a standard (multivariate) normal distribution.
 """
 function PlanarFlow(dim::Int64)
-    return PlanarFlow(randn(dim), randn(dim), randn())
+    if dim == 1
+        return PlanarFlow(randn(), randn(), randn())
+    else
+        return PlanarFlow(randn(dim), randn(dim), randn())
+    end
 end
 
-@doc raw"""
-The `PlanarFlow()` function creates a mutable `PlanarFlow` structure with parameters corresponding to input of dimension 1. The parameters are each random sampled from a standard normal distribution.
-"""
-function PlanarFlow()
-    return PlanarFlow(randn(), randn(), randn())
-end
+# number of parameters
+nr_params(flow::PlanarFlow)      = length(flow.u) + length(flow.w) + length(flow.b)
+nr_params(flow::PlanarFlowEmpty{N}) where {N} = 2*N + 1
 
 # get-functions for the PlanarFlow structure.
-getu(f::PlanarFlow)              = return f.u
-getw(f::PlanarFlow)              = return f.w
-getb(f::PlanarFlow)              = return f.b
-getall(f::PlanarFlow)            = return f.u, f.w, f.b
+getu(f::PlanarFlow)                         = return f.u
+getw(f::PlanarFlow)                         = return f.w
+getb(f::PlanarFlow)                         = return f.b
+getall(f::PlanarFlow)                       = return f.u, f.w, f.b
+getdim(f::PlanarFlowEmpty{N}) where { N }   = return N
 
 # set-functions for the PlanarFlow structure
 function setu!(f::PlanarFlow{T1,T2}, u::T1) where { T1, T2 <: Real}

@@ -23,8 +23,30 @@ mutable struct RadialFlow{T1, T2 <: Real} <: AbstractCouplingFlow
     α       :: T2
     β       :: T2
     function RadialFlow(z0::T1, α::T2, β::T2) where { T1, T2 <: Real}
-        @assert α > 0
+        @assert α > 0 "The parameter α should be larger than 0."
         return new{T1,T2}(z0, float(α), float(β))
+    end
+end
+struct RadialFlowEmpty <: AbstractCouplingFlowEmpty 
+    dim     :: Int
+end
+struct RadialFlowPlaceholder <: AbstractCouplingFlowPlaceholder end
+@doc raw"""
+The `RadialFlow()` function creates a planar flow object. Its dimensionality is automatically set when wrapping this object inside a model. Its parameters are initialized during compilation.
+"""
+RadialFlow() = RadialFlowPlaceholder()
+function prepare(dim::Int, flow::RadialFlowPlaceholder) 
+    return RadialFlowEmpty(dim)
+end
+
+# compile placeholder
+compile(f::RadialFlowEmpty) = RadialFlow(f.dim)
+# TODO make type stable
+function compile(f::RadialFlowEmpty, params) 
+    if length(params) == 3
+        return RadialFlow(params[1], params[2], params[3])
+    else
+        return RadialFlow(params[1], params[2], params[2:1+f.dim])
     end
 end
 
@@ -35,12 +57,9 @@ function RadialFlow(dim::Int64)
     return RadialFlow(randn(dim), rand(), randn())
 end
 
-@doc raw"""
-The `RadialFlow()` function creates a mutable `RadialFlow` structure with parameters corresponding to input of dimension 1. The parameters are each random sampled from a standard normal distribution.
-"""
-function RadialFlow()
-    return RadialFlow(randn(), rand(), randn())
-end
+# number of parameters
+nr_params(flow::RadialFlow)      = 2 + length(flow.β)
+nr_params(flow::RadialFlowEmpty) = 2 + flow.dim
 
 # get-functions for the RadialFlow structure.
 getz0(f::RadialFlow)             = return f.z0

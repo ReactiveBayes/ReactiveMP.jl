@@ -1,4 +1,5 @@
-## TODO: make sure that index 1 is always set to some value other than 1
+# TODO: allow to pass a custom permutation matrix
+## TODO: simplify forward function through forward! (etc...)
 
 export PermutationLayer
 export getP, getmat
@@ -11,17 +12,10 @@ import Base: eltype
 
 @doc raw"""
 The permutation layer specifies an invertible mapping ``{\bf{y}} = g({\bf{x}}) = P{\bf{x}}`` where ``P`` is a permutation matrix.
-
-`PermutationLayer(P :: PermutationMatrix)` creates the layer structure with specified permuation matrix `P`.
-`PermutationLayer(dim <: Int)` creates the layer structure with dimensionality `dim`.
-
-### Example
-```julia
-layer = PermutationLayer(dim)
-```
 """
 struct PermutationLayer{ T } <: AbstractLayer
-    P :: PermutationMatrix{T}
+    dim :: Int
+    P   :: PermutationMatrix{T}
 end
 
 function PermutationLayer(dim::T) where { T <: Int}
@@ -30,9 +24,24 @@ function PermutationLayer(dim::T) where { T <: Int}
     P = PermutationMatrix(dim)
 
     # return layer
-    return PermutationLayer(P)
+    return PermutationLayer(dim, P)
 
 end
+struct PermutationLayerPlaceholder <: AbstractLayerPlaceholder end
+@doc raw"""
+`PermutationLayer()` creates a layer that randomly shuffles its input values. The corresponding permutation matrix and its dimensionality are (randomly) generated during model creation.
+"""
+PermutationLayer() = PermutationLayerPlaceholder() # the function creates a placeholder, of which the dimensionality is set later on.
+
+# prepare placeholder 
+_prepare(dim::Int, layer::PermutationLayerPlaceholder) = (PermutationLayer(dim), )
+
+# compile layer
+compile(layer::PermutationLayer, params) = @error "The permutation layer does not have any parameters."
+compile(layer::PermutationLayer) = layer
+
+# fetch number of parameters of layer
+nr_params(layer::PermutationLayer) = 0
 
 # get-functions for the PermutationLayer structure
 getP(layer::PermutationLayer)     = layer.P
