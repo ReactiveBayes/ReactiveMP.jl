@@ -29,7 +29,7 @@ include("pipeline.jl")
 include("actors/score.jl")
 
 include("algebra/helpers.jl")
-include("algebra/flatten.jl")
+include("algebra/flatten_tuple.jl")
 include("algebra/cholinv.jl")
 include("algebra/companion_matrix.jl")
 include("algebra/permutation_matrix.jl")
