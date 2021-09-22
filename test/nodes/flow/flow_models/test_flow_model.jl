@@ -14,7 +14,7 @@ using ReactiveMP
         compiled_model = compile(model)
         @test length(compiled_model.layers)      == 1
         @test typeof(compiled_model.layers[1])   <: AdditiveCouplingLayer
-        @test typeof(compiled_model.layers[1].f) <: PlanarFlow
+        @test typeof(compiled_model.layers[1].f[1]) <: PlanarFlow
 
         # check for two layers
         f1 = PlanarFlow()
@@ -25,10 +25,10 @@ using ReactiveMP
         compiled_model = compile(model)
         @test length(compiled_model.layers)      == 3
         @test typeof(compiled_model.layers[1])   <: AdditiveCouplingLayer
-        @test typeof(compiled_model.layers[1].f) <: PlanarFlow
+        @test typeof(compiled_model.layers[1].f[1]) <: PlanarFlow
         @test typeof(compiled_model.layers[2])   <: PermutationLayer
         @test typeof(compiled_model.layers[3])   <: AdditiveCouplingLayer
-        @test typeof(compiled_model.layers[3].f) <: PlanarFlow
+        @test typeof(compiled_model.layers[3].f[1]) <: PlanarFlow
 
     end
 

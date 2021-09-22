@@ -100,6 +100,9 @@ function compile(x::Tuple, params::Vector)
     end
     
 end
+function compile(x::Tuple)
+    return (compile(first(x)), compile(Base.tail(x))...)
+end
 # compile functions to stop the recursion
 compile(x::Tuple{}, params::Vector) = ()
 compile(x::Tuple{})         = ()
@@ -231,6 +234,7 @@ function _jacobian(model::CompiledFlowModel, input::Array{T1,1}) where { T1 <: R
 
     # fetch layers
     layers = getlayers(model)
+    dim    = getdim(model)
     
     # promote type for allocating output
     T = promote_type(eltype(model), T1)
@@ -239,9 +243,10 @@ function _jacobian(model::CompiledFlowModel, input::Array{T1,1}) where { T1 <: R
     input_new = zeros(T, size(input))
     input_new .= input
     output = zeros(T, size(input))
-    J = zeros(T, 2, 2)
-    J[1,1] = 1.0
-    J[2,2] = 1.0
+    J = zeros(T, dim, dim)
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
     J_new = copy(J)
 
     # pass result along the graph
@@ -271,17 +276,19 @@ function jacobian!(J_new::Array{T1,2}, model::CompiledFlowModel, input::Array{T2
 
     # fetch layers
     layers = getlayers(model)
+    dim = getdim(model)
     
     # promote type for allocating output
     T = promote_type(eltype(model), T2)
 
     # allocate space for output
-    input_new = zeros(T, size(input))
+    input_new = zeros(T, dim)
     input_new .= input
-    output = zeros(T, size(input))
-    J = zeros(T, 2, 2)
-    J[1,1] = 1.0
-    J[2,2] = 1.0
+    output = zeros(T, dim)
+    J = zeros(T, dim, dim)
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
     J_new .= J
 
     # pass result along the graph
@@ -306,17 +313,19 @@ function _inv_jacobian(model::CompiledFlowModel, output::Array{T1,1}) where { T1
 
     # fetch layers
     layers = getlayers(model)
+    dim = getdim(model)
 
     # promote type for allocating output
     T = promote_type(eltype(model), T1)
 
     # allocate space for output
-    output_new = zeros(T, size(output))
+    output_new = zeros(T, dim)
     output_new .= output
-    input = zeros(T, size(output))
-    J = zeros(T, 2, 2)
-    J[1,1] = 1.0
-    J[2,2] = 1.0
+    input = zeros(T, dim)
+    J = zeros(T, dim, dim)
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
     J_new = copy(J)
     
     # pass result along the graph
@@ -346,17 +355,19 @@ function inv_jacobian!(J_new::Array{T1,2}, model::CompiledFlowModel, output::Arr
     
     # fetch layers
     layers = getlayers(model)
+    dim = getdim(model)
 
     # promote type for allocating output
     T = promote_type(eltype(model), T2)
     
     # allocate space for output
-    output_new = zeros(T, size(output))
+    output_new = zeros(T, dim)
     output_new .= output
-    input = zeros(T, size(output))
-    J = zeros(T, 2, 2)
-    J[1,1] = 1.0
-    J[2,2] = 1.0
+    input = zeros(T, dim)
+    J = zeros(T, dim, dim)
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
     J_new .= J
     
     # pass result along the graph

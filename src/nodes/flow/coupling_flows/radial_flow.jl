@@ -135,6 +135,14 @@ end
 forward(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } = _forward(f, input)
 Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 <: Real } = broadcast(_forward, Ref(f), input)
 
+function _forward(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 }
+    # function when the input is an array with 1 element
+    @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the RadialFlow flow."
+    return forward(f, input[1])
+end
+forward(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 } = _forward(f, input)
+Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 } = broadcast(_forward, Ref(f), input)
+
 # inplace forward pass through the RadialFlow function (multivariate input)
 function forward!(output::T1, f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real }
 
@@ -179,6 +187,14 @@ function _jacobian(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real}
 end
 jacobian(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real } = _jacobian(f, input)
 Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::Array{T1,1}) where { T1, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
+
+function _jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 }
+    # function when the input is an array with 1 element
+    @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the RadialFlow flow."
+    return jacobian(f, input[1])
+end
+jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 } = _jacobian(f, input)
+Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 } = broadcast(_jacobian, Ref(f), input)
 
 # jacobian of the RadialFlow function (univariate input)
 function _jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } 
@@ -253,3 +269,10 @@ logabsdet_jacobian(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real}  = l
 inv_jacobian(f::RadialFlow{T,T}, input::T) where { T <: Real }               = 1.0 / jacobian(f, input)
 absdet_jacobian(f::RadialFlow{T,T}, input::T) where { T <: Real }            = abs(det_jacobian(f, input))
 logabsdet_jacobian(f::RadialFlow{T,T}, input::T) where { T <: Real}          = log(absdet_jacobian(f, input))
+
+
+function inv_jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 }
+    # function when the input is an array with 1 element
+    @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the RadialFlow flow."
+    return inv_jacobian(f, input[1])
+end

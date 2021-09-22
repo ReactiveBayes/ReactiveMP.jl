@@ -232,6 +232,12 @@ using ReactiveMP
         @test forward(f, 2.5) == 3.464027580075817
         @test forward.(f, [1.5, 2.5]) == [1.5, 3.464027580075817]
 
+        # check forward function (univariate function, multivariate input)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        @test forward(f, [1.5]) == 1.5
+        @test forward(f, [2.5]) == 3.464027580075817
+        @test forward.(f, [[1.5], [2.5]]) == [1.5, 3.464027580075817]
+
         # check forward function (multivariate)
         f = PlanarFlow([1.0, 2.0], [3.0, 4.0], 0.0)
         @test forward(f, [-4.0, 3.0]) == [-4.0, 3.0]
@@ -255,6 +261,12 @@ using ReactiveMP
         @test jacobian(f, 1.5) == 3.0
         @test jacobian(f, 2.5) == 1.1413016497063289
         @test jacobian.(f, [1.5, 2.5]) == [3.0, 1.1413016497063289]
+        
+        # check jacobian function (univariate function, multivariate input)
+        f = PlanarFlow(1.0, 2.0, -3.0)
+        @test jacobian(f, [1.5]) == 3.0
+        @test jacobian(f, [2.5]) == 1.1413016497063289
+        @test jacobian.(f, [[1.5], [2.5]]) == [3.0, 1.1413016497063289]
 
         # check jacobian function (multivariate)
         f = PlanarFlow([1.0, 2.0], [3.0, 4.0], 0.0)

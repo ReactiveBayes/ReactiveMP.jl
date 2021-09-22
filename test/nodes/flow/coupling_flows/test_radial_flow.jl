@@ -231,6 +231,12 @@ using ReactiveMP
         @test forward(f, 2.5) == 1.2142857142857144
         @test forward.(f, [1.5, 2.5]) == [0.9, 1.2142857142857144]
 
+        # check forward function (univariate mapping, multivariate input)
+        f = RadialFlow(1.0, 2.0, -3.0)
+        @test forward(f, [1.5]) == 0.9
+        @test forward(f, [2.5]) == 1.2142857142857144
+        @test forward.(f, [[1.5], [2.5]]) == [0.9, 1.2142857142857144]
+
         # check forward function (multivariate)
         f = RadialFlow([1.0, 2.0], 3.0, 1.0)
         @test forward(f, [-4.0, 3.0]) == [-4.617358680468466, 3.1234717360936934]
@@ -254,6 +260,12 @@ using ReactiveMP
         @test jacobian(f, 1.5) == 0.03999999999999987
         @test jacobian(f, 2.5) == 0.5102040816326531
         @test jacobian.(f, [1.5, 2.5]) == [0.03999999999999987, 0.5102040816326531]
+
+        # check jacobian function (univariate mapping, multivariate input)
+        f = RadialFlow(1.0, 2.0, -3.0)
+        @test jacobian(f, [1.5]) == 0.03999999999999987
+        @test jacobian(f, [2.5]) == 0.5102040816326531
+        @test jacobian.(f, [[1.5], [2.5]]) == [0.03999999999999987, 0.5102040816326531]
 
         # check jacobian function (multivariate)
         f = RadialFlow([1.0, 2.0], 3.0, 1.0)
