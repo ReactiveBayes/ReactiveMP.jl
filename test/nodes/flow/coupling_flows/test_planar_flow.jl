@@ -16,9 +16,9 @@ using ReactiveMP
         @test typeof(f) == ReactiveMP.PlanarFlowPlaceholder
 
         # check when creating empty planar flow
-        f = ReactiveMP.PlanarFlowEmpty(Val(3))
+        f = ReactiveMP.PlanarFlowEmpty(3)
         @test typeof(f) == ReactiveMP.PlanarFlowEmpty{3}
-        @test f.dim     == Val(3)
+        @test getdim(f) == 3
 
         # check for specified dimensionality
         f = PlanarFlow(1)
@@ -66,11 +66,11 @@ using ReactiveMP
     @testset "Prepare-Compile" begin
 
         f = ReactiveMP.PlanarFlowPlaceholder()
-        @test ReactiveMP.prepare(2, f) == ReactiveMP.PlanarFlowEmpty(Val(2))
-        @test ReactiveMP.prepare(5, f) == ReactiveMP.PlanarFlowEmpty(Val(5))
-        @test ReactiveMP.prepare(9, f) == ReactiveMP.PlanarFlowEmpty(Val(9))
+        @test ReactiveMP.prepare(2, f) == ReactiveMP.PlanarFlowEmpty(2)
+        @test ReactiveMP.prepare(5, f) == ReactiveMP.PlanarFlowEmpty(5)
+        @test ReactiveMP.prepare(9, f) == ReactiveMP.PlanarFlowEmpty(9)
 
-        f = ReactiveMP.PlanarFlowEmpty(Val(1))
+        f = ReactiveMP.PlanarFlowEmpty(1)
         params = [1.0, 2.0, 3.0]
         fc = ReactiveMP.compile(f)
         fcp = ReactiveMP.compile(f, params)
@@ -86,7 +86,7 @@ using ReactiveMP
         @test fcp.w == 2.0
         @test fcp.b == 3.0
 
-        f = ReactiveMP.PlanarFlowEmpty(Val(2))
+        f = ReactiveMP.PlanarFlowEmpty(2)
         params = [1.0, 2.0, 3.0, 4.0, 5.0]
         fc = ReactiveMP.compile(f)
         fcp = ReactiveMP.compile(f, params)
@@ -107,7 +107,7 @@ using ReactiveMP
     @testset "nr_params" begin
         
         for k = 1:10
-            f = ReactiveMP.PlanarFlowEmpty(Val(k))
+            f = ReactiveMP.PlanarFlowEmpty(k)
             fc = compile(f)
             @test nr_params(f)  == 2*k + 1
             @test nr_params(fc) == 2*k + 1
@@ -182,7 +182,7 @@ using ReactiveMP
         @test getb(f) == 6.0
 
         # check getdim
-        f = ReactiveMP.PlanarFlowEmpty(Val(2))
+        f = ReactiveMP.PlanarFlowEmpty(2)
         @test ReactiveMP.getdim(f) == 2
 
         # check errors (univariate)
@@ -218,7 +218,7 @@ using ReactiveMP
         @test length(f) == 2
 
         # check base functions empty object
-        f = ReactiveMP.PlanarFlowEmpty(Val(2))
+        f = ReactiveMP.PlanarFlowEmpty(2)
         @test size(f)   == 2
         @test length(f) == 2
 

@@ -29,16 +29,15 @@ mutable struct PlanarFlow{T1, T2 <: Real} <: AbstractCouplingFlow
         return new{T1,T2}(u, w, float(b))
     end
 end
-struct PlanarFlowEmpty{B} <: AbstractCouplingFlowEmpty 
-    dim     :: Val{B}
-end
+struct PlanarFlowEmpty{N} <: AbstractCouplingFlowEmpty end
+PlanarFlowEmpty(dim::Int) = PlanarFlowEmpty{dim}()
 struct PlanarFlowPlaceholder <: AbstractCouplingFlowPlaceholder end
 @doc raw"""
 The `PlanarFlow()` function creates a planar flow object. Its dimensionality is automatically set when wrapping this object inside a model. Its parameters are initialized during compilation.
 """
 PlanarFlow() = PlanarFlowPlaceholder()
 function prepare(dim::Int, flow::PlanarFlowPlaceholder) 
-    return PlanarFlowEmpty(Val(dim))
+    return PlanarFlowEmpty(dim)
 end
 
 # compile placeholder

@@ -27,16 +27,15 @@ mutable struct RadialFlow{T1, T2 <: Real} <: AbstractCouplingFlow
         return new{T1,T2}(z0, float(α), float(β))
     end
 end
-struct RadialFlowEmpty{B} <: AbstractCouplingFlowEmpty 
-    dim     :: Val{B}
-end
+struct RadialFlowEmpty{N} <: AbstractCouplingFlowEmpty end
+RadialFlowEmpty(dim::Int) = RadialFlowEmpty{dim}()
 struct RadialFlowPlaceholder <: AbstractCouplingFlowPlaceholder end
 @doc raw"""
 The `RadialFlow()` function creates a planar flow object. Its dimensionality is automatically set when wrapping this object inside a model. Its parameters are initialized during compilation.
 """
 RadialFlow() = RadialFlowPlaceholder()
 function prepare(dim::Int, flow::RadialFlowPlaceholder) 
-    return RadialFlowEmpty(Val(dim))
+    return RadialFlowEmpty(dim)
 end
 
 # compile placeholder
