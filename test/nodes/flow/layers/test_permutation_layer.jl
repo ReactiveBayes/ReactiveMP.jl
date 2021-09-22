@@ -7,10 +7,14 @@ using LinearAlgebra
 @testset "Permutation Layer" begin
 
     @testset "Constructor" begin
-        
+
+        # check for placeholder creation
+        layer = PermutationLayer()
+        @test typeof(layer)   == ReactiveMP.PermutationLayerPlaceholder
+
         # check for layer with available P matrix
         P = PermutationMatrix(5)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(5, P)
         @test layer.P == P
         @test typeof(layer)   <: PermutationLayer
         @test typeof(layer)   <: ReactiveMP.AbstractLayer
@@ -29,7 +33,7 @@ using LinearAlgebra
         
         # check for layer with available P matrix
         P = PermutationMatrix(5)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(5, P)
         @test layer.P == getP(layer)
         @test layer.P == getmat(layer)
         @test typeof(layer.P) <: PermutationMatrix
@@ -43,11 +47,28 @@ using LinearAlgebra
 
     end
 
+    @testset "Prepare-Compile" begin
+        
+        layer = ReactiveMP._prepare(3, ReactiveMP.PermutationLayerPlaceholder())
+        @test typeof(layer)     <: Tuple
+        @test typeof(layer[1])  <: PermutationLayer
+        @test layer[1].dim      == 3
+        @test size(layer[1].P)  == (3,3)
+
+        P = PermutationMatrix(4)
+        layer = PermutationLayer(4, P)
+        @test compile(layer)  == layer
+        @test_throws ArgumentError compile(layer, 1)
+        
+        @test nr_params(layer) == 0
+
+    end
+
     @testset "Base" begin
         
         # check for layer with available P matrix
         P = PermutationMatrix(5)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(5, P)
         @test eltype(layer) <: Int
 
         # check for layer with unknown P matrix
@@ -60,14 +81,14 @@ using LinearAlgebra
         
         # check forward function
         P = PermutationMatrix(3)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(3, P)
         @test forward(layer, [5.0, 1.5, 8.5])  == P*[5.0, 1.5, 8.5]
         @test forward(layer, [4.0, 2.5, -9.0]) == P*[4.0, 2.5, -9.0]
         @test forward.(layer, [[5.0, 1.5, 8.5], [4.0, 2.5, -9.0]]) == [P*[5.0, 1.5, 8.5], P*[4.0, 2.5, -9.0]]
 
         # check forward! function
         P = PermutationMatrix(3)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(3, P)
         output = zeros(3)
         forward!(output, layer, [5.0, 1.5, 8.5]) 
         @test output == P*[5.0, 1.5, 8.5]
@@ -76,14 +97,14 @@ using LinearAlgebra
 
         # check bakward function
         P = PermutationMatrix(3)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(3, P)
         @test backward(layer, [5.0, 1.5, 8.5])  == P'*[5.0, 1.5, 8.5]
         @test backward(layer, [4.0, 2.5, -9.0]) == P'*[4.0, 2.5, -9.0]
         @test backward.(layer, [[5.0, 1.5, 8.5], [4.0, 2.5, -9.0]]) == [P'*[5.0, 1.5, 8.5], P'*[4.0, 2.5, -9.0]]
 
         # check backward! function
         P = PermutationMatrix(3)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(3, P)
         input = zeros(3)
         backward!(input, layer, [5.0, 1.5, 8.5]) 
         @test input == P'*[5.0, 1.5, 8.5]
@@ -96,14 +117,14 @@ using LinearAlgebra
         
         # check jacobian function
         P = PermutationMatrix(3)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(3, P)
         @test jacobian(layer, randn(3)) == P
         @test jacobian(layer, randn(3)) == P
         @test jacobian.(layer, [randn(3), randn(3)]) == [P, P]
 
         # check invjacobian function
         P = PermutationMatrix(3)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(3, P)
         @test inv_jacobian(layer, randn(3)) == P'
         @test inv_jacobian(layer, randn(3)) == P'
         @test inv_jacobian.(layer, [randn(3), randn(3)]) == [P', P']
@@ -114,7 +135,7 @@ using LinearAlgebra
         
         # check utility functions jacobian 
         P = PermutationMatrix(3)
-        layer = PermutationLayer(P)
+        layer = PermutationLayer(3, P)
         @test det_jacobian(layer, randn(3)) == det(P)
         @test det_jacobian(layer) == det(P)
         @test absdet_jacobian(layer, randn(3)) == 1.0

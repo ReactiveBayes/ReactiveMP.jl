@@ -373,15 +373,15 @@ function inv_jacobian!(J_new::Array{T1,2}, model::CompiledFlowModel, output::Arr
 end
 
 # extra utility functions
-det_jacobian(model::FlowModel, input::Array{T,1})           where { T <: Real} = det(jacobian(model, input))
-absdet_jacobian(model::FlowModel, input::Array{T,1})        where { T <: Real} = abs(det_jacobian(model, input))
-logdet_jacobian(model::FlowModel, input::Array{T,1})        where { T <: Real} = logdet(jacobian(model, input))
-logabsdet_jacobian(model::FlowModel, input::Array{T,1})     where { T <: Real} = logabsdet(jacobian(model, input))
+det_jacobian(model::CompiledFlowModel, input::Array{T,1})           where { T <: Real} = det(jacobian(model, input))
+absdet_jacobian(model::CompiledFlowModel, input::Array{T,1})        where { T <: Real} = abs(det_jacobian(model, input))
+logdet_jacobian(model::CompiledFlowModel, input::Array{T,1})        where { T <: Real} = logdet(jacobian(model, input))
+logabsdet_jacobian(model::CompiledFlowModel, input::Array{T,1})     where { T <: Real} = logabsdet(jacobian(model, input))
 
-detinv_jacobian(model::FlowModel, output::Array{T,1})       where { T <: Real} = det(inv_jacobian(model, output))
-absdetinv_jacobian(model::FlowModel, output::Array{T,1})    where { T <: Real} = abs(detinv_jacobian(model, output))
-logdetinv_jacobian(model::FlowModel, output::Array{T,1})    where { T <: Real} = logdet(inv_jacobian(model, output))
-logabsdetinv_jacobian(model::FlowModel, output::Array{T,1}) where { T <: Real} = logabsdet(inv_jacobian(model, output))
+detinv_jacobian(model::CompiledFlowModel, output::Array{T,1})       where { T <: Real} = det(inv_jacobian(model, output))
+absdetinv_jacobian(model::CompiledFlowModel, output::Array{T,1})    where { T <: Real} = abs(detinv_jacobian(model, output))
+logdetinv_jacobian(model::CompiledFlowModel, output::Array{T,1})    where { T <: Real} = logdet(inv_jacobian(model, output))
+logabsdetinv_jacobian(model::CompiledFlowModel, output::Array{T,1}) where { T <: Real} = logabsdet(inv_jacobian(model, output))
 
 
 # throw an error when the model has not yet been compiled
@@ -400,12 +400,12 @@ _jacobian(model::FlowModel, input::Array{T1,1}) where { T1 <: Real }            
 _inv_jacobian(model::FlowModel, output::Array{T1,1}) where { T1 <: Real }                                    = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 inv_jacobian!(J_new::Array{T1,2}, model::FlowModel, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }    = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 
-det_jacobian(model::CompiledFlowModel, input::Array{T,1})           where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-absdet_jacobian(model::CompiledFlowModel, input::Array{T,1})        where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-logdet_jacobian(model::CompiledFlowModel, input::Array{T,1})        where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-logabsdet_jacobian(model::CompiledFlowModel, input::Array{T,1})     where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+det_jacobian(model::FlowModel, input::Array{T,1})           where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+absdet_jacobian(model::FlowModel, input::Array{T,1})        where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+logdet_jacobian(model::FlowModel, input::Array{T,1})        where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+logabsdet_jacobian(model::FlowModel, input::Array{T,1})     where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 
-detinv_jacobian(model::CompiledFlowModel, output::Array{T,1})       where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-absdetinv_jacobian(model::CompiledFlowModel, output::Array{T,1})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-logdetinv_jacobian(model::CompiledFlowModel, output::Array{T,1})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-logabsdetinv_jacobian(model::CompiledFlowModel, output::Array{T,1}) where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+detinv_jacobian(model::FlowModel, output::Array{T,1})       where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+absdetinv_jacobian(model::FlowModel, output::Array{T,1})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+logdetinv_jacobian(model::FlowModel, output::Array{T,1})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+logabsdetinv_jacobian(model::FlowModel, output::Array{T,1}) where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))

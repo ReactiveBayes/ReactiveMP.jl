@@ -7,72 +7,94 @@ using ReactiveMP
 
     @testset "Constructor" begin
         
-        # check for layer with univariate function
+        # check for standard layer
         f = PlanarFlow()
         layer = AdditiveCouplingLayer(f)
-        @test layer.f == f
-        @test layer.f.u == f.u
-        @test layer.f.w == f.w
-        @test layer.f.b == f.b
+        @test typeof(layer.f)     <: ReactiveMP.PlanarFlowEmpty             
+        @test typeof(layer)       <: ReactiveMP.AdditiveCouplingLayerPlaceholder
+        @test layer.partition_dim == 1
+        @test layer.permute       == Val(true)
 
-        # check for layer with multivariate function
-        f = PlanarFlow(3)
-        layer = AdditiveCouplingLayer(f)
-        @test layer.f == f
-        @test layer.f.u == f.u
-        @test layer.f.w == f.w
-        @test layer.f.b == f.b
+        f = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false, partition_dim=3)
+        @test typeof(layer.f)     <: ReactiveMP.PlanarFlowEmpty        
+        @test typeof(layer)       <: ReactiveMP.AdditiveCouplingLayerPlaceholder
+        @test layer.partition_dim == 3
+        @test layer.permute       == Val(false)
+
+    end
+
+    @testset "Prepare-Compile" begin
+
+        layert = AdditiveCouplingLayer(PlanarFlow()) 
+        layerf = AdditiveCouplingLayer(PlanarFlow(); permute = false)
+        outt = ReactiveMP._prepare(2, layert)
+        outf = ReactiveMP._prepare(2, layerf)
+        
+        @test typeof(outt[1]) <: ReactiveMP.AdditiveCouplingLayerEmpty
+        @test typeof(outt[2]) <: ReactiveMP.PermutationLayer
+        @test typeof(outf)    <: ReactiveMP.AdditiveCouplingLayerEmpty
+
+        @test outt[1].dim     == 2
+        @test outt[2].dim     == 2
+        @test outf.dim        == 2
+
+        layer_comp  = compile(outf)
+        layer_compp = compile(outf, [1.0, 2.0, 3.0])
+        
+        @test typeof(layer_comp)    <: AdditiveCouplingLayer
+        @test typeof(layer_compp)   <: AdditiveCouplingLayer
+        @test typeof(layer_comp.f)  <: PlanarFlow
+        @test typeof(layer_compp.f) <: PlanarFlow
+        @test layer_compp.f.u       == 1.0
+        @test layer_compp.f.w       == 2.0
+        @test layer_compp.f.b       == 3.0
+
+        # TODO expend for multiple mappings
+        @test nr_params(outf)       == 3
+        @test nr_params(layer_comp) == 3
 
     end
 
     @testset "Get" begin
         
         # check get functions for univariate PlanarFlow
-        f = PlanarFlow()
-        layer = AdditiveCouplingLayer(f)
-        @test getf(layer) == layer.f
-        @test getflow(layer) == layer.f
-        @test getf(layer) == f
-        @test getflow(layer) == f
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        out = compile(ReactiveMP._prepare(2, layer))
+        @test getf(out) == out.f
+        @test getflow(out) == out.f
 
-        # check get functions for multivariate PlanarFlow
-        f = PlanarFlow(3)
-        layer = AdditiveCouplingLayer(f)
-        @test getf(layer) == layer.f
-        @test getflow(layer) == layer.f
-        @test getf(layer) == f
-        @test getflow(layer) == f
 
     end
 
     @testset "Base" begin
         
         # check base functions (univariate)
-        f = PlanarFlow()
-        layer = AdditiveCouplingLayer(f)
-        @test eltype(layer) == Float64
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        out = compile(ReactiveMP._prepare(2, layer))
+        @test eltype(out) == Float64
         @test eltype(AdditiveCouplingLayer{PlanarFlow{Float64,Float64}}) == Float64
-
-        # check base functions (multivariate)
-        f = PlanarFlow(3)
-        layer = AdditiveCouplingLayer(f)
-        @test eltype(layer) == Float64
-        @test eltype(AdditiveCouplingLayer{PlanarFlow{Array{Float64,1},Float64}}) == Float64
 
     end
 
     @testset "Forward-Backward" begin
         
         # check forward function
-        f = PlanarFlow(1.0, 2.0, -3.0)
-        layer = AdditiveCouplingLayer(f)
+        params = [1.0, 2.0, -3.0]
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        layer = compile(ReactiveMP._prepare(2, layer), params)
         @test forward(layer, [5.0, 1.5]) == [5.0, 7.4999983369439445]
         @test forward(layer, [4.0, 2.5]) == [4.0, 7.499909204262595]
         @test forward.(layer, [[5.0, 1.5], [4.0, 2.5]]) == [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]
 
         # check forward! function
-        f = PlanarFlow(1.0, 2.0, -3.0)
-        layer = AdditiveCouplingLayer(f)
+        params = [1.0, 2.0, -3.0]
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        layer = compile(ReactiveMP._prepare(2, layer), params)
         output = zeros(2)
         forward!(output, layer, [5.0, 1.5]) 
         @test output == [5.0, 7.4999983369439445]
@@ -80,15 +102,19 @@ using ReactiveMP
         @test output == [4.0, 7.499909204262595]
 
         # check backward function
-        f = PlanarFlow(1.0, 2.0, -3.0)
-        layer = AdditiveCouplingLayer(f)
+        params = [1.0, 2.0, -3.0]
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        layer = compile(ReactiveMP._prepare(2, layer), params)
         @test backward(layer, [5.0, 7.4999983369439445]) == [5.0, 1.5]
         @test backward(layer, [4.0, 7.499909204262595]) == [4.0, 2.5]
         @test backward.(layer, [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]) == [[5.0, 1.5], [4.0, 2.5]]
 
         # check backward! function
-        f = PlanarFlow(1.0, 2.0, -3.0)
-        layer = AdditiveCouplingLayer(f)
+        params = [1.0, 2.0, -3.0]
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        layer = compile(ReactiveMP._prepare(2, layer), params)
         output = zeros(2)
         backward!(output, layer, [5.0, 7.4999983369439445]) 
         @test output == [5.0, 1.5]
@@ -100,15 +126,19 @@ using ReactiveMP
     @testset "Jacobian" begin
         
         # check jacobian function
-        f = PlanarFlow(1.0, 2.0, -3.0)
-        layer = AdditiveCouplingLayer(f)
+        params = [1.0, 2.0, -3.0]
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        layer = compile(ReactiveMP._prepare(2, layer), params)
         @test jacobian(layer, [3.0, 1.5]) == [1.0 0.0; 1.0197320743308804 1.0]
         @test jacobian(layer, [2.5, 5.0]) == [1.0 0.0; 1.1413016497063289 1.0]
         @test jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]]
 
         # check jacobian function
-        f = PlanarFlow(1.0, 2.0, -3.0)
-        layer = AdditiveCouplingLayer(f)
+        params = [1.0, 2.0, -3.0]
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        layer = compile(ReactiveMP._prepare(2, layer), params)
         @test inv_jacobian(layer, [3.0, 1.5]) == [1.0 0.0; -1.0197320743308804 1.0]
         @test inv_jacobian(layer, [2.5, 5.0]) == [1.0 0.0; -1.1413016497063289 1.0]
         @test inv_jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]        
@@ -118,8 +148,10 @@ using ReactiveMP
     @testset "Utility Jacobian" begin
         
         # check utility functions jacobian (univariate)
-        f = PlanarFlow(1.0, 2.0, -3.0)
-        layer = AdditiveCouplingLayer(f)
+        params = [1.0, 2.0, -3.0]
+        f  = PlanarFlow()
+        layer = AdditiveCouplingLayer(f; permute=false)
+        layer = compile(ReactiveMP._prepare(2, layer), params)
         @test det_jacobian(layer, [1.5, 6.9]) == 1.0
         @test det_jacobian(layer, [2.5, 6.4]) == 1.0
         @test absdet_jacobian(layer, [1.5, 6.9]) == 1.0

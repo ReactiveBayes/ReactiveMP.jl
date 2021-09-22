@@ -37,8 +37,8 @@ PermutationLayer() = PermutationLayerPlaceholder() # the function creates a plac
 _prepare(dim::Int, layer::PermutationLayerPlaceholder) = (PermutationLayer(dim), )
 
 # compile layer
-compile(layer::PermutationLayer, params) = @error "The permutation layer does not have any parameters."
-compile(layer::PermutationLayer) = layer
+compile(layer::PermutationLayer, params) = throw(ArgumentError("The permutation matrix does not have any parameters."))
+compile(layer::PermutationLayer)         = layer
 
 # fetch number of parameters of layer
 nr_params(layer::PermutationLayer) = 0
@@ -127,19 +127,19 @@ Broadcast.broadcasted(::typeof(inv_jacobian), layer::PermutationLayer, output::A
 
 # extra utility functions 
 det_jacobian(layer::PermutationLayer, input::Array{T,1})           where { T <: Real}   = det(getP(layer))
-det_jacobian(layer::PermutationLayer)                              where { T <: Real}   = det(getP(layer))
+det_jacobian(layer::PermutationLayer)                                                   = det(getP(layer))
 absdet_jacobian(layer::PermutationLayer, input::Array{T,1})        where { T <: Real}   = 1.0
-absdet_jacobian(layer::PermutationLayer)                           where { T <: Real}   = 1.0
+absdet_jacobian(layer::PermutationLayer)                                                = 1.0
 logdet_jacobian(layer::PermutationLayer, input::Array{T,1})        where { T <: Real}   = 0.0
-logdet_jacobian(layer::PermutationLayer)                           where { T <: Real}   = 0.0
+logdet_jacobian(layer::PermutationLayer)                                                = 0.0
 logabsdet_jacobian(layer::PermutationLayer, input::Array{T,1})     where { T <: Real}   = 0.0
-logabsdet_jacobian(layer::PermutationLayer)                        where { T <: Real}   = 0.0
+logabsdet_jacobian(layer::PermutationLayer)                                             = 0.0
 
 detinv_jacobian(layer::PermutationLayer, output::Array{T,1})       where { T <: Real}   = det(getP(layer)')
-detinv_jacobian(layer::PermutationLayer)                           where { T <: Real}   = det(getP(layer)')
+detinv_jacobian(layer::PermutationLayer)                                                = det(getP(layer)')
 absdetinv_jacobian(layer::PermutationLayer, output::Array{T,1})    where { T <: Real}   = 1.0
-absdetinv_jacobian(layer::PermutationLayer)                        where { T <: Real}   = 1.0
+absdetinv_jacobian(layer::PermutationLayer)                                             = 1.0
 logdetinv_jacobian(layer::PermutationLayer, output::Array{T,1})    where { T <: Real}   = 0.0
-logdetinv_jacobian(layer::PermutationLayer)                        where { T <: Real}   = 0.0
+logdetinv_jacobian(layer::PermutationLayer)                                             = 0.0
 logabsdetinv_jacobian(layer::PermutationLayer, output::Array{T,1}) where { T <: Real}   = 0.0
-logabsdetinv_jacobian(layer::PermutationLayer)                     where { T <: Real}   = 0.0
+logabsdetinv_jacobian(layer::PermutationLayer)                                          = 0.0

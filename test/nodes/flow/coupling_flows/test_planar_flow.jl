@@ -5,21 +5,26 @@ using ReactiveMP
 
 @testset "Planar Flow" begin
 
-    @testset "Constructor" begin
+    @testset "Constructors" begin
         
-        # check for unspecified univariate input
+        # check for unspecified input
         f = PlanarFlow()
+        @test typeof(f) == ReactiveMP.PlanarFlowPlaceholder
+
+        # check when creating placeholder
+        f = ReactiveMP.PlanarFlowPlaceholder()
+        @test typeof(f) == ReactiveMP.PlanarFlowPlaceholder
+
+        # check when creating empty planar flow
+        f = ReactiveMP.PlanarFlowEmpty(Val(3))
+        @test typeof(f) == ReactiveMP.PlanarFlowEmpty{3}
+        @test f.dim     == Val(3)
+
+        # check for specified dimensionality
+        f = PlanarFlow(1)
         @test typeof(f.u) == Float64
         @test typeof(f.w) == Float64
         @test typeof(f.b) == Float64
-
-        # check for specified dimensionality
-        f = PlanarFlow(3)
-        @test typeof(f.u) == Array{Float64,1}
-        @test typeof(f.w) == Array{Float64,1}
-        @test typeof(f.b) == Float64
-        @test length(f.u) == 3
-        @test length(f.w) == 3
 
         f = PlanarFlow(5)
         @test typeof(f.u) == Array{Float64,1}
@@ -56,6 +61,58 @@ using ReactiveMP
         @test_throws AssertionError PlanarFlow([2.0, 3.0], [2.0, 3.0, 4.0], 1.0)
         @test_throws AssertionError PlanarFlow([5.0, 9.0], [1.0, 6.0, 8.0], -2.0)
         
+    end
+
+    @testset "Prepare-Compile" begin
+
+        f = ReactiveMP.PlanarFlowPlaceholder()
+        @test ReactiveMP.prepare(2, f) == ReactiveMP.PlanarFlowEmpty(Val(2))
+        @test ReactiveMP.prepare(5, f) == ReactiveMP.PlanarFlowEmpty(Val(5))
+        @test ReactiveMP.prepare(9, f) == ReactiveMP.PlanarFlowEmpty(Val(9))
+
+        f = ReactiveMP.PlanarFlowEmpty(Val(1))
+        params = [1.0, 2.0, 3.0]
+        fc = ReactiveMP.compile(f)
+        fcp = ReactiveMP.compile(f, params)
+        @test typeof(fc) <: PlanarFlow
+        @test typeof(fc.u) == Float64
+        @test typeof(fc.w) == Float64
+        @test typeof(fc.b) == Float64
+        @test typeof(fcp) <: PlanarFlow
+        @test typeof(fcp.u) == Float64
+        @test typeof(fcp.w) == Float64
+        @test typeof(fcp.b) == Float64
+        @test fcp.u == 1.0
+        @test fcp.w == 2.0
+        @test fcp.b == 3.0
+
+        f = ReactiveMP.PlanarFlowEmpty(Val(2))
+        params = [1.0, 2.0, 3.0, 4.0, 5.0]
+        fc = ReactiveMP.compile(f)
+        fcp = ReactiveMP.compile(f, params)
+        @test typeof(fc) <: PlanarFlow
+        @test typeof(fc.u) == Array{Float64,1}
+        @test typeof(fc.w) == Array{Float64,1}
+        @test typeof(fc.b) == Float64
+        @test typeof(fcp) <: PlanarFlow
+        @test typeof(fcp.u) == Array{Float64,1}
+        @test typeof(fcp.w) == Array{Float64,1}
+        @test typeof(fcp.b) == Float64
+        @test fcp.u == [1.0, 2.0]
+        @test fcp.w == [3.0, 4.0]
+        @test fcp.b == 5.0
+
+    end
+
+    @testset "nr_params" begin
+        
+        for k = 1:10
+            f = ReactiveMP.PlanarFlowEmpty(Val(k))
+            fc = compile(f)
+            @test nr_params(f)  == 2*k + 1
+            @test nr_params(fc) == 2*k + 1
+        end
+
     end
 
     @testset "Get-Set" begin
@@ -124,6 +181,10 @@ using ReactiveMP
         @test getw(f) == [3.0, 4.0]
         @test getb(f) == 6.0
 
+        # check getdim
+        f = ReactiveMP.PlanarFlowEmpty(Val(2))
+        @test ReactiveMP.getdim(f) == 2
+
         # check errors (univariate)
         f = PlanarFlow(1.0, 2.0, 3.0)
         @test_throws MethodError setu!(f, [1.0, 2.0])
@@ -143,7 +204,7 @@ using ReactiveMP
     @testset "Base" begin
         
         # check base functions (univariate)
-        f = PlanarFlow()
+        f = PlanarFlow(1.0, 2.0, 3.0)
         @test eltype(f) == Float64
         @test eltype(PlanarFlow{Float64,Float64}) == Float64
         @test size(f) == 1
@@ -154,6 +215,11 @@ using ReactiveMP
         @test eltype(f) == Float64
         @test eltype(PlanarFlow{Array{Float64,1},Float64}) == Float64
         @test size(f) == 2
+        @test length(f) == 2
+
+        # check base functions empty object
+        f = ReactiveMP.PlanarFlowEmpty(Val(2))
+        @test size(f)   == 2
         @test length(f) == 2
 
     end

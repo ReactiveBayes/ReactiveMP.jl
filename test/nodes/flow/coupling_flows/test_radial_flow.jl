@@ -7,11 +7,18 @@ using ReactiveMP
 
     @testset "Constructor" begin
         
-        # check for unspecified univariate input
+        # check for unspecified input
         f = RadialFlow()
-        @test typeof(f.z0) == Float64
-        @test typeof(f.α)  == Float64
-        @test typeof(f.β)  == Float64
+        @test typeof(f) == ReactiveMP.RadialFlowPlaceholder
+
+        # check when creating placeholder
+        f = ReactiveMP.RadialFlowPlaceholder()
+        @test typeof(f) == ReactiveMP.RadialFlowPlaceholder
+
+        # check when creating empty planar flow
+        f = ReactiveMP.RadialFlowEmpty(Val(3))
+        @test typeof(f) == ReactiveMP.RadialFlowEmpty{3}
+        @test f.dim     == Val(3)
 
         # check for specified dimensionality
         f = RadialFlow(3)
@@ -54,6 +61,58 @@ using ReactiveMP
         @test_throws AssertionError RadialFlow([2.0, 3.0], -1.0, 1.0)
         @test_throws AssertionError RadialFlow([5.0, 9.0], -5.0, -2.0)
         
+    end
+
+    @testset "Prepare-Compile" begin
+
+        f = ReactiveMP.RadialFlowPlaceholder()
+        @test ReactiveMP.prepare(2, f) == ReactiveMP.RadialFlowEmpty(Val(2))
+        @test ReactiveMP.prepare(5, f) == ReactiveMP.RadialFlowEmpty(Val(5))
+        @test ReactiveMP.prepare(9, f) == ReactiveMP.RadialFlowEmpty(Val(9))
+
+        f = ReactiveMP.RadialFlowEmpty(Val(1))
+        params = [1.0, 2.0, 3.0]
+        fc = ReactiveMP.compile(f)
+        fcp = ReactiveMP.compile(f, params)
+        @test typeof(fc)     <: RadialFlow
+        @test typeof(fc.z0)  == Float64
+        @test typeof(fc.α)   == Float64
+        @test typeof(fc.β)   == Float64
+        @test typeof(fcp)    <: RadialFlow
+        @test typeof(fcp.z0) == Float64
+        @test typeof(fcp.α)  == Float64
+        @test typeof(fcp.β)  == Float64
+        @test fcp.z0         == 1.0
+        @test fcp.α          == 2.0
+        @test fcp.β          == 3.0
+
+        f = ReactiveMP.RadialFlowEmpty(Val(2))
+        params = [1.0, 2.0, 3.0, 4.0]
+        fc = ReactiveMP.compile(f)
+        fcp = ReactiveMP.compile(f, params)
+        @test typeof(fc)     <: RadialFlow
+        @test typeof(fc.z0)  == Array{Float64,1}
+        @test typeof(fc.α)   == Float64
+        @test typeof(fc.β)   == Float64
+        @test typeof(fcp)    <: RadialFlow
+        @test typeof(fcp.z0) == Array{Float64,1}
+        @test typeof(fcp.α)  == Float64
+        @test typeof(fcp.β)  == Float64
+        @test fcp.z0         == [1.0, 2.0]
+        @test fcp.α          == 3.0
+        @test fcp.β          == 4.0
+
+    end
+
+    @testset "nr_params" begin
+        
+        for k = 1:10
+            f = ReactiveMP.RadialFlowEmpty(Val(k))
+            fc = compile(f)
+            @test nr_params(f)  == k + 2
+            @test nr_params(fc) == k + 2
+        end
+
     end
 
     @testset "Get-Set" begin
@@ -122,6 +181,10 @@ using ReactiveMP
         @test getα(f)  == 3.0
         @test getβ(f)  == 6.0
 
+        # check getdim
+        f = ReactiveMP.RadialFlowEmpty(Val(2))
+        @test ReactiveMP.getdim(f) == 2
+
         # check errors (univariate)
         f = RadialFlow(1.0, 2.0, 3.0)
         @test_throws MethodError setz0!(f, [1.0, 2.0])
@@ -140,7 +203,7 @@ using ReactiveMP
     @testset "Base" begin
         
         # check base functions (univariate)
-        f = RadialFlow()
+        f = RadialFlow(1.0, 2.0, 3.0)
         @test eltype(f) == Float64
         @test eltype(RadialFlow{Float64,Float64}) == Float64
         @test size(f) == 1
@@ -151,6 +214,11 @@ using ReactiveMP
         @test eltype(f) == Float64
         @test eltype(RadialFlow{Array{Float64,1},Float64}) == Float64
         @test size(f) == 2
+        @test length(f) == 2
+
+        # check base functions empty object
+        f = ReactiveMP.RadialFlowEmpty(Val(2))
+        @test size(f)   == 2
         @test length(f) == 2
 
     end

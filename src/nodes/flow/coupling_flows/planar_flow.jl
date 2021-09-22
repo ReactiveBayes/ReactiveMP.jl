@@ -45,7 +45,7 @@ end
 compile(f::PlanarFlowEmpty{1})          = PlanarFlow(randn(), randn(), randn())
 compile(f::PlanarFlowEmpty)             = PlanarFlow(randn(getdim(f)), randn(getdim(f)), randn())
 compile(f::PlanarFlowEmpty{1}, params)  = PlanarFlow(params[1], params[2], params[3])
-compile(f::PlanarFlowEmpty, params)     = PlanarFlow(params[1:f.dim], params[1+f.dim:2*f.dim], params[2*f.dim+1])
+compile(f::PlanarFlowEmpty, params)     = PlanarFlow(params[1:getdim(f)], params[1+getdim(f):2*getdim(f)], params[2*getdim(f)+1])
 
 @doc raw"""
 The `PlanarFlow(dim::Int64)` function creates a mutable `PlanarFlow` structure with parameters corresponding to input of dimensions `dim`. The parameters are each random sampled from a standard (multivariate) normal distribution.
@@ -92,9 +92,11 @@ eltype(::Type{PlanarFlow{T1,T2}}) where { T1 <: AbstractArray, T2 <: Real}   = p
 
 size(f::PlanarFlow{T1,T2}) where { T1 <: Real, T2 <: Real}                   = 1
 size(f::PlanarFlow{T1,T2}) where { T1 <: AbstractArray, T2 <: Real}          = length(f.u)
+size(f::PlanarFlowEmpty{N}) where { N }                                      = return N
 
 length(f::PlanarFlow{T1,T2}) where { T1 <: Real, T2 <: Real}                 = 1
 length(f::PlanarFlow{T1,T2}) where { T1 <: AbstractArray, T2 <: Real}        = length(f.u)
+length(f::PlanarFlowEmpty{N}) where { N }                                    = return N
 
 # forward pass through the PlanarFlow function (multivariate input)
 function _forward(f::PlanarFlow{T1,T2}, input::T1) where { T1, T2 <: Real }

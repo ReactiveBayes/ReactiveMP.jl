@@ -27,8 +27,8 @@ mutable struct RadialFlow{T1, T2 <: Real} <: AbstractCouplingFlow
         return new{T1,T2}(z0, float(α), float(β))
     end
 end
-struct RadialFlowEmpty <: AbstractCouplingFlowEmpty 
-    dim     :: Int
+struct RadialFlowEmpty{B} <: AbstractCouplingFlowEmpty 
+    dim     :: Val{B}
 end
 struct RadialFlowPlaceholder <: AbstractCouplingFlowPlaceholder end
 @doc raw"""
@@ -36,19 +36,14 @@ The `RadialFlow()` function creates a planar flow object. Its dimensionality is 
 """
 RadialFlow() = RadialFlowPlaceholder()
 function prepare(dim::Int, flow::RadialFlowPlaceholder) 
-    return RadialFlowEmpty(dim)
+    return RadialFlowEmpty(Val(dim))
 end
 
 # compile placeholder
-compile(f::RadialFlowEmpty) = RadialFlow(f.dim)
-# TODO make type stable
-function compile(f::RadialFlowEmpty, params) 
-    if length(params) == 3
-        return RadialFlow(params[1], params[2], params[3])
-    else
-        return RadialFlow(params[1], params[2], params[2:1+f.dim])
-    end
-end
+compile(f::RadialFlowEmpty{1})          = RadialFlow(randn(), rand(), randn())
+compile(f::RadialFlowEmpty)             = RadialFlow(randn(getdim(f)), rand(), randn())
+compile(f::RadialFlowEmpty{1}, params)  = RadialFlow(params[1], params[2], params[3])
+compile(f::RadialFlowEmpty, params)     = RadialFlow(params[1:getdim(f)], params[getdim(f)+1], params[getdim(f)+2])
 
 @doc raw"""
 The `RadialFlow(dim::Int64)` function creates a mutable `RadialFlow` structure with parameters corresponding to input of dimensions `dim`. The parameters are each random sampled from a standard (multivariate) normal distribution.
@@ -58,14 +53,15 @@ function RadialFlow(dim::Int64)
 end
 
 # number of parameters
-nr_params(flow::RadialFlow)      = 2 + length(flow.β)
-nr_params(flow::RadialFlowEmpty) = 2 + flow.dim
+nr_params(flow::RadialFlow)      = 2 + length(flow.z0)
+nr_params(flow::RadialFlowEmpty) = 2 + getdim(flow)
 
 # get-functions for the RadialFlow structure.
-getz0(f::RadialFlow)             = return f.z0
-getα(f::RadialFlow)              = return f.α
-getβ(f::RadialFlow)              = return f.β
-getall(f::RadialFlow)            = return f.z0, f.α, f.β
+getz0(f::RadialFlow)                      = return f.z0
+getα(f::RadialFlow)                       = return f.α
+getβ(f::RadialFlow)                       = return f.β
+getall(f::RadialFlow)                     = return f.z0, f.α, f.β
+getdim(f::RadialFlowEmpty{N}) where { N } = return N
 
 # set-functions for the RadialFlow structure
 function setz0!(f::RadialFlow{T1,T2}, z0::T1) where { T1, T2 <: Real}
@@ -89,9 +85,11 @@ eltype(::Type{RadialFlow{T1,T2}}) where { T1 <: AbstractArray, T2 <: Real}   = p
 
 size(f::RadialFlow{T1,T2}) where { T1 <: Real, T2 <: Real}                   = 1
 size(f::RadialFlow{T1,T2}) where { T1 <: AbstractArray, T2 <: Real}          = length(f.z0)
+size(f::RadialFlowEmpty{N}) where { N }                                      = return N
 
 length(f::RadialFlow{T1,T2}) where { T1 <: Real, T2 <: Real}                 = 1
 length(f::RadialFlow{T1,T2}) where { T1 <: AbstractArray, T2 <: Real}        = length(f.z0)
+length(f::RadialFlowEmpty{N}) where { N }                                    = return N
 
 # forward pass through the RadialFlow function (multivariate input)
 function _forward(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real }

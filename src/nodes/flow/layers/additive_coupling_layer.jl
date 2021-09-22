@@ -81,7 +81,7 @@ nr_params(layer::AdditiveCouplingLayerPlaceholder)  = nr_params(layer.f)
 nr_params(layer::AdditiveCouplingLayerEmpty)        = nr_params(layer.f)
 
 # get-functions for the AdditiveCouplingLayer structure
-getf(layer::AdditiveCouplingLayer)     = layer.f
+getf(layer::AdditiveCouplingLayer)      = layer.f
 getflow(layer::AdditiveCouplingLayer)   = layer.f
 
 # custom Base function for the AdditiveCouplingLayer structure

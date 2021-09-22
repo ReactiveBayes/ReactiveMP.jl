@@ -10,13 +10,15 @@ import ReactiveMP: @test_rules
 
 @testset "rules:Flow:out" begin
 
-    model = FlowModel( (AdditiveCouplingLayer(PlanarFlow(1.0, 2.0, 3.0)), ) )
-    meta  = FlowMeta(model)
-    metaU = FlowMeta(model, Unscented(2))
-    Ji1 = inv_jacobian(model, [3.0, -1.5])
-    Ji2 = inv_jacobian(model, [-5.0, -1.5])
-    J1 = jacobian(model, [3.0, -1.5])
-    J2 = jacobian(model, [-5.0, -1.5])
+    params = [1.0, 2.0, 3.0]
+    model = FlowModel( 2, (AdditiveCouplingLayer(PlanarFlow(); permute=false), ) )
+    compiled_model = compile(model, params)
+    meta  = FlowMeta(compiled_model)
+    metaU = FlowMeta(compiled_model, Unscented(2))
+    Ji1 = inv_jacobian(compiled_model, [3.0, -1.5])
+    Ji2 = inv_jacobian(compiled_model, [-5.0, -1.5])
+    J1 = jacobian(compiled_model, [3.0, -1.5])
+    J2 = jacobian(compiled_model, [-5.0, -1.5])
 
     @testset "Belief Propagation: (m_in::MvNormalMeanCovariance, ) (Linearization)" begin
 

@@ -13,8 +13,9 @@ import ReactiveMP: @test_marginalrules
 
     @testset ":in (m_out::NormalDistributionsFamily, m_in::NormalDistributionsFamily) (Linearization)" begin
 
-        model = FlowModel( (AdditiveCouplingLayer(PlanarFlow(1.0, 2.0, 3.0)), ) )
-        meta  = FlowMeta(model)
+        params = [1.0, 2.0, 3.0]
+        model = FlowModel( 2, (AdditiveCouplingLayer(PlanarFlow(); permute=false), ) )
+        meta  = FlowMeta(compile(model, params))
 
         @test_marginalrules [ with_float_conversions = false ] Flow(:in) [
             (
@@ -96,8 +97,9 @@ import ReactiveMP: @test_marginalrules
 
     @testset ":in (m_out::NormalDistributionsFamily, m_in::NormalDistributionsFamily) (Unscented)" begin
 
-        model = FlowModel( (AdditiveCouplingLayer(PlanarFlow(1.0, 2.0, 3.0)), ) )
-        meta  = FlowMeta(model, Unscented(2))
+        params = [1.0, 2.0, 3.0]
+        model = FlowModel( 2, (AdditiveCouplingLayer(PlanarFlow(); permute=false), ) )
+        meta  = FlowMeta(compile(model, params), Unscented(2))
 
         @test_marginalrules [ with_float_conversions = false, atol=1e-9 ] Flow(:in) [
             (
