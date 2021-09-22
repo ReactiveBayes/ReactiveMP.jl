@@ -62,9 +62,10 @@ using ReactiveMP
         f  = PlanarFlow()
         layer = AdditiveCouplingLayer(f; permute=false)
         out = compile(ReactiveMP._prepare(2, layer))
-        @test getf(out) == out.f
-        @test getflow(out) == out.f
-
+        @test getf(out)             == out.f
+        @test getflow(out)          == out.f
+        @test getdim(out)           == out.dim
+        @test getdim(out)           == 2
 
     end
 

@@ -98,6 +98,7 @@ using .ReactiveMPTestingHelpers
     @testset "Layers" begin
         
         addtests("layers/test_additive_coupling_layer.jl")
+        addtests("layers/test_input_layer.jl")
         addtests("layers/test_permutation_layer.jl")
 
     end

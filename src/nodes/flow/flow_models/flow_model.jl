@@ -34,6 +34,10 @@ Return arguments:
 function FlowModel(dim::Int, layers::T) where { T <: NTuple{N,AbstractLayerPlaceholder} where { N } }
     return FlowModel(dim, flatten_tuple(prepare.(dim, layers)))
 end
+function FlowModel(layers::T) where { T <: NTuple{N, AbstractLayerPlaceholder} where { N } }
+    @assert typeof(first(layers)) <: InputLayer "The FlowModel requires an input dimension to be specified. This can be achieved, either by preceding the layers tuple with an integer as `FlowModel(dim, layers)`, or by starting the tuple of layers with an `InputLayer(dim)` as `FlowModel((InputLayer(dim), layers...))`."
+    return FlowModel(getdim(first(layers)), flatten_tuple(prepare.(getdim(first(layers)), Base.tail(layers))))
+end
 
 # prepare function for setting correct sizes in the layers (without assigning the parameters yet!)
 prepare(dim::Int, layers::T) where { T <: NTuple{N,AbstractLayerPlaceholder} where { N }} = _prepare(dim, layers)

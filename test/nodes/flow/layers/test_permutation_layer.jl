@@ -34,16 +34,21 @@ using LinearAlgebra
         # check for layer with available P matrix
         P = PermutationMatrix(5)
         layer = PermutationLayer(5, P)
-        @test layer.P == getP(layer)
-        @test layer.P == getmat(layer)
-        @test typeof(layer.P) <: PermutationMatrix
+        @test layer.P           == getP(layer)
+        @test layer.P           == getmat(layer)
+        @test getP(layer)       == P
+        @test layer.dim         == getdim(layer)
+        @test getdim(layer)     == 5
+        @test typeof(layer.P)   <: PermutationMatrix
 
         # check for layer with unknown P matrix
         layer = PermutationLayer(4)
-        @test layer.P == getP(layer)
-        @test layer.P == getmat(layer)
-        @test size(layer.P)   == (4, 4)
-        @test typeof(layer.P) <: PermutationMatrix
+        @test layer.P           == getP(layer)
+        @test layer.P           == getmat(layer)
+        @test size(layer.P)     == (4, 4)
+        @test getdim(layer)     == layer.dim
+        @test getdim(layer)     == 4
+        @test typeof(layer.P)   <: PermutationMatrix
 
     end
 

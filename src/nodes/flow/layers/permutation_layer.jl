@@ -46,6 +46,7 @@ nr_params(layer::PermutationLayer) = 0
 # get-functions for the PermutationLayer structure
 getP(layer::PermutationLayer)     = layer.P
 getmat(layer::PermutationLayer)   = layer.P
+getdim(layer::PermutationLayer)   = layer.dim
 
 # custom Base function for the PermutationLayer structure
 eltype(layer::PermutationLayer{T})  where { T }              = eltype(T)

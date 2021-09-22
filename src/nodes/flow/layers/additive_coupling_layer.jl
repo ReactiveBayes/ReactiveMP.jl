@@ -2,7 +2,7 @@
 ## TODO: simplify forward function through forward! (etc...)
 
 export AdditiveCouplingLayer
-export getf, getflow
+export getf, getflow, getdim
 export forward, forward!, backward, backward!
 export jacobian, inv_jacobian
 export det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
@@ -83,6 +83,7 @@ nr_params(layer::AdditiveCouplingLayerEmpty)        = nr_params(layer.f)
 # get-functions for the AdditiveCouplingLayer structure
 getf(layer::AdditiveCouplingLayer)      = layer.f
 getflow(layer::AdditiveCouplingLayer)   = layer.f
+getdim(layer::AdditiveCouplingLayer)    = layer.dim
 
 # custom Base function for the AdditiveCouplingLayer structure
 eltype(layer::AdditiveCouplingLayer{T})  where { T }              = eltype(T)
