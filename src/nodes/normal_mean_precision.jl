@@ -11,3 +11,8 @@ conjugate_type(::Type{ <: NormalMeanPrecision }, ::Type{ Val{ :τ } })   = Gamma
     out_mean, out_var = mean_var(q_out)
     return 0.5 * (log2π - logmean(q_τ) + mean(q_τ) * (μ_var + out_var + abs2(μ_mean - out_mean)))
 end
+
+@average_energy NormalMeanPrecision (q_out_μ::MultivariateNormalDistributionsFamily, q_τ::Any) = begin
+    out_μ_mean, out_μ_cov = mean_cov(q_out_μ)
+    return 0.5 * (log2π - logmean(q_τ) + mean(q_τ) * (out_μ_cov[1,1] + out_μ_cov[2,2] - out_μ_cov[1,2] - out_μ_cov[2,1] + abs2(out_μ_mean[1] - out_μ_mean[2])))
+end
