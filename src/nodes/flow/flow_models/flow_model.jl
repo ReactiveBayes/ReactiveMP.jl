@@ -3,6 +3,7 @@
 export FlowModel, CompiledFlowModel
 export compile, nr_params
 export getlayers, getforward, getbackward, getjacobian, getinv_jacobian
+export forward_jacobian, backward_inv_jacobian
 export forward, forward!, backward, backward!
 export jacobian, jacobian!, inv_jacobian, inv_jacobian!
 export det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
@@ -435,6 +436,197 @@ end
 
 # when no layers are left, stop the inplace recursion
 inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, input::Vector{T4}, output_new::Vector{T5}, layers::Tuple{}) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real } = return
+
+
+# joint forward-jacobian of the Flow model
+function _forward_jacobian(model::CompiledFlowModel, input::Vector{T1}) where { T1 <: Real }
+
+    # fetch layers
+    dim    = getdim(model)
+    
+    # promote type for allocating output
+    T = promote_type(eltype(model), T1)
+
+    # allocate space for output and jacobian
+    output = zeros(T, dim)
+    J = zeros(T, dim, dim)
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
+
+    # calculate jacobian
+    forward_jacobian!(output, J, model, input)
+
+    # return result
+    return output, J
+
+end
+
+# when calling forward_jacobian, redirect to _forward_jacobian
+forward_jacobian(model::CompiledFlowModel, input::Vector{T}) where { T <: Real } = _forward_jacobian(model, input)
+
+# for broadcasting over forward_jacobian, fix the model for multiple inputs
+Broadcast.broadcasted(::typeof(forward_jacobian), model::CompiledFlowModel, input::Vector{Vector{T}}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
+
+# inplace forward_jacobian of the Flow model
+function forward_jacobian!(output::Vector{T1}, J::Matrix{T2}, model::CompiledFlowModel, input::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real }
+
+    # fetch layers
+    layers = getlayers(model)
+    dim = getdim(model)
+    
+    # promote type for allocating output
+    T = promote_type(eltype(model), T2)
+
+    # allocate space for intermediate output and jacobian
+    input_new = zeros(T, dim)
+    input_new .= input
+    J_new = zeros(T, dim, dim)
+    J_old = zeros(T, dim, dim)
+    for k = 1:dim
+        J_old[k,k] = 1.0
+    end
+
+    # calculate forward_jacobian over all layers
+    forward_jacobian!(J, J_new, J_old, output, input_new, layers)
+
+end
+
+# inplace forward_jacobian calculation for a tuple of layers
+function forward_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, output::Vector{T4}, input_new::Vector{T5}, layers::T) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real, T <: NTuple{N,AbstractLayer} where N}
+
+    # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
+    if typeof(first(layers)) <: PermutationLayer
+        
+        # calculate total jacobian
+        mul!(J, jacobian(first(layers), input_new), J_old)
+        
+        # else fall back to standard calculation
+    else 
+        
+        # calculate new jacobian
+        jacobian!(J_new, first(layers), input_new)
+        
+        # calculate total jacobian
+        mul!(J, J_new, J_old)
+        
+    end
+
+    # update old jacobian
+    J_old .= J
+
+    # perform forward pass over last layer
+    forward!(output, first(layers), input_new)
+
+    if length(layers) > 1
+        # update intermediate output
+        input_new .= output
+    end
+
+    # calculate forward_jacobian of remaining layers
+    forward_jacobian!(J, J_new, J_old, output, input_new, Base.tail(layers))
+
+end
+
+# when no layers are left, stop the inplace recursion
+forward_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, output::Vector{T4}, input_new::Vector{T5}, layers::Tuple{}) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real } = return
+
+
+# joing backward inverse jacobian of the Flow model
+function _backward_inv_jacobian(model::CompiledFlowModel, output::Vector{T1}) where { T1 <: Real }
+
+    # fetch layers
+    dim    = getdim(model)
+    
+    # promote type for allocating output
+    T = promote_type(eltype(model), T1)
+
+    # allocate space for jacobian
+    J = zeros(T, dim, dim)
+    input = zeros(T, dim)
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
+
+    # calculate jacobian
+    backward_inv_jacobian!(input, J, model, output)
+
+    # return result
+    return input, J
+
+end
+
+# when calling backward inverse jacobian, redirect to _backward_inv_jacobian
+backward_inv_jacobian(model::CompiledFlowModel, output::Vector{T}) where { T <: Real } = _backward_inv_jacobian(model, output)
+
+# for broadcasting over backward inverse jacobian, fix the model for multiple inputs
+Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::Vector{Vector{T}}) where { T <: Real } = broadcast(_backward_inv_jacobian, Ref(model), output)
+
+# inplace inverse backward jacobian of the Flow model
+function backward_inv_jacobian!(input::Vector{T1}, J::Matrix{T2}, model::CompiledFlowModel, output::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real }
+
+    # fetch layers
+    layers = getlayers(model)
+    dim = getdim(model)
+    
+    # promote type for allocating output
+    T = promote_type(eltype(model), T2)
+
+    # allocate space for intermediate output and jacobian
+    output_new = zeros(T, dim)
+    output_new .= output
+    J_new = zeros(T, dim, dim)
+    J_old = zeros(T, dim, dim)
+    for k = 1:dim
+        J_old[k,k] = 1.0
+    end
+
+    # calculate backward inverse jacobian over all layers (reversed!)
+    backward_inv_jacobian!(J, J_new, J_old, input, output_new, reverse(layers))
+
+end
+
+# inplace backward inverse jacobian calculation for a tuple of layers
+function backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, input::Vector{T4}, output_new::Vector{T5}, layers::T) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real, T <: NTuple{N,AbstractLayer} where N}
+
+    # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
+    if typeof(first(layers)) <: PermutationLayer
+        
+        # calculate total jacobian
+        mul!(J, inv_jacobian(first(layers), output_new), J_old)
+        
+    # else fall back to standard calculation
+    else 
+        
+        # calculate new jacobian
+        inv_jacobian!(J_new, first(layers), output_new)
+        
+        # calculate total jacobian
+        mul!(J, J_new, J_old)
+        
+    end
+
+    # update old jacobian
+    J_old .= J
+    
+    # perform forward pass over last layer
+    backward!(input, first(layers), output_new)
+
+    # if we did not arrive at the last layer yet, then also perform a backward pass
+    if length(layers) > 1
+
+        # update intermediate output
+        output_new .= input
+
+    end
+
+    # calculate backward inv jacobian of remaining layers
+    backward_inv_jacobian!(J, J_new, J_old, input, output_new, Base.tail(layers))
+
+end
+
+# when no layers are left, stop the inplace recursion
+backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, input::Vector{T4}, output_new::Vector{T5}, layers::Tuple{}) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real } = return
 
 
 # extra utility functions
