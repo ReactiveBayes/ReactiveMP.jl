@@ -40,6 +40,28 @@ import ReactiveMP: @test_rules
 
     end
 
+    @testset "Variational: (m_out::UnivariateNormalDistributionsFamily, q_τ::Any)" begin
+
+        @test_rules [ with_float_conversions = true ] NormalMeanPrecision(:μ, Marginalisation) [
+            (input = (m_out = NormalMeanPrecision(0.0, 1.0),  q_τ = GammaShapeRate(2.0, 1.0)), output = NormalMeanPrecision(0.0, 2.0 / 3.0)),
+            (input = (m_out = NormalMeanPrecision(-1.0, 1.0), q_τ = GammaShapeRate(3.0, 2.0)), output = NormalMeanPrecision(-1.0, 0.6)),
+            (input = (m_out = NormalMeanPrecision(2.0, 0.5),  q_τ = GammaShapeScale(10.0, 0.1)), output = NormalMeanPrecision(2.0, 1.0 / 3.0)),
+        ]
+
+        @test_rules [ with_float_conversions = true ] NormalMeanPrecision(:μ, Marginalisation) [
+            (input = (m_out = NormalMeanVariance(0.0, 1.0),  q_τ = GammaShapeRate(2.0, 1.0)), output = NormalMeanPrecision(0.0, 2.0 / 3.0)),
+            (input = (m_out = NormalMeanVariance(-1.0, 1.0), q_τ = GammaShapeRate(3.0, 2.0)), output = NormalMeanPrecision(-1.0, 0.6)),
+            (input = (m_out = NormalMeanVariance(2.0, 0.5),  q_τ = GammaShapeScale(10.0, 0.1)), output = NormalMeanPrecision(2.0, 2.0 / 3.0)),
+        ]
+
+        @test_rules [ with_float_conversions = true ] NormalMeanPrecision(:μ, Marginalisation) [
+            (input = (m_out = NormalWeightedMeanPrecision(0.0, 1.0),  q_τ = GammaShapeRate(2.0, 1.0)), output = NormalMeanPrecision(0.0, 2.0 / 3.0)),
+            (input = (m_out = NormalWeightedMeanPrecision(-1.0, 1.0), q_τ = GammaShapeRate(3.0, 2.0)), output = NormalMeanPrecision(-1.0, 0.6)),
+            (input = (m_out = NormalWeightedMeanPrecision(2.0, 0.5),  q_τ = GammaShapeScale(10.0, 0.1)), output = NormalMeanPrecision(4.0, 1.0 / 3.0)),
+        ]
+
+    end
+    
     @testset "Variational: (q_out::Any, q_τ::Any)" begin
 
         @test_rules [ with_float_conversions = true ] NormalMeanPrecision(:μ, Marginalisation) [
