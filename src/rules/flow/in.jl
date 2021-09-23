@@ -10,8 +10,7 @@
     model = getmodel(meta)
 
     # calculate new parameters
-    μ_in   = backward(model, μ_out)
-    Ji     = inv_jacobian(model, μ_out)
+    (μ_in, Ji) = backward_inv_jacobian(model, μ_out)
     Σ_in   = Ji * Σ_out * Ji'
 
     # return distribution

@@ -15,8 +15,7 @@
     model = getmodel(meta)
 
     # calculate new parameters
-    μ_in_hat = backward(model, μ_out)
-    Ji       = inv_jacobian(model, μ_out)
+    (μ_in_hat, Ji) = backward_inv_jacobian(model, μ_out)
     Σ_in_hat = Ji * Σ_out * Ji'
 
     # calculate marginal distribution

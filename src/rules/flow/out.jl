@@ -10,8 +10,7 @@
     model = getmodel(meta)
 
     # calculate new parameters
-    μ_out   = forward(model, μ_in)
-    J       = jacobian(model, μ_in)
+    (μ_out, J)   = forward_jacobian(model, μ_in)
     Σ_out   = J * Σ_in * J'
 
     # return distribution
