@@ -27,6 +27,15 @@ function PermutationLayer(dim::T) where { T <: Int}
     return PermutationLayer(dim, P)
 
 end
+function PermutationLayer(P::PermutationMatrix)
+
+    # create random permutation matrix
+    @assert size(P,1) == size(P,2) "The passed permutation matrix is not square." 
+
+    # return layer
+    return PermutationLayer(size(P,1), P)
+
+end
 struct PermutationLayerPlaceholder <: AbstractLayerPlaceholder end
 @doc raw"""
 `PermutationLayer()` creates a layer that randomly shuffles its input values. The corresponding permutation matrix and its dimensionality are (randomly) generated during model creation.
@@ -35,6 +44,10 @@ PermutationLayer() = PermutationLayerPlaceholder() # the function creates a plac
 
 # prepare placeholder 
 _prepare(dim::Int, layer::PermutationLayerPlaceholder) = (PermutationLayer(dim), )
+function _prepare(dim::Int, layer::PermutationLayer)
+    @assert dim == size(getP(layer),1) == size(getP(layer),2) "The size of the passed permutation matrix does not comply with the dimensionality of the input."
+    return (layer, )
+end
 
 # compile layer
 compile(layer::PermutationLayer, params) = throw(ArgumentError("The permutation matrix does not have any parameters."))

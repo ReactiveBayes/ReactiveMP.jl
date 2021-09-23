@@ -34,14 +34,14 @@ Return arguments:
 function FlowModel(dim::Int, layers::T) where { T <: NTuple{N,AbstractLayerPlaceholder} where { N } }
     return FlowModel(dim, flatten_tuple(prepare.(dim, layers)))
 end
-function FlowModel(layers::T) where { T <: NTuple{N, AbstractLayerPlaceholder} where { N } }
+function FlowModel(layers::T) where { T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where { N } }
     @assert typeof(first(layers)) <: InputLayer "The FlowModel requires an input dimension to be specified. This can be achieved, either by preceding the layers tuple with an integer as `FlowModel(dim, layers)`, or by starting the tuple of layers with an `InputLayer(dim)` as `FlowModel((InputLayer(dim), layers...))`."
     return FlowModel(getdim(first(layers)), flatten_tuple(prepare.(getdim(first(layers)), Base.tail(layers))))
 end
 
 # prepare function for setting correct sizes in the layers (without assigning the parameters yet!)
-prepare(dim::Int, layers::T) where { T <: NTuple{N,AbstractLayerPlaceholder} where { N }} = _prepare(dim, layers)
-Broadcast.broadcasted(::typeof(prepare), dim::Int, layers::T) where { T <: NTuple{N,AbstractLayerPlaceholder} where { N }} = broadcast(_prepare, Ref(dim), layers)
+prepare(dim::Int, layers::T) where { T <: NTuple{N,Union{AbstractLayer, AbstractLayerPlaceholder}} where { N }} = _prepare(dim, layers)
+Broadcast.broadcasted(::typeof(prepare), dim::Int, layers::T) where { T <: NTuple{N,Union{AbstractLayer, AbstractLayerPlaceholder}} where { N }} = broadcast(_prepare, Ref(dim), layers)
 
 @doc raw"""
 The CompiledFlowModel structure is the most generic type of compiled Flow model, in which the layers are not constrained to be of a specific type. The FlowModel structure contains the input dimension and a tuple of compiled layers. Do not manually create a CompiledFlowModel! Instead create a FlowModel first and compile it with `compile(model::FlowModel)`. This will make sure that all layers/mappings are configured with the proper dimensionality and with randomly sampled parameters. Alternatively, if you would like to pass your own parameters, call `compile(model::FlowModel, params::Vector)`.
