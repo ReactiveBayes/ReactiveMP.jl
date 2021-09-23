@@ -8,11 +8,9 @@ end
     return (out = m_out, μ = prod(ProdAnalytical(), m_μ, NormalMeanPrecision(mean(m_out), mean(m_τ))), τ = m_τ)
 end
 
-@marginalrule NormalMeanPrecision(:out_μ) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, q_τ::Gamma) = begin
-    W_out  = invcov(m_out)
-    W_μ    = invcov(m_μ)
-    xi_out = W_out * mean(m_out)
-    xi_μ   = W_μ * mean(m_μ)
+@marginalrule NormalMeanPrecision(:out_μ) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, q_τ::GammaDistributionsFamily) = begin
+    xi_out, W_out = weightedmean_precision(m_out)
+    xi_μ, W_μ     = weightedmean_precision(m_μ)
 
     W_bar = mean(q_τ)
 
