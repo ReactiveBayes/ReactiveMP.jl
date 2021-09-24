@@ -220,21 +220,21 @@ function backward!(input::Vector{T1}, model::CompiledFlowModel, output::Vector{T
     output_new .= output
 
     # perform backward pass over all layers
-    backward!(input, reverse(layers), output_new)
+    backward!(input, layers, output_new)
     
 end
 
-# inplace backward pass through a (reversed!) tuple of layers
+# inplace backward pass through a tuple of layers
 function backward!(input::Vector{T1}, layers::T, output::Vector{T2}) where { T1 <: Real, T2 <: Real,  T <: NTuple{N,AbstractLayer} where N}
 
-    # perform pass over last layer (but reversed!)
-    backward!(input, first(layers), output)
+    # perform pass over last layer
+    backward!(input, last(layers), output)
 
     # update intermediate output
     output .= input
 
     # perform pass over all remaining layers
-    backward!(input, Base.tail(layers), output)
+    backward!(input, Base.front(layers), output)
 
 end
 
@@ -388,8 +388,8 @@ function backward_inv_jacobian!(input::Vector{T1}, J::Matrix{T2}, model::Compile
         J_old[k,k] = 1.0
     end
 
-    # calculate backward inverse jacobian over all layers (reversed!)
-    backward_inv_jacobian!(J, J_new, J_old, input, output_new, reverse(layers))
+    # calculate backward inverse jacobian over all layers
+    backward_inv_jacobian!(J, J_new, J_old, input, output_new, layers)
 
 end
 
@@ -397,19 +397,19 @@ end
 function backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, input::Vector{T4}, output_new::Vector{T5}, layers::T) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real, T <: NTuple{N,AbstractLayer} where N}
 
     # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
-    if typeof(first(layers)) <: PermutationLayer
+    if typeof(last(layers)) <: PermutationLayer
 
         # perform forward pass over last layer
-        backward!(input, first(layers), output_new)
+        backward!(input, last(layers), output_new)
         
         # calculate total jacobian
-        mul!(J, inv_jacobian(first(layers), output_new), J_old)
+        mul!(J, inv_jacobian(last(layers), output_new), J_old)
         
     # else fall back to standard calculation
     else 
 
         # perform forward pass over last layer
-        backward_inv_jacobian!(input, J_new, first(layers), output_new)
+        backward_inv_jacobian!(input, J_new, last(layers), output_new)
         
         # calculate total jacobian
         mul!(J, J_new, J_old)
@@ -428,7 +428,7 @@ function backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{
     end
 
     # calculate backward inv jacobian of remaining layers
-    backward_inv_jacobian!(J, J_new, J_old, input, output_new, Base.tail(layers))
+    backward_inv_jacobian!(J, J_new, J_old, input, output_new, Base.front(layers))
 
 end
 

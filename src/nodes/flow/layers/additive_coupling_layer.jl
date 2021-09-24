@@ -1,7 +1,6 @@
 ## TODO: expand to arbitrarily sized inputs
 ## TODO: add inplace (inv-)jacobian functions + simplify normal one with the inplace operation
 ## TODO: fix for non-unity partition dimensions
-## TODO: in forward, speed up (when partition_dim == 1 (perhaps using typing))
 
 export AdditiveCouplingLayer
 export getf, getflow, getdim
@@ -135,11 +134,19 @@ function forward!(output::Array{T1,1}, layer::AdditiveCouplingLayer, input::Arra
     # check dimensionality
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
-    # determine result
-    output[1:pdim] .= input[1:pdim] 
-    for k = 2:dim÷pdim
-        output[1+(k-1)*pdim:k*pdim] .= input[1+(k-1)*pdim:k*pdim]
-        output[1+(k-1)*pdim:k*pdim] .+= forward(f[k-1], input[1+(k-2)*pdim:(k-1)*pdim])
+    # optimized version for scalar partition dimension
+    if pdim == 1 
+        output[1] = input[1]
+        for k = 2:dim
+            output[k] = input[k]
+            output[k] += forward(f[k-1], input[k-1])
+        end
+    else
+        view(output, 1:pdim) .= view(input, 1:pdim) 
+        for k = 2:dim÷pdim
+            view(output, 1+(k-1)*pdim:k*pdim) .= view(input, 1+(k-1)*pdim:k*pdim)
+            view(output, 1+(k-1)*pdim:k*pdim) .+= forward(f[k-1], view(input, 1+(k-2)*pdim:(k-1)*pdim))
+        end
     end
     
 end
@@ -172,10 +179,18 @@ function backward!(input::Array{T1,1}, layer::AdditiveCouplingLayer, output::Arr
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
     # determine result
-    input[1:pdim] .= output[1:pdim] 
-    for k = 2:dim÷pdim
-        input[1+(k-1)*pdim:k*pdim] .= output[1+(k-1)*pdim:k*pdim]
-        input[1+(k-1)*pdim:k*pdim] .-= forward(f[k-1], input[1+(k-2)*pdim:(k-1)*pdim])
+    if pdim == 1
+        input[1] = output[1]
+        for k = 2:dim
+            input[k] = output[k]
+            input[k] -= forward(f[k-1], input[k-1])
+        end
+    else
+        view(input, 1:pdim) .= view(output, 1:pdim) 
+        for k = 2:dim÷pdim
+            view(input, 1+(k-1)*pdim:k*pdim) .= view(output, 1+(k-1)*pdim:k*pdim)
+            view(input, 1+(k-1)*pdim:k*pdim) .-= forward(f[k-1], view(input, 1+(k-2)*pdim:(k-1)*pdim))
+        end
     end
     
 end
