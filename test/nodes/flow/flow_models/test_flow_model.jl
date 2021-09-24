@@ -288,15 +288,16 @@ using ReactiveMP
     @testset "Joint processing functions" begin
         model = FlowModel(
             (
-                InputLayer(10),
+                InputLayer(8),
                 AdditiveCouplingLayer(PlanarFlow()),
                 AdditiveCouplingLayer(PlanarFlow(); permute=false)
             )
         )
         compiled_model = compile(model)
-        x = randn(10)
+        x = randn(8)
         @test forward_jacobian(compiled_model, x) == (forward(compiled_model, x), jacobian(compiled_model, x))
         @test backward_inv_jacobian(compiled_model, x) == (backward(compiled_model, x), inv_jacobian(compiled_model, x))
+        @test inv(jacobian(compiled_model, x)) ≈ inv_jacobian(compiled_model, forward(compiled_model, x))
 
     end
 

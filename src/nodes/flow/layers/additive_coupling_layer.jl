@@ -244,7 +244,7 @@ inv_jacobian(layer::AdditiveCouplingLayer, output::Array{T,1}) where { T <: Real
 Broadcast.broadcasted(::typeof(inv_jacobian), layer::AdditiveCouplingLayer, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_inv_jacobian, Ref(layer), output)
 
 # inplace inv_jacobian through the additive coupling layer
-function inv_jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
+function inv_jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }
 
     # fetch variables
     f = getf(layer)
@@ -252,15 +252,18 @@ function inv_jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, input:
     pdim = getpartitiondim(layer)
 
     # check dimensionality
-    @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
+    @assert length(output) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
+
+    # calculate input of layer for simpler jacobian calculation
+    input = backward(layer, output)
 
     # determine result
     result .= 0.0
     for k = 1:dim÷pdim
-        result[k,k] = 1.0
+        result[k:end,k] .= 1.0
     end
     for k = 1:dim÷pdim-1
-        result[1+k*pdim:(k+1)*pdim, 1+(k-1)*pdim:k*pdim] .-= jacobian(f[k], input[1+(k-1)*pdim:k*pdim])
+        result[k+1:end, 1:k] .*= -jacobian(f[k], input[1+(k-1)*pdim:k*pdim])
     end
     
 end

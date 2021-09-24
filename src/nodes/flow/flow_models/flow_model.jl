@@ -400,34 +400,32 @@ function inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, inpu
 
     # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
     if typeof(first(layers)) <: PermutationLayer
-        
-        # calculate total jacobian
-        mul!(J, inv_jacobian(first(layers), output_new), J_old)
-        
-    # else fall back to standard calculation
-    else 
-        
-        # calculate new jacobian
-        inv_jacobian!(J_new, first(layers), output_new)
-        
-        # calculate total jacobian
-        mul!(J, J_new, J_old)
-        
-    end
-
-    # update old jacobian
-    J_old .= J
-
-    # if we did not arrive at the last layer yet, then also perform a forward pass
-    if length(layers) > 1
 
         # perform forward pass over last layer
         backward!(input, first(layers), output_new)
 
         # update intermediate output
         output_new .= input
-
+        
+        # calculate total jacobian 
+        mul!(J, inv_jacobian(first(layers), output_new), J_old)
+        
+    # else fall back to standard calculation
+    else 
+        
+        # calculate new jacobian
+        backward_inv_jacobian!(input, J_new, first(layers), output_new)
+        
+        # calculate total jacobian
+        mul!(J, J_new, J_old)
+        
+        # update intermediate output
+        output_new .= input
+        
     end
+
+    # update old jacobian
+    J_old .= J
 
     # calculate jacobian of remaining layers
     inv_jacobian!(J, J_new, J_old, input, output_new, Base.tail(layers))
@@ -591,15 +589,24 @@ function backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{
 
     # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
     if typeof(first(layers)) <: PermutationLayer
+
+        # perform forward pass over last layer
+        backward!(input, first(layers), output_new)
+
+        # update intermediate output
+        output_new .= input
         
         # calculate total jacobian
         mul!(J, inv_jacobian(first(layers), output_new), J_old)
         
     # else fall back to standard calculation
     else 
-        
-        # calculate new jacobian
-        inv_jacobian!(J_new, first(layers), output_new)
+
+        # perform forward pass over last layer
+        backward_inv_jacobian!(input, J_new, first(layers), output_new)
+
+        # update intermediate output
+        output_new .= input
         
         # calculate total jacobian
         mul!(J, J_new, J_old)
@@ -608,17 +615,6 @@ function backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{
 
     # update old jacobian
     J_old .= J
-    
-    # perform forward pass over last layer
-    backward!(input, first(layers), output_new)
-
-    # if we did not arrive at the last layer yet, then also perform a backward pass
-    if length(layers) > 1
-
-        # update intermediate output
-        output_new .= input
-
-    end
 
     # calculate backward inv jacobian of remaining layers
     backward_inv_jacobian!(J, J_new, J_old, input, output_new, Base.tail(layers))
@@ -666,3 +662,8 @@ detinv_jacobian(model::FlowModel, output::Vector{T})       where { T <: Real} = 
 absdetinv_jacobian(model::FlowModel, output::Vector{T})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 logdetinv_jacobian(model::FlowModel, output::Vector{T})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 logabsdetinv_jacobian(model::FlowModel, output::Vector{T}) where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+
+
+# fallback joint functions over layers
+forward_jacobian(output::Vector{T1}, J_new::Matrix{T2}, layer::T, input::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real, T <: AbstractLayer } = (forward!(output, layer, input), jacobian!(J_new, layer, input))
+backward_inv_jacobian!(input::Vector{T1}, J_new::Matrix{T2}, layer::T, output::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real, T <: AbstractLayer } = (backward!(input, layer, output), inv_jacobian!(J_new, layer, output))

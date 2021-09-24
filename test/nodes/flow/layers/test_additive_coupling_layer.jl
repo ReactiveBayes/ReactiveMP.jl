@@ -152,6 +152,12 @@ using ReactiveMP
         @test inv_jacobian(layer, [2.5, 5.0]) == [1.0 0.0; -1.1413016497063289 1.0]
         @test inv_jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]        
 
+        # check for invertibility 
+        layer = AdditiveCouplingLayer(PlanarFlow(); permute=false)
+        x = randn(10)
+        layer = compile(ReactiveMP._prepare(10, layer))
+        @test inv(jacobian(layer, x)) ≈ inv_jacobian(layer, forward(layer, x))
+
     end
 
     @testset "Utility Jacobian" begin
