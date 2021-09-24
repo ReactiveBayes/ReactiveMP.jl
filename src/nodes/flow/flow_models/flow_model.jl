@@ -1,5 +1,3 @@
-## TODO: create a forward-jacobian joint function that calculates both at the same time
-
 export FlowModel, CompiledFlowModel
 export compile, nr_params
 export getlayers, getforward, getbackward, getjacobian, getinv_jacobian
@@ -244,198 +242,6 @@ end
 backward!(input::Vector{T1}, layers::Tuple{}, output::Vector{T2}) where { T1 <: Real, T2 <: Real } = return
 
 
-# jacobian of the Flow model
-function _jacobian(model::CompiledFlowModel, input::Vector{T1}) where { T1 <: Real }
-
-    # fetch layers
-    dim    = getdim(model)
-    
-    # promote type for allocating output
-    T = promote_type(eltype(model), T1)
-
-    # allocate space for jacobian
-    J = zeros(T, dim, dim)
-    for k = 1:dim
-        J[k,k] = 1.0
-    end
-
-    # calculate jacobian
-    jacobian!(J, model, input)
-
-    # return result
-    return J
-
-end
-
-# when calling jacobian, redirect to _jacobian
-jacobian(model::CompiledFlowModel, input::Vector{T}) where { T <: Real } = _jacobian(model, input)
-
-# for broadcasting over jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(jacobian), model::CompiledFlowModel, input::Vector{Vector{T}}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
-
-# inplace jacobian of the Flow model
-function jacobian!(J::Matrix{T1}, model::CompiledFlowModel, input::Vector{T2}) where { T1 <: Real, T2 <: Real }
-
-    # fetch layers
-    layers = getlayers(model)
-    dim = getdim(model)
-    
-    # promote type for allocating output
-    T = promote_type(eltype(model), T2)
-
-    # allocate space for intermediate output and jacobian
-    input_new = zeros(T, dim)
-    input_new .= input
-    output = zeros(T, dim)
-    J_new = zeros(T, dim, dim)
-    J_old = zeros(T, dim, dim)
-    for k = 1:dim
-        J_old[k,k] = 1.0
-    end
-
-    # calculate jacobian over all layers
-    jacobian!(J, J_new, J_old, output, input_new, layers)
-
-end
-
-# inplace jacobian calculation for a tuple of layers
-function jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, output::Vector{T4}, input_new::Vector{T5}, layers::T) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real, T <: NTuple{N,AbstractLayer} where N}
-
-    # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
-    if typeof(first(layers)) <: PermutationLayer
-        
-        # calculate total jacobian
-        mul!(J, jacobian(first(layers), input_new), J_old)
-        
-        # else fall back to standard calculation
-    else 
-        
-        # calculate new jacobian
-        jacobian!(J_new, first(layers), input_new)
-        
-        # calculate total jacobian
-        mul!(J, J_new, J_old)
-        
-    end
-
-    # update old jacobian
-    J_old .= J
-
-    # if we did not arrive at the last layer yet, then also perform a forward pass
-    if length(layers) > 1
-
-        # perform forward pass over last layer
-        forward!(output, first(layers), input_new)
-
-        # update intermediate output
-        input_new .= output
-
-    end
-
-    # calculate jacobian of remaining layers
-    jacobian!(J, J_new, J_old, output, input_new, Base.tail(layers))
-
-end
-
-# when no layers are left, stop the inplace recursion
-jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, output::Vector{T4}, input_new::Vector{T5}, layers::Tuple{}) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real } = return
-
-
-# inverse jacobian of the Flow model
-function _inv_jacobian(model::CompiledFlowModel, output::Vector{T1}) where { T1 <: Real }
-
-    # fetch layers
-    dim    = getdim(model)
-    
-    # promote type for allocating output
-    T = promote_type(eltype(model), T1)
-
-    # allocate space for jacobian
-    J = zeros(T, dim, dim)
-    for k = 1:dim
-        J[k,k] = 1.0
-    end
-
-    # calculate jacobian
-    inv_jacobian!(J, model, output)
-
-    # return result
-    return J
-
-end
-
-# when calling inverse jacobian, redirect to _inv_jacobian
-inv_jacobian(model::CompiledFlowModel, output::Vector{T}) where { T <: Real } = _inv_jacobian(model, output)
-
-# for broadcasting over inverse jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(inv_jacobian), model::CompiledFlowModel, output::Vector{Vector{T}}) where { T <: Real } = broadcast(_inv_jacobian, Ref(model), output)
-
-# inplace inverse jacobian of the Flow model
-function inv_jacobian!(J::Matrix{T1}, model::CompiledFlowModel, output::Vector{T2}) where { T1 <: Real, T2 <: Real }
-
-    # fetch layers
-    layers = getlayers(model)
-    dim = getdim(model)
-    
-    # promote type for allocating output
-    T = promote_type(eltype(model), T2)
-
-    # allocate space for intermediate output and jacobian
-    output_new = zeros(T, dim)
-    output_new .= output
-    input = zeros(T, dim)
-    J_new = zeros(T, dim, dim)
-    J_old = zeros(T, dim, dim)
-    for k = 1:dim
-        J_old[k,k] = 1.0
-    end
-
-    # calculate inverse jacobian over all layers (reversed!)
-    inv_jacobian!(J, J_new, J_old, input, output_new, reverse(layers))
-
-end
-
-# inplace inverse jacobian calculation for a tuple of layers
-function inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, input::Vector{T4}, output_new::Vector{T5}, layers::T) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real, T <: NTuple{N,AbstractLayer} where N}
-
-    # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
-    if typeof(first(layers)) <: PermutationLayer
-
-        # perform forward pass over last layer
-        backward!(input, first(layers), output_new)
-
-        # update intermediate output
-        output_new .= input
-        
-        # calculate total jacobian 
-        mul!(J, inv_jacobian(first(layers), output_new), J_old)
-        
-    # else fall back to standard calculation
-    else 
-        
-        # calculate new jacobian
-        backward_inv_jacobian!(input, J_new, first(layers), output_new)
-        
-        # calculate total jacobian
-        mul!(J, J_new, J_old)
-        
-        # update intermediate output
-        output_new .= input
-        
-    end
-
-    # update old jacobian
-    J_old .= J
-
-    # calculate jacobian of remaining layers
-    inv_jacobian!(J, J_new, J_old, input, output_new, Base.tail(layers))
-
-end
-
-# when no layers are left, stop the inplace recursion
-inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, input::Vector{T4}, output_new::Vector{T5}, layers::Tuple{}) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real } = return
-
-
 # joint forward-jacobian of the Flow model
 function _forward_jacobian(model::CompiledFlowModel, input::Vector{T1}) where { T1 <: Real }
 
@@ -495,30 +301,33 @@ function forward_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, 
 
     # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
     if typeof(first(layers)) <: PermutationLayer
+
+        # calculate new output
+        forward!(output, first(layers), input_new)
         
         # calculate total jacobian
         mul!(J, jacobian(first(layers), input_new), J_old)
         
-        # else fall back to standard calculation
+    # else fall back to standard calculation
     else 
         
         # calculate new jacobian
-        jacobian!(J_new, first(layers), input_new)
-        
+        forward_jacobian!(output, J_new, first(layers), input_new)
+
         # calculate total jacobian
         mul!(J, J_new, J_old)
         
     end
 
-    # update old jacobian
-    J_old .= J
-
-    # perform forward pass over last layer
-    forward!(output, first(layers), input_new)
-
+    # update unless we are on the last layer
     if length(layers) > 1
-        # update intermediate output
+        
+        # update intermediate input
         input_new .= output
+
+        # update old jacobian
+        J_old .= J
+
     end
 
     # calculate forward_jacobian of remaining layers
@@ -592,9 +401,6 @@ function backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{
 
         # perform forward pass over last layer
         backward!(input, first(layers), output_new)
-
-        # update intermediate output
-        output_new .= input
         
         # calculate total jacobian
         mul!(J, inv_jacobian(first(layers), output_new), J_old)
@@ -604,17 +410,22 @@ function backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{
 
         # perform forward pass over last layer
         backward_inv_jacobian!(input, J_new, first(layers), output_new)
-
-        # update intermediate output
-        output_new .= input
         
         # calculate total jacobian
         mul!(J, J_new, J_old)
         
     end
 
-    # update old jacobian
-    J_old .= J
+    # update unless we are on the last/first layer
+    if length(layers) > 1
+
+        # update intermediate output
+        output_new .= input
+        
+        # update old jacobian
+        J_old .= J
+
+    end
 
     # calculate backward inv jacobian of remaining layers
     backward_inv_jacobian!(J, J_new, J_old, input, output_new, Base.tail(layers))
@@ -624,6 +435,62 @@ end
 # when no layers are left, stop the inplace recursion
 backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, input::Vector{T4}, output_new::Vector{T5}, layers::Tuple{}) where { T1 <: Real, T2 <: Real,  T3 <: Real, T4 <: Real, T5 <: Real } = return
 
+
+# specify jacobian and inv_jacobian functions based on joint functions
+_jacobian(model::CompiledFlowModel, input::Vector{T}) where { T <: Real }     = forward_jacobian(model, input)[2]
+jacobian(model::CompiledFlowModel, input::Vector{T}) where { T <: Real }      = _jacobian(model, input)
+Broadcast.broadcasted(::typeof(jacobian), model::CompiledFlowModel, input::Vector{Vector{T}}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
+_inv_jacobian(model::CompiledFlowModel, output::Vector{T}) where { T <: Real }     = backward_inv_jacobian(model, output)[2]
+inv_jacobian(model::CompiledFlowModel, output::Vector{T}) where { T <: Real }      = _inv_jacobian(model, output)
+Broadcast.broadcasted(::typeof(inv_jacobian), model::CompiledFlowModel, output::Vector{Vector{T}}) where { T <: Real } = broadcast(_inv_jacobian, Ref(model), output)
+function jacobian!(J::Matrix{T1}, model::CompiledFlowModel, input::Vector{T2}) where { T1 <: Real, T2 <: Real }
+    
+    # fetch dimension
+    dim    = getdim(model)
+    
+    # promote type for allocating output
+    T = promote_type(eltype(model), T1, T2)
+    
+    # allocate space for output and jacobian
+    output = zeros(T, dim)
+    J .= 0.0
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
+
+    # calculate jacobian
+    forward_jacobian!(output, J, model, input)
+    
+end
+function inv_jacobian!(J::Matrix{T1}, model::CompiledFlowModel, output::Vector{T2}) where { T1 <: Real, T2 <: Real }
+    
+    # fetch dimension
+    dim    = getdim(model)
+    
+    # promote type for allocating output
+    T = promote_type(eltype(model), T1, T2)
+    
+    # allocate space for input and jacobian
+    input = zeros(T, dim)
+    J .= 0.0
+    for k = 1:dim
+        J[k,k] = 1.0
+    end
+
+    # calculate jacobian
+    backward_inv_jacobian!(input, J, model, output)
+    
+end
+
+# fallback joint functions over layers
+function forward_jacobian!(output::Vector{T1}, J_new::Matrix{T2}, layer::T, input::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real, T <: AbstractLayer }
+    forward!(output, layer, input)
+    jacobian!(J_new, layer, input)
+end
+function backward_inv_jacobian!(input::Vector{T1}, J_new::Matrix{T2}, layer::T, output::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real, T <: AbstractLayer }
+    backward!(input, layer, output)
+    inv_jacobian!(J_new, layer, output)
+end
 
 # extra utility functions
 det_jacobian(model::CompiledFlowModel, input::Vector{T})           where { T <: Real} = det(jacobian(model, input))
@@ -662,8 +529,3 @@ detinv_jacobian(model::FlowModel, output::Vector{T})       where { T <: Real} = 
 absdetinv_jacobian(model::FlowModel, output::Vector{T})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 logdetinv_jacobian(model::FlowModel, output::Vector{T})    where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 logabsdetinv_jacobian(model::FlowModel, output::Vector{T}) where { T <: Real} = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-
-
-# fallback joint functions over layers
-forward_jacobian(output::Vector{T1}, J_new::Matrix{T2}, layer::T, input::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real, T <: AbstractLayer } = (forward!(output, layer, input), jacobian!(J_new, layer, input))
-backward_inv_jacobian!(input::Vector{T1}, J_new::Matrix{T2}, layer::T, output::Vector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real, T <: AbstractLayer } = (backward!(input, layer, output), inv_jacobian!(J_new, layer, output))
