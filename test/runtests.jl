@@ -109,6 +109,11 @@ using .ReactiveMPTestingHelpers
     addtests("rules/beta/test_out.jl")
     addtests("rules/beta/test_marginals.jl")
 
+    addtests("rules/dot_product/test_out.jl")
+    addtests("rules/dot_product/test_in1.jl")
+    addtests("rules/dot_product/test_in2.jl")
+    addtests("rules/dot_product/test_marginals.jl")
+
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
     addtests("rules/normal_mean_variance/test_var.jl")
