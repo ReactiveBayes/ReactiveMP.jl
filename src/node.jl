@@ -197,7 +197,7 @@ mutable struct NodeInterface
     NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, lazy(AbstractMessage), lazy(AbstractMessage), nothing, 0)
 end
 
-Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ",", local_constraint(interface), ")"))
+Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ", ", local_constraint(interface), ")"))
 
 """
     name(interface)
@@ -298,7 +298,7 @@ struct IndexedNodeInterface
     interface :: NodeInterface
 end
 
-Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", name(interface), ",", local_constraint(interface), ",", index(interface), ")"))
+Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", name(interface), ", ", local_constraint(interface), ", ", index(interface), ")"))
 
 name(interface::IndexedNodeInterface)             = name(interface.interface)
 local_constraint(interface::IndexedNodeInterface) = local_constraint(interface.interface)
