@@ -11,10 +11,11 @@
 
 \begin{abstract}
 
-ReactiveMP.jl is a native Julia implementation of reactive message passing-based Bayesian inference in probabilistic graphical models. 
-The package supports a large range of standard probabilistic models and can be extended to custom novel nodes and message update rules. 
+ReactiveMP.jl is a native Julia implementation of reactive message passing-based Bayesian inference in probabilistic graphical models with Factor Graphs. 
+The package does Constrained Bethe Free Energy minimisation and supports both exact and variational Bayesian inference, provides a convenient syntax for model specification and allows for extra factorisation and form constraints specification of 
+variational family of distributions. In addition, ReactiveMP.jl includes a large range of standard probabilistic models and can easily be extended to custom novel nodes and message update rules. 
 In contrast to non-reactive (imperatively coded) Bayesian inference packages, ReactiveMP.jl scales easily to support inference on a standard laptop 
-for large models with tens of thousands of variables and millions of nodes.
+for large conjugate models with tens of thousands of variables and millions of nodes. 
 
 \end{abstract}
 
@@ -31,21 +32,28 @@ run AABI algorithms with minimal additional overhead.
 An important issue in the development of PP frameworks is scalability of AABI algorithms for large models and large data sets. 
 One solution approach concerns message passing-based inference in factor graphs. In this framework, relationships between model variables are represented by a graph of sparsely connected nodes, 
 and inference proceeds efficiently by a sequence of nodes sending probabilistic messages to neighboring nodes. While the optimal message passing schedule is data-dependent, 
-all existing factor graph frameworks (e.g., Infer.Net, ForneyLab.jl) use preset message sequence schedules. The potential benefits of reactive message passing in a factor graph include 
+all existing factor graph frameworks (e.g., Infer.Net \cite{InferNET18}, ForneyLab.jl) use preset message sequence schedules. In our work we exploit reactive programming approach in the context of message passing 
+based Bayesian inference. The potential benefits of reactive message passing in a factor graph include 
 scaling to large inference tasks, much smaller processing latency and processing of data samples that arrive at irregular time intervals.
 
 \section{Reactive Message Passing}
 
 We present \textbf{ReactiveMP.jl} package, which is a native Julia \cite{bezanson2017julia} package for automated \textit{reactive} message passing-based Bayesian inference and corresponding
 Constrained Bethe Free Energy (CFBE) functional optimisation \cite{senoz_local_constraint_2021}. ReactiveMP.jl is based on a reactive programming approach, does not enforce any particular message-passing schedule, 
-supports real-time data inference and scales comfortably to inference tasks on factor graphs with tens of thousands of variables and millions of nodes.
+supports real-time data inference. In our experiments new implementation scales comfortably to inference tasks on factor graphs with tens of thousands of variables and millions of nodes.
 
 The package comes with a collection of standard probabilistic models, including linear Gaussian state-space models, hidden Markov models, auto-regressive models and mixture models. 
 Moreover, ReactiveMP.jl API supports various processing modes such as offline learning, filtering of infinite data streams and protocols for handling missing data.
 
-ReactiveMP.jl provides an easy way to add new models, node functions and analytical message update rules to the existing platform. 
-The resulting inference procedures are differentiable with \textit{ForwardDiff.jl} \cite{RevelsLubinPapamarkou2016}. As for computation time and memory usage, 
-specifically for conjugate models, ReactiveMP.jl outperforms Turing.jl and ForneyLab.jl significantly by orders of magnitude. Performance benchmarks are available at the GitHub repository.
+ReactiveMP.jl is customizable and provides an easy way to add new models, node functions and analytical message update rules to the existing platform. 
+As a result, a user can extend built-in functionality with custom nodes to run automated inference in novel probabilistic models.
+The resulting inference procedures are differentiable with \textit{ForwardDiff.jl} \cite{RevelsLubinPapamarkou2016}. In addition, the inference engine supports different types of floating point numbers, e.g., the built-in BigFloat Julia type.
+As for computation time and memory usage, specifically for conjugate models, ReactiveMP.jl outperforms Turing.jl and ForneyLab.jl significantly by orders of magnitude. Performance benchmarks are available at the GitHub repository.
+
+\section{Conclusions}
+
+Automating scalable Bayesian inference is a key factor in the quest to apply Bayesian machine learning to useful applications. We developed ReactiveMP.jl as 
+a package that enables developers to build large novel probabilistic models and automate scalable inference in those models by reactive message passing in a factor graph. 
 
 \section{Acknowledgements}
 

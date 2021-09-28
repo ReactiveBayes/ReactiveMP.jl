@@ -10,6 +10,21 @@
   publisher={SIAM}
 }
 
+@article{senoz_local_constraint_2021,
+  author         = {Şenöz, İsmail and van de Laar, Thijs and Bagaev, Dmitry and de Vries, Bert},
+  title          = {Variational Message Passing and Local Constraint Manipulation in Factor Graphs},
+  journal        = {Entropy},
+  volume         = {23},
+  year           = {2021},
+  number         = {7},
+  article-number = {807},
+  url            = {https://www.mdpi.com/1099-4300/23/7/807},
+  pubmedid       = {34202913},
+  issn           = {1099-4300},
+  abstract       = {Accurate evaluation of Bayesian model evidence for a given data set is a fundamental problem in model development. Since evidence evaluations are usually intractable, in practice variational free energy (VFE) minimization provides an attractive alternative, as the VFE is an upper bound on negative model log-evidence (NLE). In order to improve tractability of the VFE, it is common to manipulate the constraints in the search space for the posterior distribution of the latent variables. Unfortunately, constraint manipulation may also lead to a less accurate estimate of the NLE. Thus, constraint manipulation implies an engineering trade-off between tractability and accuracy of model evidence estimation. In this paper, we develop a unifying account of constraint manipulation for variational inference in models that can be represented by a (Forney-style) factor graph, for which we identify the Bethe Free Energy as an approximation to the VFE. We derive well-known message passing algorithms from first principles, as the result of minimizing the constrained Bethe Free Energy (BFE). The proposed method supports evaluation of the BFE in factor graphs for model scoring and development of new message passing-based inference algorithms that potentially improve evidence estimation accuracy.},
+  doi            = {10.3390/e23070807}
+}
+
 @article{Moore1990,
 	author = {Moore, James T. and Bard, Jonathan F.},
 	doi = {10.1287/opre.38.5.911},
@@ -65,17 +80,9 @@
       url = {https://arxiv.org/abs/1607.07892}
 }
 
-@article{senoz_local_constraint_2021,
-  author         = {Şenöz, İsmail and van de Laar, Thijs and Bagaev, Dmitry and de Vries, Bert},
-  title          = {Variational Message Passing and Local Constraint Manipulation in Factor Graphs},
-  journal        = {Entropy},
-  volume         = {23},
-  year           = {2021},
-  number         = {7},
-  article-number = {807},
-  url            = {https://www.mdpi.com/1099-4300/23/7/807},
-  pubmedid       = {34202913},
-  issn           = {1099-4300},
-  abstract       = {Accurate evaluation of Bayesian model evidence for a given data set is a fundamental problem in model development. Since evidence evaluations are usually intractable, in practice variational free energy (VFE) minimization provides an attractive alternative, as the VFE is an upper bound on negative model log-evidence (NLE). In order to improve tractability of the VFE, it is common to manipulate the constraints in the search space for the posterior distribution of the latent variables. Unfortunately, constraint manipulation may also lead to a less accurate estimate of the NLE. Thus, constraint manipulation implies an engineering trade-off between tractability and accuracy of model evidence estimation. In this paper, we develop a unifying account of constraint manipulation for variational inference in models that can be represented by a (Forney-style) factor graph, for which we identify the Bethe Free Energy as an approximation to the VFE. We derive well-known message passing algorithms from first principles, as the result of minimizing the constrained Bethe Free Energy (BFE). The proposed method supports evaluation of the BFE in factor graphs for model scoring and development of new message passing-based inference algorithms that potentially improve evidence estimation accuracy.},
-  doi            = {10.3390/e23070807}
+@misc{InferNET18,
+  author = "Minka, T. and Winn, J.M. and Guiver, J.P. and Zaykov, Y. and Fabian, D. and Bronskill, J.",
+  title = {/{Infer.NET 0.3}},
+  year = 2018,
+  note = {Microsoft Research Cambridge. http://dotnet.github.io/infer}
 }

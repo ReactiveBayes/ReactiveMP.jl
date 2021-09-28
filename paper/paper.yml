@@ -2,6 +2,8 @@ title: "ReactiveMP.jl: A Julia Package for Reactive Message Passing-based Bayesi
 keywords:
   - Bayesian Inference
   - Julia
+  - Factor Graphs
+  - Graphical Models
   - Free Energy Minimisation
   - Message Passing
   - Reactive Programing
