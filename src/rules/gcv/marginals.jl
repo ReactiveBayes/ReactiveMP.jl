@@ -2,11 +2,18 @@ export marginalrule
 
 @marginalrule GCV(:y_x) (m_y::Any, m_x::Any, q_z::Any, q_κ::Any, q_ω::Any) = begin
 
-    ksi = mean(q_κ) ^ 2 * var(q_z) + mean(q_z) ^ 2 * var(q_κ) + var(q_z) * var(q_κ)
-    A = exp(-mean(q_ω) + var(q_ω) / 2)
-    B = exp(-mean(q_κ) * mean(q_z) + ksi / 2)
-    W = [ precision(m_y) + A * B -A * B; -A * B precision(m_x) + A * B ]
-    m = cholinv(W) * [ mean(m_y) * precision(m_y); mean(m_x) * precision(m_x) ]
+    y_mean, y_precision = mean_precision(m_y)
+    x_mean, x_precision = mean_precision(m_x)
 
-    return MvNormalMeanPrecision(m, W)
+    z_mean, z_var = mean_var(q_z)
+    κ_mean, κ_var = mean_var(q_κ)
+    ω_mean, ω_var = mean_var(q_ω)
+
+    ksi = κ_mean ^ 2 * z_var + z_mean ^ 2 * κ_var + z_var * κ_var
+    A = exp(-ω_mean + ω_var / 2)
+    B = exp(-κ_mean * z_mean + ksi / 2)
+    W = [ y_precision + A * B -A * B; -A * B x_precision + A * B ]
+    ξ = [ y_mean * y_precision; x_mean * x_precision ]
+
+    return MvNormalWeightedMeanPrecision(ξ, W)
 end

@@ -2,29 +2,35 @@ export rule
 
 @rule GCV(:z, Marginalisation) (q_y_x::Any, q_κ::Any, q_ω::Any, meta::GCVMetadata) = begin
 
-    m, v = mean(q_y_x), cov(q_y_x)
-    psi = (m[1] - m[2]) ^ 2 + v[1,1]+ v[2,2] -v[1,2] -v[2,1]
-    A = exp(-mean(q_ω)+var(q_ω) / 2)
+    y_x_mean, y_x_v = mean_cov(q_y_x)
+    κ_mean, κ_var   = mean_var(q_κ)
+    ω_mean, ω_var   = mean_var(q_ω)
 
-    a = mean(q_κ)
+    psi = (y_x_mean[1] - y_x_mean[2]) ^ 2 + y_x_v[1,1]+ y_x_v[2,2] -y_x_v[1,2] -y_x_v[2,1]
+    A = exp(-ω_mean + ω_var / 2)
+
+    a = κ_mean
     b = psi * A
-    c = -mean(q_κ)
-    d = var(q_κ)
+    c = -κ_mean
+    d = κ_var
 
     return ExponentialLinearQuadratic(get_approximation(meta), a, b, c, d)
 end
 
 @rule GCV(:z, Marginalisation) (q_y::Any,q_x::Any, q_κ::Any, q_ω::Any, meta::GCVMetadata) = begin
 
-    my, vy = mean(q_y), cov(q_y)
-    mx, vx = mean(q_x), cov(q_x)
-    psi = (my - mx) ^ 2 + vy+ vx
-    A = exp(-mean(q_ω)+var(q_ω) / 2)
+    y_mean, y_var = mean_var(q_y)
+    x_mean, x_var = mean_var(q_x)
+    κ_mean, κ_var = mean_var(q_κ)
+    ω_mean, ω_var = mean_var(q_ω)
 
-    a = mean(q_κ)
+    psi = (y_mean - x_mean) ^ 2 + y_var+ x_var
+    A = exp(-ω_mean + ω_var / 2)
+
+    a = κ_mean
     b = psi * A
-    c = -mean(q_κ)
-    d = var(q_κ)
+    c = -κ_mean
+    d = κ_var
 
     return ExponentialLinearQuadratic(get_approximation(meta), a, b, c, d)
 end
