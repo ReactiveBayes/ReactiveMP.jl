@@ -62,6 +62,8 @@ include("mv_normal_mean_precision/mean.jl")
 include("mv_normal_mean_precision/precision.jl")
 include("mv_normal_mean_precision/marginals.jl")
 
+include("mv_normal_weightedmean_precision/marginals.jl")
+
 include("normal_mean_precision/out.jl")
 include("normal_mean_precision/mean.jl")
 include("normal_mean_precision/precision.jl")
@@ -103,3 +105,12 @@ include("probit/out.jl")
 include("flow/marginals.jl")
 include("flow/in.jl")
 include("flow/out.jl")
+
+include("bifm/marginals.jl")
+include("bifm/in.jl")
+include("bifm/out.jl")
+include("bifm/znext.jl")
+include("bifm/zprev.jl")
+
+include("bifm_helper/in.jl")
+include("bifm_helper/out.jl")

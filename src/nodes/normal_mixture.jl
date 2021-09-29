@@ -127,14 +127,14 @@ end
 
 # FreeEnergy related functions
 
-@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, NormalMeanVariance}, q_p::NTuple{N, GammaDistributionsFamily}) where N = begin
+@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, UnivariateGaussianDistributionsFamily}, q_p::NTuple{N, GammaDistributionsFamily}) where N = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
         return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
     end
 end
 
-@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, MvNormalMeanCovariance}, q_p::NTuple{N, Wishart}) where N = begin
+@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, MultivariateGaussianDistributionsFamily}, q_p::NTuple{N, Wishart}) where N = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
         return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)

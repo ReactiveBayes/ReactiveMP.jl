@@ -27,6 +27,8 @@ using .ReactiveMPTestingHelpers
 
     addtests("test_math.jl")
 
+    addtests("constraints/prod/test_prod_final.jl")
+
     addtests("test_distributions.jl")
     addtests("distributions/test_common.jl")
     addtests("distributions/test_bernoulli.jl")
@@ -54,6 +56,8 @@ using .ReactiveMPTestingHelpers
     addtests("test_node.jl")
     addtests("nodes/flow/test_flow.jl")
     addtests("nodes/test_addition.jl")
+    addtests("nodes/test_bifm.jl")
+    addtests("nodes/test_bifm_helper.jl")
     addtests("nodes/test_subtraction.jl")
     addtests("nodes/test_probit.jl")
     
@@ -65,12 +69,29 @@ using .ReactiveMPTestingHelpers
     addtests("rules/addition/test_in1.jl")
     addtests("rules/addition/test_in2.jl")
     addtests("rules/addition/test_out.jl")
+
+    addtests("rules/bifm/test_marginals.jl")
+    addtests("rules/bifm/test_in.jl")
+    addtests("rules/bifm/test_out.jl")
+    addtests("rules/bifm/test_zprev.jl")
+    addtests("rules/bifm/test_znext.jl")
+
+    addtests("rules/bifm_helper/test_in.jl")
+    addtests("rules/bifm_helper/test_out.jl")
+
 		
     addtests("rules/subtraction/test_marginals.jl")
     addtests("rules/subtraction/test_in1.jl")
     addtests("rules/subtraction/test_in2.jl")
     addtests("rules/subtraction/test_out.jl")
-	
+
+    addtests("rules/bernoulli/test_out.jl")
+    addtests("rules/bernoulli/test_p.jl")
+    addtests("rules/bernoulli/test_marginals.jl")
+    
+    addtests("rules/beta/test_out.jl")
+    addtests("rules/beta/test_marginals.jl")
+
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
     addtests("rules/normal_mean_variance/test_var.jl")
