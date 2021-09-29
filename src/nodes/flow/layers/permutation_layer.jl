@@ -1,6 +1,3 @@
-# TODO: allow to pass a custom permutation matrix
-## TODO: simplify forward function through forward! (etc...)
-
 export PermutationLayer
 export getP, getmat
 export forward, forward!, backward, backward!

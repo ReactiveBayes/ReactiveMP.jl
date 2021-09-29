@@ -1,5 +1,3 @@
-## TODO: expand to arbitrarily sized inputs
-## TODO: add inplace (inv-)jacobian functions + simplify normal one with the inplace operation
 ## TODO: fix for non-unity partition dimensions
 
 export AdditiveCouplingLayer
