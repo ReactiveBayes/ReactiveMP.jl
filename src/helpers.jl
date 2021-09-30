@@ -61,7 +61,10 @@ Allocation-free version of `fill(one(T) / N, N)` vector.
 
 ```jldoctest
 julia> iter = ReactiveMP.OneDivNVector(3)
-OneDivNVector(Float64, 3)
+3-element ReactiveMP.OneDivNVector{3, Float64}:
+ 0.3333333333333333
+ 0.3333333333333333
+ 0.3333333333333333
 
 julia> length(iter)
 3
@@ -76,7 +79,10 @@ julia> collect(iter)
  0.3333333333333333
 
 julia> iter = ReactiveMP.OneDivNVector(Float32, 3)
-OneDivNVector(Float32, 3)
+3-element ReactiveMP.OneDivNVector{3, Float32}:
+ 0.33333334
+ 0.33333334
+ 0.33333334
 
 julia> collect(iter)
 3-element Vector{Float32}:

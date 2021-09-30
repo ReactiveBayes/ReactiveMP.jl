@@ -13,7 +13,8 @@ makedocs(
     pages    = [
         "Introduction"    => "index.md",
         "User guide" => [ 
-            "Getting Started" => "man/getting-started.md",
+            "Getting Started"     => "man/getting-started.md",
+            "Fundamentals"        => "man/fundamentals.md",
             "Model Specification" => "man/model-specification.md"
         ],
         "Library" => [
