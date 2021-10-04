@@ -38,10 +38,10 @@ struct TinyCorrection <: AbstractCorrection end
 
 correction!(::TinyCorrection, value::Real) = clamp(value, tiny, Inf)
 
-function correction!(::TinyCorrection, matrix::AbstractMatrix)
-    s = size(matrix)
-    @assert length(s) == 2 && s[1] === s[2]
-    for i in 1:s[1]
+Base.@propagate_inbounds function correction!(::TinyCorrection, matrix::AbstractMatrix)
+    (numrows, numcols) = size(matrix)
+    @assert numrows == numcols
+    for i in 1:numrows
         @inbounds matrix[i, i] += tiny
     end
     return matrix
@@ -63,10 +63,10 @@ end
 
 correction!(correction::FixedCorrection, value::Real) = clamp(value, correction.v, Inf)
 
-function correction!(correction::FixedCorrection, matrix::AbstractMatrix)
-    s = size(matrix)
-    @assert length(s) == 2 && s[1] === s[2]
-    for i in 1:s[1]
+Base.@propagate_inbounds function correction!(correction::FixedCorrection, matrix::AbstractMatrix)
+    (numrows, numcols) = size(matrix)
+    @assert numrows == numcols
+    for i in 1:numrows
         @inbounds matrix[i, i] += correction.v
     end
     return matrix
@@ -88,9 +88,9 @@ end
 
 correction!(correction::ClampEigenValuesCorrection, value::Real) = clamp(value, correction.v, Inf)
 
-function correction!(correction::ClampEigenValuesCorrection, matrix::AbstractMatrix)
-    s = size(matrix)
-    @assert length(s) == 2 && s[1] === s[2]
+Base.@propagate_inbounds function correction!(correction::ClampEigenValuesCorrection, matrix::AbstractMatrix)
+    (numrows, numcols) = size(matrix)
+    @assert numrows == numcols
 
     F = svd(matrix)
     clamp!(F.S, correction.v, Inf)

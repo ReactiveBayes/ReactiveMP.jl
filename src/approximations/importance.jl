@@ -40,6 +40,8 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
     map!(g, approximation.bweights, approximation.bsamples)
 
     if approximation.resampling
+        # TODO: Note that ∑wᵢ=1 in this case, and add a reference to Kish's
+        # effective sample size 
         n_eff = 1 / sum(Base.Generator(abs2, approximation.bweights))
 
         # Here we assume that lengths of bweights ans bsamples vectors are the same
@@ -64,6 +66,7 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
     
     m = mapreduce(prod, +, zip(approximation.bweights, approximation.bsamples))
 
+    # TODO: This is very confusing, needs a comment
     _v = let m = m
         (r) -> r[1] * (r[2] - m) ^ 2
     end

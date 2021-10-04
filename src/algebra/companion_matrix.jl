@@ -4,6 +4,9 @@ import Base: *
 import LinearAlgebra: transpose, inv
 
 
+# I had started making some changes, but I think we need to come back to this
+# comment first.  What's described here is the same as `[I zeros(n-1)]`, an n-1
+# by n matrix, but that's almost certainly not what's intended.
 """
     CompanionMatrix
 
@@ -22,14 +25,21 @@ struct CompanionMatrix{ R <: Real, T <: AbstractVector{R} } <: AbstractMatrix{R}
 end
 
 Base.eltype(::CompanionMatrix{R}) where R = R
+
 Base.size(cmatrix::CompanionMatrix)       = (length(cmatrix.θ), length(cmatrix.θ)) 
-Base.length(cmatrix::CompanionMatrix)     = prod(size(cmatrix))
+Base.size(cmatrix::CompanionMatrix, dim::Int) = dim ∈ (1,2) ? length(cmatrix.θ) : 1
 
-Base.getindex(cmatrix::CompanionMatrix, i::Int) = getindex(cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...)
+# Equivalent to `prod(size(cmatrix))`. The compiler might optimize that away,
+# but this is more direct just to be safe.
+Base.length(cmatrix::CompanionMatrix)     = length(cmatrix.θ) ^ 2
 
-function Base.getindex(cmatrix::CompanionMatrix, i::Int, j::Int)
+Base.getindex(cmatrix::CompanionMatrix, i::Int) = getindex(cmatrix, 1 .+ reverse(divrem(i - 1, size(cmatrix,1)))...)
+
+Base.@propagate_inbounds function Base.getindex(cmatrix::CompanionMatrix, i::Int, j::Int)
+    checkindex(Bool, eachindex(cmatrix.θ), i)
+    checkindex(Bool, eachindex(cmatrix.θ), j)
     if i === 1
-        return cmatrix.θ[j]
+        return @inbounds cmatrix.θ[j]
     elseif i === j + 1
         return one(eltype(cmatrix))
     else

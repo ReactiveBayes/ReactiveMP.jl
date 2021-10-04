@@ -20,13 +20,13 @@ end
 
 function approximate_meancov(::LaplaceApproximation, g::Function, distribution)
     
-    logg = (z) -> log(g(z))
-    logd = (z) -> logpdf(distribution, z)
+    logg(z) = log(g(z))
+    logd(z) = logpdf(distribution, z)
 
-    logf   = (z) -> logg(z) + logd(z)
-    d_logf = (z) -> ForwardDiff.gradient(logf, z)
+    logf(z) = logg(z) + logd(z)
+    d_logf(z) = ForwardDiff.gradient(logf, z)
 
-    result = optimize((d) -> -(logf(d)), mean(distribution), LBFGS())
+    result = optimize(d -> -logf(d), mean(distribution), LBFGS())
     if !Optim.converged(result)
         error("LaplaceApproximation: convergence failed")
     end
