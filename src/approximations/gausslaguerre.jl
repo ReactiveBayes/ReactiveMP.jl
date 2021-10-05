@@ -49,6 +49,7 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
     # calculate the ln(wi) + logf(xi) terms
     logresult = Vector{T}(undef, p)
     for i = 1:p
+        # TODO: Can this have @inbounds?
         logresult[i] = logw[i] + fn(x[i])
     end
 

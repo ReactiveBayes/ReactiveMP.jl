@@ -3,6 +3,7 @@ export ImportanceSamplingApproximation
 using Random
 using StatsBase
 
+# TODO: Document other fields
 """
     ImportanceSamplingApproximation
 
@@ -33,6 +34,8 @@ end
 getsamples(approximation::ImportanceSamplingApproximation, distribution)           = getsamples(approximation, distribution, approximation.nsamples)
 getsamples(approximation::ImportanceSamplingApproximation, distribution, nsamples) = rand(approximation.rng, distribution, nsamples)
 
+# TODO: What's the type of `distribution`? Generic is fine, but at least a
+# comment would be helpful
 function approximate_meancov(approximation::ImportanceSamplingApproximation, g::Function, distribution)
 
     # We use preallocated arrays to sample and compute transformed samples and weightd
@@ -76,7 +79,7 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
     if isnan(m) || isnan(v) || isinf(m) || iszero(v)
         return mean(distribution), var(distribution)
     end
-
+    
     return m, v
 
 end
