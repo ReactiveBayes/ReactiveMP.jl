@@ -1,4 +1,4 @@
-ReacitveMP.jl
+ReactiveMP.jl
 =============
 
 *Julia package for automatic Bayesian inference on a factor graph with reactive message passing.*
