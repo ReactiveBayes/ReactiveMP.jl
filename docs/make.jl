@@ -18,6 +18,10 @@ makedocs(
             "Model Specification" => "man/model-specification.md",
             "Inference execution" => "man/inference-execution.md"
         ],
+        "Examples" => [
+            "Overview"                         => "examples/overview.md",
+            "Linear Gaussian Dynamical System" => "examples/linear_gaussian_state_space_model.md",
+        ],
         "Library" => [
             "Messages"     => "lib/message.md",
             "Factor nodes" => "lib/node.md",
