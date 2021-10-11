@@ -36,7 +36,7 @@ See also: [`correction!`](@ref), [`NoCorrection`](@ref), [`FixedCorrection`](@re
 """
 struct TinyCorrection <: AbstractCorrection end
 
-correction!(::TinyCorrection, value::Real) = clamp(value, tiny, Inf)
+correction!(::TinyCorrection, value::Real) = clamp(value, tiny, typemax(value))
 
 function correction!(::TinyCorrection, matrix::AbstractMatrix)
     s = size(matrix)
