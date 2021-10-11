@@ -700,6 +700,9 @@ end
 
 NodeErrorStub() = NodeErrorStub(0)
 
+interfaceindices(stub::NodeErrorStub, iname::Symbol)                     = (interfaceindex(stub, iname), )
+interfaceindices(stub::NodeErrorStub, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(stub, iname), inames)
+
 function interfaceindex(stub::NodeErrorStub, iname::Symbol)
     stub.counter = stub.counter + 1
     return stub.counter
