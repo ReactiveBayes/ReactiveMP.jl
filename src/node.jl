@@ -417,6 +417,9 @@ function interfaceindex(factornode::FactorNode, iname::Symbol)
     return iindex !== nothing ? iindex : error("Unknown interface ':$(iname)' for $(functionalform(factornode)) node")
 end
 
+interfaceindices(factornode::FactorNode, iname::Symbol) = (interfaceindex(factornode, iname), )
+interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(factornode, iname), inames)
+
 function clusterindex(factornode::FactorNode, vars::NTuple{N, Int}) where N 
     cindex = findfirst(cluster -> all(v -> v ∈ cluster, vars), factorisation(factornode))
     return cindex !== nothing ? cindex : error("Unknown cluster '$(vars)' for $(functionalform(factornode)) node")
