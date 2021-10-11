@@ -693,22 +693,8 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         vtag        = Val{ name(localmarginal) }
         meta        = metadata(factornode)
 
-        mapping = let fform = fform, vtag = vtag, msgs_names = msgs_names, marginal_names = marginal_names, meta = meta, factornode = factornode
-            (dependencies) -> begin 
-                messages  = dependencies[1]
-                marginals = getrecent(dependencies[2])
-
-                # Marginal is clamped if all of the inputs are clamped
-                is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
-
-                # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
-                is_marginal_initial = !is_marginal_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
-
-                return Marginal(marginalrule(fform, vtag, msgs_names, messages, marginal_names, marginals, meta, factornode), is_marginal_clamped, is_marginal_initial)
-            end
-        end
-
-        # TODO: discontinue operater is needed for loopy belief propagation? Check
+        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
+        # TODO: discontinue operator is needed for loopy belief propagation? Check
         marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here

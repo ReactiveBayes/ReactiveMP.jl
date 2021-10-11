@@ -125,3 +125,55 @@ function setmarginal!(marginal::MarginalObservable, value)
     next!(marginal.subject, Marginal(value, false, true))
     return nothing
 end
+
+## Marginal Mapping structure
+## https://github.com/JuliaLang/julia/issues/42559
+## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
+## We create a lambda-like callable structure to improve type inference and make it more stable
+## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
+
+struct MarginalMapping{F, T, N, M, A, R}
+    vtag            :: T
+    msgs_names      :: N
+    marginals_names :: M
+    meta            :: A
+    factornode      :: R
+end
+
+marginal_mapping_fform(::MarginalMapping{F}) where F = F
+marginal_mapping_fform(::MarginalMapping{F}) where F <: Function = F.instance
+
+function MarginalMapping(::Type{F}, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { F, T, N, M, A, R }
+    return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
+end
+
+function MarginalMapping(::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { F <: Function, T, N, M, A, R} 
+    return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
+end
+
+function (mapping::MarginalMapping)(dependencies)
+
+    messages  = dependencies[1]
+    marginals = getrecent(dependencies[2])
+
+    # Marginal is clamped if all of the inputs are clamped
+    is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+
+    # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
+    is_marginal_initial = !is_marginal_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+
+    marginal = marginalrule(
+        marginal_mapping_fform(mapping), 
+        mapping.vtag, 
+        mapping.msgs_names, 
+        messages, 
+        mapping.marginals_names, 
+        marginals, 
+        mapping.meta, 
+        mapping.factornode
+    )
+
+    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
+end
+
+Base.map(::Type{T}, mapping::M) where { T, M <: MarginalMapping } = Rocket.MapOperator{T, M}(mapping)
