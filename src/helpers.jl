@@ -248,8 +248,13 @@ end
 
 ## 
 
-__check_all(fn::Function, iterator)  = all(fn, iterator)
-__check_all(fn::Function, ::Nothing) = true
+__check_all(fn::Function, iterator)     = all(fn, iterator)
+__check_all(fn::Function, tuple::Tuple) = TupleTools.prod(map(fn, tuple))
+__check_all(fn::Function, ::Nothing)    = true
+
+##
+
+is_clamped_or_initial(something) = is_clamped(something) || is_initial(something)
 
 ## Meta utils
 
