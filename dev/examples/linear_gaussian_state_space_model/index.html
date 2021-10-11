@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Linear Gaussian Dynamical System · ReactiveMP.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">ReactiveMP.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../../man/getting-started/">Getting Started</a></li><li><a class="tocitem" href="../../man/fundamentals/">Fundamentals</a></li><li><a class="tocitem" href="../../man/model-specification/">Model Specification</a></li><li><a class="tocitem" href="../../man/inference-execution/">Inference execution</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../overview/">Overview</a></li><li class="is-active"><a class="tocitem" href>Linear Gaussian Dynamical System</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/message/">Messages</a></li><li><a class="tocitem" href="../../lib/node/">Factor nodes</a></li><li><a class="tocitem" href="../../lib/math/">Math utils</a></li><li><a class="tocitem" href="../../lib/helpers/">Helper utils</a></li></ul></li><li><a class="tocitem" href="../../extra/contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Linear Gaussian Dynamical System</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Linear Gaussian Dynamical System</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/biaslab/ReactiveMP.jl/blob/master/docs/src/examples/linear_gaussian_state_space_model.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="examples-linear-gaussian-state-space-model"><a class="docs-heading-anchor" href="#examples-linear-gaussian-state-space-model">Example: Linear Gaussian State Space Model</a><a id="examples-linear-gaussian-state-space-model-1"></a><a class="docs-heading-anchor-permalink" href="#examples-linear-gaussian-state-space-model" title="Permalink"></a></h1><p>In this example the goal is to estimate hidden states of a Linear Dynamical process where all hidden states are Gaussians. A simple multivariate Linear Gaussian State Space Model can be described with the following equations:</p><p class="math-container">\[\begin{aligned}
+ p(x_i|x_{i - 1}) &amp; = \mathcal{N}(x_i|A * x_{i - 1}, \mathcal{P}),\\
+ p(y_i|x_i) &amp; = \mathcal{N}(y_i|B * x_i, \mathcal{Q}),
+\end{aligned}\]</p><p>where <span>$x_i$</span> are hidden states, <span>$y_i$</span> are noisy observations, <span>$A$</span>, <span>$B$</span> are state transition and observational matrices, <span>$\mathcal{P}$</span> and <span>$\mathcal{Q}$</span> are state transition noise and observation noise covariance matrices. For a more rigorous introduction to Linear Gaussian Dynamical systems we refer to <a href="https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf">Simo Sarkka, Bayesian Filtering and Smoothing</a> book.</p><p>To model this process in <code>ReactiveMP</code>, first, we start with importing all needed packages:</p><pre><code class="language-">using Rocket, ReactiveMP, GraphPPL, Distributions
+using BenchmarkTools, Random, LinearAlgebra, Plots</code></pre><p>Next step, is to generate some synthetic data:</p><pre><code class="language-julia">function generate_data(rng, A, B, Q, P)
+    x_prev = [ 10.0, -10.0 ]
+
+    x = Vector{Vector{Float64}}(undef, n)
+    y = Vector{Vector{Float64}}(undef, n)
+
+    for i in 1:n
+        x[i] = rand(rng, MvNormal(A * x_prev, Q))
+        y[i] = rand(rng, MvNormal(B * x[i], P))
+        x_prev = x[i]
+    end
+
+    return x, y
+end</code></pre><pre class="documenter-example-output">generate_data (generic function with 1 method)</pre><pre><code class="language-"># Seed for reproducibility
+seed = 1234
+
+rng = MersenneTwister(1234)
+
+# We will model 2-dimensional observations with rotation matrix `A`
+# To avoid clutter we also assume that matrices `A`, `B`, `P` and `Q`
+# are known and fixed for all time-steps
+θ = π / 35
+A = [ cos(θ) -sin(θ); sin(θ) cos(θ) ]
+B = diageye(2)
+Q = diageye(2)
+P = 25.0 .* diageye(2)
+
+# Number of observations
+n = 300
+
+nothing #hide</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>For large number of observations you will need yo use <code>limit_stack_depth = 100</code> option during model creation, e.g. <code>model, (x, y) = create_model(..., options = (limit_stack_depth = 100, ))</code></p></div></div><pre><code class="language-">x, y = generate_data(rng, A, B, Q, P)
+nothing #hide</code></pre><p>Lets plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations, which are represented as dots.</p><pre><code class="language-">slicedim(dim) = (a) -&gt; map(e -&gt; e[dim], a)
+
+px = plot()
+
+px = plot!(px, x |&gt; slicedim(1), label = &quot;Hidden Signal (dim-1)&quot;, color = :orange)
+px = scatter!(px, y |&gt; slicedim(1), label = false, markersize = 2, color = :orange)
+px = plot!(px, x |&gt; slicedim(2), label = &quot;Hidden Signal (dim-2)&quot;, color = :green)
+px = scatter!(px, y |&gt; slicedim(2), label = false, markersize = 2, color = :green)
+
+plot(px)</code></pre><p>To create a model we use <code>GraphPPL</code> package and <code>@model</code> macro:</p><pre><code class="language-julia">@model function rotate_ssm(n, x0, A, B, Q, P)
+
+    # We create constvar references for better efficiency
+    cA = constvar(A)
+    cB = constvar(B)
+    cQ = constvar(Q)
+    cP = constvar(P)
+
+    # `x` is a sequence of hidden states
+    x = randomvar(n)
+    # `y` is a sequence of &quot;clamped&quot; observations
+    y = datavar(Vector{Float64}, n)
+
+    x_prior ~ MvNormalMeanCovariance(mean(x0), cov(x0))
+    x_prev = x_prior
+
+    for i in 1:n
+        x[i] ~ MvNormalMeanCovariance(cA * x_prev, cQ)
+        y[i] ~ MvNormalMeanCovariance(cB * x[i], cP)
+        x_prev = x[i]
+    end
+
+    return x, y
+end</code></pre><pre class="documenter-example-output">rotate_ssm (generic function with 1 method)</pre><p>Also for convenience we create an <code>inference</code> function to infer hidden states of our system:</p><pre><code class="language-julia">function inference(data, x0, A, B, Q, P)
+
+    # We create a model and get references for
+    # hidden states and observations
+    model, (x, y) = rotate_ssm(n, x0, A, B, Q, P);
+
+    xbuffer   = buffer(Marginal, n)
+    bfe       = nothing
+
+    # We subscribe on posterior marginals of `x`
+    xsubscription = subscribe!(getmarginals(x), xbuffer)
+    # We are also intereset in BetheFreeEnergy functional,
+    # which in this case is equal to minus log evidence
+    fsubcription = subscribe!(score(BetheFreeEnergy(), model), (v) -&gt; bfe = v)
+
+    # `update!` updates our clamped datavars
+    update!(y, data)
+
+    # It is important to always unsubscribe
+    unsubscribe!((xsubscription, fsubcription))
+
+    return xbuffer, bfe
+end</code></pre><pre class="documenter-example-output">inference (generic function with 1 method)</pre><p>To run inference we also specify prior for out first time-step:</p><pre><code class="language-julia">x0 = MvNormalMeanCovariance(zeros(2), 100.0 * diageye(2))</code></pre><pre><code class="language-">xmarginals, bfe = inference(y, x0, A, B, Q, P)
+nothing #hide</code></pre><pre><code class="language-">px = plot()
+
+px = plot!(px, x |&gt; slicedim(1), label = &quot;Hidden Signal (dim-1)&quot;, color = :orange)
+px = plot!(px, x |&gt; slicedim(2), label = &quot;Hidden Signal (dim-2)&quot;, color = :green)
+
+px = plot!(px, mean.(xmarginals) |&gt; slicedim(1), ribbon = var.(xmarginals) |&gt; slicedim(1) .|&gt; sqrt, fillalpha = 0.5, label = &quot;Estimated Signal (dim-1)&quot;, color = :teal)
+px = plot!(px, mean.(xmarginals) |&gt; slicedim(2), ribbon = var.(xmarginals) |&gt; slicedim(2) .|&gt; sqrt, fillalpha = 0.5, label = &quot;Estimated Signal (dim-1)&quot;, color = :violet)
+
+plot(px)</code></pre><p>As we can see from our plot, estimated signal resembles closely to the real hidden states with small variance. We maybe also interested in the value for minus log evidence:</p><pre><code class="language-">bfe</code></pre><p>We may be also interested in performance of our resulting Belief Propagation algorithm:</p><pre><code class="language-">@benchmark inference($y, $x0, $A, $B, $Q, $P)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview/">« Overview</a><a class="docs-footer-nextpage" href="../../lib/message/">Messages »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 11 October 2021 14:43">Monday 11 October 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
