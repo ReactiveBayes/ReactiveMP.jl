@@ -61,7 +61,10 @@ Allocation-free version of `fill(one(T) / N, N)` vector.
 
 ```jldoctest
 julia> iter = ReactiveMP.OneDivNVector(3)
-OneDivNVector(Float64, 3)
+3-element ReactiveMP.OneDivNVector{3, Float64}:
+ 0.3333333333333333
+ 0.3333333333333333
+ 0.3333333333333333
 
 julia> length(iter)
 3
@@ -76,7 +79,10 @@ julia> collect(iter)
  0.3333333333333333
 
 julia> iter = ReactiveMP.OneDivNVector(Float32, 3)
-OneDivNVector(Float32, 3)
+3-element ReactiveMP.OneDivNVector{3, Float32}:
+ 0.33333334
+ 0.33333334
+ 0.33333334
 
 julia> collect(iter)
 3-element Vector{Float32}:
@@ -216,6 +222,7 @@ union_types(x::Type)  = (x,)
 # Symbol helpers
 
 __extract_val_type(::Type{ Type{ Val{ S } } }) where S = S
+__extract_val_type(::Type{ Val{ S } })         where S = S
 
 @generated function split_underscored_symbol(symbol_val)
     S = __extract_val_type(symbol_val)
@@ -241,8 +248,13 @@ end
 
 ## 
 
-__check_all(fn::Function, iterator)  = all(fn, iterator)
-__check_all(fn::Function, ::Nothing) = true
+__check_all(fn::Function, iterator)     = all(fn, iterator)
+__check_all(fn::Function, tuple::Tuple) = TupleTools.prod(map(fn, tuple))
+__check_all(fn::Function, ::Nothing)    = true
+
+##
+
+is_clamped_or_initial(something) = is_clamped(something) || is_initial(something)
 
 ## Meta utils
 

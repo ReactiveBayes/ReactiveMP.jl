@@ -84,7 +84,7 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
-    is_prod_initial = !is_prod_clamped && (is_initial(left) || is_clamped(left)) && (is_initial(right) || is_clamped(right))
+    is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
 
     return Message(prod(prod_parametrisation, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
 end
@@ -177,12 +177,12 @@ as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdAnalytical(), left, right), messages)
 
 ## Message Mapping structure
+## https://github.com/JuliaLang/julia/issues/42559
 ## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
 ## We create a lambda-like callable structure to improve type inference and make it more stable
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 
-struct MessageMapping{F, E, T, C, N, M, A, R}
-    fform           :: E
+struct MessageMapping{F, T, C, N, M, A, R}
     vtag            :: T
     vconstraint     :: C
     msgs_names      :: N
@@ -191,26 +191,27 @@ struct MessageMapping{F, E, T, C, N, M, A, R}
     factornode      :: R
 end
 
-message_mapping_fform(m::MessageMapping{F}) where F = F
-message_mapping_fform(m::MessageMapping{F}) where F <: Function = m.fform
+message_mapping_fform(::MessageMapping{F}) where F = F
+message_mapping_fform(::MessageMapping{F}) where F <: Function = F.instance
 
 function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { F, T, C, N, M, A, R }
-    return MessageMapping{F, Nothing, T, C, N, M, A, R}(nothing, vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+    return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
 end
 
-function MessageMapping(fn::E, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { E <: Function, T, C, N, M, A, R} 
-    return MessageMapping{E, E, T, C, N, M, A, R}(fn, vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { F <: Function, T, C, N, M, A, R} 
+    return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
 end
 
 function (mapping::MessageMapping)(dependencies)
+
     messages  = dependencies[1]
-    marginals = dependencies[2]
+    marginals = dependencies[2] # getrecent(marginals) call happens in VariationalMessage
 
     # Message is clamped if all of the inputs are clamped
     is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_message_initial = !is_message_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+    is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
     message = rule(
         message_mapping_fform(mapping), 

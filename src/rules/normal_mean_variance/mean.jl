@@ -11,3 +11,8 @@ end
 # Variational                       # 
 # --------------------------------- #
 @rule NormalMeanVariance(:μ, Marginalisation) (q_out::Any, q_v::Any) = NormalMeanVariance(mean(q_out), mean(q_v))
+
+@rule NormalMeanVariance(:μ, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, q_v::Any) = begin 
+    m_out_mean, m_out_cov = mean_cov(m_out)
+    return NormalMeanVariance(m_out_mean, m_out_cov + mean(q_v))
+end

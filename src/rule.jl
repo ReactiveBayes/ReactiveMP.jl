@@ -700,6 +700,9 @@ end
 
 NodeErrorStub() = NodeErrorStub(0)
 
+interfaceindices(stub::NodeErrorStub, iname::Symbol)                     = (interfaceindex(stub, iname), )
+interfaceindices(stub::NodeErrorStub, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(stub, iname), inames)
+
 function interfaceindex(stub::NodeErrorStub, iname::Symbol)
     stub.counter = stub.counter + 1
     return stub.counter
@@ -717,10 +720,10 @@ rule_method_error_extract_on(on::Tuple{ Val{ T }, Int }) where T = string("(:", 
 
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
-rule_method_error_extract_names(::Type{ Val{ T } }) where T = T
-rule_method_error_extract_names(::Nothing)                  = ()
+rule_method_error_extract_names(::Type{ Val{ T } }) where T = map(sT -> __extract_val_type(split_underscored_symbol(Val{ sT })), T)
+rule_method_error_extract_names(::Nothing) = ()
 
-rule_method_error_extract_types(t::Tuple)   = map(e -> typeof(getdata(e)), t)
+rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeof(getdata(e))), t)
 rule_method_error_extract_types(t::Nothing) = ()
 
 rule_method_error_extract_meta(something) = string("meta::", typeof(something))
@@ -744,23 +747,23 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
     print(io, "RuleMethodError: no method matching rule for the given arguments")
 
-    try 
-        node = error.node !== nothing ? error.node : NodeErrorStub()
+    node = error.node !== nothing ? error.node : NodeErrorStub()
 
-        spec_fform       = rule_method_error_extract_fform(error.fform)
-        spec_on          = rule_method_error_extract_on(error.on)
-        spec_vconstraint = rule_method_error_extract_vconstraint(error.vconstraint)
+    spec_fform       = rule_method_error_extract_fform(error.fform)
+    spec_on          = rule_method_error_extract_on(error.on)
+    spec_vconstraint = rule_method_error_extract_vconstraint(error.vconstraint)
 
-        m_names   = rule_method_error_extract_names(error.mnames)
-        m_indices = map(n -> interfaceindex(node, n), m_names)
-        q_names   = rule_method_error_extract_names(error.qnames)
-        q_indices = map(n -> interfaceindex(node, n), q_names)
+    m_names   = rule_method_error_extract_names(error.mnames)
+    m_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), m_names)
+    q_names   = rule_method_error_extract_names(error.qnames)
+    q_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), q_names)
 
-        spec_m_names = map(e -> string("m_", e), m_names)
-        spec_m_types = rule_method_error_extract_types(error.messages)
-        spec_q_names = map(e -> string("q_", e), q_names)
-        spec_q_types = rule_method_error_extract_types(error.marginals)
+    spec_m_names = map(e -> string("m_", join(e, "_")), m_names)
+    spec_m_types = rule_method_error_extract_types(error.messages)
+    spec_q_names = map(e -> string("q_", join(e, "_")), q_names)
+    spec_q_types = rule_method_error_extract_types(error.marginals)
 
+    if isempty(intersect(Set(m_indices), Set(q_indices)))
         spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
         spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
@@ -768,7 +771,6 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
         fill!(spec, nothing)
 
-        
         for (i, j) in enumerate(m_indices)
             spec[2j - 1] = spec_m[i]
         end
@@ -790,18 +792,16 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
-    catch uerror
-        println(io, "Unexpected error occured during Base.showerror(::RuleMethodError)")
-        println(io, uerror)
+    else
+        println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)
         println(io, "rule.on: ", error.on)
         println(io, "rule.vconstraint: ", error.vconstraint)
         println(io, "rule.mnames: ", error.mnames)
         println(io, "rule.messages: ", error.messages)
         println(io, "rule.qnames: ", error.qnames)
-        println(io, "rule.marginals: ", error.ffmarginalsrm)
+        println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
-        println(io, "rule.node: ", error.node)
     end
 end
 
@@ -821,28 +821,27 @@ marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) = thr
 function Base.showerror(io::IO, error::MarginalRuleMethodError)
 
     print(io, "MarginalRuleMethodError: no method matching rule for the given arguments")
+    node = error.node !== nothing ? error.node : NodeErrorStub()
 
-    try 
-        node = error.node !== nothing ? error.node : NodeErrorStub()
+    spec_fform       = rule_method_error_extract_fform(error.fform)
+    spec_on          = rule_method_error_extract_on(error.on)
 
-        spec_fform       = rule_method_error_extract_fform(error.fform)
-        spec_on          = rule_method_error_extract_on(error.on)
+    m_names   = rule_method_error_extract_names(error.mnames)
+    m_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), m_names)
+    q_names   = rule_method_error_extract_names(error.qnames)
+    q_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), q_names)
 
-        m_names   = rule_method_error_extract_names(error.mnames)
-        m_indices = map(n -> interfaceindex(node, n), m_names)
-        q_names   = rule_method_error_extract_names(error.qnames)
-        q_indices = map(n -> interfaceindex(node, n), q_names)
+    spec_m_names = map(e -> string("m_", join(e, "_")), m_names)
+    spec_m_types = rule_method_error_extract_types(error.messages)
+    spec_q_names = map(e -> string("q_", join(e, "_")), q_names)
+    spec_q_types = rule_method_error_extract_types(error.marginals)
 
-        spec_m_names = map(e -> string("m_", e), m_names)
-        spec_m_types = rule_method_error_extract_types(error.messages)
-        spec_q_names = map(e -> string("q_", e), q_names)
-        spec_q_types = rule_method_error_extract_types(error.marginals)
+    spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
+    spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-        spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
-        spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
+    spec = Vector(undef, 2length(interfaces(node)))
 
-        spec = Vector(undef, 2length(interfaces(node)))
-
+    if isempty(intersect(Set(m_indices), Set(q_indices)))
         fill!(spec, nothing)
         
         for (i, j) in enumerate(m_indices)
@@ -866,16 +865,14 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
 
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
-    catch uerror
-        println(io, "Unexpected error occured during Base.showerror(::MarginalRuleMethodError)")
-        println(io, uerror)
+    else
+        println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)
         println(io, "rule.on: ", error.on)
         println(io, "rule.mnames: ", error.mnames)
         println(io, "rule.messages: ", error.messages)
         println(io, "rule.qnames: ", error.qnames)
-        println(io, "rule.marginals: ", error.ffmarginalsrm)
+        println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
-        println(io, "rule.node: ", error.node)
     end
 end
