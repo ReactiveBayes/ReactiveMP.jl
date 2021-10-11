@@ -84,7 +84,7 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
-    is_prod_initial = !is_prod_clamped && (is_initial(left) || is_clamped(left)) && (is_initial(right) || is_clamped(right))
+    is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
 
     return Message(prod(prod_parametrisation, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
 end
@@ -154,7 +154,7 @@ Base.show(io::IO, ::VariationalMessage) = print(io, string("VariationalMessage(:
 getcache(vmessage::VariationalMessage)                    = vmessage.cache
 setcache!(vmessage::VariationalMessage, message::Message) = vmessage.cache = message
 
-compute_message(vmessage::VariationalMessage) = vmessage.mappingFn((vmessage.messages, vmessage.marginals))
+compute_message(vmessage::VariationalMessage) = vmessage.mappingFn((vmessage.messages, getrecent(vmessage.marginals)))
 
 function materialize!(vmessage::VariationalMessage)
     cache = getcache(vmessage)
@@ -205,13 +205,13 @@ end
 function (mapping::MessageMapping)(dependencies)
 
     messages  = dependencies[1]
-    marginals = getrecent(dependencies[2])
+    marginals = dependencies[2] # getrecent(marginals) call happens in VariationalMessage
 
     # Message is clamped if all of the inputs are clamped
     is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_message_initial = !is_message_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+    is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
     message = rule(
         message_mapping_fform(mapping), 

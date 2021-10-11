@@ -152,7 +152,7 @@ function MarginalMapping(::F, vtag::T, msgs_names::N, marginals_names::M, meta::
 end
 
 function (mapping::MarginalMapping)(dependencies)
-
+    
     messages  = dependencies[1]
     marginals = getrecent(dependencies[2])
 
@@ -160,7 +160,7 @@ function (mapping::MarginalMapping)(dependencies)
     is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_marginal_initial = !is_marginal_clamped && (__check_all(m -> is_clamped(m) || is_initial(m), messages) && __check_all(m -> is_clamped(m) || is_initial(m), marginals))
+    is_marginal_initial = !is_marginal_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
     marginal = marginalrule(
         marginal_mapping_fform(mapping), 
