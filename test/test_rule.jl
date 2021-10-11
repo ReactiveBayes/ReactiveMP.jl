@@ -56,6 +56,231 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         @test names == :(Val{ (:mean, ) })
         @test values == :((ReactiveMP.Marginal(NormalMeanPrecision(0.0, 1.0), false, false),))
     end
+
+    @testset "rule_method_error" begin 
+
+        as_vague_msg(::Type{T}) where T = Message(vague(T), false, false) 
+        as_vague_mrg(::Type{T}) where T = Marginal(vague(T), false, false) 
+
+        let 
+            err = ReactiveMP.RuleMethodError(
+                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
+                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                nothing,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@rule", output)
+            @test occursin("Marginalisation", output)
+            @test occursin("m_out::NormalMeanVariance", output)
+            @test occursin("q_τ::Gamma", output)
+        end
+
+        let 
+            err = ReactiveMP.RuleMethodError(
+                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
+                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@rule", output)
+            @test occursin("Marginalisation", output)
+            @test occursin("m_out::NormalMeanVariance", output)
+            @test occursin("q_τ::Gamma", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.RuleMethodError(
+                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
+                Val{(:out, :τ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma), ),
+                nothing, nothing, 
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@rule", output)
+            @test occursin("Marginalisation", output)
+            @test occursin("m_out::NormalMeanVariance", output)
+            @test occursin("m_τ::Gamma", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.RuleMethodError(
+                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
+                nothing, nothing, 
+                Val{(:out, :τ)}, (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@rule", output)
+            @test occursin("Marginalisation", output)
+            @test occursin("q_out::NormalMeanVariance", output)
+            @test occursin("q_τ::Gamma", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.RuleMethodError(
+                NormalMeanPrecision, Val{:τ}, Marginalisation(), 
+                nothing, nothing, 
+                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@rule", output)
+            @test occursin("Marginalisation", output)
+            @test occursin("q_out_μ::MvNormalMeanPrecision", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.RuleMethodError(
+                NormalMeanPrecision, Val{:τ}, Marginalisation(), 
+                Val{(:out, :μ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(NormalMeanVariance)),
+                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("[WARN]: Non-standard rule layout found!", output)
+            @test occursin("Possible fix, define", output)
+        end
+
+    end
+
+    @testset "marginalrule_method_error" begin 
+
+        as_vague_msg(::Type{T}) where T = Message(vague(T), false, false) 
+        as_vague_mrg(::Type{T}) where T = Marginal(vague(T), false, false) 
+
+        let 
+            err = ReactiveMP.MarginalRuleMethodError(
+                NormalMeanPrecision, Val{:μ}, 
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
+                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                nothing,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@marginalrule", output)
+            @test occursin("m_out::NormalMeanVariance", output)
+            @test occursin("q_τ::Gamma", output)
+        end
+
+        let 
+            err = ReactiveMP.MarginalRuleMethodError(
+                NormalMeanPrecision, Val{:μ}, 
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
+                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@marginalrule", output)
+            @test occursin("m_out::NormalMeanVariance", output)
+            @test occursin("q_τ::Gamma", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.MarginalRuleMethodError(
+                NormalMeanPrecision, Val{:μ}, 
+                Val{(:out, :τ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma), ),
+                nothing, nothing, 
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@marginalrule", output)
+            @test occursin("m_out::NormalMeanVariance", output)
+            @test occursin("m_τ::Gamma", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.MarginalRuleMethodError(
+                NormalMeanPrecision, Val{:μ}, 
+                nothing, nothing, 
+                Val{(:out, :τ)}, (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@marginalrule", output)
+            @test occursin("q_out::NormalMeanVariance", output)
+            @test occursin("q_τ::Gamma", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.MarginalRuleMethodError(
+                NormalMeanPrecision, Val{:τ}, 
+                nothing, nothing, 
+                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("Possible fix, define:", output)
+            @test occursin("@marginalrule", output)
+            @test occursin("q_out_μ::MvNormalMeanPrecision", output)
+            @test occursin("meta::Float64", output)
+        end
+
+        let 
+            err = ReactiveMP.MarginalRuleMethodError(
+                NormalMeanPrecision, Val{:τ}, 
+                Val{(:out, :μ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(NormalMeanVariance)),
+                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                1.0,
+                make_node(NormalMeanPrecision)
+            );
+
+            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+
+            @test occursin("[WARN]: Non-standard rule layout found!", output)
+            @test occursin("Possible fix, define", output)
+        end
+
+    end
     
 end
 
