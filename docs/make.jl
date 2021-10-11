@@ -14,13 +14,15 @@ makedocs(
         "Introduction"    => "index.md",
         "User guide" => [ 
             "Getting Started"     => "man/getting-started.md",
+            "Fundamentals"        => "man/fundamentals.md",
             "Model Specification" => "man/model-specification.md",
             "Inference execution" => "man/inference-execution.md"
         ],
         "Library" => [
             "Messages"     => "lib/message.md",
             "Factor nodes" => "lib/node.md",
-            "Math utils"   => "lib/math.md"
+            "Math utils"   => "lib/math.md",
+            "Helper utils" => "lib/helpers.md"
         ],
         "Contributing" => "extra/contributing.md",
     ],

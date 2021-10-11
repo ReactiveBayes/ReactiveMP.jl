@@ -27,7 +27,7 @@ default_interface_local_constraint(::Type{ <: Probit }, edge::Val{ :out }) = Mar
     p = mean(q_out)
     m, v = mean_var(q_in)
 
-    # specify function=
+    # specify function
     h = (x) -> -p*log(normcdf(x)) - (1-p)*log(normcdf(-x))
 
     # calculate average average energy (default of 32 points)

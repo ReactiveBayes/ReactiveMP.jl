@@ -30,6 +30,16 @@ Turing comparison             |  Scalability performance
 :-------------------------:|:-------------------------:
 ![](benchmark/notebooks/plots/lgssm_comparison.svg?raw=true&sanitize=true)  |  ![](benchmark/notebooks/plots/lgssm_scaling.svg?raw=true&sanitize=true)
 
+# Overview 
+
+See the videos below from JuliaCon 2021 and BIASlab seminar for a quick introduction to ReactiveMP.
+
+JuliaCon 2021 presentation |  ReactiveMP.jl API tutorial
+:-------------------------:|:-------------------------:
+[![JuliaCon 2021 ReactiveMP.jl presentation](https://img.youtube.com/vi/twhTsKsXa_8/0.jpg)](https://www.youtube.com/watch?v=twhTsKsXa_8)  |  [![ReactiveMP.jl API tutorial](https://img.youtube.com/vi/YwjddthBKnM/0.jpg)](https://www.youtube.com/watch?v=YwjddthBKnM)
+
+
+
 # Installation
 
 Install ReactiveMP through the Julia package manager:

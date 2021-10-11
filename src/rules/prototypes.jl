@@ -6,6 +6,11 @@ include("addition/out.jl")
 include("addition/in1.jl")
 include("addition/in2.jl")
 
+include("subtraction/marginals.jl")
+include("subtraction/out.jl")
+include("subtraction/in1.jl")
+include("subtraction/in2.jl")
+
 include("multiplication/marginals.jl")
 include("multiplication/out.jl")
 include("multiplication/in.jl")
@@ -57,6 +62,8 @@ include("mv_normal_mean_precision/mean.jl")
 include("mv_normal_mean_precision/precision.jl")
 include("mv_normal_mean_precision/marginals.jl")
 
+include("mv_normal_weightedmean_precision/marginals.jl")
+
 include("normal_mean_precision/out.jl")
 include("normal_mean_precision/mean.jl")
 include("normal_mean_precision/precision.jl")
@@ -90,6 +97,15 @@ include("autoregressive/x.jl")
 include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
+
+include("bifm/marginals.jl")
+include("bifm/in.jl")
+include("bifm/out.jl")
+include("bifm/znext.jl")
+include("bifm/zprev.jl")
+
+include("bifm_helper/in.jl")
+include("bifm_helper/out.jl")
 
 include("probit/in.jl")
 include("probit/out.jl")

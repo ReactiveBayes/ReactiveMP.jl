@@ -137,6 +137,55 @@ using Distributions
 
     end
 
+    @testset "Sampling" begin
+        rng = MersenneTwister(1234)
+
+        univariate_types = [ 
+            ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})...,
+            ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float32})...
+        ]
+
+        for T in (Float32, Float64)
+            let # NormalMeanVariance
+                μ, v = 10randn(rng), 10rand(rng)
+                d    = convert(NormalMeanVariance{T}, μ, v)
+
+                @test typeof(rand(d) ) <: T
+
+                samples = rand(rng, d, 5_000)
+
+                @test isapprox(mean(samples), μ, atol = 0.5)
+                @test isapprox(var(samples), v, atol = 0.5)
+            end
+
+            let # NormalMeanPrecision
+                μ, w = 10randn(rng), 10rand(rng)
+                d    = convert(NormalMeanPrecision{T}, μ, w)
+
+                @test typeof(rand(d) ) <: T
+
+                samples = rand(rng, d, 5_000)
+
+                @test isapprox(mean(samples), μ, atol = 0.5)
+                @test isapprox(inv(var(samples)), w, atol = 0.5)
+            end
+
+            let # WeightedMeanPrecision
+                wμ, w = 10randn(rng), 10rand(rng)
+                d     = convert(NormalWeightedMeanPrecision{T}, wμ, w)
+
+                @test typeof(rand(d) ) <: T
+
+                samples = rand(rng, d, 5_000)
+
+                @test isapprox(inv(var(samples)) * mean(samples), wμ, atol = 0.5)
+                @test isapprox(inv(var(samples)), w, atol = 0.5)
+            end
+        end
+        
+
+    end
+
 end
 
 end

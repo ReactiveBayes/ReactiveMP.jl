@@ -1,4 +1,4 @@
-ReacitveMP.jl
+ReactiveMP.jl
 =============
 
 *Julia package for automatic Bayesian inference on a factor graph with reactive message passing.*
@@ -33,6 +33,7 @@ Head to the [Getting started](@ref user-guide-getting-started) section to get up
 ```@contents
 Pages = [
   "man/getting-started.md",
+  "man/fundamentals.md",
   "man/model-specification.md",
   "lib/message.md",
   "lib/node.md",
