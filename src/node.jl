@@ -361,6 +361,9 @@ abstract type AbstractFactorNode end
 isstochastic(factornode::AbstractFactorNode)    = isstochastic(sdtype(factornode))
 isdeterministic(factornode::AbstractFactorNode) = isdeterministic(sdtype(factornode))
 
+interfaceindices(factornode::AbstractFactorNode, iname::Symbol)                     = interfaceindices(factornode, (iname, ))
+interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(factornode, iname), inames)
+
 ## Generic Factor Node
 
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
@@ -416,9 +419,6 @@ function interfaceindex(factornode::FactorNode, iname::Symbol)
     iindex = findfirst(interface -> name(interface) === iname, interfaces(factornode))
     return iindex !== nothing ? iindex : error("Unknown interface ':$(iname)' for $(functionalform(factornode)) node")
 end
-
-interfaceindices(factornode::FactorNode, iname::Symbol) = (interfaceindex(factornode, iname), )
-interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(factornode, iname), inames)
 
 function clusterindex(factornode::FactorNode, vars::NTuple{N, Int}) where N 
     cindex = findfirst(cluster -> all(v -> v ∈ cluster, vars), factorisation(factornode))
