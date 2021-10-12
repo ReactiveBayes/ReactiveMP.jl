@@ -1,6 +1,5 @@
-export marginalrule
 
-@marginalrule GCV(:y_x) (m_y::Any, m_x::Any, q_z::Any, q_κ::Any, q_ω::Any) = begin
+@marginalrule GCV(:y_x) (m_y::UniNormalOrExpLinQuad, m_x::UniNormalOrExpLinQuad, q_z::Any, q_κ::Any, q_ω::Any) = begin
 
     y_mean, y_precision = mean_precision(m_y)
     x_mean, x_precision = mean_precision(m_x)

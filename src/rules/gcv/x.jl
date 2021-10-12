@@ -1,6 +1,6 @@
 export rule
 
-@rule GCV(:x, Marginalisation) (m_y::Any, q_z::Any, q_κ::Any, q_ω::Any) = begin
+@rule GCV(:x, Marginalisation) (m_y::UniNormalOrExpLinQuad, q_z::Any, q_κ::Any, q_ω::Any) = begin
 
     y_mean, y_var = mean_var(m_y)
     z_mean, z_var = mean_var(q_z)
