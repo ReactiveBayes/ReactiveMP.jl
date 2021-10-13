@@ -57,6 +57,7 @@ using .ReactiveMPTestingHelpers
     addtests("distributions/test_beta.jl")
     addtests("distributions/test_categorical.jl")
     addtests("distributions/test_contingency.jl")
+    addtests("distributions/test_exp_linear_quadratic.jl")
     addtests("distributions/test_dirichlet_matrix.jl")
     addtests("distributions/test_dirichlet.jl")
     addtests("distributions/test_gamma.jl")

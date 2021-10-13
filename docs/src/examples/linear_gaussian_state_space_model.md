@@ -41,7 +41,7 @@ end
 # Seed for reproducibility
 seed = 1234
 
-rng = MersenneTwister(1234)
+rng = MersenneTwister(seed)
 
 # We will model 2-dimensional observations with rotation matrix `A`
 # To avoid clutter we also assume that matrices `A`, `B`, `P` and `Q`
