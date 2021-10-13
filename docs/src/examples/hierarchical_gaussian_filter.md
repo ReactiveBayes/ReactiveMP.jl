@@ -5,24 +5,20 @@ In this demo the goal is to perform approximate variational Bayesian Inference f
 Simple HGF model can be defined as:
 
 ```math
-\begin{equation}
-  \begin{aligned}
+\begin{aligned}
     x^{(j)}_k & \sim \, \mathcal{N}(x^{(j)}_{k - 1}, f_k(x^{(j - 1)}_k)) \\
     y_k & \sim \, \mathcal{N}(x^{(j)}_k, \tau_k)
-  \end{aligned}
-\end{equation}
+\end{aligned}
 ```
 
 where ``j`` is an index of layer in hierarchy, ``k`` is a time step and ``f_k`` is a variance activation function. `ReactiveMP.jl` export Gaussian Controlled Variance (GCV) node with ``f_k = \exp(\kappa x + \omega)`` variance activation function. By default uses Gauss-Hermite cubature with a prespecified number of approximation points in the cubature. We can change the number of points in Gauss-Hermite cubature with the help of metadata structures in `ReactiveMP.jl`. 
 
 ```math
-\begin{equation}
-  \begin{aligned}
+ \begin{aligned}
     z_k & \sim \, \mathcal{N}(z_{k - 1}, \mathcal{\tau_z}) \\
     x_k & \sim \, \mathcal{N}(x_{k - 1}, \exp(\kappa z_k + \omega)) \\
     y_k & \sim \, \mathcal{N}(x_k, \mathcal{\tau_y})
-  \end{aligned}
-\end{equation}
+\end{aligned}
 ```
 
 In this experiment we will create a single time step of the graph and perform variational message passing filtering alrogithm to estimate hidden states of the system.
