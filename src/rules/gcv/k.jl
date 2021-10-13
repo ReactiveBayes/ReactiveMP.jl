@@ -32,5 +32,5 @@ end
     c = -a
     d = z_var
 
-    return ExponentialLinearQuadratic(get_approximation(meta),a, b, c, d)
+    return ExponentialLinearQuadratic(get_approximation(meta), a, b, c, d)
 end
