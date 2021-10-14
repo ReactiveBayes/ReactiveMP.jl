@@ -13,7 +13,7 @@
     W = mγ * (Vx + mx * mx')
     c = ar_unit(getvform(meta), order)
 
-    ξ = (Vyx + mx * my') * mγ * c
+    ξ = (Vyx + mx * my') * c * mγ
     
     return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ, W)
 end

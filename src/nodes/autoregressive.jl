@@ -1,5 +1,6 @@
 export AR, Autoregressive, ARsafe, ARunsafe, ARMeta
 
+import LazyArrays
 import StatsFuns: log2π
 
 struct AR end
@@ -38,24 +39,24 @@ is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 default_meta(::Type{ AR }) = error("Autoregressive node requires meta flag explicitly specified")
 
 @average_energy AR (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
-    mθ, Vθ   = mean(q_θ), cov(q_θ)
-    myx, Vyx = mean(q_y_x), cov(q_y_x)
+    mθ, Vθ   = mean_cov(q_θ)
+    myx, Vyx = mean_cov(q_y_x)
     mγ       = mean(q_γ)
 
     order = getorder(meta)
 
-    mx, Vx   = ar_slice(getvform(meta), myx, order+1:2order), ar_slice(getvform(meta), Vyx, order+1:2order, order+1:2order)
+    mx, Vx   = ar_slice(getvform(meta), myx, (order + 1):2order), ar_slice(getvform(meta), Vyx, (order + 1):2order, (order + 1):2order)
     my1, Vy1 = first(myx), first(Vyx)
     Vy1x     = ar_slice(getvform(meta), Vyx, 1, order+1:2order)
 
-    AE = -0.5*(logmean(q_γ)) + 0.5log2π + 0.5*mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)
+    AE = (-logmean(q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
 
     # correction
     if is_multivariate(meta)
         AE += entropy(q_y_x)
-        idc = [1, order+1:2order...]
-        myx_n = myx[idc]
-        Vyx_n = Vyx[idc, idc]
+        idc = LazyArrays.Vcat(1, (order + 1):2order)
+        myx_n = view(myx, idc)
+        Vyx_n = view(Vyx, idc, idc)
         q_y_x = MvNormalMeanCovariance(myx_n, Vyx_n)
         AE -= entropy(q_y_x)
     end
