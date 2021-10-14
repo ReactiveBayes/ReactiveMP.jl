@@ -20,11 +20,17 @@ import ReactiveMP: @test_rules
 
             @test broadcast(+, matrix, transition) == (matrix + ftransition)
             @test_throws DimensionMismatch broadcast(+, zeros(order + 1, order + 1), transition)
+
+            @test ReactiveMP.add_transition(matrix, transition) == (matrix + ftransition)
+            @test_throws DimensionMismatch ReactiveMP.add_transition(zeros(order + 1, order + 1), transition)
             
             cmatrix = copy(matrix)
             broadcast!(+, cmatrix, transition)
             @test cmatrix == (matrix + ftransition)
-            
+
+            cmatrix = copy(matrix)
+            ReactiveMP.add_transition!(cmatrix, transition)
+            @test cmatrix == (matrix + ftransition)
         end
 
     end

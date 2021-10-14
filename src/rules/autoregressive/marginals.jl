@@ -18,15 +18,13 @@ function ar_y_x_marginal(::ARsafe, m_y::NormalDistributionsFamily, m_x::NormalDi
 
     D = inv_f_Vx + mγ * Vθ
 
-    W_11 = broadcast(+, inv_b_Vy, mW)
+    W_11 = add_precision(inv_b_Vy, mW)
 
     # Equvalent to -(mW * mA)
-    W_12 = mW * mA
-    W_12 = map!(-, W_12, W_12)
+    W_12 = negate_inplace!(mW * mA)
 
     # Equivalent to (-mA' * mW)
-    W_21 = mA' * mW
-    W_21 = map!(-, W_21, W_21)
+    W_21 = negate_inplace!(mA' * mW)
 
     W_22 = D + mA' * mW * mA
 

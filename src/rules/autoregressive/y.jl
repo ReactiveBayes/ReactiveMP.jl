@@ -12,7 +12,7 @@
     C = mA * inv(D)
 
     my = C * Wx * mx
-    Vy = broadcast!(+, C * mA', mV)
+    Vy = add_transition!(C * mA', mV)
     
     return convert(promote_variate_type(getvform(meta), NormalMeanVariance), my, Vy)
 end

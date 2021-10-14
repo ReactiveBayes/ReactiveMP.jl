@@ -108,6 +108,12 @@ Base.getindex(transition::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j ===
 Base.eltype(::Type{ <: ARPrecisionMatrix{T} }) where T = T
 Base.eltype(::ARPrecisionMatrix{T})            where T = T
 
+add_precision(matrix::AbstractMatrix, transition::ARPrecisionMatrix) = broadcast(+, matrix, transition)
+add_precision(value::Real, transition::Real)                         = value + transition
+
+add_precision!(matrix::AbstractMatrix, transition::ARPrecisionMatrix) = broadcast!(+, matrix, transition)
+add_precision!(value::Real, transition::Real)                         = value + transition
+
 function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, transition::ARPrecisionMatrix)
     matrix[1, 1] += transition.γ
     for j in 2:first(size(matrix))
@@ -135,6 +141,12 @@ Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) = (i === 1 && j ==
 
 Base.eltype(::Type{ <: ARTransitionMatrix{T} }) where T = T
 Base.eltype(::ARTransitionMatrix{T})            where T = T
+
+add_transition(matrix::AbstractMatrix, transition::ARTransitionMatrix) = broadcast(+, matrix, transition)
+add_transition(value::Real, transition::Real)                          = value + transition
+
+add_transition!(matrix::AbstractMatrix, transition::ARTransitionMatrix) = broadcast!(+, matrix, transition)
+add_transition!(value::Real, transition::Real)                          = value + transition
 
 function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, transition::ARTransitionMatrix)
     matrix[1] += transition.inv_γ
