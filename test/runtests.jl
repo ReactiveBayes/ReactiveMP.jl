@@ -82,6 +82,7 @@ using .ReactiveMPTestingHelpers
     addtests("nodes/test_bifm_helper.jl")
     addtests("nodes/test_subtraction.jl")
     addtests("nodes/test_probit.jl")
+    addtests("nodes/test_autoregressive.jl")
 
     addtests("rules/addition/test_marginals.jl")
     addtests("rules/addition/test_in1.jl")

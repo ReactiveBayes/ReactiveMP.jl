@@ -12,7 +12,7 @@
     Vyx    = ar_slice(F, y_x_cov, (order + 1):2order, 1:order)
 
     C = (Vx + mx * mx')
-    B = (Vy + my * my')[1, 1] - 2 * (mA * (Vyx + mx * my'))[1, 1] + (mA * C * mA')[1, 1] + tr(Vθ * C)
+    B = @inbounds (Vy + my * my')[1, 1] - 2 * (mA * (Vyx + mx * my'))[1, 1] + (mA * C * mA')[1, 1] + tr(Vθ * C)
 
     return GammaShapeRate(convert(eltype(B), 3//2), B / 2)
 end

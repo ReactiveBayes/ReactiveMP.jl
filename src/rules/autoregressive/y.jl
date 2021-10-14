@@ -1,4 +1,3 @@
-export rule
 
 @rule AR(:y, Marginalisation) (m_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
     mθ, Vθ = mean_cov(q_θ)
@@ -13,7 +12,7 @@ export rule
     C = mA * inv(D)
 
     my = C * Wx * mx
-    Vy = C * mA' + mV
+    Vy = broadcast!(+, C * mA', mV)
     
     return convert(promote_variate_type(getvform(meta), NormalMeanVariance), my, Vy)
 end

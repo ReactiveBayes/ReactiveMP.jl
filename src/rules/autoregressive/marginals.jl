@@ -17,8 +17,21 @@ function ar_y_x_marginal(::ARsafe, m_y::NormalDistributionsFamily, m_x::NormalDi
     inv_f_Vx = cholinv(f_Vx)
 
     D = inv_f_Vx + mγ * Vθ
-    W = [inv_b_Vy+mW -mW*mA; -(mA'*mW) D+mA'*mW*mA]
-    ξ = [inv_b_Vy * b_my; inv_f_Vx * f_mx]
+
+    W_11 = broadcast(+, inv_b_Vy, mW)
+
+    # Equvalent to -(mW * mA)
+    W_12 = mW * mA
+    W_12 = map!(-, W_12, W_12)
+
+    # Equivalent to (-mA' * mW)
+    W_21 = mA' * mW
+    W_21 = map!(-, W_21, W_21)
+
+    W_22 = D + mA' * mW * mA
+
+    W = [ W_11 W_12; W_21 W_22 ]
+    ξ = [ inv_b_Vy * b_my; inv_f_Vx * f_mx ]
 
     return MvNormalWeightedMeanPrecision(ξ, W)
 end

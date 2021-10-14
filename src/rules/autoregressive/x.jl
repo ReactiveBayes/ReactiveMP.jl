@@ -8,7 +8,7 @@
     mA = as_companion_matrix(mθ)
     mV = ar_transition(getvform(meta), getorder(meta), mγ)
 
-    C = mA' * inv(Vy + mV)
+    C = mA' * inv(broadcast(+, Vy, mV))
 
     W = C * mA + mγ * Vθ
     ξ = C * my

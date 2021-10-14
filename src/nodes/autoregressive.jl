@@ -73,16 +73,11 @@ Returns `array[ranges...]` in case if T is Multivariate, and `first(array[ranges
 """
 function ar_slice end
 
-function ar_slice(::Type{Multivariate}, array, ranges...)
-    return view(array, ranges...)
-end
-
-function ar_slice(::Type{Univariate}, array, ranges...)
-    return first(view(array, ranges...))
-end
+ar_slice(::Type{Multivariate}, array, ranges...) = view(array, ranges...)
+ar_slice(::Type{Univariate}, array, ranges...) = first(view(array, ranges...))
 
 """
-ar_uvector(::T, order)
+    ar_unit(::T, order)
 
 Returns `[ 1.0, 0.0 ... 0.0 ]` with length equal to order in case if T is Multivariate, and `1.0` in case if T is Univariate
 """
@@ -100,23 +95,51 @@ function ar_unit(::Type{T}, ::Type{Univariate}, order) where { T <: Real }
     return one(T)
 end
 
-function ar_precision(::Type{Multivariate}, order, γ)
-    mw               = zeros(typeof(γ), order, order)
-    mw[diagind(mw)] .= huge
-    mw[1, 1]         = γ
-    return mw
+## Allocation-free AR Precision Matrix
+
+struct ARPrecisionMatrix{T} <: AbstractMatrix{T}
+    order :: Int
+    γ     :: T
 end
 
-function ar_precision(::Type{Univariate}, order, γ) 
-    return γ
+Base.size(transition::ARPrecisionMatrix) = (transition.order, transition.order)
+Base.getindex(transition::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? transition.γ : ((i === j) ? convert(eltype(transition), huge) : zero(eltype(transition)))
+
+Base.eltype(::Type{ <: ARPrecisionMatrix{T} }) where T = T
+Base.eltype(::ARPrecisionMatrix{T})            where T = T
+
+function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, transition::ARPrecisionMatrix)
+    matrix[1, 1] += transition.γ
+    for j in 2:first(size(matrix))
+        matrix[j, j] += convert(eltype(transition), huge)
+    end
+    return matrix
 end
 
-function ar_transition(::Type{Multivariate}, order, γ)
-    V    = zeros(typeof(γ), order, order)
-    V[1] = inv(γ)
-    return V
+ar_precision(::Type{Multivariate}, order, γ) = ARPrecisionMatrix(order, γ)
+ar_precision(::Type{Univariate}, order, γ)   = γ
+
+## Allocation-free AR Transition matrix
+
+struct ARTransitionMatrix{T} <: AbstractMatrix{T}
+    order :: Int
+    inv_γ :: T
+
+    function ARTransitionMatrix(order::Int, γ::T) where { T <: Real } 
+        return new{T}(order, inv(γ))
+    end
 end
 
-function ar_transition(::Type{Univariate}, order, γ) 
-    return inv(γ)
+Base.size(transition::ARTransitionMatrix) = (transition.order, transition.order)
+Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? transition.inv_γ : zero(eltype(transition))
+
+Base.eltype(::Type{ <: ARTransitionMatrix{T} }) where T = T
+Base.eltype(::ARTransitionMatrix{T})            where T = T
+
+function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, transition::ARTransitionMatrix)
+    matrix[1] += transition.inv_γ
+    return matrix
 end
+
+ar_transition(::Type{ Multivariate }, order, γ) = ARTransitionMatrix(order, γ)
+ar_transition(::Type{ Univariate }, order, γ)   = inv(γ)
