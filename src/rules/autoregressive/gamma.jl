@@ -1,17 +1,18 @@
-export rule
 
 @rule AR(:γ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, meta::ARMeta) = begin
     order = getorder(meta)
     F     = getvform(meta)
 
-    myx, Vyx = mean(q_y_x), cov(q_y_x)
+    y_x_mean, y_x_cov = mean_cov(q_y_x)
+    θ_mean, θ_cov = mean_cov(q_θ)
 
-    mA, Vθ = as_companion_matrix(mean(q_θ)), cov(q_θ)
-    my, Vy = ar_slice(F, myx, 1:order), ar_slice(F, Vyx, 1:order, 1:order)
-    mx, Vx = ar_slice(F, myx, order + 1:2order), ar_slice(F, Vyx, order+1:2order, order+1:2order)
-    Vyx    = ar_slice(F, Vyx, order+1:2order, 1:order)
+    mA, Vθ = as_companion_matrix(θ_mean), θ_cov
+    my, Vy = ar_slice(F, y_x_mean, 1:order), ar_slice(F, y_x_cov, 1:order, 1:order)
+    mx, Vx = ar_slice(F, y_x_mean, (order + 1):2order), ar_slice(F, y_x_cov, (order + 1):2order, (order + 1):2order)
+    Vyx    = ar_slice(F, y_x_cov, (order + 1):2order, 1:order)
 
-    B = (Vy + my * my')[1, 1] - 2 * (mA * (Vyx + mx * my'))[1, 1] + (mA * (Vx + mx * mx') * mA')[1, 1] + tr(Vθ * (Vx + mx * mx'))
+    C = (Vx + mx * mx')
+    B = (Vy + my * my')[1, 1] - 2 * (mA * (Vyx + mx * my'))[1, 1] + (mA * C * mA')[1, 1] + tr(Vθ * C)
 
-    return GammaShapeRate(3.0 / 2.0, B / 2.0)
+    return GammaShapeRate(convert(eltype(B), 3//2), B / 2)
 end
