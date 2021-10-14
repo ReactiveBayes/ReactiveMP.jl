@@ -73,11 +73,11 @@ Returns `array[ranges...]` in case if T is Multivariate, and `first(array[ranges
 function ar_slice end
 
 function ar_slice(::Type{Multivariate}, array, ranges...)
-    return array[ranges...]
+    return view(array, ranges...)
 end
 
 function ar_slice(::Type{Univariate}, array, ranges...)
-    return first(array[ranges...])
+    return first(view(array, ranges...))
 end
 
 """
@@ -87,18 +87,20 @@ Returns `[ 1.0, 0.0 ... 0.0 ]` with length equal to order in case if T is Multiv
 """
 function ar_unit end
 
-function ar_unit(::Type{Multivariate}, order)
-    c    = zeros(order)
-    c[1] = 1.0
+ar_unit(::Type{ V }, order) where { V <: VariateForm } = ar_unit(Float64, V, order)
+
+function ar_unit(::Type{T}, ::Type{Multivariate}, order) where { T <: Real }
+    c    = zeros(T, order)
+    c[1] = one(T)
     return c
 end
 
-function ar_unit(::Type{Univariate}, order)
-    return 1.0
+function ar_unit(::Type{T}, ::Type{Univariate}, order) where { T <: Real }
+    return one(T)
 end
 
 function ar_precision(::Type{Multivariate}, order, γ)
-    mw               = zeros(order, order)
+    mw               = zeros(typeof(γ), order, order)
     mw[diagind(mw)] .= huge
     mw[1, 1]         = γ
     return mw
@@ -109,8 +111,8 @@ function ar_precision(::Type{Univariate}, order, γ)
 end
 
 function ar_transition(::Type{Multivariate}, order, γ)
-    V = zeros(order, order)
-    V[1] = 1/γ
+    V    = zeros(typeof(γ), order, order)
+    V[1] = inv(γ)
     return V
 end
 
