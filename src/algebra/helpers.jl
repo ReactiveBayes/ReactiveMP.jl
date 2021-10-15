@@ -2,6 +2,7 @@ export diageye
 
 import LinearAlgebra
 import LinearAlgebra: Diagonal
+import LoopVectorization: @turbo
 
 diageye(::Type{T}, n::Int) where { T <: Real } = Matrix{T}(I, n, n)
 diageye(n::Int)                                = diageye(Float64, n)
