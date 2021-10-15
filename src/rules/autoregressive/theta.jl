@@ -10,10 +10,15 @@
 
     mγ = mean(q_γ)
 
-    W = mγ * (Vx + mx * mx')
+    # Equivalent to W = mγ * (Vx + mx * mx')
+    W = rank1update(Vx, mx)
+    W = mul_inplace!(mγ, W)
+
     c = ar_unit(getvform(meta), order)
 
-    ξ = (Vyx + mx * my') * c * mγ
+    # Equivalent to ξ = (Vyx + mx * my') * c * mγ
+    ξ = rank1update(Vyx, mx, my) * c
+    ξ = mul_inplace!(mγ, ξ)
     
     return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ, W)
 end

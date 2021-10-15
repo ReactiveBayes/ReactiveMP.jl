@@ -11,8 +11,11 @@
     mx, Vx = ar_slice(F, y_x_mean, (order + 1):2order), ar_slice(F, y_x_cov, (order + 1):2order, (order + 1):2order)
     Vyx    = ar_slice(F, y_x_cov, (order + 1):2order, 1:order)
 
-    C = (Vx + mx * mx')
-    B = @inbounds (Vy + my * my')[1, 1] - 2 * (mA * (Vyx + mx * my'))[1, 1] + (mA * C * mA')[1, 1] + tr(Vθ * C)
+    C = rank1update(Vx, mx)
+    R = rank1update(Vy, my)
+    L = rank1update(Vyx, mx, my)
+
+    B = first(R) - 2 * first(mA * L) + first(mA * C * mA') + mul_trace(Vθ, C)
 
     return GammaShapeRate(convert(eltype(B), 3//2), B / 2)
 end
