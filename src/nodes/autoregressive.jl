@@ -52,7 +52,6 @@ default_meta(::Type{ AR }) = error("Autoregressive node requires meta flag expli
     # Euivalento to AE = (-logmean(q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
     AE = (-logmean(q_γ) + log2π + mγ * (Vy1 + my1^2 - 2*mθ'*(Vy1x + mx*my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))) / 2
 
-
     # correction
     if is_multivariate(meta)
         AE += entropy(q_y_x)
@@ -104,22 +103,22 @@ struct ARPrecisionMatrix{T} <: AbstractMatrix{T}
     γ     :: T
 end
 
-Base.size(transition::ARPrecisionMatrix) = (transition.order, transition.order)
-Base.getindex(transition::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? transition.γ : ((i === j) ? convert(eltype(transition), huge) : zero(eltype(transition)))
+Base.size(precision::ARPrecisionMatrix) = (precision.order, precision.order)
+Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? precision.γ : ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
 
 Base.eltype(::Type{ <: ARPrecisionMatrix{T} }) where T = T
 Base.eltype(::ARPrecisionMatrix{T})            where T = T
 
-add_precision(matrix::AbstractMatrix, transition::ARPrecisionMatrix) = broadcast(+, matrix, transition)
-add_precision(value::Real, transition::Real)                         = value + transition
+add_precision(matrix::AbstractMatrix, precision::ARPrecisionMatrix) = broadcast(+, matrix, precision)
+add_precision(value::Real, precision::Real)                         = value + precision
 
-add_precision!(matrix::AbstractMatrix, transition::ARPrecisionMatrix) = broadcast!(+, matrix, transition)
-add_precision!(value::Real, transition::Real)                         = value + transition
+add_precision!(matrix::AbstractMatrix, precision::ARPrecisionMatrix) = broadcast!(+, matrix, precision)
+add_precision!(value::Real, precision::Real)                         = value + precision
 
-function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, transition::ARPrecisionMatrix)
-    matrix[1, 1] += transition.γ
+function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, precision::ARPrecisionMatrix)
+    matrix[1, 1] += precision.γ
     for j in 2:first(size(matrix))
-        matrix[j, j] += convert(eltype(transition), huge)
+        matrix[j, j] += convert(eltype(precision), huge)
     end
     return matrix
 end
