@@ -120,8 +120,11 @@ eltype(model::CompiledFlowModel) = promote_type(map(eltype, model.layers)...)
 length(model::CompiledFlowModel) = length(model.layers)
 
 # fetch number of parameters of model
-nr_params(model::FlowModel)         = mapreduce(nr_params, +, model.layers)
-nr_params(model::CompiledFlowModel) = mapreduce(nr_params, +, model.layers)
+nr_params(model::FlowModel)         = nr_params(getlayers(model))
+nr_params(model::CompiledFlowModel) = nr_params(getlayers(model))
+nr_params(layers::T) where { T <: NTuple{N,AbstractLayer} where N} = nr_params(first(layers)) + nr_params(Base.tail(layers))
+nr_params(layers::Tuple{}) = return 0
+
 
 
 # forward pass through the Flow model
