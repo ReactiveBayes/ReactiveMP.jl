@@ -7,10 +7,30 @@ import LoopVectorization: @turbo
 diageye(::Type{T}, n::Int) where { T <: Real } = Matrix{T}(I, n, n)
 diageye(n::Int)                                = diageye(Float64, n)
 
-negate_inplace!(A::AbstractArray) = map!(-, A, A)
+"""
+    negate_inplace!(A)
+
+Returns `-A`, modifying and reusing `A` storage if possible.
+
+See also: [`mul_inplace!`](@ref)
+"""
+function negate_inplace! end
+
+negate_inplace!(A::AbstractArray) = -A
+negate_inplace!(A::Array)         = map!(-, A, A)
 negate_inplace!(A::Real)          = -A
 
-mul_inplace!(alpha, A::AbstractArray) = lmul!(alpha, A)
+"""
+    mul_inplace!(alpha, A)
+
+Returns `alpha * A`, modifying and reusing `A` storage if possible.
+
+See also: [`negate_inplace!`](@ref)
+"""
+function mul_inplace! end
+
+mul_inplace!(alpha, A::AbstractArray) = alpha * A
+mul_inplace!(alpha, A::Array)         = lmul!(alpha, A)
 mul_inplace!(alpha, A::Real)          = alpha * A
 
 """
@@ -19,13 +39,15 @@ mul_inplace!(alpha, A::Real)          = alpha * A
 
 Helper function for A + x * y'. Uses optimised BLAS version for AbstractFloats and fallbacks to a generic implementation in case of differentiation
 """
+function rank1update end
+
 rank1update(A::AbstractMatrix, x::AbstractVector)                    = rank1update(eltype(A), eltype(x), eltype(x), A, x, x)
 rank1update(A::AbstractMatrix, x::AbstractVector, y::AbstractVector) = rank1update(eltype(A), eltype(x), eltype(y), A, x, y)
 
 rank1update(A::Real, x::Real)          = rank1update(A, x, x)
 rank1update(A::Real, x::Real, y::Real) = A + x * y
 
-function rank1update(::Type{ T }, ::Type{ T }, ::Type{T}, A::AbstractMatrix, x::AbstractVector, y::AbstractVector) where { T <: AbstractFloat } 
+function rank1update(::Type{ T }, ::Type{ T }, ::Type{T}, A::Matrix, x::Vector, y::Vector) where { T <: AbstractFloat } 
     return LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
 end
 
