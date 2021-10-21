@@ -6,15 +6,17 @@ mutable struct RandomVariable <: AbstractVariable
     name                :: Symbol
     inputmsgs           :: Vector{LazyObservable{AbstractMessage}} 
     marginal            :: Union{Nothing, MarginalObservable}
+    equality_chain      :: Union{Nothing, EqualityChain}
     pipeline            :: AbstractPipelineStage
     prod_constraint     
     prod_strategy       
     form_constraint     
     form_check_strategy
+    
 end
 
 function randomvar(name::Symbol; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
 function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
@@ -31,6 +33,7 @@ end
 
 degree(randomvar::RandomVariable)              = length(randomvar.inputmsgs)
 name(randomvar::RandomVariable)                = randomvar.name
+equality_chain(randomvar::RandomVariable)      = randomvar.equality_chain
 prod_constraint(randomvar::RandomVariable)     = randomvar.prod_constraint
 prod_strategy(randomvar::RandomVariable)       = randomvar.prod_strategy
 form_constraint(randomvar::RandomVariable)     = randomvar.form_constraint
@@ -45,7 +48,15 @@ marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(ran
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-messageout(randomvar::RandomVariable, index::Int) = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
+
+function messageout(randomvar::RandomVariable, index::Int) 
+    chain = equality_chain(randomvar)
+    if chain === nothing
+        return collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
+    else
+        return collectLatest(AbstractMessage, Any, skipindex(randomvar.inputmsgs, index)) |> map(Message, _ -> messageout(chain, index))
+    end
+end
 
 get_pipeline_stages(randomvar::RandomVariable)        = randomvar.pipeline
 add_pipeline_stage!(randomvar::RandomVariable, stage) = randomvar.pipeline = (randomvar.pipeline + stage)
@@ -58,9 +69,15 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === degree(randomvar) + 1
         push!(randomvar.inputmsgs, messagein)
     else
-        throw_setmessagein!(randomvar, index)
+        error("Inconsistent state in setmessagein! function for random variable $(randomvar). `index` should be equal to `degree(randomvar) + 1 = $(degree(randomvar) + 1)`, $(index) is given instead")
     end
 end
 
-# https://github.com/JuliaLang/julia/issues/29688
-throw_setmessagein!(randomvar, index) = throw("Inconsistent state in setmessagein! function for random variable $(randomvar). `index` should be equal to `degree(randomvar) + 1 = $(degree(randomvar) + 1)`, $(index) is given instead")
+function activate!(model, randomvar::RandomVariable)
+    d = degree(randomvar)
+    if d > 3
+        equality_nodes           = map(i -> EqualityNode(i, nothing, nothing, messagein(randomvar, i)), 1:d) 
+        randomvar.equality_chain = EqualityChain(degree(randomvar), equality_nodes, messages_prod_fn(randomvar))
+    end
+    return nothing
+end
