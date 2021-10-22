@@ -98,6 +98,7 @@ function activate!(model, chain::EqualityChain, inbounds::AbstractVector, outbou
         outbound_mapping = let chain = chain 
             (indices) -> as_message(prod(chain, materialize_right!(chain, indices[1]), materialize_left!(chain, indices[2])))
         end
+
         @inbounds outbounds[index] = as_message_observable(combineLatest((from_left, from_right), PushNew()) |> map(Message, outbound_mapping))
 
         node = @inbounds chain.nodes[index]

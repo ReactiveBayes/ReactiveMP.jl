@@ -49,10 +49,7 @@ marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(ran
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-
-function messageout(randomvar::RandomVariable, index::Int) 
-    return @inbounds randomvar.outputmsgs[index]
-end
+messageout(randomvar::RandomVariable, index::Int) = @inbounds randomvar.outputmsgs[index]
 
 get_pipeline_stages(randomvar::RandomVariable)        = randomvar.pipeline
 add_pipeline_stage!(randomvar::RandomVariable, stage) = randomvar.pipeline = (randomvar.pipeline + stage)
@@ -72,14 +69,15 @@ end
 function activate!(model, randomvar::RandomVariable)
     d = degree(randomvar)
     resize!(randomvar.outputmsgs, d)
-    if d < 3
+    # `5` here is empirical observation, maybe we can come up with better heuristic?
+    if d > 5
+        randomvar.equality_chain = EqualityChain(d, randomvar.inputmsgs, messages_prod_fn(randomvar))
+        activate!(model, randomvar.equality_chain, randomvar.inputmsgs, randomvar.outputmsgs)
+    else
         for index in 1:d
             messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
             @inbounds randomvar.outputmsgs[index] = as_message_observable(messageout)
-        end
-    else
-        randomvar.equality_chain = EqualityChain(d, randomvar.inputmsgs, messages_prod_fn(randomvar))
-        activate!(model, randomvar.equality_chain, randomvar.inputmsgs, randomvar.outputmsgs)
+        end        
     end
     return nothing
 end
