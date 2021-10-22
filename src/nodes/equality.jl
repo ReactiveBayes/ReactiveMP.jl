@@ -88,10 +88,10 @@ function materialize_right!(chain::EqualityChain, node_index::Int)
     end
 end
 
-function activate!(model, chain::EqualityChain, inbounds::AbstractVector, outbounds::AbstractVector)
+function activate!(model, chain::EqualityChain, inputmsgs::AbstractVector, outputmsgs::AbstractVector)
     n = length(chain)
 
-    for index in 1:n
+    @inbounds for index in 1:n
         from_left  = getright(chain, index - 1) # Inbound message comming from left direction  (is a right from `index - 1`)
         from_right = getleft(chain, index + 1)  # Inbound message comming from right direction (is a left from `index + 1`)
 
@@ -99,20 +99,16 @@ function activate!(model, chain::EqualityChain, inbounds::AbstractVector, outbou
             (indices) -> as_message(prod(chain, materialize_right!(chain, indices[1]), materialize_left!(chain, indices[2])))
         end
 
-        @inbounds outbounds[index] = as_message_observable(combineLatest((from_left, from_right), PushNew()) |> map(Message, outbound_mapping))
+        connect!(outputmsgs[index], combineLatest((from_left, from_right), PushNew()) |> map(Message, outbound_mapping))
 
-        node = @inbounds chain.nodes[index]
+        node = chain.nodes[index]
+        node_inbound = inputmsgs[index] |> tap(_ -> invalidate!(chain)) |> share_recent()
 
-        node_inbound = (@inbounds inbounds[index]) |> tap(_ -> invalidate!(chain)) |> share()
-
-        node_left = combineLatest((getleft(chain, index + 1), node_inbound), PushNew()) |> schedule_on(global_reactive_scheduler(getoptions(model)))
-        node_left = node_left |> map_to(index) |> share()
-
+        node_left  = combineLatest((getleft(chain, index + 1), node_inbound), PushNew()) |> schedule_on(global_reactive_scheduler(getoptions(model)))
         node_right = combineLatest((getright(chain, index - 1), node_inbound), PushNew()) |> schedule_on(global_reactive_scheduler(getoptions(model)))
-        node_right = node_right |> map_to(index) |> share()
 
-        setleft!(node, node_left)
-        setright!(node, node_right)
+        setleft!(node, node_left |> map_to(index) |> share_recent())
+        setright!(node, node_right |> map_to(index) |> share_recent())
     end
 
     return nothing

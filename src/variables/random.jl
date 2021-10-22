@@ -69,6 +69,11 @@ end
 function activate!(model, randomvar::RandomVariable)
     d = degree(randomvar)
     resize!(randomvar.outputmsgs, d)
+
+    for i in 1:d
+        @inbounds randomvar.outputmsgs[i] = MessageObservable(Message)
+    end
+
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     if d > 5
         randomvar.equality_chain = EqualityChain(d, randomvar.inputmsgs, messages_prod_fn(randomvar))
@@ -76,7 +81,7 @@ function activate!(model, randomvar::RandomVariable)
     else
         for index in 1:d
             messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
-            @inbounds randomvar.outputmsgs[index] = as_message_observable(messageout)
+            @inbounds connect!(randomvar.outputmsgs[index], messageout)
         end        
     end
     return nothing
