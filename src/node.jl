@@ -189,12 +189,12 @@ See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@re
 mutable struct NodeInterface
     name               :: Symbol
     local_constraint   :: AbstractInterfaceLocalConstraint   
-    m_out              :: LazyObservable{AbstractMessage}
-    m_in               :: LazyObservable{AbstractMessage}
+    m_out              :: MessageObservable{AbstractMessage}
+    m_in               :: LazyObservable{Message}
     connected_variable :: Union{Nothing, AbstractVariable}
     connected_index    :: Int
 
-    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, lazy(AbstractMessage), lazy(AbstractMessage), nothing, 0)
+    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, MessageObservable(AbstractMessage), lazy(Message), nothing, 0)
 end
 
 Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ", ", local_constraint(interface), ")"))
@@ -635,7 +635,9 @@ function activate!(model, factornode::AbstractFactorNode)
         vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
-        set!(messageout(interface), vmessageout |> share_recent())
+        # set!(messageout(interface), vmessageout |> share_recent())
+        # set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
+        connect!(messageout(interface), vmessageout)
         set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
     end
 end

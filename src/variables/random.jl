@@ -4,7 +4,7 @@ export RandomVariable, randomvar
 
 mutable struct RandomVariable <: AbstractVariable
     name                :: Symbol
-    inputmsgs           :: Vector{LazyObservable{AbstractMessage}} 
+    inputmsgs           :: Vector{MessageObservable{AbstractMessage}} 
     outputmsgs          :: Vector{MessageObservable{Message}}
     marginal            :: Union{Nothing, MarginalObservable}
     equality_chain      :: Union{Nothing, EqualityChain}
@@ -17,7 +17,7 @@ mutable struct RandomVariable <: AbstractVariable
 end
 
 function randomvar(name::Symbol; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), nothing, nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+    return RandomVariable(name, Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), nothing, nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
 function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
