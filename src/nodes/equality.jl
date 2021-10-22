@@ -10,12 +10,12 @@ mutable struct EqualityNode
     index        :: Int
     cache_left   :: Union{Nothing, Message}
     cache_right  :: Union{Nothing, Message}
-    left         :: LazyObservable{Int}
-    right        :: LazyObservable{Int}
+    left         :: LazyObservable{Missing}
+    right        :: LazyObservable{Missing}
     inbound      :: MessageObservable{AbstractMessage}
 end
 
-EqualityNode(index::Int, inbound::MessageObservable{AbstractMessage}) = EqualityNode(index, nothing, nothing, lazy(Int), lazy(Int), inbound)
+EqualityNode(index::Int, inbound::MessageObservable{AbstractMessage}) = EqualityNode(index, nothing, nothing, lazy(Missing), lazy(Missing), inbound)
 
 getindex(node::EqualityNode)   = node.index
 getleft(node::EqualityNode)    = node.left
@@ -53,8 +53,8 @@ prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
 
 invalidate!(chain::EqualityChain) = foreach(invalidate!, chain.nodes)
 
-getleft(chain::EqualityChain, node_index::Int)  = (1 < node_index <= length(chain)) ? (@inbounds getleft(chain.nodes[node_index])) : (of(node_index))
-getright(chain::EqualityChain, node_index::Int) = (1 <= node_index < length(chain)) ? (@inbounds getright(chain.nodes[node_index])) : (of(node_index))
+getleft(chain::EqualityChain, node_index::Int)  = (1 < node_index <= length(chain)) ? (@inbounds getleft(chain.nodes[node_index])) : (of(missing))
+getright(chain::EqualityChain, node_index::Int) = (1 <= node_index < length(chain)) ? (@inbounds getright(chain.nodes[node_index])) : (of(missing))
 
 function materialize_left!(chain::EqualityChain, node_index::Int)
     if (1 < node_index <= length(chain))
@@ -95,20 +95,25 @@ function activate!(model, chain::EqualityChain, inputmsgs::AbstractVector, outpu
         from_left  = getright(chain, index - 1) # Inbound message comming from left direction  (is a right from `index - 1`)
         from_right = getleft(chain, index + 1)  # Inbound message comming from right direction (is a left from `index + 1`)
 
-        outbound_mapping = let chain = chain 
-            (indices) -> as_message(prod(chain, materialize_right!(chain, indices[1]), materialize_left!(chain, indices[2])))
+        outbound_mapping = let chain = chain, index = index
+            (_) -> as_message(prod(chain, materialize_right!(chain, index - 1), materialize_left!(chain, index + 1)))
         end
 
         connect!(outputmsgs[index], combineLatest((from_left, from_right), PushNew()) |> map(Message, outbound_mapping))
 
         node = chain.nodes[index]
-        node_inbound = inputmsgs[index] |> tap(_ -> invalidate!(chain)) |> share_recent()
+
+        invalidate_callback = let chain = chain
+            (_) -> invalidate!(chain)
+        end
+
+        node_inbound = inputmsgs[index] |> tap(invalidate_callback) |> share_recent()
 
         node_left  = combineLatest((getleft(chain, index + 1), node_inbound), PushNew()) |> schedule_on(global_reactive_scheduler(getoptions(model)))
         node_right = combineLatest((getright(chain, index - 1), node_inbound), PushNew()) |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
-        setleft!(node, node_left |> map_to(index) |> share_recent())
-        setright!(node, node_right |> map_to(index) |> share_recent())
+        setleft!(node, node_left |> map_to(missing) |> share_recent())
+        setright!(node, node_right |> map_to(missing) |> share_recent())
     end
 
     return nothing
