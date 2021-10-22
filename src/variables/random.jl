@@ -72,14 +72,14 @@ end
 function activate!(model, randomvar::RandomVariable)
     d = degree(randomvar)
     resize!(randomvar.outputmsgs, d)
-    for index in 1:d
-        messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
-        @inbounds randomvar.outputmsgs[index] = as_message_observable(messageout)
+    if d < 3
+        for index in 1:d
+            messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
+            @inbounds randomvar.outputmsgs[index] = as_message_observable(messageout)
+        end
+    else
+        randomvar.equality_chain = EqualityChain(d, randomvar.inputmsgs, messages_prod_fn(randomvar))
+        activate!(model, randomvar.equality_chain, randomvar.inputmsgs, randomvar.outputmsgs)
     end
-    # d = degree(randomvar)
-    # if d > 3
-    #     equality_nodes           = map(i -> EqualityNode(i, nothing, nothing, messagein(randomvar, i)), 1:d) 
-    #     randomvar.equality_chain = EqualityChain(degree(randomvar), equality_nodes, messages_prod_fn(randomvar))
-    # end
     return nothing
 end

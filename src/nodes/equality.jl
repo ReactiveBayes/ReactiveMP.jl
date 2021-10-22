@@ -7,24 +7,33 @@ import Base: length
 ## Equality node
 
 mutable struct EqualityNode 
-    index   :: Int
-    left    :: Union{Nothing, Message}
-    right   :: Union{Nothing, Message}
-    inbound :: Any
+    index        :: Int
+    cache_left   :: Union{Nothing, Message}
+    cache_right  :: Union{Nothing, Message}
+    left         :: LazyObservable{Int}
+    right        :: LazyObservable{Int}
+    inbound      :: MessageObservable{AbstractMessage}
 end
 
-getindex(node::EqualityNode) = node.index
+EqualityNode(index::Int, inbound::MessageObservable{AbstractMessage}) = EqualityNode(index, nothing, nothing, lazy(Int), lazy(Int), inbound)
 
+getindex(node::EqualityNode)   = node.index
 getleft(node::EqualityNode)    = node.left
 getright(node::EqualityNode)   = node.right
 getinbound(node::EqualityNode) = node.inbound
 
-setleft!(node::EqualityNode, message::Message)  = node.left  = message
-setright!(node::EqualityNode, message::Message) = node.right = message
+setleft!(node::EqualityNode, left)   = set!(node.left, left)
+setright!(node::EqualityNode, right) = set!(node.right, right)
+
+get_cache_left(node::EqualityNode)  = node.cache_left
+get_cache_right(node::EqualityNode) = node.cache_right
+
+set_cache_left!(node::EqualityNode, cache)  = node.cache_left = cache
+set_cache_right!(node::EqualityNode, cache) = node.cache_right = cache
 
 function invalidate!(node::EqualityNode)
-    node.left  = nothing
-    node.right = nothing
+    node.cache_left  = nothing
+    node.cache_right = nothing
     return nothing
 end
 
@@ -36,81 +45,74 @@ struct EqualityChain{F}
     prod_fn :: F
 end
 
+EqualityChain(length::Int, inbounds::Vector{MessageObservable{AbstractMessage}}, prod_fn::F) where { F } = EqualityChain(length, map(i -> EqualityNode(i[1], i[2]), enumerate(inbounds)), prod_fn)
+
 Base.length(chain::EqualityChain) = chain.length
 
-function prod(chain::EqualityChain, left, right) 
-    @show left, right
-    chain.prod_fn((left, right))
-end
+prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
 
 invalidate!(chain::EqualityChain) = foreach(invalidate!, chain.nodes)
 
-"""
-    getleft(chain::EqualityChain, node_index::Int)
+getleft(chain::EqualityChain, node_index::Int)  = (1 < node_index <= length(chain)) ? (@inbounds getleft(chain.nodes[node_index])) : (of(node_index))
+getright(chain::EqualityChain, node_index::Int) = (1 <= node_index < length(chain)) ? (@inbounds getright(chain.nodes[node_index])) : (of(node_index))
 
-Returns (and materializes) the left outbound message from an equality node in the `chain` with a given `node_index`. 
-Returns missing message in case if `node_index` is not in range.
-
-See also: [`getright`](@ref), [`getoutbound`](@ref)
-"""
-function getleft(chain::EqualityChain, node_index::Int)
-    if 1 < node_index <= length(chain)
-        # First we check if cached value exists
+function materialize_left!(chain::EqualityChain, node_index::Int)
+    if (1 < node_index <= length(chain))
         node   = @inbounds chain.nodes[node_index]
-        cached = getleft(node)
-        if cached !== nothing
+        cached = get_cache_left(node)
+        if cached !== nothing 
             return cached
         end
-        # Otherwise recompute and save cache
-        nextleft = getleft(chain, node_index + 1)
-        inbound  = getrecent(getinbound(node))
-        result   = prod(chain, inbound, nextleft)
-        setleft!(node, result)
+        # Compute cache and save
+        result = prod(chain, as_message(getrecent(getinbound(node))), materialize_left!(chain, node_index + 1))
+        set_cache_left!(node, result)
         return result
-    else
-        return Message(missing, true, false)
+    else 
+        return Message(missing, true, true)
     end
 end
 
-"""
-    getright(chain::EqualityChain, node_index::Int)
-
-Returns (and materializes) the right outbound message from an equality node in the `chain` with a given `node_index`. 
-Returns missing message in case if `node_index` is not in range.
-
-See also: [`getleft`](@ref), [`getoutbound`](@ref)
-"""
-function getright(chain::EqualityChain, node_index::Int)
-    if 1 <= node_index < length(chain)
-        # First we check if cached value exists
+function materialize_right!(chain::EqualityChain, node_index::Int)
+    if (1 <= node_index < length(chain))
         node   = @inbounds chain.nodes[node_index]
-        cached = getright(node)
-        if cached !== nothing
+        cached = get_cache_right(node)
+        if cached !== nothing 
             return cached
         end
-        # Otherwise recompute and save cache
-        prevright = getright(chain, node_index - 1)
-        inbound   = getrecent(getinbound(node))
-    
-        result    = prod(chain, prevright, inbound)
-        setright!(node, result)
-        
+        # Compute cache and save
+        result = prod(chain, as_message(getrecent(getinbound(node))), materialize_right!(chain, node_index - 1))
+        set_cache_right!(node, result)
         return result
-    else
-        return Message(missing, true, false)
+    else 
+        return Message(missing, true, true)
     end
 end
 
-"""
-    getoutbound(chain::EqualityChain, node_index::Int)
+function activate!(model, chain::EqualityChain, inbounds::AbstractVector, outbounds::AbstractVector)
+    n = length(chain)
 
-Returns the outbound message from an equality node in the `chain` with a given `node_index`. 
+    for index in 1:n
+        from_left  = getright(chain, index - 1) # Inbound message comming from left direction  (is a right from `index - 1`)
+        from_right = getleft(chain, index + 1)  # Inbound message comming from right direction (is a left from `index + 1`)
 
-See also: [`getleft`](@ref), [`getright`](@ref)
-"""
-function messageout(chain::EqualityChain, node_index::Int)
-    return prod(chain, getleft(chain, node_index), getright(chain, node_index))
+        outbound_mapping = let chain = chain 
+            (indices) -> as_message(prod(chain, materialize_right!(chain, indices[1]), materialize_left!(chain, indices[2])))
+        end
+        @inbounds outbounds[index] = as_message_observable(combineLatest((from_left, from_right), PushNew()) |> map(Message, outbound_mapping))
+
+        node = @inbounds chain.nodes[index]
+
+        node_inbound = (@inbounds inbounds[index]) |> tap(_ -> invalidate!(chain)) |> share()
+
+        node_left = combineLatest((getleft(chain, index + 1), node_inbound), PushNew()) |> schedule_on(global_reactive_scheduler(getoptions(model)))
+        node_left = node_left |> map_to(index) |> share()
+
+        node_right = combineLatest((getright(chain, index - 1), node_inbound), PushNew()) |> schedule_on(global_reactive_scheduler(getoptions(model)))
+        node_right = node_right |> map_to(index) |> share()
+
+        setleft!(node, node_left)
+        setright!(node, node_right)
+    end
+
+    return nothing
 end
-
-
-
