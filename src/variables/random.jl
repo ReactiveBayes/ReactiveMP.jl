@@ -5,6 +5,7 @@ export RandomVariable, randomvar
 mutable struct RandomVariable <: AbstractVariable
     name                :: Symbol
     inputmsgs           :: Vector{LazyObservable{AbstractMessage}} 
+    outputmsgs          :: Vector{MessageObservable{Message}}
     marginal            :: Union{Nothing, MarginalObservable}
     equality_chain      :: Union{Nothing, EqualityChain}
     pipeline            :: AbstractPipelineStage
@@ -16,7 +17,7 @@ mutable struct RandomVariable <: AbstractVariable
 end
 
 function randomvar(name::Symbol; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), nothing, nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+    return RandomVariable(name, Vector{LazyObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), nothing, nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
 function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
@@ -50,12 +51,7 @@ getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
 
 function messageout(randomvar::RandomVariable, index::Int) 
-    chain = equality_chain(randomvar)
-    if chain === nothing
-        return collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
-    else
-        return collectLatest(AbstractMessage, Any, skipindex(randomvar.inputmsgs, index)) |> map(Message, _ -> messageout(chain, index))
-    end
+    return @inbounds randomvar.outputmsgs[index]
 end
 
 get_pipeline_stages(randomvar::RandomVariable)        = randomvar.pipeline
@@ -75,9 +71,15 @@ end
 
 function activate!(model, randomvar::RandomVariable)
     d = degree(randomvar)
-    if d > 3
-        equality_nodes           = map(i -> EqualityNode(i, nothing, nothing, messagein(randomvar, i)), 1:d) 
-        randomvar.equality_chain = EqualityChain(degree(randomvar), equality_nodes, messages_prod_fn(randomvar))
+    resize!(randomvar.outputmsgs, d)
+    for index in 1:d
+        messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
+        @inbounds randomvar.outputmsgs[index] = as_message_observable(messageout)
     end
+    # d = degree(randomvar)
+    # if d > 3
+    #     equality_nodes           = map(i -> EqualityNode(i, nothing, nothing, messagein(randomvar, i)), 1:d) 
+    #     randomvar.equality_chain = EqualityChain(degree(randomvar), equality_nodes, messages_prod_fn(randomvar))
+    # end
     return nothing
 end

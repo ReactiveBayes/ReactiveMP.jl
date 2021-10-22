@@ -91,8 +91,10 @@ function getright(chain::EqualityChain, node_index::Int)
         # Otherwise recompute and save cache
         prevright = getright(chain, node_index - 1)
         inbound   = getrecent(getinbound(node))
+    
         result    = prod(chain, prevright, inbound)
         setright!(node, result)
+        
         return result
     else
         return Message(missing, true, false)
