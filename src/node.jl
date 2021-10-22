@@ -616,29 +616,34 @@ function activate!(model, factornode::AbstractFactorNode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
     for (iindex, interface) in enumerate(interfaces(factornode))
-        message_dependencies, marginal_dependencies = functional_dependencies(node_pipeline_dependencies, factornode, iindex)
+        cvariable = connectedvar(interface)
+        if cvariable !== nothing
+            message_dependencies, marginal_dependencies = functional_dependencies(node_pipeline_dependencies, factornode, iindex)
 
-        msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-        marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+            msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
+            marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
-        vtag        = tag(interface)
-        vconstraint = local_constraint(interface)
-        
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
-        vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
+            vtag        = tag(interface)
+            vconstraint = local_constraint(interface)
+            
+            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
+            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-        mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
-        mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
+            mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+            mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
 
-        vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
-        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
-        vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
+            vmessageout = vmessageout |> map(AbstractMessage, mapping)
+            vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+            vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
-        # set!(messageout(interface), vmessageout |> share_recent())
-        # set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
-        connect!(messageout(interface), vmessageout)
-        set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
+            # set!(messageout(interface), vmessageout |> share_recent())
+            # set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
+            connect!(messageout(interface), vmessageout)
+            set!(messagein(interface), messageout(cvariable, connectedvarindex(interface)))
+        else
+            error("Empty variable on interface $(interface) of node $(factornode)")
+        end
     end
 end
 
