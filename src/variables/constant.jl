@@ -1,34 +1,46 @@
 export ConstVariable, constvar, getconst, isconnected
 
 import Rocket: SingleObservable, AsapScheduler
-import Base: getindex
+import Base: getindex, show
 
 mutable struct ConstVariable{C, M} <: AbstractVariable
-    name       :: Symbol
-    constant   :: C
-    messageout :: M
-    nconnected :: Int
+    name            :: Symbol
+    collection_type :: AbstractVariableCollectionType
+    constant        :: C
+    messageout      :: M
+    nconnected      :: Int
 end
 
-constvar(name::Symbol, constval)                 = ConstVariable(name, constval, of(Message(constval, true, false)), 0)
-constvar(name::Symbol, constval::Real)           = constvar(name, PointMass(constval))
-constvar(name::Symbol, constval::AbstractVector) = constvar(name, PointMass(constval))
-constvar(name::Symbol, constval::AbstractMatrix) = constvar(name, PointMass(constval))
+Base.show(io::IO, constvar::ConstVariable) = print(io, "ConstVariable(", indexed_name(constvar), ")")
+
+constvar(name::Symbol, constval, collection_type::AbstractVariableCollectionType = VariableIndividual())                 = ConstVariable(name, collection_type, constval, of(Message(constval, true, false)), 0)
+constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollectionType = VariableIndividual())           = constvar(name, PointMass(constval), collection_type)
+constvar(name::Symbol, constval::AbstractVector, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
+constvar(name::Symbol, constval::AbstractMatrix, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 
 function constvar(name::Symbol, fn::Function, dims::Tuple)
     return constvar(name, fn, dims...)
 end
 
-function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
-    vars = Array{ConstVariable}(undef, dims)
-    for i in CartesianIndices(axes(vars))
-        @inbounds vars[i] = constvar(Symbol(name, :_, Symbol(join(i.I, :_))), fn(convert(Tuple, i)))
+function constvar(name::Symbol, fn::Function, length::Int)
+    vars = Vector{ConstVariable}(undef, length)
+    @inbounds for i in 1:length
+        vars[i] = constvar(name, fn(i), VariableVector(i))
     end
     return vars
 end
 
-degree(constvar::ConstVariable)     = nconnected(constvar)
-name(constvar::ConstVariable)       = constvar.name
+function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
+    vars = Array{ConstVariable}(undef, dims)
+    @inbounds for i in CartesianIndices(axes(vars))
+        vars[i] = constvar(name, fn(convert(Tuple, i)), VariableArray(i))
+    end
+    return vars
+end
+
+degree(constvar::ConstVariable)          = nconnected(constvar)
+name(constvar::ConstVariable)            = constvar.name
+collection_type(constvar::ConstVariable) = constvar.collection_type
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 

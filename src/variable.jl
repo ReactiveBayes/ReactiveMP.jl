@@ -8,6 +8,26 @@ using Rocket
 
 abstract type AbstractVariable end
 
+## Variable collection type
+
+abstract type AbstractVariableCollectionType end
+
+struct VariableIndividual <: AbstractVariableCollectionType end
+
+struct VariableVector <: AbstractVariableCollectionType
+    index :: Int
+end
+
+struct VariableArray <: AbstractVariableCollectionType
+    index :: CartesianIndex
+end
+
+indexed_name(::VariableIndividual, name::Symbol) = string(name)
+indexed_name(seq::VariableVector, name::Symbol)  = string(name, "_", seq.index)
+indexed_name(array::VariableArray, name::Symbol) = string(name, "_", join(array.index.I, "_"))
+
+indexed_name(randomvar::AbstractVariable) = indexed_name(collection_type(randomvar), name(randomvar))
+
 ## Messages to Marginal product strategies
 
 struct FoldLeftProdStrategy end

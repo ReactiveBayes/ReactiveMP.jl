@@ -1,24 +1,37 @@
-export DataVariable, datavar, isconnected, update!
+export DataVariable, datavar, update!
+
+import Base: show
 
 mutable struct DataVariable{D, S} <: AbstractVariable
-    name       :: Symbol
-    messageout :: S
-    nconnected :: Int
-    marginal   :: Union{Nothing, MarginalObservable}
+    name            :: Symbol
+    collection_type :: AbstractVariableCollectionType
+    messageout      :: S
+    nconnected      :: Int
+    marginal        :: Union{Nothing, MarginalObservable}
 end
 
-function datavar(name::Symbol, ::Type{D}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return DataVariable{D, S}(name, subject, 0, nothing)
+Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
+
+function datavar(name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual(); subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
+    return DataVariable{D, S}(name, collection_type, subject, 0, nothing)
 end
 
 function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     return datavar(name, D, dims...; subject = subject)
 end
 
+function datavar(name::Symbol, ::Type{D}, length::Int; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
+    vars = Vector{DataVariable{D, S}}(undef, length)
+    @inbounds for i in 1:length
+        vars[i] = datavar(name, D, VariableVector(i); subject = similar(subject))
+    end
+    return vars
+end
+
 function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     vars = Array{DataVariable{D, S}}(undef, dims)
-    for i in CartesianIndices(axes(vars))
-        @inbounds vars[i] = datavar(Symbol(name, :_, Symbol(join(i.I, :_))), D; subject = similar(subject))
+    @inbounds for i in CartesianIndices(axes(vars))
+        vars[i] = datavar(name, D, VariableArray(i); subject = similar(subject))
     end
     return vars
 end
@@ -26,11 +39,11 @@ end
 Base.eltype(::Type{ <: DataVariable{D} }) where D = D
 Base.eltype(::DataVariable{D})            where D = D
 
-degree(datavar::DataVariable)    = nconnected(datavar)
-name(datavar::DataVariable)      = datavar.name
-
-isconnected(datavar::DataVariable) = datavar.nconnected !== 0
-nconnected(datavar::DataVariable)  = datavar.nconnected
+degree(datavar::DataVariable)          = nconnected(datavar)
+name(datavar::DataVariable)            = datavar.name
+collection_type(datavar::DataVariable) = datavar.collection_type
+isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
+nconnected(datavar::DataVariable)      = datavar.nconnected
 
 getlastindex(::DataVariable) = 1
 
