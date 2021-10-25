@@ -339,3 +339,15 @@ end
 deep_eltype(::Type{ T })  where { T <: Number } = T
 deep_eltype(::Type{ T })  where T               = deep_eltype(eltype(T))
 deep_eltype(::T)          where T               = deep_eltype(T)    
+
+##
+
+# See: https://github.com/JuliaLang/julia/issues/42795
+function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{AbstractUnitRange{Int}}}, x)
+    B = V.parent
+    I0 = V.indices[1]
+    l0 = length(I0)
+    l0 == 0 && return V
+    Base.fill_chunks!(B.chunks, Bool(x), first(I0), l0)
+    return V
+end

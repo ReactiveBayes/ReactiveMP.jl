@@ -76,8 +76,8 @@ function activate!(model, randomvar::RandomVariable)
 
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     if d > 5
-        randomvar.equality_chain = EqualityChain(d, randomvar.inputmsgs, messages_prod_fn(randomvar))
-        activate!(model, randomvar.equality_chain, randomvar.inputmsgs, randomvar.outputmsgs)
+        randomvar.equality_chain = EqualityChain(randomvar.inputmsgs, messages_prod_fn(randomvar))
+        activate!(model, randomvar.equality_chain, randomvar.outputmsgs)
     else
         for index in 1:d
             messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
