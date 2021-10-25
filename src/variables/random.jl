@@ -5,19 +5,18 @@ export RandomVariable, randomvar
 mutable struct RandomVariable <: AbstractVariable
     name                :: Symbol
     inputmsgs           :: Vector{MessageObservable{AbstractMessage}} 
-    outputmsgs          :: Vector{MessageObservable{Message}}
+    outputmsgs          :: Union{Nothing, Vector{MessageObservable{Message}}}
+    cache               :: Union{Nothing, EqualityChain}
     marginal            :: Union{Nothing, MarginalObservable}
-    equality_chain      :: Union{Nothing, EqualityChain}
     pipeline            :: AbstractPipelineStage
     prod_constraint     
     prod_strategy       
     form_constraint     
     form_check_strategy
-    
 end
 
 function randomvar(name::Symbol; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), nothing, nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+    return RandomVariable(name, Vector{MessageObservable{AbstractMessage}}(), nothing, nothing, nothing, pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
 function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
@@ -49,7 +48,15 @@ marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(ran
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
 messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.inputmsgs[index]
-messageout(randomvar::RandomVariable, index::Int) = @inbounds randomvar.outputmsgs[index]
+
+function messageout(randomvar::RandomVariable, index::Int) 
+    if randomvar.outputmsgs === nothing
+        initialize_output_messages!(randomvar)
+        return messageout(randomvar, index)
+    else
+        return @inbounds randomvar.outputmsgs[index]
+    end
+end
 
 get_pipeline_stages(randomvar::RandomVariable)        = randomvar.pipeline
 add_pipeline_stage!(randomvar::RandomVariable, stage) = randomvar.pipeline = (randomvar.pipeline + stage)
@@ -67,25 +74,40 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
 end
 
 function activate!(model, randomvar::RandomVariable)
-    d = degree(randomvar)
-    resize!(randomvar.outputmsgs, d)
-
-    for i in 1:d
-        @inbounds randomvar.outputmsgs[i] = MessageObservable(Message)
-    end
-
     # `5` here is empirical observation, maybe we can come up with better heuristic?
-    if d > 5
-        chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
-        chain_prod_fn  = messages_prod_fn(randomvar)
-        chain          = EqualityChain(randomvar.inputmsgs, chain_pipeline, chain_prod_fn)
-        initialize!(chain, randomvar.outputmsgs)
-        randomvar.equality_chain = chain
-    else
-        for index in 1:d
-            messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
-            @inbounds connect!(randomvar.outputmsgs[index], messageout)
-        end        
+    if degree(randomvar) > 5
+        chain_pipeline  = schedule_on(global_reactive_scheduler(getoptions(model)))
+        chain_prod_fn   = messages_prod_fn(randomvar)
+        randomvar.cache = EqualityChain(randomvar.inputmsgs, chain_pipeline, chain_prod_fn)
     end
+    return nothing
+end
+
+initialize_output_messages!(randomvar::RandomVariable) = initialize_output_messages!(randomvar.cache, randomvar)
+
+# Generic fallback for variables with small number of connected nodes, somewhere <= 5
+# We do not create equality chain in this cases, but simply do eager product
+function initialize_output_messages!(::Nothing, randomvar::RandomVariable)
+    d          = degree(randomvar)
+    inputmsgs  = randomvar.inputmsgs
+    outputmsgs = Vector{MessageObservable{Message}}(undef, d)
+    prod_fn    = messages_prod_fn(randomvar)
+
+    @inbounds for i in 1:d
+        outputmsgs[i] = MessageObservable(Message)
+        outputmsg     = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
+        connect!(outputmsgs[i], outputmsg)
+    end
+
+    randomvar.outputmsgs = outputmsgs
+
+    return nothing
+end
+
+# Equality chain initialisation for variables with large number of connected nodes, somewhere > 5
+# In this cases it is more efficient to create an equality chain structure, but it does allocate way more memory
+function initialize_output_messages!(chain::EqualityChain, randomvar::RandomVariable)
+    randomvar.outputmsgs = map(_ -> MessageObservable(Message), 1:degree(randomvar))
+    initialize!(chain, randomvar.outputmsgs)
     return nothing
 end
