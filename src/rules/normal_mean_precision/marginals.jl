@@ -11,7 +11,7 @@ end
     xi_out, W_out = weightedmean_precision(m_out)
     xi_μ, W_μ     = weightedmean_precision(m_μ)
 
-    W_bar = mean(q_τ)
+    W_bar = mean(m_τ)
 
     W  = [ W_out + W_bar -W_bar; -W_bar W_μ + W_bar ]
     xi = [ xi_out; xi_μ ]

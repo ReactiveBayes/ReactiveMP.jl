@@ -12,7 +12,7 @@ end
     xi_y, W_y  = weightedmean_precision(m_out)
     xi_m, W_m  = weightedmean_precision(m_μ)
 
-    W_bar = mean(q_Λ)
+    W_bar = mean(m_Λ)
     
     Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
     ξ  = [ xi_y; xi_m ]

@@ -361,6 +361,9 @@ abstract type AbstractFactorNode end
 isstochastic(factornode::AbstractFactorNode)    = isstochastic(sdtype(factornode))
 isdeterministic(factornode::AbstractFactorNode) = isdeterministic(sdtype(factornode))
 
+interfaceindices(factornode::AbstractFactorNode, iname::Symbol)                     = interfaceindices(factornode, (iname, ))
+interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(factornode, iname), inames)
+
 ## Generic Factor Node
 
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
@@ -416,9 +419,6 @@ function interfaceindex(factornode::FactorNode, iname::Symbol)
     iindex = findfirst(interface -> name(interface) === iname, interfaces(factornode))
     return iindex !== nothing ? iindex : error("Unknown interface ':$(iname)' for $(functionalform(factornode)) node")
 end
-
-interfaceindices(factornode::FactorNode, iname::Symbol) = (interfaceindex(factornode, iname), )
-interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(factornode, iname), inames)
 
 function clusterindex(factornode::FactorNode, vars::NTuple{N, Int}) where N 
     cindex = findfirst(cluster -> all(v -> v ∈ cluster, vars), factorisation(factornode))
@@ -685,6 +685,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         return as_marginal_observable(vmarginal, skip_strategy)
     else
         cmarginal = MarginalObservable()
+        setstream!(localmarginal, cmarginal)
 
         message_dependencies  = tuple(getclusterinterfaces(factornode, clusterindex)...)
         marginal_dependencies = tuple(TupleTools.deleteat(localmarginals(factornode), clusterindex)...)
@@ -701,8 +702,6 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
-
-        setstream!(localmarginal, cmarginal)
 
         return as_marginal_observable(cmarginal, skip_strategy)
     end
