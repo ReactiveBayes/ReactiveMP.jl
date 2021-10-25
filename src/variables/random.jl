@@ -76,8 +76,11 @@ function activate!(model, randomvar::RandomVariable)
 
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     if d > 5
-        randomvar.equality_chain = EqualityChain(randomvar.inputmsgs, messages_prod_fn(randomvar))
-        activate!(model, randomvar.equality_chain, randomvar.outputmsgs)
+        chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
+        chain_prod_fn  = messages_prod_fn(randomvar)
+        chain          = EqualityChain(randomvar.inputmsgs, chain_pipeline, chain_prod_fn)
+        initialize!(chain, randomvar.outputmsgs)
+        randomvar.equality_chain = chain
     else
         for index in 1:d
             messageout = collectLatest(AbstractMessage, Message, skipindex(randomvar.inputmsgs, index), messages_prod_fn(randomvar))
