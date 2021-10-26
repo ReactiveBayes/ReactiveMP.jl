@@ -65,16 +65,8 @@ add_pipeline_stage!(variable::AbstractVariable, stage) = error("Its not possible
 # Helper functions
 # Getters
 
-getmarginal(variable::AbstractVariable) = getmarginal(variable, SkipInitial())
-
-function getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy)
-    vmarginal = _getmarginal(variable)
-    if vmarginal === nothing
-        vmarginal = as_marginal_observable(_makemarginal(variable))
-        _setmarginal!(variable, vmarginal)
-    end
-    return as_marginal_observable(vmarginal, skip_strategy)
-end
+getmarginal(variable::AbstractVariable)                                      = getmarginal(variable, SkipInitial())
+getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(_getmarginal(variable), skip_strategy)
 
 getmarginals(variables::AbstractArray{ <: AbstractVariable })                                      = getmarginals(variables, SkipInitial())
 getmarginals(variables::AbstractArray{ <: AbstractVariable }, skip_strategy::MarginalSkipStrategy) = collectLatest(map(v -> getmarginal(v, skip_strategy), variables))

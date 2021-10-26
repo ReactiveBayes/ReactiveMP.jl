@@ -190,11 +190,10 @@ mutable struct NodeInterface
     name               :: Symbol
     local_constraint   :: AbstractInterfaceLocalConstraint   
     m_out              :: MessageObservable{AbstractMessage}
-    m_in               :: LazyObservable{Message}
     connected_variable :: Union{Nothing, AbstractVariable}
     connected_index    :: Int
 
-    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, MessageObservable(AbstractMessage), lazy(Message), nothing, 0)
+    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, MessageObservable(AbstractMessage), nothing, 0)
 end
 
 Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ", ", local_constraint(interface), ")"))
@@ -244,7 +243,10 @@ Returns an inbound messages stream from the given interface.
 
 See also: [`NodeInterface`](@ref), [`messageout`](@ref)
 """
-messagein(interface::NodeInterface)  = interface.m_in
+messagein(interface::NodeInterface) = messagein(interface, connectedvar(interface), connectedvarindex(interface))
+
+messagein(interface::NodeInterface, variable::AbstractVariable, index::Int) = messageout(variable, index)
+messagein(interface::NodeInterface, variable::Nothing, index::Int)          = error("`messagein` is not defined for interface $(interface). Interface has no connected variable.")
 
 """
     connectvariable!(interface, variable, index)
@@ -327,7 +329,7 @@ See also: [`FactorNodeLocalMarginals`](@ref)
 mutable struct FactorNodeLocalMarginal 
     index  :: Int
     name   :: Symbol
-    stream :: Union{Nothing, MarginalObservable}
+    stream :: Union{Nothing, AbstractSubscribable{<:Marginal}}
 
     FactorNodeLocalMarginal(index::Int, name::Symbol) = new(index, name, nothing)
 end
@@ -335,8 +337,8 @@ end
 index(localmarginal::FactorNodeLocalMarginal) = localmarginal.index
 name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
 
-getstream(localmarginal::FactorNodeLocalMarginal) = localmarginal.stream
-setstream!(localmarginal::FactorNodeLocalMarginal, observable::MarginalObservable) = localmarginal.stream = observable
+getstream(localmarginal::FactorNodeLocalMarginal)              = localmarginal.stream
+setstream!(localmarginal::FactorNodeLocalMarginal, observable) = localmarginal.stream = observable
 
 """
     FactorNodeLocalMarginals
@@ -349,7 +351,7 @@ end
 
 function FactorNodeLocalMarginals(variablenames, factorisation)
     marginal_names = map(fcluster -> clustername(map(i -> variablenames[i], fcluster)), factorisation)
-    index          = 0 # its better not to use zip here to preserve tuple-like structure
+    index          = 0 # its better not to use zip or enumerate here to preserve tuple-like structure
     marginals      = map((mname) -> begin index += 1; FactorNodeLocalMarginal(index, mname) end, marginal_names)
     return FactorNodeLocalMarginals(marginals)
 end
@@ -637,10 +639,7 @@ function activate!(model, factornode::AbstractFactorNode)
             vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
             vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
-            # set!(messageout(interface), vmessageout |> share_recent())
-            # set!(messagein(interface), messageout(connectedvar(interface), connectedvarindex(interface)))
             connect!(messageout(interface), vmessageout)
-            set!(messagein(interface), messageout(cvariable, connectedvarindex(interface)))
         else
             error("Empty variable on interface $(interface) of node $(factornode)")
         end
@@ -677,7 +676,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
     cached_stream = getstream(localmarginal)
 
     if cached_stream !== nothing
-        return as_marginal_observable(cached_stream, skip_strategy)
+        return apply_skip_filter(cached_stream, skip_strategy)
     end
 
     clusterindex = index(localmarginal)
@@ -689,7 +688,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         # Cluster contains only one variable, we can take marginal over this variable
         vmarginal = getmarginal(connectedvar(getinterface(factornode, marginalname)), IncludeAll())
         setstream!(localmarginal, vmarginal)
-        return as_marginal_observable(vmarginal, skip_strategy)
+        return apply_skip_filter(vmarginal, skip_strategy)
     else
         cmarginal = MarginalObservable()
         setstream!(localmarginal, cmarginal)
@@ -710,7 +709,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 
-        return as_marginal_observable(cmarginal, skip_strategy)
+        return apply_skip_filter(cmarginal, skip_strategy)
     end
 end
 

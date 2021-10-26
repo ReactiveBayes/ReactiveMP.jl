@@ -7,13 +7,12 @@ mutable struct DataVariable{D, S} <: AbstractVariable
     collection_type :: AbstractVariableCollectionType
     messageout      :: S
     nconnected      :: Int
-    marginal        :: Union{Nothing, MarginalObservable}
 end
 
 Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
 
 function datavar(name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual(); subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return DataVariable{D, S}(name, collection_type, subject, 0, nothing)
+    return DataVariable{D, S}(name, collection_type, subject, 0)
 end
 
 function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
@@ -70,9 +69,14 @@ finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
 
 get_pipeline_stages(::DataVariable) = EmptyPipelineStage()
 
-_getmarginal(datavar::DataVariable)                                = datavar.marginal
-_setmarginal!(datavar::DataVariable, marginal::MarginalObservable) = datavar.marginal = marginal
-_makemarginal(datavar::DataVariable)                               = datavar.messageout |> map(Marginal, as_marginal)
+_getmarginal(datavar::DataVariable)              = datavar.messageout |> map(Marginal, as_marginal)
+_setmarginal!(datavar::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
+_makemarginal(datavar::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
+
+# Extension for _getmarginal
+function Rocket.getrecent(proxy::ProxyObservable{ <: Marginal, S, M }) where { S <: Rocket.RecentSubjectInstance, D, M <: Rocket.MapProxy{D, typeof(as_marginal)} }
+    return as_marginal(Rocket.getrecent(proxy.proxied_source))
+end
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.nconnected += 1
