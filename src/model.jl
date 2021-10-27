@@ -109,6 +109,7 @@ function activate!(model::Model)
     end
 
     filter!(c -> isconnected(c), getconstant(model))
+    foreach(r -> activate!(model, r), getrandom(model))
     foreach(n -> activate!(model, n), getnodes(model))
 end
 

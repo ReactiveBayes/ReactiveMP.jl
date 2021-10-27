@@ -176,6 +176,46 @@ as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 # TODO
 reduce_messages(messages) = mapreduce(as_message, (left, right) -> multiply_messages(ProdAnalytical(), left, right), messages)
 
+## Message observable 
+
+struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
+    subject :: Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
+    stream  :: LazyObservable{M}
+end
+
+MessageObservable(::Type{M} = AbstractMessage) where M = MessageObservable{M}(RecentSubject(M), lazy(M))   
+
+function as_message_observable(observable)
+    output = MessageObservable(eltype(observable))
+    connect!(output, observable)
+    return output
+end
+
+Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(observable.subject)
+
+@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(observable.stream, actor)
+
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{ <: AbstractMessage })           = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{ <: AbstractMessage })       = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ErrorActor{ <: AbstractMessage })      = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.CompletionActor{ <: AbstractMessage }) = Rocket.on_subscribe!(observable.stream, actor)
+
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Subject{ <: AbstractMessage })                 = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.BehaviorSubjectInstance{ <: AbstractMessage }) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.PendingSubjectInstance{ <: AbstractMessage })  = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.RecentSubjectInstance{ <: AbstractMessage })   = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.ReplaySubjectInstance{ <: AbstractMessage })   = Rocket.on_subscribe!(observable.stream, actor)
+
+function connect!(message::MessageObservable, source)
+    set!(message.stream, source |> multicast(message.subject) |> ref_count())
+    return nothing
+end
+
+function setmessage!(message::MessageObservable, value)
+    next!(message.subject, Message(value, false, true))
+    return nothing
+end
+
 ## Message Mapping structure
 ## https://github.com/JuliaLang/julia/issues/42559
 ## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
