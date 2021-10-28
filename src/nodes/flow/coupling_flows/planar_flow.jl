@@ -104,7 +104,7 @@ function _forward(f::PlanarFlow{T1,T2}, input::T1) where { T1, T2 <: Real }
     u, w, b = getall(f)
     
     # calculate result
-    result = zeros(size(u))
+    result = u.*ones(size(u))
     result .*= tanh(dot(w, input) + b) 
     result .+= input
 
