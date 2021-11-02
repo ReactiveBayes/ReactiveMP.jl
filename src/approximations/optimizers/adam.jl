@@ -13,8 +13,8 @@ mutable struct Adam{ T } <: Optimizer
     tmp  :: T
 end
 
-function Adam(x::T; ρ1::Float64=0.9, ρ2::Float64=0.999, λ::Float64=1e-8) where { T <: AbstractArray }
-    return Adam(collect(x), zeros(Float64, size(x)), zeros(Float64, size(x)), zeros(Float64, size(x)), zeros(Float64, size(x)), ρ1, ρ2, λ, 1, zeros(Float64, size(x)))
+function Adam(x::Vector{Float64}; ρ1::Float64=0.9, ρ2::Float64=0.999, λ::Float64=1e-8) 
+    return Adam(x, zeros(Float64, size(x)), zeros(Float64, size(x)), zeros(Float64, size(x)), zeros(Float64, size(x)), ρ1, ρ2, λ, 1, zeros(Float64, size(x)))
 end
 
 function Adam(x::T; ρ1::Float64=0.9, ρ2::Float64=0.999, λ::Float64=1e-8) where { T <: Real }
@@ -91,7 +91,7 @@ function update!(optimizer::Adam{ T }, ∇::T) where { T <: Real }
     # update (biased) first moment
     s *= ρ1
     tmp = ∇
-    tmp *= (1-ρ2)
+    tmp *= (1-ρ1)
     s += tmp
     sets!(optimizer, s)
 
@@ -131,7 +131,7 @@ function update!(optimizer::Adam{ T }, ∇::T) where { T <: AbstractArray }
     # update (biased) first moment
     s .*= ρ1
     tmp .= ∇
-    tmp .*= (1-ρ2)
+    tmp .*= (1-ρ1)
     s .+= tmp
 
     # update (unbiased) first moment
