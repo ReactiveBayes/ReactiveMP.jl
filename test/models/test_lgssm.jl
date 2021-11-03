@@ -114,7 +114,7 @@ end
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
-        timestamp        = Dates.format(now(), "dd:mm:yyyy-HH:MM") 
+        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
         plot_output      = joinpath(base_output, "lgssm_univariate_plot_$(timestamp).png")
         benchmark_output = joinpath(base_output, "lgssm_univariate_benchmark_$(timestamp).txt")
         ## -------------------------------------------- ##
@@ -181,7 +181,7 @@ end
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
-        timestamp        = Dates.format(now(), "dd:mm:yyyy-HH:MM") 
+        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
         plot_output      = joinpath(base_output, "lgssm_multivariate_plot_$(timestamp).png")
         benchmark_output = joinpath(base_output, "lgssm_multivariate_benchmark_$(timestamp).txt")
         ## -------------------------------------------- ##
