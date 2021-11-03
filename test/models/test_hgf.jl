@@ -1,7 +1,6 @@
 module ReactiveMPDistributionsTest
 
-using Test
-
+using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
 using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
 
