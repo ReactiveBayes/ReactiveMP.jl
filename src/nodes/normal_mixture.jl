@@ -141,6 +141,20 @@ end
     end
 end
 
+@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, PointMass{T}}, q_p::NTuple{N, PointMass{T}}) where { N, T <: Real } = begin
+    z_bar = probvec(q_switch)
+    return mapreduce(+, 1:N, init = 0.0) do i
+        return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{ (:out, :μ, :τ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
+    end
+end
+
+@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, PointMass}, q_p::NTuple{N, PointMass}) where N = begin
+    z_bar = probvec(q_switch)
+    return mapreduce(+, 1:N, init = 0.0) do i
+        return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{ (:out, :μ, :Λ) }, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
+    end
+end
+
 function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, scheduler) where { T <: InfCountingReal, N }
     
     skip_strategy = marginal_skip_strategy(objective)
