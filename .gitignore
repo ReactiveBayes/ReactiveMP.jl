@@ -8,6 +8,8 @@ demo/*incomplete.ipynb
 demo/*.jl
 demo/*WIP*
 
+test/_output
+
 .idea
 .vscode
 

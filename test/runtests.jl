@@ -2,19 +2,23 @@ module ReactiveMPTest
 
 using Test, Documenter, ReactiveMP
 using TestSetExtensions
-
 using Aqua
-Aqua.test_all(ReactiveMP; ambiguities=false)
-
-include("test_helpers.jl")
-
-using .ReactiveMPTestingHelpers
 
 # doctest(ReactiveMP)
 
-@testset ExtendedTestSet "ReactiveMP" begin
+# Example usage of a reduced testset
+# julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
 
-    enabled_tests = lowercase.(ARGS)
+enabled_tests = lowercase.(ARGS)
+
+if isempty(enabled_tests)
+    println("Running all tests...")
+    Aqua.test_all(ReactiveMP; ambiguities=false)
+else 
+    println("Running specific tests: $enabled_tests")
+end
+
+@testset ExtendedTestSet "ReactiveMP" begin
 
     function key_to_filename(key)
         splitted = split(key, ":")
@@ -48,6 +52,7 @@ using .ReactiveMPTestingHelpers
     addtests("algebra/test_correction.jl")
 
     addtests("test_math.jl")
+    addtests("test_helpers.jl")
 
     addtests("constraints/prod/test_prod_final.jl")
 
@@ -131,6 +136,8 @@ using .ReactiveMPTestingHelpers
 
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
+
+    addtests("models/test_lgssm.jl")
 
 end
 
