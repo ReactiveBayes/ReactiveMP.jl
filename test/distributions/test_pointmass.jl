@@ -6,7 +6,7 @@ using Distributions
 using Random
 using SpecialFunctions
 
-import ReactiveMP: ∞, tiny, huge
+import ReactiveMP: InfCountingReal, tiny, huge
 import ReactiveMP.MacroHelpers: @test_inferred
 
 @testset "PointMass" begin
@@ -41,7 +41,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
             @test_throws MethodError logpdf(dist, ones(T, 2))
             @test_throws MethodError logpdf(dist, ones(T, 2, 2))
 
-            @test (@inferred entropy(dist)) === -∞
+            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
             @test @test_inferred(T, mean(dist))         == scalar
             @test @test_inferred(T, var(dist))          == zero(T)
@@ -89,7 +89,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
             @test_throws MethodError logpdf(dist, one(T))
             @test_throws MethodError logpdf(dist, ones(T, 2, 2))
 
-            @test (@inferred entropy(dist)) === -∞
+            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
             @test @test_inferred(AbstractVector{T}, mean(dist))         == vector
             @test @test_inferred(AbstractVector{T}, var(dist))          == zeros(T, N)
@@ -138,7 +138,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
             @test_throws MethodError logpdf(dist, one(T))
             @test_throws MethodError logpdf(dist, ones(T, 2))
 
-            @test (@inferred entropy(dist)) === -∞
+            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
             @test @test_inferred(AbstractMatrix{T}, mean(dist))       == matrix
             @test @test_inferred(AbstractMatrix{T}, var(dist))        == zeros(N, N)

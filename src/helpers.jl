@@ -182,6 +182,8 @@ Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal($(
 Base.promote_rule(::Type{ InfCountingReal{T1} }, ::Type{ T2 }) where { T1 <: Real, T2 <: Real } = InfCountingReal{ promote_type(T1, T2) }
 Base.promote_rule(::Type{ InfCountingReal },     ::Type{ T })  where { T <: Real }              = InfCountingReal{ T }
 
+Base.:(==)(left::InfCountingReal{T}, right::InfCountingReal{T}) where { T } = (left.value == right.value) && (left.infs == right.infs)
+
 # Union helpers
 
 union_types(x::Union) = (x.a, union_types(x.b)...)
