@@ -1,10 +1,14 @@
 module ReactiveMPTest
 
-using Test, Documenter, ReactiveMP
+## https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
+## https://gr-framework.org/workstations.html#no-output
+ENV["GKSwstype"] = "100"
+
+using Test, Documenter, ReactiveMP, Distributions
 using TestSetExtensions
 using Aqua
 
-# doctest(ReactiveMP)
+# DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
 
 # Example usage of a reduced testset
 # julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
@@ -14,6 +18,7 @@ enabled_tests = lowercase.(ARGS)
 if isempty(enabled_tests)
     println("Running all tests...")
     Aqua.test_all(ReactiveMP; ambiguities=false)
+    # doctest(ReactiveMP)
 else 
     println("Running specific tests: $enabled_tests")
 end
