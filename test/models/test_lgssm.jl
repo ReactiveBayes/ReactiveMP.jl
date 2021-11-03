@@ -25,7 +25,7 @@ using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
 
     return x, y
 end
-
+## -------------------------------------------- ##
 @model function multivariate_lgssm_model(n, x0, A, B, Q, P)
     
     # We create constvar references for better efficiency
@@ -70,7 +70,7 @@ function univariate_lgssm_inference(data, x0, c, P)
     
     return x_buffer, fe
 end
-
+## -------------------------------------------- ##
 function multivariate_lgssm_inference(data, x0, A, B, Q, P)
     n = length(data)
 
@@ -88,6 +88,7 @@ function multivariate_lgssm_inference(data, x0, A, B, Q, P)
     
     return xbuffer, fe
 end
+## -------------------------------------------- ##
 
 @testset "Linear Gaussian State Space Model" begin
 

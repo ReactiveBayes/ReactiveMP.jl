@@ -143,6 +143,7 @@ end
     addtests("rules/wishart/test_out.jl")
 
     addtests("models/test_lgssm.jl")
+    addtests("models/test_hgf.jl")
 
 end
 
