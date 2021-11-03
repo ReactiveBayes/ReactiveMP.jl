@@ -34,8 +34,8 @@ end
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
-        plot_output      = joinpath(base_output, "template_model_plot_$(timestamp).png")
-        benchmark_output = joinpath(base_output, "template_model_benchmark_$(timestamp).txt")
+        plot_output      = joinpath(base_output, "template_model_plot_$(timestamp)_v$(VERSION).png")
+        benchmark_output = joinpath(base_output, "template_model_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
         ## Create output plots
         
@@ -45,6 +45,7 @@ end
         benchmark = @benchmark 1 + 1#
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
+            versioninfo(io)
         end
         ## -------------------------------------------- ##
     end

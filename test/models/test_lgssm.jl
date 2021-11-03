@@ -116,8 +116,8 @@ end
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
-        plot_output      = joinpath(base_output, "lgssm_univariate_plot_$(timestamp).png")
-        benchmark_output = joinpath(base_output, "lgssm_univariate_benchmark_$(timestamp).txt")
+        plot_output      = joinpath(base_output, "lgssm_univariate_plot_$(timestamp)_v$(VERSION).png")
+        benchmark_output = joinpath(base_output, "lgssm_univariate_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
         ## Create output plots
         subrange = 200:215
@@ -133,6 +133,7 @@ end
         benchmark = @benchmark univariate_lgssm_inference($data, $x0_prior, 1.0, $P)
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
+            versioninfo(io)
         end
         ## -------------------------------------------- ##
     end
@@ -183,8 +184,8 @@ end
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
-        plot_output      = joinpath(base_output, "lgssm_multivariate_plot_$(timestamp).png")
-        benchmark_output = joinpath(base_output, "lgssm_multivariate_benchmark_$(timestamp).txt")
+        plot_output      = joinpath(base_output, "lgssm_multivariate_plot_$(timestamp)_v$(VERSION).png")
+        benchmark_output = joinpath(base_output, "lgssm_multivariate_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
         ## Create output plots
         slicedim(dim) = (a) -> map(e -> e[dim], a)
@@ -204,6 +205,7 @@ end
         benchmark = @benchmark multivariate_lgssm_inference($y, $x0, $A, $B, $Q, $P)
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
+            versioninfo(io)
         end
         ## -------------------------------------------- ##
     end

@@ -149,8 +149,8 @@ end
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
-        plot_output      = joinpath(base_output, "hgf_online_plot_$(timestamp).png")
-        benchmark_output = joinpath(base_output, "hgf_online_benchmark_$(timestamp).txt")
+        plot_output      = joinpath(base_output, "hgf_online_plot_$(timestamp)_v$(VERSION).png")
+        benchmark_output = joinpath(base_output, "hgf_online_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
         ## Create output plots
         pz = plot(title = "Hidden States Z")
@@ -171,6 +171,7 @@ end
         benchmark = @benchmark hgf_online_inference($y, $vmp_iters, $real_k, $real_w, $z_variance, $y_variance)
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
+            versioninfo(io)
         end
         ## -------------------------------------------- ##
     end
