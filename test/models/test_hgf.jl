@@ -1,4 +1,4 @@
-module ReactiveMPDistributionsTest
+module ReactiveMPModelsHGFTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
