@@ -2,7 +2,7 @@ module ReactiveMPModelsLGSSMTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
+using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
 
 ## Model definition
 ## -------------------------------------------- ##
@@ -96,7 +96,7 @@ end
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
-        rng = MersenneTwister(123)
+        rng = StableRNG(123)
         P   = 100.0
         n   = 500
         hidden   = collect(1:n)
@@ -110,7 +110,8 @@ end
         @test length(x_estimated) === n
         @test all((mean.(x_estimated) .- 3 .* std.(x_estimated)) .< hidden .< (mean.(x_estimated) .+ 3 .* std.(x_estimated)))
         @test all(var.(x_estimated) .> 0.0)
-        @test length(fe) === 1 && first(fe) ≈ 1896.15674252578
+        @test length(fe) === 1
+        @test abs(last(fe) - 1854.297647) < 0.01
         ## -------------------------------------------- ##
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
@@ -158,7 +159,7 @@ end
         end
         ## -------------------------------------------- ##
         # Seed for reproducibility
-        rng = MersenneTwister(1234)
+        rng = StableRNG(1234)
         # We will model 2-dimensional observations with rotation matrix `A`
         # To avoid clutter we also assume that matrices `A`, `B`, `P` and `Q`
         # are known and fixed for all time-steps
@@ -178,7 +179,8 @@ end
         # We use 3.0var instead of 3.0std here for easier dot broadcasting with mean
         @test all((mean.(xmarginals) .- 3.0 .* var.(xmarginals)) .< x .< (mean.(xmarginals) .+ 3.0 .* var.(xmarginals))) 
         @test all(isposdef.(cov.(xmarginals)))
-        @test length(fe) === 1 && first(fe) ≈ 6260.4847983671
+        @test length(fe) === 1
+        @test abs(last(fe) - 6275.9015944677) < 0.01
         ## -------------------------------------------- ##
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")

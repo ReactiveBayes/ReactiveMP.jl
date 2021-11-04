@@ -2,7 +2,9 @@ module ReactiveMPModelsTemplateTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
+using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
+
+# Please use StableRNGs for random number generators
 
 ## Model definition
 ## -------------------------------------------- ##

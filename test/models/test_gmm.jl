@@ -3,6 +3,7 @@ module ReactiveMPModelsGMMTest
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
 using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
+using StableRNGs
 
 ## Model definition
 ## -------------------------------------------- ##
@@ -144,9 +145,9 @@ end
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
-        n = 50
+        n = 150
 
-        rng = MersenneTwister(124)
+        rng = StableRNG(12345)
 
         switch = [ 1/3, 2/3 ]
         z      = rand(rng, Categorical(switch), n)
@@ -174,24 +175,25 @@ end
         @test length(mm2) === 10
         @test length(mw1) === 10
         @test length(mw2) === 10
-        @test length(fe) === 10 && last(fe) ≈ 106.63982897513 && all(diff(getvalues(fe)) .< 0)
+        @test length(fe) === 10 && all(filter(e -> abs(e) > 1e-3, diff(getvalues(fe))) .< 0)
+        @test abs(last(fe) - 280.3276104) < 0.01
 
         ms = mean(last(mswitch))
 
-        @test abs(ms - switch[1]) < 0.1 || abs(ms - switch[2]) < 0.1 
+        @test ((abs(ms - switch[1]) < 0.1) || (abs(ms - switch[2]) < 0.1))
 
         ems = sort([ last(mm1), last(mm2) ], by = mean)
         rms = sort([ μ1, μ2 ])
 
         foreach(zip(rms, ems)) do (r, e)
-            @test (r - mean(e)) < 0.1
+            @test abs(r - mean(e)) < 0.2
         end
 
         ews = sort([ last(mw1), last(mw2) ], by = mean)
         rws = sort([ w, w ])
 
         foreach(zip(rws, ews)) do (r, e)
-            @test (r - mean(e)) < 0.1
+            @test abs(r - mean(e)) < 0.2
         end
         ## -------------------------------------------- ##
         ## Form debug output
@@ -236,10 +238,10 @@ end
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
-        Random.seed!(125)
+        rng = StableRNG(43)
 
         L         = 50.0
-        nmixtures = 6
+        nmixtures = 3
         n_samples = 500
 
         probvec = ones(nmixtures)
@@ -256,24 +258,25 @@ end
             return MvNormal(mean, covariance)
         end
 
-        z = rand(switch, n_samples)
+        z = rand(rng, switch, n_samples)
         y = Vector{Vector{Float64}}(undef, n_samples)
 
         for i in 1:n_samples
-            y[i] = rand(gaussians[z[i]])
+            y[i] = rand(rng, gaussians[z[i]])
         end
         ## -------------------------------------------- ##
         ## Inference execution
-        s, m, w, fe = inference_multivariate(MersenneTwister(42), L, nmixtures, y, 25);
+        s, m, w, fe = inference_multivariate(rng, L, nmixtures, y, 25);
         ## -------------------------------------------- ##
         ## Test inference results
         @test length(s) === 25
         @test length(m) === 25
         @test length(w) === 25
-        @test length(fe) === 25 && last(fe) ≈ 3889.39942
+        @test length(fe) === 25
+        @test abs(last(fe) - 3437.962398) < 0.01
 
-        ems = sort(sort(mean.(last(m)), by=first), by = last)
-        rms = sort(sort(mean.(gaussians), by=first), by = last)
+        ems = sort(mean.(last(m)), by = x -> atan(x[2] / x[1]))
+        rms = sort(mean.(gaussians), by = x -> atan(x[2] / x[1]))
 
         foreach(zip(ems, rms)) do (estimated, real)
             @test norm(normalize(estimated) .- normalize(real)) < 0.1
@@ -310,7 +313,7 @@ end
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference_multivariate(MersenneTwister(42), $L, $nmixtures, $y, 25)#
+        benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25)#
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)

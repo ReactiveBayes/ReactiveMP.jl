@@ -2,7 +2,7 @@ module ReactiveMPModelsHGFTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
+using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
 
 ## Model definition
 ## -------------------------------------------- ##
@@ -116,14 +116,14 @@ end
             return z, x, y
         end
         ## -------------------------------------------- ##
-        rng = MersenneTwister(123)
+        rng = StableRNG(42)
         # Parameters of HGF process
         real_k = 1.0
         real_w = 0.0
-        z_variance = abs2(0.5)
-        y_variance = abs2(1.0)
+        z_variance = abs2(0.2)
+        y_variance = abs2(0.1)
         # Number of observations
-        n = 300
+        n = 2000
         z, x, y = generate_data(rng, real_k, real_w, z_variance, y_variance);
         ## -------------------------------------------- ##
         ## Inference execution
@@ -133,7 +133,8 @@ end
         ## Test inference results
         @test length(mz) === n
         @test length(mx) === n
-        @test length(fe) === vmp_iters && last(fe) ≈ 827.36173351206
+        @test length(fe) === vmp_iters
+        @test abs(last(fe) - 2026.6595389) < 0.01
         @test all(filter(e -> abs(e) > 0.1, diff(fe)) .< 0)
         # Check if all estimates are within 6std interval
         @test all((mean.(mz) .- 6 .* std.(mz)) .< z .< (mean.(mz) .+ 6 .* std.(mz)))

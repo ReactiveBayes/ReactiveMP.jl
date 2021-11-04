@@ -2,7 +2,7 @@ module ReactiveMPModelsAutoregressiveTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
+using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
 
 ## Model definition
 ## -------------------------------------------- ##
@@ -148,7 +148,7 @@ end
             return states[1+3order:end], observations[1+3order:end]
         end
         # Seed for reproducibility
-        rng  = MersenneTwister(123)
+        rng  = StableRNG(123)
         # Number of observations in synthetic dataset
         n = 500
         # AR process parameters
@@ -164,8 +164,9 @@ end
         @test length(xs) === n
         @test length(γ)  === 15
         @test length(θ)  === 15
-        @test length(fe) === 15 && last(fe) ≈ 535.3776616955
-        @test all(diff(getvalues(fe)) .< 0)
+        @test length(fe) === 15
+        @test abs(last(fe) - 518.9182342) < 0.01
+        @test all(filter(e -> abs(e) > 1e-3, diff(getvalues(fe))) .< 0)
 
         for i in 1:4
             γ, θ, xs, fe = inference(observations, i, Multivariate, ARsafe(), 15, real_τ)
@@ -183,9 +184,9 @@ end
         @test length(xs) === n
         @test length(γ)  === 15
         @test length(θ)  === 15
-        @test length(fe) === 15 && abs(last(fe) - 524.06859667065) < 0.01
-        
-        @test all(diff(getvalues(fe)) .< 0)
+        @test length(fe) === 15
+        @test abs(last(fe) - 514.66086) < 0.01
+        @test all(filter(e -> abs(e) > 1e-1, diff(getvalues(fe))) .< 0)
         @test (mean(last(γ)) - 3.0std(last(γ)) < real_γ < mean(last(γ)) + 3.0std(last(γ)))
         ## -------------------------------------------- ##
         ## Form debug output

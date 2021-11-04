@@ -2,7 +2,7 @@ module ReactiveMPModelsHMMTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Plots, Dates, LinearAlgebra
+using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
 
 ## Model definition
 ## -------------------------------------------- ##
@@ -69,15 +69,14 @@ end
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
-        function rand_vec(distribution::Categorical) 
+        function rand_vec(rng, distribution::Categorical) 
             k = ncategories(distribution)
             s = zeros(k)
-            s[ rand(distribution) ] = 1.0
+            s[ rand(rng, distribution) ] = 1.0
             s
         end
         
-        function generate_data(n_samples; seed = 124)
-            Random.seed!(seed)
+        function generate_data(rng, n_samples)
             
             # Transition probabilities (some transitions are impossible)
             A = [0.9 0.0 0.1; 0.1 0.9 0.0; 0.0 0.1 0.9] 
@@ -93,16 +92,16 @@ end
             
             for t = 1:n_samples
                 a = A * s_prev
-                s[t] = rand_vec(Categorical(a ./ sum(a)))
+                s[t] = rand_vec(rng, Categorical(a ./ sum(a)))
                 b = B * s[t]
-                x[t] = rand_vec(Categorical(b ./ sum(b)))
+                x[t] = rand_vec(rng, Categorical(b ./ sum(b)))
                 s_prev = s[t]
             end
             
             return x, s
         end
-
-        x_data, s_data = generate_data(100);
+        rng = StableRNG(123)
+        x_data, s_data = generate_data(rng, 100);
         ## -------------------------------------------- ##
         ## Inference execution
         sbuffer, Abuffer, Bbuffer, fe = inference(x_data, 20);
@@ -111,7 +110,8 @@ end
         @test length(sbuffer) === 20
         @test length(Abuffer) === 20
         @test length(Bbuffer) === 20
-        @test length(fe) === 20 && last(fe) ≈ 78.766033055777 && all(filter(e -> abs(e) > 1e-3, diff(fe)) .< 0)
+        @test length(fe) === 20 && all(filter(e -> abs(e) > 1e-3, diff(fe)) .< 0)
+        @test abs(last(fe) - 60.614480654) < 0.01
         
         ## -------------------------------------------- ##
         ## Form debug output
