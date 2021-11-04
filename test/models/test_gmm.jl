@@ -226,7 +226,7 @@ end
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference_univariate($y, 10)#
+        benchmark = @benchmark inference_univariate($y, 10) seconds=15
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)
@@ -313,7 +313,7 @@ end
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25)#
+        benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25) seconds=15
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)

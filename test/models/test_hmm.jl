@@ -129,7 +129,7 @@ end
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference($x_data, 20)#
+        benchmark = @benchmark inference($x_data, 20) seconds=15
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)

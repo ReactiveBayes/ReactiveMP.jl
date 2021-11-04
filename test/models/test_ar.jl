@@ -210,7 +210,7 @@ end
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference($observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ)#
+        benchmark = @benchmark inference($observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ) seconds=15
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)
