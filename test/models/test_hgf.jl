@@ -136,11 +136,11 @@ end
         @test length(fe) === vmp_iters && last(fe) ≈ 827.36173351206
         @test all(filter(e -> abs(e) > 0.1, diff(fe)) .< 0)
         # Check if all estimates are within 6std interval
-        @test all((z .- 6 .* std.(mz)) .< mean.(mz) .< (z .+ 6 .* std.(mz)))
-        @test all((x .- 6 .* std.(mx)) .< mean.(mx) .< (x .+ 6 .* std.(mx)))
-        # Check if more than 90% of estimates are within 3std interval
-        @test (sum((z .- 3 .* std.(mz)) .< mean.(mz) .< (z .+ 3 .* std.(mz))) / n) > 0.9
-        @test (sum((x .- 3 .* std.(mx)) .< mean.(mx) .< (x .+ 3 .* std.(mx))) / n) > 0.9
+        @test all((mean.(mz) .- 6 .* std.(mz)) .< z .< (mean.(mz) .+ 6 .* std.(mz)))
+        @test all((mean.(mx) .- 6 .* std.(mx)) .< x .< (mean.(mx) .+ 6 .* std.(mx)))
+        # Check if more than 95% of estimates are within 3std interval
+        @test (sum((mean.(mz) .- 3 .* std.(mz)) .< z .< (mean.(mz) .+ 3 .* std.(mz))) / n) > 0.95
+        @test (sum((mean.(mx) .- 3 .* std.(mx)) .< x .< (mean.(mx) .+ 3 .* std.(mx))) / n) > 0.95
         @test all(var.(mx) .> 0.0)
         @test all(var.(mz) .> 0.0)
         ## -------------------------------------------- ##

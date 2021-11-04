@@ -1,4 +1,4 @@
-module ReactiveMPModelsLGSSMTest
+module ReactiveMPModelsTemplateTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions

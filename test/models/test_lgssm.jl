@@ -108,7 +108,7 @@ end
         ## -------------------------------------------- ##
         ## Test inference results
         @test length(x_estimated) === n
-        @test all((hidden .- 3 .* std.(x_estimated)) .< mean.(x_estimated) .< (hidden .+ 3 .* std.(x_estimated)))
+        @test all((mean.(x_estimated) .- 3 .* std.(x_estimated)) .< hidden .< (mean.(x_estimated) .+ 3 .* std.(x_estimated)))
         @test all(var.(x_estimated) .> 0.0)
         @test length(fe) === 1 && first(fe) ≈ 1896.15674252578
         ## -------------------------------------------- ##
@@ -176,7 +176,7 @@ end
         ## Test inference results
         @test length(xmarginals) === n
         # We use 3.0var instead of 3.0std here for easier dot broadcasting with mean
-        @test all((x .- 3.0 .* var.(xmarginals)) .< mean.(xmarginals) .< (x .+ 3.0 .* var.(xmarginals))) 
+        @test all((mean.(xmarginals) .- 3.0 .* var.(xmarginals)) .< x .< (mean.(xmarginals) .+ 3.0 .* var.(xmarginals))) 
         @test all(isposdef.(cov.(xmarginals)))
         @test length(fe) === 1 && first(fe) ≈ 6260.4847983671
         ## -------------------------------------------- ##
