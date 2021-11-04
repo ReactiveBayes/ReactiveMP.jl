@@ -183,7 +183,7 @@ end
         @test length(xs) === n
         @test length(γ)  === 15
         @test length(θ)  === 15
-        @test length(fe) === 15 && last(fe) ≈ 524.06859667065
+        @test length(fe) === 15 && abs(last(fe) - 524.06859667065) < 0.01
         
         @test all(diff(getvalues(fe)) .< 0)
         @test (mean(last(γ)) - 3.0std(last(γ)) < real_γ < mean(last(γ)) + 3.0std(last(γ)))
