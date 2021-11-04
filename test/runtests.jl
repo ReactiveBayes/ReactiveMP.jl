@@ -144,6 +144,8 @@ end
 
     addtests("models/test_lgssm.jl")
     addtests("models/test_hgf.jl")
+    addtests("models/test_ar.jl")
+    addtests("models/test_gmm.jl")
 
 end
 

@@ -121,9 +121,9 @@ function inference(data, order, artype, stype, niter, τ)
     return γ_buffer, θ_buffer, x_buffer, fe
 end
 
-@testset "Model template" begin
+@testset "Autoregressive model" begin
 
-    @testset "Use case template" begin 
+    @testset "Full graph inference" begin 
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
@@ -160,20 +160,12 @@ end
         ## Inference execution
 
         # AR order 1
-        for i in 2:5
-            γ, θ, xs, fe = inference(observations, i, Univariate, ARsafe(), 15, real_τ)
-            @test length(xs) === n
-            @test length(γ)  === 15
-            @test length(θ)  === 15
-            @test length(fe) === 15
-        end
-
         γ, θ, xs, fe = inference(observations, 1, Univariate, ARsafe(), 15, real_τ)
         @test length(xs) === n
         @test length(γ)  === 15
         @test length(θ)  === 15
         @test length(fe) === 15 && last(fe) ≈ 535.3776616955
-        @test all(diff(fe) .< 0)
+        @test all(diff(getvalues(fe)) .< 0)
 
         for i in 1:4
             γ, θ, xs, fe = inference(observations, i, Multivariate, ARsafe(), 15, real_τ)
@@ -185,23 +177,15 @@ end
 
         # AR order 5
         γ, θ, xs, fe = inference(observations, length(real_θ), Multivariate, ARsafe(), 15, real_τ)
+
+        ## -------------------------------------------- ##
+        ## Test inference results
         @test length(xs) === n
         @test length(γ)  === 15
         @test length(θ)  === 15
         @test length(fe) === 15 && last(fe) ≈ 524.0689496230
         @test all(diff(fe) .< 0)
         @test (mean(last(γ)) - 3.0std(last(γ)) < real_γ < mean(last(γ)) + 3.0std(last(γ)))
-
-        sreal_θ = sort(real_θ)
-        sθ      = sort(ReactiveMP.getvalues(θ), by = mean)
-
-        foreach(zip(sreal_θ, sθ)) do (real, estimated)
-            @test mean(estimated) - 3std(estimated) < real < mean(estimated) + 3std(estimated) 
-        end
-
-        ## -------------------------------------------- ##
-        ## Test inference results
-        _
         ## -------------------------------------------- ##
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
