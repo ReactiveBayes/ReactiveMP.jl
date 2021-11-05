@@ -6,6 +6,21 @@ using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
 
 ## Model definition
 ## -------------------------------------------- ##
+@model [ default_factorisation = MeanField() ] function ar_model(n, order)
+
+    x = datavar(Vector{Float64}, n)
+    y = datavar(Float64, n)
+
+    γ ~ GammaShapeRate(1.0, 1.0)
+    θ ~ MvNormalMeanPrecision(zeros(order), diageye(order))
+
+    for i in 1:n
+        y[i] ~ NormalMeanPrecision(dot(x[i], θ), γ)
+    end
+
+    return x, y, θ, γ
+end
+
 @model [ default_factorisation = MeanField() ] function lar_model(T::Type{ Multivariate }, n, order, c, stype, τ)
 
     # Parameter priors
@@ -72,17 +87,42 @@ end
 ## -------------------------------------------- ##
 ## Inference definition
 ## -------------------------------------------- ##
-function init_marginals!(::Type{ Multivariate }, order, γ, θ)
+function ar_inference(inputs, outputs, order, niter)
+    n = length(outputs)
+
+    model, (x, y, θ, γ) = ar_model(n, order, options = (limit_stack_depth = 500, ))
+
+    γ_buffer = keep(Marginal)
+    θ_buffer = keep(Marginal)
+    fe       = keep(Float64)
+
+    γ_sub = subscribe!(getmarginal(γ), γ_buffer)
+    θ_sub = subscribe!(getmarginal(θ), θ_buffer)
+    f_sub = subscribe!(score(Float64, BetheFreeEnergy(), model), fe)
+
+    setmarginal!(γ, GammaShapeRate(1.0, 1.0))
+
+    for _ in 1:niter
+        update!(x, inputs)
+        update!(y, outputs)
+    end
+
+    unsubscribe!((γ_sub, θ_sub, f_sub))
+
+    return γ_buffer, θ_buffer, fe
+end
+
+function lar_init_marginals!(::Type{ Multivariate }, order, γ, θ)
     setmarginal!(γ, GammaShapeRate(1.0, 1.0))
     setmarginal!(θ, MvNormalMeanPrecision(zeros(order), diageye(order)))
 end
 
-function init_marginals!(::Type{ Univariate }, order, γ, θ)
+function lar_init_marginals!(::Type{ Univariate }, order, γ, θ)
     setmarginal!(γ, GammaShapeRate(1.0, 1.0))
     setmarginal!(θ, NormalMeanPrecision(0.0, 1.0))
 end
 
-function inference(data, order, artype, stype, niter, τ)
+function lar_inference(data, order, artype, stype, niter, τ)
 
     # We build a full graph based on nber of observatios
     n = length(data)
@@ -108,7 +148,7 @@ function inference(data, order, artype, stype, niter, τ)
     xsub  = subscribe!(getmarginals(x), x_buffer)
     fesub = subscribe!(score(Float64, BetheFreeEnergy(), model), fe)
 
-    init_marginals!(artype, order, γ, θ)
+    lar_init_marginals!(artype, order, γ, θ)
 
     # We update data several times to perform several VMP iterations
     for i in 1:niter
@@ -123,14 +163,57 @@ end
 
 @testset "Autoregressive model" begin
 
-    @testset "Full graph inference" begin 
+    @testset "Autoregressive model" begin
+        ## -------------------------------------------- ##
+        ## Data creation
+        ## -------------------------------------------- ##
+        function ar_ssm(series, order)
+            inputs = [reverse!(series[1:order])]
+            outputs = [series[order + 1]]
+            for x in series[order+2:end]
+                push!(inputs, vcat(outputs[end], inputs[end])[1:end-1])
+                push!(outputs, x)
+            end
+            return inputs, outputs
+        end
+        rng  = StableRNG(1234)
+        series          = randn(rng, 1_000)
+        ## -------------------------------------------- ##
+        ## Inference execution and test inference results
+        for order in 1:5
+            inputs, outputs = ar_ssm(series, order)
+            γ_buffer, θ_buffer, fe = ar_inference(inputs, outputs, order, 15)
+            @test length(γ_buffer) === 15
+            @test length(θ_buffer) === 15
+            @test length(fe) === 15
+            @test last(fe) < first(fe)
+            @test all(filter(e -> abs(e) > 1e-3, diff(getvalues(fe))) .< 0)
+        end
+        ## -------------------------------------------- ##
+        ## Form debug output
+        base_output = joinpath(pwd(), "_output", "models")
+        mkpath(base_output)
+        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
+        benchmark_output = joinpath(base_output, "ar_model_benchmark_$(timestamp)_v$(VERSION).txt")
+        ## -------------------------------------------- ##
+        ## Create output benchmarks
+        inputs5, outputs5 = ar_ssm(series, 5)
+        benchmark = @benchmark ar_inference($inputs5, $outputs5, 5, 15)#
+        open(benchmark_output, "w") do io
+            show(io, MIME("text/plain"), benchmark)
+            versioninfo(io)
+        end
+        ## -------------------------------------------- ##
+    end
+
+    @testset "Latent autoregressive model" begin 
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
         # The following coefficients correspond to stable poles
         coefs_ar_5 = [ 0.10699399235785655, -0.5237303489793305, 0.3068897071844715, -0.17232255282458891, 0.13323964347539288 ]
 
-        function generate_ar_data(rng, n, θ, γ, τ)
+        function generate_lar_data(rng, n, θ, γ, τ)
             order        = length(θ)
             states       = Vector{Vector{Float64}}(undef, n + 3order)
             observations = Vector{Float64}(undef, n + 3order)
@@ -155,12 +238,12 @@ end
         real_γ = 5.0
         real_τ = 5.0
         real_θ = coefs_ar_5
-        states, observations = generate_ar_data(rng, n, real_θ, real_γ, real_τ)
+        states, observations = generate_lar_data(rng, n, real_θ, real_γ, real_τ)
         ## -------------------------------------------- ##
         ## Inference execution
 
         # AR order 1
-        γ, θ, xs, fe = inference(observations, 1, Univariate, ARsafe(), 15, real_τ)
+        γ, θ, xs, fe = lar_inference(observations, 1, Univariate, ARsafe(), 15, real_τ)
         @test length(xs) === n
         @test length(γ)  === 15
         @test length(θ)  === 15
@@ -169,7 +252,7 @@ end
         @test all(filter(e -> abs(e) > 1e-3, diff(getvalues(fe))) .< 0)
 
         for i in 1:4
-            γ, θ, xs, fe = inference(observations, i, Multivariate, ARsafe(), 15, real_τ)
+            γ, θ, xs, fe = lar_inference(observations, i, Multivariate, ARsafe(), 15, real_τ)
             @test length(xs) === n
             @test length(γ)  === 15
             @test length(θ)  === 15
@@ -177,7 +260,7 @@ end
         end
 
         # AR order 5
-        γ, θ, xs, fe = inference(observations, length(real_θ), Multivariate, ARsafe(), 15, real_τ)
+        γ, θ, xs, fe = lar_inference(observations, length(real_θ), Multivariate, ARsafe(), 15, real_τ)
 
         ## -------------------------------------------- ##
         ## Test inference results
@@ -193,8 +276,8 @@ end
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
-        plot_output      = joinpath(base_output, "autoregressive_model_plot_$(timestamp)_v$(VERSION).png")
-        benchmark_output = joinpath(base_output, "autoregressive_model_benchmark_$(timestamp)_v$(VERSION).txt")
+        plot_output      = joinpath(base_output, "lar_model_plot_$(timestamp)_v$(VERSION).png")
+        benchmark_output = joinpath(base_output, "lar_model_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
         ## Create output plots
         p1 = plot(first.(states), label="Hidden state")
@@ -210,7 +293,7 @@ end
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference($observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ) seconds=15
+        benchmark = @benchmark lar_inference($observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ) seconds=15
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)
