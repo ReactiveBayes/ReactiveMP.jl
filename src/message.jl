@@ -121,6 +121,7 @@ MacroHelpers.@proxy_methods Message getdata [
     Base.length,
     Base.ndims,
     Base.size,
+    Base.eltype,
     mean_cov, 
     mean_var,
     mean_invcov, 

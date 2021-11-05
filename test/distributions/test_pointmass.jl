@@ -6,146 +6,155 @@ using Distributions
 using Random
 using SpecialFunctions
 
-import ReactiveMP: ∞
+import ReactiveMP: InfCountingReal, tiny, huge
+import ReactiveMP.MacroHelpers: @test_inferred
 
 @testset "PointMass" begin
 
+    rng = MersenneTwister(1234)
+
     @testset "Real-based PointMass" begin
+        for T in (Float16, Float32, Float64, BigFloat)
+            scalar = rand(rng, T)
+            dist   = PointMass(scalar)
 
-        scalar = rand()
-        dist   = PointMass(scalar)
+            @test variate_form(dist) === Univariate
+            @test_throws BoundsError dist[2]
+            @test_throws BoundsError dist[2, 2]
 
-        @test variate_form(dist) === Univariate
-        @test_throws BoundsError dist[2]
-        @test_throws BoundsError dist[2, 2]
+            @test insupport(dist, scalar)
+            @test !insupport(dist, scalar + tiny)
+            @test !insupport(dist, scalar - tiny)
 
-        @test insupport(dist, scalar)
-        @test !insupport(dist, scalar + 1e-6)
-        @test !insupport(dist, scalar - 1e-6)
+            @test @test_inferred(T, pdf(dist, scalar))        == one(T)
+            @test @test_inferred(T, pdf(dist, scalar + tiny)) == zero(T)
+            @test @test_inferred(T, pdf(dist, scalar - tiny)) == zero(T)
 
-        @test pdf(dist, scalar)        === 1.0
-        @test pdf(dist, scalar + 1e-6) === 0.0
-        @test pdf(dist, scalar - 1e-6) === 0.0
+            @test @test_inferred(T, logpdf(dist, scalar))        == zero(T)
+            @test @test_inferred(T, logpdf(dist, scalar + tiny)) == convert(T, -Inf)
+            @test @test_inferred(T, logpdf(dist, scalar - tiny)) == convert(T, -Inf)
 
-        @test logpdf(dist, scalar)        === 0.0
-        @test logpdf(dist, scalar + 1e-6) === -Inf
-        @test logpdf(dist, scalar - 1e-6) === -Inf
+            @test_throws MethodError insupport(dist, ones(T, 2))
+            @test_throws MethodError insupport(dist, ones(T, 2, 2))
+            @test_throws MethodError pdf(dist, ones(T, 2))
+            @test_throws MethodError pdf(dist, ones(T, 2, 2))
+            @test_throws MethodError logpdf(dist, ones(T, 2))
+            @test_throws MethodError logpdf(dist, ones(T, 2, 2))
 
-        @test_throws MethodError insupport(dist, [ 1.0, 1.0 ])
-        @test_throws MethodError insupport(dist, [ 1.0 1.0; 1.0 1.0 ])
-        @test_throws MethodError pdf(dist, [ 1.0, 1.0 ])
-        @test_throws MethodError pdf(dist, [ 1.0 1.0; 1.0 1.0 ])
-        @test_throws MethodError logpdf(dist, [ 1.0, 1.0 ])
-        @test_throws MethodError logpdf(dist, [ 1.0 1.0; 1.0 1.0 ])
+            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
-        @test entropy(dist) === -∞
+            @test @test_inferred(T, mean(dist))         == scalar
+            @test @test_inferred(T, var(dist))          == zero(T)
+            @test @test_inferred(T, std(dist))          == zero(T)
+            @test @test_inferred(T, cov(dist))          == zero(T)
+            @test @test_inferred(T, precision(dist))    == convert(T, Inf)
+            @test @test_inferred(Int, ndims(dist))      == 1
+            @test @test_inferred(Type{T}, eltype(dist)) == T
 
-        @test mean(dist)       === scalar
-        @test var(dist)        === 0.0
-        @test std(dist)        === 0.0
-        @test cov(dist)        === 0.0
-        @test precision(dist)  === Inf
-        @test ndims(dist)      === 1
-
-        @test_throws ErrorException probvec(dist) 
-        @test logmean(dist)         === log(scalar)
-        @test inversemean(dist)     === inv(scalar)
-        @test mirroredlogmean(dist) === log(1.0 - scalar)
-        @test loggammamean(dist)    === loggamma(scalar)
+            @test_throws ErrorException probvec(dist) 
+            @test @test_inferred(T, logmean(dist))         == log(scalar)
+            @test @test_inferred(T, inversemean(dist))     == inv(scalar)
+            @test @test_inferred(T, mirroredlogmean(dist)) == log(one(scalar) - scalar)
+            @test @test_inferred(T, loggammamean(dist))    == loggamma(scalar)
+        end
     end
 
     @testset "Vector-based PointMass" begin
+        for T in (Float16, Float32, Float64, BigFloat), N in (5, 10)
+            vector = rand(rng, T, N)
+            dist   = PointMass(vector)
 
-        vector = rand(5)
-        dist   = PointMass(vector)
+            @test variate_form(dist) === Multivariate
+            @test dist[2] === vector[2]
+            @test dist[3] === vector[3]
+            @test_throws BoundsError dist[N + 1]
+            @test_throws BoundsError dist[N - 1, N - 1]
 
-        @test variate_form(dist) === Multivariate
-        @test dist[2] === vector[2]
-        @test dist[3] === vector[3]
-        @test_throws BoundsError dist[6]
-        @test_throws BoundsError dist[3, 5]
+            @test insupport(dist, vector)
+            @test !insupport(dist, vector .+ tiny)
+            @test !insupport(dist, vector .- tiny)
 
-        @test insupport(dist, vector)
-        @test !insupport(dist, vector .+ 1e-6)
-        @test !insupport(dist, vector .- 1e-6)
+            @test @test_inferred(T, pdf(dist, vector))         == one(T)
+            @test @test_inferred(T, pdf(dist, vector .+ tiny)) == zero(T)
+            @test @test_inferred(T, pdf(dist, vector .- tiny)) == zero(T)
 
-        @test pdf(dist, vector)         === 1.0
-        @test pdf(dist, vector .+ 1e-6) === 0.0
-        @test pdf(dist, vector .- 1e-6) === 0.0
+            @test @test_inferred(T, logpdf(dist, vector))         == zero(T)
+            @test @test_inferred(T, logpdf(dist, vector .+ tiny)) == convert(T, -Inf)
+            @test @test_inferred(T, logpdf(dist, vector .- tiny)) == convert(T, -Inf)
 
-        @test logpdf(dist, vector)         === 0.0
-        @test logpdf(dist, vector .+ 1e-6) === -Inf
-        @test logpdf(dist, vector .- 1e-6) === -Inf
+            @test_throws MethodError insupport(dist, one(T))
+            @test_throws MethodError insupport(dist, ones(T, 2, 2))
+            @test_throws MethodError pdf(dist, one(T))
+            @test_throws MethodError pdf(dist, ones(T, 2, 2))
+            @test_throws MethodError logpdf(dist, one(T))
+            @test_throws MethodError logpdf(dist, ones(T, 2, 2))
 
-        @test_throws MethodError insupport(dist, 1.0)
-        @test_throws MethodError insupport(dist, [ 1.0 1.0; 1.0 1.0 ])
-        @test_throws MethodError pdf(dist, 1.0)
-        @test_throws MethodError pdf(dist, [ 1.0 1.0; 1.0 1.0 ])
-        @test_throws MethodError logpdf(dist, 1.0)
-        @test_throws MethodError logpdf(dist, [ 1.0 1.0; 1.0 1.0 ])
+            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
-        @test entropy(dist) === -∞
+            @test @test_inferred(AbstractVector{T}, mean(dist))         == vector
+            @test @test_inferred(AbstractVector{T}, var(dist))          == zeros(T, N)
+            @test @test_inferred(AbstractVector{T}, std(dist))          == zeros(T, N)
+            @test @test_inferred(AbstractMatrix{T}, cov(dist))          == zeros(T, N, N)
+            @test @test_inferred(AbstractMatrix{T}, precision(dist))    == fill(convert(T, Inf), (N, N))
+            @test @test_inferred(Int, ndims(dist))      == N
+            @test @test_inferred(Type{T}, eltype(dist)) == T
 
-        @test mean(dist)       == vector
-        @test var(dist)        == zeros(5)
-        @test std(dist)        == zeros(5)
-        @test cov(dist)        == zeros(5, 5)
-        @test precision(dist)  == fill(Inf, (5, 5))
-        @test ndims(dist)      == 5
-
-        @test probvec(dist)      == vector
-        @test logmean(dist)      == log.(vector)
-        @test_throws ErrorException inversemean(dist)
-        @test_throws ErrorException mirroredlogmean(dist)
-        @test loggammamean(dist) == loggamma.(vector)
+            @test @test_inferred(AbstractVector{T}, probvec(dist))      == vector
+            @test @test_inferred(AbstractVector{T}, logmean(dist))      == log.(vector)
+            @test_throws ErrorException inversemean(dist)
+            @test_throws ErrorException mirroredlogmean(dist)
+            @test @test_inferred(AbstractVector{T}, loggammamean(dist)) == loggamma.(vector)
+        end
     end
 
     @testset "Matrix-based PointMass" begin
+        for T in (Float16, Float32, Float64, BigFloat), N in (5, 10)
+            matrix = rand(rng, T, N, N)
+            dist   = PointMass(matrix)
 
-        matrix = rand(5, 5)
-        dist   = PointMass(matrix)
+            @test variate_form(dist) === Matrixvariate
+            @test dist[2]    === matrix[2]
+            @test dist[3]    === matrix[3]
+            @test dist[3, 3] === matrix[3, 3]
+            @test_throws BoundsError dist[N ^ 3]
+            @test_throws BoundsError dist[N + 1, N + 1]
 
-        @test variate_form(dist) === Matrixvariate
-        @test dist[2]    === matrix[2]
-        @test dist[3]    === matrix[3]
-        @test dist[3, 3] === matrix[3, 3]
-        @test_throws BoundsError dist[100]
-        @test_throws BoundsError dist[100, 100]
+            @test insupport(dist, matrix)
+            @test !insupport(dist, matrix .+ tiny)
+            @test !insupport(dist, matrix .- tiny)
 
-        @test insupport(dist, matrix)
-        @test !insupport(dist, matrix .+ 1e-6)
-        @test !insupport(dist, matrix .- 1e-6)
+            @test @test_inferred(T, pdf(dist, matrix))         == one(T)
+            @test @test_inferred(T, pdf(dist, matrix .+ tiny)) == zero(T)
+            @test @test_inferred(T, pdf(dist, matrix .- tiny)) == zero(T)
 
-        @test pdf(dist, matrix)         === 1.0
-        @test pdf(dist, matrix .+ 1e-6) === 0.0
-        @test pdf(dist, matrix .- 1e-6) === 0.0
+            @test @test_inferred(T, logpdf(dist, matrix))         == zero(T)
+            @test @test_inferred(T, logpdf(dist, matrix .+ tiny)) == convert(T, -Inf)
+            @test @test_inferred(T, logpdf(dist, matrix .- tiny)) == convert(T, -Inf)
 
-        @test logpdf(dist, matrix)         === 0.0
-        @test logpdf(dist, matrix .+ 1e-6) === -Inf
-        @test logpdf(dist, matrix .- 1e-6) === -Inf
+            @test_throws MethodError insupport(dist, one(T))
+            @test_throws MethodError insupport(dist, ones(T, 2))
+            @test_throws MethodError pdf(dist, one(T))
+            @test_throws MethodError pdf(dist, ones(T, 2))
+            @test_throws MethodError logpdf(dist, one(T))
+            @test_throws MethodError logpdf(dist, ones(T, 2))
 
-        @test_throws MethodError insupport(dist, 1.0)
-        @test_throws MethodError insupport(dist, [ 1.0, 1.0 ])
-        @test_throws MethodError pdf(dist, 1.0)
-        @test_throws MethodError pdf(dist, [ 1.0, 1.0 ])
-        @test_throws MethodError logpdf(dist, 1.0)
-        @test_throws MethodError logpdf(dist, [ 1.0, 1.0 ])
+            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
-        @test entropy(dist) === -∞
+            @test @test_inferred(AbstractMatrix{T}, mean(dist))       == matrix
+            @test @test_inferred(AbstractMatrix{T}, var(dist))        == zeros(N, N)
+            @test @test_inferred(AbstractMatrix{T}, std(dist))        == zeros(N, N)
+            @test @test_inferred(Tuple{Int, Int}, ndims(dist)) == (N, N)
+            @test @test_inferred(Type{T}, eltype(dist))        == T
 
-        @test mean(dist)       == matrix
-        @test var(dist)        == zeros(5, 5)
-        @test std(dist)        == zeros(5, 5)
-        @test ndims(dist)      == (5, 5)
+            @test_throws ErrorException cov(dist)
+            @test_throws ErrorException precision(dist)
 
-        @test_throws ErrorException cov(dist)
-        @test_throws ErrorException precision(dist)
-
-        @test_throws ErrorException probvec(dist)
-        @test logmean(dist)      == log.(matrix)
-        @test inversemean(dist)  ≈ cholinv(matrix)
-        @test_throws ErrorException mirroredlogmean(dist)
-        @test loggammamean(dist) == loggamma.(matrix)
+            @test_throws ErrorException probvec(dist)
+            @test @test_inferred(AbstractMatrix{T}, logmean(dist))      == log.(matrix)
+            @test @test_inferred(AbstractMatrix{T}, inversemean(dist))  ≈ cholinv(matrix)
+            @test_throws ErrorException mirroredlogmean(dist)
+            @test @test_inferred(AbstractMatrix{T}, loggammamean(dist)) == loggamma.(matrix)
+        end
     end
 
 end

@@ -129,40 +129,17 @@ Base.vec(::OneDivNVector{N, T}) where { N, T } = fill(one(T) / N, N)
 
 import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
 
-struct Infinity 
-    degree :: Int
-end
-
-degree(a::Infinity) = a.degree
-
-const ∞ = Infinity(1)
-
-Base.:+(a::Infinity, b::Infinity) = Infinity(degree(a) + degree(b))
-Base.:-(a::Infinity, b::Infinity) = Infinity(degree(a) - degree(b))
-Base.:+(a::Infinity)              = Infinity(+degree(a))
-Base.:-(a::Infinity)              = Infinity(-degree(a))
-
-Base.:*(i::Infinity, d::Int) = Infinity(degree(i) * d)
-Base.:*(d::Int, i::Infinity) = Infinity(degree(i) * d)
-
-Base.:*(::Infinity, ::Real)     = error("Infinity multiplication on real numbers is disallowed")
-Base.:*(::Real, ::Infinity)     = error("Infinity multiplication on real numbers is disallowed")
-Base.:*(::Infinity, ::Infinity) = error("Infinity multiplication is disallowed")
-Base.:/(::Infinity, ::Real)     = error("Infinity division on real numbers is disallowed")
-Base.:/(::Real, ::Infinity)     = error("Infinity division on real numbers is disallowed")
-Base.:/(::Infinity, ::Infinity) = error("Infinity division is disallowed")
-
-Base.zero(::Type{Infinity})       = Infinity(0)
-
-Base.show(io::IO, a::Infinity) = print(io, "Infinity($(degree(a)))")
-
 struct InfCountingReal{ T <: Real }
     value :: T
     infs  :: Int
 end
 
-InfCountingReal(value::T)                 where { T <: Real } = InfCountingReal{T}(value, 0)
-InfCountingReal(::Type{T}, inf::Infinity) where { T <: Real } = InfCountingReal{T}(zero(T), degree(inf))
+InfCountingReal(value::T)            where { T <: Real } = InfCountingReal{T}(value, 0)
+InfCountingReal(::Type{T}, inf::Int) where { T <: Real } = InfCountingReal{T}(zero(T), inf)
+
+Infinity(::Type{T}) where { T <: Real } = InfCountingReal(T, 1)
+
+const ∞ = Infinity(Float64)
 
 value(a::InfCountingReal) = a.value
 infs(a::InfCountingReal)  = a.infs
@@ -175,19 +152,8 @@ Base.eltype(::Type{ InfCountingReal })            = Real
 
 Base.eltype(::T) where { T <: InfCountingReal } = eltype(T)
 
-Base.:+(a::Infinity, b::Real) = InfCountingReal(b, degree(a))
-Base.:-(a::Infinity, b::Real) = InfCountingReal(-b, degree(a))
-Base.:+(b::Real, a::Infinity) = InfCountingReal(b, +degree(a))
-Base.:-(b::Real, a::Infinity) = InfCountingReal(b, -degree(a))
-
 Base.:+(a::InfCountingReal) = InfCountingReal(+value(a), +infs(a))
 Base.:-(a::InfCountingReal) = InfCountingReal(-value(a), -infs(a))
-
-Base.:+(a::InfCountingReal, b::Infinity) = InfCountingReal(value(a), infs(a) + degree(b))
-Base.:-(a::InfCountingReal, b::Infinity) = InfCountingReal(value(a), infs(a) - degree(b))
-
-Base.:+(b::Infinity, a::InfCountingReal) = InfCountingReal(+value(a), degree(b) + infs(a))
-Base.:-(b::Infinity, a::InfCountingReal) = InfCountingReal(-value(a), degree(b) - infs(a))
 
 Base.:+(a::InfCountingReal, b::Real) = InfCountingReal(value(a) + b, infs(a))
 Base.:-(a::InfCountingReal, b::Real) = InfCountingReal(value(a) - b, infs(a))
@@ -205,7 +171,6 @@ Base.:-(a::InfCountingReal, b::InfCountingReal) = InfCountingReal(value(a) - val
 Base.convert(::Type{ InfCountingReal },    v::T)                  where { T <: Real }            = InfCountingReal(v)
 Base.convert(::Type{ InfCountingReal{T} }, v::T)                  where { T <: Real }            = InfCountingReal(v)
 Base.convert(::Type{ InfCountingReal{T} }, v::R)                  where { T <: Real, R <: Real } = InfCountingReal(convert(T, v))
-Base.convert(::Type{ InfCountingReal{T} }, inf::Infinity)         where { T <: Real }            = InfCountingReal(T, inf)
 Base.convert(::Type{ InfCountingReal{T} }, v::InfCountingReal{R}) where { T <: Real, R <: Real } = InfCountingReal{T}(convert(T, value(v)), infs(v))
 
 Base.float(a::InfCountingReal) = isfinite(a) ? value(a) : Inf
@@ -213,6 +178,11 @@ Base.float(a::InfCountingReal) = isfinite(a) ? value(a) : Inf
 Base.zero(::Type{InfCountingReal{T}}) where { T <: Real } = InfCountingReal(zero(T))
 
 Base.show(io::IO, a::InfCountingReal{T}) where T = print(io, "InfCountingReal($(value(a)), $(infs(a))∞)")
+
+Base.promote_rule(::Type{ InfCountingReal{T1} }, ::Type{ T2 }) where { T1 <: Real, T2 <: Real } = InfCountingReal{ promote_type(T1, T2) }
+Base.promote_rule(::Type{ InfCountingReal },     ::Type{ T })  where { T <: Real }              = InfCountingReal{ T }
+
+Base.:(==)(left::InfCountingReal{T}, right::InfCountingReal{T}) where { T } = (left.value == right.value) && (left.infs == right.infs)
 
 # Union helpers
 
