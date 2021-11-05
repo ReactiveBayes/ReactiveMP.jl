@@ -321,3 +321,12 @@ function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{AbstractUni
     Base.fill_chunks!(B.chunks, Bool(x), first(I0), l0)
     return V
 end
+
+## 
+
+default_if_nothing(::Nothing, default) = default
+default_if_nothing(any::Any, default)  = any
+
+##
+
+forward_range(range::OrdinalRange) = step(range) > 0 ? range : last(range):first(range)
