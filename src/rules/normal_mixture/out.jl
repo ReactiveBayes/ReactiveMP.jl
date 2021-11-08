@@ -12,12 +12,12 @@ end
     return MvNormalWeightedMeanPrecision(xi, w)
 end
 
-@rule NormalMixture{N}(:out, Marginalisation) (q_switch::Any, q_m::NTuple{N,  PointMass{T}}, q_p::NTuple{N, PointMass{T} }) where { N, T <: Real } = begin
+@rule NormalMixture{N}(:out, Marginalisation) (q_switch::Any, q_m::NTuple{N,  PointMass{T} where T <: Real}, q_p::NTuple{N, PointMass{T} where T <: Real }) where { N } = begin
     πs = probvec(q_switch)
     return NormalMeanPrecision(sum(πs .* mean.(q_m)), sum(πs .* mean.(q_p)))
 end
 
-@rule NormalMixture{N}(:out, Marginalisation) (q_switch::Any, q_m::NTuple{N,  PointMass}, q_p::NTuple{N, PointMass }) where { N } = begin
+@rule NormalMixture{N}(:out, Marginalisation) (q_switch::Any, q_m::NTuple{N,  PointMass{T} where T <: AbstractVector}, q_p::NTuple{N, PointMass{T} where T <: AbstractMatrix }) where { N } = begin
     πs = probvec(q_switch)
     d  = ndims(first(q_m))
     w  = mapreduce(x -> x[1] * mean(x[2]), +, zip(πs, q_p))
