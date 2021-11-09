@@ -108,6 +108,7 @@ end
     addtests("rules/bifm_helper/test_in.jl")
     addtests("rules/bifm_helper/test_out.jl")
 
+    addtests("rules/normal_mixture/test_out.jl")
 		
     addtests("rules/subtraction/test_marginals.jl")
     addtests("rules/subtraction/test_in1.jl")
