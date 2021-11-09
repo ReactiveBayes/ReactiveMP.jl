@@ -1,20 +1,29 @@
 module ReactiveMPTest
 
-using Test, Documenter, ReactiveMP
+## https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
+## https://gr-framework.org/workstations.html#no-output
+ENV["GKSwstype"] = "100"
+
+using Test, Documenter, ReactiveMP, Distributions
 using TestSetExtensions
-
 using Aqua
-Aqua.test_all(ReactiveMP; ambiguities=false)
 
-include("test_helpers.jl")
+# DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
 
-using .ReactiveMPTestingHelpers
+# Example usage of a reduced testset
+# julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
 
-# doctest(ReactiveMP)
+enabled_tests = lowercase.(ARGS)
+
+if isempty(enabled_tests)
+    println("Running all tests...")
+    Aqua.test_all(ReactiveMP; ambiguities=false)
+    # doctest(ReactiveMP)
+else 
+    println("Running specific tests: $enabled_tests")
+end
 
 @testset ExtendedTestSet "ReactiveMP" begin
-
-    enabled_tests = lowercase.(ARGS)
 
     function key_to_filename(key)
         splitted = split(key, ":")
@@ -48,6 +57,7 @@ using .ReactiveMPTestingHelpers
     addtests("algebra/test_correction.jl")
 
     addtests("test_math.jl")
+    addtests("test_helpers.jl")
 
     addtests("constraints/prod/test_prod_final.jl")
 
@@ -131,6 +141,12 @@ using .ReactiveMPTestingHelpers
 
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
+
+    addtests("models/test_lgssm.jl")
+    addtests("models/test_hgf.jl")
+    addtests("models/test_ar.jl")
+    addtests("models/test_gmm.jl")
+    addtests("models/test_hmm.jl")
 
 end
 

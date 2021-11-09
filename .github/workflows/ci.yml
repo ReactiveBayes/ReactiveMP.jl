@@ -40,6 +40,11 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
+      - name: Archive test artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-output
+          path: test/_output
   benchmark:
     name: Benchmarks
     runs-on: ubuntu-latest

@@ -8,6 +8,8 @@ function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, n
     return score(T, objective, FactorBoundFreeEnergy(), sdtype(node), node, scheduler)
 end
 
+## Deterministic mapping
+
 function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
     stream = combineLatest(map((interface) -> apply_skip_filter(messagein(interface), marginal_skip_strategy(objective)) |> schedule_on(scheduler), interfaces(node)), PushNew())
 
@@ -24,6 +26,8 @@ function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, :
 
     return stream |> map(T, mapping)
 end
+
+## Stochastic mapping
 
 function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where { T <: InfCountingReal }
     stream = combineLatest(map((cluster) -> getmarginal!(node, cluster, marginal_skip_strategy(objective)) |> schedule_on(scheduler), localmarginals(node)), PushNew())

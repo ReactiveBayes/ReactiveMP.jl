@@ -93,21 +93,43 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
 @propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, node_index)  = chain.cacheleft[node_index] = true
 @propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, node_index) = chain.cacheright[node_index] = true
 
+@propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, range::OrdinalRange)  = fill_bitarray!(view(chain.cacheleft, forward_range(range)), true)
+@propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, range::OrdinalRange) = fill_bitarray!(view(chain.cacheright, forward_range(range)), true)
+
+@propagate_inbounds function getcache(type::EqualityNodeOutboundType, chain::EqualityChain, node_index)
+    if __check_indices(type, chain, node_index)
+        return getcache(type, getnode(chain, node_index))
+    else 
+        return Message(missing, true, true)
+    end
+end
+
 nextindex(::EqualityLeftOutbound, node_index)  = node_index + 1
 nextindex(::EqualityRightOutbound, node_index) = node_index - 1
+
+@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int  = default_if_nothing(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain))
+@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = default_if_nothing(findlast(view(chain.cacheright, 1:node_index)), 1)
+
+@propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index)  = first_unmaterialized_index(type, chain, node_index):-1:node_index
+@propagate_inbounds precompute_range(type::EqualityRightOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):node_index
 
 @propagate_inbounds function materialize!(type::EqualityNodeOutboundType, chain::EqualityChain, node_index)
     if __check_indices(type, chain, node_index)
         node = getnode(chain, node_index)
         if iscached(type, chain, node_index)
             return getcache(type, node)
+        else
+            # precompute messages in linear fashion 
+            range = precompute_range(type, chain, node_index)
+            for index in range
+                arg1 = as_message(getrecent(getinbound(chain, index)))
+                arg2 = as_message(getcache(type, chain, nextindex(type, index)))
+                result = prod(chain, arg1, arg2)
+                setcache!(type, getnode(chain, index), result)
+            end
+            setcache!(type, chain, range)
+            return materialize!(type, chain, node_index)
         end
-        arg1 = as_message(getrecent(getinbound(chain, node_index)))
-        arg2 = as_message(materialize!(type, chain, nextindex(type, node_index)))
-        result = prod(chain, arg1, arg2)
-        setcache!(type, node, result)
-        setcache!(type, chain, node_index)
-        return result
     else
         return Message(missing, true, true)
     end
