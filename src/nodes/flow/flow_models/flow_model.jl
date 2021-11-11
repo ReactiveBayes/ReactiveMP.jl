@@ -1,11 +1,6 @@
 export FlowModel, CompiledFlowModel
 export compile, nr_params
-export getlayers, getforward, getbackward, getjacobian, getinv_jacobian
-export forward_jacobian, backward_inv_jacobian
-export forward, forward!, backward, backward!
-export jacobian, jacobian!, inv_jacobian, inv_jacobian!
-export det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
-export detinv_jacobian, absdetinv_jacobian, logdetinv_jacobian, logabsdetinv_jacobian
+export getlayers
 
 using TupleTools: flatten
 

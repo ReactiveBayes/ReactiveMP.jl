@@ -1,5 +1,4 @@
 export InputLayer
-export getdim
 
 @doc raw"""
 The input layer specifies the input dimension to a flow model.

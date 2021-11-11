@@ -1,9 +1,6 @@
 ## TODO: simplify forward function through forward! (etc...)
 
 export PlanarFlow
-export getu, getw, getb, getall, setu!, setw!, setb!
-export forward, forward!
-export jacobian, jacobian!, inv_jacobian, det_jacobian, absdet_jacobian, logabsdet_jacobian
 
 import Base: eltype, size, length
 

@@ -1,5 +1,4 @@
 export Unscented
-export getL, getα, getβ, getκ, getλ, getWm, getWc
 
 struct Unscented <: AbstractNonLinearApproximation 
     L   :: Int64

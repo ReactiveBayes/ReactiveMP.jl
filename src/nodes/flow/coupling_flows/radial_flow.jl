@@ -1,7 +1,4 @@
 export RadialFlow
-export getz0, getα, getβ, getall, setz0!, setα!, setβ!
-export forward, forward!
-export jacobian, jacobian!, inv_jacobian, det_jacobian, absdet_jacobian, logabsdet_jacobian
 
 import Base: eltype, size, length
 

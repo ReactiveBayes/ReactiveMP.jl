@@ -1,9 +1,4 @@
 export PermutationLayer
-export getP, getmat
-export forward, forward!, backward, backward!
-export jacobian, inv_jacobian
-export det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
-export detinv_jacobian, absdetinv_jacobian, logdetinv_jacobian, logabsdetinv_jacobian
 
 import Base: eltype
 
