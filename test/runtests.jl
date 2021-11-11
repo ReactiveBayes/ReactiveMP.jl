@@ -22,7 +22,6 @@ using .ReactiveMPTestingHelpers
     end
 
     addtests("algebra/test_correction.jl")
-    addtests("algebra/test_flatten_tuple.jl")
     addtests("algebra/test_permutation_matrix.jl")
 
     addtests("test_math.jl")

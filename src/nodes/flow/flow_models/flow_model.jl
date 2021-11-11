@@ -7,6 +7,8 @@ export jacobian, jacobian!, inv_jacobian, inv_jacobian!
 export det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
 export detinv_jacobian, absdetinv_jacobian, logdetinv_jacobian, logabsdetinv_jacobian
 
+using TupleTools: flatten
+
 import Base: length, eltype
 
 @doc raw"""
@@ -30,11 +32,11 @@ Return arguments:
 - `::Flowmodel` - model containing layers of which are appropriately sized according to the input dimensionality.
 """
 function FlowModel(dim::Int, layers::T) where { T <: NTuple{N,AbstractLayerPlaceholder} where { N } }
-    return FlowModel(dim, flatten_tuple(prepare.(dim, layers)))
+    return FlowModel(dim, flatten(prepare.(dim, layers)))
 end
 function FlowModel(layers::T) where { T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where { N } }
     @assert typeof(first(layers)) <: InputLayer "The FlowModel requires an input dimension to be specified. This can be achieved, either by preceding the layers tuple with an integer as `FlowModel(dim, layers)`, or by starting the tuple of layers with an `InputLayer(dim)` as `FlowModel((InputLayer(dim), layers...))`."
-    return FlowModel(getdim(first(layers)), flatten_tuple(prepare.(getdim(first(layers)), Base.tail(layers))))
+    return FlowModel(getdim(first(layers)), flatten(prepare.(getdim(first(layers)), Base.tail(layers))))
 end
 
 # prepare function for setting correct sizes in the layers (without assigning the parameters yet!)
