@@ -368,7 +368,7 @@ function _backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector
 end
 
 # when calling backward inverse jacobian, redirect to _backward_inv_jacobian
-backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{T <: Real}) = _backward_inv_jacobian(model, output)
+backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{ <: Real}) = _backward_inv_jacobian(model, output)
 
 # for broadcasting over backward inverse jacobian, fix the model for multiple inputs
 Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_backward_inv_jacobian, Ref(model), output)
@@ -519,7 +519,7 @@ backward(model::FlowModel, output::AbstractVector{ <: Real })                   
 Broadcast.broadcasted(::typeof(backward), model::FlowModel, output::AbstractVector{ <: AbstractVector{ <: Real } }) = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 backward!(input::AbstractVector{ <: Real }, model::FlowModel, output::AbstractVector{ <: Real })                    = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 jacobian!(J_new::AbstractMatrix{ <: Real }, model::FlowModel, input::AbstractVector{ <: Real })                     = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-jacobian(model::FlowModel, input::AbstractVector{T})                                                                = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+jacobian(model::FlowModel, input::AbstractVector{ <: Real })                                                        = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 Broadcast.broadcasted(::typeof(jacobian), model::FlowModel, input::AbstractVector{ <: AbstractVector{ <: Real } })  = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 _jacobian(model::FlowModel, input::AbstractVector{ <: Real })                                                       = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 _inv_jacobian(model::FlowModel, output::AbstractVector{ <: Real })                                                  = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))

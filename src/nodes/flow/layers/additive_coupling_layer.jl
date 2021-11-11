@@ -237,14 +237,14 @@ end
 
 
 # inverse jacobian of the additive coupling layer
-function _inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{T}) where { T1 <: Real }
+function _inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{T}) where { T <: Real }
 
     # fetch variables
     dim = getdim(layer)
 
     # allocate jacobian
-    T = promote_type(eltype(layer), T1)
-    result = zeros(T, dim, dim)
+    Ti = promote_type(eltype(layer), T)
+    result = zeros(Ti, dim, dim)
 
     # determine result  
     inv_jacobian!(result, layer, output)
@@ -271,9 +271,9 @@ function inv_jacobian!(result::AbstractVector{T}, layer::AdditiveCouplingLayer, 
     input = backward(layer, output)
 
     # determine result
-    result .= zero(T1)
+    result .= zero(T)
     for k = 1:dim÷pdim
-        result[k:end,k] .= one(T1)
+        result[k:end,k] .= one(T)
     end
     for k = 1:dim÷pdim-1
         result[k+1:end, 1:k] .*= -jacobian(f[k], input[1+(k-1)*pdim:k*pdim])
