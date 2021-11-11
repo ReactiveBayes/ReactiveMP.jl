@@ -1,4 +1,4 @@
-export PermutationMatrix, PT_X_P, PT_X_P!, getind ,getindices
+export PermutationMatrix
 
 import Base: *
 import LinearAlgebra: transpose , inv, mul!
