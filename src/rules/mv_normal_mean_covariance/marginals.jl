@@ -4,7 +4,7 @@ export marginalrule
     return (out = prod(ProdAnalytical(), MvNormalMeanCovariance(mean(m_μ), mean(m_Σ)), m_out), μ = m_μ, Σ = m_Σ)
 end   
 
-@marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::PointMass, m_μ::MvNormalMeanCovariance, m_Σ::PointMass) = begin
+@marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_Σ::PointMass) = begin
     return (out = m_out, μ = prod(ProdAnalytical(), m_μ, MvNormalMeanCovariance(mean(m_out), mean(m_Σ))), Σ = m_Σ)
 end
 
