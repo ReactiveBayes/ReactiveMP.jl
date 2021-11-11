@@ -225,9 +225,9 @@ function jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, input::Arr
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
     # determine result
-    result .= 0.0
+    result .= zero(T1)
     for k = 1:dim÷pdim
-        result[k,k] = 1.0
+        result[k,k] = one(T1)
     end
     for k = 1:dim÷pdim-1
         result[1+k*pdim:(k+1)*pdim, 1+(k-1)*pdim:k*pdim] .+= jacobian(f[k], input[1+(k-1)*pdim:k*pdim])
@@ -271,9 +271,9 @@ function inv_jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, output
     input = backward(layer, output)
 
     # determine result
-    result .= 0.0
+    result .= zero(T1)
     for k = 1:dim÷pdim
-        result[k:end,k] .= 1.0
+        result[k:end,k] .= one(T1)
     end
     for k = 1:dim÷pdim-1
         result[k+1:end, 1:k] .*= -jacobian(f[k], input[1+(k-1)*pdim:k*pdim])

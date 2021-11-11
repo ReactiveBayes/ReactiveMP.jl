@@ -258,7 +258,7 @@ function _forward_jacobian(model::CompiledFlowModel, input::Vector{T1}) where { 
     output = zeros(T, dim)
     J = zeros(T, dim, dim)
     for k = 1:dim
-        J[k,k] = 1.0
+        J[k,k] = one(T)
     end
 
     # calculate jacobian
@@ -291,7 +291,7 @@ function forward_jacobian!(output::Vector{T1}, J::Matrix{T2}, model::CompiledFlo
     J_new = zeros(T, dim, dim)
     J_old = zeros(T, dim, dim)
     for k = 1:dim
-        J_old[k,k] = 1.0
+        J_old[k,k] = one(T)
     end
 
     # calculate forward_jacobian over all layers
@@ -355,7 +355,7 @@ function _backward_inv_jacobian(model::CompiledFlowModel, output::Vector{T1}) wh
     J = zeros(T, dim, dim)
     input = zeros(T, dim)
     for k = 1:dim
-        J[k,k] = 1.0
+        J[k,k] = one(T)
     end
 
     # calculate jacobian
@@ -388,7 +388,7 @@ function backward_inv_jacobian!(input::Vector{T1}, J::Matrix{T2}, model::Compile
     J_new = zeros(T, dim, dim)
     J_old = zeros(T, dim, dim)
     for k = 1:dim
-        J_old[k,k] = 1.0
+        J_old[k,k] = one(T)
     end
 
     # calculate backward inverse jacobian over all layers
@@ -456,9 +456,9 @@ function jacobian!(J::Matrix{T1}, model::CompiledFlowModel, input::Vector{T2}) w
     
     # allocate space for output and jacobian
     output = zeros(T, dim)
-    J .= 0.0
+    J .= zero(T1)
     for k = 1:dim
-        J[k,k] = 1.0
+        J[k,k] = one(T1)
     end
 
     # calculate jacobian
@@ -475,9 +475,9 @@ function inv_jacobian!(J::Matrix{T1}, model::CompiledFlowModel, output::Vector{T
     
     # allocate space for input and jacobian
     input = zeros(T, dim)
-    J .= 0.0
+    J .= zero(T1)
     for k = 1:dim
-        J[k,k] = 1.0
+        J[k,k] = one(T1)
     end
 
     # calculate jacobian
