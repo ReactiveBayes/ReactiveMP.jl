@@ -74,11 +74,11 @@ using LinearAlgebra
         # check for layer with available P matrix
         P = PermutationMatrix(5)
         layer = PermutationLayer(5, P)
-        @test eltype(layer) <: Int
+        @test eltype(layer) <: Integer
 
         # check for layer with unknown P matrix
         layer = PermutationLayer(4)
-        @test eltype(layer) <: Int
+        @test eltype(layer) <: Integer
 
     end
 

@@ -18,9 +18,9 @@ An example is the 3-dimensional permutation matrix
 A = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 1 & 0 & 0 \end{bmatrix}
 ```
 """
-struct PermutationMatrix{ T <: Int } <: AbstractMatrix{T}
+struct PermutationMatrix{ T <: Integer } <: AbstractMatrix{T}
     ind::Vector{T}
-    function PermutationMatrix(ind::Vector{T}) where { T <: Int }
+    function PermutationMatrix(ind::Vector{T}) where { T <: Integer }
         return new{T}(ind)
     end
 end
@@ -29,7 +29,7 @@ end
 `PermutationMatrix(dim::T; switch_first::Bool=true)` Generates a random permutation matrix of size (dim x dim).
 The `switch_first` argument specifies whether the first index always has to be permuted.
 """
-function PermutationMatrix(dim::T; switch_first::Bool=true) where { T <: Int }
+function PermutationMatrix(dim::T; switch_first::Bool=true) where { T <: Integer }
     ind = shuffle(collect(1:dim))
     if switch_first && ind[1] == 1
         tmp = ind[2]

@@ -15,7 +15,7 @@ struct PermutationLayer{ T } <: AbstractLayer
     P   :: PermutationMatrix{T}
 end
 
-function PermutationLayer(dim::T) where { T <: Int}
+function PermutationLayer(dim::T) where { T <: Integer }
 
     # create random permutation matrix
     P = PermutationMatrix(dim)
