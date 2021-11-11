@@ -78,16 +78,16 @@ end
 
 # custom Base function for the RadialFlow structure
 eltype(f::RadialFlow{T1,T2}) where { T1 <: Real, T2 <: Real}                 = promote_type(T1, T2)
-eltype(f::RadialFlow{T1,T2}) where { T1 <: AbstractArray, T2 <: Real}        = promote_type(eltype(T1), T2)
+eltype(f::RadialFlow{T1,T2}) where { T1 <: AbstractVector, T2 <: Real}       = promote_type(eltype(T1), T2)
 eltype(::Type{RadialFlow{T1,T2}}) where { T1 <: Real, T2 <: Real}            = promote_type(T1, T2)
-eltype(::Type{RadialFlow{T1,T2}}) where { T1 <: AbstractArray, T2 <: Real}   = promote_type(eltype(T1), T2)
+eltype(::Type{RadialFlow{T1,T2}}) where { T1 <: AbstractVector, T2 <: Real}  = promote_type(eltype(T1), T2)
 
 size(f::RadialFlow{T1,T2}) where { T1 <: Real, T2 <: Real}                   = 1
-size(f::RadialFlow{T1,T2}) where { T1 <: AbstractArray, T2 <: Real}          = length(f.z0)
+size(f::RadialFlow{T1,T2}) where { T1 <: AbstractVector, T2 <: Real}         = length(f.z0)
 size(f::RadialFlowEmpty{N}) where { N }                                      = return N
 
 length(f::RadialFlow{T1,T2}) where { T1 <: Real, T2 <: Real}                 = 1
-length(f::RadialFlow{T1,T2}) where { T1 <: AbstractArray, T2 <: Real}        = length(f.z0)
+length(f::RadialFlow{T1,T2}) where { T1 <: AbstractVector, T2 <: Real}       = length(f.z0)
 length(f::RadialFlowEmpty{N}) where { N }                                    = return N
 
 # forward pass through the RadialFlow function (multivariate input)
@@ -110,7 +110,7 @@ function _forward(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real }
 
 end
 forward(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real } = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::Array{T1,1}) where { T1, T2 <: Real } = broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::AbstractVector{T1}) where { T1, T2 <: Real } = broadcast(_forward, Ref(f), input)
 
 
 # forward pass through the RadialFlow function (univariate input)
@@ -133,15 +133,15 @@ function _forward(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Rea
 
 end
 forward(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 <: Real } = broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::AbstractVector{ <: Real }) where { T1 <: Real, T2 <: Real } = broadcast(_forward, Ref(f), input)
 
-function _forward(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 }
+function _forward(f::RadialFlow{T1,T2}, input) where { T1 <: Real, T2 <: Real}
     # function when the input is an array with 1 element
     @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the RadialFlow flow."
     return forward(f, input[1])
 end
-forward(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 } = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 } = broadcast(_forward, Ref(f), input)
+forward(f::RadialFlow{T1,T2}, input) where { T1 <: Real, T2 <: Real } = _forward(f, input)
+Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1,T2}, input::AbstractVector) where { T1 <: Real, T2 <: Real } = broadcast(_forward, Ref(f), input)
 
 # inplace forward pass through the RadialFlow function (multivariate input)
 function forward!(output::T1, f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real }
@@ -186,15 +186,15 @@ function _jacobian(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real}
 
 end
 jacobian(f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real } = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::Array{T1,1}) where { T1, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::AbstractVector{T1}) where { T1, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
 
-function _jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 }
+function _jacobian(f::RadialFlow{T1,T2}, input) where { T1 <: Real, T2 <: Real }
     # function when the input is an array with 1 element
     @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the RadialFlow flow."
     return jacobian(f, input[1])
 end
-jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 } = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 } = broadcast(_jacobian, Ref(f), input)
+jacobian(f::RadialFlow{T1,T2}, input) where { T1 <: Real, T2 <: Real } = _jacobian(f, input)
+Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::AbstractVector) where { T1 <: Real, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
 
 # jacobian of the RadialFlow function (univariate input)
 function _jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } 
@@ -212,10 +212,10 @@ function _jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Re
 
 end
 jacobian(f::RadialFlow{T1,T2}, input::T3) where { T1 <: Real, T2 <: Real, T3 <: Real } = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::Array{T3,1}) where { T1 <: Real, T2 <: Real, T3 <: Real } = broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1,T2}, input::AbstractVector{ <: Real }) where { T1 <: Real, T2 <: Real } = broadcast(_jacobian, Ref(f), input)
 
 # inplace jacobian of the RadialFlow function (multivariate input)
-function jacobian!(output::Array{T2,2}, f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real}
+function jacobian!(output::AbstractMatrix{T2}, f::RadialFlow{T1,T2}, input::T1) where { T1, T2 <: Real}
 
     # check whether the dimensionality is correct
     @assert size(output) == (length(input), length(f.z0)) "The dimensionality of the preallocated jacobian matrix seems incorrect."

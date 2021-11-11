@@ -148,7 +148,7 @@ end
 forward(model::CompiledFlowModel, input::AbstractVector{T}) where { T <: Real } = _forward(model, input)
 
 # for broadcasting over forward, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(forward), model::CompiledFlowModel, input::AbstractVector{AbstractVector{T}}) where { T <: Real } = broadcast(_forward, Ref(model), input)
+Broadcast.broadcasted(::typeof(forward), model::CompiledFlowModel, input::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_forward, Ref(model), input)
 
 # inplace forward pass through the Flow model
 function forward!(output::AbstractVector{T1}, model::CompiledFlowModel, input::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }
@@ -207,7 +207,7 @@ end
 backward(model::CompiledFlowModel, output::AbstractVector{T}) where { T <: Real } = _backward(model, output)
 
 # for broadcasting over backward, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(backward), model::CompiledFlowModel, output::AbstractVector{AbstractVector{T}}) where { T <: Real } = broadcast(_backward, Ref(model), output)
+Broadcast.broadcasted(::typeof(backward), model::CompiledFlowModel, output::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_backward, Ref(model), output)
 
 # inplace backward pass through the Flow model
 function backward!(input::AbstractVector{T1}, model::CompiledFlowModel, output::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }
@@ -273,7 +273,7 @@ end
 forward_jacobian(model::CompiledFlowModel, input::AbstractVector{T}) where { T <: Real } = _forward_jacobian(model, input)
 
 # for broadcasting over forward_jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(forward_jacobian), model::CompiledFlowModel, input::AbstractVector{AbstractVector{T}}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
+Broadcast.broadcasted(::typeof(forward_jacobian), model::CompiledFlowModel, input::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_jacobian, Ref(model), input)
 
 # inplace forward_jacobian of the Flow model
 function forward_jacobian!(output::AbstractVector{T1}, J::Matrix{T2}, model::CompiledFlowModel, input::AbstractVector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real }
@@ -370,7 +370,7 @@ end
 backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{T}) where { T <: Real } = _backward_inv_jacobian(model, output)
 
 # for broadcasting over backward inverse jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::AbstractVector{AbstractVector{T}}) where { T <: Real } = broadcast(_backward_inv_jacobian, Ref(model), output)
+Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_backward_inv_jacobian, Ref(model), output)
 
 # inplace inverse backward jacobian of the Flow model
 function backward_inv_jacobian!(input::AbstractVector{T1}, J::Matrix{T2}, model::CompiledFlowModel, output::AbstractVector{T3}) where { T1 <: Real, T2 <: Real, T3 <: Real }
@@ -442,10 +442,10 @@ backward_inv_jacobian!(J::Matrix{T1}, J_new::Matrix{T2}, J_old::Matrix{T3}, inpu
 # specify jacobian and inv_jacobian functions based on joint functions
 _jacobian(model::CompiledFlowModel, input::AbstractVector{T}) where { T <: Real }     = forward_jacobian(model, input)[2]
 jacobian(model::CompiledFlowModel, input::AbstractVector{T}) where { T <: Real }      = _jacobian(model, input)
-Broadcast.broadcasted(::typeof(jacobian), model::CompiledFlowModel, input::AbstractVector{AbstractVector{T}}) where { T <: Real } = broadcast(_jacobian, Ref(model), input)
+Broadcast.broadcasted(::typeof(jacobian), model::CompiledFlowModel, input::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_jacobian, Ref(model), input)
 _inv_jacobian(model::CompiledFlowModel, output::AbstractVector{T}) where { T <: Real }     = backward_inv_jacobian(model, output)[2]
 inv_jacobian(model::CompiledFlowModel, output::AbstractVector{T}) where { T <: Real }      = _inv_jacobian(model, output)
-Broadcast.broadcasted(::typeof(inv_jacobian), model::CompiledFlowModel, output::AbstractVector{AbstractVector{T}}) where { T <: Real } = broadcast(_inv_jacobian, Ref(model), output)
+Broadcast.broadcasted(::typeof(inv_jacobian), model::CompiledFlowModel, output::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_inv_jacobian, Ref(model), output)
 function jacobian!(J::Matrix{T1}, model::CompiledFlowModel, input::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }
     
     # fetch dimension
@@ -510,15 +510,15 @@ logabsdetinv_jacobian(model::CompiledFlowModel, output::AbstractVector{T}) where
 # throw an error when the model has not yet been compiled
 _forward(model::FlowModel, input::AbstractVector{T1}) where { T1 <: Real }                                          = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 forward(model::FlowModel, input::AbstractVector{T}) where { T <: Real }                                             = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-Broadcast.broadcasted(::typeof(forward), model::FlowModel, input::AbstractVector{AbstractVector{T}}) where { T <: Real }    = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-forward!(output::AbstractVector{T1}, model::FlowModel, input::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }          = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+Broadcast.broadcasted(::typeof(forward), model::FlowModel, input::AbstractVector{ <: AbstractVector{ <: Real } })   = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+forward!(output::AbstractVector{T1}, model::FlowModel, input::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }  = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 _backward(model::FlowModel, output::AbstractVector{T1}) where { T1 <: Real }                                        = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 backward(model::FlowModel, output::AbstractVector{T}) where { T <: Real }                                           = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-Broadcast.broadcasted(::typeof(backward), model::FlowModel, output::AbstractVector{AbstractVector{T}}) where { T <: Real }  = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-backward!(input::AbstractVector{T1}, model::FlowModel, output::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }         = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+Broadcast.broadcasted(::typeof(backward), model::FlowModel, output::AbstractVector{ <: AbstractVector{ <: Real } }) = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+backward!(input::AbstractVector{T1}, model::FlowModel, output::AbstractVector{T2}) where { T1 <: Real, T2 <: Real } = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 jacobian!(J_new::Matrix{T1}, model::FlowModel, input::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }          = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 jacobian(model::FlowModel, input::AbstractVector{T}) where { T <: Real }                                            = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
-Broadcast.broadcasted(::typeof(jacobian), model::FlowModel, input::AbstractVector{AbstractVector{T}}) where { T <: Real }   = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
+Broadcast.broadcasted(::typeof(jacobian), model::FlowModel, input::AbstractVector{ <: AbstractVector{ <: Real } })  = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 _jacobian(model::FlowModel, input::AbstractVector{T1}) where { T1 <: Real }                                         = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 _inv_jacobian(model::FlowModel, output::AbstractVector{T1}) where { T1 <: Real }                                    = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))
 inv_jacobian!(J_new::Matrix{T1}, model::FlowModel, output::AbstractVector{T2}) where { T1 <: Real, T2 <: Real }     = throw(ArgumentError("Please first compile your model using `compiled_model = compile(model)`."))

@@ -106,7 +106,7 @@ getpartitiondim(layer::AdditiveCouplingLayerEmpty)  = layer.partition_dim
 eltype(layer::AdditiveCouplingLayer{T})  where { T }              = promote_type(map(eltype, getf(layer))...)
 
 # forward pass through the additive coupling layer
-function _forward(layer::AdditiveCouplingLayer, input::Array{T,1}) where { T <: Real } 
+function _forward(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real }) 
 
     # allocate result
     result = similar(input)
@@ -118,11 +118,11 @@ function _forward(layer::AdditiveCouplingLayer, input::Array{T,1}) where { T <: 
     return result
     
 end
-forward(layer::AdditiveCouplingLayer, input::Array{T,1}) where { T <: Real } = _forward(layer, input)
-Broadcast.broadcasted(::typeof(forward), layer::AdditiveCouplingLayer, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_forward, Ref(layer), input)
+forward(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real }) = _forward(layer, input)
+Broadcast.broadcasted(::typeof(forward), layer::AdditiveCouplingLayer, input::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_forward, Ref(layer), input)
 
 # inplace forward pass through the additive coupling layer
-function forward!(output::Array{T1,1}, layer::AdditiveCouplingLayer, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
+function forward!(output::AbstractVector{ <: Real }, layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real })
 
     # fetch variables
     f = getf(layer)
@@ -150,7 +150,7 @@ function forward!(output::Array{T1,1}, layer::AdditiveCouplingLayer, input::Arra
 end
 
 # backward pass through the additive coupling layer
-function _backward(layer::AdditiveCouplingLayer, output::Array{T,1}) where { T <: Real }
+function _backward(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real })
 
     # allocate result
     result = similar(output)
@@ -162,11 +162,11 @@ function _backward(layer::AdditiveCouplingLayer, output::Array{T,1}) where { T <
     return result
     
 end
-backward(layer::AdditiveCouplingLayer, output::Array{T,1}) where { T <: Real } = _backward(layer, output)
-Broadcast.broadcasted(::typeof(backward), layer::AdditiveCouplingLayer, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_backward, Ref(layer), output)
+backward(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real }) = _backward(layer, output)
+Broadcast.broadcasted(::typeof(backward), layer::AdditiveCouplingLayer, output::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_backward, Ref(layer), output)
 
 # inplace backward pass through the additive coupling layer
-function backward!(input::Array{T1,1}, layer::AdditiveCouplingLayer, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }
+function backward!(input::AbstractVector{ <: Real }, layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real })
 
     # fetch variables
     f = getf(layer)
@@ -194,14 +194,14 @@ function backward!(input::Array{T1,1}, layer::AdditiveCouplingLayer, output::Arr
 end
 
 # jacobian of the additive coupling layer
-function _jacobian(layer::AdditiveCouplingLayer, input::Array{T1,1}) where { T1 <: Real }
+function _jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{T}) where { T <: Real }
 
     # fetch variables
     dim = getdim(layer)
 
     # allocate jacobian
-    T = promote_type(eltype(layer), T1)
-    result = zeros(T, dim, dim)
+    Ti = promote_type(eltype(layer), T)
+    result = zeros(Ti, dim, dim)
 
     # determine result  
     jacobian!(result, layer, input)
@@ -210,11 +210,11 @@ function _jacobian(layer::AdditiveCouplingLayer, input::Array{T1,1}) where { T1 
     return LowerTriangular(result)
     
 end
-jacobian(layer::AdditiveCouplingLayer, input::Array{T,1}) where { T <: Real } = _jacobian(layer, input)
-Broadcast.broadcasted(::typeof(jacobian), layer::AdditiveCouplingLayer, input::Array{Array{T,1},1}) where { T <: Real } = broadcast(_jacobian, Ref(layer), input)
+jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real }) = _jacobian(layer, input)
+Broadcast.broadcasted(::typeof(jacobian), layer::AdditiveCouplingLayer, input::AbstractVector{ AbstractVector{ <: Real } }) = broadcast(_jacobian, Ref(layer), input)
 
 # inplace jacobian through the additive coupling layer
-function jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, input::Array{T2,1}) where { T1 <: Real, T2 <: Real }
+function jacobian!(result::AbstractMatrix{T}, layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real }) where { T <: Real }
 
     # fetch variables
     f = getf(layer)
@@ -225,9 +225,9 @@ function jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, input::Arr
     @assert length(input) == dim "The dimensionality of the AdditiveCouplingLayer does not correspond to the length of the passed input/output."
 
     # determine result
-    result .= zero(T1)
+    result .= zero(T)
     for k = 1:dim÷pdim
-        result[k,k] = one(T1)
+        result[k,k] = one(T)
     end
     for k = 1:dim÷pdim-1
         result[1+k*pdim:(k+1)*pdim, 1+(k-1)*pdim:k*pdim] .+= jacobian(f[k], input[1+(k-1)*pdim:k*pdim])
@@ -237,7 +237,7 @@ end
 
 
 # inverse jacobian of the additive coupling layer
-function _inv_jacobian(layer::AdditiveCouplingLayer, output::Array{T1,1}) where { T1 <: Real }
+function _inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{T}) where { T1 <: Real }
 
     # fetch variables
     dim = getdim(layer)
@@ -253,11 +253,11 @@ function _inv_jacobian(layer::AdditiveCouplingLayer, output::Array{T1,1}) where 
     return LowerTriangular(result)
 
 end
-inv_jacobian(layer::AdditiveCouplingLayer, output::Array{T,1}) where { T <: Real } = _inv_jacobian(layer, output)
-Broadcast.broadcasted(::typeof(inv_jacobian), layer::AdditiveCouplingLayer, output::Array{Array{T,1},1}) where { T <: Real } = broadcast(_inv_jacobian, Ref(layer), output)
+inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real }) = _inv_jacobian(layer, output)
+Broadcast.broadcasted(::typeof(inv_jacobian), layer::AdditiveCouplingLayer, output::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_inv_jacobian, Ref(layer), output)
 
 # inplace inv_jacobian through the additive coupling layer
-function inv_jacobian!(result::Array{T1,2}, layer::AdditiveCouplingLayer, output::Array{T2,1}) where { T1 <: Real, T2 <: Real }
+function inv_jacobian!(result::AbstractVector{T}, layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real }) where { T <: Real }
 
     # fetch variables
     f = getf(layer)
@@ -283,12 +283,12 @@ end
 
 
 # extra utility functions 
-det_jacobian(layer::AdditiveCouplingLayer, input::Array{T,1})           where { T <: Real}   = 1.0
-absdet_jacobian(layer::AdditiveCouplingLayer, input::Array{T,1})        where { T <: Real}   = 1.0
-logdet_jacobian(layer::AdditiveCouplingLayer, input::Array{T,1})        where { T <: Real}   = 0.0
-logabsdet_jacobian(layer::AdditiveCouplingLayer, input::Array{T,1})     where { T <: Real}   = 0.0
+det_jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real })           = 1.0
+absdet_jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real })        = 1.0
+logdet_jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real })        = 0.0
+logabsdet_jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real })     = 0.0
 
-detinv_jacobian(layer::AdditiveCouplingLayer, output::Array{T,1})       where { T <: Real}   = 1.0
-absdetinv_jacobian(layer::AdditiveCouplingLayer, output::Array{T,1})    where { T <: Real}   = 1.0
-logdetinv_jacobian(layer::AdditiveCouplingLayer, output::Array{T,1})    where { T <: Real}   = 0.0
-logabsdetinv_jacobian(layer::AdditiveCouplingLayer, output::Array{T,1}) where { T <: Real}   = 0.0
+detinv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real })       = 1.0
+absdetinv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real })    = 1.0
+logdetinv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real })    = 0.0
+logabsdetinv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real }) = 0.0
