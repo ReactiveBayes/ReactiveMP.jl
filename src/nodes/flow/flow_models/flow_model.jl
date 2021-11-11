@@ -330,7 +330,7 @@ end
 # standard method
 function forward_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, output::AbstractVector{ <: Real }, input_new::AbstractVector{ <: Real }, layer::AbstractLayer)
     # calculate new jacobian
-    forward_jacobian!(output, J_new, first(layers), input_new)
+    forward_jacobian!(output, J_new, layer, input_new)
 
     # calculate total jacobian
     mul!(J, J_new, J_old)
@@ -419,16 +419,16 @@ end
 # specialized methods
 function backward_inv_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, input::AbstractVector{ <: Real }, output_new::AbstractVector{ <: Real }, layer::PermutationLayer)
     # perform forward pass over last layer
-    backward!(input, last(layers), output_new)
+    backward!(input, layer, output_new)
         
     # calculate total jacobian
-    mul!(J, inv_jacobian(last(layers), output_new), J_old)
+    mul!(J, inv_jacobian(layer, output_new), J_old)
 end
 
 # standard method
 function backward_inv_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, input::AbstractVector{ <: Real }, output_new::AbstractVector{ <: Real }, layer::AbstractLayer)
     # perform forward pass over last layer
-    backward_inv_jacobian!(input, J_new, last(layers), output_new)
+    backward_inv_jacobian!(input, J_new, layer, output_new)
         
     # calculate total jacobian
     mul!(J, J_new, J_old)

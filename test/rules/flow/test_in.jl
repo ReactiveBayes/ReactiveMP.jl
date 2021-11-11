@@ -7,6 +7,7 @@ using Distributions
 using LinearAlgebra
 
 import ReactiveMP: @test_rules
+using ReactiveMP: jacobian, inv_jacobian
 
 @testset "rules:Flow:in" begin
 

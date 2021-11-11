@@ -206,7 +206,7 @@ function _jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{T}) where
     
 end
 jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real }) = _jacobian(layer, input)
-Broadcast.broadcasted(::typeof(jacobian), layer::AdditiveCouplingLayer, input::AbstractVector{ AbstractVector{ <: Real } }) = broadcast(_jacobian, Ref(layer), input)
+Broadcast.broadcasted(::typeof(jacobian), layer::AdditiveCouplingLayer, input::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_jacobian, Ref(layer), input)
 
 # inplace jacobian through the additive coupling layer
 function jacobian!(result::AbstractMatrix{T}, layer::AdditiveCouplingLayer, input::AbstractVector{ <: Real }) where { T <: Real }
@@ -252,7 +252,7 @@ inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real }) = 
 Broadcast.broadcasted(::typeof(inv_jacobian), layer::AdditiveCouplingLayer, output::AbstractVector{ <: AbstractVector{ <: Real } }) = broadcast(_inv_jacobian, Ref(layer), output)
 
 # inplace inv_jacobian through the additive coupling layer
-function inv_jacobian!(result::AbstractVector{T}, layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real }) where { T <: Real }
+function inv_jacobian!(result::AbstractMatrix{T}, layer::AdditiveCouplingLayer, output::AbstractVector{ <: Real }) where { T <: Real }
 
     # fetch variables
     f = getf(layer)

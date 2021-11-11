@@ -2,6 +2,7 @@ module FlowNodeTest
 
 using Test
 using ReactiveMP 
+using ReactiveMP: getL, getα, getβ, getκ, getλ
 
 include("../../test_helpers.jl")
 

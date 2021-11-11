@@ -62,9 +62,7 @@ LinearAlgebra.inv(mat::PermutationMatrix)       = adjoint(mat)
 
 # get functions
 getind(mat::PermutationMatrix)      = mat.ind
-getindices(mat::PermutationMatrix)  = mat.ind
 getind(mat::Adjoint{T, PermutationMatrix{T}}) where { T }       = sortperm(mat.parent.ind)
-getindices(mat::Adjoint{T, PermutationMatrix{T}}) where { T }   = sortperm(mat.parent.ind)
 
 
 # Permutation-vector multiplication

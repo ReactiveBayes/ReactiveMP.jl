@@ -4,6 +4,9 @@ using Test
 using ReactiveMP 
 using LinearAlgebra
 
+using ReactiveMP: getP, getmat, getdim, forward, forward!, backward, backward!, jacobian, inv_jacobian
+using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logdet_jacobian, logabsdet_jacobian
+
 @testset "Permutation Layer" begin
 
     @testset "Constructor" begin

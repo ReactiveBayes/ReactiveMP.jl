@@ -1,7 +1,8 @@
 module ReactiveMPPermutationMatrixTest
 
 using Test
-using ReactiveMP 
+using ReactiveMP
+using ReactiveMP: getind, PT_X_P
 using Random
 
 using LinearAlgebra
@@ -40,14 +41,10 @@ using LinearAlgebra
         ind = shuffle(collect(1:100))
         P = PermutationMatrix(ind)
         @test P.ind     == getind(P)
-        @test P.ind     == getindices(P)
-        @test getind(P) == getindices(P)
 
         ind = shuffle(collect(1:100))
         P = PermutationMatrix(ind)'
         @test sortperm(ind) == getind(P)
-        @test sortperm(ind) == getindices(P)
-        @test getind(P)     == getindices(P)
 
     end
     
@@ -55,7 +52,7 @@ using LinearAlgebra
         
         P = PermutationMatrix(10)
         @test eltype(P) == Int64
-        @test length(P) == 10
+        @test length(P) == 100
         @test size(P)   == (10, 10)
 
         @test sum(P)    == 10

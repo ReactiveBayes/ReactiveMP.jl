@@ -4,6 +4,8 @@ using Test
 using ReactiveMP 
 using LinearAlgebra
 
+using ReactiveMP: getdim
+
 @testset "Input Layer" begin
 
     @testset "Constructor" begin

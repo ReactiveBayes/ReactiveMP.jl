@@ -2,6 +2,8 @@ module FlowNodeLayersAdditiveCouplingLayerTest
 
 using Test
 using ReactiveMP 
+using ReactiveMP: getf, getflow, getdim, forward, forward!, backward, backward!, jacobian, inv_jacobian
+using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
 
 @testset "Additive Coupling Layer" begin
 

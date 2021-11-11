@@ -1,7 +1,10 @@
 module FlowNodeCouplingFlowsRadialFlowTest
 
 using Test
-using ReactiveMP 
+using ReactiveMP
+using ReactiveMP: getdim, getz0, getα, getβ, getall, setz0!, setα!, setβ!
+using ReactiveMP: forward, forward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!
+using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logdet_jacobian, logabsdet_jacobian 
 
 @testset "Radial Flow" begin
 
