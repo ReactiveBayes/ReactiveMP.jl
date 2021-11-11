@@ -42,8 +42,12 @@ end
 
 # extensions of base functionality
 Base.eltype(::PermutationMatrix{T}) where { T } = T
-Base.size(mat::PermutationMatrix)               = (length(mat), length(mat)) 
-Base.length(mat::PermutationMatrix)             = length(mat.ind)
+function Base.size(mat::PermutationMatrix)
+    nr_elements = length(mat.ind)
+    return (nr_elements, nr_elements)
+end
+Base.size(mat::PermutationMatrix, d) = d::Integer <= 2 ? length(mat.ind) : 1
+Base.length(mat::PermutationMatrix)  = prod(size(mat))
 
 function Base.getindex(mat::PermutationMatrix, i::Int, j::Int)
     if mat.ind[i] == j
@@ -72,7 +76,7 @@ end
 
 function LinearAlgebra.mul!(y::AbstractVector, P::PermutationMatrix, v::AbstractVector)
     ind = getind(P)
-    @inbounds @simd for k in 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
         y[k] = v[ind[k]]
     end
 end
@@ -85,7 +89,7 @@ end
 
 function LinearAlgebra.mul!(y::AbstractVector, P::Adjoint{T, PermutationMatrix{T}}, v::AbstractVector) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
         y[ind[k]] = v[k]
     end
 end
@@ -99,7 +103,7 @@ end
 
 function LinearAlgebra.mul!(y::AbstractVector, P::Transpose{T, PermutationMatrix{T}}, v::AbstractVector) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
         y[ind[k]] = v[k]
     end
 end
@@ -115,8 +119,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, P::PermutationMatrix{T}, X::AbstractMatrix) where { T }
     ind = getind(P)
-    @inbounds @simd for k in 1:length(P)
-        @inbounds @simd for ki = 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
+        @inbounds @simd for ki = 1:size(P,1)
             Y[k,ki] = X[ind[k],ki]
         end
     end
@@ -131,8 +135,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}, X::AbstractMatrix) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:length(P)
-        @inbounds @simd for ki = 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
+        @inbounds @simd for ki = 1:size(P,1)
             Y[ind[k],ki] = X[k,ki]
         end
     end
@@ -147,8 +151,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}, X::AbstractMatrix) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:length(P)
-        @inbounds @simd for ki = 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
+        @inbounds @simd for ki = 1:size(P,1)
             Y[ind[k],ki] = X[k,ki]
         end
     end
@@ -173,8 +177,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, X::AbstractMatrix, P::PermutationMatrix)
     ind = getind(P)
-    @inbounds @simd for k in 1:length(P)
-        @inbounds @simd for ki = 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
+        @inbounds @simd for ki = 1:size(P,1)
             Y[ki,ind[k]] = X[ki,k]
         end
     end
@@ -189,8 +193,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, X::AbstractMatrix, P::Adjoint{T, PermutationMatrix{T}}) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:length(P)
-        @inbounds @simd for ki = 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
+        @inbounds @simd for ki = 1:size(P,1)
             Y[ki,k] = X[ki,ind[k]]
         end
     end
@@ -205,8 +209,8 @@ end
 
 function LinearAlgebra.mul!(Y::AbstractMatrix, X::AbstractMatrix, P::Transpose{T, PermutationMatrix{T}}, ) where { T }
     ind = getind(P.parent) # explicitly take the index of the parent as not to call sortperm
-    @inbounds @simd for k in 1:length(P)
-        @inbounds @simd for ki = 1:length(P)
+    @inbounds @simd for k in 1:size(P,1)
+        @inbounds @simd for ki = 1:size(P,1)
             Y[ki,k] = X[ki,ind[k]]
         end
     end
@@ -233,8 +237,8 @@ function PT_X_P!(Y::AbstractMatrix, X::AbstractMatrix, P::PermutationMatrix)
     ind = getind(P)
 
     # perform permutation operation
-    @inbounds @simd for k1 = 1:length(P)
-        @inbounds @simd for k2 = 1:length(P)
+    @inbounds @simd for k1 = 1:size(P,1)
+        @inbounds @simd for k2 = 1:size(P,1)
             Y[ind[k1], ind[k2]] = X[k1,k2] 
         end
     end
