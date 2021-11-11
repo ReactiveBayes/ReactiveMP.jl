@@ -2,6 +2,8 @@ export GCV, GCVMetadata
 
 import StatsFuns: log2π
 
+const UniNormalOrExpLinQuad = Union{UnivariateGaussianDistributionsFamily, ExponentialLinearQuadratic}
+
 struct GCVMetadata{ A <: AbstractApproximationMethod }
     approximation :: A
 end

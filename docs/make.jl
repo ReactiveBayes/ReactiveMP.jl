@@ -21,6 +21,8 @@ makedocs(
         "Examples" => [
             "Overview"                         => "examples/overview.md",
             "Linear Gaussian Dynamical System" => "examples/linear_gaussian_state_space_model.md",
+            "Hierarchical Gaussian Filter"     => "examples/hierarchical_gaussian_filter.md",
+            "Autoregressive Model"             => "examples/autoregressive.md",
         ],
         "Library" => [
             "Messages"     => "lib/message.md",

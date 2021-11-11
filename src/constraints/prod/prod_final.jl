@@ -18,7 +18,6 @@ end
 ProdFinal(prod::ProdFinal) = prod
 
 Base.show(io::IO, prod::ProdFinal) = print(io, "ProdFinal(", getdist(prod), ")")
-Base.eltype(prod::ProdFinal)       = Base.eltype(getdist(prod))
 
 getdist(dist::ProdFinal) = dist.dist
 
@@ -40,6 +39,7 @@ MacroHelpers.@proxy_methods ProdFinal getdist [
     Base.length,
     Base.ndims,
     Base.size,
+    Base.eltype,
     mean_cov, 
     mean_var,
     mean_invcov, 

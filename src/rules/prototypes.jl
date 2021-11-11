@@ -42,6 +42,7 @@ include("gcv/z.jl")
 include("gcv/k.jl")
 include("gcv/w.jl")
 include("gcv/marginals.jl")
+include("gcv/gaussian_extension.jl")
 
 include("kernel_gcv/x.jl")
 include("kernel_gcv/y.jl")
