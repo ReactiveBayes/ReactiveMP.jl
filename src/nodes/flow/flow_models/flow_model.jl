@@ -302,25 +302,8 @@ end
 # inplace forward_jacobian calculation for a tuple of layers
 function forward_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, output::AbstractVector{ <: Real }, input_new::AbstractVector{ <: Real }, layers::T) where { T <: NTuple{N,AbstractLayer} where N}
 
-    # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
-    if typeof(first(layers)) <: PermutationLayer
-
-        # calculate new output
-        forward!(output, first(layers), input_new)
-        
-        # calculate total jacobian
-        mul!(J, jacobian(first(layers), input_new), J_old)
-        
-    # else fall back to standard calculation
-    else 
-        
-        # calculate new jacobian
-        forward_jacobian!(output, J_new, first(layers), input_new)
-
-        # calculate total jacobian
-        mul!(J, J_new, J_old)
-        
-    end
+    # perform pass through first layers
+    forward_jacobian!(J, J_new, J_old, output, input_new, first(layers))
 
     # update unless we are on the last layer
     if length(layers) > 1
@@ -338,7 +321,23 @@ function forward_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ 
 
 end
 
+# specialized methods
+function forward_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, output::AbstractVector{ <: Real }, input_new::AbstractVector{ <: Real }, layer::PermutationLayer)
+    # calculate new output
+    forward!(output, layer, input_new)
+            
+    # calculate total jacobian
+    mul!(J, jacobian(layer, input_new), J_old)
+end
 
+# standard method
+function forward_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, output::AbstractVector{ <: Real }, input_new::AbstractVector{ <: Real }, layer::AbstractLayer)
+    # calculate new jacobian
+    forward_jacobian!(output, J_new, first(layers), input_new)
+
+    # calculate total jacobian
+    mul!(J, J_new, J_old)
+end
 
 # when no layers are left, stop the inplace recursion
 forward_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, output::AbstractVector{ <: Real }, input_new::AbstractVector{ <: Real }, layers::Tuple{}) = return
@@ -401,25 +400,8 @@ end
 # inplace backward inverse jacobian calculation for a tuple of layers
 function backward_inv_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, input::AbstractVector{ <: Real }, output_new::AbstractVector{ <: Real }, layers::T) where { T <: NTuple{N,AbstractLayer} where N}
 
-    # check for specialized jacobians that are fixed (e.g. Permutation Matrix)
-    if typeof(last(layers)) <: PermutationLayer
-
-        # perform forward pass over last layer
-        backward!(input, last(layers), output_new)
-        
-        # calculate total jacobian
-        mul!(J, inv_jacobian(last(layers), output_new), J_old)
-        
-    # else fall back to standard calculation
-    else 
-
-        # perform forward pass over last layer
-        backward_inv_jacobian!(input, J_new, last(layers), output_new)
-        
-        # calculate total jacobian
-        mul!(J, J_new, J_old)
-        
-    end
+    # perform backward pass through layers
+    backward_inv_jacobian!(J, J_new, J_old, input, output_new, last(layers))
 
     # update unless we are on the last/first layer
     if length(layers) > 1
@@ -435,6 +417,24 @@ function backward_inv_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMat
     # calculate backward inv jacobian of remaining layers
     backward_inv_jacobian!(J, J_new, J_old, input, output_new, Base.front(layers))
 
+end
+
+# specialized methods
+function backward_inv_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, input::AbstractVector{ <: Real }, output_new::AbstractVector{ <: Real }, layer::PermutationLayer)
+    # perform forward pass over last layer
+    backward!(input, last(layers), output_new)
+        
+    # calculate total jacobian
+    mul!(J, inv_jacobian(last(layers), output_new), J_old)
+end
+
+# standard method
+function backward_inv_jacobian!(J::AbstractMatrix{ <: Real }, J_new::AbstractMatrix{ <: Real }, J_old::AbstractMatrix{ <: Real }, input::AbstractVector{ <: Real }, output_new::AbstractVector{ <: Real }, layer::AbstractLayer)
+    # perform forward pass over last layer
+    backward_inv_jacobian!(input, J_new, last(layers), output_new)
+        
+    # calculate total jacobian
+    mul!(J, J_new, J_old)
 end
 
 # when no layers are left, stop the inplace recursion
