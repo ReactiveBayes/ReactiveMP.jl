@@ -41,6 +41,28 @@ import ReactiveMP: @test_rules
 
     end
 
+    @testset "Belief Propagation: (m_μ::UnivariateNormalDistributionsFamily, q_v::PointMass)" begin
+
+        @test_rules [ with_float_conversions = true ] NormalMeanVariance(:out, Marginalisation) [
+            (input = (m_μ = NormalMeanVariance(0.0, 1.0),  q_v = PointMass(2.0)), output = NormalMeanVariance(0.0, 3.0)),
+            (input = (m_μ = NormalMeanVariance(-1.0, 1.0), q_v = PointMass(1.5)), output = NormalMeanVariance(-1.0, 2.5)),
+            (input = (m_μ = NormalMeanVariance(2.0, 0.5),  q_v = PointMass(1.0)), output = NormalMeanVariance(2.0, 1.5)),
+        ]
+
+        @test_rules [ with_float_conversions = true ] NormalMeanVariance(:out, Marginalisation) [
+            (input = (m_μ = NormalMeanPrecision(0.0, 1.0),  q_v = PointMass(2.0)), output = NormalMeanVariance(0.0, 3.0)),
+            (input = (m_μ = NormalMeanPrecision(-1.0, 1.0), q_v = PointMass(1.5)), output = NormalMeanVariance(-1.0, 2.5)),
+            (input = (m_μ = NormalMeanPrecision(2.0, 0.5),  q_v = PointMass(1.0)), output = NormalMeanVariance(2.0, 3.0)),
+        ]
+
+        @test_rules [ with_float_conversions = true ] NormalMeanVariance(:out, Marginalisation) [
+            (input = (m_μ = NormalWeightedMeanPrecision(0.0, 1.0),  q_v = PointMass(2.0)), output = NormalMeanVariance(0.0, 3.0)),
+            (input = (m_μ = NormalWeightedMeanPrecision(-1.0, 1.0), q_v = PointMass(1.5)), output = NormalMeanVariance(-1.0, 2.5)),
+            (input = (m_μ = NormalWeightedMeanPrecision(2.0, 0.5),  q_v = PointMass(1.0)), output = NormalMeanVariance(4.0, 3.0)),
+        ]
+
+    end
+
     @testset "Variational: (q_μ::Any, q_v::Any)" begin
 
         @test_rules [ with_float_conversions = true ] NormalMeanVariance(:out, Marginalisation) [

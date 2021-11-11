@@ -13,8 +13,14 @@ makedocs(
     pages    = [
         "Introduction"    => "index.md",
         "User guide" => [ 
-            "Getting Started" => "man/getting-started.md",
-            "Model Specification" => "man/model-specification.md"
+            "Getting Started"     => "man/getting-started.md",
+            "Fundamentals"        => "man/fundamentals.md",
+            "Model Specification" => "man/model-specification.md",
+            "Inference execution" => "man/inference-execution.md"
+        ],
+        "Examples" => [
+            "Overview"                         => "examples/overview.md",
+            "Linear Gaussian Dynamical System" => "examples/linear_gaussian_state_space_model.md",
         ],
         "Library" => [
             "Messages"     => "lib/message.md",

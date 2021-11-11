@@ -1,4 +1,4 @@
-ReacitveMP.jl
+ReactiveMP.jl
 =============
 
 *Julia package for automatic Bayesian inference on a factor graph with reactive message passing.*
@@ -26,14 +26,16 @@ Given a probabilistic model, ReactiveMP allows for an efficient message-passing 
 - For an introduction to message passing and FFGs, see [The Factor Graph Approach to Model-Based Signal Processing](https://ieeexplore.ieee.org/document/4282128/) by Loeliger et al. (2007).
 
 ## How to get started?
-Head to the [Getting started](@ref user-guide-getting-started) section to get up and running with ForneyLab.
+Head to the [Getting started](@ref user-guide-getting-started) section to get up and running with ForneyLab. Alternatively, explore various [examples](@ref examples-overview) in the documentation.
 
 ## Table of Contents
 
 ```@contents
 Pages = [
   "man/getting-started.md",
+  "man/fundamentals.md",
   "man/model-specification.md",
+  "examples/overview.md",
   "lib/message.md",
   "lib/node.md",
   "lib/math.md",
