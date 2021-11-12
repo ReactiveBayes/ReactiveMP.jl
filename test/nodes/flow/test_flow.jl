@@ -91,24 +91,24 @@ using .ReactiveMPTestingHelpers
     # test for model specifics in the flow_models folder
     @testset "Models" begin
 
-        addtests("flow_models/test_flow_model.jl")
+        include("flow_models/test_flow_model.jl")
         
     end
 
     # test for layer specifics in the layers folder
     @testset "Layers" begin
         
-        addtests("layers/test_additive_coupling_layer.jl")
-        addtests("layers/test_input_layer.jl")
-        addtests("layers/test_permutation_layer.jl")
+        include("layers/test_additive_coupling_layer.jl")
+        include("layers/test_input_layer.jl")
+        include("layers/test_permutation_layer.jl")
 
     end
 
     # test for coupling flow specifics in the coupling_flows folder
     @testset "Coupling flows" begin
         
-        addtests("coupling_flows/test_planar_flow.jl")
-        addtests("coupling_flows/test_radial_flow.jl")
+        include("coupling_flows/test_planar_flow.jl")
+        include("coupling_flows/test_radial_flow.jl")
 
     end
 

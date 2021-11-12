@@ -73,7 +73,7 @@ end
 
     # calculate sigma points/vectors    
     sqrtΣ = sqrt((L + λ)*Σ_in)
-    χ = Vector{Vector{Float64}}(undef, 2*L + 1)
+    χ = Vector{Vector{T}}(undef, 2*L + 1)
     for k = 1:length(χ)
         χ[k] = copy(μ_in)
     end
