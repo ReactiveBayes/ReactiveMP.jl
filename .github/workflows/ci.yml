@@ -21,6 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
+        env:
+          PYTHON: ""
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
@@ -75,6 +77,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
+        env:
+          PYTHON: ""
         with:
           version: '1.6'
       - run: |
