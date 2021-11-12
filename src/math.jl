@@ -117,11 +117,6 @@ const huge = HugeNumber()
 
 #
 
-function softmax(v)
-    ret = exp.(clamp.(v .- maximum(v), -100.0, 0.0))
-    ret ./ sum(ret)
-end
-
 matrix_from_diagonal(diag::AbstractVector) = matrix_from_diagonal(eltype(diag), diag)
 
 function matrix_from_diagonal(::Type{ T }, diag::AbstractVector) where T
