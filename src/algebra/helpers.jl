@@ -1,12 +1,21 @@
 export diageye
 
+using StatsFuns: logistic
+using StatsFuns: softmax, softmax!
+
 import LinearAlgebra
-import LinearAlgebra: Diagonal
 import LoopVectorization: @turbo
 
 diageye(::Type{T}, n::Int) where { T <: Real } = Matrix{T}(I, n, n)
 diageye(n::Int)                                = diageye(Float64, n)
 
+function normalize_sum(x::Array{Float64,1}) 
+    x ./ sum(x)
+end
+
+const sigmoid = logistic
+
+dtanh(x) = 1 - tanh(x)^2
 """
     negate_inplace!(A)
 

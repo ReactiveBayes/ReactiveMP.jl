@@ -21,6 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
+        env:
+          PYTHON: ""
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
@@ -35,6 +37,8 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
+        env:
+            PYTHON: ""
       - uses: julia-actions/julia-runtest@latest
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v1
@@ -75,14 +79,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/julia-buildpkg@latest          
         with:
           version: '1.6'
       - run: |
           julia --project=docs -e '
+            ENV["PYTHON"]=""
             using Pkg
             Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
+            Pkg.instantiate()
+            Pkg.build("PyPlot")'
       - run: julia --project=docs docs/make.jl
         env:
+          PYTHON: ""
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

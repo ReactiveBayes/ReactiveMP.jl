@@ -13,6 +13,28 @@ using Aqua
 # Example usage of a reduced testset
 # julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
 
+function addtests(filename)
+    key = filename_to_key(filename)
+    if isempty(enabled_tests) || key in enabled_tests
+        include(filename)
+    end
+end
+
+function key_to_filename(key)
+    splitted = split(key, ":")
+    return length(splitted) === 1 ? string("test_", first(splitted), ".jl") : string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
+end
+
+function filename_to_key(filename)
+    splitted   = split(filename, "/")
+    if length(splitted) === 1
+        return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
+    else
+        path, name = splitted[1:end - 1], splitted[end]
+        return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
+    end
+end
+
 enabled_tests = lowercase.(ARGS)
 
 if isempty(enabled_tests)
@@ -55,6 +77,7 @@ end
     end
 
     addtests("algebra/test_correction.jl")
+    addtests("algebra/test_permutation_matrix.jl")
 
     addtests("test_math.jl")
     addtests("test_helpers.jl")
@@ -87,12 +110,17 @@ end
     addtests("test_variable.jl")
 
     addtests("test_node.jl")
+    addtests("nodes/flow/test_flow.jl")
     addtests("nodes/test_addition.jl")
     addtests("nodes/test_bifm.jl")
     addtests("nodes/test_bifm_helper.jl")
     addtests("nodes/test_subtraction.jl")
     addtests("nodes/test_probit.jl")
     addtests("nodes/test_autoregressive.jl")
+    
+    addtests("rules/flow/test_marginals.jl")
+    addtests("rules/flow/test_in.jl")
+    addtests("rules/flow/test_out.jl")
 
     addtests("rules/addition/test_marginals.jl")
     addtests("rules/addition/test_in1.jl")
