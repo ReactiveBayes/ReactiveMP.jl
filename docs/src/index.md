@@ -5,6 +5,8 @@ ReactiveMP.jl
 
 Given a probabilistic model, ReactiveMP allows for an efficient message-passing based Bayesian inference. It uses the model structure to generate an algorithm that consists of a sequence of local computations on a Forney-style factor graph (FFG) representation of the model.
 
+ReactiveMP.jl has been designed with a focus on efficiency, scalability and maximum performance for running inference with message passing. It is worth noting that this package is aimed to run Bayesian inference for conjugate state-space models. For these types of models, ReactiveMP.jl takes advantage of the conjugate pairings and beats general-purpose probabilistic programming packages easily in terms of computational load, speed, memory  and accuracy. On the other hand, sampling-based packages like [Turing.jl](https://github.com/TuringLang/Turing.jl) are generic Bayesian inference solutions and are capable of running inference for a broader set of models. 
+
 ## Package Features
 
 - User friendly syntax for specification of probabilistic models.
