@@ -1,4 +1,4 @@
-export make_node
+import LinearAlgebra: dot
 
 @node typeof(dot) Deterministic [ out, in1, in2 ]
 
