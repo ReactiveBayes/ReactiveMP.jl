@@ -44,7 +44,7 @@ supports real-time data inference. In our experiments new implementation scales 
 The package comes with a collection of standard probabilistic models, including linear Gaussian state-space models, hidden Markov models, auto-regressive models and mixture models. 
 Moreover, ReactiveMP.jl API supports various processing modes such as offline learning, filtering of infinite data streams and protocols for handling missing data.
 
-Current implementation of ReactiveMP.jl does not run inference for all models supported by more general-purpose PPLs and is limited to conjugate state-space models, but it is customizable and provides an easy way to add new models, node functions and analytical message update rules to the existing platform. 
+The current implementation of ReactiveMP.jl does not run inference for all models supported by more general-purpose PPLs and is limited to conjugate state-space models, but it is customizable and provides an easy way to add new models, node functions and analytical message update rules to the existing platform. 
 As a result, a user can extend built-in functionality with custom nodes to run automated inference in novel probabilistic models.
 The resulting inference procedures are differentiable with \textit{ForwardDiff.jl} \cite{RevelsLubinPapamarkou2016} and support different types of floating point numbers, e.g., the built-in BigFloat Julia type.
 As for computation time and memory usage, for supported conjugate models, ReactiveMP.jl outperforms Turing.jl and ForneyLab.jl significantly by orders of magnitude. Performance benchmarks are available at the GitHub repository.
