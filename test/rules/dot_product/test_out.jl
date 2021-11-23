@@ -41,22 +41,34 @@ import LinearAlgebra: dot
 
     end
 
-    @testset "Belief Propagation: (m_in1::NormalDistributionsFamily, m_in2::PointMass)" begin
+    @testset "Belief Propagation: (m_in1::MultivariateNormalDistributionsFamily, m_in2::PointMass)" begin
 
         @test_rules [ with_float_conversions = true ] typeof(dot)(:out, Marginalisation) [
-            (input = (m_in1 = MvNormalMeanCovariance([-1.0, 1.0], [1.0 -1.0; -3.0 2.0]), m_in2 = PointMass([1.0, 1.0]), meta = TinyCorrection()), output = NormalMeanVariance(0.0, -1.0)),
-            (input = (m_in1 = MvNormalMeanCovariance([2.0, 1.0], [2.0 -1.0; -3.0 1.0]), m_in2 = PointMass([1.0, 1.0]), meta = TinyCorrection()), output = NormalMeanVariance(3.0, -1.0)),
-            (input = (m_in1 = MvNormalMeanCovariance([3.0, 2.0], [1.0 -2.0; -2.0 1.0]), m_in2 = PointMass([1.0, 1.0]), meta = TinyCorrection()), output = NormalMeanVariance(5.0, -2.0)),
+            (input = (m_in1 = MvNormalMeanCovariance([-1.0, 1.0], [2.0 -1.0; -1.0 4.0]), m_in2 = PointMass([4.0, 1.0]), meta = TinyCorrection()), output = NormalMeanVariance(-3, 28)),
+            (input = (m_in1 = MvNormalMeanPrecision([2.0, 1.0], [2.0 -0.5; -0.5 5.0]), m_in2 = PointMass([2.0, 2.0]), meta = TinyCorrection()), output = NormalMeanVariance(6.0, 128/39)),
+            (input = (m_in1 = MvNormalWeightedMeanPrecision([3.0, 2.0], [10.0 1.0; 1.0 20.0]), m_in2 = PointMass([-1.0, 3.0]), meta = TinyCorrection()), output = NormalMeanVariance(-7/199, 116/199)),
+        ]
+
+        @test_rules [ with_float_conversions = true ] typeof(dot)(:out, Marginalisation) [
+            (input = (m_in1 = MvNormalMeanCovariance([-1.0, 1.0], [2.0 -1.0; -1.0 4.0]), m_in2 = PointMass([4.0, 1.0]), meta = NoCorrection()), output = NormalMeanVariance(-3, 28)),
+            (input = (m_in1 = MvNormalMeanPrecision([2.0, 1.0], [2.0 -0.5; -0.5 5.0]), m_in2 = PointMass([2.0, 2.0]), meta = NoCorrection()), output = NormalMeanVariance(6.0, 128/39)),
+            (input = (m_in1 = MvNormalWeightedMeanPrecision([3.0, 2.0], [10.0 1.0; 1.0 20.0]), m_in2 = PointMass([-1.0, 3.0]), meta = NoCorrection()), output = NormalMeanVariance(-7/199, 116/199)),
         ]
 
     end
 
-    @testset "Belief Propagation: (m_in1::PointMass, m_in2::NormalDistributionsFamily)" begin
+    @testset "Belief Propagation: (m_in1::PointMass, m_in2::MultivariateNormalDistributionsFamily)" begin
 
         @test_rules [ with_float_conversions = true ] typeof(dot)(:out, Marginalisation) [
-            (input = (m_in1 = PointMass([4.0, 1.0]), m_in2 =  MvNormalMeanCovariance([2.0, 1.0], [1.0 -2.0; -2.0 1.0]), meta = TinyCorrection()), output = NormalMeanVariance(9.0, 1.0)),
-            (input = (m_in1 = PointMass([2.0, 2.0]), m_in2 =  MvNormalMeanCovariance([-1.0, 1.0], [3.0 -3.0; -3.0 3.0]), meta = TinyCorrection()), output = NormalMeanVariance(0.0, 0.0)),
-            (input = (m_in1 = PointMass([1.0, 3.0]), m_in2 =  MvNormalMeanCovariance([-3.0, 1.0], [2.0 -2.0; -2.0 2.0]), meta = TinyCorrection()), output = NormalMeanVariance(0.0, 8.0)),
+            (input = (m_in1 = PointMass([4.0, 1.0]), m_in2 = MvNormalMeanCovariance([-1.0, 1.0], [2.0 -1.0; -1.0 4.0]), meta = TinyCorrection()), output = NormalMeanVariance(-3, 28)),
+            (input = (m_in1 = PointMass([2.0, 2.0]), m_in2 = MvNormalMeanPrecision([2.0, 1.0], [2.0 -0.5; -0.5 5.0]), meta = TinyCorrection()), output = NormalMeanVariance(6.0, 128/39)),
+            (input = (m_in1 = PointMass([-1.0, 3.0]), m_in2 = MvNormalWeightedMeanPrecision([3.0, 2.0], [10.0 1.0; 1.0 20.0]), meta = TinyCorrection()), output = NormalMeanVariance(-7/199, 116/199)),
+        ]
+
+        @test_rules [ with_float_conversions = true ] typeof(dot)(:out, Marginalisation) [
+            (input = (m_in1 = PointMass([4.0, 1.0]), m_in2 = MvNormalMeanCovariance([-1.0, 1.0], [2.0 -1.0; -1.0 4.0]), meta = NoCorrection()), output = NormalMeanVariance(-3, 28)),
+            (input = (m_in1 = PointMass([2.0, 2.0]), m_in2 = MvNormalMeanPrecision([2.0, 1.0], [2.0 -0.5; -0.5 5.0]), meta = NoCorrection()), output = NormalMeanVariance(6.0, 128/39)),
+            (input = (m_in1 = PointMass([-1.0, 3.0]), m_in2 = MvNormalWeightedMeanPrecision([3.0, 2.0], [10.0 1.0; 1.0 20.0]), meta = NoCorrection()), output = NormalMeanVariance(-7/199, 116/199)),
         ]
 
     end
