@@ -42,6 +42,7 @@ include("gcv/z.jl")
 include("gcv/k.jl")
 include("gcv/w.jl")
 include("gcv/marginals.jl")
+include("gcv/gaussian_extension.jl")
 
 include("kernel_gcv/x.jl")
 include("kernel_gcv/y.jl")
@@ -98,6 +99,14 @@ include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
 
+include("probit/marginals.jl")
+include("probit/in.jl")
+include("probit/out.jl")
+
+include("flow/marginals.jl")
+include("flow/in.jl")
+include("flow/out.jl")
+
 include("bifm/marginals.jl")
 include("bifm/in.jl")
 include("bifm/out.jl")
@@ -106,6 +115,3 @@ include("bifm/zprev.jl")
 
 include("bifm_helper/in.jl")
 include("bifm_helper/out.jl")
-
-include("probit/in.jl")
-include("probit/out.jl")

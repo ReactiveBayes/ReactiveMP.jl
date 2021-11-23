@@ -2,10 +2,31 @@ export AbstractVariable, degree
 export is_clamped, is_marginalisation, is_moment_matching
 export FoldLeftProdStrategy, FoldRightProdStrategy, CustomProdStrategy
 export getmarginal, getmarginals, setmarginal!, setmarginals!, name, as_variable
+export setmessage!, setmessages!
 
 using Rocket
 
 abstract type AbstractVariable end
+
+## Variable collection type
+
+abstract type AbstractVariableCollectionType end
+
+struct VariableIndividual <: AbstractVariableCollectionType end
+
+struct VariableVector <: AbstractVariableCollectionType
+    index :: Int
+end
+
+struct VariableArray <: AbstractVariableCollectionType
+    index :: CartesianIndex
+end
+
+indexed_name(::VariableIndividual, name::Symbol) = string(name)
+indexed_name(seq::VariableVector, name::Symbol)  = string(name, "_", seq.index)
+indexed_name(array::VariableArray, name::Symbol) = string(name, "_", join(array.index.I, "_"))
+
+indexed_name(randomvar::AbstractVariable) = indexed_name(collection_type(randomvar), name(randomvar))
 
 ## Messages to Marginal product strategies
 
@@ -44,38 +65,50 @@ add_pipeline_stage!(variable::AbstractVariable, stage) = error("Its not possible
 # Helper functions
 # Getters
 
-getmarginal(variable::AbstractVariable) = getmarginal(variable, SkipInitial())
-
-function getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy)
-    vmarginal = _getmarginal(variable)
-    if vmarginal === nothing
-        vmarginal = as_marginal_observable(_makemarginal(variable))
-        _setmarginal!(variable, vmarginal)
-    end
-    return as_marginal_observable(vmarginal, skip_strategy)
-end
+getmarginal(variable::AbstractVariable)                                      = getmarginal(variable, SkipInitial())
+getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(_getmarginal(variable), skip_strategy)
 
 getmarginals(variables::AbstractArray{ <: AbstractVariable })                                      = getmarginals(variables, SkipInitial())
 getmarginals(variables::AbstractArray{ <: AbstractVariable }, skip_strategy::MarginalSkipStrategy) = collectLatest(map(v -> getmarginal(v, skip_strategy), variables))
 
-# Setters
+## Setters
 
-function setmarginal!(variable::AbstractVariable, marginal)
-    setmarginal!(getmarginal(variable, IncludeAll()), marginal)
-end
+### Marginals
+
+setmarginal!(variable::AbstractVariable, marginal) = setmarginal!(getmarginal(variable, IncludeAll()), marginal)
 
 setmarginals!(variables::AbstractArray{ <: AbstractVariable }, marginal::Distribution)    = _setmarginals!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
 setmarginals!(variables::AbstractArray{ <: AbstractVariable }, marginals)                 = _setmarginals!(Base.IteratorSize(marginals), variables, marginals)
 
 function _setmarginals!(::Base.IteratorSize, variables::AbstractArray{ <: AbstractVariable }, marginals)
     foreach(zip(variables, marginals)) do (variable, marginal)
-        setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+        setmarginal!(variable, marginal)
     end
 end
 
 function _setmarginals!(::Any, variables::AbstractArray{ <: AbstractVariable }, marginals)
     error("setmarginals!() failed. Default value is neither an iterable object nor a distribution.")
 end
+
+### Messages
+
+setmessage!(variable::AbstractVariable, index::Int, message) = setmessage!(messageout(variable, index), message)
+setmessage!(variable::AbstractVariable, message)             = foreach(i -> setmessage!(variable, i, message), 1:degree(variable))
+
+setmessages!(variables::AbstractArray{ <: AbstractVariable }, message::Distribution)    = _setmessages!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
+setmessages!(variables::AbstractArray{ <: AbstractVariable }, messages)                 = _setmessages!(Base.IteratorSize(messages), variables, messages)
+
+function _setmessages!(::Base.IteratorSize, variables::AbstractArray{ <: AbstractVariable }, messages)
+    foreach(zip(variables, messages)) do (variable, message)
+        setmessage!(variable, message)
+    end
+end
+
+function _setmessages!(::Any, variables::AbstractArray{ <: AbstractVariable }, marginals)
+    error("setmessages!() failed. Default value is neither an iterable object nor a distribution.")
+end
+
+##
 
 function name(variable::AbstractVariable)
     return variable.name

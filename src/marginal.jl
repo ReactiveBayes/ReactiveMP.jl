@@ -46,6 +46,7 @@ MacroHelpers.@proxy_methods Marginal getdata [
     Base.length,
     Base.ndims,
     Base.size,
+    Base.eltype,
     mean_cov, 
     mean_var,
     mean_invcov, 

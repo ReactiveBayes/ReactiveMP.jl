@@ -32,6 +32,7 @@ include("actors/score.jl")
 include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
 include("algebra/companion_matrix.jl")
+include("algebra/permutation_matrix.jl")
 include("algebra/correction.jl")
 
 include("approximations.jl")
@@ -40,6 +41,7 @@ include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
+include("approximations/optimizers.jl")
 
 include("distributions/pointmass.jl")
 include("distributions/uniform.jl")
@@ -63,6 +65,9 @@ include("distributions/wishart.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
+
+# Equality node is a special case and needs to be included before random variable implementation
+include("nodes/equality.jl")
 
 include("variables/random.jl")
 include("variables/constant.jl")
@@ -107,6 +112,7 @@ include("nodes/autoregressive.jl")
 include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
+include("nodes/flow/flow.jl")
 
 
 # Deterministic nodes

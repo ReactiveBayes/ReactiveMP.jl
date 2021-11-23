@@ -1,5 +1,6 @@
 export AR, Autoregressive, ARsafe, ARunsafe, ARMeta
 
+import LazyArrays
 import StatsFuns: log2π
 
 struct AR end
@@ -38,24 +39,25 @@ is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 default_meta(::Type{ AR }) = error("Autoregressive node requires meta flag explicitly specified")
 
 @average_energy AR (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
-    mθ, Vθ   = mean(q_θ), cov(q_θ)
-    myx, Vyx = mean(q_y_x), cov(q_y_x)
+    mθ, Vθ   = mean_cov(q_θ)
+    myx, Vyx = mean_cov(q_y_x)
     mγ       = mean(q_γ)
 
     order = getorder(meta)
 
-    mx, Vx   = ar_slice(getvform(meta), myx, order+1:2order), ar_slice(getvform(meta), Vyx, order+1:2order, order+1:2order)
+    mx, Vx   = ar_slice(getvform(meta), myx, (order + 1):2order), ar_slice(getvform(meta), Vyx, (order + 1):2order, (order + 1):2order)
     my1, Vy1 = first(myx), first(Vyx)
     Vy1x     = ar_slice(getvform(meta), Vyx, 1, order+1:2order)
 
-    AE = -0.5*(logmean(q_γ)) + 0.5log2π + 0.5*mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)
+    # Euivalento to AE = (-logmean(q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
+    AE = (-logmean(q_γ) + log2π + mγ * (Vy1 + my1^2 - 2*mθ'*(Vy1x + mx*my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))) / 2
 
     # correction
     if is_multivariate(meta)
         AE += entropy(q_y_x)
-        idc = [1, order+1:2order...]
-        myx_n = myx[idc]
-        Vyx_n = Vyx[idc, idc]
+        idc = LazyArrays.Vcat(1, (order + 1):2order)
+        myx_n = view(myx, idc)
+        Vyx_n = view(Vyx, idc, idc)
         q_y_x = MvNormalMeanCovariance(myx_n, Vyx_n)
         AE -= entropy(q_y_x)
     end
@@ -72,48 +74,85 @@ Returns `array[ranges...]` in case if T is Multivariate, and `first(array[ranges
 """
 function ar_slice end
 
-function ar_slice(::Type{Multivariate}, array, ranges...)
-    return array[ranges...]
-end
-
-function ar_slice(::Type{Univariate}, array, ranges...)
-    return first(array[ranges...])
-end
+ar_slice(::Type{Multivariate}, array, ranges...) = view(array, ranges...)
+ar_slice(::Type{Univariate}, array, ranges...) = first(view(array, ranges...))
 
 """
-ar_uvector(::T, order)
+    ar_unit(::T, order)
 
 Returns `[ 1.0, 0.0 ... 0.0 ]` with length equal to order in case if T is Multivariate, and `1.0` in case if T is Univariate
 """
 function ar_unit end
 
-function ar_unit(::Type{Multivariate}, order)
-    c    = zeros(order)
-    c[1] = 1.0
+ar_unit(::Type{ V }, order) where { V <: VariateForm } = ar_unit(Float64, V, order)
+
+function ar_unit(::Type{T}, ::Type{Multivariate}, order) where { T <: Real }
+    c    = zeros(T, order)
+    c[1] = one(T)
     return c
 end
 
-function ar_unit(::Type{Univariate}, order)
-    return 1.0
+function ar_unit(::Type{T}, ::Type{Univariate}, order) where { T <: Real }
+    return one(T)
 end
 
-function ar_precision(::Type{Multivariate}, order, γ)
-    mw               = zeros(order, order)
-    mw[diagind(mw)] .= huge
-    mw[1, 1]         = γ
-    return mw
+## Allocation-free AR Precision Matrix
+
+struct ARPrecisionMatrix{T} <: AbstractMatrix{T}
+    order :: Int
+    γ     :: T
 end
 
-function ar_precision(::Type{Univariate}, order, γ) 
-    return γ
+Base.size(precision::ARPrecisionMatrix) = (precision.order, precision.order)
+Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? precision.γ : ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
+
+Base.eltype(::Type{ <: ARPrecisionMatrix{T} }) where T = T
+Base.eltype(::ARPrecisionMatrix{T})            where T = T
+
+add_precision(matrix::AbstractMatrix, precision::ARPrecisionMatrix) = broadcast(+, matrix, precision)
+add_precision(value::Real, precision::Real)                         = value + precision
+
+add_precision!(matrix::AbstractMatrix, precision::ARPrecisionMatrix) = broadcast!(+, matrix, precision)
+add_precision!(value::Real, precision::Real)                         = value + precision
+
+function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, precision::ARPrecisionMatrix)
+    matrix[1, 1] += precision.γ
+    for j in 2:first(size(matrix))
+        matrix[j, j] += convert(eltype(precision), huge)
+    end
+    return matrix
 end
 
-function ar_transition(::Type{Multivariate}, order, γ)
-    V = zeros(order, order)
-    V[1] = 1/γ
-    return V
+ar_precision(::Type{Multivariate}, order, γ) = ARPrecisionMatrix(order, γ)
+ar_precision(::Type{Univariate}, order, γ)   = γ
+
+## Allocation-free AR Transition matrix
+
+struct ARTransitionMatrix{T} <: AbstractMatrix{T}
+    order :: Int
+    inv_γ :: T
+
+    function ARTransitionMatrix(order::Int, γ::T) where { T <: Real } 
+        return new{T}(order, inv(γ))
+    end
 end
 
-function ar_transition(::Type{Univariate}, order, γ) 
-    return inv(γ)
+Base.size(transition::ARTransitionMatrix) = (transition.order, transition.order)
+Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? transition.inv_γ : zero(eltype(transition))
+
+Base.eltype(::Type{ <: ARTransitionMatrix{T} }) where T = T
+Base.eltype(::ARTransitionMatrix{T})            where T = T
+
+add_transition(matrix::AbstractMatrix, transition::ARTransitionMatrix) = broadcast(+, matrix, transition)
+add_transition(value::Real, transition::Real)                          = value + transition
+
+add_transition!(matrix::AbstractMatrix, transition::ARTransitionMatrix) = broadcast!(+, matrix, transition)
+add_transition!(value::Real, transition::Real)                          = value + transition
+
+function Base.broadcast!(::typeof(+), matrix::AbstractMatrix, transition::ARTransitionMatrix)
+    matrix[1] += transition.inv_γ
+    return matrix
 end
+
+ar_transition(::Type{ Multivariate }, order, γ) = ARTransitionMatrix(order, γ)
+ar_transition(::Type{ Univariate }, order, γ)   = inv(γ)

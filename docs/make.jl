@@ -21,10 +21,16 @@ makedocs(
         "Examples" => [
             "Overview"                         => "examples/overview.md",
             "Linear Gaussian Dynamical System" => "examples/linear_gaussian_state_space_model.md",
+            "Hierarchical Gaussian Filter"     => "examples/hierarchical_gaussian_filter.md",
+            "Autoregressive Model"             => "examples/autoregressive.md",
+            "Flow Tutorial"                    => "examples/flow_tutorial.md",
         ],
         "Library" => [
             "Messages"     => "lib/message.md",
-            "Factor nodes" => "lib/node.md",
+            "Factor nodes" => [ 
+                "Overview" => "lib/node.md",
+                "Flow"     => "lib/nodes/flow.md"
+            ],
             "Math utils"   => "lib/math.md",
             "Helper utils" => "lib/helpers.md"
         ],

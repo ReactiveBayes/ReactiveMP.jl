@@ -120,13 +120,33 @@ function expression_convert_eltype(eltype::Type{T}, expr::Expr) where T
     if @capture(expr, f_(args__)) 
         return :(ReactiveMP.convert_eltype($f, $T, $expr))
     elseif @capture(expr, (elems__, ))
-        entries = map(elems) do elem
-            @capture(elem, (name_ = value_)) || error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements.")
-            return (name, value)
+        if @capture(first(elems), (name_ = value_))
+            entries = map(elems) do elem
+                @capture(elem, (name_ = value_)) || error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements.")
+                return (name, value)
+            end
+            return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
+        else 
+            return Expr(:tuple, map(elem -> :($(expression_convert_eltype(eltype, elem))), elems)...)
         end
-        return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
     end
     error("Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements.")
+end
+
+__test_inferred_typeof(x)                 = typeof(x)
+__test_inferred_typeof(::Type{T}) where T = Type{T}
+
+macro test_inferred(T, expression)
+    return esc(quote
+        let 
+            local result = Test.@inferred($expression)
+            if !(ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T)
+                error("Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T")
+            end
+            @test ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
+            result
+        end
+    end)
 end
 
 end

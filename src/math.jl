@@ -15,16 +15,15 @@ See also: [`HugeNumber`](@ref)
 """
 struct TinyNumber <: Real end
 
+Base.convert(::Type{ F },        ::TinyNumber) where { F <: AbstractFloat } = 10eps(F)
 Base.convert(::Type{ Float32 },  ::TinyNumber) = 1f-6
 Base.convert(::Type{ Float64 },  ::TinyNumber) = 1e-12
 Base.convert(::Type{ BigFloat }, ::TinyNumber) = big"1e-24"
 
 Base.show(io::IO, ::TinyNumber) = print(io, "tiny")
 
-Base.promote_rule(::Type{ TinyNumber }, ::Type{ I }) where { I <: Integer }  = promote_rule(TinyNumber, promote_type(I, Float64))
-Base.promote_rule(::Type{ TinyNumber }, ::Type{ Float32 })                   = Float32
-Base.promote_rule(::Type{ TinyNumber }, ::Type{ Float64 })                   = Float64
-Base.promote_rule(::Type{ TinyNumber }, ::Type{ BigFloat })                  = BigFloat
+Base.promote_rule(::Type{ TinyNumber }, ::Type{ I }) where { I <: Integer }       = promote_rule(TinyNumber, promote_type(I, Float64))
+Base.promote_rule(::Type{ TinyNumber }, ::Type{ F }) where { F <: AbstractFloat } = F
 
 # Huge number
 
@@ -37,16 +36,15 @@ See also: [`TinyNumber`](@ref)
 """
 struct HugeNumber <: Real end
 
+Base.convert(::Type{ F },        ::HugeNumber) where { F <: AbstractFloat } = inv(convert(F, TinyNumber()))
 Base.convert(::Type{ Float32 },  ::HugeNumber) = 1f+6
 Base.convert(::Type{ Float64 },  ::HugeNumber) = 1e+12
 Base.convert(::Type{ BigFloat }, ::HugeNumber) = big"1e+24"
 
 Base.show(io::IO, ::HugeNumber) = print(io, "huge")
 
-Base.promote_rule(::Type{ HugeNumber }, ::Type{ I }) where { I <: Integer }  = promote_rule(HugeNumber, promote_type(I, Float64))
-Base.promote_rule(::Type{ HugeNumber }, ::Type{ Float32 })                   = Float32
-Base.promote_rule(::Type{ HugeNumber }, ::Type{ Float64 })                   = Float64
-Base.promote_rule(::Type{ HugeNumber }, ::Type{ BigFloat })                  = BigFloat
+Base.promote_rule(::Type{ HugeNumber }, ::Type{ I }) where { I <: Integer }       = promote_rule(HugeNumber, promote_type(I, Float64))
+Base.promote_rule(::Type{ HugeNumber }, ::Type{ F }) where { F <: AbstractFloat } = F
 
 ##
 
@@ -118,11 +116,6 @@ See also: [`tiny`](@ref), [`TinyNumber`](@ref), [`HugeNumber`](@ref)
 const huge = HugeNumber()
 
 #
-
-function softmax(v)
-    ret = exp.(clamp.(v .- maximum(v), -100.0, 0.0))
-    ret ./ sum(ret)
-end
 
 matrix_from_diagonal(diag::AbstractVector) = matrix_from_diagonal(eltype(diag), diag)
 
