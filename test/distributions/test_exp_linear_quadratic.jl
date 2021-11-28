@@ -11,7 +11,7 @@ using DomainIntegrals
 
     @testset "Statistics" begin
         
-        approximation = GaussHermiteCubature(21)
+        approximation = GaussHermiteCubature(11)
         rng = MersenneTwister(123)
 
         for _ in 1:3

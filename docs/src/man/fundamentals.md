@@ -675,8 +675,8 @@ Another example with `GaussianControlledVariance`, or simply `GCV` [see Hierarch
 
 ```julia
 # In this example we specify structured factorisation and flag meta with `GaussHermiteCubature` 
-# method with `21` sigma points for approximation of non-lineariety between hierarchy layers
-xt ~ GCV(xt_min, zt, real_k, real_w) where { q = q(xt, xt_min)q(zt)q(κ)q(ω), meta = GCVMetadata(GaussHermiteCubature(21)) }
+# method with `11` sigma points for approximation of non-lineariety between hierarchy layers
+xt ~ GCV(xt_min, zt, real_k, real_w) where { q = q(xt, xt_min)q(zt)q(κ)q(ω), meta = GCVMetadata(GaussHermiteCubature(11)) }
 ```
 
 The Meta object is useful to pass any extra information to a node that is not a random variable or constant model variable. It may include extra approximation methods, differentiation methods, optional non-linear functions, extra inference parameters etc.
