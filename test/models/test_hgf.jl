@@ -19,8 +19,10 @@ using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
     zt_min ~ NormalMeanVariance(zt_min_mean, zt_min_var)
     xt_min ~ NormalMeanVariance(xt_min_mean, xt_min_var)
 
+    meta = GCVMetadata(GaussHermiteCubature(9))
+
     # Higher layer is modelled as a random walk 
-    zt ~ NormalMeanVariance(zt_min, z_variance) where { q = q(zt, zt_min)q(z_variance) }
+    zt ~ NormalMeanVariance(zt_min, z_variance) where { q = q(zt, zt_min)q(z_variance), meta = meta }
     
     # Lower layer is modelled with `GCV` node
     gcv_node, xt ~ GCV(xt_min, zt, real_k, real_w) where { q = q(xt, xt_min)q(zt)q(κ)q(ω) }
@@ -134,7 +136,7 @@ end
         @test length(mz) === n
         @test length(mx) === n
         @test length(fe) === vmp_iters
-        @test abs(last(fe) - 2026.6595389) < 0.01
+        @test abs(last(fe) - 2027.8628798126442) < 0.01
         @test all(filter(e -> abs(e) > 0.1, diff(fe)) .< 0)
         # Check if all estimates are within 6std interval
         @test all((mean.(mz) .- 6 .* std.(mz)) .< z .< (mean.(mz) .+ 6 .* std.(mz)))
