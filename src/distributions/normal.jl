@@ -164,7 +164,7 @@ function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily
     return μ + σ * randn(rng, float(T))
 end
 
-function Random.rand!(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily, container::AbstractArray)
+function Random.rand!(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily, container::AbstractArray{T}) where { T <: Real }
     randn!(rng, container)
     μ, σ = mean_std(dist)
     @turbo for i in 1:length(container)
@@ -180,7 +180,7 @@ function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFami
     return μ + L * randn(rng, length(μ))
 end
 
-function Random.rand!(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily, container::AbstractArray)
+function Random.rand!(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily, container::AbstractArray{T}) where { T <: Real }
     preallocated = similar(container)
     randn!(rng, reshape(preallocated, length(preallocated)))
     μ, L = mean_std(dist)
