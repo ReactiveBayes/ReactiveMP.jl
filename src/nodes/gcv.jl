@@ -14,7 +14,7 @@ struct GCV end
 
 @node GCV Stochastic [ y, x, z, κ, ω ]
 
-const DefaultGCVNodeMetadata = GCVMetadata(GaussHermiteCubature(21))
+const DefaultGCVNodeMetadata = GCVMetadata(GaussHermiteCubature(20))
 
 default_meta(::Type{ GCV }) = DefaultGCVNodeMetadata
 
