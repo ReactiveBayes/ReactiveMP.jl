@@ -6,6 +6,7 @@ using Random
 using Distributions
 using LinearAlgebra
 using StaticArrays
+using StableRNGs
 
 import ReactiveMP: deep_eltype, get_samples, get_weights, sample_list_zero_element
 import ReactiveMP: get_meta, is_meta_present, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand
@@ -26,7 +27,7 @@ import ReactiveMP: approximate_prod_with_sample_list
 
     @testset "Constructor" begin
         
-        rng = MersenneTwister(1234)
+        rng = StableRNG(1234)
 
         for N in [ 5, 10, 100 ], type in [ Float64, Float32, BigFloat ]
             scalar_samples    = rand(rng, type, N)
@@ -119,7 +120,7 @@ import ReactiveMP: approximate_prod_with_sample_list
 
     @testset "Statistics" begin
 
-        rng = MersenneTwister(42)
+        rng = StableRNG(42)
 
         # All
         for N in [ 5, 10, 100 ]
@@ -283,7 +284,7 @@ import ReactiveMP: approximate_prod_with_sample_list
     @testset "SampleListMeta" begin 
         @test_throws ErrorException get_meta(SampleList([ 0.1 ]))
 
-        rng = MersenneTwister(1234)
+        rng = StableRNG(1234)
 
         for uweights in [ rand(rng, 2), rand(rng, 2) ],
             entropy in [ -75.6, 234.2 ],
@@ -312,7 +313,7 @@ import ReactiveMP: approximate_prod_with_sample_list
     end
 
     @testset "Iteration utilities" begin 
-        rng = MersenneTwister(1234)
+        rng = StableRNG(42)
 
         uni_distribution = Uniform(-10rand(rng), 10rand(rng))
 
@@ -342,7 +343,7 @@ import ReactiveMP: approximate_prod_with_sample_list
         # Entity to Matrix
         f5(e::Number)         = @SMatrix [ e + 1 e; e e + 1 ]
         f5(e::AbstractVector) = SMatrix{length(e), length(e)}(Diagonal(ones(length(e))))
-        f5(e::AbstractMatrix) = inv(e)
+        f5(e::AbstractMatrix) = [ e[1, 1] + 1 e[1, 2]; e[2, 1] e[2, 2] + 1 ]
 
         for N in (500, 1000, 5_000)
             for distribution in (uni_distribution, mv_distribution, mvx_distribution)
@@ -377,7 +378,7 @@ import ReactiveMP: approximate_prod_with_sample_list
 
     @testset "prod approximations" begin
 
-        rng = MersenneTwister(1234)
+        rng = StableRNG(1234)
 
         posdefm(rng, s) = begin r = rand(rng, s); I + 2r*r' end
 
@@ -387,7 +388,7 @@ import ReactiveMP: approximate_prod_with_sample_list
             (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
             (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 3e-1, 3e-1, 3e-1 ]),
             (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [ 6e-1, 6e-1, 6e-1 ], cov_tol = [ 6e1, 6e1, 6e1 ], entropy_tol = [ 4e-1, 4e-1, 4e-1 ]),
-            (x = Wishart(10.0, posdefm(rng, 3)), y = Wishart(5.0, posdefm(rng, 3)), mean_tol = [ 7e-1, 7e-1, 7e-1 ], cov_tol = [ 3e2, 3e2, 3e2 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
+            (x = Wishart(10.0, posdefm(rng, 3)), y = Wishart(5.0, posdefm(rng, 3)), mean_tol = [ 7e-1, 7e-1, 7e-1 ], cov_tol = [ 3e2, 3e2, 3e2 ], entropy_tol = [ 2e-1, 2e-1, 2e-1 ]),
         ]
         
         for (i, N) in enumerate(sizes)
