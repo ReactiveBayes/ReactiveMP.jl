@@ -14,6 +14,7 @@ jobs:
         version:
           - '1.5'
           - '1.6'
+          - '1.7'
         os:
           - ubuntu-latest
         arch:
@@ -55,12 +56,12 @@ jobs:
     needs: test
     env: 
       working-directory: './benchmark'
-    if: (github.ref == 'refs/heads/develop') && !contains(github.event.head_commit.message, '[skip benchmark]') && !contains(github.event.head_commit.message, 'docs()')
+    if: contains(github.event.head_commit.message, '[benchmark]')
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
-          version: '1.6'
+          version: '1.7'
       - run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
         working-directory: ${{ env.working-directory }}
       - run: julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.judge(target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3`), pkgdir = "$(pwd())/../")'
