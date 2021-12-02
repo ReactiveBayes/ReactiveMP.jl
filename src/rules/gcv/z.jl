@@ -6,7 +6,7 @@ export rule
     κ_mean, κ_var   = mean_var(q_κ)
     ω_mean, ω_var   = mean_var(q_ω)
 
-    psi = (y_x_mean[1] - y_x_mean[2]) ^ 2 + y_x_v[1,1]+ y_x_v[2,2] -y_x_v[1,2] -y_x_v[2,1]
+    psi = @inbounds (y_x_mean[1] - y_x_mean[2]) ^ 2 + y_x_v[1,1] + y_x_v[2,2] - y_x_v[1,2] - y_x_v[2,1]
     A = exp(-ω_mean + ω_var / 2)
 
     a = κ_mean

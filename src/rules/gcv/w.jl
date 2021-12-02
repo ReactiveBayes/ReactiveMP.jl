@@ -9,7 +9,7 @@ export rule
 
     γ = z_mean ^ 2 * κ_var + κ_mean ^ 2 * z_var + z_var * κ_var
     A = exp(-κ_mean * z_mean + γ / 2)
-    psi = (y_x_mean[1] - y_x_mean[2]) ^ 2 + y_x_var[1, 1] + y_x_var[2, 2] - y_x_var[1, 2] - y_x_var[2, 1]
+    psi = @inbounds (y_x_mean[1] - y_x_mean[2]) ^ 2 + y_x_var[1, 1] + y_x_var[2, 2] - y_x_var[1, 2] - y_x_var[2, 1]
 
     a = one(typeof(γ))
     b = psi * A
