@@ -172,18 +172,18 @@ import ReactiveMP: approximate_prod_with_sample_list
         uni_samples2      = rand(rng, uni_distribution2, 20_000)
         uni_sample_list2  = SampleList(uni_samples2)
 
+        m = rand(rng, 3)
         r = rand(rng, 3)
-        Σ = diageye(3) + 2r*r' # positive definite matrix
-        mv_distribution = MvNormal(r, Σ)
+        Σ = I + 2r*r'
+        mv_distribution = MvNormal(m, Σ)
         mv_samples      = [ rand(rng, mv_distribution) for _ in 1:20_000 ]
         mv_sample_list  = SampleList(mv_samples)
 
-        r1 = rand(rng, 3)
-        W1 = rand(3, 4)
+        W1 = rand(rng, 3, 4)
         r2 = rand(rng, 3)
-        W2 = diageye(3) + 2r2*r2' # positive definite matrix
+        W2 = I + 2r2*r2'
         r3 = rand(rng, 4)
-        W3 = diageye(4) + 2r3*r3' # positive definite matrix
+        W3 = I + 2r3*r3'
         mxv_distribution = MatrixNormal(W1, W2, W3)
         mxv_samples      = [ rand(rng, mxv_distribution) for _ in 1:20_000 ]
         mxv_sample_list  = SampleList(mxv_samples)
@@ -231,7 +231,7 @@ import ReactiveMP: approximate_prod_with_sample_list
         @test isapprox(meanlogmean(uni_sample_list), meanlogmean(uni_distribution); atol = 0.25)
 
         r4 = rand(rng, 5)
-        W4 = diageye(5) + 2r4*r4' # positive definite matrix
+        W4 = I + 2r4*r4'
 
         mxv_distribution = Wishart(5, W4)
         mxv_samples      = [ rand(rng, mxv_distribution) for _ in 1:20_000 ]
@@ -240,8 +240,8 @@ import ReactiveMP: approximate_prod_with_sample_list
         # Checking i = 1:2 that cache is not corrupted
         for i in 1:2
             @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
-            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 3.0)
-            @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 10.0)
+            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 1.0)
+            @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 5.0)
         end
     end
 
@@ -317,13 +317,13 @@ import ReactiveMP: approximate_prod_with_sample_list
 
         uni_distribution = Uniform(-10rand(rng), 10rand(rng))
 
-        μ = rand(rng, 3)
-        r1 = rand(rng, 3)
-        Σ = I + 2r1*r1'
+        μ  = rand(rng, 3)
+        L1 = rand(rng, 3, 3)
+        Σ = L1' * L1
         mv_distribution = MvNormal(μ, Σ)
 
-        r2 = rand(rng, 3)
-        W = I + 2r2*r2'
+        L2 = rand(rng, 3, 3)
+        W  = L2' * L2
         mvx_distribution = Wishart(3, W)
 
         # Entity to entity
@@ -380,15 +380,15 @@ import ReactiveMP: approximate_prod_with_sample_list
 
         rng = StableRNG(1234)
 
-        posdefm(rng, s) = begin r = rand(rng, s); I + 2r*r' end
+        posdefm(rng, s) = begin L = rand(rng, s, s); L'*L end
 
         sizes  = [ 2_500, 5_000, 10_000 ]
         inputs = [
             (x = NormalMeanPrecision(3.0, 7.0), y = NormalMeanVariance(-4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
             (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 1e-1, 1e-1, 1e-1 ]),
             (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [ 1e-1, 1e-1, 1e-1 ], cov_tol = [ 1e-1, 1e-1, 1e-1 ], entropy_tol = [ 3e-1, 3e-1, 3e-1 ]),
-            (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [ 6e-1, 6e-1, 6e-1 ], cov_tol = [ 6e1, 6e1, 6e1 ], entropy_tol = [ 4e-1, 4e-1, 4e-1 ]),
-            (x = Wishart(10.0, posdefm(rng, 3)), y = Wishart(5.0, posdefm(rng, 3)), mean_tol = [ 7e-1, 7e-1, 7e-1 ], cov_tol = [ 3e2, 3e2, 3e2 ], entropy_tol = [ 2e-1, 2e-1, 2e-1 ]),
+            (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [ 2e-1, 2e-1, 2e-1 ], cov_tol = [ 6e-1, 6e-1, 6e-1 ], entropy_tol = [ 4e-1, 4e-1, 4e-1 ]),
+            (x = Wishart(10.0, posdefm(rng, 3)), y = Wishart(5.0, posdefm(rng, 3)), mean_tol = [ 7e-1, 7e-1, 7e-1 ], cov_tol = [ 5e-1, 5e-1, 5e-1 ], entropy_tol = [ 2e-1, 2e-1, 2e-1 ]),
         ]
         
         for (i, N) in enumerate(sizes)
