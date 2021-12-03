@@ -31,8 +31,7 @@ makedocs(
                 "Overview" => "lib/node.md",
                 "Flow"     => "lib/nodes/flow.md"
             ],
-            "Math utils"   => "lib/math.md",
-            "Helper utils" => "lib/helpers.md"
+            "Math utils"   => "lib/math.md"
         ],
         "Contributing" => "extra/contributing.md",
     ],

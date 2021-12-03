@@ -81,7 +81,8 @@ sample_list_show(io::IO, ::Type{Multivariate}, sl::SampleList) = print(io, "Samp
 sample_list_show(io::IO, ::Type{Matrixvariate}, sl::SampleList) = print(io, "SampleList(Matrixvariate", ndims(sl), ", ", length(sl), ")")
 
 function SampleList(samples::S) where { S <: AbstractVector } 
-    return SampleList(samples, OneDivNVector(deep_eltype(S), length(samples)))
+    N = length(samples)
+    return SampleList(samples, fill(one(deep_eltype(S)) / N, N))
 end
 
 function SampleList(samples::S, weights::W, meta::M = nothing) where { S, W, M }
@@ -152,8 +153,8 @@ function sample_list_zero_element(sl::SampleList)
     return sample_list_zero_element(variate_form(sl), T, sl)
 end
 
-sample_list_zero_element(::Type{ Univariate }, ::Type{T}, sl::SampleList) where T   = zero(T)
-sample_list_zero_element(::Type{ Multivariate }, ::Type{T}, sl::SampleList) where T = zeros(T, ndims(sl))
+sample_list_zero_element(::Type{ Univariate }, ::Type{T}, sl::SampleList) where T    = zero(T)
+sample_list_zero_element(::Type{ Multivariate }, ::Type{T}, sl::SampleList) where T  = zeros(T, ndims(sl))
 sample_list_zero_element(::Type{ Matrixvariate }, ::Type{T}, sl::SampleList) where T = zeros(T, ndims(sl))
 
 # Generic mean_cov
@@ -317,7 +318,7 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportan
 
     # Resulting samples and weights will go here
     rcontainer = similar(y)
-    # vec here just to convert `OneDivNVector` into an array just in case
+    # vec here just to convert unusual containers into an array just in case
     # does nothing if `get_weights` returns an array
     rsamples, rweights = get_samples(rcontainer), vec(get_weights(rcontainer)) 
 
@@ -327,7 +328,7 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportan
     H_x = zero(eltype(rweights_raw))
 
     # Compute sample weights
-    @turbo for i in 1:nsamples
+    @inbounds for i in 1:nsamples
         log_sample_x    = logpdf(xlogpdf, samples[i]) # evaluate samples in logm4, i.e. logm4(s)
         raw_weight      = exp(log_sample_x)       # m4(s)
         raw_weight_prod = raw_weight * weights[i] # update the weights of posterior w_unnormalized = m4(s)*w_prev
@@ -374,7 +375,7 @@ function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportan
         y_unnormalised_weights     = get_unnormalised_weights(y)
         r_unnormalised_weights     = similar(y_unnormalised_weights)
         r_unnormalised_weights_sum = zero(eltype(r_unnormalised_weights))
-        @turbo for i in 1:nsamples
+        @inbounds for i in 1:nsamples
             r_unnormalised_weights_prod = y_unnormalised_weights[i] * rweights_raw[i]
             r_unnormalised_weights[i]   = r_unnormalised_weights_prod
             r_unnormalised_weights_sum += r_unnormalised_weights_prod
@@ -543,7 +544,7 @@ function sample_list_vague(::Type{ Univariate }, nsamples::Int)
     targetdist   = vague(Uniform)
     preallocated = preallocate_samples(Float64, (), nsamples)
     rand!(targetdist, preallocated)
-    return SampleList(Val(()), preallocated, OneDivNVector(Float64, nsamples), nothing)
+    return SampleList(Val(()), preallocated, fill(one(Float64) / nsamples, nsamples), nothing)
 end
 
 ## Multivariate
@@ -562,7 +563,7 @@ function sample_list_covm!(Σ, μ, ::Type{ Multivariate }, sl::SampleList)
     tmp = similar(μ)
     k   = length(tmp)
     
-    @turbo for i in 1:n
+    @inbounds for i in 1:n
         for j in 1:k
             tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
@@ -608,7 +609,7 @@ function sample_list_vague(::Type{ Multivariate }, dims::Int, nsamples::Int)
     targetdist   = vague(Uniform)
     preallocated = preallocate_samples(Float64, (dims, ), nsamples)
     rand!(targetdist, preallocated)
-    return SampleList(Val((dims, )), preallocated, OneDivNVector(Float64, nsamples), nothing)
+    return SampleList(Val((dims, )), preallocated, fill(one(Float64) / nsamples, nsamples), nothing)
 end
 
 ## Matrixvariate
@@ -627,7 +628,7 @@ function sample_list_covm!(Σ, μ, ::Type{ Matrixvariate }, sl::SampleList)
     k   = length(μ)
     rμ  = reshape(μ, k)
     tmp = similar(rμ)
-    @turbo for i in 1:n
+    @inbounds for i in 1:n
         for j in 1:k
             tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
@@ -673,7 +674,7 @@ function sample_list_vague(::Type{ Matrixvariate }, dims::Tuple{Int, Int}, nsamp
     targetdist   = vague(Uniform)
     preallocated = preallocate_samples(Float64, dims, nsamples)
     rand!(targetdist, preallocated)
-    return SampleList(Val(dims), preallocated, OneDivNVector(Float64, nsamples), nothing)
+    return SampleList(Val(dims), preallocated, fill(one(Float64) / nsamples, nsamples), nothing)
 end
 
 ## Array operations, broadcasting and mapping
