@@ -4,7 +4,7 @@ using StatsFuns: logistic
 using StatsFuns: softmax, softmax!
 
 import LinearAlgebra
-import LoopVectorization: @turbo
+import LoopVectorization: @tturbo
 
 diageye(::Type{T}, n::Int) where { T <: Real } = Matrix{T}(I, n, n)
 diageye(n::Int)                                = diageye(Float64, n)
@@ -68,7 +68,7 @@ end
 """
     mul_trace(A, B)
 
-Computes tr(A * B) wihtout allocating A * B.
+Computes tr(A * B) without allocating A * B.
 """
 function mul_trace end
 
@@ -78,8 +78,31 @@ function mul_trace(A::AbstractMatrix, B::AbstractMatrix)
     sA, sB = size(A), size(B)
     @assert (sA === sB) && (length(sA) === 2) && (first(sA) === last(sA))
     result = zero(promote_type(eltype(A), eltype(B)))
-    @turbo for i in 1:first(sA), j in 1:first(sA)
+    @tturbo for i in 1:first(sA), j in 1:first(sA)
         @inbounds result += A[i, j] * B[j, i]
     end
+    return result
+end
+
+
+"""
+    v_a_vT(v, a)
+
+Computes v*a*v^T with a single allocation.
+"""
+function v_a_vT(v::AbstractVector, a::T) where { T <: Real }
+    result = v*v'
+    result .*= a
+    return result
+end
+
+"""
+    v_a_vT(v1, a, v2)
+
+Computes v1*a*v2^T with a single allocation.
+"""
+function v_a_vT(v1::AbstractVector, a::T, v2::AbstractVector) where { T <: Real }
+    result = v1*v2'
+    result .*= a
     return result
 end
