@@ -95,6 +95,11 @@ function v_a_vT(v::AbstractVector, a::T) where { T <: Real }
     result .*= a
     return result
 end
+function v_a_vT(v, a)
+    result = v*v'
+    result *= a
+    return result
+end
 
 """
     v_a_vT(v1, a, v2)
@@ -104,5 +109,10 @@ Computes v1*a*v2^T with a single allocation.
 function v_a_vT(v1::AbstractVector, a::T, v2::AbstractVector) where { T <: Real }
     result = v1*v2'
     result .*= a
+    return result
+end
+function v_a_vT(v1, a, v2)
+    result = v1*v2'
+    result *= a
     return result
 end
