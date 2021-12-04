@@ -52,6 +52,7 @@ Distributions.insupport(distribution::PointMass{V}, x::AbstractVector) where { T
 Distributions.pdf(distribution::PointMass{V}, x::AbstractVector)       where { T <: Real, V <: AbstractVector{T} } = Distributions.insupport(distribution, x) ? one(T) : zero(T)
 Distributions.logpdf(distribution::PointMass{V}, x::AbstractVector)    where { T <: Real, V <: AbstractVector{T} } = Distributions.insupport(distribution, x) ? zero(T) : convert(T, -Inf)
 
+Distributions.mean(distribution::PointMass{V}) where { T, V <: AbstractVector{T} } = getpointmass(distribution)
 Distributions.mean(distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = getpointmass(distribution)
 Distributions.var(distribution::PointMass{V})  where { T <: Real, V <: AbstractVector{T} } = zeros(T, (ndims(distribution), ))
 Distributions.std(distribution::PointMass{V})  where { T <: Real, V <: AbstractVector{T} } = zeros(T, (ndims(distribution), ))

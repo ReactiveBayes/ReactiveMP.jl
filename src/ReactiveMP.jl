@@ -29,11 +29,12 @@ include("pipeline.jl")
 
 include("actors/score.jl")
 
-include("algebra/helpers.jl")
 include("algebra/cholinv.jl")
 include("algebra/companion_matrix.jl")
-include("algebra/permutation_matrix.jl")
 include("algebra/correction.jl")
+include("algebra/helpers.jl")
+include("algebra/permutation_matrix.jl")
+include("algebra/standard_basis_vector.jl")
 
 include("approximations.jl")
 include("approximations/gausshermite.jl")
