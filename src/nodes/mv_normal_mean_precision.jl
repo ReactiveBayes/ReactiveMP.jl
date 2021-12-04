@@ -32,7 +32,7 @@ end
 
     m_mean, v_mean = mean_cov(q_μ)
     m_out, v_out   = mean_cov(q_out)
-    df_Λ, S_Λ      = q_Λ.df, q_Λ.S      # prevent allocation of mean matrix
+    df_Λ, S_Λ      = q_Λ.df, q_Λ.S.mat  # prevent allocation of mean matrix
 
     result = 0.0
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
@@ -71,7 +71,7 @@ end
     dim = div(ndims(q_out_μ), 2)
 
     m, V       = mean_cov(q_out_μ)
-    df_Λ, S_Λ  = q_Λ.df, q_Λ.S          # prevent allocation of mean matrix
+    df_Λ, S_Λ  = q_Λ.df, q_Λ.S.mat      # prevent allocation of mean matrix
 
     result = 0.0
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)

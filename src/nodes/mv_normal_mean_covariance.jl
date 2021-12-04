@@ -33,7 +33,7 @@ end
 
     m_mean, v_mean = mean_cov(q_μ)
     m_out, v_out   = mean_cov(q_out)
-    S_Σ = q_Σ.S                         # work with S matrix to prevent extra allocation of mean matrix
+    S_Σ = q_Σ.S.mat                     # work with S matrix to prevent extra allocation of mean matrix
     r_Σ = q_Σ.df - dim + 1              
     
     lu_S_Σ = lu(S_Σ; check=false)       # perform lu decomposition to speed up joint logdet and inv operation
@@ -79,7 +79,7 @@ end
 
     m, V = mean_cov(q_out_μ)
     m_Σ  = mean(q_Σ)
-    S_Σ = q_Σ.S                         # work with S matrix to prevent extra allocation of mean matrix
+    S_Σ = q_Σ.S.mat                     # work with S matrix to prevent extra allocation of mean matrix
     r_Σ = q_Σ.df - dim + 1              
 
     lu_S_Σ = lu(S_Σ; check=false)       # perform lu decomposition to speed up joint logdet and inv operation
