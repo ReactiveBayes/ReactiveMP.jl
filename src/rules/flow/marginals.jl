@@ -1,14 +1,12 @@
 ## TODO: pointmass rules
 ## TODO: save sigma vectors in meta to limit allocations
 
-@marginalrule Flow(:in) (m_out::NormalDistributionsFamily, m_in::NormalDistributionsFamily, meta::FlowMeta{M,Linearization}) where { M } = begin
-    ## TODO: optimize for speed
+@marginalrule Flow(:in) (m_out::MvNormalMeanCovariance, m_in::NormalDistributionsFamily, meta::FlowMeta{M,Linearization}) where { M } = begin
     # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
     # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
     # Here q(μ) = q(μ | out, Σ)
     
     # extract parameters
-    μ_in, Σ_in   = mean_cov(m_in)
     μ_out, Σ_out = mean_cov(m_out)
 
     # extract model
@@ -18,17 +16,52 @@
     (μ_in_hat, Ji) = backward_inv_jacobian(model, μ_out)
     Σ_in_hat = Ji * Σ_out * Ji'
 
-    # calculate marginal distribution
-    Λ_in     = cholinv(Σ_in) 
-    Λ_in_hat = cholinv(Σ_in_hat)
-    Λ_marg   = Λ_in + Λ_in_hat
-    ξ_marg   = Λ_in * μ_in + Λ_in_hat * μ_in_hat
-
     # return marginal distribution
-    return MvNormalWeightedMeanPrecision(ξ_marg, Λ_marg)
+    return prod(ProdAnalytical(), m_in, MvNormalMeanCovariance(μ_in_hat, Σ_in_hat))
 
 end
 
+@marginalrule Flow(:in) (m_out::MvNormalMeanPrecision, m_in::NormalDistributionsFamily, meta::FlowMeta{M,Linearization}) where { M } = begin
+    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
+    # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
+    # Here q(μ) = q(μ | out, Σ)
+    
+    # extract parameters
+    μ_out, Λ_out = mean_precision(m_out)
+
+    # extract model
+    model = getmodel(meta)
+
+    # calculate new parameters
+    μ_in_hat = backward(model, μ_out)
+    J        = jacobian(model, μ_out)
+    Λ_in_hat = J' * Λ_out * J
+
+    # return marginal distribution
+    return prod(ProdAnalytical(), m_in, MvNormalMeanPrecision(μ_in_hat, Λ_in_hat))
+
+end
+
+@marginalrule Flow(:in) (m_out::MvNormalWeightedMeanPrecision, m_in::NormalDistributionsFamily, meta::FlowMeta{M,Linearization}) where { M } = begin
+    # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
+    # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
+    # Here q(μ) = q(μ | out, Σ)
+    
+    # extract parameters
+    μ_out, Λ_out = mean_precision(m_out)
+
+    # extract model
+    model = getmodel(meta)
+
+    # calculate new parameters
+    μ_in_hat = backward(model, μ_out)
+    J        = jacobian(model, μ_out)
+    Λ_in_hat = J' * Λ_out * J
+
+    # return marginal distribution
+    return prod(ProdAnalytical(), m_in, MvNormalMeanPrecision(μ_in_hat, Λ_in_hat))
+
+end
 
 @marginalrule Flow(:in) (m_out::NormalDistributionsFamily, m_in::NormalDistributionsFamily, meta::FlowMeta{M,Unscented}) where { M } = begin
     
