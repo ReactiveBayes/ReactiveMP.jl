@@ -29,7 +29,7 @@ include("pipeline.jl")
 
 include("actors/score.jl")
 
-include("algebra/cholinv.jl")
+include("algebra/cholesky.jl")
 include("algebra/companion_matrix.jl")
 include("algebra/correction.jl")
 include("algebra/helpers.jl")
