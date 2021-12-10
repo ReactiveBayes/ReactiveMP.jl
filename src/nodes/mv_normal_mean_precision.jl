@@ -16,7 +16,7 @@ conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :Λ } })   = Wis
     m_Λ            = mean(q_Λ)
 
     result = dim * log2π
-    result -= logdet(m_Λ)
+    result -= chollogdet(m_Λ)
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result += m_Λ[k1,k2] * (v_out[k1,k2] + v_mean[k1,k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
     end
@@ -40,7 +40,7 @@ end
     end
     result *= df_Λ
     result += dim * log2π
-    result -= logdet(S_Λ)
+    result -= chollogdet(S_Λ)
     result -= dim*log(df_Λ)
     result /= 2
 
@@ -56,7 +56,7 @@ end
     m_Λ  = mean(q_Λ)
 
     result = dim * log2π
-    result -= logdet(m_Λ)
+    result -= chollogdet(m_Λ)
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result += m_Λ[k1,k2] * (V[k1,k2] + V[dim+k1,dim+k2] - V[dim+k1,k2] - V[k1,dim+k2] + (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2]))
     end
@@ -79,7 +79,7 @@ end
     end
     result *= df_Λ
     result += dim * log2π
-    result -= logdet(S_Λ)
+    result -= chollogdet(S_Λ)
     result -= dim*log(df_Λ)
     result /= 2
 

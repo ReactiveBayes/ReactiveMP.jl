@@ -14,11 +14,9 @@ conjugate_type(::Type{ <: MvNormalMeanCovariance }, ::Type{ Val{ :Σ } })   = In
     m_out, v_out   = mean_cov(q_out)
     m_Σ            = mean(q_Σ)
 
-    lu_m_Σ = lu(m_Σ; check=false)       # perform lu decomposition to speed up joint logdet and inv operation
-    inv_m_Σ = inv(lu_m_Σ)               # inv is twice as fast as cholinv
+    inv_m_Σ, result = cholinv_logdet(m_Σ)
 
-    result = dim * log2π
-    result += logdet(lu_m_Σ)
+    result += dim * log2π
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result += inv_m_Σ[k1,k2] * (v_out[k1,k2] + v_mean[k1,k2] + (m_out[k2]-m_mean[k2]) * (m_out[k1] - m_mean[k1]))
     end
@@ -36,12 +34,10 @@ end
     S_Σ = q_Σ.S.mat                     # work with S matrix to prevent extra allocation of mean matrix
     r_Σ = q_Σ.df - dim + 1              
     
-    lu_S_Σ = lu(S_Σ; check=false)       # perform lu decomposition to speed up joint logdet and inv operation
-    inv_S_Σ = inv(lu_S_Σ)               # inv is twice as fast as cholinv
+    inv_S_Σ, result = cholinv_logdet(S_Σ)
     inv_S_Σ .*= r_Σ                     # compensate for working with S Matrix
     
-    result = log2π * dim
-    result += logdet(lu_S_Σ)
+    result += log2π * dim
     result -= log(r_Σ) * dim            # compensate for working with S matrix
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result += inv_S_Σ[k1,k2] * (v_out[k1,k2] + v_mean[k1,k2] + (m_out[k2]-m_mean[k2]) * (m_out[k1] - m_mean[k1]))
@@ -59,11 +55,9 @@ end
     m, V = mean_cov(q_out_μ)
     m_Σ  = mean(q_Σ)
 
-    lu_m_Σ = lu(m_Σ; check=false)       # perform lu decomposition to speed up joint logdet and inv operation
-    inv_m_Σ = inv(lu_m_Σ)               # inv is twice as fast as cholinv
+    inv_m_Σ, result = cholinv_logdet(m_Σ)
 
-    result = dim * log2π
-    result += logdet(lu_m_Σ)
+    result += dim * log2π
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result += inv_m_Σ[k1,k2] * (V[k1,k2] + V[dim+k1,dim+k2] - V[dim+k1,k2] - V[k1,dim+k2] + (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2]))
     end
@@ -82,12 +76,10 @@ end
     S_Σ = q_Σ.S.mat                     # work with S matrix to prevent extra allocation of mean matrix
     r_Σ = q_Σ.df - dim + 1              
 
-    lu_S_Σ = lu(S_Σ; check=false)       # perform lu decomposition to speed up joint logdet and inv operation
-    inv_S_Σ = inv(lu_S_Σ)               # inv is twice as fast as cholinv
+    inv_S_Σ, result = cholinv_logdet(S_Σ)
     inv_S_Σ .*= r_Σ                     # compensate for working with S Matrix
 
-    result = dim * log2π
-    result += logdet(lu_S_Σ)
+    result += dim * log2π
     result -= log(r_Σ) * dim          
     @turbo for k1 ∈ 1:dim, k2 ∈ 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)
         result += inv_S_Σ[k1,k2] * (V[k1,k2] + V[dim+k1,dim+k2] - V[dim+k1,k2] - V[k1,dim+k2] + (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2]))
