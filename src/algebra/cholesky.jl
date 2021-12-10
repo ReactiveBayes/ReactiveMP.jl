@@ -17,7 +17,7 @@ cholsqrt(x::Real)     = sqrt(x)
 
 function cholinv_logdet(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat } 
     # calculate cholesky decomposition
-    y = cholesky(Hermitian(A))
+    y = cholesky(Hermitian(x))
     
     # calculate logdeterminant of cholesky decomposition
     L = y.L
@@ -32,7 +32,7 @@ function cholinv_logdet(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFlo
 end
 function cholinv_logdet(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat } 
     # calculate cholesky decomposition
-    y = cholesky(Hermitian(A))
+    y = cholesky(Hermitian(x))
     
     # calculate logdeterminant of cholesky decomposition
     L = y.L
