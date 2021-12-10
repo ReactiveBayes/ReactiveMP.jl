@@ -1,24 +1,23 @@
 export cholinv, cholsqrt
 
 using LinearAlgebra
-using PositiveFactorizations
 
-cholinv(x)           = inv(cholesky(PositiveFactorizations.Positive, Hermitian(x)))
+cholinv(x)           = inv(cholesky(Hermitian(x)))
 cholinv(x::Diagonal) = Diagonal(inv.(diag(x)))
 cholinv(x::Real)     = inv(x)
 function cholinv(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat }
-    y = cholesky(PositiveFactorizations.Positive, Hermitian(x))
+    y = cholesky(Hermitian(x))
     LinearAlgebra.inv!(y)
     return y.factors
 end
 
-cholsqrt(x)           = Matrix(cholesky(PositiveFactorizations.Positive, x).L)
+cholsqrt(x)           = Matrix(cholesky(Hermitian(x)).L)
 cholsqrt(x::Diagonal) = Diagonal(sqrt.(diag(x)))
 cholsqrt(x::Real)     = sqrt(x)
 
 function cholinv_logdet(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat } 
     # calculate cholesky decomposition
-    y = cholesky(PositiveFactorizations.Positive, Hermitian(A))
+    y = cholesky(Hermitian(A))
     
     # calculate logdeterminant of cholesky decomposition
     L = y.L
@@ -33,7 +32,7 @@ function cholinv_logdet(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFlo
 end
 function cholinv_logdet(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat } 
     # calculate cholesky decomposition
-    y = cholesky(PositiveFactorizations.Positive, Hermitian(A))
+    y = cholesky(Hermitian(A))
     
     # calculate logdeterminant of cholesky decomposition
     L = y.L
