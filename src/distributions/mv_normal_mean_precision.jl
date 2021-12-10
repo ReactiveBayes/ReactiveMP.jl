@@ -36,7 +36,7 @@ Distributions.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
 Distributions.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
-Distributions.logdetcov(dist::MvNormalMeanPrecision) = -logdet(invcov(dist))
+Distributions.logdetcov(dist::MvNormalMeanPrecision) = -chollogdet(invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 

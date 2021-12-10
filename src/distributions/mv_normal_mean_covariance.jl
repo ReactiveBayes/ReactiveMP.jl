@@ -41,7 +41,7 @@ Distributions.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ
 Distributions.invcov(dist::MvNormalMeanCovariance)    = cholinv(dist.Σ)
 Distributions.std(dist::MvNormalMeanCovariance)       = cholsqrt(cov(dist))
-Distributions.logdetcov(dist::MvNormalMeanCovariance) = logdet(cov(dist))
+Distributions.logdetcov(dist::MvNormalMeanCovariance) = chollogdet(cov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
