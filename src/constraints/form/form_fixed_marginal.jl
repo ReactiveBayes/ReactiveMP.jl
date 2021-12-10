@@ -4,7 +4,7 @@ export FixedMarginalConstraint
 FixedMarginalConstraint
 
 One of the form constraint objects. 
-Enables fixing the marginal distribution to remain fixed during inference. 
+Provides a constraint on the marginal distribution such that it remains fixed during inference. 
 Can be viewed as blocking of updates of a specific edge associated with the marginal. 
 
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
