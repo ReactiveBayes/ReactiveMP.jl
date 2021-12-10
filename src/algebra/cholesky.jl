@@ -16,6 +16,10 @@ cholsqrt(x)           = Matrix(cholesky(PositiveFactorizations.Positive, Hermiti
 cholsqrt(x::Diagonal) = Diagonal(sqrt.(diag(x)))
 cholsqrt(x::Real)     = sqrt(x)
 
+chollogdet(x)           = logdet(cholesky(PositiveFactorizations.Positive, Hermitian(x)))
+chollogdet(x::Diagonal) = logdet(x)
+chollogdet(x::Real)     = logdet(x)
+
 function cholinv_logdet(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat } 
     # calculate cholesky decomposition
     y = cholesky(PositiveFactorizations.Positive, Hermitian(x))
