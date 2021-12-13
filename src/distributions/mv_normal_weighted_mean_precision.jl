@@ -36,7 +36,10 @@ function mean_cov(dist::MvNormalWeightedMeanPrecision)
     return (μ, Σ)
 end
 
-Distributions.mean(dist::MvNormalWeightedMeanPrecision)      = cov(dist) * weightedmean(dist)
+function Distributions.mean(dist::MvNormalWeightedMeanPrecision)
+    z = cholesky(PositiveFactorizations.Positive, precision(dist))
+    return z \ weightedmean(dist)
+end
 Distributions.mode(dist::MvNormalWeightedMeanPrecision)      = mean(dist)
 Distributions.var(dist::MvNormalWeightedMeanPrecision)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalWeightedMeanPrecision)       = cholinv(dist.Λ)

@@ -28,7 +28,10 @@ end
 
 Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
 
-weightedmean(dist::MvNormalMeanCovariance) = invcov(dist) * mean(dist)
+function weightedmean(dist::MvNormalMeanCovariance)
+    z = cholesky(PositiveFactorizations.Positive, Hermitian(cov(dist)))
+    return z \ mean(dist)
+end
 
 function weightedmean_invcov(dist::MvNormalMeanCovariance)
     W = invcov(dist)
