@@ -18,3 +18,9 @@ end
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return MvNormalMeanCovariance(m_μ_mean, m_μ_cov + cholinv(mean(q_Λ)))
 end
+
+@rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::MultivariateNormalDistributionsFamily, q_Λ::Wishart) = begin 
+    m_μ_mean, m_μ_cov = mean_cov(m_μ)
+    inv_mean_q_Λ = inv(q_Λ.S.chol)./q_Λ.df
+    return MvNormalMeanCovariance(m_μ_mean, m_μ_cov + inv_mean_q_Λ)
+end
