@@ -34,10 +34,12 @@ function weightedmean(dist::MvNormalMeanCovariance)
 end
 
 function weightedmean_invcov(dist::MvNormalMeanCovariance)
-    W = invcov(dist)
+    W = precision(dist)
     xi = W * mean(dist)
     return (xi, W)
 end
+
+weightedmean_precision(dist::MvNormalMeanCovariance) = weightedmean_invcov(dist)
 
 Distributions.mean(dist::MvNormalMeanCovariance)      = dist.μ
 Distributions.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
@@ -85,6 +87,24 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance, right::MvNorm
     xi_left, W_left = weightedmean_precision(left)
     xi_right, W_right = weightedmean_precision(right)
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
+end
+
+function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance{T1}, right::MvNormalMeanCovariance{T2}) where { T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat }
+
+    # start with parameters of left
+    xi, W = weightedmean_precision(left)
+
+    # update W
+    W_right = precision(right)
+    W += W_right
+
+    # update xi without allocating another vector
+    T = promote_type(T1, T2)
+    xi = convert(AbstractVector{T}, xi)
+    W  = convert(AbstractMatrix{T}, W)
+    xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, W_right), convert(AbstractVector{T}, mean(right)), one(T), xi)
+
+    return MvNormalWeightedMeanPrecision(xi, W)
 end
 
 
