@@ -21,8 +21,7 @@ end
 end
 
 @rule typeof(+)(:out, Marginalisation) (m_in1::PointMass, m_in2::NormalMeanPrecision) = begin
-    min2, win2 = mean_precision(m_in2)
-    return NormalMeanPrecision(mean(m_in1) + min2, win2)
+    return @call_rule typeof(+)(:out, Marginalisation) (m_in1 = m_in2, m_in2 = m_in1, meta = meta)
 end
 
 
@@ -32,8 +31,7 @@ end
 end
 
 @rule typeof(+)(:out, Marginalisation) (m_in1::PointMass, m_in2::MvNormalMeanPrecision) = begin
-    min2, win2 = mean_precision(m_in2)
-    return MvNormalMeanPrecision(mean(m_in1) + min2, win2)
+    return @call_rule typeof(+)(:out, Marginalisation) (m_in1 = m_in2, m_in2 = m_in1, meta = meta)
 end
 
 
@@ -43,8 +41,7 @@ end
 end
 
 @rule typeof(+)(:out, Marginalisation) (m_in1::PointMass, m_in2::UnivariateNormalDistributionsFamily) = begin
-    min2, vin2 = mean_var(m_in2)
-    return NormalMeanVariance(mean(m_in1) + min2, vin2)
+    return @call_rule typeof(+)(:out, Marginalisation) (m_in1 = m_in2, m_in2 = m_in1, meta = meta)
 end
 
 
@@ -54,8 +51,5 @@ end
 end
 
 @rule typeof(+)(:out, Marginalisation) (m_in1::PointMass, m_in2::MultivariateNormalDistributionsFamily) = begin
-    min2, vin2 = mean_cov(m_in2)
-    return MvNormalMeanCovariance(mean(m_in1) + min2, vin2)
+    return @call_rule typeof(+)(:out, Marginalisation) (m_in1 = m_in2, m_in2 = m_in1, meta = meta)
 end
-
-
