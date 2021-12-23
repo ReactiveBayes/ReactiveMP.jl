@@ -35,3 +35,13 @@ end
 
     return MvNormalMeanCovariance(μ, Σ)
 end
+
+#------------------------
+# Real * UnivariateNormalDistributions
+#------------------------
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{ <: Real }, m_in::UnivariateNormalDistributionsFamily) = begin
+    a = mean(m_A)
+    μ_in, v_in = mean_var(m_in)
+
+    return NormalMeanVariance(a*μ_in, a^2*v_in)
+end
