@@ -1,6 +1,5 @@
-export marginalrule
 
-@marginalrule typeof(*)(:A_in) (m_out::NormalDistributionsFamily, m_A::PointMass, m_in::F) where { F <: NormalDistributionsFamily } = begin
+@marginalrule typeof(*)(:A_in) (m_out::NormalDistributionsFamily, m_A::PointMass, m_in::F, meta::Any) where { F <: NormalDistributionsFamily } = begin
     # A = mean(m_A)
     # xi_out, W_out = weightedmean_precision(m_out)
     # W = A' * W_out * A
