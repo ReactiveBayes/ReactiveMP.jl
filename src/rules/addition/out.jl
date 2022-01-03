@@ -57,3 +57,33 @@ end
 @rule typeof(+)(:out, Marginalisation) (m_in1::PointMass, m_in2::MultivariateNormalDistributionsFamily) = begin
     return @call_rule typeof(+)(:out, Marginalisation) (m_in1 = m_in2, m_in2 = m_in1, meta = meta)
 end
+
+# specialized
+@rule typeof(+)(:out, Marginalisation) (m_in1::MvNormalWeightedMeanPrecision{T1}, m_in2::MvNormalWeightedMeanPrecision{T2}) where { T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat } = begin
+
+    min2, vin2 = mean_cov(m_in2)
+    vin1 = cov(m_in1)
+    T = promote_type(T1, T2)
+    BLAS.gemv!('N', one(T), vin1, weightedmean(m_in1), one(T), min2)
+    vin2 .+= vin1
+    return MvNormalMeanCovariance(min2, vin2)
+
+end
+
+@rule typeof(+)(:out, Marginalisation) (m_in1::MvNormalWeightedMeanPrecision, m_in2::PointMass) = begin
+
+    ξin1, win1 = weightedmean_precision(m_in1)
+    ξout = win1*mean(m_in2)
+    ξout .+= ξin1
+    return MvNormalWeightedMeanPrecision(ξout, win1)
+
+end
+
+@rule typeof(+)(:out, Marginalisation) (m_in1::PointMass, m_in2::MvNormalWeightedMeanPrecision) = begin
+
+    ξin2, win2 = weightedmean_precision(m_in2)
+    ξout = win2*mean(m_in1)
+    ξout .+= ξin2
+    return MvNormalWeightedMeanPrecision(ξout, win2)
+
+end
