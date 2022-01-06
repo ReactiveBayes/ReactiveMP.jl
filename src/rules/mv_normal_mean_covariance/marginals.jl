@@ -15,7 +15,13 @@ end
     W_bar = cholinv(mean(m_Σ))
     
     xi = [ xi_out; xi_m ]
-    W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
+
+    d = length(xi_out)
+    W = repeat(W_bar, 2, 2)
+    view(W, 1:d, d+1:2*d) .*= -1
+    view(W, d+1:2*d, 1:d) .*= -1
+    view(W, 1:d, 1:d) .+= W_out
+    view(W, d+1:2*d, d+1:2*d) .+= W_m
 
     return (out_μ = MvNormalWeightedMeanPrecision(xi, W), Σ = m_Σ)
 end
@@ -27,7 +33,13 @@ end
     W_bar = cholinv(mean(q_Σ))
     
     xi = [ xi_out; xi_m ]
-    W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
+    
+    d = length(xi_out)
+    W = repeat(W_bar, 2, 2)
+    view(W, 1:d, d+1:2*d) .*= -1
+    view(W, d+1:2*d, 1:d) .*= -1
+    view(W, 1:d, 1:d) .+= W_out
+    view(W, d+1:2*d, d+1:2*d) .+= W_m
     
     return MvNormalWeightedMeanPrecision(xi, W)
 end

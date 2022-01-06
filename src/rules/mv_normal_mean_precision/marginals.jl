@@ -14,7 +14,13 @@ end
 
     W_bar = mean(m_Λ)
     
-    Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
+    d = length(xi_y)
+    Λ = repeat(W_bar, 2, 2)
+    view(Λ, 1:d, d+1:2*d) .*= -1
+    view(Λ, d+1:2*d, 1:d) .*= -1
+    view(Λ, 1:d, 1:d) .+= W_y
+    view(Λ, d+1:2*d, d+1:2*d) .+= W_m
+
     ξ  = [ xi_y; xi_m ]
     
     return (out_μ = MvNormalWeightedMeanPrecision(ξ, Λ), Λ = m_Λ)
@@ -26,7 +32,13 @@ end
 
     W_bar = mean(q_Λ)
     
-    Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
+    d = length(xi_y)
+    Λ = repeat(W_bar, 2, 2)
+    view(Λ, 1:d, d+1:2*d) .*= -1
+    view(Λ, d+1:2*d, 1:d) .*= -1
+    view(Λ, 1:d, 1:d) .+= W_y
+    view(Λ, d+1:2*d, d+1:2*d) .+= W_m
+    
     ξ  = [ xi_y; xi_m ]
     
     return MvNormalWeightedMeanPrecision(ξ, Λ)
