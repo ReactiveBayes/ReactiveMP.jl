@@ -11,6 +11,21 @@ using LinearAlgebra
     rng = MersenneTwister(1234)
 
     @testset begin 
+        @test_throws AssertionError StandardBasisVector(0, 1)
+        @test_throws AssertionError StandardBasisVector(-10, 1)
+        @test_throws AssertionError StandardBasisVector(10, 11)
+        @test_throws AssertionError StandardBasisVector(10, -2)
+
+        for T in (Int, Float64, Float32)
+            r = rand(rng, T)
+            e = StandardBasisVector(2, 1, r)
+            @test eltype(e) === T
+            @test e[1] === r
+            @test e[2] === zero(r)
+        end
+    end
+
+    @testset begin 
 
         for N in 1:8
             for I in 1:N
@@ -20,17 +35,15 @@ using LinearAlgebra
                     e_c    = zeros(T, N)
                     e_c[I] = scale
 
+                    m = rand(rng, T)
                     v = rand(rng, T, N)
                     A = rand(rng, T, N, N)
                     a = rand(rng, T, N, 1)
 
-                    @test eltype(A * e) === eltype(scale)
-                    @test eltype(A' * e) === eltype(scale)
-                    @test eltype(e * e') === eltype(scale)
-                    @test eltype(e' * e) === eltype(scale)
-                    @test eltype(v' * e) === eltype(scale)
-                    @test eltype(e * v') === eltype(scale)
-                    @test eltype(a' * e) === eltype(scale)
+                    @test m * e == m * e_c
+                    @test m * e' == m * e_c'
+                    @test e * m == e_c * m
+                    @test e' * m == e_c' * m
 
                     @test (A * e) == (A * e_c)
                     @test (A' * e) == (A' * e_c)
