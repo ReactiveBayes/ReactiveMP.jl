@@ -92,8 +92,9 @@ end
 Computes v*a*v^T with a single allocation.
 """
 function v_a_vT(v::AbstractVector, a::Real)
-    result = v*v'
-    result .*= a
+    T      = promote_type(eltype(v), typeof(a))
+    result = zeros(T, length(v), length(v))
+    mul!(result, v, v', a, one(T))
     return result
 end
 
@@ -109,8 +110,9 @@ end
 Computes v1*a*v2^T with a single allocation.
 """
 function v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector)
-    result = v1*v2'
-    result .*= a
+    T      = promote_type(eltype(v1), typeof(a), eltype(v2))
+    result = zeros(T, length(v1), length(v2))
+    mul!(result, v1, v2', a, one(T))
     return result
 end
 
