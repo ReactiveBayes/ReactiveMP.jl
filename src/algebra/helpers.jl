@@ -16,6 +16,7 @@ end
 const sigmoid = logistic
 
 dtanh(x) = 1 - tanh(x)^2
+
 """
     negate_inplace!(A)
 
@@ -56,11 +57,11 @@ rank1update(A::AbstractMatrix, x::AbstractVector, y::AbstractVector) = rank1upda
 rank1update(A::Real, x::Real)          = rank1update(A, x, x)
 rank1update(A::Real, x::Real, y::Real) = A + x * y
 
-function rank1update(::Type{ T }, ::Type{ T }, ::Type{T}, A::Matrix, x::Vector, y::Vector) where { T <: AbstractFloat } 
+function rank1update(::Type{ T }, ::Type{ T }, ::Type{T}, A::Matrix, x::Vector, y::Vector) where { T <: LinearAlgebra.BlasFloat } 
     return LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
 end
 
-function rank1update(::Type{ T1 }, ::Type{ T2 }, ::Type{ T3 }, A::AbstractMatrix, x::AbstractVector, y::AbstractVector) where { T1 <: Real, T2 <: Real , T3 <: Real } 
+function rank1update(::Type{ <: Real }, ::Type{ <: Real }, ::Type{ <: Real }, A::AbstractMatrix, x::AbstractVector, y::AbstractVector)
     return A + x * y'
 end
 
@@ -90,11 +91,12 @@ end
 
 Computes v*a*v^T with a single allocation.
 """
-function v_a_vT(v::AbstractVector, a::T) where { T <: Real }
+function v_a_vT(v::AbstractVector, a::Real)
     result = v*v'
     result .*= a
     return result
 end
+
 function v_a_vT(v, a)
     result = v*v'
     result *= a
@@ -106,11 +108,12 @@ end
 
 Computes v1*a*v2^T with a single allocation.
 """
-function v_a_vT(v1::AbstractVector, a::T, v2::AbstractVector) where { T <: Real }
+function v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector)
     result = v1*v2'
     result .*= a
     return result
 end
+
 function v_a_vT(v1, a, v2)
     result = v1*v2'
     result *= a
