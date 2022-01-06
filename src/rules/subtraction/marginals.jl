@@ -1,7 +1,7 @@
 
 @marginalrule typeof(-)(:in1_in2) (m_out::UnivariateNormalDistributionsFamily, m_in1::UnivariateNormalDistributionsFamily, m_in2::PointMass) = begin
     mout, vout = mean_var(m_out)
-    return (in1 = prod(ProdAnalytical(), NormalMeanVariance(mout + mean(m_in2), voud), m_in1), in2 = m_in2)
+    return (in1 = prod(ProdAnalytical(), NormalMeanVariance(mout + mean(m_in2), vout), m_in1), in2 = m_in2)
 end
 
 @marginalrule typeof(-)(:in1_in2) (m_out::UnivariateNormalDistributionsFamily, m_in1::PointMass, m_in2::UnivariateNormalDistributionsFamily) = begin

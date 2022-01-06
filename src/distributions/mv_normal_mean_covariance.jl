@@ -29,7 +29,7 @@ end
 Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
 
 function weightedmean(dist::MvNormalMeanCovariance)
-    z = cholesky(PositiveFactorizations.Positive, Hermitian(cov(dist)))
+    z = fastcholesky(cov(dist))
     return z \ mean(dist)
 end
 
@@ -96,7 +96,7 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance{T1}, right::Mv
 
     # update W
     W_right = precision(right)
-    W += W_right
+    W .+= W_right
 
     # update xi without allocating another vector
     T = promote_type(T1, T2)

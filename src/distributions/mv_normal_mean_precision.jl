@@ -80,7 +80,7 @@ function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision{T1}, right::M
     Λ  = convert(AbstractMatrix{T}, Λ)
     xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, precision(left)), convert(AbstractVector{T}, mean(left)), one(T), xi)
     
-    z = cholesky(PositiveFactorizations.Positive, Λ)
+    z = fastcholesky(Λ)
     μ = z \ xi
 
     return MvNormalMeanPrecision(μ, Λ)

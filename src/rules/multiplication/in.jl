@@ -35,7 +35,7 @@ end
     A = mean(m_A)
     μ_out, Σ_out = mean_cov(m_out)
 
-    z = cholesky(PositiveFactorizations.Positive, Σ_out)
+    z = fastcholesky(Σ_out)
     tmp = A' / z
     W = correction!(meta, tmp * A)
 
@@ -46,7 +46,7 @@ end
     A = mean(m_A)
     μ_out, Σ_out = mean_cov(m_out)
 
-    z = cholesky(PositiveFactorizations.Positive, Σ_out)
+    z = fastcholesky(Σ_out)
     tmp = A' / z
     W = correction!(meta, dot(tmp, A))
     

@@ -37,7 +37,7 @@ function mean_cov(dist::MvNormalWeightedMeanPrecision)
 end
 
 function Distributions.mean(dist::MvNormalWeightedMeanPrecision)
-    z = cholesky(PositiveFactorizations.Positive, precision(dist))
+    z = fastcholesky(precision(dist))
     return z \ weightedmean(dist)
 end
 Distributions.mode(dist::MvNormalWeightedMeanPrecision)      = mean(dist)
