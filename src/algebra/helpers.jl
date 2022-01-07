@@ -27,8 +27,8 @@ See also: [`mul_inplace!`](@ref)
 function negate_inplace! end
 
 negate_inplace!(A::AbstractArray) = -A
-negate_inplace!(A::Array)         = map!(-, A, A)
 negate_inplace!(A::Real)          = -A
+negate_inplace!(A::Array)         = map!(-, A, A)
 
 """
     mul_inplace!(alpha, A)
@@ -40,8 +40,8 @@ See also: [`negate_inplace!`](@ref)
 function mul_inplace! end
 
 mul_inplace!(alpha, A::AbstractArray) = alpha * A
-mul_inplace!(alpha, A::Array)         = lmul!(alpha, A)
 mul_inplace!(alpha, A::Real)          = alpha * A
+mul_inplace!(alpha::T, A::Array{T}) where { T <: Real } = lmul!(alpha, A)
 
 """
     rank1update(A, x)

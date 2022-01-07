@@ -166,14 +166,14 @@ end
 function Base.:*(A::AbstractMatrix, e::StandardBasisVector)
     @assert size(A, 2) === length(e)
     v = A[:, getind(e)]
-    mul_inplace!(e.scale, v)
+    v = mul_inplace!(e.scale, v)
     return v
 end
 
 function Base.:*(A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector) where { T <: Real }
     @assert size(A, 2) === length(e)
     v = A[:, getind(e)]
-    mul_inplace!(e.scale, v)
+    v = mul_inplace!(e.scale, v)
     return v
 end
 
@@ -210,7 +210,7 @@ end
 function Base.:*(e::StandardBasisVector, A::Adjoint{T, <: AbstractMatrix{T}}) where { T <: Real }
     @assert size(A, 2) === length(e)
     v = A[:, getind(e)]
-    mul_inplace!(e.scale, v)
+    v = mul_inplace!(e.scale, v)
     return v
 end
 
