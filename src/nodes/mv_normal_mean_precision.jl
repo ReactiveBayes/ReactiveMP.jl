@@ -27,7 +27,9 @@ end
 
 # specialized method for mean-field assumption with q_Λ::Wishart
 @average_energy MvNormalMeanPrecision (q_out::Any, q_μ::Any, q_Λ::Wishart) = begin
-    # naive: (ndims(q_out) * log2π + logdet(cholinv(mean(q_Λ))) + tr(mean(q_Λ)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))) / 2
+    # m_out, v_out = mean_cov(q_out)
+    # m_mean, v_mean = mean_cov(q_μ)
+    # return (ndims(q_out) * log2π + logdet(cholinv(mean(q_Λ))) + tr(mean(q_Λ)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))) / 2
     dim = ndims(q_out)
 
     m_mean, v_mean = mean_cov(q_μ)
