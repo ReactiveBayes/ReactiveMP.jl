@@ -3,9 +3,12 @@ export cholinv, cholsqrt
 using LinearAlgebra
 using PositiveFactorizations
 
+import LinearAlgebra: BlasInt
+
 cholinv(x)           = inv(fastcholesky(x))
 cholinv(x::Diagonal) = Diagonal(inv.(diag(x)))
 cholinv(x::Real)     = inv(x)
+
 function cholinv(x::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat }
     y = fastcholesky(x)
     LinearAlgebra.inv!(y)
@@ -50,6 +53,7 @@ function fastcholesky(mat::AbstractMatrix)
     catch
         return cholesky(PositiveFactorizations.Positive, Hermitian(mat))
     end
+    
 end
 
 function fastcholesky!(A::AbstractMatrix)
@@ -67,7 +71,7 @@ function fastcholesky!(A::AbstractMatrix)
             A[row, col] /= A[col, col]
         end
     end
-    return Cholesky(LowerTriangular(A))
+    return Cholesky(A, 'L', convert(BlasInt, 0))
 end
 
 function fastcholesky!(A::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloat }
@@ -97,5 +101,5 @@ function fastcholesky!(A::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloa
         end
     end
 
-    return Cholesky(LowerTriangular(A))
+    return Cholesky(A, 'L', convert(BlasInt, 0))
 end
