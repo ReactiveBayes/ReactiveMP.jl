@@ -56,20 +56,29 @@ end
     xi_in1, W_in1 = weightedmean_precision(m_in1)
     xi_in2, W_in2 = weightedmean_precision(m_in2)
 
+    T = promote_type(eltype(W_out), eltype(W_in1), eltype(W_in2))
     d = length(xi_out)
+    Λ = Matrix{T}(undef, (2*d, 2*d))
+    @inbounds for k2 in 1:d
+        @inbounds for k1 in 1:d
+            tmp1 = W_out[k1,k2]
+            tmp2 = -tmp1
+            k1d = k1+d
+            k2d = k2+d
+            Λ[k1,k2] = tmp1 + W_in1[k1,k2]
+            Λ[k1d,k2] = tmp2
+            Λ[k1,k2d] = tmp2
+            Λ[k1d,k2d] = tmp1 + W_in2[k1,k2]
+        end
+    end
 
-    W = repeat(W_out, 2, 2)
-    view(W, 1:d, d+1:2*d) .*= -1
-    view(W, d+1:2*d, 1:d) .*= -1
-    view(W, 1:d, 1:d) .+= W_in1
-    view(W, d+1:2*d, d+1:2*d) .+= W_in2
-
-    xi = repeat(xi_out, 2)
+    xi = Vector{T}(undef, 2*d)
     @inbounds for k = 1:d
-        xi[k]   += xi_in1[k]
-        xi[k+d] *= -1
-        xi[k+d] += xi_in2[k]
+        tmp = xi_out[k]
+        xi[k]   = tmp + xi_in1[k]
+        xi[k+d] = xi_in2[k] - tmp
     end
     
-    return MvNormalWeightedMeanPrecision(xi, W)
+    # naive: return MvNormalWeightedMeanPrecision([ xi_in1 + xi_out; xi_in2 - xi_out ], [ W_in1+W_out -W_out; -W_out W_in2+W_out])
+    return MvNormalWeightedMeanPrecision(xi, Λ)
 end
