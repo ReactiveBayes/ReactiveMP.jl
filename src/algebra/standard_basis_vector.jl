@@ -17,29 +17,33 @@ e = \begin{bmatrix} 1 \\ 0 \\ 0 \end{bmatrix}
 ```
 Which can be constructed by calling `e = StandardBasisVector(3, 1, 1)`
 """
-struct StandardBasisVector{N, I, T} <: AbstractVector{T} 
-    scale :: T
+struct StandardBasisVector{T} <: AbstractVector{T} 
+    length :: Int
+    index  :: Int
+    scale  :: T
 end
 
-function StandardBasisVector(N::Int, I::Int, scale::T = one(Int)) where { T <: Real }
-    @assert N >= 0 && (1 <= I <= N)
-    return StandardBasisVector{N, I, T}(scale)
+function StandardBasisVector(length::Int, index::Int, scale::T = one(Int)) where { T <: Real }
+    @assert length >= 0 && (1 <= index <= length)
+    return StandardBasisVector{T}(length, index, scale)
 end
 
-Base.eltype(::StandardBasisVector{N, I, T})         where { N, I, T } = T
-Base.eltype(::Type{ StandardBasisVector{N, I, T} }) where { N, I, T } = T
+Base.eltype(::StandardBasisVector{T})         where { T } = T
+Base.eltype(::Type{ StandardBasisVector{T} }) where { T } = T
 
 # extensions of base functionality
-Base.size(::StandardBasisVector{N})    where { N } = (N,)
-Base.size(::StandardBasisVector{N}, d) where { N } = d::Integer == 1 ? N : 1
-Base.length(::StandardBasisVector{N})  where { N } = N
+Base.size(e::StandardBasisVector)    = (length(e), )
+Base.size(e::StandardBasisVector, d) = d::Integer == 1 ? length(e) : 1
+Base.length(e::StandardBasisVector)  = e.length
 
-Base.@propagate_inbounds function Base.getindex(e::StandardBasisVector{N, I}, i::Int) where { N, I }
+Base.@propagate_inbounds function Base.getindex(e::StandardBasisVector, i::Int)
     @boundscheck checkbounds(e, i)
-    return ifelse(I === i, e.scale, zero(eltype(e)))
+    return ifelse(getind(e) === i, e.scale, zero(eltype(e)))
 end
 
-function Base.show(io::IO, ::MIME"text/plain", e::StandardBasisVector{N, I, T}) where { N, I, T }
+function Base.show(io::IO, ::MIME"text/plain", e::StandardBasisVector{T}) where { T }
+    N = length(e)
+    I = getind(e)
     if N < 10
         x = zeros(T, N)
         x[I] = e.scale
@@ -55,7 +59,9 @@ function Base.show(io::IO, ::MIME"text/plain", e::StandardBasisVector{N, I, T}) 
     end
 end
 
-function Base.show(io::IO, e::StandardBasisVector{N, I, T}) where { N, I, T }
+function Base.show(io::IO, e::StandardBasisVector{T}) where { T }
+    N = length(e)
+    I = getind(e)
     if N < 10
         x = zeros(T, N)
         x[I] = e.scale
@@ -77,50 +83,47 @@ function Base.show(io::IO, e::StandardBasisVector{N, I, T}) where { N, I, T }
 end
 
 # get index function
-getind(::StandardBasisVector{N, I}) where { N, I } = I
+getind(e::StandardBasisVector) = e.index
 
 LinearAlgebra.adjoint(e::S) where { S <: StandardBasisVector } = Adjoint{eltype(S), S}(e)
 
 # standard basis vector - scalar
-Base.:*(e::StandardBasisVector{N, I}, x::Real) where { N, I } = StandardBasisVector(N, I, e.scale * x)
-Base.:*(x::Real, e::StandardBasisVector{N, I}) where { N, I } = StandardBasisVector(N, I, x * e.scale)
+Base.:*(e::StandardBasisVector, x::Real) = StandardBasisVector(length(e), getind(e), e.scale * x)
+Base.:*(x::Real, e::StandardBasisVector) = StandardBasisVector(length(e), getind(e), x * e.scale)
 
-Base.:*(a::Adjoint{T, StandardBasisVector{N, I, T}}, x::Real) where { N, I, T } = (a' * x)'
-Base.:*(x::Real, a::Adjoint{T, StandardBasisVector{N, I, T}}) where { N, I, T } = (x * a')'
+Base.:*(a::Adjoint{T, StandardBasisVector{T}}, x::Real) where { T } = (a' * x)'
+Base.:*(x::Real, a::Adjoint{T, StandardBasisVector{T}}) where { T } = (x * a')'
 
 # dot product
-function LinearAlgebra.dot(e::StandardBasisVector{N, I}, v::AbstractVector) where { N, I }
-    @assert length(v) === N
-    return e.scale * v[I]
+function LinearAlgebra.dot(e::StandardBasisVector, v::AbstractVector)
+    @assert length(v) === length(e)
+    return e.scale * v[ getind(e) ]
 end
 
-function LinearAlgebra.dot(v::AbstractVector, e::StandardBasisVector{N, I}) where { N, I }
-    @assert length(v) === N
-    return v[I] * e.scale
+function LinearAlgebra.dot(v::AbstractVector, e::StandardBasisVector)
+    @assert length(v) === length(e)
+    return v[ getind(e) ] * e.scale
 end
 
-function LinearAlgebra.dot(e1::StandardBasisVector{N, I, T1}, e2::StandardBasisVector{N, I, T2}) where { N, I, T1, T2 } 
-    return e1.scale * e2.scale
+function LinearAlgebra.dot(e1::StandardBasisVector{T1}, e2::StandardBasisVector{T2}) where { T1, T2 } 
+    @assert length(e1) === length(e2)
+    T = promote_type(T1, T2)
+    return ifelse(getind(e1) === getind(e2), convert(T, e1.scale * e2.scale), zero(T))::T
 end
 
-function LinearAlgebra.dot(e1::StandardBasisVector{N, I1, T1}, e2::StandardBasisVector{N, I2, T2}) where { N, I1, I2, T1, T2 } 
-    return zero(promote_type(T1, T2))
-end
-
-function LinearAlgebra.dot(e1::StandardBasisVector{N1, I1, T1}, e2::StandardBasisVector{N2, I2, T2}) where { N1, N2, I1, I2, T1, T2 } 
-    error("Incompatible length of standard basis vectors in dot function. length(e1) = $(length(e1)), length(e1) = $(length(e2))")
-end
-
-function LinearAlgebra.dot(e1::StandardBasisVector{N1, I1}, A::AbstractMatrix, e2::StandardBasisVector{N2, I2}) where { N1, N2, I1, I2 }
-    @assert size(A) == (N1, N2)
-    return e1.scale * A[I1, I2] * e2.scale
+function LinearAlgebra.dot(e1::StandardBasisVector, A::AbstractMatrix, e2::StandardBasisVector)
+    @assert size(A) == (length(e1), length(e2))
+    return e1.scale * A[ getind(e1), getind(e2) ] * e2.scale
 end
 
 # vector - vector
-function Base.:*(v::AbstractVector{T1}, a::Adjoint{T2, StandardBasisVector{N, I, T2}}) where { N, I, T1 <: Real, T2 <: Real }
+function Base.:*(v::AbstractVector{T1}, a::Adjoint{T2, StandardBasisVector{T2}}) where { T1 <: Real, T2 <: Real }
+    parent = a'
+    N = length(parent)
+    I = getind(parent)
     T  = promote_type(T1, T2)
     lv = length(v)
-    s  = (a').scale
+    s  = parent.scale
     result = zeros(T, lv, N)
     @inbounds @simd for k in 1:lv
         result[k, I] = v[k] * s
@@ -128,16 +131,22 @@ function Base.:*(v::AbstractVector{T1}, a::Adjoint{T2, StandardBasisVector{N, I,
     return result
 end
 
-function Base.:*(v::StandardBasisVector{N, I1, T1}, a::Adjoint{T2, StandardBasisVector{N, I2, T2}}) where { N, I1, I2, T1 <: Real, T2 <: Real }
+function Base.:*(v::StandardBasisVector{T1}, a::Adjoint{T2, StandardBasisVector{T2}}) where { T1 <: Real, T2 <: Real }
     T  = promote_type(T1, T2)
-    lv = length(v)
-    s  = (a').scale
-    result = zeros(T, lv, N)
+    N1 = length(v)
+    I1 = getind(v)
+    p2 = a'
+    N2 = length(p2)
+    I2 = getind(p2)
+    s  = p2.scale
+    result = zeros(T, N1, N2)
     result[I1, I2] = v.scale * s
     return result
 end
 
-function Base.:*(e::StandardBasisVector{N, I, T1}, a::Adjoint{T2, <: AbstractVector{T2}}) where { N, I, T1 <: Real, T2 <: Real } 
+function Base.:*(e::StandardBasisVector{T1}, a::Adjoint{T2, <: AbstractVector{T2}}) where { T1 <: Real, T2 <: Real } 
+    N  = length(e)
+    I  = getind(e)
     T  = promote_type(T1, T2)
     lv = length(a)
     s  = e.scale
@@ -148,31 +157,34 @@ function Base.:*(e::StandardBasisVector{N, I, T1}, a::Adjoint{T2, <: AbstractVec
     return result
 end
 
-function Base.:*(v::Adjoint{T1, <:AbstractVector{T1}}, e::StandardBasisVector{N, I, T2}) where { N, I, T1 <: Real, T2 <: Real }
+function Base.:*(v::Adjoint{T1, <:AbstractVector{T1}}, e::StandardBasisVector{T2}) where { T1 <: Real, T2 <: Real }
     @assert length(v) === length(e)
-    return v[I] * e.scale
+    return v[ getind(e) ] * e.scale
 end
 
 # vector matrix
-function Base.:*(A::AbstractMatrix, e::StandardBasisVector{N,I}) where { N, I }
-    @assert size(A, 2) === N
-    v = A[:, I]
+function Base.:*(A::AbstractMatrix, e::StandardBasisVector)
+    @assert size(A, 2) === length(e)
+    v = A[:, getind(e)]
     mul_inplace!(e.scale, v)
     return v
 end
 
-function Base.:*(A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector{N,I}) where { N, I, T <: Real }
-    @assert size(A, 2) === N
-    v = A[:, I]
+function Base.:*(A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector) where { T <: Real }
+    @assert size(A, 2) === length(e)
+    v = A[:, getind(e)]
     mul_inplace!(e.scale, v)
     return v
 end
 
-function Base.:*(A::AbstractMatrix{T1}, a::Adjoint{T2, StandardBasisVector{N, I, T2}}) where { N, I, T2 <: Real, T1 <: Real }
+function Base.:*(A::AbstractMatrix{T1}, a::Adjoint{T2, StandardBasisVector{T2}}) where { T2 <: Real, T1 <: Real }
     sA = size(A)
     @assert sA[2] === 1
+    p      = a'
+    N      = length(p)
+    I      = getind(p)
     T      = promote_type(T1, T2)
-    s      = (a').scale
+    s      = p.scale
     result = zeros(T, sA[1], N)
     @inbounds @simd for k in 1:sA[1]
         result[k, I] = A[k] * s
@@ -181,9 +193,11 @@ function Base.:*(A::AbstractMatrix{T1}, a::Adjoint{T2, StandardBasisVector{N, I,
 end
 
 
-function Base.:*(e::StandardBasisVector{N, I, T1}, A::AbstractMatrix{T2}) where { N, I, T1 <: Real, T2 <: Real }
+function Base.:*(e::StandardBasisVector{T1}, A::AbstractMatrix{T2}) where { T1 <: Real, T2 <: Real }
     sA = size(A)
     @assert sA[1] === 1
+    N      = length(e)
+    I      = getind(e)
     T      = promote_type(T1, T2)
     s      = e.scale
     result = zeros(T, N, sA[2])
@@ -193,27 +207,29 @@ function Base.:*(e::StandardBasisVector{N, I, T1}, A::AbstractMatrix{T2}) where 
     return result
 end
 
-function Base.:*(e::StandardBasisVector{N,T}, A::Adjoint{T1, <: AbstractMatrix{T1}}) where { N, T <: Real, T1 <: Real }
-    @assert size(A, 2) === N
-    v = A[:, T]
+function Base.:*(e::StandardBasisVector, A::Adjoint{T, <: AbstractMatrix{T}}) where { T <: Real }
+    @assert size(A, 2) === length(e)
+    v = A[:, getind(e)]
     mul_inplace!(e.scale, v)
     return v
 end
 
 # custom
-function v_a_vT(e1::StandardBasisVector{N1, I1, T1}, a::T3, e2::StandardBasisVector{N2, I2, T2}) where { N1, N2, I1, I2, T1 <: Real, T2 <: Real, T3 <: Real }
+function v_a_vT(e1::StandardBasisVector{T1}, a::T3, e2::StandardBasisVector{T2}) where { T1 <: Real, T2 <: Real, T3 <: Real }
 
     T = promote_type(T1, T3, T2)
-    Y = zeros(T, N1, N2)
-    Y[I1, I2] = e1.scale * a * e2.scale
+    Y = zeros(T, length(e1), length(e2))
+    Y[getind(e1), getind(e2)] = e1.scale * a * e2.scale
 
     # return output 
     return Y
     
 end
 
-function v_a_vT(e::StandardBasisVector{N, I, T1}, a::T2) where { N, I, T1 <: Real, T2 <: Real }
+function v_a_vT(e::StandardBasisVector{T1}, a::T2) where { T1 <: Real, T2 <: Real }
 
+    N = length(e)
+    I = getind(e)
     T = promote_type(T1, T2)
     Y = zeros(T, N, N)
     Y[I, I] = e.scale * a * e.scale

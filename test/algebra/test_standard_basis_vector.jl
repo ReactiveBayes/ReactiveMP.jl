@@ -25,6 +25,7 @@ using LinearAlgebra
         end
     end
 
+    # Same sizes
     @testset begin 
 
         for N in 1:8
@@ -72,6 +73,44 @@ using LinearAlgebra
                     @test dot(e, v') === dot(e_c, v')
                     @test dot(v', e') === dot(v', e_c')
                     @test dot(e', v') === dot(e_c', v')
+                end
+            end
+        end
+
+    # Different sizes
+    @testset begin 
+
+        for N1 in 1:4, N2 in 1:4
+            if N1 !== N2
+                for I1 in 1:N1, I2 in 1:N2
+                    for T in (Int, Float64, Float32)
+                        scale1   = rand(rng, T)
+                        scale2   = rand(rng, T)
+                        e1       = StandardBasisVector(N1, I1, scale1)
+                        e2       = StandardBasisVector(N2, I2, scale2)
+                        e_c1     = zeros(T, N1)
+                        e_c1[I1] = scale1
+                        e_c2     = zeros(T, N2)
+                        e_c2[I2] = scale2
+
+                        @test_throws AssertionError dot(e1, e2)
+                        @test_throws AssertionError dot(e_c1, e2)
+                        @test_throws AssertionError dot(e1, e_c2)
+                        @test_throws AssertionError dot(e2, e1)
+                        @test_throws AssertionError dot(e_c2, e1)
+                        @test_throws AssertionError dot(e2, e_c1)
+
+                        @test e1 * e2' == e_c1 * e_c2'
+                        @test e2 * e1' == e_c2 * e_c1'
+                        @test e_c1 * e2' == e_c1 * e_c2'
+                        @test e_c2 * e1' == e_c2 * e_c1'
+                        @test e1 * e_c2' == e_c1 * e_c2'
+                        @test e2 * e_c1' == e_c2 * e_c1'
+                        @test_throws AssertionError e1' * e2
+                        @test_throws AssertionError e1' * e_c2
+                        @test_throws AssertionError e2' * e1
+                        @test_throws AssertionError e2' * e_c1
+                    end
                 end
             end
         end
