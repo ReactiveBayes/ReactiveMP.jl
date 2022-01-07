@@ -10,7 +10,7 @@ end
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
     W = correction!(meta, A' * W_out * A)
-    return MvNormalWeighteMeanPrecision(A' * ξ_out, W)
+    return MvNormalWeightedMeanPrecision(A' * ξ_out, W)
 end
 
 # if A is a vector, then the result is univariate
