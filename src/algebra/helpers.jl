@@ -18,6 +18,20 @@ const sigmoid = logistic
 dtanh(x) = 1 - tanh(x)^2
 
 """
+    mirrorlog(x)
+
+Returns `log(1 - x)`.
+"""
+mirrorlog(x) = log(1 - x)
+
+"""
+    xtlog(x)
+
+Returns `x * log(x)`.
+"""
+xtlog(x) = x * log(x)
+
+"""
     negate_inplace!(A)
 
 Returns `-A`, modifying and reusing `A` storage if possible.

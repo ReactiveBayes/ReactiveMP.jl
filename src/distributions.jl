@@ -30,6 +30,7 @@ weightedmean_precision(something) = weightedmean_invcov(something)
 
 probvec(something)         = error("Probability vector function probvec() is not defined for $(something)")
 weightedmean(something)    = error("Weighted mean is not defined for $(something)")
+
 inversemean(something)     = error("Inverse expectation is not defined for $(something)")
 logmean(something)         = error("Logarithmic expectation is not defined for $(something)")
 meanlogmean(something)     = error("xlog(x) expectation is not defined for $(something)")
