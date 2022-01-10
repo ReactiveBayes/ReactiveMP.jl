@@ -105,8 +105,11 @@ function mul_trace(A::AbstractMatrix, B::AbstractMatrix)
     sA, sB = size(A), size(B)
     @assert (sA === sB) && (length(sA) === 2) && (first(sA) === last(sA))
     result = zero(promote_type(eltype(A), eltype(B)))
-    @turbo for i in 1:first(sA), j in 1:first(sA)
-        @inbounds result += A[i, j] * B[j, i]
+    n = first(sA)
+    @turbo for i in 1:n
+        for j in 1:n
+            result += A[i, j] * B[j, i]
+        end
     end
     return result
 end
