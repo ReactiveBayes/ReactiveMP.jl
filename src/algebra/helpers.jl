@@ -2,9 +2,9 @@ export diageye
 
 using StatsFuns: logistic
 using StatsFuns: softmax, softmax!
+using LoopVectorization
 
 import LinearAlgebra
-import LoopVectorization: @turbo
 
 diageye(::Type{T}, n::Int) where { T <: Real } = Matrix{T}(I, n, n)
 diageye(n::Int)                                = diageye(Float64, n)
