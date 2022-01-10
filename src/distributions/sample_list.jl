@@ -532,8 +532,8 @@ function sample_list_meanlogmean(::Type{ Univariate }, sl::SampleList)
 end
 
 function sample_list_mirroredlogmean(::Type{ Univariate }, sl::SampleList)
-    @assert all(0 .<= sl .< 1) "mean of `mirrorlog` of variable does not apply to variables outside of the range [0, 1]"
     n, samples, weights = get_data(sl)
+    @assert all(0 .<= samples .< 1) "mean of `mirrorlog` of variable does not apply to variables outside of the range [0, 1]"
     mirμ = sample_list_zero_element(sl)
     @turbo for i in 1:n
         mirμ += weights[i] * log(1 - samples[i])

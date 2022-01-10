@@ -136,7 +136,7 @@ import ReactiveMP: xtlog, mirrorlog
                 @test mean(scalar_samplelist)    ≈ sum(scalar_weights .* scalar_samples)
                 @test mean(log, scalar_samplelist) ≈ sum(scalar_weights .* log.(scalar_samples))
                 @test mean(xtlog, scalar_samplelist) ≈ sum(scalar_weights .* scalar_samples .* log.(scalar_samples))
-                @test mean(mirrorlog, scalar_samplelist) ≈ sum(scalar_weights .* log.(1.0 - scalar_samples))
+                @test mean(mirrorlog, scalar_samplelist) ≈ sum(scalar_weights .* log.(1.0 .- scalar_samples))
             end
 
             vector_samples = [ rand(rng, 2) for _ in 1:N ]
@@ -415,10 +415,6 @@ import ReactiveMP: xtlog, mirrorlog
 
                     μᵣ, Σᵣ = mean_cov(analytical2)
                     μₐ, Σₐ = mean_cov(approximation2)
-
-                    if !(abs(entropy(analytical2) - entropy(approximation2)) < input[:entropy_tol][i])
-                        @show analytical2
-                    end
                     
                     @test norm(μᵣ .- μₐ) < input[:mean_tol][i]
                     @test norm(Σᵣ .- Σₐ) < input[:cov_tol][i]

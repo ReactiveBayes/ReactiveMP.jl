@@ -66,7 +66,7 @@ import SpecialFunctions: loggamma
     @testset "Statistics" begin 
 
         distributions = [ 
-            PointMass(2.0),
+            PointMass(0.5),
             Gamma(10.0, 2.0), 
             NormalMeanVariance(-10.0, 10.0), 
             Wishart(4.0, [ 2.0 -0.5; -0.5 1.0 ]), 

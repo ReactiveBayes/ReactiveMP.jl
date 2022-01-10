@@ -8,6 +8,7 @@ using SpecialFunctions
 
 import ReactiveMP: InfCountingReal, tiny, huge
 import ReactiveMP.MacroHelpers: @test_inferred
+import ReactiveMP: xtlog, mirrorlog
 
 @testset "PointMass" begin
 
