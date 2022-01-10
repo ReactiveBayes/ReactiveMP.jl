@@ -33,8 +33,8 @@ using Distributions
         Λ    = [ 1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5 ]
         dist = MvNormalWeightedMeanPrecision(xi, Λ)
 
-        @test mean(dist)         == cholinv(Λ) * xi
-        @test mode(dist)         == cholinv(Λ) * xi
+        @test mean(dist)         ≈  cholinv(Λ) * xi
+        @test mode(dist)         ≈  cholinv(Λ) * xi
         @test weightedmean(dist) == xi
         @test invcov(dist)       == Λ
         @test precision(dist)    == Λ

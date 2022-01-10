@@ -35,7 +35,7 @@ using Distributions
 
         @test mean(dist)         == μ
         @test mode(dist)         == μ
-        @test weightedmean(dist) == cholinv(Σ) * μ
+        @test weightedmean(dist) ≈  cholinv(Σ) * μ
         @test invcov(dist)       ≈  cholinv(Σ)
         @test precision(dist)    ≈  cholinv(Σ)
         @test cov(dist)          == Σ
