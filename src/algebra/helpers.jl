@@ -4,7 +4,7 @@ using StatsFuns: logistic
 using StatsFuns: softmax, softmax!
 
 import LinearAlgebra
-import LoopVectorization: @tturbo
+import LoopVectorization: @turbo
 
 diageye(::Type{T}, n::Int) where { T <: Real } = Matrix{T}(I, n, n)
 diageye(n::Int)                                = diageye(Float64, n)
@@ -105,7 +105,7 @@ function mul_trace(A::AbstractMatrix, B::AbstractMatrix)
     sA, sB = size(A), size(B)
     @assert (sA === sB) && (length(sA) === 2) && (first(sA) === last(sA))
     result = zero(promote_type(eltype(A), eltype(B)))
-    @tturbo for i in 1:first(sA), j in 1:first(sA)
+    @turbo for i in 1:first(sA), j in 1:first(sA)
         @inbounds result += A[i, j] * B[j, i]
     end
     return result
