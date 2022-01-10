@@ -75,10 +75,22 @@ function rank1update(::Type{ T }, ::Type{ T }, ::Type{T}, A::Matrix, x::Vector, 
     return LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
 end
 
-function rank1update(::Type{ <: Real }, ::Type{ <: Real }, ::Type{ <: Real }, A::AbstractMatrix, x::AbstractVector, y::AbstractVector)
-    return A + x * y'
+function rank1update(::Type{ T1 }, ::Type{ T2 }, ::Type{ T3 }, A::AbstractMatrix, x::AbstractVector, y::AbstractVector) where { T1 <: Real, T2 <: Real, T3 <: Real }
+    T = promote_type(T1, T2, T3)
+    B = Matrix{T}(undef, size(A))
+    return rank1update!(B, A, x, y)
 end
 
+function rank1update!(B::AbstractMatrix, A::AbstractMatrix, x::AbstractVector, y::AbstractVector)
+    sz = size(A)
+    @inbounds for k2 in 1:sz[2]
+        yk2 = y[k2]
+        @inbounds for k1 in 1:sz[1]
+            B[k1,k2] = A[k1,k2] + x[k1] * yk2
+        end
+    end
+    return B
+end
 
 """
     mul_trace(A, B)
