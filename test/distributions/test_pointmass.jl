@@ -55,7 +55,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
             @test @test_inferred(T, mean(log, dist))       == log(scalar)
             @test @test_inferred(T, mean(inv, dist))       == inv(scalar)
             @test @test_inferred(T, mean(mirrorlog, dist)) == log(one(scalar) - scalar)
-            @test @test_inferred(T, loggammamean(dist))    == loggamma(scalar)
+            @test @test_inferred(T, mean(loggamma, dist))  == loggamma(scalar)
         end
     end
 
@@ -103,7 +103,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
             @test @test_inferred(AbstractVector{T}, mean(log, dist))    == log.(vector)
             @test_throws ErrorException mean(inv, dist)
             @test_throws ErrorException mean(mirrorlog, dist)
-            @test @test_inferred(AbstractVector{T}, loggammamean(dist)) == loggamma.(vector)
+            @test @test_inferred(AbstractVector{T}, mean(loggamma, dist)) == loggamma.(vector)
         end
     end
 
@@ -153,7 +153,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
             @test @test_inferred(AbstractMatrix{T}, mean(log, dist))  == log.(matrix)
             @test @test_inferred(AbstractMatrix{T}, mean(inv, dist))  ≈ cholinv(matrix)
             @test_throws ErrorException mean(mirrorlog, dist)
-            @test @test_inferred(AbstractMatrix{T}, loggammamean(dist)) == loggamma.(matrix)
+            @test @test_inferred(AbstractMatrix{T}, mean(loggamma, dist)) == loggamma.(matrix)
         end
     end
 

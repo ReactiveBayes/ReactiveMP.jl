@@ -1,6 +1,6 @@
 export Gamma, GammaShapeScale, GammaDistributionsFamily
 
-import SpecialFunctions: digamma
+import SpecialFunctions: loggamma, digamma
 import Distributions: Gamma, shape, scale, cov
 import StatsFuns: log2π
 
@@ -14,7 +14,7 @@ function mean(::typeof(log), dist::GammaShapeScale)
     return digamma(k) + log(θ)
 end
 
-function loggammamean(dist::GammaShapeScale)
+function mean(::typeof(loggamma), dist::GammaShapeScale)
     k, θ = params(dist)
     return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (-1 + digamma(k + 1) + log(θ))
 end

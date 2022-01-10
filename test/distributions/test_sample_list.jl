@@ -13,6 +13,7 @@ import ReactiveMP: get_meta, is_meta_present, get_unnormalised_weights, get_entr
 import ReactiveMP: call_logproposal, call_logintegrand
 import ReactiveMP: transform_samples, transform_weights!
 import ReactiveMP: approximate_prod_with_sample_list
+import ReactiveMP: xtlog, mirrorlog
 
 
 @testset "SampleList" begin

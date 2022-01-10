@@ -49,8 +49,7 @@ MacroHelpers.@proxy_methods ProdFinal getdist [
     weightedmean_invcov, 
     weightedmean_precision,
     probvec,
-    weightedmean,
-    loggammamean
+    weightedmean
 ]
 
 Distributions.mean(fn::Function, prod::ProdFinal) = mean(fn, getdist(prod))

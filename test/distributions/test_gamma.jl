@@ -4,6 +4,9 @@ using Test
 using ReactiveMP
 using Random
 
+import SpecialFunctions: loggamma
+import ReactiveMP: xtlog
+
 @testset "Gamma" begin
 
     @testset "Constructor" begin
@@ -151,8 +154,8 @@ using Random
             @test logpdf(left, 1.0)  ≈ logpdf(right, 1.0)
             @test logpdf(left, 10.0) ≈ logpdf(right, 10.0)
             @test mean(log, left)    ≈ mean(log, right)
-            @test loggammamean(left) ≈ loggammamean(right)
-            @test mean(xtlog, left)  ≈ mean(xtlog, right)
+            @test mean(loggamma, left) ≈ mean(loggamma, right)
+            @test mean(xtlog, left)    ≈ mean(xtlog, right)
         end
 
         types = ReactiveMP.union_types(GammaDistributionsFamily{Float64})

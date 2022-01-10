@@ -131,8 +131,7 @@ MacroHelpers.@proxy_methods Message getdata [
     weightedmean_invcov, 
     weightedmean_precision,
     probvec,
-    weightedmean,
-    loggammamean
+    weightedmean
 ]
 
 Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))

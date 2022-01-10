@@ -35,7 +35,7 @@ function mean(::typeof(log), dist::GammaShapeRate)
     return digamma(a) - log(b)
 end
 
-function loggammamean(dist::GammaShapeRate)
+function mean(::typeog(loggamma), dist::GammaShapeRate)
     a, b = params(dist)
     return 0.5 * (log2π - (digamma(a) - log(b))) + mean(dist) * (-1 + digamma(a + 1) - log(b))
 end

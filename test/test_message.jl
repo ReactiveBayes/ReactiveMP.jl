@@ -103,8 +103,7 @@ import SpecialFunctions: loggamma
             weightedmean_invcov, 
             weightedmean_precision,
             probvec,
-            weightedmean,
-            loggammamean
+            weightedmean
         ]
 
         for (distribution, distribution_methods) in zip(distributions, dists_methods), method in methods_to_test
