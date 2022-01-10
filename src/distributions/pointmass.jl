@@ -35,10 +35,10 @@ Distributions.cov(distribution::PointMass{T})  where { T <: Real } = zero(T)
 
 probvec(distribution::PointMass{T}) where { T <: Real } = error("probvec(::PointMass{ <: Real }) is not defined")
 
-mean(::typeof(inv), distribution::PointMass{T}) where { T <: Real } = inv(mean(distribution))
-mean(::typeof(log), distribution::PointMass{T}) where { T <: Real } = log(mean(distribution))
+mean(::typeof(inv), distribution::PointMass{T})       where { T <: Real } = inv(mean(distribution))
+mean(::typeof(log), distribution::PointMass{T})       where { T <: Real } = log(mean(distribution))
+mean(::typeof(mirrorlog), distribution::PointMass{T}) where { T <: Real } = log(one(T) - mean(distribution))
 
-mirroredlogmean(distribution::PointMass{T}) where { T <: Real } = log(one(T) - mean(distribution))
 loggammamean(distribution::PointMass{T})    where { T <: Real } = loggamma(mean(distribution))
 
 Base.precision(::PointMass{T}) where { T <: Real } = convert(T, Inf)
@@ -62,10 +62,10 @@ Distributions.cov(distribution::PointMass{V})  where { T <: Real, V <: AbstractV
 
 probvec(distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = mean(distribution)
 
-mean(::typeof(inv), distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = error("mean of inverse of `::PointMass{ <: AbstractVector }` is not defined")
-mean(::typeof(log), distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = log.(mean(distribution))
+mean(::typeof(inv), distribution::PointMass{V})       where { T <: Real, V <: AbstractVector{T} } = error("mean of inverse of `::PointMass{ <: AbstractVector }` is not defined")
+mean(::typeof(log), distribution::PointMass{V})       where { T <: Real, V <: AbstractVector{T} } = log.(mean(distribution))
+mean(::typeof(mirrorlog), distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = error("mean of mirrorlog of `::PointMass{ <: AbstractVector }` is not defined")
 
-mirroredlogmean(distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = error("mirroredlogmean(::PointMass{ <: AbstractVector }) is not defined")
 loggammamean(distribution::PointMass{V})    where { T <: Real, V <: AbstractVector{T} } = loggamma.(mean(distribution))
 
 Base.precision(distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = one(T) ./ cov(distribution)
@@ -89,10 +89,10 @@ Distributions.cov(distribution::PointMass{M})  where { T <: Real, M <: AbstractM
 
 probvec(distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = error("probvec(::PointMass{ <: AbstractMatrix }) is not defined")
 
-mean(::typeof(inv), distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = cholinv(mean(distribution))
-mean(::typeof(log), distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = log.(mean(distribution))
+mean(::typeof(inv), distribution::PointMass{M})       where { T <: Real, M <: AbstractMatrix{T} } = cholinv(mean(distribution))
+mean(::typeof(log), distribution::PointMass{M})       where { T <: Real, M <: AbstractMatrix{T} } = log.(mean(distribution))
+mean(::typeof(mirrorlog), distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = error("mean of mirrorlog of `::PointMass{ <: AbstractMatrix }` is not defined")
 
-mirroredlogmean(distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = error("mirroredlogmean(::PointMass{ <: AbstractMatrix }) is not defined")
 loggammamean(distribution::PointMass{M})    where { T <: Real, M <: AbstractMatrix{T} } = loggamma.(mean(distribution))
 
 Base.precision(distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = one(T) ./ cov(distribution)

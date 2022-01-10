@@ -19,7 +19,7 @@ function mean(::typeof(log), dist::Beta)
     return digamma(a) - digamma(a + b)
 end
 
-function mirroredlogmean(dist::Beta)
+function mean(::typeof(mirrorlog), dist::Beta)
     a, b = params(dist)
     return digamma(b) - digamma(a + b)
 end

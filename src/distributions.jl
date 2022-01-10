@@ -31,7 +31,6 @@ weightedmean_precision(something) = weightedmean_invcov(something)
 probvec(something)         = error("Probability vector function probvec() is not defined for $(something)")
 weightedmean(something)    = error("Weighted mean is not defined for $(something)")
 
-mirroredlogmean(something) = error("Mirrored Logarithmic expectation is not defined for $(something)")
 loggammamean(something)    = error("E[logГ(x)] is not defined for $(something)")
 
 """

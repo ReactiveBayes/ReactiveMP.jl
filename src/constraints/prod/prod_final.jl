@@ -50,7 +50,6 @@ MacroHelpers.@proxy_methods ProdFinal getdist [
     weightedmean_precision,
     probvec,
     weightedmean,
-    mirroredlogmean,
     loggammamean
 ]
 

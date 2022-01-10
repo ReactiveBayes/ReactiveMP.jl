@@ -132,7 +132,6 @@ MacroHelpers.@proxy_methods Message getdata [
     weightedmean_precision,
     probvec,
     weightedmean,
-    mirroredlogmean,
     loggammamean
 ]
 

@@ -57,7 +57,6 @@ MacroHelpers.@proxy_methods Marginal getdata [
     weightedmean_precision,
     probvec,
     weightedmean,
-    mirroredlogmean,
     loggammamean
 ]
 

@@ -185,9 +185,9 @@ end
 
 weightedmean(sl::SampleList)    = first(weightedmean_precision(sl))
 
-mean(::typeof(log), sl::SampleList)   = sample_list_logmean(variate_form(sl), sl)
-mean(::typeof(xtlog), sl::SampleList) = sample_list_meanlogmean(variate_form(sl), sl)
-mirroredlogmean(sl::SampleList) = sample_list_mirroredlogmean(variate_form(sl), sl)
+mean(::typeof(log), sl::SampleList)       = sample_list_logmean(variate_form(sl), sl)
+mean(::typeof(xtlog), sl::SampleList)     = sample_list_meanlogmean(variate_form(sl), sl)
+mean(::typeof(mirrorlog), sl::SampleList) = sample_list_mirroredlogmean(variate_form(sl), sl)
 
 ##
 
@@ -532,7 +532,7 @@ function sample_list_meanlogmean(::Type{ Univariate }, sl::SampleList)
 end
 
 function sample_list_mirroredlogmean(::Type{ Univariate }, sl::SampleList)
-    @assert all(0 .<= sl .< 1) "mirroredlogmean does not apply to variables outside of the range [0, 1]"
+    @assert all(0 .<= sl .< 1) "mean of `mirrorlog` of variable does not apply to variables outside of the range [0, 1]"
     n, samples, weights = get_data(sl)
     mirμ = sample_list_zero_element(sl)
     @turbo for i in 1:n
