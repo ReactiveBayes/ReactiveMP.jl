@@ -47,24 +47,27 @@ cholinv_logdet(x::Diagonal) = Diagonal(inv.(diag(x))), mapreduce(z -> log(z), +,
 cholinv_logdet(x::Real)     = inv(x), log(abs(x))
 
 function fastcholesky(mat::AbstractMatrix)
-    try
-        A = copy(mat)
-        return fastcholesky!(A)
-    catch
+    A = copy(mat)
+    C = fastcholesky!(A)
+    if !isposdef(C)
         return cholesky(PositiveFactorizations.Positive, Hermitian(mat))
-    end
-    
+    else
+        return C
+    end 
 end
 
 function fastcholesky!(A::AbstractMatrix)
-    nbrows, nbcols = size(A)
-    @inbounds for col=1:nbcols
+    n = LinearAlgebra.checksquare(A)
+    @inbounds for col=1:n
         @inbounds @simd for idx in 1:col-1
             A[col, col] -= A[col, idx]^2;
         end
+        if A[col,col] <= 0
+            return Cholesky(A, 'L', convert(BlasInt, -1))
+        end
         A[col, col] = sqrt(A[col, col])
 
-        @inbounds for row in col+1: nbrows
+        @inbounds for row in col+1: n
             @inbounds @simd for idx in 1:col-1
                 A[row, col] -= A[row, idx]*A[col, idx]
             end
@@ -80,17 +83,20 @@ function fastcholesky!(A::AbstractMatrix{T}) where { T <: LinearAlgebra.BlasFloa
     # step size
     s = 250
 
-    n = size(A,1)
+    n = LinearAlgebra.checksquare(A)
     z = 1
     @inbounds for c in 1:n
 
         if c == z + s
-            BLAS.gemm!('N', 'T', -one(T), view(A, c:n, z:c-1), view(A, c:n, z:c-1), one(T), view(A, c:n, c:n))
+            BLAS.gemm!('N', 'T', -one(T), view(A, c:n, z:c-1), view(A, c:n, z:c-1), one(T), view(A, c:n, c:n)) # replace with syrk once julia bug has been fixed
             z = c
         end
 
         @inbounds for k in z:c-1
             A[c,c] -= A[c,k]^2
+        end
+        if A[c,c] <= 0
+            return Cholesky(A, 'L', convert(BlasInt, -1))
         end
         A[c,c] = sqrt(A[c,c])
         @inbounds for i in c+1:n
