@@ -62,9 +62,9 @@ using LinearAlgebra
         for size in 2:4, T1 in (Float32, Float64), T2 in (Float32, Float64), T3 in (Float32, Float64)
             A = rand(rng, T1, size, size)
             x = rand(rng, T2, size)
-            @test ReactiveMP.rank1update(A, x) == (A + x*x')
+            @test ReactiveMP.rank1update(A, x) ≈ (A + x*x')
             y = rand(rng, T3, size)
-            @test ReactiveMP.rank1update(A, x, y) == (A + x*y')
+            @test ReactiveMP.rank1update(A, x, y) ≈ (A + x*y')
         end
 
     end
