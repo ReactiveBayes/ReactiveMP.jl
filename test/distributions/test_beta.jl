@@ -5,6 +5,8 @@ using ReactiveMP
 using Distributions
 using Random
 
+import ReactiveMP: mirrorlog
+
 @testset "Beta" begin
 
     # Beta comes from Distributions.jl and most of the things should be covered there
