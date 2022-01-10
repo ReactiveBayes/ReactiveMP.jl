@@ -119,6 +119,11 @@ end
     addtests("nodes/test_subtraction.jl")
     addtests("nodes/test_probit.jl")
     addtests("nodes/test_autoregressive.jl")
+    addtests("nodes/test_normal_mean_precision.jl")
+    addtests("nodes/test_normal_mean_variance.jl")
+    addtests("nodes/test_mv_normal_mean_precision.jl")
+    addtests("nodes/test_mv_normal_mean_covariance.jl")
+
     
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")

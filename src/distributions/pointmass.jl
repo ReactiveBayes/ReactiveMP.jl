@@ -61,6 +61,7 @@ mean(::typeof(inv), distribution::PointMass{V})       where { T <: Real, V <: Ab
 mean(::typeof(log), distribution::PointMass{V})       where { T <: Real, V <: AbstractVector{T} } = log.(mean(distribution))
 mean(::typeof(mirrorlog), distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = error("mean of mirrorlog of `::PointMass{ <: AbstractVector }` is not defined")
 mean(::typeof(loggamma), distribution::PointMass{V})  where { T <: Real, V <: AbstractVector{T} } = loggamma.(mean(distribution))
+mean(::typeof(logdet), distribution::PointMass{V})    where { T <: Real, V <: AbstractVector{T} } = error("mean of logdet of `::PointMass{ <: AbstractVector }` is not defined")
 
 Base.precision(distribution::PointMass{V}) where { T <: Real, V <: AbstractVector{T} } = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{V})     where { T <: Real, V <: AbstractVector{T} } = length(mean(distribution))
@@ -87,6 +88,7 @@ mean(::typeof(inv), distribution::PointMass{M})       where { T <: Real, M <: Ab
 mean(::typeof(log), distribution::PointMass{M})       where { T <: Real, M <: AbstractMatrix{T} } = log.(mean(distribution))
 mean(::typeof(mirrorlog), distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = error("mean of mirrorlog of `::PointMass{ <: AbstractMatrix }` is not defined")
 mean(::typeof(loggamma), distribution::PointMass{M})  where { T <: Real, M <: AbstractMatrix{T} } = loggamma.(mean(distribution))
+mean(::typeof(logdet), distribution::PointMass{M})    where { T <: Real, M <: AbstractMatrix{T} } = logdet(mean(distribution))
 
 Base.precision(distribution::PointMass{M}) where { T <: Real, M <: AbstractMatrix{T} } = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{M})     where { T <: Real, M <: AbstractMatrix{T} } = size(mean(distribution))
