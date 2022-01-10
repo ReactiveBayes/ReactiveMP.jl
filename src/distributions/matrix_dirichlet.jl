@@ -22,7 +22,7 @@ function Distributions.entropy(dist::MatrixDirichlet)
     end
 end
 
-logmean(dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a, dims = 1))
+mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a, dims = 1))
 
 prod_analytical_rule(::Type{ <: MatrixDirichlet }, ::Type{ <: MatrixDirichlet }) = ProdAnalyticalRuleAvailable()
 

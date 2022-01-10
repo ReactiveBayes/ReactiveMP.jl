@@ -1,7 +1,7 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
-export weightedmean, probvec, logmean, meanlogmean, inversemean, mirroredlogmean, loggammamean
+export weightedmean, probvec
 export variate_form, value_support, promote_variate_type, convert_eltype
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
@@ -31,9 +31,6 @@ weightedmean_precision(something) = weightedmean_invcov(something)
 probvec(something)         = error("Probability vector function probvec() is not defined for $(something)")
 weightedmean(something)    = error("Weighted mean is not defined for $(something)")
 
-inversemean(something)     = error("Inverse expectation is not defined for $(something)")
-logmean(something)         = error("Logarithmic expectation is not defined for $(something)")
-meanlogmean(something)     = error("xlog(x) expectation is not defined for $(something)")
 mirroredlogmean(something) = error("Mirrored Logarithmic expectation is not defined for $(something)")
 loggammamean(something)    = error("E[logГ(x)] is not defined for $(something)")
 

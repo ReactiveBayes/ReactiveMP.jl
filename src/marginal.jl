@@ -57,12 +57,11 @@ MacroHelpers.@proxy_methods Marginal getdata [
     weightedmean_precision,
     probvec,
     weightedmean,
-    inversemean,
-    logmean,
-    meanlogmean,
     mirroredlogmean,
     loggammamean
 ]
+
+Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal))
 
 ## Utility functions
 

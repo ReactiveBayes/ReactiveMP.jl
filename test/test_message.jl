@@ -9,6 +9,8 @@ import InteractiveUtils: methodswith
 import Base: methods
 import Base.Iterators: repeated, product
 import ReactiveMP: materialize!
+import ReactiveMP: mirrorlog, xtlog
+import SpecialFunctions: loggamma
 
 @testset "Message" begin
 
@@ -64,6 +66,7 @@ import ReactiveMP: materialize!
     @testset "Statistics" begin 
 
         distributions = [ 
+            PointMass(2.0),
             Gamma(10.0, 2.0), 
             NormalMeanVariance(-10.0, 10.0), 
             Wishart(4.0, [ 2.0 -0.5; -0.5 1.0 ]), 
@@ -101,8 +104,6 @@ import ReactiveMP: materialize!
             weightedmean_precision,
             probvec,
             weightedmean,
-            inversemean,
-            logmean,
             meanlogmean,
             mirroredlogmean,
             loggammamean
@@ -115,6 +116,19 @@ import ReactiveMP: materialize!
             ms = methods(method, (T, ))
             if !isempty(ms) && all(m -> m ∈ distribution_methods, ms)
                 @test method(message) == method(distribution)
+            end
+        end
+
+        fn_mean_functions = (inv, log, xtlog, mirrorlog, loggamma)
+
+        for distribution in distributions, fn_mean in fn_mean_functions
+            F       = typeof(fn_mean)
+            T       = typeof(distribution)
+            message = Message(distribution, false, false)
+            # Here we check that a specialised method for a particular type T exist
+            ms = methods(mean, (F, T, ), ReactiveMP)
+            if !isempty(ms)
+                @test mean(fn_mean, message) == mean(fn_mean, distribution)
             end
         end
 

@@ -49,8 +49,8 @@ default_meta(::Type{ AR }) = error("Autoregressive node requires meta flag expli
     my1, Vy1 = first(myx), first(Vyx)
     Vy1x     = ar_slice(getvform(meta), Vyx, 1, order+1:2order)
 
-    # Euivalento to AE = (-logmean(q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
-    AE = (-logmean(q_γ) + log2π + mγ * (Vy1 + my1^2 - 2*mθ'*(Vy1x + mx*my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))) / 2
+    # Euivalento to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
+    AE = (-mean(log, q_γ) + log2π + mγ * (Vy1 + my1^2 - 2*mθ'*(Vy1x + mx*my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))) / 2
 
     # correction
     if is_multivariate(meta)

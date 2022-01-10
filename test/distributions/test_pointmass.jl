@@ -53,7 +53,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
 
             @test_throws ErrorException probvec(dist) 
             @test @test_inferred(T, logmean(dist))         == log(scalar)
-            @test @test_inferred(T, inversemean(dist))     == inv(scalar)
+            @test @test_inferred(T, mean(inv, dist))       == inv(scalar)
             @test @test_inferred(T, mirroredlogmean(dist)) == log(one(scalar) - scalar)
             @test @test_inferred(T, loggammamean(dist))    == loggamma(scalar)
         end
@@ -101,7 +101,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
 
             @test @test_inferred(AbstractVector{T}, probvec(dist))      == vector
             @test @test_inferred(AbstractVector{T}, logmean(dist))      == log.(vector)
-            @test_throws ErrorException inversemean(dist)
+            @test_throws ErrorException mean(inv, dist)
             @test_throws ErrorException mirroredlogmean(dist)
             @test @test_inferred(AbstractVector{T}, loggammamean(dist)) == loggamma.(vector)
         end
@@ -151,7 +151,7 @@ import ReactiveMP.MacroHelpers: @test_inferred
 
             @test_throws ErrorException probvec(dist)
             @test @test_inferred(AbstractMatrix{T}, logmean(dist))      == log.(matrix)
-            @test @test_inferred(AbstractMatrix{T}, inversemean(dist))  ≈ cholinv(matrix)
+            @test @test_inferred(AbstractMatrix{T}, mean(inv, dist))  ≈ cholinv(matrix)
             @test_throws ErrorException mirroredlogmean(dist)
             @test @test_inferred(AbstractMatrix{T}, loggammamean(dist)) == loggamma.(matrix)
         end

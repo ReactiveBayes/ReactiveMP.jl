@@ -60,9 +60,7 @@ Base.size(product::DistProduct)      = error("size() is not defined for $(produc
 
 probvec(product::DistProduct)         = error("probvec() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
 weightedmean(product::DistProduct)    = error("weightedmean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
-inversemean(product::DistProduct)     = error("inversemean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
-logmean(product::DistProduct)         = error("logmean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
-meanlogmean(product::DistProduct)     = error("meanlogmean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
+
 mirroredlogmean(product::DistProduct) = error("mirroredlogmean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
 loggammamean(product::DistProduct)    = error("loggammamean() is not defined for $(product). DistProduct structure has to be approximated and cannot be used in inference procedure.")
 

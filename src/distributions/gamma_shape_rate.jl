@@ -30,7 +30,7 @@ function Distributions.entropy(dist::GammaShapeRate)
     return a - log(b) + loggamma(a) + (1-a)*digamma(a)
 end
 
-function logmean(dist::GammaShapeRate)
+function mean(::typeof(log), dist::GammaShapeRate)
     a, b = params(dist)
     return digamma(a) - log(b)
 end
