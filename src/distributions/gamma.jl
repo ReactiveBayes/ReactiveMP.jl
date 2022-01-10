@@ -19,7 +19,7 @@ function loggammamean(dist::GammaShapeScale)
     return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (-1 + digamma(k + 1) + log(θ))
 end
 
-function meanlogmean(dist::GammaShapeScale)
+function mean(::typeof(xtlog), dist::GammaShapeScale)
     k, θ = params(dist)
     return mean(dist) * (digamma(k + 1) + log(θ))
 end

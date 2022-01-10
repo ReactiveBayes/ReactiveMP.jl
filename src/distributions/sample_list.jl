@@ -185,8 +185,8 @@ end
 
 weightedmean(sl::SampleList)    = first(weightedmean_precision(sl))
 
-mean(::typeof(log), sl::SampleList) = sample_list_logmean(variate_form(sl), sl)
-meanlogmean(sl::SampleList)     = sample_list_meanlogmean(variate_form(sl), sl)
+mean(::typeof(log), sl::SampleList)   = sample_list_logmean(variate_form(sl), sl)
+mean(::typeof(xtlog), sl::SampleList) = sample_list_meanlogmean(variate_form(sl), sl)
 mirroredlogmean(sl::SampleList) = sample_list_mirroredlogmean(variate_form(sl), sl)
 
 ##

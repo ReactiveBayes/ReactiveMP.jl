@@ -133,8 +133,9 @@ import ReactiveMP: approximate_prod_with_sample_list
             # Checking i = 1:2 that cache is not corrupted
             for i in 1:2
                 @test mean(scalar_samplelist)    ≈ sum(scalar_weights .* scalar_samples)
-                @test logmean(scalar_samplelist) ≈ sum(scalar_weights .* log.(scalar_samples))
-                @test meanlogmean(scalar_samplelist) ≈ sum(scalar_weights .* scalar_samples .* log.(scalar_samples))
+                @test mean(log, scalar_samplelist) ≈ sum(scalar_weights .* log.(scalar_samples))
+                @test mean(xtlog, scalar_samplelist) ≈ sum(scalar_weights .* scalar_samples .* log.(scalar_samples))
+                @test mean(mirrorlog, scalar_samplelist) ≈ sum(scalar_weights .* log.(1.0 - scalar_samples))
             end
 
             vector_samples = [ rand(rng, 2) for _ in 1:N ]
@@ -145,8 +146,8 @@ import ReactiveMP: approximate_prod_with_sample_list
             # Checking i = 1:2 that cache is not corrupted
             for i in 1:2
                 @test mean(vector_samplelist)    ≈ sum(vector_weights .* vector_samples)
-                @test logmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> log.(e), (vector_samples)))
-                @test meanlogmean(vector_samplelist) ≈ sum(vector_weights .* map(e -> e .* log.(e), (vector_samples)))
+                @test mean(log, vector_samplelist) ≈ sum(vector_weights .* map(e -> log.(e), (vector_samples)))
+                @test mean(xtlog, vector_samplelist) ≈ sum(vector_weights .* map(e -> e .* log.(e), (vector_samples)))
             end
 
             matrix_samples = [ rand(rng, 2, 2) for _ in 1:N ]
@@ -157,13 +158,13 @@ import ReactiveMP: approximate_prod_with_sample_list
             # Checking i = 1:2 that cache is not corrupted
             for i in 1:2
                 @test mean(matrix_samplelist) ≈ sum(matrix_weights .* matrix_samples)
-                @test logmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> log.(e), matrix_samples))
-                @test meanlogmean(matrix_samplelist) ≈ sum(matrix_weights .* map(e -> e .* log.(e), matrix_samples))
+                @test mean(log, matrix_samplelist) ≈ sum(matrix_weights .* map(e -> log.(e), matrix_samples))
+                @test mean(xtlog, matrix_samplelist) ≈ sum(matrix_weights .* map(e -> e .* log.(e), matrix_samples))
             end
 
         end
 
-        # Logmean and meanlogmean
+        
         uni_distribution = Gamma(rand(rng) + 1, rand(rng) + 2)
         uni_samples      = rand(rng, uni_distribution, 20_000)
         uni_sample_list  = SampleList(uni_samples)
@@ -217,18 +218,14 @@ import ReactiveMP: approximate_prod_with_sample_list
             @test isapprox(invcov(mv_sample_list), cholinv(cov(mv_distribution)), atol = 0.2)
         end
 
-        # TODO logmean for matrix variate distribution?
-
         mv_distribution = Dirichlet(rand(rng, 3))
         mv_samples      = [ rand(rng, mv_distribution) for _ in 1:20_000 ]
         mv_sample_list  = SampleList(mv_samples)
 
-        @test isapprox(logmean(uni_sample_list), logmean(uni_distribution); atol = 0.02)
-        @test isapprox(logmean(mv_sample_list), logmean(mv_distribution); atol = 0.5)
+        @test isapprox(mean(log, uni_sample_list), mean(log, uni_distribution); atol = 0.02)
+        @test isapprox(mean(log, mv_sample_list), mean(log, mv_distribution); atol = 0.5)
 
-        # TODO meanlogmean for multivariate and matrix variate distribution?
-
-        @test isapprox(meanlogmean(uni_sample_list), meanlogmean(uni_distribution); atol = 0.25)
+        @test isapprox(mean(xtlog, uni_sample_list), mean(xtlog, uni_distribution); atol = 0.25)
 
         r4 = rand(rng, 5)
         W4 = I + 2r4*r4'

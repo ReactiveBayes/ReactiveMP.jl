@@ -104,7 +104,6 @@ import SpecialFunctions: loggamma
             weightedmean_precision,
             probvec,
             weightedmean,
-            meanlogmean,
             mirroredlogmean,
             loggammamean
         ]
