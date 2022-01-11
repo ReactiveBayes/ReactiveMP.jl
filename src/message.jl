@@ -131,13 +131,10 @@ MacroHelpers.@proxy_methods Message getdata [
     weightedmean_invcov, 
     weightedmean_precision,
     probvec,
-    weightedmean,
-    inversemean,
-    logmean,
-    meanlogmean,
-    mirroredlogmean,
-    loggammamean
+    weightedmean
 ]
+
+Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
 
 ## Variational Message
 

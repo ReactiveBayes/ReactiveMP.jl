@@ -36,13 +36,16 @@ function mean_cov(dist::MvNormalWeightedMeanPrecision)
     return (μ, Σ)
 end
 
-Distributions.mean(dist::MvNormalWeightedMeanPrecision)      = cov(dist) * weightedmean(dist)
+function Distributions.mean(dist::MvNormalWeightedMeanPrecision)
+    z = fastcholesky(precision(dist))
+    return z \ weightedmean(dist)
+end
 Distributions.mode(dist::MvNormalWeightedMeanPrecision)      = mean(dist)
 Distributions.var(dist::MvNormalWeightedMeanPrecision)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalWeightedMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalWeightedMeanPrecision)    = dist.Λ
 Distributions.std(dist::MvNormalWeightedMeanPrecision)       = cholsqrt(cov(dist))
-Distributions.logdetcov(dist::MvNormalWeightedMeanPrecision) = -logdet(invcov(dist))
+Distributions.logdetcov(dist::MvNormalWeightedMeanPrecision) = -chollogdet(invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 

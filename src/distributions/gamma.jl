@@ -1,6 +1,6 @@
 export Gamma, GammaShapeScale, GammaDistributionsFamily
 
-import SpecialFunctions: digamma
+import SpecialFunctions: loggamma, digamma
 import Distributions: Gamma, shape, scale, cov
 import StatsFuns: log2π
 
@@ -9,17 +9,17 @@ const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
 
 Distributions.cov(dist::GammaDistributionsFamily) = var(dist)
 
-function logmean(dist::GammaShapeScale)
+function mean(::typeof(log), dist::GammaShapeScale)
     k, θ = params(dist)
     return digamma(k) + log(θ)
 end
 
-function loggammamean(dist::GammaShapeScale)
+function mean(::typeof(loggamma), dist::GammaShapeScale)
     k, θ = params(dist)
     return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (-1 + digamma(k + 1) + log(θ))
 end
 
-function meanlogmean(dist::GammaShapeScale)
+function mean(::typeof(xtlog), dist::GammaShapeScale)
     k, θ = params(dist)
     return mean(dist) * (digamma(k + 1) + log(θ))
 end

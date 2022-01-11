@@ -36,7 +36,7 @@ Distributions.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
 Distributions.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
-Distributions.logdetcov(dist::MvNormalMeanPrecision) = -logdet(invcov(dist))
+Distributions.logdetcov(dist::MvNormalMeanPrecision) = -chollogdet(invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
@@ -70,8 +70,37 @@ function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNor
     return MvNormalMeanPrecision(μ, Λ)
 end
 
+function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where { T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat }
+    Λ = precision(left) + precision(right)
+
+    # fast & efficient implementation of precision(right)*mean(right) + precision(left)*mean(left)
+    xi = precision(right)*mean(right)
+    T = promote_type(T1,T2)
+    xi = convert(AbstractVector{T}, xi)
+    Λ  = convert(AbstractMatrix{T}, Λ)
+    xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, precision(left)), convert(AbstractVector{T}, mean(left)), one(T), xi)
+    
+    z = fastcholesky(Λ)
+    μ = z \ xi
+
+    return MvNormalMeanPrecision(μ, Λ)
+end
+
 function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     W = precision(left) + precision(right)
     xi = precision(left)*mean(left) + precision(right)*mean(right)
+    return MvNormalWeightedMeanPrecision(xi, W)
+end
+
+function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where { T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat }
+    W = precision(left) + precision(right)
+
+    # fast & efficient implementation of xi = precision(right)*mean(right) + precision(left)*mean(left)
+    xi = precision(right)*mean(right)
+    T = promote_type(T1, T2)
+    xi = convert(AbstractVector{T}, xi)
+    W  = convert(AbstractMatrix{T}, W)
+    xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, precision(left)), convert(AbstractVector{T}, mean(left)), one(T), xi)
+
     return MvNormalWeightedMeanPrecision(xi, W)
 end

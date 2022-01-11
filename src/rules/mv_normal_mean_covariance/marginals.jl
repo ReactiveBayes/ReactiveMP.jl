@@ -15,7 +15,26 @@ end
     W_bar = cholinv(mean(m_Σ))
     
     xi = [ xi_out; xi_m ]
-    W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
+
+    T = promote_type(eltype(W_bar), eltype(W_out), eltype(W_m))
+    d = length(xi_out)
+    W = Matrix{T}(undef, (2*d, 2*d))
+    @inbounds for k2 in 1:d
+        for k1 in 1:d
+            tmp1 = W_bar[k1,k2]
+            tmp2 = -tmp1
+            k1d = k1+d
+            k2d = k2+d
+            W[k1,k2] = tmp1 + W_out[k1,k2]
+            W[k1d,k2] = tmp2
+            W[k1,k2d] = tmp2
+            W[k1d,k2d] = tmp1 + W_m[k1,k2]
+        end
+    end
+
+    # naive:
+    # xi = [ xi_out; xi_m ]
+    # W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
 
     return (out_μ = MvNormalWeightedMeanPrecision(xi, W), Σ = m_Σ)
 end
@@ -27,7 +46,26 @@ end
     W_bar = cholinv(mean(q_Σ))
     
     xi = [ xi_out; xi_m ]
-    W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
+    
+    T = promote_type(eltype(W_bar), eltype(W_out), eltype(W_m))
+    d = length(xi_out)
+    W = Matrix{T}(undef, (2*d, 2*d))
+    @inbounds for k2 in 1:d
+        for k1 in 1:d
+            tmp1 = W_bar[k1,k2]
+            tmp2 = -tmp1
+            k1d = k1+d
+            k2d = k2+d
+            W[k1,k2] = tmp1 + W_out[k1,k2]
+            W[k1d,k2] = tmp2
+            W[k1,k2d] = tmp2
+            W[k1d,k2d] = tmp1 + W_m[k1,k2]
+        end
+    end
+
+    # naive:
+    # xi = [ xi_out; xi_m ]
+    # W  = [ W_out + W_bar -W_bar; -W_bar W_m + W_bar ]
     
     return MvNormalWeightedMeanPrecision(xi, W)
 end

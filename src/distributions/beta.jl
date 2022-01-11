@@ -14,12 +14,12 @@ function prod(::ProdAnalytical, left::Beta, right::Beta)
     return Beta(left_a + right_a - one(T), left_b + right_b - one(T))
 end
 
-function logmean(dist::Beta) 
+function mean(::typeof(log), dist::Beta) 
     a, b = params(dist)
     return digamma(a) - digamma(a + b)
 end
 
-function mirroredlogmean(dist::Beta)
+function mean(::typeof(mirrorlog), dist::Beta)
     a, b = params(dist)
     return digamma(b) - digamma(a + b)
 end

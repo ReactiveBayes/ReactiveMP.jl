@@ -13,10 +13,29 @@ end
     xi_m, W_m  = weightedmean_precision(m_μ)
 
     W_bar = mean(m_Λ)
-    
-    Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
+
+    T = promote_type(eltype(W_bar), eltype(W_y), eltype(W_m))
+    d = length(xi_y)
+    Λ = Matrix{T}(undef, (2*d, 2*d))
+    @inbounds for k2 in 1:d
+        @inbounds for k1 in 1:d
+            tmp1 = W_bar[k1,k2]
+            tmp2 = -tmp1
+            k1d = k1+d
+            k2d = k2+d
+            Λ[k1,k2] = tmp1 + W_y[k1,k2]
+            Λ[k1d,k2] = tmp2
+            Λ[k1,k2d] = tmp2
+            Λ[k1d,k2d] = tmp1 + W_m[k1,k2]
+        end
+    end
+
     ξ  = [ xi_y; xi_m ]
     
+    # naive:
+    # Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
+    # ξ  = [ xi_y; xi_m ]
+
     return (out_μ = MvNormalWeightedMeanPrecision(ξ, Λ), Λ = m_Λ)
 end
 
@@ -26,8 +45,27 @@ end
 
     W_bar = mean(q_Λ)
     
-    Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
+    T = promote_type(eltype(W_bar), eltype(W_y), eltype(W_m))
+    d = length(xi_y)
+    Λ = Matrix{T}(undef, (2*d, 2*d))
+    @inbounds for k2 in 1:d
+        @inbounds for k1 in 1:d
+            tmp1 = W_bar[k1,k2]
+            tmp2 = -tmp1
+            k1d = k1+d
+            k2d = k2+d
+            Λ[k1,k2] = tmp1 + W_y[k1,k2]
+            Λ[k1d,k2] = tmp2
+            Λ[k1,k2d] = tmp2
+            Λ[k1d,k2d] = tmp1 + W_m[k1,k2]
+        end
+    end
+    
     ξ  = [ xi_y; xi_m ]
+
+    # naive:
+    # Λ  = [ W_y + W_bar -W_bar; -W_bar W_m + W_bar ]
+    # ξ  = [ xi_y; xi_m ]
     
     return MvNormalWeightedMeanPrecision(ξ, Λ)
 end

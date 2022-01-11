@@ -273,7 +273,8 @@ end
         @test length(m) === 25
         @test length(w) === 25
         @test length(fe) === 25
-        @test abs(last(fe) - 3437.962398) < 0.01
+        @test all(filter(e -> abs(e) > 1e-3, diff(getvalues(fe))) .< 0)
+        @test abs(last(fe) - 3442.4015524445967) < 0.01
 
         ems = sort(mean.(last(m)), by = x -> atan(x[2] / x[1]))
         rms = sort(mean.(gaussians), by = x -> atan(x[2] / x[1]))

@@ -11,6 +11,11 @@ using LinearAlgebra
     # Wishart comes from Distributions.jl and most of the things should be covered there
     # Here we test some extra ReactiveMP.jl specific functionality
 
+    @testset "mean(:logdet)" begin
+        @test mean(logdet, Wishart(3, [ 1.0 0.0; 0.0 1.0 ])) ≈ 0.845568670196936
+        @test mean(logdet, Wishart(5, [1.4659658963311604 1.111775094889733 0.8741034114800605; 1.111775094889733 0.8746971141492232 0.6545661366809246; 0.8741034114800605 0.6545661366809246 0.5498917856395482])) ≈ -3.4633310802040693
+    end
+
     @testset "vague" begin
         @test_throws MethodError vague(Wishart)
 

@@ -3,7 +3,6 @@ module ReactiveMPTestingHelpers
 using Test
 using ReactiveMP
 
-import ReactiveMP: OneDivNVector
 import ReactiveMP: deep_eltype
 
 @testset "Helpers" begin

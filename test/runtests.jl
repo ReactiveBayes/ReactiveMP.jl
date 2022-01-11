@@ -77,7 +77,9 @@ end
     end
 
     addtests("algebra/test_correction.jl")
+    addtests("algebra/test_helpers.jl")
     addtests("algebra/test_permutation_matrix.jl")
+    addtests("algebra/test_standard_basis_vector.jl")
 
     addtests("test_math.jl")
     addtests("test_helpers.jl")
@@ -117,6 +119,11 @@ end
     addtests("nodes/test_subtraction.jl")
     addtests("nodes/test_probit.jl")
     addtests("nodes/test_autoregressive.jl")
+    addtests("nodes/test_normal_mean_precision.jl")
+    addtests("nodes/test_normal_mean_variance.jl")
+    addtests("nodes/test_mv_normal_mean_precision.jl")
+    addtests("nodes/test_mv_normal_mean_covariance.jl")
+
     
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")

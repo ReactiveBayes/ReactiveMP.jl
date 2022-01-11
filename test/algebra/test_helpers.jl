@@ -8,6 +8,18 @@ using LinearAlgebra
 
 @testset "Helpers" begin
 
+    @testset "mirrorlog" begin 
+        rng  = MersenneTwister(1234)
+        vals = rand(rng, 10) 
+        @test ReactiveMP.mirrorlog.(vals) == map(x -> log(1 - x), vals)
+    end
+
+    @testset "xtlog" begin 
+        rng  = MersenneTwister(1234)
+        vals = rand(rng, 10) 
+        @test ReactiveMP.xtlog.(vals) == map(x -> x * log(x), vals)
+    end
+
     @testset "negate_inplace!" begin 
         rng = MersenneTwister(1234)
 
@@ -50,9 +62,9 @@ using LinearAlgebra
         for size in 2:4, T1 in (Float32, Float64), T2 in (Float32, Float64), T3 in (Float32, Float64)
             A = rand(rng, T1, size, size)
             x = rand(rng, T2, size)
-            @test ReactiveMP.rank1update(A, x) == (A + x*x')
+            @test ReactiveMP.rank1update(A, x) ≈ (A + x*x')
             y = rand(rng, T3, size)
-            @test ReactiveMP.rank1update(A, x, y) == (A + x*y')
+            @test ReactiveMP.rank1update(A, x, y) ≈ (A + x*y')
         end
 
     end
@@ -63,7 +75,12 @@ using LinearAlgebra
         for size in 2:4, T1 in (Float32, Float64), T2 in (Float32, Float64)
             A = rand(rng, T1, size, size)
             B = rand(rng, T2, size, size)
-            @test ReactiveMP.mul_trace(A, B) ≈ tr(A * B)
+            
+            # See: https://github.com/JuliaSIMD/LoopVectorization.jl/issues/377
+            # Remove if statement once fixed
+            if T1 !== Float32 || T2 !== Float32
+                @test ReactiveMP.mul_trace(A, B) ≈ tr(A * B)
+            end
 
             a = rand(rng, T1)
             b = rand(rng, T2)

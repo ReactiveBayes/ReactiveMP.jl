@@ -5,6 +5,8 @@ using ReactiveMP
 using Distributions
 using Random
 
+import ReactiveMP: mirrorlog
+
 @testset "Beta" begin
 
     # Beta comes from Distributions.jl and most of the things should be covered there
@@ -24,16 +26,16 @@ using Random
         @test prod(ProdAnalytical(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
     end
 
-    @testset "logmean" begin
-        @test logmean(Beta(1.0, 3.0)) ≈ -1.8333333333333335
-        @test logmean(Beta(0.1, 0.3)) ≈ -7.862370395825961
-        @test logmean(Beta(4.5, 0.3)) ≈ -0.07197681436958758
+    @testset "mean(::typeof(log))" begin
+        @test mean(log, Beta(1.0, 3.0)) ≈ -1.8333333333333335
+        @test mean(log, Beta(0.1, 0.3)) ≈ -7.862370395825961
+        @test mean(log, Beta(4.5, 0.3)) ≈ -0.07197681436958758
     end
 
-    @testset "mirroredlogmean" begin
-        @test mirroredlogmean(Beta(1.0, 3.0)) ≈ -0.33333333333333337
-        @test mirroredlogmean(Beta(0.1, 0.3)) ≈ -0.9411396776150167
-        @test mirroredlogmean(Beta(4.5, 0.3)) ≈ -4.963371962929249
+    @testset "mean(::typeof(mirrorlog))" begin
+        @test mean(mirrorlog, Beta(1.0, 3.0)) ≈ -0.33333333333333337
+        @test mean(mirrorlog, Beta(0.1, 0.3)) ≈ -0.9411396776150167
+        @test mean(mirrorlog, Beta(4.5, 0.3)) ≈ -4.963371962929249
     end
 
 end

@@ -50,8 +50,8 @@ import ReactiveMP: @test_rules
             (input = (m_in1 = MvNormalMeanCovariance([-4.0, 3.0], [3.0 2.0; 2.0 4.0]), m_in2 = PointMass([1.0, 1.0])),  output = MvNormalMeanCovariance([-3.0, 4.0], [3.0 2.0; 2.0 4.0])),
             (input = (m_in1 = MvNormalMeanPrecision([-4.0, 3.0], [3.0 2.0; 2.0 4.0]),  m_in2 = PointMass([1.0, 1.0])),  output = MvNormalMeanPrecision([-3.0, 4.0], [3.0 2.0; 2.0 4.0])),
             (input = (m_in1 = MvNormalMeanPrecision([-4.0, 3.0], [3.0 2.0; 2.0 4.0]),  m_in2 = PointMass([-2.0, 1.0])), output = MvNormalMeanPrecision([-6.0, 4.0], [3.0 2.0; 2.0 4.0])),
-            (input = (m_in1 = MvNormalWeightedMeanPrecision([1.0, 3.0], [ 1.0 0.0; 0.0 1.0 ]), m_in2 = PointMass([ 2.0, 7.0 ])),  output = MvNormalMeanCovariance([ 3.0, 10.0 ], [ 1.0 0.0; 0.0 1.0 ])),
-            (input = (m_in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [ 2.0 0.0; 0.0 2.0 ]), m_in2 = PointMass([ 1.0, 3.0 ])),  output = MvNormalMeanCovariance([ 2.0, 5.0 ], [ 1/2 0.0; 0.0 1/2 ])),
+            (input = (m_in1 = MvNormalWeightedMeanPrecision([1.0, 3.0], [ 1.0 0.0; 0.0 1.0 ]), m_in2 = PointMass([ 2.0, 7.0 ])),  output = MvNormalWeightedMeanPrecision([ 3.0, 10.0 ], [ 1.0 0.0; 0.0 1.0 ])),
+            (input = (m_in1 = MvNormalWeightedMeanPrecision([2.0, 4.0], [ 2.0 0.0; 0.0 2.0 ]), m_in2 = PointMass([ 1.0, 3.0 ])),  output = MvNormalWeightedMeanPrecision([ 4.0, 10.0 ], [ 2.0 0.0; 0.0 2.0 ])),
         ]
 
     end
@@ -63,8 +63,8 @@ import ReactiveMP: @test_rules
             (input = (m_in1 = PointMass([1.0, 1.0]),    m_in2 = MvNormalMeanCovariance([-4.0, 3.0], [3.0 2.0; 2.0 4.0])),   output = MvNormalMeanCovariance([-3.0, 4.0], [3.0 2.0; 2.0 4.0])),
             (input = (m_in1 = PointMass([1.0, 1.0]),    m_in2 = MvNormalMeanPrecision([-4.0, 3.0], [3.0 2.0; 2.0 4.0])),    output = MvNormalMeanPrecision([-3.0, 4.0], [3.0 2.0; 2.0 4.0])),
             (input = (m_in1 = PointMass([-2.0, 1.0]),   m_in2 = MvNormalMeanPrecision([-4.0, 3.0], [3.0 2.0; 2.0 4.0])),    output = MvNormalMeanPrecision([-6.0, 4.0], [3.0 2.0; 2.0 4.0])),
-            (input = (m_in1 = PointMass([ 2.0, 7.0 ]),  m_in2 = MvNormalWeightedMeanPrecision([1.0, 3.0], [ 1.0 0.0; 0.0 1.0 ])),  output = MvNormalMeanCovariance([ 3.0, 10.0 ], [ 1.0 0.0; 0.0 1.0 ])),
-            (input = (m_in1 = PointMass([ 1.0, 3.0 ]),  m_in2 = MvNormalWeightedMeanPrecision([2.0, 4.0], [ 2.0 0.0; 0.0 2.0 ])),  output = MvNormalMeanCovariance([ 2.0, 5.0 ], [ 1/2 0.0; 0.0 1/2 ])),
+            (input = (m_in1 = PointMass([ 2.0, 7.0 ]),  m_in2 = MvNormalWeightedMeanPrecision([1.0, 3.0], [ 1.0 0.0; 0.0 1.0 ])),  output = MvNormalWeightedMeanPrecision([ 3.0, 10.0 ], [ 1.0 0.0; 0.0 1.0 ])),
+            (input = (m_in1 = PointMass([ 1.0, 3.0 ]),  m_in2 = MvNormalWeightedMeanPrecision([2.0, 4.0], [ 2.0 0.0; 0.0 2.0 ])),  output = MvNormalWeightedMeanPrecision([ 4.0, 10.0 ], [ 2.0 0.0; 0.0 2.0 ])),
         ]
 
     end

@@ -4,8 +4,7 @@
     out_wmean, out_prec = weightedmean_precision(m_out)
     
     ξ = A * out_wmean
-    W = correction!(meta, A * out_prec * A')
+    W = correction!(meta, v_a_vT(A, out_prec))
     
     return convert(promote_variate_type(variate_form(m_in1), NormalWeightedMeanPrecision), ξ, W)
 end
-
