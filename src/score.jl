@@ -27,14 +27,17 @@ marginal_skip_strategy(objective::BetheFreeEnergy) = objective.marginal_skip_str
 
 function score(::Type{T}, objective::BetheFreeEnergy, model, scheduler) where { T <: InfCountingReal }
 
+    stochastic_variables = filter(r -> !is_point_mass_form_constraint(form_constraint(r)), getrandom(model))
+    point_mass_estimates = filter(r -> is_point_mass_form_constraint(form_constraint(r)), getrandom(model))
+
     node_bound_free_energies     = map((node) -> score(T, objective, FactorBoundFreeEnergy(), node, scheduler), getnodes(model))
-    variable_bound_entropies     = map((v) -> score(T, objective, VariableBoundEntropy(), v, scheduler), getrandom(model))
+    variable_bound_entropies     = map((v) -> score(T, objective, VariableBoundEntropy(), v, scheduler), stochastic_variables)
     node_bound_free_energies_sum = collectLatest(T, T, node_bound_free_energies, reduce_with_sum)
     variable_bound_entropies_sum = collectLatest(T, T, variable_bound_entropies, reduce_with_sum)
 
     data_point_entropies_n     = mapreduce(degree, +, getdata(model), init = 0)
     constant_point_entropies_n = mapreduce(degree, +, getconstant(model), init = 0)
-    form_point_entropies_n     = count(r -> is_point_mass_form_constraint(form_constraint(r)), getrandom(model))
+    form_point_entropies_n     = mapreduce(degree, +, point_mass_estimates, init = 0)
 
     point_entropies = InfCountingReal(eltype(T), data_point_entropies_n + constant_point_entropies_n + form_point_entropies_n)
 
