@@ -19,6 +19,7 @@ include("constraints/prod/prod_final.jl")
 
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
+include("constraints/form/form_fixed_marginal.jl")
 include("constraints/form/form_sample_list.jl")
 
 as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
