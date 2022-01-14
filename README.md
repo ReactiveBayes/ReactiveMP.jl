@@ -192,4 +192,4 @@ There are a set of [demos](https://github.com/biaslab/ReactiveMP.jl/tree/master/
 
 # License
 
-MIT License Copyright (c) 2021 BIASlab
+MIT License Copyright (c) 2021-2022 BIASlab
