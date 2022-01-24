@@ -71,30 +71,36 @@ struct Model{O}
     random   :: Vector{RandomVariable}
     constant :: Vector{ConstVariable}
     data     :: Vector{DataVariable}
+    vardict  :: Dict{Symbol, Any}
 end
 
 Base.show(io::IO, model::Model) = print(io, "Model($(getoptions(model)))")
 
 Model() = Model(model_options())
 Model(options::NamedTuple) = Model(model_options(options))
-Model(options::O) where { O <: ModelOptions } = Model{O}(options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}())
+Model(options::O) where { O <: ModelOptions } = Model{O}(options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
 
 getoptions(model::Model)  = model.options
 getnodes(model::Model)    = model.nodes
 getrandom(model::Model)   = model.random
 getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
+getvardict(model::Model)  = model.vardict
+
+getindex(model::Model, symbol::Symbol) = getindex(getvardict(model), symbol)
+
+add!(vardict::Dict, name::Symbol, entity) = vardict[name] = entity
 
 add!(model::Model, node::AbstractFactorNode)  = begin push!(model.nodes, node); return node end
-add!(model::Model, randomvar::RandomVariable) = begin push!(model.random, randomvar); return randomvar end
-add!(model::Model, constvar::ConstVariable)   = begin push!(model.constant, constvar); return constvar end
-add!(model::Model, datavar::DataVariable)     = begin push!(model.data, datavar); return datavar end
+add!(model::Model, randomvar::RandomVariable) = begin push!(model.random, randomvar); add!(getvardict(model), name(randomvar), randomvar); return randomvar end
+add!(model::Model, constvar::ConstVariable)   = begin push!(model.constant, constvar); add!(getvardict(model), name(constvar), constvar); return constvar end
+add!(model::Model, datavar::DataVariable)     = begin push!(model.data, datavar); add!(getvardict(model), name(datavar), datavar); return datavar end
 add!(model::Model, ::Nothing)                 = nothing
 add!(model::Model, collection::Tuple)         = begin foreach((d) -> add!(model, d), collection); return collection end
 add!(model::Model, array::AbstractArray)      = begin foreach((d) -> add!(model, d), array); return array end
-add!(model::Model, array::AbstractArray{ <: RandomVariable }) = begin append!(model.random, array); return array end
-add!(model::Model, array::AbstractArray{ <: ConstVariable })  = begin append!(model.constant, array); return array end
-add!(model::Model, array::AbstractArray{ <: DataVariable })   = begin append!(model.data, array); return array end
+add!(model::Model, array::AbstractArray{ <: RandomVariable }) = begin append!(model.random, array); add!(getvardict(model), name(first(array)), array); return array end
+add!(model::Model, array::AbstractArray{ <: ConstVariable })  = begin append!(model.constant, array); add!(getvardict(model), name(first(array)), array); return array end
+add!(model::Model, array::AbstractArray{ <: DataVariable })   = begin append!(model.data, array); add!(getvardict(model), name(first(array)), array); return array end
 
 function activate!(model::Model) 
     filter!(getrandom(model)) do randomvar

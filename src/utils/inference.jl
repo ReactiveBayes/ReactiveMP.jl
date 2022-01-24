@@ -1,49 +1,83 @@
-obtain_marginal!(variable::AbstractVariable, marginal) = getmarginal!(variables)
-obtain_marginal!(variable::AbstractArray{ <: AbstractVariable }, marginal) = getmarginals!(variables)
-
+obtain_marginal(variable::AbstractVariable)                      = getmarginal(variable)
+obtain_marginal(variables::AbstractArray{ <: AbstractVariable }) = getmarginals(variables)
 
 assign_marginal!(variables::AbstractArray{ <: AbstractVariable }, marginals) = setmarginals!(variables, marginals)
-assign_marginal!(variable::AbstractVariable, marginal) = setmarginal!(variable, marginal)
+assign_marginal!(variable::AbstractVariable, marginal)                       = setmarginal!(variable, marginal)
 
+struct KeepEach end
 
-function inference(; kwargs...)
+make_actor(::Any, ::KeepEach)                                = nothing
+make_actor(::RandomVariable, ::KeepEach)                     = keep(Marginal)
+make_actor(::AbstractArray{ <: RandomVariable }, ::KeepEach) = keep(Vector{Marginal})
 
-    model, _ = kwargs[:model]()
+function inference(; 
+    # `model`: specifies a **callback** to create a model, may use whatever global parameters as it wants, required
+    model = () -> error("model keyword is required."), 
+    # NamedTuple with data, required
+    data = nothing,
+    # NamedTuple with initial marginals, optional, defaults to empty
+    initmarginals = nothing,
+    # NamedTuple with initial messages, optional, defaults to empty
+    initmessages = nothing,  # optional
+    # Reserverd for the future
+    constraints = nothing,
+    # Return structure info, optional, defaults to return everything at each iteration
+    returnvars = nothing, 
+    # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
+    iterations = 1,
+    # Do we compute FE, optional, defaults to false
+    free_energy = false,
+    # Show progress module, optional, defaults to false
+    showprogress = false,)
 
-   # maybe try catch and unsubsribe?
+    _model, _ = model()
+    vardict = ReactiveMP.getvardict(_model)
+
+    # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
+    # `KeepEach` for each 
+    ireturnvars = if returnvars === nothing 
+        Dict(variable => KeepEach() for (variable, value) in vardict)
+    else 
+        returnvars
+    end
+
+    # Second, for each entry we create an actor and we drop `nothing` 
+    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in ireturnvars)
+
+    subscriptions = Dict(variable => subscribe!(obtain_marginal(vardict[variable]), actor) for (variable, actor) in actors if actor !== nothing)
     
-   # Check how to map over named tuple values with preserving the same structure
-    actors = map(kwargs[:returnvars]) do (variable, strategy) # eg. (x, KeepEach)
-        return make_actor(variable, strategy) # returns eg. buffer(Marginal, n) or KeepActor(), dispatch on strategy
-    end
-    
-    # `actors` should be a named tuple, eg. (x = keep(Marginal), z = buffer(Marginal, 10))
-    subscriptions = map(actors) do (variable, actor)
-        return subscribe!(obtain_marginal!(model.variables[variable]), actor) # obtain_marginal! calls either `getmarginal` or `getmarginals`
-    end
-
-    # `initmarginals` is a named tuple, eg. (x = vague(Gamma), z = [ ... ])
-    foreach(initmarginals) do (variable, initvalue)
-        assign_marginal!(model.variables[variable], initvalue) # __setmarginal calls either `setmarginal!` or `setmarginals!`
-    end
-
-    # exactly the same for `initmessages` here
-
-    if kwargs[:free_energy]
-        fe_subscription = ...
+    fe_actor, fe_subscription = if free_energy
+        _fe_actor = ScoreActor()
+        _fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), _fe_actor)
+        (_fe_actor, _fe_subscription)
     else
-        fe_subscription = voidTeardown # empty subscription from Rocket.jl, does nothing on `unsubscribe!`
+        nothing, VoidTeardown()
     end
 
-    # showprogress stuff here
-    for iteration in kwargs[:iteration]
-         foreach(kwargs[:data]) do (variable, data)
-             update!(model.variables[variable], data)
-         end
+    if initmarginals !== nothing
+        for (variable, initvalue) in initmarginals
+            assign_marginal!(vardict[variable], initvalue)
+        end
     end
 
-    unsubscribe!(subscriptions)
+    if initmessages !== nothing
+        # todo assignt_message!
+    end
+
+    # todo showprogress
+    # todo check if data is not nothing
+    for _ in 1:iterations
+        for (key, value) in data
+            update!(vardict[key], value)
+        end
+    end
+
+    for (_, subscription) in subscriptions
+        unsubscribe!(subscription)
+    end
+
     unsubscribe!(fe_subscription)
     
-    return ReturnStructure(actors..., free_energy...) # ??
+    # Todo return proper structure
+    return (actors, fe_actor)
 end

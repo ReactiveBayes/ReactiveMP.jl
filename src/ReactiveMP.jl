@@ -128,6 +128,7 @@ include("rules/prototypes.jl")
 include("actors/prior.jl")
 
 include("model.jl")
+include("utils/inference.jl")
 
 include("fixes.jl")
 
