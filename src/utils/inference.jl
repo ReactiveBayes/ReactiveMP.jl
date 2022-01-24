@@ -1,14 +1,29 @@
+import ProgressMeter
+export inference
+
 obtain_marginal(variable::AbstractVariable)                      = getmarginal(variable)
 obtain_marginal(variables::AbstractArray{ <: AbstractVariable }) = getmarginals(variables)
 
 assign_marginal!(variables::AbstractArray{ <: AbstractVariable }, marginals) = setmarginals!(variables, marginals)
 assign_marginal!(variable::AbstractVariable, marginal)                       = setmarginal!(variable, marginal)
 
+assign_message!(variables::AbstractArray{ <: AbstractVariable }, messages) = setmessages!(variables, messages)
+assign_message!(variable::AbstractVariable, message)                       = setmessage!(variable, message)
+
 struct KeepEach end
+struct KeepLast end
 
 make_actor(::Any, ::KeepEach)                                = nothing
 make_actor(::RandomVariable, ::KeepEach)                     = keep(Marginal)
 make_actor(::AbstractArray{ <: RandomVariable }, ::KeepEach) = keep(Vector{Marginal})
+
+make_actor(::RandomVariable, ::KeepLast)                     = error("Not implemented")
+make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepLast) = buffer(Marginal, length(x))
+
+struct ReturnStructure
+    posteriors
+    free_energy
+end
 
 function inference(; 
     # `model`: specifies a **callback** to create a model, may use whatever global parameters as it wants, required
@@ -61,14 +76,21 @@ function inference(;
     end
 
     if initmessages !== nothing
-        # todo assignt_message!
+        for (variable, initvalue) in initmessages
+            assign_message!(vardict[variable], initvalue)
+        end
     end
 
-    # todo showprogress
-    # todo check if data is not nothing
+    if isnothing(data) || isempty(data)
+        error("No data provided")
+    end
+    p = showprogress ? ProgressMeter.Progress(iterations) : nothing
     for _ in 1:iterations
         for (key, value) in data
             update!(vardict[key], value)
+        end
+        if !isnothing(p)
+            ProgressMeter.next!(p)
         end
     end
 
@@ -79,5 +101,5 @@ function inference(;
     unsubscribe!(fe_subscription)
     
     # Todo return proper structure
-    return (actors, fe_actor)
+    return ReturnStructure(actors, fe_actor)
 end
