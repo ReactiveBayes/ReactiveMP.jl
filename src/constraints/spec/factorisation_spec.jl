@@ -40,13 +40,6 @@ indextype(::FactorisationSpecEntry, index::Integer)       = FactorisationSpecEnt
 indextype(::FactorisationSpecEntry, index::AbstractRange) = FactorisationSpecEntryRanged()
 indextype(::FactorisationSpecEntry, index::SplittedRange) = FactorisationSpecEntrySplitRanged()
 
-Base.merge!(left::NTuple{N, FactorisationSpecEntry}, right::FactorisationSpecEntry) where N = TupleTools.setindex(left, merge!(left[end], right), lastindex(left))
-Base.merge!(left::FactorisationSpecEntry, right::NTuple{N, FactorisationSpecEntry}) where N = TupleTools.setindex(right, merge!(left, right[begin]), firstindex(right))
-
-function Base.merge!(left::NTuple{N1, FactorisationSpecEntry}, right::NTuple{N2, FactorisationSpecEntry}) where { N1, N2 }
-    return TupleTools.insertat(left, lastindex(left), (merge!(left[end], right[begin]), right[begin + 1:end]...))
-end
-
 function Base.merge!(left::FactorisationSpecEntry, right::FactorisationSpecEntry)
     if left.symbol !== right.symbol
         error("Cannot merge factorisation specification entries with different names $(left) and $(right)")
@@ -107,6 +100,10 @@ function Base.merge!(left::FactorisationSpec, right::FactorisationSpec)
     error("Cannot merge factorisation specifications $(left) and $(right)")
 end
 
+Base.merge!(left::NTuple{N, FactorisationSpec}, right::FactorisationSpec) where N = TupleTools.setindex(left, merge!(left[end], right), lastindex(left))
+Base.merge!(left::FactorisationSpec, right::NTuple{N, FactorisationSpec}) where N = TupleTools.setindex(right, merge!(left, right[begin]), firstindex(right))
+Base.merge!(left::NTuple{N1, FactorisationSpec}, right::NTuple{N2, FactorisationSpec}) where { N1, N2 } = TupleTools.insertat(left, lastindex(left), (merge!(left[end], right[begin]), right[begin + 1:end]...))
+
 # Mul 
 
 Base.:(*)(left::FactorisationSpec, right::FactorisationSpec)                    = (left, right)
@@ -115,22 +112,16 @@ Base.:(*)(left::FactorisationSpec, right::NTuple{N, FactorisationSpec}) where N 
 Base.:(*)(left::NTuple{N1, FactorisationSpec}, right::NTuple{N2, FactorisationSpec}) where { N1, N2 } = (left..., right...)
 
 # `Node` here refers to a node in a tree, it has nothing to do with factor nodes
-struct FactorisationSpecNode{K <: FactorisationSpec, N, S}
-    key        :: K
-    childnodes :: N
-    childspec  :: S
+struct FactorisationSpecNode{S}
+    childspec :: S
 
-    function FactorisationSpecNode(key::K, childnodes::N, childspec::S) where { K <: FactorisationSpec, C1, N <: NTuple{C1, FactorisationSpecNode}, C2, S <: NTuple{C2, FactorisationSpec} }
-        return new{K, N, S}(key, childnodes, childspec)
-    end
+    FactorisationSpecNode(childspec::S) where { N, S <: NTuple{N, FactorisationSpec} } = new{S}(childspec)
 end
 
 function Base.show(io::IO, node::FactorisationSpecNode) 
-    print(io, node.key, " -> (childnodes: [")
-    join(io, node.childnodes, ", ")
-    print(io, "], childspec: [")
+    print(io, "[ ")
     join(io, node.childspec, ", ")
-    print(io, "])")
+    print(io, " ]")
 end
 
 ## ## 
