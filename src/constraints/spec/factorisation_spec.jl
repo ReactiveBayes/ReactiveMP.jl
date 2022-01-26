@@ -41,9 +41,7 @@ indextype(::FactorisationSpecEntry, index::AbstractRange) = FactorisationSpecEnt
 indextype(::FactorisationSpecEntry, index::SplittedRange) = FactorisationSpecEntrySplitRanged()
 
 function Base.merge!(left::FactorisationSpecEntry, right::FactorisationSpecEntry)
-    if left.symbol !== right.symbol
-        error("Cannot merge factorisation specification entries with different names $(left) and $(right)")
-    end
+    (left.symbol === right.symbol) || error("Cannot merge factorisation specification entries with different names $(left) and $(right)")
     return merge!(indextype(left), indextype(right), left, right) 
 end
 
@@ -81,15 +79,7 @@ struct FactorisationSpec{E}
     entries :: E
 end
 
-function Base.show(io::IO, spec::FactorisationSpec) 
-    print(io, "q(")
-    join(io, spec.entries, ", ")
-    print(io, ")")
-end
-
-# Base.:(==)(left::FactorisationSpec, right::FactorisationSpec) = all(d -> d[1] == d[2], zip(left.entries, right.entries))
-
-Base.hash(spec::FactorisationSpec, h::UInt) = foldr(hash, spec.entries, init = h)
+Base.show(io::IO, spec::FactorisationSpec) = begin print(io, "q("); join(io, spec.entries, ", "); print(io, ")") end
 
 function Base.merge!(left::FactorisationSpec, right::FactorisationSpec)
     if length(left.entries) == length(right.entries)
@@ -118,10 +108,6 @@ struct FactorisationSpecNode{S}
     FactorisationSpecNode(childspec::S) where { N, S <: NTuple{N, FactorisationSpec} } = new{S}(childspec)
 end
 
-function Base.show(io::IO, node::FactorisationSpecNode) 
-    print(io, "[ ")
-    join(io, node.childspec, ", ")
-    print(io, " ]")
-end
+Base.show(io::IO, node::FactorisationSpecNode) = join(io, node.childspec, " ")
 
 ## ## 
