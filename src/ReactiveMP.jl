@@ -12,6 +12,9 @@ include("message.jl")
 include("marginal.jl")
 include("distributions.jl")
 
+include("constraints/spec/factorisation_spec.jl")
+include("constraints/spec/spec.jl")
+
 include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
