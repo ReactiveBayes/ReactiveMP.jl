@@ -4,6 +4,7 @@ include("rocket.jl")
 include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
+include("scale_factor_helpers.jl")
 
 include("constraints/prod/prod.jl")
 include("constraints/form/form.jl")

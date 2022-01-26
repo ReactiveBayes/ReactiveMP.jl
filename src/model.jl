@@ -14,9 +14,10 @@ import Base: show
 
 # Model Options
 
-struct ModelOptions{P, F, S}
+struct ModelOptions{P, F, M, S}
     pipeline                   :: P
     default_factorisation      :: F
+    default_meta               :: M
     global_reactive_scheduler  :: S
 end
 
@@ -25,6 +26,7 @@ model_options() = model_options(NamedTuple{()}(()))
 available_option_names(::Type{ <: ModelOptions }) = (
     :pipeline, 
     :default_factorisation,
+    :default_meta,
     :global_reactive_scheduler, 
     :limit_stack_depth
 )
@@ -32,6 +34,7 @@ available_option_names(::Type{ <: ModelOptions }) = (
 function model_options(options::NamedTuple)
     pipeline                  = EmptyPipelineStage()
     default_factorisation     = FullFactorisation()
+    default_meta              = nothing
     global_reactive_scheduler = AsapScheduler()
 
     if haskey(options, :pipeline)
@@ -40,6 +43,10 @@ function model_options(options::NamedTuple)
 
     if haskey(options, :default_factorisation)
         default_factorisation = options[:default_factorisation]
+    end
+    
+    if haskey(options, :default_meta)
+        default_meta = options[:default_meta]
     end
 
     if haskey(options, :global_reactive_scheduler)
@@ -55,6 +62,7 @@ function model_options(options::NamedTuple)
     return ModelOptions(
         pipeline,
         default_factorisation,
+        default_meta,
         global_reactive_scheduler
     )
 end
@@ -62,6 +70,7 @@ end
 global_reactive_scheduler(options::ModelOptions) = options.global_reactive_scheduler
 get_pipeline_stages(options::ModelOptions)       = options.pipeline
 default_factorisation(options::ModelOptions)     = options.default_factorisation
+default_meta(options::ModelOptions)              = options.default_meta
 
 # Model
 
@@ -123,8 +132,8 @@ as_variable(model::Model, x)                   = add!(model, as_variable(x))
 as_variable(model::Model, v::AbstractVariable) = v
 as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d), t)
 
-function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
-    return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
+function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), meta = default_meta(getoptions(model)), kwargs...) 
+    return add!(model, make_node(args...; factorisation = factorisation, meta = meta, kwargs...))
 end
 
 # Repeat variational message passing iterations [ EXPERIMENTAL ]
