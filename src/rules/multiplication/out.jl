@@ -11,6 +11,14 @@ end
     return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
 end
 
+# Message with scale factor (BP case)
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass, m_in::ScaledMessage, meta::ScaleFactorMeta) = begin 
+    message = @call_rule typeof(*)(:out, Marginalisation) (m_A = m_A, m_in = m_in.message, meta=TinyCorrection())
+    scale = m_in.scale
+
+    return ScaledMessage(message, scale)
+end
+
 #------------------------
 # AbstractVector * UnivariateNormalDistributions
 #------------------------

@@ -5,6 +5,14 @@
     return GammaShapeRate(shape(m_out), rate(m_out) * mean(m_A))
 end
 
+# Message with scale factor (BP case)
+@rule typeof(*)(:in, Marginalisation) (m_out::ScaledMessage, m_A::PointMass, meta::ScaleFactorMeta) = begin
+    message = @call_rule typeof(*)(:in, Marginalisation) (m_out = m_out.message, m_A = m_A, meta=TinyCorrection())
+    scale = m_out.scale + logdet(mean(m_A))
+
+    return ScaledMessage(message, scale)
+end
+
 # if A is a matrix, then the result is multivariate
 @rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{ <: AbstractMatrix }, meta::AbstractCorrection) = begin
     A = mean(m_A)
