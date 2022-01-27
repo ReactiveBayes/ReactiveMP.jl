@@ -6,8 +6,8 @@ using ReactiveMP
 import ReactiveMP: FactorisationSpecEntryIndex
 import ReactiveMP: FactorisationSpecEntryExact, FactorisationSpecEntryIndexed, FactorisationSpecEntryRanged, FactorisationSpecEntrySplitRanged
 import ReactiveMP: SplittedRange
-import ReactiveMP: FactorisationSpecEntry, FactorisationSpec, FactorisationSpecNode
-import ReactiveMP: indextype
+import ReactiveMP: FactorisationSpecEntry, FactorisationSpec, FactorisationSpecList
+import ReactiveMP: indextype, validate
 
 @testset "show" begin 
     @test repr(FactorisationSpecEntry(:z, nothing)) == "z"
@@ -58,6 +58,36 @@ end
 
     @test_throws ErrorException merge!(FactorisationSpec(( FactorisationSpecEntry(:z, 1), )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, nothing) ))) 
     @test_throws ErrorException merge!(FactorisationSpec(( FactorisationSpecEntry(:x, 1), FactorisationSpecEntry(:s, 1) )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, 4) )))
+end
+
+@testset "validate" begin
+    x = randomvar(:x, 10)
+    z = randomvar(:z, 10, 10)
+    y = randomvar(:y)
+
+    @test validate(FactorisationSpecEntry(:x, nothing), x)
+    @test validate(FactorisationSpecEntry(:z, nothing), z)
+    @test validate(FactorisationSpecEntry(:x, 1), x)
+    @test validate(FactorisationSpecEntry(:x, 1:10), x)
+    @test validate(FactorisationSpecEntry(:x, SplittedRange(1:10)), x)
+    @test validate(FactorisationSpecEntry(:z, 1:10), z)
+    @test validate(FactorisationSpecEntry(:z, firstindex(z):lastindex(z)), z)
+    @test_throws ErrorException validate(FactorisationSpecEntry(:y, 1), y)
+    @test_throws ErrorException validate(FactorisationSpecEntry(:y, 1:10), y)
+    @test_throws ErrorException validate(FactorisationSpecEntry(:y, SplittedRange(1:10)), y)
+    @test_throws ErrorException validate(FactorisationSpecEntry(:y, nothing), x)
+    @test_throws ErrorException validate(FactorisationSpecEntry(:x, nothing), y)
+    @test_throws ErrorException validate(FactorisationSpecEntry(:x, SplittedRange(1:11)), x)
+    @test_throws ErrorException validate(FactorisationSpecEntry(:x, 1:11), x)
+
+    # FactorisationSpec
+
+    names = Set([ :x, :z, :y ])
+    vardict = Dict(:x => x, :z => z, :y => y)
+
+    @test validate(FactorisationSpec((FactorisationSpecEntry(:x, nothing), FactorisationSpecEntry(:y, nothing))), vardict, names)
+    @test_throws ErrorException validate(FactorisationSpec((FactorisationSpecEntry(:x, nothing), FactorisationSpecEntry(:x, nothing))), vardict, names)
+    @test_throws ErrorException validate(FactorisationSpec((FactorisationSpecEntry(:x, nothing), FactorisationSpecEntry(:r, nothing))), vardict, names)
 end
 
 @testset "hash" begin 

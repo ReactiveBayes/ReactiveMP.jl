@@ -21,6 +21,7 @@ struct FactorisationSpecEntry{I}
 end
 
 name(entry::FactorisationSpecEntry) = entry.symbol
+getindex(entry::FactorisationSpecEntry) = entry.index
 
 Base.show(io::IO, entry::FactorisationSpecEntry) = show(io, indextype(entry), entry)
 
@@ -73,11 +74,37 @@ function Base.merge!(::FactorisationSpecEntrySplitRanged, ::FactorisationSpecEnt
     return FactorisationSpecEntry(left.symbol, SplittedRange(first(left.index):last(right.index)))
 end
 
+function validate(entry::FactorisationSpecEntry, variable::AbstractVariable) 
+    (name(entry) === name(variable)) || error("`validate` expects name of factorisation specification entry to be the same as the `variable` name")
+    return validate(indextype(entry), entry, variable)
+end
+
+function validate(entry::FactorisationSpecEntry, variable::AbstractArray{ <: AbstractVariable }) 
+    (name(entry) === name(first(variable))) || error("`validate` expects name of factorisation specification entry to be the same as the `variable` name")
+    return validate(indextype(entry), entry, variable)
+end
+
+validate(::FactorisationSpecEntryExact, entry::FactorisationSpecEntry, variable::RandomVariable) = true
+validate(::FactorisationSpecEntryExact, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = true
+validate(::FactorisationSpecEntryIndexed, entry::FactorisationSpecEntry, variable::AbstractVariable) = error("Single variable $(name(variable)) cannot be indexed in factorisation specification entry $(entry)")
+validate(::FactorisationSpecEntryIndexed, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = true
+validate(::FactorisationSpecEntryRanged, entry::FactorisationSpecEntry, variable::AbstractVariable) = error("Single variable $(name(variable)) cannot be range-indexed in factorisation specification entry $(entry)")
+validate(::FactorisationSpecEntryRanged, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = (first(getindex(entry)) >= firstindex(variable) && last(getindex(entry)) <= lastindex(variable)) || error("Index out of bounds for variable $(name(first(variable))) in factorisation specification entry $(entry)")
+validate(::FactorisationSpecEntrySplitRanged, entry::FactorisationSpecEntry, variable::AbstractVariable) = error("Single variable $(name(variable)) cannot be splitrange-indexed in factorisation specification entry $(entry)")
+validate(::FactorisationSpecEntrySplitRanged, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = (first(getindex(entry)) >= firstindex(variable) && last(getindex(entry)) <= lastindex(variable)) || error("Index out of bounds for variable $(name(first(variable))) in factorisation specification entry $(entry)")
+
+validate(::FactorisationSpecEntryIndex, entry::FactorisationSpecEntry, variable::ConstVariable) = error("Constant $(name(variable)) should not be present in the factorisation constraints specification")
+validate(::FactorisationSpecEntryIndex, entry::FactorisationSpecEntry, variable::AbstractArray{ <: ConstVariable }) = error("Constant $(name(first(variable))) should not be present in the factorisation constraints specification")
+validate(::FactorisationSpecEntryIndex, entry::FactorisationSpecEntry, variable::DataVariable) = error("Data variable $(name(variable)) should not be present in the factorisation constraints specification")
+validate(::FactorisationSpecEntryIndex, entry::FactorisationSpecEntry, variable::AbstractArray{ <: DataVariable }) = error("Data variable $(name(first(variable))) should not be present in the factorisation constraints specification")
+
 # 
 
 struct FactorisationSpec{E}
     entries :: E
 end
+
+getentries(spec::FactorisationSpec) = spec.entries
 
 Base.show(io::IO, spec::FactorisationSpec) = begin print(io, "q("); join(io, spec.entries, ", "); print(io, ")") end
 
@@ -94,6 +121,20 @@ Base.merge!(left::NTuple{N, FactorisationSpec}, right::FactorisationSpec) where 
 Base.merge!(left::FactorisationSpec, right::NTuple{N, FactorisationSpec}) where N = TupleTools.setindex(right, merge!(left, right[begin]), firstindex(right))
 Base.merge!(left::NTuple{N1, FactorisationSpec}, right::NTuple{N2, FactorisationSpec}) where { N1, N2 } = TupleTools.insertat(left, lastindex(left), (merge!(left[end], right[begin]), right[begin + 1:end]...))
 
+function validate(spec::FactorisationSpec, vardict, names; allow_dots = true)
+    length(getentries(spec)) === length(Set(Iterators.map(name, getentries(spec)))) || error("Duplicate names in factorisation consstraint specification $(spec)")
+    for entry in getentries(spec)
+        if name(entry) ∉ names && !((allow_dots && name(entry) === :(..)))
+            error("Factorisation specification $(spec) has unknown variable name $(name(entry))")
+        elseif name(entry) !== :(..)
+            if !validate(entry, vardict[ name(entry) ])
+                return false
+            end
+        end
+    end
+    return true
+end
+
 # Mul 
 
 Base.:(*)(left::FactorisationSpec, right::FactorisationSpec)                    = (left, right)
@@ -107,6 +148,8 @@ struct FactorisationSpecList{S}
 
     FactorisationSpecList(specs::S) where { N, S <: NTuple{N, FactorisationSpec} } = new{S}(specs)
 end
+
+getentries(list::FactorisationSpecList) = list.specs
 
 Base.show(io::IO, node::FactorisationSpecList) = join(io, node.specs, " ")
 
