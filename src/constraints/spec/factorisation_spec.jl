@@ -102,12 +102,12 @@ Base.:(*)(left::FactorisationSpec, right::NTuple{N, FactorisationSpec}) where N 
 Base.:(*)(left::NTuple{N1, FactorisationSpec}, right::NTuple{N2, FactorisationSpec}) where { N1, N2 } = (left..., right...)
 
 # `Node` here refers to a node in a tree, it has nothing to do with factor nodes
-struct FactorisationSpecNode{S}
-    childspec :: S
+struct FactorisationSpecList{S}
+    specs :: S
 
-    FactorisationSpecNode(childspec::S) where { N, S <: NTuple{N, FactorisationSpec} } = new{S}(childspec)
+    FactorisationSpecList(specs::S) where { N, S <: NTuple{N, FactorisationSpec} } = new{S}(specs)
 end
 
-Base.show(io::IO, node::FactorisationSpecNode) = join(io, node.childspec, " ")
+Base.show(io::IO, node::FactorisationSpecList) = join(io, node.specs, " ")
 
 ## ## 

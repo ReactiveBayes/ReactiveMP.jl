@@ -1,10 +1,19 @@
 
 import Base: show
 
-struct Constraints 
-    factorisation :: Dict{FactorisationSpec, FactorisationSpecNode}
+struct ConstraintsGenerator{F}
+    generator :: F
+end
 
-    Constraints() = new(Dict{FactorisationSpec, FactorisationSpecNode}())
+Base.show(io::IO, generator::ConstraintsGenerator) = print(io, "ConstraintsGenerator()")
+
+function (constraints::ConstraintsGenerator)(model)
+    factorisation = constraints.generator(model)
+    return Constraints(factorisation)
+end
+
+struct Constraints
+    factorisation :: Dict{FactorisationSpec, FactorisationSpecList}
 end
 
 function Base.show(io::IO, constraints::Constraints)
@@ -13,14 +22,13 @@ function Base.show(io::IO, constraints::Constraints)
     end
 end
 
-make_factorisation_spec_entry(constraints::Constraints, args...)                   = FactorisationSpecEntry(args...)
-make_factorisation_spec(constraints::Constraints, args::FactorisationSpecEntry...) = FactorisationSpec(args)
+function add_factorisation_node(factorisation::Dict{FactorisationSpec, FactorisationSpecList}, key::FactorisationSpec, entries::FactorisationSpec) 
+    return add_factorisation_node(factorisation, key, (entries, ))
+end
 
-add_factorisation_node(constraints::Constraints, key::FactorisationSpec, entries::FactorisationSpec) = add_factorisation_node(constraints, key, (entries, ))
-
-function add_factorisation_node(constraints::Constraints, key::FactorisationSpec, entries::NTuple{N, FactorisationSpec}) where N
-    !(haskey(constraints.factorisation, key)) || error("Factorisation spec for $(key) exists already.")
-    node = FactorisationSpecNode(entries)
-    constraints.factorisation[key] = node
-    return constraints
+function add_factorisation_node(factorisation::Dict{FactorisationSpec, FactorisationSpecList}, key::FactorisationSpec, entries::NTuple{N, FactorisationSpec}) where N
+    !(haskey(factorisation, key)) || error("Factorisation spec for $(key) exists already.")
+    node = FactorisationSpecList(entries)
+    factorisation[key] = node
+    return factorisation
 end
