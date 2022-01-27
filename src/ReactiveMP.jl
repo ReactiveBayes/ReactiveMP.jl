@@ -131,6 +131,7 @@ include("constraints/spec/factorisation_spec.jl")
 include("constraints/spec/spec.jl")
 
 include("model.jl")
+include("utils/inference.jl")
 
 include("fixes.jl")
 
