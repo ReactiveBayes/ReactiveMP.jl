@@ -87,7 +87,13 @@ getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
 getvardict(model::Model)  = model.vardict
 
-getindex(model::Model, symbol::Symbol) = getindex(getvardict(model), symbol)
+function getindex(model::Model, symbol::Symbol) 
+    vardict = getvardict(model)
+    if !haskey(vardict, symbol)
+        error("Model has no variable/variables named $(symbol).")
+    end
+    return getindex(getvardict(model), symbol)
+end
 
 add!(vardict::Dict, name::Symbol, entity) = vardict[name] = entity
 
