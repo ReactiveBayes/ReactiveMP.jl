@@ -128,8 +128,8 @@ function Base.merge!(left::FactorisationSpec, right::FactorisationSpec)
         if TupleTools.prod(tuple(Iterators.map((l, r) -> name(l) === name(r), left.entries, right.entries)...))
             entries = tuple(Iterators.map((l, r) -> merge!(l, r), left.entries, right.entries)...)
             if length(entries) > 1
-                TupleTools.prod(TupleTools.diff(map(firstindex, entries))) === 0 || error("Cannot merge factorisation specifications $(left) and $(right). First indices do not match on the left hand side of the expression and on the firght hand side.")
-                TupleTools.prod(TupleTools.diff(map(lastindex, entries))) === 0 || error("Cannot merge factorisation specifications $(left) and $(right). Last indices do not match on the left hand side of the expression and on the firght hand side.")
+                lendiffs = map(lastindex, entries) .- map(firstindex, entries)
+                TupleTools.prod(TupleTools.diff(lendiffs)) === 0 || error("Cannot merge factorisation specifications $(left) and $(right). Indices do not match by their `diff` on the left hand side of the expression and on the firght hand side.")
             end
             return FactorisationSpec(entries)
         end
