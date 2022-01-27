@@ -23,6 +23,21 @@ end
 name(entry::FactorisationSpecEntry) = entry.symbol
 getindex(entry::FactorisationSpecEntry) = entry.index
 
+firstindex(entry::FactorisationSpecEntry) = firstindex(indextype(entry), entry)
+lastindex(entry::FactorisationSpecEntry)  = lastindex(indextype(entry), entry)
+
+firstindex(::FactorisationSpecEntryExact, entry::FactorisationSpecEntry) = typemin(Int64)
+lastindex(::FactorisationSpecEntryExact, entry::FactorisationSpecEntry)  = typemax(Int64)
+
+firstindex(::FactorisationSpecEntryIndexed, entry::FactorisationSpecEntry) = getindex(entry)
+lastindex(::FactorisationSpecEntryIndexed, entry::FactorisationSpecEntry)  = getindex(entry)
+
+firstindex(::FactorisationSpecEntryRanged, entry::FactorisationSpecEntry) = first(getindex(entry))
+lastindex(::FactorisationSpecEntryRanged, entry::FactorisationSpecEntry)  = last(getindex(entry))
+
+firstindex(::FactorisationSpecEntrySplitRanged, entry::FactorisationSpecEntry) = first(getindex(entry))
+lastindex(::FactorisationSpecEntrySplitRanged, entry::FactorisationSpecEntry)  = last(getindex(entry))
+
 Base.show(io::IO, entry::FactorisationSpecEntry) = show(io, indextype(entry), entry)
 
 Base.show(io, ::FactorisationSpecEntryExact, entry::FactorisationSpecEntry) = print(io, entry.symbol)
@@ -89,9 +104,9 @@ validate(::FactorisationSpecEntryExact, entry::FactorisationSpecEntry, variable:
 validate(::FactorisationSpecEntryIndexed, entry::FactorisationSpecEntry, variable::AbstractVariable) = error("Single variable $(name(variable)) cannot be indexed in factorisation specification entry $(entry)")
 validate(::FactorisationSpecEntryIndexed, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = true
 validate(::FactorisationSpecEntryRanged, entry::FactorisationSpecEntry, variable::AbstractVariable) = error("Single variable $(name(variable)) cannot be range-indexed in factorisation specification entry $(entry)")
-validate(::FactorisationSpecEntryRanged, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = (first(getindex(entry)) >= firstindex(variable) && last(getindex(entry)) <= lastindex(variable)) || error("Index out of bounds for variable $(name(first(variable))) in factorisation specification entry $(entry)")
+validate(::FactorisationSpecEntryRanged, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = (firstindex(entry) >= firstindex(variable) && lastindex(entry) <= lastindex(variable)) || error("Index out of bounds for variable $(name(first(variable))) in factorisation specification entry $(entry)")
 validate(::FactorisationSpecEntrySplitRanged, entry::FactorisationSpecEntry, variable::AbstractVariable) = error("Single variable $(name(variable)) cannot be splitrange-indexed in factorisation specification entry $(entry)")
-validate(::FactorisationSpecEntrySplitRanged, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = (first(getindex(entry)) >= firstindex(variable) && last(getindex(entry)) <= lastindex(variable)) || error("Index out of bounds for variable $(name(first(variable))) in factorisation specification entry $(entry)")
+validate(::FactorisationSpecEntrySplitRanged, entry::FactorisationSpecEntry, variable::AbstractArray{ <: RandomVariable }) = (firstindex(entry) >= firstindex(variable) && lastindex(entry) <= lastindex(variable)) || error("Index out of bounds for variable $(name(first(variable))) in factorisation specification entry $(entry)")
 
 validate(::FactorisationSpecEntryIndex, entry::FactorisationSpecEntry, variable::ConstVariable) = error("Constant $(name(variable)) should not be present in the factorisation constraints specification")
 validate(::FactorisationSpecEntryIndex, entry::FactorisationSpecEntry, variable::AbstractArray{ <: ConstVariable }) = error("Constant $(name(first(variable))) should not be present in the factorisation constraints specification")
@@ -111,7 +126,12 @@ Base.show(io::IO, spec::FactorisationSpec) = begin print(io, "q("); join(io, spe
 function Base.merge!(left::FactorisationSpec, right::FactorisationSpec)
     if length(left.entries) == length(right.entries)
         if TupleTools.prod(tuple(Iterators.map((l, r) -> name(l) === name(r), left.entries, right.entries)...))
-            return FactorisationSpec(tuple(Iterators.map((l, r) -> merge!(l, r), left.entries, right.entries)...))
+            entries = tuple(Iterators.map((l, r) -> merge!(l, r), left.entries, right.entries)...)
+            if length(entries) > 1
+                TupleTools.prod(TupleTools.diff(map(firstindex, entries))) === 0 || error("Cannot merge factorisation specifications $(left) and $(right). First indices do not match on the left hand side of the expression and on the firght hand side.")
+                TupleTools.prod(TupleTools.diff(map(lastindex, entries))) === 0 || error("Cannot merge factorisation specifications $(left) and $(right). Last indices do not match on the left hand side of the expression and on the firght hand side.")
+            end
+            return FactorisationSpec(entries)
         end
     end
     error("Cannot merge factorisation specifications $(left) and $(right)")

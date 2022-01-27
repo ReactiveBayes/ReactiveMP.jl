@@ -60,6 +60,26 @@ end
     @test_throws ErrorException merge!(FactorisationSpec(( FactorisationSpecEntry(:x, 1), FactorisationSpecEntry(:s, 1) )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, 4) )))
 end
 
+@testset "fistindex/lastindex" begin 
+    @test firstindex(FactorisationSpecEntry(:x, nothing)) === typemin(Int64)
+    @test lastindex(FactorisationSpecEntry(:x, nothing)) === typemax(Int64)
+
+    @test firstindex(FactorisationSpecEntry(:x, 1)) === 1
+    @test lastindex(FactorisationSpecEntry(:x, 1)) === 1
+    @test firstindex(FactorisationSpecEntry(:x, 2)) === 2
+    @test lastindex(FactorisationSpecEntry(:x, 2)) === 2
+
+    @test firstindex(FactorisationSpecEntry(:x, 2:10)) === 2
+    @test lastindex(FactorisationSpecEntry(:x, 2:10)) === 10
+    @test firstindex(FactorisationSpecEntry(:x, 1:5)) === 1
+    @test lastindex(FactorisationSpecEntry(:x, 1:5)) === 5
+
+    @test firstindex(FactorisationSpecEntry(:x, SplittedRange(2:10))) === 2
+    @test lastindex(FactorisationSpecEntry(:x, SplittedRange(2:10))) === 10
+    @test firstindex(FactorisationSpecEntry(:x, SplittedRange(1:5))) === 1
+    @test lastindex(FactorisationSpecEntry(:x, SplittedRange(1:5))) === 5
+end
+
 @testset "validate" begin
     x = randomvar(:x, 10)
     z = randomvar(:z, 10, 10)
