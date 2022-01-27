@@ -119,6 +119,9 @@ struct FactorisationSpec{E}
     entries :: E
 end
 
+# Corresponds to `q(..)`
+const RootFactorisationSpec = FactorisationSpec((FactorisationSpecEntry(:.., nothing),))
+
 getentries(spec::FactorisationSpec) = spec.entries
 
 Base.show(io::IO, spec::FactorisationSpec) = begin print(io, "q("); join(io, spec.entries, ", "); print(io, ")") end

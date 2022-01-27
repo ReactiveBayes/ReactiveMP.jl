@@ -10,6 +10,9 @@ Base.show(io::IO, generator::ConstraintsGenerator) = print(io, "ConstraintsGener
 function (constraints::ConstraintsGenerator)(model)
     factorisation = constraints.generator(model)
 
+    # Check here that root exists
+    haskey(factorisation, RootFactorisationSpec) || error("Factorisation constraints specification must has `q(..) = ` expression as a root expression.")
+
     vardict = getvardict(model)
     names   = keys(getvardict(model))
 
@@ -20,7 +23,14 @@ function (constraints::ConstraintsGenerator)(model)
         # Next check the same but for all entries on RHS
         foreach(entry -> validate(entry, vardict, names, allow_dots = false), getentries(list))
         # Next, we check that LHS and RHS names matched and they're indices match too and if indices did intersect
-        for spec_entry in getentries(spec)
+        spec_entries = getentries(spec)
+        # Here in case of `q(..)` we replace lhs with `q(args...)` where args are names from right expression
+        rhs_check_entries = if length(spec_entries) === 1 && name(first(spec_entries)) === :(..)
+            map(e -> FactorisationSpecEntry(name(e), nothing), TupleTools.flatten(map(getentries, getentries(list))))
+        else 
+            spec_entries
+        end
+        for spec_entry in rhs_check_entries
             list_entries  = TupleTools.flatten(map(getentries, getentries(list)))
             spec_name     = name(spec_entry)
             if spec_name !== :(..)
@@ -53,6 +63,26 @@ function (constraints::ConstraintsGenerator)(model)
                 end
             end
         end
+    end
+
+    # Check here that all factorisation specification paths are used and `error` if some is unused
+    root = factorisation[ RootFactorisationSpec ]
+    used = Set{FactorisationSpec}()
+
+    function __util_step_into(used::Set, factorisation::Dict, entries::Tuple)
+        for entry in entries
+            if haskey(factorisation, entry)
+                push!(used, entry)
+                __util_step_into(used, factorisation, getentries(factorisation[ entry ]))
+            end
+        end
+    end
+
+    __util_step_into(used, factorisation, getentries(root))
+
+    unused = setdiff(keys(factorisation), used, (RootFactorisationSpec, ))
+    if length(unused) !== 0
+        error("Unused factorisation specification found: $(first(unused))")
     end
 
     return Constraints(factorisation)
