@@ -24,17 +24,17 @@ function (constraints::ConstraintsGenerator)(model)
         foreach(entry -> validate(entry, vardict, names, allow_dots = false), getentries(list))
         # Next, we check that LHS and RHS names matched and they're indices match too and if indices did intersect
         spec_entries = getentries(spec)
+        flat_list = TupleTools.flatten(map(getentries, getentries(list)))
         # Here in case of `q(..)` we replace lhs with `q(args...)` where args are names from right expression
         rhs_check_entries = if length(spec_entries) === 1 && name(first(spec_entries)) === :(..)
-            map(e -> FactorisationSpecEntry(name(e), nothing), TupleTools.flatten(map(getentries, getentries(list))))
+            Set(map(e -> FactorisationSpecEntry(name(e), nothing), flat_list))
         else 
             spec_entries
         end
         for spec_entry in rhs_check_entries
-            list_entries  = TupleTools.flatten(map(getentries, getentries(list)))
             spec_name     = name(spec_entry)
             if spec_name !== :(..)
-                filtered_list = Iterators.filter(entry -> name(entry) === spec_name, list_entries)
+                filtered_list = Iterators.filter(entry -> name(entry) === spec_name, flat_list)
                 processed = false # `processed` = false means that there are no variables with the same name on the LHS
                 maxindex = typemin(Int64)
                 minindex = typemax(Int64)
