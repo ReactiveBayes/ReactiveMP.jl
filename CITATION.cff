@@ -1,0 +1,50 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  Reactive Message Passing for Scalable Bayesian
+  Inference
+message: Please cite this research as below.
+type: software
+authors:
+  - given-names: Dmitry
+    family-names: Bagaev
+    email: d.v.bagaev@tue.nl
+    orcid: 'https://orcid.org/0000-0001-9655-7986'
+    affiliation: Eindhoven University of Technology Eindhoven
+  - given-names: Bert
+    name-particle: de
+    family-names: Vries
+    email: bert.de.vries@tue.nl
+    affiliation: Eindhoven University of Technology Eindhoven
+    orcid: 'https://orcid.org/0000-0003-0839-174X'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.5913617
+    description: >-
+      The versioned DOI for version 1.3.1 of the
+      work.
+  - type: url
+    value: >-
+      https://github.com/biaslab/ReactiveMP.jl/releases/tag/v1.3.1
+    description: The GitHub release URL of tag 1.3.1
+  - type: doi
+    value: 10.21105/jcon.00091
+    description: The JuliaCon2021 Proceedings DOI of the work.
+preferred-citation:
+  identifiers:
+    - type: other
+      value: "arXiv:2112.13251"
+      description: The ArXiv preprint of the paper
+repository-code: 'https://github.com/biaslab/ReactiveMP.jl'
+keywords:
+  - Bayesian Inference
+  - Factor Graphs
+  - Message Passing
+  - Reactive Programming
+  - Variational Inference
+license: MIT
+commit: a943ccffb16b26b7c6706abae310513dfa6c648e
+version: 1.3.1
+date-released: '2021-01-28'
