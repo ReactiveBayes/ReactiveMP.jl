@@ -5,7 +5,7 @@ struct ConstraintsGenerator{F}
     generator :: F
 end
 
-Base.show(io::IO, generator::ConstraintsGenerator) = print(io, "ConstraintsGenerator()")
+Base.show(io::IO, ::ConstraintsGenerator) = print(io, "ConstraintsGenerator()")
 
 function (constraints::ConstraintsGenerator)(model)
     factorisation = constraints.generator(model)
@@ -71,7 +71,9 @@ function (constraints::ConstraintsGenerator)(model)
 
     function __util_step_into(used::Set, factorisation::Dict, entries::Tuple)
         for entry in entries
-            if haskey(factorisation, entry)
+            if entry ∈ used
+                error("Factorisation constraint specification $(entry) has been used twice.")
+            elseif haskey(factorisation, entry)
                 push!(used, entry)
                 __util_step_into(used, factorisation, getentries(factorisation[ entry ]))
             end
