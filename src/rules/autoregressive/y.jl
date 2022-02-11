@@ -16,3 +16,11 @@
     
     return convert(promote_variate_type(getvform(meta), NormalMeanVariance), my, Vy)
 end
+
+@rule AR(:y, Marginalisation) (q_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
+    mA = as_companion_matrix(mean(q_θ))
+
+    mV = ar_transition(getvform(meta), getorder(meta), mean(q_γ))
+
+    return convert(promote_variate_type(getvform(meta), NormalMeanVariance), mA*mean(q_x), mV)
+end
