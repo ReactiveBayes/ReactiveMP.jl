@@ -21,7 +21,7 @@
 end
 
 
-@rule AR(:γ, Marginalisation) (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, meta::ARMeta) = begin
+@rule AR(:γ, Marginalisation) (q_y::Any, q_x::Any, q_θ::Any, meta::ARMeta) = begin
 
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)

@@ -1,5 +1,5 @@
 
-@rule AR(:θ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
+@rule AR(:θ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any, meta::ARMeta) = begin
     order = getorder(meta)
     F     = getvform(meta)
 
@@ -23,7 +23,7 @@
     return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ, W)
 end
 
-@rule AR(:θ, Marginalisation) (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
+@rule AR(:θ, Marginalisation) (q_y::Any, q_x::Any, q_γ::Any, meta::ARMeta) = begin
     order = getorder(meta)
 
     mx, Vx = mean_cov(q_x)
