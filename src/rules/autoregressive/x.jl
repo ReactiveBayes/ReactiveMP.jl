@@ -1,5 +1,5 @@
 
-@rule AR(:x, Marginalisation) (m_y::Any, q_θ::NormalDistributionsFamily, q_γ::Any, meta::ARMeta) = begin
+@rule AR(:x, Marginalisation) (m_y::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::Any, meta::ARMeta) = begin
     mθ, Vθ = mean_cov(q_θ)
     my, Vy = mean_cov(m_y)
 
@@ -16,7 +16,7 @@
     return convert(promote_variate_type(getvform(meta), NormalWeightedMeanPrecision), ξ, W)
 end
 
-@rule AR(:x, Marginalisation) (q_y::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::Any, meta::ARMeta) = begin
+@rule AR(:x, Marginalisation) (q_y::Any, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
     
     mθ, Vθ = mean_cov(q_θ)
     mγ = mean(q_γ)
