@@ -1,5 +1,5 @@
 
-@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass) = PointMass(mean(m_in1) * mean(m_in2))
+@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass) = PointMass(mean(m_A) \ mean(m_out))
 
 @rule typeof(*)(:in, Marginalisation) (m_out::GammaDistributionsFamily, m_A::PointMass{ <: Real }) = begin 
     return GammaShapeRate(shape(m_out), rate(m_out) * mean(m_A))

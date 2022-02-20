@@ -84,6 +84,7 @@ end
     addtests("test_math.jl")
     addtests("test_helpers.jl")
 
+    addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
 
     addtests("test_distributions.jl")
