@@ -84,6 +84,7 @@ end
     addtests("test_math.jl")
     addtests("test_helpers.jl")
 
+    addtests("constraints/spec/test_spec.jl")
     addtests("constraints/spec/test_factorisation_spec.jl")
     addtests("constraints/prod/test_prod_final.jl")
 
