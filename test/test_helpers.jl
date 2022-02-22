@@ -3,9 +3,18 @@ module ReactiveMPTestingHelpers
 using Test
 using ReactiveMP
 
+import ReactiveMP: SkipIndexIterator, skipindex
 import ReactiveMP: deep_eltype
+import ReactiveMP: InfCountingReal, ∞
 
 @testset "Helpers" begin
+
+    @testset "SkipIndexIterator" begin  
+        s = skipindex(1:3, 2)
+        @test typeof(s) <: SkipIndexIterator
+        @test collect(s) == [ 1, 3 ]
+        @test collect(skipindex(s, 1)) == [ 3 ]
+    end
 
     @testset "deep_eltype" begin
 
@@ -30,6 +39,19 @@ import ReactiveMP: deep_eltype
 
         end
 
+    end
+
+    @testset "InfCountingReal" begin 
+        r = InfCountingReal(0.0, 0)
+        @test float(r) ≈ 0.0
+        @test float(r + 1) ≈ 1.0
+        @test float(1 + r) ≈ 1.0
+        @test float(r - 1) ≈ -1.0
+        @test float(1 - r) ≈ 1.0
+        @test float(r - 1 + ∞) ≈ Inf
+        @test float(1 - r + ∞) ≈ Inf
+        @test float(r - 1 + ∞ - ∞) ≈ -1.0
+        @test float(1 - r + ∞ - ∞) ≈ 1.0
     end
     
 end
