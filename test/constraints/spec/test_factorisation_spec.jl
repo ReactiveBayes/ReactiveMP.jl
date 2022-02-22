@@ -3,141 +3,52 @@ module ReactiveMPFactorisationSpecTest
 using Test
 using ReactiveMP 
 
-import ReactiveMP: FactorisationSpecEntryIndex
-import ReactiveMP: FactorisationSpecEntryExact, FactorisationSpecEntryIndexed, FactorisationSpecEntryRanged, FactorisationSpecEntrySplitRanged
-import ReactiveMP: SplittedRange
-import ReactiveMP: FactorisationSpecEntry, FactorisationSpec, FactorisationSpecList
-import ReactiveMP: indextype, validate
+import ReactiveMP: CombinedRange, SplittedRange, is_splitted
+import ReactiveMP: __as_unit_range
 
-@testset "show" begin 
-    @test repr(FactorisationSpecEntry(:z, nothing)) == "z"
-    @test repr(FactorisationSpecEntry(:x, nothing)) == "x"
-    @test repr(FactorisationSpecEntry(:z, 1)) == "z[1]"
-    @test repr(FactorisationSpecEntry(:x, 3)) == "x[3]"
-    @test repr(FactorisationSpecEntry(:z, 1:4)) == "z[1:4]"
-    @test repr(FactorisationSpecEntry(:x, 6:9)) == "x[6:9]"
-    @test repr(FactorisationSpecEntry(:z, SplittedRange(1:4))) == "z[1]..z[4]"
-    @test repr(FactorisationSpecEntry(:x, SplittedRange(6:9))) == "x[6]..x[9]"
+@testset "FactorisationSpec" begin 
 
-    @test repr(FactorisationSpec(( FactorisationSpecEntry(:z, 1), FactorisationSpecEntry(:s, 1) ))) == "q(z[1], s[1])"
-    @test repr(FactorisationSpec(( FactorisationSpecEntry(:z, 3), FactorisationSpecEntry(:s, 1) ))) == "q(z[3], s[1])"
-    @test repr(FactorisationSpec(( FactorisationSpecEntry(:z, 3), FactorisationSpecEntry(:s, nothing) ))) == "q(z[3], s)"
-    @test repr(FactorisationSpec(( FactorisationSpecEntry(:z, 1:2), FactorisationSpecEntry(:s, 1:2) ))) == "q(z[1:2], s[1:2])"
-    @test repr(FactorisationSpec(( FactorisationSpecEntry(:z, 1:2), FactorisationSpecEntry(:s, 1:2) ))) == "q(z[1:2], s[1:2])"
-    @test repr(FactorisationSpec(( FactorisationSpecEntry(:z, SplittedRange(1:2)), FactorisationSpecEntry(:s, nothing) ))) == "q(z[1]..z[2], s)"
+    @testset "CombinedRange" begin 
+        for left in 1:3, right in 10:13
+            cr = CombinedRange(left, right)
+
+            @test firstindex(cr) === left
+            @test lastindex(cr)  === right
+            @test !is_splitted(cr)
+            
+            for i in left:right
+                @test i ∈ cr
+                @test !((i + lastindex(cr) + 1) ∈ cr)
+            end
+        end
+    end
+
+    @testset "SplittedRange" begin 
+        for left in 1:3, right in 10:13
+            cr = SplittedRange(left, right)
+
+            @test firstindex(cr) === left
+            @test lastindex(cr)  === right
+            @test is_splitted(cr)
+            
+            for i in left:right
+                @test i ∈ cr
+                @test !((i + lastindex(cr) + 1) ∈ cr)
+            end
+        end
+    end
+
+    @testset "__as_unit_range" begin    
+        for i in 1:3
+            __as_unit_range(i) === i:i
+        end
+
+        for i in 1:3
+            __as_unit_range(CombinedRange(i, i + 1)) === (i):(i + 1)
+            __as_unit_range(SplittedRange(i, i + 1)) === (i):(i + 1)
+        end
+    end
+
 end
-
-@testset "indextype" begin 
-    
-    @test indextype(FactorisationSpecEntry(:z, nothing)) === FactorisationSpecEntryExact()
-    @test indextype(FactorisationSpecEntry(:z, 1)) === FactorisationSpecEntryIndexed()
-    @test indextype(FactorisationSpecEntry(:z, 1:2)) === FactorisationSpecEntryRanged()
-    @test indextype(FactorisationSpecEntry(:z, SplittedRange(1:2))) === FactorisationSpecEntrySplitRanged()
-
-end
-
-@testset "merge!" begin 
-
-    @test_throws ErrorException merge!(FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:s, nothing))
-    @test merge!(FactorisationSpecEntry(:s, nothing), FactorisationSpecEntry(:s, nothing)) == FactorisationSpecEntry(:s, nothing)
-    @test_throws ErrorException merge!(FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:z, 1))
-    @test_throws ErrorException merge!(FactorisationSpecEntry(:z, 1), FactorisationSpecEntry(:z, nothing))
-    @test_throws ErrorException merge!(FactorisationSpecEntry(:z, 1), FactorisationSpecEntry(:s, 2))
-    @test merge!(FactorisationSpecEntry(:z, 1), FactorisationSpecEntry(:z, 3)) == FactorisationSpecEntry(:z, SplittedRange(1:3))
-    @test_throws AssertionError merge!(FactorisationSpecEntry(:z, 3), FactorisationSpecEntry(:z, 1)) == FactorisationSpecEntry(:z, 1:1)
-    @test merge!(FactorisationSpecEntry(:z, 1),FactorisationSpecEntry(:z, SplittedRange(2:4)),) == FactorisationSpecEntry(:z, SplittedRange(1:4))
-    @test merge!(FactorisationSpecEntry(:z, SplittedRange(1:5)),FactorisationSpecEntry(:z, 8),) == FactorisationSpecEntry(:z, SplittedRange(1:8))
-    @test merge!(FactorisationSpecEntry(:z, SplittedRange(1:5)),FactorisationSpecEntry(:z, SplittedRange(6:10)),) == FactorisationSpecEntry(:z, SplittedRange(1:10))
-    @test_throws AssertionError merge!(FactorisationSpecEntry(:z, 10),FactorisationSpecEntry(:z, SplittedRange(2:4)),) == FactorisationSpecEntry(:z, SplittedRange(1:4))
-    @test_throws AssertionError merge!(FactorisationSpecEntry(:z, SplittedRange(1:10)),FactorisationSpecEntry(:z, 8),) == FactorisationSpecEntry(:z, SplittedRange(1:8))
-    @test_throws AssertionError merge!(FactorisationSpecEntry(:z, SplittedRange(1:10)),FactorisationSpecEntry(:z, SplittedRange(6:10)),) == FactorisationSpecEntry(:z, SplittedRange(1:10))
-
-    @test merge!(FactorisationSpec(( FactorisationSpecEntry(:z, 1), FactorisationSpecEntry(:s, 1) )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, 4) ))) == FactorisationSpec(( FactorisationSpecEntry(:z, SplittedRange(1:4)), FactorisationSpecEntry(:s, SplittedRange(1:4)) ))
-    @test_throws ErrorException merge!(FactorisationSpec(( FactorisationSpecEntry(:s, 1), FactorisationSpecEntry(:z, 1) )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, 4) ))) == FactorisationSpec(( FactorisationSpecEntry(:s, SplittedRange(1:4)), FactorisationSpecEntry(:z, SplittedRange(1:4)) ))
-    @test merge!(FactorisationSpec(( FactorisationSpecEntry(:s, nothing), FactorisationSpecEntry(:z, 1) )), FactorisationSpec(( FactorisationSpecEntry(:s, nothing), FactorisationSpecEntry(:z, 4) ))) == FactorisationSpec(( FactorisationSpecEntry(:s, nothing), FactorisationSpecEntry(:z, SplittedRange(1:4)) ))
-
-    @test_throws ErrorException merge!(FactorisationSpec(( FactorisationSpecEntry(:z, 1), )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, nothing) ))) 
-    @test_throws ErrorException merge!(FactorisationSpec(( FactorisationSpecEntry(:x, 1), FactorisationSpecEntry(:s, 1) )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, 4) )))
-end
-
-@testset "fistindex/lastindex" begin 
-    @test firstindex(FactorisationSpecEntry(:x, nothing)) === typemin(Int64)
-    @test lastindex(FactorisationSpecEntry(:x, nothing)) === typemax(Int64)
-
-    @test firstindex(FactorisationSpecEntry(:x, 1)) === 1
-    @test lastindex(FactorisationSpecEntry(:x, 1)) === 1
-    @test firstindex(FactorisationSpecEntry(:x, 2)) === 2
-    @test lastindex(FactorisationSpecEntry(:x, 2)) === 2
-
-    @test firstindex(FactorisationSpecEntry(:x, 2:10)) === 2
-    @test lastindex(FactorisationSpecEntry(:x, 2:10)) === 10
-    @test firstindex(FactorisationSpecEntry(:x, 1:5)) === 1
-    @test lastindex(FactorisationSpecEntry(:x, 1:5)) === 5
-
-    @test firstindex(FactorisationSpecEntry(:x, SplittedRange(2:10))) === 2
-    @test lastindex(FactorisationSpecEntry(:x, SplittedRange(2:10))) === 10
-    @test firstindex(FactorisationSpecEntry(:x, SplittedRange(1:5))) === 1
-    @test lastindex(FactorisationSpecEntry(:x, SplittedRange(1:5))) === 5
-end
-
-@testset "validate" begin
-    x = randomvar(:x, 10)
-    z = randomvar(:z, 10, 10)
-    y = randomvar(:y)
-
-    @test validate(FactorisationSpecEntry(:x, nothing), x)
-    @test validate(FactorisationSpecEntry(:z, nothing), z)
-    @test validate(FactorisationSpecEntry(:x, 1), x)
-    @test validate(FactorisationSpecEntry(:x, 1:10), x)
-    @test validate(FactorisationSpecEntry(:x, SplittedRange(1:10)), x)
-    @test validate(FactorisationSpecEntry(:z, 1:10), z)
-    @test validate(FactorisationSpecEntry(:z, firstindex(z):lastindex(z)), z)
-    @test_throws ErrorException validate(FactorisationSpecEntry(:y, 1), y)
-    @test_throws ErrorException validate(FactorisationSpecEntry(:y, 1:10), y)
-    @test_throws ErrorException validate(FactorisationSpecEntry(:y, SplittedRange(1:10)), y)
-    @test_throws ErrorException validate(FactorisationSpecEntry(:y, nothing), x)
-    @test_throws ErrorException validate(FactorisationSpecEntry(:x, nothing), y)
-    @test_throws ErrorException validate(FactorisationSpecEntry(:x, SplittedRange(1:11)), x)
-    @test_throws ErrorException validate(FactorisationSpecEntry(:x, 1:11), x)
-
-    # FactorisationSpec
-
-    names = Set([ :x, :z, :y ])
-    vardict = Dict(:x => x, :z => z, :y => y)
-
-    @test validate(FactorisationSpec((FactorisationSpecEntry(:x, nothing), FactorisationSpecEntry(:y, nothing))), vardict, names)
-    @test_throws ErrorException validate(FactorisationSpec((FactorisationSpecEntry(:x, nothing), FactorisationSpecEntry(:x, nothing))), vardict, names)
-    @test_throws ErrorException validate(FactorisationSpec((FactorisationSpecEntry(:x, nothing), FactorisationSpecEntry(:r, nothing))), vardict, names)
-end
-
-@testset "hash" begin 
-    @test hash(SplittedRange(1:2)) === hash(SplittedRange(1:2))
-    @test hash(SplittedRange(1:2)) != hash(1:2)
-    @test hash(FactorisationSpecEntry(:z, 1:2)) === hash(FactorisationSpecEntry(:z, 1:2))
-    @test hash(FactorisationSpecEntry(:z, 1:3)) != hash(FactorisationSpecEntry(:z, 1:2))
-    @test hash(FactorisationSpecEntry(:s, 1:2)) != hash(FactorisationSpecEntry(:z, 1:2))
-    @test hash(FactorisationSpecEntry(:z, SplittedRange(1:2))) != hash(FactorisationSpecEntry(:z, 1:2))
-
-    @test hash(FactorisationSpec(( FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:s, nothing) ))) == hash(FactorisationSpec(( FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:s, nothing) )))
-    @test hash(FactorisationSpec(( FactorisationSpecEntry(:z, SplittedRange(1:2)), FactorisationSpecEntry(:s, SplittedRange(1:2)) ))) == hash(FactorisationSpec(( FactorisationSpecEntry(:z, SplittedRange(1:2)), FactorisationSpecEntry(:s, SplittedRange(1:2)) )))
-    @test hash(FactorisationSpec(( FactorisationSpecEntry(:z, SplittedRange(1:2)), FactorisationSpecEntry(:s, SplittedRange(1:2)) ))) != hash(FactorisationSpec(( FactorisationSpecEntry(:z, SplittedRange(1:3)), FactorisationSpecEntry(:s, SplittedRange(1:3)) )))
-    @test hash(FactorisationSpec(( FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:x, nothing) ))) != hash(FactorisationSpec(( FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:s, nothing) )))
-
-    testdict = Dict{FactorisationSpec, Any}()
-
-    entry1 = FactorisationSpec(( FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:s, nothing) ))
-    entry2 = FactorisationSpec(( FactorisationSpecEntry(:z, nothing), FactorisationSpecEntry(:s, nothing) ))
-    testdict[entry1] = 2
-
-    @test testdict[entry2] === 2
-
-    entry3 = merge!(FactorisationSpec(( FactorisationSpecEntry(:z, 1), FactorisationSpecEntry(:s, 1) )), FactorisationSpec(( FactorisationSpecEntry(:z, 4), FactorisationSpecEntry(:s, 4) ))) 
-    entry4 = FactorisationSpec(( FactorisationSpecEntry(:z, SplittedRange(1:4)), FactorisationSpecEntry(:s, SplittedRange(1:4)) ))
-
-    testdict[entry3] = 3
-    @test testdict[entry4] === 3
-end
-
-## 
 
 end
