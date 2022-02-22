@@ -22,3 +22,9 @@ ReactiveMP.∞
 ```@docs
 ReactiveMP.deep_eltype
 ```
+
+## [FunctionalIndex](@id lib-helpers-functional-index)
+
+```@docs
+ReactiveMP.FunctionalIndex
+```
