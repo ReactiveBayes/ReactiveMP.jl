@@ -50,6 +50,9 @@ function Base.show(io::IO, specification::ConstraintsSpecification)
     end
 end
 
+# TODO
+function get_factorisation_reference end
+
 """
     resolve_factorisation(expr::Expr, variables, constraints, model) 
 

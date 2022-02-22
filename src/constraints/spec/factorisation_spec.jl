@@ -133,9 +133,9 @@ __factorisation_split_merge_range(a::Int, b::Int)                         = Spli
 __factorisation_split_merge_range(a::FunctionalIndex, b::Int)             = SplittedRange(a, b)
 __factorisation_split_merge_range(a::Int, b::FunctionalIndex)             = SplittedRange(a, b)
 __factorisation_split_merge_range(a::FunctionalIndex, b::FunctionalIndex) = SplittedRange(a, b)
-__factorisation_split_merge_range(a::Any, b::Any)                         = error("Cannot merge $(a) and $(b) indexes in `__factorisation_split`")
+__factorisation_split_merge_range(a::Any, b::Any)                         = error("Cannot merge $(a) and $(b) indexes in `factorisation_split`")
 
-function __factorisation_split(left::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}}, right::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}})
+function factorisation_split(left::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}}, right::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}})
     left_last   = last(left)
     right_first = first(right)
     (getnames(left_last) === getnames(right_first)) || error("Cannot split $(left_last) and $(right_first). Names or their order does not match.")
@@ -169,24 +169,6 @@ __factorisation_specification_resolve_index(index::Integer, collection::Abstract
 __factorisation_specification_resolve_index(index::FunctionalIndex, collection::AbstractVector{ <: AbstractVariable }) = __factorisation_specification_resolve_index(index(collection)::Integer, collection)::Integer
 __factorisation_specification_resolve_index(index::CombinedRange, collection::AbstractVector{ <: AbstractVariable })   = CombinedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
 __factorisation_specification_resolve_index(index::SplittedRange, collection::AbstractVector{ <: AbstractVariable })   = SplittedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## Errors
 
