@@ -1,5 +1,6 @@
-import ProgressMeter
 export inference
+
+import ProgressMeter
 
 obtain_marginal(variable::AbstractVariable)                      = getmarginal(variable)
 obtain_marginal(variables::AbstractArray{ <: AbstractVariable }) = getmarginals(variables)
@@ -20,16 +21,54 @@ make_actor(::AbstractArray{ <: RandomVariable }, ::KeepEach) = keep(Vector{Margi
 make_actor(::RandomVariable, ::KeepLast)                     = error("Not implemented")
 make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepLast) = buffer(Marginal, length(x))
 
-struct ReturnStructure
-    posteriors
-    free_energy
+## Inference ensure update
+
+mutable struct MarginalHasBeenUpdated
+    updated :: Bool
+end
+
+__unset_updated!(updated::MarginalHasBeenUpdated) = updated.updated = false
+__set_updated!(updated::MarginalHasBeenUpdated)   = updated.updated = true
+
+# This creates a `tap` operator that will set the `updated` flag to true. 
+# Later on we check flags and `unset!` them after the `update!` procedure
+ensure_update(updated::MarginalHasBeenUpdated) = tap(_ -> __set_updated!(updated))
+
+## Extra error handling
+
+__inference_process_error(error) = rethrow(error)
+
+function __inference_process_error(err::StackOverflowError)
+    error("""
+        Stack overflow error occurred during the inference procedure. 
+        The dataset size might be causing this error. 
+        To circumvent this behavior, try using `limit_stack_depth` option when creating a model.
+    """)
+end
+##
+
+struct InferenceResult{P, F}
+    posteriors  :: P
+    free_energy :: F
+end
+
+function Base.getproperty(result::InferenceResult, property::Symbol)
+    if property === :free_energy && getfield(result, :free_energy) === nothing 
+        error("""
+        Bethe Free Energy has not been computed. 
+        Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
+        """)
+    else
+        return getfield(result, property)
+    end
+    return getfield(result, property)
 end
 
 function inference(; 
     # `model`: specifies a **callback** to create a model, may use whatever global parameters as it wants, required
-    model = () -> error("model keyword is required."), 
+    model, 
     # NamedTuple with data, required
-    data = nothing,
+    data,
     # NamedTuple with initial marginals, optional, defaults to empty
     initmarginals = nothing,
     # NamedTuple with initial messages, optional, defaults to empty
@@ -47,9 +86,9 @@ function inference(;
 
     _model, _ = model()
     vardict = ReactiveMP.getvardict(_model)
-
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
-    # `KeepEach` for each 
+    # `KeepEach` for each variable in a model, but DataVariables and ConstVariables are filtered out later on
+    # TODO: filter our temporary variables too
     ireturnvars = if returnvars === nothing 
         Dict(variable => KeepEach() for (variable, value) in vardict)
     else 
@@ -58,48 +97,68 @@ function inference(;
 
     # Second, for each entry we create an actor and we drop `nothing` 
     actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in ireturnvars)
+    actors = filter!(pair -> last(pair) !== nothing, actors)
 
-    subscriptions = Dict(variable => subscribe!(obtain_marginal(vardict[variable]), actor) for (variable, actor) in actors if actor !== nothing)
-    
-    fe_actor, fe_subscription = if free_energy
-        _fe_actor = ScoreActor()
-        _fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), _fe_actor)
-        (_fe_actor, _fe_subscription)
-    else
-        nothing, VoidTeardown()
-    end
-
-    if initmarginals !== nothing
-        for (variable, initvalue) in initmarginals
-            assign_marginal!(vardict[variable], initvalue)
+    updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, actor) in actors)
+    try 
+        subscriptions = Dict(variable => subscribe!(obtain_marginal(vardict[variable]) |> ensure_update(updates[variable]), actor) for (variable, actor) in actors)
+        
+        fe_actor, fe_subscription = if free_energy
+            _fe_actor = ScoreActor()
+            _fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), _fe_actor)
+            (_fe_actor, _fe_subscription)
+        else
+            nothing, VoidTeardown()
         end
-    end
 
-    if initmessages !== nothing
-        for (variable, initvalue) in initmessages
-            assign_message!(vardict[variable], initvalue)
+        if initmarginals !== nothing
+            for (variable, initvalue) in initmarginals
+                assign_marginal!(vardict[variable], initvalue)
+            end
         end
-    end
 
-    if isnothing(data) || isempty(data)
-        error("No data provided")
-    end
-    p = showprogress ? ProgressMeter.Progress(iterations) : nothing
-    for _ in 1:iterations
-        for (key, value) in data
-            update!(vardict[key], value)
+        if initmessages !== nothing
+            for (variable, initvalue) in initmessages
+                assign_message!(vardict[variable], initvalue)
+            end
         end
-        if !isnothing(p)
-            ProgressMeter.next!(p)
+
+        if isnothing(data) || isempty(data)
+            error("No data provided")
         end
-    end
+        p = showprogress ? ProgressMeter.Progress(iterations) : nothing
 
-    for (_, subscription) in subscriptions
-        unsubscribe!(subscription)
-    end
+        for _ in 1:iterations
+            for (key, value) in data
+                update!(vardict[key], value)
+            end
+            not_updated = filter((pair) -> !last(pair).updated, updates)
+            if length(not_updated) !== 0
+                names = join(map(first, collect(not_updated)), ", ")
+                error("""
+                Variables [ $(names) ] have not been updated after a single inference iteration. 
+                Therefore, make sure to initialize all required marginals and messages. See `initmarginals` and `initmessages` keyword arguments for the `inference` function. 
+                """)
+            end
+            for (_, update_flag) in updates
+                __unset_updated!(update_flag)
+            end
+            if !isnothing(p)
+                ProgressMeter.next!(p)
+            end
+        end
 
-    unsubscribe!(fe_subscription)
-    
-    # Todo return proper structure
-    return ReturnStructure(actors, fe_actor)
+        for (_, subscription) in subscriptions
+            unsubscribe!(subscription)
+        end
+
+        unsubscribe!(fe_subscription)
+
+        posterior_values = Dict(variable => getvalues(actor) for (variable, actor) in actors)
+        fe_values        = fe_actor !== nothing ? getvalues(fe_actor) : nothing
+
+        return InferenceResult(posterior_values, fe_values)
+    catch error
+        __inference_process_error(error)
+    end    
 end
