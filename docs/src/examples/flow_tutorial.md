@@ -442,7 +442,15 @@ end
 ```
 
 ```@example flow
-res = optimize(f, randn(nr_params(model)), LBFGS(), Optim.Options(store_trace = true, show_trace = true), autodiff=:forward)
+function optimize_model(f, model)
+    try
+        res = optimize(f, randn(nr_params(model)), LBFGS(), Optim.Options(store_trace = true, show_trace = true), autodiff=:forward)
+        return res
+    catch
+        return optimize_model(f, model)
+    end
+end
+res = optimize_model(f, model)
 nothing #hide
 ```
 
