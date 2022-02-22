@@ -39,14 +39,16 @@ end
 
 function randomvar(name::Symbol, dims::Vararg{Int}; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
     vars = Array{RandomVariable}(undef, dims)
+    size = axes(vars)
     @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = randomvar(name, VariableArray(i); pipeline = pipeline, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
+        vars[i] = randomvar(name, VariableArray(size, i); pipeline = pipeline, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
     end
     return vars
 end
 
 degree(randomvar::RandomVariable)              = length(randomvar.input_messages)
 name(randomvar::RandomVariable)                = randomvar.name
+proxy(randomvar::RandomVariable)               = nothing
 collection_type(randomvar::RandomVariable)     = randomvar.collection_type
 equality_chain(randomvar::RandomVariable)      = randomvar.equality_chain
 prod_constraint(randomvar::RandomVariable)     = randomvar.prod_constraint

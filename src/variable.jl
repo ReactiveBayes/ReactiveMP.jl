@@ -18,9 +18,14 @@ struct VariableVector <: AbstractVariableCollectionType
     index :: Int
 end
 
-struct VariableArray <: AbstractVariableCollectionType
-    index :: CartesianIndex
+struct VariableArray{S, I} <: AbstractVariableCollectionType
+    size  :: S
+    index :: I
 end
+
+linear_index(::VariableIndividual) = nothing
+linear_index(v::VariableVector)    = v.index
+linear_index(v::VariableArray)     = LinearIndices(v.size)[v.index]
 
 indexed_name(::VariableIndividual, name::Symbol) = string(name)
 indexed_name(seq::VariableVector, name::Symbol)  = string(name, "_", seq.index)
