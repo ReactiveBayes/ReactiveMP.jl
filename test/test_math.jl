@@ -15,9 +15,17 @@ using Random
         @test convert(Float64, tiny)  == 1e-12
         @test convert(BigFloat, tiny) == big"1e-24"
 
+        @test Float32(tiny) == 1f-6
+        @test Float64(tiny) == 1e-12
+        @test BigFloat(tiny) == big"1e-24"    
+
         @test convert(Float32, huge)  == 1f+6
         @test convert(Float64, huge)  == 1e+12
         @test convert(BigFloat, huge) == big"1e+24"
+
+        @test Float32(huge) == 1f+6
+        @test Float64(huge) == 1e+12
+        @test BigFloat(huge) == big"1e+24"
 
         @test @inferred clamp(1f0, tiny, huge)  == 1f0
         @test @inferred clamp(0f0, tiny, huge)  == 1f-6
