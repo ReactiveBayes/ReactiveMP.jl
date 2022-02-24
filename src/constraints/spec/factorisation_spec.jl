@@ -172,20 +172,34 @@ __factorisation_specification_resolve_index(index::SplittedRange, collection::Ab
 
 ##
 
-struct FactotisationReferenceProxyUnchecked end
-struct FactotisationReferenceProxyChecked end
+struct FactorisationReferenceProxyUnchecked end
+struct FactorisationReferenceProxyChecked end
 
+"""
+    get_factorisation_reference
+
+This function resolves variable that should be used for factorisation constraints resolution. The idea here is that random variables can be automatically created by the model specification 
+language and user might be unaware of them. Such variables also have some randomly generated names and cannot be used explicitly in constraints specification language. However, ReactiveMP.jl keeps 
+track of `proxy_variables`. During the first call of `get_factorisation_reference` we check if there are some proxy variables at all and:
+1. if not we simply return name and linear index of the current variable
+2. if yes we pass it futher to the `unchecked` version of the function 
+   2.1 `unchecked` version return immediatelly if there is only one proxy var (see bullet 1)
+   2.2 in case of multiple proxy vars we filter only `RandomVariable` and call `checked` version of the function 
+3. `checked` version of the function return immediatelly if there is only one proxy random variable left, if there are multuple proxy random vars we throw an error as this case is ambigous for factorisation constrains specification
+
+This function is a part of private API and should not be used explicitly.
+"""
 function get_factorisation_reference end
 
-get_factorisation_reference(var::AbstractVariable) = get_factorisation_reference(var, FactotisationReferenceProxyUnchecked(), proxy(var))
+get_factorisation_reference(var::AbstractVariable) = get_factorisation_reference(var, FactorisationReferenceProxyUnchecked(), proxy(var))
 
-get_factorisation_reference(var::AbstractVariable, ::Union{ FactotisationReferenceProxyChecked, FactotisationReferenceProxyUnchecked }, ::Nothing) = (name(var), linear_index(collection_type(var)))
+get_factorisation_reference(var::AbstractVariable, ::Union{ FactorisationReferenceProxyChecked, FactorisationReferenceProxyUnchecked }, ::Nothing) = (name(var), linear_index(collection_type(var)))
 
-get_factorisation_reference(var::AbstractVariable, ::FactotisationReferenceProxyUnchecked, proxy::Tuple{T}) where { T <: AbstractVariable } = get_factorisation_reference(first(proxy))
-get_factorisation_reference(var::AbstractVariable, ::FactotisationReferenceProxyUnchecked, proxy::Tuple)                                    = get_factorisation_reference(var, FactotisationReferenceProxyChecked(), filter(v -> v isa RandomVariable, proxy))
+get_factorisation_reference(var::AbstractVariable, ::FactorisationReferenceProxyUnchecked, proxy::Tuple{T}) where { T <: AbstractVariable } = get_factorisation_reference(first(proxy))
+get_factorisation_reference(var::AbstractVariable, ::FactorisationReferenceProxyUnchecked, proxy::Tuple)                                    = get_factorisation_reference(var, FactorisationReferenceProxyChecked(), filter(v -> v isa RandomVariable, proxy))
 
-get_factorisation_reference(::AbstractVariable, ::FactotisationReferenceProxyChecked, proxy::Tuple{T})   where { T <: AbstractVariable } = get_factorisation_reference(first(proxy))
-get_factorisation_reference(::AbstractVariable, ::FactotisationReferenceProxyChecked, proxy::Tuple)                                      = error("Multiple proxy vars in factorisation reference are dissalowed. This may happened because of the deterministic relation in the model that has more than one input. This setting does not play nicely with constraints specification language. As a workaround create and give a specific name for the output variable of this deterministic relation.")
+get_factorisation_reference(::AbstractVariable, ::FactorisationReferenceProxyChecked, proxy::Tuple{T})   where { T <: AbstractVariable } = get_factorisation_reference(first(proxy))
+get_factorisation_reference(::AbstractVariable, ::FactorisationReferenceProxyChecked, proxy::Tuple)                                      = error("Multiple proxy vars in factorisation reference are dissalowed. This may happened because of the deterministic relation in the model that has more than one input. This setting does not play nicely with constraints specification language. As a workaround create and give a specific name for the output variable of this deterministic relation.")
 
 ##
 
