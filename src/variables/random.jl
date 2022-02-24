@@ -13,6 +13,7 @@ mutable struct RandomVariable <: AbstractVariable
     output_cache        :: Union{Nothing, EqualityChain}
     marginal            :: MarginalObservable
     pipeline            :: AbstractPipelineStage
+    proxy_variables     
     prod_constraint     
     prod_strategy       
     form_constraint     
@@ -21,8 +22,8 @@ end
 
 Base.show(io::IO, randomvar::RandomVariable) = print(io, "RandomVariable(", indexed_name(randomvar), ")")
 
-function randomvar(name::Symbol, collection_type::AbstractVariableCollectionType = VariableIndividual(); pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, collection_type, Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), false, nothing, MarginalObservable(), pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+function randomvar(name::Symbol, collection_type::AbstractVariableCollectionType = VariableIndividual(); pipeline = EmptyPipelineStage(), proxy_variables = nothing, prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
+    return RandomVariable(name, collection_type, Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), false, nothing, MarginalObservable(), pipeline, proxy_variables, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
 function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
@@ -48,7 +49,7 @@ end
 
 degree(randomvar::RandomVariable)              = length(randomvar.input_messages)
 name(randomvar::RandomVariable)                = randomvar.name
-proxy(randomvar::RandomVariable)               = nothing
+proxy(randomvar::RandomVariable)               = randomvar.proxy_variables
 collection_type(randomvar::RandomVariable)     = randomvar.collection_type
 equality_chain(randomvar::RandomVariable)      = randomvar.equality_chain
 prod_constraint(randomvar::RandomVariable)     = randomvar.prod_constraint

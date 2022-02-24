@@ -369,23 +369,98 @@ using GraphPPL # for `@constraints` macro
         @testset "Use case #12" begin 
             cs = @constraints begin
                 q(x, y) = q(x[begin])*q(x[begin+1:end])*q(y)
-             end
-                     
-             model = Model()
-                     
-             y = randomvar(model, :y, 11)
-             x = randomvar(model, :x, 10)
+            end
+                    
+            model = Model()
+                    
+            y = randomvar(model, :y, 11)
+            x = randomvar(model, :x, 10)
 
+            
+            for i in 1:10
+            if i > 1 && i < 10
+                @test ReactiveMP.resolve_factorisation(expr, (x[1], x[i]), cs, model) === ((1,), (2,))
+                @test ReactiveMP.resolve_factorisation(expr, (x[1], x[i], x[i + 1]), cs, model) === ((1,), (2, 3))
+            end
+            @test ReactiveMP.resolve_factorisation(expr, (x[1], x[2], x[3], y[i]), cs, model) === ((1,), (2, 3), (4, ))
+            @test ReactiveMP.resolve_factorisation(expr, (x[1], x[2], x[3], x[4], y[i]), cs, model) === ((1,), (2, 3, 4), (5, ))
+            end
              
-             for i in 1:10
-                if i > 1 && i < 10
-                    @test ReactiveMP.resolve_factorisation(expr, (x[1], x[i]), cs, model) === ((1,), (2,))
-                    @test ReactiveMP.resolve_factorisation(expr, (x[1], x[i], x[i + 1]), cs, model) === ((1,), (2, 3))
+        end
+
+        @testset "Use case #13" begin 
+            cs = @constraints begin 
+                q(x, y) = q(x)q(y)
+            end
+
+            model = Model()
+
+            x = randomvar(model, :x)
+            y = randomvar(model, :y)
+            tmp = randomvar(model, :tmp, proxy_variables = (y, ))
+
+            @test ReactiveMP.resolve_factorisation(expr, (x, y), cs, model) === ((1, ), (2, ))
+            @test ReactiveMP.resolve_factorisation(expr, (x, tmp), cs, model) === ((1, ), (2, ))
+        end
+
+        @testset "Use case #14" begin 
+            # Check proxy vars
+            @constraints function cs14(flag)
+                q(x, y) = q(x)q(y)
+                if flag 
+                    q(x, y, z) = q(x)q(y, z)
+                else
+                    q(x, y, z) = q(y)q(x, z)
                 end
-                @test ReactiveMP.resolve_factorisation(expr, (x[1], x[2], x[3], y[i]), cs, model) === ((1,), (2, 3), (4, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[1], x[2], x[3], x[4], y[i]), cs, model) === ((1,), (2, 3, 4), (5, ))
-             end
-             
+            end
+
+            model = Model()
+
+            x = randomvar(model, :x, 10)
+            y = randomvar(model, :y, 10)
+            z = randomvar(model, :z)
+
+            d = datavar(model, :d, Float64, 10)
+            c = constvar(model, :c, (i) -> i, 10)
+
+            # different proxy vars
+            tmp1 = Vector{RandomVariable}(undef, 10)
+            tmp2 = Vector{RandomVariable}(undef, 10)
+            tmp3 = Vector{RandomVariable}(undef, 10)
+            tmp4 = Vector{RandomVariable}(undef, 10)
+            tmp5 = Vector{RandomVariable}(undef, 10)
+            tmp6 = Vector{RandomVariable}(undef, 10)
+            tmp7 = Vector{RandomVariable}(undef, 10)
+
+            for i in 1:10
+                tmp1[i] = randomvar(model, :tmp1, proxy_variables = (y[i], ))
+                tmp2[i] = randomvar(model, :tmp2, proxy_variables = (y[i], d[i]))
+                tmp3[i] = randomvar(model, :tmp3, proxy_variables = (y[i], c[i]))
+                tmp4[i] = randomvar(model, :tmp2, proxy_variables = (c[i], y[i], d[i]))
+                tmp5[i] = randomvar(model, :tmp3, proxy_variables = (d[i], y[i], c[i]))
+                tmp6[i] = randomvar(model, :tmp2, proxy_variables = (d[i], y[i]))
+                tmp7[i] = randomvar(model, :tmp3, proxy_variables = (c[i], y[i]))
+            end
+
+            for i in 1:10
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], y[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp1[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp2[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp3[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp4[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp5[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp6[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp7[i], z), cs14(true), model) === ((1, ), (2, 3))
+
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], y[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp1[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp2[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp3[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp4[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp5[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp6[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp7[i], z), cs14(false), model) === ((1, 3), (2, ))
+            end
         end
 
         ## Error testing below
@@ -434,6 +509,42 @@ using GraphPPL # for `@constraints` macro
 
             @test ercs3(false) isa ReactiveMP.ConstraintsSpecification
             @test_throws ErrorException ercs3(true)
+        end
+
+        @testset "Error case #4" begin 
+            # multiple proxy vars
+            cs = @constraints begin
+                q(x, y, z) = q(x)q(y)q(z)
+            end
+
+            model = Model()
+
+            x = randomvar(model, :x)
+            y = randomvar(model, :y)
+
+            z = randomvar(model, :z)
+            d = datavar(model, :d, Float64)
+            c = constvar(model, :c, 1)
+
+            tmp1 = randomvar(model, :tmp, proxy_variables = (x, y))
+            tmp2 = randomvar(model, :tmp, proxy_variables = (x, y, d))
+            tmp3 = randomvar(model, :tmp, proxy_variables = (x, y, c))
+            tmp4 = randomvar(model, :tmp, proxy_variables = (d, x, y))
+            tmp5 = randomvar(model, :tmp, proxy_variables = (x, c, y))
+            tmp6 = randomvar(model, :tmp, proxy_variables = (x, d, y))
+            tmp7 = randomvar(model, :tmp, proxy_variables = (c, x, y))
+            tmp8 = randomvar(model, :tmp, proxy_variables = (c, x, y, d))
+            tmp9 = randomvar(model, :tmp, proxy_variables = (d, x, y, c))
+            
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp1), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp2), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp3), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp4), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp5), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp6), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp7), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp8), cs, model)
+            @test_throws ErrorException resolve_factorisation(expr, (z, tmp9), cs, model)
         end
 
     end
