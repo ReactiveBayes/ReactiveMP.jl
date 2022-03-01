@@ -32,19 +32,32 @@ function __reset_preallocated!(preallocated::ConstraintsSpecificationPreallocate
     empty!(preallocated.clusters_set)
 end
 
-struct ConstraintsSpecification{F, M}
+struct ConstraintsSpecification{F, M, S}
     factorisation :: F
-    form :: M
+    marginalsform :: M
+    messagesform  :: S
     preallocated :: ConstraintsSpecificationPreallocated
 end
 
-ConstraintsSpecification(factorisation::F, form::M) where { F, M } = ConstraintsSpecification{F, M}(factorisation, form, ConstraintsSpecificationPreallocated())
+ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S) where { F, M, S } = ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, ConstraintsSpecificationPreallocated())
 
 __reset_preallocated!(specification::ConstraintsSpecification, size::Int) = __reset_preallocated!(specification.preallocated, size)
 
 function Base.show(io::IO, specification::ConstraintsSpecification) 
-    print(io, "Constraints:\n\tform: $(specification.form)\n")
-    print(io, "\tfactorisation\n")
+    print(io, "Constraints:\n")
+    print(io, "\tmarginals form:\n")
+    foreach(pairs(specification.marginalsform)) do spec 
+        print(io, "\t\tq($(first(spec))) :: ")
+        join(io, map(repr, last(spec)), " :: ")
+        print(io, "\n")
+    end
+    print(io, "\tmessages form:\n")
+    foreach(pairs(specification.messagesform)) do spec 
+        print(io, "\t\tμ($(first(spec))) :: ")
+        join(io, map(repr, last(spec)), " :: ")
+        print(io, "\n")
+    end
+    print(io, "\tfactorisation:\n")
     foreach(specification.factorisation) do f
         print(io, "\t\t", f, "\n")
     end
