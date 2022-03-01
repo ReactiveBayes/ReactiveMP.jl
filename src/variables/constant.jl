@@ -44,6 +44,9 @@ name(constvar::ConstVariable)            = constvar.name
 proxy(constvar::ConstVariable)           = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
 
+isproxy(::ConstVariable)  = false
+israndom(::ConstVariable) = false
+
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 
 isconnected(constvar::ConstVariable) = constvar.nconnected !== 0

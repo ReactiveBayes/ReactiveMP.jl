@@ -4,7 +4,7 @@ using Test
 using ReactiveMP 
 
 
-@testset "ConstraintsSpec" begin 
+@testset "Constraints specification" begin 
 
     
     

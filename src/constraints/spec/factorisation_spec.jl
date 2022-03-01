@@ -193,7 +193,7 @@ function get_factorisation_reference end
 
 get_factorisation_reference(var::AbstractVariable) = get_factorisation_reference(var, FactorisationReferenceProxyUnchecked(), proxy(var))
 
-get_factorisation_reference(var::AbstractVariable, ::Union{ FactorisationReferenceProxyChecked, FactorisationReferenceProxyUnchecked }, ::Nothing) = (name(var), linear_index(collection_type(var)))
+get_factorisation_reference(var::AbstractVariable, ::Union{ FactorisationReferenceProxyChecked, FactorisationReferenceProxyUnchecked }, ::Nothing) = (name(var), linear_index(collection_type(var)), var)
 
 get_factorisation_reference(var::AbstractVariable, ::FactorisationReferenceProxyUnchecked, proxy::Tuple{T}) where { T <: AbstractVariable } = get_factorisation_reference(first(proxy))
 get_factorisation_reference(var::AbstractVariable, ::FactorisationReferenceProxyUnchecked, proxy::Tuple)                                    = get_factorisation_reference(var, FactorisationReferenceProxyChecked(), filter(v -> v isa RandomVariable, proxy))
@@ -389,10 +389,26 @@ function resolve_factorisation(expr::Expr, variables, constraints, model)
         end
         
     end
+
+
     
+    index::Int = 1
     shift::Int = 0
     for varref in var_refs
-        __process_factorisation_entry!(varref[1], varref[2], shift)
+
+        if israndom(varref[3])
+            # We process everything as usual if varref is a random variable
+            __process_factorisation_entry!(varref[1], varref[2], shift)
+        else 
+            # We filter out varref from all clusters if it is not random
+            for k in 1:N
+                if k !== index
+                    clusters_template[ shift + k ] = false
+                    clusters_template[ (k - 1) * N + index ] = false
+                end
+            end
+        end
+        index += 1
         shift += N
     end
     
