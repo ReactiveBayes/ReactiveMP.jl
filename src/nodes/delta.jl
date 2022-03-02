@@ -1,6 +1,10 @@
+export DeltaFn
 
-struct DeltaFn end
+struct DeltaFnCallableWrapper{F} end
 
+(::Type{ DeltaFnCallableWrapper{F}  })(args...) where F = F.instance(args...)
+
+struct DeltaFn{F} end
 struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
     fn :: F
     
@@ -11,7 +15,7 @@ struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
     metadata       :: M
 end
 
-functionalform(factornode::DeltaFnNode)                     = DeltaFn
+functionalform(factornode::DeltaFnNode{F})  where F         = DeltaFn{DeltaFnCallableWrapper{F}}
 sdtype(factornode::DeltaFnNode)                             = Deterministic()
 interfaces(factornode::DeltaFnNode)                         = (factornode.out, factornode.ins...)
 factorisation(factornode::DeltaFnNode{F, N}) where { F, N } = ntuple(identity, N + 1)
@@ -113,7 +117,7 @@ function activate!(model, factornode::DeltaFnNode)
         msgs_names      = Val{ (:in, ) }
         msgs_observable = combineLatest((messagein(interface), ), PushNew())
 
-        marginal_names       = Val{ (:out, ) }
+        marginal_names       = Val{ (:ins, ) }
         marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]), ), PushNew())
 
         vtag        = tag(interface)
