@@ -744,67 +744,64 @@ end
 rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) = throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)
-    try
-        print(io, "RuleMethodError: no method matching rule for the given arguments")
 
-        node = error.node !== nothing ? error.node : NodeErrorStub()
+    print(io, "RuleMethodError: no method matching rule for the given arguments")
 
-        spec_fform       = rule_method_error_extract_fform(error.fform)
-        spec_on          = rule_method_error_extract_on(error.on)
-        spec_vconstraint = rule_method_error_extract_vconstraint(error.vconstraint)
+    node = error.node !== nothing ? error.node : NodeErrorStub()
 
-        m_names   = rule_method_error_extract_names(error.mnames)
-        m_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), m_names)
-        q_names   = rule_method_error_extract_names(error.qnames)
-        q_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), q_names)
+    spec_fform       = rule_method_error_extract_fform(error.fform)
+    spec_on          = rule_method_error_extract_on(error.on)
+    spec_vconstraint = rule_method_error_extract_vconstraint(error.vconstraint)
 
-        spec_m_names = map(e -> string("m_", join(e, "_")), m_names)
-        spec_m_types = rule_method_error_extract_types(error.messages)
-        spec_q_names = map(e -> string("q_", join(e, "_")), q_names)
-        spec_q_types = rule_method_error_extract_types(error.marginals)
+    m_names   = rule_method_error_extract_names(error.mnames)
+    m_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), m_names)
+    q_names   = rule_method_error_extract_names(error.qnames)
+    q_indices = map(n -> TupleTools.maximum(interfaceindices(node, n)), q_names)
 
-        if isempty(intersect(Set(m_indices), Set(q_indices)))
-            spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
-            spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
+    spec_m_names = map(e -> string("m_", join(e, "_")), m_names)
+    spec_m_types = rule_method_error_extract_types(error.messages)
+    spec_q_names = map(e -> string("q_", join(e, "_")), q_names)
+    spec_q_types = rule_method_error_extract_types(error.marginals)
 
-            spec = Vector(undef, 2length(interfaces(node)))
+    if isempty(intersect(Set(m_indices), Set(q_indices)))
+        spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
+        spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-            fill!(spec, nothing)
+        spec = Vector(undef, 2length(interfaces(node)))
 
-            for (i, j) in enumerate(m_indices)
-                spec[2j - 1] = spec_m[i]
-            end
+        fill!(spec, nothing)
 
-            for (i, j) in enumerate(q_indices)
-                spec[2j] = spec_q[i]
-            end
-
-            filter!(!isnothing, spec)
-
-            arguments_spec = join(spec, ", ")
-            meta_spec      = rule_method_error_extract_meta(error.meta)
-
-            possible_fix_definition = """
-            @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
-                return ...
-            end
-            """
-
-            println(io, "\n\nPossible fix, define:\n")
-            println(io, possible_fix_definition)
-        else
-            println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
-            println(io, "rule.fform: ", error.fform)
-            println(io, "rule.on: ", error.on)
-            println(io, "rule.vconstraint: ", error.vconstraint)
-            println(io, "rule.mnames: ", error.mnames)
-            println(io, "rule.messages: ", error.messages)
-            println(io, "rule.qnames: ", error.qnames)
-            println(io, "rule.marginals: ", error.marginals)
-            println(io, "rule.meta: ", error.meta)
+        for (i, j) in enumerate(m_indices)
+            spec[2j - 1] = spec_m[i]
         end
-    catch 
-        println(io, error)
+
+        for (i, j) in enumerate(q_indices)
+            spec[2j] = spec_q[i]
+        end
+
+        filter!(!isnothing, spec)
+
+        arguments_spec = join(spec, ", ")
+        meta_spec      = rule_method_error_extract_meta(error.meta)
+
+        possible_fix_definition = """
+        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
+            return ...
+        end
+        """
+
+        println(io, "\n\nPossible fix, define:\n")
+        println(io, possible_fix_definition)
+    else
+        println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
+        println(io, "rule.fform: ", error.fform)
+        println(io, "rule.on: ", error.on)
+        println(io, "rule.vconstraint: ", error.vconstraint)
+        println(io, "rule.mnames: ", error.mnames)
+        println(io, "rule.messages: ", error.messages)
+        println(io, "rule.qnames: ", error.qnames)
+        println(io, "rule.marginals: ", error.marginals)
+        println(io, "rule.meta: ", error.meta)
     end
 end
 

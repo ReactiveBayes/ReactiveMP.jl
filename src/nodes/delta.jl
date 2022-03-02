@@ -57,9 +57,32 @@ function activate!(model, factornode::DeltaFnNode)
         (connectedvar(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
     end
 
-    # Declare marginals
+    # First we declare local marginal clusters 
+    let out = factornode.out, localmarginal = factornode.localmarginals.marginals[1]
+        setstream!(localmarginal, getmarginal(connectedvar(out), IncludeAll()))
+    end
 
-    # First we declare message passing logic for out interface
+    let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
+        cmarginal = MarginalObservable()
+        setstream!(localmarginal, cmarginal)
+
+        msgs_names      = Val{ (:ins, ) }
+        msgs_observable = combineLatest((combineLatest(map((in) -> messagein(in), ins), PushNew()), ), PushNew())
+
+        marginal_names       = Val{ (:out, ) }
+        marginals_observable = combineLatestUpdates((getmarginal(connectedvar(out), IncludeAll()), ), PushNew())
+        
+        fform = functionalform(factornode)
+        vtag  = Val{ :ins }
+        meta  = metadata(factornode)
+
+        mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
+
+        connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
+    end
+
+    # Second we declare message passing logic for out interface
     let interface = factornode.out
 
         msgs_names      = Val{ (:ins, ) }
@@ -85,33 +108,29 @@ function activate!(model, factornode::DeltaFnNode)
         connect!(messageout(interface), vmessageout)
     end
 
-    
+    # At last we declare message passing logic for input interfaces
+    foreach(factornode.ins) do interface 
+        msgs_names      = Val{ (:in, ) }
+        msgs_observable = combineLatest((messagein(interface), ), PushNew())
 
-    # for (iindex, interface) in enumerate(interfaces(factornode))
-    #     cvariable = connectedvar(interface)
-    #     if cvariable !== nothing
-    #         message_dependencies, marginal_dependencies = functional_dependencies(node_pipeline_dependencies, factornode, iindex)
+        marginal_names       = Val{ (:out, ) }
+        marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]), ), PushNew())
 
-    #         msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-    #         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+        vtag        = tag(interface)
+        vconstraint = local_constraint(interface)
 
-    #         vtag        = tag(interface)
-    #         vconstraint = local_constraint(interface)
-            
-    #         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
-    #         vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
+        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        # vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-    #         mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
-    #         mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
+        mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+        mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
 
-    #         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-    #         vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
-    #         vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
-    #         vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
+        vmessageout = vmessageout |> map(AbstractMessage, mapping)
+        vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+        # vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+        vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
-    #         connect!(messageout(interface), vmessageout)
-    #     else
-    #         error("Empty variable on interface $(interface) of node $(factornode)")
-    #     end
-    # end
+        connect!(messageout(interface), vmessageout)
+    end
+
 end
