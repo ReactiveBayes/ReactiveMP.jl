@@ -11,20 +11,22 @@ This structure is used with a combination of `@meta` macro from GraphPPL.jl.
 - `N`: names of variables for the meta specification
 - `meta::M`: meta object
 """
-struct MetaSpecificationEntry{F, N, M}
-    meta :: M
-
-    MetaSpecificationEntry(::Val{F}, ::Val{N}, meta::M) where { F, N, M } = new{F, N, M}(meta)
+struct MetaSpecificationEntry{N, M}
+    fform :: Symbol
+    names :: NTuple{N, Symbol}
+    meta  :: M
 end
 
-functionalform(entry::MetaSpecificationEntry{F}) where { F } = F
-getnames(entry::MetaSpecificationEntry{F, N}) where { F, N } = N
-metadata(entry::MetaSpecificationEntry)                      = entry.meta
+MetaSpecificationEntry(::Val{F}, ::Val{N}, meta::M) where { F, N, M } = MetaSpecificationEntry(F, N, meta)
 
-function Base.show(io::IO, entry::MetaSpecificationEntry{F, N}) where { F, N }
-    print(io, F, "(")
-    join(io, N, ", ")
-    print(io, ") = ", entry.meta)
+functionalform(entry::MetaSpecificationEntry) = entry.fform
+getnames(entry::MetaSpecificationEntry)       = entry.names
+metadata(entry::MetaSpecificationEntry)       = entry.meta
+
+function Base.show(io::IO, entry::MetaSpecificationEntry) where { F, N }
+    print(io, functionalform(entry), "(")
+    join(io, getnames(entry), ", ")
+    print(io, ") = ", metadata(entry))
 end
 
 

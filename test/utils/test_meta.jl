@@ -124,6 +124,46 @@ import ReactiveMP: resolve_meta
         end
 
     end
+
+    @testset "Use case #5" begin 
+
+        # Just many variables and statements
+        meta = @meta begin
+            HGF(x) -> 123 
+            AR(x, y, z) -> 1
+            AR(x1, y, z) -> 2
+            AR(x2, y, z) -> 3
+            AR(x3, y, z) -> 4
+            AR(x4, y, z) -> 5
+            AR(x5, y, z) -> 6
+            AR(x6, y, z) -> 7
+            AR(x7, y, z) -> 8
+            AR(x8, y, z) -> 9
+            AR(x9, y, z) -> 10
+            AR(x10, y, z) -> 11
+            AR(x1, y1, z) -> 12
+            AR(x2, y2, z) -> 13
+            AR(x3, y3, z) -> 14
+            AR(x4, y4, z) -> 15
+            AR(x5, y5, z) -> 16
+            AR(x6, y6, z3) -> 17
+            AR(x7, y7, z4) -> 18
+            AR(x8, y8, z) -> 19
+            AR(x9, y9, z) -> 20
+            AR(x10, y10, z) -> 21
+        end
+
+        model = Model()
+
+        z = randomvar(model, :z)
+        x = randomvar(model, :x10)
+        y = randomvar(model, :y10)
+    
+        @test ReactiveMP.resolve_meta(expr, :AR, (z, x, y), meta, model) === 21
+        @test ReactiveMP.resolve_meta(expr, :AR, (x, z, y), meta, model) === 21
+        @test ReactiveMP.resolve_meta(expr, :AR, (x, y, z), meta, model) === 21
+
+    end
     
     # Errors
 
