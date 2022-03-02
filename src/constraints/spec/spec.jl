@@ -41,6 +41,8 @@ end
 
 ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S) where { F, M, S } = ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, ConstraintsSpecificationPreallocated())
 
+const DefaultConstraints = ConstraintsSpecification((), (;), (;))
+
 __reset_preallocated!(specification::ConstraintsSpecification, size::Int) = __reset_preallocated!(specification.preallocated, size)
 
 function Base.show(io::IO, specification::ConstraintsSpecification) 

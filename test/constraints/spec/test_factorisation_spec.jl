@@ -7,6 +7,7 @@ import ReactiveMP: FunctionalIndex
 import ReactiveMP: CombinedRange, SplittedRange, is_splitted
 import ReactiveMP: __as_unit_range, __factorisation_specification_resolve_index
 import ReactiveMP: resolve_factorisation
+import ReactiveMP: DefaultConstraints
 
 using GraphPPL # for `@constraints` macro
 
@@ -464,38 +465,40 @@ using GraphPPL # for `@constraints` macro
         end
 
         @testset "Use case #15" begin
-            # empty constraints still should factorize out datavar and constvar
-            cs = @constraints begin 
+            # empty and default constraints still should factorize out datavar and constvar
+            empty = @constraints begin 
                 # empty
             end
 
-            model = Model()
+            for cs in (empty, DefaultConstraints)
+                let model = Model()
+                    d = datavar(model, :d, Float64)
+                    c = constvar(model, :c, 1.0)
+                    x = randomvar(model, :x)
+                    y = randomvar(model, :y)
 
-            d = datavar(model, :d, Float64)
-            c = constvar(model, :c, 1.0)
-            x = randomvar(model, :x)
-            y = randomvar(model, :y)
-
-            @test ReactiveMP.resolve_factorisation(expr, (d, d), cs, model) === ((1,), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (c, c), cs, model) === ((1,), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (d, x), cs, model) === ((1,), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (d, x, y), cs, model) === ((1,), (2, 3))
-            @test ReactiveMP.resolve_factorisation(expr, (x, d, y), cs, model) === ((1, 3), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, y, d), cs, model) === ((1, 2), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (c, x), cs, model) === ((1,), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (c, x, y), cs, model) === ((1,), (2, 3))
-            @test ReactiveMP.resolve_factorisation(expr, (x, c, y), cs, model) === ((1, 3), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, y, c), cs, model) === ((1, 2), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (c, d), cs, model) === ((1,), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (c, x, d), cs, model) === ((1,), (2, ), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, c, d), cs, model) === ((1, ), (2, ), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, d, c), cs, model) === ((1, ), (2,), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (c, x, d, y), cs, model) === ((1,), (2, 4), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, c, d, y), cs, model) === ((1, 4), (2, ), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, d, c, y), cs, model) === ((1, 4), (2,), (3, ))
-            @test ReactiveMP.resolve_factorisation(expr, (c, x, y, d), cs, model) === ((1,), (2, 3), (4, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, c, y, d), cs, model) === ((1, 3), (2, ), (4, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, d, y, c), cs, model) === ((1, 3), (2,), (4, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (d, d), cs, model) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (c, c), cs, model) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (d, x), cs, model) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (d, x, y), cs, model) === ((1,), (2, 3))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, d, y), cs, model) === ((1, 3), (2, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, y, d), cs, model) === ((1, 2), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (c, x), cs, model) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (c, x, y), cs, model) === ((1,), (2, 3))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, c, y), cs, model) === ((1, 3), (2, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, y, c), cs, model) === ((1, 2), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (c, d), cs, model) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (c, x, d), cs, model) === ((1,), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, c, d), cs, model) === ((1, ), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, d, c), cs, model) === ((1, ), (2,), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (c, x, d, y), cs, model) === ((1,), (2, 4), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, c, d, y), cs, model) === ((1, 4), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, d, c, y), cs, model) === ((1, 4), (2,), (3, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (c, x, y, d), cs, model) === ((1,), (2, 3), (4, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, c, y, d), cs, model) === ((1, 3), (2, ), (4, ))
+                    @test ReactiveMP.resolve_factorisation(expr, (x, d, y, c), cs, model) === ((1, 3), (2,), (4, ))
+                end
+            end
         end
 
         ## Error testing below
