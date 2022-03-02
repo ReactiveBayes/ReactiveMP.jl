@@ -191,6 +191,8 @@ end
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
 
+    addtests("utils/test_meta.jl")
+
 end
 
 end
