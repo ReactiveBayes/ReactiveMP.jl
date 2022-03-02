@@ -114,6 +114,7 @@ include("nodes/autoregressive.jl")
 include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
+include("nodes/delta.jl")
 include("nodes/flow/flow.jl")
 
 
