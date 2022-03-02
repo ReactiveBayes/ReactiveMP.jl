@@ -203,6 +203,10 @@ get_factorisation_reference(::AbstractVariable, ::FactorisationReferenceProxyChe
 
 ##
 
+function resolve_factorisation(expr::Expr, variables, ::UnspecifiedConstraints, model)
+    return resolve_factorisation(expr, variables, __EmptyConstraints, model)
+end
+
 """
     resolve_factorisation(expr::Expr, variables, constraints, model) 
 

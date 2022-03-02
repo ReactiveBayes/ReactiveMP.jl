@@ -41,7 +41,11 @@ end
 
 ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S) where { F, M, S } = ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, ConstraintsSpecificationPreallocated())
 
-const DefaultConstraints = ConstraintsSpecification((), (;), (;))
+struct UnspecifiedConstraints end
+
+const DefaultConstraints = UnspecifiedConstraints()
+
+const __EmptyConstraints = ConstraintsSpecification((), (;), (;))
 
 __reset_preallocated!(specification::ConstraintsSpecification, size::Int) = __reset_preallocated!(specification.preallocated, size)
 
