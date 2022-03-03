@@ -3,6 +3,8 @@ export GammaMixture, GammaMixtureNode
 # Gamma Mixture Functional Form
 struct GammaMixture{N} end
 
+ReactiveMP.as_node_symbol(::Type{ <: GammaMixture }) = :GammaMixture
+
 # Special node
 # Generic FactorNode implementation does not work with dynamic number of inputs
 # We need to reimplement the following set of functions

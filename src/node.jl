@@ -112,6 +112,15 @@ function sdtype end
 sdtype(::Type{ T }) where T = Deterministic()
 sdtype(::Function)          = Deterministic()
 
+"""
+    as_node_symbol(type)
+
+Returns a symbol associated with a node `type`.
+"""
+function as_node_symbol end
+
+as_node_symbol(fn::F) where { F <: Function } = Symbol(fn)
+
 ## Generic factorisation constraints
 
 """
@@ -847,6 +856,8 @@ macro node(fformtype, sdtype, interfaces_list)
         ReactiveMP.as_node_functional_form(::$fuppertype) = ReactiveMP.ValidNodeFunctionalForm()
 
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
+
+        ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
         
         function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, pipeline = nothing)
             return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), ReactiveMP.collect_pipeline($fbottomtype, pipeline))

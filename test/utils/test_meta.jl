@@ -9,7 +9,11 @@ import ReactiveMP: resolve_meta
 
 @testset "Meta specification" begin
 
-    expr = :(out ~ Normal(args))
+    struct SomeNode end
+    struct SomeOtherNode end
+
+    ReactiveMP.as_node_symbol(::Type{ <: SomeNode }) = :SomeNode
+    ReactiveMP.as_node_symbol(::Type{ <: SomeOtherNode }) = :SomeOtherNode
 
     @testset "Use case #1" begin 
 
@@ -23,19 +27,19 @@ import ReactiveMP: resolve_meta
         y = randomvar(model, :y)
         z = randomvar(model, :z)
 
-        @test resolve_meta(expr, :SomeOtherNode, (x, y), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (x, y), meta, model) == "meta"
-        @test resolve_meta(expr, :SomeNode, (y, x), meta, model) == "meta"
-        @test resolve_meta(expr, :SomeNode, (x, y, z), meta, model) == "meta"
-        @test resolve_meta(expr, :SomeNode, (x, y, x, y), meta, model) == "meta"
-        @test resolve_meta(expr, :SomeNode, (x, y, x, y, z, z), meta, model) == "meta"
-        @test resolve_meta(expr, :SomeNode, (y, x, z), meta, model) == "meta"
-        @test resolve_meta(expr, :SomeNode, (y, z, x), meta, model) == "meta"
-        @test resolve_meta(expr, :SomeNode, (x, ), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (x, z), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (y, ), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (y, z), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (z, ), meta, model) === nothing
+        @test resolve_meta(meta, model, SomeOtherNode, (x, y)) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x, y)) == "meta"
+        @test resolve_meta(meta, model, SomeNode, (y, x)) == "meta"
+        @test resolve_meta(meta, model, SomeNode, (x, y, z)) == "meta"
+        @test resolve_meta(meta, model, SomeNode, (x, y, x, y)) == "meta"
+        @test resolve_meta(meta, model, SomeNode, (x, y, x, y, z, z)) == "meta"
+        @test resolve_meta(meta, model, SomeNode, (y, x, z)) == "meta"
+        @test resolve_meta(meta, model, SomeNode, (y, z, x)) == "meta"
+        @test resolve_meta(meta, model, SomeNode, (x, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x, z)) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y, z)) === nothing
+        @test resolve_meta(meta, model, SomeNode, (z, )) === nothing
 
     end
 
@@ -56,19 +60,19 @@ import ReactiveMP: resolve_meta
         z = randomvar(model, :z)
 
         for (meta, result) in ((makemeta(true), "meta1"), (makemeta(false), "meta2"))
-            @test resolve_meta(expr, :SomeOtherNode, (x, y), meta, model) === nothing
-            @test resolve_meta(expr, :SomeNode, (x, y), meta, model) == result
-            @test resolve_meta(expr, :SomeNode, (y, x), meta, model) ==  result
-            @test resolve_meta(expr, :SomeNode, (x, y, z), meta, model) ==  result
-            @test resolve_meta(expr, :SomeNode, (x, y, x, y), meta, model) ==  result
-            @test resolve_meta(expr, :SomeNode, (x, y, x, y, z, z), meta, model) ==  result
-            @test resolve_meta(expr, :SomeNode, (y, x, z), meta, model) ==  result
-            @test resolve_meta(expr, :SomeNode, (y, z, x), meta, model) ==  result
-            @test resolve_meta(expr, :SomeNode, (x, ), meta, model) === nothing
-            @test resolve_meta(expr, :SomeNode, (x, z), meta, model) === nothing
-            @test resolve_meta(expr, :SomeNode, (y, ), meta, model) === nothing
-            @test resolve_meta(expr, :SomeNode, (y, z), meta, model) === nothing
-            @test resolve_meta(expr, :SomeNode, (z, ), meta, model) === nothing
+            @test resolve_meta(meta, model, SomeOtherNode, (x, y)) === nothing
+            @test resolve_meta(meta, model, SomeNode, (x, y)) == result
+            @test resolve_meta(meta, model, SomeNode, (y, x)) ==  result
+            @test resolve_meta(meta, model, SomeNode, (x, y, z)) ==  result
+            @test resolve_meta(meta, model, SomeNode, (x, y, x, y)) ==  result
+            @test resolve_meta(meta, model, SomeNode, (x, y, x, y, z, z)) ==  result
+            @test resolve_meta(meta, model, SomeNode, (y, x, z)) ==  result
+            @test resolve_meta(meta, model, SomeNode, (y, z, x)) ==  result
+            @test resolve_meta(meta, model, SomeNode, (x, )) === nothing
+            @test resolve_meta(meta, model, SomeNode, (x, z)) === nothing
+            @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
+            @test resolve_meta(meta, model, SomeNode, (y, z)) === nothing
+            @test resolve_meta(meta, model, SomeNode, (z, )) === nothing
         end
 
     end
@@ -86,16 +90,16 @@ import ReactiveMP: resolve_meta
         y = randomvar(model, :y, 10)
         z = randomvar(model, :z, 10)
 
-        @test resolve_meta(expr, :SomeNode, (x[1], z[1]), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (x[1], z[1], z[2]), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (x[1], x[2], z[1]), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (x[1], y[1]), meta, model) == "meta1"
-        @test resolve_meta(expr, :SomeNode, (x[1], x[2], y[1]), meta, model) == "meta1"
-        @test resolve_meta(expr, :SomeNode, (y[1], y[2], x[1]), meta, model) == "meta1"
-        @test resolve_meta(expr, :SomeNode, (z[1], z[2], y[1]), meta, model) == "meta2"
-        @test resolve_meta(expr, :SomeNode, (y[1], y[2], z[1]), meta, model) == "meta2"
-        @test_throws ErrorException resolve_meta(expr, :SomeNode, (x[1], y[1], z[1]), meta, model) 
-        @test_throws ErrorException resolve_meta(expr, :SomeNode, (z[1], y[1], x[1]), meta, model) 
+        @test resolve_meta(meta, model, SomeNode, (x[1], z[1])) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x[1], z[1], z[2])) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x[1], x[2], z[1])) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x[1], y[1])) == "meta1"
+        @test resolve_meta(meta, model, SomeNode, (x[1], x[2], y[1])) == "meta1"
+        @test resolve_meta(meta, model, SomeNode, (y[1], y[2], x[1])) == "meta1"
+        @test resolve_meta(meta, model, SomeNode, (z[1], z[2], y[1])) == "meta2"
+        @test resolve_meta(meta, model, SomeNode, (y[1], y[2], z[1])) == "meta2"
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x[1], y[1], z[1])) 
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (z[1], y[1], x[1])) 
 
     end
 
@@ -111,16 +115,16 @@ import ReactiveMP: resolve_meta
         y = randomvar(model, :y)
         tmp = randomvar(model, :tmp, proxy_variables = (y, ))
 
-        @test resolve_meta(expr, :SomeNode, (x[1], tmp), meta, model) == "meta1"
-        @test resolve_meta(expr, :SomeNode, (x[1], x[2], tmp), meta, model) == "meta1"
-        @test resolve_meta(expr, :SomeNode, (tmp, x[1]), meta, model) == "meta1"
-        @test resolve_meta(expr, :SomeNode, (tmp, x[1], x[2]), meta, model) == "meta1"
+        @test resolve_meta(meta, model, SomeNode, (x[1], tmp)) == "meta1"
+        @test resolve_meta(meta, model, SomeNode, (x[1], x[2], tmp)) == "meta1"
+        @test resolve_meta(meta, model, SomeNode, (tmp, x[1])) == "meta1"
+        @test resolve_meta(meta, model, SomeNode, (tmp, x[1], x[2])) == "meta1"
 
-        @test resolve_meta(expr, :SomeNode, (y, ), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (tmp, ), meta, model) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (tmp, )) === nothing
         for i in 1:10
-            @test resolve_meta(expr, :SomeNode, (x[i], ), meta, model) === nothing
-            @test resolve_meta(expr, :SomeOtherNode, (x[i], y), meta, model) === nothing
+            @test resolve_meta(meta, model, SomeNode, (x[i], )) === nothing
+            @test resolve_meta(meta, model, SomeOtherNode, (x[i], y)) === nothing
         end
 
     end
@@ -159,9 +163,9 @@ import ReactiveMP: resolve_meta
         x = randomvar(model, :x10)
         y = randomvar(model, :y10)
     
-        @test ReactiveMP.resolve_meta(expr, :AR, (z, x, y), meta, model) === 21
-        @test ReactiveMP.resolve_meta(expr, :AR, (x, z, y), meta, model) === 21
-        @test ReactiveMP.resolve_meta(expr, :AR, (x, y, z), meta, model) === 21
+        @test ReactiveMP.resolve_meta(meta, model, AR, (z, x, y)) === 21
+        @test ReactiveMP.resolve_meta(meta, model, AR, (x, z, y)) === 21
+        @test ReactiveMP.resolve_meta(meta, model, AR, (x, y, z)) === 21
 
     end
     
@@ -180,19 +184,19 @@ import ReactiveMP: resolve_meta
         y = randomvar(model, :y)
         z = randomvar(model, :z)
 
-        @test resolve_meta(expr, :SomeOtherNode, (x, y), meta, model) === nothing
-        @test_throws ErrorException resolve_meta(expr, :SomeNode, (x, y), meta, model)
-        @test_throws ErrorException  resolve_meta(expr, :SomeNode, (y, x), meta, model)
-        @test_throws ErrorException  resolve_meta(expr, :SomeNode, (x, y, z), meta, model)
-        @test_throws ErrorException  resolve_meta(expr, :SomeNode, (x, y, x, y), meta, model)
-        @test_throws ErrorException  resolve_meta(expr, :SomeNode, (x, y, x, y, z, z), meta, model)
-        @test_throws ErrorException  resolve_meta(expr, :SomeNode, (y, x, z), meta, model)
-        @test_throws ErrorException  resolve_meta(expr, :SomeNode, (y, z, x), meta, model)
-        @test resolve_meta(expr, :SomeNode, (x, ), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (x, z), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (y, ), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (y, z), meta, model) === nothing
-        @test resolve_meta(expr, :SomeNode, (z, ), meta, model) === nothing
+        @test resolve_meta(meta, model, SomeOtherNode, (x, y)) === nothing
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x, y))
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (y, x))
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x, y, z))
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x, y, x, y))
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x, y, x, y, z, z))
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (y, x, z))
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (y, z, x))
+        @test resolve_meta(meta, model, SomeNode, (x, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x, z)) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y, z)) === nothing
+        @test resolve_meta(meta, model, SomeNode, (z, )) === nothing
 
     end
 

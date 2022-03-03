@@ -4,6 +4,8 @@ export GaussianMixture, GaussianMixtureNode
 # Normal Mixture Functional Form
 struct NormalMixture{N} end
 
+ReactiveMP.as_node_symbol(::Type{ <: NormalMixture }) = :NormalMixture
+
 # Special node
 # Generic FactorNode implementation does not work with dynamic number of inputs
 # We need to reimplement the following set of functions

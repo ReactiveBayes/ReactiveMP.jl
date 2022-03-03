@@ -131,10 +131,10 @@ include("constraints/spec/spec.jl")
 include("constraints/spec/form_spec.jl")
 include("constraints/spec/factorisation_spec.jl")
 
-include("model.jl")
 include("utils/inference.jl")
 include("utils/meta.jl")
 
+include("model.jl")
 include("fixes.jl")
 
 end

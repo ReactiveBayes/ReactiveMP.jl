@@ -1,6 +1,7 @@
 export ModelOptions, model_options
 export Model
 export AutoVar
+export getoptions, getconstraints, getmeta
 export getnodes, getrandom, getconstant, getdata
 export activate!, repeat!
 export UntilConvergence
@@ -66,27 +67,38 @@ default_factorisation(options::ModelOptions)     = options.default_factorisation
 
 # Model
 
-struct Model{O}
-    options  :: O
-    nodes    :: Vector{AbstractFactorNode}
-    random   :: Vector{RandomVariable}
-    constant :: Vector{ConstVariable}
-    data     :: Vector{DataVariable}
-    vardict  :: Dict{Symbol, Any}
+struct Model{C, M, O}
+    constraints :: C
+    meta        :: M
+    options     :: O
+    nodes       :: Vector{AbstractFactorNode}
+    random      :: Vector{RandomVariable}
+    constant    :: Vector{ConstVariable}
+    data        :: Vector{DataVariable}
+    vardict     :: Dict{Symbol, Any}
 end
 
-Base.show(io::IO, model::Model) = print(io, "Model($(getoptions(model)))")
+Base.show(io::IO, ::Type{ <: Model }) = print(io, "Model")
+Base.show(io::IO, model::Model)       = print(io, "Model()")
 
-Model() = Model(model_options())
-Model(options::NamedTuple) = Model(model_options(options))
-Model(options::O) where { O <: ModelOptions } = Model{O}(options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
+Model() = Model(DefaultConstraints, DefaultMeta, model_options())
 
-getoptions(model::Model)  = model.options
-getnodes(model::Model)    = model.nodes
-getrandom(model::Model)   = model.random
-getconstant(model::Model) = model.constant
-getdata(model::Model)     = model.data
-getvardict(model::Model)  = model.vardict
+function Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple) 
+    return Model(constraints, meta, model_options(options))
+end
+
+function Model(constraints::C, meta::M, options::O) where { C <: Union{ UnspecifiedConstraints, ConstraintsSpecification }, M <: Union{ UnspecifiedMeta, MetaSpecification }, O <: ModelOptions } 
+    return Model{C, M, O}(constraints, meta, options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
+end
+
+getconstraints(model::Model) = model.constraints
+getmeta(model::Model)        = model.meta
+getoptions(model::Model)     = model.options
+getnodes(model::Model)       = model.nodes
+getrandom(model::Model)      = model.random
+getconstant(model::Model)    = model.constant
+getdata(model::Model)        = model.data
+getvardict(model::Model)     = model.vardict
 
 function Base.getindex(model::Model, symbol::Symbol) 
     vardict = getvardict(model)
@@ -141,6 +153,21 @@ end
 
 # Utility functions
 
+## constraints 
+
+node_resolve_factorisation(model::Model, fform, variables) = node_resolve_factorisation(model, getconstraints(model), default_factorisation(getoptions(model)), fform, variables)
+
+node_resolve_factorisation(model::Model, constraints, default, fform, variables)                               = error("Cannot resolve factorisation constrains. Both `constraints` and `default_factorisation` option have been set, which is disallowed.")
+node_resolve_factorisation(model::Model, ::UnspecifiedConstraints, default, fform, variables)                  = default
+node_resolve_factorisation(model::Model, constraints, ::UnspecifiedConstraints, fform, variables)              = resolve_factorisation(constraints, model, fform, variables)
+node_resolve_factorisation(model::Model, ::UnspecifiedConstraints, ::UnspecifiedConstraints, fform, variables) = resolve_factorisation(UnspecifiedConstraints(), model, fform, variables)
+
+## meta 
+
+node_resolve_meta(model::Model, fform, variables) = resolve_meta(getmeta(model), model, fform, variables)
+
+## variable creation
+
 randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
 constvar(model::Model, args...; kwargs...)  = add!(model, constvar(args...; kwargs...))
 datavar(model::Model, args...; kwargs...)   = add!(model, datavar(args...; kwargs...))
@@ -149,8 +176,8 @@ as_variable(model::Model, x)                   = add!(model, as_variable(x))
 as_variable(model::Model, v::AbstractVariable) = v
 as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d), t)
 
-function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
-    return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
+function make_node(model::Model, fform, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
+    return add!(model, make_node(fform, args...; factorisation = factorisation, kwargs...))
 end
 
 ## AutoVar 
