@@ -39,7 +39,8 @@ enabled_tests = lowercase.(ARGS)
 
 if isempty(enabled_tests)
     println("Running all tests...")
-    Aqua.test_all(ReactiveMP; ambiguities=false)
+    # `project_toml_formatting` is broken on CI, revise at some point
+    Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
     # doctest(ReactiveMP)
 else 
     println("Running specific tests: $enabled_tests")
