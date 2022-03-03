@@ -904,7 +904,7 @@ macro node(fformtype, sdtype, interfaces_list)
         end
 
         function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable }; kwargs...)
-            var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
+            var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar), proxy_variables = args)
             node = ReactiveMP.make_node(fform, var, args...; kwargs...)
             return node, var
         end

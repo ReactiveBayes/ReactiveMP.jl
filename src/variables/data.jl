@@ -29,8 +29,9 @@ end
 
 function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
     vars = Array{DataVariable{D, S}}(undef, dims)
+    size = axes(vars)
     @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = datavar(name, D, VariableArray(i); subject = similar(subject))
+        vars[i] = datavar(name, D, VariableArray(size, i); subject = similar(subject))
     end
     return vars
 end
@@ -40,9 +41,13 @@ Base.eltype(::DataVariable{D})            where D = D
 
 degree(datavar::DataVariable)          = nconnected(datavar)
 name(datavar::DataVariable)            = datavar.name
+proxy(datavar::DataVariable)           = nothing
 collection_type(datavar::DataVariable) = datavar.collection_type
 isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)      = datavar.nconnected
+
+isproxy(::DataVariable)  = false
+israndom(::DataVariable) = false
 
 getlastindex(::DataVariable) = 1
 

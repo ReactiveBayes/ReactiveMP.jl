@@ -32,15 +32,20 @@ end
 
 function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
     vars = Array{ConstVariable}(undef, dims)
+    size = axes(vars)
     @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = constvar(name, fn(convert(Tuple, i)), VariableArray(i))
+        vars[i] = constvar(name, fn(convert(Tuple, i)), VariableArray(size, i))
     end
     return vars
 end
 
 degree(constvar::ConstVariable)          = nconnected(constvar)
 name(constvar::ConstVariable)            = constvar.name
+proxy(constvar::ConstVariable)           = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
+
+isproxy(::ConstVariable)  = false
+israndom(::ConstVariable) = false
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 

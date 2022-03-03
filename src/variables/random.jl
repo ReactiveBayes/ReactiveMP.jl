@@ -13,6 +13,7 @@ mutable struct RandomVariable <: AbstractVariable
     output_cache        :: Union{Nothing, EqualityChain}
     marginal            :: MarginalObservable
     pipeline            :: AbstractPipelineStage
+    proxy_variables     
     prod_constraint     
     prod_strategy       
     form_constraint     
@@ -21,8 +22,8 @@ end
 
 Base.show(io::IO, randomvar::RandomVariable) = print(io, "RandomVariable(", indexed_name(randomvar), ")")
 
-function randomvar(name::Symbol, collection_type::AbstractVariableCollectionType = VariableIndividual(); pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
-    return RandomVariable(name, collection_type, Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), false, nothing, MarginalObservable(), pipeline, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
+function randomvar(name::Symbol, collection_type::AbstractVariableCollectionType = VariableIndividual(); pipeline = EmptyPipelineStage(), proxy_variables = nothing, prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault()) 
+    return RandomVariable(name, collection_type, Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), false, nothing, MarginalObservable(), pipeline, proxy_variables, prod_constraint, prod_strategy, form_constraint, form_check_strategy)
 end
 
 function randomvar(name::Symbol, dims::Tuple; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
@@ -39,20 +40,25 @@ end
 
 function randomvar(name::Symbol, dims::Vararg{Int}; pipeline = EmptyPipelineStage(), prod_constraint = ProdAnalytical(), prod_strategy = FoldLeftProdStrategy(), form_constraint = UnspecifiedFormConstraint(), form_check_strategy = FormConstraintCheckPickDefault())
     vars = Array{RandomVariable}(undef, dims)
+    size = axes(vars)
     @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = randomvar(name, VariableArray(i); pipeline = pipeline, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
+        vars[i] = randomvar(name, VariableArray(size, i); pipeline = pipeline, prod_constraint = prod_constraint, prod_strategy = prod_strategy, form_constraint = form_constraint, form_check_strategy = form_check_strategy)
     end
     return vars
 end
 
 degree(randomvar::RandomVariable)              = length(randomvar.input_messages)
 name(randomvar::RandomVariable)                = randomvar.name
+proxy(randomvar::RandomVariable)               = randomvar.proxy_variables
 collection_type(randomvar::RandomVariable)     = randomvar.collection_type
 equality_chain(randomvar::RandomVariable)      = randomvar.equality_chain
 prod_constraint(randomvar::RandomVariable)     = randomvar.prod_constraint
 prod_strategy(randomvar::RandomVariable)       = randomvar.prod_strategy
 form_constraint(randomvar::RandomVariable)     = randomvar.form_constraint
 form_check_strategy(randomvar::RandomVariable) = _form_check_strategy(randomvar.form_check_strategy, randomvar)
+
+isproxy(randomvar::RandomVariable) = proxy(randomvar) !== nothing
+israndom(::RandomVariable) = true
 
 _form_check_strategy(::FormConstraintCheckPickDefault, randomvar::RandomVariable) = default_form_check_strategy(form_constraint(randomvar))
 _form_check_strategy(form_check_strategy, randomvar::RandomVariable)              = form_check_strategy

@@ -5,7 +5,7 @@ export activate!, repeat!
 export UntilConvergence
 # export MarginalsEagerUpdate, MarginalsPureUpdate
 
-import Base: show
+import Base: show, getindex, haskey, firstindex, lastindex
 
 # Marginals update strategies 
 
@@ -87,7 +87,26 @@ getconstant(model::Model) = model.constant
 getdata(model::Model)     = model.data
 getvardict(model::Model)  = model.vardict
 
-getindex(model::Model, symbol::Symbol) = getindex(getvardict(model), symbol)
+function Base.getindex(model::Model, symbol::Symbol) 
+    vardict = getvardict(model)
+    if !haskey(vardict, symbol)
+        error("Model has no variable/variables named $(symbol).")
+    end
+    return getindex(getvardict(model), symbol)
+end
+
+function Base.haskey(model::Model, symbol::Symbol)
+    return haskey(getvardict(model), symbol)
+end
+
+firstindex(model::Model, symbol::Symbol) = firstindex(model, getindex(model, symbol))
+lastindex(model::Model, symbol::Symbol)  = lastindex(model, getindex(model, symbol))
+
+firstindex(::Model, ::AbstractVariable) = typemin(Int64)
+lastindex(::Model, ::AbstractVariable)  = typemax(Int64)
+
+firstindex(::Model, variables::AbstractVector{ <: AbstractVariable }) = firstindex(variables)
+lastindex(::Model, variables::AbstractVector{ <: AbstractVariable })  = lastindex(variables)
 
 add!(vardict::Dict, name::Symbol, entity) = vardict[name] = entity
 

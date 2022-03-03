@@ -84,6 +84,8 @@ end
     addtests("test_math.jl")
     addtests("test_helpers.jl")
 
+    addtests("constraints/spec/test_spec.jl")
+    addtests("constraints/spec/test_factorisation_spec.jl")
     addtests("constraints/prod/test_prod_final.jl")
 
     addtests("test_distributions.jl")
@@ -188,6 +190,8 @@ end
     addtests("models/test_ar.jl")
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
+
+    addtests("utils/test_meta.jl")
 
 end
 

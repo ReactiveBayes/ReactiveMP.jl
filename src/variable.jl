@@ -18,9 +18,14 @@ struct VariableVector <: AbstractVariableCollectionType
     index :: Int
 end
 
-struct VariableArray <: AbstractVariableCollectionType
-    index :: CartesianIndex
+struct VariableArray{S, I} <: AbstractVariableCollectionType
+    size  :: S
+    index :: I
 end
+
+linear_index(::VariableIndividual) = nothing
+linear_index(v::VariableVector)    = v.index
+linear_index(v::VariableArray)     = LinearIndices(v.size)[v.index]
 
 indexed_name(::VariableIndividual, name::Symbol) = string(name)
 indexed_name(seq::VariableVector, name::Symbol)  = string(name, "_", seq.index)
@@ -113,6 +118,37 @@ end
 function name(variable::AbstractVariable)
     return variable.name
 end
+
+##
+
+struct VariableReferenceProxyUnchecked end
+struct VariableReferenceProxyChecked end
+
+"""
+    resolve_variable_proxy
+
+This function resolves variable that should be used for factorisation constraints resolution or in other places. The idea here is that random variables can be automatically created by the model specification 
+language and user might be unaware of them. Such variables also have some randomly generated names and cannot be used explicitly in constraints specification language. However, ReactiveMP.jl keeps 
+track of `proxy_variables`. During the first call of `get_factorisation_reference` we check if there are some proxy variables at all and:
+1. if not we simply return name and linear index of the current variable
+2. if yes we pass it futher to the `unchecked` version of the function 
+   2.1 `unchecked` version return immediatelly if there is only one proxy var (see bullet 1)
+   2.2 in case of multiple proxy vars we filter only `RandomVariable` and call `checked` version of the function 
+3. `checked` version of the function return immediatelly if there is only one proxy random variable left, if there are multuple proxy random vars we throw an error as this case is ambigous for factorisation constrains specification
+
+This function is a part of private API and should not be used explicitly.
+"""
+function resolve_variable_proxy end
+
+resolve_variable_proxy(var::AbstractVariable) = resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy(var))
+
+resolve_variable_proxy(var::AbstractVariable, ::Union{ VariableReferenceProxyChecked, VariableReferenceProxyUnchecked }, ::Nothing) = (name(var), linear_index(collection_type(var)), var)
+
+resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyUnchecked, proxy::Tuple{T}) where { T <: AbstractVariable } = resolve_variable_proxy(first(proxy))
+resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyUnchecked, proxy::Tuple)                                    = resolve_variable_proxy(var, VariableReferenceProxyChecked(), filter(v -> v isa RandomVariable, proxy))
+
+resolve_variable_proxy(::AbstractVariable, ::VariableReferenceProxyChecked, proxy::Tuple{T})   where { T <: AbstractVariable } = resolve_variable_proxy(first(proxy))
+resolve_variable_proxy(::AbstractVariable, ::VariableReferenceProxyChecked, proxy::Tuple)                                      = error("Multiple proxy vars in variable reference resolution are dissalowed. This may happened because of the deterministic relation in the model that has more than one input. This setting does not play nicely with constraints or meta specification languages. As a workaround create and give a specific name for the output variable of this deterministic relation.")
 
 ## Helper functions
 
