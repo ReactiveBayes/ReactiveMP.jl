@@ -172,18 +172,18 @@ __factorisation_specification_resolve_index(index::SplittedRange, collection::Ab
 
 ##
 
-function resolve_factorisation(expr::Expr, variables, ::UnspecifiedConstraints, model)
-    return resolve_factorisation(expr, variables, __EmptyConstraints, model)
+function resolve_factorisation(::UnspecifiedConstraints, model, fform, variables)
+    return resolve_factorisation(__EmptyConstraints, model, fform, variables)
 end
 
 """
-    resolve_factorisation(expr::Expr, variables, constraints, model) 
+    resolve_factorisation(constraints, model, fform, variables) 
 
-This function resolves factorisation constraints in a form of a tuple for a given `expr` (needed for error printing), `variables`, `constraints` and `model`.
+This function resolves factorisation constraints in a form of a tuple for a given `constraints`, `model`, `fform`, and `variables`.
 
 See also: [`ConstraintsSpecification`](@ref)
 """
-function resolve_factorisation(expr::Expr, variables, constraints, model) 
+function resolve_factorisation(constraints, model, fform, variables) 
 
     N = length(variables)
     
@@ -205,7 +205,7 @@ function resolve_factorisation(expr::Expr, variables, constraints, model)
     model_vardict = ReactiveMP.getvardict(model)
     
     var_refs_collections = map(var_refs_names) do name
-        return get(() -> error("Model has no variable named $(name). Or it has not been created before the expression `$(expr)`."), model_vardict, name)
+        return get(() -> error("Model has no variable named $(name). Double check the expression `$(var_refs_names[1]) ~ $(fform)($(join(var_refs_names[2:end], ", ")))`."), model_vardict, name)
     end
     
     # function _resolve_var_ref_position
@@ -410,7 +410,7 @@ function resolve_factorisation(expr::Expr, variables, constraints, model)
     for cluster in sorted_clusters
         for index in cluster
             if clusters_usage[index] === true
-                __throw_intersection_error(expr, var_refs, sorted_clusters, constraints)
+                __throw_intersection_error(fform, var_refs, var_refs_names, sorted_clusters, constraints)
             end 
             clusters_usage[index] = true
         end
@@ -423,17 +423,18 @@ end
 ## Errors
 
 struct ClusterIntersectionError
-    expression
+    fform
     varrefs
+    varrefsnames
     clusters
     constraints
 end
 
-__throw_intersection_error(expression, varrefs, clusters, constraints) = throw(ClusterIntersectionError(expression, varrefs, clusters, constraints))
+__throw_intersection_error(fform, varrefs, varrefsnames, clusters, constraints) = throw(ClusterIntersectionError(fform, varrefs, varrefsnames, clusters, constraints))
 
 function Base.showerror(io::IO, error::ClusterIntersectionError)
     
-    print(io, "Cluster intersection error in the expression `$(error.expression)`.\n")
+    print(io, "Cluster intersection error in the expression `$(varrefsnames[1]) ~ $(fform)($(join(varrefsnames[2:end], ", ")))`.\n")
     print(io, "Based on factorisation constraints the resulting local constraint ")
     print(io, "q(")
     join(io, map(r -> __io_entry_pair(r[1], r[2]), error.varrefs), ", ")

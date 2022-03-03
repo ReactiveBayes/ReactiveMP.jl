@@ -102,9 +102,9 @@ using GraphPPL # for `@constraints` macro
 
     @testset "Factorisation constraints resolution" begin
 
-        # Factorisation constrains resolution function accepts an expression as an input for error printing
-        # We don't care about actual expression in tests
-        expr = :(test ~ Test(test))
+        # Factorisation constrains resolution function accepts a `fform` symbol as an input for error printing
+        # We don't care about actual symbol in tests
+        fform = :Test
 
         @testset "Use case #1" begin
             cs = @constraints begin 
@@ -116,7 +116,7 @@ using GraphPPL # for `@constraints` macro
             x = randomvar(model, :x)
             y = randomvar(model, :y)
 
-            @test resolve_factorisation(expr, (x, y), cs, model) === ((1,), (2, ))
+            @test resolve_factorisation(cs, model, fform, (x, y)) === ((1,), (2, ))
         end
 
         @testset "Use case #2" begin
@@ -133,8 +133,8 @@ using GraphPPL # for `@constraints` macro
             x = randomvar(model, :x)
             y = randomvar(model, :y)
 
-            @test resolve_factorisation(expr, (x, y), cs2(true), model) === ((1, 2), )
-            @test resolve_factorisation(expr, (x, y), cs2(false), model) === ((1,), (2, ))
+            @test resolve_factorisation(cs2(true), model, fform, (x, y)) === ((1, 2), )
+            @test resolve_factorisation(cs2(false), model, fform, (x, y)) === ((1,), (2, ))
         end
 
         @testset "Use case #3" begin
@@ -148,21 +148,21 @@ using GraphPPL # for `@constraints` macro
             y = randomvar(model, :y, 10)
 
             for i in 1:5
-                @test resolve_factorisation(expr, (x[i], y[i]), cs, model) === ((1, ), (2, ))
-                @test resolve_factorisation(expr, (x[i + 1], y[i]), cs, model) === ((1, ), (2, ))
-                @test resolve_factorisation(expr, (x[i], y[i + 1]), cs, model) === ((1, ), (2, ))
-                @test resolve_factorisation(expr, (y[i], x[i]), cs, model) === ((1, ), (2, ))
-                @test resolve_factorisation(expr, (y[2], x[i]), cs, model) === ((1, ), (2, ))
-                @test resolve_factorisation(expr, (y[i], x[i + 1]), cs, model) === ((1, ), (2, ))
-                @test resolve_factorisation(expr, (x[i], x[i + 1], y[i], y[i + 1]), cs, model) === ((1, 2), (3, 4))
-                @test resolve_factorisation(expr, (y[i], y[i + 1], x[i], x[i + 1]), cs, model) === ((1, 2), (3, 4))
-                @test resolve_factorisation(expr, (y[i], x[i], y[i + 1], x[i + 1]), cs, model) === ((1, 3), (2, 4))
-                @test resolve_factorisation(expr, (x[i], y[i], x[i + 1], y[i + 1]), cs, model) === ((1, 3), (2, 4))
-                @test resolve_factorisation(expr, (x[i], y[i + 1], x[i + 1], y[i]), cs, model) === ((1, 3), (2, 4))
-                @test resolve_factorisation(expr, (x[i], x[i + 1], x[i + 2], y[i], y[i + 1], y[i + 2]), cs, model) === ((1, 2, 3), (4, 5, 6))
-                @test resolve_factorisation(expr, (y[i], y[i + 1], y[i + 2], x[i], x[i + 1], x[i + 2]), cs, model) === ((1, 2, 3), (4, 5, 6))
-                @test resolve_factorisation(expr, (x[i], y[i], x[i + 1], y[i + 1], x[i + 2], y[i + 2]), cs, model) === ((1, 3, 5), (2, 4, 6))
-                @test resolve_factorisation(expr, (y[i], x[i], y[i + 1], x[i + 1], y[i + 2], x[i + 2]), cs, model) === ((1, 3, 5), (2, 4, 6))
+                @test resolve_factorisation(cs, model, fform, (x[i], y[i])) === ((1, ), (2, ))
+                @test resolve_factorisation(cs, model, fform, (x[i + 1], y[i])) === ((1, ), (2, ))
+                @test resolve_factorisation(cs, model, fform, (x[i], y[i + 1])) === ((1, ), (2, ))
+                @test resolve_factorisation(cs, model, fform, (y[i], x[i])) === ((1, ), (2, ))
+                @test resolve_factorisation(cs, model, fform, (y[2], x[i])) === ((1, ), (2, ))
+                @test resolve_factorisation(cs, model, fform, (y[i], x[i + 1])) === ((1, ), (2, ))
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1], y[i], y[i + 1])) === ((1, 2), (3, 4))
+                @test resolve_factorisation(cs, model, fform, (y[i], y[i + 1], x[i], x[i + 1])) === ((1, 2), (3, 4))
+                @test resolve_factorisation(cs, model, fform, (y[i], x[i], y[i + 1], x[i + 1])) === ((1, 3), (2, 4))
+                @test resolve_factorisation(cs, model, fform, (x[i], y[i], x[i + 1], y[i + 1])) === ((1, 3), (2, 4))
+                @test resolve_factorisation(cs, model, fform, (x[i], y[i + 1], x[i + 1], y[i])) === ((1, 3), (2, 4))
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1], x[i + 2], y[i], y[i + 1], y[i + 2])) === ((1, 2, 3), (4, 5, 6))
+                @test resolve_factorisation(cs, model, fform, (y[i], y[i + 1], y[i + 2], x[i], x[i + 1], x[i + 2])) === ((1, 2, 3), (4, 5, 6))
+                @test resolve_factorisation(cs, model, fform, (x[i], y[i], x[i + 1], y[i + 1], x[i + 2], y[i + 2])) === ((1, 3, 5), (2, 4, 6))
+                @test resolve_factorisation(cs, model, fform, (y[i], x[i], y[i + 1], x[i + 1], y[i + 2], x[i + 2])) === ((1, 3, 5), (2, 4, 6))
             end
         end
 
@@ -181,20 +181,20 @@ using GraphPPL # for `@constraints` macro
             z = randomvar(model, :z)
 
             for i in 1:10
-                @test resolve_factorisation(expr, (x[i], y[i]), cs4(true), model) === ((1, ), (2, ))
-                @test resolve_factorisation(expr, (x[i], y[i], z), cs4(true), model) === ((1, ), (2, ), (3, ))
-                @test resolve_factorisation(expr, (x[i], z, y[i]), cs4(true), model) === ((1, ), (2, ), (3, ))
-                @test resolve_factorisation(expr, (z, x[i], y[i]), cs4(true), model) === ((1, ), (2, ), (3, ))
-                @test resolve_factorisation(expr, (x[i], z), cs4(true), model) === ((1, ), (2, ), )
-                @test resolve_factorisation(expr, (y[i], z), cs4(true), model) === ((1, ), (2, ), )
+                @test resolve_factorisation(cs4(true), model, fform, (x[i], y[i])) === ((1, ), (2, ))
+                @test resolve_factorisation(cs4(true), model, fform, (x[i], y[i], z)) === ((1, ), (2, ), (3, ))
+                @test resolve_factorisation(cs4(true), model, fform, (x[i], z, y[i])) === ((1, ), (2, ), (3, ))
+                @test resolve_factorisation(cs4(true), model, fform, (z, x[i], y[i])) === ((1, ), (2, ), (3, ))
+                @test resolve_factorisation(cs4(true), model, fform, (x[i], z)) === ((1, ), (2, ), )
+                @test resolve_factorisation(cs4(true), model, fform, (y[i], z)) === ((1, ), (2, ), )
 
-                @test resolve_factorisation(expr, (x[i], y[i]), cs4(false), model) === ((1, 2), )
-                @test resolve_factorisation(expr, (x[i], y[i], z), cs4(false), model) === ((1, 2, ), (3, ))
-                @test resolve_factorisation(expr, (x[i], z, y[i]), cs4(false), model) === ((1, 3, ), (2, ))
-                @test resolve_factorisation(expr, (z, x[i], y[i]), cs4(false), model) === ((1, ), (2, 3, ))
-                @test resolve_factorisation(expr, (z, y[i], x[i]), cs4(false), model) === ((1, ), (2, 3, ))
-                @test resolve_factorisation(expr, (x[i], z), cs4(false), model) === ((1, ), (2, ), )
-                @test resolve_factorisation(expr, (y[i], z), cs4(false), model) === ((1, ), (2, ), )
+                @test resolve_factorisation(cs4(false), model, fform, (x[i], y[i])) === ((1, 2), )
+                @test resolve_factorisation(cs4(false), model, fform, (x[i], y[i], z),) === ((1, 2, ), (3, ))
+                @test resolve_factorisation(cs4(false), model, fform, (x[i], z, y[i])) === ((1, 3, ), (2, ))
+                @test resolve_factorisation(cs4(false), model, fform, (z, x[i], y[i])) === ((1, ), (2, 3, ))
+                @test resolve_factorisation(cs4(false), model, fform, (z, y[i], x[i])) === ((1, ), (2, 3, ))
+                @test resolve_factorisation(cs4(false), model, fform, (x[i], z)) === ((1, ), (2, ), )
+                @test resolve_factorisation(cs4(false), model, fform, (y[i], z)) === ((1, ), (2, ), )
             end
             
         end
@@ -211,15 +211,15 @@ using GraphPPL # for `@constraints` macro
             z = randomvar(model, :z)
             
             for i in 1:10
-                @test resolve_factorisation(expr, (x[i], y[i], z), cs, model) === ((1, 2, 3), )
-                @test resolve_factorisation(expr, (z, x[i], y[i]), cs, model) === ((1, 2, 3), )
-                @test resolve_factorisation(expr, (x[i], z, y[i]), cs, model) === ((1, 2, 3), )
-                @test resolve_factorisation(expr, (x[i], x[i + 1], y[i], y[i + 1], z), cs, model) === ((1, 2, 3, 4, 5), )
-                @test resolve_factorisation(expr, (z, x[i], x[i + 1], y[i], y[i + 1]), cs, model) === ((1, 2, 3, 4, 5), )
-                @test resolve_factorisation(expr, (x[i], z, x[i + 1], y[i], y[i + 1]), cs, model) === ((1, 2, 3, 4, 5), )
-                @test resolve_factorisation(expr, (x[i], x[i + 1], z, y[i], y[i + 1]), cs, model) === ((1, 2, 3, 4, 5), )
-                @test resolve_factorisation(expr, (x[i], x[i + 1], y[i], z, y[i + 1]), cs, model) === ((1, 2, 3, 4, 5), )
-                @test resolve_factorisation(expr, (x[i], x[i + 1], y[i], y[i + 1], z), cs, model) === ((1, 2, 3, 4, 5), )
+                @test resolve_factorisation(cs, model, fform, (x[i], y[i], z)) === ((1, 2, 3), )
+                @test resolve_factorisation(cs, model, fform, (z, x[i], y[i])) === ((1, 2, 3), )
+                @test resolve_factorisation(cs, model, fform, (x[i], z, y[i])) === ((1, 2, 3), )
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1], y[i], y[i + 1], z)) === ((1, 2, 3, 4, 5), )
+                @test resolve_factorisation(cs, model, fform, (z, x[i], x[i + 1], y[i], y[i + 1])) === ((1, 2, 3, 4, 5), )
+                @test resolve_factorisation(cs, model, fform, (x[i], z, x[i + 1], y[i], y[i + 1])) === ((1, 2, 3, 4, 5), )
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1], z, y[i], y[i + 1])) === ((1, 2, 3, 4, 5), )
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1], y[i], z, y[i + 1])) === ((1, 2, 3, 4, 5), )
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1], y[i], y[i + 1], z)) === ((1, 2, 3, 4, 5), )
             end
             
         end
@@ -234,8 +234,8 @@ using GraphPPL # for `@constraints` macro
             x = randomvar(model, :x, 10)
 
             for i in 1:8
-                @test resolve_factorisation(expr, (x[i], x[i + 1]), cs, model) === ((1,), (2, ))
-                @test resolve_factorisation(expr, (x[i], x[i + 1], x[i + 2]), cs, model) === ((1,), (2, ), (3, ))
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1])) === ((1,), (2, ))
+                @test resolve_factorisation(cs, model, fform, (x[i], x[i + 1], x[i + 2])) === ((1,), (2, ), (3, ))
             end
         end
 
@@ -250,20 +250,20 @@ using GraphPPL # for `@constraints` macro
             z = randomvar(model, :z)
             
             for i in 1:10, n in 1:9
-                @test resolve_factorisation(expr, (x[i], z), cs6(n), model) === ((1, 2), )
+                @test resolve_factorisation(cs6(n), model, fform, (x[i], z)) === ((1, 2), )
             end    
-            @test resolve_factorisation(expr, (x[1], x[2]), cs6(5), model) === ((1, 2), )
-            @test resolve_factorisation(expr, (x[2], x[1]), cs6(5), model) === ((1, 2), )
-            @test resolve_factorisation(expr, (x[5], x[6]), cs6(5), model) === ((1, ), (2, ), )
-            @test resolve_factorisation(expr, (x[6], x[5]), cs6(5), model) === ((1, ), (2, ), )
+            @test resolve_factorisation(cs6(5), model, fform, (x[1], x[2])) === ((1, 2), )
+            @test resolve_factorisation(cs6(5), model, fform, (x[2], x[1])) === ((1, 2), )
+            @test resolve_factorisation(cs6(5), model, fform, (x[5], x[6])) === ((1, ), (2, ), )
+            @test resolve_factorisation(cs6(5), model, fform, (x[6], x[5])) === ((1, ), (2, ), )
             
-            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(expr, (x[1], x[2], z), cs6(1), model) 
-            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(expr, (x[2], x[1], z), cs6(1), model) 
-            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(expr, (z, x[1], x[2]), cs6(1), model) 
-            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(expr, (x[1], z, x[2]), cs6(1), model) 
+            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(cs6(1), model, fform, (x[1], x[2], z)) 
+            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(cs6(1), model, fform, (x[2], x[1], z)) 
+            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(cs6(1), model, fform, (z, x[1], x[2])) 
+            @test_throws ReactiveMP.ClusterIntersectionError resolve_factorisation(cs6(1), model, fform, (x[1], z, x[2])) 
 
             for n in 2:9
-                @test resolve_factorisation(expr, (x[1], x[2], z), cs6(n), model) === ((1, 2, 3), )
+                @test resolve_factorisation(cs6(n), model, fform, (x[1], x[2], z)) === ((1, 2, 3), )
             end
         end
 
@@ -285,14 +285,14 @@ using GraphPPL # for `@constraints` macro
             r = randomvar(model, :r)
             
             for i in 1:9
-                @test ReactiveMP.resolve_factorisation(expr, (y[i], y[i + 1], x[i], x[i + 1], t, r), cs8(false), model) === ((1, 3), (2, 4), (5, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], x[i + 1], y[i], y[i + 1], t, r), cs8(false), model) === ((1, 3), (2, 4), (5, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (t, r, x[i], x[i + 1], y[i], y[i + 1]), cs8(false), model) === ((1, 2), (3, 5), (4, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (t, x[i], x[i + 1], y[i], y[i + 1], r), cs8(false), model) === ((1, 6), (2, 4), (3, 5, ))
-                @test ReactiveMP.resolve_factorisation(expr, (y[i], y[i + 1], x[i], x[i + 1], t, r), cs8(true), model) === ((1, 3), (2, 4), (5, ), (6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], x[i + 1], y[i], y[i + 1], t, r), cs8(true), model) === ((1, 3), (2, 4), (5,), (6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (t, r, x[i], x[i + 1], y[i], y[i + 1]), cs8(true), model) === ((1,), (2, ), (3, 5), (4, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (t, x[i], x[i + 1], y[i], y[i + 1], r), cs8(true), model) === ((1,), (2, 4), (3, 5, ), (6, ))
+                @test ReactiveMP.resolve_factorisation(cs8(false), model, fform, (y[i], y[i + 1], x[i], x[i + 1], t, r)) === ((1, 3), (2, 4), (5, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs8(false), model, fform, (x[i], x[i + 1], y[i], y[i + 1], t, r)) === ((1, 3), (2, 4), (5, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs8(false), model, fform, (t, r, x[i], x[i + 1], y[i], y[i + 1])) === ((1, 2), (3, 5), (4, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs8(false), model, fform, (t, x[i], x[i + 1], y[i], y[i + 1], r)) === ((1, 6), (2, 4), (3, 5, ))
+                @test ReactiveMP.resolve_factorisation(cs8(true), model, fform, (y[i], y[i + 1], x[i], x[i + 1], t, r)) === ((1, 3), (2, 4), (5, ), (6, ))
+                @test ReactiveMP.resolve_factorisation(cs8(true), model, fform, (x[i], x[i + 1], y[i], y[i + 1], t, r)) === ((1, 3), (2, 4), (5,), (6, ))
+                @test ReactiveMP.resolve_factorisation(cs8(true), model, fform, (t, r, x[i], x[i + 1], y[i], y[i + 1])) === ((1,), (2, ), (3, 5), (4, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs8(true), model, fform, (t, x[i], x[i + 1], y[i], y[i + 1], r)) === ((1,), (2, 4), (3, 5, ), (6, ))
             end
             
         end
@@ -313,12 +313,12 @@ using GraphPPL # for `@constraints` macro
             t = randomvar(model, :t, 10)
             r = randomvar(model, :r)
         
-            @test ReactiveMP.resolve_factorisation(expr, (x[1], x[2], y[1], t[1]), cs, model) === ((1, 2, ), (3, ), (4, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x[2], x[3], y[1], t[1]), cs, model) === ((1, 2, ), (3, ), (4, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x[2], x[3], x[4], y[1], t[1]), cs, model) === ((1, 2, ), (3, ), (4, ), (5, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x[3], x[4], y[1], t[1]), cs, model) === ((1, ), (2, ), (3, ), (4, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x[3], x[4], y[1], t[1], r), cs, model) === ((1, ), (2, ), (3, ), (4, ), (5, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x[2], x[3], x[4], y[1], t[1], r), cs, model) === ((1, 2, ), (3, ), (4, ), (5, ), (6, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[1], x[2], y[1], t[1])) === ((1, 2, ), (3, ), (4, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[2], x[3], y[1], t[1])) === ((1, 2, ), (3, ), (4, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[2], x[3], x[4], y[1], t[1])) === ((1, 2, ), (3, ), (4, ), (5, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[3], x[4], y[1], t[1])) === ((1, ), (2, ), (3, ), (4, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[3], x[4], y[1], t[1], r)) === ((1, ), (2, ), (3, ), (4, ), (5, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[2], x[3], x[4], y[1], t[1], r)) === ((1, 2, ), (3, ), (4, ), (5, ), (6, ))
         end
 
         @testset "Use case #10" begin
@@ -336,14 +336,14 @@ using GraphPPL # for `@constraints` macro
             r = randomvar(model, :r)
 
             for i in 1:9
-                @test ReactiveMP.resolve_factorisation(expr, (y[i], y[i + 1], x[i], x[i + 1], t, r), cs, model) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (y[i], x[i + 1], x[i], y[i + 1], t, r), cs, model) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], y[i + 1], y[i], x[i + 1], t, r), cs, model) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], x[i + 1], y[i], y[i + 1], t, r), cs, model) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (r, y[i], y[i + 1], x[i], x[i + 1], t), cs, model) === ((1, 6) , (2, ), (3, ), (4, ), (5, ))
-                @test ReactiveMP.resolve_factorisation(expr, (t, y[i], y[i + 1], x[i], x[i + 1], r), cs, model) === ((1, 6) , (2, ), (3, ), (4, ), (5, ))
-                @test ReactiveMP.resolve_factorisation(expr, (r, t, y[i], y[i + 1], x[i], x[i + 1]), cs, model) === ((1, 2) , (3, ), (4, ), (5, ), (6, ))
-                @test ReactiveMP.resolve_factorisation(expr, (t, r, y[i], y[i + 1], x[i], x[i + 1]), cs, model) === ((1, 2) , (3, ), (4, ), (5, ), (6, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (y[i], y[i + 1], x[i], x[i + 1], t, r)) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (y[i], x[i + 1], x[i], y[i + 1], t, r)) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[i], y[i + 1], y[i], x[i + 1], t, r)) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[i], x[i + 1], y[i], y[i + 1], t, r)) === ((1,) , (2, ), (3, ), (4, ), (5, 6, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (r, y[i], y[i + 1], x[i], x[i + 1], t)) === ((1, 6) , (2, ), (3, ), (4, ), (5, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (t, y[i], y[i + 1], x[i], x[i + 1], r)) === ((1, 6) , (2, ), (3, ), (4, ), (5, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (r, t, y[i], y[i + 1], x[i], x[i + 1])) === ((1, 2) , (3, ), (4, ), (5, ), (6, ))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (t, r, y[i], y[i + 1], x[i], x[i + 1])) === ((1, 2) , (3, ), (4, ), (5, ), (6, ))
             end
         end
 
@@ -361,10 +361,10 @@ using GraphPPL # for `@constraints` macro
             t = randomvar(model, :t)
             r = randomvar(model, :r)
 
-            @test ReactiveMP.resolve_factorisation(expr, (x[1], y[2], x[2], y[3]), cs, model) === ((1, 2), (3, 4), )
-            @test ReactiveMP.resolve_factorisation(expr, (x[1], y[2], x[2], y[3], y[1]), cs, model) === ((1, 2), (3, 4), (5, ))
-            @test ReactiveMP.resolve_factorisation(expr, (y[1], y[2], x[1], x[2], t, r), cs, model) === ((1, ), (2, 3), (4, ), (5, 6))
-            @test ReactiveMP.resolve_factorisation(expr, (y[1], y[2], y[3], x[1], x[2], x[3], t, r), cs, model) === ((1, ), (2, 4), (3, 5), (6,), (7, 8))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[1], y[2], x[2], y[3])) === ((1, 2), (3, 4), )
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[1], y[2], x[2], y[3], y[1])) === ((1, 2), (3, 4), (5, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (y[1], y[2], x[1], x[2], t, r)) === ((1, ), (2, 3), (4, ), (5, 6))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (y[1], y[2], y[3], x[1], x[2], x[3], t, r)) === ((1, ), (2, 4), (3, 5), (6,), (7, 8))
         end
 
         @testset "Use case #12" begin 
@@ -380,11 +380,11 @@ using GraphPPL # for `@constraints` macro
             
             for i in 1:10
             if i > 1 && i < 10
-                @test ReactiveMP.resolve_factorisation(expr, (x[1], x[i]), cs, model) === ((1,), (2,))
-                @test ReactiveMP.resolve_factorisation(expr, (x[1], x[i], x[i + 1]), cs, model) === ((1,), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[1], x[i])) === ((1,), (2,))
+                @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[1], x[i], x[i + 1])) === ((1,), (2, 3))
             end
-            @test ReactiveMP.resolve_factorisation(expr, (x[1], x[2], x[3], y[i]), cs, model) === ((1,), (2, 3), (4, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x[1], x[2], x[3], x[4], y[i]), cs, model) === ((1,), (2, 3, 4), (5, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[1], x[2], x[3], y[i])) === ((1,), (2, 3), (4, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x[1], x[2], x[3], x[4], y[i])) === ((1,), (2, 3, 4), (5, ))
             end
              
         end
@@ -400,8 +400,8 @@ using GraphPPL # for `@constraints` macro
             y = randomvar(model, :y)
             tmp = randomvar(model, :tmp, proxy_variables = (y, ))
 
-            @test ReactiveMP.resolve_factorisation(expr, (x, y), cs, model) === ((1, ), (2, ))
-            @test ReactiveMP.resolve_factorisation(expr, (x, tmp), cs, model) === ((1, ), (2, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y)) === ((1, ), (2, ))
+            @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, tmp)) === ((1, ), (2, ))
         end
 
         @testset "Use case #14" begin 
@@ -444,23 +444,23 @@ using GraphPPL # for `@constraints` macro
             end
 
             for i in 1:10
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], y[i], z), cs14(true), model) === ((1, ), (2, 3))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp1[i], z), cs14(true), model) === ((1, ), (2, 3))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp2[i], z), cs14(true), model) === ((1, ), (2, 3))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp3[i], z), cs14(true), model) === ((1, ), (2, 3))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp4[i], z), cs14(true), model) === ((1, ), (2, 3))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp5[i], z), cs14(true), model) === ((1, ), (2, 3))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp6[i], z), cs14(true), model) === ((1, ), (2, 3))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp7[i], z), cs14(true), model) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], y[i], z)) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], tmp1[i], z)) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], tmp2[i], z)) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], tmp3[i], z)) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], tmp4[i], z)) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], tmp5[i], z)) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], tmp6[i], z)) === ((1, ), (2, 3))
+                @test ReactiveMP.resolve_factorisation(cs14(true), model, fform, (x[i], tmp7[i], z)) === ((1, ), (2, 3))
 
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], y[i], z), cs14(false), model) === ((1, 3), (2, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp1[i], z), cs14(false), model) === ((1, 3), (2, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp2[i], z), cs14(false), model) === ((1, 3), (2, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp3[i], z), cs14(false), model) === ((1, 3), (2, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp4[i], z), cs14(false), model) === ((1, 3), (2, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp5[i], z), cs14(false), model) === ((1, 3), (2, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp6[i], z), cs14(false), model) === ((1, 3), (2, ))
-                @test ReactiveMP.resolve_factorisation(expr, (x[i], tmp7[i], z), cs14(false), model) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], y[i], z)) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], tmp1[i], z)) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], tmp2[i], z)) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], tmp3[i], z)) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], tmp4[i], z)) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], tmp5[i], z)) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], tmp6[i], z)) === ((1, 3), (2, ))
+                @test ReactiveMP.resolve_factorisation(cs14(false), model, fform, (x[i], tmp7[i], z)) === ((1, 3), (2, ))
             end
         end
 
@@ -477,26 +477,26 @@ using GraphPPL # for `@constraints` macro
                     x = randomvar(model, :x)
                     y = randomvar(model, :y)
 
-                    @test ReactiveMP.resolve_factorisation(expr, (d, d), cs, model) === ((1,), (2, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (c, c), cs, model) === ((1,), (2, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (d, x), cs, model) === ((1,), (2, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (d, x, y), cs, model) === ((1,), (2, 3))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, d, y), cs, model) === ((1, 3), (2, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, y, d), cs, model) === ((1, 2), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (c, x), cs, model) === ((1,), (2, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (c, x, y), cs, model) === ((1,), (2, 3))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, c, y), cs, model) === ((1, 3), (2, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, y, c), cs, model) === ((1, 2), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (c, d), cs, model) === ((1,), (2, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (c, x, d), cs, model) === ((1,), (2, ), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, c, d), cs, model) === ((1, ), (2, ), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, d, c), cs, model) === ((1, ), (2,), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (c, x, d, y), cs, model) === ((1,), (2, 4), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, c, d, y), cs, model) === ((1, 4), (2, ), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, d, c, y), cs, model) === ((1, 4), (2,), (3, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (c, x, y, d), cs, model) === ((1,), (2, 3), (4, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, c, y, d), cs, model) === ((1, 3), (2, ), (4, ))
-                    @test ReactiveMP.resolve_factorisation(expr, (x, d, y, c), cs, model) === ((1, 3), (2,), (4, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, d)) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, c)) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, x)) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, x, y)) === ((1,), (2, 3))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, y)) === ((1, 3), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y, d)) === ((1, 2), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x)) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x, y)) === ((1,), (2, 3))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, y)) === ((1, 3), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y, c)) === ((1, 2), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, d)) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x, d)) === ((1,), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, d)) === ((1, ), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, c)) === ((1, ), (2,), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x, d, y)) === ((1,), (2, 4), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, d, y)) === ((1, 4), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, c, y)) === ((1, 4), (2,), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x, y, d)) === ((1,), (2, 3), (4, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, y, d)) === ((1, 3), (2, ), (4, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, y, c)) === ((1, 3), (2,), (4, ))
                 end
             end
         end
@@ -574,15 +574,30 @@ using GraphPPL # for `@constraints` macro
             tmp8 = randomvar(model, :tmp, proxy_variables = (c, x, y, d))
             tmp9 = randomvar(model, :tmp, proxy_variables = (d, x, y, c))
             
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp1), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp2), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp3), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp4), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp5), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp6), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp7), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp8), cs, model)
-            @test_throws ErrorException resolve_factorisation(expr, (z, tmp9), cs, model)
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp1))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp2))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp3))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp4))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp5))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp6))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp7))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp8))
+            @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp9))
+        end
+
+        @testset "Error case #5" begin 
+            # undefined variables
+            model = Model()
+            other = Model()
+            
+            x = randomvar(other, :x)
+            y = randomvar(other, :y)
+            
+            cs = @constraints begin
+                q(x, y) = q(x)q(y)
+            end
+            
+            @test_throws ErrorException ReactiveMP.resolve_factorisation(cs, model, :Normal, (x, y))
         end
 
     end
