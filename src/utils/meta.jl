@@ -23,7 +23,7 @@ functionalform(entry::MetaSpecificationEntry) = entry.fform
 getnames(entry::MetaSpecificationEntry)       = entry.names
 metadata(entry::MetaSpecificationEntry)       = entry.meta
 
-function Base.show(io::IO, entry::MetaSpecificationEntry) where { F, N }
+function Base.show(io::IO, entry::MetaSpecificationEntry)
     print(io, functionalform(entry), "(")
     join(io, getnames(entry), ", ")
     print(io, ") = ", metadata(entry))

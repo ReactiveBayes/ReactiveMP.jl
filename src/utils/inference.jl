@@ -14,11 +14,10 @@ assign_message!(variable::AbstractVariable, message)                       = set
 struct KeepEach end
 struct KeepLast end
 
-make_actor(::Any, ::KeepEach)                                = nothing
 make_actor(::RandomVariable, ::KeepEach)                     = keep(Marginal)
 make_actor(::AbstractArray{ <: RandomVariable }, ::KeepEach) = keep(Vector{Marginal})
 
-make_actor(::RandomVariable, ::KeepLast)                     = error("Not implemented")
+make_actor(::RandomVariable, ::KeepLast)                      = storage(Marginal)
 make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepLast) = buffer(Marginal, length(x))
 
 ## Inference ensure update
@@ -55,8 +54,8 @@ end
 function Base.getproperty(result::InferenceResult, property::Symbol)
     if property === :free_energy && getfield(result, :free_energy) === nothing 
         error("""
-        Bethe Free Energy has not been computed. 
-        Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
+            Bethe Free Energy has not been computed. 
+            Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
         """)
     else
         return getfield(result, property)
@@ -86,46 +85,50 @@ function inference(;
 
     _model, _ = model()
     vardict = ReactiveMP.getvardict(_model)
+
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
-    # `KeepEach` for each variable in a model, but DataVariables and ConstVariables are filtered out later on
-    # TODO: filter our temporary variables too
-    ireturnvars = if returnvars === nothing 
-        Dict(variable => KeepEach() for (variable, value) in vardict)
-    else 
-        returnvars
+    # `KeepEach` for each random and not-proxied variable in a model
+    if returnvars === nothing 
+        ireturnvars = Dict(variable => KeepEach() for (variable, value) in vardict if (israndom(variable) && !isproxy(variable)))
     end
 
-    # Second, for each entry we create an actor and we drop `nothing` 
-    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in ireturnvars)
-    actors = filter!(pair -> last(pair) !== nothing, actors)
+    # Second, for each random variable entry we create an actor
+    actors  = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in ireturnvars)
 
-    updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, actor) in actors)
+    # At third, for each random variable entry we create a boolean flag to track their updates
+    updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in ireturnvars)
+
     try 
         subscriptions = Dict(variable => subscribe!(obtain_marginal(vardict[variable]) |> ensure_update(updates[variable]), actor) for (variable, actor) in actors)
         
-        fe_actor, fe_subscription = if free_energy
-            _fe_actor = ScoreActor()
-            _fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), _fe_actor)
-            (_fe_actor, _fe_subscription)
-        else
-            nothing, VoidTeardown()
+        fe_actor        = nothing
+        fe_subscription = VoidTeardown()
+        
+        if free_energy
+            fe_actor        = ScoreActor()
+            fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), _fe_actor)
         end
 
-        if initmarginals !== nothing
+        if !isnothing(initmarginals)
             for (variable, initvalue) in initmarginals
                 assign_marginal!(vardict[variable], initvalue)
             end
         end
 
-        if initmessages !== nothing
+        if !isnothing(initmessages)
             for (variable, initvalue) in initmessages
                 assign_message!(vardict[variable], initvalue)
             end
         end
 
         if isnothing(data) || isempty(data)
-            error("No data provided")
+            error("Data is empty. Make sure you used `data` keyword argument with correct value.")
+        else 
+            foreach(filter(pair -> first(pair) isa DataVariable), vardict) do pair
+                haskey(data, name(pair)) || error("Data entry $(name(p)) is missing in `data` dictionary.")
+            end
         end
+
         p = showprogress ? ProgressMeter.Progress(iterations) : nothing
 
         for _ in 1:iterations
@@ -134,10 +137,10 @@ function inference(;
             end
             not_updated = filter((pair) -> !last(pair).updated, updates)
             if length(not_updated) !== 0
-                names = join(map(first, collect(not_updated)), ", ")
+                names = join(keys(not_updated), ", ")
                 error("""
-                Variables [ $(names) ] have not been updated after a single inference iteration. 
-                Therefore, make sure to initialize all required marginals and messages. See `initmarginals` and `initmessages` keyword arguments for the `inference` function. 
+                    Variables [ $(names) ] have not been updated after a single inference iteration. 
+                    Therefore, make sure to initialize all required marginals and messages. See `initmarginals` and `initmessages` keyword arguments for the `inference` function. 
                 """)
             end
             for (_, update_flag) in updates

@@ -241,7 +241,7 @@ function resolve_factorisation(expr::Expr, variables, constraints, model)
     # FactorisationConstraintsSpecification has names of LHS and specs of RHS
     factorisation = constraints.factorisation
     
-    function __process_factorisation_entry!(symbol::Symbol, index, shift::Int) where N
+    function __process_factorisation_entry!(symbol::Symbol, index, shift::Int)
         # `symbols` refers to all possible symbols that refer to the current variable
         
         function __filter_template!(spec::FactorisationConstraintsSpecification, factorisation_entries::Tuple)
