@@ -229,9 +229,3 @@ function ReactiveMP.make_node(::Type{ <: NormalMixture }, out::AbstractVariable,
 
     return node
 end
-
-function ReactiveMP.make_node(fform::Type{ <: NormalMixture }, autovar::AutoVar, args::Vararg{ <: AbstractVariable }; kwargs...)
-    var  = randomvar(getname(autovar))
-    node = make_node(fform, var, args...; kwargs...)
-    return node, var
-end

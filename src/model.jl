@@ -1,5 +1,6 @@
 export ModelOptions, model_options
 export Model
+export AutoVar
 export getnodes, getrandom, getconstant, getdata
 export activate!, repeat!
 export UntilConvergence
@@ -151,6 +152,58 @@ as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d
 function make_node(model::Model, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
     return add!(model, make_node(args...; factorisation = factorisation, kwargs...))
 end
+
+## AutoVar 
+
+struct AutoVar
+    name :: Symbol
+end
+
+getname(autovar::AutoVar) = autovar.name
+
+function ReactiveMP.make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable }; kwargs...)
+    var  = add!(model, ReactiveMP.randomvar(ReactiveMP.getname(autovar), proxy_variables = isdeterministic(sdtype(fform)) ? args : nothing))
+    node = ReactiveMP.make_node(model, fform, var, args...; kwargs...) # add! is inside
+    return node, var
+end
+
+__fform_const_apply(::Type{T}, args...) where T = T(args...)
+__fform_const_apply(f::F, args...) where { F <: Function } = f(args...)
+
+function ReactiveMP.make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable }; kwargs...)
+    if isstochastic(sdtype(fform))
+        var  = add!(model, ReactiveMP.randomvar(ReactiveMP.getname(autovar)))
+        node = ReactiveMP.make_node(model, fform, var, args...; kwargs...) # add! is inside
+        return node, var
+    else
+        var  = add!(model, ReactiveMP.constvar(ReactiveMP.getname(autovar), __fform_const_apply(fform, map((d) -> ReactiveMP.getconst(d), args)...)))
+        return nothing, var
+    end
+end
+
+# function make_node(model::Model, fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...)
+#     var = add!(model, constvar(getname(autovar), fform(map((d) -> getconst(d), args)...)))
+#     return nothing, var
+# end
+
+# function make_node(model::Model, ::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...) where T
+#     var = add!(model, constvar(getname(autovar), T(map((d) -> getconst(d), args)...)))
+#     return nothing, var
+# end
+
+function make_node(model::Model, fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
+    # TODO
+    message_cb = let fform = fform
+        (d::Tuple) -> Message(fform(d...), false, false)
+    end
+
+    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, message_cb)
+    var     = add!(model, datavar(getname(autovar), Any, subject = subject))
+
+    return nothing, var
+end
+
+##
 
 # Repeat variational message passing iterations [ EXPERIMENTAL ]
 

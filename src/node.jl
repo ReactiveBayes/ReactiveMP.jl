@@ -7,7 +7,7 @@ export FactorNode, functionalform, interfaces, factorisation, localmarginals, lo
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export connect!, activate!
-export make_node, AutoVar
+export make_node
 export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, RequireEverythingFunctionalDependencies
 export @node
 
@@ -107,7 +107,10 @@ See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@re
 """
 function sdtype end
 
-sdtype(::Function) = Deterministic()
+# Any `Type` is considered to be a deterministic mapping unless stated otherwise
+# E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
+sdtype(::Type{ T }) where T = Deterministic()
+sdtype(::Function)          = Deterministic()
 
 ## Generic factorisation constraints
 
@@ -719,12 +722,6 @@ function conjugate_type end
 
 ## make_node
 
-struct AutoVar
-    name :: Symbol
-end
-
-getname(autovar::AutoVar) = autovar.name
-
 function make_node end
 
 function interface_get_index end
@@ -738,30 +735,7 @@ function interface_get_name(::Type{ Val{ Node } }, ::Type{ Val{ Interface } }) w
     error("Node $Node has no interface named $Interface")
 end
 
-make_node(fform, ::AutoVar, ::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
-make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...)        = error("Unknown functional form '$(fform)' used for node specification.")
-
-function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...)
-    var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
-    return nothing, var
-end
-
-function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...) where T
-    var  = constvar(getname(autovar), T(map((d) -> getconst(d), args)...))
-    return nothing, var
-end
-
-function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
-    # TODO
-    message_cb = let fform = fform
-        (d::Tuple) -> Message(fform(d...), false, false)
-    end
-
-    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, message_cb)
-    var     = datavar(getname(autovar), Any, subject = subject)
-    
-    return nothing, var
-end
+make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
 
 # end
 
@@ -867,25 +841,6 @@ macro node(fformtype, sdtype, interfaces_list)
     else
         error("Unreachable in @node macro.") 
     end
-
-    make_node_const_mapping = if sdtype === :Stochastic
-        quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
-                var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
-                node = ReactiveMP.make_node(fform, var, args...; kwargs...)
-                return node, var
-            end
-        end
-    elseif sdtype === :Deterministic
-        quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
-                var  = ReactiveMP.constvar(ReactiveMP.getname(autovar), fform(map((d) -> ReactiveMP.getconst(d), args)...))
-                return nothing, var
-            end
-        end
-    else
-        error("Unreachable in @node macro.") 
-    end
     
     res = quote
 
@@ -903,13 +858,6 @@ macro node(fformtype, sdtype, interfaces_list)
             return node
         end
 
-        function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable }; kwargs...)
-            var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar), proxy_variables = isdeterministic((ReactiveMP.$sdtype)()) ? args : nothing)
-            node = ReactiveMP.make_node(fform, var, args...; kwargs...)
-            return node, var
-        end
-
-        $(make_node_const_mapping)
         $(interface_name_getters...)
 
         $factorisation_collectors
