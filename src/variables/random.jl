@@ -58,7 +58,9 @@ form_constraint(randomvar::RandomVariable)     = randomvar.form_constraint
 form_check_strategy(randomvar::RandomVariable) = _form_check_strategy(randomvar.form_check_strategy, randomvar)
 
 isproxy(randomvar::RandomVariable) = proxy(randomvar) !== nothing
-israndom(::RandomVariable) = true
+
+israndom(::RandomVariable)                      = true
+israndom(::AbstractVector{ <: RandomVariable }) = true
 
 _form_check_strategy(::FormConstraintCheckPickDefault, randomvar::RandomVariable) = default_form_check_strategy(form_constraint(randomvar))
 _form_check_strategy(form_check_strategy, randomvar::RandomVariable)              = form_check_strategy

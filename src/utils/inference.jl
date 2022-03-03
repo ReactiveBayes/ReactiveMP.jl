@@ -1,4 +1,4 @@
-export inference
+export inference, KeepEach, KeepLast
 
 import ProgressMeter
 
@@ -51,6 +51,33 @@ struct InferenceResult{P, F}
     free_energy :: F
 end
 
+Base.iterate(results::InferenceResult)      = iterate((getfield(results, :posteriors), getfield(results, :free_energy)))
+Base.iterate(results::InferenceResult, any) = iterate((getfield(results, :posteriors), getfield(results, :free_energy)), any)
+
+function Base.show(io::IO, result::InferenceResult)
+    print(io, "Inference results:\n")
+    if !isnothing(getfield(result, :free_energy))
+        print(io, "-----------------------------------------\n")
+        print(io, "Free Energy: ")
+        print(IOContext(io, :compact => true, :limit => true, :displaysize => (1, 80)), result.free_energy)
+        print(io, "\n")
+    end
+
+    maxwidth = 80
+    maxlen   = maximum(p -> length(string(first(p))), pairs(result.posteriors))
+    print(io, "-----------------------------------------\n")
+    for (key, value) in pairs(result.posteriors)
+        print(io, "$(rpad(key, maxlen)) = ")
+        svalue = string(value)
+        slen   = length(svalue)
+        print(IOContext(io, :compact => true, :limit => true), view(svalue, 1:maxwidth))
+        if slen > maxwidth
+            print(io, "...")
+        end
+        print(io, "\n")
+    end
+end
+
 function Base.getproperty(result::InferenceResult, property::Symbol)
     if property === :free_energy && getfield(result, :free_energy) === nothing 
         error("""
@@ -63,14 +90,38 @@ function Base.getproperty(result::InferenceResult, property::Symbol)
     return getfield(result, property)
 end
 
+"""
+    inference(
+        # `model`: specifies a **callback** to create a model, may use whatever global parameters as it wants, required
+        model, 
+        # NamedTuple with data, required
+        data,
+        # NamedTuple with initial marginals, optional, defaults to empty
+        initmarginals = nothing,
+        # NamedTuple with initial messages, optional, defaults to empty
+        initmessages = nothing,  # optional
+        # Reserverd for the future
+        constraints = nothing,
+        # Return structure info, optional, defaults to return everything at each iteration
+        returnvars = nothing, 
+        # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
+        iterations = 1,
+        # Do we compute FE, optional, defaults to false
+        free_energy = false,
+        # Show progress module, optional, defaults to false
+        showprogress = false,
+    )
+
+This function provides generic (but somewhat limited) way to run inference in ReactiveMP.jl. 
+"""
 function inference(; 
     # `model`: specifies a **callback** to create a model, may use whatever global parameters as it wants, required
     model, 
-    # NamedTuple with data, required
+    # NamedTuple or Dict with data, required
     data,
-    # NamedTuple with initial marginals, optional, defaults to empty
+    # NamedTuple or Dict with initial marginals, optional, defaults to empty
     initmarginals = nothing,
-    # NamedTuple with initial messages, optional, defaults to empty
+    # NamedTuple or Dict with initial messages, optional, defaults to empty
     initmessages = nothing,  # optional
     # Reserverd for the future
     constraints = nothing,
@@ -89,34 +140,34 @@ function inference(;
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
     # `KeepEach` for each random and not-proxied variable in a model
     if returnvars === nothing 
-        ireturnvars = Dict(variable => KeepEach() for (variable, value) in vardict if (israndom(variable) && !isproxy(variable)))
+        returnvars = Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
     end
 
     # Second, for each random variable entry we create an actor
-    actors  = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in ireturnvars)
+    actors  = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars))
 
     # At third, for each random variable entry we create a boolean flag to track their updates
-    updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in ireturnvars)
+    updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(returnvars))
 
     try 
-        subscriptions = Dict(variable => subscribe!(obtain_marginal(vardict[variable]) |> ensure_update(updates[variable]), actor) for (variable, actor) in actors)
+        subscriptions = Dict(variable => subscribe!(obtain_marginal(vardict[variable]) |> ensure_update(updates[variable]), actor) for (variable, actor) in pairs(actors))
         
         fe_actor        = nothing
         fe_subscription = VoidTeardown()
         
         if free_energy
             fe_actor        = ScoreActor()
-            fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), _fe_actor)
+            fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), fe_actor)
         end
 
         if !isnothing(initmarginals)
-            for (variable, initvalue) in initmarginals
+            for (variable, initvalue) in pairs(initmarginals)
                 assign_marginal!(vardict[variable], initvalue)
             end
         end
 
         if !isnothing(initmessages)
-            for (variable, initvalue) in initmessages
+            for (variable, initvalue) in pairs(initmessages)
                 assign_message!(vardict[variable], initvalue)
             end
         end
@@ -124,7 +175,7 @@ function inference(;
         if isnothing(data) || isempty(data)
             error("Data is empty. Make sure you used `data` keyword argument with correct value.")
         else 
-            foreach(filter(pair -> first(pair) isa DataVariable), vardict) do pair
+            foreach(filter(pair -> first(pair) isa DataVariable, pairs(vardict))) do pair
                 haskey(data, name(pair)) || error("Data entry $(name(p)) is missing in `data` dictionary.")
             end
         end
@@ -132,7 +183,7 @@ function inference(;
         p = showprogress ? ProgressMeter.Progress(iterations) : nothing
 
         for _ in 1:iterations
-            for (key, value) in data
+            for (key, value) in pairs(data)
                 update!(vardict[key], value)
             end
             not_updated = filter((pair) -> !last(pair).updated, updates)
@@ -143,7 +194,7 @@ function inference(;
                     Therefore, make sure to initialize all required marginals and messages. See `initmarginals` and `initmessages` keyword arguments for the `inference` function. 
                 """)
             end
-            for (_, update_flag) in updates
+            for (_, update_flag) in pairs(updates)
                 __unset_updated!(update_flag)
             end
             if !isnothing(p)
@@ -151,13 +202,13 @@ function inference(;
             end
         end
 
-        for (_, subscription) in subscriptions
+        for (_, subscription) in pairs(subscriptions)
             unsubscribe!(subscription)
         end
 
         unsubscribe!(fe_subscription)
 
-        posterior_values = Dict(variable => getvalues(actor) for (variable, actor) in actors)
+        posterior_values = Dict(variable => getvalues(actor) for (variable, actor) in pairs(actors))
         fe_values        = fe_actor !== nothing ? getvalues(fe_actor) : nothing
 
         return InferenceResult(posterior_values, fe_values)

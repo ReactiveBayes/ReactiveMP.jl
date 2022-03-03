@@ -156,4 +156,6 @@ as_variable(x)                   = constvar(gensym(:as_var), x)
 as_variable(v::AbstractVariable) = v
 as_variable(t::Tuple)            = map(as_variable, t)
 
+israndom(v::AbstractVector{ <: AbstractVariable }) = all(israndom, v)
+isproxy(v::AbstractVector{ <: AbstractVariable })  = any(isproxy, v)
 
