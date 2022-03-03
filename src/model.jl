@@ -181,28 +181,6 @@ function ReactiveMP.make_node(model::Model, fform, autovar::AutoVar, args::Varar
     end
 end
 
-# function make_node(model::Model, fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...)
-#     var = add!(model, constvar(getname(autovar), fform(map((d) -> getconst(d), args)...)))
-#     return nothing, var
-# end
-
-# function make_node(model::Model, ::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...) where T
-#     var = add!(model, constvar(getname(autovar), T(map((d) -> getconst(d), args)...)))
-#     return nothing, var
-# end
-
-function make_node(model::Model, fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
-    # TODO
-    message_cb = let fform = fform
-        (d::Tuple) -> Message(fform(d...), false, false)
-    end
-
-    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, message_cb)
-    var     = add!(model, datavar(getname(autovar), Any, subject = subject))
-
-    return nothing, var
-end
-
 ##
 
 # Repeat variational message passing iterations [ EXPERIMENTAL ]
@@ -264,19 +242,3 @@ function repeat!(callback::Function, model::Model, criterion::UntilConvergence{S
 
     return iterations_count
 end
-
-# TODO: Feature rejected due to a bug with invalid constant reusing. Should be revisited later.
-# function make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ConstVariable{ <: PointMass } }; factorisation = default_factorisation(getoptions(model)), kwargs...)
-#     node, var = if haskey(getconstant(model), getname(autovar))
-#         nothing, getconstant(model)[ getname(autovar) ]
-#     else
-#         add!(model, make_node(fform, autovar, args...; factorisation = factorisation, kwargs...))
-#     end
-# end
-
-# function datavar(model::Model, nameprefix::Symbol, type::Type, dims...) 
-#     datavars = datavar(nameprefix, type, dims...)
-#     dictvars = Dict(zip(map(name, datavars), datavars))
-#     mergewith!((l, r) -> error("DataVariable with name $(name(l)) has already been added to the model"), getdata(model), dictvars)
-#     return datavars
-# end

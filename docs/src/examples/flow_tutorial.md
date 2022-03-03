@@ -22,8 +22,7 @@ using ReactiveMP
 using Rocket
 using GraphPPL
 using Random 
-
-Random.seed!(123)
+using StableRNGs
 
 using LinearAlgebra     # only used for some matrix specifics
 using PyPlot            # only used for visualisation
@@ -123,7 +122,7 @@ We can perform inference in our compiled model through standard usage of Reactiv
 ```@example flow
 function generate_data(nr_samples::Int64, model::CompiledFlowModel; seed = 123)
 
-    rng = MersenneTwister(seed)
+    rng = StableRNG(seed)
     
     # specify latent sampling distribution
     dist = MvNormal([1.5, 0.5], I)
@@ -297,7 +296,7 @@ The flow model is often used to learn unknown probabilistic mappings. Here we wi
 ```@example flow
 function generate_data(nr_samples::Int64; seed = 123)
     
-    rng = MersenneTwister(seed)
+    rng = StableRNG(seed)
 
     # sample weights
     w = rand(rng, nr_samples, 2)
@@ -450,7 +449,7 @@ end
 ```
 
 ```@example flow
-res = optimize(f, randn(MersenneTwister(1), nr_params(model)), LBFGS(), Optim.Options(store_trace = true, show_trace = true), autodiff=:forward)
+res = optimize(f, ones(nr_params(model)), LBFGS(), Optim.Options(store_trace = true, show_trace = true, show_every = 10), autodiff=:forward)
 nothing #hide
 ```
 
