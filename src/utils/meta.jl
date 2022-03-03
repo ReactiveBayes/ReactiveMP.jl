@@ -41,6 +41,10 @@ function Base.show(io::IO, specification::MetaSpecification)
     join(io, specification.entries, "\n\t")
 end
 
+struct UnspecifiedMeta end
+
+const DefaultMeta = UnspecifiedMeta()
+
 """
     resolve_meta(expr::Expr, fform::Symbol, variables, metaspec, model) 
 
@@ -65,4 +69,8 @@ function resolve_meta(expr::Expr, fform::Symbol, variables, metaspec, model)
 
     return found === nothing ? nothing : metadata(found)
 
+end
+
+function resolve_meta(expr::Expr, fform::Symbol, variables, metaspec::UnspecifiedMeta, model)
+    return nothing
 end
