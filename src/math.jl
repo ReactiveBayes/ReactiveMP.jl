@@ -20,6 +20,8 @@ Base.convert(::Type{ Float32 },  ::TinyNumber) = 1f-6
 Base.convert(::Type{ Float64 },  ::TinyNumber) = 1e-12
 Base.convert(::Type{ BigFloat }, ::TinyNumber) = big"1e-24"
 
+(::Type{T})(::TinyNumber) where { T <: AbstractFloat } = convert(T, tiny)
+
 Base.show(io::IO, ::TinyNumber) = print(io, "tiny")
 
 Base.promote_rule(::Type{ TinyNumber }, ::Type{ I }) where { I <: Integer }       = promote_rule(TinyNumber, promote_type(I, Float64))
@@ -40,6 +42,8 @@ Base.convert(::Type{ F },        ::HugeNumber) where { F <: AbstractFloat } = in
 Base.convert(::Type{ Float32 },  ::HugeNumber) = 1f+6
 Base.convert(::Type{ Float64 },  ::HugeNumber) = 1e+12
 Base.convert(::Type{ BigFloat }, ::HugeNumber) = big"1e+24"
+
+(::Type{T})(::HugeNumber) where { T <: AbstractFloat } = convert(T, huge)
 
 Base.show(io::IO, ::HugeNumber) = print(io, "huge")
 

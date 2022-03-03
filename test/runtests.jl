@@ -86,6 +86,7 @@ end
 
     addtests("constraints/spec/test_spec.jl")
     addtests("constraints/spec/test_factorisation_spec.jl")
+    addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
 
     addtests("test_distributions.jl")

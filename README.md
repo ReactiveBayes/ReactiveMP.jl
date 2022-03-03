@@ -1,8 +1,8 @@
 # ReactiveMP.jl
 
-| **Documentation**                                                               | **Build Status**                                                                                |
-|:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] |
+| **Documentation**                                                         | **Build Status**                 | **Build Status**                   | **Zenodo DOI**                   |
+|:-------------------------------------------------------------------------:|:--------------------------------:|:----------------------------------:|:--------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![DOI][ci-img]][ci-url]         | [![DOI][codecov-img]][codecov-url] | [![DOI][zenodo-img]][zenodo-url] |
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://biaslab.github.io/ReactiveMP.jl/dev
@@ -15,6 +15,9 @@
 
 [codecov-img]: https://codecov.io/gh/biaslab/ReactiveMP.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/biaslab/ReactiveMP.jl?branch=master
+
+[zenodo-img]: https://zenodo.org/badge/229773785.svg
+[zenodo-url]: https://zenodo.org/badge/latestdoi/229773785
 
 ReactiveMP.jl is a Julia package for automatic Bayesian inference on a factor graph with reactive message passing.
 
