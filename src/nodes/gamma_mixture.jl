@@ -178,7 +178,7 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }, factorisation::F = M
     return GammaMixtureNode{N, F, typeof(meta), P}(factorisation, out, switch, as, bs, meta, pipeline)
 end
 
-function ReactiveMP.make_node(::Type{ <: GammaMixture }, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = nothing) where { N}
+function ReactiveMP.make_node(::Type{ <: GammaMixture }, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}) where { N }
     node = make_node(GammaMixture{N}, collect_factorisation(GammaMixture, factorisation(options)), collect_meta(GammaMixture, metadata(options)), collect_pipeline(GammaMixture, getpipeline(options)))
 
     # out
