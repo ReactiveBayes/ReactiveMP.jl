@@ -66,7 +66,7 @@ using ReactiveMP
 
         model = Model()
 
-        snode, svar = make_node(model, CustomStochasticNode, AutoVar(:cout), cx, cy, cz, factorisation = MeanField())
+        snode, svar = make_node(model, FactorNodeCreationOptions(MeanField(), nothing, nothing), CustomStochasticNode, AutoVar(:cout), cx, cy, cz)
 
         @test snode ∈ getnodes(model)
         @test svar ∈ getrandom(model)
@@ -118,7 +118,7 @@ using ReactiveMP
 
         model = Model()
 
-        snode, svar = make_node(model, CustomDeterministicNode, AutoVar(:cout), cx, cy, cz, factorisation = MeanField())
+        snode, svar = make_node(model, FactorNodeCreationOptions(MeanField(), nothing, nothing), CustomDeterministicNode, AutoVar(:cout), cx, cy, cz)
 
         @test svar ∈ getconstant(model)
 

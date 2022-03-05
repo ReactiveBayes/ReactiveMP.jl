@@ -15,7 +15,7 @@ using Random
         @test factorisation(node)           === ((1, 2), )
         @test metadata(node)                === ProbitMeta(32)
 
-        node = make_node(Probit, meta = 1)
+        node = make_node(Probit, FactorNodeCreationOptions(nothing, 1, nothing))
 
         @test functionalform(node)          === Probit
         @test sdtype(node)                  === Stochastic()

@@ -18,7 +18,7 @@ import ReactiveMP: make_node
         @test localmarginalnames(node)      === (:out_μ_Λ, )
         @test metadata(node)                === nothing
 
-        node = make_node(MvNormalMeanPrecision, meta = 1)
+        node = make_node(MvNormalMeanPrecision, FactorNodeCreationOptions(nothing, 1, nothing))
 
         @test functionalform(node)          === MvNormalMeanPrecision
         @test sdtype(node)                  === Stochastic()
@@ -27,7 +27,7 @@ import ReactiveMP: make_node
         @test localmarginalnames(node)      === (:out_μ_Λ, )
         @test metadata(node)                === 1
 
-        node = make_node(MvNormalMeanPrecision, factorisation = ((1, ), (2, 3)))
+        node = make_node(MvNormalMeanPrecision, FactorNodeCreationOptions(((1, ), (2, 3)), nothing, nothing))
 
         @test functionalform(node)          === MvNormalMeanPrecision
         @test sdtype(node)                  === Stochastic()

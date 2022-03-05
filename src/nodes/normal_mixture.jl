@@ -202,8 +202,8 @@ function ReactiveMP.make_node(::Type{ <: NormalMixture{N} }; factorisation::F = 
     return NormalMixtureNode{N, F, M, P}(factorisation, out, switch, means, precs, meta, pipeline)
 end
 
-function ReactiveMP.make_node(::Type{ <: NormalMixture }, out::AbstractVariable, switch::AbstractVariable, means::NTuple{N, AbstractVariable}, precs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = nothing) where { N}
-    node = make_node(NormalMixture{N}, factorisation = collect_factorisation(NormalMixture, factorisation), meta = collect_meta(NormalMixture, meta), pipeline = collect_pipeline(NormalMixture, pipeline))
+function ReactiveMP.make_node(::Type{ <: NormalMixture }, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, means::NTuple{N, AbstractVariable}, precs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = nothing) where { N}
+    node = make_node(NormalMixture{N}, collect_factorisation(NormalMixture, factorisation(options)), collect_meta(NormalMixture, metadata(options)), collect_pipeline(NormalMixture, getpipeline(options)))
 
     # out
     out_index = getlastindex(out)
