@@ -380,6 +380,18 @@ interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) wher
 
 ## Generic Factor Node
 
+struct FactorNodeCreationOptions{F, M, P}
+    factorisation :: F
+    metadata      :: M
+    pipeline      :: P
+end
+
+FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothing)
+
+factorisation(options::FactorNodeCreationOptions) = options.factorisation
+metadata(options::FactorNodeCreationOptions)      = options.metadata
+getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
+
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
     interfaces     :: I
@@ -744,7 +756,8 @@ function interface_get_name(::Type{ Val{ Node } }, ::Type{ Val{ Interface } }) w
     error("Node $Node has no interface named $Interface")
 end
 
-make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
+make_node(fform, args::Vararg{ <: AbstractVariable })                                     = make_node(fform, FactorNodeCreationOptions(), args...)
+make_node(fform, options::FactorNodeCreationOptions, args::Vararg{ <: AbstractVariable }) = error("Unknown functional form '$(fform)' used for node specification.")
 
 # end
 
@@ -836,6 +849,7 @@ macro node(fformtype, sdtype, interfaces_list)
     # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a FullFactorisation equivalent
     factorisation_collectors = if sdtype === :Stochastic 
         quote
+            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                      = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = factorisation
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = $names_splitted_indices
@@ -843,6 +857,7 @@ macro node(fformtype, sdtype, interfaces_list)
         
     elseif sdtype === :Deterministic
         quote
+            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                      = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = ($names_indices, )
@@ -859,12 +874,12 @@ macro node(fformtype, sdtype, interfaces_list)
 
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
         
-        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, pipeline = nothing)
-            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), ReactiveMP.collect_pipeline($fbottomtype, pipeline))
+        function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions)
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation(options)), ReactiveMP.collect_meta($fbottomtype, metadata(options)), ReactiveMP.collect_pipeline($fbottomtype, getpipeline(options)))
         end
         
-        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, pipeline = nothing)
-            node = ReactiveMP.make_node($fbottomtype, factorisation = factorisation, meta = meta, pipeline = pipeline)
+        function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions, $(interface_args...))
+            node = ReactiveMP.make_node($fbottomtype, options)
             $(interface_connections...)
             return node
         end

@@ -1,4 +1,3 @@
-export make_node, score
 
 import StatsFuns: logπ
 import SpecialFunctions: loggamma

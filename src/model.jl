@@ -33,7 +33,7 @@ available_option_names(::Type{ <: ModelOptions }) = (
 
 function model_options(options::NamedTuple)
     pipeline                  = EmptyPipelineStage()
-    default_factorisation     = FullFactorisation()
+    default_factorisation     = UnspecifiedConstraints()
     global_reactive_scheduler = AsapScheduler()
 
     if haskey(options, :pipeline)
@@ -153,9 +153,21 @@ end
 
 # Utility functions
 
+##
+
+function node_resolve_options(model::Model, options::FactorNodeCreationOptions, fform, variables) 
+    return FactorNodeCreationOptions(
+        node_resolve_factorisation(model, options, fform, variables),
+        node_resolve_meta(model, options, fform, variables),
+        getpipeline(options)
+    )
+end
+
 ## constraints 
 
-node_resolve_factorisation(model::Model, fform, variables) = node_resolve_factorisation(model, getconstraints(model), default_factorisation(getoptions(model)), fform, variables)
+node_resolve_factorisation(model::Model, options::FactorNodeCreationOptions, fform, variables)            = node_resolve_factorisation(model, options, factorisation(options), fform, variables)
+node_resolve_factorisation(model::Model, options::FactorNodeCreationOptions, something, fform, variables) = something
+node_resolve_factorisation(model::Model, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = node_resolve_factorisation(model, getconstraints(model), default_factorisation(getoptions(model)), fform, variables)
 
 node_resolve_factorisation(model::Model, constraints, default, fform, variables)                               = error("Cannot resolve factorisation constrains. Both `constraints` and `default_factorisation` option have been set, which is disallowed.")
 node_resolve_factorisation(model::Model, ::UnspecifiedConstraints, default, fform, variables)                  = default
@@ -164,7 +176,9 @@ node_resolve_factorisation(model::Model, ::UnspecifiedConstraints, ::Unspecified
 
 ## meta 
 
-node_resolve_meta(model::Model, fform, variables) = resolve_meta(getmeta(model), model, fform, variables)
+node_resolve_meta(model::Model, options::FactorNodeCreationOptions, fform, variables)            = node_resolve_meta(model, options, metadata(options), fform, variables)
+node_resolve_meta(model::Model, options::FactorNodeCreationOptions, something, fform, variables) = something
+node_resolve_meta(model::Model, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = resolve_meta(getmeta(model), model, fform, variables)
 
 ## variable creation
 
@@ -176,8 +190,8 @@ as_variable(model::Model, x)                   = add!(model, as_variable(x))
 as_variable(model::Model, v::AbstractVariable) = v
 as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d), t)
 
-function make_node(model::Model, fform, args...; factorisation = default_factorisation(getoptions(model)), kwargs...) 
-    return add!(model, make_node(fform, args...; factorisation = factorisation, kwargs...))
+function make_node(model::Model, options::FactorNodeCreationOptions, fform, args...)
+    return add!(model, make_node(fform, node_resolve_options(model, options, fform, args), args...))
 end
 
 ## AutoVar 
@@ -188,19 +202,19 @@ end
 
 getname(autovar::AutoVar) = autovar.name
 
-function ReactiveMP.make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable }; kwargs...)
+function ReactiveMP.make_node(model::Model, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable })
     var  = add!(model, ReactiveMP.randomvar(ReactiveMP.getname(autovar), proxy_variables = isdeterministic(sdtype(fform)) ? args : nothing))
-    node = ReactiveMP.make_node(model, fform, var, args...; kwargs...) # add! is inside
+    node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
     return node, var
 end
 
 __fform_const_apply(::Type{T}, args...) where T = T(args...)
 __fform_const_apply(f::F, args...) where { F <: Function } = f(args...)
 
-function ReactiveMP.make_node(model::Model, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable }; kwargs...)
+function ReactiveMP.make_node(model::Model, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable })
     if isstochastic(sdtype(fform))
         var  = add!(model, ReactiveMP.randomvar(ReactiveMP.getname(autovar)))
-        node = ReactiveMP.make_node(model, fform, var, args...; kwargs...) # add! is inside
+        node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
         return node, var
     else
         var  = add!(model, ReactiveMP.constvar(ReactiveMP.getname(autovar), __fform_const_apply(fform, map((d) -> ReactiveMP.getconst(d), args)...)))
