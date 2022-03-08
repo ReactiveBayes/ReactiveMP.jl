@@ -41,7 +41,7 @@ end
 
 degree(constvar::ConstVariable)          = nconnected(constvar)
 name(constvar::ConstVariable)            = constvar.name
-proxy(constvar::ConstVariable)           = nothing
+proxy_variables(constvar::ConstVariable) = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
 
 isproxy(::ConstVariable)  = false

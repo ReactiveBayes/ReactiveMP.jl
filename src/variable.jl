@@ -140,7 +140,7 @@ This function is a part of private API and should not be used explicitly.
 """
 function resolve_variable_proxy end
 
-resolve_variable_proxy(var::AbstractVariable) = resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy(var))
+resolve_variable_proxy(var::AbstractVariable) = resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy_variables(var))
 
 resolve_variable_proxy(var::AbstractVariable, ::Union{ VariableReferenceProxyChecked, VariableReferenceProxyUnchecked }, ::Nothing) = (name(var), linear_index(collection_type(var)), var)
 
@@ -156,6 +156,6 @@ as_variable(x)                   = constvar(gensym(:as_var), x)
 as_variable(v::AbstractVariable) = v
 as_variable(t::Tuple)            = map(as_variable, t)
 
-israndom(v::AbstractVector{ <: AbstractVariable }) = all(israndom, v)
-isproxy(v::AbstractVector{ <: AbstractVariable })  = any(isproxy, v)
+israndom(v::AbstractArray{ <: AbstractVariable }) = all(israndom, v)
+isproxy(v::AbstractArray{ <: AbstractVariable })  = any(isproxy, v)
 

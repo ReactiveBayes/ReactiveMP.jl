@@ -41,7 +41,7 @@ Base.eltype(::DataVariable{D})            where D = D
 
 degree(datavar::DataVariable)          = nconnected(datavar)
 name(datavar::DataVariable)            = datavar.name
-proxy(datavar::DataVariable)           = nothing
+proxy_variables(datavar::DataVariable) = nothing
 collection_type(datavar::DataVariable) = datavar.collection_type
 isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)      = datavar.nconnected
