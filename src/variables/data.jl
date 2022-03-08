@@ -11,22 +11,36 @@ end
 
 Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
 
-function datavar(name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual(); subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return DataVariable{D, S}(name, collection_type, subject, 0)
+struct DataVariableCreationOptions{S}
+    subject :: S
 end
 
-function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return datavar(name, D, dims...; subject = subject)
+Base.similar(options::DataVariableCreationOptions) = DataVariableCreationOptions(similar(options.subject))
+
+DataVariableCreationOptions(::Type{D}) where D                              = DataVariableCreationOptions(D, nothing)
+DataVariableCreationOptions(::Type{D}, subject) where D                     = DataVariableCreationOptions(D, subject, Val(false))
+
+DataVariableCreationOptions(::Type{D}, subject::Nothing, allow_missing::Val{ true })  where D = DataVariableCreationOptions(D, RecentSubject(Union{ Message{Missing}, Message{D} }), Val(false)) # `Val(false)` here is intentional
+DataVariableCreationOptions(::Type{D}, subject::Nothing, allow_missing::Val{ false }) where D = DataVariableCreationOptions(D, RecentSubject(Union{ Message{D} }), Val(false))
+
+DataVariableCreationOptions(::Type{D}, subject::S, ::Val{ true })  where { D, S } = error("Error in datavar options. Custom `subject` was specified and `allow_missing` was set to true, which is disallowed. Provide a custom subject that accept missing values by itself and do no use `allow_missing` option.")
+DataVariableCreationOptions(::Type{D}, subject::S, ::Val{ false }) where { D, S } = DataVariableCreationOptions{S}(subject)
+
+datavar(name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where D = datavar(DataVariableCreationOptions(D), name, D, collection_type)
+datavar(name::Symbol, ::Type{D}, length::Int)                                                            where D = datavar(DataVariableCreationOptions(D), name, D, length) 
+datavar(name::Symbol, ::Type{D}, dims::Tuple)                                                            where D = datavar(DataVariableCreationOptions(D), name, D, dims) 
+datavar(name::Symbol, ::Type{D}, dims::Vararg{Int})                                                      where D = datavar(DataVariableCreationOptions(D), name, D, dims) 
+
+datavar(options::DataVariableCreationOptions{S}, name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where { S, D } = DataVariable{D, S}(name, collection_type, options.subject, 0)
+
+function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, length::Int) where { D }
+    return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
 end
 
-function datavar(name::Symbol, ::Type{D}, length::Int; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return map(i -> datavar(name, D, VariableVector(i); subject = similar(subject)), 1:length)
-end
-
-function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
+function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, dims::Tuple) where { D }
     indices = CartesianIndices(dims)
     size    = axes(indices)
-    return map(i -> datavar(name, D, VariableArray(size, i); subject = similar(subject)), indices)
+    return map(i -> datavar(similar(options), name, D, VariableArray(size, i)), indices)
 end
 
 Base.eltype(::Type{ <: DataVariable{D} }) where D = D

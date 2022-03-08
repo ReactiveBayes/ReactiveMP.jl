@@ -182,9 +182,9 @@ node_resolve_meta(model::Model, options::FactorNodeCreationOptions, ::Nothing, f
 
 ## variable creation
 
-randomvar(model::Model, args...; kwargs...) = add!(model, randomvar(args...; kwargs...))
-constvar(model::Model, args...; kwargs...)  = add!(model, constvar(args...; kwargs...))
-datavar(model::Model, args...; kwargs...)   = add!(model, datavar(args...; kwargs...))
+randomvar(model::Model, args...) = add!(model, randomvar(args...))
+constvar(model::Model, args...)  = add!(model, constvar(args...))
+datavar(model::Model, args...)   = add!(model, datavar(args...))
 
 as_variable(model::Model, x)                   = add!(model, as_variable(x))
 as_variable(model::Model, v::AbstractVariable) = v
