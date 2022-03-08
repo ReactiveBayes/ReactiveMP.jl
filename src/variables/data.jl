@@ -20,20 +20,13 @@ function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = RecentSubjec
 end
 
 function datavar(name::Symbol, ::Type{D}, length::Int; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    vars = Vector{DataVariable{D, S}}(undef, length)
-    @inbounds for i in 1:length
-        vars[i] = datavar(name, D, VariableVector(i); subject = similar(subject))
-    end
-    return vars
+    return map(i -> datavar(name, D, VariableVector(i); subject = similar(subject)), 1:length)
 end
 
 function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    vars = Array{DataVariable{D, S}}(undef, dims)
-    size = axes(vars)
-    @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = datavar(name, D, VariableArray(size, i); subject = similar(subject))
-    end
-    return vars
+    indices = CartesianIndices(dims)
+    size    = axes(indices)
+    return map(i -> datavar(name, D, VariableArray(size, i); subject = similar(subject)), indices)
 end
 
 Base.eltype(::Type{ <: DataVariable{D} }) where D = D

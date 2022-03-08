@@ -18,7 +18,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
         for sym in (:x, :y, :z)
             v = randomvar(sym)
 
-            @test israndom(v) 
+            @test israndom(v)
             @test name(v) === sym
             @test collection_type(v) isa VariableIndividual
             @test marginal_form_constraint(v) isa UnspecifiedFormConstraint
@@ -67,7 +67,6 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
                 @test all(v -> !isproxy(v), vs)
             end
         end
-
 
     end
 
@@ -200,6 +199,27 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
             let options = RandomVariableCreationOptions()
                 @test ReactiveMP.messages_form_check_strategy(randomvar(ReactiveMP.randomvar_options_set_messages_form_check_strategy(options, messages_form_check_strategy), :x)) === messages_form_check_strategy
             end
+        end
+
+    end
+
+    @testset "Proxy creation" begin 
+
+        proxy_var1 = randomvar(:proxy1)
+        proxy_var2 = randomvar(:proxy2)
+
+        for sym in (:x, :y, :z)
+            v1 = randomvar(ReactiveMP.randomvar_options_set_proxy_variables((proxy_var1, )), sym)
+            @test israndom(v1)
+            @test name(v1) === sym
+            @test proxy_variables(v1) === (proxy_var1, )
+            @test isproxy(v1)
+
+            v2 = randomvar(ReactiveMP.randomvar_options_set_proxy_variables((proxy_var1, proxy_var2)), sym)
+            @test israndom(v2)
+            @test name(v2) === sym
+            @test proxy_variables(v2) === (proxy_var1, proxy_var2)
+            @test isproxy(v2)
         end
 
     end

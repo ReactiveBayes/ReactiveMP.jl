@@ -114,6 +114,7 @@ end
     addtests("test_message.jl")
     
     addtests("test_variable.jl")
+    addtests("variables/test_constant.jl")
     addtests("variables/test_random.jl")
 
     addtests("test_node.jl")

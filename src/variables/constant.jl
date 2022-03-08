@@ -18,25 +18,16 @@ constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollecti
 constvar(name::Symbol, constval::AbstractVector, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 constvar(name::Symbol, constval::AbstractMatrix, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 
-function constvar(name::Symbol, fn::Function, dims::Tuple)
-    return constvar(name, fn, dims...)
-end
+constvar(name::Symbol, fn::Function, dims::Vararg{Int}) = constvar(name, fn, dims)
 
 function constvar(name::Symbol, fn::Function, length::Int)
-    vars = Vector{ConstVariable}(undef, length)
-    @inbounds for i in 1:length
-        vars[i] = constvar(name, fn(i), VariableVector(i))
-    end
-    return vars
+    return map(i -> constvar(name, fn(i), VariableVector(i)), 1:length)
 end
 
-function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
-    vars = Array{ConstVariable}(undef, dims)
-    size = axes(vars)
-    @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = constvar(name, fn(convert(Tuple, i)), VariableArray(size, i))
-    end
-    return vars
+function constvar(name::Symbol, fn::Function, dims::Tuple)
+    indices = CartesianIndices(dims)
+    size    = axes(indices)
+    return map(i -> constvar(name, fn(convert(Tuple, i)), VariableArray(size, i)), indices)
 end
 
 degree(constvar::ConstVariable)          = nconnected(constvar)
