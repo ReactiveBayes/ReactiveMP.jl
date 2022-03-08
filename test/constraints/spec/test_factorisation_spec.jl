@@ -398,7 +398,7 @@ using GraphPPL # for `@constraints` macro
 
             x = randomvar(model, :x)
             y = randomvar(model, :y)
-            tmp = randomvar(model, :tmp, proxy_variables = (y, ))
+            tmp = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y, )), :tmp)
 
             @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y)) === ((1, ), (2, ))
             @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, tmp)) === ((1, ), (2, ))
@@ -434,13 +434,13 @@ using GraphPPL # for `@constraints` macro
             tmp7 = Vector{RandomVariable}(undef, 10)
 
             for i in 1:10
-                tmp1[i] = randomvar(model, :tmp1, proxy_variables = (y[i], ))
-                tmp2[i] = randomvar(model, :tmp2, proxy_variables = (y[i], d[i]))
-                tmp3[i] = randomvar(model, :tmp3, proxy_variables = (y[i], c[i]))
-                tmp4[i] = randomvar(model, :tmp2, proxy_variables = (c[i], y[i], d[i]))
-                tmp5[i] = randomvar(model, :tmp3, proxy_variables = (d[i], y[i], c[i]))
-                tmp6[i] = randomvar(model, :tmp2, proxy_variables = (d[i], y[i]))
-                tmp7[i] = randomvar(model, :tmp3, proxy_variables = (c[i], y[i]))
+                tmp1[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y[i], )), :tmp1)
+                tmp2[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y[i], d[i])), :tmp2)
+                tmp3[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y[i], c[i])), :tmp3)
+                tmp4[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c[i], y[i], d[i])), :tmp4)
+                tmp5[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d[i], y[i], c[i])), :tmp5)
+                tmp6[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d[i], y[i])), :tmp6)
+                tmp7[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c[i], y[i])), :tmp7)
             end
 
             for i in 1:10
@@ -564,15 +564,17 @@ using GraphPPL # for `@constraints` macro
             d = datavar(model, :d, Float64)
             c = constvar(model, :c, 1)
 
-            tmp1 = randomvar(model, :tmp, proxy_variables = (x, y))
-            tmp2 = randomvar(model, :tmp, proxy_variables = (x, y, d))
-            tmp3 = randomvar(model, :tmp, proxy_variables = (x, y, c))
-            tmp4 = randomvar(model, :tmp, proxy_variables = (d, x, y))
-            tmp5 = randomvar(model, :tmp, proxy_variables = (x, c, y))
-            tmp6 = randomvar(model, :tmp, proxy_variables = (x, d, y))
-            tmp7 = randomvar(model, :tmp, proxy_variables = (c, x, y))
-            tmp8 = randomvar(model, :tmp, proxy_variables = (c, x, y, d))
-            tmp9 = randomvar(model, :tmp, proxy_variables = (d, x, y, c))
+            
+
+            tmp1 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y)), :tmp)
+            tmp2 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, d)), :tmp)
+            tmp3 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, c)), :tmp)
+            tmp4 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d, x, y)), :tmp)
+            tmp5 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, c, y)), :tmp)
+            tmp6 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, d, y)), :tmp)
+            tmp7 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y)), :tmp)
+            tmp8 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y, d)), :tmp)
+            tmp9 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d, x, y, c)), :tmp)
             
             @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp1))
             @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp2))
