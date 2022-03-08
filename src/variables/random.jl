@@ -50,6 +50,15 @@ function RandomVariableCreationOptions()
 end
 
 # Immutable setters return a new object, this API is considered to be private
+randomvar_options_set_pipeline(pipeline)                                         = randomvar_options_set_pipeline(RandomVariableCreationOptions(), pipeline)
+randomvar_options_set_proxy_variables(proxy_variables)                           = randomvar_options_set_proxy_variables(RandomVariableCreationOptions(), proxy_variables)
+randomvar_options_set_prod_constraint(prod_constraint)                           = randomvar_options_set_prod_constraint(RandomVariableCreationOptions(), prod_constraint)
+randomvar_options_set_prod_strategy(prod_strategy)                               = randomvar_options_set_prod_strategy(RandomVariableCreationOptions(), prod_strategy)
+randomvar_options_set_marginal_form_constraint(marginal_form_constraint)         = randomvar_options_set_marginal_form_constraint(RandomVariableCreationOptions(), marginal_form_constraint)
+randomvar_options_set_marginal_form_check_strategy(marginal_form_check_strategy) = randomvar_options_set_marginal_form_check_strategy(RandomVariableCreationOptions(), marginal_form_check_strategy)
+randomvar_options_set_messages_form_constraint(messages_form_constraint)         = randomvar_options_set_messages_form_constraint(RandomVariableCreationOptions(), messages_form_constraint)
+randomvar_options_set_messages_form_check_strategy(messages_form_check_strategy) = randomvar_options_set_messages_form_check_strategy(RandomVariableCreationOptions(), messages_form_check_strategy)
+
 randomvar_options_set_pipeline(options::RandomVariableCreationOptions, pipeline)                                         = RandomVariableCreationOptions(pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
 randomvar_options_set_proxy_variables(options::RandomVariableCreationOptions, proxy_variables)                           = RandomVariableCreationOptions(options.pipeline, proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
 randomvar_options_set_prod_constraint(options::RandomVariableCreationOptions, prod_constraint)                           = RandomVariableCreationOptions(options.pipeline, options.proxy_variables, prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
