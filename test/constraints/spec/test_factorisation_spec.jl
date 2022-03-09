@@ -104,7 +104,13 @@ using GraphPPL # for `@constraints` macro
 
         # Factorisation constrains resolution function accepts a `fform` symbol as an input for error printing
         # We don't care about actual symbol in tests
-        fform = :Test
+        struct TestFactorisationStochastic end
+        struct TestFactorisationDeterministic end
+
+        ReactiveMP.sdtype(::Type{ TestFactorisationStochastic })    = ReactiveMP.Stochastic()
+        ReactiveMP.sdtype(::Type{ TestFactorisationDeterministic }) = ReactiveMP.Deterministic()
+
+        fform = TestFactorisationStochastic
 
         @testset "Use case #1" begin
             cs = @constraints begin 
@@ -491,6 +497,10 @@ using GraphPPL # for `@constraints` macro
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x, d)) === ((1,), (2, ), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, d)) === ((1, ), (2, ), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, c)) === ((1, ), (2,), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, x, c)) === ((1, ), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, x, d)) === ((1, ), (2,), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, c, x)) === ((1, ), (2, ), (3, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, d, x)) === ((1, ), (2,), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x, d, y)) === ((1,), (2, 4), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, d, y)) === ((1, 4), (2, ), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, c, y)) === ((1, 4), (2,), (3, ))

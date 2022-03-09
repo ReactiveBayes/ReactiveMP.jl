@@ -170,11 +170,27 @@ __factorisation_specification_resolve_index(index::FunctionalIndex, collection::
 __factorisation_specification_resolve_index(index::CombinedRange, collection::AbstractVector{ <: AbstractVariable })   = CombinedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
 __factorisation_specification_resolve_index(index::SplittedRange, collection::AbstractVector{ <: AbstractVariable })   = SplittedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
 
-##
+## Some pre-written optimised dispatch rules for the `UnspecifiedConstraints` case
 
-function resolve_factorisation(::UnspecifiedConstraints, model, fform, variables)
-    return resolve_factorisation(__EmptyConstraints, model, fform, variables)
-end
+resolve_factorisation(::UnspecifiedConstraints, model, fform, variables)      = resolve_factorisation(UnspecifiedConstraints(), sdtype(fform), model, fform, variables)
+resolve_factorisation(::UnspecifiedConstraints, any, model, fform, variables) = resolve_factorisation(__EmptyConstraints, model, fform, variables)
+
+# Preoptimised dispatch rule for unspecified constraints and a deterministic node with any number of inputs
+resolve_factorisation(::UnspecifiedConstraints, ::Deterministic, model, fform, variables) = FullFactorisation()
+
+# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 2 inputs
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2 }) where { V1 <: RandomVariable, V2 <: RandomVariable } = ((1, 2, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2 }) where { V1 <: Union{ <: ConstVariable, <: DataVariable }, V2 <: RandomVariable } = ((1, ), (2, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2 }) where { V1 <: RandomVariable, V2 <: Union{ <: ConstVariable, <: DataVariable } } = ((1, ), (2, ))
+
+# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 3 inputs
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: RandomVariable, V3 <: RandomVariable } = ((1, 2, 3, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: Union{ <: ConstVariable, <: DataVariable }, V2 <: RandomVariable, V3 <: RandomVariable } = ((1, ), (2, 3))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: Union{ <: ConstVariable, <: DataVariable }, V3 <: RandomVariable } = ((1, 3), (2, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: RandomVariable, V3 <: Union{ <: ConstVariable, <: DataVariable } } = ((1, 2), (3, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: Union{ <: ConstVariable, <: DataVariable }, V3 <: Union{ <: ConstVariable, <: DataVariable } } = ((1, ), (2, ), (3, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: Union{ <: ConstVariable, <: DataVariable }, V2 <: RandomVariable, V3 <: Union{ <: ConstVariable, <: DataVariable } } = ((1, ), (2, ), (3, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: Union{ <: ConstVariable, <: DataVariable }, V2 <: Union{ <: ConstVariable, <: DataVariable }, V3 <: RandomVariable } = ((1, ), (2, ), (3, ))
 
 """
     resolve_factorisation(constraints, model, fform, variables) 
