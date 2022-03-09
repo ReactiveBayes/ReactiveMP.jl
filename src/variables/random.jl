@@ -86,14 +86,14 @@ function randomvar(options::RandomVariableCreationOptions, name::Symbol, collect
         false, 
         nothing, 
         MarginalObservable(), 
-        options.pipeline, 
-        options.proxy_variables, 
-        options.prod_constraint, 
-        options.prod_strategy, 
-        options.marginal_form_constraint, 
-        options.marginal_form_check_strategy,
-        options.messages_form_constraint, 
-        options.messages_form_check_strategy
+        something(options.pipeline, EmptyPipelineStage()),      # `something(args..)` returns the first `notnothing` object
+        options.proxy_variables,                                # here we do allow `nothing`, so no need for `something(...)`
+        something(options.prod_constraint, ProdAnalytical()), 
+        something(options.prod_strategy, FoldLeftProdStrategy()),
+        something(options.marginal_form_constraint, UnspecifiedFormConstraint()), 
+        something(options.marginal_form_check_strategy, FormConstraintCheckPickDefault()),
+        something(options.messages_form_constraint, UnspecifiedFormConstraint()), 
+        something(options.messages_form_check_strategy, FormConstraintCheckPickDefault())
     )
 end
 

@@ -1,4 +1,4 @@
-module ReactiveMPRandomvVariableTest
+module ReactiveMPRandomVariableTest
 
 using Test
 using ReactiveMP
@@ -150,7 +150,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
         end
 
         # here and later on we use some dummy values
-        dummy = (nothing, 1, "dummy")
+        dummy = (1.0, 1, "dummy")
         
         for proxy_variables in dummy
             @test ReactiveMP.proxy_variables(randomvar(ReactiveMP.randomvar_options_set_proxy_variables(proxy_variables), :x)) === proxy_variables
