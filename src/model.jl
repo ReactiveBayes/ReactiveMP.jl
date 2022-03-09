@@ -83,9 +83,15 @@ Base.show(io::IO, model::Model)       = print(io, "Model()")
 
 Model() = Model(DefaultConstraints, DefaultMeta, model_options())
 
-function Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple) 
-    return Model(constraints, meta, model_options(options))
-end
+Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }) = Model(constraints, DefaultMeta, model_options())
+Model(meta::Union{ UnspecifiedMeta, MetaSpecification })                      = Model(DefaultConstraints, meta, model_options())
+Model(options::NamedTuple)                                                    = Model(DefaultConstraints, DefaultMeta, model_options(options))
+
+Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, options::NamedTuple) = Model(constraints, DefaultMeta, model_options(options))
+Model(meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple)                      = Model(DefaultConstraints, meta, model_options(options))
+
+Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification })                       = Model(constraints, meta, model_options())
+Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple)  = Model(constraints, meta, model_options(options))
 
 function Model(constraints::C, meta::M, options::O) where { C <: Union{ UnspecifiedConstraints, ConstraintsSpecification }, M <: Union{ UnspecifiedMeta, MetaSpecification }, O <: ModelOptions } 
     return Model{C, M, O}(constraints, meta, options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
@@ -203,8 +209,10 @@ end
 getname(autovar::AutoVar) = autovar.name
 
 function ReactiveMP.make_node(model::Model, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable })
-    var  = add!(model, ReactiveMP.randomvar(ReactiveMP.getname(autovar), proxy_variables = isdeterministic(sdtype(fform)) ? args : nothing))
-    node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
+    proxy     = isdeterministic(sdtype(fform)) ? args : nothing
+    rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(proxy)
+    var       = add!(model, ReactiveMP.randomvar(rvoptions, ReactiveMP.getname(autovar)))
+    node      = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
     return node, var
 end
 
