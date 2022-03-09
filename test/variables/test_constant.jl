@@ -5,7 +5,7 @@ using ReactiveMP
 using Rocket
 
 import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
-import ReactiveMP: getconst
+import ReactiveMP: getconst, proxy_variables
 import ReactiveMP: israndom, isproxy
 
 @testset "ConstVariable" begin

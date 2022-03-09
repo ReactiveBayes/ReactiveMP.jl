@@ -875,7 +875,7 @@ macro node(fformtype, sdtype, interfaces_list)
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
         
         function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions)
-            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation(options)), ReactiveMP.collect_meta($fbottomtype, metadata(options)), ReactiveMP.collect_pipeline($fbottomtype, getpipeline(options)))
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation(options)), ReactiveMP.collect_meta($fbottomtype, metadata(options)), ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options)))
         end
         
         function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions, $(interface_args...))
