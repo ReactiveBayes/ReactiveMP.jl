@@ -13,10 +13,12 @@ makedocs(
     pages    = [
         "Introduction"    => "index.md",
         "User guide" => [ 
-            "Getting Started"     => "man/getting-started.md",
-            "Fundamentals"        => "man/fundamentals.md",
-            "Model Specification" => "man/model-specification.md",
-            "Inference execution" => "man/inference-execution.md"
+            "Getting Started"           => "man/getting-started.md",
+            "Fundamentals"              => "man/fundamentals.md",
+            "Model Specification"       => "man/model-specification.md",
+            "Constraints Specification" => "man/constraints-specification.md",
+            "Meta Specification"        => "man/meta-specification.md",
+            "Inference execution"       => "man/inference-execution.md"
         ],
         "Examples" => [
             "Overview"                         => "examples/overview.md",
