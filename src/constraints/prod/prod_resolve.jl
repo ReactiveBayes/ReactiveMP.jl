@@ -23,13 +23,18 @@ resolve_prod_constraint(::ProdPreserveTypeLeft, ::ProdPreserveTypeRight) = error
 resolve_prod_constraint(::ProdPreserveTypeRight, ::ProdPreserveTypeLeft) = error("Cannot resolve `prod_constraint`. `ProdPreserveTypeRight()` and `ProdPreserveTypeLeft()` are incompatible.")
 
 # `ProdGeneric` always has "inner" prod_constraint, e.g. `ProdAnalytical` to resolve analytical cases, but it might be any other prod_constraint as well
-resolve_prod_constraint(left::ProdGeneric, right) = ProdGeneric(resolve_prod_constraint(get_constraint(left), right))
-resolve_prod_constraint(left, right::ProdGeneric) = ProdGeneric(resolve_prod_constraint(left, get_constraint(right)))
+resolve_prod_constraint(left::ProdGeneric, right::AbstractProdConstraint) = ProdGeneric(resolve_prod_constraint(get_constraint(left), right))
+resolve_prod_constraint(left::AbstractProdConstraint, right::ProdGeneric) = ProdGeneric(resolve_prod_constraint(left, get_constraint(right)))
 
 resolve_prod_constraint(left::ProdGeneric, right::ProdGeneric) = ProdGeneric(resolve_prod_constraint(get_constraint(left), get_constraint(right)))
 
 # `ProdFinal` has the higher priority among the others
-resolve_prod_constraint(left::ProdFinal, right) = left
-resolve_prod_constraint(left, right::ProdFinal) = right
+resolve_prod_constraint(left::ProdFinal, right::AbstractProdConstraint) = left
+resolve_prod_constraint(left::AbstractProdConstraint, right::ProdFinal) = right
 
 resolve_prod_constraint(left::ProdFinal, right::ProdFinal) = error("Cannot resolve `prod_constraint`. Both $(left) and $(right) prod constraints are of type `ProdFinal`")
+
+# Utility case
+resolve_prod_constraint(left::Nothing, right::AbstractProdConstraint) = right
+resolve_prod_constraint(left::AbstractProdConstraint, right::Nothing) = left
+resolve_prod_constraint(::Nothing, ::Nothing) = nothing

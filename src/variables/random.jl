@@ -35,6 +35,13 @@ struct RandomVariableCreationOptions{L, P, C, S, T, G, M, N}
     messages_form_check_strategy :: N
 end
 
+prod_constraint(options::RandomVariableCreationOptions)              = options.prod_constraint
+prod_strategy(options::RandomVariableCreationOptions)                = options.prod_strategy
+marginal_form_constraint(options::RandomVariableCreationOptions)     = options.marginal_form_constraint
+marginal_form_check_strategy(options::RandomVariableCreationOptions) = options.marginal_form_check_strategy
+messages_form_constraint(options::RandomVariableCreationOptions)     = options.messages_form_constraint
+messages_form_check_strategy(options::RandomVariableCreationOptions) = options.messages_form_check_strategy
+
 function RandomVariableCreationOptions()
     # Return default settings
     return RandomVariableCreationOptions(

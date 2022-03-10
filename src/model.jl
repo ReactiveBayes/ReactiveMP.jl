@@ -159,7 +159,7 @@ end
 
 # Utility functions
 
-##
+## node
 
 function node_resolve_options(model::Model, options::FactorNodeCreationOptions, fform, variables) 
     return FactorNodeCreationOptions(
@@ -186,9 +186,47 @@ node_resolve_meta(model::Model, options::FactorNodeCreationOptions, fform, varia
 node_resolve_meta(model::Model, options::FactorNodeCreationOptions, something, fform, variables) = something
 node_resolve_meta(model::Model, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = resolve_meta(getmeta(model), model, fform, variables)
 
+## randomvar
+
+function randomvar_resolve_options(model::Model, options::RandomVariableCreationOptions, name) 
+    qform, qprod = randomvar_resolve_marginal_form_prod(model, options, name)
+    mform, mprod = randomvar_resolve_messages_form_prod(model, options, name)
+
+    rprod = resolve_prod_constraint(qprod, mprod)
+
+    qoptions = randomvar_options_set_marginal_form_constraint(options, qform)
+    moptions = randomvar_options_set_messages_form_constraint(qoptions, mform)
+    roptions = randomvar_options_set_prod_constraint(moptions, rprod)
+
+    return roptions
+end
+
+## constraints
+
+randomvar_resolve_marginal_form_prod(model::Model, options::RandomVariableCreationOptions, name)            = randomvar_resolve_marginal_form_prod(model, options, marginal_form_constraint(options), name)
+randomvar_resolve_marginal_form_prod(model::Model, options::RandomVariableCreationOptions, something, name) = (something, nothing)
+randomvar_resolve_marginal_form_prod(model::Model, options::RandomVariableCreationOptions, ::Nothing, name) = randomvar_resolve_marginal_form_prod(model, getconstraints(model), name)
+
+randomvar_resolve_marginal_form_prod(model::Model, ::UnspecifiedConstraints, name) = (nothing, nothing)
+randomvar_resolve_marginal_form_prod(model::Model, constraints, name)              = resolve_marginal_form_prod(constraints, model, name)
+
+randomvar_resolve_messages_form_prod(model::Model, options::RandomVariableCreationOptions, name)            = randomvar_resolve_messages_form_prod(model, options, messages_form_constraint(options), name)
+randomvar_resolve_messages_form_prod(model::Model, options::RandomVariableCreationOptions, something, name) = (something, nothing)
+randomvar_resolve_messages_form_prod(model::Model, options::RandomVariableCreationOptions, ::Nothing, name) = randomvar_resolve_messages_form_prod(model, getconstraints(model), name)
+
+randomvar_resolve_messages_form_prod(model::Model, ::UnspecifiedConstraints, name) = (nothing, nothing)
+randomvar_resolve_messages_form_prod(model::Model, constraints, name)              = resolve_messages_form_prod(constraints, model, name)
+
 ## variable creation
 
-randomvar(model::Model, args...) = add!(model, randomvar(args...))
+function randomvar(model::Model, name::Symbol, args...)
+    return randomvar(model, RandomVariableCreationOptions(), name, args...)
+end
+
+function randomvar(model::Model, options::RandomVariableCreationOptions, name::Symbol, args...) 
+    return add!(model, randomvar(randomvar_resolve_options(model, options, name), name, args...))
+end
+
 constvar(model::Model, args...)  = add!(model, constvar(args...))
 datavar(model::Model, args...)   = add!(model, datavar(args...))
 

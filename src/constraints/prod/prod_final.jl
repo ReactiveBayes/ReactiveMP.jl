@@ -11,7 +11,7 @@ Note: `ProdFinal` is not a prod strategy, as opposed to `ProdAnalytical` and `Pr
 
 See also: [`BIFM`]
 """
-struct ProdFinal{T}
+struct ProdFinal{T} <: AbstractProdConstraint
     dist :: T
 end
 

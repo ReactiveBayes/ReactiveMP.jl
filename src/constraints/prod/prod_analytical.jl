@@ -10,7 +10,7 @@ It fails if no analytical rules is available, use `ProdGeneric` prod strategy to
 
 See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdGeneric`](@ref)
 """
-struct ProdAnalytical end
+struct ProdAnalytical <: AbstractProdConstraint end
 
 """
     prod(strategy, left, right)

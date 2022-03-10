@@ -7,6 +7,8 @@ import Distributions
 struct ProdAnalyticalRuleAvailable end
 struct ProdAnalyticalRuleUnknown end
 
+abstract type AbstractProdConstraint end
+
 """
     prod_analytical_rule(::Type, ::Type)
 

@@ -80,7 +80,7 @@ _check_dist_product_value_support(::Type{ S1 }, ::Type{ S2 }) where { S1 <: Valu
 
 See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveType`](@ref)
 """
-struct ProdGeneric{C} 
+struct ProdGeneric{C} <: AbstractProdConstraint
     prod_constraint :: C
 end
 
