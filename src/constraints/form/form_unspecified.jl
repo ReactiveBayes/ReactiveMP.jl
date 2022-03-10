@@ -10,9 +10,13 @@ See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
 struct UnspecifiedFormConstraint <: AbstractFormConstraint end
 
+is_point_mass_form_constraint(::UnspecifiedFormConstraint) = false
+
 default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLast()
 
-is_point_mass_form_constraint(::UnspecifiedFormConstraint) = false
+default_prod_constraint(::UnspecifiedFormConstraint) = ProdAnalytical()
+
+make_form_constraint(::Type{ <: Nothing }) = UnspecifiedFormConstraint()
 
 constrain_form(::UnspecifiedFormConstraint, something)                            = something
 constrain_form(::UnspecifiedFormConstraint, something::Message{ <: DistProduct }) = error("`DistProduct` object cannot be used as a functional form in inference backend. Use form constraints to restrict the functional form of marginal posteriors.")

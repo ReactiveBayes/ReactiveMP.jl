@@ -54,6 +54,16 @@ See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), 
 function default_form_check_strategy end
 
 """
+    default_prod_constraint(form_constraint)
+
+Returns a default prod constraint needed to apply a given `form_constraint`. For most form constraints this function returns `ProdGeneric`.
+
+See also: [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
+"""
+function default_prod_constraint end
+
+
+"""
     is_point_mass_form_constraint(form_constraint)
 
 Specifies whether form constraint always returns PointMass estimates or not. For a given `form_constraint` returns either `true` or `false`.
@@ -73,12 +83,38 @@ See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), 
 """
 function constrain_form end 
 
+"""
+    make_form_constraint(::Type, args...; kwargs...)
+
+Creates form constraint object based on passed `type` with given `args` and `kwargs`. Used to simplify form constraint specification.
+
+As an example:
+
+```julia
+make_form_constraint(PointMass)
+```
+
+creates an instance of `PointMassFormConstraint` and 
+
+```julia
+make_form_constraint(SampleList, 5000, LeftProposal())
+```
+should create an instance of `SampleListFormConstraint`.
+
+See also: [`AbstractFormConstraint`](@ref)
+"""
+function make_form_constraint end
+
 
 struct CompositeFormConstraint{C} <: AbstractFormConstraint
     constraints :: C
 end
 
+Base.show(io::IO, constraint::CompositeFormConstraint) = join(io, constraint.constraints, " :: ")
+
 constrain_form(composite::CompositeFormConstraint, something) = reduce((form, constraint) -> constrain_form(constraint, form), composite.constraints, init = something)
+
+default_prod_constraint(constraint::CompositeFormConstraint) = mapfoldl(default_prod_constraint, resolve_prod_constraint, constraint.constraints)
 
 function default_form_check_strategy(composite::CompositeFormConstraint)
     strategies = map(default_form_check_strategy, composite.constraints)

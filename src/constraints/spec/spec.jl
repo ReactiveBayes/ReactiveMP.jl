@@ -53,15 +53,11 @@ function Base.show(io::IO, specification::ConstraintsSpecification)
     print(io, "Constraints:\n")
     print(io, "\tmarginals form:\n")
     foreach(pairs(specification.marginalsform)) do spec 
-        print(io, "\t\tq($(first(spec))) :: ")
-        join(io, map(repr, last(spec)), " :: ")
-        print(io, "\n")
+        print(io, "\t\tq(", first(spec), ") :: ", last(spec), "\n")
     end
     print(io, "\tmessages form:\n")
     foreach(pairs(specification.messagesform)) do spec 
-        print(io, "\t\tμ($(first(spec))) :: ")
-        join(io, map(repr, last(spec)), " :: ")
-        print(io, "\n")
+        print(io, "\t\tq(", first(spec), ") :: ", last(spec), "\n")
     end
     print(io, "\tfactorisation:\n")
     foreach(specification.factorisation) do f

@@ -18,12 +18,18 @@ struct SampleListFormConstraint{N, R, S, M} <: AbstractFormConstraint
     method   :: M
 end
 
+Base.show(io::IO, constraint::SampleListFormConstraint) = print(io, "SampleListFormConstraint(", constraint.rng, ", ", constraint.strategy, ", ", constraint.method, ")")
+
 SampleListFormConstraint(nsamples::Int, strategy::S, method::M = BootstrapImportanceSampling())         where { S, M }                   = SampleListFormConstraint(Random.GLOBAL_RNG, nsamples, strategy, method)
 SampleListFormConstraint(rng::R, nsamples::Int, strategy::S, method::M = BootstrapImportanceSampling()) where { R <: AbstractRNG, S, M } = SampleListFormConstraint{nsamples, R, S, M}(rng, strategy, method)
 
+is_point_mass_form_constraint(::SampleListFormConstraint) = false
+
 default_form_check_strategy(::SampleListFormConstraint) = FormConstraintCheckLast()
 
-is_point_mass_form_constraint(::SampleListFormConstraint) = false
+default_prod_constraint(::SampleListFormConstraint) = ProdGeneric()
+
+make_form_constraint(::Type{ SampleList }, args...; kwargs...) = SampleListFormConstraint(args...; kwargs...)
 
 constrain_form(::SampleListFormConstraint, something) = something
 

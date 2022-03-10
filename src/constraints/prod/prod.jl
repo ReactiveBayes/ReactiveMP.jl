@@ -16,3 +16,13 @@ Returns `ProdAnalyticalRuleUnknown` by default.
 See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
 """
 prod_analytical_rule(::Type, ::Type) = ProdAnalyticalRuleUnknown()
+
+
+"""
+    resolve_prod_constraint(left, right)
+
+Given two product constraints returns a single one that has a higher priority (if possible).
+
+See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
+"""
+function resolve_prod_constraint end
