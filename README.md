@@ -1,6 +1,6 @@
 # ReactiveMP.jl
 
-| **Documentation**                                                         | **Build Status**                 | **Code coverage**                  | **Zenodo DOI**                   |
+| **Documentation**                                                         | **Build Status**                 | **Coverage**                       | **Zenodo DOI**                   |
 |:-------------------------------------------------------------------------:|:--------------------------------:|:----------------------------------:|:--------------------------------:|
 | [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![DOI][ci-img]][ci-url]         | [![DOI][codecov-img]][codecov-url] | [![DOI][zenodo-img]][zenodo-url] |
 
