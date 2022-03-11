@@ -482,7 +482,9 @@ using GraphPPL # for `@constraints` macro
                     c = constvar(model, :c, 1.0)
                     x = randomvar(model, :x)
                     y = randomvar(model, :y)
+                    z = randomvar(model, :z)
 
+                    
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, d)) === ((1,), (2, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, c)) === ((1,), (2, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, x)) === ((1,), (2, ))
@@ -494,6 +496,9 @@ using GraphPPL # for `@constraints` macro
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, y)) === ((1, 3), (2, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y, c)) === ((1, 2), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, d)) === ((1,), (2, ))
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y, z)) === ((1, 2, 3), )
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (y, x, z)) === ((1, 2, 3), )
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (z, x, y)) === ((1, 2, 3), )
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, x, d)) === ((1,), (2, ), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, c, d)) === ((1, ), (2, ), (3, ))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, c)) === ((1, ), (2,), (3, ))

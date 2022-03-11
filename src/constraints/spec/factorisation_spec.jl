@@ -184,7 +184,7 @@ resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tu
 resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2 }) where { V1 <: RandomVariable, V2 <: Union{ <: ConstVariable, <: DataVariable } } = ((1, ), (2, ))
 
 # Preoptimised dispatch rules for unspecified constraints and a stochastic node with 3 inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: RandomVariable, V3 <: RandomVariable } = ((1, 2, 3, ))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: RandomVariable, V3 <: RandomVariable } = ((1, 2, 3, ), )
 resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: Union{ <: ConstVariable, <: DataVariable }, V2 <: RandomVariable, V3 <: RandomVariable } = ((1, ), (2, 3))
 resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: Union{ <: ConstVariable, <: DataVariable }, V3 <: RandomVariable } = ((1, 3), (2, ))
 resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{ V1, V2, V3 }) where { V1 <: RandomVariable, V2 <: RandomVariable, V3 <: Union{ <: ConstVariable, <: DataVariable } } = ((1, 2), (3, ))
@@ -449,8 +449,8 @@ end
 __throw_intersection_error(fform, varrefs, varrefsnames, clusters, constraints) = throw(ClusterIntersectionError(fform, varrefs, varrefsnames, clusters, constraints))
 
 function Base.showerror(io::IO, error::ClusterIntersectionError)
-    
-    print(io, "Cluster intersection error in the expression `$(varrefsnames[1]) ~ $(fform)($(join(varrefsnames[2:end], ", ")))`.\n")
+
+    print(io, "Cluster intersection error in the expression `$(error.varrefsnames[1]) ~ $(error.fform)($(join(error.varrefsnames[2:end], ", ")))`.\n")
     print(io, "Based on factorisation constraints the resulting local constraint ")
     print(io, "q(")
     join(io, map(r -> __io_entry_pair(r[1], r[2]), error.varrefs), ", ")
