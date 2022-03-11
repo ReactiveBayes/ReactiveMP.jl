@@ -4,7 +4,7 @@ Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to
 
 ```julia
 meta = @meta begin 
-    GCV(x, k, w) <- GCVMetadata(GaussHermiteCubature(20))
+    GCV(x, k, w) -> GCVMetadata(GaussHermiteCubature(20))
 end
 ```
 
@@ -15,7 +15,7 @@ indicates, that for every `GCV` node in the model that has `x`, `k` and `w` as c
 
 ```julia
 @meta make_meta(n)
-    GCV(x, k, w) <- GCVMetadata(GaussHermiteCubature(n))
+    GCV(x, k, w) -> GCVMetadata(GaussHermiteCubature(n))
 end
 
 meta = make_meta(20)
