@@ -56,6 +56,8 @@ function RandomVariableCreationOptions()
     )
 end
 
+const EmptyRandomVariableCreationOptions = RandomVariableCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+
 # Immutable setters return a new object, this API is considered to be private
 randomvar_options_set_pipeline(pipeline)                                         = randomvar_options_set_pipeline(RandomVariableCreationOptions(), pipeline)
 randomvar_options_set_proxy_variables(proxy_variables)                           = randomvar_options_set_proxy_variables(RandomVariableCreationOptions(), proxy_variables)

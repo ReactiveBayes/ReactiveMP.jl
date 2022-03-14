@@ -248,8 +248,8 @@ getname(autovar::AutoVar) = autovar.name
 
 function ReactiveMP.make_node(model::Model, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable })
     proxy     = isdeterministic(sdtype(fform)) ? args : nothing
-    rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(proxy)
-    var       = add!(model, ReactiveMP.randomvar(rvoptions, ReactiveMP.getname(autovar)))
+    rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(EmptyRandomVariableCreationOptions, proxy)
+    var       = ReactiveMP.randomvar(model, rvoptions, ReactiveMP.getname(autovar)) # add! is inside
     node      = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
     return node, var
 end
@@ -259,7 +259,7 @@ __fform_const_apply(f::F, args...) where { F <: Function } = f(args...)
 
 function ReactiveMP.make_node(model::Model, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable })
     if isstochastic(sdtype(fform))
-        var  = add!(model, ReactiveMP.randomvar(ReactiveMP.getname(autovar)))
+        var  = ReactiveMP.randomvar(model, EmptyRandomVariableCreationOptions, ReactiveMP.getname(autovar)) # add! is inside
         node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
         return node, var
     else
