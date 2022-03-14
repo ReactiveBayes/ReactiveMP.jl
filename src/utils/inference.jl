@@ -70,7 +70,7 @@ function Base.show(io::IO, result::InferenceResult)
         print(io, "$(rpad(key, maxlen)) = ")
         svalue = string(value)
         slen   = length(svalue)
-        print(IOContext(io, :compact => true, :limit => true), view(svalue, 1:maxwidth))
+        print(IOContext(io, :compact => true, :limit => true), view(svalue, 1:min(maxwidth, length(svalue))))
         if slen > maxwidth
             print(io, "...")
         end
