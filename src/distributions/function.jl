@@ -70,12 +70,45 @@ vague(::Type{ <: ContinuousUnivariateLogPdf }) = ContinuousUnivariateLogPdf(Doma
 
 prod_analytical_rule(::Type{ <: ContinuousUnivariateLogPdf }, ::Type{ <: ContinuousUnivariateLogPdf }) = ProdAnalyticalRuleAvailable()
 
-function prod(::ProdAnalytical, left::ContinuousUnivariateLogPdf, right::ContinuousUnivariateLogPdf)
+function prod(::ProdAnalytical, left::ContinuousUnivariateLogPdf{D1, F1}, right::ContinuousUnivariateLogPdf{D2, F2}) where { D1, D2, F1, F2 }
     @assert left.domain == right.domain "Different domain types in product of generic `ContinuousUnivariateLogPdf` distributions. Left domain is $(left.domain), right is $(right.domain)."
     plogpdf = let left = left, right = right
         (x) -> logpdf(left, x) + logpdf(right, x)
     end
     return ContinuousUnivariateLogPdf(left.domain, plogpdf)
+end
+
+## More efficient prod for same logpdfs
+
+struct ContinuousUnivariateLogPdfVectorisedProduct{F} <: ContinuousUnivariateDistribution
+    vector :: Vector{F}
+end
+
+(dist::ContinuousUnivariateLogPdfVectorisedProduct)(x) = logpdf(dist, x)
+
+Distributions.support(dist::ContinuousUnivariateLogPdfVectorisedProduct) = Distributions.support(first(dist.vector))
+
+Distributions.mean(dist::ContinuousUnivariateLogPdfVectorisedProduct)    = error("mean() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+Distributions.median(dist::ContinuousUnivariateLogPdfVectorisedProduct)  = error("median() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+Distributions.mode(dist::ContinuousUnivariateLogPdfVectorisedProduct)    = error("mode() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+Distributions.var(dist::ContinuousUnivariateLogPdfVectorisedProduct)     = error("var() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+Distributions.std(dist::ContinuousUnivariateLogPdfVectorisedProduct)     = error("std() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+Distributions.cov(dist::ContinuousUnivariateLogPdfVectorisedProduct)     = error("cov() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+Distributions.invcov(dist::ContinuousUnivariateLogPdfVectorisedProduct)  = error("invcov() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+Distributions.entropy(dist::ContinuousUnivariateLogPdfVectorisedProduct) = error("entropy() is not defined for `ContinuousUnivariateLogPdfVectorisedProduct`.")
+
+Distributions.logpdf(dist::ContinuousUnivariateLogPdfVectorisedProduct, x) = mapreduce((d) -> logpdf(d, x), +, dist.vector)
+Distributions.pdf(dist::ContinuousUnivariateLogPdfVectorisedProduct, x)    = exp(mapreduce((d) -> logpdf(d, x), +, dist.vector))
+
+function prod(::ProdAnalytical, left::ContinuousUnivariateLogPdf{D, F}, right::ContinuousUnivariateLogPdf{D, F}) where { D, F }
+    return ContinuousUnivariateLogPdfVectorisedProduct(ContinuousUnivariateLogPdf{D, F}[ left, right ])
+end
+
+prod_analytical_rule(::Type{ ContinuousUnivariateLogPdfVectorisedProduct{F} }, ::Type{ F }) where { F <: ContinuousUnivariateLogPdf } = ProdAnalyticalRuleAvailable()
+
+function prod(::ProdAnalytical, left::ContinuousUnivariateLogPdfVectorisedProduct{F}, right::F) where { F <: ContinuousUnivariateLogPdf }
+    push!(left.vector, right)
+    return left
 end
 
 # This method is inaccurate and relies on various approximation methods, which may fail in different scenarious
