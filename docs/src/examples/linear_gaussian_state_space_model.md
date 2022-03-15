@@ -59,7 +59,7 @@ nothing #hide
 ```
 
 !!! note
-    For large number of observations you will need yo use `limit_stack_depth = 100` option during model creation, e.g. `model, (x, y) = create_model(..., options = (limit_stack_depth = 100, ))`
+    For large number of observations you will need yo use `limit_stack_depth = 100` option during model creation, e.g. `model, (x, y) = create_model(model_options(limit_stack_depth = 100), ...)`
 
 
 ```@example lgssm

@@ -90,7 +90,7 @@ end
 function ar_inference(inputs, outputs, order, niter)
     n = length(outputs)
 
-    model, (x, y, θ, γ) = ar_model(n, order, options = (limit_stack_depth = 500, ))
+    model, (x, y, θ, γ) = ar_model(model_options(limit_stack_depth = 500), n, order)
 
     γ_buffer = keep(Marginal)
     θ_buffer = keep(Marginal)
@@ -132,7 +132,7 @@ function lar_inference(data, order, artype, stype, niter, τ)
     c = ReactiveMP.ar_unit(artype, order)
 
     # Note that to run inference for huge model it might be necessary to pass extra
-    # options = (limit_stack_depth = 100,) to limit stack depth during recursive inference procedure
+    # `model_options(limit_stack_depth = 100)` as a first argument to limit stack depth during recursive inference procedure
     model, (x, y, θ, γ) = lar_model(artype, n, order, c, stype, τ)
 
     # We are going to keep `γ` and `θ` estimates for all VMP iterations

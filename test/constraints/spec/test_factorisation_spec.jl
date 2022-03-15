@@ -117,7 +117,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y) = q(x)q(y)
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x)
             y = randomvar(model, :y)
@@ -134,7 +134,7 @@ using GraphPPL # for `@constraints` macro
                 end
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x)
             y = randomvar(model, :y)
@@ -148,7 +148,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y) = q(x)q(y)
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x, 10)
             y = randomvar(model, :y, 10)
@@ -180,7 +180,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y, z) = q(x, y)q(z)
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x, 10)
             y = randomvar(model, :y, 10)
@@ -210,7 +210,7 @@ using GraphPPL # for `@constraints` macro
 
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x, 11)
             y = randomvar(model, :y, 11)
@@ -235,7 +235,7 @@ using GraphPPL # for `@constraints` macro
                 q(x) = q(x[begin])..q(x[end])
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x, 10)
 
@@ -250,7 +250,7 @@ using GraphPPL # for `@constraints` macro
                 q(x) = q(x[1:n])q(x[n + 1])..q(x[end])
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x, 10)
             z = randomvar(model, :z)
@@ -283,7 +283,7 @@ using GraphPPL # for `@constraints` macro
                 end
             end
                     
-            model = Model()
+            model = FactorGraphModel()
                     
             y = randomvar(model, :y, 10)
             x = randomvar(model, :x, 10)
@@ -312,7 +312,7 @@ using GraphPPL # for `@constraints` macro
                 q(x) = q(x[begin:begin+2])q(x[begin+3])..q(x[end])
             end
                     
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x, 10)
             y = randomvar(model, :y, 10)
@@ -334,7 +334,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y, r) = q(x, y)q(r)
             end
                     
-            model = Model()
+            model = FactorGraphModel()
                     
             y = randomvar(model, :y, 10)
             x = randomvar(model, :x, 10)
@@ -360,7 +360,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y, r) = q(x, y)q(r)
             end
                     
-            model = Model()
+            model = FactorGraphModel()
                     
             y = randomvar(model, :y, 11)
             x = randomvar(model, :x, 10)
@@ -378,7 +378,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y) = q(x[begin])*q(x[begin+1:end])*q(y)
             end
                     
-            model = Model()
+            model = FactorGraphModel()
                     
             y = randomvar(model, :y, 11)
             x = randomvar(model, :x, 10)
@@ -400,7 +400,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y) = q(x)q(y)
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x)
             y = randomvar(model, :y)
@@ -421,7 +421,7 @@ using GraphPPL # for `@constraints` macro
                 end
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x, 10)
             y = randomvar(model, :y, 10)
@@ -477,7 +477,7 @@ using GraphPPL # for `@constraints` macro
             end
 
             for cs in (empty, DefaultConstraints)
-                let model = Model()
+                let model = FactorGraphModel()
                     d = datavar(model, :d, Float64)
                     c = constvar(model, :c, 1.0)
                     x = randomvar(model, :x)
@@ -570,7 +570,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y, z) = q(x)q(y)q(z)
             end
 
-            model = Model()
+            model = FactorGraphModel()
 
             x = randomvar(model, :x)
             y = randomvar(model, :y)
@@ -604,8 +604,8 @@ using GraphPPL # for `@constraints` macro
 
         @testset "Error case #5" begin 
             # undefined variables
-            model = Model()
-            other = Model()
+            model = FactorGraphModel()
+            other = FactorGraphModel()
             
             x = randomvar(other, :x)
             y = randomvar(other, :y)

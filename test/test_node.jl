@@ -64,7 +64,7 @@ using ReactiveMP
         cy = constvar(:cy, 1.0)
         cz = constvar(:cz, 1.0)
 
-        model = Model()
+        model = FactorGraphModel()
 
         snode, svar = make_node(model, FactorNodeCreationOptions(MeanField(), nothing, nothing), CustomStochasticNode, AutoVar(:cout), cx, cy, cz)
 
@@ -116,7 +116,7 @@ using ReactiveMP
         cy = constvar(:cy, 1.0)
         cz = constvar(:cz, 1.0)
 
-        model = Model()
+        model = FactorGraphModel()
 
         snode, svar = make_node(model, FactorNodeCreationOptions(MeanField(), nothing, nothing), CustomDeterministicNode, AutoVar(:cout), cx, cy, cz)
 

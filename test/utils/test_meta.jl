@@ -21,7 +21,7 @@ import ReactiveMP: resolve_meta
             SomeNode(x, y) -> "meta"
         end
 
-        model = Model()
+        model = FactorGraphModel()
 
         x = randomvar(model, :x)
         y = randomvar(model, :y)
@@ -53,7 +53,7 @@ import ReactiveMP: resolve_meta
             end
         end
 
-        model = Model()
+        model = FactorGraphModel()
 
         x = randomvar(model, :x)
         y = randomvar(model, :y)
@@ -84,7 +84,7 @@ import ReactiveMP: resolve_meta
             SomeNode(z, y) -> "meta2"
         end
 
-        model = Model()
+        model = FactorGraphModel()
 
         x = randomvar(model, :x, 10)
         y = randomvar(model, :y, 10)
@@ -109,7 +109,7 @@ import ReactiveMP: resolve_meta
             SomeNode(x, y) -> "meta1"
         end
 
-        model = Model()
+        model = FactorGraphModel()
 
         x = randomvar(model, :x, 10)
         y = randomvar(model, :y)
@@ -157,7 +157,7 @@ import ReactiveMP: resolve_meta
             AR(x10, y10, z) -> 21
         end
 
-        model = Model()
+        model = FactorGraphModel()
 
         z = randomvar(model, :z)
         x = randomvar(model, :x10)
@@ -178,7 +178,7 @@ import ReactiveMP: resolve_meta
             SomeNode(y, x) -> "meta"
         end
 
-        model = Model()
+        model = FactorGraphModel()
 
         x = randomvar(model, :x)
         y = randomvar(model, :y)

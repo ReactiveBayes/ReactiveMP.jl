@@ -74,7 +74,7 @@ end
 function multivariate_lgssm_inference(data, x0, A, B, Q, P)
     n = length(data)
 
-    model, (x, y) = multivariate_lgssm_model(n, x0, A, B, Q, P, options = (limit_stack_depth = 100, ));
+    model, (x, y) = multivariate_lgssm_model(model_options(limit_stack_depth = 500), n, x0, A, B, Q, P);
 
     xbuffer = buffer(Marginal, n)
     fe      = keep(Float64)

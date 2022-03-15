@@ -1,18 +1,23 @@
+export AbstractModelSpecification
 export ModelOptions, model_options
-export Model
+export FactorGraphModel
 export AutoVar
 export getoptions, getconstraints, getmeta
 export getnodes, getrandom, getconstant, getdata
 export activate!, repeat!
 export UntilConvergence
-# export MarginalsEagerUpdate, MarginalsPureUpdate
 
 import Base: show, getindex, haskey, firstindex, lastindex
 
-# Marginals update strategies 
+# Abstract model specification
 
-# struct MarginalsEagerUpdate end
-# struct MarginalsPureUpdate end
+abstract type AbstractModelSpecification end
+
+function create_model end
+
+function model_name end
+
+function source_code end
 
 # Model Options
 
@@ -22,7 +27,8 @@ struct ModelOptions{P, F, S}
     global_reactive_scheduler  :: S
 end
 
-model_options() = model_options(NamedTuple{()}(()))
+model_options(; kwargs...)       = model_options(kwargs)
+model_options(pairs::Base.Pairs) = model_options(NamedTuple(pairs))
 
 available_option_names(::Type{ <: ModelOptions }) = (
     :pipeline, 
@@ -31,10 +37,21 @@ available_option_names(::Type{ <: ModelOptions }) = (
     :limit_stack_depth
 )
 
+__as_named_tuple(nt::NamedTuple, arg1::NamedTuple{T, Tuple{Nothing}}, tail...) where T = __as_named_tuple(nt, tail...)
+__as_named_tuple(nt::NamedTuple, arg1::NamedTuple, tail...)                            = __as_named_tuple(merge(nt, arg1), tail...)
+
+__as_named_tuple(nt::NamedTuple) = nt
+
+as_named_tuple(options::ModelOptions) = __as_named_tuple((;),
+    (pipeline = options.pipeline, ),
+    (default_factorisation = options.default_factorisation, ),
+    (global_reactive_scheduler = options.global_reactive_scheduler, )
+)
+
 function model_options(options::NamedTuple)
-    pipeline                  = EmptyPipelineStage()
-    default_factorisation     = UnspecifiedConstraints()
-    global_reactive_scheduler = AsapScheduler()
+    pipeline                  = nothing
+    default_factorisation     = nothing
+    global_reactive_scheduler = nothing
 
     if haskey(options, :pipeline)
         pipeline = options[:pipeline]
@@ -61,13 +78,15 @@ function model_options(options::NamedTuple)
     )
 end
 
-global_reactive_scheduler(options::ModelOptions) = options.global_reactive_scheduler
-get_pipeline_stages(options::ModelOptions)       = options.pipeline
-default_factorisation(options::ModelOptions)     = options.default_factorisation
+global_reactive_scheduler(options::ModelOptions) = something(options.global_reactive_scheduler, AsapScheduler())
+get_pipeline_stages(options::ModelOptions)       = something(options.pipeline, EmptyPipelineStage())
+default_factorisation(options::ModelOptions)     = something(options.default_factorisation, UnspecifiedConstraints())
+
+Base.merge(nt::NamedTuple, options::ModelOptions) = model_options(merge(nt, as_named_tuple(options)))
 
 # Model
 
-struct Model{C, M, O}
+struct FactorGraphModel{C, M, O}
     constraints :: C
     meta        :: M
     options     :: O
@@ -78,35 +97,35 @@ struct Model{C, M, O}
     vardict     :: Dict{Symbol, Any}
 end
 
-Base.show(io::IO, ::Type{ <: Model }) = print(io, "Model")
-Base.show(io::IO, model::Model)       = print(io, "Model()")
+Base.show(io::IO, ::Type{ <: FactorGraphModel }) = print(io, "FactorGraphModel")
+Base.show(io::IO, model::FactorGraphModel)       = print(io, "FactorGraphModel()")
 
-Model() = Model(DefaultConstraints, DefaultMeta, model_options())
+FactorGraphModel() = FactorGraphModel(DefaultConstraints, DefaultMeta, model_options())
 
-Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }) = Model(constraints, DefaultMeta, model_options())
-Model(meta::Union{ UnspecifiedMeta, MetaSpecification })                      = Model(DefaultConstraints, meta, model_options())
-Model(options::NamedTuple)                                                    = Model(DefaultConstraints, DefaultMeta, model_options(options))
+FactorGraphModel(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }) = FactorGraphModel(constraints, DefaultMeta, model_options())
+FactorGraphModel(meta::Union{ UnspecifiedMeta, MetaSpecification })                      = FactorGraphModel(DefaultConstraints, meta, model_options())
+FactorGraphModel(options::NamedTuple)                                                    = FactorGraphModel(DefaultConstraints, DefaultMeta, model_options(options))
 
-Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, options::NamedTuple) = Model(constraints, DefaultMeta, model_options(options))
-Model(meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple)                      = Model(DefaultConstraints, meta, model_options(options))
+FactorGraphModel(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, options::NamedTuple) = FactorGraphModel(constraints, DefaultMeta, model_options(options))
+FactorGraphModel(meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple)                      = FactorGraphModel(DefaultConstraints, meta, model_options(options))
 
-Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification })                       = Model(constraints, meta, model_options())
-Model(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple)  = Model(constraints, meta, model_options(options))
+FactorGraphModel(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification })                       = FactorGraphModel(constraints, meta, model_options())
+FactorGraphModel(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple)  = FactorGraphModel(constraints, meta, model_options(options))
 
-function Model(constraints::C, meta::M, options::O) where { C <: Union{ UnspecifiedConstraints, ConstraintsSpecification }, M <: Union{ UnspecifiedMeta, MetaSpecification }, O <: ModelOptions } 
-    return Model{C, M, O}(constraints, meta, options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
+function FactorGraphModel(constraints::C, meta::M, options::O) where { C <: Union{ UnspecifiedConstraints, ConstraintsSpecification }, M <: Union{ UnspecifiedMeta, MetaSpecification }, O <: ModelOptions } 
+    return FactorGraphModel{C, M, O}(constraints, meta, options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
 end
 
-getconstraints(model::Model) = model.constraints
-getmeta(model::Model)        = model.meta
-getoptions(model::Model)     = model.options
-getnodes(model::Model)       = model.nodes
-getrandom(model::Model)      = model.random
-getconstant(model::Model)    = model.constant
-getdata(model::Model)        = model.data
-getvardict(model::Model)     = model.vardict
+getconstraints(model::FactorGraphModel) = model.constraints
+getmeta(model::FactorGraphModel)        = model.meta
+getoptions(model::FactorGraphModel)     = model.options
+getnodes(model::FactorGraphModel)       = model.nodes
+getrandom(model::FactorGraphModel)      = model.random
+getconstant(model::FactorGraphModel)    = model.constant
+getdata(model::FactorGraphModel)        = model.data
+getvardict(model::FactorGraphModel)     = model.vardict
 
-function Base.getindex(model::Model, symbol::Symbol) 
+function Base.getindex(model::FactorGraphModel, symbol::Symbol) 
     vardict = getvardict(model)
     if !haskey(vardict, symbol)
         error("Model has no variable/variables named $(symbol).")
@@ -114,33 +133,33 @@ function Base.getindex(model::Model, symbol::Symbol)
     return getindex(getvardict(model), symbol)
 end
 
-function Base.haskey(model::Model, symbol::Symbol)
+function Base.haskey(model::FactorGraphModel, symbol::Symbol)
     return haskey(getvardict(model), symbol)
 end
 
-firstindex(model::Model, symbol::Symbol) = firstindex(model, getindex(model, symbol))
-lastindex(model::Model, symbol::Symbol)  = lastindex(model, getindex(model, symbol))
+firstindex(model::FactorGraphModel, symbol::Symbol) = firstindex(model, getindex(model, symbol))
+lastindex(model::FactorGraphModel, symbol::Symbol)  = lastindex(model, getindex(model, symbol))
 
-firstindex(::Model, ::AbstractVariable) = typemin(Int64)
-lastindex(::Model, ::AbstractVariable)  = typemax(Int64)
+firstindex(::FactorGraphModel, ::AbstractVariable) = typemin(Int64)
+lastindex(::FactorGraphModel, ::AbstractVariable)  = typemax(Int64)
 
-firstindex(::Model, variables::AbstractVector{ <: AbstractVariable }) = firstindex(variables)
-lastindex(::Model, variables::AbstractVector{ <: AbstractVariable })  = lastindex(variables)
+firstindex(::FactorGraphModel, variables::AbstractVector{ <: AbstractVariable }) = firstindex(variables)
+lastindex(::FactorGraphModel, variables::AbstractVector{ <: AbstractVariable })  = lastindex(variables)
 
 add!(vardict::Dict, name::Symbol, entity) = vardict[name] = entity
 
-add!(model::Model, node::AbstractFactorNode)  = begin push!(model.nodes, node); return node end
-add!(model::Model, randomvar::RandomVariable) = begin push!(model.random, randomvar); add!(getvardict(model), name(randomvar), randomvar); return randomvar end
-add!(model::Model, constvar::ConstVariable)   = begin push!(model.constant, constvar); add!(getvardict(model), name(constvar), constvar); return constvar end
-add!(model::Model, datavar::DataVariable)     = begin push!(model.data, datavar); add!(getvardict(model), name(datavar), datavar); return datavar end
-add!(model::Model, ::Nothing)                 = nothing
-add!(model::Model, collection::Tuple)         = begin foreach((d) -> add!(model, d), collection); return collection end
-add!(model::Model, array::AbstractArray)      = begin foreach((d) -> add!(model, d), array); return array end
-add!(model::Model, array::AbstractArray{ <: RandomVariable }) = begin append!(model.random, array); add!(getvardict(model), name(first(array)), array); return array end
-add!(model::Model, array::AbstractArray{ <: ConstVariable })  = begin append!(model.constant, array); add!(getvardict(model), name(first(array)), array); return array end
-add!(model::Model, array::AbstractArray{ <: DataVariable })   = begin append!(model.data, array); add!(getvardict(model), name(first(array)), array); return array end
+add!(model::FactorGraphModel, node::AbstractFactorNode)  = begin push!(model.nodes, node); return node end
+add!(model::FactorGraphModel, randomvar::RandomVariable) = begin push!(model.random, randomvar); add!(getvardict(model), name(randomvar), randomvar); return randomvar end
+add!(model::FactorGraphModel, constvar::ConstVariable)   = begin push!(model.constant, constvar); add!(getvardict(model), name(constvar), constvar); return constvar end
+add!(model::FactorGraphModel, datavar::DataVariable)     = begin push!(model.data, datavar); add!(getvardict(model), name(datavar), datavar); return datavar end
+add!(model::FactorGraphModel, ::Nothing)                 = nothing
+add!(model::FactorGraphModel, collection::Tuple)         = begin foreach((d) -> add!(model, d), collection); return collection end
+add!(model::FactorGraphModel, array::AbstractArray)      = begin foreach((d) -> add!(model, d), array); return array end
+add!(model::FactorGraphModel, array::AbstractArray{ <: RandomVariable }) = begin append!(model.random, array); add!(getvardict(model), name(first(array)), array); return array end
+add!(model::FactorGraphModel, array::AbstractArray{ <: ConstVariable })  = begin append!(model.constant, array); add!(getvardict(model), name(first(array)), array); return array end
+add!(model::FactorGraphModel, array::AbstractArray{ <: DataVariable })   = begin append!(model.data, array); add!(getvardict(model), name(first(array)), array); return array end
 
-function activate!(model::Model) 
+function activate!(model::FactorGraphModel) 
     filter!(getrandom(model)) do randomvar
         @assert degree(randomvar) !== 1 "Half-edge has been found: $(name(randomvar)). To terminate half-edges 'Uninformative' node can be used."
         return degree(randomvar) >= 2
@@ -161,7 +180,7 @@ end
 
 ## node
 
-function node_resolve_options(model::Model, options::FactorNodeCreationOptions, fform, variables) 
+function node_resolve_options(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, variables) 
     return FactorNodeCreationOptions(
         node_resolve_factorisation(model, options, fform, variables),
         node_resolve_meta(model, options, fform, variables),
@@ -171,24 +190,24 @@ end
 
 ## constraints 
 
-node_resolve_factorisation(model::Model, options::FactorNodeCreationOptions, fform, variables)            = node_resolve_factorisation(model, options, factorisation(options), fform, variables)
-node_resolve_factorisation(model::Model, options::FactorNodeCreationOptions, something, fform, variables) = something
-node_resolve_factorisation(model::Model, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = node_resolve_factorisation(model, getconstraints(model), default_factorisation(getoptions(model)), fform, variables)
+node_resolve_factorisation(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, variables)            = node_resolve_factorisation(model, options, factorisation(options), fform, variables)
+node_resolve_factorisation(model::FactorGraphModel, options::FactorNodeCreationOptions, something, fform, variables) = something
+node_resolve_factorisation(model::FactorGraphModel, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = node_resolve_factorisation(model, getconstraints(model), default_factorisation(getoptions(model)), fform, variables)
 
-node_resolve_factorisation(model::Model, constraints, default, fform, variables)                               = error("Cannot resolve factorisation constrains. Both `constraints` and `default_factorisation` option have been set, which is disallowed.")
-node_resolve_factorisation(model::Model, ::UnspecifiedConstraints, default, fform, variables)                  = default
-node_resolve_factorisation(model::Model, constraints, ::UnspecifiedConstraints, fform, variables)              = resolve_factorisation(constraints, model, fform, variables)
-node_resolve_factorisation(model::Model, ::UnspecifiedConstraints, ::UnspecifiedConstraints, fform, variables) = resolve_factorisation(UnspecifiedConstraints(), model, fform, variables)
+node_resolve_factorisation(model::FactorGraphModel, constraints, default, fform, variables)                               = error("Cannot resolve factorisation constrains. Both `constraints` and `default_factorisation` option have been set, which is disallowed.")
+node_resolve_factorisation(model::FactorGraphModel, ::UnspecifiedConstraints, default, fform, variables)                  = default
+node_resolve_factorisation(model::FactorGraphModel, constraints, ::UnspecifiedConstraints, fform, variables)              = resolve_factorisation(constraints, model, fform, variables)
+node_resolve_factorisation(model::FactorGraphModel, ::UnspecifiedConstraints, ::UnspecifiedConstraints, fform, variables) = resolve_factorisation(UnspecifiedConstraints(), model, fform, variables)
 
 ## meta 
 
-node_resolve_meta(model::Model, options::FactorNodeCreationOptions, fform, variables)            = node_resolve_meta(model, options, metadata(options), fform, variables)
-node_resolve_meta(model::Model, options::FactorNodeCreationOptions, something, fform, variables) = something
-node_resolve_meta(model::Model, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = resolve_meta(getmeta(model), model, fform, variables)
+node_resolve_meta(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, variables)            = node_resolve_meta(model, options, metadata(options), fform, variables)
+node_resolve_meta(model::FactorGraphModel, options::FactorNodeCreationOptions, something, fform, variables) = something
+node_resolve_meta(model::FactorGraphModel, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = resolve_meta(getmeta(model), model, fform, variables)
 
 ## randomvar
 
-function randomvar_resolve_options(model::Model, options::RandomVariableCreationOptions, name) 
+function randomvar_resolve_options(model::FactorGraphModel, options::RandomVariableCreationOptions, name) 
     qform, qprod = randomvar_resolve_marginal_form_prod(model, options, name)
     mform, mprod = randomvar_resolve_messages_form_prod(model, options, name)
 
@@ -203,38 +222,38 @@ end
 
 ## constraints
 
-randomvar_resolve_marginal_form_prod(model::Model, options::RandomVariableCreationOptions, name)            = randomvar_resolve_marginal_form_prod(model, options, marginal_form_constraint(options), name)
-randomvar_resolve_marginal_form_prod(model::Model, options::RandomVariableCreationOptions, something, name) = (something, nothing)
-randomvar_resolve_marginal_form_prod(model::Model, options::RandomVariableCreationOptions, ::Nothing, name) = randomvar_resolve_marginal_form_prod(model, getconstraints(model), name)
+randomvar_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, name)            = randomvar_resolve_marginal_form_prod(model, options, marginal_form_constraint(options), name)
+randomvar_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, something, name) = (something, nothing)
+randomvar_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, ::Nothing, name) = randomvar_resolve_marginal_form_prod(model, getconstraints(model), name)
 
-randomvar_resolve_marginal_form_prod(model::Model, ::UnspecifiedConstraints, name) = (nothing, nothing)
-randomvar_resolve_marginal_form_prod(model::Model, constraints, name)              = resolve_marginal_form_prod(constraints, model, name)
+randomvar_resolve_marginal_form_prod(model::FactorGraphModel, ::UnspecifiedConstraints, name) = (nothing, nothing)
+randomvar_resolve_marginal_form_prod(model::FactorGraphModel, constraints, name)              = resolve_marginal_form_prod(constraints, model, name)
 
-randomvar_resolve_messages_form_prod(model::Model, options::RandomVariableCreationOptions, name)            = randomvar_resolve_messages_form_prod(model, options, messages_form_constraint(options), name)
-randomvar_resolve_messages_form_prod(model::Model, options::RandomVariableCreationOptions, something, name) = (something, nothing)
-randomvar_resolve_messages_form_prod(model::Model, options::RandomVariableCreationOptions, ::Nothing, name) = randomvar_resolve_messages_form_prod(model, getconstraints(model), name)
+randomvar_resolve_messages_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, name)            = randomvar_resolve_messages_form_prod(model, options, messages_form_constraint(options), name)
+randomvar_resolve_messages_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, something, name) = (something, nothing)
+randomvar_resolve_messages_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, ::Nothing, name) = randomvar_resolve_messages_form_prod(model, getconstraints(model), name)
 
-randomvar_resolve_messages_form_prod(model::Model, ::UnspecifiedConstraints, name) = (nothing, nothing)
-randomvar_resolve_messages_form_prod(model::Model, constraints, name)              = resolve_messages_form_prod(constraints, model, name)
+randomvar_resolve_messages_form_prod(model::FactorGraphModel, ::UnspecifiedConstraints, name) = (nothing, nothing)
+randomvar_resolve_messages_form_prod(model::FactorGraphModel, constraints, name)              = resolve_messages_form_prod(constraints, model, name)
 
 ## variable creation
 
-function randomvar(model::Model, name::Symbol, args...)
+function randomvar(model::FactorGraphModel, name::Symbol, args...)
     return randomvar(model, RandomVariableCreationOptions(), name, args...)
 end
 
-function randomvar(model::Model, options::RandomVariableCreationOptions, name::Symbol, args...) 
+function randomvar(model::FactorGraphModel, options::RandomVariableCreationOptions, name::Symbol, args...) 
     return add!(model, randomvar(randomvar_resolve_options(model, options, name), name, args...))
 end
 
-constvar(model::Model, args...)  = add!(model, constvar(args...))
-datavar(model::Model, args...)   = add!(model, datavar(args...))
+constvar(model::FactorGraphModel, args...)  = add!(model, constvar(args...))
+datavar(model::FactorGraphModel, args...)   = add!(model, datavar(args...))
 
-as_variable(model::Model, x)                   = add!(model, as_variable(x))
-as_variable(model::Model, v::AbstractVariable) = v
-as_variable(model::Model, t::Tuple)            = map((d) -> as_variable(model, d), t)
+as_variable(model::FactorGraphModel, x)                   = add!(model, as_variable(x))
+as_variable(model::FactorGraphModel, v::AbstractVariable) = v
+as_variable(model::FactorGraphModel, t::Tuple)            = map((d) -> as_variable(model, d), t)
 
-function make_node(model::Model, options::FactorNodeCreationOptions, fform, args...)
+function make_node(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, args...)
     return add!(model, make_node(fform, node_resolve_options(model, options, fform, args), args...))
 end
 
@@ -246,7 +265,7 @@ end
 
 getname(autovar::AutoVar) = autovar.name
 
-function ReactiveMP.make_node(model::Model, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable })
+function ReactiveMP.make_node(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable })
     proxy     = isdeterministic(sdtype(fform)) ? args : nothing
     rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(EmptyRandomVariableCreationOptions, proxy)
     var       = ReactiveMP.randomvar(model, rvoptions, ReactiveMP.getname(autovar)) # add! is inside
@@ -257,7 +276,7 @@ end
 __fform_const_apply(::Type{T}, args...) where T = T(args...)
 __fform_const_apply(f::F, args...) where { F <: Function } = f(args...)
 
-function ReactiveMP.make_node(model::Model, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable })
+function ReactiveMP.make_node(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, autovar::AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable })
     if isstochastic(sdtype(fform))
         var  = ReactiveMP.randomvar(model, EmptyRandomVariableCreationOptions, ReactiveMP.getname(autovar)) # add! is inside
         node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
@@ -272,9 +291,9 @@ end
 
 # Repeat variational message passing iterations [ EXPERIMENTAL ]
 
-repeat!(model::Model, criterion) = repeat!((_) -> nothing, model, criterion)
+repeat!(model::FactorGraphModel, criterion) = repeat!((_) -> nothing, model, criterion)
 
-function repeat!(callback::Function, model::Model, count::Int)
+function repeat!(callback::Function, model::FactorGraphModel, count::Int)
     for _ in 1:count
         foreach(getdata(model)) do datavar
             resend!(datavar)
@@ -293,7 +312,7 @@ end
 UntilConvergence(score::S; tolerance::F = 1e-6, maxcount::Int = 10_000, mincount::Int = 0) where { S, F <: Real } = UntilConvergence{S, F}(score, tolerance, maxcount, mincount)
 UntilConvergence(; kwargs...)                                                                                     = UntilConvergence(BetheFreeEnergy(); kwargs...)
 
-function repeat!(callback::Function, model::Model, criterion::UntilConvergence{S, F}) where { S, F }
+function repeat!(callback::Function, model::FactorGraphModel, criterion::UntilConvergence{S, F}) where { S, F }
 
     stopping_fn = let tolerance = criterion.tolerance
         (p) -> abs(p[1] - p[2]) < tolerance
