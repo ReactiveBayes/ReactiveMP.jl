@@ -5,6 +5,8 @@ include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
 
+include("constraints/meta/meta.jl")
+
 include("constraints/prod/prod.jl")
 include("constraints/form/form.jl")
 
@@ -132,10 +134,8 @@ include("constraints/spec/spec.jl")
 include("constraints/spec/factorisation_spec.jl")
 include("constraints/spec/form_spec.jl")
 
-include("utils/inference.jl")
-include("utils/meta.jl")
-
 include("model.jl")
 include("fixes.jl")
+include("inference.jl")
 
 end

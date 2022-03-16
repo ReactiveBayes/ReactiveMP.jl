@@ -1,11 +1,10 @@
 export AbstractModelSpecification
 export ModelOptions, model_options
-export FactorGraphModel
+export FactorGraphModel, Model
 export AutoVar
 export getoptions, getconstraints, getmeta
 export getnodes, getrandom, getconstant, getdata
-export activate!, repeat!
-export UntilConvergence
+export activate!
 
 import Base: show, getindex, haskey, firstindex, lastindex
 
@@ -18,6 +17,30 @@ function create_model end
 function model_name end
 
 function source_code end
+
+# Model Generator
+
+"""
+    ModelGenerator
+
+`ModelGenerator` is a special object that is used in the `inference` function to lazily create model later on given `constraints`, `meta` and `options`.
+
+See also: [`inference`](@ref)
+"""
+struct ModelGenerator{T, A, K, C, M, O}
+    args        :: A
+    kwargs      :: K
+    constraints :: C
+    meta        :: M
+    options     :: O
+
+    ModelGenerator(::Type{T}, args::A, kwargs::K, constraints::C, meta::M, options::O) where { T, A, K, C, M, O } = new{T, A, K, C, M, O}(args, kwargs, constraints, meta, options)
+end
+
+# `ModelGenerator{T, A, K, Nothing, Nothing, Nothing}` is returned from the `Model` function
+function create_model(generator::ModelGenerator{T, A, K, Nothing, Nothing, Nothing}, constraints, meta, options) where { T, A, K }
+    return create_model(T, constraints, meta, options, generator.args...; generator.kwargs...)
+end
 
 # Model Options
 
@@ -61,6 +84,10 @@ function model_options(options::NamedTuple)
         default_factorisation = options[:default_factorisation]
     end
 
+    if haskey(options, :global_reactive_scheduler) && haskey(options, :limit_stack_depth)
+        @warn "Model options have `global_reactive_scheduler` and `limit_stack_depth` options specified together. Ignoring `limit_stack_depth`."
+    end
+
     if haskey(options, :global_reactive_scheduler)
         global_reactive_scheduler = options[:global_reactive_scheduler]
     elseif haskey(options, :limit_stack_depth)
@@ -85,6 +112,8 @@ default_factorisation(options::ModelOptions)     = something(options.default_fac
 Base.merge(nt::NamedTuple, options::ModelOptions) = model_options(merge(nt, as_named_tuple(options)))
 
 # Model
+
+Model(::Type{T}, args...; kwargs...) where { T <: AbstractModelSpecification } = ModelGenerator(T, args, kwargs, nothing, nothing, nothing)
 
 struct FactorGraphModel{C, M, O}
     constraints :: C
@@ -285,66 +314,4 @@ function ReactiveMP.make_node(model::FactorGraphModel, options::FactorNodeCreati
         var  = add!(model, ReactiveMP.constvar(ReactiveMP.getname(autovar), __fform_const_apply(fform, map((d) -> ReactiveMP.getconst(d), args)...)))
         return nothing, var
     end
-end
-
-##
-
-# Repeat variational message passing iterations [ EXPERIMENTAL ]
-
-repeat!(model::FactorGraphModel, criterion) = repeat!((_) -> nothing, model, criterion)
-
-function repeat!(callback::Function, model::FactorGraphModel, count::Int)
-    for _ in 1:count
-        foreach(getdata(model)) do datavar
-            resend!(datavar)
-        end
-        callback(model)
-    end
-end
-
-struct UntilConvergence{S, F}
-    score_type :: S
-    tolerance  :: F
-    maxcount   :: Int
-    mincount   :: Int
-end
-
-UntilConvergence(score::S; tolerance::F = 1e-6, maxcount::Int = 10_000, mincount::Int = 0) where { S, F <: Real } = UntilConvergence{S, F}(score, tolerance, maxcount, mincount)
-UntilConvergence(; kwargs...)                                                                                     = UntilConvergence(BetheFreeEnergy(); kwargs...)
-
-function repeat!(callback::Function, model::FactorGraphModel, criterion::UntilConvergence{S, F}) where { S, F }
-
-    stopping_fn = let tolerance = criterion.tolerance
-        (p) -> abs(p[1] - p[2]) < tolerance
-    end
-
-    source = score(F, criterion.score_type, model, AsapScheduler()) |> pairwise() |> map(Bool, stopping_fn)
-
-    is_satisfied     = false
-    iterations_count = 0
-
-    subscription = subscribe!(source, lambda(
-        on_next     = (v) -> is_satisfied = v,
-        on_complete = (v) -> is_satisfied = true
-    ))
-
-    while !is_satisfied
-        foreach(getdata(model)) do datavar
-            resend!(datavar)
-        end
-        callback(model)
-        iterations_count += 1
-
-        if iterations_count <= criterion.mincount
-            is_satisfied = false
-        end
-
-        if iterations_count >= criterion.maxcount
-            is_satisfied = true
-        end
-    end
-
-    unsubscribe!(subscription)
-
-    return iterations_count
 end

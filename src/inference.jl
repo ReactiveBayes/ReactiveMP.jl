@@ -92,16 +92,20 @@ end
 
 """
     inference(
-        # `model`: specifies a **callback** to create a model, may use whatever global parameters as it wants, required
-        model, 
-        # NamedTuple with data, required
+        # `model`: specifies a model generator, with the help of the `Model` function
+        model::ModelGenerator; 
+        # NamedTuple or Dict with data, required
         data,
         # NamedTuple with initial marginals, optional, defaults to empty
         initmarginals = nothing,
         # NamedTuple with initial messages, optional, defaults to empty
         initmessages = nothing,  # optional
-        # Reserverd for the future
+        # Constraints specification object
         constraints = nothing,
+        # Meta specification object
+        meta  = nothing,
+        # Model creation options
+        options = (;),
         # Return structure info, optional, defaults to return everything at each iteration
         returnvars = nothing, 
         # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
@@ -114,17 +118,21 @@ end
 
 This function provides generic (but somewhat limited) way to run inference in ReactiveMP.jl. 
 """
-function inference(; 
-    # `model`: specifies a **callback** to create a model, may use whatever global parameters as it wants, required
-    model, 
+function inference(;
+    # `model`: specifies a model generator, with the help of the `Model` function
+    model::ModelGenerator,
     # NamedTuple or Dict with data, required
     data,
     # NamedTuple or Dict with initial marginals, optional, defaults to empty
     initmarginals = nothing,
     # NamedTuple or Dict with initial messages, optional, defaults to empty
     initmessages = nothing,  # optional
-    # Reserverd for the future
+    # Constraints specification object
     constraints = nothing,
+    # Meta specification object
+    meta  = nothing,
+    # Model creation options
+    options = (;),
     # Return structure info, optional, defaults to return everything at each iteration
     returnvars = nothing, 
     # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
@@ -134,7 +142,7 @@ function inference(;
     # Show progress module, optional, defaults to false
     showprogress = false,)
 
-    _model, _ = model()
+    _model, _ = create_model(model, constraints, meta, options)
     vardict = ReactiveMP.getvardict(_model)
 
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
