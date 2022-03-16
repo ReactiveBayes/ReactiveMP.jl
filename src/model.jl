@@ -51,7 +51,8 @@ struct ModelOptions{P, F, S}
 end
 
 model_options(; kwargs...)       = model_options(kwargs)
-model_options(pairs::Base.Pairs) = model_options(NamedTuple(pairs))
+
+model_options(pairs::Base.Iterators.Pairs) = model_options(NamedTuple(pairs))
 
 available_option_names(::Type{ <: ModelOptions }) = (
     :pipeline, 
