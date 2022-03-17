@@ -31,6 +31,7 @@ include("matrix_dirichlet/out.jl")
 
 include("categorical/out.jl")
 include("categorical/p.jl")
+include("categorical/marginals.jl")
 
 include("bernoulli/p.jl")
 include("bernoulli/out.jl")

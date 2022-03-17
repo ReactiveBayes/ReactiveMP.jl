@@ -39,7 +39,8 @@ enabled_tests = lowercase.(ARGS)
 
 if isempty(enabled_tests)
     println("Running all tests...")
-    Aqua.test_all(ReactiveMP; ambiguities=false)
+    # `project_toml_formatting` is broken on CI, revise at some point
+    Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
     # doctest(ReactiveMP)
 else 
     println("Running specific tests: $enabled_tests")
@@ -84,6 +85,7 @@ end
     addtests("test_math.jl")
     addtests("test_helpers.jl")
 
+    addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
 
     addtests("test_distributions.jl")

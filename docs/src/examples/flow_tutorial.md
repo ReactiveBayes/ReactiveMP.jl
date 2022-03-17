@@ -121,13 +121,15 @@ compiled_model = compile(model)
 We can perform inference in our compiled model through standard usage of ReactiveMP. Let's first generate some random 2D data which has been sampled from a standard normal distribution and is consecutively passed through a normalizing flow. Using the `forward(model, data)` function we can propagate data in the forward direction through the flow.
 
 ```@example flow
-function generate_data(nr_samples::Int64, model::CompiledFlowModel)
+function generate_data(nr_samples::Int64, model::CompiledFlowModel; seed = 123)
 
+    rng = MersenneTwister(seed)
+    
     # specify latent sampling distribution
     dist = MvNormal([1.5, 0.5], I)
 
     # sample from the latent distribution
-    x = rand(dist, nr_samples)
+    x = rand(rng, dist, nr_samples)
 
     # transform data
     y = zeros(Float64, size(x))
@@ -138,7 +140,7 @@ function generate_data(nr_samples::Int64, model::CompiledFlowModel)
     # return data
     return y, x
 
-end
+end;
 ```
 
 ```@example flow
@@ -293,10 +295,12 @@ plt.gcf()
 The flow model is often used to learn unknown probabilistic mappings. Here we will demonstrate it as follows for a binary classification task with the following data:
 
 ```@example flow
-function generate_data(nr_samples::Int64)
+function generate_data(nr_samples::Int64; seed = 123)
+    
+    rng = MersenneTwister(seed)
 
     # sample weights
-    w = rand(nr_samples,2)
+    w = rand(rng, nr_samples, 2)
 
     # sample appraisal
     y = zeros(Float64, nr_samples)
@@ -307,7 +311,7 @@ function generate_data(nr_samples::Int64)
     # return data
     return y, w
 
-end
+end;
 ```
 
 ```@example flow
@@ -411,7 +415,11 @@ end
 
 Optimization can be performed using the `Optim` package. Alternatively, other (custom) optimizers can be implemented, such as:
 
-`res = optimize(f, randn(nr_params(model)), LBFGS(), Optim.Options(g_tol = 1e-3, iterations = 100, store_trace = true, show_trace = true))` - uses finitediff and is slower/less accurate.
+```julia
+res = optimize(f, randn(nr_params(model)), LBFGS(), Optim.Options(g_tol = 1e-3, iterations = 100, store_trace = true, show_trace = true))
+``` 
+
+- uses finitediff and is slower/less accurate.
 
 *or*
 
@@ -442,7 +450,7 @@ end
 ```
 
 ```@example flow
-res = optimize(f, randn(nr_params(model)), LBFGS(), Optim.Options(store_trace = true, show_trace = true), autodiff=:forward)
+res = optimize(f, randn(MersenneTwister(1), nr_params(model)), LBFGS(), Optim.Options(store_trace = true, show_trace = true), autodiff=:forward)
 nothing #hide
 ```
 

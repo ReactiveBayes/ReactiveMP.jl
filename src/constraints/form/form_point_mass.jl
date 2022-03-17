@@ -13,18 +13,24 @@ or different arguments for `Optim.jl` package.
 
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
-struct PointMassFormConstraint{F, P} <: AbstractFormConstraint
+struct PointMassFormConstraint{F, P, B} <: AbstractFormConstraint
     optimizer      :: F
-    starting_point :: P   
+    starting_point :: P
+    boundaries     :: B   
 end
 
-PointMassFormConstraint(; optimizer = default_point_mass_form_constraint_optimizer, starting_point = default_point_mass_form_constraint_starting_point) = PointMassFormConstraint(optimizer, starting_point)
+PointMassFormConstraint(; 
+    optimizer      = default_point_mass_form_constraint_optimizer, 
+    starting_point = default_point_mass_form_constraint_starting_point, 
+    boundaries     = default_point_mass_form_constraint_boundaries
+) = PointMassFormConstraint(optimizer, starting_point, boundaries)
 
 default_form_check_strategy(::PointMassFormConstraint) = FormConstraintCheckLast()
 
 is_point_mass_form_constraint(::PointMassFormConstraint) = true
 
 call_optimizer(pmconstraint::PointMassFormConstraint, data)      = pmconstraint.optimizer(variate_form(data), value_support(data), pmconstraint, data)
+call_boundaries(pmconstraint::PointMassFormConstraint, data)     = pmconstraint.boundaries(variate_form(data), value_support(data), pmconstraint, data)
 call_starting_point(pmconstraint::PointMassFormConstraint, data) = pmconstraint.starting_point(variate_form(data), value_support(data), pmconstraint, data)
 
 function constrain_form(pmconstraint::PointMassFormConstraint, message::Message) 
@@ -40,14 +46,12 @@ function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Ty
         (x) -> -logpdf(distribution, x[1])
     end
 
-    support = Distributions.support(distribution)
+    lower, upper = call_boundaries(constraint, distribution)
 
-    result = if isinf(Distributions.minimum(support)) && isinf(Distributions.maximum(support))
+    result = if isinf(lower) && isinf(upper)
         optimize(target, call_starting_point(constraint, distribution), LBFGS())
     else
-        lb = [ Distributions.minimum(support) ]
-        rb = [ Distributions.maximum(support) ]
-        optimize(target, lb, rb, call_starting_point(constraint, distribution), Fminbox(GradientDescent()))
+        optimize(target, [ lower ], [ upper ], call_starting_point(constraint, distribution), Fminbox(GradientDescent()))
     end
 
     if Optim.converged(result)
@@ -57,13 +61,18 @@ function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Ty
     end
 end
 
-function default_point_mass_form_constraint_starting_point(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+function default_point_mass_form_constraint_boundaries(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
     support = Distributions.support(distribution)
-    lb      = Distributions.minimum(support)
-    rb      = Distributions.maximum(support)
-    return if isinf(lb) && isinf(rb)
+    lower   = Distributions.minimum(support)
+    upper   = Distributions.maximum(support)
+    return lower, upper
+end
+
+function default_point_mass_form_constraint_starting_point(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    lower, upper  = call_boundaries(constraint, distribution)
+    return if isinf(lower) && isinf(upper)
         return zeros(1)
     else
-        error("No default starting point specified for a range [ $(lb), $(rb) ]")
+        error("No default starting point specified for a range [ $(lower), $(upper) ]")
     end
 end

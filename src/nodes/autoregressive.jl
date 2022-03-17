@@ -65,6 +65,28 @@ default_meta(::Type{ AR }) = error("Autoregressive node requires meta flag expli
     return AE
 end
 
+@average_energy AR (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
+    mθ, Vθ = mean_cov(q_θ)
+    my, Vy = mean_cov(q_y)
+    mx, Vx = mean_cov(q_x)
+    mγ     = mean(q_γ)
+
+    order = getorder(meta)
+
+    my1, Vy1 = first(my), first(Vy)
+
+    AE = -0.5mean(log, q_γ) + 0.5log2π + 0.5*mγ*(Vy1+my1^2 - 2*mθ'*mx*my1 + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))
+
+    # correction
+    if is_multivariate(meta)
+        AE += entropy(q_y)
+        q_y = NormalMeanVariance(my1, Vy1)
+        AE -= entropy(q_y)
+    end
+
+    return AE
+end
+
 # Helpers for AR rules
 
 """
