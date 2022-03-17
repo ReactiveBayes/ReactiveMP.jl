@@ -236,11 +236,6 @@ function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{I
     return V
 end
 
-## 
-
-default_if_nothing(::Nothing, default) = default
-default_if_nothing(any::Any, default)  = any
-
 ##
 
 forward_range(range::OrdinalRange)::UnitRange = step(range) > 0 ? (first(range):last(range)) : (last(range):first(range))

@@ -107,8 +107,8 @@ end
 nextindex(::EqualityLeftOutbound, node_index)  = node_index + 1
 nextindex(::EqualityRightOutbound, node_index) = node_index - 1
 
-@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int  = default_if_nothing(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain) - (node_index - 1)) + (node_index - 1)
-@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = default_if_nothing(findlast(view(chain.cacheright, 1:node_index)), 1)
+@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int  = something(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain) - (node_index - 1)) + (node_index - 1)
+@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = something(findlast(view(chain.cacheright, 1:node_index)), 1)
 
 @propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index)  = first_unmaterialized_index(type, chain, node_index):-1:node_index
 @propagate_inbounds precompute_range(type::EqualityRightOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):node_index
