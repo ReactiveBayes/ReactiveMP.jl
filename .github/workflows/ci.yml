@@ -82,7 +82,7 @@ jobs:
       - uses: julia-actions/setup-julia@v1
       - uses: julia-actions/julia-buildpkg@latest          
         with:
-          version: '1.6'
+          version: '1.7'
       - run: |
           julia --project=docs -e '
             ENV["PYTHON"]=""
