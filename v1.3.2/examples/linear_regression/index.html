@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Linear Regression · ReactiveMP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ReactiveMP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../../man/getting-started/">Getting Started</a></li><li><a class="tocitem" href="../../man/fundamentals/">Fundamentals</a></li><li><a class="tocitem" href="../../man/model-specification/">Model Specification</a></li><li><a class="tocitem" href="../../man/inference-execution/">Inference execution</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../overview/">Overview</a></li><li class="is-active"><a class="tocitem" href>Linear Regression</a></li><li><a class="tocitem" href="../linear_gaussian_state_space_model/">Linear Gaussian Dynamical System</a></li><li><a class="tocitem" href="../hierarchical_gaussian_filter/">Hierarchical Gaussian Filter</a></li><li><a class="tocitem" href="../autoregressive/">Autoregressive Model</a></li><li><a class="tocitem" href="../flow_tutorial/">Flow Tutorial</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/message/">Messages</a></li><li><input class="collapse-toggle" id="menuitem-4-2" type="checkbox"/><label class="tocitem" for="menuitem-4-2"><span class="docs-label">Factor nodes</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../lib/node/">Overview</a></li><li><a class="tocitem" href="../../lib/nodes/flow/">Flow</a></li></ul></li><li><a class="tocitem" href="../../lib/math/">Math utils</a></li></ul></li><li><a class="tocitem" href="../../extra/contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Linear Regression</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Linear Regression</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/biaslab/ReactiveMP.jl/blob/master/docs/src/examples/linear_regression.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="examples-linear-regression"><a class="docs-heading-anchor" href="#examples-linear-regression">Example: Linear Regression</a><a id="examples-linear-regression-1"></a><a class="docs-heading-anchor-permalink" href="#examples-linear-regression" title="Permalink"></a></h1><p>In this example we are going to perform a simple linear regression problem, but in the Bayesian setting. We specify the model:</p><p class="math-container">\[y_i = a * x_i + b\]</p><p>where <span>$a$</span> and <span>$b$</span> are random variables with some vague priors.</p><p>First step is to import all needed packages and define the model:</p><pre><code class="language- hljs">using ReactiveMP, GraphPPL, Rocket, Random, Plots, StableRNGs, BenchmarkTools</code></pre><pre><code class="language-julia hljs">@model function linear_regression(n)
+    a ~ NormalMeanVariance(0.0, 1.0)
+    b ~ NormalMeanVariance(0.0, 1.0)
+
+    x = datavar(Float64, n)
+    y = datavar(Float64, n)
+
+    for i in 1:n
+        y[i] ~ NormalMeanVariance(x[i] * b + a, 1.0)
+    end
+
+    return a, b, x, y
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">linear_regression (generic function with 1 method)</code></pre><p>Next step is to define an inference procedure.</p><pre><code class="language-julia hljs">function inference(xdata, ydata)
+    @assert length(xdata) == length(ydata)
+
+    n = length(xdata)
+
+    model, (a, b, x, y) = linear_regression(n)
+
+    as = storage(Marginal)
+    bs = storage(Marginal)
+
+    asub = subscribe!(getmarginal(a), as)
+    bsub = subscribe!(getmarginal(b), bs)
+
+    # We need to initialise messages for loopy belief propagation
+    setmessage!(b, NormalMeanVariance(0.0, 100.0))
+
+    # loopy belief propagation
+    for i in 1:20
+        update!(x, xdata)
+        update!(y, ydata)
+    end
+
+    return getvalues(as), getvalues(bs)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">inference (generic function with 1 method)</code></pre><p>In order to test our inference procedure we create a test dataset where observations are corrupted with gaussian white noise (with known variance).</p><pre><code class="language- hljs">reala = 25
+realb = 0.5
+
+N = 100
+
+rng = StableRNG(1234)
+
+xorig = collect(1:N)
+
+xdata = xorig .+ randn(rng, N)
+ydata = reala .+ realb .* xorig .+ randn(rng, N)
+
+plot(xdata, label = &quot;X&quot;, title = &quot;Linear regression dataset&quot;)
+plot!(ydata, label = &quot;Y&quot;)</code></pre><pre><code class="language- hljs">ares, bres = inference(xdata, ydata)
+nothing #hide</code></pre><pre><code class="language- hljs">println(&quot;Real a: &quot;, reala, &quot; | Estimated a: &quot;, mean(ares), &quot; | Error: &quot;, abs(mean(ares) - reala))
+println(&quot;Real b: &quot;, realb, &quot; | Estimated b: &quot;, mean(bres), &quot; | Error: &quot;, abs(mean(bres) - realb))
+nothing #hide</code></pre><p>We can see that ReactiveMP.jl estimated real values of linear regression coefficients with high precision. Lets also test the benchmark of the resulting inference procedure.</p><pre><code class="language- hljs">@benchmark inference($xdata, $ydata)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview/">« Overview</a><a class="docs-footer-nextpage" href="../linear_gaussian_state_space_model/">Linear Gaussian Dynamical System »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.14 on <span class="colophon-date" title="Thursday 17 March 2022 11:35">Thursday 17 March 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
