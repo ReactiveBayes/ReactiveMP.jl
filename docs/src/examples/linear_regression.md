@@ -81,7 +81,7 @@ ares, bres = inference(xdata, ydata)
 nothing #hide
 ```
 
-```@example lingreg
+```@example linreg
 println("Real a: ", reala, " | Estimated a: ", mean(ares), " | Error: ", abs(mean(ares) - reala))
 println("Real b: ", realb, " | Estimated b: ", mean(bres), " | Error: ", abs(mean(bres) - realb))
 nothing #hide
