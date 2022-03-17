@@ -312,7 +312,7 @@ deep_eltype(::T)          where T               = deep_eltype(T)
 ##
 
 # See: https://github.com/JuliaLang/julia/issues/42795
-function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{AbstractUnitRange{Int}}}, x)
+function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x)
     B = V.parent
     I0 = V.indices[1]
     l0 = length(I0)
@@ -321,14 +321,9 @@ function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{AbstractUni
     return V
 end
 
-## 
-
-default_if_nothing(::Nothing, default) = default
-default_if_nothing(any::Any, default)  = any
-
 ##
 
-forward_range(range::OrdinalRange) = step(range) > 0 ? range : last(range):first(range)
+forward_range(range::OrdinalRange)::UnitRange = step(range) > 0 ? (first(range):last(range)) : (last(range):first(range))
 
 ## 
 
@@ -367,4 +362,3 @@ function Base.show(io::IO, index::FunctionalIndex{R, F}) where { R, F }
     __functional_index_print(io, index.f)
     print(io, ")")
 end
-
