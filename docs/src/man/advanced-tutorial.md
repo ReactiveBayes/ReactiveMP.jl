@@ -1,6 +1,9 @@
-# [API Tutorial](@id examples-api-tutorial)
+# [Advanced Tutorial](@id user-guide-advanced-tutorial)
 
-```julia
+This tutorials covers the fundametnal and advanced usage of the ReactiveMP.jl package.
+This tutorial also exists in the form of a Jupyter notebook in [demo/](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) folder at GitHub repository.
+
+```@example api
 # Reactive programming package for Julia
 using Rocket 
 # Core package for Constrained Bethe Free Energy minimsation with Factor graphs and message passing
@@ -11,23 +14,13 @@ using GraphPPL
 using Distributions, Random
 ```
 
-    ┌ Info: Precompiling ReactiveMP [a194aa59-28ba-4574-a09c-4a745416d6e3]
-    └ @ Base loading.jl:1423
-    ┌ Info: Precompiling GraphPPL [b3f8163a-e979-4e85-b43e-1f63d8c8b42c]
-    └ @ Base loading.jl:1423
-
-
-This notebook covers the fundamentals of the ReactiveMP.jl package. For a more advanced usage we refer the interested reader to the documentation.
-
-This tutorial is also available in the [documentation](https://biaslab.github.io/ReactiveMP.jl/stable/).
-
 ## General model specification syntax
 
 We use the `@model` macro from the `GraphPPL.jl` package to create a probabilistic model $p(s, y)$ and we also specify extra constraints on the variational family of distributions $\mathcal{Q}$, used for approximating intractable posterior distributions.
 Below there is a simple example of the general syntax for model specification. In this tutorial we do not cover all possible ways to create models or advanced features of `GraphPPL.jl`.  Instead we refer the interested reader to the documentation for a more rigorous explanation and illustrative examples.
 
 
-```julia
+```@example api
 # the `@model` macro accepts a regular Julia function
 @model function test_model1(s_mean, s_precision)
     
@@ -58,31 +51,18 @@ end
 The `@model` macro creates a function with the same name and with the same set of input arguments as the original function (`test_model1(s_mean, s_precision)` in this example). However, the return value is modified in such a way to contain a reference to the model object as the first value and to the user specified variables in the form of a tuple as the second value.
 
 
-```julia
+```@example api
 model, (s, y) = test_model1(0.0, 1.0)
 ```
-
-
-
-
-    (FactorGraphModel(), (RandomVariable(s), DataVariable(y)))
-
-
 
 Another way of creating the model is to use the `Model` function that returns an instance of `ModelGenerator`:
 
 
-```julia
+```@example api
 modelgenerator = Model(test_model1, 0.0, 1.0)
 
 model, (s, y) = ReactiveMP.create_model(modelgenerator)
 ```
-
-
-
-
-    (FactorGraphModel(), (RandomVariable(s), DataVariable(y)))
-
 
 
 The benefits of using model generator as a way to create a model is that it allows to change inference constraints and meta specification for nodes. We will talk about factorisation and form constraints and meta specification later on in this demo.
@@ -94,80 +74,26 @@ The benefits of using model generator as a way to create a model is that it allo
 - `getconstant()`: return an array of constant values in the model
 
 
-```julia
+```@example api
 getnodes(model)
 ```
 
-
-
-
-    2-element Vector{ReactiveMP.AbstractFactorNode}:
-     FactorNode:
-     form            : NormalMeanPrecision
-     sdtype          : Stochastic()
-     interfaces      : (Interface(out, Marginalisation()), Interface(μ, Marginalisation()), Interface(τ, Marginalisation()))
-     factorisation   : ((1,), (2,), (3,))
-     local marginals : (:out, :μ, :τ)
-     metadata        : nothing
-     pipeline        : FactorNodePipeline(functional_dependencies = DefaultFunctionalDependencies(), extra_stages = EmptyPipelineStage()
-    
-     FactorNode:
-     form            : NormalMeanPrecision
-     sdtype          : Stochastic()
-     interfaces      : (Interface(out, Marginalisation()), Interface(μ, Marginalisation()), Interface(τ, Marginalisation()))
-     factorisation   : ((1,), (2,), (3,))
-     local marginals : (:out, :μ, :τ)
-     metadata        : nothing
-     pipeline        : FactorNodePipeline(functional_dependencies = DefaultFunctionalDependencies(), extra_stages = EmptyPipelineStage()
-
-
-
-
-
-```julia
+```@example api
 getrandom(model) .|> name
 ```
 
-
-
-
-    1-element Vector{Symbol}:
-     :s
-
-
-
-
-```julia
+```@example api
 getdata(model) .|> name
 ```
 
-
-
-
-    1-element Vector{Symbol}:
-     :y
-
-
-
-
-```julia
+```@example api
 getconstant(model) .|> getconst
 ```
-
-
-
-
-    3-element Vector{Float64}:
-     0.0
-     1.0
-     1.0
-
-
 
 It is also possible to use control flow statements such as `if` or `for` blocks in the model specification function. In general, any valid snippet of Julia code can be used inside the `@model` block. As an example consider the following (valid!) model:
 
 
-```julia
+```@example api
 @model function test_model2(n)
     
     if n <= 1
@@ -218,60 +144,31 @@ end
 
 
 
-```julia
-model, (s, y) = test_model2(10);
+```@example api
+model, (s, y) = test_model2(10)
 ```
 
 
-```julia
+```@example api
 # An amount of factor nodes in generated Factor Graph
 getnodes(model) |> length
 ```
 
-
-
-
-    20
-
-
-
-
-```julia
+```@example api
 # An amount of random variables
 getrandom(model) |> length
 ```
 
 
-
-
-    10
-
-
-
-
-```julia
+```@example api
 # An amount of data inputs
 getdata(model) |> length
 ```
 
-
-
-
-    10
-
-
-
-
-```julia
+```@example api
 # An amount of constant values
 getconstant(model) |> length
 ```
-
-
-
-
-    21
-
 
 
 It is also possible to use complex expression inside the functional dependency expressions
@@ -291,93 +188,12 @@ s ~ NormalMeanPrecision(0.0, 1.0)
 An example model which will throw an error:
 
 
-```julia
+```@example api
 @model function error_model1()
     s = 1.0
     s ~ NormalMeanPrecision(0.0, 1.0)
 end
 ```
-
-
-    LoadError: Invalid name 's' for new random variable. 's' was already initialized with '=' operator before.
-    in expression starting at /Users/bvdmitri/.julia/dev/GraphPPL.jl/src/model.jl:173
-
-    
-
-    Stacktrace:
-
-      [1] error(s::String)
-
-        @ Base ./error.jl:33
-
-      [2] (::GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol})(expression::Expr)
-
-        @ GraphPPL ~/.julia/dev/GraphPPL.jl/src/model.jl:320
-
-      [3] walk
-
-        @ ~/.julia/packages/MacroTools/PP9IQ/src/utils.jl:112 [inlined]
-
-      [4] postwalk
-
-        @ ~/.julia/packages/MacroTools/PP9IQ/src/utils.jl:122 [inlined]
-
-      [5] (::MacroTools.var"#21#22"{GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol}})(x::Expr)
-
-        @ MacroTools ~/.julia/packages/MacroTools/PP9IQ/src/utils.jl:122
-
-      [6] iterate
-
-        @ ./generator.jl:47 [inlined]
-
-      [7] collect_to!(dest::Vector{Any}, itr::Base.Generator{Vector{Any}, MacroTools.var"#21#22"{GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol}}}, offs::Int64, st::Int64)
-
-        @ Base ./array.jl:782
-
-      [8] collect_to!(dest::Vector{LineNumberNode}, itr::Base.Generator{Vector{Any}, MacroTools.var"#21#22"{GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol}}}, offs::Int64, st::Int64)
-
-        @ Base ./array.jl:790
-
-      [9] collect_to_with_first!(dest::Vector{LineNumberNode}, v1::LineNumberNode, itr::Base.Generator{Vector{Any}, MacroTools.var"#21#22"{GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol}}}, st::Int64)
-
-        @ Base ./array.jl:760
-
-     [10] _collect(c::Vector{Any}, itr::Base.Generator{Vector{Any}, MacroTools.var"#21#22"{GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol}}}, #unused#::Base.EltypeUnknown, isz::Base.HasShape{1})
-
-        @ Base ./array.jl:754
-
-     [11] collect_similar(cont::Vector{Any}, itr::Base.Generator{Vector{Any}, MacroTools.var"#21#22"{GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol}}})
-
-        @ Base ./array.jl:653
-
-     [12] map(f::Function, A::Vector{Any})
-
-        @ Base ./abstractarray.jl:2849
-
-     [13] walk(x::Expr, inner::Function, outer::GraphPPL.var"#39#52"{ReactiveMPBackend, Set{Symbol}, Set{Symbol}, Symbol})
-
-        @ MacroTools ~/.julia/packages/MacroTools/PP9IQ/src/utils.jl:112
-
-     [14] postwalk(f::Function, x::Expr)
-
-        @ MacroTools ~/.julia/packages/MacroTools/PP9IQ/src/utils.jl:122
-
-     [15] generate_model_expression(backend::ReactiveMPBackend, model_options::Expr, model_specification::Expr)
-
-        @ GraphPPL ~/.julia/dev/GraphPPL.jl/src/model.jl:287
-
-     [16] var"@model"(__source__::LineNumberNode, __module__::Module, model_options::Any, model_specification::Any)
-
-        @ GraphPPL ~/.julia/dev/GraphPPL.jl/src/model.jl:177
-
-     [17] eval
-
-        @ ./boot.jl:373 [inlined]
-
-     [18] include_string(mapexpr::typeof(REPL.softscope), mod::Module, code::String, filename::String)
-
-        @ Base ./loading.jl:1196
-
 
 By default the `GraphPPL.jl` package creates new references for constants (literals like `0.0` or `1.0`) in a model. In some situations this may not be efficient, especially when these constants represent large matrices. `GraphPPL.jl` will by default create new copies of some constant (e.g. matrix) in a model every time it uses it. However it is possible to use `constvar()` function to create and reuse similar constants in the model specification syntax as
 
@@ -389,7 +205,7 @@ c = constvar(0.0)
 An example:
 
 
-```julia
+```@example api
 @model function test_model5(dim::Int, n::Int, A::Matrix, P::Matrix, Q::Matrix)
     
     s = randomvar(n)
@@ -436,66 +252,36 @@ end
 Observables are lazy push-based collections and they deliver their values over time.
 
 
-```julia
+```@example api
 # Timer that emits a new value every second and has an initial one second delay 
 observable = timer(1000, 1000)
 ```
 
-
-
-
-    TimerObservable(1000, 1000)
-
-
-
 A subscription allows us to subscribe on future values of some observable, and actors specify what to do with these new values:
 
 
-```julia
+```@example api
 actor = (value) -> println(value)
 subscription1 = subscribe!(observable, actor)
 ```
 
 
-
-
-    TimerSubscription()
-
-
-
-
-```julia
+```@example api
 # We always need to unsubscribe from some observables
 unsubscribe!(subscription1)
 ```
 
 
-```julia
+```@example api
 # We can modify our observables
 modified = observable |> filter(d -> rem(d, 2) === 1) |> map(Int, d -> d ^ 2)
 ```
 
-
-
-
-    ProxyObservable(Int64, MapProxy(Int64))
-
-
-
-
-```julia
+```@example api
 subscription2 = subscribe!(modified, (value) -> println(value))
 ```
 
-
-
-
-    TimerSubscription()
-
-
-
-
-```julia
+```@example api
 unsubscribe!(subscription2)
 ```
 
@@ -506,7 +292,7 @@ The `ReactiveMP.jl` package returns posterior marginal distributions in our spec
 Lets see how it works in practice. Here we create a simple coin toss model. We assume that observations are governed by the `Bernoulli` distribution with unknown bias parameter `θ`. To have a fully Bayesian treatment of this problem we endow `θ` with the `Beta` prior.
 
 
-```julia
+```@example api
 @model function coin_toss_model(n)
 
     # `datavar` creates data 'inputs' in our model
@@ -530,12 +316,13 @@ end
 ```
 
 
-```julia
-_, (y, θ) = coin_toss_model(500);
+```@example api
+_, (y, θ) = coin_toss_model(500)
+nothing #hide
 ```
 
 
-```julia
+```@example api
 # As soon as we have a new value for the marginal posterior over the `θ` variable
 # we simply print the first two statistics of it
 θ_subscription = subscribe!(getmarginal(θ), (marginal) -> println("New update: mean(θ) = ", mean(marginal), ", std(θ) = ", std(marginal)));
@@ -543,31 +330,27 @@ _, (y, θ) = coin_toss_model(500);
 
 Next, lets define our dataset:
 
-
-```julia
+```@example api
 p = 0.75 # Bias of a coin
 
-dataset = float.(rand(Bernoulli(p), 500));
+dataset = float.(rand(Bernoulli(p), 500))
+nothing #hide
 ```
 
 To pass data to our model we use `update!` function
 
 
-```julia
+```@example api
 update!(y, dataset)
 ```
 
-    New update: mean(θ) = 0.7426326129666012, std(θ) = 0.019358810889841
-
-
-
-```julia
+```@example api
 # It is necessary to always unsubscribe from running observables
 unsubscribe!(θ_subscription)
 ```
 
 
-```julia
+```@example api
 # The ReactiveMP.jl inference backend is lazy and does not compute posterior marginals if no-one is listening for them
 # At this moment we have already unsubscribed from the new posterior updates so this `update!` does nothing
 update!(y, dataset)
@@ -576,112 +359,59 @@ update!(y, dataset)
 `Rocket.jl` provides some useful built-in actors for obtaining posterior marginals especially with static datasets.
 
 
-```julia
+```@example api
 # the `keep` actor simply keeps all incoming updates in an internal storage, ordered
 θvalues = keep(Marginal)
 ```
 
-
-
-
-    KeepActor{Marginal}(Marginal[])
-
-
-
-
-```julia
+```@example api
 # `getmarginal` always emits last cached value as its first value
 subscribe!(getmarginal(θ) |> take(1), θvalues);
 ```
 
 
-```julia
+```@example api
 getvalues(θvalues)
 ```
 
-
-
-
-    1-element Vector{Marginal}:
-     Marginal(Beta{Float64}(α=378.0, β=131.0))
-
-
-
-
-```julia
+```@example api
 subscribe!(getmarginal(θ) |> take(1), θvalues);
 ```
 
 
-```julia
+```@example api
 getvalues(θvalues)
 ```
 
 
-
-
-    2-element Vector{Marginal}:
-     Marginal(Beta{Float64}(α=378.0, β=131.0))
-     Marginal(Beta{Float64}(α=378.0, β=131.0))
-
-
-
-
-```julia
+```@example api
 # the `buffer` actor keeps very last incoming update in an internal storage and can also store 
 # an array of updates for a sequence of random variables
 θbuffer = buffer(Marginal, 1)
 ```
 
-
-
-
-    BufferActor{Marginal, Vector{Marginal}}(Marginal[#undef])
-
-
-
-
-```julia
+```@example api
 subscribe!(getmarginals([ θ ]) |> take(1), θbuffer);
 ```
 
-
-```julia
+```@example api
 getvalues(θbuffer)
 ```
 
-
-
-
-    1-element Vector{Marginal}:
-     Marginal(Beta{Float64}(α=378.0, β=131.0))
-
-
-
-
-```julia
+```@example api
 subscribe!(getmarginals([ θ ]) |> take(1), θbuffer);
 ```
 
-
-```julia
+```@example api
 getvalues(θbuffer)
 ```
-
-
-
-
-    1-element Vector{Marginal}:
-     Marginal(Beta{Float64}(α=378.0, β=131.0))
-
-
 
 ## Reactive Inference
 
 ReactiveMP.jl naturally supports reactive streams of data and it is possible to run reactive inference with some external datasource.
 
 
-```julia
+```@example api
 @model function online_coin_toss_model()
     
     # We create datavars for the prior 
@@ -700,12 +430,12 @@ end
 ```
 
 
-```julia
-_, (θ_a, θ_b, θ, y) = online_coin_toss_model();
+```@example api
+_, (θ_a, θ_b, θ, y) = online_coin_toss_model()
 ```
 
 
-```julia
+```@example api
 # In this example we subscribe on posterior marginal of θ variable and use it as a prior for our next observation
 # We also print into stdout for convenience
 θ_subscription = subscribe!(getmarginal(θ), (m) -> begin 
@@ -713,35 +443,29 @@ _, (θ_a, θ_b, θ, y) = online_coin_toss_model();
     update!(θ_a, m_a)
     update!(θ_b, m_b)
     println("New posterior for θ: mean = ", mean(m), ", std = ", std(m))
-end);
+end)
 ```
 
 
-```julia
+```@example api
 # Initial priors
 update!(θ_a, 10.0 * rand())
 update!(θ_b, 10.0 * rand())
 ```
 
 
-```julia
-data_source = timer(500, 500) |> map(Float64, (_) -> float(rand(Bernoulli(0.75)))) |> tap((v) -> println("New observation: ", v));
+```@example api
+data_source = timer(500, 500) |> map(Float64, (_) -> float(rand(Bernoulli(0.75)))) |> tap((v) -> println("New observation: ", v))
+nothing #hide
 ```
 
 
-```julia
+```@example api
 data_subscription = subscribe!(data_source, (data) -> update!(y, data))
 ```
 
 
-
-
-    TimerSubscription()
-
-
-
-
-```julia
+```@example api
 # It is important to unsubscribe from running observables to release computer resources
 unsubscribe!(data_subscription)
 unsubscribe!(θ_subscription)
@@ -754,7 +478,7 @@ That was an example of exact Bayesian inference with Sum-Product (or Belief Prop
 On a very high-level, ReactiveMP.jl is aimed to solve the Constrained Bethe Free Energy minimisation problem. For this task we approximate our exact posterior marginal distribution by some family of distributions $q \in \mathcal{Q}$. Often this involves assuming some factorization over $q$. For this purpose the `@model` macro supports optional `where { ... }` clauses for every `~` expression in a model specification.
 
 
-```julia
+```@example api
 @model function test_model6_with_manual_constraints(n)
     τ ~ GammaShapeRate(1.0, 1.0) 
     μ ~ NormalMeanVariance(0.0, 100.0)
@@ -806,28 +530,16 @@ This will autatically impose a mean field factorization constraint over all marg
 `GraphPPL.jl` package exports `@constraints` macro to simplify factorisation and form constraints specification. Read more about `@constraints` macro in the corresponding documentation section, here we show a simple example of the same factorisation constraints specification, but with `@constraints` macro:
 
 
-```julia
+```@example api
 constraints6 = @constraints begin
      q(μ, τ) = q(μ)q(τ) # Mean-Field over `μ` and `τ`
 end
 ```
 
-
-
-
-    Constraints:
-    	marginals form:
-    	messages form:
-    	factorisation:
-    		q(μ, τ) = q(μ)q(τ)
-
-
-
-
 **Note**: `where` blocks have higher priority over constraints specification
 
 
-```julia
+```@example api
 @model function test_model6(n)
     τ ~ GammaShapeRate(1.0, 1.0) 
     μ ~ NormalMeanVariance(0.0, 100.0)
@@ -849,53 +561,18 @@ end
 To run inference in this model we again need to create a synthetic dataset:
 
 
-```julia
-dataset = rand(Normal(-3.0, inv(sqrt(5.0))), 1000);
+```@example api
+dataset = rand(Normal(-3.0, inv(sqrt(5.0))), 1000)
+nothing #hide
 ```
 
 #### `inference` function
 
 In order to simplify model and inference testing, `ReactiveMP.jl` exports pre-written inference function, that is aimed for simple use cases with static datasets:
 
-
-```julia
-?inference
-```
-
-```
-inference(
-    # `model`: specifies a model generator, with the help of the `Model` function
-    model::ModelGenerator; 
-    # NamedTuple or Dict with data, required
-    data,
-    # NamedTuple with initial marginals, optional, defaults to empty
-    initmarginals = nothing,
-    # NamedTuple with initial messages, optional, defaults to empty
-    initmessages = nothing,  # optional
-    # Constraints specification object
-    constraints = nothing,
-    # Meta specification object
-    meta  = nothing,
-    # Model creation options
-    options = (;),
-    # Return structure info, optional, defaults to return everything at each iteration
-    returnvars = nothing, 
-    # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
-    iterations = 1,
-    # Do we compute FE, optional, defaults to false
-    free_energy = false,
-    # Show progress module, optional, defaults to false
-    showprogress = false,
-)
-```
-
 This function provides generic (but somewhat limited) way to run inference in ReactiveMP.jl. 
 
-
-
-
-
-```julia
+```@example api
 result = inference(
     model         = Model(test_model6, length(dataset)),
     data          = (y = dataset, ),
@@ -908,51 +585,35 @@ result = inference(
 )
 ```
 
-    Inference results:
-    -----------------------------------------
-    Free Energy: Real[14763.3, 3276.07, 645.285, 601.821, 601.821, 601.821, 601.821, 601.821, 601.821, 601.821]
-    -----------------------------------------
-    μ = Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15682.23170282978, w=5204.7373...
-    τ = Marginal(GammaShapeRate{Float64}(a=501.0, b=96.25864505252237))
 
-
-
-
-
-```julia
+```@example api
 println("μ: mean = ", mean(result.posteriors[:μ]), ", std = ", std(result.posteriors[:μ]))
+nothing #hide
 ```
 
-    μ: mean = -3.0130688119259657, std = 0.013861192405657346
 
-
-
-```julia
+```@example api
 println("τ: mean = ", mean(result.posteriors[:τ]), ", std = ", std(result.posteriors[:τ]))
+nothing #hide
 ```
-
-    τ: mean = 5.204727323209624, std = 0.23253006806179705
-
 
 #### Manual inference
 
 For advanced use cases it is advised to write inference functions manually as it provides more flexibility, here is an example of manual inference specification:
 
 
-```julia
-model, (μ, τ, y) = test_model6(constraints6, length(dataset));
+```@example api
+model, (μ, τ, y) = test_model6(constraints6, length(dataset))
 ```
 
 For variational inference we also usually need to set initial marginals for our inference procedure. For that purpose `ReactiveMP.jl` export the `setmarginal!` function:
 
-
-```julia
+```@example api
 setmarginal!(μ, vague(NormalMeanPrecision))
 setmarginal!(τ, vague(GammaShapeRate))
 ```
 
-
-```julia
+```@example api
 μ_values = keep(Marginal)
 τ_values = keep(Marginal)
 
@@ -965,71 +626,32 @@ end
 ```
 
 
-```julia
+```@example api
 getvalues(μ_values)
 ```
 
 
-
-
-    10-element Vector{Marginal}:
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-3.019100750200221e-9, w=0.010000001002000566))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-27.629495773280823, w=9.179867803429282))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-10021.247182136565, w=3325.930698652331))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15673.395541852733, w=5201.80471710224))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15682.22287937003, w=5204.734394819007))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15682.231694023943, w=5204.737320287038))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15682.231702820985, w=5204.737323206587))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15682.231702829797, w=5204.737323209579))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15682.231702829771, w=5204.737323209567))
-     Marginal(NormalWeightedMeanPrecision{Float64}(xi=-15682.23170282978, w=5204.737323209567))
-
-
-
-
-```julia
+```@example api
 getvalues(τ_values)
 ```
 
 
-
-
-    10-element Vector{Marginal}:
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=5.0000000000463575e14))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=54635.465934702996))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=150.63498062446408))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=96.31291260934161))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=96.25869921157143))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=96.25864510657314))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=96.25864505257626))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=96.25864505252225))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=96.25864505252243))
-     Marginal(GammaShapeRate{Float64}(a=501.0, b=96.25864505252237))
-
-
-
-
-```julia
+```@example api
 println("μ: mean = ", mean(last(μ_values)), ", std = ", std(last(μ_values)))
+nothing #hide
 ```
 
-    μ: mean = -3.0130688119259657, std = 0.013861192405657346
-
-
-
-```julia
+```@example api
 println("τ: mean = ", mean(last(τ_values)), ", std = ", std(last(τ_values)))
+nothing #hide
 ```
-
-    τ: mean = 5.204727323209624, std = 0.23253006806179705
-
 
 ### Form constraints
 
 In order to support form constraints, the `randomvar()` function also supports a `where { ... }` clause with some optional arguments. One of these arguments is `form_constraint` that allows us to specify a form constraint to the random variables in our model. Another one is `prod_constraint` that allows to specify an additional constraints during computation of product of two colliding messages. For example we can perform the EM algorithm if we assign a point mass contraint on some variables in our model.
 
 
-```julia
+```@example api
 @model function test_model7_with_manual_constraints(n)
     τ ~ GammaShapeRate(1.0, 1.0) 
     
@@ -1050,25 +672,13 @@ end
 As in the previous example we can use `@constraints` macro to achieve the same goal with a nicer syntax:
 
 
-```julia
+```@example api
 constraints7 = @constraints begin 
     q(μ) :: PointMass
     
     q(μ, τ) = q(μ)q(τ) # Mean-Field over `μ` and `τ`
 end
 ```
-
-
-
-
-    Constraints:
-    	marginals form:
-    		q(μ) :: PointMassFormConstraint() [ prod_constraint = ProdGeneric(ProdAnalytical())]
-    	messages form:
-    	factorisation:
-    		q(μ, τ) = q(μ)q(τ)
-
-
 
 
 In this example we specified an extra constraints for $q_i$ for Bethe factorisation:
@@ -1078,7 +688,7 @@ q(s) = \prod_{a \in \mathcal{V}} q_a(s_a) \prod_{i \in \mathcal{E}} q_i^{-1}(s_i
 ```
 
 
-```julia
+```@example api
 @model function test_model7(n)
     τ ~ GammaShapeRate(1.0, 1.0) 
     
@@ -1097,12 +707,12 @@ end
 ```
 
 
-```julia
+```@example api
 model, (μ, τ, y) = test_model7(constraints7, length(dataset));
 ```
 
 
-```julia
+```@example api
 setmarginal!(μ, vague(NormalMeanPrecision))
 setmarginal!(τ, PointMass(1.0))
 
@@ -1118,28 +728,14 @@ end
 ```
 
 
-```julia
+```@example api
 getvalues(μ_values) |> last
 ```
 
 
-
-
-    Marginal(PointMass{Float64}(-3.0130688177034712))
-
-
-
-
-```julia
+```@example api
 getvalues(τ_values) |> last 
 ```
-
-
-
-
-    Marginal(GammaShapeRate{Float64}(a=501.0, b=96.1625787250356))
-
-
 
 By default `ReactiveMP.jl` tries to compute an analytical product of two colliding messages and throws an error if no analytical solution is known. However, it is possible to fall back to a generic product that does not require an analytical solution to be known. In this case the inference backend will simply propagate the product of two message in a form of a tuple. It is not possible to use such a tuple-product during an inference and in this case it is mandatory to use some form constraint to approximate this product.
 
@@ -1163,29 +759,21 @@ Sometimes it is useful to preserve a specific parametrisation of the resulting p
 During variational inference `ReactiveMP.jl` optimises a special functional called the Bethe Free Energy functional. It is possible to obtain its values for all VMP iterations with the `score` function.
 
 
-```julia
+```@example api
 model, (μ, τ, y) = test_model6(constraints6, length(dataset));
 ```
 
 
-```julia
+```@example api
 bfe_observable = score(BetheFreeEnergy(), model)
 ```
 
-
-
-
-    ProxyObservable(Real, MapProxy(Tuple{ReactiveMP.InfCountingReal, ReactiveMP.InfCountingReal}))
-
-
-
-
-```julia
+```@example api
 bfe_subscription = subscribe!(bfe_observable, (fe) -> println("Current BFE value: ", fe));
 ```
 
 
-```julia
+```@example api
 # Reset the model with vague marginals
 setmarginal!(μ, vague(NormalMeanPrecision))
 setmarginal!(τ, vague(GammaShapeRate))
@@ -1195,20 +783,7 @@ for i in 1:10
 end
 ```
 
-    Current BFE value: 614.3116250537296
-    Current BFE value: 601.8211489410164
-    Current BFE value: 601.8211486920968
-    Current BFE value: 601.8211486920954
-    Current BFE value: 601.8211486920986
-    Current BFE value: 601.8211486920968
-    Current BFE value: 601.8211486920968
-    Current BFE value: 601.8211486920964
-    Current BFE value: 601.8211486920964
-    Current BFE value: 601.8211486920968
-
-
-
-```julia
+```@example api
 # It always necessary to unsubscribe and release computer resources
 unsubscribe!([ μ_subscription, τ_subscription, bfe_subscription ])
 ```
@@ -1247,14 +822,6 @@ Users can use `@meta` macro from the `GraphPPL.jl` package to achieve the same g
      AR(s, θ, γ) -> ARMeta(Multivariate, 5, ARsafe())
 end
 ```
-
-
-
-
-    Meta specification:
-    	AR(s, θ, γ) = ARMeta{Multivariate, ARsafe}(5, ARsafe())
-
-
 
 ## Creating custom nodes and message computation rules
 
@@ -1323,7 +890,6 @@ q(z) = \int q(z, x, y) \mathrm{d}x\mathrm{d}y
 
 If we look on difference between sum-product rules and variational rules with mean-field assumption we notice that they require different local information to compute an outgoing message:
 
-<div style="width:100%">
 ```math
 \mu(z) = \int f(x, y, z)\mu(x)\mu(y)\mathrm{d}x\mathrm{d}y
 ```
@@ -1331,7 +897,6 @@ If we look on difference between sum-product rules and variational rules with me
 ```math
 \nu(z) = \exp{ \int \log f(x, y, z)q(x)q(y)\mathrm{d}x\mathrm{d}y }
 ```
-</div>
 
 The `@rule` macro supports both cases with special prefixes during rule specification:
 - `m_` prefix corresponds to the incoming message on a specific edge
@@ -1414,7 +979,7 @@ y[i] ~ NormalMeanPrecision(x[i], 1.0) where { pipeline = LaplaceApproximation() 
 Let us return to the coin toss model, but this time we want to print flowing messages:
 
 
-```julia
+```@example api
 @model [ default_factorisation = FullFactorisation() ] function coin_toss_model_log(n)
 
     y = datavar(Float64, n)
@@ -1430,48 +995,30 @@ end
 ```
 
 
-```julia
+```@example api
 _, (y, θ) = coin_toss_model_log(5);
 ```
 
 
-```julia
+```@example api
 θ_subscription = subscribe!(getmarginal(θ), (value) -> println("New posterior marginal for θ: ", value));
 ```
 
-    [θ][Beta][out]: Message(Beta{Float64}(α=2.0, β=7.0))
-
-
-
-```julia
+```@example api
 coinflips = float.(rand(Bernoulli(0.5), 5));
 ```
 
 
-```julia
+```@example api
 update!(y, coinflips)
 ```
 
-    [y[1]][Bernoulli][p]: Message(Beta{Float64}(α=2.0, β=1.0))
-    [y[2]][Bernoulli][p]: Message(Beta{Float64}(α=1.0, β=2.0))
-    [y[3]][Bernoulli][p]: Message(Beta{Float64}(α=1.0, β=2.0))
-    [y[4]][Bernoulli][p]: Message(Beta{Float64}(α=2.0, β=1.0))
-    [y[5]][Bernoulli][p]: Message(Beta{Float64}(α=2.0, β=1.0))
-    New posterior marginal for θ: Marginal(Beta{Float64}(α=5.0, β=9.0))
 
-
-
-```julia
+```@example api
 unsubscribe!(θ_subscription)
 ```
 
-
-```julia
+```@example api
 # Inference is lazy and does not send messages if no one is listening for them
 update!(y, coinflips)
-```
-
-
-```julia
-
 ```

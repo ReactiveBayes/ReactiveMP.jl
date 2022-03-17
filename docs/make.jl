@@ -14,7 +14,7 @@ makedocs(
         "Introduction"    => "index.md",
         "User guide" => [ 
             "Getting Started"           => "man/getting-started.md",
-            "Fundamentals"              => "man/fundamentals.md",
+            "Advanced Tutorial"         => "man/advanced-tutorial.md",
             "Model Specification"       => "man/model-specification.md",
             "Constraints Specification" => "man/constraints-specification.md",
             "Meta Specification"        => "man/meta-specification.md",
@@ -23,7 +23,6 @@ makedocs(
         "Examples" => [
             "Overview"                         => "examples/overview.md",
             "Linear Regression"                => "examples/linear_regression.md",
-            "API Tutorial"                     => "examples/api-tutorial.md",
             "Linear Gaussian Dynamical System" => "examples/linear_gaussian_state_space_model.md",
             "Hierarchical Gaussian Filter"     => "examples/hierarchical_gaussian_filter.md",
             "Autoregressive Model"             => "examples/autoregressive.md",
