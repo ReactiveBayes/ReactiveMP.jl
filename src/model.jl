@@ -42,6 +42,10 @@ function create_model(generator::ModelGenerator{T, A, K, Nothing, Nothing, Nothi
     return create_model(T, constraints, meta, options, generator.args...; generator.kwargs...)
 end
 
+function create_model(generator::ModelGenerator{T}) where { T }
+    return create_model(T, generator.constraints, generator.meta, generator.options, generator.args...; generator.kwargs...)
+end
+
 # Model Options
 
 struct ModelOptions{P, F, S}
