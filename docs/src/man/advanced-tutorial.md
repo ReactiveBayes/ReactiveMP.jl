@@ -188,11 +188,15 @@ s ~ NormalMeanPrecision(0.0, 1.0)
 An example model which will throw an error:
 
 
-```@example api
+```julia
 @model function error_model1()
     s = 1.0
     s ~ NormalMeanPrecision(0.0, 1.0)
 end
+```
+
+```
+LoadError: Invalid name 's' for new random variable. 's' was already initialized with '=' operator before.
 ```
 
 By default the `GraphPPL.jl` package creates new references for constants (literals like `0.0` or `1.0`) in a model. In some situations this may not be efficient, especially when these constants represent large matrices. `GraphPPL.jl` will by default create new copies of some constant (e.g. matrix) in a model every time it uses it. However it is possible to use `constvar()` function to create and reuse similar constants in the model specification syntax as

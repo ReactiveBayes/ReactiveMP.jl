@@ -141,7 +141,16 @@ As you can see, `GraphPPL` offers a model specification syntax that resembles cl
 
 ### Inference specification
 
-Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this, we need to specify inference procedure. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with statis datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
+Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this we can use a generic `inference` function from `ReactiveMP.jl` that supports static datasets.
+
+```julia
+result = inference(
+    model = Model(coin_model, length(data)),
+    data  = (y = data, )
+)
+```
+
+There is a way to manually specify an inference procedure for advanced use-cases. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with static datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
 
 1. Return variables of interests from model specification
 2. Subscribe on variables of interests posterior marginal updates
@@ -151,7 +160,7 @@ Once we have defined our model, the next step is to use `ReactiveMP` API to infe
 Here is an example of inference procedure:
 
 ```julia
-function inference(data)
+function custom_inference(data)
     n = length(data)
 
     # `coin_model` function from `@model` macro returns a reference to 
@@ -185,7 +194,7 @@ end
 Here after everything is ready we just call our `inference` function to get a posterior marginal distribution over `θ` parameter in the model.
 
 ```julia
-θestimated = inference(dataset)
+θestimated = custom_inference(dataset)
 ```
 
 ![Coin Flip](docs/src/assets/img/coin-flip.svg?raw=true&sanitize=true "ReactiveMP.jl Benchmark")

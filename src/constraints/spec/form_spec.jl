@@ -8,7 +8,7 @@ const __EmptyFormConstraintSpecification = FormConstraintSpecification(nothing, 
 
 FormConstraintSpecification(form_constraint) = FormConstraintSpecification(form_constraint, default_prod_constraint(form_constraint))
 
-Base.show(io::IO, spec::FormConstraintSpecification) = print(io, spec.form_constraint, " [ prod_constraint = ", spec.prod_constraint, "]")
+Base.show(io::IO, spec::FormConstraintSpecification) = print(io, spec.form_constraint, " [ prod_constraint = ", spec.prod_constraint, " ]")
 
 function resolve_marginal_messages_form_prod(constraints, model, name)
     marginal_form_constraint, marginal_prod_constraint = resolve_marginal_form_prod(constraints, model, name)

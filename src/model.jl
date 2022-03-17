@@ -229,6 +229,7 @@ node_resolve_factorisation(model::FactorGraphModel, options::FactorNodeCreationO
 node_resolve_factorisation(model::FactorGraphModel, options::FactorNodeCreationOptions, ::Nothing, fform, variables) = node_resolve_factorisation(model, getconstraints(model), default_factorisation(getoptions(model)), fform, variables)
 
 node_resolve_factorisation(model::FactorGraphModel, constraints, default, fform, variables)                               = error("Cannot resolve factorisation constrains. Both `constraints` and `default_factorisation` option have been set, which is disallowed.")
+node_resolve_factorisation(model::FactorGraphModel, ::ConstraintsSpecification{Tuple{}}, default, fform, variables)       = default
 node_resolve_factorisation(model::FactorGraphModel, ::UnspecifiedConstraints, default, fform, variables)                  = default
 node_resolve_factorisation(model::FactorGraphModel, constraints, ::UnspecifiedConstraints, fform, variables)              = resolve_factorisation(constraints, model, fform, variables)
 node_resolve_factorisation(model::FactorGraphModel, ::UnspecifiedConstraints, ::UnspecifiedConstraints, fform, variables) = resolve_factorisation(UnspecifiedConstraints(), model, fform, variables)
@@ -245,7 +246,7 @@ function randomvar_resolve_options(model::FactorGraphModel, options::RandomVaria
     qform, qprod = randomvar_resolve_marginal_form_prod(model, options, name)
     mform, mprod = randomvar_resolve_messages_form_prod(model, options, name)
 
-    rprod = resolve_prod_constraint(qprod, mprod)
+    rprod = resolve_prod_constraint(options.prod_constraint, resolve_prod_constraint(qprod, mprod))
 
     qoptions = randomvar_options_set_marginal_form_constraint(options, qform)
     moptions = randomvar_options_set_messages_form_constraint(qoptions, mform)

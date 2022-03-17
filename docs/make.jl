@@ -27,6 +27,7 @@ makedocs(
             "Hierarchical Gaussian Filter"     => "examples/hierarchical_gaussian_filter.md",
             "Autoregressive Model"             => "examples/autoregressive.md",
             "Flow Tutorial"                    => "examples/flow_tutorial.md",
+            "Gamma Mixture"                    => "examples/gamma_mixture.md",
         ],
         "Library" => [
             "Messages"     => "lib/message.md",
