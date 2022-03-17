@@ -8,3 +8,9 @@ end
     a = clamp.(exp.(mean(log, q_a))' * probvec(m_out), tiny, Inf)
     return Categorical(a ./ sum(a))
 end
+
+@rule Transition(:in, Marginalisation) (m_out::Any, m_a::PointMass, ) = begin 
+    p = mean(m_a)' * probvec(m_out)
+    normalize!(p, 1)
+    return Categorical(p)
+end
