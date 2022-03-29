@@ -28,6 +28,8 @@ makedocs(
             "Hierarchical Gaussian Filter"     => "examples/hierarchical_gaussian_filter.md",
             "Autoregressive Model"             => "examples/autoregressive.md",
             "Normalizing Flows Tutorial"       => "examples/flow_tutorial.md",
+            "Univariate Normal Mixture"        => "examples/univariate_normal_mixture.md",
+            "Multivariate Normal Mixture"      => "examples/multivariate_normal_mixture.md",
             "Gamma Mixture"                    => "examples/gamma_mixture.md",
         ],
         "Library" => [
