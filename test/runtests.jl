@@ -89,6 +89,7 @@ end
     addtests("constraints/spec/test_form_spec.jl")
     addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
+    addtests("constraints/meta/test_meta.jl")
 
     addtests("test_distributions.jl")
     addtests("distributions/test_common.jl")
@@ -195,8 +196,6 @@ end
     addtests("models/test_ar.jl")
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
-
-    addtests("utils/test_meta.jl")
 
 end
 

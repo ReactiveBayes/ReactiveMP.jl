@@ -19,9 +19,9 @@ Install `ReactiveMP` through the Julia package manager:
 ## Example: Inferring the bias of a coin
 The `ReactiveMP` approach to solving inference problems consists of three phases:
 
-1. [Model specification](@ref): `ReactiveMP` uses `GraphPPL` package for model specification part. It offers a domain-specific language to specify your probabilistic model.
-2. [Inference specification](@ref): `ReactiveMP` inference API has been designed to be as flexible as possible and it is compatible both with asynchronous infinite data streams and with static datasets. For most of the use cases it consists of the same simple building blocks. In this example we will show one of the many possible ways to infer your quantities of interest.
-3. [Inference execution](@ref): Given model specification and inference procedure it is pretty straightforward to use reactive API from `Rocket` to pass data to the inference backend and to run actual inference.
+1. [Model specification](@ref getting-started-model-specification): `ReactiveMP` uses `GraphPPL` package for model specification part. It offers a domain-specific language to specify your probabilistic model.
+2. [Inference specification](@ref getting-started-inference-specification): `ReactiveMP` inference API has been designed to be as flexible as possible and it is compatible both with asynchronous infinite data streams and with static datasets. For most of the use cases it consists of the same simple building blocks. In this example we will show one of the many possible ways to infer your quantities of interest.
+3. [Inference execution](@ref getting-started-inference-execution): Given model specification and inference procedure it is pretty straightforward to use reactive API from `Rocket` to pass data to the inference backend and to run actual inference.
 
 ### Coin flip simulation
 Let's start by creating some dataset. One approach could be flipping a coin N times and recording each outcome. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
@@ -43,7 +43,7 @@ distribution = Bernoulli(p)
 dataset = float.(rand(rng, Bernoulli(p), n))
 ```
 
-### Model specification
+### [Model specification](@id getting-started-model-specification)
 
 In a Bayesian setting, the next step is to specify our probabilistic model. This amounts to specifying the joint probability of the random variables of the system.
 
@@ -102,7 +102,7 @@ end
 
 As you can see, `GraphPPL` offers a model specification syntax that resembles closely to the mathematical equations defined above. We use `datavar` function to create "clamped" variables that take specific values at a later date. `θ ~ Beta(2.0, 7.0)` expression creates random variable `θ` and assigns it as an output of `Beta` node in the corresponding FFG. 
 
-### Inference specification
+### [Inference specification](@id getting-started-inference-specification)
 
 Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this we can use a generic `inference` function from `ReactiveMP.jl` that supports static datasets.
 
@@ -160,7 +160,7 @@ function custom_inference(data)
 end
 ```
 
-### Inference execution
+### [Inference execution](@id getting-started-inference-execution)
 
 Here after everything is ready we just call our `inference` function to get a posterior marginal distribution over `θ` parameter in the model.
 

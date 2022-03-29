@@ -14,3 +14,4 @@ This section contains a set of examples for Bayesian Inference with `ReactiveMP`
 - [Univariate Gaussian Mixture](@ref examples-univariate-gaussian-mixture): This example implements variational Bayesian inference in a univariate Gaussian mixture model with mean-field assumption.
 - [Multivariate Gaussian Mixture](@ref examples-multivariate-gaussian-mixture): This example implements variational Bayesian inference in a multivariate Gaussian mixture model with mean-field assumption.
 - [Gamma Mixture](@ref examples-gamma-mixture): This example implements one of the experiments outlined in https://biaslab.github.io/publication/mp-based-inference-in-gmm/ .
+- [Custom nonlinear node](@ref examples-custom-nonlinear-node): This example shows how to build an arbitrary factor node for non-linear function using sample list approximation.

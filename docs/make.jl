@@ -31,6 +31,7 @@ makedocs(
             "Univariate Normal Mixture"        => "examples/univariate_normal_mixture.md",
             "Multivariate Normal Mixture"      => "examples/multivariate_normal_mixture.md",
             "Gamma Mixture"                    => "examples/gamma_mixture.md",
+            "Custom Nonlinear Node"            => "examples/custom_nonlinear_node.md"
         ],
         "Library" => [
             "Messages"     => "lib/message.md",

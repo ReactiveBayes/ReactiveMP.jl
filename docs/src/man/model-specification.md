@@ -61,7 +61,7 @@ end
     
 ## Graph variables creation
 
-### Constants
+### [Constants](@id user-guide-model-specification-constant-variables)
 
 Any runtime constant passed to a model as a model argument will be automatically converted to a fixed constant in the graph model at runtime. Sometimes it might be useful to create constants by hand (e.g. to avoid copying large matrices across the model and to avoid extensive memory allocations).
 
@@ -92,7 +92,7 @@ end
 !!! note
     `::ConstVariable` annotation does not play role in Julia's multiple dispatch. `GraphPPL.jl` removes this annotation and replaces it with `::Any`.
 
-### Data variables
+### [Data variables](@id user-guide-model-specification-data-variables)
 
 It is important to have a mechanism to pass data values to the model. You can create data inputs with `datavar()` function. As a first argument it accepts a type specification and optional dimensionality (as additional arguments or as a tuple).
 
@@ -107,7 +107,7 @@ y = datavar(Float64, (n, m)) # It is also possible to use a tuple for dimensiona
 
 `datavar()` call supports `where { options... }` block for extra options specification. 
 
-### Random variables
+### [Random variables](@id user-guide-model-specification-random-variables)
 
 There are several ways to create random variables. The first one is an explicit call to `randomvar()` function. By default it doesn't accept any argument, creates a single random variable in the model and returns it. It is also possible to pass dimensionality arguments to `randomvar()` function in the same way as for the `datavar()` function.
 

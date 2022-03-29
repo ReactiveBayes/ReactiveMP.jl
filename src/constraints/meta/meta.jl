@@ -54,13 +54,15 @@ See also: [`ConstraintsSpecification`](@ref)
 """
 function resolve_meta(metaspec, model, fform, variables) 
     symfform       = as_node_symbol(fform)
-    var_refs       = map(resolve_variable_proxy, filter(israndom, variables))
+
+    var_names      = map(name, variables)
+    var_refs       = map(resolve_variable_proxy, variables)
     var_refs_names = map(r -> r[1], var_refs)
 
     found = nothing
 
     unrolled_foreach(getentries(metaspec)) do fentry
-        if functionalform(fentry) === symfform && all(s -> s ∈ var_refs_names, getnames(fentry))
+        if functionalform(fentry) === symfform && (all(s -> s ∈ var_names, getnames(fentry)) || all(s -> s ∈ var_refs_names, getnames(fentry)))
             if found !== nothing
                 error("Ambigous meta object resolution for the node $(fform). Check $(found) and $(fentry).")
             end
