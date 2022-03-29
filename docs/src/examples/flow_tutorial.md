@@ -1,7 +1,4 @@
-# [Example: Flow tutorial](@id examples-flow)
-
-# Normalizing flows: a tutorial
-
+# [Example: Normalizing Flow tutorial](@id examples-flow)
 
 *Table of contents*
 1. [Introduction](@ref examples-flow-introduction)
@@ -159,7 +156,7 @@ plt.gcf()
 The probabilistic model for doing inference can be described as 
 
 ```@example flow
-@model function normalizing_flow(nr_samples::Int64, compiled_model::CompiledFlowModel)
+@model function normalizing_flow(nr_samples::Int64)
     
     # initialize variables
     z_μ   = randomvar()
@@ -172,18 +169,14 @@ The probabilistic model for doing inference can be described as
     z_μ ~ MvNormalMeanCovariance(zeros(2), huge*diagm(ones(2)))
     z_Λ ~ Wishart(2.0, tiny*diagm(ones(2)))
 
-    # specify model
-    meta = FlowMeta(compiled_model) # defaults to FlowMeta(compiled_model; approximation=Linearization()). 
-                                    # other approximation methods can be e.g. FlowMeta(compiled_model; approximation=Unscented(input_dim))
-
     # specify observations
     for k = 1:nr_samples
 
         # specify latent state
-        x[k] ~ MvNormalMeanPrecision(z_μ, z_Λ) where { q = MeanField() }
+        x[k] ~ MvNormalMeanPrecision(z_μ, z_Λ)
 
         # specify transformed latent value
-        y_lat[k] ~ Flow(x[k]) where { meta = meta }
+        y_lat[k] ~ Flow(x[k])
 
         # specify observations
         y[k] ~ MvNormalMeanCovariance(y_lat[k], tiny*diagm(ones(2)))
@@ -193,59 +186,52 @@ The probabilistic model for doing inference can be described as
     # return variables
     return z_μ, z_Λ, x, y_lat, y
 
-end
+end;
 ```
 
 Here the flow model is passed inside a meta data object of the flow node.
 Inference then resorts to
 
 ```@example flow
-function inference_flow(data_y::Array{Array{Float64,1},1}, compiled_model::CompiledFlowModel; nr_iterations::Int64=10)
-    
-    # fetch number of samples
-    nr_samples = length(data_y)
+observations = [y[:,k] for k=1:size(y,2)]
 
-    # define model
-    model, (z_μ, z_Λ, x, y_lat, y) = normalizing_flow(nr_samples, compiled_model)
-    
-    # initialize buffer for latent states
-    mzμ = keep(Marginal)
-    mzΛ = keep(Marginal)
-    mx  = buffer(Marginal, nr_samples)
-    my  = buffer(Marginal, nr_samples)
+fmodel         = Model(normalizing_flow, length(observations))
+data          = (y = observations, )
+initmarginals = (z_μ = MvNormalMeanCovariance(zeros(2), huge*diagm(ones(2))), z_Λ = Wishart(2.0, tiny*diagm(ones(2))))
+returnvars    = (z_μ = KeepLast(), z_Λ = KeepLast(), x = KeepLast(), y_lat = KeepLast())
 
-    # initialize free energy
-    fe_values = Vector{Float64}()
-    
-    # subscribe to z
-    zμ_sub = subscribe!(getmarginal(z_μ), mzμ)
-    zΛ_sub = subscribe!(getmarginal(z_Λ), mzΛ)
-    x_sub  = subscribe!(getmarginals(x), mx)
-    y_sub  = subscribe!(getmarginals(y_lat), my)
-    fe_sub = subscribe!(score(BetheFreeEnergy(), model), (fe) -> push!(fe_values, fe))
+constraints = @constraints begin
+    q(z_μ, x, z_Λ) = q(z_μ)q(z_Λ)q(x)
+end
 
-    # set initial marginals
-    setmarginal!(z_μ, MvNormalMeanCovariance(zeros(2), huge*diagm(ones(2))))
-    setmarginal!(z_Λ, Wishart(2.0, tiny*diagm(ones(2))))
+@meta function fmeta(model)
+    compiled_model = compile(model, randn(StableRNG(321), nr_params(model)))
+    Flow(y_lat, x) -> FlowMeta(compiled_model) # defaults to FlowMeta(compiled_model; approximation=Linearization()). 
+                                               # other approximation methods can be e.g. FlowMeta(compiled_model; approximation=Unscented(input_dim))
+end
 
-    # update y according to observations (i.e. perform inference)
-    for it = 1:nr_iterations
-        ReactiveMP.update!(y, data_y)
-    end
-
-    # unsubscribe
-    unsubscribe!([zμ_sub, zΛ_sub, x_sub, y_sub, fe_sub])
-    
-    # return the marginal values
-    return getvalues(mzμ)[end], getvalues(mzΛ)[end], getvalues(mx), getvalues(my), fe_values
-
-end;
+# First execution is slow due to Julia's initial compilation 
+result = inference(
+    model = fmodel, 
+    data  = data,
+    constraints   = constraints,
+    meta          = fmeta(model),
+    initmarginals = initmarginals,
+    returnvars    = returnvars,
+    free_energy   = true,
+    iterations    = 10, 
+    showprogress  = false
+)
 ```
 
 The following line of code then executes the inference algorithm.
 
 ```@example flow
-zμ_flow, zΛ_flow, x_flow, y_flow, fe_flow = inference_flow([y[:,k] for k=1:size(y,2)], compiled_model)
+fe_flow = result.free_energy
+zμ_flow = result.posteriors[:z_μ]
+zΛ_flow = result.posteriors[:z_Λ]
+x_flow  = result.posteriors[:x]
+y_flow  = result.posteriors[:y_lat]
 nothing #hide
 ```
 
@@ -314,7 +300,7 @@ end;
 ```
 
 ```@example flow
-data_y, data_x = generate_data(200);
+data_y, data_x = generate_data(50);
 plt.figure()
 plt.scatter(data_x[:,1], data_x[:,2], c=data_y)
 plt.grid()
@@ -340,7 +326,7 @@ model = FlowModel(2,
 The corresponding probabilistic model for the binary classification task can be created as
 
 ```@example flow
-@model function flow_classifier(nr_samples::Int64, model::FlowModel, params)
+@model [ default_factorisation = FullFactorisation() ] function flow_classifier(nr_samples::Int64)
     
     # initialize variables
     x_lat  = randomvar(nr_samples)
@@ -349,9 +335,6 @@ The corresponding probabilistic model for the binary classification task can be 
     y      = datavar(Float64, nr_samples)
     x      = datavar(Vector{Float64}, nr_samples)
 
-    # compile flow model
-    meta  = FlowMeta(compile(model, params)) # default: FlowMeta(model, Linearization())
-
     # specify observations
     for k = 1:nr_samples
 
@@ -359,7 +342,7 @@ The corresponding probabilistic model for the binary classification task can be 
         x_lat[k] ~ MvNormalMeanPrecision(x[k], 1e3*diagm(ones(2)))
 
         # specify transformed latent value
-        y_lat1[k] ~ Flow(x_lat[k]) where { meta = meta }
+        y_lat1[k] ~ Flow(x_lat[k])
         y_lat2[k] ~ dot(y_lat1[k], [1, 1])
 
         # specify observations
@@ -373,49 +356,40 @@ The corresponding probabilistic model for the binary classification task can be 
 end
 ```
 
-Here we see that the compilation occurs inside of our probabilistic model. As a result we can pass parameters (and a model) to this function which we wish to opmize for some criterium, such as the variational free energy. Inference can be described as
+```@example flow 
+fcmodel       = Model(flow_classifier, length(data_y))
+data          = (y = data_y, x = [data_x[k,:] for k=1:size(data_x,1)], )
 
-```@example flow
-function inference_flow_classifier(data_y::Array{Float64,1}, data_x::Array{Array{Float64,1},1}, model::FlowModel, params)
-    
-    # fetch number of samples
-    nr_samples = length(data_y)
-
-    # define model
-    model, (x_lat, x, y_lat1, y_lat2, y) = flow_classifier(nr_samples, model, params)
-
-    # initialize free energy
-    fe_buffer = nothing
-    
-    # subscribe
-    fe_sub = subscribe!(score(BetheFreeEnergy(), model), (fe) -> fe_buffer = fe)
-
-    # update y and x according to observations (i.e. perform inference)
-    ReactiveMP.update!(y, data_y)
-    ReactiveMP.update!(x, data_x)
-
-    # unsubscribe
-    unsubscribe!(fe_sub)
-    
-    # return the marginal values
-    return fe_buffer
-
+@meta function fmeta(model, params)
+    compiled_model = compile(model, params)
+    Flow(y_lat1, x_lat) -> FlowMeta(compiled_model)
 end
 ```
+
+Here we see that the compilation occurs inside of our probabilistic model. As a result we can pass parameters (and a model) to this function which we wish to opmize for some criterium, such as the variational free energy. Inference can be described as
 
 For the optimization procedure, we will simplify our inference loop, such that it only accepts parameters as an argument (which is wishes to optimize) and outputs a performance metric.
 
 ```@example flow
 function f(params)
-    fe = inference_flow_classifier(data_y, [data_x[k,:] for k=1:size(data_x,1)], model, params)
-    return fe
-end
+    Random.seed!(42) # Flow uses random permutation matrices, which is not good for the optimisation procedure
+    result = inference(
+        model         = fcmodel, 
+        data          = data,
+        meta          = fmeta(model, params),
+        free_energy   = true,
+        iterations    = 10, 
+        showprogress  = false
+    );
+    
+    result.free_energy[end]
+end;
 ```
 
 Optimization can be performed using the `Optim` package. Alternatively, other (custom) optimizers can be implemented, such as:
 
 ```julia
-res = optimize(f, randn(nr_params(model)), LBFGS(), Optim.Options(g_tol = 1e-3, iterations = 100, store_trace = true, show_trace = true))
+res = optimize(f, randn(StableRNG(42), nr_params(model)), GradientDescent(), Optim.Options(f_tol = 1e-3, store_trace = true, show_trace = true, show_every = 100), autodiff=:forward)
 ``` 
 
 - uses finitediff and is slower/less accurate.
@@ -449,7 +423,7 @@ end
 ```
 
 ```@example flow
-res = optimize(f, ones(nr_params(model)), LBFGS(), Optim.Options(store_trace = true, show_trace = true, show_every = 10), autodiff=:forward)
+res = optimize(f, randn(StableRNG(42), nr_params(model)), GradientDescent(), Optim.Options(store_trace = true, show_trace = true, show_every = 50), autodiff=:forward)
 nothing #hide
 ```
 

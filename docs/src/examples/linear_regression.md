@@ -12,6 +12,8 @@ First step is to import all needed packages and define the model:
 using ReactiveMP, GraphPPL, Rocket, Random, Plots, StableRNGs, BenchmarkTools
 ```
 
+## Model specification
+
 ```@example linreg
 @model function linear_regression(n)
     a ~ NormalMeanVariance(0.0, 1.0)
@@ -28,34 +30,7 @@ using ReactiveMP, GraphPPL, Rocket, Random, Plots, StableRNGs, BenchmarkTools
 end
 ```
 
-Next step is to define an inference procedure.
-
-```@example linreg
-function inference(xdata, ydata)
-    @assert length(xdata) == length(ydata)
-    
-    n = length(xdata)
-    
-    model, (a, b, x, y) = linear_regression(n)
-    
-    as = storage(Marginal)
-    bs = storage(Marginal)
-    
-    asub = subscribe!(getmarginal(a), as)
-    bsub = subscribe!(getmarginal(b), bs)
-    
-    # We need to initialise messages for loopy belief propagation
-    setmessage!(b, NormalMeanVariance(0.0, 100.0))
-    
-    # loopy belief propagation
-    for i in 1:20
-        update!(x, xdata)
-        update!(y, ydata)
-    end
-    
-    return getvalues(as), getvalues(bs)
-end
-```
+## Dataset
 
 In order to test our inference procedure we create a test dataset where observations are corrupted with gaussian white noise (with known variance).
 
@@ -76,21 +51,42 @@ plot(xdata, label = "X", title = "Linear regression dataset")
 plot!(ydata, label = "Y")
 ```
 
+## Inference
+
 ```@example linreg
-ares, bres = inference(xdata, ydata)
-nothing #hide
+results = inference(
+    model = Model(linear_regression, length(xdata)), 
+    data  = (y = ydata, x = xdata), 
+    initmessages = (b = NormalMeanVariance(0.0, 100.0), ), 
+    returnvars   = (a = KeepLast(), b = KeepLast()), 
+    iterations = 20
+)
 ```
 
 ```@example linreg
-println("Real a: ", reala, " | Estimated a: ", mean(ares), " | Error: ", abs(mean(ares) - reala))
-println("Real b: ", realb, " | Estimated b: ", mean(bres), " | Error: ", abs(mean(bres) - realb))
+a = results.posteriors[:a] 
+```
+
+```@example linreg
+b = results.posteriors[:b]
+```
+
+```@example linreg
+println("Real a: ", reala, " | Estimated a: ", mean(a), " | Error: ", abs(mean(a) - reala))
+println("Real b: ", realb, " | Estimated b: ", mean(b), " | Error: ", abs(mean(b) - realb))
 nothing #hide
 ```
 
 We can see that ReactiveMP.jl estimated real values of linear regression coefficients with high precision. Lets also test the benchmark of the resulting inference procedure.
 
 ```@example linreg
-@benchmark inference($xdata, $ydata)
+@benchmark inference(
+    model = Model($linear_regression, length($xdata)), 
+    data  = (y = $ydata, x = $xdata), 
+    initmessages = (b = NormalMeanVariance(0.0, 100.0), ), 
+    returnvars   = (a = KeepLast(), b = KeepLast()), 
+    iterations = 20
+)
 ```
 
 

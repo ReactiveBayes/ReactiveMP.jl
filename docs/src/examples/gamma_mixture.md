@@ -159,5 +159,9 @@ p2 = plot!(_mixture, label=false, title="Inferred mixtures", linewidth=3.0)
 # evaluate the convergence of the algorithm by monitoring the BFE
 p3 = plot(gresult.free_energy, label=false, xlabel="iterations", title="Bethe FE")
 
-plot(p1, p2, p3, layout = @layout([ a b c ]), size=(1400, 400))
+plot(p1, p2, layout = @layout([ a; b ]))
+```
+
+```@example gmix
+plot(p3)
 ```
