@@ -3,7 +3,7 @@
 This section contains a set of examples for Bayesian Inference with `ReactiveMP` package in various probabilistic models.
 
 !!! note
-    This section is WIP and more examples will be added over time. More examples can be found in [`demo/`](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) folder at GitHub repository.
+    This section is incomplete and more examples will be added over time. More examples can be found in [`demo/`](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) folder at GitHub repository.
 
 - [Linear regression](@ref examples-linear-regression): An example of linear regression Bayesian inference.
 - [Gaussian Linear Dynamical System](@ref examples-linear-gaussian-state-space-model): An example of inference procedure for Gaussian Linear Dynamical System with multivariate noisy observations using Belief Propagation (Sum Product) algorithm. Reference: [Simo Sarkka, Bayesian Filtering and Smoothing](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf).
@@ -15,3 +15,4 @@ This section contains a set of examples for Bayesian Inference with `ReactiveMP`
 - [Multivariate Gaussian Mixture](@ref examples-multivariate-gaussian-mixture): This example implements variational Bayesian inference in a multivariate Gaussian mixture model with mean-field assumption.
 - [Gamma Mixture](@ref examples-gamma-mixture): This example implements one of the experiments outlined in https://biaslab.github.io/publication/mp-based-inference-in-gmm/ .
 - [Custom nonlinear node](@ref examples-custom-nonlinear-node): This example shows how to build an arbitrary factor node for non-linear function using sample list approximation.
+- [Missing data](@ref examples-missing-data): This examples show how to extend basic functionality of ReactiveMP to support missing data points.

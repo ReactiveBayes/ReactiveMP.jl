@@ -58,9 +58,10 @@ sdim(n) = (a) -> map(d -> d[n], a)
 ```
 
 ```@example mgmm
-p = plot(xlim = (-1.5L, 1.5L), ylim = (-1.5L, 1.5L))
+global p = plot(xlim = (-1.5L, 1.5L), ylim = (-1.5L, 1.5L))
 
 for (index, gaussian) in enumerate(gaussians)
+    global p
     p = contour!(p, range(-2L, 2L, step = 0.25), range(-2L, 2L, step = 0.25), (x, y) -> pdf(gaussian, [ x, y ]), levels = 3, colorbar = false)
 end
 
@@ -144,7 +145,7 @@ nothing #hide
 ```
 
 ```@example mgmm
-pe = plot(xlim = (-1.5L, 1.5L), ylim = (-1.5L, 1.5L))
+global pe = plot(xlim = (-1.5L, 1.5L), ylim = (-1.5L, 1.5L))
 
 rp = scatter(y |> sdim(1), y |> sdim(2), xlim = (-1.5L, 1.5L), ylim = (-1.5L, 1.5L), legend=false, title="Generated", ms = 2)
 
@@ -152,6 +153,7 @@ e_means = mean.(m[end])
 e_precs = mean.(w[end])
 
 for (e_m, e_w) in zip(e_means, e_precs)
+    global pe
     gaussian = MvNormal(e_m, Matrix(Hermitian(inv(e_w))))
     pe = contour!(pe, range(-2L, 2L, step = 0.25), range(-2L, 2L, step = 0.25), (x, y) -> pdf(gaussian, [ x, y ]), title="Inference result", legend=false, levels = 7, colorbar = false)
 end
