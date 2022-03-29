@@ -55,14 +55,16 @@ end
 
 ```@example mgmm
 sdim(n) = (a) -> map(d -> d[n], a)
+```
 
+```@example mgmm
 p = plot(xlim = (-1.5L, 1.5L), ylim = (-1.5L, 1.5L))
 
 for (index, gaussian) in enumerate(gaussians)
     p = contour!(p, range(-2L, 2L, step = 0.25), range(-2L, 2L, step = 0.25), (x, y) -> pdf(gaussian, [ x, y ]), levels = 3, colorbar = false)
 end
 
-p = scatter!(y |> sdim(1), y |> sdim(2), ms = 2, alpha = 0.4)
+p = scatter!(p, y |> sdim(1), y |> sdim(2), ms = 2, alpha = 0.4)
 
 plot(p, size = (600, 400), legend=false)
 ```
