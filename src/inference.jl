@@ -31,7 +31,8 @@ __set_updated!(updated::MarginalHasBeenUpdated)   = updated.updated = true
 
 # This creates a `tap` operator that will set the `updated` flag to true. 
 # Later on we check flags and `unset!` them after the `update!` procedure
-ensure_update(updated::MarginalHasBeenUpdated) = tap(_ -> __set_updated!(updated))
+ensure_update(model::FactorGraphModel, callback, variable_name::Symbol, updated::MarginalHasBeenUpdated)  = tap((update) -> begin __set_updated!(updated); callback(model, variable_name, update) end)
+ensure_update(model::FactorGraphModel, ::Nothing, variable_name::Symbol, updated::MarginalHasBeenUpdated) = tap((_) -> __set_updated!(updated)) # If `callback` is nothing we simply set updated flag
 
 ## Extra error handling
 
@@ -90,6 +91,17 @@ function Base.getproperty(result::InferenceResult, property::Symbol)
     return getfield(result, property)
 end
 
+
+
+__inference_invoke_callback(callback, args...)  = callback(args...)
+__inference_invoke_callback(::Nothing, args...) = begin end
+
+inference_invoke_callback(callbacks, name, args...) = __inference_invoke_callback(inference_get_callback(callbacks, name), args...)
+inference_invoke_callback(::Nothing, name, args...) = begin end
+
+inference_get_callback(callbacks, name) = get(() -> nothing, callbacks, name)
+inference_get_callback(::Nothing, name) = nothing
+
 """
     inference(
         # `model`: specifies a model generator, with the help of the `Model` function
@@ -111,12 +123,27 @@ end
         # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
         iterations = 1,
         # Do we compute FE, optional, defaults to false
+        # Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
         free_energy = false,
         # Show progress module, optional, defaults to false
         showprogress = false,
+        # Inference cycle callbacks
+        callbacks = nothing,
     )
 
 This function provides generic (but somewhat limited) way to run inference in ReactiveMP.jl. 
+
+## Callbacks
+
+- `:on_marginal_update`:    args: (model::FactorGraphModel, name::Symbol, update)
+- `:before_model_creation`: args: ()
+- `:after_model_creation`:  args: (model::FactorGraphModel)
+- `:before_inference`:      args: (model::FactorGraphModel)
+- `:before_iteration`:      args: (model::FactorGraphModel, iteration::Int)
+- `:before_data_update`:    args: (model::FactorGraphModel, data)
+- `:after_data_update`:     args: (model::FactorGraphModel, data)
+- `:after_iteration`:       args: (model::FactorGraphModel, iteration::Int)
+- `:after_inference`:       args: (model::FactorGraphModel)
 """
 function inference(;
     # `model`: specifies a model generator, with the help of the `Model` function
@@ -137,13 +164,19 @@ function inference(;
     returnvars = nothing, 
     # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
     iterations = 1,
-    # Do we compute FE, optional, defaults to false
+    # Do we compute FE, optional, defaults to false 
+    # Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
     free_energy = false,
     # Show progress module, optional, defaults to false
-    showprogress = false,)
+    showprogress = false,
+    # Inference cycle callbacks
+    callbacks = nothing,
+)
 
-    _model, _ = create_model(model, constraints, meta, options)
-    vardict = ReactiveMP.getvardict(_model)
+    inference_invoke_callback(callbacks, :before_model_creation)
+    fmodel, _ = create_model(model, constraints, meta, options)
+    inference_invoke_callback(callbacks, :after_model_creation, fmodel)
+    vardict = ReactiveMP.getvardict(fmodel)
 
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
     # `KeepEach` for each random and not-proxied variable in a model
@@ -158,14 +191,15 @@ function inference(;
     updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(returnvars))
 
     try 
-        subscriptions = Dict(variable => subscribe!(obtain_marginal(vardict[variable]) |> ensure_update(updates[variable]), actor) for (variable, actor) in pairs(actors))
+        on_marginal_update = inference_get_callback(callbacks, :on_marginal_update)
+        subscriptions      = Dict(variable => subscribe!(obtain_marginal(vardict[variable]) |> ensure_update(fmodel, on_marginal_update, variable, updates[variable]), actor) for (variable, actor) in pairs(actors))
         
         fe_actor        = nothing
         fe_subscription = VoidTeardown()
         
         if free_energy
             fe_actor        = ScoreActor()
-            fe_subscription = subscribe!(score(BetheFreeEnergy(), _model), fe_actor)
+            fe_subscription = subscribe!(score(BetheFreeEnergy(), fmodel), fe_actor)
         end
 
         if !isnothing(initmarginals)
@@ -190,10 +224,15 @@ function inference(;
 
         p = showprogress ? ProgressMeter.Progress(iterations) : nothing
 
-        for _ in 1:iterations
+        inference_invoke_callback(callbacks, :before_inference, fmodel)
+
+        for iteration in 1:iterations
+            inference_invoke_callback(callbacks, :before_iteration, fmodel, iteration)
+            inference_invoke_callback(callbacks, :before_data_update, fmodel, data)
             for (key, value) in pairs(data)
                 update!(vardict[key], value)
             end
+            inference_invoke_callback(callbacks, :after_data_update, fmodel, data)
             not_updated = filter((pair) -> !last(pair).updated, updates)
             if length(not_updated) !== 0
                 names = join(keys(not_updated), ", ")
@@ -208,6 +247,7 @@ function inference(;
             if !isnothing(p)
                 ProgressMeter.next!(p)
             end
+            inference_invoke_callback(callbacks, :after_iteration, fmodel, iteration)
         end
 
         for (_, subscription) in pairs(subscriptions)
@@ -218,6 +258,8 @@ function inference(;
 
         posterior_values = Dict(variable => getvalues(actor) for (variable, actor) in pairs(actors))
         fe_values        = fe_actor !== nothing ? getvalues(fe_actor) : nothing
+
+        inference_invoke_callback(callbacks, :after_inference, fmodel)
 
         return InferenceResult(posterior_values, fe_values)
     catch error

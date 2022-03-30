@@ -62,6 +62,8 @@ function Rocket.getrecent(observable::SingleObservable{ <: Marginal })
     return observable.value
 end
 
+setanonymous!(::ConstVariable, ::Bool) = nothing
+
 function setmessagein!(constvar::ConstVariable, ::Int, messagein) 
     constvar.nconnected += 1
     return nothing
