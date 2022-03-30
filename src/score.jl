@@ -9,8 +9,12 @@ function score end
 # Specialized versions like score(Float64, ...) are not differentiable, but could be faster
 score(objective::AbstractScoreObjective, model)                                           = score(objective, model, AsapScheduler())
 score(objective::AbstractScoreObjective, model, scheduler)                                = score(InfCountingReal, objective, model, scheduler)
+
 score(::Type{T}, objective::AbstractScoreObjective, model) where { T <: Real }            = score(T, objective, model, AsapScheduler())
-score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where { T <: Real } = score(InfCountingReal{T}, objective, model, scheduler)
+score(::Type{T}, objective::AbstractScoreObjective, model) where { T <: InfCountingReal } = score(T, objective, model, AsapScheduler())
+
+score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where { T <: Real }            = score(InfCountingReal{T}, objective, model, scheduler)
+score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where { T <: InfCountingReal } = score(T, objective, model, scheduler)
 
 # Bethe Free Energy objective
 

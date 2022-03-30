@@ -42,7 +42,7 @@ function __inference_process_error(err::StackOverflowError)
     error("""
         Stack overflow error occurred during the inference procedure. 
         The dataset size might be causing this error. 
-        To circumvent this behavior, try using `limit_stack_depth` option when creating a model.
+        To resolve this issue, try using `limit_stack_depth` option when creating a model. See also: `?model_options`
     """)
 end
 ##
@@ -102,38 +102,114 @@ inference_invoke_callback(::Nothing, name, args...) = begin end
 inference_get_callback(callbacks, name) = get(() -> nothing, callbacks, name)
 inference_get_callback(::Nothing, name) = nothing
 
+unwrap_free_energy_option(option::Bool)                        = (option, Real, InfCountingReal)
+unwrap_free_energy_option(option::Type{T}) where { T <: Real } = (true, T, InfCountingReal{T})
+
 """
     inference(
-        # `model`: specifies a model generator, with the help of the `Model` function
         model::ModelGenerator; 
-        # NamedTuple or Dict with data, required
         data,
-        # NamedTuple with initial marginals, optional, defaults to empty
         initmarginals = nothing,
-        # NamedTuple with initial messages, optional, defaults to empty
-        initmessages = nothing,  # optional
-        # Constraints specification object
-        constraints = nothing,
-        # Meta specification object
-        meta  = nothing,
-        # Model creation options
-        options = (;),
-        # Return structure info, optional, defaults to return everything at each iteration
-        returnvars = nothing, 
-        # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
-        iterations = 1,
-        # Do we compute FE, optional, defaults to false
-        # Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
-        free_energy = false,
-        # Show progress module, optional, defaults to false
-        showprogress = false,
-        # Inference cycle callbacks
-        callbacks = nothing,
+        initmessages  = nothing,
+        constraints   = nothing,
+        meta          = nothing,
+        options       = (;),
+        returnvars    = nothing, 
+        iterations    = 1,
+        free_energy   = false,
+        showprogress  = false,
+        callbacks     = nothing,
     )
 
 This function provides generic (but somewhat limited) way to run inference in ReactiveMP.jl. 
 
-## Callbacks
+## Arguments
+
+See more information for some arguments below.
+
+- `model::ModelGenerator`: specifies a model generator, with the help of the `Model` function
+- `data`: `NamedTuple` or `Dict` with data, required
+- `initmarginals = nothing`: `NamedTuple` or `Dict` with initial marginals, optional, defaults to empty
+- `initmessages = nothing`: `NamedTuple` or `Dict` with initial messages, optional, defaults to empty
+- `constraints = nothing`: constraints specification object, see `@constraints`
+- `meta  = nothing`: meta specification object, see `@meta`
+- `options = (;)`: model creation options, see `model_options`
+- `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see more information below
+- `iterations = 1`: number of VMP or Loopy BP iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
+- `free_energy = false`: compute FE, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
+- `showprogress = false`: show progress module, optional, defaults to false
+- `callbacks = nothing`: inference cycle callbacks, see below for more info
+
+## Extendend information about arguments
+
+- ### `model`
+
+`model` argument accepts `ModelGenerator` as its input. The easiest way to crate the `ModelGenerator` is to use `Model` function. `Model` function accepts model name as its first argument and the rest is passed directly to the model constructor.
+For example:
+
+```julia
+result = inference(
+    # Creates `coin_toss(some_argument, some_keyword_argument = 3)`
+    model = Model(coin_toss, some_argument; some_keyword_argument = 3)
+)
+```
+
+**Note**: `model` keyword argument does not accepts `FactorGraphModel` instance as a value, as it needs to inject `constraints` and `meta` during the inference procedure.
+
+- ### `initmarginals`
+
+In general VMP needs every marginal in a model to be pre-initialised. In practice, however, for many models it is sufficient enough to initialise only a small subset of variables in the model.
+
+- ### `initmessages`
+
+Loopy BP may need some messages in a model to be pre-initialised.
+
+- ### `options`
+
+See `?model_options`.
+
+- ### `returnvars`
+
+`returnvars` specifies variables of interests and the amount of information to return about their posterior updates. By default `inference` function tracks and returns every update for each iteration for every random variable in the model.
+`returnvars` accepts `NamedTuple` or `Dict` or return var specification. There are two specifications:
+
+- `KeepLast`: saves last update for variable, ignoring any intermediate results from iterations
+- `KeepEach`: saves all updates for variable for all iterations
+
+Example: 
+
+```julia
+result = inference(
+    ...,
+    returnvars = (
+        x = KeepLast(),
+        τ = KeepEach()
+    )
+)
+```
+
+- ### `free_energy` 
+
+This setting specifies whenever the `inference` function should return Bethe Free Energy (BFE) values. 
+Note, however, that it may be not possible to compute BFE values for every model. 
+
+Additionally, may accept a floating point type, instead of a `Bool` value. Using his option, e.g.`Float64`, improves performance of Bethe Free Energy computation, but restricts using automatic differentiation packages.
+
+- ### `callbacks`
+
+Inference function has its own lifecycle. User is free to provide some (or none) of the callbacks to inject some extra logging or other procedures in the inference function, e.g.
+
+```julia
+result = inference(
+    ...,
+    callbacks = (
+        on_marginal_update = (model, name, update) -> println("\$(name) has been updated: \$(update)"),
+        after_inference    = (args...) -> println("Inference has been completed")
+    )
+)
+```
+
+The list of all possible callbacks is present below:
 
 - `:on_marginal_update`:    args: (model::FactorGraphModel, name::Symbol, update)
 - `:before_model_creation`: args: ()
@@ -196,10 +272,12 @@ function inference(;
         
         fe_actor        = nothing
         fe_subscription = VoidTeardown()
+
+        is_free_energy, S, T = unwrap_free_energy_option(free_energy)
         
-        if free_energy
-            fe_actor        = ScoreActor()
-            fe_subscription = subscribe!(score(BetheFreeEnergy(), fmodel), fe_actor)
+        if is_free_energy
+            fe_actor        = ScoreActor(S)
+            fe_subscription = subscribe!(score(T, BetheFreeEnergy(), fmodel), fe_actor)
         end
 
         if !isnothing(initmarginals)

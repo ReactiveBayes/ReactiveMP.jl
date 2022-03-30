@@ -54,7 +54,26 @@ struct ModelOptions{P, F, S}
     global_reactive_scheduler  :: S
 end
 
-model_options(; kwargs...)       = model_options(kwargs)
+"""
+    model_options(options...)
+
+Creates model options object. The list of available options is present below:
+
+### Options
+
+- `default_factorisation`: specifies default factorisation for all factor nodes, e.g. `MeanField()` or `FullFactorisation`. **Note**: this setting is not compatible with `@constraints`
+- `limit_stack_depth`: limits the stack depth for computing messages, helps with `StackOverflowError` for some huge models, but reduces the performance of inference backend. Accepts integer as an argument that specifies the maximum number of recursive depth. Lower is better for stack overflow error, but worse for performance.
+
+### Advanced options
+
+- `pipeline`: changes the default pipeline for each factor node in the graph
+- `global_reactive_scheduler`: changes the scheduler of reactive streams, see Rocket.jl for more info, defaults to no scheduler
+
+See also: [`inference`](@ref)
+"""
+function model_options end
+
+model_options(; kwargs...) = model_options(kwargs)
 
 model_options(pairs::Base.Iterators.Pairs) = model_options(NamedTuple(pairs))
 
