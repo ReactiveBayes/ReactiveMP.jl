@@ -6,6 +6,7 @@ import Base: show
 
 mutable struct RandomVariable <: AbstractVariable
     name                :: Symbol
+    anonymous           :: Bool
     collection_type     :: AbstractVariableCollectionType
     input_messages      :: Vector{MessageObservable{AbstractMessage}} 
     output_messages     :: Vector{MessageObservable{Message}}
@@ -89,6 +90,7 @@ randomvar(options::RandomVariableCreationOptions, name::Symbol, dims::Vararg{Int
 function randomvar(options::RandomVariableCreationOptions, name::Symbol, collection_type::AbstractVariableCollectionType) 
     return RandomVariable(
         name, 
+        false,
         collection_type, 
         Vector{MessageObservable{AbstractMessage}}(), 
         Vector{MessageObservable{Message}}(), 
@@ -118,6 +120,7 @@ end
 
 degree(randomvar::RandomVariable)              = length(randomvar.input_messages)
 name(randomvar::RandomVariable)                = randomvar.name
+isanonymous(randomvar::RandomVariable)         = randomvar.anonymous
 proxy_variables(randomvar::RandomVariable)     = randomvar.proxy_variables
 collection_type(randomvar::RandomVariable)     = randomvar.collection_type
 equality_chain(randomvar::RandomVariable)      = randomvar.equality_chain
@@ -161,6 +164,8 @@ add_pipeline_stage!(randomvar::RandomVariable, stage) = randomvar.pipeline = (ra
 _getmarginal(randomvar::RandomVariable)              = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, observable) = connect!(_getmarginal(randomvar), observable)
 _makemarginal(randomvar::RandomVariable)             = collectLatest(AbstractMessage, Marginal, randomvar.input_messages, marginal_prod_fn(randomvar))
+
+setanonymous!(randomvar::RandomVariable, anonymous::Bool) = randomvar.anonymous = anonymous
 
 function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === degree(randomvar) + 1

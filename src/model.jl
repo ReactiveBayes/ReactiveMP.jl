@@ -232,7 +232,9 @@ node_resolve_factorisation(model::FactorGraphModel, constraints, default, fform,
 node_resolve_factorisation(model::FactorGraphModel, ::ConstraintsSpecification{Tuple{}}, default, fform, variables)       = default
 node_resolve_factorisation(model::FactorGraphModel, ::UnspecifiedConstraints, default, fform, variables)                  = default
 node_resolve_factorisation(model::FactorGraphModel, constraints, ::UnspecifiedConstraints, fform, variables)              = resolve_factorisation(constraints, model, fform, variables)
-node_resolve_factorisation(model::FactorGraphModel, ::UnspecifiedConstraints, ::UnspecifiedConstraints, fform, variables) = resolve_factorisation(UnspecifiedConstraints(), model, fform, variables)
+
+node_resolve_factorisation(model::FactorGraphModel, ::ConstraintsSpecification{Tuple{}}, ::UnspecifiedConstraints, fform, variables) = resolve_factorisation(UnspecifiedConstraints(), model, fform, variables)
+node_resolve_factorisation(model::FactorGraphModel, ::UnspecifiedConstraints, ::UnspecifiedConstraints, fform, variables)            = resolve_factorisation(UnspecifiedConstraints(), model, fform, variables)
 
 ## meta 
 

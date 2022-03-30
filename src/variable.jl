@@ -115,9 +115,8 @@ end
 
 ##
 
-function name(variable::AbstractVariable)
-    return variable.name
-end
+name(variable::AbstractVariable)        = variable.name
+isanonymous(variable::AbstractVariable) = false
 
 ##
 
@@ -140,15 +139,15 @@ This function is a part of private API and should not be used explicitly.
 """
 function resolve_variable_proxy end
 
-resolve_variable_proxy(var::AbstractVariable) = resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy_variables(var))
+resolve_variable_proxy(var::AbstractVariable) = !isanonymous(var) ? resolve_variable_proxy(var, VariableReferenceProxyChecked(), nothing) : resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy_variables(var))        
 
 resolve_variable_proxy(var::AbstractVariable, ::Union{ VariableReferenceProxyChecked, VariableReferenceProxyUnchecked }, ::Nothing) = (name(var), linear_index(collection_type(var)), var)
 
 resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyUnchecked, proxy::Tuple{T}) where { T <: AbstractVariable } = resolve_variable_proxy(first(proxy))
 resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyUnchecked, proxy::Tuple)                                    = resolve_variable_proxy(var, VariableReferenceProxyChecked(), filter(v -> v isa RandomVariable, proxy))
+resolve_variable_proxy(::AbstractVariable, ::VariableReferenceProxyChecked, proxy::Tuple{T})   where { T <: AbstractVariable }    = resolve_variable_proxy(first(proxy))
 
-resolve_variable_proxy(::AbstractVariable, ::VariableReferenceProxyChecked, proxy::Tuple{T})   where { T <: AbstractVariable } = resolve_variable_proxy(first(proxy))
-resolve_variable_proxy(::AbstractVariable, ::VariableReferenceProxyChecked, proxy::Tuple)                                      = error("Multiple proxy vars in variable reference resolution are dissalowed. This may happened because of the deterministic relation in the model that has more than one input. This setting does not play nicely with constraints or meta specification languages. As a workaround create and give a specific name for the output variable of this deterministic relation.")
+resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyChecked, proxy::Tuple) = error("Multiple proxy vars $(map(name, proxy)) for variable $(name(var)) are dissalowed in reference resolution function. This may happened because of the deterministic relation in the model that has more than one random variable as an input. This setting does not play nicely with constraints or meta specification languages. As a workaround create and give a specific name for the output variable of this deterministic relation.")
 
 ## Helper functions
 

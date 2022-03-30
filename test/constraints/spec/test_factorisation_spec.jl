@@ -8,6 +8,7 @@ import ReactiveMP: CombinedRange, SplittedRange, is_splitted
 import ReactiveMP: __as_unit_range, __factorisation_specification_resolve_index
 import ReactiveMP: resolve_factorisation
 import ReactiveMP: DefaultConstraints
+import ReactiveMP: setanonymous!
 
 using GraphPPL # for `@constraints` macro
 
@@ -405,6 +406,7 @@ using GraphPPL # for `@constraints` macro
             x = randomvar(model, :x)
             y = randomvar(model, :y)
             tmp = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y, )), :tmp)
+            setanonymous!(tmp, true)
 
             @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y)) === ((1, ), (2, ))
             @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, tmp)) === ((1, ), (2, ))
@@ -447,6 +449,14 @@ using GraphPPL # for `@constraints` macro
                 tmp5[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d[i], y[i], c[i])), :tmp5)
                 tmp6[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d[i], y[i])), :tmp6)
                 tmp7[i] = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c[i], y[i])), :tmp7)
+
+                setanonymous!(tmp1[i], true)
+                setanonymous!(tmp2[i], true)
+                setanonymous!(tmp3[i], true)
+                setanonymous!(tmp4[i], true)
+                setanonymous!(tmp5[i], true)
+                setanonymous!(tmp6[i], true)
+                setanonymous!(tmp7[i], true)
             end
 
             for i in 1:10
@@ -579,8 +589,6 @@ using GraphPPL # for `@constraints` macro
             d = datavar(model, :d, Float64)
             c = constvar(model, :c, 1)
 
-            
-
             tmp1 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y)), :tmp)
             tmp2 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, d)), :tmp)
             tmp3 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, c)), :tmp)
@@ -590,6 +598,16 @@ using GraphPPL # for `@constraints` macro
             tmp7 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y)), :tmp)
             tmp8 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y, d)), :tmp)
             tmp9 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d, x, y, c)), :tmp)
+
+            setanonymous!(tmp1, true)
+            setanonymous!(tmp2, true)
+            setanonymous!(tmp3, true)
+            setanonymous!(tmp4, true)
+            setanonymous!(tmp5, true)
+            setanonymous!(tmp6, true)
+            setanonymous!(tmp7, true)
+            setanonymous!(tmp8, true)
+            setanonymous!(tmp9, true)
             
             @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp1))
             @test_throws ErrorException resolve_factorisation(cs, model, fform, (z, tmp2))
