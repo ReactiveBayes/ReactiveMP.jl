@@ -90,7 +90,7 @@ function Rocket.getrecent(proxy::ProxyObservable{ <: Marginal, S, M }) where { S
     return as_marginal(Rocket.getrecent(proxy.proxied_source))
 end
 
-setanonymous!(::ConstVariable, ::Bool) = nothing
+setanonymous!(::DataVariable, ::Bool) = nothing
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.nconnected += 1
