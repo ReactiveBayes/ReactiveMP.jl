@@ -121,30 +121,30 @@ unwrap_free_energy_option(option::Type{T}) where { T <: Real } = (true, T, InfCo
         callbacks     = nothing,
     )
 
-This function provides generic (but somewhat limited) way to run inference in ReactiveMP.jl. 
+This function provides a generic (but somewhat limited) way to perform probabilistic inference in ReactiveMP.jl. 
 
 ## Arguments
 
-See more information for some arguments below.
+For more information about some of the arguments, please check below.
 
 - `model::ModelGenerator`: specifies a model generator, with the help of the `Model` function
 - `data`: `NamedTuple` or `Dict` with data, required
-- `initmarginals = nothing`: `NamedTuple` or `Dict` with initial marginals, optional, defaults to empty
-- `initmessages = nothing`: `NamedTuple` or `Dict` with initial messages, optional, defaults to empty
+- `initmarginals = nothing`: `NamedTuple` or `Dict` with initial marginals, optional, defaults to nothing
+- `initmessages = nothing`: `NamedTuple` or `Dict` with initial messages, optional, defaults to nothing
 - `constraints = nothing`: constraints specification object, see `@constraints`
 - `meta  = nothing`: meta specification object, see `@meta`
 - `options = (;)`: model creation options, see `model_options`
-- `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see more information below
-- `iterations = 1`: number of VMP or Loopy BP iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
-- `free_energy = false`: compute FE, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
+- `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see below for more information
+- `iterations = 1`: number of iterations, defaults to 1, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations
+- `free_energy = false`: compute the Bethe free energy, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
 - `showprogress = false`: show progress module, optional, defaults to false
 - `callbacks = nothing`: inference cycle callbacks, see below for more info
 
-## Extendend information about arguments
+## Extended information about some of the arguments
 
 - ### `model`
 
-`model` argument accepts `ModelGenerator` as its input. The easiest way to crate the `ModelGenerator` is to use `Model` function. `Model` function accepts model name as its first argument and the rest is passed directly to the model constructor.
+The `model` argument accepts a `ModelGenerator` as its input. The easiest way to create the `ModelGenerator` is to use the `Model` function. The `Model` function accepts a model name as its first argument and the rest is passed directly to the model constructor.
 For example:
 
 ```julia
@@ -154,15 +154,15 @@ result = inference(
 )
 ```
 
-**Note**: `model` keyword argument does not accepts `FactorGraphModel` instance as a value, as it needs to inject `constraints` and `meta` during the inference procedure.
+**Note**: The `model` keyword argument does not accept a `FactorGraphModel` instance as a value, as it needs to inject `constraints` and `meta` during the inference procedure.
 
 - ### `initmarginals`
 
-In general VMP needs every marginal in a model to be pre-initialised. In practice, however, for many models it is sufficient enough to initialise only a small subset of variables in the model.
+In general for variational message passing every marginal distribution in a model needs to be pre-initialised. In practice, however, for many models it is sufficient enough to initialise only a small subset of variables in the model.
 
 - ### `initmessages`
 
-Loopy BP may need some messages in a model to be pre-initialised.
+Loopy belief propagation may need some messages in a model to be pre-initialised.
 
 - ### `options`
 
@@ -170,11 +170,11 @@ See `?model_options`.
 
 - ### `returnvars`
 
-`returnvars` specifies variables of interests and the amount of information to return about their posterior updates. By default `inference` function tracks and returns every update for each iteration for every random variable in the model.
-`returnvars` accepts `NamedTuple` or `Dict` or return var specification. There are two specifications:
+`returnvars` specifies the variables of interests and the amount of information to return about their posterior updates. By default the `inference` function tracks and returns every update for each iteration for every random variable in the model.
+`returnvars` accepts a `NamedTuple` or `Dict` or return var specification. There are two specifications:
 
-- `KeepLast`: saves last update for variable, ignoring any intermediate results from iterations
-- `KeepEach`: saves all updates for variable for all iterations
+- `KeepLast`: saves the last update for a variable, ignoring any intermediate results during iterations
+- `KeepEach`: saves all updates for a variable for all iterations
 
 Example: 
 
@@ -193,11 +193,11 @@ result = inference(
 This setting specifies whenever the `inference` function should return Bethe Free Energy (BFE) values. 
 Note, however, that it may be not possible to compute BFE values for every model. 
 
-Additionally, may accept a floating point type, instead of a `Bool` value. Using his option, e.g.`Float64`, improves performance of Bethe Free Energy computation, but restricts using automatic differentiation packages.
+Additionally, the argument may accept a floating point type, instead of a `Bool` value. Using his option, e.g.`Float64`, improves performance of Bethe Free Energy computation, but restricts using automatic differentiation packages.
 
 - ### `callbacks`
 
-Inference function has its own lifecycle. User is free to provide some (or none) of the callbacks to inject some extra logging or other procedures in the inference function, e.g.
+The inference function has its own lifecycle. The user is free to provide some (or none) of the callbacks to inject some extra logging or other procedures in the inference function, e.g.
 
 ```julia
 result = inference(
