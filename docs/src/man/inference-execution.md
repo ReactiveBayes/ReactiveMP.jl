@@ -9,7 +9,7 @@ The `ReactiveMP` inference API supports different types of message-passing algor
 
 Whereas belief propagation computes exact inference for the random variables of interest, the variational message passing (VMP) in an approximation method that can be applied to a larger range of models.
 
-The `ReactiveMP` engine itself isn't aware of different algorithm types and simply does message passing between nodes, however during model specification stage user may specifiy different factorisation constraints around factor nodes by using `where { q = ... }` syntax. Different factorisation constraints lead to a different message passing update rules.
+The `ReactiveMP` engine itself isn't aware of different algorithm types and simply does message passing between nodes, however during model specification stage user may specifiy different factorisation constraints around factor nodes by using `where { q = ... }` syntax or with the help of the `@constraints` macro. Different factorisation constraints lead to a different message passing update rules.
 
 Inference with `ReactiveMP` usually consists of the same simple building blocks and designed in such a way to support both static and real-time infinite datasets:
 
@@ -21,9 +21,22 @@ Inference with `ReactiveMP` usually consists of the same simple building blocks 
 
 It is worth to note that Step 5 is optional and in case where observations come from an infinite real-time data stream (e.g. from the internet) it may be justified to never unsubscribe and perform real-time Bayesian inference in a reactive manner as soon as data arrives.
 
-## [Model creation](@id user-guide-inference-execution-model-creation)
+ReactiveMP.jl provides generic `inference` function to simplify these steps and test models faster. However, this function does not suppor the full range of ReactiveMP.jl's package 
+feature. Read about both automatic and manual approaches below.
 
-During model specification stage user decides on variables of interesets in a model and returns them using a `return ...` statement. As an example consider that we have a simple hierarchical model in which the mean of a Normal distribution is represented by another Normal distribution whose mean is modelled by another Normal distribution.
+## [Automatic inference specification](@id user-guide-inference-execution-automatic-specification)
+
+```@docs
+inference
+```
+
+## [Manual inference specification](@id user-guide-inference-execution-manual-specification)
+
+For advanced use cases such as online real-time Bayesian inference it is advised to use manual inference specification. 
+
+### [Model creation](@id user-guide-inference-execution-model-creation)
+
+During model specification stage user decides on variables of interesets in a model and returns (optionally) them using a `return ...` statement. As an example consider that we have a simple hierarchical model in which the mean of a Normal distribution is represented by another Normal distribution whose mean is modelled by another Normal distribution.
 
 ```@example hierarchical-normal
 using Rocket, GraphPPL, ReactiveMP, Distributions, Random
@@ -35,7 +48,7 @@ using Rocket, GraphPPL, ReactiveMP, Distributions, Random
     y = datavar(Float64)
     y ~ NormalMeanVariance(m1, 1.0)
 
-    # Return variables of interests
+    # Return variables of interests, optional
     return m1, y
 end
 ```
@@ -47,20 +60,19 @@ model, (m1, y) = my_model()
 nothing #hide
 ```
 
-On the other hand, if we were interested in the posterior distributions of both m1 and m2 we would then need to return both of them from a model specification, i.e.
+Alternatively, it is possible to query variables using squared brackets on `model` object:
 
-```julia
-@model function my_model()
-    ...
-    return m1, m2, y
-end
+```@example hierarchical-normal
+model, _ = my_model()
 
-model, (m1, m2, y) = my_model()
+model[:m1] # m1
+model[:y]  # y
+nothing #hide
 ```
 
-`@model` macro also return a reference for a factor graph as its first return value. Factor graph object (named `model` in previous example) contains all information about all factor nodes in a model as well as random variables and data inputs.
+`@model` macro also return a reference for a factor graph as its first return value. Factor graph object (named `model` in previous example) contains all information about all factor nodes in a model as well as random variables and data inputs. See [Advanced Tutorial](@ref user-guide-advanced-tutorial) section.
 
-## [Posterior marginal updates](@id user-guide-inference-execution-marginal-updates)
+### [Posterior marginal updates](@id user-guide-inference-execution-marginal-updates)
 
 The `ReactiveMP` package has a reactive API and operates in terms of Observables and Actors. For detailed information about these concepts we refer to [Rocket.jl documentation](https://biaslab.github.io/Rocket.jl/stable/observables/about/).
 
@@ -95,7 +107,7 @@ model, (m_n, ...) = my_model()
 m_n_updates = getmarginals(m_n)
 ```
 
-## [Feeding observations](@id user-guide-inference-execution-observations)
+### [Feeding observations](@id user-guide-inference-execution-observations)
 
 By default (without any extra factorisation constraints) model specification implies Belief Propagation message passing update rules. In case of BP algorithm `ReactiveMP` package computes an exact Bayesian posteriors with a single message passing iteration.
 To enforce Belief Propagation message passing update rule for some specific factor node user may use `where { q = FullFactorisation() }` option. Read more in [Model Specification](@ref user-guide-model-specification) section. To perform a message passing iteration we need to pass some data to all our data inputs that were created with [`datavar` function](@ref user-guide-model-specification-data-variables) during model specification.
@@ -124,7 +136,7 @@ end
 update!(y, data)
 ```
 
-## [Variational Message Passing](@id user-guide-inference-vmp)
+### [Variational Message Passing](@id user-guide-inference-vmp)
 
 Variational message passing (VMP) algorithms are generated much in the same way as the belief propagation algorithm we saw in the previous section. There is a major difference though: for VMP algorithm generation we need to define the factorization properties of our approximate distribution. A common approach is to assume that all random variables of the model factorize with respect to each other. This is known as the mean field assumption. In `ReactiveMP`, the specification of such factorization properties is defined during model specification stage using the `where { q = ... }` syntax. Let's take a look at a simple example to see how it is used. In this model we want to learn the mean and precision of a Normal distribution, where the former is modelled with a Normal distribution and the latter with a Gamma.
 
@@ -225,7 +237,7 @@ end
 plot!(p2, [ real_precision ], seriestype = :vline, label = "Real precision", color = :red4, opacity = 0.7)
 ```
 
-## [Computing Bethe Free Energy](@id user-guide-inference-vmp-bfe)
+### [Computing Bethe Free Energy](@id user-guide-inference-vmp-bfe)
 
 VMP inference boils down to finding the member of a family of tractable probability distributions that is closest in KL divergence to an intractable posterior distribution. This is achieved by minimizing a quantity known as Variational Free Energy. `ReactiveMP` uses Bethe Free Energy approximation to the real Variational Free Energy. Free energy is particularly useful to test for convergence of the VMP iterative procedure.
 

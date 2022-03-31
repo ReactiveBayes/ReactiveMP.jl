@@ -18,9 +18,6 @@ Model options, `model_arguments` and `model_keyword_arguments` are optional and 
 end
 ```
 
-!!! note
-    `options`, `constraints` and `meta` keyword arguments are reserved and cannot be used in `model_keyword_arguments`.
-
 The `@model` macro returns a regular Julia function (in this example `model_name()`) which can be executed as usual. It returns a reference to a model object itself and a tuple of a user specified return variables, e.g:
 
 ```julia
@@ -45,13 +42,14 @@ Here is an example of a simple state space model with latent random variables `x
 ```julia
 @model [ options... ] function state_space_model(n_observations, noise_variance)
 
+    c = constvar(1.0)
     x = randomvar(n_observations)
     y = datavar(Float64, n_observations)
 
     x[1] ~ NormalMeanVariance(0.0, 100.0)
 
     for i in 2:n_observations
-       x[i] ~ x[i - 1] + 1.0
+       x[i] ~ x[i - 1] + c
        y[i] ~ NormalMeanVariance(x[i], noise_var)
     end
 
@@ -94,7 +92,7 @@ end
 
 ### [Data variables](@id user-guide-model-specification-data-variables)
 
-It is important to have a mechanism to pass data values to the model. You can create data inputs with `datavar()` function. As a first argument it accepts a type specification and optional dimensionality (as additional arguments or as a tuple).
+It is important to have a mechanism to pass data values to the model. You can create data inputs with `datavar()` function. As a first argument it accepts a type specification and optional dimensionality (as additional arguments or as a tuple). User can treat `datavar()`s in the model as both clamped values for priors and observations.
 
 Examples: 
 
@@ -106,6 +104,10 @@ y = datavar(Float64, (n, m)) # It is also possible to use a tuple for dimensiona
 ```
 
 `datavar()` call supports `where { options... }` block for extra options specification. 
+
+#### Data variables available options
+
+- `allow_missing = true/false`: Specifies if it is possible to pass `missing` object as an observation. Note however that by default ReactiveMP.jl does not expose any message computation rules that involve `missing`s.
 
 ### [Random variables](@id user-guide-model-specification-random-variables)
 
@@ -122,6 +124,16 @@ x = randomvar((n, m)) # It is also possible to use a tuple for dimensionality
 
 In the same way as `datavar()` function, `randomvar()` options supports `where { options... }` block for exxtra options. 
 
+#### Random variables available options
+
+- `prod_constraint`
+- `prod_strategy`
+- `marginal_form_constraint`
+- `marginal_form_check_strategy`
+- `messages_form_constraint`
+- `messages_form_check_strategy`
+- `pipeline`
+
 The second way to create a random variable is to create a node with the `~` operator. If the random variable has not yet been created before this call, it will be created automatically during the creation of the node. Read more about the `~` operator below.
 
 ## Node creation
@@ -136,6 +148,8 @@ v = randomvar()
 y ~ NormalMeanVariance(m, v) # Creates a `y` random variable automatically
 ```
 
+Another example, but using a determnistic relation between random variables:
+
 ```julia
 a = randomvar()
 b = randomvar()
@@ -146,13 +160,16 @@ c ~ a + b
     The `GraphPPL.jl` package uses the `~` operator for modelling both stochastic and deterministic relationships between random variables.
 
 
-The `@model` macro automatically resolves any inner function calls into anonymous extra nodes in case this inner function call is a non-linear transformations. But it is important to note that the inference backend will try to optimize inner non-linear deterministic function calls in the case where all arguments are constants or data inputs. For example:
+The `@model` macro automatically resolves any inner function calls into anonymous extra nodes in case this inner function call is a non-linear transformations. It will also create needed anonymous random variables. But it is important to note that the inference backend will try to optimize inner non-linear deterministic function calls in the case where all arguments are constants or data inputs. For example:
 
 ```julia
-noise ~ NormalMeanVariance(mean, inv(precision)) # Will create a non-linear node in case if `precision` is a random variable. Won't create an additional non-linear node in case if `precision` is a constant or data input.
+noise ~ NormalMeanVariance(mean, inv(precision)) # Will create a non-linear `inv` node in case if `precision` is a random variable. Won't create an additional non-linear node in case if `precision` is a constant or data input.
 ```
 
 It is possible to use any functional expression within the `~` operator arguments list. The only one exception is the `ref` expression (e.g `x[i]`). All reference expressions within the `~` operator arguments list are left untouched during model parsing. This means that the model parser will not create unnecessary nodes when only simple indexing is involved.
+
+!!! note
+    It is forbidden to use random variable within square brackets in the model specification.
 
 ```julia
 y ~ NormalMeanVariance(x[i - 1], variance) # While in principle `i - 1` is an inner function call (`-(i, 1)`) model parser will leave it untouched and won't create any anonymous nodes for `ref` expressions.
@@ -181,6 +198,8 @@ y ~ NormalMeanVariance(y_mean, y_var) where { q = q(y_mean)q(y_var)q(y) } # mean
 A list of the available options specific to `ReactiveMP.jl` is presented below.
 
 #### Factorisation constraint option
+
+See also [Constraints Specification](@ref user-guide-constraints-specification) section.
 
 Users can specify a factorisation constraint over the approximate posterior `q` for variational inference.
 The general syntax for factorisation constraints over `q` is the following:
@@ -245,4 +264,6 @@ Is is possible to pass any extra metadata to a factor node with the `meta` optio
 z ~ f(x, y) where { meta = ... }
 ```
 
-#### WIP more options
+#### Pipeline option
+
+WIP

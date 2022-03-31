@@ -104,6 +104,8 @@ As you can see, `GraphPPL` offers a model specification syntax that resembles cl
 
 ### [Inference specification](@id getting-started-inference-specification)
 
+#### Automatic inference specification
+
 Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this we can use a generic `inference` function from `ReactiveMP.jl` that supports static datasets.
 
 ```@example coin 
@@ -122,6 +124,10 @@ println("mean: ", mean(θestimated))
 println("std:  ", std(θestimated))
 nothing #hide
 ```
+
+Read more information about the `inference` function in the [Inference execution](@ref user-guide-inference-execution) section.
+
+#### Manual inference specification
 
 There is a way to manually specify an inference procedure for advanced use-cases. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with static datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
 

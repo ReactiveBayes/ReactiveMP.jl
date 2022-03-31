@@ -14,11 +14,11 @@ makedocs(
         "Introduction"    => "index.md",
         "User guide" => [ 
             "Getting Started"           => "man/getting-started.md",
-            "Advanced Tutorial"         => "man/advanced-tutorial.md",
             "Model Specification"       => "man/model-specification.md",
             "Constraints Specification" => "man/constraints-specification.md",
             "Meta Specification"        => "man/meta-specification.md",
-            "Inference execution"       => "man/inference-execution.md"
+            "Inference execution"       => "man/inference-execution.md",
+            "Advanced Tutorial"         => "man/advanced-tutorial.md",
         ],
         "Examples" => [
             "Overview"                         => "examples/overview.md",
