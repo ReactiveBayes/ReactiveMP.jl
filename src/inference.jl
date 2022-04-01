@@ -131,14 +131,14 @@ For more information about some of the arguments, please check below.
 - `data`: `NamedTuple` or `Dict` with data, required
 - `initmarginals = nothing`: `NamedTuple` or `Dict` with initial marginals, optional, defaults to nothing
 - `initmessages = nothing`: `NamedTuple` or `Dict` with initial messages, optional, defaults to nothing
-- `constraints = nothing`: constraints specification object, see `@constraints`
-- `meta  = nothing`: meta specification object, see `@meta`
-- `options = (;)`: model creation options, see `model_options`
+- `constraints = nothing`: constraints specification object, optional, see `@constraints`
+- `meta  = nothing`: meta specification object, optional, may be required for some models, see `@meta`
+- `options = (;)`: model creation options, optional, see `model_options`
 - `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see below for more information
-- `iterations = 1`: number of iterations, defaults to 1, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations
+- `iterations = 1`: number of iterations, optional, defaults to 1, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations
 - `free_energy = false`: compute the Bethe free energy, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
 - `showprogress = false`: show progress module, optional, defaults to false
-- `callbacks = nothing`: inference cycle callbacks, see below for more info
+- `callbacks = nothing`: inference cycle callbacks, optional, see below for more info
 
 ## Extended information about some of the arguments
 

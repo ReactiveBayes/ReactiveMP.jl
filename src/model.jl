@@ -213,7 +213,9 @@ add!(model::FactorGraphModel, array::AbstractArray{ <: ConstVariable })  = begin
 add!(model::FactorGraphModel, array::AbstractArray{ <: DataVariable })   = begin append!(model.data, array); add!(getvardict(model), name(first(array)), array); return array end
 
 function activate!(model::FactorGraphModel) 
+
     filter!(getrandom(model)) do randomvar
+        @assert degree(randomvar) !== 0 "Unused random variable has been found $(name(randomvar))."
         @assert degree(randomvar) !== 1 "Half-edge has been found: $(name(randomvar)). To terminate half-edges 'Uninformative' node can be used."
         return degree(randomvar) >= 2
     end

@@ -1,4 +1,4 @@
-export rule
+
 
 @rule NormalMeanPrecision(:τ, Marginalisation) (q_out::Any, q_μ::Any) = begin
     θ = 2 / (var(q_out) + var(q_μ) + abs2(mean(q_out) - mean(q_μ)))

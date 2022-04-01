@@ -115,6 +115,8 @@ import ReactiveMP: resolve_meta
         y = randomvar(model, :y)
         tmp = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y, )), :tmp)
 
+        ReactiveMP.setanonymous!(tmp, true)
+
         @test resolve_meta(meta, model, SomeNode, (x[1], tmp)) == "meta1"
         @test resolve_meta(meta, model, SomeNode, (x[1], x[2], tmp)) == "meta1"
         @test resolve_meta(meta, model, SomeNode, (tmp, x[1])) == "meta1"

@@ -123,8 +123,6 @@ include("nodes/multiplication.jl")
 
 include("rules/prototypes.jl")
 
-include("actors/prior.jl")
-
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
 include("constraints/form/form_fixed_marginal.jl")
