@@ -4,16 +4,21 @@
 
 ### General syntax 
 
-`@constraints` macro accepts both regular julia functions and just simple blocks. In the first case it returns a function that return constraints and in the second case it returns constraints directly.
+`@constraints` macro accepts both regular julia functions and just simple blocks. For example both are valid:
 
 ```julia
-myconstraints = @constraints begin 
-    q(x) :: PointMass
-    q(x, y) = q(x)q(y)
+
+@constraints function create_my_constraints(arg1, arg2)
+    ...
 end
+
+@constraints begin 
+    ...
+end
+
 ```
 
-or 
+In the first case it returns a function that return constraints upon calling, e.g. 
 
 ```julia
 @constraints function make_constraints(flag)
@@ -24,6 +29,15 @@ or
 end
 
 myconstraints = make_constraints(true)
+```
+ 
+and in the second case it returns constraints directly.
+
+```julia
+myconstraints = @constraints begin 
+    q(x) :: PointMass
+    q(x, y) = q(x)q(y)
+end
 ```
 
 ### Marginal and messages form constraints
@@ -59,10 +73,12 @@ end
 
 indicates that the resulting posterior first maybe approximated with a `SampleList` and in addition the result of this approximation should be approximated as a `PointMass`. 
 
+!!! note
+    Not all combinations of "stacked" form constraints are compatible between each other.
 
 ### Factorisation constraints on posterior distribution `q()`
 
-`@model` macro specifies generative model `p(s, y)` where `s` is a set of random variables and `y` is a set of obseervations. In a nutshell the goal of probabilistic programming is to find `p(s|y)`. `p(s|y)` during the inference procedure can be approximated with another `q(s)` using e.g. KL divergency. By default there are no extra factorisation constraints on `q(s)` and the result is `q(s) = p(s|y)`. However, inference may be not tractable for every model without extra factorisation constraints. To circumvent this, `GraphPPL.jl` and `ReactiveMP.jl` accepts optional factorisation constraints specification syntax:
+`@model` macro specifies generative model `p(s, y)` where `s` is a set of random variables and `y` is a set of observations. In a nutshell the goal of probabilistic programming is to find `p(s|y)`. ReactiveMP approximates `p(s|y)` with a proxy distribution `q(x)` using KL divergency and Bethe Free Energy optimisation procedure. By default there are no extra factorisation constraints on `q(s)` and the optimal solution is `q(s) = p(s|y)`. However, inference may be not tractable for every model without extra factorisation constraints. To circumvent this, `GraphPPL.jl` and `ReactiveMP.jl` accepts optional factorisation constraints specification syntax:
 
 For example:
 
@@ -76,12 +92,12 @@ specifies a so-called mean-field assumption on variables `x` and `y` in the mode
 
 ```julia
 @constraints begin 
-    q(x, y) = q(x)q(y)
     q(x) = q(x[begin])..q(x[end])
+    q(x, y) = q(x)q(y)
 end
 ```
 
-These constraints specifies a mean-field assumption between variables `x` and `y` (either single variable or collection of variables) and additionally specifies mean-field assumption on variables `x_i`.
+These constraints specifies a mean-field assumption between variables `x` and `y` (either single variable or collection of variables) and additionally specifies mean-field assumption on variables $x_i$.
 
 !!! note 
     `@constraints` macro does not support matrix-based collections of variables. E.g. it is not possible to write `q(x[begin, begin])..q(x[end, end])`
@@ -104,7 +120,7 @@ end
 
 In this example we specify a mean-field assumption between a set of variables `x[begin:k]` and `x[k+1:end]`. 
 
-To create a model with extra constraints user may use optional `constraints` keyword argument for the model function:
+To create a model with extra constraints user may pass optional `constraints` positional argument for the model function:
 
 ```julia
 @model function my_model(arguments...)
@@ -115,5 +131,7 @@ constraints = @constraints begin
     ...
 end
 
-model, (x, y) = model_name(arguments..., constraints = constraints)
+model, (x, y) = my_model(constraints, arguments...)
 ```
+
+Alternatively, it is possible to use [`Model`](@ref) function directly or resort to the automatic [`inference`](@ref) function that accepts `constraints` keyword argument. 

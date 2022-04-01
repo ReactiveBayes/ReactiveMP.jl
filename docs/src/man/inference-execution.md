@@ -26,6 +26,8 @@ feature. Read about both automatic and manual approaches below.
 
 ## [Automatic inference specification](@id user-guide-inference-execution-automatic-specification)
 
+ReactiveMP.jl exports user friendly `inference` function to quickly run and test you model with static datasets. Note, however, that this function does not use all capabilities of ReactiveMP.jl library and for advanced use cases you may want to resort to the [manual inference specification](@ref user-guide-inference-execution-manual-specification) section and [Advanced Tutorial](@ref ) section.
+
 ```@docs
 inference
 ```

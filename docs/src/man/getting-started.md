@@ -125,7 +125,7 @@ println("std:  ", std(θestimated))
 nothing #hide
 ```
 
-Read more information about the `inference` function in the [Inference execution](@ref user-guide-inference-execution) section.
+Read more information about the `inference` function in the [Inference execution](@ref user-guide-inference-execution-automatic-specification) and [Advanced Tutorial](@ref user-guide-advanced-tutorial) sections.
 
 #### Manual inference specification
 
