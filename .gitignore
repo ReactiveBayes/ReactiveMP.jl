@@ -28,6 +28,7 @@ Coverage.ipynb
 examples/*Compiled
 
 **/Manifest.toml
+**/LocalPreferences.toml
 !benchmark/Manifest.toml
 
 **/.benchmarkci
