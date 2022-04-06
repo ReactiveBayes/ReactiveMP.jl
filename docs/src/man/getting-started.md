@@ -102,6 +102,9 @@ end
 
 As you can see, `GraphPPL` offers a model specification syntax that resembles closely to the mathematical equations defined above. We use `datavar` function to create "clamped" variables that take specific values at a later date. `θ ~ Beta(2.0, 7.0)` expression creates random variable `θ` and assigns it as an output of `Beta` node in the corresponding FFG. 
 
+!!! note
+    To quickly check the list of all available factor nodes that can be used in the model specification language call `?make_node` or `Base.doc(make_node)`.
+
 ### [Inference specification](@id getting-started-inference-specification)
 
 #### Automatic inference specification

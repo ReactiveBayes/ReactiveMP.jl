@@ -743,6 +743,15 @@ function conjugate_type end
 
 ## make_node
 
+"""
+    make_node(node, options)
+
+Creates a factor node of a given type and options. See the list of avaialble factor nodes below.
+
+See also: [`@node`](@ref)
+
+# List of available nodes:
+"""
 function make_node end
 
 function interface_get_index end
@@ -768,7 +777,14 @@ import .MacroHelpers
 """
     @node(fformtype, sdtype, interfaces_list)
 
-`@node` macro creates a node for a `fformtype` type object 
+
+`@node` macro creates a node for a `fformtype` type object. To obtain a list of available nodes use `?make_node`.
+
+# Arguments
+
+- `fformtype`: Either an existing type identifier, e.g. `Normal` or a function type identifier, e.g. `typeof(+)`
+- `sdtype`: Either `Stochastic` or `Deterministic`. Defines the type of the functional relationship
+- `interfaces_list`: Defines a fixed list of edges of a factor node, by convention the first element should be `out`. Example: `[ out, mean, variance ]`
 
 # Examples
 ```julia
@@ -785,6 +801,10 @@ end
 
 @node typeof(+) Deterministic [ out, in1, in2 ]
 ```
+
+# List of available nodes
+
+See `?make_node`.
 
 See also: [`make_node`](@ref), [`Stochastic`](@ref), [`Deterministic`](@ref)
 """
@@ -865,6 +885,15 @@ macro node(fformtype, sdtype, interfaces_list)
     else
         error("Unreachable in @node macro.") 
     end
+
+
+
+    doctype   = rpad(fbottomtype, 30)
+    docsdtype = rpad(sdtype, 15)
+    docedges  = string(interfaces_list)
+    doc       = """
+        $doctype : $docsdtype : $docedges
+    """
     
     res = quote
 
@@ -874,6 +903,7 @@ macro node(fformtype, sdtype, interfaces_list)
 
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
         
+        @doc $doc
         function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions)
             return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation(options)), ReactiveMP.collect_meta($fbottomtype, metadata(options)), ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options)))
         end
