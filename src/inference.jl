@@ -139,6 +139,7 @@ For more information about some of the arguments, please check below.
 - `free_energy = false`: compute the Bethe free energy, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
 - `showprogress = false`: show progress module, optional, defaults to false
 - `callbacks = nothing`: inference cycle callbacks, optional, see below for more info
+- `warn = true`: enables/disables warnings
 
 ## Extended information about some of the arguments
 
@@ -247,6 +248,8 @@ function inference(;
     showprogress = false,
     # Inference cycle callbacks
     callbacks = nothing,
+    # warn, optional, defaults to true
+    warn = true
 )
 
     inference_invoke_callback(callbacks, :before_model_creation)
@@ -258,13 +261,19 @@ function inference(;
     # `KeepEach` for each random and not-proxied variable in a model
     if returnvars === nothing 
         returnvars = Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
+    else 
+        foreach(pairs(returnvars)) do pair 
+            if warn && !haskey(vardict, first(pair))
+                @warn "`returnvars` object has `$(first(pair))` specification, but model has no variable named `$(first(pair))`. Use `warn = false` to supress this warning."
+            end
+        end
     end
 
     # Second, for each random variable entry we create an actor
-    actors  = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars))
+    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars) if haskey(vardict, variable))
 
     # At third, for each random variable entry we create a boolean flag to track their updates
-    updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(returnvars))
+    updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(actors))
 
     try 
         on_marginal_update = inference_get_callback(callbacks, :on_marginal_update)
@@ -282,21 +291,29 @@ function inference(;
 
         if !isnothing(initmarginals)
             for (variable, initvalue) in pairs(initmarginals)
-                assign_marginal!(vardict[variable], initvalue)
+                if haskey(vardict, variable)
+                    assign_marginal!(vardict[variable], initvalue)
+                elseif warn
+                    @warn "`initmarginals` object has `$(variable)` specification, but model has no variable named `$(variable)`. Use `warn = false` to supress this warning."
+                end
             end
         end
 
         if !isnothing(initmessages)
             for (variable, initvalue) in pairs(initmessages)
-                assign_message!(vardict[variable], initvalue)
+                if haskey(vardict, variable)
+                    assign_message!(vardict[variable], initvalue)
+                elseif warn
+                    @warn "`initmessages` object has `$(variable)` specification, but model has no variable named `$(variable)`. Use `warn = false` to supress this warning."
+                end
             end
         end
 
         if isnothing(data) || isempty(data)
             error("Data is empty. Make sure you used `data` keyword argument with correct value.")
         else 
-            foreach(filter(pair -> first(pair) isa DataVariable, pairs(vardict))) do pair
-                haskey(data, name(pair)) || error("Data entry $(name(p)) is missing in `data` dictionary.")
+            foreach(filter(pair -> isdata(last(pair)), pairs(vardict))) do pair
+                haskey(data, first(pair)) || error("Data entry $(first(pair)) is missing in `data` dictionary.")
             end
         end
 
@@ -304,10 +321,19 @@ function inference(;
 
         inference_invoke_callback(callbacks, :before_inference, fmodel)
 
+        fdata = filter(pairs(data)) do pair
+            hk      = haskey(vardict, first(pair))
+            is_data = hk ? isdata(vardict[first(pair)]) : false
+            if warn && (!hk || !is_data)
+                @warn "`data` object has `$(first(pair))` specification, but model has no data input named `$(first(pair))`. Use `warn = false` to supress this warning."
+            end
+            return hk && is_data
+        end
+
         for iteration in 1:iterations
             inference_invoke_callback(callbacks, :before_iteration, fmodel, iteration)
             inference_invoke_callback(callbacks, :before_data_update, fmodel, data)
-            for (key, value) in pairs(data)
+            for (key, value) in fdata
                 update!(vardict[key], value)
             end
             inference_invoke_callback(callbacks, :after_data_update, fmodel, data)

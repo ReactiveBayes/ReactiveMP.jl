@@ -56,6 +56,9 @@ nconnected(datavar::DataVariable)      = datavar.nconnected
 isproxy(::DataVariable)  = false
 israndom(::DataVariable) = false
 
+isdata(::DataVariable)                     = true
+isdata(::AbstractArray{ <: DataVariable }) = true
+
 getlastindex(::DataVariable) = 1
 
 messageout(datavar::DataVariable, ::Int) = datavar.messageout

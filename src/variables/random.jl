@@ -141,8 +141,13 @@ _messages_form_check_strategy(form_check_strategy, randomvar::RandomVariable)   
 
 isproxy(randomvar::RandomVariable) = proxy_variables(randomvar) !== nothing
 
+isdata(::RandomVariable)                     = false
+isdata(::AbstractArray{ <: RandomVariable }) = false
+
 israndom(::RandomVariable)                     = true
 israndom(::AbstractArray{ <: RandomVariable }) = true
+
+
 
 messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), messages_form_constraint(randomvar), messages_form_check_strategy(randomvar))
 marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), marginal_form_constraint(randomvar), marginal_form_check_strategy(randomvar))
