@@ -744,6 +744,7 @@ function conjugate_type end
 ## make_node
 
 """
+    make_node(node)
     make_node(node, options)
 
 Creates a factor node of a given type and options. See the list of avaialble factor nodes below.
