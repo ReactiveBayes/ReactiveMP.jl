@@ -264,7 +264,7 @@ function inference(;
     else 
         foreach(pairs(returnvars)) do pair 
             if warn && !haskey(vardict, first(pair))
-                @warn "`returnvars` object has `$(first(pair))` specification, but model has no variable named `$(first(pair))`. Use `warn = false` to supress this warning."
+                @warn "`returnvars` object has `$(first(pair))` specification, but model has no variable named `$(first(pair))`. Use `warn = false` to suppress this warning."
             end
         end
     end
@@ -294,7 +294,7 @@ function inference(;
                 if haskey(vardict, variable)
                     assign_marginal!(vardict[variable], initvalue)
                 elseif warn
-                    @warn "`initmarginals` object has `$(variable)` specification, but model has no variable named `$(variable)`. Use `warn = false` to supress this warning."
+                    @warn "`initmarginals` object has `$(variable)` specification, but model has no variable named `$(variable)`. Use `warn = false` to suppress this warning."
                 end
             end
         end
@@ -304,7 +304,7 @@ function inference(;
                 if haskey(vardict, variable)
                     assign_message!(vardict[variable], initvalue)
                 elseif warn
-                    @warn "`initmessages` object has `$(variable)` specification, but model has no variable named `$(variable)`. Use `warn = false` to supress this warning."
+                    @warn "`initmessages` object has `$(variable)` specification, but model has no variable named `$(variable)`. Use `warn = false` to suppress this warning."
                 end
             end
         end
@@ -325,7 +325,7 @@ function inference(;
             hk      = haskey(vardict, first(pair))
             is_data = hk ? isdata(vardict[first(pair)]) : false
             if warn && (!hk || !is_data)
-                @warn "`data` object has `$(first(pair))` specification, but model has no data input named `$(first(pair))`. Use `warn = false` to supress this warning."
+                @warn "`data` object has `$(first(pair))` specification, but model has no data input named `$(first(pair))`. Use `warn = false` to suppress this warning."
             end
             return hk && is_data
         end
