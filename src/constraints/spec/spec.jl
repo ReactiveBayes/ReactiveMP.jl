@@ -49,6 +49,14 @@ const __EmptyConstraints = ConstraintsSpecification((), (;), (;))
 
 __reset_preallocated!(specification::ConstraintsSpecification, size::Int) = __reset_preallocated!(specification.preallocated, size)
 
+function activate!(constraints::UnspecifiedConstraints, model) 
+    return nothing
+end
+
+function activate!(constraints::ConstraintsSpecification, model)
+    return nothing
+end
+
 function Base.show(io::IO, specification::ConstraintsSpecification) 
     print(io, "Constraints:\n")
     print(io, "\tmarginals form:\n")

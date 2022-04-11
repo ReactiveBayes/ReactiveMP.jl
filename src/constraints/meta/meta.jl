@@ -75,3 +75,13 @@ function resolve_meta(metaspec, model, fform, variables)
 end
 
 resolve_meta(metaspec::UnspecifiedMeta, model, fform, variables) = nothing
+
+## 
+
+function activate!(meta::UnspecifiedMeta, model)
+    return nothing
+end
+
+function activate!(meta::MetaSpecification, model)
+    return nothing
+end

@@ -8,6 +8,10 @@ using Test, Documenter, ReactiveMP, Distributions
 using TestSetExtensions
 using Aqua
 
+# Unregistered GraphPPL, do not commit this two lines, but use them to test ReactiveMP locally
+# ENV["JULIA_PKG_USE_CLI_GIT"] = true
+# import Pkg; Pkg.rm("GraphPPL"); Pkg.add(Pkg.PackageSpec(name="GraphPPL", rev="master"));
+
 # DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
 
 # Example usage of a reduced testset

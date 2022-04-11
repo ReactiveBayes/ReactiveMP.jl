@@ -215,16 +215,19 @@ add!(model::FactorGraphModel, array::AbstractArray{ <: DataVariable })   = begin
 function activate!(model::FactorGraphModel) 
 
     filter!(getrandom(model)) do randomvar
-        @assert degree(randomvar) !== 0 "Unused random variable has been found $(name(randomvar))."
-        @assert degree(randomvar) !== 1 "Half-edge has been found: $(name(randomvar)). To terminate half-edges 'Uninformative' node can be used."
+        @assert degree(randomvar) !== 0 "Unused random variable has been found $(indexed_name(randomvar))."
+        @assert degree(randomvar) !== 1 "Half-edge has been found: $(indexed_name(randomvar)). To terminate half-edges 'Uninformative' node can be used."
         return degree(randomvar) >= 2
     end
 
     foreach(getdata(model)) do datavar
         if !isconnected(datavar)
-            @warn "Unused data variable has been found: '$(name(datavar))'. Ignore if '$(name(datavar))' has been used in deterministic nonlinear tranformation."
+            @warn "Unused data variable has been found: '$(indexed_name(datavar))'. Ignore if '$(indexed_name(datavar))' has been used in deterministic nonlinear tranformation."
         end
     end
+
+    activate!(getconstraints(model), model)
+    activate!(getmeta(model), model)
 
     filter!(c -> isconnected(c), getconstant(model))
     foreach(r -> activate!(model, r), getrandom(model))
