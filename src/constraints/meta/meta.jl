@@ -44,6 +44,8 @@ getoptions(specification::MetaSpecification) = specification.options
 function Base.show(io::IO, specification::MetaSpecification)
     print(io, "Meta specification:\n  ")
     join(io, specification.entries, "\n  ")
+    print(io, "\nOptions:\n")
+    print(io, "  warn = ", specification.options.warn)
 end
 
 struct UnspecifiedMeta end

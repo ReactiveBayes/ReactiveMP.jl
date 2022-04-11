@@ -46,6 +46,8 @@ end
 
 ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S, options::ConstraintsSpecificationOptions) where { F, M, S } = ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, options, ConstraintsSpecificationPreallocated())
 
+getoptions(specification::ConstraintsSpecification) = specification.options
+
 struct UnspecifiedConstraints end
 
 const DefaultConstraints = UnspecifiedConstraints()
@@ -76,6 +78,6 @@ function Base.show(io::IO, specification::ConstraintsSpecification)
     foreach(specification.factorisation) do f
         print(io, "    ", f, "\n")
     end
-    print(io, "  options:\n")
-    print(io, "    warn = ", specification.options.warn, "\n")
+    print(io, "Options:\n")
+    print(io, "  warn = ", specification.options.warn, "\n")
 end
