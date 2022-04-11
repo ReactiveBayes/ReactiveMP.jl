@@ -26,19 +26,24 @@ metadata(entry::MetaSpecificationEntry)       = entry.meta
 function Base.show(io::IO, entry::MetaSpecificationEntry)
     print(io, functionalform(entry), "(")
     join(io, getnames(entry), ", ")
-    print(io, ") = ", metadata(entry))
+    print(io, ") -> ", metadata(entry))
 end
 
+struct MetaSpecificationOptions 
+    warn :: Bool
+end
 
 struct MetaSpecification{E}
     entries :: E
+    options :: MetaSpecificationOptions
 end
 
 getentries(specification::MetaSpecification) = specification.entries
+getoptions(specification::MetaSpecification) = specification.options
 
 function Base.show(io::IO, specification::MetaSpecification)
-    print(io, "Meta specification:\n\t")
-    join(io, specification.entries, "\n\t")
+    print(io, "Meta specification:\n  ")
+    join(io, specification.entries, "\n  ")
 end
 
 struct UnspecifiedMeta end

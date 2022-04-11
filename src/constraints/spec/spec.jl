@@ -32,20 +32,25 @@ function __reset_preallocated!(preallocated::ConstraintsSpecificationPreallocate
     empty!(preallocated.clusters_set)
 end
 
+struct ConstraintsSpecificationOptions
+    warn :: Bool
+end
+
 struct ConstraintsSpecification{F, M, S}
     factorisation :: F
     marginalsform :: M
     messagesform  :: S
-    preallocated :: ConstraintsSpecificationPreallocated
+    options       :: ConstraintsSpecificationOptions
+    preallocated  :: ConstraintsSpecificationPreallocated
 end
 
-ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S) where { F, M, S } = ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, ConstraintsSpecificationPreallocated())
+ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S, options::ConstraintsSpecificationOptions) where { F, M, S } = ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, options, ConstraintsSpecificationPreallocated())
 
 struct UnspecifiedConstraints end
 
 const DefaultConstraints = UnspecifiedConstraints()
 
-const __EmptyConstraints = ConstraintsSpecification((), (;), (;))
+const __EmptyConstraints = ConstraintsSpecification((), (;), (;), ConstraintsSpecificationOptions(true))
 
 __reset_preallocated!(specification::ConstraintsSpecification, size::Int) = __reset_preallocated!(specification.preallocated, size)
 
@@ -59,16 +64,18 @@ end
 
 function Base.show(io::IO, specification::ConstraintsSpecification) 
     print(io, "Constraints:\n")
-    print(io, "\tmarginals form:\n")
+    print(io, "  marginals form:\n")
     foreach(pairs(specification.marginalsform)) do spec 
-        print(io, "\t\tq(", first(spec), ") :: ", last(spec), "\n")
+        print(io, "    q(", first(spec), ") :: ", last(spec), "\n")
     end
-    print(io, "\tmessages form:\n")
+    print(io, "  messages form:\n")
     foreach(pairs(specification.messagesform)) do spec 
-        print(io, "\t\tq(", first(spec), ") :: ", last(spec), "\n")
+        print(io, "    q(", first(spec), ") :: ", last(spec), "\n")
     end
-    print(io, "\tfactorisation:\n")
+    print(io, "  factorisation:\n")
     foreach(specification.factorisation) do f
-        print(io, "\t\t", f, "\n")
+        print(io, "    ", f, "\n")
     end
+    print(io, "  options:\n")
+    print(io, "    warn = ", specification.options.warn, "\n")
 end
