@@ -68,13 +68,14 @@ function activate!(constraints::ConstraintsSpecification, model)
     warn    = iswarn(options)
 
     # Check functional forms first 
-    # Case 1: variable from functional form constraint (either marginal or message) does not exist in the model
 
     # Check marginal form constraints
     foreach(pairs(constraints.marginalsform)) do entry 
         specname = first(entry)
+        # Check if form constrain applied for datavar or constvar
         if warn && (hasdatavar(model, specname) || hasconstvar(model, specname))
             @warn "Constraints specification has marginal form constraint for `q($(specname))`, but `$(specname)` is not a random variable. It is not possible to set a form constrain on non-random variable. Form constraint is ignored. Use `warn = false` option during constraints specification to supress this warning."
+        # Check if variable does not exist 
         elseif warn && !hasrandomvar(model, specname)
             @warn "Constraints specification has marginal form constraint for `q($(specname))`, but model has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to supress this warning."
         end
@@ -83,10 +84,24 @@ function activate!(constraints::ConstraintsSpecification, model)
     # Check messages form constraints
     foreach(pairs(constraints.messagesform)) do entry 
         specname = first(entry)
+        # Check if form constrain applied for datavar or constvar
         if warn && (hasdatavar(model, specname) || hasconstvar(model, specname))
             @warn "Constraints specification has messages form constraint for `μ($(specname))`, but `$(specname)` is not a random variable. It is not possible to set a form constrain on non-random variable. Form constraint is ignored. Use `warn = false` option during constraints specification to supress this warning."
+        # Check if variable does not exist 
         elseif warn && !hasrandomvar(model, specname)
             @warn "Constraints specification has messages form constraint for `μ($(specname))`, but model has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to supress this warning."
+        end
+    end
+
+    # Check LHS of factorisation constraints
+    foreach(constraints.factorisation) do spec 
+        specnames = getnames(spec)
+        foreach(specnames) do specname
+            if warn && (hasdatavar(model, specname) || hasconstvar(model, specname))
+                @warn "Constraints specification has factorisation constraint for `q($(join(specnames, ", ")))`, but `$(specname)` is not a random variable. Data variables and constants in the model are forced to be factorized by default such that `q($(join(specnames, ", "))) = q($(specname))q(...)` . Use `warn = false` option during constraints specification to supress this warning."
+            elseif warn && !hasrandomvar(model, specname)
+                @warn "Constraints specification has factorisation constraint for `q($(join(specnames, ", ")))`, but model has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to supress this warning."
+            end
         end
     end
 

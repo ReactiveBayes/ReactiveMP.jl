@@ -8,7 +8,7 @@ import ReactiveMP: CombinedRange, SplittedRange, is_splitted
 import ReactiveMP: __as_unit_range, __factorisation_specification_resolve_index
 import ReactiveMP: resolve_factorisation
 import ReactiveMP: DefaultConstraints
-import ReactiveMP: setanonymous!
+import ReactiveMP: setanonymous!, activate!
 
 using GraphPPL # for `@constraints` macro
 
@@ -524,6 +524,64 @@ using GraphPPL # for `@constraints` macro
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, y, c)) === ((1, 3), (2,), (4, ))
                 end
             end
+        end
+
+        ## Warning testing below
+
+        # Variable does not exist
+        @testset "Warning case #1" begin 
+
+            model = FactorGraphModel()
+
+            cs_with_warn = @constraints [ warn = true ] begin 
+                q(x) = q(x[begin])..q(x[end])
+            end
+
+            cs_without_warn = @constraints [ warn = false ] begin 
+                q(x) = q(x[begin])..q(x[end])
+            end
+
+            @test_logs (:warn, r".*q(.*).*has no random variable") activate!(cs_with_warn, model)
+            @test_logs min_level = Logging.Warn activate!(cs_without_warn, model)
+
+        end
+
+        @testset "Warning case #2" begin 
+            # datavar in factorisation constraint
+            model = FactorGraphModel()
+
+            x = datavar(model, :x, Float64)
+
+            cs_with_warn = @constraints [ warn = true ] begin 
+                q(x) = q(x[begin])..q(x[end])
+            end
+
+            cs_without_warn = @constraints [ warn = false ] begin 
+                q(x) = q(x[begin])..q(x[end])
+            end
+
+            @test_logs (:warn, r".*q(.*).*is not a random variable") activate!(cs_with_warn, model)
+            @test_logs min_level = Logging.Warn activate!(cs_without_warn, model)
+
+        end
+
+        @testset "Warning case #3" begin 
+            # constvar in factorisation constraint
+            model = FactorGraphModel()
+
+            x = constvar(model, :x, 1.0)
+
+            cs_with_warn = @constraints [ warn = true ] begin 
+                q(x) = q(x[begin])..q(x[end])
+            end
+
+            cs_without_warn = @constraints [ warn = false ] begin 
+                q(x) = q(x[begin])..q(x[end])
+            end
+
+            @test_logs (:warn, r".*q(.*).*is not a random variable") activate!(cs_with_warn, model)
+            @test_logs min_level = Logging.Warn activate!(cs_without_warn, model)
+
         end
 
         ## Error testing below
