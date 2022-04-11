@@ -156,8 +156,8 @@ as_variable(v::AbstractVariable) = v
 as_variable(t::Tuple)            = map(as_variable, t)
 
 
-
 israndom(v::AbstractArray{ <: AbstractVariable }) = all(israndom, v)
 isdata(v::AbstractArray{ <: AbstractVariable })   = all(isdata, v)
+isconst(v::AbstractArray{ <: AbstractVariable })  = all(isconst, v)
 isproxy(v::AbstractArray{ <: AbstractVariable })  = any(isproxy, v)
 

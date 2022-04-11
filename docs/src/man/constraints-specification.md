@@ -40,6 +40,19 @@ myconstraints = @constraints begin
 end
 ```
 
+### Options specification 
+
+`@constraints` macro accepts optional list of options as a first argument and specified as an array of `key = value` pairs, e.g. 
+
+```julia
+myconstraints = @constraints [ warn = false ] begin 
+   ...
+end
+```
+
+List of available options:
+- `warn::Bool` - enables/disables various warnings with an incompatible model/constraints specification
+
 ### Marginal and messages form constraints
 
 To specify marginal or messages form constraints `@constraints` macro uses `::` operator (in the similar way as Julia uses it for type specification)

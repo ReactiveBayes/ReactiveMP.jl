@@ -2,6 +2,8 @@
 
 Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to change or customise the inference procedure. As an example `GCV` node accepts the approxximation method that will be used to approximate non-conjugate relationships between variables in this node. `GraphPPL.jl` exports `@meta` macro to specify node-specific meta and contextual information. For example:
 
+### General syntax 
+
 `@meta` macro accepts both regular julia functions and just simple blocks. For example both are valid:
 
 ```julia
@@ -34,7 +36,20 @@ mymeta = @meta begin
 end
 ```
 
-## Syntax 
+### Options specification 
+
+`@meta` macro accepts optional list of options as a first argument and specified as an array of `key = value` pairs, e.g. 
+
+```julia
+mymeta = @meta [ warn = false ] begin 
+   ...
+end
+```
+
+List of available options:
+- `warn::Bool` - enables/disables various warnings with an incompatible model/meta specification
+
+### Meta specification
 
 First, lets start with an example:
 

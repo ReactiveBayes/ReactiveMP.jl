@@ -36,6 +36,8 @@ struct ConstraintsSpecificationOptions
     warn :: Bool
 end
 
+iswarn(options::ConstraintsSpecificationOptions) = options.warn
+
 struct ConstraintsSpecification{F, M, S}
     factorisation :: F
     marginalsform :: M
@@ -61,6 +63,33 @@ function activate!(constraints::UnspecifiedConstraints, model)
 end
 
 function activate!(constraints::ConstraintsSpecification, model)
+
+    options = getoptions(constraints)
+    warn    = iswarn(options)
+
+    # Check functional forms first 
+    # Case 1: variable from functional form constraint (either marginal or message) does not exist in the model
+
+    # Check marginal form constraints
+    foreach(pairs(constraints.marginalsform)) do entry 
+        specname = first(entry)
+        if warn && (hasdatavar(model, specname) || hasconstvar(model, specname))
+            @warn "Constraints specification has marginal form constraint for `q($(specname))`, but `$(specname)` is not a random variable. It is not possible to set a form constrain on non-random variable. Form constraint is ignored. Use `warn = false` option during constraints specification to supress this warning."
+        elseif warn && !hasrandomvar(model, specname)
+            @warn "Constraints specification has marginal form constraint for `q($(specname))`, but model has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to supress this warning."
+        end
+    end
+
+    # Check messages form constraints
+    foreach(pairs(constraints.messagesform)) do entry 
+        specname = first(entry)
+        if warn && (hasdatavar(model, specname) || hasconstvar(model, specname))
+            @warn "Constraints specification has messages form constraint for `μ($(specname))`, but `$(specname)` is not a random variable. It is not possible to set a form constrain on non-random variable. Form constraint is ignored. Use `warn = false` option during constraints specification to supress this warning."
+        elseif warn && !hasrandomvar(model, specname)
+            @warn "Constraints specification has messages form constraint for `μ($(specname))`, but model has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to supress this warning."
+        end
+    end
+
     return nothing
 end
 
@@ -72,7 +101,7 @@ function Base.show(io::IO, specification::ConstraintsSpecification)
     end
     print(io, "  messages form:\n")
     foreach(pairs(specification.messagesform)) do spec 
-        print(io, "    q(", first(spec), ") :: ", last(spec), "\n")
+        print(io, "    μ(", first(spec), ") :: ", last(spec), "\n")
     end
     print(io, "  factorisation:\n")
     foreach(specification.factorisation) do f

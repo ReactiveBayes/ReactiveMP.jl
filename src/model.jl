@@ -190,6 +190,10 @@ function Base.haskey(model::FactorGraphModel, symbol::Symbol)
     return haskey(getvardict(model), symbol)
 end
 
+hasrandomvar(model::FactorGraphModel, symbol::Symbol) = haskey(model, symbol) ? israndom(getindex(model, symbol)) : false
+hasdatavar(model::FactorGraphModel, symbol::Symbol)   = haskey(model, symbol) ? isdata(getindex(model, symbol)) : false
+hasconstvar(model::FactorGraphModel, symbol::Symbol)  = haskey(model, symbol) ? isconst(getindex(model, symbol)) : false
+
 firstindex(model::FactorGraphModel, symbol::Symbol) = firstindex(model, getindex(model, symbol))
 lastindex(model::FactorGraphModel, symbol::Symbol)  = lastindex(model, getindex(model, symbol))
 

@@ -33,6 +33,8 @@ struct MetaSpecificationOptions
     warn :: Bool
 end
 
+iswarn(options::MetaSpecificationOptions) = options.warn
+
 struct MetaSpecification{E}
     entries :: E
     options :: MetaSpecificationOptions

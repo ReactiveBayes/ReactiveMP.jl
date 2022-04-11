@@ -54,10 +54,13 @@ isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)      = datavar.nconnected
 
 isproxy(::DataVariable)  = false
-israndom(::DataVariable) = false
 
-isdata(::DataVariable)                     = true
-isdata(::AbstractArray{ <: DataVariable }) = true
+israndom(::DataVariable)                     = false
+israndom(::AbstractArray{ <: DataVariable }) = false
+isdata(::DataVariable)                       = true
+isdata(::AbstractArray{ <: DataVariable })   = true
+isconst(::DataVariable)                      = false
+isconst(::AbstractArray{ <: DataVariable })  = false
 
 getlastindex(::DataVariable) = 1
 

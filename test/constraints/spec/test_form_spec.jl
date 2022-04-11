@@ -1,11 +1,13 @@
 module ReactiveMPFormConstraintsSpecTest 
 
 using Test
+using Logging
 using ReactiveMP 
 using GraphPPL
 
 import ReactiveMP: CompositeFormConstraint
 import ReactiveMP: resolve_marginal_form_prod, resolve_messages_form_prod
+import ReactiveMP: activate!
 
 
 @testset "Form constraints specification" begin 
@@ -336,6 +338,70 @@ import ReactiveMP: resolve_marginal_form_prod, resolve_messages_form_prod
         @test let (form, prod) = resolve_messages_form_prod(cs, model, :y) 
             form === PointMassFormConstraint() && prod === ProdGeneric()
         end
+    end
+
+    @testset "Warning case #1" begin 
+        model = FactorGraphModel()
+
+        cs_with_warn = @constraints [ warn = true ] begin 
+            q(x) :: PointMass # Unknown variable for marginal
+        end
+
+        cs_without_warn = @constraints [ warn = false ] begin 
+            q(x) :: PointMass # Unknown variable for marginal
+        end
+
+        @test_logs (:warn, r".*q(.*).*no random variable") activate!(cs_with_warn, model)
+        @test_logs min_level = Logging.Warn activate!(cs_without_warn, model)
+    end
+
+    @testset "Warning case #2" begin 
+        model = FactorGraphModel()
+
+        cs_with_warn = @constraints [ warn = true ] begin 
+            μ(x) :: PointMass # Unknown variable for marginal
+        end
+
+        cs_without_warn = @constraints [ warn = false ] begin 
+            μ(x) :: PointMass # Unknown variable for marginal
+        end
+
+        @test_logs (:warn, r".*μ(.*).*no random variable") activate!(cs_with_warn, model)
+        @test_logs min_level = Logging.Warn activate!(cs_without_warn, model)
+    end
+
+    @testset "Warning case #3" begin 
+        model = FactorGraphModel()
+
+        x = datavar(model, :x, Float64)
+
+        cs_with_warn = @constraints [ warn = true ] begin 
+            q(x) :: PointMass # Unknown variable for marginal
+        end
+
+        cs_without_warn = @constraints [ warn = false ] begin 
+            q(x) :: PointMass # Unknown variable for marginal
+        end
+
+        @test_logs (:warn, r".*q(.*).*is not a random variable") activate!(cs_with_warn, model)
+        @test_logs min_level = Logging.Warn activate!(cs_without_warn, model)
+    end
+
+    @testset "Warning case #4" begin 
+        model = FactorGraphModel()
+
+        x = constvar(model, :x, 1.0)
+
+        cs_with_warn = @constraints [ warn = true ] begin 
+            q(x) :: PointMass # Unknown variable for marginal
+        end
+
+        cs_without_warn = @constraints [ warn = false ] begin 
+            q(x) :: PointMass # Unknown variable for marginal
+        end
+
+        @test_logs (:warn, r".*q(.*).*is not a random variable") activate!(cs_with_warn, model)
+        @test_logs min_level = Logging.Warn activate!(cs_without_warn, model)
     end
 
     @testset "Error case #1" begin

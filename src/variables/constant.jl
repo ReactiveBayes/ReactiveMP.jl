@@ -36,10 +36,13 @@ proxy_variables(constvar::ConstVariable) = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
 
 isproxy(::ConstVariable)  = false
-israndom(::ConstVariable) = false
 
-isdata(::ConstVariable)                     = false
-isdata(::AbstractArray{ <: ConstVariable }) = false
+israndom(::ConstVariable)                     = false
+israndom(::AbstractArray{ <: ConstVariable }) = false
+isdata(::ConstVariable)                       = false
+isdata(::AbstractArray{ <: ConstVariable })   = false
+isconst(::ConstVariable)                      = true
+isconst(::AbstractArray{ <: ConstVariable })  = true
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 

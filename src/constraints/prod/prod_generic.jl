@@ -84,7 +84,7 @@ struct ProdGeneric{C} <: AbstractProdConstraint
     prod_constraint :: C
 end
 
-Base.show(io::IO, prod::ProdGeneric) = print(io, "ProdGeneric(", prod.prod_constraint, ")")
+Base.show(io::IO, prod::ProdGeneric) = print(io, "ProdGeneric(fallback = ", prod.prod_constraint, ")")
 
 get_constraint(prod_generic::ProdGeneric) = prod_generic.prod_constraint
 
