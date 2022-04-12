@@ -1,5 +1,7 @@
+export AbstractFormConstraint
 export FormConstraintCheckEach, FormConstraintCheckLast, FormConstraintCheckPickDefault
-export constrain_form, default_form_check_strategy, is_point_mass_form_constraint
+export constrain_form, default_prod_constraint, default_form_check_strategy, is_point_mass_form_constraint, make_form_constraint
+export CompositeFormConstraint
 
 using TupleTools
 
@@ -11,6 +13,15 @@ import Base: +
 # after each subsequent `prod` 
 # or we may want to wait after all `prod` functions in the equality chain have been executed 
 
+"""
+    AbstractFormConstraint
+
+Every functional form constraint is a subtype of `AbstractFormConstraint` abstract type.
+
+Note: this is not strictly necessary, but it makes automatic dispatch easier and compatible with the `CompositeFormConstraint`.
+
+See also: [`CompositeFormConstraint`](@ref)
+"""
 abstract type AbstractFormConstraint end
 
 """
@@ -73,11 +84,9 @@ See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), 
 function is_point_mass_form_constraint end
 
 """
-    constrain_form(form_constraint, something)
+    constrain_form(form_constraint, distribution)
 
-Checks that the functional form of `something` object fits `form_constraint` constraint.
-If functional form of `something` object does not fit the given constraint this function 
-should try to approximate `something` object to be in line with the given `form_constraint`.
+This function must approximate `distribution` object in a form that satisfies `form_constraint`.
 
 See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`is_point_mass_form_constraint`](@ref)
 """
@@ -105,7 +114,12 @@ See also: [`AbstractFormConstraint`](@ref)
 """
 function make_form_constraint end
 
+"""
+    CompositeFormConstraint
 
+Creates a composite form constraint that applies form constraints in order. The composed form constraints must be compatible and have the exact same `form_check_strategy`. 
+Any functional form constraint that defines `is_point_mass_form_constraint() = true` may be used only as the last element of the composition.
+"""
 struct CompositeFormConstraint{C} <: AbstractFormConstraint
     constraints :: C
 end

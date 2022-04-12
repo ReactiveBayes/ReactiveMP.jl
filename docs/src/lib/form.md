@@ -1,6 +1,6 @@
 # [Built-in Functional Forms](@id lib-forms)
 
-This section describes built-in functional forms that can be used for posterior marginal and/or messages form constraints specification. Read more information about constraints specification syntax in the [Constraints Specification](@ref user-guide-constraints-specification) section.
+This section describes built-in functional forms that can be used for posterior marginal and/or messages form constraints specification. Read more information about constraints specification syntax in the [Constraints Specification](@ref user-guide-constraints-specification) section. An important part of the functional forms constraint implementation is the [`prod`](@ref) function. More information about [`prod`](@ref) function is present in the [Prod Implementation](@ref lib-prod) section.
 
 ## [Custom functional forms](@id lib-forms-custom-constraints)
 
@@ -52,14 +52,33 @@ SampleListFormConstraint
 
 ## [FixedMarginalFormConstraint](@id lib-forms-fixed-marginal-constraint)
 
-Fixed marginal form constraint replaces the resulting posterior marginal obtained during the inference procedure with the prespecified one. Worth to note that the inference backend still tries to compute real posterior marginal and may fail during this process. Might be useful for debugging purposes.
+Fixed marginal form constraint replaces the resulting posterior marginal obtained during the inference procedure with the prespecified one. Worth to note that the inference backend still tries to compute real posterior marginal and may fail during this process. Might be useful for debugging purposes. If `nothing` is passed then the computed posterior marginal is returned.
 
 ```julia
-@constraints begin 
-    q(x) :: Marginal(NormalMeanVariance(0.0, 1.0))
+@constraints function block_updates(x_posterior = nothing) 
+    # `nothing` returns the computed posterior marginal
+    q(x) :: Marginal(x_posterior)
 end
 ```
 
 ```@docs 
 FixedMarginalFormConstraint
+```
+
+## [CompositeFormConstraint](@id lib-forms-composite-constraint)
+
+It is possible to create a composite functional form constraint with either `+` operator or using `@constraints` macro, e.g:
+
+```julia
+form_constraint = SampleListFormConstraint(1000) + PointMassFormConstraint()
+```
+
+```julia
+@constraints begin 
+    q(x) :: SampleList(1000) :: PointMass()
+end
+```
+
+```@docs
+CompositeFormConstraint
 ```

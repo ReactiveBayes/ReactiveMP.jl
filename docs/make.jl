@@ -24,12 +24,13 @@ makedocs(
             "Custom functional form" => "custom/custom-functional-form.md",
         ],
         "Library" => [
-            "Messages"     => "lib/message.md",
+            "Messages"            => "lib/message.md",
+            "Functional forms"    => "lib/form.md",
+            "Prod implementation" => "lib/prod.md",
             "Factor nodes" => [ 
                 "Overview" => "lib/node.md",
                 "Flow"     => "lib/nodes/flow.md"
             ],
-            "Functional forms" => "lib/form.md",
             "Math utils"       => "lib/math.md",
             "Helper utils"     => "lib/helpers.md"
         ],

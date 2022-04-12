@@ -12,10 +12,8 @@ However `DistProduct` cannot be used to compute statistics such as mean or varia
 It has to be approximated before using in actual inference procedure.
 
 Backend exploits form constraints specification which usually help to deal with intractable distributions products. 
-User may use EM form constraint with a specific optimisation algorithm or it may approximate intractable product with Gaussian Distribution
-using for example Laplace approximation 
 
-See also: [`prod`](@ref)
+See also: [`prod`](@ref), [`ProdGeneric`](@ref)
 """
 struct DistProduct{ L, R }
     left  :: L
@@ -76,9 +74,36 @@ _check_dist_product_value_support(::Type{ S1 }, ::Type{ S2 }) where { S1 <: Valu
 """
     ProdGeneric{C}
 
-`ProdGeneric` is one of the strategies for `prod` function. This strategy mimics `prod_constraint` constraint but does not fail in case of no analytical rule is available.
+`ProdGeneric` is one of the strategies for `prod` function. This strategy does not fail in case of no analytical rule is available, but simply creates a product tree, there all nodes represent the `prod` function and all leaves are valid `Distribution` object.
+This object does not define any statistical properties (such as `mean` or `var` etc) and cannot be used during the inference procedure. However this object plays imporant part in the functional form constraints implementation. 
+In a few words this object keeps all the information of a product of messages and propagates this information in the functional form constraint.
 
-See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveType`](@ref)
+For example, the following product expression `q(x) ∝ μ₁(μ) × μ₂(x)` would create the following tree:
+
+```
+q(x) = ( prod )
+          ||
+          /\
+         /  \
+      μ₁(x)  μ₂(x)   
+```
+
+Another example, the following product expression `q(x) ∝ (μ₁(μ) × μ₂(x)) × μ₃(x)` would create the following tree:
+
+```
+q(x) = ( prod )
+          |  \
+          |   \
+          |    μ₃(x)
+        (prod)
+          /\
+         /  \
+      μ₁(x)  μ₂(x)   
+```
+
+`ProdGeneric` has a "fallback" method, which it may or may not use under some circumstances. For example if the `fallback` method is `ProdAnalytical` (which is the default one) - `ProdGeneric` will try to optimize `prod` tree with analytical solutions where possible.
+
+See also: [`prod`](@ref), [`DistProduct`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveType`](@ref), [`prod_analytical_rule`](@ref)
 """
 struct ProdGeneric{C} <: AbstractProdConstraint
     prod_constraint :: C

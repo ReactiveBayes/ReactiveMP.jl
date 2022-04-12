@@ -98,6 +98,8 @@ indicates that the `q(x)` first must be approximated with a `SampleList` and in 
 !!! note
     Not all combinations of "stacked" form constraints are compatible between each other.
 
+You can find more information about built-in functional form constraint in the [Built-in Functional Forms](@ref lib-forms) section. In addition, [Custom Functional Form Specification](@ref custom-functional-form) explains the functional form interfaces and shows how to build a custom functional form constraint that is compatible with `ReactiveMP.jl` inference backend.
+
 ## Factorisation constraints on posterior distribution `q()`
 
 `@model` macro specifies generative model `p(s, y)` where `s` is a set of random variables and `y` is a set of observations. In a nutshell the goal of probabilistic programming is to find `p(s|y)`. ReactiveMP approximates `p(s|y)` with a proxy distribution `q(x)` using KL divergency and Bethe Free Energy optimisation procedure. By default there are no extra factorisation constraints on `q(s)` and the optimal solution is `q(s) = p(s|y)`. However, inference may be not tractable for every model without extra factorisation constraints. To circumvent this, `GraphPPL.jl` and `ReactiveMP.jl` accepts optional factorisation constraints specification syntax:

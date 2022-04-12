@@ -1,5 +1,5 @@
 export ProdAnalyticalRuleAvailable, ProdAnalyticalRuleUnknown
-export prod_analytical_rule
+export prod_analytical_rule, resolve_prod_constraint
 
 import Base: show, prod
 import Distributions

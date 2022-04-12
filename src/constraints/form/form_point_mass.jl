@@ -75,16 +75,11 @@ default_prod_constraint(::PointMassFormConstraint) = ProdGeneric()
 
 make_form_constraint(::Type{ <: PointMass }, args...; kwargs...) = PointMassFormConstraint(args...; kwargs...)
 
-call_optimizer(pmconstraint::PointMassFormConstraint, data)      = pmconstraint.optimizer(variate_form(data), value_support(data), pmconstraint, data)
-call_boundaries(pmconstraint::PointMassFormConstraint, data)     = pmconstraint.boundaries(variate_form(data), value_support(data), pmconstraint, data)
-call_starting_point(pmconstraint::PointMassFormConstraint, data) = pmconstraint.starting_point(variate_form(data), value_support(data), pmconstraint, data)
+call_optimizer(pmconstraint::PointMassFormConstraint, distribution)      = pmconstraint.optimizer(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
+call_boundaries(pmconstraint::PointMassFormConstraint, distribution)     = pmconstraint.boundaries(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
+call_starting_point(pmconstraint::PointMassFormConstraint, distribution) = pmconstraint.starting_point(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
 
-function constrain_form(pmconstraint::PointMassFormConstraint, message::Message) 
-    data       = ReactiveMP.getdata(message)
-    is_clamped = ReactiveMP.is_clamped(message)
-    is_initial = ReactiveMP.is_initial(message)
-    return Message(call_optimizer(pmconstraint, data), is_clamped, is_initial)
-end
+constrain_form(pmconstraint::PointMassFormConstraint, distribution) = call_optimizer(pmconstraint, distribution)
 
 function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
 

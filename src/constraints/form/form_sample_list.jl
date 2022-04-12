@@ -38,8 +38,6 @@ default_prod_constraint(::SampleListFormConstraint) = ProdGeneric()
 
 make_form_constraint(::Type{ SampleList }, args...; kwargs...) = SampleListFormConstraint(args...; kwargs...)
 
-constrain_form(::SampleListFormConstraint, something) = something
-
 __approximate(constraint::SampleListFormConstraint{N, R, S, M}, left, right) where { N, R, S <: LeftProposal, M }  = approximate_prod_with_sample_list(constraint.rng, constraint.method, left, right, N)
 __approximate(constraint::SampleListFormConstraint{N, R, S, M}, left, right) where { N, R, S <: RightProposal, M } = approximate_prod_with_sample_list(constraint.rng, constraint.method, right, left, N)
 
@@ -48,9 +46,12 @@ __approximate(constraint::SampleListFormConstraint{N, R, S, M}, left, right::Con
 
 __approximate(constraint::SampleListFormConstraint{N, R, S, M}, left::ContinuousUnivariateLogPdf, right::ContinuousUnivariateLogPdf) where { N, R, S <: AutoProposal, M } = error("Cannot approximate the product of $(left) and $(right) as a sample list.")
 
-function constrain_form(constraint::SampleListFormConstraint, something::Message{ <: DistProduct })
-    product = getdata(something)
+function constrain_form(::SampleListFormConstraint, something) 
+    return something
+end
+
+function constrain_form(constraint::SampleListFormConstraint, product::DistProduct)
     left    = constrain_form(constraint, getleft(product))
     right   = constrain_form(constraint, getright(product))
-    return Message(__approximate(constraint, left, right), is_clamped(something), is_initial(something))
+    return __approximate(constraint, left, right)
 end
