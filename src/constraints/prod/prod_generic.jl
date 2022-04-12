@@ -78,29 +78,6 @@ _check_dist_product_value_support(::Type{ S1 }, ::Type{ S2 }) where { S1 <: Valu
 This object does not define any statistical properties (such as `mean` or `var` etc) and cannot be used during the inference procedure. However this object plays imporant part in the functional form constraints implementation. 
 In a few words this object keeps all the information of a product of messages and propagates this information in the functional form constraint.
 
-For example, the following product expression `q(x) ∝ μ₁(μ) × μ₂(x)` would create the following tree:
-
-```
-q(x) = ( prod )
-          ||
-          /\
-         /  \
-      μ₁(x)  μ₂(x)   
-```
-
-Another example, the following product expression `q(x) ∝ (μ₁(μ) × μ₂(x)) × μ₃(x)` would create the following tree:
-
-```
-q(x) = ( prod )
-          |  \
-          |   \
-          |    μ₃(x)
-        (prod)
-          /\
-         /  \
-      μ₁(x)  μ₂(x)   
-```
-
 `ProdGeneric` has a "fallback" method, which it may or may not use under some circumstances. For example if the `fallback` method is `ProdAnalytical` (which is the default one) - `ProdGeneric` will try to optimize `prod` tree with analytical solutions where possible.
 
 See also: [`prod`](@ref), [`DistProduct`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveType`](@ref), [`prod_analytical_rule`](@ref)
