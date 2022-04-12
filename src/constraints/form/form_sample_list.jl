@@ -7,9 +7,15 @@ struct RightProposal end
 struct AutoProposal end
 
 """
-    SampleListFormConstraint
+    SampleListFormConstraint(rng, strategy, method)
 
 One of the form constraint objects. Approximates `DistProduct` with a SampleList object. 
+
+# Traits 
+- `is_point_mass_form_constraint` = `false`
+- `default_form_check_strategy`   = `FormConstraintCheckLast()`
+- `default_prod_constraint`       = `ProdGeneric()`
+- `make_form_constraint`          = `SampleList` (for use in `@constraints` macro)
 
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """

@@ -16,6 +16,41 @@ or different arguments for `Optim.jl` package.
 - `starting_point`: specifies a callback function for initial optimisation point: See also: `ReactiveMP.default_point_mass_form_constraint_starting_point`
 - `boundaries`: specifies a callback function for determining optimisation boundaries: See also: `ReactiveMP.default_point_mass_form_constraint_boundaries`
 
+## Custom optimizer callback interface
+
+```julia
+# This is an example of the `custom_optimizer` interface
+function custom_optimizer(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    # should return argmin of the -logpdf(distribution)
+end
+```
+
+## Custom starting point callback interface
+
+```julia
+# This is an example of the `custom_starting_point` interface
+function custom_starting_point(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    # built-in optimizer expects an array, even for a univariate distribution
+    return [ 0.0 ] 
+end
+```
+
+## Custom boundaries callback interface
+
+```julia
+# This is an example of the `custom_boundaries` interface
+function custom_boundaries(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    # returns a tuple of `lower` and `upper` boundaries
+    return (-Inf, Inf)
+end
+```
+
+# Traits 
+- `is_point_mass_form_constraint` = `true`
+- `default_form_check_strategy`   = `FormConstraintCheckLast()`
+- `default_prod_constraint`       = `ProdGeneric()`
+- `make_form_constraint`          = `PointMass` (for use in `@constraints` macro)
+
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
 struct PointMassFormConstraint{F, P, B} <: AbstractFormConstraint
@@ -50,8 +85,6 @@ function constrain_form(pmconstraint::PointMassFormConstraint, message::Message)
     is_initial = ReactiveMP.is_initial(message)
     return Message(call_optimizer(pmconstraint, data), is_clamped, is_initial)
 end
-
-
 
 function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
 

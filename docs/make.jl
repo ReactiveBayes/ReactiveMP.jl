@@ -20,6 +20,19 @@ makedocs(
             "Inference execution"       => "man/inference-execution.md",
             "Advanced Tutorial"         => "man/advanced-tutorial.md",
         ],
+        "Custom functionality" => [
+            "Custom functional form" => "custom/custom-functional-form.md",
+        ],
+        "Library" => [
+            "Messages"     => "lib/message.md",
+            "Factor nodes" => [ 
+                "Overview" => "lib/node.md",
+                "Flow"     => "lib/nodes/flow.md"
+            ],
+            "Functional forms" => "lib/form.md",
+            "Math utils"       => "lib/math.md",
+            "Helper utils"     => "lib/helpers.md"
+        ],
         "Examples" => [
             "Overview"                         => "examples/overview.md",
             "Linear Regression"                => "examples/linear_regression.md",
@@ -33,15 +46,6 @@ makedocs(
             "Gamma Mixture"                    => "examples/gamma_mixture.md",
             "Custom Nonlinear Node"            => "examples/custom_nonlinear_node.md",
             "Missing data"                     => "examples/missing_data.md"
-        ],
-        "Library" => [
-            "Messages"     => "lib/message.md",
-            "Factor nodes" => [ 
-                "Overview" => "lib/node.md",
-                "Flow"     => "lib/nodes/flow.md"
-            ],
-            "Math utils"   => "lib/math.md",
-            "Helper utils" => "lib/helpers.md"
         ],
         "Contributing" => "extra/contributing.md",
     ],

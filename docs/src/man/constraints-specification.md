@@ -2,17 +2,19 @@
 
 `GraphPPL.jl` exports `@constraints` macro for the extra constraints specification that can be used during the inference step in `ReactiveMP.jl` package.
 
-### General syntax 
+## General syntax 
 
-`@constraints` macro accepts both regular julia functions and just simple blocks. For example both are valid:
+`@constraints` macro accepts either regular julia function or a single `begin ... end` block. For example both are valid:
 
 ```julia
 
+# `functional` style
 @constraints function create_my_constraints(arg1, arg2)
     ...
 end
 
-@constraints begin 
+# `block` style
+myconstraints = @constraints begin 
     ...
 end
 
@@ -21,9 +23,10 @@ end
 In the first case it returns a function that return constraints upon calling, e.g. 
 
 ```julia
-@constraints function make_constraints(flag)
+@constraints function make_constraints(mean_field)
     q(x) :: PointMass
-    if flag
+
+    if mean_field
         q(x, y) = q(x)q(y)
     end
 end
@@ -31,7 +34,7 @@ end
 myconstraints = make_constraints(true)
 ```
  
-and in the second case it returns constraints directly.
+and in the second case it evaluates automatically and returns constraints object directly.
 
 ```julia
 myconstraints = @constraints begin 
@@ -53,11 +56,11 @@ end
 List of available options:
 - `warn::Bool` - enables/disables various warnings with an incompatible model/constraints specification
 
-### Marginal and messages form constraints
+## Marginal and messages form constraints
 
-To specify marginal or messages form constraints `@constraints` macro uses `::` operator (in the similar way as Julia uses it for type specification)
+To specify marginal or messages form constraints `@constraints` macro uses `::` operator (in somewhat similar way as Julia uses it for multiple dispatch type specification)
 
-The following constraint
+The following constraint:
 
 ```julia
 @constraints begin 
@@ -65,7 +68,13 @@ The following constraint
 end
 ```
 
-indicates that the resulting marginal of the variable (or array of variables) named `x` must be approximated with a `PointMass` object. To set messages form constraint `@constraints` macro uses `μ(...)` instead of `q(...)`:
+indicates that the resulting marginal of the variable (or array of variables) named `x` must be approximated with a `PointMass` object. Message passing based algorithms compute posterior marginals as a normalized product of two colliding messages on corresponding edges of a factor graph. In a few words `q(x)::PointMass` reads as:
+
+```math
+\mathrm{approximate~} q(x) = \frac{\overrightarrow{\mu}(x)\overleftarrow{\mu}(x)}{\int \overrightarrow{\mu}(x)\overleftarrow{\mu}(x) \mathrm{d}x}\mathrm{~as~PointMass}
+```
+
+Sometimes it might be usefull to set a functional form constraint on messages too. For example if it is essential to keep a specific Gaussian parametrisation or if some messages are intractable and need approximation. To set messages form constraint `@constraints` macro uses `μ(...)` instead of `q(...)`:
 
 ```julia
 @constraints begin 
@@ -80,16 +89,16 @@ end
 
 ```julia
 @constraints begin 
-    q(x) :: SampleList(1000, LeftProposal()) :: PointMass
+    q(x) :: SampleList(1000) :: PointMass
 end
 ```
 
-indicates that the resulting posterior first maybe approximated with a `SampleList` and in addition the result of this approximation should be approximated as a `PointMass`. 
+indicates that the `q(x)` first must be approximated with a `SampleList` and in addition the result of this approximation should be approximated as a `PointMass`. 
 
 !!! note
     Not all combinations of "stacked" form constraints are compatible between each other.
 
-### Factorisation constraints on posterior distribution `q()`
+## Factorisation constraints on posterior distribution `q()`
 
 `@model` macro specifies generative model `p(s, y)` where `s` is a set of random variables and `y` is a set of observations. In a nutshell the goal of probabilistic programming is to find `p(s|y)`. ReactiveMP approximates `p(s|y)` with a proxy distribution `q(x)` using KL divergency and Bethe Free Energy optimisation procedure. By default there are no extra factorisation constraints on `q(s)` and the optimal solution is `q(s) = p(s|y)`. However, inference may be not tractable for every model without extra factorisation constraints. To circumvent this, `GraphPPL.jl` and `ReactiveMP.jl` accepts optional factorisation constraints specification syntax:
 
