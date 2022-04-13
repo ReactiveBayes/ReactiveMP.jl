@@ -40,7 +40,7 @@ We don't know our data yet so we will attempt to fit it with a simple Gaussian r
 end
 ```
 
-To support missing values we extend a least of possible rules in ReactiveMP:
+To support missing values we extend a list of possible rules in ReactiveMP:
 
 ```@example missingdata
 @rule NormalMeanPrecision(:μ, Marginalisation) (q_out::Any, q_τ::Missing) = missing

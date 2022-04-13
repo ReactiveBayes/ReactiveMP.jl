@@ -261,7 +261,7 @@ y ~ NormalMeanVariance(y_mean, y_var) where { q = q(y_mean, v)q(y) }
 
 #### Metadata option
 
-Is is possible to pass any extra metadata to a factor node with the `meta` option. Metadata can be later accessed in message computation rules:
+Is is possible to pass any extra metadata to a factor node with the `meta` option. Metadata can be later accessed in message computation rules. See also [Meta specification](@ref user-guide-meta-specification) section.
 
 ```julia
 z ~ f(x, y) where { meta = ... }

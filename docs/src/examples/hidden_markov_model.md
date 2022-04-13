@@ -2,10 +2,13 @@
 
 In this demo we are interested in Bayesian inference of parameters of a hidden Markov model (HMM).,
 Specifically, we consider a first-order HMM with hidden states $s_0, s_1, \dots, s_T$ and observations $x_1, \dots, x_T$ governed by a state transition probability matrix $A$ and an observation probability matrix $B$:,
-    \begin{align*}
-        s_t & \sim \mathcal{C}at(A s_{t-1}),\\
-        x_t & \sim \mathcal{C}at(B s_t).\\,
-    \end{align*}
+
+```math
+\begin{align*}
+    s_t & \sim \mathcal{C}at(A s_{t-1}),\\
+    x_t & \sim \mathcal{C}at(B s_t).\\,
+\end{align*}
+```
 
 
 We assume three possible states (\"red\", \"green\" and \"blue\"), and the goal is to estimate matrices $A$ and $B$ from a simulated data set. To have a full Bayesian treatment of the problem, both $A$ and $B$ are endowed with priors (Dirichlet distributions on the columns)."

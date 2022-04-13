@@ -1,10 +1,10 @@
 # [Meta Specification](@id user-guide-meta-specification)
 
-Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to change or customise the inference procedure. As an example `GCV` node accepts the approxximation method that will be used to approximate non-conjugate relationships between variables in this node. `GraphPPL.jl` exports `@meta` macro to specify node-specific meta and contextual information. For example:
+Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to change or customise the inference procedure or the way node computes outbound messages. As an example `GCV` node accepts the approxximation method that will be used to approximate non-conjugate relationships between variables in this node. `GraphPPL.jl` exports `@meta` macro to specify node-specific meta and contextual information. For example:
 
-### General syntax 
+## General syntax 
 
-`@meta` macro accepts both regular julia functions and just simple blocks. For example both are valid:
+`@meta` macro accepts either regular julia function or a single `begin ... end` block. For example both are valid:
 
 ```julia
 
@@ -12,10 +12,9 @@ Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to
     ...
 end
 
-@meta begin 
+mymeta = @meta begin 
     ...
 end
-
 ```
 
 In the first case it returns a function that return meta upon calling, e.g. 
@@ -36,7 +35,7 @@ mymeta = @meta begin
 end
 ```
 
-### Options specification 
+## Options specification 
 
 `@meta` macro accepts optional list of options as a first argument and specified as an array of `key = value` pairs, e.g. 
 
@@ -49,7 +48,7 @@ end
 List of available options:
 - `warn::Bool` - enables/disables various warnings with an incompatible model/meta specification
 
-### Meta specification
+## Meta specification
 
 First, lets start with an example:
 
@@ -59,7 +58,7 @@ meta = @meta begin
 end
 ```
 
-indicates, that for every `GCV` node in the model that has `x`, `k` and `w` as connected variables the `GCVMetadata(GaussHermiteCubature(20))` meta object should be used.
+This meta specification indicates, that for every `GCV` node in the model with `x`, `k` and `w` as connected variables should use the `GCVMetadata(GaussHermiteCubature(20))` meta object.
 
 You can have a list of as many as possible meta specification entries for different nodes:
 
@@ -67,7 +66,7 @@ You can have a list of as many as possible meta specification entries for differ
 meta = @meta begin 
     GCV(x1, k1, w1) -> GCVMetadata(GaussHermiteCubature(20))
     GCV(x2, k2, w3) -> GCVMetadata(GaussHermiteCubature(30))
-    NormalMeanVariance(out, x) -> MyCustomMetaObject(arg1, arg2)
+    NormalMeanVariance(y, x) -> MyCustomMetaObject(arg1, arg2)
 end
 ```
 
