@@ -1,7 +1,8 @@
 module ReactiveMPFactorisationSpecTest 
 
 using Test
-using ReactiveMP 
+using ReactiveMP
+using Logging
 
 import ReactiveMP: FunctionalIndex
 import ReactiveMP: CombinedRange, SplittedRange, is_splitted
