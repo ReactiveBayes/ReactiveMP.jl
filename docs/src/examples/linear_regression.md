@@ -35,8 +35,8 @@ end
 In order to test our inference procedure we create a test dataset where observations are corrupted with gaussian white noise (with known variance).
 
 ```@example linreg
-reala = 25
-realb = 0.5
+reala = 0.5
+realb = 25
 
 N = 250
 
@@ -45,7 +45,7 @@ rng = StableRNG(1234)
 xorig = collect(1:N)
 
 xdata = xorig .+ randn(rng, N)
-ydata = reala .+ realb .* xorig .+ randn(rng, N)
+ydata = realb .+ reala .* xorig .+ randn(rng, N);
 
 plot(xdata, label = "X", title = "Linear regression dataset")
 plot!(ydata, label = "Y")
