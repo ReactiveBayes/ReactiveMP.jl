@@ -81,7 +81,7 @@ end
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
-        benchmark_output = joinpath(base_output, "template_model_benchmark_$(timestamp)_v$(VERSION).txt")
+        benchmark_output = joinpath(base_output, "linear_regression_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
         ## Create output benchmarks
         benchmark = @benchmark inference($xdata, $ydata);#

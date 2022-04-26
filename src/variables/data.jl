@@ -11,28 +11,36 @@ end
 
 Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
 
-function datavar(name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual(); subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return DataVariable{D, S}(name, collection_type, subject, 0)
+struct DataVariableCreationOptions{S}
+    subject :: S
 end
 
-function datavar(name::Symbol, ::Type{D}, dims::Tuple; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    return datavar(name, D, dims...; subject = subject)
+Base.similar(options::DataVariableCreationOptions) = DataVariableCreationOptions(similar(options.subject))
+
+DataVariableCreationOptions(::Type{D}) where D                              = DataVariableCreationOptions(D, nothing)
+DataVariableCreationOptions(::Type{D}, subject) where D                     = DataVariableCreationOptions(D, subject, Val(false))
+
+DataVariableCreationOptions(::Type{D}, subject::Nothing, allow_missing::Val{ true })  where D = DataVariableCreationOptions(D, RecentSubject(Union{ Message{Missing}, Message{D} }), Val(false)) # `Val(false)` here is intentional
+DataVariableCreationOptions(::Type{D}, subject::Nothing, allow_missing::Val{ false }) where D = DataVariableCreationOptions(D, RecentSubject(Union{ Message{D} }), Val(false))
+
+DataVariableCreationOptions(::Type{D}, subject::S, ::Val{ true })  where { D, S } = error("Error in datavar options. Custom `subject` was specified and `allow_missing` was set to true, which is disallowed. Provide a custom subject that accept missing values by itself and do no use `allow_missing` option.")
+DataVariableCreationOptions(::Type{D}, subject::S, ::Val{ false }) where { D, S } = DataVariableCreationOptions{S}(subject)
+
+datavar(name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where D = datavar(DataVariableCreationOptions(D), name, D, collection_type)
+datavar(name::Symbol, ::Type{D}, length::Int)                                                            where D = datavar(DataVariableCreationOptions(D), name, D, length) 
+datavar(name::Symbol, ::Type{D}, dims::Tuple)                                                            where D = datavar(DataVariableCreationOptions(D), name, D, dims) 
+datavar(name::Symbol, ::Type{D}, dims::Vararg{Int})                                                      where D = datavar(DataVariableCreationOptions(D), name, D, dims) 
+
+datavar(options::DataVariableCreationOptions{S}, name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where { S, D } = DataVariable{D, S}(name, collection_type, options.subject, 0)
+
+function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, length::Int) where { D }
+    return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
 end
 
-function datavar(name::Symbol, ::Type{D}, length::Int; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    vars = Vector{DataVariable{D, S}}(undef, length)
-    @inbounds for i in 1:length
-        vars[i] = datavar(name, D, VariableVector(i); subject = similar(subject))
-    end
-    return vars
-end
-
-function datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}; subject::S = RecentSubject(Union{Message{Missing}, Message{D}})) where { S, D }
-    vars = Array{DataVariable{D, S}}(undef, dims)
-    @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = datavar(name, D, VariableArray(i); subject = similar(subject))
-    end
-    return vars
+function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, dims::Tuple) where { D }
+    indices = CartesianIndices(dims)
+    size    = axes(indices)
+    return map(i -> datavar(similar(options), name, D, VariableArray(size, i)), indices)
 end
 
 Base.eltype(::Type{ <: DataVariable{D} }) where D = D
@@ -40,9 +48,19 @@ Base.eltype(::DataVariable{D})            where D = D
 
 degree(datavar::DataVariable)          = nconnected(datavar)
 name(datavar::DataVariable)            = datavar.name
+proxy_variables(datavar::DataVariable) = nothing
 collection_type(datavar::DataVariable) = datavar.collection_type
 isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)      = datavar.nconnected
+
+isproxy(::DataVariable)  = false
+
+israndom(::DataVariable)                     = false
+israndom(::AbstractArray{ <: DataVariable }) = false
+isdata(::DataVariable)                       = true
+isdata(::AbstractArray{ <: DataVariable })   = true
+isconst(::DataVariable)                      = false
+isconst(::AbstractArray{ <: DataVariable })  = false
 
 getlastindex(::DataVariable) = 1
 
@@ -77,6 +95,8 @@ _makemarginal(datavar::DataVariable)             = error("It is not possible to 
 function Rocket.getrecent(proxy::ProxyObservable{ <: Marginal, S, M }) where { S <: Rocket.RecentSubjectInstance, D, M <: Rocket.MapProxy{D, typeof(as_marginal)} }
     return as_marginal(Rocket.getrecent(proxy.proxied_source))
 end
+
+setanonymous!(::DataVariable, ::Bool) = nothing
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.nconnected += 1

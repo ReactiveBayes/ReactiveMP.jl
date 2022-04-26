@@ -18,29 +18,31 @@ constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollecti
 constvar(name::Symbol, constval::AbstractVector, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 constvar(name::Symbol, constval::AbstractMatrix, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 
-function constvar(name::Symbol, fn::Function, dims::Tuple)
-    return constvar(name, fn, dims...)
-end
+constvar(name::Symbol, fn::Function, dims::Vararg{Int}) = constvar(name, fn, dims)
 
 function constvar(name::Symbol, fn::Function, length::Int)
-    vars = Vector{ConstVariable}(undef, length)
-    @inbounds for i in 1:length
-        vars[i] = constvar(name, fn(i), VariableVector(i))
-    end
-    return vars
+    return map(i -> constvar(name, fn(i), VariableVector(i)), 1:length)
 end
 
-function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
-    vars = Array{ConstVariable}(undef, dims)
-    @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = constvar(name, fn(convert(Tuple, i)), VariableArray(i))
-    end
-    return vars
+function constvar(name::Symbol, fn::Function, dims::Tuple)
+    indices = CartesianIndices(dims)
+    size    = axes(indices)
+    return map(i -> constvar(name, fn(convert(Tuple, i)), VariableArray(size, i)), indices)
 end
 
 degree(constvar::ConstVariable)          = nconnected(constvar)
 name(constvar::ConstVariable)            = constvar.name
+proxy_variables(constvar::ConstVariable) = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
+
+isproxy(::ConstVariable)  = false
+
+israndom(::ConstVariable)                     = false
+israndom(::AbstractArray{ <: ConstVariable }) = false
+isdata(::ConstVariable)                       = false
+isdata(::AbstractArray{ <: ConstVariable })   = false
+isconst(::ConstVariable)                      = true
+isconst(::AbstractArray{ <: ConstVariable })  = true
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 
@@ -65,6 +67,8 @@ _makemarginal(::ConstVariable)             = error("It is not possible to make m
 function Rocket.getrecent(observable::SingleObservable{ <: Marginal })
     return observable.value
 end
+
+setanonymous!(::ConstVariable, ::Bool) = nothing
 
 function setmessagein!(constvar::ConstVariable, ::Int, messagein) 
     constvar.nconnected += 1

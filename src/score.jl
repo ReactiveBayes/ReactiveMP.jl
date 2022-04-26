@@ -9,8 +9,12 @@ function score end
 # Specialized versions like score(Float64, ...) are not differentiable, but could be faster
 score(objective::AbstractScoreObjective, model)                                           = score(objective, model, AsapScheduler())
 score(objective::AbstractScoreObjective, model, scheduler)                                = score(InfCountingReal, objective, model, scheduler)
+
 score(::Type{T}, objective::AbstractScoreObjective, model) where { T <: Real }            = score(T, objective, model, AsapScheduler())
-score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where { T <: Real } = score(InfCountingReal{T}, objective, model, scheduler)
+score(::Type{T}, objective::AbstractScoreObjective, model) where { T <: InfCountingReal } = score(T, objective, model, AsapScheduler())
+
+score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where { T <: Real }            = score(InfCountingReal{T}, objective, model, scheduler)
+score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where { T <: InfCountingReal } = score(T, objective, model, scheduler)
 
 # Bethe Free Energy objective
 
@@ -27,8 +31,8 @@ marginal_skip_strategy(objective::BetheFreeEnergy) = objective.marginal_skip_str
 
 function score(::Type{T}, objective::BetheFreeEnergy, model, scheduler) where { T <: InfCountingReal }
 
-    stochastic_variables = filter(r -> !is_point_mass_form_constraint(form_constraint(r)), getrandom(model))
-    point_mass_estimates = filter(r -> is_point_mass_form_constraint(form_constraint(r)), getrandom(model))
+    stochastic_variables = filter(r -> !is_point_mass_form_constraint(marginal_form_constraint(r)), getrandom(model))
+    point_mass_estimates = filter(r -> is_point_mass_form_constraint(marginal_form_constraint(r)), getrandom(model))
 
     node_bound_free_energies     = map((node) -> score(T, objective, FactorBoundFreeEnergy(), node, scheduler), getnodes(model))
     variable_bound_entropies     = map((v) -> score(T, objective, VariableBoundEntropy(), v, scheduler), stochastic_variables)

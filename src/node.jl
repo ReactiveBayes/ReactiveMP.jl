@@ -3,11 +3,11 @@ export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export MeanField, FullFactorisation, collect_factorisation
 export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
 export AbstractInterfaceLocalConstraint, Marginalisation, MomentMatching
-export FactorNode, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
+export FactorNode, FactorNodeCreationOptions, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export connect!, activate!
-export make_node, AutoVar
+export make_node
 export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, RequireEverythingFunctionalDependencies
 export @node
 
@@ -107,7 +107,19 @@ See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@re
 """
 function sdtype end
 
-sdtype(::Function) = Deterministic()
+# Any `Type` is considered to be a deterministic mapping unless stated otherwise
+# E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
+sdtype(::Type{ T }) where T = Deterministic()
+sdtype(::Function)          = Deterministic()
+
+"""
+    as_node_symbol(type)
+
+Returns a symbol associated with a node `type`.
+"""
+function as_node_symbol end
+
+as_node_symbol(fn::F) where { F <: Function } = Symbol(fn)
 
 ## Generic factorisation constraints
 
@@ -367,6 +379,18 @@ interfaceindices(factornode::AbstractFactorNode, iname::Symbol)                 
 interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) where N = map(iname -> interfaceindex(factornode, iname), inames)
 
 ## Generic Factor Node
+
+struct FactorNodeCreationOptions{F, M, P}
+    factorisation :: F
+    metadata      :: M
+    pipeline      :: P
+end
+
+FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothing)
+
+factorisation(options::FactorNodeCreationOptions) = options.factorisation
+metadata(options::FactorNodeCreationOptions)      = options.metadata
+getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
 
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
@@ -719,12 +743,16 @@ function conjugate_type end
 
 ## make_node
 
-struct AutoVar
-    name :: Symbol
-end
+"""
+    make_node(node)
+    make_node(node, options)
 
-getname(autovar::AutoVar) = autovar.name
+Creates a factor node of a given type and options. See the list of avaialble factor nodes below.
 
+See also: [`@node`](@ref)
+
+# List of available nodes:
+"""
 function make_node end
 
 function interface_get_index end
@@ -738,30 +766,8 @@ function interface_get_name(::Type{ Val{ Node } }, ::Type{ Val{ Interface } }) w
     error("Node $Node has no interface named $Interface")
 end
 
-make_node(fform, ::AutoVar, ::Vararg{ <: AbstractVariable }; kwargs...) = error("Unknown functional form '$(fform)' used for node specification.")
-make_node(fform, args::Vararg{ <: AbstractVariable }; kwargs...)        = error("Unknown functional form '$(fform)' used for node specification.")
-
-function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...)
-    var  = constvar(getname(autovar), fform(map((d) -> getconst(d), args)...))
-    return nothing, var
-end
-
-function make_node(::Type{ T }, autovar::AutoVar, args::Vararg{ <: ConstVariable }; kwargs...) where T
-    var  = constvar(getname(autovar), T(map((d) -> getconst(d), args)...))
-    return nothing, var
-end
-
-function make_node(fform::Function, autovar::AutoVar, args::Vararg{ <: DataVariable{ <: PointMass } }; kwargs...)
-    # TODO
-    message_cb = let fform = fform
-        (d::Tuple) -> Message(fform(d...), false, false)
-    end
-
-    subject = combineLatest(tuple(map((a) -> messageout(a, getlastindex(a)) |> map(Any, (d) -> mean(getdata(d))), args)...), PushNew()) |> map(Message, message_cb)
-    var     = datavar(getname(autovar), Any, subject = subject)
-    
-    return nothing, var
-end
+make_node(fform, args::Vararg{ <: AbstractVariable })                                     = make_node(fform, FactorNodeCreationOptions(), args...)
+make_node(fform, options::FactorNodeCreationOptions, args::Vararg{ <: AbstractVariable }) = error("Unknown functional form '$(fform)' used for node specification.")
 
 # end
 
@@ -772,7 +778,14 @@ import .MacroHelpers
 """
     @node(fformtype, sdtype, interfaces_list)
 
-`@node` macro creates a node for a `fformtype` type object 
+
+`@node` macro creates a node for a `fformtype` type object. To obtain a list of available nodes use `?make_node`.
+
+# Arguments
+
+- `fformtype`: Either an existing type identifier, e.g. `Normal` or a function type identifier, e.g. `typeof(+)`
+- `sdtype`: Either `Stochastic` or `Deterministic`. Defines the type of the functional relationship
+- `interfaces_list`: Defines a fixed list of edges of a factor node, by convention the first element should be `out`. Example: `[ out, mean, variance ]`
 
 # Examples
 ```julia
@@ -789,6 +802,10 @@ end
 
 @node typeof(+) Deterministic [ out, in1, in2 ]
 ```
+
+# List of available nodes
+
+See `?make_node`.
 
 See also: [`make_node`](@ref), [`Stochastic`](@ref), [`Deterministic`](@ref)
 """
@@ -853,6 +870,7 @@ macro node(fformtype, sdtype, interfaces_list)
     # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a FullFactorisation equivalent
     factorisation_collectors = if sdtype === :Stochastic 
         quote
+            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                      = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = factorisation
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = $names_splitted_indices
@@ -860,6 +878,7 @@ macro node(fformtype, sdtype, interfaces_list)
         
     elseif sdtype === :Deterministic
         quote
+            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                      = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices, )
             ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = ($names_indices, )
@@ -868,48 +887,34 @@ macro node(fformtype, sdtype, interfaces_list)
         error("Unreachable in @node macro.") 
     end
 
-    make_node_const_mapping = if sdtype === :Stochastic
-        quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
-                var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
-                node = ReactiveMP.make_node(fform, var, args...; kwargs...)
-                return node, var
-            end
-        end
-    elseif sdtype === :Deterministic
-        quote
-            function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.ConstVariable{ <: ReactiveMP.PointMass } }; kwargs...)
-                var  = ReactiveMP.constvar(ReactiveMP.getname(autovar), fform(map((d) -> ReactiveMP.getconst(d), args)...))
-                return nothing, var
-            end
-        end
-    else
-        error("Unreachable in @node macro.") 
-    end
+
+
+    doctype   = rpad(fbottomtype, 30)
+    docsdtype = rpad(sdtype, 15)
+    docedges  = string(interfaces_list)
+    doc       = """
+        $doctype : $docsdtype : $docedges
+    """
     
     res = quote
 
         ReactiveMP.as_node_functional_form(::$fuppertype) = ReactiveMP.ValidNodeFunctionalForm()
 
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
+
+        ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
         
-        function ReactiveMP.make_node(::$fuppertype; factorisation = ($names_indices, ), meta = nothing, pipeline = nothing)
-            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation), ReactiveMP.collect_meta($fbottomtype, meta), ReactiveMP.collect_pipeline($fbottomtype, pipeline))
+        @doc $doc
+        function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions)
+            return ReactiveMP.FactorNode($fbottomtype, $names_quoted_tuple, ReactiveMP.collect_factorisation($fbottomtype, factorisation(options)), ReactiveMP.collect_meta($fbottomtype, metadata(options)), ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options)))
         end
         
-        function ReactiveMP.make_node(::$fuppertype, $(interface_args...); factorisation = ($names_indices, ), meta = nothing, pipeline = nothing)
-            node = ReactiveMP.make_node($fbottomtype, factorisation = factorisation, meta = meta, pipeline = pipeline)
+        function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions, $(interface_args...))
+            node = ReactiveMP.make_node($fbottomtype, options)
             $(interface_connections...)
             return node
         end
 
-        function ReactiveMP.make_node(fform::$fuppertype, autovar::ReactiveMP.AutoVar, args::Vararg{ <: ReactiveMP.AbstractVariable }; kwargs...)
-            var  = ReactiveMP.randomvar(ReactiveMP.getname(autovar))
-            node = ReactiveMP.make_node(fform, var, args...; kwargs...)
-            return node, var
-        end
-
-        $(make_node_const_mapping)
         $(interface_name_getters...)
 
         $factorisation_collectors

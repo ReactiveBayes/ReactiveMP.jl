@@ -32,7 +32,7 @@ end
 function inference(data, vmp_iters)
     n = length(data)
     
-    model, (s, x, A, B) = transition_model(n, options = (limit_stack_depth = 500, ))
+    model, (s, x, A, B) = transition_model(model_options(limit_stack_depth = 500), n)
     
     sbuffer = keep(Vector{Marginal})
     Abuffer = keep(Marginal)

@@ -11,7 +11,7 @@ for better performance.
 
 See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveTypeLeft`](@ref), [`ProdPreserveTypeRight`](@ref)
 """
-struct ProdPreserveType{T} end
+struct ProdPreserveType{T} <: AbstractProdConstraint end
 
 ProdPreserveType(::Type{T}) where T = ProdPreserveType{T}()
 
@@ -26,7 +26,7 @@ for better performance.
 
 See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdPreserveTypeRight`](@ref)
 """
-struct ProdPreserveTypeLeft end
+struct ProdPreserveTypeLeft <: AbstractProdConstraint end
 
 prod(::ProdPreserveTypeLeft, left::L, right) where L = prod(ProdPreserveType(L), left, right)
 
@@ -39,6 +39,6 @@ for better performance.
 
 See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdPreserveTypeLeft`](@ref)
 """
-struct ProdPreserveTypeRight end
+struct ProdPreserveTypeRight <: AbstractProdConstraint end
 
 prod(::ProdPreserveTypeRight, left, right::R) where R = prod(ProdPreserveType(R), left, right)

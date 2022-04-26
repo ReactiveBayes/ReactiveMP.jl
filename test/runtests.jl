@@ -8,6 +8,10 @@ using Test, Documenter, ReactiveMP, Distributions
 using TestSetExtensions
 using Aqua
 
+# Unregistered GraphPPL, do not commit this two lines, but use them to test ReactiveMP locally
+# ENV["JULIA_PKG_USE_CLI_GIT"] = true
+# import Pkg; Pkg.rm("GraphPPL"); Pkg.add(Pkg.PackageSpec(name="GraphPPL", rev="master"));
+
 # DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
 
 # Example usage of a reduced testset
@@ -85,8 +89,11 @@ end
     addtests("test_math.jl")
     addtests("test_helpers.jl")
 
+    addtests("constraints/spec/test_factorisation_spec.jl")
+    addtests("constraints/spec/test_form_spec.jl")
     addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
+    addtests("constraints/meta/test_meta.jl")
 
     addtests("test_distributions.jl")
     addtests("distributions/test_common.jl")
@@ -112,6 +119,9 @@ end
     addtests("test_message.jl")
     
     addtests("test_variable.jl")
+    addtests("variables/test_constant.jl")
+    addtests("variables/test_data.jl")
+    addtests("variables/test_random.jl")
 
     addtests("test_node.jl")
     addtests("nodes/flow/test_flow.jl")
@@ -190,6 +200,7 @@ end
     addtests("models/test_ar.jl")
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
+    addtests("models/test_linreg.jl")
 
 end
 

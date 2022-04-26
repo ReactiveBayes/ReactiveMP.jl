@@ -17,7 +17,7 @@ import ReactiveMP: @test_rules
         @test localmarginalnames(node)      === (:out_in1_in2, )
         @test metadata(node)                === nothing
 
-        node = make_node(-, meta = 1)
+        node = make_node(-, FactorNodeCreationOptions(nothing, 1, nothing))
 
         @test functionalform(node)          === -
         @test sdtype(node)                  === Deterministic()

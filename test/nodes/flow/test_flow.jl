@@ -17,7 +17,7 @@ using .ReactiveMPTestingHelpers
         @testset "Creation" begin
 
             # create example Flow node
-            node = make_node(Flow, meta = 1)
+            node = make_node(Flow, FactorNodeCreationOptions(nothing, 1, nothing))
     
             # check whether Flow node creation has been a success
             @test functionalform(node)          === Flow

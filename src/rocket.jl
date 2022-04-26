@@ -43,33 +43,30 @@ Rocket.makeinstance(::Type, scheduler::LimitStackScheduler) = scheduler
 
 Rocket.instancetype(::Type, ::Type{ <: LimitStackScheduler }) = LimitStackScheduler
 
-macro limitstack(no_limit_cb, limit_cb)
-    output = quote
-        increase_depth!(instance)
-
-        if get_hard_depth(instance) >= get_hard_limit(instance)
-            error("Hard limit in LimitStackScheduler exceeded")
-        end
-
-        result = if get_soft_depth(instance) < get_soft_limit(instance)
-            begin 
-                $no_limit_cb
-            end
-        else
-            previous_soft_depth = get_soft_depth(instance)
-            set_soft_depth!(instance, 0)
-            r = begin 
-                $limit_cb
-            end
-            set_soft_depth!(instance, previous_soft_depth)
-            r
-        end
-
-        decrease_depth!(instance)
-
-        result
+function limitstack(callback::Function, instance::LimitStackScheduler)
+    increase_depth!(instance)
+    if get_hard_depth(instance) >= get_hard_limit(instance)
+        error("Hard limit in LimitStackScheduler exceeded")
     end
-    return esc(output)
+    result = if get_soft_depth(instance) < get_soft_limit(instance)
+        callback()
+    else
+        previous_soft_depth = get_soft_depth(instance)
+        set_soft_depth!(instance, 0)
+        condition = Base.Condition()
+        @async begin 
+            try
+                notify(condition, callback())
+            catch exception 
+                notify(condition, exception, error = true)
+            end
+        end
+        r = wait(condition) # returns `callback()`
+        set_soft_depth!(instance, previous_soft_depth)
+        r
+    end
+    decrease_depth!(instance)
+    return result
 end
 
 struct LimitStackSubscription <: Teardown
@@ -79,45 +76,12 @@ end
 
 Rocket.as_teardown(::Type{ <: LimitStackSubscription }) = UnsubscribableTeardownLogic()
 
-function Rocket.on_unsubscribe!(l::LimitStackSubscription)
-    instance     = l.instance
-    subscription = l.subscription
-    @limitstack Rocket.unsubscribe!(subscription) begin
-        @sync @async Rocket.unsubscribe!(subscription)
-    end
-    return nothing
+Rocket.on_unsubscribe!(scheduler::LimitStackSubscription) = limitstack(() -> Rocket.unsubscribe!(scheduler.subscription), scheduler.instance)
+
+Rocket.scheduled_subscription!(source, actor, instance::LimitStackScheduler) = limitstack(instance) do
+    return LimitStackSubscription(instance, Rocket.on_subscribe!(source, actor, instance))
 end
 
-function Rocket.scheduled_subscription!(source, actor, instance::LimitStackScheduler) 
-    subscription = @limitstack Rocket.on_subscribe!(source, actor, instance) begin 
-        condition  = Base.Condition()
-        @async begin
-            try
-                subscription = Rocket.on_subscribe!(source, actor, instance)
-                notify(condition, subscription)
-            catch exception
-                notify(condition, exception, error = true)
-            end
-        end
-        wait(condition)
-    end
-    return LimitStackSubscription(instance, subscription)
-end
-
-function Rocket.scheduled_next!(actor, value, instance::LimitStackScheduler) 
-    @limitstack Rocket.on_next!(actor, value) begin
-        @sync @async Rocket.scheduled_next!(actor, value, instance)
-    end
-end
-
-function Rocket.scheduled_error!(actor, err, instance::LimitStackScheduler) 
-    @limitstack Rocket.on_error!(actor, err) begin
-        @sync @async Rocket.scheduled_error!(actor, err, instance)
-    end
-end
-
-function Rocket.scheduled_complete!(actor, instance::LimitStackScheduler) 
-    @limitstack Rocket.on_complete!(actor) begin
-        @sync @async Rocket.scheduled_complete!(actor, instance)
-    end
-end
+Rocket.scheduled_next!(actor, value, instance::LimitStackScheduler) = limitstack(() -> Rocket.on_next!(actor, value), instance)
+Rocket.scheduled_error!(actor, err, instance::LimitStackScheduler)  = limitstack(() -> Rocket.on_error!(actor, err), instance)
+Rocket.scheduled_complete!(actor, instance::LimitStackScheduler)    = limitstack(() -> Rocket.on_complete!(actor), instance)

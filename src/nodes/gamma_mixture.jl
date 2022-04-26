@@ -3,6 +3,8 @@ export GammaMixture, GammaMixtureNode
 # Gamma Mixture Functional Form
 struct GammaMixture{N} end
 
+ReactiveMP.as_node_symbol(::Type{ <: GammaMixture }) = :GammaMixture
+
 # Special node
 # Generic FactorNode implementation does not work with dynamic number of inputs
 # We need to reimplement the following set of functions
@@ -165,7 +167,7 @@ sdtype(::Type{ <: GammaMixture }) = Stochastic()
 
 collect_factorisation(::Type{ <: GammaMixture }, factorisation) = factorisation
 
-function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
+function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }, factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where { N, F, M, P }
     @assert N >= 2 "GammaMixtureNode requires at least two mixtures on input"
     @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "GammaMixtureNode supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out, Marginalisation())
@@ -176,8 +178,8 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture{N} }; factorisation::F = M
     return GammaMixtureNode{N, F, typeof(meta), P}(factorisation, out, switch, as, bs, meta, pipeline)
 end
 
-function ReactiveMP.make_node(::Type{ <: GammaMixture }, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}; factorisation = MeanField(), meta = nothing, pipeline = nothing) where { N}
-    node = make_node(GammaMixture{N}, factorisation = collect_factorisation(GammaMixture, factorisation), meta = collect_meta(GammaMixture, meta), pipeline = collect_pipeline(GammaMixture, pipeline))
+function ReactiveMP.make_node(::Type{ <: GammaMixture }, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}) where { N }
+    node = make_node(GammaMixture{N}, collect_factorisation(GammaMixture, factorisation(options)), collect_meta(GammaMixture, metadata(options)), collect_pipeline(GammaMixture, getpipeline(options)))
 
     # out
     out_index = getlastindex(out)
@@ -204,10 +206,4 @@ function ReactiveMP.make_node(::Type{ <: GammaMixture }, out::AbstractVariable, 
     end
 
     return node
-end
-
-function ReactiveMP.make_node(fform::Type{ <: GammaMixture }, autovar::AutoVar, args::Vararg{ <: AbstractVariable }; kwargs...)
-    var  = randomvar(getname(autovar))
-    node = make_node(fform, var, args...; kwargs...)
-    return node, var
 end
