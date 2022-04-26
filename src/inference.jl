@@ -1,4 +1,4 @@
-export inference, KeepEach, KeepLast
+export inference, InferenceResult, KeepEach, KeepLast
 
 import ProgressMeter
 
