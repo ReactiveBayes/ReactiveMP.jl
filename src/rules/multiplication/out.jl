@@ -5,10 +5,18 @@
     return GammaShapeRate(shape(m_in), rate(m_in) / mean(m_A))
 end
 
+@rule typeof(*)(:out, Marginalisation) (m_A::GammaDistributionsFamily, m_in::PointMass{ <: Real }, meta::Any) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
+end
+
 @rule typeof(*)(:out, Marginalisation) (m_A::PointMass{ <: AbstractMatrix }, m_in::F) where { F <: NormalDistributionsFamily } = begin
     A = mean(m_A)
     μ_in, Σ_in = mean_cov(m_in)
     return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
+end
+
+@rule typeof(*)(:out, Marginalisation) (m_A::F, m_in::PointMass{ <: AbstractMatrix }, meta::Any) where { F <: NormalDistributionsFamily } = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
 end
 
 #------------------------
@@ -36,6 +44,10 @@ end
     return MvNormalMeanCovariance(μ, Σ)
 end
 
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{ <: AbstractVector }, meta::Any) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
+end
+
 #------------------------
 # Real * UnivariateNormalDistributions
 #------------------------
@@ -44,4 +56,8 @@ end
     μ_in, v_in = mean_var(m_in)
 
     return NormalMeanVariance(a*μ_in, a^2*v_in)
+end
+
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{ <: Real }, meta::Any) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
 end

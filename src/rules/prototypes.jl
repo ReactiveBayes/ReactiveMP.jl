@@ -14,6 +14,7 @@ include("subtraction/in2.jl")
 include("multiplication/marginals.jl")
 include("multiplication/out.jl")
 include("multiplication/in.jl")
+include("multiplication/A.jl")
 
 include("gamma/out.jl")
 include("gamma/marginals.jl")

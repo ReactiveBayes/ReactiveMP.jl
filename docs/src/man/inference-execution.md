@@ -30,6 +30,7 @@ ReactiveMP.jl exports user friendly `inference` function to quickly run and test
 
 ```@docs
 inference
+InferenceResult
 ```
 
 ## [Manual inference specification](@id user-guide-inference-execution-manual-specification)

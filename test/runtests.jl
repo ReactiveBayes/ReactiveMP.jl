@@ -200,6 +200,7 @@ end
     addtests("models/test_ar.jl")
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
+    addtests("models/test_linreg.jl")
 
 end
 
