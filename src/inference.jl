@@ -68,8 +68,8 @@ struct InferenceResult{P, F, M, R}
     returnval   :: R
 end
 
-Base.iterate(results::InferenceResult)      = iterate((getfield(results, :posteriors), getfield(results, :free_energy)))
-Base.iterate(results::InferenceResult, any) = iterate((getfield(results, :posteriors), getfield(results, :free_energy)), any)
+Base.iterate(results::InferenceResult)      = iterate((getfield(results, :posteriors), getfield(results, :free_energy), getfield(results, :model), getfield(results, :returnval)))
+Base.iterate(results::InferenceResult, any) = iterate((getfield(results, :posteriors), getfield(results, :free_energy), getfield(results, :model), getfield(results, :returnval)), any)
 
 function Base.show(io::IO, result::InferenceResult)
     print(io, "Inference results:\n")
