@@ -450,7 +450,7 @@ __throw_intersection_error(fform, varrefs, varrefsnames, clusters, constraints) 
 
 function Base.showerror(io::IO, error::ClusterIntersectionError)
 
-    print(io, "Cluster intersection error in the expression `$(error.varrefsnames[1]) ~ $(error.fform)($(join(error.varrefsnames[2:end], ", ")))`.\n")
+    print(io, "Cluster intersection error in the expression `$(__io_entry_pair(error.varrefs[1])) ~ $(error.fform)($(join(map(__io_entry_pair, error.varrefs[2:end]), ", ")))`.\n")
     print(io, "Based on factorisation constraints the resulting local constraint ")
     print(io, "q(")
     join(io, map(r -> __io_entry_pair(r[1], r[2]), error.varrefs), ", ")
