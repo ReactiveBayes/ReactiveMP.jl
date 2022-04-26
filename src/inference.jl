@@ -47,9 +47,25 @@ function __inference_process_error(err::StackOverflowError)
 end
 ##
 
-struct InferenceResult{P, F}
+"""
+    InferenceResult
+
+This structure is used as a return value from the [`inference`](@ref) function. 
+
+# Fields
+
+- `posteriors`: `Dict` or `NamedTuple` of 'random variable' - 'posterior' pairs. See the `returnvars` argument for [`inference`](@ref).
+- `free_energy`: (optional) An array of Bethe Free Energy values per VMP iteration. See the `free_energy` argument for [`inference`](@ref).
+- `model`: `FactorGraphModel` object reference.
+- `returnval`: Return value from executed `@model`.
+
+See also: [`inference`](@ref)
+"""
+struct InferenceResult{P, F, M, R}
     posteriors  :: P
     free_energy :: F
+    model       :: M
+    returnval   :: R
 end
 
 Base.iterate(results::InferenceResult)      = iterate((getfield(results, :posteriors), getfield(results, :free_energy)))
@@ -121,7 +137,7 @@ unwrap_free_energy_option(option::Type{T}) where { T <: Real } = (true, T, InfCo
         callbacks     = nothing,
     )
 
-This function provides a generic (but somewhat limited) way to perform probabilistic inference in ReactiveMP.jl. 
+This function provides a generic (but somewhat limited) way to perform probabilistic inference in ReactiveMP.jl. Returns `InferenceResult`.
 
 ## Arguments
 
@@ -221,6 +237,8 @@ The list of all possible callbacks is present below:
 - `:after_data_update`:     args: (model::FactorGraphModel, data)
 - `:after_iteration`:       args: (model::FactorGraphModel, iteration::Int)
 - `:after_inference`:       args: (model::FactorGraphModel)
+
+See also: [`InferenceResult`](@ref)
 """
 function inference(;
     # `model`: specifies a model generator, with the help of the `Model` function
@@ -253,7 +271,7 @@ function inference(;
 )
 
     inference_invoke_callback(callbacks, :before_model_creation)
-    fmodel, _ = create_model(model, constraints, meta, options)
+    fmodel, freturval = create_model(model, constraints, meta, options)
     inference_invoke_callback(callbacks, :after_model_creation, fmodel)
     vardict = ReactiveMP.getvardict(fmodel)
 
@@ -365,7 +383,7 @@ function inference(;
 
         inference_invoke_callback(callbacks, :after_inference, fmodel)
 
-        return InferenceResult(posterior_values, fe_values)
+        return InferenceResult(posterior_values, fe_values, fmodel, freturval)
     catch error
         __inference_process_error(error)
     end    

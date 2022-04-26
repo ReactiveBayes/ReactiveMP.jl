@@ -2,7 +2,7 @@ export AbstractModelSpecification
 export ModelOptions, model_options
 export FactorGraphModel, Model
 export AutoVar
-export getoptions, getconstraints, getmeta
+export getoptions, getconstraints, getmeta, getstats
 export getnodes, getrandom, getconstant, getdata
 export activate!
 
@@ -139,6 +139,16 @@ Base.merge(nt::NamedTuple, options::ModelOptions) = model_options(merge(nt, as_n
 
 Model(::Type{T}, args...; kwargs...) where { T <: AbstractModelSpecification } = ModelGenerator(T, args, kwargs, nothing, nothing, nothing)
 
+struct FactorGraphModelStats 
+    node_ids :: Set{Symbol}
+
+    FactorGraphModelStats() = new(Set{Symbol}())
+end
+
+add!(stats::FactorGraphModelStats, node::AbstractFactorNode) = push!(stats.node_ids, as_node_symbol(functionalform(node)))
+
+hasnodeid(stats::FactorGraphModelStats, nodeid::Symbol) = nodeid ∈ stats.node_ids
+
 struct FactorGraphModel{C, M, O}
     constraints :: C
     meta        :: M
@@ -148,6 +158,7 @@ struct FactorGraphModel{C, M, O}
     constant    :: Vector{ConstVariable}
     data        :: Vector{DataVariable}
     vardict     :: Dict{Symbol, Any}
+    stats       :: FactorGraphModelStats
 end
 
 Base.show(io::IO, ::Type{ <: FactorGraphModel }) = print(io, "FactorGraphModel")
@@ -166,7 +177,7 @@ FactorGraphModel(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecific
 FactorGraphModel(constraints::Union{ UnspecifiedConstraints, ConstraintsSpecification }, meta::Union{ UnspecifiedMeta, MetaSpecification }, options::NamedTuple)  = FactorGraphModel(constraints, meta, model_options(options))
 
 function FactorGraphModel(constraints::C, meta::M, options::O) where { C <: Union{ UnspecifiedConstraints, ConstraintsSpecification }, M <: Union{ UnspecifiedMeta, MetaSpecification }, O <: ModelOptions } 
-    return FactorGraphModel{C, M, O}(constraints, meta, options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
+    return FactorGraphModel{C, M, O}(constraints, meta, options, Vector{FactorNode}(), Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}(), FactorGraphModelStats())
 end
 
 getconstraints(model::FactorGraphModel) = model.constraints
@@ -177,6 +188,7 @@ getrandom(model::FactorGraphModel)      = model.random
 getconstant(model::FactorGraphModel)    = model.constant
 getdata(model::FactorGraphModel)        = model.data
 getvardict(model::FactorGraphModel)     = model.vardict
+getstats(model::FactorGraphModel)       = model.stats
 
 function Base.getindex(model::FactorGraphModel, symbol::Symbol) 
     vardict = getvardict(model)
@@ -205,7 +217,7 @@ lastindex(::FactorGraphModel, variables::AbstractVector{ <: AbstractVariable }) 
 
 add!(vardict::Dict, name::Symbol, entity) = vardict[name] = entity
 
-add!(model::FactorGraphModel, node::AbstractFactorNode)  = begin push!(model.nodes, node); return node end
+add!(model::FactorGraphModel, node::AbstractFactorNode)  = begin push!(model.nodes, node); add!(getstats(model), node); return node end
 add!(model::FactorGraphModel, randomvar::RandomVariable) = begin push!(model.random, randomvar); add!(getvardict(model), name(randomvar), randomvar); return randomvar end
 add!(model::FactorGraphModel, constvar::ConstVariable)   = begin push!(model.constant, constvar); add!(getvardict(model), name(constvar), constvar); return constvar end
 add!(model::FactorGraphModel, datavar::DataVariable)     = begin push!(model.data, datavar); add!(getvardict(model), name(datavar), datavar); return datavar end

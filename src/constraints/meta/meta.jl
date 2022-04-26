@@ -92,5 +92,23 @@ function activate!(meta::UnspecifiedMeta, model)
 end
 
 function activate!(meta::MetaSpecification, model)
+
+    options = getoptions(meta)
+    stats   = getstats(model)
+
+    warn = iswarn(options)
+
+    foreach(getentries(meta)) do entry
+        if warn && !hasnodeid(stats, functionalform(entry))
+            @warn "Meta specification `$(entry)` specifies node entry as `$(functionalform(entry))`, but model has no factor node `$(functionalform(entry))`. Use `warn = false` option during constraints specification to suppress this warning."
+        end
+
+        foreach(getnames(entry)) do ename
+            if warn && !(hasrandomvar(model, ename) || hasdatavar(model, ename) || hasconstvar(model, ename))
+                @warn "Meta specification `$(entry)` uses `$(ename)`, but model has no variable named `$(ename)`. Use `warn = false` option during constraints specification to suppress this warning."    
+            end
+        end
+    end
+    
     return nothing
 end

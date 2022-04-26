@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using GraphPPL
 using Distributions
+using Logging
 
 import ReactiveMP: resolve_meta
 
@@ -169,6 +170,47 @@ import ReactiveMP: resolve_meta
         @test ReactiveMP.resolve_meta(meta, model, AR, (x, z, y)) === 21
         @test ReactiveMP.resolve_meta(meta, model, AR, (x, y, z)) === 21
 
+    end
+
+    # Warnings 
+
+    @testset "Warning case #1" begin 
+        model = FactorGraphModel()
+
+        x = randomvar(model, :x)
+        y = randomvar(model, :y)
+
+        meta_with_warn = @meta [ warn = true ] begin 
+            Gamma(x, y) -> 123 # Factor node does exist in the model
+        end
+
+        meta_without_warn = @meta [ warn = false ] begin 
+            Gamma(x, y) -> 123 # Factor node does exist in the model, but warn is false
+        end
+
+        @test_logs (:warn, r".*model has no factor node `Gamma`.*") activate!(meta_with_warn, model)
+        @test_logs min_level = Logging.Warn activate!(meta_without_warn, model)
+    end
+
+    @testset "Warning case #2" begin 
+        model = FactorGraphModel()
+
+        z = randomvar(model, :z)
+        x = randomvar(model, :x)
+        y = randomvar(model, :y)
+
+        ReactiveMP.add!(model, make_node(Gamma, z, x, y))
+
+        meta_with_warn = @meta [ warn = true ] begin 
+            Gamma(r, t) -> 123 # Factor node exist, but uses wrong var names
+        end
+
+        meta_without_warn = @meta [ warn = false ] begin 
+            Gamma(r, t) -> 123 # Factor node exist, but uses wrong var names, but warn is false
+        end
+
+        @test_logs (:warn, r".*model has no variable named `r`.*") (:warn, r".*model has no variable named `t`.*") activate!(meta_with_warn, model)
+        @test_logs min_level = Logging.Warn activate!(meta_without_warn, model)
     end
     
     # Errors
