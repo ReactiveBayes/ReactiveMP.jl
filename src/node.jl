@@ -450,9 +450,8 @@ getpipeline(factornode::FactorNode)        = factornode.pipeline
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
 # Cluster is reffered to a tuple of node interfaces 
-clusters(factornode::FactorNode) = map(factor -> map(i -> begin
-    return @inbounds interfaces(factornode)[i]
-end, factor), factorisation(factornode))
+clusters(factornode::FactorNode) =
+    map(factor -> map(i -> @inbounds(interfaces(factornode)[i]), factor), factorisation(factornode))
 
 clusterindex(factornode::FactorNode, v::Symbol)                                = clusterindex(factornode, (v,))
 clusterindex(factornode::FactorNode, vindex::Int)                              = clusterindex(factornode, (vindex,))
@@ -538,9 +537,7 @@ function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, v
     # First we remove current edge index from the list of dependencies
     vdependencies = TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex))
     # Second we map interface indices to the actual interfaces
-    return map(inds -> map(i -> begin
-        return @inbounds nodeinterfaces[i]
-    end, inds), vdependencies)
+    return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), vdependencies)
 end
 
 function marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmarginals, varcluster, cindex)

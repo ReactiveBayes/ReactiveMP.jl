@@ -18,9 +18,9 @@ This function has been introduced in:
 Rezende, Danilo, and Shakir Mohamed. "Variational inference with normalizing flows." _International conference on machine learning._ PMLR, 2015.
 """
 mutable struct PlanarFlow{T1, T2 <: Real} <: AbstractCouplingFlow
-    u :: T1
-    w :: T1
-    b :: T2
+    u::T1
+    w::T1
+    b::T2
     function PlanarFlow(u::T1, w::T1, b::T2) where {T1, T2 <: Real}
         @assert length(u) == length(w) "The parameters u and w in the PlanarFlow structure should have equal length."
         return new{T1, T2}(u, w, float(b))

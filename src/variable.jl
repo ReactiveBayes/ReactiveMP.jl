@@ -140,11 +140,12 @@ This function is a part of private API and should not be used explicitly.
 """
 function resolve_variable_proxy end
 
-resolve_variable_proxy(var::AbstractVariable) = if !isanonymous(var)
-    resolve_variable_proxy(var, VariableReferenceProxyChecked(), nothing)
-else
-    resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy_variables(var))
-end
+resolve_variable_proxy(var::AbstractVariable) =
+    if !isanonymous(var)
+        resolve_variable_proxy(var, VariableReferenceProxyChecked(), nothing)
+    else
+        resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy_variables(var))
+    end
 
 resolve_variable_proxy(
     var::AbstractVariable,

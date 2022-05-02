@@ -42,8 +42,18 @@ make_form_constraint(::Type{SampleList}, args...; kwargs...) = SampleListFormCon
 __approximate(constraint::SampleListFormConstraint{N, R, S, M}, left, right) where {N, R, S <: LeftProposal, M}  = approximate_prod_with_sample_list(constraint.rng, constraint.method, left, right, N)
 __approximate(constraint::SampleListFormConstraint{N, R, S, M}, left, right) where {N, R, S <: RightProposal, M} = approximate_prod_with_sample_list(constraint.rng, constraint.method, right, left, N)
 
-__approximate(constraint::SampleListFormConstraint{N, R, S, M}, left::ContinuousUnivariateLogPdf, right) where {N, R, S <: AutoProposal, M} = approximate_prod_with_sample_list(constraint.rng, constraint.method, right, left, N)
-__approximate(constraint::SampleListFormConstraint{N, R, S, M}, left, right::ContinuousUnivariateLogPdf) where {N, R, S <: AutoProposal, M} = approximate_prod_with_sample_list(constraint.rng, constraint.method, left, right, N)
+__approximate(
+    constraint::SampleListFormConstraint{N, R, S, M},
+    left::ContinuousUnivariateLogPdf,
+    right
+) where {N, R, S <: AutoProposal, M} =
+    approximate_prod_with_sample_list(constraint.rng, constraint.method, right, left, N)
+__approximate(
+    constraint::SampleListFormConstraint{N, R, S, M},
+    left,
+    right::ContinuousUnivariateLogPdf
+) where {N, R, S <: AutoProposal, M} =
+    approximate_prod_with_sample_list(constraint.rng, constraint.method, left, right, N)
 
 __approximate(
     constraint::SampleListFormConstraint{N, R, S, M},
