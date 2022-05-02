@@ -91,14 +91,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest          
         with:
           version: '1.7'
-      - run: |
-          julia --project=docs -e '
-            ENV["PYTHON"]=""
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()
-            Pkg.build("PyPlot")'
-      - run: julia --project=docs docs/make.jl
+      - run: make pkg_docs
         env:
           PYTHON: ""
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
