@@ -15,7 +15,7 @@ We assume three possible states (\"red\", \"green\" and \"blue\"), and the goal 
 
 ```@example hmm
 using Rocket, ReactiveMP, GraphPPL
-using Random, BenchmarkTools, Distributions, MacroTools, LinearAlgebra
+using Random, BenchmarkTools, Distributions, LinearAlgebra
 using Plots
 ```
 
