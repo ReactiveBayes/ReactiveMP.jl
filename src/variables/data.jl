@@ -26,6 +26,44 @@ DataVariableCreationOptions(::Type{D}, subject::Nothing, allow_missing::Val{ fal
 DataVariableCreationOptions(::Type{D}, subject::S, ::Val{ true })  where { D, S } = error("Error in datavar options. Custom `subject` was specified and `allow_missing` was set to true, which is disallowed. Provide a custom subject that accept missing values by itself and do no use `allow_missing` option.")
 DataVariableCreationOptions(::Type{D}, subject::S, ::Val{ false }) where { D, S } = DataVariableCreationOptions{S}(subject)
 
+""" 
+    datavar(::Type, [ dims... ])
+
+`datavar()` function provides a mechanism to pass data values to the model. You can create data inputs with `datavar()` function. 
+As a first argument it accepts a type specification and optional dimensionality (as additional arguments or as a tuple). 
+User can treat `datavar()`s in the model as both clamped values for priors and observations.
+
+Note: `datavar()` function is supposed to be used only within the `@model` macro, see `GraphPPL.jl` package.
+
+## Example 
+
+```julia
+@model function model_name(...)
+    ...
+    y = datavar(Float64) # Creates a single data input with `y` as identificator
+    y = datavar(Float64, n) # Returns a vector of  `y_i` data input objects with length `n`
+    y = datavar(Float64, n, m) # Returns a matrix of `y_i_j` data input objects with size `(n, m)`
+    y = datavar(Float64, (n, m)) # It is also possible to use a tuple for dimensionality
+    ...
+end
+```
+
+`datavar()` call within `@model` macro supports `where { options... }` block for extra options specification, e.g:
+
+```julia
+@model function model_name(...)
+    ...
+    y = datavar(Float64, n) where { allow_missing = true }
+    ...
+end
+```
+
+### Data variables available options
+
+- `allow_missing = true/false`: Specifies if it is possible to pass `missing` object as an observation. Note, however, that by default ReactiveMP.jl does not expose any message computation rules that involve `missing`s.
+"""
+function datavar end
+
 datavar(name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where D = datavar(DataVariableCreationOptions(D), name, D, collection_type)
 datavar(name::Symbol, ::Type{D}, length::Int)                                                            where D = datavar(DataVariableCreationOptions(D), name, D, length) 
 datavar(name::Symbol, ::Type{D}, dims::Tuple)                                                            where D = datavar(DataVariableCreationOptions(D), name, D, dims) 

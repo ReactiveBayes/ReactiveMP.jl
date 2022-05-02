@@ -13,6 +13,30 @@ end
 
 Base.show(io::IO, constvar::ConstVariable) = print(io, "ConstVariable(", indexed_name(constvar), ")")
 
+"""
+    constvar()
+
+Any runtime constant passed to a model as a model argument will be automatically converted to a fixed constant in the graph model at runtime. Sometimes it might be useful to create constants by hand (e.g. to avoid copying large matrices across the model and to avoid extensive memory allocations).
+
+Note: `constvar()` function is supposed to be used only within the `@model` macro.
+
+## Example
+
+```julia
+@model function model_name(...)
+    ...
+    c = constvar(1.0)
+
+    for i in 2:n
+        x[i] ~ x[i - 1] + c # Reuse the same reference to a constant 1.0
+    end
+    ...
+end
+```
+    
+"""
+function constvar end
+
 constvar(name::Symbol, constval, collection_type::AbstractVariableCollectionType = VariableIndividual())                 = ConstVariable(name, collection_type, constval, of(Message(constval, true, false)), 0)
 constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollectionType = VariableIndividual())           = constvar(name, PointMass(constval), collection_type)
 constvar(name::Symbol, constval::AbstractVector, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
