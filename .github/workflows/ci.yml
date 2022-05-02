@@ -13,7 +13,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest          
         with:
           version: '1.7'
-      - run: julia -e 'import Pkg; Pkg.add("JuliaFormatter"); import JuliaFormatter; JuliaFormatter.format("src", overwrite = false, verbose = true) ? exit(0) : exit(1)'
+      - run: julia -e 'import Pkg; Pkg.add("JuliaFormatter"); import JuliaFormatter; if JuliaFormatter.format("src", overwrite = false, verbose = true) exit(0) else exit(1) end'
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
