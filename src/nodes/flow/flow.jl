@@ -3,7 +3,7 @@ export getmodel, getapproximation
 
 # specify Flow factor node
 struct Flow end
-@node Flow Deterministic [ out, in ]
+@node Flow Deterministic [out, in]
 
 # specify abstract types for Flow building blocks
 abstract type AbstractFlowModel end
@@ -30,14 +30,16 @@ struct FlowMeta{T <: AbstractCompiledFlowModel, A <: AbstractNonLinearApproximat
     model         :: T
     approximation :: A
 end
-default_meta(::Type{ Flow }) = error("The Flow node requires the meta flag to be explicitly specified. Please create a `FlowMeta` structure for this purpose and include it with the Flow node as: `y ~ Flow(x) where { meta = FlowMeta(...) }` ")
+default_meta(::Type{Flow}) = error(
+    "The Flow node requires the meta flag to be explicitly specified. Please create a `FlowMeta` structure for this purpose and include it with the Flow node as: `y ~ Flow(x) where { meta = FlowMeta(...) }` "
+)
 
 # include approximations
 include("approximations/linearization.jl")
 include("approximations/unscented.jl")
 
 # structure constructors
-function FlowMeta(model::T) where { T <: AbstractCompiledFlowModel }
+function FlowMeta(model::T) where {T <: AbstractCompiledFlowModel}
     return FlowMeta(model, Linearization())
 end
 

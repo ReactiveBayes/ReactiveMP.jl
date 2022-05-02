@@ -3,7 +3,6 @@ export CompanionMatrix, CompanionMatrixTransposed
 import Base: *
 import LinearAlgebra: transpose, inv
 
-
 """
     CompanionMatrix
 
@@ -17,15 +16,16 @@ Represents a matrix of the following structure:
  0  0  0  ...   0  0
  0  0  0  ...   1  0
 """
-struct CompanionMatrix{ R <: Real, T <: AbstractVector{R} } <: AbstractMatrix{R}
-    θ :: T
+struct CompanionMatrix{R <: Real, T <: AbstractVector{R}} <: AbstractMatrix{R}
+    θ::T
 end
 
-Base.eltype(::CompanionMatrix{R}) where R = R
-Base.size(cmatrix::CompanionMatrix)       = (length(cmatrix.θ), length(cmatrix.θ)) 
-Base.length(cmatrix::CompanionMatrix)     = prod(size(cmatrix))
+Base.eltype(::CompanionMatrix{R}) where {R} = R
+Base.size(cmatrix::CompanionMatrix)         = (length(cmatrix.θ), length(cmatrix.θ))
+Base.length(cmatrix::CompanionMatrix)       = prod(size(cmatrix))
 
-Base.getindex(cmatrix::CompanionMatrix, i::Int) = getindex(cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...)
+Base.getindex(cmatrix::CompanionMatrix, i::Int) =
+    getindex(cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...)
 
 function Base.getindex(cmatrix::CompanionMatrix, i::Int, j::Int)
     if i === 1
@@ -37,15 +37,16 @@ function Base.getindex(cmatrix::CompanionMatrix, i::Int, j::Int)
     end
 end
 
-struct CompanionMatrixTransposed{ R <: Real, T <: AbstractVector{R} } <: AbstractMatrix{R}
-    θ :: T
+struct CompanionMatrixTransposed{R <: Real, T <: AbstractVector{R}} <: AbstractMatrix{R}
+    θ::T
 end
 
-Base.eltype(::CompanionMatrixTransposed{R}) where R = R
-Base.size(cmatrix::CompanionMatrixTransposed)       = (length(cmatrix.θ), length(cmatrix.θ)) 
-Base.length(cmatrix::CompanionMatrixTransposed)     = prod(size(cmatrix))
+Base.eltype(::CompanionMatrixTransposed{R}) where {R} = R
+Base.size(cmatrix::CompanionMatrixTransposed)         = (length(cmatrix.θ), length(cmatrix.θ))
+Base.length(cmatrix::CompanionMatrixTransposed)       = prod(size(cmatrix))
 
-Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int) = getindex(cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...)
+Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int) =
+    getindex(cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...)
 
 function Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int, j::Int)
     if j === 1
@@ -57,8 +58,8 @@ function Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int, j::Int)
     end
 end
 
-as_companion_matrix(θ::T) where { R, T <: AbstractVector{R} } = CompanionMatrix{R, T}(θ)
-as_companion_matrix(θ::T) where { T <: Real }                 = θ
+as_companion_matrix(θ::T) where {R, T <: AbstractVector{R}} = CompanionMatrix{R, T}(θ)
+as_companion_matrix(θ::T) where {T <: Real}                 = θ
 
 LinearAlgebra.transpose(cmatrix::CompanionMatrix)           = CompanionMatrixTransposed(cmatrix.θ)
 LinearAlgebra.transpose(cmatrix::CompanionMatrixTransposed) = CompanionMatrix(cmatrix.θ)
@@ -73,7 +74,7 @@ function as_matrix(cmatrix::CompanionMatrix)
     S       = zeros(dim, dim)
     S[1, :] = cmatrix.θ
     for i in 2:dim
-        S[i, i - 1] = one(eltype(cmatrix))
+        S[i, i-1] = one(eltype(cmatrix))
     end
     S
 end
@@ -83,7 +84,7 @@ function as_matrix(cmatrix::CompanionMatrixTransposed)
     S       = zeros(dim, dim)
     S[:, 1] = cmatrix.θ
     for i in 2:dim
-        S[i - 1, i] = one(eltype(cmatrix))
+        S[i-1, i] = one(eltype(cmatrix))
     end
     S
 end
@@ -91,21 +92,20 @@ end
 function Base.:*(tm::CompanionMatrix, v::AbstractVector)
     r = similar(v)
     r[1] = tm.θ' * v
-    for i in 1:(length(v) - 1)
-        r[i + 1] = v[i]
+    for i in 1:(length(v)-1)
+        r[i+1] = v[i]
     end
     return r
 end
 
 function Base.:*(tm::CompanionMatrix, m::AbstractMatrix)
-
     l = length(tm.θ)
     r = similar(m)
 
     for (index, col) in enumerate(eachcol(m))
         r[1, index] = tm.θ' * col
-        for i in 1:(l - 1)
-            r[i + 1, index] = col[i]
+        for i in 1:(l-1)
+            r[i+1, index] = col[i]
         end
     end
 
@@ -113,14 +113,13 @@ function Base.:*(tm::CompanionMatrix, m::AbstractMatrix)
 end
 
 function Base.:*(m::AbstractMatrix, tm::CompanionMatrixTransposed)
-
     l = length(tm.θ)
     r = similar(m)
 
     for (index, row) in enumerate(eachrow(m))
         r[index, 1] = tm.θ' * row
-        for i in 1:(l - 1)
-            r[index, i + 1] = row[i]
+        for i in 1:(l-1)
+            r[index, i+1] = row[i]
         end
     end
 
@@ -128,7 +127,6 @@ function Base.:*(m::AbstractMatrix, tm::CompanionMatrixTransposed)
 end
 
 function Base.:*(m::AbstractMatrix, tm::CompanionMatrix)
-
     l = length(tm.θ)
     r = similar(m)
 
@@ -136,13 +134,12 @@ function Base.:*(m::AbstractMatrix, tm::CompanionMatrix)
 end
 
 function Base.:*(tm::CompanionMatrixTransposed, m::AbstractMatrix)
-
     l = length(tm.θ)
     r = similar(m)
 
     for (index, col) in enumerate(eachcol(m))
         for j in 1:l-1
-            r[j, index] = tm.θ[j] * col[1] + col[j + 1]
+            r[j, index] = tm.θ[j] * col[1] + col[j+1]
         end
         r[l, index] = tm.θ[l] * col[1]
     end

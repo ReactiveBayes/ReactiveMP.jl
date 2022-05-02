@@ -4,17 +4,17 @@ import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
 import Base: ndims, precision, length, size, prod
 
-struct MvNormalWeightedMeanPrecision{ T <: Real, M <: AbstractVector{T}, P <: AbstractMatrix{T} } <: AbstractMvNormal
+struct MvNormalWeightedMeanPrecision{T <: Real, M <: AbstractVector{T}, P <: AbstractMatrix{T}} <: AbstractMvNormal
     xi :: M
     Λ  :: P
 end
 
-function MvNormalWeightedMeanPrecision(xi::AbstractVector{ <: Real }, Λ::AbstractMatrix{ <: Real }) 
+function MvNormalWeightedMeanPrecision(xi::AbstractVector{<:Real}, Λ::AbstractMatrix{<:Real})
     T = promote_type(eltype(xi), eltype(Λ))
     return MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-function MvNormalWeightedMeanPrecision(xi::AbstractVector{ <: Integer}, Λ::AbstractMatrix{ <: Integer }) 
+function MvNormalWeightedMeanPrecision(xi::AbstractVector{<:Integer}, Λ::AbstractMatrix{<:Integer})
     return MvNormalWeightedMeanPrecision(float.(xi), float.(Λ))
 end
 
@@ -22,7 +22,7 @@ function MvNormalWeightedMeanPrecision(xi::AbstractVector, λ::AbstractVector)
     return MvNormalWeightedMeanPrecision(xi, matrix_from_diagonal(promote_type(eltype(xi), eltype(λ)), λ))
 end
 
-function MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where T 
+function MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where {T}
     return MvNormalWeightedMeanPrecision(xi, convert(AbstractArray{T}, ones(length(xi))))
 end
 
@@ -57,30 +57,36 @@ function Distributions.sqmahal!(r, dist::MvNormalWeightedMeanPrecision, x::Abstr
     return dot(r, invcov(dist), r)
 end
 
-Base.eltype(::MvNormalWeightedMeanPrecision{T})     where T = T 
-Base.precision(dist::MvNormalWeightedMeanPrecision)         = invcov(dist)
-Base.length(dist::MvNormalWeightedMeanPrecision)            = length(weightedmean(dist))
-Base.ndims(dist::MvNormalWeightedMeanPrecision)             = length(dist)
-Base.size(dist::MvNormalWeightedMeanPrecision)              = (length(dist), )
+Base.eltype(::MvNormalWeightedMeanPrecision{T}) where {T} = T
+Base.precision(dist::MvNormalWeightedMeanPrecision)       = invcov(dist)
+Base.length(dist::MvNormalWeightedMeanPrecision)          = length(weightedmean(dist))
+Base.ndims(dist::MvNormalWeightedMeanPrecision)           = length(dist)
+Base.size(dist::MvNormalWeightedMeanPrecision)            = (length(dist),)
 
-Base.convert(::Type{ <: MvNormalWeightedMeanPrecision }, xi::AbstractVector, Λ::AbstractMatrix) = MvNormalWeightedMeanPrecision(xi, Λ)
+Base.convert(::Type{<:MvNormalWeightedMeanPrecision}, xi::AbstractVector, Λ::AbstractMatrix) =
+    MvNormalWeightedMeanPrecision(xi, Λ)
 
-function Base.convert(::Type{ <: MvNormalWeightedMeanPrecision{T} }, xi::AbstractVector, Λ::AbstractMatrix) where { T <: Real }
+function Base.convert(
+    ::Type{<:MvNormalWeightedMeanPrecision{T}},
+    xi::AbstractVector,
+    Λ::AbstractMatrix
+) where {T <: Real}
     MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{ <: MvNormalWeightedMeanPrecision }, dims::Int) = MvNormalWeightedMeanPrecision(zeros(dims), fill(tiny, dims))
+vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) = MvNormalWeightedMeanPrecision(zeros(dims), fill(tiny, dims))
 
-prod_analytical_rule(::Type{ <: MvNormalWeightedMeanPrecision }, ::Type{ <: MvNormalWeightedMeanPrecision }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
+    ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdPreserveType, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
-    xi = weightedmean(left) + weightedmean(right) 
+    xi = weightedmean(left) + weightedmean(right)
     Λ  = invcov(left) + invcov(right)
     return MvNormalWeightedMeanPrecision(xi, Λ)
 end
 
 function Base.prod(::ProdAnalytical, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
-    xi = weightedmean(left) + weightedmean(right) 
+    xi = weightedmean(left) + weightedmean(right)
     Λ  = invcov(left) + invcov(right)
     return MvNormalWeightedMeanPrecision(xi, Λ)
 end

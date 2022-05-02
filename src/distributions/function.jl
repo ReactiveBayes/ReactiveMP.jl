@@ -20,17 +20,18 @@ known analytical distribution available.
 fdist = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> -x^2)
 ```
 """
-struct ContinuousUnivariateLogPdf{ D <: DomainSets.Domain, F } <: ContinuousUnivariateDistribution
-    domain :: D
-    logpdf :: F
+struct ContinuousUnivariateLogPdf{D <: DomainSets.Domain, F} <: ContinuousUnivariateDistribution
+    domain::D
+    logpdf::F
 end
 
 ContinuousUnivariateLogPdf(f::Function) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), f)
 
-(dist::ContinuousUnivariateLogPdf)(x::Real)                      = logpdf(dist, x)
-(dist::ContinuousUnivariateLogPdf)(x::AbstractVector{ <: Real }) = logpdf(dist, x)
+(dist::ContinuousUnivariateLogPdf)(x::Real)                   = logpdf(dist, x)
+(dist::ContinuousUnivariateLogPdf)(x::AbstractVector{<:Real}) = logpdf(dist, x)
 
-Distributions.support(dist::ContinuousUnivariateLogPdf) = Distributions.RealInterval(DomainSets.infimum(dist.domain), DomainSets.supremum(dist.domain))
+Distributions.support(dist::ContinuousUnivariateLogPdf) =
+    Distributions.RealInterval(DomainSets.infimum(dist.domain), DomainSets.supremum(dist.domain))
 
 Distributions.mean(dist::ContinuousUnivariateLogPdf)    = error("mean() is not defined for `ContinuousUnivariateLogPdf`.")
 Distributions.median(dist::ContinuousUnivariateLogPdf)  = error("median() is not defined for `ContinuousUnivariateLogPdf`.")
@@ -42,35 +43,42 @@ Distributions.invcov(dist::ContinuousUnivariateLogPdf)  = error("invcov() is not
 Distributions.entropy(dist::ContinuousUnivariateLogPdf) = error("entropy() is not defined for `ContinuousUnivariateLogPdf`.")
 
 # We don't expect neither `pdf` nor `logpdf` to be normalised
-Distributions.pdf(dist::ContinuousUnivariateLogPdf, x::Real)    = exp(logpdf(dist, x))
+Distributions.pdf(dist::ContinuousUnivariateLogPdf, x::Real) = exp(logpdf(dist, x))
 
-function Distributions.logpdf(dist::ContinuousUnivariateLogPdf, x::Real) 
+function Distributions.logpdf(dist::ContinuousUnivariateLogPdf, x::Real)
     @assert x ∈ dist.domain "x = $(x) does not belong to the domain of $dist"
     return dist.logpdf(x)
 end
 
 # These are fallbacks for various optimisation packages which may pass arguments as vectors
-function Distributions.pdf(dist::ContinuousUnivariateLogPdf, x::AbstractVector{ <: Real })
+function Distributions.pdf(dist::ContinuousUnivariateLogPdf, x::AbstractVector{<:Real})
     @assert length(x) === 1 "`ContinuousUnivariateLogPdf` expects either float or a vector of a single float as an input for the `pdf` function."
     return exp(logpdf(dist, first(x)))
 end
 
-function Distributions.logpdf(dist::ContinuousUnivariateLogPdf, x::AbstractVector{ <: Real }) 
+function Distributions.logpdf(dist::ContinuousUnivariateLogPdf, x::AbstractVector{<:Real})
     @assert length(x) === 1 "`ContinuousUnivariateLogPdf` expects either float or a vector of a single float as an input for the `logpdf` function."
     return logpdf(dist, first(x))
 end
 
 Base.precision(dist::ContinuousUnivariateLogPdf) = error("precision() is not defined for `ContinuousUnivariateLogPdf`.")
 
-Base.convert(::Type{ ContinuousUnivariateLogPdf }, domain::D, logpdf::F) where { D <: DomainSets.Domain, F } = ContinuousUnivariateLogPdf{D, F}(domain, logpdf)
+Base.convert(::Type{ContinuousUnivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} =
+    ContinuousUnivariateLogPdf{D, F}(domain, logpdf)
 
-convert_eltype(::Type{ ContinuousUnivariateLogPdf }, ::Type{ T }, dist::ContinuousUnivariateLogPdf) where { T <: Real } = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
+convert_eltype(::Type{ContinuousUnivariateLogPdf}, ::Type{T}, dist::ContinuousUnivariateLogPdf) where {T <: Real} =
+    convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
 
-vague(::Type{ <: ContinuousUnivariateLogPdf }) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
+vague(::Type{<:ContinuousUnivariateLogPdf}) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
 
-prod_analytical_rule(::Type{ <: ContinuousUnivariateLogPdf }, ::Type{ <: ContinuousUnivariateLogPdf }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:ContinuousUnivariateLogPdf}, ::Type{<:ContinuousUnivariateLogPdf}) =
+    ProdAnalyticalRuleAvailable()
 
-function prod(::ProdAnalytical, left::ContinuousUnivariateLogPdf{D1, F1}, right::ContinuousUnivariateLogPdf{D2, F2}) where { D1, D2, F1, F2 }
+function prod(
+    ::ProdAnalytical,
+    left::ContinuousUnivariateLogPdf{D1, F1},
+    right::ContinuousUnivariateLogPdf{D2, F2}
+) where {D1, D2, F1, F2}
     @assert left.domain == right.domain "Different domain types in product of generic `ContinuousUnivariateLogPdf` distributions. Left domain is $(left.domain), right is $(right.domain)."
     plogpdf = let left = left, right = right
         (x) -> logpdf(left, x) + logpdf(right, x)
@@ -81,7 +89,7 @@ end
 ## More efficient prod for same logpdfs
 
 struct ContinuousUnivariateLogPdfVectorisedProduct{F} <: ContinuousUnivariateDistribution
-    vector :: Vector{F}
+    vector::Vector{F}
 end
 
 (dist::ContinuousUnivariateLogPdfVectorisedProduct)(x) = logpdf(dist, x)
@@ -100,13 +108,24 @@ Distributions.entropy(dist::ContinuousUnivariateLogPdfVectorisedProduct) = error
 Distributions.logpdf(dist::ContinuousUnivariateLogPdfVectorisedProduct, x) = mapreduce((d) -> logpdf(d, x), +, dist.vector)
 Distributions.pdf(dist::ContinuousUnivariateLogPdfVectorisedProduct, x)    = exp(mapreduce((d) -> logpdf(d, x), +, dist.vector))
 
-function prod(::ProdAnalytical, left::ContinuousUnivariateLogPdf{D, F}, right::ContinuousUnivariateLogPdf{D, F}) where { D, F }
-    return ContinuousUnivariateLogPdfVectorisedProduct(ContinuousUnivariateLogPdf{D, F}[ left, right ])
+function prod(
+    ::ProdAnalytical,
+    left::ContinuousUnivariateLogPdf{D, F},
+    right::ContinuousUnivariateLogPdf{D, F}
+) where {D, F}
+    return ContinuousUnivariateLogPdfVectorisedProduct(ContinuousUnivariateLogPdf{D, F}[left, right])
 end
 
-prod_analytical_rule(::Type{ ContinuousUnivariateLogPdfVectorisedProduct{F} }, ::Type{ F }) where { F <: ContinuousUnivariateLogPdf } = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(
+    ::Type{ContinuousUnivariateLogPdfVectorisedProduct{F}},
+    ::Type{F}
+) where {F <: ContinuousUnivariateLogPdf} = ProdAnalyticalRuleAvailable()
 
-function prod(::ProdAnalytical, left::ContinuousUnivariateLogPdfVectorisedProduct{F}, right::F) where { F <: ContinuousUnivariateLogPdf }
+function prod(
+    ::ProdAnalytical,
+    left::ContinuousUnivariateLogPdfVectorisedProduct{F},
+    right::F
+) where {F <: ContinuousUnivariateLogPdf}
     push!(left.vector, right)
     return left
 end
@@ -121,16 +140,37 @@ function Base.isapprox(left::ContinuousUnivariateLogPdf, right::ContinuousUnivar
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
-function culogpdf__isapprox(domain::DomainSets.FullSpace, left::ContinuousUnivariateLogPdf, right::ContinuousUnivariateLogPdf; kwargs...)
-    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(Q_GaussHermite(32), (x) -> exp(x ^ 2) * abs(left(x) - right(x))); kwargs...)
+function culogpdf__isapprox(
+    domain::DomainSets.FullSpace,
+    left::ContinuousUnivariateLogPdf,
+    right::ContinuousUnivariateLogPdf;
+    kwargs...
+)
+    return isapprox(
+        zero(eltype(domain)),
+        DomainIntegrals.integral(Q_GaussHermite(32), (x) -> exp(x^2) * abs(left(x) - right(x)));
+        kwargs...
+    )
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
-function culogpdf__isapprox(domain::DomainSets.HalfLine, left::ContinuousUnivariateLogPdf, right::ContinuousUnivariateLogPdf; kwargs...)
-    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x))); kwargs...)
+function culogpdf__isapprox(
+    domain::DomainSets.HalfLine,
+    left::ContinuousUnivariateLogPdf,
+    right::ContinuousUnivariateLogPdf;
+    kwargs...
+)
+    return isapprox(
+        zero(eltype(domain)),
+        DomainIntegrals.integral(Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x)));
+        kwargs...
+    )
 end
 
 # We do not check typeof of a different functions because in most of the cases lambdas have different types, but it does not really mean that objects are different
-function is_typeof_equal(left::ContinuousUnivariateLogPdf{D, F1}, right::ContinuousUnivariateLogPdf{D, F2}) where { D, F1 <: Function, F2 <: Function }
+function is_typeof_equal(
+    left::ContinuousUnivariateLogPdf{D, F1},
+    right::ContinuousUnivariateLogPdf{D, F2}
+) where {D, F1 <: Function, F2 <: Function}
     return true
 end

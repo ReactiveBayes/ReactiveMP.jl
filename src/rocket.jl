@@ -3,8 +3,8 @@
 using Rocket
 
 mutable struct LimitStackSchedulerProps
-    soft_depth :: Int
-    hard_depth :: Int
+    soft_depth::Int
+    hard_depth::Int
 end
 
 struct LimitStackScheduler <: Rocket.AbstractScheduler
@@ -19,12 +19,12 @@ LimitStackScheduler(soft_limit::Int, hard_limit::Int) = LimitStackScheduler(soft
 get_soft_limit(scheduler::LimitStackScheduler) = scheduler.soft_limit
 get_hard_limit(scheduler::LimitStackScheduler) = scheduler.hard_limit
 
-function increase_depth!(scheduler::LimitStackScheduler) 
+function increase_depth!(scheduler::LimitStackScheduler)
     scheduler.props.soft_depth = scheduler.props.soft_depth + 1
     scheduler.props.hard_depth = scheduler.props.hard_depth + 1
 end
 
-function decrease_depth!(scheduler::LimitStackScheduler) 
+function decrease_depth!(scheduler::LimitStackScheduler)
     scheduler.props.soft_depth = scheduler.props.soft_depth - 1
     scheduler.props.hard_depth = scheduler.props.hard_depth - 1
 end
@@ -35,13 +35,16 @@ set_soft_depth!(scheduler::LimitStackScheduler, v) = scheduler.props.soft_depth 
 get_hard_depth(scheduler::LimitStackScheduler)     = scheduler.props.hard_depth
 set_hard_depth!(scheduler::LimitStackScheduler, v) = scheduler.props.hard_depth = v
 
-Base.show(io::IO, scheduler::LimitStackScheduler) = print(io, "LimitStackScheduler(soft_limit = $(get_soft_limit(scheduler)), hard_limit = $(get_hard_limit(scheduler)))")
+Base.show(io::IO, scheduler::LimitStackScheduler) = print(
+    io,
+    "LimitStackScheduler(soft_limit = $(get_soft_limit(scheduler)), hard_limit = $(get_hard_limit(scheduler)))"
+)
 
 Base.similar(scheduler::LimitStackScheduler) = LimitStackScheduler(get_soft_limit(scheduler), get_hard_limit(scheduler))
 
 Rocket.makeinstance(::Type, scheduler::LimitStackScheduler) = scheduler
 
-Rocket.instancetype(::Type, ::Type{ <: LimitStackScheduler }) = LimitStackScheduler
+Rocket.instancetype(::Type, ::Type{<:LimitStackScheduler}) = LimitStackScheduler
 
 function limitstack(callback::Function, instance::LimitStackScheduler)
     increase_depth!(instance)
@@ -54,10 +57,10 @@ function limitstack(callback::Function, instance::LimitStackScheduler)
         previous_soft_depth = get_soft_depth(instance)
         set_soft_depth!(instance, 0)
         condition = Base.Condition()
-        @async begin 
+        @async begin
             try
                 notify(condition, callback())
-            catch exception 
+            catch exception
                 notify(condition, exception, error = true)
             end
         end
@@ -74,13 +77,15 @@ struct LimitStackSubscription <: Teardown
     subscription :: Teardown
 end
 
-Rocket.as_teardown(::Type{ <: LimitStackSubscription }) = UnsubscribableTeardownLogic()
+Rocket.as_teardown(::Type{<:LimitStackSubscription}) = UnsubscribableTeardownLogic()
 
-Rocket.on_unsubscribe!(scheduler::LimitStackSubscription) = limitstack(() -> Rocket.unsubscribe!(scheduler.subscription), scheduler.instance)
+Rocket.on_unsubscribe!(scheduler::LimitStackSubscription) =
+    limitstack(() -> Rocket.unsubscribe!(scheduler.subscription), scheduler.instance)
 
-Rocket.scheduled_subscription!(source, actor, instance::LimitStackScheduler) = limitstack(instance) do
-    return LimitStackSubscription(instance, Rocket.on_subscribe!(source, actor, instance))
-end
+Rocket.scheduled_subscription!(source, actor, instance::LimitStackScheduler) =
+    limitstack(instance) do
+        return LimitStackSubscription(instance, Rocket.on_subscribe!(source, actor, instance))
+    end
 
 Rocket.scheduled_next!(actor, value, instance::LimitStackScheduler) = limitstack(() -> Rocket.on_next!(actor, value), instance)
 Rocket.scheduled_error!(actor, err, instance::LimitStackScheduler)  = limitstack(() -> Rocket.on_error!(actor, err), instance)

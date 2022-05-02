@@ -1,6 +1,7 @@
 export AbstractFormConstraint
 export FormConstraintCheckEach, FormConstraintCheckLast, FormConstraintCheckPickDefault
-export constrain_form, default_prod_constraint, default_form_check_strategy, is_point_mass_form_constraint, make_form_constraint
+export constrain_form,
+    default_prod_constraint, default_form_check_strategy, is_point_mass_form_constraint, make_form_constraint
 export CompositeFormConstraint
 
 using TupleTools
@@ -73,7 +74,6 @@ See also: [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
 """
 function default_prod_constraint end
 
-
 """
     is_point_mass_form_constraint(form_constraint)
 
@@ -90,7 +90,7 @@ This function must approximate `distribution` object in a form that satisfies `f
 
 See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`is_point_mass_form_constraint`](@ref)
 """
-function constrain_form end 
+function constrain_form end
 
 """
     make_form_constraint(::Type, args...; kwargs...)
@@ -121,19 +121,23 @@ Creates a composite form constraint that applies form constraints in order. The 
 Any functional form constraint that defines `is_point_mass_form_constraint() = true` may be used only as the last element of the composition.
 """
 struct CompositeFormConstraint{C} <: AbstractFormConstraint
-    constraints :: C
+    constraints::C
 end
 
 Base.show(io::IO, constraint::CompositeFormConstraint) = join(io, constraint.constraints, " :: ")
 
-constrain_form(composite::CompositeFormConstraint, something) = reduce((form, constraint) -> constrain_form(constraint, form), composite.constraints, init = something)
+constrain_form(composite::CompositeFormConstraint, something) =
+    reduce((form, constraint) -> constrain_form(constraint, form), composite.constraints, init = something)
 
-default_prod_constraint(constraint::CompositeFormConstraint) = mapfoldl(default_prod_constraint, resolve_prod_constraint, constraint.constraints)
+default_prod_constraint(constraint::CompositeFormConstraint) =
+    mapfoldl(default_prod_constraint, resolve_prod_constraint, constraint.constraints)
 
 function default_form_check_strategy(composite::CompositeFormConstraint)
     strategies = map(default_form_check_strategy, composite.constraints)
     if !(all(e -> e === first(strategies), TupleTools.tail(strategies)))
-        error("Different default form check strategy for composite form constraints found. Use `form_check_strategy` options to specify check strategy.")
+        error(
+            "Different default form check strategy for composite form constraints found. Use `form_check_strategy` options to specify check strategy."
+        )
     end
     return first(strategies)
 end
@@ -142,14 +146,16 @@ function is_point_mass_form_constraint(composite::CompositeFormConstraint)
     is_point_mass = map(is_point_mass_form_constraint, composite.constraints)
     pmindex       = findnext(is_point_mass, 1)
     if pmindex !== nothing && pmindex !== length(is_point_mass)
-        error("Composite form constraint supports point mass constraint only at the end of the form constrains specification.")
+        error(
+            "Composite form constraint supports point mass constraint only at the end of the form constrains specification."
+        )
     end
     return last(is_point_mass)
 end
 
 Base.:+(constraint::AbstractFormConstraint) = constraint
 
-Base.:+(left::AbstractFormConstraint,  right::AbstractFormConstraint)  = CompositeFormConstraint((left, right))
-Base.:+(left::AbstractFormConstraint,  right::CompositeFormConstraint) = CompositeFormConstraint((left, right.constraints...))
+Base.:+(left::AbstractFormConstraint, right::AbstractFormConstraint)   = CompositeFormConstraint((left, right))
+Base.:+(left::AbstractFormConstraint, right::CompositeFormConstraint)  = CompositeFormConstraint((left, right.constraints...))
 Base.:+(left::CompositeFormConstraint, right::AbstractFormConstraint)  = CompositeFormConstraint((left.constraints..., right))
 Base.:+(left::CompositeFormConstraint, right::CompositeFormConstraint) = CompositeFormConstraint((left.constraints..., right.constraints...))

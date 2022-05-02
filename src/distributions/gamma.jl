@@ -24,39 +24,42 @@ function mean(::typeof(xtlog), dist::GammaShapeScale)
     return mean(dist) * (digamma(k + 1) + log(θ))
 end
 
-vague(::Type{ <: GammaShapeScale }) = GammaShapeScale(1.0, huge)
+vague(::Type{<:GammaShapeScale}) = GammaShapeScale(1.0, huge)
 
-prod_analytical_rule(::Type{ <: GammaShapeScale }, ::Type{ <: GammaShapeScale }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)
     T = promote_type(eltype(left), eltype(right))
-    return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
+    return GammaShapeScale(
+        shape(left) + shape(right) - one(T),
+        (scale(left) * scale(right)) / (scale(left) + scale(right))
+    )
 end
 
 # Conversion to shape - scale parametrisation
 
-function Base.convert(::Type{ GammaShapeScale{T} }, dist::GammaDistributionsFamily) where T
+function Base.convert(::Type{GammaShapeScale{T}}, dist::GammaDistributionsFamily) where {T}
     return GammaShapeScale(convert(T, shape(dist)), convert(T, scale(dist)))
 end
 
-function Base.convert(::Type{ GammaShapeScale }, dist::GammaDistributionsFamily{T}) where T
+function Base.convert(::Type{GammaShapeScale}, dist::GammaDistributionsFamily{T}) where {T}
     return convert(GammaShapeScale{T}, dist)
 end
 
 # Conversion to shape - rate parametrisation
 
-function Base.convert(::Type{ GammaShapeRate{T} }, dist::GammaDistributionsFamily) where T
+function Base.convert(::Type{GammaShapeRate{T}}, dist::GammaDistributionsFamily) where {T}
     return GammaShapeRate(convert(T, shape(dist)), convert(T, rate(dist)))
 end
 
-function Base.convert(::Type{ GammaShapeRate }, dist::GammaDistributionsFamily{T}) where T
+function Base.convert(::Type{GammaShapeRate}, dist::GammaDistributionsFamily{T}) where {T}
     return convert(GammaShapeRate{T}, dist)
 end
 
 # Extensions of prod methods
 
-prod_analytical_rule(::Type{ <: GammaShapeRate }, ::Type{ <: GammaShapeScale }) = ProdAnalyticalRuleAvailable()
-prod_analytical_rule(::Type{ <: GammaShapeScale }, ::Type{ <: GammaShapeRate }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeScale)
     T = promote_type(eltype(left), eltype(right))
@@ -65,7 +68,10 @@ end
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeRate)
     T = promote_type(eltype(left), eltype(right))
-    return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
+    return GammaShapeScale(
+        shape(left) + shape(right) - one(T),
+        (scale(left) * scale(right)) / (scale(left) + scale(right))
+    )
 end
 
 ## Friendly functions

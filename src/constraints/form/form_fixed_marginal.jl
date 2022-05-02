@@ -15,7 +15,7 @@ Can be viewed as blocking of updates of a specific edge associated with the marg
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
 mutable struct FixedMarginalFormConstraint <: ReactiveMP.AbstractFormConstraint
-    fixed_value :: Any
+    fixed_value::Any
 end
 
 is_point_mass_form_constraint(::FixedMarginalFormConstraint) = false
@@ -24,6 +24,7 @@ default_form_check_strategy(::FixedMarginalFormConstraint) = FormConstraintCheck
 
 default_prod_constraint(::FixedMarginalFormConstraint) = ProdGeneric()
 
-make_form_constraint(::Type{ <: Marginal }, fixed_value) = FixedMarginalFormConstraint(fixed_value)
+make_form_constraint(::Type{<:Marginal}, fixed_value) = FixedMarginalFormConstraint(fixed_value)
 
-constrain_form(constraint::FixedMarginalFormConstraint, something) = constraint.fixed_value !== nothing ? constraint.fixed_value : something
+constrain_form(constraint::FixedMarginalFormConstraint, something) =
+    constraint.fixed_value !== nothing ? constraint.fixed_value : something

@@ -5,19 +5,19 @@ import Base: show
 ## Random variable implementation
 
 mutable struct RandomVariable <: AbstractVariable
-    name                :: Symbol
-    anonymous           :: Bool
-    collection_type     :: AbstractVariableCollectionType
-    input_messages      :: Vector{MessageObservable{AbstractMessage}} 
-    output_messages     :: Vector{MessageObservable{Message}}
-    output_initialised  :: Bool
-    output_cache        :: Union{Nothing, EqualityChain}
-    marginal            :: MarginalObservable
-    pipeline            :: AbstractPipelineStage
-    proxy_variables     
-    prod_constraint     
-    prod_strategy       
-    marginal_form_constraint     
+    name               :: Symbol
+    anonymous          :: Bool
+    collection_type    :: AbstractVariableCollectionType
+    input_messages     :: Vector{MessageObservable{AbstractMessage}}
+    output_messages    :: Vector{MessageObservable{Message}}
+    output_initialised :: Bool
+    output_cache       :: Union{Nothing, EqualityChain}
+    marginal           :: MarginalObservable
+    pipeline           :: AbstractPipelineStage
+    proxy_variables
+    prod_constraint
+    prod_strategy
+    marginal_form_constraint
     marginal_form_check_strategy
     messages_form_constraint
     messages_form_check_strategy
@@ -57,7 +57,8 @@ function RandomVariableCreationOptions()
     )
 end
 
-const EmptyRandomVariableCreationOptions = RandomVariableCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+const EmptyRandomVariableCreationOptions =
+    RandomVariableCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
 
 # Immutable setters return a new object, this API is considered to be private
 randomvar_options_set_pipeline(pipeline)                                         = randomvar_options_set_pipeline(RandomVariableCreationOptions(), pipeline)
@@ -130,23 +131,27 @@ randomvar(name::Symbol, dims::Vararg{Int})                               = rando
 randomvar(options::RandomVariableCreationOptions, name::Symbol)                    = randomvar(options, name, VariableIndividual())
 randomvar(options::RandomVariableCreationOptions, name::Symbol, dims::Vararg{Int}) = randomvar(options, name, dims)
 
-function randomvar(options::RandomVariableCreationOptions, name::Symbol, collection_type::AbstractVariableCollectionType) 
+function randomvar(
+    options::RandomVariableCreationOptions,
+    name::Symbol,
+    collection_type::AbstractVariableCollectionType
+)
     return RandomVariable(
-        name, 
+        name,
         false,
-        collection_type, 
-        Vector{MessageObservable{AbstractMessage}}(), 
-        Vector{MessageObservable{Message}}(), 
-        false, 
-        nothing, 
-        MarginalObservable(), 
+        collection_type,
+        Vector{MessageObservable{AbstractMessage}}(),
+        Vector{MessageObservable{Message}}(),
+        false,
+        nothing,
+        MarginalObservable(),
         something(options.pipeline, EmptyPipelineStage()),      # `something(args..)` returns the first `notnothing` object
         options.proxy_variables,                                # here we do allow `nothing`, so no need for `something(...)`
-        something(options.prod_constraint, ProdAnalytical()), 
+        something(options.prod_constraint, ProdAnalytical()),
         something(options.prod_strategy, FoldLeftProdStrategy()),
-        something(options.marginal_form_constraint, UnspecifiedFormConstraint()), 
+        something(options.marginal_form_constraint, UnspecifiedFormConstraint()),
         something(options.marginal_form_check_strategy, FormConstraintCheckPickDefault()),
-        something(options.messages_form_constraint, UnspecifiedFormConstraint()), 
+        something(options.messages_form_constraint, UnspecifiedFormConstraint()),
         something(options.messages_form_check_strategy, FormConstraintCheckPickDefault())
     )
 end
@@ -161,14 +166,14 @@ function randomvar(options::RandomVariableCreationOptions, name::Symbol, dims::T
     return map(i -> randomvar(options, name, VariableArray(size, i)), indices)
 end
 
-degree(randomvar::RandomVariable)              = length(randomvar.input_messages)
-name(randomvar::RandomVariable)                = randomvar.name
-isanonymous(randomvar::RandomVariable)         = randomvar.anonymous
-proxy_variables(randomvar::RandomVariable)     = randomvar.proxy_variables
-collection_type(randomvar::RandomVariable)     = randomvar.collection_type
-equality_chain(randomvar::RandomVariable)      = randomvar.equality_chain
-prod_constraint(randomvar::RandomVariable)     = randomvar.prod_constraint
-prod_strategy(randomvar::RandomVariable)       = randomvar.prod_strategy
+degree(randomvar::RandomVariable)          = length(randomvar.input_messages)
+name(randomvar::RandomVariable)            = randomvar.name
+isanonymous(randomvar::RandomVariable)     = randomvar.anonymous
+proxy_variables(randomvar::RandomVariable) = randomvar.proxy_variables
+collection_type(randomvar::RandomVariable) = randomvar.collection_type
+equality_chain(randomvar::RandomVariable)  = randomvar.equality_chain
+prod_constraint(randomvar::RandomVariable) = randomvar.prod_constraint
+prod_strategy(randomvar::RandomVariable)   = randomvar.prod_strategy
 
 marginal_form_constraint(randomvar::RandomVariable)     = randomvar.marginal_form_constraint
 marginal_form_check_strategy(randomvar::RandomVariable) = _marginal_form_check_strategy(randomvar.marginal_form_check_strategy, randomvar)
@@ -184,21 +189,31 @@ _messages_form_check_strategy(form_check_strategy, randomvar::RandomVariable)   
 
 isproxy(randomvar::RandomVariable) = proxy_variables(randomvar) !== nothing
 
-israndom(::RandomVariable)                     = true
-israndom(::AbstractArray{ <: RandomVariable }) = true
-isdata(::RandomVariable)                       = false
-isdata(::AbstractArray{ <: RandomVariable })   = false
-isconst(::RandomVariable)                      = false
-isconst(::AbstractArray{ <: RandomVariable })  = false
+israndom(::RandomVariable)                  = true
+israndom(::AbstractArray{<:RandomVariable}) = true
+isdata(::RandomVariable)                    = false
+isdata(::AbstractArray{<:RandomVariable})   = false
+isconst(::RandomVariable)                   = false
+isconst(::AbstractArray{<:RandomVariable})  = false
 
-messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), messages_form_constraint(randomvar), messages_form_check_strategy(randomvar))
-marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), marginal_form_constraint(randomvar), marginal_form_check_strategy(randomvar))
+messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(
+    prod_strategy(randomvar),
+    prod_constraint(randomvar),
+    messages_form_constraint(randomvar),
+    messages_form_check_strategy(randomvar)
+)
+marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(
+    prod_strategy(randomvar),
+    prod_constraint(randomvar),
+    marginal_form_constraint(randomvar),
+    marginal_form_check_strategy(randomvar)
+)
 
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
-messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.input_messages[index]
+messagein(randomvar::RandomVariable, index::Int) = @inbounds randomvar.input_messages[index]
 
-function messageout(randomvar::RandomVariable, index::Int) 
+function messageout(randomvar::RandomVariable, index::Int)
     if randomvar.output_initialised === false
         initialize_output_messages!(randomvar)
     end
@@ -218,7 +233,9 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     if index === degree(randomvar) + 1
         push!(randomvar.input_messages, messagein)
     else
-        error("Inconsistent state in setmessagein! function for random variable $(randomvar). `index` should be equal to `degree(randomvar) + 1 = $(degree(randomvar) + 1)`, $(index) is given instead")
+        error(
+            "Inconsistent state in setmessagein! function for random variable $(randomvar). `index` should be equal to `degree(randomvar) + 1 = $(degree(randomvar) + 1)`, $(index) is given instead"
+        )
     end
 end
 
@@ -226,8 +243,8 @@ function activate!(model, randomvar::RandomVariable)
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomvar) > 5
-        chain_pipeline  = schedule_on(global_reactive_scheduler(getoptions(model)))
-        chain_prod_fn   = messages_prod_fn(randomvar)
+        chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
+        chain_prod_fn = messages_prod_fn(randomvar)
         randomvar.output_cache = EqualityChain(randomvar.input_messages, chain_pipeline, chain_prod_fn)
     end
 

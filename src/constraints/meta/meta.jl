@@ -17,7 +17,7 @@ struct MetaSpecificationEntry{N, M}
     meta  :: M
 end
 
-MetaSpecificationEntry(::Val{F}, ::Val{N}, meta::M) where { F, N, M } = MetaSpecificationEntry(F, N, meta)
+MetaSpecificationEntry(::Val{F}, ::Val{N}, meta::M) where {F, N, M} = MetaSpecificationEntry(F, N, meta)
 
 functionalform(entry::MetaSpecificationEntry) = entry.fform
 getnames(entry::MetaSpecificationEntry)       = entry.names
@@ -29,15 +29,15 @@ function Base.show(io::IO, entry::MetaSpecificationEntry)
     print(io, ") -> ", metadata(entry))
 end
 
-struct MetaSpecificationOptions 
-    warn :: Bool
+struct MetaSpecificationOptions
+    warn::Bool
 end
 
 iswarn(options::MetaSpecificationOptions) = options.warn
 
 struct MetaSpecification{E}
-    entries :: E
-    options :: MetaSpecificationOptions
+    entries::E
+    options::MetaSpecificationOptions
 end
 
 getentries(specification::MetaSpecification) = specification.entries
@@ -61,8 +61,8 @@ This function resolves meta for a given `expr` (needed for error printing), `ffo
 
 See also: [`ConstraintsSpecification`](@ref)
 """
-function resolve_meta(metaspec, model, fform, variables) 
-    symfform       = as_node_symbol(fform)
+function resolve_meta(metaspec, model, fform, variables)
+    symfform = as_node_symbol(fform)
 
     var_names      = map(name, variables)
     var_refs       = map(resolve_variable_proxy, variables)
@@ -71,7 +71,8 @@ function resolve_meta(metaspec, model, fform, variables)
     found = nothing
 
     unrolled_foreach(getentries(metaspec)) do fentry
-        if functionalform(fentry) === symfform && (all(s -> s ∈ var_names, getnames(fentry)) || all(s -> s ∈ var_refs_names, getnames(fentry)))
+        if functionalform(fentry) === symfform &&
+           (all(s -> s ∈ var_names, getnames(fentry)) || all(s -> s ∈ var_refs_names, getnames(fentry)))
             if found !== nothing
                 error("Ambigous meta object resolution for the node $(fform). Check $(found) and $(fentry).")
             end
@@ -80,7 +81,6 @@ function resolve_meta(metaspec, model, fform, variables)
     end
 
     return found === nothing ? nothing : metadata(found)
-
 end
 
 resolve_meta(metaspec::UnspecifiedMeta, model, fform, variables) = nothing
@@ -92,7 +92,6 @@ function activate!(meta::UnspecifiedMeta, model)
 end
 
 function activate!(meta::MetaSpecification, model)
-
     options = getoptions(meta)
     stats   = getstats(model)
 
@@ -105,10 +104,10 @@ function activate!(meta::MetaSpecification, model)
 
         foreach(getnames(entry)) do ename
             if warn && !(hasrandomvar(model, ename) || hasdatavar(model, ename) || hasconstvar(model, ename))
-                @warn "Meta specification `$(entry)` uses `$(ename)`, but model has no variable named `$(ename)`. Use `warn = false` option during constraints specification to suppress this warning."    
+                @warn "Meta specification `$(entry)` uses `$(ename)`, but model has no variable named `$(ename)`. Use `warn = false` option during constraints specification to suppress this warning."
             end
         end
     end
-    
+
     return nothing
 end

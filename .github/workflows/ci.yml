@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
-      - uses: julia-actions/julia-buildpkg@latest          
+      - uses: julia-actions/setup-julia@v1         
         with:
           version: '1.7'
       - run: julia -e 'import Pkg; Pkg.add("JuliaFormatter"); import JuliaFormatter; if JuliaFormatter.format("src", overwrite = false, verbose = true) exit(0) else exit(1) end'

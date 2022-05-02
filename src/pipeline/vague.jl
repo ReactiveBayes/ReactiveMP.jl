@@ -12,8 +12,8 @@ Uses the `start_with()` operator from `Rocket.jl` library and `vague` function t
 
 See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`EmptyPipelineStage`](@ref), [`CompositePipelineStage`](@ref)
 """
-struct InitVaguePipelineStage{D} <: AbstractPipelineStage 
-    dimensionality :: D
+struct InitVaguePipelineStage{D} <: AbstractPipelineStage
+    dimensionality::D
 end
 
 InitVaguePipelineStage() = InitVaguePipelineStage(nothing)
@@ -26,16 +26,21 @@ variate_form(::InitVaguePipelineStage, ::Nothing)         = Univariate
 variate_form(::InitVaguePipelineStage, ::Int)             = Multivariate
 variate_form(::InitVaguePipelineStage, ::Tuple{Int, Int}) = Matrixvariate
 
-apply_pipeline_stage(stage::InitVaguePipelineStage, factornode, tag, stream) = __apply_vague_pipeline_stage(variate_form(stage), stage, factornode, tag, stream)
+apply_pipeline_stage(stage::InitVaguePipelineStage, factornode, tag, stream) =
+    __apply_vague_pipeline_stage(variate_form(stage), stage, factornode, tag, stream)
 
-function __apply_vague_pipeline_stage(::Type{ Univariate }, stage::InitVaguePipelineStage, factornode, tag, stream) 
+function __apply_vague_pipeline_stage(::Type{Univariate}, stage::InitVaguePipelineStage, factornode, tag, stream)
     return stream |> start_with(Message(vague(conjugate_type(functionalform(factornode), tag)), false, true))
 end
 
-function __apply_vague_pipeline_stage(::Type{ Multivariate }, stage::InitVaguePipelineStage, factornode, tag, stream) 
-    return stream |> start_with(Message(vague(conjugate_type(functionalform(factornode), tag), getdimensionality(stage)), false, true))
+function __apply_vague_pipeline_stage(::Type{Multivariate}, stage::InitVaguePipelineStage, factornode, tag, stream)
+    return stream |> start_with(
+        Message(vague(conjugate_type(functionalform(factornode), tag), getdimensionality(stage)), false, true)
+    )
 end
 
-function __apply_vague_pipeline_stage(::Type{ Matrixvariate }, stage::InitVaguePipelineStage, factornode, tag, stream) 
-    return stream |> start_with(Message(vague(conjugate_type(functionalform(factornode), tag), getdimensionality(stage)...), false, true))
+function __apply_vague_pipeline_stage(::Type{Matrixvariate}, stage::InitVaguePipelineStage, factornode, tag, stream)
+    return stream |> start_with(
+        Message(vague(conjugate_type(functionalform(factornode), tag), getdimensionality(stage)...), false, true)
+    )
 end
