@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Hidden Markov Model · ReactiveMP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ReactiveMP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../../man/getting-started/">Getting Started</a></li><li><a class="tocitem" href="../../man/model-specification/">Model Specification</a></li><li><a class="tocitem" href="../../man/constraints-specification/">Constraints Specification</a></li><li><a class="tocitem" href="../../man/meta-specification/">Meta Specification</a></li><li><a class="tocitem" href="../../man/inference-execution/">Inference execution</a></li><li><a class="tocitem" href="../../man/advanced-tutorial/">Advanced Tutorial</a></li></ul></li><li><span class="tocitem">Custom functionality</span><ul><li><a class="tocitem" href="../../custom/custom-functional-form/">Custom functional form</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/message/">Messages</a></li><li><a class="tocitem" href="../../lib/form/">Functional forms</a></li><li><a class="tocitem" href="../../lib/prod/">Prod implementation</a></li><li><input class="collapse-toggle" id="menuitem-4-4" type="checkbox"/><label class="tocitem" for="menuitem-4-4"><span class="docs-label">Factor nodes</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../lib/node/">Overview</a></li><li><a class="tocitem" href="../../lib/nodes/flow/">Flow</a></li></ul></li><li><a class="tocitem" href="../../lib/math/">Math utils</a></li><li><a class="tocitem" href="../../lib/helpers/">Helper utils</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../overview/">Overview</a></li><li><a class="tocitem" href="../linear_regression/">Linear Regression</a></li><li><a class="tocitem" href="../linear_gaussian_state_space_model/">Linear Gaussian Dynamical System</a></li><li class="is-active"><a class="tocitem" href>Hidden Markov Model</a><ul class="internal"><li><a class="tocitem" href="#Model-specification"><span>Model specification</span></a></li><li><a class="tocitem" href="#Inference"><span>Inference</span></a></li><li><a class="tocitem" href="#Results"><span>Results</span></a></li><li><a class="tocitem" href="#Custom-inference"><span>Custom inference</span></a></li><li><a class="tocitem" href="#Benchmark-timings"><span>Benchmark timings</span></a></li></ul></li><li><a class="tocitem" href="../hierarchical_gaussian_filter/">Hierarchical Gaussian Filter</a></li><li><a class="tocitem" href="../autoregressive/">Autoregressive Model</a></li><li><a class="tocitem" href="../flow_tutorial/">Normalizing Flows Tutorial</a></li><li><a class="tocitem" href="../univariate_normal_mixture/">Univariate Normal Mixture</a></li><li><a class="tocitem" href="../multivariate_normal_mixture/">Multivariate Normal Mixture</a></li><li><a class="tocitem" href="../gamma_mixture/">Gamma Mixture</a></li><li><a class="tocitem" href="../custom_nonlinear_node/">Custom Nonlinear Node</a></li><li><a class="tocitem" href="../missing_data/">Missing data</a></li></ul></li><li><a class="tocitem" href="../../extra/contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Hidden Markov Model</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Hidden Markov Model</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/biaslab/ReactiveMP.jl/blob/master/docs/src/examples/hidden_markov_model.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="examples-hidden-markov-model"><a class="docs-heading-anchor" href="#examples-hidden-markov-model">Example: Hidden Markov Model</a><a id="examples-hidden-markov-model-1"></a><a class="docs-heading-anchor-permalink" href="#examples-hidden-markov-model" title="Permalink"></a></h1><p>In this demo we are interested in Bayesian inference of parameters of a hidden Markov model (HMM)., Specifically, we consider a first-order HMM with hidden states <span>$s_0, s_1, \dots, s_T$</span> and observations <span>$x_1, \dots, x_T$</span> governed by a state transition probability matrix <span>$A$</span> and an observation probability matrix <span>$B$</span>:,</p><p class="math-container">\[\begin{align*}
+    s_t &amp; \sim \mathcal{C}at(A s_{t-1}),\\
+    x_t &amp; \sim \mathcal{C}at(B s_t).\\,
+\end{align*}\]</p><p>We assume three possible states (\&quot;red\&quot;, \&quot;green\&quot; and \&quot;blue\&quot;), and the goal is to estimate matrices <span>$A$</span> and <span>$B$</span> from a simulated data set. To have a full Bayesian treatment of the problem, both <span>$A$</span> and <span>$B$</span> are endowed with priors (Dirichlet distributions on the columns).&quot;</p><pre><code class="language- hljs">using Rocket, ReactiveMP, GraphPPL
+using Random, BenchmarkTools, Distributions, MacroTools, LinearAlgebra
+using Plots</code></pre><pre><code class="language-julia hljs">function rand_vec(rng, distribution::Categorical)
+    k = ncategories(distribution)
+    s = zeros(k)
+    s[ rand(rng, distribution) ] = 1.0
+    s
+end
+
+function generate_data(n_samples; seed = 124)
+
+    rng = MersenneTwister(seed)
+
+    # Transition probabilities (some transitions are impossible)
+    A = [0.9 0.0 0.1; 0.1 0.9 0.0; 0.0 0.1 0.9]
+    # Observation noise
+    B = [0.9 0.05 0.05; 0.05 0.9 0.05; 0.05 0.05 0.9]
+    # Initial state
+    s_0 = [1.0, 0.0, 0.0]
+    # Generate some data
+    s = Vector{Vector{Float64}}(undef, n_samples) # one-hot encoding of the states
+    x = Vector{Vector{Float64}}(undef, n_samples) # one-hot encoding of the observations
+
+    s_prev = s_0
+
+    for t = 1:n_samples
+        a = A * s_prev
+        s[t] = rand_vec(rng, Categorical(a ./ sum(a)))
+        b = B * s[t]
+        x[t] = rand_vec(rng, Categorical(b ./ sum(b)))
+        s_prev = s[t]
+    end
+
+    return x, s
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">generate_data (generic function with 1 method)</code></pre><pre><code class="language- hljs"># Test data
+N = 100
+
+x_data, s_data = generate_data(N)
+
+scatter(argmax.(s_data))</code></pre><h2 id="Model-specification"><a class="docs-heading-anchor" href="#Model-specification">Model specification</a><a id="Model-specification-1"></a><a class="docs-heading-anchor-permalink" href="#Model-specification" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Model specification
+@model function hidden_markov_model(n)
+
+    A ~ MatrixDirichlet(ones(3, 3))
+    B ~ MatrixDirichlet([ 10.0 1.0 1.0; 1.0 10.0 1.0; 1.0 1.0 10.0 ])
+
+    s_0 ~ Categorical(fill(1.0 / 3.0, 3))
+
+    s = randomvar(n)
+    x = datavar(Vector{Float64}, n)
+
+    s_prev = s_0
+
+    for t in 1:n
+        s[t] ~ Transition(s_prev, A)
+        x[t] ~ Transition(s[t], B)
+        s_prev = s[t]
+    end
+
+end
+
+@constraints function hidden_markov_model_constraints()
+    q(s_0, s, A, B) = q(s_0, s)q(A)q(B)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">hidden_markov_model_constraints (generic function with 1 method)</code></pre><h2 id="Inference"><a class="docs-heading-anchor" href="#Inference">Inference</a><a id="Inference-1"></a><a class="docs-heading-anchor-permalink" href="#Inference" title="Permalink"></a></h2><pre><code class="language-julia hljs">idata = (x = x_data, )
+
+imodel = Model(hidden_markov_model, N)
+
+imarginals = (
+    A = vague(MatrixDirichlet, 3, 3),
+    B = vague(MatrixDirichlet, 3, 3),
+    s = vague(Categorical, 3)
+)
+
+ireturnvars = (
+    A = KeepLast(),
+    B = KeepLast(),
+    s = KeepLast()
+)
+
+result = inference(
+    model         = imodel,
+    data          = idata,
+    constraints   = hidden_markov_model_constraints(),
+    initmarginals = imarginals,
+    returnvars    = ireturnvars,
+    iterations    = 20,
+    free_energy   = true
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Inference results:
+-----------------------------------------
+Free Energy: Real[132.198, 125.35, 120.523, 113.37, 99.2503, 84.8829, 80.6348, 79.6174, 79.1632, 78.9335, 78.8291, 78.7876, 78.7729, 78.768, 78.7666, 78.7661, 78.766, 78.766, 78.766, 78.766]
+-----------------------------------------
+A = Marginal(MatrixDirichlet{Float64, Matrix{Float64}}(
+a: [50.77712567849792 1.5084...
+s = Marginal[Marginal(Distributions.Categorical{Float64, Vector{Float64}}(support=Ba...
+B = Marginal(MatrixDirichlet{Float64, Matrix{Float64}}(
+a: [59.78624669132068 1.1776...
+</code></pre><h2 id="Results"><a class="docs-heading-anchor" href="#Results">Results</a><a id="Results-1"></a><a class="docs-heading-anchor-permalink" href="#Results" title="Permalink"></a></h2><pre><code class="language-julia hljs">mean(result.posteriors[:A])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3×3 Matrix{Float64}:
+ 0.892911   0.0830398  0.133822
+ 0.0858821  0.691112   0.042798
+ 0.0212073  0.225849   0.82338</code></pre><pre><code class="language-julia hljs">mean(result.posteriors[:B])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3×3 Matrix{Float64}:
+ 0.908176   0.0422229  0.0718142
+ 0.0694807  0.882211   0.0430307
+ 0.0223437  0.0755656  0.885155</code></pre><pre><code class="language- hljs">p1 = scatter(argmax.(s_data), title=&quot;Inference results&quot;, label = &quot;real&quot;, ms = 6)
+p1 = scatter!(p1, argmax.(ReactiveMP.probvec.(result.posteriors[:s])), label = &quot;inferred&quot;, ms = 2)
+p2 = plot(result.free_energy, label=&quot;Free energy&quot;)
+
+plot(p1, p2, layout = @layout([ a; b ]))</code></pre><h2 id="Custom-inference"><a class="docs-heading-anchor" href="#Custom-inference">Custom inference</a><a id="Custom-inference-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-inference" title="Permalink"></a></h2><pre><code class="language-julia hljs">@model [ default_factorisation = MeanField() ] function custom_optimised_hidden_markov_model(n)
+
+    A ~ MatrixDirichlet(ones(3, 3))
+    B ~ MatrixDirichlet([ 10.0 1.0 1.0; 1.0 10.0 1.0; 1.0 1.0 10.0 ])
+
+    s_0 ~ Categorical(fill(1.0 / 3.0, 3))
+
+    s = randomvar(n)
+    x = datavar(Vector{Float64}, n)
+
+    s_prev = s_0
+
+    for t in 1:n
+        s[t] ~ Transition(s_prev, A) where { q = q(out, in)q(a) }
+        x[t] ~ Transition(s[t], B)
+        s_prev = s[t]
+    end
+
+    return s, x, A, B
+end</code></pre><pre><code class="language-julia hljs">function custom_optimised_inference(data, vmp_iters)
+    n = length(data)
+
+    model, (s, x, A, B) = custom_optimised_hidden_markov_model(model_options(limit_stack_depth = 500), n)
+
+    sbuffer = keep(Vector{Marginal})
+    Abuffer = keep(Marginal)
+    Bbuffer = keep(Marginal)
+    fe      = ScoreActor(Float64)
+
+    ssub  = subscribe!(getmarginals(s), sbuffer)
+    Asub  = subscribe!(getmarginal(A), Abuffer)
+    Bsub  = subscribe!(getmarginal(B), Bbuffer)
+    fesub = subscribe!(score(Float64, BetheFreeEnergy(), model), fe)
+
+    setmarginal!(A, vague(MatrixDirichlet, 3, 3))
+    setmarginal!(B, vague(MatrixDirichlet, 3, 3))
+
+    foreach(s) do svar
+        setmarginal!(svar, vague(Categorical, 3))
+    end
+
+    for i in 1:vmp_iters
+        update!(x, data)
+    end
+
+    unsubscribe!(ssub)
+    unsubscribe!(Asub)
+    unsubscribe!(Bsub)
+    unsubscribe!(fesub)
+
+    return map(getvalues, (sbuffer, Abuffer, Bbuffer, fe))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">custom_optimised_inference (generic function with 1 method)</code></pre><pre><code class="language-julia hljs">sbuffer, Abuffer, Bbuffer, fe = custom_optimised_inference(x_data, 20)
+
+@assert mean.(last(sbuffer)) ≈ mean.(result.posteriors[:s])</code></pre><pre><code class="language- hljs">p1 = scatter(argmax.(s_data), title=&quot;Inference results&quot;, label = &quot;real&quot;, ms = 6)
+p1 = scatter!(p1, argmax.(ReactiveMP.probvec.(last(sbuffer))), label = &quot;inferred&quot;, ms = 2)
+p2 = plot(result.free_energy, label=&quot;Free energy&quot;)
+
+plot(p1, p2, layout = @layout([ a; b ]))</code></pre><h2 id="Benchmark-timings"><a class="docs-heading-anchor" href="#Benchmark-timings">Benchmark timings</a><a id="Benchmark-timings-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmark-timings" title="Permalink"></a></h2><pre><code class="language-julia hljs">@benchmark inference(
+    model         = $imodel,
+    data          = $idata,
+    constraints   = hidden_markov_model_constraints(),
+    initmarginals = $imarginals,
+    returnvars    = $ireturnvars,
+    iterations    = 20,
+    free_energy   = true
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 87 samples with 1 evaluation.
+ Range (min … max):  45.689 ms … 102.912 ms  ┊ GC (min … max):  0.00% … 45.46%
+ Time  (median):     49.356 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   57.483 ms ±  19.065 ms  ┊ GC (mean ± σ):  13.08% ± 17.21%
+
+  ▇▇█ ▄   ▅                                                     
+  ███▆█▁▃▇█▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▅▆▅ ▁
+  45.7 ms         Histogram: frequency by time          102 ms &lt;
+
+ Memory estimate: 27.45 MiB, allocs estimate: 445720.</code></pre><pre><code class="language-julia hljs">@benchmark custom_optimised_inference($x_data, 20)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 91 samples with 1 evaluation.
+ Range (min … max):  44.372 ms … 99.255 ms  ┊ GC (min … max):  0.00% … 46.58%
+ Time  (median):     47.741 ms              ┊ GC (median):     0.00%
+ Time  (mean ± σ):   54.931 ms ± 18.203 ms  ┊ GC (mean ± σ):  12.73% ± 17.00%
+
+  █▄  ▁                                                        
+  ██▅▅█▅▃▇▄▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▄▃▅▅ ▁
+  44.4 ms         Histogram: frequency by time        98.3 ms &lt;
+
+ Memory estimate: 26.41 MiB, allocs estimate: 418997.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../linear_gaussian_state_space_model/">« Linear Gaussian Dynamical System</a><a class="docs-footer-nextpage" href="../hierarchical_gaussian_filter/">Hierarchical Gaussian Filter »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.16 on <span class="colophon-date" title="Monday 2 May 2022 14:38">Monday 2 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
