@@ -125,6 +125,14 @@ import DomainSets
             @test all(map(p -> exp(-p^2) == pdf(d6, [ p ]), points2))
         end
 
+        @testset "test domain in logpdf" begin
+            d1 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> -x ^ 2)
+            d2 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> -x ^ 4)
+            
+            @test_throws AssertionError logpdf(d1, [ 1.0, 1.0 ])
+            @test_throws AssertionError logpdf(d2, [ 1.0, 1.0 ])
+        end
+
         @testset "support" begin 
             d1 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
             @test minimum(support(d1)) === -Inf
@@ -277,6 +285,19 @@ import DomainSets
             @test all(map(p -> -p'p/4 == d2(p), points2))
             @test all(map(p -> -p'p/4 == logpdf(d2, p), points2))
             @test all(map(p -> exp(-p'p/4) == pdf(d2, p), points2))
+        end
+
+        @testset "test domain in logpdf" begin
+
+            for dim in (2, 3, 4)
+
+                d1 = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^dim, (x) -> -x'x)
+                d2 = ContinuousMultivariateLogPdf(DomainSets.HalfLine()^dim, (x) -> -x'x)
+                
+                @test_throws AssertionError logpdf(d1, ones(dim + 1))
+                @test_throws AssertionError logpdf(d2, ones(dim + 1))
+
+            end
         end
 
         @testset "vague" begin
