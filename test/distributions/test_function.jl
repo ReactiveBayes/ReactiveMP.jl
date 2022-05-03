@@ -34,11 +34,6 @@ import DomainSets
         return isapprox(zero(eltype(domain)), DomainIntegrals.integral(DomainIntegrals.Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x))); kwargs...)
     end
 
-    # We do not check typeof of a different functions because in most of the cases lambdas have different types, but they can still be the same
-    function is_typeof_equal(::ContinuousUnivariateLogPdf{D, F1}, ::ContinuousUnivariateLogPdf{D, F2}) where { D, F1 <: Function, F2 <: Function }
-        return true
-    end
-
     @testset "ContinuousUnivariateLogPdf" begin
         
         @testset "Constructor" begin 
