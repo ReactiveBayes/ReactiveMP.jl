@@ -1,4 +1,4 @@
-export ContinuousUnivariateLogPdf
+export ContinuousUnivariateLogPdf, ContinuousGenericLogPdfVectorisedProduct
 
 using Distributions
 
@@ -104,7 +104,7 @@ struct ContinuousGenericLogPdfVectorisedProduct{F} <: AbstractContinuousGenericL
     length :: Int # `length` here is needed for extra safety as we implicitly mutate `vector` in `prod`
 end
 
-variate_form(::Type{ <: ContinuousGenericLogPdfVectorisedProduct{F} }) where F = Distributions.variate_form(F)
+variate_form(::Type{ <: ContinuousGenericLogPdfVectorisedProduct{F} }) where F = variate_form(F)
 
 getdomain(dist::ContinuousGenericLogPdfVectorisedProduct) = getdomain(first(dist.vector))
 getlogpdf(dist::ContinuousGenericLogPdfVectorisedProduct) = (x) -> mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
@@ -129,24 +129,24 @@ end
 # These methods are inaccurate and relies on various approximation methods, which may fail in different scenarios
 # This should not be used though anywhere in the real code, but only in tests
 # Current implementation of `isapprox` method supports only FullSpace and HalfLine domains with limited accuracy
-function Base.isapprox(left::ContinuousUnivariateLogPdf, right::ContinuousUnivariateLogPdf; kwargs...)
-    if getdomain(left) !== getdomain(right)
+function Base.isapprox(left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    if (getdomain(left) !== getdomain(right)) || (value_support(typeof(left)) !== value_support(typeof(right))) || (variate_form(typeof(left)) !== variate_form(typeof(right)))
         return false
     end
     return culogpdf__isapprox(getdomain(left), left, right; kwargs...)
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
-function culogpdf__isapprox(domain::DomainSets.FullSpace, left::ContinuousUnivariateLogPdf, right::ContinuousUnivariateLogPdf; kwargs...)
+function culogpdf__isapprox(domain::DomainSets.FullSpace, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
     return isapprox(zero(eltype(domain)), DomainIntegrals.integral(Q_GaussHermite(32), (x) -> exp(x ^ 2) * abs(left(x) - right(x))); kwargs...)
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
-function culogpdf__isapprox(domain::DomainSets.HalfLine, left::ContinuousUnivariateLogPdf, right::ContinuousUnivariateLogPdf; kwargs...)
+function culogpdf__isapprox(domain::DomainSets.HalfLine, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
     return isapprox(zero(eltype(domain)), DomainIntegrals.integral(Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x))); kwargs...)
 end
 
 # We do not check typeof of a different functions because in most of the cases lambdas have different types, but they can still be the same
-function is_typeof_equal(left::ContinuousUnivariateLogPdf{D, F1}, right::ContinuousUnivariateLogPdf{D, F2}) where { D, F1 <: Function, F2 <: Function }
+function is_typeof_equal(::ContinuousUnivariateLogPdf{D, F1}, ::ContinuousUnivariateLogPdf{D, F2}) where { D, F1 <: Function, F2 <: Function }
     return true
 end

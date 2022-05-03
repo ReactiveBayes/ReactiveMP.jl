@@ -5,6 +5,8 @@ using ReactiveMP
 using Distributions
 using Random
 
+import ReactiveMP: getdomain
+
 import DomainSets
 
 @testset "Generic Functional Distributions" begin
@@ -146,6 +148,14 @@ import DomainSets
             pr1 = prod(ProdAnalytical(), d1, d2)
             pt1 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> logpdf(d1, x) + logpdf(d2, x))
 
+            @test getdomain(pr1) === getdomain(d1)
+            @test getdomain(pr1) === getdomain(d2)
+            @test variate_form(typeof(pr1)) === variate_form(typeof(d1))
+            @test variate_form(typeof(pr1)) === variate_form(typeof(d2))
+            @test value_support(typeof(pr1)) === value_support(typeof(d1))
+            @test value_support(typeof(pr1)) === value_support(typeof(d2))
+            @test support(pr1) === support(d1)
+            @test support(pr1) === support(d2)
             @test isapprox(pr1, pt1, atol = 1e-12)
 
             d3 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> 2.0 * -x ^ 2)
@@ -154,6 +164,14 @@ import DomainSets
             pr2 = prod(ProdAnalytical(), d3, d4)
             pt2 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> logpdf(d3, x) + logpdf(d4, x))
 
+            @test getdomain(pr2) === getdomain(d3)
+            @test getdomain(pr2) === getdomain(d4)
+            @test variate_form(typeof(pr2)) === variate_form(typeof(d3))
+            @test variate_form(typeof(pr2)) === variate_form(typeof(d4))
+            @test value_support(typeof(pr2)) === value_support(typeof(d3))
+            @test value_support(typeof(pr2)) === value_support(typeof(d4))
+            @test support(pr2) === support(d3)
+            @test support(pr2) === support(d4)
             @test isapprox(pr2, pt2, atol = 1e-12)
 
             @test !isapprox(pr1, pr2, atol = 1e-12)
@@ -161,6 +179,26 @@ import DomainSets
             d5 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 2.0 * -x ^ 2)
             d6 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> 2.0 * -x ^ 2)
             @test_throws AssertionError prod(ProdAnalytical(), d5, d6)
+        end
+
+        @testset "vectorised-prod" begin
+            f = (x) -> 2.0 * -x ^ 2
+            d1 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), f)
+            d2 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), f)
+            d3 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> f(x) + f(x))
+
+            pr1 = prod(ProdAnalytical(), d1, d2)
+
+            @test pr1 isa ContinuousGenericLogPdfVectorisedProduct
+            @test getdomain(pr1) === getdomain(d1)
+            @test getdomain(pr1) === getdomain(d2)
+            @test variate_form(typeof(pr1)) === variate_form(typeof(d1))
+            @test variate_form(typeof(pr1)) === variate_form(typeof(d2))
+            @test value_support(typeof(pr1)) === value_support(typeof(d1))
+            @test value_support(typeof(pr1)) === value_support(typeof(d2))
+            @test support(pr1) === support(d1)
+            @test support(pr1) === support(d2)
+            @test isapprox(pr1, d3, atol = 1e-12)
         end
 
         @testset "convert" begin
