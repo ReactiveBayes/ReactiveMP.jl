@@ -1,10 +1,11 @@
-export ContinuousUnivariateLogPdf
+export ContinuousUnivariateLogPdf, ContinuousMultivariateLogPdf
 export ContinuousGenericLogPdfVectorisedProduct
 
 using Distributions
 
 import DomainSets
 import DomainIntegrals
+
 import Base: isapprox
 
 abstract type AbstractContinuousGenericLogPdf end
@@ -98,6 +99,50 @@ convert_eltype(::Type{ ContinuousUnivariateLogPdf }, ::Type{ T }, dist::Continuo
 
 vague(::Type{ <: ContinuousUnivariateLogPdf }) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
 
+## 
+
+"""
+    ContinuousMultivariateLogPdf{ D <: DomainSets.Domain, F } <: AbstractContinuousGenericLogPdf
+
+Generic continuous multivariate distribution in a form of domain specification and logpdf function. Can be used in cases where no 
+known analytical distribution available. 
+
+# Arguments 
+- `domain`: multidimensional domain specificatiom from `DomainSets.jl` package
+- `logpdf`: callable object that accepts an `AbstractVector` as an input and represents a `logpdf` of a distribution. Does not necessarily normalised.
+
+```julia 
+fdist = ContinuousMultivariateLogPdf(DomainSets.FullSpace() ^ 2, (x) -> -x'x)
+```
+"""
+struct ContinuousMultivariateLogPdf{ D <: DomainSets.Domain, F } <: AbstractContinuousGenericLogPdf
+    domain :: D
+    logpdf :: F
+
+    ContinuousMultivariateLogPdf(domain::D, logpdf::F) where { D <: DomainSets.Domain, F } = begin 
+        @assert DomainSets.dimension(domain) !== 1 "Cannot create ContinuousMultivariateLogPdf. Dimension of domain = $(domain) should not be equal to 1. Use, for example, `DomainSets.FullSpace() ^ 2` to create 2-dimensional full space domain."
+        return new{D, F}(domain, logpdf)
+    end
+end
+
+variate_form(::Type{ <: ContinuousMultivariateLogPdf }) = Multivariate
+
+getdomain(dist::ContinuousMultivariateLogPdf) = dist.domain
+getlogpdf(dist::ContinuousMultivariateLogPdf) = dist.logpdf
+
+ContinuousMultivariateLogPdf(dims::Int, f::Function) = ContinuousMultivariateLogPdf(DomainSets.FullSpace() ^ dims, f)
+
+Base.show(io::IO, dist::ContinuousMultivariateLogPdf) = print(io, "ContinuousMultivariateLogPdf(", getdomain(dist), ")")
+Base.show(io::IO, ::Type{ <: ContinuousMultivariateLogPdf{D} }) where D = print(io, "ContinuousMultivariateLogPdf{", D, "}")
+
+Distributions.support(dist::ContinuousMultivariateLogPdf) = getdomain(dist) # differs from Univariate implementation, todo if it causes any problems
+
+Base.convert(::Type{ ContinuousMultivariateLogPdf }, domain::D, logpdf::F) where { D <: DomainSets.Domain, F } = ContinuousMultivariateLogPdf(domain, logpdf)
+
+convert_eltype(::Type{ ContinuousMultivariateLogPdf }, ::Type{ T }, dist::ContinuousMultivariateLogPdf) where { T <: Real } = convert(ContinuousMultivariateLogPdf, dist.domain, dist.logpdf)
+
+vague(::Type{ <: ContinuousMultivariateLogPdf }, dims::Int) = ContinuousMultivariateLogPdf(DomainSets.FullSpace() ^ dims, (x) -> ones(dims))
+
 ## More efficient prod for same logpdfs
 
 """
@@ -105,7 +150,7 @@ vague(::Type{ <: ContinuousUnivariateLogPdf }) = ContinuousUnivariateLogPdf(Doma
 
 An efficient implementation of product of multiple generic log-pdf objects.
 
-See also: [`ContinuousUnivariateLogPdf`](@ref)
+See also: [`ContinuousUnivariateLogPdf`](@ref), [`ContinuousMultivariateLogPdf`](@ref)
 """
 struct ContinuousGenericLogPdfVectorisedProduct{F} <: AbstractContinuousGenericLogPdf
     vector :: Vector{F}
