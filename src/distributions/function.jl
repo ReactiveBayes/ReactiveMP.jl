@@ -66,6 +66,11 @@ fdist = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> -x^2)
 struct ContinuousUnivariateLogPdf{ D <: DomainSets.Domain, F } <: AbstractContinuousGenericLogPdf
     domain :: D
     logpdf :: F
+
+    ContinuousUnivariateLogPdf(domain::D, logpdf::F) where {D, F} = begin 
+        @assert DomainSets.dimension(domain) === 1 "Cannot create ContinuousUnivariateLogPdf. Dimension of domain = $(domain) is not equal to 1."
+        return new{D, F}(domain, logpdf)
+    end
 end
 
 variate_form(::Type{ <: ContinuousUnivariateLogPdf }) = Univariate
@@ -86,7 +91,7 @@ function Distributions.logpdf(dist::ContinuousUnivariateLogPdf, x::AbstractVecto
     return logpdf(dist, first(x))
 end
 
-Base.convert(::Type{ ContinuousUnivariateLogPdf }, domain::D, logpdf::F) where { D <: DomainSets.Domain, F } = ContinuousUnivariateLogPdf{D, F}(domain, logpdf)
+Base.convert(::Type{ ContinuousUnivariateLogPdf }, domain::D, logpdf::F) where { D <: DomainSets.Domain, F } = ContinuousUnivariateLogPdf(domain, logpdf)
 
 convert_eltype(::Type{ ContinuousUnivariateLogPdf }, ::Type{ T }, dist::ContinuousUnivariateLogPdf) where { T <: Real } = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
 

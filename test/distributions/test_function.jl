@@ -1,4 +1,4 @@
-module BetaTest
+module AbstractContinuousGenericLogPdfTest
 
 using Test
 using ReactiveMP
@@ -18,6 +18,21 @@ import DomainSets
 
             @test typeof(d1) === typeof(d2)
             @test d1 ≈ d2
+
+            @test_throws AssertionError ContinuousUnivariateLogPdf(DomainSets.FullSpace() ^ 2, f)
+        end
+
+        @testset "Intentional errors" begin
+            dist = ContinuousUnivariateLogPdf((x) -> x)
+            @test_throws ErrorException mean(dist)
+            @test_throws ErrorException median(dist)
+            @test_throws ErrorException mode(dist)
+            @test_throws ErrorException var(dist)
+            @test_throws ErrorException std(dist)
+            @test_throws ErrorException cov(dist)
+            @test_throws ErrorException invcov(dist)
+            @test_throws ErrorException entropy(dist)
+            @test_throws ErrorException precision(dist)
         end
 
         @testset "pdf/logpdf" begin 
@@ -142,6 +157,10 @@ import DomainSets
             @test isapprox(pr2, pt2, atol = 1e-12)
 
             @test !isapprox(pr1, pr2, atol = 1e-12)
+
+            d5 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 2.0 * -x ^ 2)
+            d6 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> 2.0 * -x ^ 2)
+            @test_throws AssertionError prod(ProdAnalytical(), d5, d6)
         end
 
         @testset "convert" begin
