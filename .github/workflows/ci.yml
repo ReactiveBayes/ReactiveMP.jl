@@ -91,7 +91,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest          
         with:
           version: '1.7'
-      - run: make pkg_docs
+      - run: make docs
         env:
           PYTHON: ""
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

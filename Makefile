@@ -7,10 +7,14 @@ lint: ## Code formating check
 doc_init:
 	julia --project=docs -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyPlot")'
 
-pkg_docs: doc_init ## Generate documentation
+.PHONY: docs
+
+docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl
 
-pkg_test: ## Run tests
+.PHONY: test
+
+test: ## Run tests
 	julia -e 'import Pkg; Pkg.activate("."); Pkg.test("ReactiveMP")'
 
 help:  ## Display this help
