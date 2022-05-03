@@ -43,6 +43,9 @@ Returns the `VariateForm` sub-type (defined in `Distributions.jl`):
 variate_form(::Distribution{F, S})            where { F <: VariateForm, S <: ValueSupport } = F
 variate_form(::Type{ <: Distribution{F, S} }) where { F <: VariateForm, S <: ValueSupport } = F
 
+# Note that the recent version of `Distributions.jl` has the exact same methods (`variate_form`) with the exact same names, however, old versions do not
+# We keep that for backward-compatibility with old `Distributions.jl` versions, but probably we should revise this at some point and remove our implementations
+
 """
     value_support(distribution_or_type)
 
@@ -54,6 +57,8 @@ Returns the `ValueSupport` sub-type (defined in `Distributions.jl`):
 value_support(::Distribution{F, S})            where { F <: VariateForm, S <: ValueSupport } = S
 value_support(::Type{ <: Distribution{F, S} }) where { F <: VariateForm, S <: ValueSupport } = S
 
+# Note that the recent version of `Distributions.jl` has the exact same methods (`value_support`) with the exact same names, however, old versions do not
+# We keep that for backward-compatibility with old `Distributions.jl` versions, but probably we should revise this at some point and remove our implementations
 
 """
     promote_variate_type(::Type{ <: VariateForm }, distribution_type)
