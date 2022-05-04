@@ -211,15 +211,15 @@ function culogpdf__isapprox(domain::DomainSets.HalfLine, left::AbstractContinuou
 end
 
 function culogpdf__isapprox(domain::DomainSets.VcatDomain, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
-    a = clamp.(DomainSets.infimum(domain), -100.0, 100.0)
-    b = clamp.(DomainSets.supremum(domain), -100.0, 100.0)
+    a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
+    b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
     return isapprox(zero(deep_eltype(domain)), I; kwargs...) && isapprox(zero(deep_eltype(domain)), E; kwargs...)
 end
 
 function culogpdf__isapprox(domain::DomainSets.FixedIntervalProduct, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
-    a = clamp.(DomainSets.infimum(domain), -100.0, 100.0)
-    b = clamp.(DomainSets.supremum(domain), -100.0, 100.0)
+    a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
+    b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
     return isapprox(zero(deep_eltype(domain)), I; kwargs...) && isapprox(zero(deep_eltype(domain)), E; kwargs...)
 end

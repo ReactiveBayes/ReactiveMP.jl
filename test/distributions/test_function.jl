@@ -129,6 +129,7 @@ import DomainSets
             d1 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> -x ^ 2)
             d2 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> -x ^ 4)
             
+            # This also throws a warning in stdout
             @test_throws AssertionError logpdf(d1, [ 1.0, 1.0 ])
             @test_throws AssertionError logpdf(d2, [ 1.0, 1.0 ])
         end
@@ -294,6 +295,7 @@ import DomainSets
                 d1 = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^dim, (x) -> -x'x)
                 d2 = ContinuousMultivariateLogPdf(DomainSets.HalfLine()^dim, (x) -> -x'x)
                 
+                # This also throws a warning in stdout
                 @test_throws AssertionError logpdf(d1, ones(dim + 1))
                 @test_throws AssertionError logpdf(d2, ones(dim + 1))
 
