@@ -4,7 +4,7 @@ SHELL = /bin/bash
 .PHONY: lint format
 
 lint_init:
-	julia --project=docs -e 'Pkg.instantiate();'
+	julia --project=scripts -e 'using Pkg; Pkg.instantiate();'
 
 lint: lint_init ## Code formating check
 	julia --project=scripts/ scripts/format.jl
