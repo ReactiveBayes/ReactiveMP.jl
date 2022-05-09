@@ -17,7 +17,7 @@ doc_init:
 
 .PHONY: docs
 
-docs: ## Generate documentation
+docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl
 
 .PHONY: test
