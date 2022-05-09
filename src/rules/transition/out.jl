@@ -9,7 +9,17 @@ end
     return Categorical(a ./ sum(a))
 end
 
-@rule Transition(:out, Marginalisation) (m_in::Any, m_a::PointMass) = begin
+@rule Transition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin 
+    return @call_rule Transition(:out, Marginalisation) (m_in = m_in, m_a = q_a, meta = meta)
+end
+
+@rule Transition(:out, Marginalisation) (q_in::PointMass, q_a::PointMass) = begin
+    p = mean(q_a) * mean(q_in)
+    normalize!(p, 1)
+    return Categorical(p)
+end
+
+@rule Transition(:out, Marginalisation) (m_in::Categorical, m_a::PointMass) = begin
     p = mean(m_a) * probvec(m_in)
     normalize!(p, 1)
     return Categorical(p)
