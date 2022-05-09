@@ -3,10 +3,13 @@ SHELL = /bin/bash
 
 .PHONY: lint format
 
-lint: ## Code formating check
+lint_init:
+	julia --project=docs -e 'Pkg.instantiate();'
+
+lint: lint_init ## Code formating check
 	julia --project=scripts/ scripts/format.jl
 
-format: ## Code formating run
+format: lint_init ## Code formating run
 	julia --project=scripts/ scripts/format.jl --overwrite
 
 doc_init:
