@@ -12,10 +12,10 @@ lint: lint_init ## Code formating check
 format: lint_init ## Code formating run
 	julia --project=scripts/ scripts/format.jl --overwrite
 
+.PHONY: docs
+
 doc_init:
 	julia --project=docs -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyPlot")'
-
-.PHONY: docs
 
 docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl
