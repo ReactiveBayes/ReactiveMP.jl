@@ -1,8 +1,13 @@
 SHELL = /bin/bash
 .DEFAULT_GOAL = help
 
+.PHONY: lint format
+
 lint: ## Code formating check
-	julia scripts/format.jl
+	julia --project=scripts/ scripts/format.jl
+
+format: ## Code formating run
+	julia --project=scripts/ scripts/format.jl --overwrite
 
 doc_init:
 	julia --project=docs -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyPlot")'

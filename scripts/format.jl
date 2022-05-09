@@ -1,10 +1,24 @@
-import Pkg;
-Pkg.add("JuliaFormatter");
-
 import JuliaFormatter;
+using ArgParse;
 
-for format_folder in ["scripts", "src"]
-    if !(JuliaFormatter.format(format_folder, overwrite = false, verbose = true))
-        exit(1)
-    end
+s = ArgParseSettings()
+
+@add_arg_table s begin
+    "--overwrite"
+    help = "overwrite your files with JuliaFormatter"
+    action = :store_true
+end
+
+commandline_args = parse_args(s)
+folders_to_format = ["scripts", "src"]
+
+formatted = all(
+    map(
+        folder -> JuliaFormatter.format(folder, overwrite = commandline_args["overwrite"], verbose = true),
+        folders_to_format
+    )
+)
+
+if !formatted
+    exit(1)
 end
