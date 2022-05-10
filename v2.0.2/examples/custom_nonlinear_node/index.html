@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Custom Nonlinear Node · ReactiveMP.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ReactiveMP.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">User guide</span><ul><li><a class="tocitem" href="../../man/getting-started/">Getting Started</a></li><li><a class="tocitem" href="../../man/model-specification/">Model Specification</a></li><li><a class="tocitem" href="../../man/constraints-specification/">Constraints Specification</a></li><li><a class="tocitem" href="../../man/meta-specification/">Meta Specification</a></li><li><a class="tocitem" href="../../man/inference-execution/">Inference execution</a></li><li><a class="tocitem" href="../../man/advanced-tutorial/">Advanced Tutorial</a></li></ul></li><li><span class="tocitem">Custom functionality</span><ul><li><a class="tocitem" href="../../custom/custom-functional-form/">Custom functional form</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/message/">Messages</a></li><li><a class="tocitem" href="../../lib/form/">Functional forms</a></li><li><a class="tocitem" href="../../lib/prod/">Prod implementation</a></li><li><input class="collapse-toggle" id="menuitem-4-4" type="checkbox"/><label class="tocitem" for="menuitem-4-4"><span class="docs-label">Factor nodes</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../lib/node/">Overview</a></li><li><a class="tocitem" href="../../lib/nodes/flow/">Flow</a></li></ul></li><li><a class="tocitem" href="../../lib/math/">Math utils</a></li><li><a class="tocitem" href="../../lib/helpers/">Helper utils</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../overview/">Overview</a></li><li><a class="tocitem" href="../linear_regression/">Linear Regression</a></li><li><a class="tocitem" href="../linear_gaussian_state_space_model/">Linear Gaussian Dynamical System</a></li><li><a class="tocitem" href="../hidden_markov_model/">Hidden Markov Model</a></li><li><a class="tocitem" href="../hierarchical_gaussian_filter/">Hierarchical Gaussian Filter</a></li><li><a class="tocitem" href="../autoregressive/">Autoregressive Model</a></li><li><a class="tocitem" href="../flow_tutorial/">Normalizing Flows Tutorial</a></li><li><a class="tocitem" href="../univariate_normal_mixture/">Univariate Normal Mixture</a></li><li><a class="tocitem" href="../multivariate_normal_mixture/">Multivariate Normal Mixture</a></li><li><a class="tocitem" href="../gamma_mixture/">Gamma Mixture</a></li><li class="is-active"><a class="tocitem" href>Custom Nonlinear Node</a><ul class="internal"><li><a class="tocitem" href="#Custom-node-structure"><span>Custom node structure</span></a></li><li><a class="tocitem" href="#Model-specification"><span>Model specification</span></a></li><li><a class="tocitem" href="#Inference"><span>Inference</span></a></li><li><a class="tocitem" href="#Benchmark"><span>Benchmark</span></a></li></ul></li><li><a class="tocitem" href="../missing_data/">Missing data</a></li></ul></li><li><a class="tocitem" href="../../extra/contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Custom Nonlinear Node</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Custom Nonlinear Node</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/biaslab/ReactiveMP.jl/blob/master/docs/src/examples/custom_nonlinear_node.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="examples-custom-nonlinear-node"><a class="docs-heading-anchor" href="#examples-custom-nonlinear-node">Example: Custom nonlinear node</a><a id="examples-custom-nonlinear-node-1"></a><a class="docs-heading-anchor-permalink" href="#examples-custom-nonlinear-node" title="Permalink"></a></h1><pre><code class="language-julia hljs">using ReactiveMP, Distributions, Random, BenchmarkTools, Rocket, GraphPPL, StableRNGs</code></pre><p>Here is an example of creating custom node with nonlinear function approximation with samplelist.</p><h2 id="Custom-node-structure"><a class="docs-heading-anchor" href="#Custom-node-structure">Custom node structure</a><a id="Custom-node-structure-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-node-structure" title="Permalink"></a></h2><pre><code class="language-julia hljs">struct NonlinearNode end # Dummy structure just to make Julia happy
+
+struct NonlinearMeta{R, F}
+    rng      :: R
+    fn       :: F   # Nonlinear function, we assume 1 float input - 1 float ouput
+    nsamples :: Int # Number of samples used in approximation
+end</code></pre><pre><code class="language-julia hljs">@node NonlinearNode Deterministic [ out, in ]</code></pre><p>We need to define two Sum-product message computation rules for our new custom node</p><ul><li>Rule for outbound message on <code>out</code> edge given inbound message on <code>in</code> edge</li><li>Rule for outbound message on <code>in</code> edge given inbound message on <code>out</code> edge</li><li>Both rules accept optional meta object</li></ul><pre><code class="language-julia hljs"># Rule for outbound message on `out` edge given inbound message on `in` edge
+@rule NonlinearNode(:out, Marginalisation) (m_in::NormalMeanVariance, meta::NonlinearMeta) = begin
+    samples = rand(meta.rng, m_in, meta.nsamples)
+    return SampleList(map(meta.fn, samples))
+end
+
+# Rule for outbound message on `in` edge given inbound message on `out` edge
+@rule NonlinearNode(:in, Marginalisation) (m_out::Gamma, meta::NonlinearMeta) = begin
+    return ContinuousUnivariateLogPdf((x) -&gt; logpdf(m_out, meta.fn(x)))
+end</code></pre><h2 id="Model-specification"><a class="docs-heading-anchor" href="#Model-specification">Model specification</a><a id="Model-specification-1"></a><a class="docs-heading-anchor-permalink" href="#Model-specification" title="Permalink"></a></h2><p>After we have defined our custom node with custom rules we may proceed with a model specification:</p><p class="math-container">\[\begin{equation}
+\begin{aligned}
+p(\theta) &amp;= \mathcal{N}(\theta|\mu_{\theta}, \sigma_{\theta}),\\
+p(m) &amp;= \mathcal{N}(\theta|\mu_{m}, \sigma_{m}),\\
+p(w) &amp;= f(\theta),\\
+p(y_i|m, w) &amp;= \mathcal{N}(y_i|m, w),
+\end{aligned}
+\end{equation}\]</p><p>Given this IID model, we aim to estimate the precision of a Gaussian distribution. We pass a random variable <span>$\theta$</span> through a non-linear transformation <span>$f$</span> to make it positive and suitable for a precision parameter of a Gaussian distribution. We, later on, will estimate the posterior of <span>$\theta$</span>. </p><pre><code class="language-julia hljs">@model function nonlinear_estimation(n)
+
+    θ ~ NormalMeanVariance(0.0, 100.0)
+    m ~ NormalMeanVariance(0.0, 1.0)
+
+    w ~ NonlinearNode(θ)
+
+    y = datavar(Float64, n)
+
+    for i in 1:n
+        y[i] ~ NormalMeanPrecision(m, w)
+    end
+
+    return θ, m, w, y
+end</code></pre><pre><code class="language-julia hljs">@constraints function nconstsraints(nsamples)
+    q(θ) :: SampleList(nsamples, LeftProposal())
+    q(w) :: SampleList(nsamples, RightProposal())
+
+    q(θ, w, m) = q(θ)q(m)q(w)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">nconstsraints (generic function with 1 method)</code></pre><pre><code class="language-julia hljs"># TODO: check
+@meta function nmeta(fn, nsamples)
+    NonlinearNode(θ, w) -&gt; NonlinearMeta(StableRNG(123), fn, nsamples)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">nmeta (generic function with 1 method)</code></pre><p>Here we generate some data with some arbitrary nonlinearity for precision parameter:</p><pre><code class="language-julia hljs">nonlinear_fn(x) = abs(exp(x) * sin(x))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">nonlinear_fn (generic function with 1 method)</code></pre><pre><code class="language-julia hljs">seed = 123
+rng  = MersenneTwister(seed)
+
+niters   = 15 # Number of VMP iterations
+nsamples = 5_000 # Number of samples in approximation
+
+n = 500 # Number of IID samples
+μ = -10.0
+θ = -1.0
+w = nonlinear_fn(θ)
+
+data = rand(rng, NormalMeanPrecision(μ, w), n)</code></pre><h2 id="Inference"><a class="docs-heading-anchor" href="#Inference">Inference</a><a id="Inference-1"></a><a class="docs-heading-anchor-permalink" href="#Inference" title="Permalink"></a></h2><pre><code class="language- hljs">result = inference(
+    model = Model(nonlinear_estimation, n),
+    meta =  nmeta(nonlinear_fn, nsamples),
+    constraints = nconstsraints(nsamples),
+    data = (y = data, ), 
+    initmarginals = (m = vague(NormalMeanPrecision), w = vague(Gamma)),
+    returnvars = (θ = KeepLast(), ),
+    iterations = niters,  
+    showprogress = true
+)</code></pre><pre><code class="language- hljs">using Plots, StatsPlots
+
+estimated = Normal(mean_std(result.posteriors[:θ])...)
+
+plot(estimated, title=&quot;Posterior for θ&quot;, label = &quot;Estimated&quot;, legend = :bottomright, fill = true, fillopacity = 0.2, xlim = (-3, 3), ylim = (0, 2))
+vline!([ θ ], label = &quot;Real value of θ&quot;)</code></pre><h2 id="Benchmark"><a class="docs-heading-anchor" href="#Benchmark">Benchmark</a><a id="Benchmark-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmark" title="Permalink"></a></h2><pre><code class="language- hljs">@benchmark inference(
+    model = $(Model(nonlinear_estimation, n)),
+    meta = $(nmeta(nonlinear_fn, nsamples)),
+    constraints = $(nconstsraints(nsamples)),
+    data = (y = $data, ), 
+    initmarginals = (m = vague(NormalMeanPrecision), w = vague(Gamma)),
+    returnvars = (θ = KeepLast(), ),
+    iterations = $niters,  
+    showprogress = true
+)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../gamma_mixture/">« Gamma Mixture</a><a class="docs-footer-nextpage" href="../missing_data/">Missing data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.17 on <span class="colophon-date" title="Tuesday 10 May 2022 09:22">Tuesday 10 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
