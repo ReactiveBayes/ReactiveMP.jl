@@ -185,12 +185,6 @@ end
 
 MessageObservable(::Type{M} = AbstractMessage) where M = MessageObservable{M}(RecentSubject(M), lazy(M))   
 
-function as_message_observable(observable)
-    output = MessageObservable(eltype(observable))
-    connect!(output, observable)
-    return output
-end
-
 Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(observable.subject)
 
 @inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(observable.stream, actor)
