@@ -76,7 +76,6 @@ include("variables/data.jl")
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
-include("pipeline/scheduled.jl")
 include("pipeline/vague.jl")
 
 include("rule.jl")

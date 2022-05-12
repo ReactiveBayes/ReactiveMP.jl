@@ -196,7 +196,7 @@ marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(ran
 
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
-messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.input_messages[index]
+messagein(randomvar::RandomVariable, index::Int) = @inbounds randomvar.input_messages[index]
 
 function messageout(randomvar::RandomVariable, index::Int) 
     if randomvar.output_initialised === false
@@ -223,6 +223,11 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
 end
 
 function activate!(model, randomvar::RandomVariable)
+    
+    if randomvar.output_initialised === true
+        error("Broken random variable ", randomvar, ". Unreachable reached.")
+    end
+
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomvar) > 5
