@@ -16,3 +16,4 @@ This section contains a set of examples for Bayesian Inference with `ReactiveMP`
 - [Gamma Mixture](@ref examples-gamma-mixture): This example implements one of the experiments outlined in https://biaslab.github.io/publication/mp-based-inference-in-gmm/ .
 - [Custom nonlinear node](@ref examples-custom-nonlinear-node): This example shows how to build an arbitrary factor node for non-linear function using sample list approximation.
 - [Missing data](@ref examples-missing-data): This examples show how to extend basic functionality of ReactiveMP to support missing data points.
+- [Expectation Propagation (Probit)](@ref examples-probit): In this demo we illustrate EP in the context of state-estimation in a linear state-space model that combines a Gaussian state-evolution model with a discrete observation model.

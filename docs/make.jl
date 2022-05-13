@@ -46,7 +46,8 @@ makedocs(
             "Multivariate Normal Mixture"      => "examples/multivariate_normal_mixture.md",
             "Gamma Mixture"                    => "examples/gamma_mixture.md",
             "Custom Nonlinear Node"            => "examples/custom_nonlinear_node.md",
-            "Missing data"                     => "examples/missing_data.md"
+            "Missing data"                     => "examples/missing_data.md",
+            "Expectation Propagation (Probit)" => "examples/probit.md"
         ],
         "Contributing" => "extra/contributing.md",
     ],
