@@ -538,7 +538,14 @@ name(p::InterfacePluginStartWithMessage)      = name(p.msg)
 messagein(p::InterfacePluginStartWithMessage) = messagein(p.start_with, p)
 
 messagein(::Nothing, p::InterfacePluginStartWithMessage) = messagein(p.msg)
-messagein(something, p::InterfacePluginStartWithMessage) = messagein(p.msg) |> start_with(Message(something, false, true))
+
+function messagein(something, p::InterfacePluginStartWithMessage) 
+    output = messagein(p.msg)
+    if isnothing(getrecent(output))
+        setmessage!(output, something)
+    end
+    return output
+end
 
 function message_dependencies(dependencies::RequireInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex) 
 
