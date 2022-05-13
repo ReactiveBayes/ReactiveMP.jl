@@ -28,6 +28,8 @@ Distributions.entropy(dist::AbstractContinuousGenericLogPdf) = __error_not_defin
 
 Base.precision(dist::AbstractContinuousGenericLogPdf) = __error_not_defined(dist, :precision)
 
+Base.eltype(dist::AbstractContinuousGenericLogPdf) = eltype(getdomain(dist))
+
 (dist::AbstractContinuousGenericLogPdf)(x::Real)                      = logpdf(dist, x)
 (dist::AbstractContinuousGenericLogPdf)(x::AbstractVector{ <: Real }) = logpdf(dist, x)
 
