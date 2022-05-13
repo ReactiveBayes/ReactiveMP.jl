@@ -21,6 +21,8 @@ import DomainSets
 
             @test typeof(d1) === typeof(d2)
             @test d1 ≈ d2
+            @test eltype(d1) === Float64
+            @test eltype(d2) === Float64
 
             @test_throws AssertionError ContinuousUnivariateLogPdf(DomainSets.FullSpace() ^ 2, f)
         end
