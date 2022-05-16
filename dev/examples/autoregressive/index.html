@@ -2482,22 +2482,22 @@ Free Energy: Real[543.153, 537.758, 536.225, 535.696, 535.501, 535.426, 535.397,
 γ = Marginal[Marginal(GammaShapeRate{Float64}(a=251.0, b=99.00892750388891)), Margin...
 θ = Marginal[Marginal(NormalWeightedMeanPrecision{Float64}(xi=-2.5643656811659143, w...
 x = Marginal[Marginal(NormalWeightedMeanPrecision{Float64}(xi=0.2762917781268436, w=...
-</code></pre><pre><code class="language-julia hljs">println(&quot;1-order AR inference Bethe Free Energy: &quot;, last(fe))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-order AR inference Bethe Free Energy: 523.9398879407568</code></pre><p>We can see that, according to final Bethe Free Energy value, in this example 5-order AR process can describe data better than 1-order AR.</p><p>We may be also interested in benchmarking our algorithm:</p><pre><code class="language-julia hljs">@benchmark inference(model = $umodel, constraints = $constraints, meta = $umeta, data = $udata, initmarginals = $uinitmarginals, free_energy = true, iterations = 15, showprogress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 17 samples with 1 evaluation.
- Range (min … max):  246.697 ms … 331.034 ms  ┊ GC (min … max):  0.00% … 16.19%
- Time  (median):     300.720 ms               ┊ GC (median):    15.03%
- Time  (mean ± σ):   299.116 ms ±  21.362 ms  ┊ GC (mean ± σ):  13.20% ±  5.71%
+</code></pre><pre><code class="language-julia hljs">println(&quot;1-order AR inference Bethe Free Energy: &quot;, last(fe))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-order AR inference Bethe Free Energy: 523.9398879407568</code></pre><p>We can see that, according to final Bethe Free Energy value, in this example 5-order AR process can describe data better than 1-order AR.</p><p>We may be also interested in benchmarking our algorithm:</p><pre><code class="language-julia hljs">@benchmark inference(model = $umodel, constraints = $constraints, meta = $umeta, data = $udata, initmarginals = $uinitmarginals, free_energy = true, iterations = 15, showprogress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 18 samples with 1 evaluation.
+ Range (min … max):  246.300 ms … 321.727 ms  ┊ GC (min … max):  0.00% … 21.60%
+ Time  (median):     283.973 ms               ┊ GC (median):    14.44%
+ Time  (mean ± σ):   283.606 ms ±  17.777 ms  ┊ GC (mean ± σ):  13.17% ±  5.73%
 
-  ▁                 ▁    █         ▁▁ ▁▁ ▁▁  █▁       ▁   █   ▁  
-  █▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁▁▁▁██▁██▁██▁▁██▁▁▁▁▁▁▁█▁▁▁█▁▁▁█ ▁
-  247 ms           Histogram: frequency by time          331 ms &lt;
+  ▁         ▁    ▁   █   ▁ ▁  ▁▁ ▁   ▁▁▁▁▁    ▁ ▁             ▁  
+  █▁▁▁▁▁▁▁▁▁█▁▁▁▁█▁▁▁█▁▁▁█▁█▁▁██▁█▁▁▁█████▁▁▁▁█▁█▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  246 ms           Histogram: frequency by time          322 ms &lt;
 
  Memory estimate: 92.26 MiB, allocs estimate: 1787071.</code></pre><pre><code class="language-julia hljs">@benchmark inference(model = $mmodel, constraints = $constraints, meta = $mmeta, data = $mdata, initmarginals = $minitmarginals, free_energy = true, iterations = 15, showprogress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 5 samples with 1 evaluation.
- Range (min … max):  1.073 s …   1.130 s  ┊ GC (min … max): 10.84% … 13.06%
- Time  (median):     1.087 s              ┊ GC (median):    12.25%
- Time  (mean ± σ):   1.100 s ± 26.639 ms  ┊ GC (mean ± σ):  12.88% ±  2.11%
+ Range (min … max):  1.031 s …   1.111 s  ┊ GC (min … max): 10.83% … 15.70%
+ Time  (median):     1.048 s              ┊ GC (median):    12.03%
+ Time  (mean ± σ):   1.063 s ± 33.733 ms  ┊ GC (mean ± σ):  12.70% ±  1.87%
 
-  █         █   █                                       █ █  
-  █▁▁▁▁▁▁▁▁▁█▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁█ ▁
-  1.07 s         Histogram: frequency by time        1.13 s &lt;
+  █     █     █                         █                 █  
+  █▁▁▁▁▁█▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  1.03 s         Histogram: frequency by time        1.11 s &lt;
 
- Memory estimate: 296.26 MiB, allocs estimate: 2495100.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hierarchical_gaussian_filter/">« Hierarchical Gaussian Filter</a><a class="docs-footer-nextpage" href="../flow_tutorial/">Normalizing Flows Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.17 on <span class="colophon-date" title="Friday 13 May 2022 19:17">Friday 13 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ Memory estimate: 296.26 MiB, allocs estimate: 2495100.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hierarchical_gaussian_filter/">« Hierarchical Gaussian Filter</a><a class="docs-footer-nextpage" href="../flow_tutorial/">Normalizing Flows Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.17 on <span class="colophon-date" title="Monday 16 May 2022 10:34">Monday 16 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
