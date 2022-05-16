@@ -538,7 +538,14 @@ name(p::InterfacePluginStartWithMessage)      = name(p.msg)
 messagein(p::InterfacePluginStartWithMessage) = messagein(p.start_with, p)
 
 messagein(::Nothing, p::InterfacePluginStartWithMessage) = messagein(p.msg)
-messagein(something, p::InterfacePluginStartWithMessage) = messagein(p.msg) |> start_with(Message(something, false, true))
+
+function messagein(something, p::InterfacePluginStartWithMessage) 
+    output = messagein(p.msg)
+    if isnothing(getrecent(output))
+        setmessage!(output, something)
+    end
+    return output
+end
 
 function message_dependencies(dependencies::RequireInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex) 
 
@@ -608,7 +615,7 @@ end
 function get_messages_observable(factornode, messages)
     if !isempty(messages)
         msgs_names      = Val{ map(name, messages) }
-        msgs_observable = combineLatest(map(m -> messagein(m), messages), PushNew())
+        msgs_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
         return msgs_names, msgs_observable
     else
         return nothing, of(nothing)
@@ -626,13 +633,6 @@ function get_marginals_observable(factornode, marginals)
     end
 end
 
-
-# Variational Message Passing
-apply_mapping(msgs_observable, marginals_observable, mapping) = (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], mapping)
-
-# Fallback for Belief Propagation
-apply_mapping(msgs_observable, marginals_observable::SingleObservable{Nothing}, mapping) = mapping
-
 function activate!(model, factornode::AbstractFactorNode)
     fform = functionalform(factornode)
     meta  = metadata(factornode)
@@ -643,7 +643,7 @@ function activate!(model, factornode::AbstractFactorNode)
 
     for (iindex, interface) in enumerate(interfaces(factornode))
         cvariable = connectedvar(interface)
-        if cvariable !== nothing
+        if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
             message_dependencies, marginal_dependencies = functional_dependencies(node_pipeline_dependencies, factornode, iindex)
 
             msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
@@ -652,11 +652,12 @@ function activate!(model, factornode::AbstractFactorNode)
             vtag        = tag(interface)
             vconstraint = local_constraint(interface)
             
-            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew()) # TODO check PushEach
+            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-            mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
-            mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
 
             vmessageout = vmessageout |> map(AbstractMessage, mapping)
             vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
@@ -664,7 +665,7 @@ function activate!(model, factornode::AbstractFactorNode)
             vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
             connect!(messageout(interface), vmessageout)
-        else
+        elseif cvariable === nothing
             error("Empty variable on interface $(interface) of node $(factornode)")
         end
     end

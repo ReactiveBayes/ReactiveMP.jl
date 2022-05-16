@@ -78,6 +78,49 @@ randomvar_options_set_marginal_form_check_strategy(options::RandomVariableCreati
 randomvar_options_set_messages_form_constraint(options::RandomVariableCreationOptions, messages_form_constraint)         = RandomVariableCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, messages_form_constraint, options.messages_form_check_strategy)
 randomvar_options_set_messages_form_check_strategy(options::RandomVariableCreationOptions, messages_form_check_strategy) = RandomVariableCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, messages_form_check_strategy)
 
+"""
+    randomvar()
+
+By default `randomvar()` creates a single random variable in the model and returns it. It is also possible to pass dimensionality arguments to `randomvar()` function in the same way as for the `datavar()` function.
+
+Note: `randomvar()` function is supposed to be used only within the `@model` macro.
+
+## Example
+
+```julia
+@model function model_name(...)
+    ...
+    x = randomvar() # Returns a single random variable which can be used later in the model
+    x = randomvar(n) # Returns an vector of random variables with length `n`
+    x = randomvar(n, m) # Returns a matrix of random variables with size `(n, m)`
+    x = randomvar((n, m)) # It is also possible to use a tuple for dimensionality
+    ...
+end
+```
+
+`randomvar()` call within `@model` macro supports `where { options... }` block for extra options specification, e.g:
+
+```julia
+@model function model_name(...)
+    ...
+    y = randomvar() where { prod_constraint = ProdGeneric() }
+    ...
+end
+```
+
+### Random variables available options
+
+- `prod_constraint`
+- `prod_strategy`
+- `marginal_form_constraint`
+- `marginal_form_check_strategy`
+- `messages_form_constraint`
+- `messages_form_check_strategy`
+- `pipeline`
+
+"""
+function randomvar end
+
 randomvar(name::Symbol)                                                  = randomvar(RandomVariableCreationOptions(), name, VariableIndividual())
 randomvar(name::Symbol, collection_type::AbstractVariableCollectionType) = randomvar(RandomVariableCreationOptions(), name, collection_type)
 randomvar(name::Symbol, length::Int)                                     = randomvar(RandomVariableCreationOptions(), name, length)
@@ -153,7 +196,7 @@ marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(prod_strategy(ran
 
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
-messagein(randomvar::RandomVariable, index::Int)  = @inbounds randomvar.input_messages[index]
+messagein(randomvar::RandomVariable, index::Int) = @inbounds randomvar.input_messages[index]
 
 function messageout(randomvar::RandomVariable, index::Int) 
     if randomvar.output_initialised === false
@@ -180,6 +223,11 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
 end
 
 function activate!(model, randomvar::RandomVariable)
+    
+    if randomvar.output_initialised === true
+        error("Broken random variable ", randomvar, ". Unreachable reached.")
+    end
+
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomvar) > 5

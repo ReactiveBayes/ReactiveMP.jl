@@ -61,29 +61,35 @@ end
 
 ### [Constants](@id user-guide-model-specification-constant-variables)
 
-Any runtime constant passed to a model as a model argument will be automatically converted to a fixed constant in the graph model at runtime. Sometimes it might be useful to create constants by hand (e.g. to avoid copying large matrices across the model and to avoid extensive memory allocations).
+Even though any runtime constant passed to a model as a model argument will be automatically converted to a fixed constant, sometimes it might be useful to create constants by hand (e.g. to avoid copying large matrices across the model and to avoid extensive memory allocations).
 
 You can create a constant within a model specification macro with `constvar()` function. For example:
 
 ```julia
-c = constvar(1.0)
+@model function model_name(...)
+    ...
+    c = constvar(1.0)
 
-for i in 2:n
-    x[i] ~ x[i - 1] + c # Reuse the same reference to a constant 1.0
+    for i in 2:n
+        x[i] ~ x[i - 1] + c # Reuse the same reference to a constant 1.0
+    end
+    ...
 end
 ```
+
+!!! note 
+    `constvar()` function is supposed to be used only within the `@model` macro.
 
 Additionally you can specify an extra `::ConstVariable` type for some of the model arguments. In this case macro automatically converts them to a single constant using `constvar()` function. E.g.:
 
 ```julia
 @model function model_name(nsamples::Int, c::ConstVariable)
-    # ...
+    ...
     # no need to call for a constvar() here
     for i in 2:n
         x[i] ~ x[i - 1] + c # Reuse the same reference to a constant `c`
     end
-    # ...
-    return ...
+    ...
 end
 ```
 
@@ -97,13 +103,28 @@ It is important to have a mechanism to pass data values to the model. You can cr
 Examples: 
 
 ```julia
-y = datavar(Float64) # Creates a single data input with `y` as identificator
-y = datavar(Float64, n) # Returns a vector of  `y_i` data input objects with length `n`
-y = datavar(Float64, n, m) # Returns a matrix of `y_i_j` data input objects with size `(n, m)`
-y = datavar(Float64, (n, m)) # It is also possible to use a tuple for dimensionality
+@model function model_name(...)
+    ...
+    y = datavar(Float64) # Creates a single data input with `y` as identificator
+    y = datavar(Float64, n) # Returns a vector of  `y_i` data input objects with length `n`
+    y = datavar(Float64, n, m) # Returns a matrix of `y_i_j` data input objects with size `(n, m)`
+    y = datavar(Float64, (n, m)) # It is also possible to use a tuple for dimensionality
+    ...
+end
 ```
 
-`datavar()` call supports `where { options... }` block for extra options specification. 
+!!! note 
+    `datavar()` function is supposed to be used only within the `@model` macro.
+
+`datavar()` call within `@model` macro supports `where { options... }` block for extra options specification, e.g:
+
+```julia
+@model function model_name(...)
+    ...
+    y = datavar(Float64, n) where { allow_missing = true }
+    ...
+end
+```
 
 #### Data variables available options
 
@@ -116,13 +137,28 @@ There are several ways to create random variables. The first one is an explicit 
 Examples: 
 
 ```julia
-x = randomvar() # Returns a single random variable which can be used later in the model
-x = randomvar(n) # Returns an vector of random variables with length `n`
-x = randomvar(n, m) # Returns a matrix of random variables with size `(n, m)`
-x = randomvar((n, m)) # It is also possible to use a tuple for dimensionality
+@model function model_name(...)
+    ...
+    x = randomvar() # Returns a single random variable which can be used later in the model
+    x = randomvar(n) # Returns an vector of random variables with length `n`
+    x = randomvar(n, m) # Returns a matrix of random variables with size `(n, m)`
+    x = randomvar((n, m)) # It is also possible to use a tuple for dimensionality
+    ...
+end
 ```
 
-In the same way as `datavar()` function, `randomvar()` options supports `where { options... }` block for exxtra options. 
+!!! note 
+    `randomvar()` function is supposed to be used only within the `@model` macro.
+
+`randomvar()` call within `@model` macro supports `where { options... }` block for extra options specification, e.g:
+
+```julia
+@model function model_name(...)
+    ...
+    y = randomvar() where { prod_constraint = ProdGeneric() }
+    ...
+end
+```
 
 #### Random variables available options
 
@@ -146,17 +182,25 @@ Factor nodes are used to define a relationship between random variables and/or c
 We model a random variable by a probability distribution using the `~` operator. For example, to create a random variable `y` which is modeled by a Normal distribution, where its mean and variance are controlled by the random variables `m` and `v` respectively, we define
 
 ```julia
-m = randomvar()
-v = randomvar()
-y ~ NormalMeanVariance(m, v) # Creates a `y` random variable automatically
+@model function model_name(...)
+    ...
+    m = randomvar()
+    v = randomvar()
+    y ~ NormalMeanVariance(m, v) # Creates a `y` random variable automatically
+    ...
+end
 ```
 
 Another example, but using a determnistic relation between random variables:
 
 ```julia
-a = randomvar()
-b = randomvar()
-c ~ a + b
+@model function model_name(...)
+    ...
+    a = randomvar()
+    b = randomvar()
+    c ~ a + b
+    ...
+end
 ```
 
 !!! note
