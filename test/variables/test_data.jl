@@ -51,8 +51,15 @@ import ReactiveMP: israndom, isproxy
                 @test all(v -> eltype(v) === type, vs)
                 @test !isproxy(vs)
                 @test all(v -> !isproxy(v), vs)
+
+                vs_updated = nothing
+                subscribe!(vs, (matrix_update) -> vs_updated = matrix_update)
+                matrix_update = [1.0 for i=1:l, j=1:r]
+                update!(vs, matrix_update)
+                @test vs_updated == matrix_update
             end
         end
+        
 
 
     end
