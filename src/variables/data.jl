@@ -114,7 +114,7 @@ update!(::Type{ PointMass{D1} }, ::Type{D2}, datavar, data) where { D1, D2 } = e
 
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 
-function update!(datavars::AbstractVector{ <: DataVariable }, data::AbstractVector)
+function update!(datavars::AbstractArray{ <: DataVariable }, data::AbstractArray)
     @assert size(datavars) === size(data) "Invalid update! call: size of datavar array and data should match"
     foreach(zip(datavars, data)) do (var, d)
         update!(var, d)
