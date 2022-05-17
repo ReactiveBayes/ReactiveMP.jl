@@ -54,9 +54,8 @@ import ReactiveMP: israndom, isproxy
 
                 vs_updated = nothing
                 subscribe!(getmarginals(vs), (matrix_update) -> vs_updated = mean(matrix_update))
-                matrix_update = [1.0 for i=1:l, j=1:r]
-                update!(vs, matrix_update)
-                @test vs_updated == matrix_update
+                update!(vs, ones(l, r))
+                @test vs_updated == ones(l, r)
             end
         end
         
