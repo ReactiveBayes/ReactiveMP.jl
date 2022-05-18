@@ -45,6 +45,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
             @test @test_inferred(T, mean(dist))         == scalar
+            @test @test_inferred(T, mode(dist))         == scalar
             @test @test_inferred(T, var(dist))          == zero(T)
             @test @test_inferred(T, std(dist))          == zero(T)
             @test @test_inferred(T, cov(dist))          == zero(T)
@@ -93,6 +94,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
             @test @test_inferred(AbstractVector{T}, mean(dist))         == vector
+            @test @test_inferred(AbstractVector{T}, mode(dist))         == vector
             @test @test_inferred(AbstractVector{T}, var(dist))          == zeros(T, N)
             @test @test_inferred(AbstractVector{T}, std(dist))          == zeros(T, N)
             @test @test_inferred(AbstractMatrix{T}, cov(dist))          == zeros(T, N, N)
@@ -142,6 +144,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
 
             @test @test_inferred(AbstractMatrix{T}, mean(dist))       == matrix
+            @test @test_inferred(AbstractMatrix{T}, mode(dist))       == matrix
             @test @test_inferred(AbstractMatrix{T}, var(dist))        == zeros(N, N)
             @test @test_inferred(AbstractMatrix{T}, std(dist))        == zeros(N, N)
             @test @test_inferred(Tuple{Int, Int}, ndims(dist)) == (N, N)

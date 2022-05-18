@@ -29,6 +29,7 @@ Distributions.pdf(distribution::PointMass{T}, x::Real) where {T <: Real}       =
 Distributions.logpdf(distribution::PointMass{T}, x::Real) where {T <: Real}    = Distributions.insupport(distribution, x) ? zero(T) : convert(T, -Inf)
 
 Distributions.mean(distribution::PointMass{T}) where {T <: Real} = getpointmass(distribution)
+Distributions.mode(distribution::PointMass{T}) where {T <: Real} = mean(distribution)
 Distributions.var(distribution::PointMass{T}) where {T <: Real}  = zero(T)
 Distributions.std(distribution::PointMass{T}) where {T <: Real}  = zero(T)
 Distributions.cov(distribution::PointMass{T}) where {T <: Real}  = zero(T)
@@ -52,6 +53,7 @@ Distributions.pdf(distribution::PointMass{V}, x::AbstractVector) where {T <: Rea
 Distributions.logpdf(distribution::PointMass{V}, x::AbstractVector) where {T <: Real, V <: AbstractVector{T}}    = Distributions.insupport(distribution, x) ? zero(T) : convert(T, -Inf)
 
 Distributions.mean(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}} = getpointmass(distribution)
+Distributions.mode(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}} = mean(distribution)
 Distributions.var(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}  = zeros(T, (ndims(distribution),))
 Distributions.std(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}  = zeros(T, (ndims(distribution),))
 Distributions.cov(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}  = zeros(T, (ndims(distribution), ndims(distribution)))
@@ -79,6 +81,7 @@ Distributions.pdf(distribution::PointMass{M}, x::AbstractMatrix) where {T <: Rea
 Distributions.logpdf(distribution::PointMass{M}, x::AbstractMatrix) where {T <: Real, M <: AbstractMatrix{T}}    = Distributions.insupport(distribution, x) ? zero(T) : convert(T, -Inf)
 
 Distributions.mean(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = getpointmass(distribution)
+Distributions.mode(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = mean(distribution)
 Distributions.var(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}  = zeros(T, ndims(distribution))
 Distributions.std(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}  = zeros(T, ndims(distribution))
 Distributions.cov(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}  = error("Distributions.cov(::PointMass{ <: AbstractMatrix }) is not defined")
