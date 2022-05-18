@@ -3,7 +3,7 @@
 Let us assume that the following model generates the data
 ```math
 \begin{align*}
-    {x}_t &= {x}_{t-1} + c \\
+    {x}_t &\sim \mathcal{N}\left({x}_{t-1}, 1.0\right) \\
     {y}_t &\sim \mathcal{N}\left({x}_{t}, p \right) 
 \end{align*}
 ```

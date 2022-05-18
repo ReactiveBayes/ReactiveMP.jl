@@ -4,6 +4,11 @@
     return Contingency(B ./ sum(B))
 end
 
+@marginalrule Transition(:out_in) (m_out::Categorical, m_in::Categorical, q_a::PointMass) = begin
+    B = Diagonal(probvec(m_out)) * mean(q_a) * Diagonal(probvec(m_in))
+    return Contingency(B ./ sum(B))
+end
+
 @marginalrule Transition(:out_in_a) (m_out::Categorical, m_in::Categorical, m_a::PointMass) = begin
     B = Diagonal(probvec(m_out)) * mean(m_a) * Diagonal(probvec(m_in))
     return (out_in = Contingency(B ./ sum(B)), a = m_a)

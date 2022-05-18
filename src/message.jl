@@ -169,19 +169,17 @@ end
 VariationalMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
     VariationalMessage(messages, marginals, mappingFn, nothing)
 
-Base.show(io::IO, ::VariationalMessage) = print(io, string("VariationalMessage(:postponed)"))
+Base.show(io::IO, ::VariationalMessage) = print(io, "VariationalMessage()")
 
 getcache(vmessage::VariationalMessage)                    = vmessage.cache
 setcache!(vmessage::VariationalMessage, message::Message) = vmessage.cache = message
-
-compute_message(vmessage::VariationalMessage) = vmessage.mappingFn((vmessage.messages, getrecent(vmessage.marginals)))
 
 function materialize!(vmessage::VariationalMessage)
     cache = getcache(vmessage)
     if cache !== nothing
         return cache
     end
-    message = compute_message(vmessage)
+    message = materialize!(vmessage.mappingFn, (getrecent(vmessage.messages), getrecent(vmessage.marginals)))
     setcache!(vmessage, message)
     return message
 end
@@ -191,12 +189,6 @@ end
 as_message(message::Message)             = message
 as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 
-## Operators
-
-# TODO
-reduce_messages(messages) =
-    mapreduce(as_message, (left, right) -> multiply_messages(ProdAnalytical(), left, right), messages)
-
 ## Message observable 
 
 struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
@@ -205,12 +197,6 @@ struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
 end
 
 MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(RecentSubject(M), lazy(M))
-
-function as_message_observable(observable)
-    output = MessageObservable(eltype(observable))
-    connect!(output, observable)
-    return output
-end
 
 Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(observable.subject)
 
@@ -279,9 +265,9 @@ function MessageMapping(
     return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
 end
 
-function (mapping::MessageMapping)(dependencies)
+function materialize!(mapping::MessageMapping, dependencies)
     messages  = dependencies[1]
-    marginals = dependencies[2] # getrecent(marginals) call happens in VariationalMessage
+    marginals = dependencies[2]
 
     # Message is clamped if all of the inputs are clamped
     is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
@@ -305,5 +291,3 @@ function (mapping::MessageMapping)(dependencies)
 
     return Message(message, is_message_clamped, is_message_initial)
 end
-
-Base.map(::Type{T}, mapping::M) where {T, M <: MessageMapping} = Rocket.MapOperator{T, M}(mapping)

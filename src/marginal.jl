@@ -164,7 +164,7 @@ function MarginalMapping(
 end
 
 function (mapping::MarginalMapping)(dependencies)
-    messages  = dependencies[1]
+    messages  = getrecent(dependencies[1])
     marginals = getrecent(dependencies[2])
 
     # Marginal is clamped if all of the inputs are clamped

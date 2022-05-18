@@ -240,6 +240,10 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
 end
 
 function activate!(model, randomvar::RandomVariable)
+    if randomvar.output_initialised === true
+        error("Broken random variable ", randomvar, ". Unreachable reached.")
+    end
+
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomvar) > 5
