@@ -39,6 +39,9 @@ failing! All demos (can be found in `/demo/` directory) and benchmarks (can be f
 
 ### Style conventions
 
+!!! note
+    ReactiveMP.jl repository contains scripts to automatically format code according to our guidlines. Use `make format` command to fix code style. This command overwrites files.
+
 We use default [Julia style guide](https://docs.julialang.org/en/v1/manual/style-guide/index.html). We list here a few important points and our modifications to the Julia style guide:
 
 - Use 4 spaces for indentation
@@ -59,3 +62,22 @@ The tests can be evaluated by running following command in the Julia REPL:
 ```julia
 ] test ReactiveMP
 ```
+
+In addition tests can be evaluated by running following command in the ReactiveMP root directory:
+
+```bash
+make test
+```
+
+### Makefile
+
+`ReactiveMP.jl` uses `Makefile` for most common operations:
+
+- `make help`: Shows help snippet
+- `make test`: Run tests, supports extra argumens
+  - `make test testest="distributions:normal_mean_variance"` would run tests only from `distributions/test_normal_mean_variance.jl`
+  - `make test testset="distributions:normal_mean_variance models:lgssm"` would run tests both from `distributions/test_normal_mean_variance.jl` and `models/test_lgssm.jl`
+- `make docs`: Compile documentation
+- `make benchmark`: Run simple benchmark
+- `make lint`: Check codestyle
+- `make format`: Check and fix codestyle 
