@@ -17,7 +17,7 @@ format: lint_init ## Code formating run
 benchmark_init:
 	julia --project=benchmark/ -e 'using Pkg; Pkg.instantiate();'
 
-benchmark: ## Runs simple benchmark
+benchmark: benchmark_init ## Runs simple benchmark
 	julia --project=benchmark/ --startup-file=no scripts/benchmark.jl
 
 .PHONY: docs
