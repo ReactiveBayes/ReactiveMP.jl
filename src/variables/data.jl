@@ -109,12 +109,14 @@ update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 
 update!(datavar::DataVariable, data::Number)        = update!(eltype(datavar), typeof(data), datavar, data)
 update!(datavar::DataVariable, data::AbstractArray) = update!(eltype(datavar), typeof(data), datavar, data)
 
-update!(::Type{ PointMass{D} }, ::Type{D}, datavar, data)   where { D }      = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
-update!(::Type{ PointMass{D1} }, ::Type{D2}, datavar, data) where { D1, D2 } = error("'$(name(datavar)) = datavar($D1, ...)' accepts data of type $D1, but $D2 has been supplied. Check 'update!($(name(datavar)), data::$D2)' and explicitly convert data to type $D1.")
+update!(::Type{ D },  ::Type{ D }, datavar, data)  where { D }      = next!(messageout(datavar, 1), Message(data, false, false))
+update!(::Type{ D1 }, ::Type{ D2 }, datavar, data) where { D1, D2 } = error("'$(name(datavar)) = datavar($D1, ...)' accepts data of type $D1, but $D2 has been supplied. Check 'update!($(name(datavar)), data::$D2)' and explicitly convert data to type $D1.")
+
+update!(::Type{ PointMass{D} }, ::Type{D}, datavar, data) where { D } = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 
-function update!(datavars::AbstractVector{ <: DataVariable }, data::AbstractVector)
+function update!(datavars::AbstractArray{ <: DataVariable }, data::AbstractArray)
     @assert size(datavars) === size(data) "Invalid update! call: size of datavar array and data should match"
     foreach(zip(datavars, data)) do (var, d)
         update!(var, d)
