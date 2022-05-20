@@ -14,11 +14,11 @@ assign_message!(variable::AbstractVariable, message)                       = set
 struct KeepEach end
 struct KeepLast end
 
-make_actor(::RandomVariable, ::KeepEach)                     = keep(Marginal)
-make_actor(::AbstractArray{ <: RandomVariable }, ::KeepEach) = keep(Vector{Marginal})
+make_actor(::RandomVariable, ::KeepEach)                           = keep(Marginal)
+make_actor(::Array{ <: RandomVariable, N}, ::KeepEach) where { N } = keep(Array{Marginal, N})
 
-make_actor(::RandomVariable, ::KeepLast)                      = storage(Marginal)
-make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepLast) = buffer(Marginal, length(x))
+make_actor(::RandomVariable, ::KeepLast)                            = storage(Marginal)
+make_actor(x::Array{ <: RandomVariable, N}, ::KeepLast) where { N } = buffer(Marginal, size(x))
 
 ## Inference ensure update
 
