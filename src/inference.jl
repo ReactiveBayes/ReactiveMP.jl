@@ -21,6 +21,9 @@ make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepEach)       = keep(typeo
 make_actor(::RandomVariable, ::KeepLast)                     = storage(Marginal)
 make_actor(x::AbstractArray{ <: RandomVariable}, ::KeepLast) = buffer(Marginal, size(x))
 
+__getdata(values::AbstractVector{ <: Marginal }) = map(getdata, values)
+__getdata(marginal::Marginal)                    = getdata(marginal)
+
 ## Inference ensure update
 
 mutable struct MarginalHasBeenUpdated
@@ -92,16 +95,15 @@ function Base.show(io::IO, result::InferenceResult)
         print(IOContext(io, :compact => true, :limit => true, :displaysize => (1, 80)), result.free_energy)
         print(io, "\n")
     end
-
-    maxwidth = 80
-    maxlen   = maximum(p -> length(string(first(p))), pairs(result.posteriors))
+    maxdisplay = 80
+    maxlen     = maximum(p -> length(string(first(p))), pairs(result.posteriors), init = 0)
     print(io, "-----------------------------------------\n")
     for (key, value) in pairs(result.posteriors)
         print(io, "$(rpad(key, maxlen)) = ")
-        svalue = string(value)
-        slen   = length(svalue)
-        print(IOContext(io, :compact => true, :limit => true), view(svalue, 1:min(maxwidth, length(svalue))))
-        if slen > maxwidth
+        strval    = repr(value, context = :limit => true)
+        lastindex = last(collect(Iterators.take(eachindex(strval), maxdisplay)))
+        print(io, view(strval, 1:lastindex))
+        if lastindex >= maxdisplay
             print(io, "...")
         end
         print(io, "\n")
@@ -402,7 +404,7 @@ function inference(;
 
         unsubscribe!(fe_subscription)
 
-        posterior_values = Dict(variable => getvalues(actor) for (variable, actor) in pairs(actors))
+        posterior_values = Dict(variable => __getdata(getvalues(actor)) for (variable, actor) in pairs(actors))
         fe_values        = fe_actor !== nothing ? getvalues(fe_actor) : nothing
 
         inference_invoke_callback(callbacks, :after_inference, fmodel)
