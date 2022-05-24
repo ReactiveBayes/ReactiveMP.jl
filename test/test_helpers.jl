@@ -9,27 +9,24 @@ import ReactiveMP: InfCountingReal, ∞
 import ReactiveMP: FunctionalIndex
 
 @testset "Helpers" begin
-
-    @testset "SkipIndexIterator" begin  
+    @testset "SkipIndexIterator" begin
         s = skipindex(1:3, 2)
         @test typeof(s) <: SkipIndexIterator
-        @test collect(s) == [ 1, 3 ]
-        @test collect(skipindex(s, 1)) == [ 3 ]
+        @test collect(s) == [1, 3]
+        @test collect(skipindex(s, 1)) == [3]
     end
 
     @testset "deep_eltype" begin
-
-        for type in [ Float32, Float64, Complex{Float64}, BigFloat ]
-
+        for type in [Float32, Float64, Complex{Float64}, BigFloat]
             @test deep_eltype(type) === type
             @test deep_eltype(zero(type)) === type
 
-            vector = zeros(type, 10)
-            matrix = zeros(type, 10, 10)
-            vector_of_vectors  = [ vector, vector ]
-            vector_of_matrices = [ matrix, matrix ]
-            matrix_of_vector   = [ vector vector; vector vector ]
-            matrix_of_matrices = [ matrix matrix; matrix matrix ]
+            vector             = zeros(type, 10)
+            matrix             = zeros(type, 10, 10)
+            vector_of_vectors  = [vector, vector]
+            vector_of_matrices = [matrix, matrix]
+            matrix_of_vector   = [vector vector; vector vector]
+            matrix_of_matrices = [matrix matrix; matrix matrix]
 
             @test deep_eltype(vector) === type
             @test deep_eltype(matrix) === type
@@ -37,12 +34,10 @@ import ReactiveMP: FunctionalIndex
             @test deep_eltype(vector_of_matrices) === type
             @test deep_eltype(matrix_of_vector) === type
             @test deep_eltype(matrix_of_matrices) === type
-
         end
-
     end
 
-    @testset "InfCountingReal" begin 
+    @testset "InfCountingReal" begin
         r = InfCountingReal(0.0, 0)
         @test float(r) ≈ 0.0
         @test float(r + 1) ≈ 1.0
@@ -56,7 +51,6 @@ import ReactiveMP: FunctionalIndex
     end
 
     @testset "FunctionalIndex" begin
-    
         for N in 1:5
             collection = ones(N)
             @test FunctionalIndex{:nothing}(firstindex)(collection) === firstindex(collection)
@@ -66,23 +60,22 @@ import ReactiveMP: FunctionalIndex
             @test (FunctionalIndex{:nothing}(firstindex) + 1 - 2 + 3)(collection) === firstindex(collection) + 1 - 2 + 3
             @test (FunctionalIndex{:nothing}(lastindex) - 1 + 2 - 3)(collection) === lastindex(collection) - 1 + 2 - 3
         end
-        
+
         @test repr(FunctionalIndex{:begin}(firstindex)) === "(begin)"
         @test repr(FunctionalIndex{:begin}(firstindex) + 1) === "((begin) + 1)"
         @test repr(FunctionalIndex{:begin}(firstindex) - 1) === "((begin) - 1)"
         @test repr(FunctionalIndex{:begin}(firstindex) - 1 + 1) === "(((begin) - 1) + 1)"
-        
+
         @test repr(FunctionalIndex{:end}(lastindex)) === "(end)"
         @test repr(FunctionalIndex{:end}(lastindex) + 1) === "((end) + 1)"
         @test repr(FunctionalIndex{:end}(lastindex) - 1) === "((end) - 1)"
         @test repr(FunctionalIndex{:end}(lastindex) - 1 + 1) === "(((end) - 1) + 1)"
-        
+
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) + 1)))
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) - 1)))
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) + 1 + 1)))
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) - 1 + 1)))
     end
-    
 end
 
 end

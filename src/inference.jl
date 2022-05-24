@@ -2,29 +2,29 @@ export inference, InferenceResult, KeepEach, KeepLast
 
 import ProgressMeter
 
-obtain_marginal(variable::AbstractVariable)                      = getmarginal(variable)
-obtain_marginal(variables::AbstractArray{ <: AbstractVariable }) = getmarginals(variables)
+obtain_marginal(variable::AbstractVariable)                   = getmarginal(variable)
+obtain_marginal(variables::AbstractArray{<:AbstractVariable}) = getmarginals(variables)
 
-assign_marginal!(variables::AbstractArray{ <: AbstractVariable }, marginals) = setmarginals!(variables, marginals)
-assign_marginal!(variable::AbstractVariable, marginal)                       = setmarginal!(variable, marginal)
+assign_marginal!(variables::AbstractArray{<:AbstractVariable}, marginals) = setmarginals!(variables, marginals)
+assign_marginal!(variable::AbstractVariable, marginal)                    = setmarginal!(variable, marginal)
 
-assign_message!(variables::AbstractArray{ <: AbstractVariable }, messages) = setmessages!(variables, messages)
-assign_message!(variable::AbstractVariable, message)                       = setmessage!(variable, message)
+assign_message!(variables::AbstractArray{<:AbstractVariable}, messages) = setmessages!(variables, messages)
+assign_message!(variable::AbstractVariable, message)                    = setmessage!(variable, message)
 
 struct KeepEach end
 struct KeepLast end
 
-make_actor(::RandomVariable, ::KeepEach)                            = keep(Marginal)
-make_actor(::Array{ <: RandomVariable, N }, ::KeepEach) where { N } = keep(Array{Marginal, N})
-make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepEach)       = keep(typeof(similar(x, Marginal)))
+make_actor(::RandomVariable, ::KeepEach)                       = keep(Marginal)
+make_actor(::Array{<:RandomVariable, N}, ::KeepEach) where {N} = keep(Array{Marginal, N})
+make_actor(x::AbstractArray{<:RandomVariable}, ::KeepEach)     = keep(typeof(similar(x, Marginal)))
 
-make_actor(::RandomVariable, ::KeepLast)                     = storage(Marginal)
-make_actor(x::AbstractArray{ <: RandomVariable}, ::KeepLast) = buffer(Marginal, size(x))
+make_actor(::RandomVariable, ::KeepLast)                   = storage(Marginal)
+make_actor(x::AbstractArray{<:RandomVariable}, ::KeepLast) = buffer(Marginal, size(x))
 
 ## Inference ensure update
 
 mutable struct MarginalHasBeenUpdated
-    updated :: Bool
+    updated::Bool
 end
 
 __unset_updated!(updated::MarginalHasBeenUpdated) = updated.updated = false
@@ -32,7 +32,10 @@ __set_updated!(updated::MarginalHasBeenUpdated)   = updated.updated = true
 
 # This creates a `tap` operator that will set the `updated` flag to true. 
 # Later on we check flags and `unset!` them after the `update!` procedure
-ensure_update(model::FactorGraphModel, callback, variable_name::Symbol, updated::MarginalHasBeenUpdated)  = tap((update) -> begin __set_updated!(updated); callback(model, variable_name, update) end)
+ensure_update(model::FactorGraphModel, callback, variable_name::Symbol, updated::MarginalHasBeenUpdated)  = tap((update) -> begin
+    __set_updated!(updated)
+    callback(model, variable_name, update)
+end)
 ensure_update(model::FactorGraphModel, ::Nothing, variable_name::Symbol, updated::MarginalHasBeenUpdated) = tap((_) -> __set_updated!(updated)) # If `callback` is nothing we simply set updated flag
 
 ## Extra error handling
@@ -49,14 +52,16 @@ end
 
 __inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothing
 
-function __inference_check_dicttype(keyword::Symbol, input::T) where {T} 
-    error("""
-        Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
-        If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
-        Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
-              The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
-              The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
-    """)
+function __inference_check_dicttype(keyword::Symbol, input::T) where {T}
+    error(
+        """
+      Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
+      If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
+      Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
+            The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
+            The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
+  """
+    )
 end
 ##
 
@@ -108,7 +113,7 @@ function Base.show(io::IO, result::InferenceResult)
 end
 
 function Base.getproperty(result::InferenceResult, property::Symbol)
-    if property === :free_energy && getfield(result, :free_energy) === nothing 
+    if property === :free_energy && getfield(result, :free_energy) === nothing
         error("""
             Bethe Free Energy has not been computed. 
             Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
@@ -119,19 +124,18 @@ function Base.getproperty(result::InferenceResult, property::Symbol)
     return getfield(result, property)
 end
 
-
-
 __inference_invoke_callback(callback, args...)  = callback(args...)
 __inference_invoke_callback(::Nothing, args...) = begin end
 
-inference_invoke_callback(callbacks, name, args...) = __inference_invoke_callback(inference_get_callback(callbacks, name), args...)
+inference_invoke_callback(callbacks, name, args...) =
+    __inference_invoke_callback(inference_get_callback(callbacks, name), args...)
 inference_invoke_callback(::Nothing, name, args...) = begin end
 
 inference_get_callback(callbacks, name) = get(() -> nothing, callbacks, name)
 inference_get_callback(::Nothing, name) = nothing
 
-unwrap_free_energy_option(option::Bool)                        = (option, Real, InfCountingReal)
-unwrap_free_energy_option(option::Type{T}) where { T <: Real } = (true, T, InfCountingReal{T})
+unwrap_free_energy_option(option::Bool)                      = (option, Real, InfCountingReal)
+unwrap_free_energy_option(option::Type{T}) where {T <: Real} = (true, T, InfCountingReal{T})
 
 """
     inference(
@@ -270,11 +274,11 @@ function inference(;
     # Constraints specification object
     constraints = nothing,
     # Meta specification object
-    meta  = nothing,
+    meta = nothing,
     # Model creation options
     options = (;),
     # Return structure info, optional, defaults to return everything at each iteration
-    returnvars = nothing, 
+    returnvars = nothing,
     # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
     iterations = 1,
     # Do we compute FE, optional, defaults to false 
@@ -287,7 +291,6 @@ function inference(;
     # warn, optional, defaults to true
     warn = true
 )
-
     __inference_check_dicttype(:data, data)
     __inference_check_dicttype(:initmarginals, initmarginals)
     __inference_check_dicttype(:initmessages, initmessages)
@@ -300,15 +303,16 @@ function inference(;
 
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
     # `KeepEach` for each random and not-proxied variable in a model
-    if returnvars === nothing 
-        returnvars = Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
+    if returnvars === nothing
+        returnvars =
+            Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
     end
 
     # Use `__check_has_randomvar` to filter out unknown or non-random variables in the `returnvar` specification
-    __check_has_randomvar(vardict, variable) = begin 
+    __check_has_randomvar(vardict, variable) = begin
         haskey_check   = haskey(vardict, variable)
         israndom_check = haskey_check ? israndom(vardict[variable]) : false
-        if warn && !haskey_check 
+        if warn && !haskey_check
             @warn "`returnvars` object has `$(variable)` specification, but model has no variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
         elseif warn && haskey_check && !israndom_check
             @warn "`returnvars` object has `$(variable)` specification, but model has no **random** variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
@@ -317,20 +321,23 @@ function inference(;
     end
 
     # Second, for each random variable entry we create an actor
-    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars) if __check_has_randomvar(vardict, variable))
+    actors = Dict(
+        variable => make_actor(vardict[variable], value) for
+        (variable, value) in pairs(returnvars) if __check_has_randomvar(vardict, variable)
+    )
 
     # At third, for each random variable entry we create a boolean flag to track their updates
     updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(actors))
 
-    try 
+    try
         on_marginal_update = inference_get_callback(callbacks, :on_marginal_update)
         subscriptions      = Dict(variable => subscribe!(obtain_marginal(vardict[variable]) |> ensure_update(fmodel, on_marginal_update, variable, updates[variable]), actor) for (variable, actor) in pairs(actors))
-        
+
         fe_actor        = nothing
         fe_subscription = VoidTeardown()
 
         is_free_energy, S, T = unwrap_free_energy_option(free_energy)
-        
+
         if is_free_energy
             fe_actor        = ScoreActor(S)
             fe_subscription = subscribe!(score(T, BetheFreeEnergy(), fmodel), fe_actor)
@@ -358,7 +365,7 @@ function inference(;
 
         if isnothing(data) || isempty(data)
             error("Data is empty. Make sure you used `data` keyword argument with correct value.")
-        else 
+        else
             foreach(filter(pair -> isdata(last(pair)), pairs(vardict))) do pair
                 haskey(data, first(pair)) || error("Data entry $(first(pair)) is missing in `data` dictionary.")
             end
@@ -387,10 +394,12 @@ function inference(;
             not_updated = filter((pair) -> !last(pair).updated, updates)
             if length(not_updated) !== 0
                 names = join(keys(not_updated), ", ")
-                error("""
-                    Variables [ $(names) ] have not been updated after a single inference iteration. 
-                    Therefore, make sure to initialize all required marginals and messages. See `initmarginals` and `initmessages` keyword arguments for the `inference` function. 
-                """)
+                error(
+                    """
+                  Variables [ $(names) ] have not been updated after a single inference iteration. 
+                  Therefore, make sure to initialize all required marginals and messages. See `initmarginals` and `initmessages` keyword arguments for the `inference` function. 
+              """
+                )
             end
             for (_, update_flag) in pairs(updates)
                 __unset_updated!(update_flag)
@@ -415,5 +424,5 @@ function inference(;
         return InferenceResult(posterior_values, fe_values, fmodel, freturval)
     catch error
         __inference_process_error(error)
-    end    
+    end
 end

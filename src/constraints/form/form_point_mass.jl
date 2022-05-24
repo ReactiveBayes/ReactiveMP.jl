@@ -56,14 +56,14 @@ See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 struct PointMassFormConstraint{F, P, B} <: AbstractFormConstraint
     optimizer      :: F
     starting_point :: P
-    boundaries     :: B   
+    boundaries     :: B
 end
 
 Base.show(io::IO, ::PointMassFormConstraint) = print(io, "PointMassFormConstraint()")
 
-PointMassFormConstraint(; 
-    optimizer      = default_point_mass_form_constraint_optimizer, 
-    starting_point = default_point_mass_form_constraint_starting_point, 
+PointMassFormConstraint(;
+    optimizer      = default_point_mass_form_constraint_optimizer,
+    starting_point = default_point_mass_form_constraint_starting_point,
     boundaries     = default_point_mass_form_constraint_boundaries
 ) = PointMassFormConstraint(optimizer, starting_point, boundaries)
 
@@ -73,7 +73,7 @@ default_form_check_strategy(::PointMassFormConstraint) = FormConstraintCheckLast
 
 default_prod_constraint(::PointMassFormConstraint) = ProdGeneric()
 
-make_form_constraint(::Type{ <: PointMass }, args...; kwargs...) = PointMassFormConstraint(args...; kwargs...)
+make_form_constraint(::Type{<:PointMass}, args...; kwargs...) = PointMassFormConstraint(args...; kwargs...)
 
 call_optimizer(pmconstraint::PointMassFormConstraint, distribution)      = pmconstraint.optimizer(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
 call_boundaries(pmconstraint::PointMassFormConstraint, distribution)     = pmconstraint.boundaries(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
@@ -81,9 +81,13 @@ call_starting_point(pmconstraint::PointMassFormConstraint, distribution) = pmcon
 
 constrain_form(pmconstraint::PointMassFormConstraint, distribution) = call_optimizer(pmconstraint, distribution)
 
-function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
-
-    target = let distribution = distribution 
+function default_point_mass_form_constraint_optimizer(
+    ::Type{Univariate},
+    ::Type{Continuous},
+    constraint::PointMassFormConstraint,
+    distribution
+)
+    target = let distribution = distribution
         (x) -> -logpdf(distribution, x[1])
     end
 
@@ -92,7 +96,7 @@ function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Ty
     result = if isinf(lower) && isinf(upper)
         optimize(target, call_starting_point(constraint, distribution), LBFGS())
     else
-        optimize(target, [ lower ], [ upper ], call_starting_point(constraint, distribution), Fminbox(GradientDescent()))
+        optimize(target, [lower], [upper], call_starting_point(constraint, distribution), Fminbox(GradientDescent()))
     end
 
     if Optim.converged(result)
@@ -102,15 +106,25 @@ function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Ty
     end
 end
 
-function default_point_mass_form_constraint_boundaries(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+function default_point_mass_form_constraint_boundaries(
+    ::Type{Univariate},
+    ::Type{Continuous},
+    constraint::PointMassFormConstraint,
+    distribution
+)
     support = Distributions.support(distribution)
     lower   = Distributions.minimum(support)
     upper   = Distributions.maximum(support)
     return lower, upper
 end
 
-function default_point_mass_form_constraint_starting_point(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
-    lower, upper  = call_boundaries(constraint, distribution)
+function default_point_mass_form_constraint_starting_point(
+    ::Type{Univariate},
+    ::Type{Continuous},
+    constraint::PointMassFormConstraint,
+    distribution
+)
+    lower, upper = call_boundaries(constraint, distribution)
     return if isinf(lower) && isinf(upper)
         return zeros(1)
     else

@@ -1,10 +1,10 @@
 import StatsFuns: log2π
 
-@node MvNormalMeanPrecision Stochastic [ out, (μ, aliases = [ mean ]), (Λ, aliases = [ invcov, precision ]) ]
+@node MvNormalMeanPrecision Stochastic [out, (μ, aliases = [mean]), (Λ, aliases = [invcov, precision])]
 
-conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :out } }) = MvNormalMeanPrecision
-conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :μ } })   = MvNormalMeanPrecision
-conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :Λ } })   = Wishart
+conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:out}}) = MvNormalMeanPrecision
+conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:μ}})   = MvNormalMeanPrecision
+conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:Λ}})   = Wishart
 
 # default method for mean-field assumption
 @average_energy MvNormalMeanPrecision (q_out::Any, q_μ::Any, q_Λ::Any) = begin
@@ -20,12 +20,12 @@ conjugate_type(::Type{ <: MvNormalMeanPrecision }, ::Type{ Val{ :Λ } })   = Wis
     result -= mean(logdet, q_Λ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result += m_Λ[k1,k2] * (v_out[k1,k2] + v_mean[k1,k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
+        result += m_Λ[k1, k2] * (v_out[k1, k2] + v_mean[k1, k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
     end
     result /= 2
 
     return result
-end   
+end
 
 # specialized method for mean-field assumption with q_Λ::Wishart
 @average_energy MvNormalMeanPrecision (q_out::Any, q_μ::Any, q_Λ::Wishart) = begin
@@ -42,7 +42,7 @@ end
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result += S_Λ[k1,k2] * (v_out[k1,k2] + v_mean[k1,k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
+        result += S_Λ[k1, k2] * (v_out[k1, k2] + v_mean[k1, k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
     end
     result *= df_Λ
     result += dim * log2π
@@ -65,7 +65,11 @@ end
     result -= mean(logdet, q_Λ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result += m_Λ[k1,k2] * (V[k1,k2] + V[dim+k1,dim+k2] - V[dim+k1,k2] - V[k1,dim+k2] + (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2]))
+        result +=
+            m_Λ[k1, k2] * (
+                V[k1, k2] + V[dim+k1, dim+k2] - V[dim+k1, k2] - V[k1, dim+k2] +
+                (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2])
+            )
     end
     result /= 2
 
@@ -77,14 +81,18 @@ end
     # naive: (ndims(q_out) * log2π - mean(logdet, q_Λ) + tr(mean(q_Λ)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))) / 2
     dim = div(ndims(q_out_μ), 2)
 
-    m, V       = mean_cov(q_out_μ)
-    df_Λ, S_Λ  = params(q_Λ)     # prevent allocation of mean matrix
+    m, V      = mean_cov(q_out_μ)
+    df_Λ, S_Λ = params(q_Λ)     # prevent allocation of mean matrix
 
     result = zero(promote_type(eltype(q_out_μ), eltype(q_Λ)))
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result += S_Λ[k1,k2] * (V[k1,k2] + V[dim+k1,dim+k2] - V[dim+k1,k2] - V[k1,dim+k2] + (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2]))
+        result +=
+            S_Λ[k1, k2] * (
+                V[k1, k2] + V[dim+k1, dim+k2] - V[dim+k1, k2] - V[k1, dim+k2] +
+                (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2])
+            )
     end
     result *= df_Λ
     result += dim * log2π

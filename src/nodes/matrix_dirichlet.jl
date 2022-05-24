@@ -1,6 +1,6 @@
 import SpecialFunctions: loggamma
 
-@node MatrixDirichlet Stochastic [ out, a ]
+@node MatrixDirichlet Stochastic [out, a]
 
 @average_energy MatrixDirichlet (q_out::MatrixDirichlet, q_a::PointMass) = begin
     H = mapreduce(+, zip(eachcol(mean(q_a)), eachcol(mean(log, q_out)))) do (q_a_column, logmean_q_out_column)

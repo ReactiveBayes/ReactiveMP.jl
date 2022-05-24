@@ -13,9 +13,9 @@ See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdPreserveTypeLeft`](@re
 """
 struct ProdPreserveType{T} <: AbstractProdConstraint end
 
-ProdPreserveType(::Type{T}) where T = ProdPreserveType{T}()
+ProdPreserveType(::Type{T}) where {T} = ProdPreserveType{T}()
 
-prod(::ProdPreserveType{T}, left, right) where T = convert(T, prod(ProdAnalytical(), left, right))
+prod(::ProdPreserveType{T}, left, right) where {T} = convert(T, prod(ProdAnalytical(), left, right))
 
 """
     ProdPreserveTypeLeft
@@ -28,7 +28,7 @@ See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdPreserveTypeRight`](
 """
 struct ProdPreserveTypeLeft <: AbstractProdConstraint end
 
-prod(::ProdPreserveTypeLeft, left::L, right) where L = prod(ProdPreserveType(L), left, right)
+prod(::ProdPreserveTypeLeft, left::L, right) where {L} = prod(ProdPreserveType(L), left, right)
 
 """
     ProdPreserveTypeRight
@@ -41,4 +41,4 @@ See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdPreserveTypeLeft`](@
 """
 struct ProdPreserveTypeRight <: AbstractProdConstraint end
 
-prod(::ProdPreserveTypeRight, left, right::R) where R = prod(ProdPreserveType(R), left, right)
+prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)

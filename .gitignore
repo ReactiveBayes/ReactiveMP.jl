@@ -3,6 +3,8 @@
 docs/build
 docs/Manifest.toml
 
+scripts/Manifest.toml
+
 demo/.ipynb_checkpoints
 demo/*incomplete.ipynb
 demo/*.jl

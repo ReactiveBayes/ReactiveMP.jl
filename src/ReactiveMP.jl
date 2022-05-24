@@ -113,12 +113,10 @@ include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/flow/flow.jl")
 
-
 # Deterministic nodes
 include("nodes/addition.jl")
 include("nodes/subtraction.jl")
 include("nodes/multiplication.jl")
-
 
 include("rules/prototypes.jl")
 

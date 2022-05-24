@@ -32,7 +32,8 @@ mean(product), var(product)
 
 See also: [`prod_analytical_rule`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
 """
-prod(::ProdAnalytical, left, right) = error("No analytical rule available to compute a product of distributions $(left) and $(right).")
+prod(::ProdAnalytical, left, right) =
+    error("No analytical rule available to compute a product of distributions $(left) and $(right).")
 
 prod(::ProdAnalytical, ::Missing, right)     = right
 prod(::ProdAnalytical, left, ::Missing)      = left

@@ -1,16 +1,15 @@
 module ReactiveMPCorrectionTest
 
 using Test
-using ReactiveMP 
+using ReactiveMP
 using Random
 
 using LinearAlgebra
 
 @testset "Correction" begin
-
     rng = MersenneTwister(1234)
 
-    for n in [ 3, 5, 10 ]
+    for n in [3, 5, 10]
         a = rand(rng)
         A = rand(rng, n, n)
 
@@ -58,7 +57,6 @@ using LinearAlgebra
         K = ReactiveMP.correction!(ClampEigenValuesCorrection(1e-12), copy(A))
         @test K ≈ A
     end
-    
 end
 
 end

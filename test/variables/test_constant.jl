@@ -9,10 +9,8 @@ import ReactiveMP: getconst, proxy_variables
 import ReactiveMP: israndom, isproxy
 
 @testset "ConstVariable" begin
-
-    @testset "Simple creation" begin 
-
-        for sym in (:x, :y, :z), value in (1.0, 1.0, "asd", [ 1.0, 1.0 ], [ 1.0 0.0; 0.0 1.0 ])
+    @testset "Simple creation" begin
+        for sym in (:x, :y, :z), value in (1.0, 1.0, "asd", [1.0, 1.0], [1.0 0.0; 0.0 1.0])
             v = constvar(sym, value)
 
             @test !israndom(v)
@@ -25,8 +23,8 @@ import ReactiveMP: israndom, isproxy
 
         for sym in (:x, :y, :z), n in (10, 20)
             vs = constvar(sym, (i) -> i + 1, n)
-            
-            @test !israndom(vs) 
+
+            @test !israndom(vs)
             @test length(vs) === n
             @test vs isa Vector
             @test all(v -> !israndom(v), vs)
@@ -40,7 +38,7 @@ import ReactiveMP: israndom, isproxy
 
         for sym in (:x, :y, :z), l in (10, 20), r in (10, 20)
             for vs in (constvar(sym, (i) -> sum(i), l, r), constvar(sym, (i) -> sum(i), (l, r)))
-                @test !israndom(vs) 
+                @test !israndom(vs)
                 @test size(vs) === (l, r)
                 @test length(vs) === l * r
                 @test vs isa Matrix
@@ -53,10 +51,7 @@ import ReactiveMP: israndom, isproxy
                 @test all(v -> !isproxy(v), vs)
             end
         end
-
-
     end
-
 end
 
 end

@@ -10,7 +10,7 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, d
     return approximate_meancov(method, g, mean(distribution), cov(distribution))
 end
 
-function approximate_meancov(method::AbstractApproximationMethod, g::Function, m::T, v::T) where { T <: Real }
+function approximate_meancov(method::AbstractApproximationMethod, g::Function, m::T, v::T) where {T <: Real}
     weights = getweights(method, m, v)
     points  = getpoints(method, m, v)
 
@@ -33,7 +33,7 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
     var = 0.0
     for (index, (point, c)) in enumerate(zip(points, cs))
         point -= mean
-        var += c * point ^ 2
+        var += c * point^2
     end
 
     var /= norm
@@ -41,7 +41,12 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
     return mean, var
 end
 
-function approximate_meancov(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractMatrix{T}) where { T <: Real }
+function approximate_meancov(
+    method::AbstractApproximationMethod,
+    g::Function,
+    m::AbstractVector{T},
+    P::AbstractMatrix{T}
+) where {T <: Real}
     ndims = length(m)
 
     weights = getweights(method, m, P)
@@ -80,7 +85,12 @@ function approximate_kernel_expectation(method::AbstractApproximationMethod, g::
     return approximate_kernel_expectation(method, g, mean(distribution), cov(distribution))
 end
 
-function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractMatrix{T}) where { T <: Real }
+function approximate_kernel_expectation(
+    method::AbstractApproximationMethod,
+    g::Function,
+    m::AbstractVector{T},
+    P::AbstractMatrix{T}
+) where {T <: Real}
     ndims = length(m)
 
     weights = getweights(method, m, P)

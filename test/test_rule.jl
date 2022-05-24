@@ -1,18 +1,17 @@
 module ReactiveMPRuleTest
 
 using Test
-using ReactiveMP 
+using ReactiveMP
 using MacroTools
 
 import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_macro_parse_fn_args
 
 @testset "rule" begin
-
     @testset "rule_macro_parse_on_tag(expression)" begin
-        @test rule_macro_parse_on_tag(:(:out)) == (:(Type{ Val{ :out } }), nothing, nothing)
-        @test rule_macro_parse_on_tag(:(:mean)) == (:(Type{ Val{ :mean } }), nothing, nothing)
-        @test rule_macro_parse_on_tag(:(:mean, k)) == (:(Tuple{ Val{ :mean }, Int }), :k, :(k = on[2]))
-        @test rule_macro_parse_on_tag(:(:precision, r)) == (:(Tuple{ Val{ :precision }, Int }), :r, :(r = on[2]))
+        @test rule_macro_parse_on_tag(:(:out)) == (:(Type{Val{:out}}), nothing, nothing)
+        @test rule_macro_parse_on_tag(:(:mean)) == (:(Type{Val{:mean}}), nothing, nothing)
+        @test rule_macro_parse_on_tag(:(:mean, k)) == (:(Tuple{Val{:mean}, Int}), :k, :(k = on[2]))
+        @test rule_macro_parse_on_tag(:(:precision, r)) == (:(Tuple{Val{:precision}, Int}), :r, :(r = on[2]))
 
         @test_throws ErrorException rule_macro_parse_on_tag(:(out))
         @test_throws ErrorException rule_macro_parse_on_tag(:(123))
@@ -21,57 +20,91 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
     end
 
     @testset "rule_macro_parse_fn_args(inputs; specname, prefix, proxy)" begin
-        names, types, init = rule_macro_parse_fn_args([ (:m_out, :PointMass), (:m_mean, :NormalMeanPrecision) ]; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+        names, types, init = rule_macro_parse_fn_args(
+            [(:m_out, :PointMass), (:m_mean, :NormalMeanPrecision)];
+            specname = :messages,
+            prefix = :m_,
+            proxy = :(ReactiveMP.Message)
+        )
 
-        @test names == :(Type{ Val{ (:out, :mean) } })
-        @test types == :(Tuple{ ReactiveMP.Message{ <: PointMass }, ReactiveMP.Message{ <: NormalMeanPrecision } })
+        @test names == :(Type{Val{(:out, :mean)}})
+        @test types == :(Tuple{ReactiveMP.Message{<:PointMass}, ReactiveMP.Message{<:NormalMeanPrecision}})
         @test init == Expr[:(m_out = getdata(messages[1])), :(m_mean = getdata(messages[2]))]
 
-        names, types, init = rule_macro_parse_fn_args([ (:m_out, :PointMass), (:m_mean, :NormalMeanPrecision) ]; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+        names, types, init = rule_macro_parse_fn_args(
+            [(:m_out, :PointMass), (:m_mean, :NormalMeanPrecision)];
+            specname = :marginals,
+            prefix = :q_,
+            proxy = :(ReactiveMP.Marginal)
+        )
 
         @test names == :Nothing
         @test types == :Nothing
         @test init == Expr[]
 
-        names, types, init = rule_macro_parse_fn_args([ (:m_out, :PointMass), (:q_mean, :NormalMeanPrecision) ]; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+        names, types, init = rule_macro_parse_fn_args(
+            [(:m_out, :PointMass), (:q_mean, :NormalMeanPrecision)];
+            specname = :marginals,
+            prefix = :q_,
+            proxy = :(ReactiveMP.Marginal)
+        )
 
-        @test names == :(Type{ Val{ (:mean, ) } })
-        @test types == :(Tuple{ ReactiveMP.Marginal{ <: NormalMeanPrecision }, })
-        @test init == Expr[ :(q_mean = getdata(marginals[1])) ]
+        @test names == :(Type{Val{(:mean,)}})
+        @test types == :(Tuple{ReactiveMP.Marginal{<:NormalMeanPrecision}})
+        @test init == Expr[:(q_mean = getdata(marginals[1]))]
     end
 
     @testset "call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)" begin
-        names, values = call_rule_macro_parse_fn_args([ (:m_out, :(PointMass(1.0))), (:m_mean, :(NormalMeanPrecision(0.0, 1.0))) ]; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+        names, values = call_rule_macro_parse_fn_args(
+            [(:m_out, :(PointMass(1.0))), (:m_mean, :(NormalMeanPrecision(0.0, 1.0)))];
+            specname = :messages,
+            prefix = :m_,
+            proxy = :(ReactiveMP.Message)
+        )
 
-        @test names == :(Val{ (:out, :mean) })
-        @test values == :(ReactiveMP.Message(PointMass(1.0), false, false), ReactiveMP.Message(NormalMeanPrecision(0.0, 1.0), false, false))
+        @test names == :(Val{(:out, :mean)})
+        @test values == :(
+            ReactiveMP.Message(PointMass(1.0), false, false),
+            ReactiveMP.Message(NormalMeanPrecision(0.0, 1.0), false, false)
+        )
 
-        names, values = call_rule_macro_parse_fn_args([ (:m_out, :(PointMass(1.0))), (:m_mean, :(NormalMeanPrecision(0.0, 1.0))) ]; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+        names, values = call_rule_macro_parse_fn_args(
+            [(:m_out, :(PointMass(1.0))), (:m_mean, :(NormalMeanPrecision(0.0, 1.0)))];
+            specname = :marginals,
+            prefix = :q_,
+            proxy = :(ReactiveMP.Marginal)
+        )
 
         @test names == :nothing
         @test values == :nothing
 
-        names, values = call_rule_macro_parse_fn_args([ (:m_out, :(PointMass(1.0))), (:q_mean, :(NormalMeanPrecision(0.0, 1.0))) ]; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+        names, values = call_rule_macro_parse_fn_args(
+            [(:m_out, :(PointMass(1.0))), (:q_mean, :(NormalMeanPrecision(0.0, 1.0)))];
+            specname = :marginals,
+            prefix = :q_,
+            proxy = :(ReactiveMP.Marginal)
+        )
 
-        @test names == :(Val{ (:mean, ) })
+        @test names == :(Val{(:mean,)})
         @test values == :((ReactiveMP.Marginal(NormalMeanPrecision(0.0, 1.0), false, false),))
     end
 
-    @testset "rule_method_error" begin 
+    @testset "rule_method_error" begin
+        as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false)
+        as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false)
 
-        as_vague_msg(::Type{T}) where T = Message(vague(T), false, false) 
-        as_vague_mrg(::Type{T}) where T = Marginal(vague(T), false, false) 
-
-        let 
+        let
             err = ReactiveMP.RuleMethodError(
-                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
-                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
-                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                NormalMeanPrecision, Val{:μ}, Marginalisation(),
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance),),
+                Val{(:τ,)}, (as_vague_mrg(Gamma),),
                 nothing,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@rule", output)
@@ -80,16 +113,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("q_τ::Gamma", output)
         end
 
-        let 
+        let
             err = ReactiveMP.RuleMethodError(
-                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
-                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
-                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                NormalMeanPrecision, Val{:μ}, Marginalisation(),
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance),),
+                Val{(:τ,)}, (as_vague_mrg(Gamma),),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@rule", output)
@@ -99,16 +134,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.RuleMethodError(
-                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
-                Val{(:out, :τ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma), ),
-                nothing, nothing, 
+                NormalMeanPrecision, Val{:μ}, Marginalisation(),
+                Val{(:out, :τ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)),
+                nothing, nothing,
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@rule", output)
@@ -118,16 +155,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.RuleMethodError(
-                NormalMeanPrecision, Val{:μ}, Marginalisation(), 
-                nothing, nothing, 
-                Val{(:out, :τ)}, (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma), ),
+                NormalMeanPrecision, Val{:μ}, Marginalisation(),
+                nothing, nothing,
+                Val{(:out, :τ)}, (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@rule", output)
@@ -137,16 +176,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.RuleMethodError(
-                NormalMeanPrecision, Val{:τ}, Marginalisation(), 
-                nothing, nothing, 
-                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                NormalMeanPrecision, Val{:τ}, Marginalisation(),
+                nothing, nothing,
+                Val{(:out_μ,)}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@rule", output)
@@ -155,38 +196,40 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.RuleMethodError(
-                NormalMeanPrecision, Val{:τ}, Marginalisation(), 
+                NormalMeanPrecision, Val{:τ}, Marginalisation(),
                 Val{(:out, :μ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(NormalMeanVariance)),
-                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                Val{(:out_μ,)}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("[WARN]: Non-standard rule layout found!", output)
             @test occursin("Possible fix, define", output)
         end
-
     end
 
-    @testset "marginalrule_method_error" begin 
+    @testset "marginalrule_method_error" begin
+        as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false)
+        as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false)
 
-        as_vague_msg(::Type{T}) where T = Message(vague(T), false, false) 
-        as_vague_mrg(::Type{T}) where T = Marginal(vague(T), false, false) 
-
-        let 
+        let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, 
-                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
-                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                NormalMeanPrecision, Val{:μ},
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance),),
+                Val{(:τ,)}, (as_vague_mrg(Gamma),),
                 nothing,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@marginalrule", output)
@@ -194,16 +237,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("q_τ::Gamma", output)
         end
 
-        let 
+        let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, 
-                Val{(:out,)}, (as_vague_msg(NormalMeanVariance), ), 
-                Val{(:τ, )}, (as_vague_mrg(Gamma), ),
+                NormalMeanPrecision, Val{:μ},
+                Val{(:out,)}, (as_vague_msg(NormalMeanVariance),),
+                Val{(:τ,)}, (as_vague_mrg(Gamma),),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@marginalrule", output)
@@ -212,16 +257,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, 
-                Val{(:out, :τ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma), ),
-                nothing, nothing, 
+                NormalMeanPrecision, Val{:μ},
+                Val{(:out, :τ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)),
+                nothing, nothing,
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@marginalrule", output)
@@ -230,16 +277,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, 
-                nothing, nothing, 
-                Val{(:out, :τ)}, (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma), ),
+                NormalMeanPrecision, Val{:μ},
+                nothing, nothing,
+                Val{(:out, :τ)}, (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@marginalrule", output)
@@ -248,16 +297,18 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:τ}, 
-                nothing, nothing, 
-                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                NormalMeanPrecision, Val{:τ},
+                nothing, nothing,
+                Val{(:out_μ,)}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("Possible fix, define:", output)
             @test occursin("@marginalrule", output)
@@ -265,23 +316,23 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("meta::Float64", output)
         end
 
-        let 
+        let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:τ}, 
+                NormalMeanPrecision, Val{:τ},
                 Val{(:out, :μ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(NormalMeanVariance)),
-                Val{(:out_μ, )}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false), ),
+                Val{(:out_μ,)}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                 1.0,
                 make_node(NormalMeanPrecision)
-            );
+            )
 
-            io = IOBuffer(); showerror(io, err); output = String(take!(io))
+            io = IOBuffer()
+            showerror(io, err)
+            output = String(take!(io))
 
             @test occursin("[WARN]: Non-standard rule layout found!", output)
             @test occursin("Possible fix, define", output)
         end
-
     end
-    
 end
 
 end

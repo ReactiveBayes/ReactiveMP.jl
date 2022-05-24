@@ -4,25 +4,25 @@ import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
 import Base: ndims, precision, length, size, prod
 
-struct MvNormalMeanPrecision{ T <: Real, M <: AbstractVector{T}, P <: AbstractMatrix{T} } <: AbstractMvNormal
-    μ :: M
-    Λ :: P
+struct MvNormalMeanPrecision{T <: Real, M <: AbstractVector{T}, P <: AbstractMatrix{T}} <: AbstractMvNormal
+    μ::M
+    Λ::P
 end
 
-function MvNormalMeanPrecision(μ::AbstractVector{ <: Real }, Λ::AbstractMatrix{ <: Real }) 
+function MvNormalMeanPrecision(μ::AbstractVector{<:Real}, Λ::AbstractMatrix{<:Real})
     T = promote_type(eltype(μ), eltype(Λ))
     return MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
 
-function MvNormalMeanPrecision(μ::AbstractVector{ <: Integer}, Λ::AbstractMatrix{ <: Integer }) 
+function MvNormalMeanPrecision(μ::AbstractVector{<:Integer}, Λ::AbstractMatrix{<:Integer})
     return MvNormalMeanPrecision(float.(μ), float.(Λ))
 end
 
-function MvNormalMeanPrecision(μ::AbstractVector, λ::AbstractVector) 
+function MvNormalMeanPrecision(μ::AbstractVector, λ::AbstractVector)
     return MvNormalMeanPrecision(μ, matrix_from_diagonal(promote_type(eltype(μ), eltype(λ)), λ))
 end
 
-function MvNormalMeanPrecision(μ::AbstractVector{T}) where T 
+function MvNormalMeanPrecision(μ::AbstractVector{T}) where {T}
     return MvNormalMeanPrecision(μ, convert(AbstractArray{T}, ones(length(μ))))
 end
 
@@ -48,21 +48,21 @@ function Distributions.sqmahal!(r, dist::MvNormalMeanPrecision, x::AbstractVecto
     return dot(r, invcov(dist), r)
 end
 
-Base.eltype(::MvNormalMeanPrecision{T})     where T = T 
-Base.precision(dist::MvNormalMeanPrecision)         = invcov(dist)
-Base.length(dist::MvNormalMeanPrecision)            = length(mean(dist))
-Base.ndims(dist::MvNormalMeanPrecision)             = length(dist)
-Base.size(dist::MvNormalMeanPrecision)              = (length(dist), )
+Base.eltype(::MvNormalMeanPrecision{T}) where {T} = T
+Base.precision(dist::MvNormalMeanPrecision)       = invcov(dist)
+Base.length(dist::MvNormalMeanPrecision)          = length(mean(dist))
+Base.ndims(dist::MvNormalMeanPrecision)           = length(dist)
+Base.size(dist::MvNormalMeanPrecision)            = (length(dist),)
 
-Base.convert(::Type{ <: MvNormalMeanPrecision }, μ::AbstractVector, Λ::AbstractMatrix) = MvNormalMeanPrecision(μ, Λ)
+Base.convert(::Type{<:MvNormalMeanPrecision}, μ::AbstractVector, Λ::AbstractMatrix) = MvNormalMeanPrecision(μ, Λ)
 
-function Base.convert(::Type{ <: MvNormalMeanPrecision{T} }, μ::AbstractVector, Λ::AbstractMatrix) where { T <: Real }
+function Base.convert(::Type{<:MvNormalMeanPrecision{T}}, μ::AbstractVector, Λ::AbstractMatrix) where {T <: Real}
     MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{ <: MvNormalMeanPrecision }, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
+vague(::Type{<:MvNormalMeanPrecision}, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
 
-prod_analytical_rule(::Type{ <: MvNormalMeanPrecision }, ::Type{ <: MvNormalMeanPrecision }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     Λ = invcov(left) + invcov(right)
@@ -70,16 +70,20 @@ function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNor
     return MvNormalMeanPrecision(μ, Λ)
 end
 
-function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where { T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat }
+function Base.prod(
+    ::ProdPreserveType,
+    left::MvNormalMeanPrecision{T1},
+    right::MvNormalMeanPrecision{T2}
+) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     Λ = precision(left) + precision(right)
 
     # fast & efficient implementation of precision(right)*mean(right) + precision(left)*mean(left)
-    xi = precision(right)*mean(right)
-    T = promote_type(T1,T2)
+    xi = precision(right) * mean(right)
+    T  = promote_type(T1, T2)
     xi = convert(AbstractVector{T}, xi)
     Λ  = convert(AbstractMatrix{T}, Λ)
     xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, precision(left)), convert(AbstractVector{T}, mean(left)), one(T), xi)
-    
+
     z = fastcholesky(Λ)
     μ = z \ xi
 
@@ -88,16 +92,20 @@ end
 
 function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     W = precision(left) + precision(right)
-    xi = precision(left)*mean(left) + precision(right)*mean(right)
+    xi = precision(left) * mean(left) + precision(right) * mean(right)
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
-function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where { T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat }
+function Base.prod(
+    ::ProdAnalytical,
+    left::MvNormalMeanPrecision{T1},
+    right::MvNormalMeanPrecision{T2}
+) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
     # fast & efficient implementation of xi = precision(right)*mean(right) + precision(left)*mean(left)
-    xi = precision(right)*mean(right)
-    T = promote_type(T1, T2)
+    xi = precision(right) * mean(right)
+    T  = promote_type(T1, T2)
     xi = convert(AbstractVector{T}, xi)
     W  = convert(AbstractMatrix{T}, W)
     xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, precision(left)), convert(AbstractVector{T}, mean(left)), one(T), xi)

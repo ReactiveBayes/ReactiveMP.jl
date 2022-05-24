@@ -12,9 +12,7 @@ import ReactiveMP: marginal_form_constraint, marginal_form_check_strategy
 import ReactiveMP: messages_form_constraint, messages_form_check_strategy
 
 @testset "RandomVariable" begin
-
-    @testset "Simple creation" begin 
-
+    @testset "Simple creation" begin
         for sym in (:x, :y, :z)
             v = randomvar(sym)
 
@@ -31,8 +29,8 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
 
         for sym in (:x, :y, :z), n in (10, 20)
             vs = randomvar(sym, n)
-            
-            @test israndom(vs) 
+
+            @test israndom(vs)
             @test length(vs) === n
             @test vs isa Vector
             @test all(v -> israndom(v), vs)
@@ -50,7 +48,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
 
         for sym in (:x, :y, :z), l in (10, 20), r in (10, 20)
             for vs in (randomvar(sym, l, r), randomvar(sym, (l, r)))
-                @test israndom(vs) 
+                @test israndom(vs)
                 @test size(vs) === (l, r)
                 @test length(vs) === l * r
                 @test vs isa Matrix
@@ -67,27 +65,25 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
                 @test all(v -> !isproxy(v), vs)
             end
         end
-
     end
 
     @testset "Creation via options" begin
-
         test_var     = randomvar(:tmp)
         test_options = RandomVariableCreationOptions(
-            LoggerPipelineStage(),    
-            (test_var, ),             
-            ProdGeneric(),            
-            FoldRightProdStrategy(),  
-            PointMassFormConstraint(),
-            FormConstraintCheckEach(),
-            SampleListFormConstraint(5000, LeftProposal()),
-            FormConstraintCheckLast() 
-        )
+        LoggerPipelineStage(),
+        (test_var,),
+        ProdGeneric(),
+        FoldRightProdStrategy(),
+        PointMassFormConstraint(),
+        FormConstraintCheckEach(),
+        SampleListFormConstraint(5000, LeftProposal()),
+        FormConstraintCheckLast()
+)
 
         for sym in (:x, :y, :z)
             v = randomvar(test_options, sym)
 
-            @test israndom(v) 
+            @test israndom(v)
             @test name(v) === sym
             @test collection_type(v) isa VariableIndividual
             @test marginal_form_constraint(v) == test_options.marginal_form_constraint
@@ -101,8 +97,8 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
 
         for sym in (:x, :y, :z), n in (10, 20)
             vs = randomvar(test_options, sym, n)
-            
-            @test israndom(vs) 
+
+            @test israndom(vs)
             @test length(vs) === n
             @test vs isa Vector
             @test all(v -> israndom(v), vs)
@@ -120,7 +116,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
 
         for sym in (:x, :y, :z), l in (10, 20), r in (10, 20)
             for vs in (randomvar(test_options, sym, l, r), randomvar(test_options, sym, (l, r)))
-                @test israndom(vs) 
+                @test israndom(vs)
                 @test size(vs) === (l, r)
                 @test length(vs) === l * r
                 @test vs isa Matrix
@@ -137,82 +133,133 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
                 @test all(v -> prod_strategy(v) == test_options.prod_strategy, vs)
             end
         end
-
     end
 
     @testset "Options setters" begin
-
         for pipeline in (EmptyPipelineStage(), LoggerPipelineStage(), DiscontinuePipelineStage())
-            @test ReactiveMP.get_pipeline_stages(randomvar(ReactiveMP.randomvar_options_set_pipeline(pipeline), :x)) === pipeline
+            @test ReactiveMP.get_pipeline_stages(randomvar(ReactiveMP.randomvar_options_set_pipeline(pipeline), :x)) ===
+                  pipeline
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.get_pipeline_stages(randomvar(ReactiveMP.randomvar_options_set_pipeline(options, pipeline), :x)) === pipeline
+                @test ReactiveMP.get_pipeline_stages(
+                    randomvar(ReactiveMP.randomvar_options_set_pipeline(options, pipeline), :x)
+                ) === pipeline
             end
         end
 
         # here and later on we use some dummy values
         dummy = (1.0, 1, "dummy")
-        
+
         for proxy_variables in dummy
-            @test ReactiveMP.proxy_variables(randomvar(ReactiveMP.randomvar_options_set_proxy_variables(proxy_variables), :x)) === proxy_variables
+            @test ReactiveMP.proxy_variables(
+                randomvar(ReactiveMP.randomvar_options_set_proxy_variables(proxy_variables), :x)
+            ) === proxy_variables
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.proxy_variables(randomvar(ReactiveMP.randomvar_options_set_proxy_variables(options, proxy_variables), :x)) === proxy_variables
+                @test ReactiveMP.proxy_variables(
+                    randomvar(ReactiveMP.randomvar_options_set_proxy_variables(options, proxy_variables), :x)
+                ) === proxy_variables
             end
         end
 
         for prod_constraint in dummy
-            @test ReactiveMP.prod_constraint(randomvar(ReactiveMP.randomvar_options_set_prod_constraint(prod_constraint), :x)) === prod_constraint
+            @test ReactiveMP.prod_constraint(
+                randomvar(ReactiveMP.randomvar_options_set_prod_constraint(prod_constraint), :x)
+            ) === prod_constraint
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.prod_constraint(randomvar(ReactiveMP.randomvar_options_set_prod_constraint(options, prod_constraint), :x)) === prod_constraint
+                @test ReactiveMP.prod_constraint(
+                    randomvar(ReactiveMP.randomvar_options_set_prod_constraint(options, prod_constraint), :x)
+                ) === prod_constraint
             end
         end
 
         for prod_strategy in dummy
-            @test ReactiveMP.prod_strategy(randomvar(ReactiveMP.randomvar_options_set_prod_strategy(prod_strategy), :x)) === prod_strategy
+            @test ReactiveMP.prod_strategy(
+                randomvar(ReactiveMP.randomvar_options_set_prod_strategy(prod_strategy), :x)
+            ) === prod_strategy
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.prod_strategy(randomvar(ReactiveMP.randomvar_options_set_prod_strategy(options, prod_strategy), :x)) === prod_strategy
+                @test ReactiveMP.prod_strategy(
+                    randomvar(ReactiveMP.randomvar_options_set_prod_strategy(options, prod_strategy), :x)
+                ) === prod_strategy
             end
         end
 
         for marginal_form_constraint in dummy
-            @test ReactiveMP.marginal_form_constraint(randomvar(ReactiveMP.randomvar_options_set_marginal_form_constraint(marginal_form_constraint), :x)) === marginal_form_constraint
+            @test ReactiveMP.marginal_form_constraint(
+                randomvar(ReactiveMP.randomvar_options_set_marginal_form_constraint(marginal_form_constraint), :x)
+            ) === marginal_form_constraint
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.marginal_form_constraint(randomvar(ReactiveMP.randomvar_options_set_marginal_form_constraint(options, marginal_form_constraint), :x)) === marginal_form_constraint
+                @test ReactiveMP.marginal_form_constraint(
+                    randomvar(
+                        ReactiveMP.randomvar_options_set_marginal_form_constraint(options, marginal_form_constraint),
+                        :x
+                    )
+                ) === marginal_form_constraint
             end
         end
 
         for marginal_form_check_strategy in dummy
-            @test ReactiveMP.marginal_form_check_strategy(randomvar(ReactiveMP.randomvar_options_set_marginal_form_check_strategy(marginal_form_check_strategy), :x)) === marginal_form_check_strategy
+            @test ReactiveMP.marginal_form_check_strategy(
+                randomvar(
+                    ReactiveMP.randomvar_options_set_marginal_form_check_strategy(marginal_form_check_strategy),
+                    :x
+                )
+            ) === marginal_form_check_strategy
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.marginal_form_check_strategy(randomvar(ReactiveMP.randomvar_options_set_marginal_form_check_strategy(options, marginal_form_check_strategy), :x)) === marginal_form_check_strategy
+                @test ReactiveMP.marginal_form_check_strategy(
+                    randomvar(
+                        ReactiveMP.randomvar_options_set_marginal_form_check_strategy(
+                            options,
+                            marginal_form_check_strategy
+                        ),
+                        :x
+                    )
+                ) === marginal_form_check_strategy
             end
         end
 
         for messages_form_constraint in dummy
-            @test ReactiveMP.messages_form_constraint(randomvar(ReactiveMP.randomvar_options_set_messages_form_constraint(messages_form_constraint), :x)) === messages_form_constraint
+            @test ReactiveMP.messages_form_constraint(
+                randomvar(ReactiveMP.randomvar_options_set_messages_form_constraint(messages_form_constraint), :x)
+            ) === messages_form_constraint
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.messages_form_constraint(randomvar(ReactiveMP.randomvar_options_set_messages_form_constraint(options, messages_form_constraint), :x)) === messages_form_constraint
+                @test ReactiveMP.messages_form_constraint(
+                    randomvar(
+                        ReactiveMP.randomvar_options_set_messages_form_constraint(options, messages_form_constraint),
+                        :x
+                    )
+                ) === messages_form_constraint
             end
         end
 
         for messages_form_check_strategy in dummy
-            @test ReactiveMP.messages_form_check_strategy(randomvar(ReactiveMP.randomvar_options_set_messages_form_check_strategy(messages_form_check_strategy), :x)) === messages_form_check_strategy
+            @test ReactiveMP.messages_form_check_strategy(
+                randomvar(
+                    ReactiveMP.randomvar_options_set_messages_form_check_strategy(messages_form_check_strategy),
+                    :x
+                )
+            ) === messages_form_check_strategy
             let options = RandomVariableCreationOptions()
-                @test ReactiveMP.messages_form_check_strategy(randomvar(ReactiveMP.randomvar_options_set_messages_form_check_strategy(options, messages_form_check_strategy), :x)) === messages_form_check_strategy
+                @test ReactiveMP.messages_form_check_strategy(
+                    randomvar(
+                        ReactiveMP.randomvar_options_set_messages_form_check_strategy(
+                            options,
+                            messages_form_check_strategy
+                        ),
+                        :x
+                    )
+                ) === messages_form_check_strategy
             end
         end
-
     end
 
-    @testset "Proxy creation" begin 
-
+    @testset "Proxy creation" begin
         proxy_var1 = randomvar(:proxy1)
         proxy_var2 = randomvar(:proxy2)
 
         for sym in (:x, :y, :z)
-            v1 = randomvar(ReactiveMP.randomvar_options_set_proxy_variables((proxy_var1, )), sym)
+            v1 = randomvar(ReactiveMP.randomvar_options_set_proxy_variables((proxy_var1,)), sym)
             @test israndom(v1)
             @test name(v1) === sym
-            @test proxy_variables(v1) === (proxy_var1, )
+            @test proxy_variables(v1) === (proxy_var1,)
             @test isproxy(v1)
 
             v2 = randomvar(ReactiveMP.randomvar_options_set_proxy_variables((proxy_var1, proxy_var2)), sym)
@@ -221,9 +268,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
             @test proxy_variables(v2) === (proxy_var1, proxy_var2)
             @test isproxy(v2)
         end
-
     end
-
 end
 
 end

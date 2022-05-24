@@ -8,6 +8,7 @@ DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions
 
 makedocs(
     modules  = [ ReactiveMP ],
+    strict   = [ :doctest, :eval_block, :example_block, :meta_block, :parse_error, :setup_block ],
     clean    = true,
     sitename = "ReactiveMP.jl",
     pages    = [

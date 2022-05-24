@@ -18,27 +18,26 @@ Interfaces:
 """
 struct BIFMHelper <: AbstractFactorNode end
 
-@node BIFMHelper Stochastic [ out, in ]
+@node BIFMHelper Stochastic [out, in]
 
 # specify custom functional dependencies for BIFMHelper node
-function functional_dependencies(dependencies, factornode::FactorNode{ <: Type{BIFMHelper} }, iindex::Int)
-    cindex             = clusterindex(factornode, iindex)
+function functional_dependencies(dependencies, factornode::FactorNode{<:Type{BIFMHelper}}, iindex::Int)
+    cindex = clusterindex(factornode, iindex)
 
     nodeinterfaces     = interfaces(factornode)
     nodeclusters       = factorisation(factornode)
     nodelocalmarginals = localmarginals(factornode)
 
-    varcluster = @inbounds nodeclusters[ cindex ]
-    
+    varcluster = @inbounds nodeclusters[cindex]
+
     # output
     if iindex === 2
-        mdependencies = (nodeinterfaces[1], )
+        mdependencies = (nodeinterfaces[1],)
         return tuple(mdependencies...), ()
     elseif iindex === 1
         qdependencies = TupleTools.deleteat(nodelocalmarginals, cindex)
-        return (), tuple(qdependencies...) 
+        return (), tuple(qdependencies...)
     end
-    
 end
 
 @average_energy BIFMHelper (q_out::Any, q_in::Any) = begin

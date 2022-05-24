@@ -19,7 +19,6 @@ See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
 """
 prod_analytical_rule(::Type, ::Type) = ProdAnalyticalRuleUnknown()
 
-
 """
     resolve_prod_constraint(left, right)
 

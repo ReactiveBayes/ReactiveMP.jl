@@ -1,14 +1,13 @@
 module ReactiveMPProdFinalTest
 
 using Test
-using ReactiveMP 
+using ReactiveMP
 using Random
 using LinearAlgebra
 
 import ReactiveMP: getdist
 
 @testset "ProdFinal" begin
-
     uni_distributions = [
         Gamma(1.0, 2.0),
         NormalMeanVariance(-10.0, 3.0)
@@ -34,7 +33,6 @@ import ReactiveMP: getdist
             @test (@inferred getdist(prod(ProdAnalytical(), ProdFinal(left), right))) === left
             @test (@inferred getdist(prod(ProdAnalytical(), left, ProdFinal(right)))) === right
             @test_throws ErrorException prod(ProdAnalytical(), ProdFinal(left), ProdFinal(right))
-            
         end
     end
 
@@ -50,8 +48,6 @@ import ReactiveMP: getdist
             end
         end
     end
-
-    
 end
 
 end

@@ -1,3 +1,3 @@
 export rule
 
-@rule Uninformative(:out, Marginalisation) () = missing 
+@rule Uninformative(:out, Marginalisation) () = missing

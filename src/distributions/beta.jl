@@ -3,9 +3,9 @@ export Beta
 import Distributions: Beta, params
 import SpecialFunctions: digamma
 
-vague(::Type{ <: Beta }) = Beta(1.0, 1.0)
+vague(::Type{<:Beta}) = Beta(1.0, 1.0)
 
-prod_analytical_rule(::Type{ <: Beta }, ::Type{ <: Beta }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Beta}, ::Type{<:Beta}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Beta, right::Beta)
     left_a, left_b   = params(left)
@@ -14,7 +14,7 @@ function prod(::ProdAnalytical, left::Beta, right::Beta)
     return Beta(left_a + right_a - one(T), left_b + right_b - one(T))
 end
 
-function mean(::typeof(log), dist::Beta) 
+function mean(::typeof(log), dist::Beta)
     a, b = params(dist)
     return digamma(a) - digamma(a + b)
 end

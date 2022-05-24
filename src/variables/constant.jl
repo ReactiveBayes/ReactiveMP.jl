@@ -59,22 +59,22 @@ name(constvar::ConstVariable)            = constvar.name
 proxy_variables(constvar::ConstVariable) = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
 
-isproxy(::ConstVariable)  = false
+isproxy(::ConstVariable) = false
 
-israndom(::ConstVariable)                     = false
-israndom(::AbstractArray{ <: ConstVariable }) = false
-isdata(::ConstVariable)                       = false
-isdata(::AbstractArray{ <: ConstVariable })   = false
-isconst(::ConstVariable)                      = true
-isconst(::AbstractArray{ <: ConstVariable })  = true
+israndom(::ConstVariable)                  = false
+israndom(::AbstractArray{<:ConstVariable}) = false
+isdata(::ConstVariable)                    = false
+isdata(::AbstractArray{<:ConstVariable})   = false
+isconst(::ConstVariable)                   = true
+isconst(::AbstractArray{<:ConstVariable})  = true
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 
 isconnected(constvar::ConstVariable) = constvar.nconnected !== 0
 nconnected(constvar::ConstVariable)  = constvar.nconnected
 
-getconst(constvar::ConstVariable{ <: PointMass }) = getpointmass(constvar.constant)
-getconst(constvar::ConstVariable)                 = constvar.constant
+getconst(constvar::ConstVariable{<:PointMass}) = getpointmass(constvar.constant)
+getconst(constvar::ConstVariable)              = constvar.constant
 
 getlastindex(::ConstVariable) = 1
 
@@ -88,13 +88,13 @@ _setmarginal!(::ConstVariable, observable) = error("It is not possible to set a 
 _makemarginal(::ConstVariable)             = error("It is not possible to make marginal stream for `ConstVariable`")
 
 # For _getmarginal
-function Rocket.getrecent(observable::SingleObservable{ <: Marginal })
+function Rocket.getrecent(observable::SingleObservable{<:Marginal})
     return observable.value
 end
 
 setanonymous!(::ConstVariable, ::Bool) = nothing
 
-function setmessagein!(constvar::ConstVariable, ::Int, messagein) 
+function setmessagein!(constvar::ConstVariable, ::Int, messagein)
     constvar.nconnected += 1
     return nothing
 end
