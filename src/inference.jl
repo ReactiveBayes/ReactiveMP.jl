@@ -305,16 +305,22 @@ function inference(;
     # `KeepEach` for each random and not-proxied variable in a model
     if returnvars === nothing 
         returnvars = Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
-    else 
-        foreach(pairs(returnvars)) do pair 
-            if warn && !haskey(vardict, first(pair))
-                @warn "`returnvars` object has `$(first(pair))` specification, but model has no variable named `$(first(pair))`. Use `warn = false` to suppress this warning."
-            end
+    end
+
+    # Use `__check_has_randomvar` to filter out unknown or non-random variables in the `returnvar` specification
+    __check_has_randomvar(vardict, variable) = begin 
+        haskey_check   = haskey(vardict, variable)
+        israndom_check = haskey_check ? israndom(vardict[variable]) : false
+        if warn && !haskey_check 
+            @warn "`returnvars` object has `$(variable)` specification, but model has no variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
+        elseif warn && haskey_check && !israndom_check
+            @warn "`returnvars` object has `$(variable)` specification, but model has no **random** variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
         end
+        return haskey_check && israndom_check
     end
 
     # Second, for each random variable entry we create an actor
-    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars) if haskey(vardict, variable))
+    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars) if __check_has_randomvar(vardict, variable))
 
     # At third, for each random variable entry we create a boolean flag to track their updates
     updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(actors))
