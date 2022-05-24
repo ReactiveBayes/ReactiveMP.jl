@@ -9,16 +9,14 @@ using Logging
 import ReactiveMP: resolve_meta
 
 @testset "Meta specification" begin
-
     struct SomeNode end
     struct SomeOtherNode end
 
-    ReactiveMP.as_node_symbol(::Type{ <: SomeNode }) = :SomeNode
-    ReactiveMP.as_node_symbol(::Type{ <: SomeOtherNode }) = :SomeOtherNode
+    ReactiveMP.as_node_symbol(::Type{<:SomeNode}) = :SomeNode
+    ReactiveMP.as_node_symbol(::Type{<:SomeOtherNode}) = :SomeOtherNode
 
-    @testset "Use case #1" begin 
-
-        meta = @meta begin 
+    @testset "Use case #1" begin
+        meta = @meta begin
             SomeNode(x, y) -> "meta"
         end
 
@@ -36,16 +34,14 @@ import ReactiveMP: resolve_meta
         @test resolve_meta(meta, model, SomeNode, (x, y, x, y, z, z)) == "meta"
         @test resolve_meta(meta, model, SomeNode, (y, x, z)) == "meta"
         @test resolve_meta(meta, model, SomeNode, (y, z, x)) == "meta"
-        @test resolve_meta(meta, model, SomeNode, (x, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x,)) === nothing
         @test resolve_meta(meta, model, SomeNode, (x, z)) === nothing
-        @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y,)) === nothing
         @test resolve_meta(meta, model, SomeNode, (y, z)) === nothing
-        @test resolve_meta(meta, model, SomeNode, (z, )) === nothing
-
+        @test resolve_meta(meta, model, SomeNode, (z,)) === nothing
     end
 
-    @testset "Use case #2" begin 
-
+    @testset "Use case #2" begin
         @meta function makemeta(flag)
             if flag
                 SomeNode(x, y) -> "meta1"
@@ -63,24 +59,22 @@ import ReactiveMP: resolve_meta
         for (meta, result) in ((makemeta(true), "meta1"), (makemeta(false), "meta2"))
             @test resolve_meta(meta, model, SomeOtherNode, (x, y)) === nothing
             @test resolve_meta(meta, model, SomeNode, (x, y)) == result
-            @test resolve_meta(meta, model, SomeNode, (y, x)) ==  result
-            @test resolve_meta(meta, model, SomeNode, (x, y, z)) ==  result
-            @test resolve_meta(meta, model, SomeNode, (x, y, x, y)) ==  result
-            @test resolve_meta(meta, model, SomeNode, (x, y, x, y, z, z)) ==  result
-            @test resolve_meta(meta, model, SomeNode, (y, x, z)) ==  result
-            @test resolve_meta(meta, model, SomeNode, (y, z, x)) ==  result
-            @test resolve_meta(meta, model, SomeNode, (x, )) === nothing
+            @test resolve_meta(meta, model, SomeNode, (y, x)) == result
+            @test resolve_meta(meta, model, SomeNode, (x, y, z)) == result
+            @test resolve_meta(meta, model, SomeNode, (x, y, x, y)) == result
+            @test resolve_meta(meta, model, SomeNode, (x, y, x, y, z, z)) == result
+            @test resolve_meta(meta, model, SomeNode, (y, x, z)) == result
+            @test resolve_meta(meta, model, SomeNode, (y, z, x)) == result
+            @test resolve_meta(meta, model, SomeNode, (x,)) === nothing
             @test resolve_meta(meta, model, SomeNode, (x, z)) === nothing
-            @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
+            @test resolve_meta(meta, model, SomeNode, (y,)) === nothing
             @test resolve_meta(meta, model, SomeNode, (y, z)) === nothing
-            @test resolve_meta(meta, model, SomeNode, (z, )) === nothing
+            @test resolve_meta(meta, model, SomeNode, (z,)) === nothing
         end
-
     end
 
-    @testset "Use case #3" begin 
-
-        meta = @meta begin 
+    @testset "Use case #3" begin
+        meta = @meta begin
             SomeNode(x, y) -> "meta1"
             SomeNode(z, y) -> "meta2"
         end
@@ -99,14 +93,12 @@ import ReactiveMP: resolve_meta
         @test resolve_meta(meta, model, SomeNode, (y[1], y[2], x[1])) == "meta1"
         @test resolve_meta(meta, model, SomeNode, (z[1], z[2], y[1])) == "meta2"
         @test resolve_meta(meta, model, SomeNode, (y[1], y[2], z[1])) == "meta2"
-        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x[1], y[1], z[1])) 
-        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (z[1], y[1], x[1])) 
-
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x[1], y[1], z[1]))
+        @test_throws ErrorException resolve_meta(meta, model, SomeNode, (z[1], y[1], x[1]))
     end
 
-    @testset "Use case #4" begin 
-
-        meta = @meta begin 
+    @testset "Use case #4" begin
+        meta = @meta begin
             SomeNode(x, y) -> "meta1"
         end
 
@@ -114,7 +106,7 @@ import ReactiveMP: resolve_meta
 
         x = randomvar(model, :x, 10)
         y = randomvar(model, :y)
-        tmp = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y, )), :tmp)
+        tmp = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((y,)), :tmp)
 
         ReactiveMP.setanonymous!(tmp, true)
 
@@ -123,20 +115,19 @@ import ReactiveMP: resolve_meta
         @test resolve_meta(meta, model, SomeNode, (tmp, x[1])) == "meta1"
         @test resolve_meta(meta, model, SomeNode, (tmp, x[1], x[2])) == "meta1"
 
-        @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
-        @test resolve_meta(meta, model, SomeNode, (tmp, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y,)) === nothing
+        @test resolve_meta(meta, model, SomeNode, (tmp,)) === nothing
         for i in 1:10
-            @test resolve_meta(meta, model, SomeNode, (x[i], )) === nothing
+            @test resolve_meta(meta, model, SomeNode, (x[i],)) === nothing
             @test resolve_meta(meta, model, SomeOtherNode, (x[i], y)) === nothing
         end
-
     end
 
-    @testset "Use case #5" begin 
+    @testset "Use case #5" begin
 
         # Just many variables and statements
         meta = @meta begin
-            HGF(x) -> 123 
+            HGF(x) -> 123
             AR(x, y, z) -> 1
             AR(x1, y, z) -> 2
             AR(x2, y, z) -> 3
@@ -165,26 +156,25 @@ import ReactiveMP: resolve_meta
         z = randomvar(model, :z)
         x = randomvar(model, :x10)
         y = randomvar(model, :y10)
-    
+
         @test ReactiveMP.resolve_meta(meta, model, AR, (z, x, y)) === 21
         @test ReactiveMP.resolve_meta(meta, model, AR, (x, z, y)) === 21
         @test ReactiveMP.resolve_meta(meta, model, AR, (x, y, z)) === 21
-
     end
 
     # Warnings 
 
-    @testset "Warning case #1" begin 
+    @testset "Warning case #1" begin
         model = FactorGraphModel()
 
         x = randomvar(model, :x)
         y = randomvar(model, :y)
 
-        meta_with_warn = @meta [ warn = true ] begin 
+        meta_with_warn = @meta [warn = true] begin
             Gamma(x, y) -> 123 # Factor node does exist in the model
         end
 
-        meta_without_warn = @meta [ warn = false ] begin 
+        meta_without_warn = @meta [warn = false] begin
             Gamma(x, y) -> 123 # Factor node does exist in the model, but warn is false
         end
 
@@ -192,7 +182,7 @@ import ReactiveMP: resolve_meta
         @test_logs min_level = Logging.Warn activate!(meta_without_warn, model)
     end
 
-    @testset "Warning case #2" begin 
+    @testset "Warning case #2" begin
         model = FactorGraphModel()
 
         z = randomvar(model, :z)
@@ -201,23 +191,25 @@ import ReactiveMP: resolve_meta
 
         ReactiveMP.add!(model, make_node(Gamma, z, x, y))
 
-        meta_with_warn = @meta [ warn = true ] begin 
+        meta_with_warn = @meta [warn = true] begin
             Gamma(r, t) -> 123 # Factor node exist, but uses wrong var names
         end
 
-        meta_without_warn = @meta [ warn = false ] begin 
+        meta_without_warn = @meta [warn = false] begin
             Gamma(r, t) -> 123 # Factor node exist, but uses wrong var names, but warn is false
         end
 
-        @test_logs (:warn, r".*model has no variable named `r`.*") (:warn, r".*model has no variable named `t`.*") activate!(meta_with_warn, model)
+        @test_logs (:warn, r".*model has no variable named `r`.*") (:warn, r".*model has no variable named `t`.*") activate!(
+            meta_with_warn,
+            model
+        )
         @test_logs min_level = Logging.Warn activate!(meta_without_warn, model)
     end
-    
+
     # Errors
 
-    @testset "Error case #1" begin 
-
-        meta = @meta begin 
+    @testset "Error case #1" begin
+        meta = @meta begin
             SomeNode(x, y) -> "meta"
             SomeNode(y, x) -> "meta"
         end
@@ -236,14 +228,12 @@ import ReactiveMP: resolve_meta
         @test_throws ErrorException resolve_meta(meta, model, SomeNode, (x, y, x, y, z, z))
         @test_throws ErrorException resolve_meta(meta, model, SomeNode, (y, x, z))
         @test_throws ErrorException resolve_meta(meta, model, SomeNode, (y, z, x))
-        @test resolve_meta(meta, model, SomeNode, (x, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (x,)) === nothing
         @test resolve_meta(meta, model, SomeNode, (x, z)) === nothing
-        @test resolve_meta(meta, model, SomeNode, (y, )) === nothing
+        @test resolve_meta(meta, model, SomeNode, (y,)) === nothing
         @test resolve_meta(meta, model, SomeNode, (y, z)) === nothing
-        @test resolve_meta(meta, model, SomeNode, (z, )) === nothing
-
+        @test resolve_meta(meta, model, SomeNode, (z,)) === nothing
     end
-
 end
 
 end

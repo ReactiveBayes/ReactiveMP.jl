@@ -9,12 +9,10 @@ import ReactiveMP: getconst, proxy_variables
 import ReactiveMP: israndom, isproxy
 
 @testset "DataVariable" begin
+    @testset "Simple creation" begin
+        randomize_update(::Type{T}, size) where {T <: Union{Int, Float64}} = rand(T, size)
+        randomize_update(::Type{V}, size) where {V <: AbstractVector}      = map(_ -> rand(eltype(V), 1), CartesianIndices(size))
 
-    @testset "Simple creation" begin 
-
-        randomize_update(::Type{ T }, size) where { T <: Union{Int, Float64} } = rand(T, size)
-        randomize_update(::Type{ V }, size) where { V <: AbstractVector }      = map(_ -> rand(eltype(V), 1), CartesianIndices(size))
-        
         function test_updates(vs, type, size)
             nupdates     = 3
             updates      = []
@@ -45,8 +43,8 @@ import ReactiveMP: israndom, isproxy
 
         for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64}), n in (10, 20)
             vs = datavar(sym, type, n)
-            
-            @test !israndom(vs) 
+
+            @test !israndom(vs)
             @test length(vs) === n
             @test vs isa Vector
             @test all(v -> !israndom(v), vs)
@@ -56,12 +54,12 @@ import ReactiveMP: israndom, isproxy
             @test all(v -> eltype(v) === type, vs)
             @test !isproxy(vs)
             @test all(v -> !isproxy(v), vs)
-            @test test_updates(vs, type, (n, ))
+            @test test_updates(vs, type, (n,))
         end
 
         for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64}), l in (10, 20), r in (10, 20)
             for vs in (datavar(sym, type, l, r), datavar(sym, type, (l, r)))
-                @test !israndom(vs) 
+                @test !israndom(vs)
                 @test size(vs) === (l, r)
                 @test length(vs) === l * r
                 @test vs isa Matrix
@@ -75,11 +73,7 @@ import ReactiveMP: israndom, isproxy
                 @test test_updates(vs, type, (l, r))
             end
         end
-        
-
-
     end
-
 end
 
 end

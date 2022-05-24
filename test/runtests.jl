@@ -26,15 +26,19 @@ end
 
 function key_to_filename(key)
     splitted = split(key, ":")
-    return length(splitted) === 1 ? string("test_", first(splitted), ".jl") : string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
+    return if length(splitted) === 1
+        string("test_", first(splitted), ".jl")
+    else
+        string(join(splitted[1:end-1], "/"), "/test_", splitted[end], ".jl")
+    end
 end
 
 function filename_to_key(filename)
-    splitted   = split(filename, "/")
+    splitted = split(filename, "/")
     if length(splitted) === 1
         return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
     else
-        path, name = splitted[1:end - 1], splitted[end]
+        path, name = splitted[1:end-1], splitted[end]
         return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
     end
 end
@@ -46,23 +50,26 @@ if isempty(enabled_tests)
     # `project_toml_formatting` is broken on CI, revise at some point
     Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
     # doctest(ReactiveMP)
-else 
+else
     println("Running specific tests: $enabled_tests")
 end
 
 @testset ExtendedTestSet "ReactiveMP" begin
-
     function key_to_filename(key)
         splitted = split(key, ":")
-        return length(splitted) === 1 ? string("test_", first(splitted), ".jl") : string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
+        return if length(splitted) === 1
+            string("test_", first(splitted), ".jl")
+        else
+            string(join(splitted[1:end-1], "/"), "/test_", splitted[end], ".jl")
+        end
     end
 
     function filename_to_key(filename)
-        splitted   = split(filename, "/")
+        splitted = split(filename, "/")
         if length(splitted) === 1
             return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
         else
-            path, name = splitted[1:end - 1], splitted[end]
+            path, name = splitted[1:end-1], splitted[end]
             return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
         end
     end
@@ -75,8 +82,10 @@ end
     end
 
     @testset "Testset helpers" begin
-        @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) == "distributions/test_normal_mean_variance.jl"
-        @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) == "distributions:normal_mean_variance"
+        @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) ==
+              "distributions/test_normal_mean_variance.jl"
+        @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) ==
+              "distributions:normal_mean_variance"
         @test key_to_filename(filename_to_key("test_message.jl")) == "test_message.jl"
         @test filename_to_key(key_to_filename("message")) == "message"
     end
@@ -117,7 +126,7 @@ end
     addtests("distributions/test_sample_list.jl")
 
     addtests("test_message.jl")
-    
+
     addtests("test_variable.jl")
     addtests("variables/test_constant.jl")
     addtests("variables/test_data.jl")
@@ -136,7 +145,6 @@ end
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
 
-    
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")
     addtests("rules/flow/test_out.jl")
@@ -156,7 +164,7 @@ end
     addtests("rules/bifm_helper/test_out.jl")
 
     addtests("rules/normal_mixture/test_out.jl")
-		
+
     addtests("rules/subtraction/test_marginals.jl")
     addtests("rules/subtraction/test_in1.jl")
     addtests("rules/subtraction/test_in2.jl")
@@ -165,7 +173,7 @@ end
     addtests("rules/bernoulli/test_out.jl")
     addtests("rules/bernoulli/test_p.jl")
     addtests("rules/bernoulli/test_marginals.jl")
-    
+
     addtests("rules/beta/test_out.jl")
     addtests("rules/beta/test_marginals.jl")
 
@@ -187,7 +195,7 @@ end
 
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
-    addtests("rules/mv_normal_mean_precision/test_precision.jl")  
+    addtests("rules/mv_normal_mean_precision/test_precision.jl")
 
     addtests("rules/probit/test_out.jl")
     addtests("rules/probit/test_in.jl")
@@ -202,7 +210,6 @@ end
     addtests("models/test_hmm.jl")
     addtests("models/test_linreg.jl")
     addtests("models/test_probit.jl")
-
 end
 
 end
