@@ -1,7 +1,7 @@
 # Extra file for fast-fixes for packages ReactiveMP.jl depends on
 
 # Hotfix for https://github.com/JuliaStats/Distributions.jl/issues/1270
-function score(::DifferentialEntropy, marginal::Marginal{ <: Dirichlet })
+function score(::DifferentialEntropy, marginal::Marginal{<:Dirichlet})
     d  = getdata(marginal)
     α  = d.alpha
     α0 = d.alpha0

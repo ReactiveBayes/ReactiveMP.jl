@@ -28,15 +28,17 @@ ReactiveMP.jl has been designed with a focus on efficiency, scalability and maxi
 - For an introduction to message passing and FFGs, see [The Factor Graph Approach to Model-Based Signal Processing](https://ieeexplore.ieee.org/document/4282128/) by Loeliger et al. (2007).
 
 ## How to get started?
-Head to the [Getting started](@ref user-guide-getting-started) section to get up and running with ForneyLab. Alternatively, explore various [examples](@ref examples-overview) in the documentation.
+Head to the [Getting started](@ref user-guide-getting-started) section to get up and running with ForneyLab. Alternatively, explore various [examples](@ref examples-overview) in the documentation. For advanced extensive tutorial take a look on [Advanced Tutorial](@ref user-guide-advanced-tutorial).
 
 ## Table of Contents
 
 ```@contents
 Pages = [
   "man/getting-started.md",
-  "man/fundamentals.md",
+  "man/advanced-tutorial.md",
   "man/model-specification.md",
+  "man/constraints-specification.md",
+  "man/meta-specification.md",
   "examples/overview.md",
   "lib/message.md",
   "lib/node.md",

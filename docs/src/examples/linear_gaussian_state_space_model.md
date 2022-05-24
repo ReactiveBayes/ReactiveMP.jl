@@ -59,7 +59,7 @@ nothing #hide
 ```
 
 !!! note
-    For large number of observations you will need yo use `limit_stack_depth = 100` option during model creation, e.g. `model, (x, y) = create_model(..., options = (limit_stack_depth = 100, ))`
+    For large number of observations you will need yo use `limit_stack_depth = 100` option during model creation, e.g. `model, (x, y) = create_model(model_options(limit_stack_depth = 100), ...)`
 
 
 ```@example lgssm
@@ -81,6 +81,8 @@ px = scatter!(px, y |> slicedim(2), label = false, markersize = 2, color = :gree
 
 plot(px)
 ```
+
+## Model specification
 
 To create a model we use `GraphPPL` package and `@model` macro:
 
@@ -111,10 +113,12 @@ To create a model we use `GraphPPL` package and `@model` macro:
 end
 ```
 
-Also for convenience we create an `inference` function to infer hidden states of our system:
+## Inference
+
+Here we create a `custom_inference` function to infer hidden states of our system:
 
 ```@example lgssm
-function inference(data, x0, A, B, Q, P)
+function custom_inference(data, x0, A, B, Q, P)
 
     # We create a model and get references for 
     # hidden states and observations
@@ -139,6 +143,15 @@ function inference(data, x0, A, B, Q, P)
 end
 ```
 
+Alternatively you can use **ReactiveMP** inference API:
+
+```julia
+result = inference(
+    model = Model(rotate_ssm, length(y), x0, A, B, Q, P), 
+    data  = (y = y,)
+);
+```
+
 To run inference we also specify prior for out first time-step:
 
 ```@example lgssm
@@ -147,7 +160,7 @@ nothing # hide
 ```
 
 ```@example lgssm
-xmarginals, bfe = inference(y, x0, A, B, Q, P)
+xmarginals, bfe = custom_inference(y, x0, A, B, Q, P)
 nothing #hide
 ```
 
@@ -172,5 +185,5 @@ bfe
 We may be also interested in performance of our resulting Belief Propagation algorithm:
 
 ```@example lgssm
-@benchmark inference($y, $x0, $A, $B, $Q, $P)
+@benchmark custom_inference($y, $x0, $A, $B, $Q, $P)
 ```

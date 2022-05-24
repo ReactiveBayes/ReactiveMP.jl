@@ -11,38 +11,83 @@ By default uses `Optim.jl` package to find argmin of -logpdf(x).
 Accepts custom `optimizer` callback which might be used to customise optimisation procedure with different packages 
 or different arguments for `Optim.jl` package.
 
+# Keyword arguments
+- `optimizer`: specifies a callback function for logpdf optimisation. See also: `ReactiveMP.default_point_mass_form_constraint_optimizer`
+- `starting_point`: specifies a callback function for initial optimisation point: See also: `ReactiveMP.default_point_mass_form_constraint_starting_point`
+- `boundaries`: specifies a callback function for determining optimisation boundaries: See also: `ReactiveMP.default_point_mass_form_constraint_boundaries`
+
+## Custom optimizer callback interface
+
+```julia
+# This is an example of the `custom_optimizer` interface
+function custom_optimizer(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    # should return argmin of the -logpdf(distribution)
+end
+```
+
+## Custom starting point callback interface
+
+```julia
+# This is an example of the `custom_starting_point` interface
+function custom_starting_point(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    # built-in optimizer expects an array, even for a univariate distribution
+    return [ 0.0 ] 
+end
+```
+
+## Custom boundaries callback interface
+
+```julia
+# This is an example of the `custom_boundaries` interface
+function custom_boundaries(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+    # returns a tuple of `lower` and `upper` boundaries
+    return (-Inf, Inf)
+end
+```
+
+# Traits 
+- `is_point_mass_form_constraint` = `true`
+- `default_form_check_strategy`   = `FormConstraintCheckLast()`
+- `default_prod_constraint`       = `ProdGeneric()`
+- `make_form_constraint`          = `PointMass` (for use in `@constraints` macro)
+
 See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
 """
 struct PointMassFormConstraint{F, P, B} <: AbstractFormConstraint
     optimizer      :: F
     starting_point :: P
-    boundaries     :: B   
+    boundaries     :: B
 end
 
-PointMassFormConstraint(; 
-    optimizer      = default_point_mass_form_constraint_optimizer, 
-    starting_point = default_point_mass_form_constraint_starting_point, 
+Base.show(io::IO, ::PointMassFormConstraint) = print(io, "PointMassFormConstraint()")
+
+PointMassFormConstraint(;
+    optimizer      = default_point_mass_form_constraint_optimizer,
+    starting_point = default_point_mass_form_constraint_starting_point,
     boundaries     = default_point_mass_form_constraint_boundaries
 ) = PointMassFormConstraint(optimizer, starting_point, boundaries)
 
-default_form_check_strategy(::PointMassFormConstraint) = FormConstraintCheckLast()
-
 is_point_mass_form_constraint(::PointMassFormConstraint) = true
 
-call_optimizer(pmconstraint::PointMassFormConstraint, data)      = pmconstraint.optimizer(variate_form(data), value_support(data), pmconstraint, data)
-call_boundaries(pmconstraint::PointMassFormConstraint, data)     = pmconstraint.boundaries(variate_form(data), value_support(data), pmconstraint, data)
-call_starting_point(pmconstraint::PointMassFormConstraint, data) = pmconstraint.starting_point(variate_form(data), value_support(data), pmconstraint, data)
+default_form_check_strategy(::PointMassFormConstraint) = FormConstraintCheckLast()
 
-function constrain_form(pmconstraint::PointMassFormConstraint, message::Message) 
-    data       = ReactiveMP.getdata(message)
-    is_clamped = ReactiveMP.is_clamped(message)
-    is_initial = ReactiveMP.is_initial(message)
-    return Message(call_optimizer(pmconstraint, data), is_clamped, is_initial)
-end
+default_prod_constraint(::PointMassFormConstraint) = ProdGeneric()
 
-function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+make_form_constraint(::Type{<:PointMass}, args...; kwargs...) = PointMassFormConstraint(args...; kwargs...)
 
-    target = let distribution = distribution 
+call_optimizer(pmconstraint::PointMassFormConstraint, distribution)      = pmconstraint.optimizer(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
+call_boundaries(pmconstraint::PointMassFormConstraint, distribution)     = pmconstraint.boundaries(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
+call_starting_point(pmconstraint::PointMassFormConstraint, distribution) = pmconstraint.starting_point(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
+
+constrain_form(pmconstraint::PointMassFormConstraint, distribution) = call_optimizer(pmconstraint, distribution)
+
+function default_point_mass_form_constraint_optimizer(
+    ::Type{Univariate},
+    ::Type{Continuous},
+    constraint::PointMassFormConstraint,
+    distribution
+)
+    target = let distribution = distribution
         (x) -> -logpdf(distribution, x[1])
     end
 
@@ -51,7 +96,7 @@ function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Ty
     result = if isinf(lower) && isinf(upper)
         optimize(target, call_starting_point(constraint, distribution), LBFGS())
     else
-        optimize(target, [ lower ], [ upper ], call_starting_point(constraint, distribution), Fminbox(GradientDescent()))
+        optimize(target, [lower], [upper], call_starting_point(constraint, distribution), Fminbox(GradientDescent()))
     end
 
     if Optim.converged(result)
@@ -61,15 +106,25 @@ function default_point_mass_form_constraint_optimizer(::Type{ Univariate }, ::Ty
     end
 end
 
-function default_point_mass_form_constraint_boundaries(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
+function default_point_mass_form_constraint_boundaries(
+    ::Type{Univariate},
+    ::Type{Continuous},
+    constraint::PointMassFormConstraint,
+    distribution
+)
     support = Distributions.support(distribution)
     lower   = Distributions.minimum(support)
     upper   = Distributions.maximum(support)
     return lower, upper
 end
 
-function default_point_mass_form_constraint_starting_point(::Type{ Univariate }, ::Type{ Continuous }, constraint::PointMassFormConstraint, distribution)
-    lower, upper  = call_boundaries(constraint, distribution)
+function default_point_mass_form_constraint_starting_point(
+    ::Type{Univariate},
+    ::Type{Continuous},
+    constraint::PointMassFormConstraint,
+    distribution
+)
+    lower, upper = call_boundaries(constraint, distribution)
     return if isinf(lower) && isinf(upper)
         return zeros(1)
     else

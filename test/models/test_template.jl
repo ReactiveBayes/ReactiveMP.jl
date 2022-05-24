@@ -19,8 +19,7 @@ function template_inference(data, x0, c, P)
 end
 
 @testset "Model template" begin
-
-    @testset "Use case template" begin 
+    @testset "Use case template" begin
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
@@ -35,12 +34,12 @@ end
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
-        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
+        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
         plot_output      = joinpath(base_output, "template_model_plot_$(timestamp)_v$(VERSION).png")
         benchmark_output = joinpath(base_output, "template_model_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
         ## Create output plots
-        
+
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
@@ -51,7 +50,6 @@ end
         end
         ## -------------------------------------------- ##
     end
-
 end
 
 end

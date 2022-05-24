@@ -1,16 +1,15 @@
 module ReactiveMPStandardBasisVectorTest
 
 using Test
-using ReactiveMP 
+using ReactiveMP
 using Random
 
 using LinearAlgebra
 
 @testset "StandardBasisVector" begin
-
     rng = MersenneTwister(1234)
 
-    @testset begin 
+    @testset begin
         @test_throws AssertionError StandardBasisVector(0, 1)
         @test_throws AssertionError StandardBasisVector(-10, 1)
         @test_throws AssertionError StandardBasisVector(10, 11)
@@ -26,8 +25,7 @@ using LinearAlgebra
     end
 
     # Same sizes
-    @testset begin 
-
+    @testset begin
         for N in 1:8
             for I in 1:N
                 for T in (Int, Float64, Float32)
@@ -48,7 +46,7 @@ using LinearAlgebra
 
                     @test (A * e) == (A * e_c)
                     @test (A' * e) == (A' * e_c)
-                    @test (e * e') == (e_c * e_c') 
+                    @test (e * e') == (e_c * e_c')
                     @test (e' * e) == (e_c' * e_c)
                     @test (v' * e) == (v' * e_c)
                     @test (e' * v) == (e_c' * v)
@@ -58,7 +56,7 @@ using LinearAlgebra
 
                     t = rand(rng, T)
 
-                    @test ReactiveMP.v_a_vT(e, t)    ≈ ReactiveMP.v_a_vT(e_c, t)
+                    @test ReactiveMP.v_a_vT(e, t) ≈ ReactiveMP.v_a_vT(e_c, t)
                     @test ReactiveMP.v_a_vT(e, t, e) ≈ ReactiveMP.v_a_vT(e_c, t, e_c)
 
                     @test dot(e, A, e) === dot(e_c, A, e_c)
@@ -78,8 +76,7 @@ using LinearAlgebra
         end
     end
     # Different sizes
-    @testset begin 
-
+    @testset begin
         for N1 in 1:4, N2 in 1:4
             if N1 !== N2
                 for I1 in 1:N1, I2 in 1:N2
@@ -114,9 +111,7 @@ using LinearAlgebra
                 end
             end
         end
-
     end
-    
 end
 
 end

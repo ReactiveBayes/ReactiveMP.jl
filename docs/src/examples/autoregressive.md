@@ -19,7 +19,7 @@ We start with importing all needed packages:
 
 ```@example ar
 using Rocket, ReactiveMP, GraphPPL
-using Distributions, LinearAlgebra, Random, Plots, BenchmarkTools
+using Distributions, LinearAlgebra, Parameters, Random, Plots, BenchmarkTools
 ```
 
 Lets generate some synthetic dataset, we use a predefined set of coeffcients for $k$ = 5:
@@ -77,12 +77,9 @@ scatter!(observations, label = "Observations")
 Next step is to specify probabilistic model and run inference procedure with `ReactiveMP`. We use `GraphPPL.jl` package to specify probabilistic model and additional constraints for variational Bayesian Inference. We also specify two different models for Multivariate AR with order ``k`` > 1 and for Univariate AR (reduces to simple State-Space-Model) with order ``k`` = 1.
 
 ```@example ar
-@model [ default_factorisation = MeanField() ] function lar_model(T::Type{ Multivariate }, n, order, c, stype, τ)
+@model function lar_model(T::Type, n, order, c, τ)
     
-    # Parameter priors 
-    γ  ~ GammaShapeRate(1.0, 1.0) 
-    θ  ~ MvNormalMeanPrecision(zeros(order), diageye(order))
-    
+     
     # We create a sequence of random variables for hidden states
     x = randomvar(n)
     # As well a sequence of observartions
@@ -92,128 +89,94 @@ Next step is to specify probabilistic model and run inference procedure with `Re
     # We assume observation noise to be known
     cτ = constvar(τ)
     
+    γ  = randomvar()
+    θ  = randomvar()
+    x0 = randomvar()
+    
     # Prior for first state
-    x0 ~ MvNormalMeanPrecision(zeros(order), diageye(order))
+    if T === Multivariate
+        γ  ~ GammaShapeRate(1.0, 1.0)
+        θ  ~ MvNormalMeanPrecision(zeros(order), diageye(order))
+        x0 ~ MvNormalMeanPrecision(zeros(order), diageye(order))
+    else
+        γ  ~ GammaShapeRate(1.0, 1.0)
+        θ  ~ NormalMeanPrecision(0.0, 1.0)
+        x0 ~ NormalMeanPrecision(0.0, 1.0)
+    end
     
     x_prev = x0
     
-    # AR process requires extra meta information
-    meta = ARMeta(Multivariate, order, stype)
-    
     for i in 1:n
-        # Autoregressive node uses structured factorisation assumption between states
-        x[i] ~ AR(x_prev, θ, γ) where { q = q(y, x)q(γ)q(θ), meta = meta }
-        y[i] ~ NormalMeanPrecision(dot(ct, x[i]), cτ)
+        
+        x[i] ~ AR(x_prev, θ, γ) 
+        
+        if T === Multivariate
+            y[i] ~ NormalMeanPrecision(dot(ct, x[i]), cτ)
+        else
+            y[i] ~ NormalMeanPrecision(ct * x[i], cτ)
+        end
+        
         x_prev = x[i]
     end
-    
     return x, y, θ, γ
 end
 ```
 
 ```@example ar
-@model [ default_factorisation = MeanField() ] function lar_model(T::Type{Univariate}, n, order, c, stype, τ)
-    
-    # Parameter priors 
-    γ  ~ GammaShapeRate(1.0, 1.0)
-    θ  ~ NormalMeanPrecision(0.0, 1.0)
-    
-    # We create a sequence of random variables for hidden states
-    x = randomvar(n)
-    # As well a sequence of observartions
-    y = datavar(Float64, n)
-    
-    ct = constvar(c)
-    # We assume observation noise to be known
-    cτ = constvar(τ) 
-
-    # Prior for first state
-    x0 ~ NormalMeanPrecision(0.0, 1.0)
-    
-    x_prev = x0
-    
-    # AR process requires extra meta information
-    meta = ARMeta(Univariate, order, stype)
-    
-    for i in 1:n
-        x[i] ~ AR(x_prev, θ, γ) where { q = q(y, x)q(γ)q(θ), meta = meta }
-        y[i] ~ NormalMeanPrecision(ct * x[i], cτ)
-        x_prev = x[i]
-    end
-    
-    return x, y, θ, γ
-end
-```
-
-We will use different initial marginals depending on type of our AR process
-
-```@example ar
-function init_marginals!(::Type{ Multivariate }, order, γ, θ)
-    setmarginal!(γ, GammaShapeRate(1.0, 1.0))
-    setmarginal!(θ, MvNormalMeanPrecision(zeros(order), diageye(order)))
-end
-
-function init_marginals!(::Type{ Univariate }, order, γ, θ)
-    setmarginal!(γ, GammaShapeRate(1.0, 1.0))
-    setmarginal!(θ, NormalMeanPrecision(0.0, 1.0))
+constraints = @constraints begin 
+    q(x0, x, θ, γ) = q(x0, x)q(θ)q(γ)
 end
 ```
 
 ```@example ar
-function inference(data, order, artype, stype, niter, τ)
-    
-    # We build a full graph based on nber of observatios
-    n = length(data)
-    
-    # Depending on the order of AR process `c` is
-    # either a nber or a vector
-    c = ReactiveMP.ar_unit(artype, order)
-    
-    # Note that to run inference for huge model it might be necessary to pass extra 
-    # options = (limit_stack_depth = 100,) to limit stack depth during recursive inference procedure
-    model, (x, y, θ, γ) = lar_model(artype, n, order, c, stype, τ)
-    
-    # We are going to keep `γ` and `θ` estimates for all VMP iterations
-    # But `buffer` only last posterior estimates for a sequence of hidden states `x`
-    # We also will keep Bethe Free Energy in `fe`
-    γ_buffer = keep(Marginal)
-    θ_buffer = keep(Marginal)
-    x_buffer = buffer(Marginal, n)
-    fe       = keep(Float64)
-    
-    γsub  = subscribe!(getmarginal(γ), γ_buffer)
-    θsub  = subscribe!(getmarginal(θ), θ_buffer)
-    xsub  = subscribe!(getmarginals(x), x_buffer)
-    fesub = subscribe!(score(Float64, BetheFreeEnergy(), model), fe)
-    
-    init_marginals!(artype, order, γ, θ)
-    
-    # We update data several times to perform several VMP iterations
-    for i in 1:niter
-        update!(y, data)
-    end
-    
-    # It is important to unsubscribe from running observables
-    unsubscribe!((γsub, θsub, xsub, fesub))
-    
-    return γ_buffer, θ_buffer, x_buffer, fe
+@meta function ar_meta(artype, order, stype)
+    AR(x, θ, γ) -> ARMeta(artype, order, stype)
 end
 ```
 
 ```@example ar
-γ, θ, xs, fe = inference(observations, length(real_θ), Multivariate, ARsafe(), 15, real_τ)
-nothing #hide
+morder  = 5
+martype = Multivariate
+mc      = ReactiveMP.ar_unit(martype, morder)
+mmeta   = ar_meta(martype, morder, ARsafe())
+
+moptions = (limit_stack_depth = 100, )
+
+mmodel         = Model(lar_model, martype, length(observations), morder, mc, real_τ)
+mdata          = (y = observations, )
+minitmarginals = (γ = GammaShapeRate(1.0, 1.0), θ = MvNormalMeanPrecision(zeros(morder), diageye(morder)))
+mreturnvars    = (x = KeepLast(), γ = KeepEach(), θ = KeepEach())
+
+# First execution is slow due to Julia's initial compilation 
+mresult = inference(
+    model = mmodel, 
+    data  = mdata,
+    constraints   = constraints,
+    meta          = mmeta,
+    options       = moptions,
+    initmarginals = minitmarginals,
+    returnvars    = mreturnvars,
+    free_energy   = true,
+    iterations    = 100, 
+    showprogress  = true
+)
+```
+
+```@example ar
+@unpack x, γ, θ = mresult.posteriors
+
+fe = mresult.free_energy;
 ```
 
 ```@example ar
 p1 = plot(first.(states), label="Hidden state")
 p1 = scatter!(p1, observations, label="Observations")
-p1 = plot!(p1, first.(mean.(xs)), ribbon = sqrt.(first.(var.(xs))), label="Inferred states", legend = :bottomright)
+p1 = plot!(p1, first.(mean.(x)), ribbon = first.(std.(x)), label="Inferred states", legend = :bottomright)
 
-p2 = plot(mean.(γ), ribbon = std.(γ), label = "Inferred transition precision", legend = :bottomright)
+p2 = plot(mean.(γ), ribbon = std.(γ), label = "Inferred transition precision", legend = :topright)
 p2 = plot!([ real_γ ], seriestype = :hline, label = "Real transition precision")
 
-p3 = plot(getvalues(fe), label = "Bethe Free Energy")
+p3 = plot(fe, label = "Bethe Free Energy")
 
 plot(p1, p2, p3, layout = @layout([ a; b c ]))
 ```
@@ -225,7 +188,7 @@ subrange = div(n,5):(div(n, 5) + div(n, 5))
 
 plot(subrange, first.(states)[subrange], label="Hidden state")
 scatter!(subrange, observations[subrange], label="Observations")
-plot!(subrange, first.(mean.(xs))[subrange], ribbon = sqrt.(first.(var.(xs)))[subrange], label="Inferred states", legend = :bottomright)
+plot!(subrange, first.(mean.(x))[subrange], ribbon = sqrt.(first.(var.(x)))[subrange], label="Inferred states", legend = :bottomright)
 ```
 
 It is also interesting to see where our AR coefficients converge to:
@@ -261,8 +224,29 @@ nothing #hide
 We can also run a 1-order AR inference on 5-order AR data:
 
 ```@example ar
-γ, θ, xs, fe = inference(observations, 1, Univariate, ARsafe(), 15, real_τ)
-nothing #hide
+uorder  = 1
+uartype = Univariate
+uc      = ReactiveMP.ar_unit(uartype, uorder)
+umeta   = ar_meta(uartype, uorder, ARsafe())
+
+uoptions = (limit_stack_depth = 100, )
+
+umodel         = Model(lar_model, uartype, length(observations), uorder, uc, real_τ)
+udata          = (y = observations, )
+uinitmarginals = (γ = GammaShapeRate(1.0, 1.0), θ = NormalMeanPrecision(0.0, 1.0))
+ureturnvars    = (x = KeepLast(), γ = KeepEach(), θ = KeepEach())
+
+uresult = inference(
+    model = umodel, 
+    data  = udata,
+    meta  = umeta,
+    constraints   = constraints,
+    initmarginals = uinitmarginals,
+    returnvars    = ureturnvars,
+    free_energy   = true,
+    iterations    = 15, 
+    showprogress  = false
+)
 ```
 
 ```@example ar
@@ -275,6 +259,9 @@ We can see that, according to final Bethe Free Energy value, in this example 5-o
 We may be also interested in benchmarking our algorithm:
 
 ```@example ar
-println("Benchmark for n = $n and AR-$(length(real_θ)) inference");
-@benchmark inference($observations, length(real_θ), Multivariate, ARsafe(), 15, real_τ)
+@benchmark inference(model = $umodel, constraints = $constraints, meta = $umeta, data = $udata, initmarginals = $uinitmarginals, free_energy = true, iterations = 15, showprogress = false)
+```
+
+```@example ar
+@benchmark inference(model = $mmodel, constraints = $constraints, meta = $mmeta, data = $mdata, initmarginals = $minitmarginals, free_energy = true, iterations = 15, showprogress = false)
 ```

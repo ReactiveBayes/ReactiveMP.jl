@@ -2,11 +2,12 @@ export Bernoulli
 
 import Distributions: Categorical, probs
 
-vague(::Type{ <: Categorical }, dims::Int) = Categorical(ones(dims) ./ dims)
+vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
-prod_analytical_rule(::Type{ <: Categorical }, ::Type{ <: Categorical }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = ProdAnalyticalRuleAvailable()
 
-convert_eltype(::Type{ Categorical }, ::Type{T}, distribution::Categorical{R}) where { T <: Real, R <: Real } = Categorical(convert(AbstractVector{T}, probs(distribution)))
+convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) where {T <: Real, R <: Real} =
+    Categorical(convert(AbstractVector{T}, probs(distribution)))
 
 function prod(::ProdAnalytical, left::Categorical, right::Categorical)
     # Multiplication of 2 categorical PMFs: p(z) = p(x) * p(y)

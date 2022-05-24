@@ -20,8 +20,8 @@ is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
 
 # TupleTools.prod is a more efficient version of Base.all for NTuple here
-is_clamped(marginals::Tuple)  = TupleTools.prod(map(is_clamped, marginals))
-is_initial(marginals::Tuple)  = TupleTools.prod(map(is_initial, marginals))
+is_clamped(marginals::Tuple) = TupleTools.prod(map(is_clamped, marginals))
+is_initial(marginals::Tuple) = TupleTools.prod(map(is_initial, marginals))
 
 ## Statistics 
 
@@ -47,13 +47,13 @@ MacroHelpers.@proxy_methods Marginal getdata [
     Base.ndims,
     Base.size,
     Base.eltype,
-    mean_cov, 
+    mean_cov,
     mean_var,
-    mean_invcov, 
-    mean_precision, 
-    weightedmean_cov, 
+    mean_invcov,
+    mean_precision,
+    weightedmean_cov,
     weightedmean_var,
-    weightedmean_invcov, 
+    weightedmean_invcov,
     weightedmean_precision,
     probvec,
     weightedmean
@@ -63,7 +63,8 @@ Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal
 
 ## Utility functions
 
-getdata(marginals::Tuple) = map(getdata, marginals)
+getdata(marginals::Tuple)         = map(getdata, marginals)
+getdata(marginals::AbstractArray) = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 
@@ -71,22 +72,22 @@ as_marginal(marginal::Marginal) = marginal
 
 abstract type MarginalSkipStrategy end
 
-struct SkipClamped           <: MarginalSkipStrategy end
-struct SkipInitial           <: MarginalSkipStrategy end
+struct SkipClamped <: MarginalSkipStrategy end
+struct SkipInitial <: MarginalSkipStrategy end
 struct SkipClampedAndInitial <: MarginalSkipStrategy end
-struct IncludeAll            <: MarginalSkipStrategy end
+struct IncludeAll <: MarginalSkipStrategy end
 
 apply_skip_filter(observable, ::SkipClamped)           = observable |> filter(v -> !is_clamped(v))
 apply_skip_filter(observable, ::SkipInitial)           = observable |> filter(v -> !is_initial(v))
 apply_skip_filter(observable, ::SkipClampedAndInitial) = observable |> filter(v -> !is_initial(v) && !is_clamped(v))
 apply_skip_filter(observable, ::IncludeAll)            = observable
 
-struct MarginalObservable <: Subscribable{ Marginal }
-    subject :: Rocket.RecentSubjectInstance{ Marginal, Subject{ Marginal, AsapScheduler, AsapScheduler } }
-    stream  :: LazyObservable{ Marginal }
+struct MarginalObservable <: Subscribable{Marginal}
+    subject :: Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
+    stream  :: LazyObservable{Marginal}
 end
 
-MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))   
+MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
 
 as_marginal_observable(observable::MarginalObservable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(observable, skip_strategy)
 as_marginal_observable(observable)                                                          = as_marginal_observable(observable, IncludeAll())
@@ -103,16 +104,16 @@ Rocket.getrecent(::Nothing)                      = nothing
 
 @inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{ <: Marginal })           = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.NextActor{ <: Marginal })       = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ErrorActor{ <: Marginal })      = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.CompletionActor{ <: Marginal }) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{<:Marginal})           = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.NextActor{<:Marginal})       = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ErrorActor{<:Marginal})      = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.CompletionActor{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
 
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Subject{ <: Marginal })                 = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.BehaviorSubjectInstance{ <: Marginal }) = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.PendingSubjectInstance{ <: Marginal })  = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.RecentSubjectInstance{ <: Marginal })   = Rocket.on_subscribe!(observable.stream, actor)
-@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ReplaySubjectInstance{ <: Marginal })   = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Subject{<:Marginal})                 = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.BehaviorSubjectInstance{<:Marginal}) = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.PendingSubjectInstance{<:Marginal})  = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.RecentSubjectInstance{<:Marginal})   = Rocket.on_subscribe!(observable.stream, actor)
+@inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.ReplaySubjectInstance{<:Marginal})   = Rocket.on_subscribe!(observable.stream, actor)
 
 function connect!(marginal::MarginalObservable, source)
     set!(marginal.stream, source |> multicast(marginal.subject) |> ref_count())
@@ -138,40 +139,55 @@ struct MarginalMapping{F, T, N, M, A, R}
     factornode      :: R
 end
 
-marginal_mapping_fform(::MarginalMapping{F}) where F = F
-marginal_mapping_fform(::MarginalMapping{F}) where F <: Function = F.instance
+marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
+marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
-function MarginalMapping(::Type{F}, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { F, T, N, M, A, R }
+function MarginalMapping(
+    ::Type{F},
+    vtag::T,
+    msgs_names::N,
+    marginals_names::M,
+    meta::A,
+    factornode::R
+) where {F, T, N, M, A, R}
     return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
 end
 
-function MarginalMapping(::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where { F <: Function, T, N, M, A, R} 
+function MarginalMapping(
+    ::F,
+    vtag::T,
+    msgs_names::N,
+    marginals_names::M,
+    meta::A,
+    factornode::R
+) where {F <: Function, T, N, M, A, R}
     return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
 end
 
 function (mapping::MarginalMapping)(dependencies)
-    
-    messages  = dependencies[1]
+    messages  = getrecent(dependencies[1])
     marginals = getrecent(dependencies[2])
 
     # Marginal is clamped if all of the inputs are clamped
     is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_marginal_initial = !is_marginal_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
+    is_marginal_initial =
+        !is_marginal_clamped &&
+        (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
     marginal = marginalrule(
-        marginal_mapping_fform(mapping), 
-        mapping.vtag, 
-        mapping.msgs_names, 
-        messages, 
-        mapping.marginals_names, 
-        marginals, 
-        mapping.meta, 
+        marginal_mapping_fform(mapping),
+        mapping.vtag,
+        mapping.msgs_names,
+        messages,
+        mapping.marginals_names,
+        marginals,
+        mapping.meta,
         mapping.factornode
     )
 
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
 end
 
-Base.map(::Type{T}, mapping::M) where { T, M <: MarginalMapping } = Rocket.MapOperator{T, M}(mapping)
+Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{T, M}(mapping)

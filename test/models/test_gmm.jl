@@ -7,59 +7,60 @@ using StableRNGs
 
 ## Model definition
 ## -------------------------------------------- ##
-@model [ default_factorisation = MeanField() ] function univariate_gaussian_mixture_model(n)
-    
+@model [default_factorisation = MeanField()] function univariate_gaussian_mixture_model(n)
     s ~ Beta(1.0, 1.0)
-    
+
     m1 ~ NormalMeanVariance(-2.0, 1e3)
     w1 ~ GammaShapeRate(0.01, 0.01)
-    
+
     m2 ~ NormalMeanVariance(2.0, 1e3)
     w2 ~ GammaShapeRate(0.01, 0.01)
-    
+
     z = randomvar(n)
     y = datavar(Float64, n)
-    
+
     for i in 1:n
         z[i] ~ Bernoulli(s)
         y[i] ~ NormalMixture(z[i], (m1, m2), (w1, w2))
     end
-    
+
     return s, m1, w1, m2, w2, z, y
 end
 
 @model function multivariate_gaussian_mixture_model(rng, L, nmixtures, n)
-    
     z = randomvar(n)
     m = randomvar(nmixtures)
     w = randomvar(nmixtures)
-    
-    basis_v = [ 1.0, 0.0 ]
-    
+
+    basis_v = [1.0, 0.0]
+
     for i in 1:nmixtures
         # Assume we now only approximate location of cluters's mean
-        approximate_angle_prior = ((2π + + rand(rng)) / nmixtures) * (i - 1)
-        approximate_basis_v  = L / 2 * (basis_v .+ rand(rng, 2))
-        approximate_rotation = [ cos(approximate_angle_prior) -sin(approximate_angle_prior); sin(approximate_angle_prior) cos(approximate_angle_prior) ]
-        mean_mean_prior     = approximate_rotation * approximate_basis_v
-        mean_mean_cov       = [ 1e6 0.0; 0.0 1e6 ]
-        
+        approximate_angle_prior = ((2π + +rand(rng)) / nmixtures) * (i - 1)
+        approximate_basis_v = L / 2 * (basis_v .+ rand(rng, 2))
+        approximate_rotation = [
+            cos(approximate_angle_prior) -sin(approximate_angle_prior)
+            sin(approximate_angle_prior) cos(approximate_angle_prior)
+        ]
+        mean_mean_prior = approximate_rotation * approximate_basis_v
+        mean_mean_cov = [1e6 0.0; 0.0 1e6]
+
         m[i] ~ MvNormalMeanCovariance(mean_mean_prior, mean_mean_cov)
-        w[i] ~ Wishart(3, [ 1e2 0.0; 0.0 1e2 ])
+        w[i] ~ Wishart(3, [1e2 0.0; 0.0 1e2])
     end
-    
+
     s ~ Dirichlet(ones(nmixtures))
 
     y = datavar(Vector{Float64}, n)
-    
+
     means = tuple(m...)
     precs = tuple(w...)
-    
+
     for i in 1:n
-        z[i] ~ Categorical(s) where { q = MeanField() }
-        y[i] ~ NormalMixture(z[i], means, precs) where { q = MeanField() }
+        z[i] ~ Categorical(s) where {q = MeanField()}
+        y[i] ~ NormalMixture(z[i], means, precs) where {q = MeanField()}
     end
-    
+
     return s, z, m, w, y
 end
 ## -------------------------------------------- ##
@@ -67,43 +68,43 @@ end
 ## -------------------------------------------- ##
 function inference_univariate(data, n_its)
     n = length(data)
-    model, (s, m1, w1, m2, w2, z, y) = univariate_gaussian_mixture_model(n);
-    
+    model, (s, m1, w1, m2, w2, z, y) = univariate_gaussian_mixture_model(n)
+
     mswitch = keep(Marginal)
     mm1 = keep(Marginal)
     mm2 = keep(Marginal)
     mw1 = keep(Marginal)
     mw2 = keep(Marginal)
-    
+
     fe = keep(Float64)
-    
+
     m1sub = subscribe!(getmarginal(m1), mm1)
     m2sub = subscribe!(getmarginal(m2), mm2)
     w1sub = subscribe!(getmarginal(w1), mw1)
     w2sub = subscribe!(getmarginal(w2), mw2)
     switchsub = subscribe!(getmarginal(s), mswitch)
     fesub = subscribe!(score(Float64, BetheFreeEnergy(), model), fe)
-    
+
     setmarginal!(s, vague(Beta))
     setmarginal!(m1, NormalMeanVariance(-2.0, 1e3))
     setmarginal!(m2, NormalMeanVariance(2.0, 1e3))
     setmarginal!(w1, vague(GammaShapeRate))
     setmarginal!(w2, vague(GammaShapeRate))
-    
+
     for i in 1:n_its
         update!(y, data)
     end
-    
+
     unsubscribe!((fesub, switchsub, m1sub, m2sub, w1sub, w2sub))
-    
+
     return mswitch, mm1, mm2, mw1, mw2, fe
 end
 
 function inference_multivariate(rng, L, nmixtures, data, viters)
     n = length(data)
-    
+
     model, (s, z, m, w, y) = multivariate_gaussian_mixture_model(rng, L, nmixtures, n)
-    
+
     means_estimates  = keep(Vector{Marginal})
     precs_estimates  = keep(Vector{Marginal})
     switch_estimates = keep(Marginal)
@@ -113,35 +114,37 @@ function inference_multivariate(rng, L, nmixtures, data, viters)
     m_sub = subscribe!(getmarginals(m), means_estimates)
     p_sub = subscribe!(getmarginals(w), precs_estimates)
     f_sub = subscribe!(score(Float64, BetheFreeEnergy(), model), fe_values)
-    
+
     setmarginal!(s, vague(Dirichlet, nmixtures))
-    
-    basis_v = [ 1.0, 0.0 ]
-    
+
+    basis_v = [1.0, 0.0]
+
     for i in 1:nmixtures
         # Assume we now only approximate location of cluters's mean
-        approximate_angle_prior = ((2π + + rand(rng)) / nmixtures) * (i - 1)
-        approximate_basis_v  = L / 2 * (basis_v .+ rand(rng, 2))
-        approximate_rotation = [ cos(approximate_angle_prior) -sin(approximate_angle_prior); sin(approximate_angle_prior) cos(approximate_angle_prior) ]
-        mean_mean_prior     = approximate_rotation * approximate_basis_v
-        mean_mean_cov       = [ 1e6 0.0; 0.0 1e6 ]
-        
+        approximate_angle_prior = ((2π + +rand(rng)) / nmixtures) * (i - 1)
+        approximate_basis_v = L / 2 * (basis_v .+ rand(rng, 2))
+        approximate_rotation = [
+            cos(approximate_angle_prior) -sin(approximate_angle_prior)
+            sin(approximate_angle_prior) cos(approximate_angle_prior)
+        ]
+        mean_mean_prior = approximate_rotation * approximate_basis_v
+        mean_mean_cov = [1e6 0.0; 0.0 1e6]
+
         setmarginal!(m[i], MvNormalMeanCovariance(mean_mean_prior, mean_mean_cov))
-        setmarginal!(w[i], Wishart(3, [ 1e2 0.0; 0.0 1e2 ]))
+        setmarginal!(w[i], Wishart(3, [1e2 0.0; 0.0 1e2]))
     end
-    
+
     for i in 1:viters
         update!(y, data)
     end
-    
+
     unsubscribe!((s_sub, m_sub, p_sub, f_sub))
-    
+
     return switch_estimates, means_estimates, precs_estimates, fe_values
 end
 
 @testset "Gaussian Mixture Model" begin
-
-    @testset "Univariate" begin 
+    @testset "Univariate" begin
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
@@ -149,7 +152,7 @@ end
 
         rng = StableRNG(12345)
 
-        switch = [ 1/3, 2/3 ]
+        switch = [1 / 3, 2 / 3]
         z      = rand(rng, Categorical(switch), n)
         y      = Vector{Float64}(undef, n)
 
@@ -159,7 +162,7 @@ end
 
         dists = [
             Normal(μ1, sqrt(inv(w))),
-            Normal(μ2, sqrt(inv(w))),
+            Normal(μ2, sqrt(inv(w)))
         ]
 
         for i in 1:n
@@ -167,7 +170,7 @@ end
         end
         ## -------------------------------------------- ##
         ## Inference execution
-        mswitch, mm1, mm2, mw1, mw2, fe = inference_univariate(y, 10);
+        mswitch, mm1, mm2, mw1, mw2, fe = inference_univariate(y, 10)
         ## -------------------------------------------- ##
         ## Test inference results
         @test length(mswitch) === 10
@@ -182,15 +185,15 @@ end
 
         @test ((abs(ms - switch[1]) < 0.1) || (abs(ms - switch[2]) < 0.1))
 
-        ems = sort([ last(mm1), last(mm2) ], by = mean)
-        rms = sort([ μ1, μ2 ])
+        ems = sort([last(mm1), last(mm2)], by = mean)
+        rms = sort([μ1, μ2])
 
         foreach(zip(rms, ems)) do (r, e)
             @test abs(r - mean(e)) < 0.2
         end
 
-        ews = sort([ last(mw1), last(mw2) ], by = mean)
-        rws = sort([ w, w ])
+        ews = sort([last(mw1), last(mw2)], by = mean)
+        rws = sort([w, w])
 
         foreach(zip(rws, ews)) do (r, e)
             @test abs(r - mean(e)) < 0.2
@@ -199,7 +202,7 @@ end
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
-        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
+        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
         plot_output      = joinpath(base_output, "univariate_gmm_model_plot_$(timestamp)_v$(VERSION).png")
         benchmark_output = joinpath(base_output, "univariate_gmm_model_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
@@ -207,26 +210,27 @@ end
         dim(d) = (a) -> map(r -> r[d], a)
         mp = plot(mean.(mm1), ribbon = var.(mm1) .|> sqrt, label = "m1 prediction")
         mp = plot!(mean.(mm2), ribbon = var.(mm2) .|> sqrt, label = "m2 prediction")
-        mp = plot!(mp, [ μ1 ], seriestype = :hline, label = "real m1")
-        mp = plot!(mp, [ μ2 ], seriestype = :hline, label = "real m2")
+        mp = plot!(mp, [μ1], seriestype = :hline, label = "real m1")
+        mp = plot!(mp, [μ2], seriestype = :hline, label = "real m2")
 
-        wp = plot(mean.(mw1), ribbon = var.(mw1) .|> sqrt, label = "w1 prediction", legend = :bottomleft, ylim = (-1, 3))
-        wp = plot!(wp, [ w ], seriestype = :hline, label = "real w1")
+        wp =
+            plot(mean.(mw1), ribbon = var.(mw1) .|> sqrt, label = "w1 prediction", legend = :bottomleft, ylim = (-1, 3))
+        wp = plot!(wp, [w], seriestype = :hline, label = "real w1")
         wp = plot!(wp, mean.(mw2), ribbon = var.(mw2) .|> sqrt, label = "w2 prediction")
-        wp = plot!(wp, [ w ], seriestype = :hline, label = "real w2")
+        wp = plot!(wp, [w], seriestype = :hline, label = "real w2")
 
         swp = plot(mean.(mswitch), ribbon = var.(mswitch) .|> sqrt, label = "Switch prediction")
 
-        swp = plot!(swp, [ switch[1] ], seriestype = :hline, label = "switch[1]")
-        swp = plot!(swp, [ switch[2] ], seriestype = :hline, label = "switch[2]")
+        swp = plot!(swp, [switch[1]], seriestype = :hline, label = "switch[1]")
+        swp = plot!(swp, [switch[2]], seriestype = :hline, label = "switch[2]")
 
         fep = plot(fe[2:end], label = "Free Energy", legend = :bottomleft)
 
-        p = plot(mp, wp, swp, fep, layout = @layout([ a b; c d ]), size = (1000, 700))
+        p = plot(mp, wp, swp, fep, layout = @layout([a b; c d]), size = (1000, 700))
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference_univariate($y, 10) seconds=15
+        benchmark = @benchmark inference_univariate($y, 10) seconds = 15
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)
@@ -234,7 +238,7 @@ end
         ## -------------------------------------------- ##
     end
 
-    @testset "Multivariate" begin 
+    @testset "Multivariate" begin
         ## -------------------------------------------- ##
         ## Data creation
         ## -------------------------------------------- ##
@@ -251,10 +255,10 @@ end
 
         gaussians = map(1:nmixtures) do index
             angle      = 2π / nmixtures * (index - 1)
-            basis_v    = L * [ 1.0, 0.0 ]
-            rotationm  = [ cos(angle) -sin(angle); sin(angle) cos(angle) ]
-            mean       = rotationm * basis_v 
-            covariance = Matrix(Hermitian(rotationm * [ 10.0 0.0; 0.0 20.0 ] * transpose(rotationm)))
+            basis_v    = L * [1.0, 0.0]
+            rotationm  = [cos(angle) -sin(angle); sin(angle) cos(angle)]
+            mean       = rotationm * basis_v
+            covariance = Matrix(Hermitian(rotationm * [10.0 0.0; 0.0 20.0] * transpose(rotationm)))
             return MvNormal(mean, covariance)
         end
 
@@ -266,7 +270,7 @@ end
         end
         ## -------------------------------------------- ##
         ## Inference execution
-        s, m, w, fe = inference_multivariate(rng, L, nmixtures, y, 25);
+        s, m, w, fe = inference_multivariate(rng, L, nmixtures, y, 25)
         ## -------------------------------------------- ##
         ## Test inference results
         @test length(s) === 25
@@ -286,7 +290,7 @@ end
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
-        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM") 
+        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
         plot_output      = joinpath(base_output, "multivariate_gmm_model_plot_$(timestamp)_v$(VERSION).png")
         benchmark_output = joinpath(base_output, "multivariate_gmm_model_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
@@ -304,24 +308,30 @@ end
 
         for (e_m, e_w) in zip(e_means, e_precs)
             gaussian = MvNormal(e_m, Matrix(Hermitian(inv(e_w))))
-            pe = contour!(pe, range(-2L, 2L, step = 0.25), range(-2L, 2L, step = 0.25), (x, y) -> pdf(gaussian, [ x, y ]), levels = 7, colorbar = false)
+            pe = contour!(
+                pe,
+                range(-2L, 2L, step = 0.25),
+                range(-2L, 2L, step = 0.25),
+                (x, y) -> pdf(gaussian, [x, y]),
+                levels = 7,
+                colorbar = false
+            )
         end
 
         pfe = plot(fe[2:end], label = "Free Energy")
 
-        p = plot(rp, pe, pfe, size = (600, 600), layout = @layout([ a b; c ]))
+        p = plot(rp, pe, pfe, size = (600, 600), layout = @layout([a b; c]))
 
         savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks
-        benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25) seconds=15
+        benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25) seconds = 15
         open(benchmark_output, "w") do io
             show(io, MIME("text/plain"), benchmark)
             versioninfo(io)
         end
         ## -------------------------------------------- ##
     end
-
 end
 
 end

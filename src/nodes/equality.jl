@@ -31,11 +31,11 @@ in a convenient manner so they can be reused during `prod` for random variables 
 
 See also: [`EqualityChain`](@ref)
 """
-mutable struct EqualityNode 
-    left         :: LazyObservable{Missing}
-    right        :: LazyObservable{Missing}
-    cache_left   :: Message
-    cache_right  :: Message
+mutable struct EqualityNode
+    left        :: LazyObservable{Missing}
+    right       :: LazyObservable{Missing}
+    cache_left  :: Message
+    cache_right :: Message
 
     EqualityNode() = new(lazy(Missing), lazy(Missing), Message(missing, true, true), Message(missing, true, true))
 end
@@ -66,10 +66,10 @@ struct EqualityChain{P, F}
     pipeline   :: P
     prod_fn    :: F
 
-    function EqualityChain(inputmsgs::Vector{MessageObservable{AbstractMessage}}, pipeline::P, prod_fn::F) where { P, F } 
-        n     = length(inputmsgs)
+    function EqualityChain(inputmsgs::Vector{MessageObservable{AbstractMessage}}, pipeline::P, prod_fn::F) where {P, F}
+        n = length(inputmsgs)
         nodes = map(_ -> EqualityNode(), 1:n)
-        return new{P, F}(n, nodes, inputmsgs, falses(n), falses(n), pipeline, prod_fn)     
+        return new{P, F}(n, nodes, inputmsgs, falses(n), falses(n), pipeline, prod_fn)
     end
 end
 
@@ -99,7 +99,7 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
 @propagate_inbounds function getcache(type::EqualityNodeOutboundType, chain::EqualityChain, node_index)
     if __check_indices(type, chain, node_index)
         return getcache(type, getnode(chain, node_index))
-    else 
+    else
         return Message(missing, true, true)
     end
 end
@@ -107,8 +107,8 @@ end
 nextindex(::EqualityLeftOutbound, node_index)  = node_index + 1
 nextindex(::EqualityRightOutbound, node_index) = node_index - 1
 
-@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int  = default_if_nothing(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain))
-@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = default_if_nothing(findlast(view(chain.cacheright, 1:node_index)), 1)
+@propagate_inbounds first_unmaterialized_index(::EqualityLeftOutbound, chain::EqualityChain, node_index)::Int  = something(findfirst(view(chain.cacheleft, node_index:length(chain))), length(chain) - (node_index - 1)) + (node_index - 1)
+@propagate_inbounds first_unmaterialized_index(::EqualityRightOutbound, chain::EqualityChain, node_index)::Int = something(findlast(view(chain.cacheright, 1:node_index)), 1)
 
 @propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index)  = first_unmaterialized_index(type, chain, node_index):-1:node_index
 @propagate_inbounds precompute_range(type::EqualityRightOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):node_index
@@ -137,7 +137,7 @@ end
 
 ##
 
-struct ChainInvalidationCallback 
+struct ChainInvalidationCallback
     index      :: Int
     cacheleft  :: BitVector
     cacheright :: BitVector
@@ -156,9 +156,9 @@ end
 
 ## 
 
-struct ChainOutboundMapping 
-    index :: Int
-    chain :: EqualityChain
+struct ChainOutboundMapping
+    index::Int
+    chain::EqualityChain
 end
 
 function (mapping::ChainOutboundMapping)(_)
@@ -175,7 +175,7 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
     pipeline = getpipeline(chain)
 
     Left  = EqualityLeftOutbound()
-    Right = EqualityRightOutbound() 
+    Right = EqualityRightOutbound()
 
     @inbounds for index in 1:n
         node = getnode(chain, index)
@@ -192,7 +192,11 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
         from_left  = getoutbound(Right, chain, nextindex(Right, index)) # Inbound message comming from left direction  (is a right from `index - 1`)
         from_right = getoutbound(Left, chain, nextindex(Left, index))  # Inbound message comming from right direction (is a left from `index + 1`)
 
-        connect!(outputmsgs[index], combineLatestUpdates((from_left, from_right), PushNew()) |> map(Message, ChainOutboundMapping(index, chain)))
+        connect!(
+            outputmsgs[index],
+            combineLatestUpdates((from_left, from_right), PushNew()) |>
+            map(Message, ChainOutboundMapping(index, chain))
+        )
     end
 
     return nothing

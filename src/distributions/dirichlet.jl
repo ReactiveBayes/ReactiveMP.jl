@@ -3,9 +3,9 @@ export Dirichlet
 import Distributions: Dirichlet
 import SpecialFunctions: digamma
 
-vague(::Type{ <: Dirichlet }, dims::Int) = Dirichlet(ones(dims))
+vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
-prod_analytical_rule(::Type{ <: Dirichlet }, ::Type{ <: Dirichlet }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)
@@ -20,8 +20,8 @@ mean(::typeof(log), dist::Dirichlet) = digamma.(probvec(dist)) .- digamma(sum(pr
 
 # Variate forms promotion
 
-promote_variate_type(::Type{ Multivariate },  ::Type{ <: Dirichlet })          = Dirichlet
-promote_variate_type(::Type{ Matrixvariate }, ::Type{ <: Dirichlet })          = MatrixDirichlet
+promote_variate_type(::Type{Multivariate}, ::Type{<:Dirichlet})  = Dirichlet
+promote_variate_type(::Type{Matrixvariate}, ::Type{<:Dirichlet}) = MatrixDirichlet
 
-promote_variate_type(::Type{ Multivariate },  ::Type{ <: MatrixDirichlet }) = Dirichlet
-promote_variate_type(::Type{ Matrixvariate }, ::Type{ <: MatrixDirichlet }) = MatrixDirichlet
+promote_variate_type(::Type{Multivariate}, ::Type{<:MatrixDirichlet})  = Dirichlet
+promote_variate_type(::Type{Matrixvariate}, ::Type{<:MatrixDirichlet}) = MatrixDirichlet
