@@ -114,10 +114,10 @@ update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 
 update!(datavar::DataVariable, data::Number)        = update!(eltype(datavar), datavar, data)
 update!(datavar::DataVariable, data::AbstractArray) = update!(eltype(datavar), datavar, data)
 
-update!(::Type{D}, datavar, data::D)   where {D}      = next!(messageout(datavar, 1), Message(data, false, false))
+update!(::Type{D}, datavar, data::D) where {D}        = next!(messageout(datavar, 1), Message(data, false, false))
 update!(::Type{D1}, datavar, data::D2) where {D1, D2} = error("'$(name(datavar)) = datavar($D1, ...)' accepts data of type $D1, but $D2 has been supplied. Check 'update!($(name(datavar)), data::$D2)' and explicitly convert data to type $D1.")
 
-update!(::Type{PointMass{D}}, datavar, data::D) where {D} = 
+update!(::Type{PointMass{D}}, datavar, data::D) where {D} =
     next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
