@@ -261,8 +261,7 @@ using GraphPPL # for `@constraints` macro
         end
 
         @testset "Use case #5" begin
-            cs = @constraints begin
-            end
+            cs = @constraints begin end
 
             model = FactorGraphModel()
 

@@ -76,6 +76,7 @@ import ReactiveMP: make_node
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
+
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
                     Marginal(convert(N2, q_μ), false, false),
@@ -93,6 +94,7 @@ import ReactiveMP: make_node
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
+
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
                     Marginal(convert(N2, q_μ), false, false),
@@ -110,6 +112,7 @@ import ReactiveMP: make_node
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
+
                 marginals = (
                     Marginal(convert(N1, q_out), false, false),
                     Marginal(convert(N2, q_μ), false, false),
