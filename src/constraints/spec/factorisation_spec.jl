@@ -183,14 +183,14 @@ placeholders in a form of the `FunctionalIndex` structure. This function correct
 """
 function __factorisation_specification_resolve_index end
 
-__factorisation_specification_resolve_index(index::Any, collection::AbstractVariable)                               = error("Attempt to access a single variable $(name(collection)) at index [$(index)].") # `index` here is guaranteed to be not `nothing`, because of dispatch. `Nothing, Nothing` version will dispatch on the method below
-__factorisation_specification_resolve_index(index::Nothing, collection::AbstractVariable)                           = nothing
-__factorisation_specification_resolve_index(index::Nothing, collection::AbstractVector{<:AbstractVariable})         = nothing
-__factorisation_specification_resolve_index(index::Real, collection::AbstractVector{<:AbstractVariable})            = error("Non integer indices are not supported. Attempt to access collection $(collection) of variable $(name(first(collection))) at index [$(index)].")
-__factorisation_specification_resolve_index(index::Integer, collection::AbstractVector{<:AbstractVariable})         = (firstindex(collection) <= index <= lastindex(collection)) ? index : error("Index out of bounds happened during indices resolution in factorisation constraints. Attempt to access collection $(collection) of variable $(name(first(collection))) at index [$(index)].")
-__factorisation_specification_resolve_index(index::FunctionalIndex, collection::AbstractVector{<:AbstractVariable}) = __factorisation_specification_resolve_index(index(collection)::Integer, collection)::Integer
-__factorisation_specification_resolve_index(index::CombinedRange, collection::AbstractVector{<:AbstractVariable})   = CombinedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
-__factorisation_specification_resolve_index(index::SplittedRange, collection::AbstractVector{<:AbstractVariable})   = SplittedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
+__factorisation_specification_resolve_index(index::Any, collection::AbstractVariable)                              = error("Attempt to access a single variable $(name(collection)) at index [$(index)].") # `index` here is guaranteed to be not `nothing`, because of dispatch. `Nothing, Nothing` version will dispatch on the method below
+__factorisation_specification_resolve_index(index::Nothing, collection::AbstractVariable)                          = nothing
+__factorisation_specification_resolve_index(index::Nothing, collection::AbstractArray{<:AbstractVariable})         = nothing
+__factorisation_specification_resolve_index(index::Real, collection::AbstractArray{<:AbstractVariable})            = error("Non integer indices are not supported. Attempt to access collection $(collection) of variable $(name(first(collection))) at index [$(index)].")
+__factorisation_specification_resolve_index(index::Integer, collection::AbstractArray{<:AbstractVariable})         = (firstindex(collection) <= index <= lastindex(collection)) ? index : error("Index out of bounds happened during indices resolution in factorisation constraints. Attempt to access collection $(collection) of variable $(name(first(collection))) at index [$(index)].")
+__factorisation_specification_resolve_index(index::FunctionalIndex, collection::AbstractArray{<:AbstractVariable}) = __factorisation_specification_resolve_index(index(collection)::Integer, collection)::Integer
+__factorisation_specification_resolve_index(index::CombinedRange, collection::AbstractArray{<:AbstractVariable})   = CombinedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
+__factorisation_specification_resolve_index(index::SplittedRange, collection::AbstractArray{<:AbstractVariable})   = SplittedRange(__factorisation_specification_resolve_index(firstindex(index), collection)::Integer, __factorisation_specification_resolve_index(lastindex(index), collection)::Integer)
 
 ## Some pre-written optimised dispatch rules for the `UnspecifiedConstraints` case
 

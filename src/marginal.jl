@@ -63,7 +63,8 @@ Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal
 
 ## Utility functions
 
-getdata(marginals::Tuple) = map(getdata, marginals)
+getdata(marginals::Tuple)         = map(getdata, marginals)
+getdata(marginals::AbstractArray) = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 

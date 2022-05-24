@@ -12,7 +12,27 @@ import ReactiveMP: israndom, isproxy
 
     @testset "Simple creation" begin 
 
-        for sym in (:x, :y, :z), type in (Float64, Int64, String, Vector{Float64})
+        randomize_update(::Type{ T }, size) where { T <: Union{Int, Float64} } = rand(T, size)
+        randomize_update(::Type{ V }, size) where { V <: AbstractVector }      = map(_ -> rand(eltype(V), 1), CartesianIndices(size))
+        
+        function test_updates(vs, type, size)
+            nupdates     = 3
+            updates      = []
+            subscription = subscribe!(getmarginals(vs), (update) -> push!(updates, ReactiveMP.getdata.(update)))
+            for _ in 1:nupdates
+                update = randomize_update(type, size)
+                update!(vs, update)
+                @test last(updates) == update
+            end
+            @test length(updates) === nupdates
+            unsubscribe!(subscription)
+            # Check if we do not receive updates after unsubscription
+            update!(vs, randomize_update(type, size))
+            @test length(updates) === nupdates
+            return true
+        end
+
+        for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64})
             v = datavar(sym, type)
 
             @test !israndom(v)
@@ -23,7 +43,7 @@ import ReactiveMP: israndom, isproxy
             @test !isproxy(v)
         end
 
-        for sym in (:x, :y, :z), type in (Float64, Int64, String, Vector{Float64}), n in (10, 20)
+        for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64}), n in (10, 20)
             vs = datavar(sym, type, n)
             
             @test !israndom(vs) 
@@ -36,9 +56,10 @@ import ReactiveMP: israndom, isproxy
             @test all(v -> eltype(v) === type, vs)
             @test !isproxy(vs)
             @test all(v -> !isproxy(v), vs)
+            @test test_updates(vs, type, (n, ))
         end
 
-        for sym in (:x, :y, :z), type in (Float64, Int64, String, Vector{Float64}), l in (10, 20), r in (10, 20)
+        for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64}), l in (10, 20), r in (10, 20)
             for vs in (datavar(sym, type, l, r), datavar(sym, type, (l, r)))
                 @test !israndom(vs) 
                 @test size(vs) === (l, r)
@@ -51,8 +72,10 @@ import ReactiveMP: israndom, isproxy
                 @test all(v -> eltype(v) === type, vs)
                 @test !isproxy(vs)
                 @test all(v -> !isproxy(v), vs)
+                @test test_updates(vs, type, (l, r))
             end
         end
+        
 
 
     end

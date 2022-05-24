@@ -14,11 +14,12 @@ assign_message!(variable::AbstractVariable, message)                    = setmes
 struct KeepEach end
 struct KeepLast end
 
-make_actor(::RandomVariable, ::KeepEach)                  = keep(Marginal)
-make_actor(::AbstractArray{<:RandomVariable}, ::KeepEach) = keep(Vector{Marginal})
+make_actor(::RandomVariable, ::KeepEach)                            = keep(Marginal)
+make_actor(::Array{ <: RandomVariable, N }, ::KeepEach) where { N } = keep(Array{Marginal, N})
+make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepEach)       = keep(typeof(similar(x, Marginal)))
 
-make_actor(::RandomVariable, ::KeepLast)                   = storage(Marginal)
-make_actor(x::AbstractArray{<:RandomVariable}, ::KeepLast) = buffer(Marginal, length(x))
+make_actor(::RandomVariable, ::KeepLast)                     = storage(Marginal)
+make_actor(x::AbstractArray{ <: RandomVariable}, ::KeepLast) = buffer(Marginal, size(x))
 
 ## Inference ensure update
 
@@ -46,6 +47,18 @@ function __inference_process_error(err::StackOverflowError)
         Stack overflow error occurred during the inference procedure. 
         The dataset size might be causing this error. 
         To resolve this issue, try using `limit_stack_depth` option when creating a model. See also: `?model_options`
+    """)
+end
+
+__inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothing
+
+function __inference_check_dicttype(keyword::Symbol, input::T) where {T} 
+    error("""
+        Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
+        If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
+        Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
+              The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
+              The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
     """)
 end
 ##
@@ -82,16 +95,15 @@ function Base.show(io::IO, result::InferenceResult)
         print(IOContext(io, :compact => true, :limit => true, :displaysize => (1, 80)), result.free_energy)
         print(io, "\n")
     end
-
-    maxwidth = 80
-    maxlen   = maximum(p -> length(string(first(p))), pairs(result.posteriors))
+    maxdisplay = 80
+    maxlen     = maximum(p -> length(string(first(p))), pairs(result.posteriors), init = 0)
     print(io, "-----------------------------------------\n")
     for (key, value) in pairs(result.posteriors)
         print(io, "$(rpad(key, maxlen)) = ")
-        svalue = string(value)
-        slen   = length(svalue)
-        print(IOContext(io, :compact => true, :limit => true), view(svalue, 1:min(maxwidth, length(svalue))))
-        if slen > maxwidth
+        strval    = repr(value, context = :limit => true)
+        lastindex = last(collect(Iterators.take(eachindex(strval), maxdisplay)))
+        print(io, view(strval, 1:lastindex))
+        if lastindex >= maxdisplay
             print(io, "...")
         end
         print(io, "\n")
@@ -158,6 +170,12 @@ For more information about some of the arguments, please check below.
 - `showprogress = false`: show progress module, optional, defaults to false
 - `callbacks = nothing`: inference cycle callbacks, optional, see below for more info
 - `warn = true`: enables/disables warnings
+
+## Note on NamedTuples
+
+When passing `NamedTuple` as a value for some argument, make sure you use a trailing comma for `NamedTuple`s with a single entry. The reason is that Julia treats `returnvars = (x = KeepLast())` and 
+`returnvars = (x = KeepLast(), )` expressions differently. First expression creates (or **overwrites!**) new local/global variable named `x` with contents `KeepLast()`. The second expression (note traling comma)
+creates `NamedTuple` with `x` as a key and `KeepLast()` as a value assigned for this key.
 
 ## Extended information about some of the arguments
 
@@ -271,6 +289,12 @@ function inference(;
     # warn, optional, defaults to true
     warn = true
 )
+
+    __inference_check_dicttype(:data, data)
+    __inference_check_dicttype(:initmarginals, initmarginals)
+    __inference_check_dicttype(:initmessages, initmessages)
+    __inference_check_dicttype(:returnvars, returnvars)
+
     inference_invoke_callback(callbacks, :before_model_creation)
     fmodel, freturval = create_model(model, constraints, meta, options)
     inference_invoke_callback(callbacks, :after_model_creation, fmodel)
@@ -278,22 +302,24 @@ function inference(;
 
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
     # `KeepEach` for each random and not-proxied variable in a model
-    if returnvars === nothing
-        returnvars =
-            Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
-    else
-        foreach(pairs(returnvars)) do pair
-            if warn && !haskey(vardict, first(pair))
-                @warn "`returnvars` object has `$(first(pair))` specification, but model has no variable named `$(first(pair))`. Use `warn = false` to suppress this warning."
-            end
+    if returnvars === nothing 
+        returnvars = Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
+    end
+
+    # Use `__check_has_randomvar` to filter out unknown or non-random variables in the `returnvar` specification
+    __check_has_randomvar(vardict, variable) = begin 
+        haskey_check   = haskey(vardict, variable)
+        israndom_check = haskey_check ? israndom(vardict[variable]) : false
+        if warn && !haskey_check 
+            @warn "`returnvars` object has `$(variable)` specification, but model has no variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
+        elseif warn && haskey_check && !israndom_check
+            @warn "`returnvars` object has `$(variable)` specification, but model has no **random** variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
         end
+        return haskey_check && israndom_check
     end
 
     # Second, for each random variable entry we create an actor
-    actors = Dict(
-        variable => make_actor(vardict[variable], value) for
-        (variable, value) in pairs(returnvars) if haskey(vardict, variable)
-    )
+    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars) if __check_has_randomvar(vardict, variable))
 
     # At third, for each random variable entry we create a boolean flag to track their updates
     updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(actors))
@@ -385,7 +411,7 @@ function inference(;
 
         unsubscribe!(fe_subscription)
 
-        posterior_values = Dict(variable => getvalues(actor) for (variable, actor) in pairs(actors))
+        posterior_values = Dict(variable => getdata(getvalues(actor)) for (variable, actor) in pairs(actors))
         fe_values        = fe_actor !== nothing ? getvalues(fe_actor) : nothing
 
         inference_invoke_callback(callbacks, :after_inference, fmodel)
