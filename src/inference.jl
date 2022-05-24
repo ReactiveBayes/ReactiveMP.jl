@@ -21,9 +21,6 @@ make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepEach)       = keep(typeo
 make_actor(::RandomVariable, ::KeepLast)                     = storage(Marginal)
 make_actor(x::AbstractArray{ <: RandomVariable}, ::KeepLast) = buffer(Marginal, size(x))
 
-__getdata(values::AbstractVector{ <: Marginal }) = map(getdata, values)
-__getdata(marginal::Marginal)                    = getdata(marginal)
-
 ## Inference ensure update
 
 mutable struct MarginalHasBeenUpdated
@@ -410,7 +407,7 @@ function inference(;
 
         unsubscribe!(fe_subscription)
 
-        posterior_values = Dict(variable => __getdata(getvalues(actor)) for (variable, actor) in pairs(actors))
+        posterior_values = Dict(variable => getdata(getvalues(actor)) for (variable, actor) in pairs(actors))
         fe_values        = fe_actor !== nothing ? getvalues(fe_actor) : nothing
 
         inference_invoke_callback(callbacks, :after_inference, fmodel)
