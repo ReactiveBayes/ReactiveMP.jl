@@ -14,12 +14,12 @@ assign_message!(variable::AbstractVariable, message)                    = setmes
 struct KeepEach end
 struct KeepLast end
 
-make_actor(::RandomVariable, ::KeepEach)                            = keep(Marginal)
-make_actor(::Array{ <: RandomVariable, N }, ::KeepEach) where { N } = keep(Array{Marginal, N})
-make_actor(x::AbstractArray{ <: RandomVariable }, ::KeepEach)       = keep(typeof(similar(x, Marginal)))
+make_actor(::RandomVariable, ::KeepEach)                       = keep(Marginal)
+make_actor(::Array{<:RandomVariable, N}, ::KeepEach) where {N} = keep(Array{Marginal, N})
+make_actor(x::AbstractArray{<:RandomVariable}, ::KeepEach)     = keep(typeof(similar(x, Marginal)))
 
-make_actor(::RandomVariable, ::KeepLast)                     = storage(Marginal)
-make_actor(x::AbstractArray{ <: RandomVariable}, ::KeepLast) = buffer(Marginal, size(x))
+make_actor(::RandomVariable, ::KeepLast)                   = storage(Marginal)
+make_actor(x::AbstractArray{<:RandomVariable}, ::KeepLast) = buffer(Marginal, size(x))
 
 ## Inference ensure update
 
@@ -52,14 +52,16 @@ end
 
 __inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothing
 
-function __inference_check_dicttype(keyword::Symbol, input::T) where {T} 
-    error("""
-        Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
-        If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
-        Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
-              The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
-              The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
-    """)
+function __inference_check_dicttype(keyword::Symbol, input::T) where {T}
+    error(
+        """
+      Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
+      If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
+      Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
+            The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
+            The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
+  """
+    )
 end
 ##
 
@@ -289,7 +291,6 @@ function inference(;
     # warn, optional, defaults to true
     warn = true
 )
-
     __inference_check_dicttype(:data, data)
     __inference_check_dicttype(:initmarginals, initmarginals)
     __inference_check_dicttype(:initmessages, initmessages)
@@ -302,15 +303,16 @@ function inference(;
 
     # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
     # `KeepEach` for each random and not-proxied variable in a model
-    if returnvars === nothing 
-        returnvars = Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
+    if returnvars === nothing
+        returnvars =
+            Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
     end
 
     # Use `__check_has_randomvar` to filter out unknown or non-random variables in the `returnvar` specification
-    __check_has_randomvar(vardict, variable) = begin 
+    __check_has_randomvar(vardict, variable) = begin
         haskey_check   = haskey(vardict, variable)
         israndom_check = haskey_check ? israndom(vardict[variable]) : false
-        if warn && !haskey_check 
+        if warn && !haskey_check
             @warn "`returnvars` object has `$(variable)` specification, but model has no variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
         elseif warn && haskey_check && !israndom_check
             @warn "`returnvars` object has `$(variable)` specification, but model has no **random** variable named `$(variable)`. The `$(variable)` specification is ignored. Use `warn = false` to suppress this warning."
@@ -319,7 +321,10 @@ function inference(;
     end
 
     # Second, for each random variable entry we create an actor
-    actors = Dict(variable => make_actor(vardict[variable], value) for (variable, value) in pairs(returnvars) if __check_has_randomvar(vardict, variable))
+    actors = Dict(
+        variable => make_actor(vardict[variable], value) for
+        (variable, value) in pairs(returnvars) if __check_has_randomvar(vardict, variable)
+    )
 
     # At third, for each random variable entry we create a boolean flag to track their updates
     updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(actors))
