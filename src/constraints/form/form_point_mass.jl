@@ -75,9 +75,9 @@ default_prod_constraint(::PointMassFormConstraint) = ProdGeneric()
 
 make_form_constraint(::Type{<:PointMass}, args...; kwargs...) = PointMassFormConstraint(args...; kwargs...)
 
-call_optimizer(pmconstraint::PointMassFormConstraint, distribution)      = pmconstraint.optimizer(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
-call_boundaries(pmconstraint::PointMassFormConstraint, distribution)     = pmconstraint.boundaries(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
-call_starting_point(pmconstraint::PointMassFormConstraint, distribution) = pmconstraint.starting_point(variate_form(distribution), value_support(distribution), pmconstraint, distribution)
+call_optimizer(pmconstraint::PointMassFormConstraint, distribution::D) where {D}      = pmconstraint.optimizer(variate_form(D), value_support(D), pmconstraint, distribution)
+call_boundaries(pmconstraint::PointMassFormConstraint, distribution::D) where {D}     = pmconstraint.boundaries(variate_form(D), value_support(D), pmconstraint, distribution)
+call_starting_point(pmconstraint::PointMassFormConstraint, distribution::D) where {D} = pmconstraint.starting_point(variate_form(D), value_support(D), pmconstraint, distribution)
 
 constrain_form(pmconstraint::PointMassFormConstraint, distribution) = call_optimizer(pmconstraint, distribution)
 

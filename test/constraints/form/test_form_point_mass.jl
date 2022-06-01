@@ -4,6 +4,8 @@ using Test
 using ReactiveMP
 using Random
 using LinearAlgebra
+using StableRNGs
+using DomainSets
 
 import ReactiveMP:
     PointMassFormConstraint, is_point_mass_form_constraint, call_boundaries, call_starting_point, call_optimizer
@@ -53,6 +55,43 @@ import ReactiveMP:
 
         @test call_optimizer(bm_constraint, NormalMeanVariance(0, 1)) == PointMass(10.0)
         @test call_optimizer(bm_constraint, Gamma(1, 1)) == PointMass(10.0)
+    end
+
+    @testset "optimizer for generic f" begin
+        irng = StableRNG(42)
+
+        for _ in 1:3
+            constraint = PointMassFormConstraint()
+
+            d1 = NormalMeanVariance(10randn(irng), 10rand(irng))
+            d2 = NormalMeanVariance(10randn(irng), 10rand(irng))
+
+            f = ContinuousUnivariateLogPdf((x) -> logpdf(d1, x) + logpdf(d2, x))
+
+            opt = call_optimizer(constraint, f)
+
+            analytical = prod(ProdAnalytical(), d1, d2)
+
+            @test isapprox(mode(opt), mode(analytical), atol = 1e-8)
+        end
+
+        for _ in 1:3
+            constraint = PointMassFormConstraint(
+                boundaries = (args...) -> (0.0, Inf),
+                starting_point = (args...) -> [1.0]
+            )
+
+            d1 = Gamma(10rand(irng) + 1, 10rand(irng) + 1)
+            d2 = Gamma(10rand(irng) + 1, 10rand(irng) + 1)
+
+            f = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> logpdf(d1, x) + logpdf(d2, x))
+
+            opt = call_optimizer(constraint, f)
+
+            analytical = prod(ProdAnalytical(), d1, d2)
+
+            @test isapprox(mode(opt), mode(analytical), atol = 1e-4)
+        end
     end
 end
 

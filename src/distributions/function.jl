@@ -12,6 +12,7 @@ import Base: isapprox
 abstract type AbstractContinuousGenericLogPdf end
 
 value_support(::Type{<:AbstractContinuousGenericLogPdf}) = Continuous
+value_support(::AbstractContinuousGenericLogPdf)         = Continuous
 
 # We throw an error on purpose, since we do not want to use `AbstractContinuousGenericLogPdf` much without approximations
 # We want to encourage a user to use functional form constraints and approximate generic log-pdfs as much as possible instead
@@ -82,6 +83,7 @@ struct ContinuousUnivariateLogPdf{D <: DomainSets.Domain, F} <: AbstractContinuo
 end
 
 variate_form(::Type{<:ContinuousUnivariateLogPdf}) = Univariate
+variate_form(::ContinuousUnivariateLogPdf)         = Univariate
 
 getdomain(dist::ContinuousUnivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousUnivariateLogPdf) = dist.logpdf
@@ -143,6 +145,7 @@ struct ContinuousMultivariateLogPdf{D <: DomainSets.Domain, F} <: AbstractContin
 end
 
 variate_form(::Type{<:ContinuousMultivariateLogPdf}) = Multivariate
+variate_form(::ContinuousMultivariateLogPdf)         = Multivariate
 
 getdomain(dist::ContinuousMultivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousMultivariateLogPdf) = dist.logpdf
@@ -187,6 +190,7 @@ struct ContinuousGenericLogPdfVectorisedProduct{F} <: AbstractContinuousGenericL
 end
 
 variate_form(::Type{<:ContinuousGenericLogPdfVectorisedProduct{F}}) where {F} = variate_form(F)
+variate_form(::ContinuousGenericLogPdfVectorisedProduct{F}) where {F}         = variate_form(F)
 
 getdomain(dist::ContinuousGenericLogPdfVectorisedProduct) = getdomain(first(dist.vector))
 getlogpdf(dist::ContinuousGenericLogPdfVectorisedProduct) =
