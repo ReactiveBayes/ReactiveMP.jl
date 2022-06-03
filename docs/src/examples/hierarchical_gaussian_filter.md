@@ -78,7 +78,7 @@ z, x, y = generate_data(rng, real_k, real_w, z_variance, y_variance)
 nothing #hide
 ```
 
-Lets plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations.
+Let's plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations.
 
 ```@example hgf
 let 

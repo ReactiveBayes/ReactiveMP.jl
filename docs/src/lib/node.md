@@ -1,7 +1,7 @@
 
 # [Nodes implementation](@id lib-node)
 
-In message passing framework one of the most important concept is factor node. 
+In message passing framework one of the most important concepts is factor node. 
 Factor node represents a local function in a factorised representation of a generative model.
 
 !!! note

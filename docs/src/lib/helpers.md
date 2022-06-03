@@ -1,7 +1,7 @@
 
 # [Helper utilities](@id lib-helpers)
 
-`ReactiveMP` implements various structures/function/method as "helper" structures that might be usefull in various contexts.
+`ReactiveMP` implements various structures/functions/methods as "helper" structures that might be useful in various contexts.
 
 ## [SkipIndexIterator](@id lib-helpers-skip-index-iterator)
 
