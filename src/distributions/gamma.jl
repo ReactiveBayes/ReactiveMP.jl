@@ -9,8 +9,6 @@ const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
 
 Distributions.cov(dist::GammaDistributionsFamily) = var(dist)
 
-Distributions.mode(d::GammaShapeRate) = shape(d) >= 1 ? mode(GammaShapeScale(shape(d), 1/rate(d))) : throw(error("Gamma has no mode when shape < 1"))
-
 function mean(::typeof(log), dist::GammaShapeScale)
     k, θ = params(dist)
     return digamma(k) + log(θ)

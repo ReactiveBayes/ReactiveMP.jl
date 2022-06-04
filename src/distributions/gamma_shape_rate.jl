@@ -25,6 +25,9 @@ Distributions.mean(dist::GammaShapeRate)   = shape(dist) / rate(dist)
 Distributions.var(dist::GammaShapeRate)    = shape(dist) / abs2(rate(dist))
 Distributions.params(dist::GammaShapeRate) = (shape(dist), rate(dist))
 
+Distributions.mode(d::GammaShapeRate) = shape(d) >=1 ? mode(Gamma(shape(d), scale(d))) : 
+    throw(error("Gamma has no mode when shape < 1"))
+
 function Distributions.entropy(dist::GammaShapeRate)
     a, b = params(dist)
     return a - log(b) + loggamma(a) + (1 - a) * digamma(a)
