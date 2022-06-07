@@ -26,13 +26,13 @@ The `ReactiveMP` approach to solving inference problems consists of three phases
 ### Coin flip simulation
 Let's start by creating some dataset. One approach could be flipping a coin N times and recording each outcome. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
 
-First lets setup our environment by importing all needed packages:
+First let's setup our environment by importing all needed packages:
 
 ```@example coin
 using Rocket, GraphPPL, ReactiveMP, Distributions, Random
 ```
 
-Next, lets define our dataset:
+Next, let's define our dataset:
 
 ```@example coin
 rng = MersenneTwister(42)
