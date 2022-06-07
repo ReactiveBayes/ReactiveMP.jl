@@ -126,11 +126,13 @@ end
         p = plot(p1, p2, p3, layout = @layout([a b; c]))
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark = @benchmark inference($x_data, 20) seconds = 15
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark = @benchmark inference($x_data, 20) seconds = 15
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end
