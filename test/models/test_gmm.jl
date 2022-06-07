@@ -229,11 +229,13 @@ end
         p = plot(mp, wp, swp, fep, layout = @layout([a b; c d]), size = (1000, 700))
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark = @benchmark inference_univariate($y, 10) seconds = 15
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark = @benchmark inference_univariate($y, 10) seconds = 15
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end
@@ -324,11 +326,13 @@ end
 
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25) seconds = 15
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25) seconds = 15
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end

@@ -42,11 +42,13 @@ end
 
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark = @benchmark 1 + 1#
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark = @benchmark 1 + 1#
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end

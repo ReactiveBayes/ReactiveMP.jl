@@ -194,12 +194,14 @@ end
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
         benchmark_output = joinpath(base_output, "ar_model_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        inputs5, outputs5 = ar_ssm(series, 5)
-        benchmark = @benchmark ar_inference($inputs5, $outputs5, 5, 15)#
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            inputs5, outputs5 = ar_ssm(series, 5)
+            benchmark = @benchmark ar_inference($inputs5, $outputs5, 5, 15)#
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end
@@ -297,12 +299,14 @@ end
         p = plot(p1, p2, p3, layout = @layout([a; b c]))
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark =
-            @benchmark lar_inference($observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ) seconds = 15
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark =
+                @benchmark lar_inference($observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ) seconds = 15
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end
