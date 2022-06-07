@@ -22,7 +22,7 @@ using Rocket, ReactiveMP, GraphPPL
 using Distributions, LinearAlgebra, Parameters, Random, Plots, BenchmarkTools
 ```
 
-Lets generate some synthetic dataset, we use a predefined set of coeffcients for $k$ = 5:
+Let's generate some synthetic dataset, we use a predefined set of coefficients for $k$ = 5:
 
 ```@example ar
 # The following coefficients correspond to stable poles
@@ -67,7 +67,7 @@ states, observations = generate_ar_data(rng, n, real_θ, real_γ, real_τ)
 nothing #hide
 ```
 
-Lets plot our synthetic dataset:
+Let's plot our synthetic dataset:
 
 ```@example ar
 plot(first.(states), label = "Hidden states")
@@ -181,7 +181,7 @@ p3 = plot(fe, label = "Bethe Free Energy")
 plot(p1, p2, p3, layout = @layout([ a; b c ]))
 ```
 
-Lets also plot a subrange of our results:
+Let's also plot a subrange of our results:
 
 ```@example ar
 subrange = div(n,5):(div(n, 5) + div(n, 5))

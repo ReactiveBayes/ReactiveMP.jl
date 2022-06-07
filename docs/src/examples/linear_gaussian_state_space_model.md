@@ -67,7 +67,7 @@ x, y = generate_data(rng, A, B, Q, P)
 nothing #hide
 ```
 
-Lets plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations, which are represented as dots.
+Let's plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations, which are represented as dots.
 
 ```@example lgssm
 slicedim(dim) = (a) -> map(e -> e[dim], a)

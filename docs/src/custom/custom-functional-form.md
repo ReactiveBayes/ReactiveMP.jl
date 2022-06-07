@@ -39,7 +39,7 @@ default_prod_constraint
 
 ### Constrain form, a.k.a `f`
 
-The main function that a custom functional form must implement, which we referred to as `f` in the beginning in this section, is the [`constrain_form`](@ref) function.
+The main function that a custom functional form must implement, which we referred to as `f` in the beginning of this section, is the [`constrain_form`](@ref) function.
 
 ```@docs
 constrain_form

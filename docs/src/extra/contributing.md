@@ -74,7 +74,7 @@ make test
 `ReactiveMP.jl` uses `Makefile` for most common operations:
 
 - `make help`: Shows help snippet
-- `make test`: Run tests, supports extra argumens
+- `make test`: Run tests, supports extra arguments
   - `make test testest="distributions:normal_mean_variance"` would run tests only from `distributions/test_normal_mean_variance.jl`
   - `make test testset="distributions:normal_mean_variance models:lgssm"` would run tests both from `distributions/test_normal_mean_variance.jl` and `models/test_lgssm.jl`
 - `make docs`: Compile documentation
