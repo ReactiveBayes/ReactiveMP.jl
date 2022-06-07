@@ -197,7 +197,7 @@ end
         ## Create output benchmarks (skip if CI)
         if get(ENV, "CI", nothing) != "true"
             inputs5, outputs5 = ar_ssm(series, 5)
-            benchmark = @benchmark ar_inference($inputs5, $outputs5, 5, 15)#
+            benchmark = @benchmark ar_inference($inputs5, $outputs5, 5, 15) seconds = 15#
             open(benchmark_output, "w") do io
                 show(io, MIME("text/plain"), benchmark)
                 versioninfo(io)
@@ -302,7 +302,9 @@ end
         ## Create output benchmarks (skip if CI)
         if get(ENV, "CI", nothing) != "true"
             benchmark =
-                @benchmark lar_inference($observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ) seconds = 15
+                @benchmark lar_inference(
+                    $observations, length($real_θ), Multivariate, ARsafe(), 15, $real_τ
+                ) seconds = 15
             open(benchmark_output, "w") do io
                 show(io, MIME("text/plain"), benchmark)
                 versioninfo(io)
