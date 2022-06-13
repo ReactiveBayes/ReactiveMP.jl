@@ -23,18 +23,16 @@ import ReactiveMP: make_node
     end
 
     @testset "Average energy" begin
-        node = make_node(Poisson)
+        node = ReactiveMP.make_node(Poisson)
         
         for k in 1:100
-            println(score(AverageEnergy(),
-            Poisson,
-            Val{(:out, :l)},
-            (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing))
-            println(entropy(Poisson(k)))
-            @test score(AverageEnergy(),
-            Poisson,
-            Val{(:out, :l)},
-            (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing) ≈ entropy(Poisson(k))
+            @test isapprox(score(AverageEnergy(), Poisson, Val{(:out, :l)},
+            (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing), entropy(Poisson(k)), rtol = 1e-3)
+        end
+    
+        for k in 101:110
+            @test isapprox(score(AverageEnergy(), Poisson, Val{(:out, :l)},
+            (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing), entropy(Poisson(k)), rtol = 1e-1)
         end
     end
 end
