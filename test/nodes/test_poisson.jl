@@ -18,21 +18,23 @@ import ReactiveMP: make_node
         @test metadata(node) === nothing
 
         node = make_node(Poisson, FactorNodeCreationOptions(nothing, 1, nothing))
-        
+
         @test metadata(node) === 1
     end
 
     @testset "Average energy" begin
         node = ReactiveMP.make_node(Poisson)
-        
+
         for k in 1:100
-            @test isapprox(score(AverageEnergy(), Poisson, Val{(:out, :l)},
-            (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing), entropy(Poisson(k)), rtol = 1e-3)
+            @test isapprox(
+                score(AverageEnergy(), Poisson, Val{(:out, :l)},
+                    (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing), entropy(Poisson(k)), rtol = 1e-3)
         end
-    
+
         for k in 101:110
-            @test isapprox(score(AverageEnergy(), Poisson, Val{(:out, :l)},
-            (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing), entropy(Poisson(k)), rtol = 1e-1)
+            @test isapprox(
+                score(AverageEnergy(), Poisson, Val{(:out, :l)},
+                    (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing), entropy(Poisson(k)), rtol = 1e-1)
         end
     end
 end

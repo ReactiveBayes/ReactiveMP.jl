@@ -5,8 +5,7 @@ export Poisson
 # ∑ [λ^k*log(k!)]/k! from k=0 to inf
 # Approximates the above sum for calculation of averageEnergy and differentialEntropy
 # @ref https://arxiv.org/pdf/1708.06394.pdf
-function __approximate_powersum(::Type{R}, l::T, j=100) where {R, T}
-    
+function __approximate_powersum(::Type{R}, l::T, j = 100) where {R, T}
     if l == zero(T)
         return zero(T)
     elseif l > 110
@@ -15,7 +14,7 @@ function __approximate_powersum(::Type{R}, l::T, j=100) where {R, T}
     elseif l < 50 || R === BigFloat # asymptotic, does not work for large `l`
         s = zero(R)
         lk = one(R)
-        for k = 1:j
+        for k in 1:j
             lk *= l
             s += lk * loggamma(k + 1) / gamma(k + 1)
         end
@@ -26,4 +25,4 @@ function __approximate_powersum(::Type{R}, l::T, j=100) where {R, T}
 end
 
 @average_energy Poisson (q_out::Any, q_l::Any) =
-    mean(q_l) - mean(q_out)*mean(log, q_l) + exp(-mean(q_out))*__approximate_powersum(Float64, mean(q_out))
+    mean(q_l) - mean(q_out) * mean(log, q_l) + exp(-mean(q_out)) * __approximate_powersum(Float64, mean(q_out))
