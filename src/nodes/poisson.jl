@@ -20,7 +20,8 @@ function __approximate_powersum(::Type{R}, l::T, j = 100) where {R, T}
         end
         return s
     else
-        return convert(Float64, __approximate_powersum(BigFloat, l, 150))
+        # Try `BigFloat`
+        return convert(T, __approximate_powersum(BigFloat, l, 150))
     end
 end
 
