@@ -1,8 +1,8 @@
 
-@node Uniform Stochastic [ out, (a, aliases = [α, left]), (b, aliases = [β, right])]
+@node Uniform Stochastic [out, (a, aliases = [α, left]), (b, aliases = [β, right])]
 
-prod_analytical_rule(::Type{ <: Uniform }, ::Type{ <: Beta }) = ProdAnalyticalRuleAvailable()
-prod_analytical_rule(::Type{ <: Beta }, ::Type{ <: Uniform }) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Uniform}, ::Type{<:Beta}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Beta}, ::Type{<:Uniform}) = ProdAnalyticalRuleAvailable()
 
 prod(::ProdAnalytical, left::Beta, right::Uniform) = prod(ProdAnalytical(), right, left)
 
