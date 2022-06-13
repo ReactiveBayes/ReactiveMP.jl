@@ -249,48 +249,56 @@ lastindex(::FactorGraphModel, ::AbstractVariable)  = typemax(Int64)
 firstindex(::FactorGraphModel, variables::AbstractVector{<:AbstractVariable}) = firstindex(variables)
 lastindex(::FactorGraphModel, variables::AbstractVector{<:AbstractVariable})  = lastindex(variables)
 
+add!(model::FactorGraphModel, ::Nothing)  = nothing
 add!(vardict::Dict, name::Symbol, entity) = vardict[name] = entity
 
-add!(model::FactorGraphModel, node::AbstractFactorNode)               = begin
+function add!(model::FactorGraphModel, node::AbstractFactorNode)
     push!(model.nodes, node)
     add!(getstats(model), node)
     return node
 end
-add!(model::FactorGraphModel, randomvar::RandomVariable)              = begin
+
+function add!(model::FactorGraphModel, randomvar::RandomVariable)
     push!(model.random, randomvar)
     add!(getvardict(model), name(randomvar), randomvar)
     return randomvar
 end
-add!(model::FactorGraphModel, constvar::ConstVariable)                = begin
+
+function add!(model::FactorGraphModel, constvar::ConstVariable)
     push!(model.constant, constvar)
     add!(getvardict(model), name(constvar), constvar)
     return constvar
 end
-add!(model::FactorGraphModel, datavar::DataVariable)                  = begin
+
+function add!(model::FactorGraphModel, datavar::DataVariable)
     push!(model.data, datavar)
     add!(getvardict(model), name(datavar), datavar)
     return datavar
 end
-add!(model::FactorGraphModel, ::Nothing)                              = nothing
-add!(model::FactorGraphModel, collection::Tuple)                      = begin
+
+function add!(model::FactorGraphModel, collection::Tuple)
     foreach((d) -> add!(model, d), collection)
     return collection
 end
-add!(model::FactorGraphModel, array::AbstractArray)                   = begin
+
+function add!(model::FactorGraphModel, array::AbstractArray)
     foreach((d) -> add!(model, d), array)
     return array
 end
-add!(model::FactorGraphModel, array::AbstractArray{<:RandomVariable}) = begin
+
+function add!(model::FactorGraphModel, array::AbstractArray{<:RandomVariable})
     append!(model.random, array)
     add!(getvardict(model), name(first(array)), array)
     return array
 end
-add!(model::FactorGraphModel, array::AbstractArray{<:ConstVariable})  = begin
+
+function add!(model::FactorGraphModel, array::AbstractArray{<:ConstVariable})
     append!(model.constant, array)
     add!(getvardict(model), name(first(array)), array)
     return array
 end
-add!(model::FactorGraphModel, array::AbstractArray{<:DataVariable})   = begin
+
+function add!(model::FactorGraphModel, array::AbstractArray{<:DataVariable})
     append!(model.data, array)
     add!(getvardict(model), name(first(array)), array)
     return array
