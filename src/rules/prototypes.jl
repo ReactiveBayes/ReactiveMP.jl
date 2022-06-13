@@ -117,3 +117,7 @@ include("bifm/zprev.jl")
 
 include("bifm_helper/in.jl")
 include("bifm_helper/out.jl")
+
+include("poisson/l.jl")
+include("poisson/marginals.jl")
+include("poisson/out.jl")
