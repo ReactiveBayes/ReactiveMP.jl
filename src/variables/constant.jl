@@ -13,42 +13,68 @@ end
 
 Base.show(io::IO, constvar::ConstVariable) = print(io, "ConstVariable(", indexed_name(constvar), ")")
 
+"""
+    constvar()
+
+Any runtime constant passed to a model as a model argument will be automatically converted to a fixed constant in the graph model at runtime. Sometimes it might be useful to create constants by hand (e.g. to avoid copying large matrices across the model and to avoid extensive memory allocations).
+
+Note: `constvar()` function is supposed to be used only within the `@model` macro.
+
+## Example
+
+```julia
+@model function model_name(...)
+    ...
+    c = constvar(1.0)
+
+    for i in 2:n
+        x[i] ~ x[i - 1] + c # Reuse the same reference to a constant 1.0
+    end
+    ...
+end
+```
+    
+"""
+function constvar end
+
 constvar(name::Symbol, constval, collection_type::AbstractVariableCollectionType = VariableIndividual())                 = ConstVariable(name, collection_type, constval, of(Message(constval, true, false)), 0)
 constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollectionType = VariableIndividual())           = constvar(name, PointMass(constval), collection_type)
 constvar(name::Symbol, constval::AbstractVector, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 constvar(name::Symbol, constval::AbstractMatrix, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 
-function constvar(name::Symbol, fn::Function, dims::Tuple)
-    return constvar(name, fn, dims...)
-end
+constvar(name::Symbol, fn::Function, dims::Vararg{Int}) = constvar(name, fn, dims)
 
 function constvar(name::Symbol, fn::Function, length::Int)
-    vars = Vector{ConstVariable}(undef, length)
-    @inbounds for i in 1:length
-        vars[i] = constvar(name, fn(i), VariableVector(i))
-    end
-    return vars
+    return map(i -> constvar(name, fn(i), VariableVector(i)), 1:length)
 end
 
-function constvar(name::Symbol, fn::Function, dims::Vararg{Int})
-    vars = Array{ConstVariable}(undef, dims)
-    @inbounds for i in CartesianIndices(axes(vars))
-        vars[i] = constvar(name, fn(convert(Tuple, i)), VariableArray(i))
-    end
-    return vars
+function constvar(name::Symbol, fn::Function, dims::Tuple)
+    indices = CartesianIndices(dims)
+    size    = axes(indices)
+    return map(i -> constvar(name, fn(convert(Tuple, i)), VariableArray(size, i)), indices)
 end
 
 degree(constvar::ConstVariable)          = nconnected(constvar)
 name(constvar::ConstVariable)            = constvar.name
+proxy_variables(constvar::ConstVariable) = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
+
+isproxy(::ConstVariable) = false
+
+israndom(::ConstVariable)                  = false
+israndom(::AbstractArray{<:ConstVariable}) = false
+isdata(::ConstVariable)                    = false
+isdata(::AbstractArray{<:ConstVariable})   = false
+isconst(::ConstVariable)                   = true
+isconst(::AbstractArray{<:ConstVariable})  = true
 
 Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constvar), index)
 
 isconnected(constvar::ConstVariable) = constvar.nconnected !== 0
 nconnected(constvar::ConstVariable)  = constvar.nconnected
 
-getconst(constvar::ConstVariable{ <: PointMass }) = getpointmass(constvar.constant)
-getconst(constvar::ConstVariable)                 = constvar.constant
+getconst(constvar::ConstVariable{<:PointMass}) = getpointmass(constvar.constant)
+getconst(constvar::ConstVariable)              = constvar.constant
 
 getlastindex(::ConstVariable) = 1
 
@@ -62,11 +88,13 @@ _setmarginal!(::ConstVariable, observable) = error("It is not possible to set a 
 _makemarginal(::ConstVariable)             = error("It is not possible to make marginal stream for `ConstVariable`")
 
 # For _getmarginal
-function Rocket.getrecent(observable::SingleObservable{ <: Marginal })
+function Rocket.getrecent(observable::SingleObservable{<:Marginal})
     return observable.value
 end
 
-function setmessagein!(constvar::ConstVariable, ::Int, messagein) 
+setanonymous!(::ConstVariable, ::Bool) = nothing
+
+function setmessagein!(constvar::ConstVariable, ::Int, messagein)
     constvar.nconnected += 1
     return nothing
 end

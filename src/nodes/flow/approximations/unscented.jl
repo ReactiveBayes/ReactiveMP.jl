@@ -1,23 +1,23 @@
 export Unscented
 
-struct Unscented <: AbstractNonLinearApproximation 
-    L   :: Int64
-    α   :: Float64
-    β   :: Float64
-    κ   :: Float64
-    λ   :: Float64
-    Wm  :: Vector{Float64}
-    Wc  :: Vector{Float64}
+struct Unscented <: AbstractNonLinearApproximation
+    L  :: Int64
+    α  :: Float64
+    β  :: Float64
+    κ  :: Float64
+    λ  :: Float64
+    Wm :: Vector{Float64}
+    Wc :: Vector{Float64}
 end
 
-function Unscented(dim::Int64; α::Float64=1e-3, β::Float64=2.0, κ::Float64=0.0)
-    λ = α^2*(dim + κ) - dim
-    Wm = ones(2*dim + 1)
-    Wc = ones(2*dim + 1)
-    Wm ./= (2*(dim+λ))
-    Wc ./= (2*(dim+λ))
-    Wm[1] = λ/(dim+λ)
-    Wc[1] = λ/(dim+λ) + (1 - α^2 + β)
+function Unscented(dim::Int64; α::Float64 = 1e-3, β::Float64 = 2.0, κ::Float64 = 0.0)
+    λ = α^2 * (dim + κ) - dim
+    Wm = ones(2 * dim + 1)
+    Wc = ones(2 * dim + 1)
+    Wm ./= (2 * (dim + λ))
+    Wc ./= (2 * (dim + λ))
+    Wm[1] = λ / (dim + λ)
+    Wc[1] = λ / (dim + λ) + (1 - α^2 + β)
     return Unscented(dim, α, β, κ, λ, Wm, Wc)
 end
 

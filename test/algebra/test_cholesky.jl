@@ -1,20 +1,19 @@
 module AlgebraCholeskyTest
 
 using Test
-using ReactiveMP 
+using ReactiveMP
 using Random
 
 using LinearAlgebra
 
 @testset "Helpers" begin
-
-    @testset "cholesky related" begin 
+    @testset "cholesky related" begin
         rng = MersenneTwister(1234)
 
         for size in (2, 3, 4, 5, 10, 100, 1000)
             L = rand(rng, size, size)
             A = L * L'
-            
+
             @test LinearAlgebra.cholesky(A).L ≈ ReactiveMP.fastcholesky(A).L
             @test inv(LinearAlgebra.cholesky(A)) ≈ inv(ReactiveMP.fastcholesky(A))
             @test inv(LinearAlgebra.cholesky(A)) ≈ ReactiveMP.cholinv(A)
@@ -40,10 +39,7 @@ using LinearAlgebra
             @test logdet(A) ≈ ReactiveMP.chollogdet(A)
             @test all((inv(A), logdet(A)) .≈ ReactiveMP.cholinv_logdet(A))
         end
-
-
     end
-    
 end
 
 end

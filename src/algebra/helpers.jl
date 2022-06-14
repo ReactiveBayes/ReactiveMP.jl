@@ -6,10 +6,10 @@ using LoopVectorization
 
 import LinearAlgebra
 
-diageye(::Type{T}, n::Int) where { T <: Real } = Matrix{T}(I, n, n)
-diageye(n::Int)                                = diageye(Float64, n)
+diageye(::Type{T}, n::Int) where {T <: Real} = Matrix{T}(I, n, n)
+diageye(n::Int)                              = diageye(Float64, n)
 
-function normalize_sum(x::Array{Float64,1}) 
+function normalize_sum(x::Array{Float64, 1})
     x ./ sum(x)
 end
 
@@ -54,8 +54,8 @@ See also: [`negate_inplace!`](@ref)
 function mul_inplace! end
 
 mul_inplace!(alpha, A::AbstractArray) = alpha * A
-mul_inplace!(alpha, A::Real)          = alpha * A
-mul_inplace!(alpha::T, A::Array{T}) where { T <: Real } = lmul!(alpha, A)
+mul_inplace!(alpha, A::Real) = alpha * A
+mul_inplace!(alpha::T, A::Array{T}) where {T <: Real} = lmul!(alpha, A)
 
 """
     rank1update(A, x)
@@ -71,11 +71,25 @@ rank1update(A::AbstractMatrix, x::AbstractVector, y::AbstractVector) = rank1upda
 rank1update(A::Real, x::Real)          = rank1update(A, x, x)
 rank1update(A::Real, x::Real, y::Real) = A + x * y
 
-function rank1update(::Type{ T }, ::Type{ T }, ::Type{T}, A::Matrix, x::Vector, y::Vector) where { T <: LinearAlgebra.BlasFloat } 
+function rank1update(
+    ::Type{T},
+    ::Type{T},
+    ::Type{T},
+    A::Matrix,
+    x::Vector,
+    y::Vector
+) where {T <: LinearAlgebra.BlasFloat}
     return LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
 end
 
-function rank1update(::Type{ T1 }, ::Type{ T2 }, ::Type{ T3 }, A::AbstractMatrix, x::AbstractVector, y::AbstractVector) where { T1 <: Real, T2 <: Real, T3 <: Real }
+function rank1update(
+    ::Type{T1},
+    ::Type{T2},
+    ::Type{T3},
+    A::AbstractMatrix,
+    x::AbstractVector,
+    y::AbstractVector
+) where {T1 <: Real, T2 <: Real, T3 <: Real}
     T = promote_type(T1, T2, T3)
     B = Matrix{T}(undef, size(A))
     return rank1update!(B, A, x, y)
@@ -86,7 +100,7 @@ function rank1update!(B::AbstractMatrix, A::AbstractMatrix, x::AbstractVector, y
     @inbounds for k2 in 1:sz[2]
         yk2 = y[k2]
         @inbounds for k1 in 1:sz[1]
-            B[k1,k2] = A[k1,k2] + x[k1] * yk2
+            B[k1, k2] = A[k1, k2] + x[k1] * yk2
         end
     end
     return B
@@ -114,7 +128,6 @@ function mul_trace(A::AbstractMatrix, B::AbstractMatrix)
     return result
 end
 
-
 """
     v_a_vT(v, a)
 
@@ -128,7 +141,7 @@ function v_a_vT(v::AbstractVector, a::Real)
 end
 
 function v_a_vT(v, a)
-    result = v*v'
+    result = v * v'
     result *= a
     return result
 end
@@ -146,7 +159,7 @@ function v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector)
 end
 
 function v_a_vT(v1, a, v2)
-    result = v1*v2'
+    result = v1 * v2'
     result *= a
     return result
 end

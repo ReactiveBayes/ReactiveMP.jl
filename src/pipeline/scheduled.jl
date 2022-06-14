@@ -13,33 +13,34 @@ Applies the `schedule_on()` operator from `Rocket.jl` library to the given pipel
 See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`EmptyPipelineStage`](@ref), [`CompositePipelineStage`](@ref)
 """
 struct ScheduleOnPipelineStage{S} <: AbstractPipelineStage
-    scheduler :: S
+    scheduler::S
 end
 
 apply_pipeline_stage(stage::ScheduleOnPipelineStage, factornode, tag, stream) = stream |> schedule_on(stage.scheduler)
 
-Rocket.release!(stage::ScheduleOnPipelineStage)                        = release!(stage.scheduler)
-Rocket.release!(stages::NTuple{N, <: ScheduleOnPipelineStage}) where N = foreach(release!, stages)
-Rocket.release!(stages::AbstractArray{ <: ScheduleOnPipelineStage })   = foreach(release!, stages)
+Rocket.release!(stage::ScheduleOnPipelineStage)                         = release!(stage.scheduler)
+Rocket.release!(stages::NTuple{N, <:ScheduleOnPipelineStage}) where {N} = foreach(release!, stages)
+Rocket.release!(stages::AbstractArray{<:ScheduleOnPipelineStage})       = foreach(release!, stages)
 
-update!(stage::ScheduleOnPipelineStage)                        = release!(stage.scheduler)
-update!(stages::NTuple{N, <: ScheduleOnPipelineStage}) where N = foreach(update!, stages)
-update!(stages::AbstractArray{ <: ScheduleOnPipelineStage })   = foreach(update!, stages)
+update!(stage::ScheduleOnPipelineStage)                         = release!(stage.scheduler)
+update!(stages::NTuple{N, <:ScheduleOnPipelineStage}) where {N} = foreach(update!, stages)
+update!(stages::AbstractArray{<:ScheduleOnPipelineStage})       = foreach(update!, stages)
 
 function _schedule_updates end
 
-__schedule_updates(var::AbstractVariable)                         = __schedule_updates((var, ))
-__schedule_updates(vars::NTuple{N, <: AbstractVariable }) where N = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
-__schedule_updates(vars::AbstractArray{ <: AbstractVariable })    = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
+__schedule_updates(var::AbstractVariable)                         = __schedule_updates((var,))
+__schedule_updates(vars::NTuple{N, <:AbstractVariable}) where {N} = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
+__schedule_updates(vars::AbstractArray{<:AbstractVariable})       = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
 
-__schedule_updates(pipeline_stage::ScheduleOnPipelineStage, var::AbstractVariable) = __schedule_updates(pipeline_stage, (var, ))
+__schedule_updates(pipeline_stage::ScheduleOnPipelineStage, var::AbstractVariable) =
+    __schedule_updates(pipeline_stage, (var,))
 
-function __schedule_updates(pipeline_stage::ScheduleOnPipelineStage, vars::NTuple{N, <: AbstractVariable }) where N
+function __schedule_updates(pipeline_stage::ScheduleOnPipelineStage, vars::NTuple{N, <:AbstractVariable}) where {N}
     foreach((v) -> add_pipeline_stage!(v, pipeline_stage), vars)
     return pipeline_stage
 end
 
-function __schedule_updates(pipeline_stage::ScheduleOnPipelineStage, vars::AbstractArray{ <: AbstractVariable })
+function __schedule_updates(pipeline_stage::ScheduleOnPipelineStage, vars::AbstractArray{<:AbstractVariable})
     foreach((v) -> add_pipeline_stage!(v, pipeline_stage), vars)
     return pipeline_stage
 end
@@ -52,6 +53,6 @@ Returns a scheduler with `release!` method available to release all scheduled up
 
 See also: [`ScheduleOnPipelineStage`](@ref), [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref)
 """
-function schedule_updates(args...; pipeline_stage = ScheduleOnPipelineStage(PendingScheduler())) 
+function schedule_updates(args...; pipeline_stage = ScheduleOnPipelineStage(PendingScheduler()))
     return map((arg) -> __schedule_updates(pipeline_stage, arg), args)
 end

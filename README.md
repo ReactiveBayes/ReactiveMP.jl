@@ -1,8 +1,8 @@
 # ReactiveMP.jl
 
-| **Documentation**                                                         | **Build Status**                 | **Build Status**                   | **Zenodo DOI**                   |
-|:-------------------------------------------------------------------------:|:--------------------------------:|:----------------------------------:|:--------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![DOI][ci-img]][ci-url]         | [![DOI][codecov-img]][codecov-url] | [![DOI][zenodo-img]][zenodo-url] |
+| **Documentation**                                                         | **Build Status**                 | **Coverage**                       | **Zenodo DOI**                   | **Pkg Eval**   |
+|:-------------------------------------------------------------------------:|:--------------------------------:|:----------------------------------:|:--------------------------------:|:--------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![DOI][ci-img]][ci-url]         | [![DOI][codecov-img]][codecov-url] | [![DOI][zenodo-img]][zenodo-url] | [![PkgEval][pkgeval-img]][pkgeval-url] |
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://biaslab.github.io/ReactiveMP.jl/dev
@@ -18,6 +18,9 @@
 
 [zenodo-img]: https://zenodo.org/badge/229773785.svg
 [zenodo-url]: https://zenodo.org/badge/latestdoi/229773785
+
+[pkgeval-img]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/R/ReactiveMP.svg
+[pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/R/ReactiveMP.html
 
 ReactiveMP.jl is a Julia package for automatic Bayesian inference on a factor graph with reactive message passing.
 
@@ -63,13 +66,13 @@ Here we show a simple example of how to use ReactiveMP.jl for Bayesian inference
 
 Let's start by creating some dataset. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
 
-First lets setup our environment by importing all needed packages:
+First let's setup our environment by importing all needed packages:
 
 ```julia
 using Rocket, GraphPPL, ReactiveMP, Distributions, Random
 ```
 
-Next, lets define our dataset:
+Next, let's define our dataset:
 
 ```julia
 n = 500  # Number of coin flips
@@ -141,7 +144,16 @@ As you can see, `GraphPPL` offers a model specification syntax that resembles cl
 
 ### Inference specification
 
-Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this, we need to specify inference procedure. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with statis datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
+Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this we can use a generic `inference` function from `ReactiveMP.jl` that supports static datasets.
+
+```julia
+result = inference(
+    model = Model(coin_model, length(data)),
+    data  = (y = data, )
+)
+```
+
+There is a way to manually specify an inference procedure for advanced use-cases. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with static datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
 
 1. Return variables of interests from model specification
 2. Subscribe on variables of interests posterior marginal updates
@@ -151,7 +163,7 @@ Once we have defined our model, the next step is to use `ReactiveMP` API to infe
 Here is an example of inference procedure:
 
 ```julia
-function inference(data)
+function custom_inference(data)
     n = length(data)
 
     # `coin_model` function from `@model` macro returns a reference to 
@@ -185,7 +197,7 @@ end
 Here after everything is ready we just call our `inference` function to get a posterior marginal distribution over `θ` parameter in the model.
 
 ```julia
-θestimated = inference(dataset)
+θestimated = custom_inference(dataset)
 ```
 
 ![Coin Flip](docs/src/assets/img/coin-flip.svg?raw=true&sanitize=true "ReactiveMP.jl Benchmark")

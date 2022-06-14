@@ -57,8 +57,8 @@ One of the correction strategies for `correction!` function. Adds fixed `v` term
 
 See also: [`correction!`](@ref), [`NoCorrection`](@ref), [`TinyCorrection`](@ref), [`ClampEigenValuesCorrection`](@ref)
 """
-struct FixedCorrection{T} <: AbstractCorrection 
-    v :: T
+struct FixedCorrection{T} <: AbstractCorrection
+    v::T
 end
 
 correction!(correction::FixedCorrection, value::Real) = clamp(value, correction.v, Inf)
@@ -83,7 +83,7 @@ One of the correction strategies for `correction!` function. Clamps eigen values
 See also: [`correction!`](@ref), [`NoCorrection`](@ref), [`FixedCorrection`](@ref), [`TinyCorrection`](@ref)
 """
 struct ClampEigenValuesCorrection{T} <: AbstractCorrection
-    v :: T
+    v::T
 end
 
 correction!(correction::ClampEigenValuesCorrection, value::Real) = clamp(value, correction.v, Inf)
@@ -99,4 +99,3 @@ function correction!(correction::ClampEigenValuesCorrection, matrix::AbstractMat
 
     return M
 end
-

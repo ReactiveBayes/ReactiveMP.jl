@@ -1,11 +1,13 @@
 export ProdAnalyticalRuleAvailable, ProdAnalyticalRuleUnknown
-export prod_analytical_rule
+export prod_analytical_rule, resolve_prod_constraint
 
 import Base: show, prod
 import Distributions
 
 struct ProdAnalyticalRuleAvailable end
 struct ProdAnalyticalRuleUnknown end
+
+abstract type AbstractProdConstraint end
 
 """
     prod_analytical_rule(::Type, ::Type)
@@ -16,3 +18,12 @@ Returns `ProdAnalyticalRuleUnknown` by default.
 See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
 """
 prod_analytical_rule(::Type, ::Type) = ProdAnalyticalRuleUnknown()
+
+"""
+    resolve_prod_constraint(left, right)
+
+Given two product constraints returns a single one that has a higher priority (if possible).
+
+See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
+"""
+function resolve_prod_constraint end
