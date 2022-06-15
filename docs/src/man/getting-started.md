@@ -87,6 +87,8 @@ Now let's see how to specify this model using GraphPPL's package syntax.
     
     # We endow θ parameter of our model with some prior
     θ ~ Beta(2.0, 7.0)
+    # or, in this particular case, the `Uniform(0.0, 1.0)` prior also works:
+    # θ ~ Uniform(0.0, 1.0)
     
     # We assume that outcome of each coin flip is governed by the Bernoulli distribution
     for i in 1:n

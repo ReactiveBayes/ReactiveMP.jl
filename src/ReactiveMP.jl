@@ -88,6 +88,7 @@ include("score/node.jl")
 
 # Stochastic nodes
 include("nodes/uninformative.jl")
+include("nodes/uniform.jl")
 include("nodes/normal_mean_variance.jl")
 include("nodes/normal_mean_precision.jl")
 include("nodes/mv_normal_mean_covariance.jl")

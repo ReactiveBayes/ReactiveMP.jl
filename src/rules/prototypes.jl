@@ -1,6 +1,8 @@
 
 include("uninformative/out.jl")
 
+include("uniform/out.jl")
+
 include("addition/marginals.jl")
 include("addition/out.jl")
 include("addition/in1.jl")

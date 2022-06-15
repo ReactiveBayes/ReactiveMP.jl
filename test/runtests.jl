@@ -145,6 +145,8 @@ end
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
 
+    addtests("rules/uniform/test_out.jl")
+
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")
     addtests("rules/flow/test_out.jl")
