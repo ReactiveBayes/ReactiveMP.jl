@@ -2,6 +2,7 @@ module ReactiveMPNodeTest
 
 using Test
 using ReactiveMP
+using Distributions
 
 @testset "FactorNode" begin
     @testset "Common" begin
@@ -150,6 +151,29 @@ using ReactiveMP
         @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [out]), in, x]))
         @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [1]), in, x]))
         @test_throws Exception eval(:(@node DummyStruct Stochastic []))
+    end
+
+    @testset "sdtype of an arbitrary distribution is Stochastic" begin
+        struct DummyDistribution <: Distribution{Univariate, Continuous} end
+
+        @test sdtype(DummyDistribution) === Stochastic()
+    end
+
+    @testset "make_node throws on Unknown distribution type" begin
+        struct DummyDistribution <: Distribution{Univariate, Continuous} end
+
+        @test_throws ErrorException ReactiveMP.make_node(
+            FactorGraphModel(),
+            FactorNodeCreationOptions(),
+            DummyDistribution,
+            AutoVar(:θ)
+        )
+        @test_throws ErrorException ReactiveMP.make_node(
+            FactorGraphModel(),
+            FactorNodeCreationOptions(),
+            DummyDistribution,
+            randomvar(:θ)
+        )
     end
 end
 
