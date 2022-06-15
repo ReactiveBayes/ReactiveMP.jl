@@ -108,10 +108,11 @@ See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@re
 """
 function sdtype end
 
-# Any `Type` is considered to be a deterministic mapping unless stated otherwise
+# Any `Type` is considered to be a deterministic mapping unless stated otherwise (By convention, any `Distribution` type is not deterministic)
 # E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
-sdtype(::Type{T}) where {T} = Deterministic()
-sdtype(::Function)          = Deterministic()
+sdtype(::Type{T}) where {T}    = Deterministic()
+sdtype(::Type{<:Distribution}) = Stochastic()
+sdtype(::Function)             = Deterministic()
 
 """
     as_node_symbol(type)
@@ -804,8 +805,16 @@ function interface_get_name(::Type{Val{Node}}, ::Type{Val{Interface}}) where {No
     error("Node $Node has no interface named $Interface")
 end
 
-make_node(fform, args::Vararg{<:AbstractVariable})                                     = make_node(fform, FactorNodeCreationOptions(), args...)
-make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable}) = error("Unknown functional form '$(fform)' used for node specification.")
+make_node(fform, args::Vararg{<:AbstractVariable}) = make_node(fform, FactorNodeCreationOptions(), args...)
+
+function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
+    error(
+        """
+        `$(fform)` is not available as a node in the inference engine. Used in `$(name(first(args))) ~ $(fform)(...)` expression.
+        Use `@node` macro to add a custom factor node corresponding to `$(fform)`. See `@node` macro for additional documentation and examples.
+        """
+    )
+end
 
 # end
 
