@@ -42,7 +42,6 @@ import ReactiveMP: make_node
                 score(AverageEnergy(), Poisson, Val{(:out, :l)},
                     (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing), entropy(Poisson(k)), rtol = 1e-1)
         end
-        
     end
 end
 end
