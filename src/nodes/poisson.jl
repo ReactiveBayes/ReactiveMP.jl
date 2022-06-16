@@ -27,3 +27,6 @@ end
 
 @average_energy Poisson (q_out::Any, q_l::Any) =
     mean(q_l) - mean(q_out) * mean(log, q_l) + exp(-mean(q_out)) * __approximate_powersum(Float64, mean(q_out))
+
+@average_energy Poisson (q_out::PointMass, q_l::Any) =
+    mean(q_l) - mean(q_out) * mean(log, q_l) + mapreduce(log, +, (1:mean(q_out)))
