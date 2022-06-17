@@ -143,9 +143,9 @@ using Distributions
 
         # Check that same variables are not allowed
 
-        struct DummyNodeCheckUniqueness end 
+        struct DummyNodeCheckUniqueness end
 
-        @node DummyNodeCheckUniqueness Stochastic [ a, b, c ]
+        @node DummyNodeCheckUniqueness Stochastic [a, b, c]
 
         sx = randomvar(:rx)
         sd = datavar(:rd, Float64)

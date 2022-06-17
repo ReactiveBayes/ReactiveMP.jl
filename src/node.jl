@@ -890,16 +890,18 @@ macro node(fformtype, sdtype, interfaces_list)
 
     # Check that all arguments within interface refer to the unique var objects
     non_unique_error_sym = gensym(:non_unique_error_sym)
-    non_unique_error_msg = :($non_unique_error_sym = (fformtype, names) -> 
-        """
-        Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed. 
-        Check creation of the `$(fformtype)` with the `[ $(join(names, ", ")) ]` arguments.
-        """
+    non_unique_error_msg = :(
+        $non_unique_error_sym =
+            (fformtype, names) ->
+                """
+                Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed. 
+                Check creation of the `$(fformtype)` with the `[ $(join(names, ", ")) ]` arguments.
+                """
     )
     interface_uniqueness = map(enumerate(names)) do (index, name)
         names_without_current = skipindex(names, index)
         return quote
-            if $(name) in ($(names_without_current...), )
+            if $(name) in ($(names_without_current...),)
                 error($(non_unique_error_sym)($fformtype, $names_indexed))
             end
         end
