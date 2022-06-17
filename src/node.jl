@@ -883,9 +883,27 @@ macro node(fformtype, sdtype, interfaces_list)
     names_quoted_tuple     = Expr(:tuple, map(name -> Expr(:quote, name), names)...)
     names_indices          = Expr(:tuple, map(i -> i, 1:length(names))...)
     names_splitted_indices = Expr(:tuple, map(i -> Expr(:tuple, i), 1:length(names))...)
+    names_indexed          = Expr(:tuple, map(name -> Expr(:call, :(ReactiveMP.indexed_name), name), names)...)
 
     interface_args        = map(name -> :($name::AbstractVariable), names)
     interface_connections = map(name -> :(ReactiveMP.connect!(node, $(Expr(:quote, name)), $name)), names)
+
+    # Check that all arguments within interface refer to the unique var objects
+    non_unique_error_sym = gensym(:non_unique_error_sym)
+    non_unique_error_msg = :($non_unique_error_sym = (fformtype, names) -> 
+        """
+        Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed. 
+        Check creation of the `$(fformtype)` with the `[ $(join(names, ", ")) ]` arguments.
+        """
+    )
+    interface_uniqueness = map(enumerate(names)) do (index, name)
+        names_without_current = skipindex(names, index)
+        return quote
+            if $(name) in ($(names_without_current...), )
+                error($(non_unique_error_sym)($fformtype, $names_indexed))
+            end
+        end
+    end
 
     # Here we create helpers function for GraphPPL.jl interfacing
     # They are used to convert interface names from `where { q = q(x, y)q(z) }` to an equivalent tuple respresentation, e.g. `((1, 2), (3, ))`
@@ -965,6 +983,8 @@ macro node(fformtype, sdtype, interfaces_list)
 
         function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions, $(interface_args...))
             node = ReactiveMP.make_node($fbottomtype, options)
+            $(non_unique_error_msg)
+            $(interface_uniqueness...)
             $(interface_connections...)
             return node
         end

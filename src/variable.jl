@@ -163,7 +163,7 @@ resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyChecked, p
 
 ## Helper functions
 
-as_variable(x)                   = constvar(gensym(:as_var), x)
+as_variable(x)                   = constvar(gensym(:constvar), x)
 as_variable(v::AbstractVariable) = v
 as_variable(t::Tuple)            = map(as_variable, t)
 

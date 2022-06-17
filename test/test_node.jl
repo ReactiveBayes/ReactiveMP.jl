@@ -141,6 +141,25 @@ using Distributions
         @test snode === nothing
         @test typeof(svar) <: ConstVariable
 
+        # Check that same variables are not allowed
+
+        struct DummyNodeCheckUniqueness end 
+
+        @node DummyNodeCheckUniqueness Stochastic [ a, b, c ]
+
+        sx = randomvar(:rx)
+        sd = datavar(:rd, Float64)
+        sc = constvar(:sc, 1.0)
+
+        vs = (sx, sd, sc)
+
+        for a in vs, b in vs, c in vs
+            input = (a, b, c)
+            if length(input) != length(Set(input))
+                @test_throws ErrorException make_node(DummyNodeCheckUniqueness, FactorNodeCreationOptions(), a, b, c)
+            end
+        end
+
         # Testing expected exceptions
 
         struct DummyStruct end
