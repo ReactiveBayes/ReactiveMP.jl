@@ -901,8 +901,8 @@ macro node(fformtype, sdtype, interfaces_list)
     interface_uniqueness = map(enumerate(names)) do (index, name)
         names_without_current = skipindex(names, index)
         return quote
-            if $(name) in ($(names_without_current...),)
-                error($(non_unique_error_sym)($fformtype, $names_indexed))
+            if Base.in($(name), ($(names_without_current...),))
+                Base.error($(non_unique_error_sym)($fformtype, $names_indexed))
             end
         end
     end
@@ -977,8 +977,8 @@ macro node(fformtype, sdtype, interfaces_list)
             return ReactiveMP.FactorNode(
                 $fbottomtype,
                 $names_quoted_tuple,
-                ReactiveMP.collect_factorisation($fbottomtype, factorisation(options)),
-                ReactiveMP.collect_meta($fbottomtype, metadata(options)),
+                ReactiveMP.collect_factorisation($fbottomtype, ReactiveMP.factorisation(options)),
+                ReactiveMP.collect_meta($fbottomtype, ReactiveMP.metadata(options)),
                 ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options))
             )
         end
