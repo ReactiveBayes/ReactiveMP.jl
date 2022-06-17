@@ -16,6 +16,16 @@ Install `ReactiveMP` through the Julia package manager:
 !!! note
     For best user experience you also need to install `GraphPPL`, `Rocket` and `Distributions` packages.
 
+## Importing ReactiveMP
+
+To add `ReactiveMP` package (and all associated packages) into a running Julia session simply run:
+
+```julia
+using ReactiveMP, Rocket, GraphPPL, Distributions
+```
+
+Read more about about `using` in the [Using methods from ReactiveMP](@ref lib-using-methods) section of the documentation.
+
 ## Example: Inferring the bias of a coin
 The `ReactiveMP` approach to solving inference problems consists of three phases:
 
