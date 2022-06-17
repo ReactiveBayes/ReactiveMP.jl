@@ -113,6 +113,7 @@ include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/flow/flow.jl")
+include("nodes/poisson.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
