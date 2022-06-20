@@ -95,6 +95,7 @@ end
     addtests("algebra/test_permutation_matrix.jl")
     addtests("algebra/test_standard_basis_vector.jl")
 
+    addtests("test_model.jl")
     addtests("test_math.jl")
     addtests("test_helpers.jl")
 
