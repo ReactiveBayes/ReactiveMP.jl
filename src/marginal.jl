@@ -102,6 +102,9 @@ Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.s
 Rocket.getrecent(observables::Tuple)             = Rocket.getrecent.(observables)
 Rocket.getrecent(::Nothing)                      = nothing
 
+# todo add this method to Rocket.jl
+Rocket.getrecent(observable::Rocket.CombineLatestUpdatesObservable) = getrecent(observable.sources)
+
 @inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(observable.stream, actor)
 
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{<:Marginal})           = Rocket.on_subscribe!(observable.stream, actor)
