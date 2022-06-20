@@ -37,7 +37,6 @@ import ReactiveMP: mirrorlog
         @test mean(mirrorlog, Beta(0.1, 0.3)) ≈ -0.9411396776150167
         @test mean(mirrorlog, Beta(4.5, 0.3)) ≈ -4.963371962929249
     end
-
 end
 
 end

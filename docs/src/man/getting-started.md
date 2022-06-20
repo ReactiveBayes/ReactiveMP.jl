@@ -16,23 +16,33 @@ Install `ReactiveMP` through the Julia package manager:
 !!! note
     For best user experience you also need to install `GraphPPL`, `Rocket` and `Distributions` packages.
 
+## Importing ReactiveMP
+
+To add `ReactiveMP` package (and all associated packages) into a running Julia session simply run:
+
+```julia
+using ReactiveMP, Rocket, GraphPPL, Distributions
+```
+
+Read more about about `using` in the [Using methods from ReactiveMP](@ref lib-using-methods) section of the documentation.
+
 ## Example: Inferring the bias of a coin
 The `ReactiveMP` approach to solving inference problems consists of three phases:
 
-1. [Model specification](@ref): `ReactiveMP` uses `GraphPPL` package for model specification part. It offers a domain-specific language to specify your probabilistic model.
-2. [Inference specification](@ref): `ReactiveMP` inference API has been designed to be as flexible as possible and it is compatible both with asynchronous infinite data streams and with static datasets. For most of the use cases it consists of the same simple building blocks. In this example we will show one of the many possible ways to infer your quantities of interest.
-3. [Inference execution](@ref): Given model specification and inference procedure it is pretty straightforward to use reactive API from `Rocket` to pass data to the inference backend and to run actual inference.
+1. [Model specification](@ref getting-started-model-specification): `ReactiveMP` uses `GraphPPL` package for model specification part. It offers a domain-specific language to specify your probabilistic model.
+2. [Inference specification](@ref getting-started-inference-specification): `ReactiveMP` inference API has been designed to be as flexible as possible and it is compatible both with asynchronous infinite data streams and with static datasets. For most of the use cases it consists of the same simple building blocks. In this example we will show one of the many possible ways to infer your quantities of interest.
+3. [Inference execution](@ref getting-started-inference-execution): Given model specification and inference procedure it is pretty straightforward to use reactive API from `Rocket` to pass data to the inference backend and to run actual inference.
 
 ### Coin flip simulation
 Let's start by creating some dataset. One approach could be flipping a coin N times and recording each outcome. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
 
-First lets setup our environment by importing all needed packages:
+First let's setup our environment by importing all needed packages:
 
 ```@example coin
 using Rocket, GraphPPL, ReactiveMP, Distributions, Random
 ```
 
-Next, lets define our dataset:
+Next, let's define our dataset:
 
 ```@example coin
 rng = MersenneTwister(42)
@@ -43,7 +53,7 @@ distribution = Bernoulli(p)
 dataset = float.(rand(rng, Bernoulli(p), n))
 ```
 
-### Model specification
+### [Model specification](@id getting-started-model-specification)
 
 In a Bayesian setting, the next step is to specify our probabilistic model. This amounts to specifying the joint probability of the random variables of the system.
 
@@ -87,6 +97,8 @@ Now let's see how to specify this model using GraphPPL's package syntax.
     
     # We endow θ parameter of our model with some prior
     θ ~ Beta(2.0, 7.0)
+    # or, in this particular case, the `Uniform(0.0, 1.0)` prior also works:
+    # θ ~ Uniform(0.0, 1.0)
     
     # We assume that outcome of each coin flip is governed by the Bernoulli distribution
     for i in 1:n
@@ -102,9 +114,37 @@ end
 
 As you can see, `GraphPPL` offers a model specification syntax that resembles closely to the mathematical equations defined above. We use `datavar` function to create "clamped" variables that take specific values at a later date. `θ ~ Beta(2.0, 7.0)` expression creates random variable `θ` and assigns it as an output of `Beta` node in the corresponding FFG. 
 
-### Inference specification
+!!! note
+    To quickly check the list of all available factor nodes that can be used in the model specification language call `?make_node` or `Base.doc(make_node)`.
 
-Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this, we need to specify inference procedure. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with static datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
+### [Inference specification](@id getting-started-inference-specification)
+
+#### Automatic inference specification
+
+Once we have defined our model, the next step is to use `ReactiveMP` API to infer quantities of interests. To do this we can use a generic `inference` function from `ReactiveMP.jl` that supports static datasets.
+
+```@example coin 
+result = inference(
+    model = Model(coin_model, length(dataset)),
+    data  = (y = dataset, )
+)
+```
+
+```@example coin 
+θestimated = last(result.posteriors[:θ])
+```
+
+```@example coin
+println("mean: ", mean(θestimated))
+println("std:  ", std(θestimated))
+nothing #hide
+```
+
+Read more information about the `inference` function in the [Inference execution](@ref user-guide-inference-execution-automatic-specification) and [Advanced Tutorial](@ref user-guide-advanced-tutorial) sections.
+
+#### Manual inference specification
+
+There is a way to manually specify an inference procedure for advanced use-cases. `ReactiveMP` API is flexible in terms of inference specification and is compatible both with real-time inference processing and with static datasets. In most of the cases for static datasets, as in our example, it consists of same basic building blocks:
 
 1. Return variables of interests from model specification
 2. Subscribe on variables of interests posterior marginal updates
@@ -114,7 +154,7 @@ Once we have defined our model, the next step is to use `ReactiveMP` API to infe
 Here is an example of inference procedure:
 
 ```@example coin 
-function inference(data)
+function custom_inference(data)
     n = length(data)
 
     # `coin_model` function from `@model` macro returns a reference to the model object and 
@@ -141,12 +181,12 @@ function inference(data)
 end
 ```
 
-### Inference execution
+### [Inference execution](@id getting-started-inference-execution)
 
 Here after everything is ready we just call our `inference` function to get a posterior marginal distribution over `θ` parameter in the model.
 
 ```@example coin
-θestimated = inference(dataset)
+θestimated = custom_inference(dataset)
 ```
 
 ```@example coin
@@ -176,9 +216,9 @@ nothing # hide
 ```
 
 ```@example coin
-θestimated_100   = inference(dataset_100)
-θestimated_1000  = inference(dataset_1000)
-θestimated_10000 = inference(dataset_10000)
+θestimated_100   = custom_inference(dataset_100)
+θestimated_1000  = custom_inference(dataset_1000)
+θestimated_10000 = custom_inference(dataset_10000)
 nothing #hide
 ```
 

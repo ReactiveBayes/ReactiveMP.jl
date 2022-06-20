@@ -78,7 +78,7 @@ z, x, y = generate_data(rng, real_k, real_w, z_variance, y_variance)
 nothing #hide
 ```
 
-Lets plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations.
+Let's plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations.
 
 ```@example hgf
 let 
@@ -97,7 +97,7 @@ To create a model we use `GraphPPL` package and `@model` macro:
 ```@example hgf
 # We create a single-time step of corresponding state-space process to
 # perform online learning (filtering)
-@model [ default_factorisation = MeanField() ] function hgf(real_k, real_w, z_variance, y_variance)
+@model function hgf(real_k, real_w, z_variance, y_variance)
     
     # Priors from previous time step for `z`
     zt_min_mean = datavar(Float64)
@@ -111,10 +111,10 @@ To create a model we use `GraphPPL` package and `@model` macro:
     xt_min ~ NormalMeanVariance(xt_min_mean, xt_min_var)
 
     # Higher layer is modelled as a random walk 
-    zt ~ NormalMeanVariance(zt_min, z_variance) where { q = q(zt, zt_min)q(z_variance) }
+    zt ~ NormalMeanVariance(zt_min, z_variance)
     
     # Lower layer is modelled with `GCV` node
-    gcv_node, xt ~ GCV(xt_min, zt, real_k, real_w) where { q = q(xt, xt_min)q(zt)q(κ)q(ω) }
+    gcv_node, xt ~ GCV(xt_min, zt, real_k, real_w)
     
     # Noisy observations 
     y = datavar(Float64)
@@ -125,7 +125,7 @@ end
 ```
 
 ```@example hgf
-function inference(data, vmp_iters, real_k, real_w, z_variance, y_variance)
+function reactive_online_inference(data, vmp_iters, real_k, real_w, z_variance, y_variance)
     n = length(data)
     
     # We don't want to save all marginals from all VMP iterations
@@ -138,7 +138,12 @@ function inference(data, vmp_iters, real_k, real_w, z_variance, y_variance)
     mx = keep(Marginal)
     fe = ScoreActor(Float64)
 
-    model, (zt, xt, y, gcv_node, xt_min_mean, xt_min_var, zt_min_mean, zt_min_var) = hgf(real_k, real_w, z_variance, y_variance)
+    hgf_constraints = @constraints begin
+        q(zt, zt_min, z_variance) = q(zt, zt_min)q(z_variance)
+        q(xt, zt, xt_min) = q(xt, xt_min)q(zt)
+    end
+
+    model, (zt, xt, y, gcv_node, xt_min_mean, xt_min_var, zt_min_mean, zt_min_var) = hgf(hgf_constraints, real_k, real_w, z_variance, y_variance)
 
     # Initial priors
     current_zt_mean, current_zt_var = 0.0, 10.0
@@ -187,7 +192,7 @@ nothing #hide
 ```
 
 ```@example hgf
-mz, mx, fe = inference(y, vmp_iters, real_k, real_w, z_variance, y_variance)
+mz, mx, fe = reactive_online_inference(y, vmp_iters, real_k, real_w, z_variance, y_variance)
 nothing #hide
 ```
 
@@ -217,5 +222,5 @@ As we can see BetheFreeEnergy converges nicely to a stable point.
 We may be also interested in performance of our resulting Variational Message Passing algorithm:
 
 ```@example hgf
-@benchmark inference($y, $vmp_iters, $real_k, $real_w, $z_variance, $y_variance)
+@benchmark reactive_online_inference($y, $vmp_iters, $real_k, $real_w, $z_variance, $y_variance)
 ```

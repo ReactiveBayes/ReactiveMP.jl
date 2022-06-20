@@ -1,20 +1,26 @@
-# [Fundamentals](@id user-guide-fundamentals)
+# [Advanced Tutorial](@id user-guide-advanced-tutorial)
 
-This tutorials covers the fundamentals of the ReactiveMP.jl package. For a more advanced usage we refer the interested reader to the other sections of the documentation.
-
+This tutorials covers the fundametnal and advanced usage of the ReactiveMP.jl package.
 This tutorial also exists in the form of a Jupyter notebook in [demo/](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) folder at GitHub repository.
 
-First lets setup our environment by importing all needed packages:
-
-```@example test_model1
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random
+```@example api
+# Reactive programming package for Julia
+using Rocket 
+# Core package for Constrained Bethe Free Energy minimsation with Factor graphs and message passing
+using ReactiveMP 
+# High-level user friendly probabilistic model and constraints specification language package for ReactiveMP
+using GraphPPL
+# Optionally include the Distributions.jl package and the Random package from Base
+using Distributions, Random
 ```
 
-## [General model specification syntax](@id user-guide-fundamentals-model-syntax)
+## General model specification syntax
 
-We use the `@model` macro from the `GraphPPL.jl` package to create a probabilistic model $p(s, y)$ and to specify extra constraints on the variational family of distributions $\mathcal{Q}$, used for approximating intractable posterior distributions. Below there is a simple example of the general syntax for model specification. In this tutorial we do not cover all possible ways to create models or advanced features of `GraphPPL.jl`.  Instead we refer the interested reader to the [Model specification](@ref user-guide-model-specification) section for a more rigorous explanation and illustrative examples.
+We use the `@model` macro from the `GraphPPL.jl` package to create a probabilistic model $p(s, y)$ and we also specify extra constraints on the variational family of distributions $\mathcal{Q}$, used for approximating intractable posterior distributions.
+Below there is a simple example of the general syntax for model specification. In this tutorial we do not cover all possible ways to create models or advanced features of `GraphPPL.jl`.  Instead we refer the interested reader to the documentation for a more rigorous explanation and illustrative examples.
 
-```@example test_model1
+
+```@example api
 # the `@model` macro accepts a regular Julia function
 @model function test_model1(s_mean, s_precision)
     
@@ -35,44 +41,59 @@ We use the `@model` macro from the `GraphPPL.jl` package to create a probabilist
     
     y ~ GaussianMeanPrecision(s, 1.0)
     
-    return s, y
+    # In general `@model` macro returns a variable of interests
+    # However it is also possible to obtain all variable in the model 
+    # with the `ReactiveMP.getvardict(model)` function call
+    return s, y 
 end
 ```
 
 The `@model` macro creates a function with the same name and with the same set of input arguments as the original function (`test_model1(s_mean, s_precision)` in this example). However, the return value is modified in such a way to contain a reference to the model object as the first value and to the user specified variables in the form of a tuple as the second value.
 
-```@example test_model1
+
+```@example api
 model, (s, y) = test_model1(0.0, 1.0)
-nothing #hide
 ```
 
-Later on we can examine our model structure with the help of some utility functions such as: 
+Another way of creating the model is to use the `Model` function that returns an instance of `ModelGenerator`:
+
+
+```@example api
+modelgenerator = Model(test_model1, 0.0, 1.0)
+
+model, (s, y) = ReactiveMP.create_model(modelgenerator)
+```
+
+
+The benefits of using model generator as a way to create a model is that it allows to change inference constraints and meta specification for nodes. We will talk about factorisation and form constraints and meta specification later on in this demo.
+
+`GraphPPL.jl` returns a factor graph-based representation of a model. We can examine this factor graph structure with the help of some utility functions such as: 
 - `getnodes()`: returns an array of factor nodes in a correposning factor graph
 - `getrandom()`: returns an array of random variable in the model
 - `getdata()`: returns an array of data inputs in the model
 - `getconstant()`: return an array of constant values in the model
 
-```@example test_model1
+
+```@example api
 getnodes(model)
 ```
 
-```@example test_model1
+```@example api
 getrandom(model) .|> name
 ```
 
-```@example test_model1
+```@example api
 getdata(model) .|> name
 ```
 
-```@example test_model1
+```@example api
 getconstant(model) .|> getconst
 ```
 
 It is also possible to use control flow statements such as `if` or `for` blocks in the model specification function. In general, any valid snippet of Julia code can be used inside the `@model` block. As an example consider the following (valid!) model:
 
-```@example test_model2
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
+```@example api
 @model function test_model2(n)
     
     if n <= 1
@@ -99,30 +120,56 @@ using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 end
 ```
 
-```@example test_model2
-model, (s, y) = test_model2(10)
-nothing #hide
+There are some limitations though regarding using `if`-blocks to create random variables. It is advised to create random variables in advance before `if` block, e.g instead of 
+
+```julia
+if some_condition
+    x ~ Normal(0.0, 1.0)
+else
+    x ~ Normal(0.0, 100.0)
+end
 ```
 
-```@example test_model2
+some needs to write:
+
+```julia
+x = randomvar()
+
+if some_condition
+    x ~ Normal(0.0, 1.0)
+else
+    x ~ Normal(0.0, 100.0)
+end
+```
+
+
+
+```@example api
+model, (s, y) = test_model2(10)
+```
+
+
+```@example api
 # An amount of factor nodes in generated Factor Graph
 getnodes(model) |> length
 ```
 
-```@example test_model2
+```@example api
 # An amount of random variables
 getrandom(model) |> length
 ```
 
-```@example test_model2
+
+```@example api
 # An amount of data inputs
 getdata(model) |> length
 ```
 
-```@example test_model2
+```@example api
 # An amount of constant values
 getconstant(model) |> length
 ```
+
 
 It is also possible to use complex expression inside the functional dependency expressions
 
@@ -139,6 +186,7 @@ s ~ NormalMeanPrecision(0.0, 1.0)
 ```
 
 An example model which will throw an error:
+
 
 ```julia
 @model function error_model1()
@@ -160,9 +208,8 @@ c = constvar(0.0)
 
 An example:
 
-```@example test_model5
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
+```@example api
 @model function test_model5(dim::Int, n::Int, A::Matrix, P::Matrix, Q::Matrix)
     
     s = randomvar(n)
@@ -201,55 +248,44 @@ The `~` expression can also return a reference to a newly created node in a corr
 end
 ```
 
-## [Probabilistic inference in ReactiveMP.jl](@id user-guide-fundamentals-inference)
+## Probabilistic inference in ReactiveMP.jl
 
 `ReactiveMP.jl` uses the `Rocket.jl` package API for inference routines. `Rocket.jl` is a reactive programming extension for Julia that is higly inspired by `RxJS` and similar libraries from the `Rx` ecosystem. It consists of **observables**, **actors**, **subscriptions** and **operators**. For more infromation and rigorous examples see [Rocket.jl github page](https://github.com/biaslab/Rocket.jl).
 
 ### Observables
 Observables are lazy push-based collections and they deliver their values over time.
 
-```julia
+
+```@example api
 # Timer that emits a new value every second and has an initial one second delay 
 observable = timer(1000, 1000)
 ```
 
 A subscription allows us to subscribe on future values of some observable, and actors specify what to do with these new values:
 
-```julia
+
+```@example api
 actor = (value) -> println(value)
 subscription1 = subscribe!(observable, actor)
 ```
 
-```
-0
-1
-2
-3
-...
-```
 
-```julia
+```@example api
 # We always need to unsubscribe from some observables
 unsubscribe!(subscription1)
 ```
 
-```julia
+
+```@example api
 # We can modify our observables
 modified = observable |> filter(d -> rem(d, 2) === 1) |> map(Int, d -> d ^ 2)
 ```
 
-```julia
+```@example api
 subscription2 = subscribe!(modified, (value) -> println(value))
 ```
 
-```
-1
-9
-25
-...
-```
-
-```julia
+```@example api
 unsubscribe!(subscription2)
 ```
 
@@ -259,9 +295,8 @@ The `ReactiveMP.jl` package returns posterior marginal distributions in our spec
 
 Lets see how it works in practice. Here we create a simple coin toss model. We assume that observations are governed by the `Bernoulli` distribution with unknown bias parameter `θ`. To have a fully Bayesian treatment of this problem we endow `θ` with the `Beta` prior.
 
-```@example coin_toss_model
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
+```@example api
 @model function coin_toss_model(n)
 
     # `datavar` creates data 'inputs' in our model
@@ -284,38 +319,42 @@ using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 end
 ```
 
-```@example coin_toss_model
+
+```@example api
 _, (y, θ) = coin_toss_model(500)
 nothing #hide
 ```
 
-```@example coin_toss_model
+
+```@example api
 # As soon as we have a new value for the marginal posterior over the `θ` variable
 # we simply print the first two statistics of it
 θ_subscription = subscribe!(getmarginal(θ), (marginal) -> println("New update: mean(θ) = ", mean(marginal), ", std(θ) = ", std(marginal)));
-nothing #hide
 ```
 
 Next, lets define our dataset:
 
-```@example coin_toss_model
-p       = 0.75 # Bias of a coin
-dataset = float.(rand(Bernoulli(p), 500));
+```@example api
+p = 0.75 # Bias of a coin
+
+dataset = float.(rand(Bernoulli(p), 500))
+nothing #hide
 ```
 
 To pass data to our model we use `update!` function
 
-```@example coin_toss_model
+
+```@example api
 update!(y, dataset)
-nothing #hide
 ```
 
-```@example coin_toss_model
+```@example api
 # It is necessary to always unsubscribe from running observables
 unsubscribe!(θ_subscription)
 ```
 
-```@example coin_toss_model
+
+```@example api
 # The ReactiveMP.jl inference backend is lazy and does not compute posterior marginals if no-one is listening for them
 # At this moment we have already unsubscribed from the new posterior updates so this `update!` does nothing
 update!(y, dataset)
@@ -323,64 +362,60 @@ update!(y, dataset)
 
 `Rocket.jl` provides some useful built-in actors for obtaining posterior marginals especially with static datasets.
 
-```@example coin_toss_model
+
+```@example api
 # the `keep` actor simply keeps all incoming updates in an internal storage, ordered
 θvalues = keep(Marginal)
-nothing #hide
 ```
 
-```@example coin_toss_model
+```@example api
 # `getmarginal` always emits last cached value as its first value
-subscribe!(getmarginal(θ) |> take(1), θvalues)
-nothing #hide
+subscribe!(getmarginal(θ) |> take(1), θvalues);
 ```
 
-```@example coin_toss_model
+
+```@example api
 getvalues(θvalues)
 ```
 
-```@example coin_toss_model
-# `getmarginal` always emits last cached value as its first value
-subscribe!(getmarginal(θ) |> take(1), θvalues)
-nothing #hide
+```@example api
+subscribe!(getmarginal(θ) |> take(1), θvalues);
 ```
 
-```@example coin_toss_model
+
+```@example api
 getvalues(θvalues)
 ```
 
-```@example coin_toss_model
+
+```@example api
 # the `buffer` actor keeps very last incoming update in an internal storage and can also store 
 # an array of updates for a sequence of random variables
 θbuffer = buffer(Marginal, 1)
-nothing #hide
 ```
 
-```@example coin_toss_model
+```@example api
 subscribe!(getmarginals([ θ ]) |> take(1), θbuffer);
-nothing #hide
 ```
 
-```@example coin_toss_model
+```@example api
 getvalues(θbuffer)
 ```
 
-```@example coin_toss_model
+```@example api
 subscribe!(getmarginals([ θ ]) |> take(1), θbuffer);
-nothing #hide
 ```
 
-```@example coin_toss_model
+```@example api
 getvalues(θbuffer)
 ```
 
-## [Reactive inference in ReactiveMP.jl](@id user-guide-fundamentals-reactive-inference)
+## Reactive Inference
 
 ReactiveMP.jl naturally supports reactive streams of data and it is possible to run reactive inference with some external datasource.
 
-```@example online_coin_toss_model
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
+```@example api
 @model function online_coin_toss_model()
     
     # We create datavars for the prior 
@@ -395,14 +430,16 @@ using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
     return θ_a, θ_b, θ, y
 end
+
 ```
 
-```@example online_coin_toss_model
+
+```@example api
 _, (θ_a, θ_b, θ, y) = online_coin_toss_model()
-nothing #hide
 ```
 
-```@example online_coin_toss_model
+
+```@example api
 # In this example we subscribe on posterior marginal of θ variable and use it as a prior for our next observation
 # We also print into stdout for convenience
 θ_subscription = subscribe!(getmarginal(θ), (m) -> begin 
@@ -411,27 +448,28 @@ nothing #hide
     update!(θ_b, m_b)
     println("New posterior for θ: mean = ", mean(m), ", std = ", std(m))
 end)
-nothing #hide
 ```
 
-```@example online_coin_toss_model
+
+```@example api
 # Initial priors
 update!(θ_a, 10.0 * rand())
 update!(θ_b, 10.0 * rand())
 ```
 
-```@example online_coin_toss_model
+
+```@example api
 data_source = timer(500, 500) |> map(Float64, (_) -> float(rand(Bernoulli(0.75)))) |> tap((v) -> println("New observation: ", v))
 nothing #hide
 ```
 
-```@example online_coin_toss_model
-data_subscription = subscribe!(data_source |> take(5), (data) -> update!(y, data))
-sleep(5) #hide
-nothing #hide
+
+```@example api
+data_subscription = subscribe!(data_source, (data) -> update!(y, data))
 ```
 
-```@example online_coin_toss_model
+
+```@example api
 # It is important to unsubscribe from running observables to release computer resources
 unsubscribe!(data_subscription)
 unsubscribe!(θ_subscription)
@@ -439,16 +477,13 @@ unsubscribe!(θ_subscription)
 
 That was an example of exact Bayesian inference with Sum-Product (or Belief Propagation) algorithm. However, `ReactiveMP.jl` is not limited to only the sum-product algorithm but it also supports variational message passing with [Constrained Bethe Free Energy Minimisation](https://www.mdpi.com/1099-4300/23/7/807).
 
-## [Variational inference in ReactiveMP.jl](@id user-guide-fundamentals-vmp-inference)
-
-### Factorisation constraints
+## Variational inference
 
 On a very high-level, ReactiveMP.jl is aimed to solve the Constrained Bethe Free Energy minimisation problem. For this task we approximate our exact posterior marginal distribution by some family of distributions $q \in \mathcal{Q}$. Often this involves assuming some factorization over $q$. For this purpose the `@model` macro supports optional `where { ... }` clauses for every `~` expression in a model specification.
 
-```@example test_model6
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
-@model function test_model6(n)
+```@example api
+@model function test_model6_with_manual_constraints(n)
     τ ~ GammaShapeRate(1.0, 1.0) 
     μ ~ NormalMeanVariance(0.0, 100.0)
     
@@ -494,30 +529,95 @@ end
 ```
 This will autatically impose a mean field factorization constraint over all marginal distributions in our model.
 
+### GraphPPL.jl constraints macro
+
+`GraphPPL.jl` package exports `@constraints` macro to simplify factorisation and form constraints specification. Read more about `@constraints` macro in the corresponding documentation section, here we show a simple example of the same factorisation constraints specification, but with `@constraints` macro:
+
+
+```@example api
+constraints6 = @constraints begin
+     q(μ, τ) = q(μ)q(τ) # Mean-Field over `μ` and `τ`
+end
+```
+
+**Note**: `where` blocks have higher priority over constraints specification
+
+
+```@example api
+@model function test_model6(n)
+    τ ~ GammaShapeRate(1.0, 1.0) 
+    μ ~ NormalMeanVariance(0.0, 100.0)
+    
+    y = datavar(Float64, n)
+    
+    for i in 1:n
+        # Here we assume a mean-field assumption on our 
+        # variational family of distributions locally for the current node
+        y[i] ~ NormalMeanPrecision(μ, τ)
+    end
+    
+    return μ, τ, y
+end
+```
+
+### Inference
+
 To run inference in this model we again need to create a synthetic dataset:
 
-```@example test_model6
-real_mean = -3.0
-real_prec = 5.0
-n         = 1000
 
-dataset = rand(Normal(real_mean, inv(sqrt(real_prec))), n)
+```@example api
+dataset = rand(Normal(-3.0, inv(sqrt(5.0))), 1000)
 nothing #hide
 ```
 
-```@example test_model6
-model, (μ, τ, y) = test_model6(length(dataset))
+#### `inference` function
+
+In order to simplify model and inference testing, `ReactiveMP.jl` exports pre-written inference function, that is aimed for simple use cases with static datasets:
+
+This function provides generic (but somewhat limited) way to run inference in ReactiveMP.jl. 
+
+```@example api
+result = inference(
+    model         = Model(test_model6, length(dataset)),
+    data          = (y = dataset, ),
+    constraints   = constraints6, 
+    initmarginals = (μ = vague(NormalMeanPrecision), τ = vague(GammaShapeRate)),
+    returnvars    = (μ = KeepLast(), τ = KeepLast()),
+    iterations    = 10,
+    free_energy   = true,
+    showprogress  = true
+)
+```
+
+
+```@example api
+println("μ: mean = ", mean(result.posteriors[:μ]), ", std = ", std(result.posteriors[:μ]))
 nothing #hide
+```
+
+
+```@example api
+println("τ: mean = ", mean(result.posteriors[:τ]), ", std = ", std(result.posteriors[:τ]))
+nothing #hide
+```
+
+#### Manual inference
+
+For advanced use cases it is advised to write inference functions manually as it provides more flexibility, here is an example of manual inference specification:
+
+
+```@example api
+model, (μ, τ, y) = test_model6(constraints6, length(dataset))
 ```
 
 For variational inference we also usually need to set initial marginals for our inference procedure. For that purpose `ReactiveMP.jl` export the `setmarginal!` function:
 
-```@example test_model6
+```@example api
 setmarginal!(μ, vague(NormalMeanPrecision))
 setmarginal!(τ, vague(GammaShapeRate))
 ```
 
-```@example test_model6
+```@example api
 μ_values = keep(Marginal)
 τ_values = keep(Marginal)
 
@@ -529,20 +629,23 @@ for i in 1:10
 end
 ```
 
-```@example test_model6
+
+```@example api
 getvalues(μ_values)
 ```
 
-```@example test_model6
+
+```@example api
 getvalues(τ_values)
 ```
 
-```@example test_model6
+
+```@example api
 println("μ: mean = ", mean(last(μ_values)), ", std = ", std(last(μ_values)))
 nothing #hide
 ```
 
-```@example test_model6
+```@example api
 println("τ: mean = ", mean(last(τ_values)), ", std = ", std(last(τ_values)))
 nothing #hide
 ```
@@ -551,14 +654,13 @@ nothing #hide
 
 In order to support form constraints, the `randomvar()` function also supports a `where { ... }` clause with some optional arguments. One of these arguments is `form_constraint` that allows us to specify a form constraint to the random variables in our model. Another one is `prod_constraint` that allows to specify an additional constraints during computation of product of two colliding messages. For example we can perform the EM algorithm if we assign a point mass contraint on some variables in our model.
 
-```@example test_model7
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
-@model function test_model7(n)
+```@example api
+@model function test_model7_with_manual_constraints(n)
     τ ~ GammaShapeRate(1.0, 1.0) 
     
     # In case of form constraints `randomvar()` call is necessary
-    μ = randomvar() where { form_constraint = PointMassFormConstraint() }
+    μ = randomvar() where { marginal_form_constraint = PointMassFormConstraint() }
     μ ~ NormalMeanVariance(0.0, 100.0)
     
     y = datavar(Float64, n)
@@ -571,27 +673,50 @@ using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 end
 ```
 
+As in the previous example we can use `@constraints` macro to achieve the same goal with a nicer syntax:
+
+
+```@example api
+constraints7 = @constraints begin 
+    q(μ) :: PointMass
+    
+    q(μ, τ) = q(μ)q(τ) # Mean-Field over `μ` and `τ`
+end
+```
+
+
 In this example we specified an extra constraints for $q_i$ for Bethe factorisation:
 
 ```math
 q(s) = \prod_{a \in \mathcal{V}} q_a(s_a) \prod_{i \in \mathcal{E}} q_i^{-1}(s_i)
 ```
 
-```@example test_model7
-real_mean = -3.0
-real_prec = 5.0
-n         = 1000
 
-dataset = rand(Normal(real_mean, inv(sqrt(real_prec))), n)
-nothing #hide
+```@example api
+@model function test_model7(n)
+    τ ~ GammaShapeRate(1.0, 1.0) 
+    
+    # In case of form constraints `randomvar()` call is necessary
+    μ = randomvar()
+    μ ~ NormalMeanVariance(0.0, 100.0)
+    
+    y = datavar(Float64, n)
+    
+    for i in 1:n
+        y[i] ~ NormalMeanPrecision(μ, τ)
+    end
+    
+    return μ, τ, y
+end
 ```
 
-```@example test_model7
-model, (μ, τ, y) = test_model7(length(dataset))
-nothing #hide
+
+```@example api
+model, (μ, τ, y) = test_model7(constraints7, length(dataset));
 ```
 
-```@example test_model7
+
+```@example api
 setmarginal!(μ, vague(NormalMeanPrecision))
 setmarginal!(τ, PointMass(1.0))
 
@@ -606,13 +731,17 @@ for i in 1:10
 end
 ```
 
-```@example test_model7
-getvalues(μ_values)
+
+```@example api
+getvalues(μ_values) |> last
 ```
 
-### Product constraints
 
-By default `ReactiveMP.jl` tries to compute an analytical product of two colliding messages and throws an error if no analytical solution is known. However, it is possible to fall back to a generic product that does not require an analytical solution to be known. In this case the inference backend will simply propagate the product of two message in a form of a tuple. It is not possible to use such a tuple-product during an inference and in this case it is mandatory to use some form constraint to approximate this product.
+```@example api
+getvalues(τ_values) |> last 
+```
+
+By default `ReactiveMP.jl` tries to compute an analytical product of two colliding messages and throws an error if no analytical solution is known. However, it is possible to fall back to a generic product that does not require an analytical solution to be known. In this case the inference backend will simply propagate the product of two messages in a form of a tuple. It is not possible to use such a tuple-product during an inference and in this case it is mandatory to use some form constraint to approximate this product.
 
 ```julia
 μ = randomvar() where { 
@@ -627,22 +756,28 @@ Sometimes it is useful to preserve a specific parametrisation of the resulting p
 μ = randomvar() where { prod_constraint = ProdPreserveType(NormalWeightedMeanPrecision) }
 ```
 
-### Free Energy Computation
+**Note**: `@constraints` macro specifies required `prod_constraint` automatically.
+
+### Free Energy
 
 During variational inference `ReactiveMP.jl` optimises a special functional called the Bethe Free Energy functional. It is possible to obtain its values for all VMP iterations with the `score` function.
 
-```@example test_model6
-model, (μ, τ, y) = test_model6(length(dataset))
-nothing #hide
+
+```@example api
+model, (μ, τ, y) = test_model6(constraints6, length(dataset));
 ```
 
-```@example test_model6
-bfe_observable   = score(BetheFreeEnergy(), model)
-bfe_subscription = subscribe!(bfe_observable, (fe) -> println("Current BFE value: ", fe))
-nothing #hide
+
+```@example api
+bfe_observable = score(BetheFreeEnergy(), model)
 ```
 
-```@example test_model6
+```@example api
+bfe_subscription = subscribe!(bfe_observable, (fe) -> println("Current BFE value: ", fe));
+```
+
+
+```@example api
 # Reset the model with vague marginals
 setmarginal!(μ, vague(NormalMeanPrecision))
 setmarginal!(τ, vague(GammaShapeRate))
@@ -652,7 +787,7 @@ for i in 1:10
 end
 ```
 
-```@example test_model6
+```@example api
 # It always necessary to unsubscribe and release computer resources
 unsubscribe!([ μ_subscription, τ_subscription, bfe_subscription ])
 ```
@@ -675,13 +810,24 @@ Another example with `GaussianControlledVariance`, or simply `GCV` [see Hierarch
 
 ```julia
 # In this example we specify structured factorisation and flag meta with `GaussHermiteCubature` 
-# method with `11` sigma points for approximation of non-lineariety between hierarchy layers
-xt ~ GCV(xt_min, zt, real_k, real_w) where { q = q(xt, xt_min)q(zt)q(κ)q(ω), meta = GCVMetadata(GaussHermiteCubature(11)) }
+# method with `21` sigma points for approximation of non-lineariety between hierarchy layers
+xt ~ GCV(xt_min, zt, real_k, real_w) where { q = q(xt, xt_min)q(zt)q(κ)q(ω), meta = GCVMetadata(GaussHermiteCubature(21)) }
 ```
 
 The Meta object is useful to pass any extra information to a node that is not a random variable or constant model variable. It may include extra approximation methods, differentiation methods, optional non-linear functions, extra inference parameters etc.
 
-## [Creating custom nodes and message computation rules](@id user-guide-fundamentals-custom-nodes-rules)
+### GraphPPL.jl `@meta` macro
+
+Users can use `@meta` macro from the `GraphPPL.jl` package to achieve the same goal. Read more about `@meta` macro in the corresponding documentation section. Here is a simple example of the same meta specification:
+
+
+```julia
+@meta begin 
+     AR(s, θ, γ) -> ARMeta(Multivariate, 5, ARsafe())
+end
+```
+
+## Creating custom nodes and message computation rules
 
 ### Custom nodes
 
@@ -707,8 +853,7 @@ function dot end
 @node typeof(dot) Deterministic [ out, x, a ]
 ```
 
-!!! note
-    Deterministic nodes do not support factorisation constraints with the `where { q = ... }` clause.
+**Note**: Deterministic nodes do not support factorisation constraints with the `where { q = ... }` clause.
 
 After that it is possible to use the newly created node during model specification:
 
@@ -789,8 +934,7 @@ end
 end
 ```
 
-!!! note 
-    In the `@rule` specification the messages or marginals arguments **must** be in order with interfaces specification from `@node` macro:
+**NOTE**: In the `@rule` specification the messages or marginals arguments **must** be in order with interfaces specification from `@node` macro:
 
 ```julia
 # Inference backend expects arguments in `@rule` macro to be in the same order
@@ -823,7 +967,7 @@ or
 end
 ```
 
-## [Customizing messages computational pipeline](@id user-guide-fundamentals-pipeline)
+### Customizing messages computational pipeline
 
 In certain situations it might be convenient to customize the default message computational pipeline. `GrahpPPL.jl` supports the `pipeline` keyword in the `where { ... }` clause to add some extra steps after a message has been computed. A use case might be an extra approximation method to preserve conjugacy in the model, debugging or simple printing.
 
@@ -838,10 +982,9 @@ y[i] ~ NormalMeanPrecision(x[i], 1.0) where { pipeline = LaplaceApproximation() 
 
 Let us return to the coin toss model, but this time we want to print flowing messages:
 
-```@example coin_toss_model_log
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 
-@model function coin_toss_model_log(n)
+```@example api
+@model [ default_factorisation = FullFactorisation() ] function coin_toss_model_log(n)
 
     y = datavar(Float64, n)
 
@@ -855,34 +998,31 @@ using Rocket, GraphPPL, ReactiveMP, Distributions, Random #hide
 end
 ```
 
-```@example coin_toss_model_log
-_, (y, θ) = coin_toss_model_log(5)
-nothing #hide
+
+```@example api
+_, (y, θ) = coin_toss_model_log(5);
 ```
 
-```@example coin_toss_model_log
-θ_subscription = subscribe!(getmarginal(θ), (value) -> println("New posterior marginal for θ: ", value))
-nothing #hide
+
+```@example api
+θ_subscription = subscribe!(getmarginal(θ), (value) -> println("New posterior marginal for θ: ", value));
 ```
 
-```@example coin_toss_model_log
-coinflips = float.(rand(Bernoulli(0.5), 5))
-nothing #hide
+```@example api
+coinflips = float.(rand(Bernoulli(0.5), 5));
 ```
 
-```@example coin_toss_model_log
+
+```@example api
 update!(y, coinflips)
-nothing #hide
 ```
 
-```@example coin_toss_model_log
+
+```@example api
 unsubscribe!(θ_subscription)
 ```
 
-```@example coin_toss_model_log
+```@example api
 # Inference is lazy and does not send messages if no one is listening for them
 update!(y, coinflips)
-nothing #hide
 ```
-
-This tutorials covered the fundamentals of the ReactiveMP.jl package. For a more advanced usage we refer the interested reader to the other sections of the documentation.

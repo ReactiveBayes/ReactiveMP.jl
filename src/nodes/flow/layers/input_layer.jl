@@ -8,7 +8,7 @@ layer = InputLayer(3)
 ```
 """
 struct InputLayer <: AbstractLayerPlaceholder
-    dim :: Int
+    dim::Int
     function InputLayer(dim::Int)
         @assert dim > 1 "The specified input dimension should be larger than 1."
         return new(dim)

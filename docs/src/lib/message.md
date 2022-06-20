@@ -1,7 +1,7 @@
 
 # [Messages implementation](@id lib-message)
 
-In message passing framework one of the most important concept is (wow!) messages. Messages flow on edges of a factor graph and usually hold some information in a form of probability distribution.
+In message passing framework one of the most important concepts is (wow!) messages. Messages flow on edges of a factor graph and usually hold some information in a form of probability distribution.
 In ReactiveMP.jl we distinguish two major types of messages: Belief Propagation and Variational.  
 
 ## Abstract message type
@@ -46,7 +46,7 @@ logpdf(message, 1.0)
 is_clamped(message), is_initial(message)
 ```
 
-User should not really interact with `Message` structure while working with `ReactiveMP` unless doing some advanced inference procedures that involves prediction.
+The user should not really interact with `Message` structure while working with `ReactiveMP` unless doing some advanced inference procedures that involve prediction.
 
 ## [Variational message](@id lib-variational-message)
 

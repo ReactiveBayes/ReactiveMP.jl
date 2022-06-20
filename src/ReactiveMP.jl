@@ -5,6 +5,8 @@ include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
 
+include("constraints/meta/meta.jl")
+
 include("constraints/prod/prod.jl")
 include("constraints/form/form.jl")
 
@@ -16,11 +18,7 @@ include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
 include("constraints/prod/prod_final.jl")
-
-include("constraints/form/form_unspecified.jl")
-include("constraints/form/form_point_mass.jl")
-include("constraints/form/form_fixed_marginal.jl")
-include("constraints/form/form_sample_list.jl")
+include("constraints/prod/prod_resolve.jl")
 
 as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
@@ -78,7 +76,6 @@ include("variables/data.jl")
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
-include("pipeline/scheduled.jl")
 include("pipeline/vague.jl")
 
 include("rule.jl")
@@ -91,6 +88,7 @@ include("score/node.jl")
 
 # Stochastic nodes
 include("nodes/uninformative.jl")
+include("nodes/uniform.jl")
 include("nodes/normal_mean_variance.jl")
 include("nodes/normal_mean_precision.jl")
 include("nodes/mv_normal_mean_covariance.jl")
@@ -116,20 +114,26 @@ include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/delta.jl")
 include("nodes/flow/flow.jl")
-
+include("nodes/poisson.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
 include("nodes/subtraction.jl")
 include("nodes/multiplication.jl")
 
-
 include("rules/prototypes.jl")
 
-include("actors/prior.jl")
+include("constraints/form/form_unspecified.jl")
+include("constraints/form/form_point_mass.jl")
+include("constraints/form/form_fixed_marginal.jl")
+include("constraints/form/form_sample_list.jl")
+
+include("constraints/spec/spec.jl")
+include("constraints/spec/factorisation_spec.jl")
+include("constraints/spec/form_spec.jl")
 
 include("model.jl")
-
 include("fixes.jl")
+include("inference.jl")
 
 end

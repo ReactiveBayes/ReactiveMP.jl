@@ -8,6 +8,10 @@ using Test, Documenter, ReactiveMP, Distributions
 using TestSetExtensions
 using Aqua
 
+# Unregistered GraphPPL, do not commit this two lines, but use them to test ReactiveMP locally
+# ENV["JULIA_PKG_USE_CLI_GIT"] = true
+# import Pkg; Pkg.rm("GraphPPL"); Pkg.add(Pkg.PackageSpec(name="GraphPPL", rev="master"));
+
 # DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
 
 # Example usage of a reduced testset
@@ -22,15 +26,19 @@ end
 
 function key_to_filename(key)
     splitted = split(key, ":")
-    return length(splitted) === 1 ? string("test_", first(splitted), ".jl") : string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
+    return if length(splitted) === 1
+        string("test_", first(splitted), ".jl")
+    else
+        string(join(splitted[1:end-1], "/"), "/test_", splitted[end], ".jl")
+    end
 end
 
 function filename_to_key(filename)
-    splitted   = split(filename, "/")
+    splitted = split(filename, "/")
     if length(splitted) === 1
         return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
     else
-        path, name = splitted[1:end - 1], splitted[end]
+        path, name = splitted[1:end-1], splitted[end]
         return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
     end
 end
@@ -39,25 +47,29 @@ enabled_tests = lowercase.(ARGS)
 
 if isempty(enabled_tests)
     println("Running all tests...")
-    Aqua.test_all(ReactiveMP; ambiguities=false)
+    # `project_toml_formatting` is broken on CI, revise at some point
+    Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
     # doctest(ReactiveMP)
-else 
+else
     println("Running specific tests: $enabled_tests")
 end
 
 @testset ExtendedTestSet "ReactiveMP" begin
-
     function key_to_filename(key)
         splitted = split(key, ":")
-        return length(splitted) === 1 ? string("test_", first(splitted), ".jl") : string(join(splitted[1:end - 1], "/"), "/test_", splitted[end], ".jl")
+        return if length(splitted) === 1
+            string("test_", first(splitted), ".jl")
+        else
+            string(join(splitted[1:end-1], "/"), "/test_", splitted[end], ".jl")
+        end
     end
 
     function filename_to_key(filename)
-        splitted   = split(filename, "/")
+        splitted = split(filename, "/")
         if length(splitted) === 1
             return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
         else
-            path, name = splitted[1:end - 1], splitted[end]
+            path, name = splitted[1:end-1], splitted[end]
             return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
         end
     end
@@ -70,8 +82,10 @@ end
     end
 
     @testset "Testset helpers" begin
-        @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) == "distributions/test_normal_mean_variance.jl"
-        @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) == "distributions:normal_mean_variance"
+        @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) ==
+              "distributions/test_normal_mean_variance.jl"
+        @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) ==
+              "distributions:normal_mean_variance"
         @test key_to_filename(filename_to_key("test_message.jl")) == "test_message.jl"
         @test filename_to_key(key_to_filename("message")) == "message"
     end
@@ -84,8 +98,11 @@ end
     addtests("test_math.jl")
     addtests("test_helpers.jl")
 
+    addtests("constraints/spec/test_factorisation_spec.jl")
+    addtests("constraints/spec/test_form_spec.jl")
     addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
+    addtests("constraints/meta/test_meta.jl")
 
     addtests("test_distributions.jl")
     addtests("distributions/test_common.jl")
@@ -109,8 +126,11 @@ end
     addtests("distributions/test_sample_list.jl")
 
     addtests("test_message.jl")
-    
+
     addtests("test_variable.jl")
+    addtests("variables/test_constant.jl")
+    addtests("variables/test_data.jl")
+    addtests("variables/test_random.jl")
 
     addtests("test_node.jl")
     addtests("nodes/flow/test_flow.jl")
@@ -124,8 +144,10 @@ end
     addtests("nodes/test_normal_mean_variance.jl")
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
+    addtests("nodes/test_poisson.jl")
 
-    
+    addtests("rules/uniform/test_out.jl")
+
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")
     addtests("rules/flow/test_out.jl")
@@ -145,7 +167,7 @@ end
     addtests("rules/bifm_helper/test_out.jl")
 
     addtests("rules/normal_mixture/test_out.jl")
-		
+
     addtests("rules/subtraction/test_marginals.jl")
     addtests("rules/subtraction/test_in1.jl")
     addtests("rules/subtraction/test_in2.jl")
@@ -154,7 +176,7 @@ end
     addtests("rules/bernoulli/test_out.jl")
     addtests("rules/bernoulli/test_p.jl")
     addtests("rules/bernoulli/test_marginals.jl")
-    
+
     addtests("rules/beta/test_out.jl")
     addtests("rules/beta/test_marginals.jl")
 
@@ -176,7 +198,7 @@ end
 
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
-    addtests("rules/mv_normal_mean_precision/test_precision.jl")  
+    addtests("rules/mv_normal_mean_precision/test_precision.jl")
 
     addtests("rules/probit/test_out.jl")
     addtests("rules/probit/test_in.jl")
@@ -184,12 +206,17 @@ end
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
 
+    addtests("rules/poisson/test_l.jl")
+    addtests("rules/poisson/test_marginals.jl")
+    addtests("rules/poisson/test_out.jl")
+
     addtests("models/test_lgssm.jl")
     addtests("models/test_hgf.jl")
     addtests("models/test_ar.jl")
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
-
+    addtests("models/test_linreg.jl")
+    addtests("models/test_probit.jl")
 end
 
 end

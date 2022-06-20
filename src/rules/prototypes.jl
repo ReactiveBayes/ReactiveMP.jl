@@ -1,6 +1,8 @@
 
 include("uninformative/out.jl")
 
+include("uniform/out.jl")
+
 include("addition/marginals.jl")
 include("addition/out.jl")
 include("addition/in1.jl")
@@ -14,6 +16,7 @@ include("subtraction/in2.jl")
 include("multiplication/marginals.jl")
 include("multiplication/out.jl")
 include("multiplication/in.jl")
+include("multiplication/A.jl")
 
 include("gamma/out.jl")
 include("gamma/marginals.jl")
@@ -31,6 +34,7 @@ include("matrix_dirichlet/out.jl")
 
 include("categorical/out.jl")
 include("categorical/p.jl")
+include("categorical/marginals.jl")
 
 include("bernoulli/p.jl")
 include("bernoulli/out.jl")
@@ -115,3 +119,7 @@ include("bifm/zprev.jl")
 
 include("bifm_helper/in.jl")
 include("bifm_helper/out.jl")
+
+include("poisson/l.jl")
+include("poisson/marginals.jl")
+include("poisson/out.jl")

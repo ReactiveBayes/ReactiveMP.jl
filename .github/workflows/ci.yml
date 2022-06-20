@@ -5,16 +5,26 @@ on:
   schedule:
     - cron: '44 9 16 * *' # run the cron job one time per month
 jobs:
+  format: 
+    name: Julia Formatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1         
+        with:
+          version: '1.7'
+      - run: make lint
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    needs: format
     strategy:
       fail-fast: false
       matrix:
         version:
-          - '1.5'
           - '1.6'
           - '1.7'
+          - 'nightly'
         os:
           - ubuntu-latest
         arch:
@@ -54,25 +64,27 @@ jobs:
     name: Benchmarks
     runs-on: ubuntu-latest
     needs: test
-    env: 
-      working-directory: './benchmark'
     if: contains(github.event.head_commit.message, '[benchmark]')
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.7'
-      - run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
-        working-directory: ${{ env.working-directory }}
-      - run: julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.judge(target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3`), pkgdir = "$(pwd())/../")'
-        working-directory: ${{ env.working-directory }}
-      - run: julia --project=. -e 'using PkgBenchmark; using BenchmarkCI; BenchmarkCI.displayjudgement()'
-        working-directory: ${{ env.working-directory }}
-      - run: julia --project=. -e 'using Base64; using BenchmarkCI; BenchmarkCI.pushresult(; url = "git@github.com:biaslab/ReactiveMP.jl.git", title = "Benchmark result (via Travis)", branch = "gh-benchmarks", sshkey = String(Base64.base64decode(ENV["BENCHMARK_KEY"]))); '
-        working-directory: ${{ env.working-directory }}
+      - uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-benchmark-${{ env.cache-name }}-${{ hashFiles('**/benchmark/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-benchmark-${{ env.cache-name }}-
+            ${{ runner.os }}-benchmark-
+            ${{ runner.os }}-
+      - run: make benchmark
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BENCHMARK_KEY: ${{ secrets.BENCHMARK_KEY }}
+          PUBLISH_BENCHMARKS: true
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -80,17 +92,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
+      - uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-docs-${{ env.cache-name }}-${{ hashFiles('**/docs/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-docs-${{ env.cache-name }}-
+            ${{ runner.os }}-docs-
+            ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest          
         with:
-          version: '1.6'
-      - run: |
-          julia --project=docs -e '
-            ENV["PYTHON"]=""
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()
-            Pkg.build("PyPlot")'
-      - run: julia --project=docs docs/make.jl
+          version: '1.7'
+      - run: make docs
         env:
           PYTHON: ""
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -22,12 +22,19 @@ struct ImportanceSamplingApproximation{T, R}
     rsamples   :: Vector{T}
 end
 
-function ImportanceSamplingApproximation(rng::R, nsamples::Int; resampling::Bool = true) where { R } 
-    return ImportanceSamplingApproximation(Float64, rng, nsamples; resampling = resampling) 
+function ImportanceSamplingApproximation(rng::R, nsamples::Int; resampling::Bool = true) where {R}
+    return ImportanceSamplingApproximation(Float64, rng, nsamples; resampling = resampling)
 end
 
-function ImportanceSamplingApproximation(::Type{T}, rng::R, nsamples::Int; resampling::Bool = true) where { T, R } 
-    return ImportanceSamplingApproximation{T, R}(rng, nsamples, Vector{T}(undef, nsamples), Vector{T}(undef, nsamples), resampling, Vector{T}(undef, nsamples))
+function ImportanceSamplingApproximation(::Type{T}, rng::R, nsamples::Int; resampling::Bool = true) where {T, R}
+    return ImportanceSamplingApproximation{T, R}(
+        rng,
+        nsamples,
+        Vector{T}(undef, nsamples),
+        Vector{T}(undef, nsamples),
+        resampling,
+        Vector{T}(undef, nsamples)
+    )
 end
 
 getsamples(approximation::ImportanceSamplingApproximation, distribution)           = getsamples(approximation, distribution, approximation.nsamples)
@@ -61,11 +68,11 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
     end
 
     map!(Base.Fix2(/, normalization), approximation.bweights, approximation.bweights)
-    
+
     m = mapreduce(prod, +, zip(approximation.bweights, approximation.bsamples))
 
     _v = let m = m
-        (r) -> r[1] * (r[2] - m) ^ 2
+        (r) -> r[1] * (r[2] - m)^2
     end
 
     v = mapreduce(_v, +, zip(approximation.bweights, approximation.bsamples))
@@ -75,5 +82,4 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
     end
 
     return m, v
-
 end

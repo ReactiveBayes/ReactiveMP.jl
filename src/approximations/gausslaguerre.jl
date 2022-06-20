@@ -6,15 +6,14 @@ using StatsFuns: logsumexp
 
 import Base: ==
 
-
-struct GaussLaguerreQuadrature{ R <: DomainIntegrals.HalfLineRule, W <: AbstractVector } <: AbstractApproximationMethod
-    rule :: R
-    logw :: W
+struct GaussLaguerreQuadrature{R <: DomainIntegrals.HalfLineRule, W <: AbstractVector} <: AbstractApproximationMethod
+    rule::R
+    logw::W
 end
 
 GaussLaguerreQuadrature(n::Int) = GaussLaguerreQuadrature(Float64, n)
 
-function GaussLaguerreQuadrature(::Type{T}, n::Int) where T 
+function GaussLaguerreQuadrature(::Type{T}, n::Int) where {T}
     x, w = FastGaussQuadrature.gausslaguerre(n, zero(T))
     logw = log.(w)
     return GaussLaguerreQuadrature(DomainIntegrals.HalfLineRule(x, w), logw)
@@ -48,7 +47,7 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
 
     # calculate the ln(wi) + logf(xi) terms
     logresult = Vector{T}(undef, p)
-    for i = 1:p
+    for i in 1:p
         logresult[i] = logw[i] + fn(x[i])
     end
 
@@ -56,6 +55,6 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
     return logsumexp(logresult)
 end
 
-function Base.:(==)(left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}) where R 
+function Base.:(==)(left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}) where {R}
     return getlength(left) == getlength(right)
 end
