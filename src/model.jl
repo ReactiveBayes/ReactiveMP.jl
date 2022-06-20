@@ -390,20 +390,35 @@ randomvar_resolve_messages_form_prod(model::FactorGraphModel, constraints, name)
 
 ## variable creation
 
-function randomvar(model::FactorGraphModel, name::Symbol, args...)
-    return randomvar(model, RandomVariableCreationOptions(), name, args...)
+randomvar(model::FactorGraphModel, name::Symbol, args...) = randomvar(model, RandomVariableCreationOptions(), name, args...)
+datavar(model::FactorGraphModel, name::Symbol, args...)   = datavar(model, DataVariableCreationOptions(Any), name, args...)
+
+function __check_variable_existence(model::FactorGraphModel, name::Symbol)
+    if haskey(getvardict(model), name)
+        error("Variable named `$(name)` has been redefined")
+    end
 end
 
 function randomvar(model::FactorGraphModel, options::RandomVariableCreationOptions, name::Symbol, args...)
+    __check_variable_existence(model, name)
     return add!(model, randomvar(randomvar_resolve_options(model, options, name), name, args...))
 end
 
-constvar(model::FactorGraphModel, args...) = add!(model, constvar(args...))
-datavar(model::FactorGraphModel, args...)  = add!(model, datavar(args...))
+function datavar(model::FactorGraphModel, options::DataVariableCreationOptions, name::Symbol, args...) 
+    __check_variable_existence(model, name)
+    return add!(model, datavar(options, name, args...))
+end
+
+function constvar(model::FactorGraphModel, name::Symbol, args...) 
+    __check_variable_existence(model, name)
+    return add!(model, constvar(name, args...))
+end
 
 as_variable(model::FactorGraphModel, x)                   = add!(model, as_variable(x))
 as_variable(model::FactorGraphModel, v::AbstractVariable) = v
 as_variable(model::FactorGraphModel, t::Tuple)            = map((d) -> as_variable(model, d), t)
+
+## node creation
 
 function make_node(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, args...)
     return add!(model, make_node(fform, node_resolve_options(model, options, fform, args), args...))
@@ -415,7 +430,7 @@ struct AutoVar
     name::Symbol
 end
 
-getname(autovar::AutoVar) = autovar.name
+name(autovar::AutoVar) = autovar.name
 
 function ReactiveMP.make_node(
     model::FactorGraphModel,
@@ -426,7 +441,7 @@ function ReactiveMP.make_node(
 )
     proxy     = isdeterministic(sdtype(fform)) ? args : nothing
     rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(EmptyRandomVariableCreationOptions, proxy)
-    var       = ReactiveMP.randomvar(model, rvoptions, ReactiveMP.getname(autovar)) # add! is inside
+    var       = ReactiveMP.randomvar(model, rvoptions, ReactiveMP.name(autovar)) # add! is inside
     node      = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
     return node, var
 end
@@ -442,14 +457,14 @@ function ReactiveMP.make_node(
     args::Vararg{<:ReactiveMP.ConstVariable}
 )
     if isstochastic(sdtype(fform))
-        var  = ReactiveMP.randomvar(model, EmptyRandomVariableCreationOptions, ReactiveMP.getname(autovar)) # add! is inside
+        var  = get(() -> ReactiveMP.randomvar(model, EmptyRandomVariableCreationOptions, ReactiveMP.name(autovar)), getvardict(model), name(autovar))
         node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
         return node, var
     else
         var = add!(
             model,
             ReactiveMP.constvar(
-                ReactiveMP.getname(autovar),
+                ReactiveMP.name(autovar),
                 __fform_const_apply(fform, map((d) -> ReactiveMP.getconst(d), args)...)
             )
         )
