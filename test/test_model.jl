@@ -20,7 +20,9 @@ using Random
                 x = randomvar()
             elseif condition === 2
                 x = randomvar()
+                x_saved = x
                 x ~ NormalMeanPrecision(0.0, 1.0)
+                @test x_saved === x
             elseif condition === 3
                 x ~ NormalMeanPrecision(0.0, 1.0)
             end
