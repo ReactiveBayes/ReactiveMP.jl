@@ -7,9 +7,7 @@ using Random
 
 # TODO: move this tests to RxInfer.jl
 @testset "@model macro tests" begin
-
     @testset "Fail if variables has been overwritten" begin
-
         @model function mymodel1(; condition)
             if condition === 0
                 x = randomvar()
@@ -40,9 +38,7 @@ using Random
 
         m, _ = mymodel1(condition = 3)
         @test haskey(m, :x) && ReactiveMP.degree(m[:x]) === 2
-
     end
-
 end
 
 end

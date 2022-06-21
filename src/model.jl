@@ -407,12 +407,12 @@ function randomvar(model::FactorGraphModel, options::RandomVariableCreationOptio
     return add!(model, randomvar(randomvar_resolve_options(model, options, name), name, args...))
 end
 
-function datavar(model::FactorGraphModel, options::DataVariableCreationOptions, name::Symbol, args...) 
+function datavar(model::FactorGraphModel, options::DataVariableCreationOptions, name::Symbol, args...)
     __check_variable_existence(model, name)
     return add!(model, datavar(options, name, args...))
 end
 
-function constvar(model::FactorGraphModel, name::Symbol, args...) 
+function constvar(model::FactorGraphModel, name::Symbol, args...)
     __check_variable_existence(model, name)
     return add!(model, constvar(name, args...))
 end
@@ -441,13 +441,18 @@ name(autovar::AutoVar) = autovar.name
 # Or creates a new one in two cases:
 # - variable did not exist before
 # - variable exists, but has been declared as anyonymous (only if `rewrite_anonymous` argument is set to true)
-function make_autovar(model::FactorGraphModel, options::RandomVariableCreationOptions, name::Symbol, rewrite_anonymous::Bool = true)
+function make_autovar(
+    model::FactorGraphModel,
+    options::RandomVariableCreationOptions,
+    name::Symbol,
+    rewrite_anonymous::Bool = true
+)
     if haskey(getvardict(model), name)
         var = model[name]
         if rewrite_anonymous && isanonymous(var)
             return ReactiveMP.randomvar(model, options, name)
         else
-            return var 
+            return var
         end
     else
         return ReactiveMP.randomvar(model, options, name)
@@ -479,7 +484,7 @@ function ReactiveMP.make_node(
     args::Vararg{<:ReactiveMP.ConstVariable}
 )
     if isstochastic(sdtype(fform))
-        var  = ReactiveMP.make_autovar(model, ReactiveMP.EmptyRandomVariableCreationOptions, ReactiveMP.name(autovar), true) 
+        var  = ReactiveMP.make_autovar(model, ReactiveMP.EmptyRandomVariableCreationOptions, ReactiveMP.name(autovar), true)
         node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
         return node, var
     else
