@@ -236,6 +236,8 @@ function Base.haskey(model::FactorGraphModel, symbol::Symbol)
     return haskey(getvardict(model), symbol)
 end
 
+Base.broadcastable(model::FactorGraphModel) = Ref(model)
+
 hasrandomvar(model::FactorGraphModel, symbol::Symbol) = haskey(model, symbol) ? israndom(getindex(model, symbol)) : false
 hasdatavar(model::FactorGraphModel, symbol::Symbol)   = haskey(model, symbol) ? isdata(getindex(model, symbol)) : false
 hasconstvar(model::FactorGraphModel, symbol::Symbol)  = haskey(model, symbol) ? isconst(getindex(model, symbol)) : false
@@ -415,9 +417,11 @@ function constvar(model::FactorGraphModel, name::Symbol, args...)
     return add!(model, constvar(name, args...))
 end
 
-as_variable(model::FactorGraphModel, x)                   = add!(model, as_variable(x))
+as_variable(model::FactorGraphModel, x)        = add!(model, as_variable(x))
+as_variable(model::FactorGraphModel, t::Tuple) = map((d) -> as_variable(model, d), t)
+
 as_variable(model::FactorGraphModel, v::AbstractVariable) = v
-as_variable(model::FactorGraphModel, t::Tuple)            = map((d) -> as_variable(model, d), t)
+as_variable(model::FactorGraphModel, v::AbstractVector{<:AbstractVariable}) = v
 
 ## node creation
 

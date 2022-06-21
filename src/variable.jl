@@ -8,6 +8,10 @@ using Rocket
 
 abstract type AbstractVariable end
 
+## Base interface extensions
+
+Base.broadcastable(v::AbstractVariable) = Ref(v)
+
 ## Variable collection type
 
 abstract type AbstractVariableCollectionType end
@@ -164,9 +168,11 @@ resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyChecked, p
 
 ## Helper functions
 
-as_variable(x)                   = constvar(gensym(:constvar), x)
+as_variable(x)        = constvar(gensym(:constvar), x)
+as_variable(t::Tuple) = map(as_variable, t)
+
 as_variable(v::AbstractVariable) = v
-as_variable(t::Tuple)            = map(as_variable, t)
+as_variable(v::AbstractArray{<:AbstractVariable}) = v
 
 israndom(v::AbstractArray{<:AbstractVariable}) = all(israndom, v)
 isdata(v::AbstractArray{<:AbstractVariable})   = all(isdata, v)

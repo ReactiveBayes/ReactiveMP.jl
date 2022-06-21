@@ -402,6 +402,8 @@ factorisation(options::FactorNodeCreationOptions) = options.factorisation
 metadata(options::FactorNodeCreationOptions)      = options.metadata
 getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
 
+Base.broadcastable(options::FactorNodeCreationOptions) = Ref(options)
+
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
     interfaces     :: I
