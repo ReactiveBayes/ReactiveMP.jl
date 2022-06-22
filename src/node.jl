@@ -809,6 +809,12 @@ end
 
 make_node(fform, args::Vararg{<:AbstractVariable}) = make_node(fform, FactorNodeCreationOptions(), args...)
 
+# We disallow any broadcast function as a node's functional form and cast to its base function
+# The reason is that we do allow broadcasting syntax in the model specification, however, broadcasting functions like `.+` !== `+`
+# We don't want to create 'broadcasted'-versions for each node type and simply fallback to the original node definition
+# Model specification language cannot replace `.+` with `+` as it would break broadcast operation with model constants, e.g. `matrix` .+ `scalar`
+make_node(fform::Base.BroadcastFunction, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable}) = make_node(fform.f, options, args...)
+
 function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
     error(
         """
