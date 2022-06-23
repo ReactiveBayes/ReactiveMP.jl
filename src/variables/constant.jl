@@ -98,3 +98,6 @@ function setmessagein!(constvar::ConstVariable, ::Int, messagein)
     constvar.nconnected += 1
     return nothing
 end
+
+# `ConstVariable` is the only one container that can 'undo' `as_variable` operation
+undo_as_variable(constvar::ConstVariable) = getconst(constvar)
