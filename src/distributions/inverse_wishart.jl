@@ -8,8 +8,7 @@ import SpecialFunctions: digamma
 function Distributions.mean(::typeof(logdet), distribution::InverseWishart)
     d    = ndims(distribution)
     ν, S = params(distribution)
-    invS = cholinv(S)
-    return mapreduce(i -> -digamma((ν + 1 - i) / 2), +, 1:d) - d * log(2) - logdet(invS)
+    return mapreduce(i -> -digamma((ν + 1 - i) / 2), +, 1:d) - d * log(2) - logdet(S)
 end
 
 vague(::Type{<:InverseWishart}, dims::Int) = InverseWishart(dims, inv(Matrix(Diagonal(huge .* ones(dims)))))
