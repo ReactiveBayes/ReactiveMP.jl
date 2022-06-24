@@ -59,7 +59,9 @@ using Random
 
             x[1] ~ NormalMeanVariance(0.0, 1.0)
             x[2:end] .~ x[1:end-1] + 1
-            nodes, y .~ NormalMeanVariance(x .+ 1 .- constvar(1) .+ 1, det((diageye(2) .+ diageye(2)) ./ 2))
+            nodes, y .~ NormalMeanVariance(x .+ 1 .- constvar(1) .+ 1, det((diageye(2) .+ diageye(2)) ./ 2)) where { 
+                q = q(μ)q(v)q(out), meta = 1
+            }
 
             return (nodes, )
         end
@@ -72,6 +74,8 @@ using Random
 
         for node in nodes 
             v = ReactiveMP.connectedvar(ReactiveMP.getinterface(node, :v))
+            @test ReactiveMP.factorisation(node) === ((1,),(2,),(3,))
+            @test ReactiveMP.metadata(node) === 1
             @test v isa ReactiveMP.ConstVariable
             @test ReactiveMP.getconst(v) == 1
         end
