@@ -29,7 +29,8 @@ end
     x = datavar(Float64, n)
     y = datavar(Float64, n)
 
-    y .~ NormalMeanVariance(x .* b .+ a, 1.0)
+    # Variance over-complicated for a purpose of checking that this expressions are allowed, it should be equal to `1.0`
+    y .~ NormalMeanVariance(x .* b .+ a, det((diageye(2) .+ diageye(2)) ./ 2)) 
 
     return a, b, x, y
 end
