@@ -11,6 +11,12 @@ function Distributions.mean(::typeof(logdet), distribution::Wishart)
     return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) + logdet(S)
 end
 
+function Distributions.mean(::typeof(cholinv), distribution::Wishart)
+    d    = ndims(distribution)
+    ν, S = params(distribution)
+    sum([digamma.(0.5*(ν + 1 - i)) for i = 1:d]) + d*log(2) + logdet(S)
+end
+
 vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, Matrix(Diagonal(huge .* ones(dims))))
 
 Base.ndims(dist::Wishart) = Distributions.dim(dist)
