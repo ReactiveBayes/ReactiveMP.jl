@@ -7,7 +7,8 @@ using Random
 
 # TODO: move this tests to RxInfer.jl
 @testset "@model macro tests" begin
-    @testset "Broadcasting syntax #1" begin 
+
+    @testset "Broadcasting #1" begin 
 
         @model function bsyntax1(n, broadcasting)
             m ~ NormalMeanPrecision(0.0, 1.0)
@@ -47,7 +48,46 @@ using Random
         end
     end
 
-    @testset "Fail if variables has been overwritten" begin
+    @testset "Broadcasting #2" begin 
+        import LinearAlgebra: det
+
+        @model function bsyntax2(n)
+            x = randomvar(n)
+            y = datavar(Float64, n)
+
+            nodes = Vector{Any}(undef, n)
+
+            x[1] ~ NormalMeanVariance(0.0, 1.0)
+            x[2:end] .~ x[1:end-1] + 1
+            nodes, y .~ NormalMeanVariance(x .+ 1 .- constvar(1) .+ 1, det((diageye(2) .+ diageye(2)) ./ 2))
+
+            return (nodes, )
+        end
+
+        n = 10
+        # Test that model creates without any issues
+        model, (nodes, ) = bsyntax2(n)
+
+        @test length(getrandom(model)) === n + n + n + n
+
+        for node in nodes 
+            v = ReactiveMP.connectedvar(ReactiveMP.getinterface(node, :v))
+            @test v isa ReactiveMP.ConstVariable
+            @test ReactiveMP.getconst(v) == 1
+        end
+    end
+
+    @testset "Error #1: Fail if variable in broadcasting hasnt been defined" begin 
+        @model function berror1(n)
+            x = randomvar(n)
+            x .~ NormalMeanVariance(0.0, 1.0)
+            y .~ NormalMeanVariance(x, 1.0) # <- y has not be defined, but used in broadcasting
+        end
+
+        @test_throws ErrorException berror1(10)
+    end
+
+    @testset "Error #2: Fail if variables has been overwritten" begin
         @model function mymodel1(; condition)
             if condition === 0
                 x = randomvar()
