@@ -40,7 +40,7 @@ failing! All demos (can be found in `/demo/` directory) and benchmarks (can be f
 ### Style conventions
 
 !!! note
-    ReactiveMP.jl repository contains scripts to automatically format code according to our guidlines. Use `make format` command to fix code style. This command overwrites files.
+    ReactiveMP.jl repository contains scripts to automatically format code according to our guidelines. Use `make format` command to fix code style. This command overwrites files.
 
 We use default [Julia style guide](https://docs.julialang.org/en/v1/manual/style-guide/index.html). We list here a few important points and our modifications to the Julia style guide:
 
