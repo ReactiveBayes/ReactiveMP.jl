@@ -14,7 +14,7 @@ end
 function Distributions.mean(::typeof(cholinv), distribution::Wishart)
     d    = ndims(distribution)
     ν, S = params(distribution)
-    sum([digamma.(0.5*(ν + 1 - i)) for i = 1:d]) + d*log(2) + logdet(S)
+    sum([digamma.(0.5 * (ν + 1 - i)) for i in 1:d]) + d * log(2) + logdet(S)
 end
 
 vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, Matrix(Diagonal(huge .* ones(dims))))
