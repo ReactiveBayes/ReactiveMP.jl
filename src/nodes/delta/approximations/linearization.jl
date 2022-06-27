@@ -1,3 +1,3 @@
-# Lets pretend we have some approximation method and some internal fields
+export LinearApproximation
 
 struct LinearApproximation end

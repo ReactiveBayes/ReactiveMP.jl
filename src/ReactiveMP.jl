@@ -111,15 +111,7 @@ include("nodes/autoregressive.jl")
 include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
-include("nodes/delta/delta.jl")
 include("nodes/flow/flow.jl")
-
-# Deterministic nodes
-include("nodes/addition.jl")
-include("nodes/subtraction.jl")
-include("nodes/multiplication.jl")
-
-include("rules/prototypes.jl")
 
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
@@ -133,5 +125,16 @@ include("constraints/spec/form_spec.jl")
 include("model.jl")
 include("fixes.jl")
 include("inference.jl")
+
+# Deterministic nodes
+include("nodes/addition.jl")
+include("nodes/subtraction.jl")
+include("nodes/multiplication.jl")
+
+# Delta node depends on model.jl (use AutoVar)
+include("nodes/delta/delta.jl")
+
+# Nodes before rules
+include("rules/prototypes.jl")
 
 end

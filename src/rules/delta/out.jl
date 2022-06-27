@@ -1,4 +1,4 @@
-using Random, StableRNGs
+using Random
 
 # We define a rule for `DeltaFn{f}` where `f` is a callable reference to our function and can be called as `f(1, 2, 3)` blabla
 # `m_ins` is a tuple of input messages
