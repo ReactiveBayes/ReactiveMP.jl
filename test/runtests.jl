@@ -144,6 +144,9 @@ end
     addtests("nodes/test_normal_mean_variance.jl")
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
+    addtests("nodes/test_poisson.jl")
+
+    addtests("rules/uniform/test_out.jl")
 
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")
@@ -202,6 +205,10 @@ end
 
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
+
+    addtests("rules/poisson/test_l.jl")
+    addtests("rules/poisson/test_marginals.jl")
+    addtests("rules/poisson/test_out.jl")
 
     addtests("models/test_lgssm.jl")
     addtests("models/test_hgf.jl")

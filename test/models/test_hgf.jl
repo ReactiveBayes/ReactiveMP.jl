@@ -168,12 +168,14 @@ end
         p = plot(pz, px, pf, layout = @layout([a; b; c]))
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark =
-            @benchmark hgf_online_inference($y, $vmp_iters, $real_k, $real_w, $z_variance, $y_variance) seconds = 15
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark =
+                @benchmark hgf_online_inference($y, $vmp_iters, $real_k, $real_w, $z_variance, $y_variance) seconds = 15
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end
