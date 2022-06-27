@@ -19,6 +19,8 @@ end
 include("approximations/linearization.jl")
 include("approximations/sampling.jl")
 
+as_node_symbol(::Type{DeltaFn{ReactiveMP.DeltaFnCallableWrapper{F}}}) where {F} = Symbol(:DeltaFn, string(F))
+
 functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{DeltaFnCallableWrapper{F}}
 sdtype(factornode::DeltaFnNode)                           = Deterministic()
 interfaces(factornode::DeltaFnNode)                       = (factornode.out, factornode.ins...)
@@ -29,10 +31,9 @@ metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
 function __make_delta_fn_node(
     fn::F,
+    options::FactorNodeCreationOptions,
     out::AbstractVariable,
-    ins::NTuple{N, <:AbstractVariable};
-    factorisation = nothing,
-    meta::M = nothing
+    ins::NTuple{N, <:AbstractVariable}
 ) where {F <: Function, N, M}
     out_interface = NodeInterface(:out, Marginalisation())
     ins_interface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(:in, Marginalisation())), N)
@@ -48,18 +49,23 @@ function __make_delta_fn_node(
     end
 
     localmarginals = FactorNodeLocalMarginals((FactorNodeLocalMarginal(1, :out), FactorNodeLocalMarginal(2, :ins)))
-    metadata       = collect_meta(DeltaFn, meta)
+    meta           = collect_meta(DeltaFn, metadata(options))
 
-    return DeltaFnNode(fn, out_interface, ins_interface, localmarginals, metadata)
+    return DeltaFnNode(fn, out_interface, ins_interface, localmarginals, meta)
 end
 
-function make_node(fform::F, autovar::AutoVar, args::Vararg{<:AbstractVariable}; kwargs...) where {F <: Function}
+function make_node(
+    fform::F,
+    options::FactorNodeCreationOptions,
+    autovar::AutoVar,
+    args::Vararg{<:AbstractVariable}
+) where {F <: Function}
     out = randomvar(getname(autovar))
-    return __make_delta_fn_node(fform, out, args; kwargs...), out
+    return __make_delta_fn_node(fform, options, out, args), out
 end
 
-function make_node(fform::F, args::Vararg{<:AbstractVariable}; kwargs...) where {F <: Function}
-    return __make_delta_fn_node(fform, args[1], args[2:end]; kwargs...)
+function make_node(fform::F, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable}) where {F <: Function}
+    return __make_delta_fn_node(fform, options, args[1], args[2:end])
 end
 
 # DeltaFn is very special, so it has a very special `activate!` function
@@ -81,7 +87,7 @@ function activate!(model, factornode::DeltaFnNode)
         setstream!(localmarginal, cmarginal)
 
         msgs_names      = Val{(:ins,)}
-        msgs_observable = combineLatest((combineLatest(map((in) -> messagein(in), ins), PushNew()),), PushNew())
+        msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
 
         marginal_names       = Val{(:out,)}
         marginals_observable = combineLatestUpdates((getmarginal(connectedvar(out), IncludeAll()),), PushNew())
@@ -98,8 +104,8 @@ function activate!(model, factornode::DeltaFnNode)
 
     # Second we declare message passing logic for out interface
     let interface = factornode.out
-        msgs_names      = Val{(:ins,)}
-        msgs_observable = combineLatest((combineLatest(map((in) -> messagein(in), factornode.ins), PushNew()),), PushNew())
+        msgs_names      = Val{(:out, :ins)}
+        msgs_observable = combineLatestUpdates((messagein(interface), combineLatestUpdates(map((in) -> messagein(in), factornode.ins), PushNew())), PushNew())
 
         marginal_names       = nothing
         marginals_observable = of(nothing)
@@ -110,8 +116,10 @@ function activate!(model, factornode::DeltaFnNode)
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
         # vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-        mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
-        mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
+        mapping =
+            let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
 
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
@@ -124,7 +132,7 @@ function activate!(model, factornode::DeltaFnNode)
     # At last we declare message passing logic for input interfaces
     foreach(factornode.ins) do interface
         msgs_names      = Val{(:in,)}
-        msgs_observable = combineLatest((messagein(interface),), PushNew())
+        msgs_observable = combineLatestUpdates((messagein(interface),), PushNew())
 
         marginal_names       = Val{(:ins,)}
         marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]),), PushNew())
@@ -135,8 +143,10 @@ function activate!(model, factornode::DeltaFnNode)
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
         # vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-        mapping = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
-        mapping = apply_mapping(msgs_observable, marginals_observable, mapping)
+        mapping =
+            let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
 
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)

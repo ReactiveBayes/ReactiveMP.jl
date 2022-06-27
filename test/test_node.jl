@@ -2,6 +2,7 @@ module ReactiveMPNodeTest
 
 using Test
 using ReactiveMP
+using Distributions
 
 @testset "FactorNode" begin
     @testset "Common" begin
@@ -140,6 +141,25 @@ using ReactiveMP
         @test snode === nothing
         @test typeof(svar) <: ConstVariable
 
+        # Check that same variables are not allowed
+
+        struct DummyNodeCheckUniqueness end
+
+        @node DummyNodeCheckUniqueness Stochastic [a, b, c]
+
+        sx = randomvar(:rx)
+        sd = datavar(:rd, Float64)
+        sc = constvar(:sc, 1.0)
+
+        vs = (sx, sd, sc)
+
+        for a in vs, b in vs, c in vs
+            input = (a, b, c)
+            if length(input) != length(Set(input))
+                @test_throws ErrorException make_node(DummyNodeCheckUniqueness, FactorNodeCreationOptions(), a, b, c)
+            end
+        end
+
         # Testing expected exceptions
 
         struct DummyStruct end
@@ -150,6 +170,29 @@ using ReactiveMP
         @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [out]), in, x]))
         @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [1]), in, x]))
         @test_throws Exception eval(:(@node DummyStruct Stochastic []))
+    end
+
+    @testset "sdtype of an arbitrary distribution is Stochastic" begin
+        struct DummyDistribution <: Distribution{Univariate, Continuous} end
+
+        @test sdtype(DummyDistribution) === Stochastic()
+    end
+
+    @testset "make_node throws on Unknown distribution type" begin
+        struct DummyDistribution <: Distribution{Univariate, Continuous} end
+
+        @test_throws ErrorException ReactiveMP.make_node(
+            FactorGraphModel(),
+            FactorNodeCreationOptions(),
+            DummyDistribution,
+            AutoVar(:θ)
+        )
+        @test_throws ErrorException ReactiveMP.make_node(
+            FactorGraphModel(),
+            FactorNodeCreationOptions(),
+            DummyDistribution,
+            randomvar(:θ)
+        )
     end
 end
 

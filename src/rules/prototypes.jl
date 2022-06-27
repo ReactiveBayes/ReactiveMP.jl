@@ -1,6 +1,8 @@
 
 include("uninformative/out.jl")
 
+include("uniform/out.jl")
+
 include("addition/marginals.jl")
 include("addition/out.jl")
 include("addition/in1.jl")
@@ -120,3 +122,7 @@ include("bifm_helper/out.jl")
 
 include("delta/in.jl")
 include("delta/out.jl")
+
+include("poisson/l.jl")
+include("poisson/marginals.jl")
+include("poisson/out.jl")

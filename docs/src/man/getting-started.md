@@ -16,6 +16,16 @@ Install `ReactiveMP` through the Julia package manager:
 !!! note
     For best user experience you also need to install `GraphPPL`, `Rocket` and `Distributions` packages.
 
+## Importing ReactiveMP
+
+To add `ReactiveMP` package (and all associated packages) into a running Julia session simply run:
+
+```julia
+using ReactiveMP, Rocket, GraphPPL, Distributions
+```
+
+Read more about about `using` in the [Using methods from ReactiveMP](@ref lib-using-methods) section of the documentation.
+
 ## Example: Inferring the bias of a coin
 The `ReactiveMP` approach to solving inference problems consists of three phases:
 
@@ -87,6 +97,8 @@ Now let's see how to specify this model using GraphPPL's package syntax.
     
     # We endow θ parameter of our model with some prior
     θ ~ Beta(2.0, 7.0)
+    # or, in this particular case, the `Uniform(0.0, 1.0)` prior also works:
+    # θ ~ Uniform(0.0, 1.0)
     
     # We assume that outcome of each coin flip is governed by the Bernoulli distribution
     for i in 1:n

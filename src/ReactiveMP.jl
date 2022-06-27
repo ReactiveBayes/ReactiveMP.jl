@@ -86,8 +86,22 @@ include("node.jl")
 include("score/variable.jl")
 include("score/node.jl")
 
+include("constraints/form/form_unspecified.jl")
+include("constraints/form/form_point_mass.jl")
+include("constraints/form/form_fixed_marginal.jl")
+include("constraints/form/form_sample_list.jl")
+
+include("constraints/spec/spec.jl")
+include("constraints/spec/factorisation_spec.jl")
+include("constraints/spec/form_spec.jl")
+
+include("fixes.jl")
+include("model.jl")
+include("inference.jl")
+
 # Stochastic nodes
 include("nodes/uninformative.jl")
+include("nodes/uniform.jl")
 include("nodes/normal_mean_variance.jl")
 include("nodes/normal_mean_precision.jl")
 include("nodes/mv_normal_mean_covariance.jl")
@@ -112,6 +126,7 @@ include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/flow/flow.jl")
+include("nodes/poisson.jl")
 
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
