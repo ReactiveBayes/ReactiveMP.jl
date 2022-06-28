@@ -844,8 +844,8 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) =
-    throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
+# rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) =
+#     throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)
     print(io, "RuleMethodError: no method matching rule for the given arguments")
@@ -922,8 +922,8 @@ struct MarginalRuleMethodError
     node
 end
 
-marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) =
-    throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
+# marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) =
+#     throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::MarginalRuleMethodError)
     print(io, "MarginalRuleMethodError: no method matching rule for the given arguments")
