@@ -12,9 +12,9 @@ import Distributions: Wishart
     m_q_S   = mean(q_S)
     m_q_out = mean(q_out)
 
-    return 0.5 * (
+    return (
         m_q_ν * (mean(logdet, q_S) + d * log(2)) -
-        mean(logdet, q_out) * (m_q_ν - d - 1.0) +
-        tr(mean(cholinv, q_S) * m_q_out) + 0.5 * d * (d - 1) * logπ
-    ) + mapreduce(i -> loggamma(0.5 * (m_q_ν + 1.0 - i)), +, 1:d)
+        mean(logdet, q_out) * (m_q_ν - d - 1) +
+        tr(mean(inv, q_S) * m_q_out) + d * (d - 1) / 2 * logπ
+    ) / 2 + mapreduce(i -> loggamma((m_q_ν + 1 - i) / 2), +, 1:d)
 end
