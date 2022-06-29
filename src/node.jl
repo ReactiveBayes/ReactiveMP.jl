@@ -435,6 +435,7 @@ function Base.show(io::IO, factornode::FactorNode)
     println(io, string(" form            : ", functionalform(factornode)))
     println(io, string(" sdtype          : ", sdtype(factornode)))
     println(io, string(" interfaces      : ", interfaces(factornode)))
+    println(io, string(" connectedvars   : ", map(indexed_name, connectedvars(factornode))))
     println(io, string(" factorisation   : ", factorisation(factornode)))
     println(io, string(" local marginals : ", localmarginalnames(factornode)))
     println(io, string(" metadata        : ", metadata(factornode)))
@@ -444,6 +445,7 @@ end
 functionalform(factornode::FactorNode)     = factornode.fform
 sdtype(factornode::FactorNode)             = sdtype(functionalform(factornode))
 interfaces(factornode::FactorNode)         = factornode.interfaces
+connectedvars(factornode::FactorNode)      = map((i) -> connectedvar(i), interfaces(factornode))
 factorisation(factornode::FactorNode)      = factornode.factorisation
 localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
 localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode))

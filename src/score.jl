@@ -1,4 +1,5 @@
 export score, AverageEnergy, DifferentialEntropy, BetheFreeEnergy
+export BetheFreeEnergyCheckNaNs, BetheFreeEnergyCheckInfs, BetheFreeEnergyDefaultChecks
 export @average_energy
 
 abstract type AbstractScoreObjective end
@@ -18,16 +19,92 @@ score(::Type{T}, objective::AbstractScoreObjective, model, scheduler) where {T <
 
 # Bethe Free Energy objective
 
+## Various check/report structures
+
+"""
+    apply_diagnostic_check(check, context, stream)
+
+This function applies a `check` to the `stream`. Accepts optional context object for custom error messages.
+"""
+function apply_diagnostic_check end
+
+"""
+    BetheFreeEnergyCheckNaNs
+
+If enabled checks that both variable and factor bound score functions in Bethe Free Energy computation do not return `NaN`s. 
+Throws an error if finds `NaN`. 
+
+See also: [`BetheFreeEnergyCheckInfs`](@ref)
+"""
+struct BetheFreeEnergyCheckNaNs end
+
+function apply_diagnostic_check(::BetheFreeEnergyCheckNaNs, node::AbstractFactorNode, stream)
+    return stream |> error_if(value_isnan, (_) -> """
+        Failed to compute node bound free energy component. The result is `NaN`. 
+        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+        $(node)
+    """)
+end
+
+function apply_diagnostic_check(::BetheFreeEnergyCheckNaNs, variable::AbstractVariable, stream)
+    return stream |> error_if(value_isnan, (_) -> """
+        Failed to compute variable bound free energy component for `$(indexed_name(variable))` variable. The result is `NaN`. 
+        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+    """)
+end
+
+"""
+    BetheFreeEnergyCheckInfs
+
+If enabled checks that both variable and factor bound score functions in Bethe Free Energy computation do not return `Inf`s. 
+Throws an error if finds `Inf`. 
+
+See also: [`BetheFreeEnergyCheckNaNs`](@ref)
+"""
+struct BetheFreeEnergyCheckInfs end
+
+function apply_diagnostic_check(::BetheFreeEnergyCheckInfs, node::AbstractFactorNode, stream)
+    return stream |> error_if(value_isinf, (_) -> """
+        Failed to compute node bound free energy component. The result is `Inf`. 
+        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+        $(node)
+    """)
+end
+
+function apply_diagnostic_check(::BetheFreeEnergyCheckInfs, variable::AbstractVariable, stream)
+    return stream |> error_if(value_isnan, (_) -> """
+        Failed to compute variable bound free energy component for `$(indexed_name(variable))` variable. The result is `Inf`. 
+        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+    """)
+end
+
+apply_diagnostic_check(::Nothing, something, stream)     = stream
+apply_diagnostic_check(checks::Tuple, something, stream) = foldl((folded, check) -> apply_diagnostic_check(check, something, folded), checks; init = stream)
+
+##
+
 struct AverageEnergy end
 struct DifferentialEntropy end
 
-struct BetheFreeEnergy{S} <: AbstractScoreObjective
+"""
+    BetheFreeEnergy(marginal_skip_strategy, diagnostic_checks)
+
+Creates Bethe Free Energy values stream when passed to the `score` function. 
+"""
+struct BetheFreeEnergy{S, C} <: AbstractScoreObjective
     marginal_skip_strategy::S
+    diagnostic_checks::C
 end
 
-BetheFreeEnergy() = BetheFreeEnergy(SkipInitial())
+const BetheFreeEnergyDefaultMarginalSkipStrategy = SkipInitial()
+const BetheFreeEnergyDefaultChecks               = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
+
+BetheFreeEnergy() = BetheFreeEnergy(BetheFreeEnergyDefaultMarginalSkipStrategy, BetheFreeEnergyDefaultChecks)
 
 marginal_skip_strategy(objective::BetheFreeEnergy) = objective.marginal_skip_strategy
+
+apply_diagnostic_check(objective::BetheFreeEnergy, something, stream) =
+    apply_diagnostic_check(objective.diagnostic_checks, something, stream)
 
 function score(::Type{T}, objective::BetheFreeEnergy, model, scheduler) where {T <: InfCountingReal}
     stochastic_variables = filter(r -> !is_point_mass_form_constraint(marginal_form_constraint(r)), getrandom(model))

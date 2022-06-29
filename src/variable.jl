@@ -35,6 +35,8 @@ indexed_name(::VariableIndividual, name::Symbol) = string(name)
 indexed_name(seq::VariableVector, name::Symbol)  = string(name, "_", seq.index)
 indexed_name(array::VariableArray, name::Symbol) = string(name, "_", join(array.index.I, "_"))
 
+indexed_name(::Nothing)                   = nothing
+indexed_name(collection::Tuple)           = map(indexed_name, collection)
 indexed_name(randomvar::AbstractVariable) = indexed_name(collection_type(randomvar), name(randomvar))
 
 ## Messages to Marginal product strategies

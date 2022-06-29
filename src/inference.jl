@@ -141,16 +141,17 @@ unwrap_free_energy_option(option::Type{T}) where {T <: Real} = (true, T, InfCoun
     inference(
         model::ModelGenerator; 
         data,
-        initmarginals = nothing,
-        initmessages  = nothing,
-        constraints   = nothing,
-        meta          = nothing,
-        options       = (;),
-        returnvars    = nothing, 
-        iterations    = 1,
-        free_energy   = false,
-        showprogress  = false,
-        callbacks     = nothing,
+        initmarginals           = nothing,
+        initmessages            = nothing,
+        constraints             = nothing,
+        meta                    = nothing,
+        options                 = (;),
+        returnvars              = nothing, 
+        iterations              = 1,
+        free_energy             = false,
+        free_energy_diagnostics = BetheFreeEnergyDefaultChecks,
+        showprogress            = false,
+        callbacks               = nothing,
     )
 
 This function provides a generic (but somewhat limited) way to perform probabilistic inference in ReactiveMP.jl. Returns `InferenceResult`.
@@ -169,6 +170,7 @@ For more information about some of the arguments, please check below.
 - `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see below for more information
 - `iterations = 1`: number of iterations, optional, defaults to 1, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations
 - `free_energy = false`: compute the Bethe free energy, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
+- `free_energy_diagnostics = BetheFreeEnergyDefaultChecks`: free energy diagnostic checks, optional, by default checks for possible `NaN`s and `Inf`s. `nothing` disables all checks.
 - `showprogress = false`: show progress module, optional, defaults to false
 - `callbacks = nothing`: inference cycle callbacks, optional, see below for more info
 - `warn = true`: enables/disables warnings
@@ -234,6 +236,11 @@ Note, however, that it may be not possible to compute BFE values for every model
 
 Additionally, the argument may accept a floating point type, instead of a `Bool` value. Using his option, e.g.`Float64`, improves performance of Bethe Free Energy computation, but restricts using automatic differentiation packages.
 
+- ### `free_energy_diagnostics`
+
+This settings specifies either a single or a tuple of diagnostic checks for Bethe Free Energy values stream. By default checks for `NaN`s and `Inf`s. See also [`BetheFreeEnergyCheckNaNs`](@ref) and [`BetheFreeEnergyCheckInfs`](@ref).
+Pass `nothing` to disable any checks.
+
 - ### `callbacks`
 
 The inference function has its own lifecycle. The user is free to provide some (or none) of the callbacks to inject some extra logging or other procedures in the inference function, e.g.
@@ -284,6 +291,8 @@ function inference(;
     # Do we compute FE, optional, defaults to false 
     # Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
     free_energy = false,
+    # Default BFE stream checks
+    free_energy_diagnostics = BetheFreeEnergyDefaultChecks,
     # Show progress module, optional, defaults to false
     showprogress = false,
     # Inference cycle callbacks
@@ -340,7 +349,7 @@ function inference(;
 
         if is_free_energy
             fe_actor        = ScoreActor(S)
-            fe_subscription = subscribe!(score(T, BetheFreeEnergy(), fmodel), fe_actor)
+            fe_subscription = subscribe!(score(T, BetheFreeEnergy(BetheFreeEnergyDefaultMarginalSkipStrategy, free_energy_diagnostics), fmodel), fe_actor)
         end
 
         if !isnothing(initmarginals)

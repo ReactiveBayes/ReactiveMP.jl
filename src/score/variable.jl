@@ -12,5 +12,6 @@ function score(
     mapping = let d = degree(variable)
         (marginal) -> convert(T, (d - 1) * score(DifferentialEntropy(), marginal))
     end
-    return getmarginal(variable, marginal_skip_strategy(objective)) |> schedule_on(scheduler) |> map(T, mapping)
+    stream = getmarginal(variable, marginal_skip_strategy(objective)) |> schedule_on(scheduler)
+    return apply_diagnostic_check(objective, variable, stream |> map(T, mapping))
 end
