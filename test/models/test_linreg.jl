@@ -30,7 +30,7 @@ end
     y = datavar(Float64, n)
 
     # Variance over-complicated for a purpose of checking that this expressions are allowed, it should be equal to `1.0`
-    y .~ NormalMeanVariance(x .* b .+ a, det((diageye(2) .+ diageye(2)) ./ 2)) 
+    y .~ NormalMeanVariance(x .* b .+ a, det((diageye(2) .+ diageye(2)) ./ 2))
 
     return a, b, x, y
 end
@@ -89,7 +89,7 @@ end
         ## Test inference results
         @test mean(ares) ≈ mean(ares2) && var(ares) ≈ var(ares2) # Broadcasting may change the order of computations, so slight 
         @test mean(bres) ≈ mean(bres2) && var(bres) ≈ var(bres2) # differences are allowed
-        @test all(fres .≈ fres2) 
+        @test all(fres .≈ fres2)
         @test isapprox(mean(ares), reala, atol = 5)
         @test isapprox(mean(bres), realb, atol = 0.1)
         @test fres[end] < fres[2] # Loopy belief propagation has no guaranties though

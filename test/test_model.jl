@@ -7,9 +7,7 @@ using Random
 
 # TODO: move this tests to RxInfer.jl
 @testset "@model macro tests" begin
-
-    @testset "Broadcasting #1" begin 
-
+    @testset "Broadcasting #1" begin
         @model function bsyntax1(n, broadcasting)
             m ~ NormalMeanPrecision(0.0, 1.0)
             t ~ Gamma(1.0, 1.0)
@@ -19,7 +17,7 @@ using Random
 
             if broadcasting
                 nodes, y .~ NormalMeanPrecision(m, t)
-            else 
+            else
                 for i in 1:n
                     nodes[i], y[i] ~ NormalMeanPrecision(m, t)
                 end
@@ -40,7 +38,7 @@ using Random
         @test ReactiveMP.degree(t) === n + 1
 
         for testset in (((nodesb, yb), mb, tb), ((nodes, y), m, t))
-            for (node, y) in zip(testset[1]...) 
+            for (node, y) in zip(testset[1]...)
                 @test ReactiveMP.connectedvar(ReactiveMP.getinterface(node, :out)) === y # Test that :out interface has been connected to `y[i]`
                 @test ReactiveMP.connectedvar(ReactiveMP.getinterface(node, :μ)) === testset[2] # Test that :μ interface has been connected to 'm'
                 @test ReactiveMP.connectedvar(ReactiveMP.getinterface(node, :τ)) === testset[3] # Test that :τ interface has been connected to 't'
@@ -48,7 +46,7 @@ using Random
         end
     end
 
-    @testset "Broadcasting #2" begin 
+    @testset "Broadcasting #2" begin
         import LinearAlgebra: det
 
         @model function bsyntax2(n)
@@ -59,29 +57,32 @@ using Random
 
             x[1] ~ NormalMeanVariance(0.0, 1.0)
             x[2:end] .~ x[1:end-1] + 1
-            nodes, y .~ NormalMeanVariance(x .+ 1 .- constvar(1) .+ 1, det((diageye(2) .+ diageye(2)) ./ 2)) where { 
+            nodes, y .~ NormalMeanVariance(
+                x .+ 1 .- constvar(1) .+ 1,
+                det((diageye(2) .+ diageye(2)) ./ 2)
+            ) where {
                 q = q(μ)q(v)q(out), meta = 1
             }
 
-            return (nodes, )
+            return (nodes,)
         end
 
         n = 10
         # Test that model creates without any issues
-        model, (nodes, ) = bsyntax2(n)
+        model, (nodes,) = bsyntax2(n)
 
         @test length(getrandom(model)) === n + n + n + n
 
-        for node in nodes 
+        for node in nodes
             v = ReactiveMP.connectedvar(ReactiveMP.getinterface(node, :v))
-            @test ReactiveMP.factorisation(node) === ((1,),(2,),(3,))
+            @test ReactiveMP.factorisation(node) === ((1,), (2,), (3,))
             @test ReactiveMP.metadata(node) === 1
             @test v isa ReactiveMP.ConstVariable
             @test ReactiveMP.getconst(v) == 1
         end
     end
 
-    @testset "Error #1: Fail if variable in broadcasting hasnt been defined" begin 
+    @testset "Error #1: Fail if variable in broadcasting hasnt been defined" begin
         @model function berror1(n)
             x = randomvar(n)
             x .~ NormalMeanVariance(0.0, 1.0)
