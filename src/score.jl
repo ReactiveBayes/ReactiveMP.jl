@@ -39,18 +39,24 @@ See also: [`BetheFreeEnergyCheckInfs`](@ref)
 struct BetheFreeEnergyCheckNaNs end
 
 function apply_diagnostic_check(::BetheFreeEnergyCheckNaNs, node::AbstractFactorNode, stream)
-    return stream |> error_if(value_isnan, (_) -> """
-        Failed to compute node bound free energy component. The result is `NaN`. 
-        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
-        $(node)
-    """)
+    error_fn = let node = node
+        (_) -> """
+            Failed to compute node bound free energy component. The result is `NaN`. 
+            Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+            $(node)
+        """
+    end
+    return stream |> error_if(value_isnan, error_fn)
 end
 
 function apply_diagnostic_check(::BetheFreeEnergyCheckNaNs, variable::AbstractVariable, stream)
-    return stream |> error_if(value_isnan, (_) -> """
-        Failed to compute variable bound free energy component for `$(indexed_name(variable))` variable. The result is `NaN`. 
-        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
-    """)
+    error_fn = let variable = variable
+        (_) -> """
+            Failed to compute variable bound free energy component for `$(indexed_name(variable))` variable. The result is `NaN`. 
+            Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+        """
+    end
+    return stream |> error_if(value_isnan, error_fn)
 end
 
 """
@@ -64,18 +70,24 @@ See also: [`BetheFreeEnergyCheckNaNs`](@ref)
 struct BetheFreeEnergyCheckInfs end
 
 function apply_diagnostic_check(::BetheFreeEnergyCheckInfs, node::AbstractFactorNode, stream)
-    return stream |> error_if(value_isinf, (_) -> """
-        Failed to compute node bound free energy component. The result is `Inf`. 
-        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
-        $(node)
-    """)
+    error_fn = let node = node
+        (_) -> """
+            Failed to compute node bound free energy component. The result is `Inf`. 
+            Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+            $(node)
+        """
+    end
+    return stream |> error_if(value_isinf, error_fn)
 end
 
 function apply_diagnostic_check(::BetheFreeEnergyCheckInfs, variable::AbstractVariable, stream)
-    return stream |> error_if(value_isnan, (_) -> """
-        Failed to compute variable bound free energy component for `$(indexed_name(variable))` variable. The result is `Inf`. 
-        Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
-    """)
+    error_fn = let variable = variable
+        (_) -> """
+            Failed to compute variable bound free energy component for `$(indexed_name(variable))` variable. The result is `Inf`. 
+            Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
+        """
+    end
+    return stream |> error_if(value_isnan, error_fn)
 end
 
 apply_diagnostic_check(::Nothing, something, stream)     = stream
