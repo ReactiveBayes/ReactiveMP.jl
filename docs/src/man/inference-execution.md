@@ -9,7 +9,7 @@ The `ReactiveMP` inference API supports different types of message-passing algor
 
 Whereas belief propagation computes exact inference for the random variables of interest, the variational message passing (VMP) in an approximation method that can be applied to a larger range of models.
 
-The `ReactiveMP` engine itself isn't aware of different algorithm types and simply does message passing between nodes, however during model specification stage user may specifiy different factorisation constraints around factor nodes by using `where { q = ... }` syntax or with the help of the `@constraints` macro. Different factorisation constraints lead to a different message passing update rules.
+The `ReactiveMP` engine itself isn't aware of different algorithm types and simply does message passing between nodes, however during model specification stage user may specify different factorisation constraints around factor nodes by using `where { q = ... }` syntax or with the help of the `@constraints` macro. Different factorisation constraints lead to a different message passing update rules.
 
 Inference with `ReactiveMP` usually consists of the same simple building blocks and designed in such a way to support both static and real-time infinite datasets:
 
@@ -21,7 +21,7 @@ Inference with `ReactiveMP` usually consists of the same simple building blocks 
 
 It is worth to note that Step 5 is optional and in case where observations come from an infinite real-time data stream (e.g. from the internet) it may be justified to never unsubscribe and perform real-time Bayesian inference in a reactive manner as soon as data arrives.
 
-ReactiveMP.jl provides generic `inference` function to simplify these steps and test models faster. However, this function does not suppor the full range of ReactiveMP.jl's package 
+ReactiveMP.jl provides generic `inference` function to simplify these steps and test models faster. However, this function does not support the full range of ReactiveMP.jl's package 
 feature. Read about both automatic and manual approaches below.
 
 ## [Automatic inference specification](@id user-guide-inference-execution-automatic-specification)
@@ -39,7 +39,7 @@ For advanced use cases such as online real-time Bayesian inference it is advised
 
 ### [Model creation](@id user-guide-inference-execution-model-creation)
 
-During model specification stage user decides on variables of interesets in a model and returns (optionally) them using a `return ...` statement. As an example consider that we have a simple hierarchical model in which the mean of a Normal distribution is represented by another Normal distribution whose mean is modelled by another Normal distribution.
+During model specification stage user decides on variables of interest in a model and returns (optionally) them using a `return ...` statement. As an example consider that we have a simple hierarchical model in which the mean of a Normal distribution is represented by another Normal distribution whose mean is modelled by another Normal distribution.
 
 ```@example hierarchical-normal
 using Rocket, GraphPPL, ReactiveMP, Distributions, Random

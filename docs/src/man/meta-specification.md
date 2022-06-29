@@ -4,7 +4,7 @@ Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to
 
 ## General syntax 
 
-`@meta` macro accepts either regular julia function or a single `begin ... end` block. For example both are valid:
+`@meta` macro accepts either regular Julia function or a single `begin ... end` block. For example both are valid:
 
 ```julia
 
