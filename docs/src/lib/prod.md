@@ -16,5 +16,6 @@ ProdPreserveTypeRight
 ```@docs 
 DistProduct
 ProdGeneric
+GenericLogPdfVectorisedProduct
 ```
 
