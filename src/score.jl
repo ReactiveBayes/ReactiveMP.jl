@@ -1,5 +1,6 @@
 export score, AverageEnergy, DifferentialEntropy, BetheFreeEnergy
-export BetheFreeEnergyCheckNaNs, BetheFreeEnergyCheckInfs, BetheFreeEnergyDefaultChecks
+export BetheFreeEnergyCheckNaNs, BetheFreeEnergyCheckInfs
+export BetheFreeEnergyDefaultMarginalSkipStrategy, BetheFreeEnergyDefaultChecks
 export @average_energy
 
 abstract type AbstractScoreObjective end
@@ -87,7 +88,7 @@ function apply_diagnostic_check(::BetheFreeEnergyCheckInfs, variable::AbstractVa
             Use `diagnostic_checks` field in `BetheFreeEnergy` constructor or `free_energy_diagnostics` keyword argument in the `inference` function to suppress this error.
         """
     end
-    return stream |> error_if(value_isnan, error_fn)
+    return stream |> error_if(value_isinf, error_fn)
 end
 
 apply_diagnostic_check(::Nothing, something, stream)     = stream
