@@ -28,9 +28,9 @@ import ReactiveMP: getdist, prod
         struct DummyDistribution13 end
         struct DummyDistribution14 end
 
-        Distributions.support(::DummyDistribution1) = (-Inf, Inf)
-        Distributions.support(::DummyDistribution2) = (-Inf, Inf)
-        Distributions.support(::DummyDistribution3) = (-Inf, Inf)
+        Distributions.support(::DummyDistribution11) = (-Inf, Inf)
+        Distributions.support(::DummyDistribution12) = (-Inf, Inf)
+        Distributions.support(::DummyDistribution13) = (-Inf, Inf)
         Distributions.support(::DummyDistribution14) = (-Inf, Inf)
 
         ReactiveMP.prod_analytical_rule(::Type{DummyDistribution12}, ::Type{DummyDistribution13}) = ProdAnalyticalRuleAvailable()
