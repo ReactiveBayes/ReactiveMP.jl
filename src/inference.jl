@@ -227,6 +227,17 @@ result = inference(
 )
 ```
 
+It is also possible to set iether `returnvars = KeepLast()` or `returnvars = KeepEach()` that acts as an alias and sets the given option for __all__ random variables in the model.
+
+# Example: 
+
+```julia
+result = inference(
+    ...,
+    returnvars = KeepLast()
+)
+```
+
 - ### `free_energy` 
 
 This setting specifies whenever the `inference` function should return Bethe Free Energy (BFE) values. 
@@ -294,19 +305,22 @@ function inference(;
     __inference_check_dicttype(:data, data)
     __inference_check_dicttype(:initmarginals, initmarginals)
     __inference_check_dicttype(:initmessages, initmessages)
-    __inference_check_dicttype(:returnvars, returnvars)
 
     inference_invoke_callback(callbacks, :before_model_creation)
     fmodel, freturval = create_model(model, constraints, meta, options)
     inference_invoke_callback(callbacks, :after_model_creation, fmodel)
     vardict = ReactiveMP.getvardict(fmodel)
 
-    # First what we do - we check if `returnvars` is nothing. If so, we replace it with 
-    # `KeepEach` for each random and not-proxied variable in a model
-    if returnvars === nothing
+    # First what we do - we check if `returnvars` is nothing or one of the two possible values: `KeepEach` and `KeepLast`. 
+    # If so, we replace it with either `KeepEach` or `KeepLast` for each random and not-proxied variable in a model
+    if returnvars === nothing || returnvars === KeepEach() || returnvars === KeepLast()
+        # Checks if the first argument is `nothing`, in which case returns the second argument
+        returnoption = something(returnvars, KeepEach()) 
         returnvars =
-            Dict(variable => KeepEach() for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
+            Dict(variable => returnoption for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
     end
+
+    __inference_check_dicttype(:returnvars, returnvars)
 
     # Use `__check_has_randomvar` to filter out unknown or non-random variables in the `returnvar` specification
     __check_has_randomvar(vardict, variable) = begin
