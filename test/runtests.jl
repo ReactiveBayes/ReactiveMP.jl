@@ -103,6 +103,7 @@ end
     addtests("constraints/spec/test_form_spec.jl")
     addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
+    addtests("constraints/prod/test_prod_generic.jl")
     addtests("constraints/meta/test_meta.jl")
 
     addtests("test_distributions.jl")
