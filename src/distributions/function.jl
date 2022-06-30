@@ -178,8 +178,11 @@ end
 ## We need to implement this auxilary functions, because we define `prod_analytical_rule = ProdAnalyticalRuleAvailable()` for AbstractContinuousGenericLogPdf
 ## By default `GenericLogPdfVectorisedProduct` works only if `prod_analytical_rule = ProdAnalyticalRuleUnknown()`
 
-prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericLogPdf} = GenericLogPdfVectorisedProduct(F[left, right], 2)
-prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where {F <: AbstractContinuousGenericLogPdf} = push!(left, right)
+prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericLogPdf} =
+    GenericLogPdfVectorisedProduct(F[left, right], 2)
+
+prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where {F <: AbstractContinuousGenericLogPdf} =
+    push!(left, right)
 
 ## Utility methods for tests 
 
