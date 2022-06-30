@@ -7,11 +7,10 @@ using Rocket
 using Distributions
 
 @testset "BetheFreeEnergy score tests" begin
-
     import ReactiveMP: InfCountingReal
 
-    @testset "`BetheFreeEnergyCheckInfs` for variable bound energy" begin 
-    
+    @testset "`BetheFreeEnergyCheckInfs` for variable bound energy" begin
+
         # Dummy graph [U] - (x) - [U]
         model = FactorGraphModel()
         x     = randomvar(model, :x)
@@ -26,11 +25,14 @@ using Distributions
 
         events = []
 
-        subscription = subscribe!(vbenergy |> safe(), lambda(
-            on_next     = (data) -> push!(events, float(data)),
-            on_error    = (err) -> push!(events, err),
-            on_complete = () -> push!(events, "completed")
-        ))
+        subscription = subscribe!(
+            vbenergy |> safe(),
+            lambda(
+                on_next     = (data) -> push!(events, float(data)),
+                on_error    = (err) -> push!(events, err),
+                on_complete = () -> push!(events, "completed")
+            )
+        )
 
         # First value is ok
         setmarginal!(x, NormalMeanVariance(0.0, 1.0))
@@ -49,8 +51,8 @@ using Distributions
         @test length(events) === 3
     end
 
-    @testset "`BetheFreeEnergyCheckNaNs` for variable bound energy" begin 
-    
+    @testset "`BetheFreeEnergyCheckNaNs` for variable bound energy" begin
+
         # Dummy graph [U] - (x) - [U]
         model = FactorGraphModel()
         x     = randomvar(model, :x)
@@ -65,11 +67,14 @@ using Distributions
 
         events = []
 
-        subscription = subscribe!(vbenergy |> safe(), lambda(
-            on_next     = (data) -> push!(events, float(data)),
-            on_error    = (err) -> push!(events, err),
-            on_complete = () -> push!(events, "completed")
-        ))
+        subscription = subscribe!(
+            vbenergy |> safe(),
+            lambda(
+                on_next     = (data) -> push!(events, float(data)),
+                on_error    = (err) -> push!(events, err),
+                on_complete = () -> push!(events, "completed")
+            )
+        )
 
         # First value is ok
         setmarginal!(x, NormalMeanVariance(0.0, 1.0))
@@ -88,8 +93,8 @@ using Distributions
         @test length(events) === 3
     end
 
-    @testset "No checks for variable bound energy" begin 
-    
+    @testset "No checks for variable bound energy" begin
+
         # Dummy graph [U] - (x) - [U]
         model = FactorGraphModel()
         x     = randomvar(model, :x)
@@ -104,11 +109,14 @@ using Distributions
 
         events = []
 
-        subscription = subscribe!(vbenergy |> safe(), lambda(
-            on_next     = (data) -> push!(events, float(data)),
-            on_error    = (err) -> push!(events, err),
-            on_complete = () -> push!(events, "completed")
-        ))
+        subscription = subscribe!(
+            vbenergy |> safe(),
+            lambda(
+                on_next     = (data) -> push!(events, float(data)),
+                on_error    = (err) -> push!(events, err),
+                on_complete = () -> push!(events, "completed")
+            )
+        )
 
         # First value is ok
         setmarginal!(x, NormalMeanVariance(0.0, 1.0))
@@ -127,13 +135,13 @@ using Distributions
         @test length(events) === 4
     end
 
-    @testset "`BetheFreeEnergyCheckInfs` for node bound energy" begin 
-    
+    @testset "`BetheFreeEnergyCheckInfs` for node bound energy" begin
+
         # Dummy graph [U] - (x) - [U]
         model = FactorGraphModel()
         x     = randomvar(model, :x)
-        n1 = make_node(Uninformative, FactorNodeCreationOptions(), x)
-        n2 = make_node(Uninformative, FactorNodeCreationOptions(), x)
+        n1    = make_node(Uninformative, FactorNodeCreationOptions(), x)
+        n2    = make_node(Uninformative, FactorNodeCreationOptions(), x)
 
         activate!(model)
 
@@ -143,11 +151,14 @@ using Distributions
 
         events = []
 
-        subscription = subscribe!(nbenergy |> safe(), lambda(
-            on_next     = (data) -> push!(events, float(data)),
-            on_error    = (err) -> push!(events, err),
-            on_complete = () -> push!(events, "completed")
-        ))
+        subscription = subscribe!(
+            nbenergy |> safe(),
+            lambda(
+                on_next     = (data) -> push!(events, float(data)),
+                on_error    = (err) -> push!(events, err),
+                on_complete = () -> push!(events, "completed")
+            )
+        )
 
         # First value is ok, `entropy(d) - entropy(d)` === 0
         setmarginal!(x, NormalMeanVariance(0.0, 1.0))
@@ -161,24 +172,27 @@ using Distributions
 
         # A hacky way to make `entropy(d) - entropy(d)` return Inf, dont use at home, for testing is fine
         count = 0
-        Distributions.entropy(::DummyDistribution) = begin count += 1; return count === 1 ? 0 : Inf end
+        Distributions.entropy(::DummyDistribution) = begin
+            count += 1
+            return count === 1 ? 0 : Inf
+        end
 
         # Third value is Inf, should trigger the check
         setmarginal!(x, DummyDistribution())
         @test events[3] isa String && occursin("The result is `Inf`.", events[3])
-       
+
         # Normally stream should unsubscribe after first error 
         setmarginal!(x, NormalMeanPrecision(0.0, 0.0))
         @test length(events) === 3
     end
 
-    @testset "`BetheFreeEnergyCheckInfs` for node bound energy" begin 
-    
+    @testset "`BetheFreeEnergyCheckInfs` for node bound energy" begin
+
         # Dummy graph [U] - (x) - [U]
         model = FactorGraphModel()
         x     = randomvar(model, :x)
-        n1 = make_node(Uninformative, FactorNodeCreationOptions(), x)
-        n2 = make_node(Uninformative, FactorNodeCreationOptions(), x)
+        n1    = make_node(Uninformative, FactorNodeCreationOptions(), x)
+        n2    = make_node(Uninformative, FactorNodeCreationOptions(), x)
 
         activate!(model)
 
@@ -188,11 +202,14 @@ using Distributions
 
         events = []
 
-        subscription = subscribe!(nbenergy |> safe(), lambda(
-            on_next     = (data) -> push!(events, float(data)),
-            on_error    = (err) -> push!(events, err),
-            on_complete = () -> push!(events, "completed")
-        ))
+        subscription = subscribe!(
+            nbenergy |> safe(),
+            lambda(
+                on_next     = (data) -> push!(events, float(data)),
+                on_error    = (err) -> push!(events, err),
+                on_complete = () -> push!(events, "completed")
+            )
+        )
 
         # First value is ok, `entropy(d) - entropy(d)` === 0
         setmarginal!(x, NormalMeanVariance(0.0, 1.0))
@@ -202,7 +219,10 @@ using Distributions
 
         # A hacky way to make `entropy(d) - entropy(d)` return Inf, dont use at home, for testing is fine
         count = 0
-        Distributions.entropy(::DummyDistribution) = begin count += 1; return count === 1 ? 0 : Inf end
+        Distributions.entropy(::DummyDistribution) = begin
+            count += 1
+            return count === 1 ? 0 : Inf
+        end
 
         # Second value is Inf, but the corresponding check is disabled
         setmarginal!(x, DummyDistribution())
@@ -211,19 +231,19 @@ using Distributions
         # Third value is NaN, as `Inf - Inf` === NaN, should trigger the check
         setmarginal!(x, NormalMeanVariance(0.0, 0.0))
         @test events[3] isa String && occursin("The result is `NaN`.", events[3])
-       
+
         # Normally stream should unsubscribe after first error 
         setmarginal!(x, NormalMeanPrecision(0.0, 0.0))
         @test length(events) === 3
     end
 
-    @testset "`BetheFreeEnergyCheckInfs` for node bound energy" begin 
-    
+    @testset "`BetheFreeEnergyCheckInfs` for node bound energy" begin
+
         # Dummy graph [U] - (x) - [U]
         model = FactorGraphModel()
         x     = randomvar(model, :x)
-        n1 = make_node(Uninformative, FactorNodeCreationOptions(), x)
-        n2 = make_node(Uninformative, FactorNodeCreationOptions(), x)
+        n1    = make_node(Uninformative, FactorNodeCreationOptions(), x)
+        n2    = make_node(Uninformative, FactorNodeCreationOptions(), x)
 
         activate!(model)
 
@@ -233,11 +253,14 @@ using Distributions
 
         events = []
 
-        subscription = subscribe!(nbenergy |> safe(), lambda(
-            on_next     = (data) -> push!(events, float(data)),
-            on_error    = (err) -> push!(events, err),
-            on_complete = () -> push!(events, "completed")
-        ))
+        subscription = subscribe!(
+            nbenergy |> safe(),
+            lambda(
+                on_next     = (data) -> push!(events, float(data)),
+                on_error    = (err) -> push!(events, err),
+                on_complete = () -> push!(events, "completed")
+            )
+        )
 
         # First value is ok, `entropy(d) - entropy(d)` === 0
         setmarginal!(x, NormalMeanVariance(0.0, 1.0))
@@ -247,7 +270,10 @@ using Distributions
 
         # A hacky way to make `entropy(d) - entropy(d)` return Inf, dont use at home, for testing is fine
         count = 0
-        Distributions.entropy(::DummyDistribution) = begin count += 1; return count === 1 ? 0 : Inf end
+        Distributions.entropy(::DummyDistribution) = begin
+            count += 1
+            return count === 1 ? 0 : Inf
+        end
 
         # Second value is Inf, but the corresponding check is disabled
         setmarginal!(x, DummyDistribution())
@@ -256,12 +282,11 @@ using Distributions
         # Third value is NaN, as `Inf - Inf` === NaN, but the corresponding check is disabled
         setmarginal!(x, NormalMeanVariance(0.0, 0.0))
         @test events[3] |> isnan
-       
+
         # Normally stream should not unsubscribe if there are no errors
         setmarginal!(x, NormalMeanPrecision(0.0, 0.0))
         @test length(events) === 4
     end
-
 end
 
 end
