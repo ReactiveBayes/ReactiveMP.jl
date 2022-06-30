@@ -98,6 +98,7 @@ end
     addtests("test_model.jl")
     addtests("test_math.jl")
     addtests("test_helpers.jl")
+    addtests("test_score.jl")
 
     addtests("constraints/spec/test_factorisation_spec.jl")
     addtests("constraints/spec/test_form_spec.jl")
