@@ -13,12 +13,14 @@ end
 
 vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, Matrix(Diagonal(huge .* ones(dims))))
 
-Base.ndims(dist::Wishart) = Distributions.dim(dist)
+Base.ndims(dist::Wishart) = size(dist, 1)
 
 prod_analytical_rule(::Type{<:Wishart}, ::Type{<:Wishart}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Wishart, right::Wishart)
-    d = dim(left)
+    @assert size(left, 1) === size(right, 1) "Cannot compute a product of two Wishart distributions of different sizes"
+
+    d = size(left, 1)
 
     ldf, lS = params(left)
     rdf, rS = params(right)
