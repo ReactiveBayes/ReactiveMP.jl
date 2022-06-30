@@ -174,9 +174,7 @@ value_support(::Type{<:GenericLogPdfVectorisedProduct{F}}) where {F} = value_sup
 value_support(::GenericLogPdfVectorisedProduct{F}) where {F}         = value_support(F)
 
 Base.show(io::IO, dist::GenericLogPdfVectorisedProduct) =
-    print(io, "GenericLogPdfVectorisedProduct(", support(dist), ")")
-Base.show(io::IO, ::Type{<:GenericLogPdfVectorisedProduct}) =
-    print(io, "GenericLogPdfVectorisedProduct")
+    print(io, "GenericLogPdfVectorisedProduct(", Distributions.support(dist), ")")
 
 Distributions.support(dist::GenericLogPdfVectorisedProduct) = Distributions.support(first(dist.vector))
 
@@ -200,7 +198,7 @@ prod(
     ::ProdAnalyticalRuleUnknown,
     left::DistProduct{L, R},
     right::L
-) where {L, R} = DistProduct(GenericLogPdfVectorisedProduct(L[getleft(left), left], 2), getright(left))
+) where {L, R} = DistProduct(GenericLogPdfVectorisedProduct(L[getleft(left), right], 2), getright(left))
 
 prod(
     ::ProdGeneric,
