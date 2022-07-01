@@ -105,6 +105,12 @@ isdata(::AbstractArray{<:DataVariable})   = true
 isconst(::DataVariable)                   = false
 isconst(::AbstractArray{<:DataVariable})  = false
 
+function Base.getindex(datavar::DataVariable, i...)
+    error(
+        "Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed."
+    )
+end
+
 getlastindex(::DataVariable) = 1
 
 messageout(datavar::DataVariable, ::Int) = datavar.messageout
