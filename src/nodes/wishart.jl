@@ -6,7 +6,7 @@ import Distributions: Wishart
 @node Wishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
 
 @average_energy Wishart (q_out::Any, q_ν::Any, q_S::Any) = begin
-    d = dim(q_out)
+    d = size(q_out, 1)
 
     m_q_ν   = mean(q_ν)
     m_q_S   = mean(q_S)
