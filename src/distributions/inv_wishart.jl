@@ -3,7 +3,7 @@ export InvWishart
 import Distributions: InverseWishart, Wishart
 import Base: ndims
 import LinearAlgebra
-import SpecialFunctions: digamma
+import SpecialFunctions: digamma, loggamma
 
 struct InvWishart{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν::T
@@ -19,9 +19,15 @@ Distributions.mean(dist::InvWishart)  = mean(InverseWishart(params(dist)...))
 Distributions.var(dist::InvWishart)   = var(InverseWishart(params(dist)...))
 Distributions.cov(dist::InvWishart)   = cov(InverseWishart(params(dist)...))
 Distributions.mode(dist::InvWishart)  = mode(InverseWishart(params(dist)...))
+Distributions.dim(dist::InvWishart)   = size(dist.S, 1)
 
-
-Distributions.entropy(dist::InvWishart) = -Distributions.entropy(Wishart(dist.ν, inv(dist.S))) # not true
+# TODO:
+# from "Parametric Bayesian Estimation of Differential Entropy and Relative Entropy" Gupta et al.
+function Distributions.entropy(dist::InvWishart)
+    d = dim(dist)
+    ν, S = params(dist)
+    mapreduce(i -> loggamma(0.5 * (ν + 1.0 - i)), +, 1:d) + 0.5ν*d + 0.5(d+1)*log(det(S)/2) + 0.5(ν+d+1) + sum([digamma(0.5(ν-d+i)) for i in 1:d])
+end
 
 function Distributions.mean(::typeof(logdet), distribution::InverseWishart)
     d    = ndims(distribution)
