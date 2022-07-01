@@ -191,7 +191,7 @@ We model a random variable by a probability distribution using the `~` operator.
 end
 ```
 
-Another example, but using a determnistic relation between random variables:
+Another example, but using a deterministic relation between random variables:
 
 ```julia
 @model function model_name(...)
