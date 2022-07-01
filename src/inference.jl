@@ -324,9 +324,11 @@ function inference(;
     # If so, we replace it with either `KeepEach` or `KeepLast` for each random and not-proxied variable in a model
     if returnvars === nothing || returnvars === KeepEach() || returnvars === KeepLast()
         # Checks if the first argument is `nothing`, in which case returns the second argument
-        returnoption = something(returnvars, KeepEach()) 
+        returnoption = something(returnvars, KeepEach())
         returnvars =
-            Dict(variable => returnoption for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value)))
+            Dict(
+                variable => returnoption for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value))
+            )
     end
 
     __inference_check_dicttype(:returnvars, returnvars)
