@@ -636,12 +636,12 @@ function message_dependencies(
         end
         return map(inds -> map(mapindex, inds), varcluster)
     else
-        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, iindex)
+        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, cindex, iindex)
     end
 end
 
 function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex, iindex)
-    return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex)
+    return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex, iindex)
 end
 
 ### With inbound marginals
@@ -658,17 +658,24 @@ function message_dependencies(
     cindex,
     iindex
 )
-    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, iindex)
+    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, cindex, iindex)
 end
 
 function marginal_dependencies(
-    ::RequireInboundMarginalFunctionalDependencies,
+    dependencies::RequireInboundMarginalFunctionalDependencies,
     nodelocalmarginals,
     varcluster,
     cindex,
     iindex
 )
-    error("Not implemented")
+    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
+    depindex = findfirst((i) -> i === iindex, dependencies.indices)
+    
+    if depindex !== nothing
+        error("Not implemented")
+    else
+        return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex, iindex)
+    end
 end
 
 ### Everything
