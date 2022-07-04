@@ -535,6 +535,11 @@ Base.:+(left::FactorNodePipeline, right::AbstractPipelineStage)                 
 
 """
     DefaultFunctionalDependencies
+
+This pipeline translates directly to variational message passing scheme. In order to compute a message out some edge this pipeline requires 
+message from edges within the same edge-cluster and marginals over other edge-clusters.
+
+See also: [`ReactiveMP.RequireInboundFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
 struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
@@ -549,8 +554,37 @@ function marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmargina
     return TupleTools.deleteat(nodelocalmarginals, cindex)
 end
 
-### With inbound
+### With inbound messages
 
+"""
+    RequireInboundFunctionalDependencies(indices::Tuple, start_with::Tuple)
+
+The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
+
+`@model` macro accepts a simplified construction of this pipeline:
+
+```julia
+@model function some_model()
+    # ...
+    y ~ NormalMeanVariance(x, τ) where {
+        pipeline = RequireInbound(x = vague(NormalMeanPrecision),     τ)
+                                  # ^^^                               ^^^
+                                  # request 'inbound' for 'x'         we may do the same for 'τ', 
+                                  # and initialise with `vague(...)`  but here we skip initialisation
+    } 
+    # ...
+end
+```
+
+# Arguments 
+
+- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages 
+- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
+
+Note: `setmessage!` overwrites the values in `start_with`.
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+"""
 struct RequireInboundFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
     start_with :: S
@@ -604,8 +638,32 @@ function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocal
     return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex)
 end
 
+### With inbound marginals
+
+
+struct RequireInboundMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline 
+    indices    :: I
+    start_with :: S
+end
+
+function message_dependencies(::RequireInboundMarginalFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, iindex)
+end
+
+function marginal_dependencies(::RequireInboundMarginalFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+    error("Not implemented")
+end
+
 ### Everything
 
+"""
+   RequireEverythingFunctionalDependencies
+
+This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally. 
+This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
+
+See also: [`DefaultFunctionalDependencies`](@ref), [`RequireInboundFunctionalDependencies`](@ref), [`RequireInboundMarginalFunctionalDependencies`](@ref)
+"""
 struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
 function ReactiveMP.message_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, varcluster, iindex)
