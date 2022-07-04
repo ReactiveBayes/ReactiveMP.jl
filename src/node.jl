@@ -575,6 +575,13 @@ end
 
 The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
 
+# Arguments 
+
+- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages 
+- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
+
+Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmessage!` overwrites whatever has been passed in `start_with`.
+
 `@model` macro accepts a simplified construction of this pipeline:
 
 ```julia
@@ -589,13 +596,6 @@ The same as `DefaultFunctionalDependencies`, but in order to compute a message o
     # ...
 end
 ```
-
-# Arguments 
-
-- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages 
-- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
-
-Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmessage!` overwrites whatever has been passed in `start_with`.
 
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
@@ -656,27 +656,12 @@ function marginal_dependencies(
     )
 end
 
-### With inbound marginals
+### With marginals
 
 """
     RequireInboundMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
 
 The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on the this edge.
-
-`@model` macro accepts a simplified construction of this pipeline:
-
-```julia
-@model function some_model()
-    # ...
-    y ~ NormalMeanVariance(x, τ) where {
-        pipeline = RequireInboundMarginal(x = vague(NormalMeanPrecision),     τ)
-                                          # ^^^                               ^^^
-                                          # request 'marginal' for 'x'        we may do the same for 'τ', 
-                                          # and initialise with `vague(...)`  but here we skip initialisation
-    } 
-    # ...
-end
-```
 
 # Arguments 
 
@@ -685,15 +670,30 @@ end
 
 Note: `start_with` uses `setmarginal!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmarginal!` overwrites whatever has been passed in `start_with`.
 
+`@model` macro accepts a simplified construction of this pipeline:
+
+```julia
+@model function some_model()
+    # ...
+    y ~ NormalMeanVariance(x, τ) where {
+        pipeline = RequireMarginal(x = vague(NormalMeanPrecision),     τ)
+                                   # ^^^                               ^^^
+                                   # request 'marginal' for 'x'        we may do the same for 'τ', 
+                                   # and initialise with `vague(...)`  but here we skip initialisation
+    } 
+    # ...
+end
+```
+
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
-struct RequireInboundMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
+struct RequireMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
     start_with :: S
 end
 
 function message_dependencies(
-    ::RequireInboundMarginalFunctionalDependencies,
+    ::RequireMarginalFunctionalDependencies,
     nodeinterfaces,
     nodelocalmarginals,
     varcluster,
@@ -711,7 +711,7 @@ function message_dependencies(
 end
 
 function marginal_dependencies(
-    dependencies::RequireInboundMarginalFunctionalDependencies,
+    dependencies::RequireMarginalFunctionalDependencies,
     nodeinterfaces,
     nodelocalmarginals,
     varcluster,
