@@ -595,31 +595,13 @@ end
 - `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages 
 - `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
 
-Note: `setmessage!` overwrites the values in `start_with`.
+Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmessage!` overwrites whatever has been passed in `start_with`.
 
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
 struct RequireInboundFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
     start_with :: S
-end
-
-struct InterfacePluginStartWithMessage{M, S}
-    msg        :: M
-    start_with :: S
-end
-
-name(p::InterfacePluginStartWithMessage)      = name(p.msg)
-messagein(p::InterfacePluginStartWithMessage) = messagein(p.start_with, p)
-
-messagein(::Nothing, p::InterfacePluginStartWithMessage) = messagein(p.msg)
-
-function messagein(something, p::InterfacePluginStartWithMessage)
-    output = messagein(p.msg)
-    if isnothing(getrecent(output))
-        setmessage!(output, something)
-    end
-    return output
 end
 
 function message_dependencies(
@@ -676,6 +658,35 @@ end
 
 ### With inbound marginals
 
+"""
+    RequireInboundMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
+
+The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on the this edge.
+
+`@model` macro accepts a simplified construction of this pipeline:
+
+```julia
+@model function some_model()
+    # ...
+    y ~ NormalMeanVariance(x, τ) where {
+        pipeline = RequireInboundMarginal(x = vague(NormalMeanPrecision),     τ)
+                                          # ^^^                               ^^^
+                                          # request 'marginal' for 'x'        we may do the same for 'τ', 
+                                          # and initialise with `vague(...)`  but here we skip initialisation
+    } 
+    # ...
+end
+```
+
+# Arguments 
+
+- `indices`::Tuple, tuple of integers, which indicates what edges should require their own marginals 
+- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial marginal for edges in `indices`
+
+Note: `start_with` uses `setmarginal!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmarginal!` overwrites whatever has been passed in `start_with`.
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+"""
 struct RequireInboundMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
     start_with :: S
@@ -720,8 +731,7 @@ function marginal_dependencies(
             setmarginal!(vmarginal, start_with)
         end
         setstream!(extra_localmarginal, vmarginal)
-        return (
-            extra_localmarginal,
+        return TupleTools.insertafter(
             marginal_dependencies(
                 DefaultFunctionalDependencies(),
                 nodeinterfaces,
@@ -729,8 +739,7 @@ function marginal_dependencies(
                 varcluster,
                 cindex,
                 iindex
-            )...
-        )
+            ), cindex - 1, (extra_localmarginal,))
     else
         return marginal_dependencies(
             DefaultFunctionalDependencies(),
