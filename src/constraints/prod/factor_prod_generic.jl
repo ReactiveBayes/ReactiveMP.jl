@@ -1,5 +1,5 @@
 import Distributions
-import Base: prod, show
+import Base: getindex, show
 
 """
     FactorProduct
@@ -10,7 +10,6 @@ end
 
 getmultipliers(product::FactorProduct)  = product.multipliers
 
-Base.show(io::IO, product::FactorProduct) = print(io, "FactorProduct(", join(getmultipliers(product), ", ", ""), ")")
+Base.show(io::IO, product::FactorProduct) = print(io, "FactorProduct(", join(getmultipliers(product), ", ", ", "), ")")
 
-multipliers = (1, 2)
-print(FactorProduct(multipliers))
+getindex(product::FactorProduct, i::Int) = product.multipliers[i]
