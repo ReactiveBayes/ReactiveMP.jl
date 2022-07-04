@@ -672,7 +672,9 @@ function marginal_dependencies(
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
     
     if depindex !== nothing
-        error("Not implemented")
+        extramarginal = FactorNodeLocalMarginal(-1, name(nodeinterfaces[iindex]))
+        setmarginal!(extramarginal, getmarginal(connectedvar(nodeinterfaces[iindex]), IncludeAll()))
+        return (extramarginal, marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex, iindex)...)
     else
         return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex, iindex)
     end
