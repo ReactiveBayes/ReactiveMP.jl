@@ -8,6 +8,10 @@ using Rocket
 
 abstract type AbstractVariable end
 
+## Base interface extensions
+
+Base.broadcastable(v::AbstractVariable) = Ref(v)
+
 ## Variable collection type
 
 abstract type AbstractVariableCollectionType end
@@ -31,6 +35,8 @@ indexed_name(::VariableIndividual, name::Symbol) = string(name)
 indexed_name(seq::VariableVector, name::Symbol)  = string(name, "_", seq.index)
 indexed_name(array::VariableArray, name::Symbol) = string(name, "_", join(array.index.I, "_"))
 
+indexed_name(::Nothing)                   = nothing
+indexed_name(collection::Tuple)           = map(indexed_name, collection)
 indexed_name(randomvar::AbstractVariable) = indexed_name(collection_type(randomvar), name(randomvar))
 
 ## Messages to Marginal product strategies
@@ -118,6 +124,7 @@ end
 
 name(variable::AbstractVariable)        = variable.name
 isanonymous(variable::AbstractVariable) = false
+isanonymous(variables::AbstractVector)  = all(isanonymous, variables)
 
 ##
 
@@ -163,9 +170,34 @@ resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyChecked, p
 
 ## Helper functions
 
-as_variable(x)                   = constvar(gensym(:constvar), x)
+"""
+    as_variable(x)
+
+Converts an object (or array of objects) `x` to an instance of `AbstractVariable` (or to an array). Does nothing if `x` is already an instance of `AbstractVariable`.
+
+See also: [`ReactiveMP.undo_as_variable`](@ref)
+"""
+function as_variable end
+
+as_variable(x)        = constvar(:anonymous_constvar, x)
+as_variable(t::Tuple) = map(as_variable, t)
+
 as_variable(v::AbstractVariable) = v
-as_variable(t::Tuple)            = map(as_variable, t)
+as_variable(v::AbstractArray{<:AbstractVariable}) = v
+
+## undo as_variable
+
+"""
+    undo_as_variable(x)
+
+Undoes the operation of `as_variable` if possible. Otherwise does nothing.
+
+See also: [`ReactiveMP.as_variable`](@ref)
+"""
+function undo_as_variable end
+
+undo_as_variable(x)                   = error("Cannot undo `as_variable` operation for variable `x`. `x = $(x)` should be an instance of `AbstractVariable`")
+undo_as_variable(v::AbstractVariable) = v
 
 israndom(v::AbstractArray{<:AbstractVariable}) = all(israndom, v)
 isdata(v::AbstractArray{<:AbstractVariable})   = all(isdata, v)

@@ -128,6 +128,11 @@ const ∞ = Infinity(Float64)
 value(a::InfCountingReal) = a.value
 infs(a::InfCountingReal)  = a.infs
 
+value_isnan(a) = isnan(a)
+value_isinf(a) = isinf(a)
+value_isnan(a::InfCountingReal) = isnan(value(a))
+value_isinf(a::InfCountingReal) = isinf(value(a))
+
 Base.isfinite(a::InfCountingReal) = infs(a) === 0
 Base.isinf(a::InfCountingReal)    = !(isfinite(a))
 
