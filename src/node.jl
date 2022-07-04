@@ -543,14 +543,14 @@ See also: [`ReactiveMP.RequireInboundFunctionalDependencies`](@ref), [`ReactiveM
 """
 struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, varcluster, cindex, iindex)
+function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     # First we remove current edge index from the list of dependencies
     vdependencies = TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex))
     # Second we map interface indices to the actual interfaces
     return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), vdependencies)
 end
 
-function marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmarginals, varcluster, cindex, iindex)
+function marginal_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     return TupleTools.deleteat(nodelocalmarginals, cindex)
 end
 
@@ -611,6 +611,7 @@ end
 function message_dependencies(
     dependencies::RequireInboundFunctionalDependencies,
     nodeinterfaces,
+    nodelocalmarginals,
     varcluster,
     cindex,
     iindex
@@ -622,26 +623,20 @@ function message_dependencies(
     # If we have `depindex` in our `indices` we include it in our list of functional dependencies. It effectively forces rule to require inbound message
     if depindex !== nothing
         # `mapindex` is a lambda function here
-        mapindex = let nodeinterfaces = nodeinterfaces, depindex = depindex
-            (i) -> begin
-                interface = @inbounds nodeinterfaces[i]
-                # InterfacePluginStartWithMessage is a proxy structure for `name` and `messagein` method for an interface
-                # It returns the same name but modifies `messagein` to return an observable with `start_with` operator
-                return if i === iindex
-                    InterfacePluginStartWithMessage(interface, dependencies.start_with[depindex])
-                else
-                    interface
-                end
-            end
+        output     = messagein(nodeinterfaces[iindex])
+        start_with = dependencies.start_with[depindex]
+        # Initialise now, if message has not been initialised before and `start_with` element is not empty
+        if isnothing(getrecent(output)) && !isnothing(start_with)
+            setmessage!(output, start_with)
         end
-        return map(inds -> map(mapindex, inds), varcluster)
+        return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), varcluster)
     else
-        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, cindex, iindex)
+        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     end
 end
 
-function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex, iindex)
-    return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex, iindex)
+function marginal_dependencies(::RequireInboundFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
+    return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 end
 
 ### With inbound marginals
@@ -654,15 +649,17 @@ end
 function message_dependencies(
     ::RequireInboundMarginalFunctionalDependencies,
     nodeinterfaces,
+    nodelocalmarginals,
     varcluster,
     cindex,
     iindex
 )
-    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, cindex, iindex)
+    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 end
 
 function marginal_dependencies(
     dependencies::RequireInboundMarginalFunctionalDependencies,
+    nodeinterfaces,
     nodelocalmarginals,
     varcluster,
     cindex,
@@ -672,11 +669,18 @@ function marginal_dependencies(
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
     
     if depindex !== nothing
-        extramarginal = FactorNodeLocalMarginal(-1, name(nodeinterfaces[iindex]))
-        setmarginal!(extramarginal, getmarginal(connectedvar(nodeinterfaces[iindex]), IncludeAll()))
-        return (extramarginal, marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex, iindex)...)
+        # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
+        extra_localmarginal = FactorNodeLocalMarginal(-1, name(nodeinterfaces[iindex]))
+        vmarginal           = getmarginal(connectedvar(nodeinterfaces[iindex]), IncludeAll())
+        start_with          = dependencies.start_with[depindex]
+        # Initialise now, if marginal has not been initialised before and `start_with` element is not empty
+        if isnothing(getrecent(vmarginal)) && !isnothing(start_with)
+            setmarginal!(vmarginal, start_with)
+        end
+        setstream!(extra_localmarginal, vmarginal)
+        return (extra_localmarginal, marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)...)
     else
-        return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex, iindex)
+        return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     end
 end
 
@@ -695,6 +699,7 @@ struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependen
 function ReactiveMP.message_dependencies(
     ::RequireEverythingFunctionalDependencies,
     nodeinterfaces,
+    nodelocalmarginals,
     varcluster,
     cindex,
     iindex
@@ -705,6 +710,7 @@ end
 
 function ReactiveMP.marginal_dependencies(
     ::RequireEverythingFunctionalDependencies,
+    nodeinterfaces,
     nodelocalmarginals,
     varcluster,
     cindex,
@@ -733,8 +739,8 @@ function functional_dependencies(dependencies, factornode::FactorNode, iindex::I
 
     varcluster = @inbounds nodeclusters[cindex]
 
-    messages  = message_dependencies(dependencies, nodeinterfaces, varcluster, cindex, iindex)
-    marginals = marginal_dependencies(dependencies, nodelocalmarginals, varcluster, cindex, iindex)
+    messages  = message_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
+    marginals = marginal_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 
     return tuple(messages...), tuple(marginals...)
 end
