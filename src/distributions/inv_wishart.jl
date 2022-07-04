@@ -11,8 +11,10 @@ struct InvWishart{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribu
     S::A
 end
 
-InvWishart(ν::Real, S::AbstractMatrix{Real})  = InvWishart(promote(ν, S)...)
-InvWishart(ν::Integer, S::AbstractMatrix{Real})  = InvWishart(float(ν), S)
+InvWishart(ν::Real, S::AbstractMatrix{Real})     = InvWishart(promote(ν, S)...)
+# TODO:
+# InvWishart(ν::Integer, S::AbstractMatrix{Real})  = InvWishart(float(ν), S)
+InvWishart(ν::Int64, S::Matrix{Float64})  = InvWishart(float(ν), S)
 
 Distributions.params(dist::InvWishart) = (dist.ν, dist.S)
 
@@ -41,7 +43,7 @@ function Distributions.mean(::typeof(inv), distribution::InvWishart)
     return ν*inv(S)
 end
 
-vague(::Type{<:InvWishart}, dims::Int) = InvWishart(dims, inv(Matrix(Diagonal(huge .* ones(dims)))))
+vague(::Type{<:InvWishart}, dims::Integer) = InvWishart(dims, inv(Matrix(Diagonal(huge .* ones(dims)))))
 
 function Base.convert(::Type{InverseWishart}, dist::InvWishart)
     ν, S = params(dist)
@@ -62,7 +64,8 @@ function prod(::ProdAnalytical, left::InvWishart, right::InvWishart)
     rdf, rS = params(right)
 
     V  = lS + rS |> Hermitian |> Matrix
-    df = ldf + rdf - d + 1
 
-    return InverseWishart(df, V)
+    df = ldf + rdf + d + 1
+
+    return InvWishart(df, V)
 end

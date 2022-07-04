@@ -55,6 +55,7 @@ include("kernel_gcv/marginals.jl")
 
 include("mv_normal_mean_covariance/out.jl")
 include("mv_normal_mean_covariance/mean.jl")
+include("mv_normal_mean_covariance/covariance.jl")
 include("mv_normal_mean_covariance/marginals.jl")
 
 include("normal_mean_variance/out.jl")
@@ -123,3 +124,6 @@ include("bifm_helper/out.jl")
 include("poisson/l.jl")
 include("poisson/marginals.jl")
 include("poisson/out.jl")
+
+include("inv_wishart/out.jl")
+include("inv_wishart/marginals.jl")

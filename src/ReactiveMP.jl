@@ -65,6 +65,7 @@ include("distributions/wishart.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
+include("distributions/inv_wishart.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
@@ -114,6 +115,7 @@ include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/flow/flow.jl")
 include("nodes/poisson.jl")
+include("nodes/inv_wishart.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
