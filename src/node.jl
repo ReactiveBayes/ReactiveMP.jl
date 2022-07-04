@@ -543,14 +543,14 @@ See also: [`ReactiveMP.RequireInboundFunctionalDependencies`](@ref), [`ReactiveM
 """
 struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, varcluster, cindex, iindex)
     # First we remove current edge index from the list of dependencies
     vdependencies = TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex))
     # Second we map interface indices to the actual interfaces
     return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), vdependencies)
 end
 
-function marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+function marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmarginals, varcluster, cindex, iindex)
     return TupleTools.deleteat(nodelocalmarginals, cindex)
 end
 
@@ -608,7 +608,13 @@ function messagein(something, p::InterfacePluginStartWithMessage)
     return output
 end
 
-function message_dependencies(dependencies::RequireInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+function message_dependencies(
+    dependencies::RequireInboundFunctionalDependencies,
+    nodeinterfaces,
+    varcluster,
+    cindex,
+    iindex
+)
 
     # First we find dependency index in `indices`, we use it later to find `start_with` distribution
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
@@ -634,23 +640,34 @@ function message_dependencies(dependencies::RequireInboundFunctionalDependencies
     end
 end
 
-function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex, iindex)
     return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex)
 end
 
 ### With inbound marginals
 
-
-struct RequireInboundMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline 
+struct RequireInboundMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
     start_with :: S
 end
 
-function message_dependencies(::RequireInboundMarginalFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+function message_dependencies(
+    ::RequireInboundMarginalFunctionalDependencies,
+    nodeinterfaces,
+    varcluster,
+    cindex,
+    iindex
+)
     return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, iindex)
 end
 
-function marginal_dependencies(::RequireInboundMarginalFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+function marginal_dependencies(
+    ::RequireInboundMarginalFunctionalDependencies,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
     error("Not implemented")
 end
 
@@ -666,8 +683,14 @@ See also: [`DefaultFunctionalDependencies`](@ref), [`RequireInboundFunctionalDep
 """
 struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function ReactiveMP.message_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, varcluster, iindex)
-    # Return all node interfaces including the edge we are trying to compuate a message on
+function ReactiveMP.message_dependencies(
+    ::RequireEverythingFunctionalDependencies,
+    nodeinterfaces,
+    varcluster,
+    cindex,
+    iindex
+)
+    # Return all node interfaces including the edge we are trying to compute a message on
     return nodeinterfaces
 end
 
@@ -675,7 +698,8 @@ function ReactiveMP.marginal_dependencies(
     ::RequireEverythingFunctionalDependencies,
     nodelocalmarginals,
     varcluster,
-    cindex
+    cindex,
+    iindex
 )
     # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
     return nodelocalmarginals
@@ -700,8 +724,8 @@ function functional_dependencies(dependencies, factornode::FactorNode, iindex::I
 
     varcluster = @inbounds nodeclusters[cindex]
 
-    messages  = message_dependencies(dependencies, nodeinterfaces, varcluster, iindex)
-    marginals = marginal_dependencies(dependencies, nodelocalmarginals, varcluster, cindex)
+    messages  = message_dependencies(dependencies, nodeinterfaces, varcluster, cindex, iindex)
+    marginals = marginal_dependencies(dependencies, nodelocalmarginals, varcluster, cindex, iindex)
 
     return tuple(messages...), tuple(marginals...)
 end
