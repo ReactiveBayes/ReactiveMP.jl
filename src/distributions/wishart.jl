@@ -13,7 +13,7 @@ end
 
 function Distributions.mean(::typeof(inv), distribution::Wishart)
     ν, S = params(distribution)
-    return ν*inv(S)
+    return ν * inv(S)
 end
 
 vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, Matrix(Diagonal(huge .* ones(dims))))

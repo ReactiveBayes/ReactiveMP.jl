@@ -8,7 +8,7 @@ import Distributions: Wishart
 @average_energy Wishart (q_out::Any, q_ν::PointMass, q_S::Any) = begin
     d = size(q_out, 1)
 
-    m_q_ν   = mean(q_ν)
+    m_q_ν = mean(q_ν)
 
     return (
         m_q_ν * (mean(logdet, q_S) + d * log(2)) -
