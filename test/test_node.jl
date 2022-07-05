@@ -274,7 +274,7 @@ using Distributions
                 @test isnothing(Rocket.getrecent(ReactiveMP.messagein(z_msgdeps[1])))
             end
 
-            @testset "Defatul functional dependencies: Structured factorisation" begin 
+            @testset "Require inbound message dependencies: Structured factorisation" begin 
                 # Require inbound message on `y` and `z`
                 pipeline = RequireInboundFunctionalDependencies((2, 3), (NormalMeanVariance(0.123, 0.123), nothing))
 
@@ -356,6 +356,204 @@ using Distributions
                 @test length(z_msgdeps) === 2 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :z
                 @test length(z_mgdeps) === 1 && name(z_mgdeps[1]) === :y
                 @test isnothing(Rocket.getrecent(ReactiveMP.messagein(z_msgdeps[2])))
+            end
+
+        end
+
+        @testset "Require marginal functional dependencies" begin 
+
+            @testset "Require marginal functional dependencies: FullFactorisation" begin 
+                # Require marginal on `x`
+                pipeline = RequireMarginalFunctionalDependencies((1, ), (NormalMeanVariance(0.123, 0.123), ))
+
+                # We test `FullFactorisation` case here
+                m, x, y, z, node = make_dummy_model(FullFactorisation(), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 2 && name(x_msgdeps[1]) === :y && name(x_msgdeps[2]) === :z
+                @test length(x_mgdeps) === 1 &&  name(x_mgdeps[1]) === :x
+                @test mean_var(Rocket.getrecent(ReactiveMP.getmarginal(x, IncludeAll()))) == (0.123, 0.123)
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 2 && name(y_msgdeps[1]) === :x && name(y_msgdeps[2]) === :z
+                @test length(y_mgdeps) === 0
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 2 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :y
+                @test length(z_mgdeps) === 0
+
+                ## -- ## 
+
+                # Require marginals on `y` and `z`
+                pipeline = RequireMarginalFunctionalDependencies((2, 3), (NormalMeanVariance(0.123, 0.123), nothing))
+
+                # We test `FullFactorisation` case here
+                m, x, y, z, node = make_dummy_model(FullFactorisation(), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 2 && name(x_msgdeps[1]) === :y && name(x_msgdeps[2]) === :z
+                @test length(x_mgdeps) === 0
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 2 && name(y_msgdeps[1]) === :x && name(y_msgdeps[2]) === :z
+                @test length(y_mgdeps) === 1 && name(y_mgdeps[1]) === :y
+                @test mean_var(Rocket.getrecent(ReactiveMP.getmarginal(y, IncludeAll()))) == (0.123, 0.123)
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 2 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :y
+                @test length(z_mgdeps) === 1 && name(z_mgdeps[1]) === :z
+                @test isnothing(Rocket.getrecent(ReactiveMP.getmarginal(z, IncludeAll())))
+            end
+
+            @testset "Require marginal functional dependencies: MeanField" begin 
+                # Require marginal on `x`
+                pipeline = RequireMarginalFunctionalDependencies((1, ), (NormalMeanVariance(0.123, 0.123), ))
+
+                # We test `MeanField` case here
+                m, x, y, z, node = make_dummy_model(MeanField(), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 0 
+                @test length(x_mgdeps) === 3 && name(x_mgdeps[1]) === :x && name(x_mgdeps[2]) === :y && name(x_mgdeps[3]) === :z
+                @test mean_var(Rocket.getrecent(ReactiveMP.getmarginal(x, IncludeAll()))) == (0.123, 0.123)
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 0
+                @test length(y_mgdeps) === 2 && name(y_mgdeps[1]) === :x && name(y_mgdeps[2]) === :z
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 0
+                @test length(z_mgdeps) === 2 && name(z_mgdeps[1]) === :x && name(z_mgdeps[2]) === :y
+
+                ## -- ## 
+
+                # Require marginals on `y` and `z`
+                pipeline = RequireMarginalFunctionalDependencies((2, 3), (NormalMeanVariance(0.123, 0.123), nothing))
+
+                # We test `MeanField` case here
+                m, x, y, z, node = make_dummy_model(MeanField(), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 0
+                @test length(x_mgdeps) === 2 && name(x_mgdeps[1]) === :y && name(x_mgdeps[2]) === :z
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 0 
+                @test length(y_mgdeps) === 3 && name(y_mgdeps[1]) === :x && name(y_mgdeps[2]) === :y && name(y_mgdeps[3]) === :z
+                @test mean_var(Rocket.getrecent(ReactiveMP.getmarginal(y, IncludeAll()))) == (0.123, 0.123)
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 0
+                @test length(z_mgdeps) === 3 && name(z_mgdeps[1]) === :x && name(z_mgdeps[2]) === :y && name(z_mgdeps[3]) === :z
+                @test isnothing(Rocket.getrecent(ReactiveMP.getmarginal(z, IncludeAll())))
+            end
+
+            @testset "Require marginal functional dependencies: Structured factorisation" begin 
+                # Require marginal on `y` and `z`
+                pipeline = RequireMarginalFunctionalDependencies((2, 3), (NormalMeanVariance(0.123, 0.123), nothing))
+
+                # We test `(x, y), (z)` factorisation case here
+                m, x, y, z, node = make_dummy_model(((1, 2), (3, )), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 1 && name(x_msgdeps[1]) === :y
+                @test length(x_mgdeps) === 1 && name(x_mgdeps[1]) === :z
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 1 && name(y_msgdeps[1]) === :x
+                @test length(y_mgdeps) === 2 && name(y_mgdeps[1]) === :y && name(y_mgdeps[2]) === :z
+                @test mean_var(Rocket.getrecent(ReactiveMP.getmarginal(y, IncludeAll()))) == (0.123, 0.123)
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 0
+                @test length(z_mgdeps) === 2 && name(z_mgdeps[1]) === :x_y && name(z_mgdeps[2]) === :z
+                @test isnothing(Rocket.getrecent(ReactiveMP.getmarginal(z, IncludeAll())))
+
+                ## --- ##
+
+                # Require marginals on `y` and `z`
+                pipeline = RequireMarginalFunctionalDependencies((2, 3), (NormalMeanVariance(0.123, 0.123), nothing))
+
+                # We test `(x, ), (y, z)` factorisation case here
+                m, x, y, z, node = make_dummy_model(((1, ), (2, 3)), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 0
+                @test length(x_mgdeps) === 1 && name(x_mgdeps[1]) === :y_z
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 1 && name(y_msgdeps[1]) === :z 
+                @test length(y_mgdeps) === 2 && name(y_mgdeps[1]) === :x && name(y_mgdeps[2]) === :y
+                @test mean_var(Rocket.getrecent(ReactiveMP.getmarginal(y, IncludeAll()))) == (0.123, 0.123)
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 1 && name(z_msgdeps[1]) === :y
+                @test length(z_mgdeps) === 2 && name(z_mgdeps[1]) === :x && name(z_mgdeps[2]) === :z
+                @test isnothing(Rocket.getrecent(ReactiveMP.getmarginal(z, IncludeAll())))
+
+                ## --- ##
+
+                # Require marginals on `y` and `z`
+                pipeline = RequireMarginalFunctionalDependencies((2, 3), (NormalMeanVariance(0.123, 0.123), nothing))
+
+                # We test `(x, z), (y, )` factorisation case here
+                m, x, y, z, node = make_dummy_model(((1, 3), (2, )), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 1 && name(x_msgdeps[1]) === :z
+                @test length(x_mgdeps) === 1 && name(x_mgdeps[1]) === :y
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 0
+                @test length(y_mgdeps) === 2 && name(y_mgdeps[1]) === :x_z && name(y_mgdeps[2]) === :y
+                @test mean_var(Rocket.getrecent(ReactiveMP.getmarginal(y, IncludeAll()))) == (0.123, 0.123)
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 1 && name(z_msgdeps[1]) === :x
+                @test length(z_mgdeps) === 2 && name(z_mgdeps[1]) === :y && name(z_mgdeps[2]) === :z
+                @test isnothing(Rocket.getrecent(ReactiveMP.getmarginal(z, IncludeAll())))
             end
 
         end

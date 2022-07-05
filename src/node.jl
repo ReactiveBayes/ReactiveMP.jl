@@ -9,7 +9,8 @@ export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export connect!, activate!
 export make_node
-export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, RequireEverythingFunctionalDependencies
+export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, 
+    RequireMarginalFunctionalDependencies, RequireEverythingFunctionalDependencies
 export @node
 
 using Rocket
@@ -347,11 +348,16 @@ See also: [`FactorNodeLocalMarginals`](@ref)
 """
 mutable struct FactorNodeLocalMarginal
     index  :: Int
+    first  :: Int
     name   :: Symbol
     stream :: Union{Nothing, AbstractSubscribable{<:Marginal}}
 
-    FactorNodeLocalMarginal(index::Int, name::Symbol) = new(index, name, nothing)
+    FactorNodeLocalMarginal(index::Int, first::Int, name::Symbol) = new(index, first, name, nothing)
 end
+
+# `First` defines the index of the first element in the joint marginal
+# E.g. if the set of variables is (x, y, z, w) and joint is `z_w`, first is equal to 3
+Base.first(localmarginal::FactorNodeLocalMarginal) = localmarginal.first
 
 index(localmarginal::FactorNodeLocalMarginal) = localmarginal.index
 name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
@@ -371,10 +377,10 @@ end
 function FactorNodeLocalMarginals(variablenames, factorisation)
     marginal_names = map(fcluster -> clustername(map(i -> variablenames[i], fcluster)), factorisation)
     index          = 0 # its better not to use zip or enumerate here to preserve tuple-like structure
-    marginals      = map((mname) -> begin
+    marginals      = map(marginal_names) do mname
         index += 1
-        FactorNodeLocalMarginal(index, mname)
-    end, marginal_names)
+        return FactorNodeLocalMarginal(index, first(factorisation[index]), mname)
+    end
     return FactorNodeLocalMarginals(marginals)
 end
 
@@ -723,7 +729,7 @@ function marginal_dependencies(
 
     if depindex !== nothing
         # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
-        extra_localmarginal = FactorNodeLocalMarginal(-1, name(nodeinterfaces[iindex]))
+        extra_localmarginal = FactorNodeLocalMarginal(-1, iindex, name(nodeinterfaces[iindex]))
         vmarginal           = getmarginal(connectedvar(nodeinterfaces[iindex]), IncludeAll())
         start_with          = dependencies.start_with[depindex]
         # Initialise now, if marginal has not been initialised before and `start_with` element is not empty
@@ -731,15 +737,17 @@ function marginal_dependencies(
             setmarginal!(vmarginal, start_with)
         end
         setstream!(extra_localmarginal, vmarginal)
-        return TupleTools.insertafter(
-            marginal_dependencies(
-                DefaultFunctionalDependencies(),
-                nodeinterfaces,
-                nodelocalmarginals,
-                varcluster,
-                cindex,
-                iindex
-            ), cindex - 1, (extra_localmarginal,))
+        default = marginal_dependencies(
+            DefaultFunctionalDependencies(),
+            nodeinterfaces,
+            nodelocalmarginals,
+            varcluster,
+            cindex,
+            iindex
+        )
+        # Find insertion position (probably might be implemented more efficiently)
+        insertafter = sum(first(el) < iindex ? 1 : 0 for el in default; init = 0)
+        return TupleTools.insertafter(default, insertafter, (extra_localmarginal,))
     else
         return marginal_dependencies(
             DefaultFunctionalDependencies(),
