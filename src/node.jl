@@ -794,8 +794,16 @@ default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
 
 ### Generic
 
+function functional_dependencies(factornode::FactorNode, iname::Symbol)
+    return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iname)
+end
+
 function functional_dependencies(dependencies, factornode::FactorNode, iname::Symbol)
     return functional_dependencies(dependencies, factornode, interfaceindex(factornode, iname))
+end
+
+function functional_dependencies(factornode::FactorNode, iindex::Int)
+    return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iindex)
 end
 
 function functional_dependencies(dependencies, factornode::FactorNode, iindex::Int)
@@ -835,18 +843,15 @@ function get_marginals_observable(factornode, marginals)
 end
 
 function activate!(model, factornode::AbstractFactorNode)
-    fform = functionalform(factornode)
-    meta = metadata(factornode)
-    node_pipeline = getpipeline(factornode)
-
-    node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
+    fform                      = functionalform(factornode)
+    meta                       = metadata(factornode)
+    node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
     for (iindex, interface) in enumerate(interfaces(factornode))
         cvariable = connectedvar(interface)
         if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
-            message_dependencies, marginal_dependencies =
-                functional_dependencies(node_pipeline_dependencies, factornode, iindex)
+            message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
 
             msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
             marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
