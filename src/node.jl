@@ -9,7 +9,8 @@ export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export connect!, activate!
 export make_node
-export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, 
+export DefaultFunctionalDependencies,
+    RequireMessageFunctionalDependencies,
     RequireMarginalFunctionalDependencies, RequireEverythingFunctionalDependencies
 export @node
 
@@ -545,7 +546,7 @@ Base.:+(left::FactorNodePipeline, right::AbstractPipelineStage)                 
 This pipeline translates directly to variational message passing scheme. In order to compute a message out some edge this pipeline requires 
 message from edges within the same edge-cluster and marginals over other edge-clusters.
 
-See also: [`ReactiveMP.RequireInboundFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+See also: [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
 struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
@@ -577,7 +578,7 @@ end
 ### With inbound messages
 
 """
-    RequireInboundFunctionalDependencies(indices::Tuple, start_with::Tuple)
+    RequireMessageFunctionalDependencies(indices::Tuple, start_with::Tuple)
 
 The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
 
@@ -594,7 +595,7 @@ Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by oth
 @model function some_model()
     # ...
     y ~ NormalMeanVariance(x, τ) where {
-        pipeline = RequireInbound(x = vague(NormalMeanPrecision),     τ)
+        pipeline = RequireMessage(x = vague(NormalMeanPrecision),     τ)
                                   # ^^^                               ^^^
                                   # request 'inbound' for 'x'         we may do the same for 'τ', 
                                   # and initialise with `vague(...)`  but here we skip initialisation
@@ -603,15 +604,19 @@ Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by oth
 end
 ```
 
-See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+Deprecation warning: `RequireInboundFunctionalDependencies` has been deprecated in favor of `RequireMessageFunctionalDependencies`.
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
-struct RequireInboundFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
+struct RequireMessageFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
     start_with :: S
 end
 
+Base.@deprecate_binding RequireInboundFunctionalDependencies RequireMessageFunctionalDependencies
+
 function message_dependencies(
-    dependencies::RequireInboundFunctionalDependencies,
+    dependencies::RequireMessageFunctionalDependencies,
     nodeinterfaces,
     nodelocalmarginals,
     varcluster,
@@ -645,7 +650,7 @@ function message_dependencies(
 end
 
 function marginal_dependencies(
-    ::RequireInboundFunctionalDependencies,
+    ::RequireMessageFunctionalDependencies,
     nodeinterfaces,
     nodelocalmarginals,
     varcluster,
@@ -665,7 +670,7 @@ end
 ### With marginals
 
 """
-    RequireInboundMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
+    RequireMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
 
 The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on the this edge.
 
@@ -691,7 +696,9 @@ Note: `start_with` uses `setmarginal!` mechanism, hence, it can be visible by ot
 end
 ```
 
-See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireInboundFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+Note: Simplified construction in `@model` macro syntax is only available in `GraphPPL.jl` of version `>2.2.0`.
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
 struct RequireMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
@@ -768,7 +775,7 @@ end
 This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally. 
 This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
 
-See also: [`DefaultFunctionalDependencies`](@ref), [`RequireInboundFunctionalDependencies`](@ref), [`RequireInboundMarginalFunctionalDependencies`](@ref)
+See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)
 """
 struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
@@ -800,18 +807,20 @@ end
 
 default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
 
-### Generic
+### Generic `functional_dependencies` for `AbstractFactorNode`
 
-function functional_dependencies(factornode::FactorNode, iname::Symbol)
+function functional_dependencies(factornode::AbstractFactorNode, iname::Symbol)
     return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iname)
 end
 
-function functional_dependencies(dependencies, factornode::FactorNode, iname::Symbol)
-    return functional_dependencies(dependencies, factornode, interfaceindex(factornode, iname))
+function functional_dependencies(factornode::AbstractFactorNode, iindex::Int)
+    return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iindex)
 end
 
-function functional_dependencies(factornode::FactorNode, iindex::Int)
-    return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iindex)
+### `FactorNode` implementation of `functional_dependencies`
+
+function functional_dependencies(dependencies, factornode::FactorNode, iname::Symbol)
+    return functional_dependencies(dependencies, factornode, interfaceindex(factornode, iname))
 end
 
 function functional_dependencies(dependencies, factornode::FactorNode, iindex::Int)

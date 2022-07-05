@@ -17,7 +17,7 @@ ProbitMeta(; p = 32) = ProbitMeta(p)
 default_meta(::Type{Probit}) = ProbitMeta(32)
 
 default_functional_dependencies_pipeline(::Type{<:Probit}) =
-    RequireInboundFunctionalDependencies((2,), (vague(NormalMeanPrecision),))
+    RequireMessageFunctionalDependencies((2,), (vague(NormalMeanPrecision),))
 
 default_interface_local_constraint(::Type{<:Probit}, edge::Val{:in})  = MomentMatching()
 default_interface_local_constraint(::Type{<:Probit}, edge::Val{:out}) = Marginalisation()

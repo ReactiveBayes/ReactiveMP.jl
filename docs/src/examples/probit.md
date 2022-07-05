@@ -80,9 +80,9 @@ p = plot!(p, data_x[2:end], label = "x")
     for k = 2:nr_samples + 1
         x[k] ~ NormalMeanPrecision(x[k - 1] + 0.1, 100)
         y[k - 1] ~ Probit(x[k]) where {
-            # Probit node by default uses RequireInbound pipeline with vague(NormalMeanPrecision) message as initial value for `in` edge
+            # Probit node by default uses RequireMessage pipeline with vague(NormalMeanPrecision) message as initial value for `in` edge
             # To change initial value use may specify it manually, like. Changes to the initial message may improve stability in some situations
-            pipeline = RequireInbound(in = NormalMeanPrecision(0, 0.01)) 
+            pipeline = RequireMessage(in = NormalMeanPrecision(0, 0.01)) 
         }
     end
     

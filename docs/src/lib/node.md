@@ -64,5 +64,12 @@ println("sdtype() of `Bernoulli` node is ", sdtype(bernoulli_node))
 nothing #hide
 ```
 
-## [Node factorisation constraints](@id lib-node-factorisation-constraints)
+## [Node functional dependencies pipeline](@id lib-node-functional-dependencies-pipeline)
+
+```@docs
+DefaultFunctionalDependencies
+RequireMessageFunctionalDependencies
+RequireMarginalFunctionalDependencies
+RequireEverythingFunctionalDependencies
+```
 
