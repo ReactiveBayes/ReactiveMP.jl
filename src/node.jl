@@ -23,7 +23,7 @@ import Base: getindex, setindex!, firstindex, lastindex
 ## Node traits
 
 """
-    ValidNodeFunctionalForm   
+    ValidNodeFunctionalForm
 
 Trait specification for an object that can be used in model specification as a factor node.
 
@@ -148,7 +148,7 @@ struct FullFactorisation end
 """
     collect_factorisation(nodetype, factorisation)
 
-This function converts given factorisation to a correct internal factorisation representation for a given node. 
+This function converts given factorisation to a correct internal factorisation representation for a given node.
 
 See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
 """
@@ -157,7 +157,7 @@ function collect_factorisation end
 """
     collect_meta(nodetype, meta)
 
-This function converts given meta object to a correct internal meta representation for a given node. 
+This function converts given meta object to a correct internal meta representation for a given node.
 Fallbacks to `default_meta` in case if meta is `nothing`.
 
 See also: [`default_meta`](@ref), [`FactorNode`](@ref)
@@ -238,7 +238,7 @@ local_constraint(interface::NodeInterface) = interface.local_constraint
 """
     tag(interface)
 
-Returns a tag of the interface in the form of `Val{ name(interface) }`. 
+Returns a tag of the interface in the form of `Val{ name(interface) }`.
 The major difference between tag and name is that it is possible to dispath on interface's tag in message computation rule.
 
 See also: [`NodeInterface`](@ref), [`name`](@ref)
@@ -308,8 +308,8 @@ get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(connectedvar
 """
     IndexedNodeInterface
 
-`IndexedNodeInterface` object represents a repetative node-variable connection. 
-Used in cases when node may connect different number of random variables with the same name, e.g. means and precisions of Gaussian Mixture node.
+`IndexedNodeInterface` object represents a repetative node-variable connection.
+Used in cases when a node may connect to a different number of random variables with the same name, e.g. means and precisions of a Gaussian Mixture node.
 
 See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
@@ -341,8 +341,8 @@ get_pipeline_stages(interface::IndexedNodeInterface)               = get_pipelin
 """
     FactorNodeLocalMarginal
 
-This object represents local marginals for some specific factor node. 
-Local marginal can be joint in case of structured factorisation. 
+This object represents local marginals for some specific factor node.
+The local marginal can be joint in case of structured factorisation.
 Local to factor node marginal also can be shared with a corresponding marginal of some random variable.
 
 See also: [`FactorNodeLocalMarginals`](@ref)
@@ -369,7 +369,7 @@ setstream!(localmarginal::FactorNodeLocalMarginal, observable) = localmarginal.s
 """
     FactorNodeLocalMarginals
 
-This object acts as an iterable and indexable proxy for local marginals for some node. 
+This object acts as an iterable and indexable proxy for local marginals for some node.
 """
 struct FactorNodeLocalMarginals{M}
     marginals::M
@@ -461,7 +461,7 @@ getpipeline(factornode::FactorNode)        = factornode.pipeline
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
-# Cluster is reffered to a tuple of node interfaces 
+# Cluster is reffered to a tuple of node interfaces
 clusters(factornode::FactorNode) =
     map(factor -> map(i -> @inbounds(interfaces(factornode)[i]), factor), factorisation(factornode))
 
@@ -530,7 +530,7 @@ collect_pipeline(T::Any, stage::AbstractPipelineStage)                    = Fact
 collect_pipeline(T::Any, fdp::AbstractNodeFunctionalDependenciesPipeline) = FactorNodePipeline(fdp, EmptyPipelineStage())
 collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipeline
 
-## Functional Dependencies 
+## Functional Dependencies
 
 function message_dependencies end
 function marginal_dependencies end
@@ -538,13 +538,13 @@ function marginal_dependencies end
 Base.:+(left::AbstractNodeFunctionalDependenciesPipeline, right::AbstractPipelineStage) = FactorNodePipeline(left, right)
 Base.:+(left::FactorNodePipeline, right::AbstractPipelineStage)                         = FactorNodePipeline(left.functional_dependencies, left.extra_stages + right)
 
-### Default 
+### Default
 
 """
     DefaultFunctionalDependencies
 
-This pipeline translates directly to variational message passing scheme. In order to compute a message out some edge this pipeline requires 
-message from edges within the same edge-cluster and marginals over other edge-clusters.
+This pipeline translates directly to enforcing a variational message passing scheme. In order to compute a message out of some edge, this pipeline requires
+messages from edges within the same edge-cluster and marginals over other edge-clusters.
 
 See also: [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
@@ -582,9 +582,9 @@ end
 
 The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
 
-# Arguments 
+# Arguments
 
-- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages 
+- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages
 - `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
 
 Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmessage!` overwrites whatever has been passed in `start_with`.
@@ -597,9 +597,9 @@ Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by oth
     y ~ NormalMeanVariance(x, τ) where {
         pipeline = RequireMessage(x = vague(NormalMeanPrecision),     τ)
                                   # ^^^                               ^^^
-                                  # request 'inbound' for 'x'         we may do the same for 'τ', 
+                                  # request 'inbound' for 'x'         we may do the same for 'τ',
                                   # and initialise with `vague(...)`  but here we skip initialisation
-    } 
+    }
     # ...
 end
 ```
@@ -672,14 +672,14 @@ end
 """
     RequireMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
 
-The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on the this edge.
+Similar to `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on that edge.
 
-# Arguments 
+# Arguments
 
-- `indices`::Tuple, tuple of integers, which indicates what edges should require their own marginals 
+- `indices`::Tuple, tuple of integers, which indicates what edges should require their own marginals
 - `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial marginal for edges in `indices`
 
-Note: `start_with` uses `setmarginal!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmarginal!` overwrites whatever has been passed in `start_with`.
+Note: `start_with` uses the `setmarginal!` mechanism, hence it can be visible to other listeners on the same edge. Explicit calls to `setmarginal!` overwrites whatever has been passed in `start_with`.
 
 `@model` macro accepts a simplified construction of this pipeline:
 
@@ -689,14 +689,14 @@ Note: `start_with` uses `setmarginal!` mechanism, hence, it can be visible by ot
     y ~ NormalMeanVariance(x, τ) where {
         pipeline = RequireMarginal(x = vague(NormalMeanPrecision),     τ)
                                    # ^^^                               ^^^
-                                   # request 'marginal' for 'x'        we may do the same for 'τ', 
+                                   # request 'marginal' for 'x'        we may do the same for 'τ',
                                    # and initialise with `vague(...)`  but here we skip initialisation
-    } 
+    }
     # ...
 end
 ```
 
-Note: Simplified construction in `@model` macro syntax is only available in `GraphPPL.jl` of version `>2.2.0`.
+Note: The simplified construction in `@model` macro syntax is only available in `GraphPPL.jl` of version `>2.2.0`.
 
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
@@ -772,7 +772,7 @@ end
 """
    RequireEverythingFunctionalDependencies
 
-This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally. 
+This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally.
 This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
 
 See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)
@@ -803,7 +803,7 @@ function ReactiveMP.marginal_dependencies(
     return nodelocalmarginals
 end
 
-### 
+###
 
 default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
 
@@ -1028,7 +1028,7 @@ import .MacroHelpers
 # Examples
 ```julia
 
-struct MyNormalDistribution 
+struct MyNormalDistribution
     mean :: Float64
     var  :: Float64
 end
@@ -1036,7 +1036,7 @@ end
 @node MyNormalDistribution Stochastic [ out, mean, var ]
 ```
 
-```julia 
+```julia
 
 @node typeof(+) Deterministic [ out, in1, in2 ]
 ```
@@ -1085,7 +1085,7 @@ macro node(fformtype, sdtype, interfaces_list)
         $non_unique_error_sym =
             (fformtype, names) ->
                 """
-                Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed. 
+                Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed.
                 Check creation of the `$(fformtype)` with the `[ $(join(names, ", ")) ]` arguments.
                 """
     )
@@ -1126,9 +1126,9 @@ macro node(fformtype, sdtype, interfaces_list)
         end
     end
 
-    # By default every argument passed to a factorisation option of the node is transformed by 
+    # By default every argument passed to a factorisation option of the node is transformed by
     # `collect_factorisation` function to have a tuple like structure.
-    # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects 
+    # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects
     # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a FullFactorisation equivalent
     factorisation_collectors = if sdtype === :Stochastic
         quote
