@@ -558,6 +558,135 @@ using Distributions
 
         end
 
+        @testset "Require everything functional dependencies" begin 
+
+            @testset "Require everything functional dependencies: FullFactorisation" begin 
+                pipeline = RequireEverythingFunctionalDependencies()
+
+                # We test `FullFactorisation` case here
+                m, x, y, z, node = make_dummy_model(FullFactorisation(), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 3 && name(x_msgdeps[1]) === :x && name(x_msgdeps[2]) === :y && name(x_msgdeps[3]) === :z
+                @test length(x_mgdeps) === 1 && name(x_mgdeps[1]) === :x_y_z
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 3 && name(y_msgdeps[1]) === :x && name(y_msgdeps[2]) === :y && name(y_msgdeps[3]) === :z
+                @test length(y_mgdeps) === 1 && name(y_mgdeps[1]) === :x_y_z
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 3 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :y && name(z_msgdeps[3]) === :z
+                @test length(z_mgdeps) === 1 && name(z_mgdeps[1]) === :x_y_z
+            end
+
+            @testset "Require everything functional dependencies: MeanField" begin 
+                pipeline = RequireEverythingFunctionalDependencies()
+
+                # We test `MeanField` case here
+                m, x, y, z, node = make_dummy_model(MeanField(), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 3 && name(x_mgdeps[1]) === :x && name(x_mgdeps[2]) === :y && name(x_mgdeps[3]) === :z 
+                @test length(x_mgdeps) === 3 && name(x_mgdeps[1]) === :x && name(x_mgdeps[2]) === :y && name(x_mgdeps[3]) === :z
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 3 && name(y_msgdeps[1]) === :x && name(y_msgdeps[2]) === :y && name(y_msgdeps[3]) === :z 
+                @test length(y_mgdeps) === 3 && name(y_mgdeps[1]) === :x && name(y_mgdeps[2]) === :y && name(y_mgdeps[3]) === :z
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 3 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :y && name(z_msgdeps[3]) === :z
+                @test length(z_mgdeps) === 3 && name(z_mgdeps[1]) === :x && name(z_mgdeps[2]) === :y && name(z_mgdeps[3]) === :z
+            end
+
+            @testset "Require everything dependencies: Structured factorisation" begin 
+                pipeline = RequireEverythingFunctionalDependencies()
+
+                # We test `(x, y), (z)` factorisation case here
+                m, x, y, z, node = make_dummy_model(((1, 2), (3, )), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 3 && name(x_msgdeps[1]) === :x && name(x_msgdeps[2]) === :y && name(x_msgdeps[3]) === :z
+                @test length(x_mgdeps) === 2 && name(x_mgdeps[1]) === :x_y && name(x_mgdeps[2]) === :z
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 3 && name(y_msgdeps[1]) === :x && name(y_msgdeps[2]) === :y && name(y_msgdeps[3]) === :z
+                @test length(y_mgdeps) === 2 && name(y_mgdeps[1]) === :x_y && name(y_mgdeps[2]) === :z
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 3 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :y && name(z_msgdeps[3]) === :z
+                @test length(z_mgdeps) === 2 && name(z_mgdeps[1]) === :x_y && name(z_mgdeps[2]) === :z
+
+                ## --- ##
+
+                pipeline = RequireEverythingFunctionalDependencies()
+
+                # We test `(x, ), (y, z)` factorisation case here
+                m, x, y, z, node = make_dummy_model(((1, ), (2, 3)), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 3 && name(x_msgdeps[1]) === :x && name(x_msgdeps[2]) === :y && name(x_msgdeps[3]) === :z
+                @test length(x_mgdeps) === 2 && name(x_mgdeps[1]) === :x && name(x_mgdeps[2]) === :y_z
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 3 && name(y_msgdeps[1]) === :x && name(y_msgdeps[2]) === :y && name(y_msgdeps[3]) === :z
+                @test length(y_mgdeps) === 2 && name(y_mgdeps[1]) === :x && name(y_mgdeps[2]) === :y_z
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z) 
+                
+                @test length(z_msgdeps) === 3 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :y && name(z_msgdeps[3]) === :z
+                @test length(z_mgdeps) === 2 && name(z_mgdeps[1]) === :x && name(z_mgdeps[2]) === :y_z
+
+                ## --- ##
+
+                pipeline = RequireEverythingFunctionalDependencies()
+
+                # We test `(x, z), (y, )` factorisation case here
+                m, x, y, z, node = make_dummy_model(((1, 3), (2, )), pipeline)
+
+                # Test that pipeline dependencies have been set properly
+                @test ReactiveMP.get_pipeline_dependencies(ReactiveMP.getpipeline(node)) === pipeline
+
+                x_msgdeps, x_mgdeps = ReactiveMP.functional_dependencies(node, :x) 
+
+                @test length(x_msgdeps) === 3 && name(x_msgdeps[1]) === :x && name(x_msgdeps[2]) === :y && name(x_msgdeps[3]) === :z
+                @test length(x_mgdeps) === 2 && name(x_mgdeps[1]) === :x_z && name(x_mgdeps[2]) === :y
+
+                y_msgdeps, y_mgdeps = ReactiveMP.functional_dependencies(node, :y) 
+                
+                @test length(y_msgdeps) === 3 && name(y_msgdeps[1]) === :x && name(y_msgdeps[2]) === :y && name(y_msgdeps[3]) === :z
+                @test length(y_mgdeps) === 2 && name(y_mgdeps[1]) === :x_z && name(y_mgdeps[2]) === :y
+
+                z_msgdeps, z_mgdeps = ReactiveMP.functional_dependencies(node, :z)
+                
+                @test length(z_msgdeps) === 3 && name(z_msgdeps[1]) === :x && name(z_msgdeps[2]) === :y && name(z_msgdeps[3]) === :z
+                @test length(z_mgdeps) === 2 && name(z_mgdeps[1]) === :x_z && name(z_mgdeps[2]) === :y
+            end
+
+        end
+
     end
 
     @testset "@node macro" begin
