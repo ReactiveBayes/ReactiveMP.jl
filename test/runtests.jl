@@ -198,6 +198,7 @@ end
 
     addtests("rules/mv_normal_mean_covariance/test_out.jl")
     addtests("rules/mv_normal_mean_covariance/test_mean.jl")
+    addtests("rules/mv_normal_mean_covariance/test_covariance.jl")
 
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
@@ -208,6 +209,9 @@ end
 
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
+
+    addtests("rules/inv_wishart/test_marginals.jl")
+    addtests("rules/inv_wishart/test_out.jl")
 
     addtests("rules/poisson/test_l.jl")
     addtests("rules/poisson/test_marginals.jl")
