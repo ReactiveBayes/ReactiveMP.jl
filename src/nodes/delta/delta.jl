@@ -82,24 +82,32 @@ function activate!(model, factornode::DeltaFnNode)
         setstream!(localmarginal, getmarginal(connectedvar(out), IncludeAll()))
     end
 
-    let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
-        cmarginal = MarginalObservable()
-        setstream!(localmarginal, cmarginal)
+    if length(factornode.ins) === 1
+        let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
+            # Cluster contains only one variable, we can take marginal over this variable
+            cmarginal = getmarginal(connectedvar(ins[1]), IncludeAll())
+            setstream!(localmarginal, cmarginal)
+        end
+    else
+        let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
+            cmarginal = MarginalObservable()
+            setstream!(localmarginal, cmarginal)
 
-        msgs_names      = Val{(:ins,)}
-        msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
+            msgs_names      = Val{(:ins,)}
+            msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
 
-        marginal_names       = Val{(:out,)}
-        marginals_observable = combineLatestUpdates((getmarginal(connectedvar(out), IncludeAll()),), PushNew())
+            marginal_names       = Val{(:out,)}
+            marginals_observable = combineLatestUpdates((getmarginal(connectedvar(out), IncludeAll()),), PushNew())
 
-        fform = functionalform(factornode)
-        vtag  = Val{:ins}
-        meta  = metadata(factornode)
+            fform = functionalform(factornode)
+            vtag  = Val{:ins}
+            meta  = metadata(factornode)
 
-        mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
-        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
+            mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
+            marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
-        connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
+            connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
+        end
     end
 
     # Second we declare message passing logic for out interface

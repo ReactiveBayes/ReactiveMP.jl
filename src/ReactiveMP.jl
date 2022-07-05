@@ -1,3 +1,4 @@
+
 module ReactiveMP
 
 include("rocket.jl")
@@ -134,8 +135,7 @@ include("model.jl")
 include("fixes.jl")
 include("inference.jl")
 
-#Delta node
-
+# Delta node depends on model.jl (use AutoVar)
 include("nodes/delta/delta.jl")
 
 include("rules/prototypes.jl")
