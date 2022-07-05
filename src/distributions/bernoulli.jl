@@ -1,6 +1,7 @@
 export Bernoulli
 
 import Distributions: Bernoulli, succprob, failprob
+import Base
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
@@ -23,4 +24,30 @@ prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ProdAnalytica
 function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     @assert length(probvec(right)) === 2 "Improper Bernoulli x Categorical product"
     return prod(ProdPreserveType(Bernoulli), left, Bernoulli(first(probvec(right))))
+end
+
+struct BernoulliNaturalParametrs <: NaturalParametrs
+    η
+end
+
+get_natural_params(params::BernoulliNaturalParametrs) = params.η
+
+function Base.:+(left::BernoulliNaturalParametrs, right::BernoulliNaturalParametrs)
+    return BernoulliNaturalParametrs(get_natural_params(left) + get_natural_params(right))
+end
+
+function Base.:-(left::BernoulliNaturalParametrs, right::BernoulliNaturalParametrs)
+    return BernoulliNaturalParametrs(get_natural_params(left) - get_natural_params(right))
+end
+
+function logNormalizer(η::BernoulliNaturalParametrs)
+    return log(1 + exp(get_natural_params(η)))
+end
+
+function logPdf(η::BernoulliNaturalParametrs, x)
+    return x * get_natural_params(η) - logNormalizer(η)
+end
+
+function standardDist(η::BernoulliNaturalParametrs)
+    return Bernoulli(get_natural_params(η) / (1 + exp(get_natural_params(η))))
 end
