@@ -6,7 +6,7 @@
     m_mean, v_mean = mean_cov(q_μ)
 
     df = ndims(q_μ)
-    S  = Matrix(Hermitian(v_mean + v_out + (m_mean - m_out) * (m_mean - m_out)'))
+    S  = v_mean + v_out + (m_mean - m_out) * (m_mean - m_out)'
 
     return InvWishart(-df, S)
 end
