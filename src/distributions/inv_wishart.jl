@@ -46,7 +46,7 @@ function Distributions.mean(::typeof(inv), dist::InvWishart)
     return ν * cholinv(S)
 end
 
-vague(::Type{<:InvWishart}, dims::Integer) = InvWishart(dims, inv(Matrix(Diagonal(huge .* ones(dims)))))
+vague(::Type{<:InvWishart}, dims::Integer) = InvWishart(dims, tiny .* diageye(dims))
 
 function Base.convert(::Type{InverseWishart}, dist::InvWishart)
     ν, S = params(dist)
