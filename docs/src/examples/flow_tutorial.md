@@ -346,7 +346,7 @@ The corresponding probabilistic model for the binary classification task can be 
         y_lat2[k] ~ dot(y_lat1[k], [1, 1])
 
         # specify observations
-        y[k] ~ Probit(y_lat2[k]) # default: where { pipeline = RequireInbound(in = NormalMeanPrecision(0, 1.0)) }
+        y[k] ~ Probit(y_lat2[k]) # default: where { pipeline = RequireMessage(in = NormalMeanPrecision(0, 1.0)) }
 
     end
 
