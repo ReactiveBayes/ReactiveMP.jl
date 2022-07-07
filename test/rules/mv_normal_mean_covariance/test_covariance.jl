@@ -15,7 +15,7 @@ import ReactiveMP: @test_rules
             ),
             (
                 input = (q_out = MvNormalMeanCovariance([1.0; 2.0], [3.0 2.0; 2.0 4.0]), q_μ = PointMass([3.0; 5.0])),
-                output = InvWishart(-2.0, [75/73 -46/73; -46/73 36/73])
+                output = InvWishart(-2.0, [7.0 8.0; 8.0 13.0])
             ),
             (
                 input = (
@@ -46,14 +46,14 @@ import ReactiveMP: @test_rules
                     q_out = MvNormalMeanPrecision([1.0; 2.0], [3.0 2.0; 2.0 4.0]),
                     q_μ = MvNormalMeanPrecision([3.0; 5.0], [3.0 2.0; 2.0 4.0])
                 ),
-                output = InvWishart(-2.0, [10.0 10.0; 10.0 17.0])
+                output = InvWishart(-2.0, [10/2 11/2; 11/2 39/4])
             ),
             (
                 input = (
                     q_out = MvNormalMeanPrecision([1.0; 2.0; 3.0], [3.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 4.0]),
                     q_μ = MvNormalMeanPrecision([3.0; 5.0; -2.0], [3.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 4.0])
                 ),
-                output = InvWishart(-3.0, [14/3 6.0 -10.0; 6.0 10.0 -15.0; -10.0 -15.0 50/2])
+                output = InvWishart(-3.0, [14/3 6.0 -10.0; 6.0 10.0 -15.0; -10.0 -15.0 51/2])
             )
         ]
         @test_rules [with_float_conversions = false, float32_atol = 1e-5] MvNormalMeanCovariance(:Σ, Marginalisation) [
@@ -62,7 +62,7 @@ import ReactiveMP: @test_rules
                     q_out = PointMass([1.0, 2.0]),
                     q_μ = MvNormalWeightedMeanPrecision([3.0, 5.0], [3.0 2.0; 2.0 4.0])
                 ),
-                output = InvWishart(-2.0, [17/16 13/32; 13/32 73/64])
+                output = InvWishart(-2.0, [17//16 13//32; 13//32 73//64])
             ),
             (
                 input = (
@@ -76,7 +76,7 @@ import ReactiveMP: @test_rules
                     q_out = MvNormalWeightedMeanPrecision([1.0; 2.0], [3.0 2.0; 2.0 4.0]),
                     q_μ = MvNormalWeightedMeanPrecision([3.0; 5.0], [3.0 2.0; 2.0 4.0])
                 ),
-                output = InvWishart(-2.0, [17/16 11/32; 11/32 73/64])
+                output = InvWishart(-2.0, [17/16 -11/32; -11/32 73/64])
             ),
         ]
     end
