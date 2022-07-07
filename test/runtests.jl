@@ -148,6 +148,7 @@ end
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
     addtests("nodes/test_poisson.jl")
+    addtests("nodes/test_inv_wishart.jl")
 
     addtests("rules/uniform/test_out.jl")
 

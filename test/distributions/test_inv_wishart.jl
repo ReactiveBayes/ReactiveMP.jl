@@ -1,0 +1,108 @@
+module MatrixDirichletTest
+
+using Test
+using ReactiveMP
+using Distributions
+using Random
+
+@testset "InvWishart" begin
+    @testset "common" begin
+        @test InvWishart <: Distribution
+        @test InvWishart <: ContinuousDistribution
+        @test InvWishart <: MatrixDistribution
+
+        @test value_support(InvWishart) === Continuous
+        @test variate_form(InvWishart) === Matrixvariate
+    end
+
+    @testset "statistics" begin
+        # ν > dim(d) + 1
+        for ν in 4:10
+            L = randn(ν-2, ν-2); S = L*L'
+            d = InvWishart(ν, S)
+
+            @test mean(d) == mean(InverseWishart(params(d)...))
+            @test mode(d) == mode(InverseWishart(params(d)...))
+
+        end
+
+        # ν > dim(d) + 3
+        for ν in 5:10
+            L = randn(ν-4, ν-4); S = L*L'
+            d = InvWishart(ν, S)
+
+            @test cov(d) == cov(InverseWishart(params(d)...))
+            @test var(d) == var(InverseWishart(params(d)...))
+
+        end
+    end
+
+    @testset "vague" begin
+        @test_throws MethodError vague(InvWishart)
+
+        dims = 3
+        d1 = vague(InvWishart, dims)
+
+        @test typeof(d1) <: InvWishart
+        @test d1.ν == dims
+        @test d1.S == tiny .* diageye(dims)
+
+        dims = 4
+        d2 = vague(InvWishart, dims)
+
+        @test typeof(d2) <: InvWishart
+        @test d2.ν == dims
+        @test d2.S == tiny .* diageye(dims)
+    end
+
+    @testset "entropy" begin
+        @test entropy(InvWishart(2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712])) ≈ 10.111427477184794
+        @test entropy(InvWishart(5.0, diageye(4))) ≈ 8.939145914882221
+    end
+
+    @testset "convert" begin
+        for ν in 2:10
+            L = randn(ν, ν); S = L*L'
+            d = InvWishart(ν, S)
+            @test convert(InverseWishart, d1) == InverseWishart(ν, S)
+        end
+    end
+
+    @testset "mean(::typeof(logdet))" begin
+        ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
+        samples = rand(InverseWishart(ν, S), Int(1e6))
+        @test mean(logdet, InvWishart(ν, S)) ≈ mean(logdet.(samples))
+        
+
+        ν, S = 4.0, diageye(3)
+        samples = rand(InverseWishart(ν, S), Int(1e6))
+        @test mean(logdet, InvWishart(ν, S)) ≈ mean(logdet.(samples))
+    end
+
+    @testset "mean(::typeof(inv))" begin
+        ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
+        samples = rand(InverseWishart(ν, S), Int(1e6))
+        @test mean(inv, InvWishart(ν, S)) ≈ mean(inv.(samples))
+        
+
+        ν, S = 4.0, diageye(3)
+        samples = rand(InverseWishart(ν, S), Int(1e6))
+        @test mean(inv, InvWishart(ν, S)) ≈ mean(inv.(samples))
+    end
+
+    @testset "prod" begin
+        d1 = InvWishart([0.2 3.4; 5.0 11.0; 0.2 0.6])
+        d2 = InvWishart([1.2 3.3; 4.0 5.0; 2.0 1.1])
+        d3 = InvWishart([1.0 1.0; 1.0 1.0; 1.0 1.0])
+
+        @test prod(ProdAnalytical(), d1, d2) ==
+              InvWishart([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
+        @test prod(ProdAnalytical(), d1, d3) == InvWishart(
+            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
+        )
+        @test prod(ProdAnalytical(), d2, d3) == InvWishart([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+    end
+
+end
+
+end

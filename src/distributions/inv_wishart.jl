@@ -30,8 +30,8 @@ Distributions.dim(dist::InvWishart)  = size(dist.S, 1)
 function Distributions.entropy(dist::InvWishart)
     d = dim(dist)
     ν, S = params(dist)
-    d * (d - 1)/4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i)/2), +, 1:d) +
-    ν/2 * d + (d + 1)/2 * (logdet(S) - log(2)) - (ν + d + 1)/2 * mapreduce(i -> digamma((ν - d + i)/2), +, 1:d)
+    d * (d - 1) / 4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i) / 2), +, 1:d) +
+    ν / 2 * d + (d + 1) / 2 * (logdet(S) - log(2)) - (ν + d + 1) / 2 * mapreduce(i -> digamma((ν - d + i) / 2), +, 1:d)
 end
 
 function Distributions.mean(::typeof(logdet), dist::InvWishart)

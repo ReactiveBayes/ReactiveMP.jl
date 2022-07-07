@@ -77,7 +77,7 @@ import ReactiveMP: @test_rules
                     q_μ = MvNormalWeightedMeanPrecision([3.0; 5.0], [3.0 2.0; 2.0 4.0])
                 ),
                 output = InvWishart(-2.0, [17/16 -11/32; -11/32 73/64])
-            ),
+            )
         ]
     end
 
@@ -101,7 +101,7 @@ import ReactiveMP: @test_rules
         A = [3.5 -0.5 -0.25 0.0; -0.5 3.0 -0.25 0.0; -0.25 -0.25 6.0 0.25; 0.0 0.0 0.25 7.0]
 
         @test_rules [with_float_conversions = false, float32_atol = 1e-5] MvNormalMeanCovariance(:Σ, Marginalisation) [
-            (input = (q_out_μ = MvNormalMeanCovariance(a, A),), output = InvWishart(-2.0, [14.0 8.0; 8.0 26.0])),
+            (input = (q_out_μ = MvNormalMeanCovariance(a, A),), output = InvWishart(-2.0, [14.0 8.0; 8.0 26.0]))
         ]
     end
 end
