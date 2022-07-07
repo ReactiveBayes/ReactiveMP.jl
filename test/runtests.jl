@@ -127,6 +127,7 @@ end
     addtests("distributions/test_pointmass.jl")
     addtests("distributions/test_wishart.jl")
     addtests("distributions/test_sample_list.jl")
+    addtests("distributions/test_inv_wishart.jl")
 
     addtests("test_message.jl")
 

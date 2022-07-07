@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using Distributions
 using Random
+using LinearAlgebra
 
 @testset "InvWishart" begin
     @testset "common" begin
@@ -64,7 +65,7 @@ using Random
         for ν in 2:10
             L = randn(ν, ν); S = L*L'
             d = InvWishart(ν, S)
-            @test convert(InverseWishart, d1) == InverseWishart(ν, S)
+            @test convert(InverseWishart, d) == InverseWishart(ν, S)
         end
     end
 
@@ -91,16 +92,17 @@ using Random
     end
 
     @testset "prod" begin
-        d1 = InvWishart([0.2 3.4; 5.0 11.0; 0.2 0.6])
-        d2 = InvWishart([1.2 3.3; 4.0 5.0; 2.0 1.1])
-        d3 = InvWishart([1.0 1.0; 1.0 1.0; 1.0 1.0])
+        d1 = InvWishart(3.0, diageye(2))
+        d2 = InvWishart(-3.0, [0.6423504672769315 0.9203141654948761; 0.9203141654948761 1.528137747462735])
 
-        @test prod(ProdAnalytical(), d1, d2) ==
-              InvWishart([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test prod(ProdAnalytical(), d1, d3) == InvWishart(
-            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
-        )
-        @test prod(ProdAnalytical(), d2, d3) == InvWishart([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+        @test prod(ProdAnalytical(), d1, d2) ≈
+              InvWishart(3.0, [1.6423504672769313 0.9203141654948761; 0.9203141654948761 2.528137747462735])
+
+        d1 = InvWishart(4.0, diageye(3))
+        d2 = InvWishart(-2.0, diageye(3))
+
+        @test prod(ProdAnalytical(), d1, d2) ≈
+              InvWishart(6.0, 2*diageye(3))
     end
 
 end
