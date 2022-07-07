@@ -19,22 +19,22 @@ using LinearAlgebra
     @testset "statistics" begin
         # ν > dim(d) + 1
         for ν in 4:10
-            L = randn(ν-2, ν-2); S = L*L'
+            L = randn(ν - 2, ν - 2)
+            S = L * L'
             d = InvWishart(ν, S)
 
             @test mean(d) == mean(InverseWishart(params(d)...))
             @test mode(d) == mode(InverseWishart(params(d)...))
-
         end
 
         # ν > dim(d) + 3
         for ν in 5:10
-            L = randn(ν-4, ν-4); S = L*L'
+            L = randn(ν - 4, ν - 4)
+            S = L * L'
             d = InvWishart(ν, S)
 
             @test cov(d) == cov(InverseWishart(params(d)...))
             @test var(d) == var(InverseWishart(params(d)...))
-
         end
     end
 
@@ -57,13 +57,16 @@ using LinearAlgebra
     end
 
     @testset "entropy" begin
-        @test entropy(InvWishart(2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712])) ≈ 10.111427477184794
+        @test entropy(
+            InvWishart(2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712])
+        ) ≈ 10.111427477184794
         @test entropy(InvWishart(5.0, diageye(4))) ≈ 8.939145914882221
     end
 
     @testset "convert" begin
         for ν in 2:10
-            L = randn(ν, ν); S = L*L'
+            L = randn(ν, ν)
+            S = L * L'
             d = InvWishart(ν, S)
             @test convert(InverseWishart, d) == InverseWishart(ν, S)
         end
@@ -73,7 +76,6 @@ using LinearAlgebra
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(InverseWishart(ν, S), Int(1e6))
         @test mean(logdet, InvWishart(ν, S)) ≈ mean(logdet.(samples))
-        
 
         ν, S = 4.0, diageye(3)
         samples = rand(InverseWishart(ν, S), Int(1e6))
@@ -84,7 +86,6 @@ using LinearAlgebra
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(InverseWishart(ν, S), Int(1e6))
         @test mean(inv, InvWishart(ν, S)) ≈ mean(inv.(samples))
-        
 
         ν, S = 4.0, diageye(3)
         samples = rand(InverseWishart(ν, S), Int(1e6))
@@ -102,9 +103,8 @@ using LinearAlgebra
         d2 = InvWishart(-2.0, diageye(3))
 
         @test prod(ProdAnalytical(), d1, d2) ≈
-              InvWishart(6.0, 2*diageye(3))
+              InvWishart(6.0, 2 * diageye(3))
     end
-
 end
 
 end
