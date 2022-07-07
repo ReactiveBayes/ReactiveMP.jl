@@ -30,9 +30,8 @@ Distributions.dim(dist::InvWishart)  = size(dist.S, 1)
 function Distributions.entropy(dist::InvWishart)
     d = dim(dist)
     ν, S = params(dist)
-    0.25 * d * (d - 1) * logπ + mapreduce(i -> loggamma(0.5 * (ν + 1.0 - i)), +, 1:d) +
-    0.5ν * d + 0.5(d + 1) * (logdet(S) - log(2)) - 0.5(ν + d + 1) * sum([digamma(0.5(ν - d + i)) for i in 1:d])
-    return 0
+    d * (d - 1)/4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i)/2), +, 1:d) +
+    ν/2 * d + (d + 1)/2 * (logdet(S) - log(2)) - (ν + d + 1)/2 * mapreduce(i -> digamma((ν - d + i)/2), +, 1:d)
 end
 
 function Distributions.mean(::typeof(logdet), dist::InvWishart)
@@ -51,11 +50,6 @@ vague(::Type{<:InvWishart}, dims::Integer) = InvWishart(dims, tiny .* diageye(di
 function Base.convert(::Type{InverseWishart}, dist::InvWishart)
     ν, S = params(dist)
     return InverseWishart(ν, S)
-end
-
-function Base.convert(::Type{Wishart}, dist::InvWishart)
-    ν, S = params(dist)
-    return InverseWishart(ν, cholinv(S))
 end
 
 prod_analytical_rule(::Type{<:InvWishart}, ::Type{<:InvWishart}) = ProdAnalyticalRuleAvailable()
