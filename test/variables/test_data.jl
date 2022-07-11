@@ -74,6 +74,11 @@ import ReactiveMP: israndom, isproxy
             end
         end
     end
+
+    @testset "Error indexing" begin
+        # This test may be removed if we implement this feature in the future
+        @test_throws ErrorException datavar(:x, Float64)[1]
+    end
 end
 
 end

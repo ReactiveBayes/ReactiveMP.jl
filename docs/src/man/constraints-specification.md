@@ -4,7 +4,7 @@
 
 ## General syntax 
 
-`@constraints` macro accepts either regular julia function or a single `begin ... end` block. For example both are valid:
+`@constraints` macro accepts either regular Julia function or a single `begin ... end` block. For example both are valid:
 
 ```julia
 
@@ -112,7 +112,7 @@ For example:
 end
 ```
 
-specifies a so-called mean-field assumption on variables `x` and `y` in the model. Futhermore, if `x` is an array of variables in our model we may induce extra mean-field assumption on `x` in the following way.
+specifies a so-called mean-field assumption on variables `x` and `y` in the model. Furthermore, if `x` is an array of variables in our model we may induce extra mean-field assumption on `x` in the following way.
 
 ```julia
 @constraints begin 

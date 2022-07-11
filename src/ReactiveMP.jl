@@ -82,8 +82,8 @@ include("pipeline/vague.jl")
 
 include("rule.jl")
 
-include("score.jl")
 include("node.jl")
+include("score.jl")
 
 include("score/variable.jl")
 include("score/node.jl")

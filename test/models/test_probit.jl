@@ -23,7 +23,7 @@ using StatsFuns: normcdf
     for k in 2:nr_samples+1
         x[k] ~ NormalMeanPrecision(x[k-1] + 0.1, 100)
         y[k-1] ~ Probit(x[k]) where {
-            pipeline = RequireInbound(in = NormalMeanPrecision(0, 1.0))
+            pipeline = RequireMessage(in = NormalMeanPrecision(0, 1.0))
         }
     end
 

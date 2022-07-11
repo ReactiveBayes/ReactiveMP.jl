@@ -236,6 +236,8 @@ function Base.haskey(model::FactorGraphModel, symbol::Symbol)
     return haskey(getvardict(model), symbol)
 end
 
+Base.broadcastable(model::FactorGraphModel) = Ref(model)
+
 hasrandomvar(model::FactorGraphModel, symbol::Symbol) = haskey(model, symbol) ? israndom(getindex(model, symbol)) : false
 hasdatavar(model::FactorGraphModel, symbol::Symbol)   = haskey(model, symbol) ? isdata(getindex(model, symbol)) : false
 hasconstvar(model::FactorGraphModel, symbol::Symbol)  = haskey(model, symbol) ? isconst(getindex(model, symbol)) : false
@@ -390,20 +392,38 @@ randomvar_resolve_messages_form_prod(model::FactorGraphModel, constraints, name)
 
 ## variable creation
 
-function randomvar(model::FactorGraphModel, name::Symbol, args...)
-    return randomvar(model, RandomVariableCreationOptions(), name, args...)
+randomvar(model::FactorGraphModel, name::Symbol, args...) = randomvar(model, RandomVariableCreationOptions(), name, args...)
+datavar(model::FactorGraphModel, name::Symbol, args...)   = datavar(model, DataVariableCreationOptions(Any), name, args...)
+
+function __check_variable_existence(model::FactorGraphModel, name::Symbol)
+    if haskey(getvardict(model), name)
+        # Anonymous variables are allowed to be overwritten with the same name
+        isanonymous(model[name]) || error("Variable named `$(name)` has been redefined")
+    end
 end
 
 function randomvar(model::FactorGraphModel, options::RandomVariableCreationOptions, name::Symbol, args...)
+    __check_variable_existence(model, name)
     return add!(model, randomvar(randomvar_resolve_options(model, options, name), name, args...))
 end
 
-constvar(model::FactorGraphModel, args...) = add!(model, constvar(args...))
-datavar(model::FactorGraphModel, args...)  = add!(model, datavar(args...))
+function datavar(model::FactorGraphModel, options::DataVariableCreationOptions, name::Symbol, args...)
+    __check_variable_existence(model, name)
+    return add!(model, datavar(options, name, args...))
+end
 
-as_variable(model::FactorGraphModel, x)                   = add!(model, as_variable(x))
+function constvar(model::FactorGraphModel, name::Symbol, args...)
+    __check_variable_existence(model, name)
+    return add!(model, constvar(name, args...))
+end
+
+as_variable(model::FactorGraphModel, x)        = add!(model, as_variable(x))
+as_variable(model::FactorGraphModel, t::Tuple) = map((d) -> as_variable(model, d), t)
+
 as_variable(model::FactorGraphModel, v::AbstractVariable) = v
-as_variable(model::FactorGraphModel, t::Tuple)            = map((d) -> as_variable(model, d), t)
+as_variable(model::FactorGraphModel, v::AbstractVector{<:AbstractVariable}) = v
+
+## node creation
 
 function make_node(model::FactorGraphModel, options::FactorNodeCreationOptions, fform, args...)
     return add!(model, make_node(fform, node_resolve_options(model, options, fform, args), args...))
@@ -415,7 +435,29 @@ struct AutoVar
     name::Symbol
 end
 
-getname(autovar::AutoVar) = autovar.name
+name(autovar::AutoVar) = autovar.name
+
+# This function either returns a saved version of a variable from `vardict`
+# Or creates a new one in two cases:
+# - variable did not exist before
+# - variable exists, but has been declared as anyonymous (only if `rewrite_anonymous` argument is set to true)
+function make_autovar(
+    model::FactorGraphModel,
+    options::RandomVariableCreationOptions,
+    name::Symbol,
+    rewrite_anonymous::Bool = true
+)
+    if haskey(getvardict(model), name)
+        var = model[name]
+        if rewrite_anonymous && isanonymous(var)
+            return ReactiveMP.randomvar(model, options, name)
+        else
+            return var
+        end
+    else
+        return ReactiveMP.randomvar(model, options, name)
+    end
+end
 
 function ReactiveMP.make_node(
     model::FactorGraphModel,
@@ -425,8 +467,8 @@ function ReactiveMP.make_node(
     args::Vararg{<:ReactiveMP.AbstractVariable}
 )
     proxy     = isdeterministic(sdtype(fform)) ? args : nothing
-    rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(EmptyRandomVariableCreationOptions, proxy)
-    var       = ReactiveMP.randomvar(model, rvoptions, ReactiveMP.getname(autovar)) # add! is inside
+    rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(ReactiveMP.EmptyRandomVariableCreationOptions, proxy)
+    var       = ReactiveMP.make_autovar(model, rvoptions, ReactiveMP.name(autovar), true) # add! is inside
     node      = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
     return node, var
 end
@@ -442,14 +484,14 @@ function ReactiveMP.make_node(
     args::Vararg{<:ReactiveMP.ConstVariable}
 )
     if isstochastic(sdtype(fform))
-        var  = ReactiveMP.randomvar(model, EmptyRandomVariableCreationOptions, ReactiveMP.getname(autovar)) # add! is inside
+        var  = ReactiveMP.make_autovar(model, ReactiveMP.EmptyRandomVariableCreationOptions, ReactiveMP.name(autovar), true)
         node = ReactiveMP.make_node(model, options, fform, var, args...) # add! is inside
         return node, var
     else
         var = add!(
             model,
             ReactiveMP.constvar(
-                ReactiveMP.getname(autovar),
+                ReactiveMP.name(autovar),
                 __fform_const_apply(fform, map((d) -> ReactiveMP.getconst(d), args)...)
             )
         )

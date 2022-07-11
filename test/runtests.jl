@@ -95,13 +95,16 @@ end
     addtests("algebra/test_permutation_matrix.jl")
     addtests("algebra/test_standard_basis_vector.jl")
 
+    addtests("test_model.jl")
     addtests("test_math.jl")
     addtests("test_helpers.jl")
+    addtests("test_score.jl")
 
     addtests("constraints/spec/test_factorisation_spec.jl")
     addtests("constraints/spec/test_form_spec.jl")
     addtests("constraints/form/test_form_point_mass.jl")
     addtests("constraints/prod/test_prod_final.jl")
+    addtests("constraints/prod/test_prod_generic.jl")
     addtests("constraints/meta/test_meta.jl")
 
     addtests("test_distributions.jl")
