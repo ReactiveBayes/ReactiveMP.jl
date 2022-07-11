@@ -48,7 +48,7 @@ function __make_delta_fn_node(
         setmessagein!(in_var, in_index, messageout(in_interface))
     end
 
-    localmarginals = FactorNodeLocalMarginals((FactorNodeLocalMarginal(1, :out), FactorNodeLocalMarginal(2, :ins)))
+    localmarginals = FactorNodeLocalMarginals((FactorNodeLocalMarginal(1, 1, :out), FactorNodeLocalMarginal(2, 2, :ins)))
     meta           = collect_meta(DeltaFn, metadata(options))
 
     return DeltaFnNode(fn, out_interface, ins_interface, localmarginals, meta)
@@ -82,35 +82,35 @@ function activate!(model, factornode::DeltaFnNode)
         setstream!(localmarginal, getmarginal(connectedvar(out), IncludeAll()))
     end
 
-    if length(factornode.ins) === 1
-        let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
-            # Cluster contains only one variable, we can take marginal over this variable
-            cmarginal = getmarginal(connectedvar(ins[1]), IncludeAll())
-            setstream!(localmarginal, cmarginal)
-        end
-    else
-        let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
-            cmarginal = MarginalObservable()
-            setstream!(localmarginal, cmarginal)
+    # Second we declare how to compute a joint marginal over all inbound edges
+    # For this we need to collect all messages from `ins` edges and from `out` edge
+    # For convenience we also collect marginal over `out` edge ( <- double check with Semih and Thijs )
+    let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
+        cmarginal = MarginalObservable()
+        setstream!(localmarginal, cmarginal)
 
-            msgs_names      = Val{(:ins,)}
-            msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
+        # We need messages both from `:out` and `:ins`
+        msgs_names      = Val{(:out, :ins,)}
+        msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
 
-            marginal_names       = Val{(:out,)}
-            marginals_observable = combineLatestUpdates((getmarginal(connectedvar(out), IncludeAll()),), PushNew())
+        # Double check this with Semih and Thijs (see comment above)
+        # We need marginal from `:out`
+        marginal_names       = Val{(:out,)}
+        marginals_observable = combineLatestUpdates((getmarginal(connectedvar(out), IncludeAll()),), PushNew())
 
-            fform = functionalform(factornode)
-            vtag  = Val{:ins}
-            meta  = metadata(factornode)
+        fform = functionalform(factornode)
+        vtag  = Val{:ins}
+        meta  = metadata(factornode)
 
-            mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
-            marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
+        mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
-            connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
-        end
+        connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
     end
 
     # Second we declare message passing logic for out interface
+    # To compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge and `:out` edge
+    # In general, we don't need any marginals
     let interface = factornode.out
         msgs_names      = Val{(:out, :ins)}
         msgs_observable = combineLatestUpdates((messagein(interface), combineLatestUpdates(map((in) -> messagein(in), factornode.ins), PushNew())), PushNew())
@@ -138,6 +138,7 @@ function activate!(model, factornode::DeltaFnNode)
     end
 
     # At last we declare message passing logic for input interfaces
+    # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
         msgs_names      = Val{(:in,)}
         msgs_observable = combineLatestUpdates((messagein(interface),), PushNew())
