@@ -15,10 +15,6 @@ struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
     metadata       :: M
 end
 
-# include approximations
-include("approximations/linearization.jl")
-include("approximations/sampling.jl")
-
 as_node_symbol(::Type{DeltaFn{ReactiveMP.DeltaFnCallableWrapper{F}}}) where {F} = Symbol(:DeltaFn, string(F))
 
 functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{DeltaFnCallableWrapper{F}}
