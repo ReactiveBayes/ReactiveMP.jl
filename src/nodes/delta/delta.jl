@@ -84,7 +84,6 @@ function activate!(model, factornode::DeltaFnNode)
 
     # Second we declare how to compute a joint marginal over all inbound edges
     # For this we need to collect all messages from `ins` edges and from `out` edge
-    # For convenience we also collect marginal over `out` edge ( <- double check with Semih and Thijs )
     let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
         cmarginal = MarginalObservable()
         setstream!(localmarginal, cmarginal)
@@ -93,10 +92,8 @@ function activate!(model, factornode::DeltaFnNode)
         msgs_names      = Val{(:out, :ins,)}
         msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
 
-        # Double check this with Semih and Thijs (see comment above)
-        # We need marginal from `:out`
-        marginal_names       = Val{(:out,)}
-        marginals_observable = combineLatestUpdates((getmarginal(connectedvar(out), IncludeAll()),), PushNew())
+        marginal_names       = nothing
+        marginals_observable = of(nothing)
 
         fform = functionalform(factornode)
         vtag  = Val{:ins}
