@@ -38,7 +38,7 @@ to_marginal(dist::WishartMessage) = convert(Wishart, dist)
 
 function Base.convert(::Type{WishartMessage{T}}, distribution::WishartMessage) where {T}
     (ν, S) = params(distribution)
-    return InverseWishartMessage(convert(T, ν), convert(AbstractMatrix{T}, S))
+    return WishartMessage(convert(T, ν), convert(AbstractMatrix{T}, S))
 end
 
 
