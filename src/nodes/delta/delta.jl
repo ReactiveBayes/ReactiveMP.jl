@@ -30,6 +30,19 @@ localmarginals(factornode::DeltaFnNode)                   = factornode.localmarg
 localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
+# For missing rules error msg
+rule_method_error_extract_fform(f::Type{<: DeltaFn }) = "DeltaFn{f}"
+
+function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
+    if iname === :out
+        return 1
+    elseif iname === :ins || iname === :in
+        return 2
+    else
+        error("Unknown interface ':$(iname)' for nonlinear delta fn [ $(functionalform(factornode)) ] node")
+    end
+end
+
 function __make_delta_fn_node(
     fn::F,
     options::FactorNodeCreationOptions,
