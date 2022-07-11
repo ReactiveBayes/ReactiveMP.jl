@@ -9,7 +9,7 @@ import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:InvWishart" begin
     @testset ":out_ν_S (m_out::InvWishart, m_ν::PointMass, m_S::PointMass)" begin
-        @test_marginalrules [with_float_conversions = false, atol = 1e-5] InvWishart(:out_ν_S) [
+        @test_marginalrules [with_float_conversions = true, atol = 1e-5] InvWishart(:out_ν_S) [
             (
                 input = (
                     m_out = InvWishart(3.0, [3.0 -1.0; -1.0 4.0]),

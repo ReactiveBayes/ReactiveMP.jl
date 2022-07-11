@@ -1,7 +1,7 @@
 export InvWishart
 
 import Distributions: InverseWishart, Wishart
-import Base: ndims
+import Base: ndims, convert
 import LinearAlgebra
 import StatsFuns: logπ
 import SpecialFunctions: digamma, loggamma
@@ -25,6 +25,11 @@ Distributions.var(dist::InvWishart)  = var(InverseWishart(params(dist)...))
 Distributions.cov(dist::InvWishart)  = cov(InverseWishart(params(dist)...))
 Distributions.mode(dist::InvWishart) = mode(InverseWishart(params(dist)...))
 Distributions.dim(dist::InvWishart)  = size(dist.S, 1)
+
+function Base.convert(::Type{InvWishart{T}}, distribution::InvWishart) where {T}
+    (ν, S) = params(distribution)
+    return InvWishart(convert(T, ν), convert(AbstractMatrix{T}, S))
+end
 
 # from "Parametric Bayesian Estimation of Differential Entropy and Relative Entropy" Gupta et al.
 function Distributions.entropy(dist::InvWishart)
