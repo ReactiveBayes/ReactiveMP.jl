@@ -5,6 +5,7 @@ using ReactiveMP
 using Distributions
 using Random
 using LinearAlgebra
+using StableRNGs
 
 @testset "InvWishart" begin
     @testset "common" begin
@@ -17,9 +18,10 @@ using LinearAlgebra
     end
 
     @testset "statistics" begin
+        rng = StableRNG(42)
         # ν > dim(d) + 1
         for ν in 4:10
-            L = randn(ν - 2, ν - 2)
+            L = randn(rng, ν - 2, ν - 2)
             S = L * L'
             d = InvWishart(ν, S)
 
@@ -29,7 +31,7 @@ using LinearAlgebra
 
         # ν > dim(d) + 3
         for ν in 5:10
-            L = randn(ν - 4, ν - 4)
+            L = randn(rng, ν - 4, ν - 4)
             S = L * L'
             d = InvWishart(ν, S)
 
@@ -64,8 +66,9 @@ using LinearAlgebra
     end
 
     @testset "convert" begin
+        rng = StableRNG(42)
         for ν in 2:10
-            L = randn(ν, ν)
+            L = randn(rng, ν, ν)
             S = L * L'
             d = InvWishart(ν, S)
             @test convert(InverseWishart, d) == InverseWishart(ν, S)
@@ -73,22 +76,24 @@ using LinearAlgebra
     end
 
     @testset "mean(::typeof(logdet))" begin
+        rng = StableRNG(123)
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
-        samples = rand(InverseWishart(ν, S), Int(1e6))
+        samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(logdet, InvWishart(ν, S)), mean(logdet.(samples)), atol = 1e-2)
 
         ν, S = 4.0, diageye(3)
-        samples = rand(InverseWishart(ν, S), Int(1e6))
+        samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(logdet, InvWishart(ν, S)), mean(logdet.(samples)), atol = 1e-2)
     end
 
     @testset "mean(::typeof(inv))" begin
+        rng = StableRNG(321)
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
-        samples = rand(InverseWishart(ν, S), Int(1e6))
+        samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InvWishart(ν, S)), mean(inv.(samples)), atol = 1e-2)
 
         ν, S = 4.0, diageye(3)
-        samples = rand(InverseWishart(ν, S), Int(1e6))
+        samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InvWishart(ν, S)), mean(inv.(samples)), atol = 1e-2)
     end
 
