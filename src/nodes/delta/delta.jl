@@ -34,7 +34,7 @@ function __make_delta_fn_node(
     options::FactorNodeCreationOptions,
     out::AbstractVariable,
     ins::NTuple{N, <:AbstractVariable}
-) where {F <: Function, N, M}
+) where {F <: Function, N}
     out_interface = NodeInterface(:out, Marginalisation())
     ins_interface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(:in, Marginalisation())), N)
 
@@ -89,8 +89,8 @@ function activate!(model, factornode::DeltaFnNode)
         setstream!(localmarginal, cmarginal)
 
         # We need messages both from `:out` and `:ins`
-        msgs_names      = Val{(:out, :ins,)}
-        msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
+        msgs_names      = Val{(:out, :ins)}
+        msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew())), PushNew())
 
         marginal_names       = nothing
         marginals_observable = of(nothing)
