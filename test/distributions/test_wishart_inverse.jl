@@ -64,7 +64,10 @@ import ReactiveMP: InverseWishartMessage
 
     @testset "entropy" begin
         @test entropy(
-            InverseWishartMessage(2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712])
+            InverseWishartMessage(
+                2.0,
+                [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
+            )
         ) ≈ 10.111427477184794
         @test entropy(InverseWishartMessage(5.0, diageye(4))) ≈ 8.939145914882221
     end

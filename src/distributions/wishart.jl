@@ -41,7 +41,6 @@ function Base.convert(::Type{WishartMessage{T}}, distribution::WishartMessage) w
     return WishartMessage(convert(T, ν), convert(AbstractMatrix{T}, S))
 end
 
-
 function Distributions.mean(::typeof(logdet), distribution::WishartDistributionsFamily)
     d    = size(distribution, 1)
     ν, S = params(distribution)
@@ -57,7 +56,7 @@ vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, huge .* diageye(dims))
 
 Base.ndims(dist::Wishart) = size(dist, 1)
 
-function Base.convert(::Type{Wishart}, dist::WishartMessage) 
+function Base.convert(::Type{Wishart}, dist::WishartMessage)
     (ν, S) = params(dist)
     return Wishart(ν, Matrix(Hermitian(S)))
 end

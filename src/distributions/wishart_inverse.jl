@@ -65,7 +65,7 @@ vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims, tiny .* di
 
 Base.ndims(dist::InverseWishart) = size(dist, 1)
 
-function Base.convert(::Type{InverseWishart}, dist::InverseWishartMessage) 
+function Base.convert(::Type{InverseWishart}, dist::InverseWishartMessage)
     (ν, S) = params(dist)
     return InverseWishart(ν, Matrix(Hermitian(S)))
 end

@@ -114,7 +114,7 @@ prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
             constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
         Base.Generator(as_message, messages)
     )
-    
+
 prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
     (messages) -> constrain_form_as_message(
         foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)),
