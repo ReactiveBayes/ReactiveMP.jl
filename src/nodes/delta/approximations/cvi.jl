@@ -1,5 +1,7 @@
+export CVIApproximation
+
 struct CVIApproximation
-    lerning_rate
+    learning_rate
     n_samples
     rng
 end

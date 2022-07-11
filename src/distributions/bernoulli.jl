@@ -51,3 +51,5 @@ end
 function standardDist(η::BernoulliNaturalParametrs)
     return Bernoulli(get_natural_params(η) / (1 + exp(get_natural_params(η))))
 end
+
+naturalParams(dist::Bernoulli) = BernoulliNaturalParametrs(log(dist.params[:p] / (1 - dist.params[:p])))

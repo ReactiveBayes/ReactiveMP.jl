@@ -8,8 +8,7 @@ using Random
 @rule DeltaFn{f}(:out, Marginalisation) (m_ins::NTuple{N, Any}, meta::SamplingApproximation) where {f, N} =
     begin
         message_samples = rand(meta.rng, m_in, meta.nsamples)
-        return Sample
-        List(map(x -> f(x...), message_samples))
+        return SampleList(map(x -> f(x...), message_samples))
     end
 
 @rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_ins::NTuple{1, Any}, meta::LinearApproximation) where {f} = begin
@@ -26,6 +25,34 @@ end
     m = a * mean + b
     V = a * var * a'
     return NormalMeanVariance(m, V)
+end
+
+function ruleSPCVIIn1Factor(node_id::Symbol,
+    msg_out::Message{<:FactorFunction, <:VariateType},
+    msg_in::Message{<:FactorNode, <:VariateType})
+    thenode = currentGraph().nodes[node_id]
+
+    η = deepcopy(naturalParams(msg_in.dist))
+    if thenode.online_inference == false
+        λ_init = deepcopy(η)
+    else
+        λ_init = deepcopy(naturalParams(thenode.q[1]))
+    end
+
+    logp_nc(z) = (thenode.dataset_size / thenode.batch_size) * logPdf(msg_out.dist, thenode.g(z))
+    λ = renderCVI(logp_nc, thenode.num_iterations, thenode.opt, λ_init, msg_in, thenode.convergence_optimizer)
+
+    λ_message = λ .- η
+    # Implement proper message check for all the distributions later on.
+    thenode.q = [standardDist(msg_in.dist, λ)]
+    if thenode.online_inference == false
+        thenode.q_memory = deepcopy(thenode.q)
+    end
+    return standardMessage(msg_in.dist, λ_message)
+end
+
+@rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
+    natural_params_in = naturalParams(msg_in)
 end
 
 # @rule DeltaFn{f}(:out, Marginalisation) (m_ins::NTuple{N, Any}, meta::LinearApproximationKnownInverse) where {f, N} =
