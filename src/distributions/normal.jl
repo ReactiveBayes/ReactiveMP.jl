@@ -18,7 +18,6 @@ const UnivariateGaussianDistributionsFamily   = UnivariateNormalDistributionsFam
 const MultivariateGaussianDistributionsFamily = MultivariateNormalDistributionsFamily
 const GaussianDistributionsFamily             = NormalDistributionsFamily
 
-import Base
 import Base: prod, convert
 import Random: rand!
 
@@ -240,36 +239,3 @@ function Random.rand!(
     container
 end
 
-struct NormalNaturalParametrs <: NaturalParametrs
-    weighted_mean
-    precision
-end
-
-# Standard parameters to natural parameters
-function naturalParams(dist::UnivariateNormalDistributionsFamily)
-    weighted_mean, precision = weightedmean_precision(dist)
-    return NormalNaturalParametrs(weighted_mean, -0.5 * precision)
-end
-
-function standardDist(η::NormalNaturalParametrs)
-    return GaussianWeighteMeanPrecision(η.weighted_mean, -2 * η.precision)
-end
-
-function Base.:+(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
-    return NormalNaturalParametrs(left.weighted_mean + right.weighted_mean, left.precision + right.precision)
-end
-
-function Base.:-(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
-    return NormalNaturalParametrs(left.weighted_mean - right.weighted_mean, left.precision - right.precision)
-end
-
-function logNormalizer(η::NormalNaturalParametrs)
-    return -(η.weighted_mean^2) / (4 * η.precision) - 0.5 * log(-2 * η.precision)
-end
-
-# logPdf wrt natural params. ForwardDiff is not stable with reshape function which
-# precludes the usage of logPdf functions previously defined. Below function is
-# meant to be used with Zygote.
-function logPdf(η::NormalNaturalParametrs, x)
-    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.precision - logNormalizer(η)
-end
