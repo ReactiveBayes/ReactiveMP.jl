@@ -12,6 +12,10 @@ end
     return NormalMeanVariance(0, 1)
 end
 
+@rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::FactorProduct, m_in::Any, meta::CVIApproximation) where {f} = begin
+    return q_ins[k]
+end
+
 # @rule function DeltaFn{f}((:in, k), Marginalisation)
 #     (msg_out, msg_in, meta::CVIApproximation)
 #     η = naturalParams(msg_in)

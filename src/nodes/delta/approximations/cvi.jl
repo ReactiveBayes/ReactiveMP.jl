@@ -1,14 +1,15 @@
 export CVIApproximation
 export renderCVI
-using Flux 
+using Flux
 
-struct CVIApproximation
+mutable struct CVIApproximation
     learning_rate
     n_samples
     rng
     opt
     dataset_size
     batch_size
+    q_ins_marginal
 end
 
 #---------------------------

@@ -2,4 +2,10 @@
     return MvNormalMeanPrecision(zeros(N), diageye(N))
 end
 
-@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::CVIApproximation) where {f} = begin end
+@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::CVIApproximation) where {f} = begin
+    η = naturalParams(m_ins[1])
+    logp_nc(z) = (meta.dataset_size / meta.batch_size) * logpdf(m_out, f(z))
+    λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, deepcopy(η), m_ins[1])
+    meta.q_ins_marginal = FactorProduct((standardDist(λ - η)))
+    return FactorProduct((standardDist(λ - η)))
+end
