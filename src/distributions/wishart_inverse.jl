@@ -60,7 +60,7 @@ end
 
 function Distributions.mean(::typeof(inv), dist::InverseWishartDistributionsFamily)
     ν, S = params(dist)
-    return ν * cholinv(S)
+    return mean(Wishart(ν, cholinv(S)))
 end
 
 vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims, tiny .* diageye(dims))
