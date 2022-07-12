@@ -73,6 +73,13 @@ end
 
 Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWishartMessage(params(dist)...)
 
+## Friendly functions
+
+function logpdf_sample_friendly(dist::InverseWishartMessage)
+    friendly = convert(InverseWishart, dist)
+    return (friendly, friendly)
+end
+
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `InverseWishartMessage` messages as they are significantly faster in creation
 prod_analytical_rule(::Type{<:InverseWishartMessage}, ::Type{<:InverseWishartMessage}) = ProdAnalyticalRuleAvailable()
