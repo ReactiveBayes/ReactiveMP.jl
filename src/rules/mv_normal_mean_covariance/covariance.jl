@@ -8,7 +8,7 @@
     df = ndims(q_μ)
     S  = v_mean + v_out + (m_mean - m_out) * (m_mean - m_out)'
 
-    return InvWishart(-df, S)
+    return InverseWishartMessage(-df, S)
 end
 
 @rule MvNormalMeanCovariance(:Σ, Marginalisation) (q_out_μ::Any,) = begin
@@ -20,5 +20,5 @@ end
     vdiff = @views v_out_μ[1:d, 1:d] - v_out_μ[1:d, d+1:end] - v_out_μ[d+1:end, 1:d] + v_out_μ[d+1:end, d+1:end]
     S     = vdiff + mdiff * mdiff'
 
-    return InvWishart(-d, S)
+    return InverseWishartMessage(-d, S)
 end

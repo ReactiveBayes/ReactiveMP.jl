@@ -6,6 +6,8 @@ using Distributions
 using Random
 using LinearAlgebra
 
+import ReactiveMP: WishartMessage
+
 @testset "Wishart" begin
 
     # Wishart comes from Distributions.jl and most of the things should be covered there
@@ -40,12 +42,12 @@ using LinearAlgebra
         v2 = [10.2 -3.3; -3.3 5.0]
         v3 = [8.1 -2.7; -2.7 9.0]
 
-        @test prod(ProdAnalytical(), Wishart(3, v1), Wishart(3, v2)) ≈
-              Wishart(3, [4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
-        @test prod(ProdAnalytical(), Wishart(4, v1), Wishart(4, v3)) ≈
-              Wishart(5, [4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
-        @test prod(ProdAnalytical(), Wishart(5, v2), Wishart(4, v3)) ≈
-              Wishart(6, [4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499])
+        @test prod(ProdAnalytical(), WishartMessage(3, v1), WishartMessage(3, v2)) ≈
+              WishartMessage(3, [4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
+        @test prod(ProdAnalytical(), WishartMessage(4, v1), WishartMessage(4, v3)) ≈
+              WishartMessage(5, [4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
+        @test prod(ProdAnalytical(), WishartMessage(5, v2), WishartMessage(4, v3)) ≈
+              WishartMessage(6, [4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499])
     end
 
     @testset "ndims" begin

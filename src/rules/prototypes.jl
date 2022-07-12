@@ -78,6 +78,9 @@ include("normal_mean_precision/marginals.jl")
 include("wishart/out.jl")
 include("wishart/marginals.jl")
 
+include("wishart_inverse/out.jl")
+include("wishart_inverse/marginals.jl")
+
 include("normal_mixture/switch.jl")
 include("normal_mixture/m.jl")
 include("normal_mixture/p.jl")
@@ -124,6 +127,3 @@ include("bifm_helper/out.jl")
 include("poisson/l.jl")
 include("poisson/marginals.jl")
 include("poisson/out.jl")
-
-include("inv_wishart/out.jl")
-include("inv_wishart/marginals.jl")

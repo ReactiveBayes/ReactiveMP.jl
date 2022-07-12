@@ -1,12 +1,13 @@
+export InverseWishart
 
 import StatsFuns: logπ
 import SpecialFunctions: loggamma
 import Distributions: InverseWishart
 
-@node InvWishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
+@node InverseWishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
 
-@average_energy InvWishart (q_out::Any, q_ν::PointMass, q_S::Any) = begin
-    d = dim(q_out)
+@average_energy InverseWishart (q_out::Any, q_ν::PointMass, q_S::Any) = begin
+    d = size(q_out, 1)
 
     m_q_ν = mean(q_ν)
 
