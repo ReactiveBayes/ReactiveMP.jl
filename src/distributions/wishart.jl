@@ -23,11 +23,12 @@ end
 
 WishartMessage(ν::Integer, S::AbstractMatrix{Real}) = WishartMessage(float(ν), S)
 
-Distributions.params(dist::WishartMessage) = (dist.ν, dist.S)
-Distributions.mean(dist::WishartMessage)   = mean(convert(Wishart, dist))
-Distributions.var(dist::WishartMessage)    = var(convert(Wishart, dist))
-Distributions.cov(dist::WishartMessage)    = cov(convert(Wishart, dist))
-Distributions.mode(dist::WishartMessage)   = mode(convert(Wishart, dist))
+Distributions.params(dist::WishartMessage)  = (dist.ν, dist.S)
+Distributions.mean(dist::WishartMessage)    = mean(convert(Wishart, dist))
+Distributions.var(dist::WishartMessage)     = var(convert(Wishart, dist))
+Distributions.cov(dist::WishartMessage)     = cov(convert(Wishart, dist))
+Distributions.mode(dist::WishartMessage)    = mode(convert(Wishart, dist))
+Distributions.entropy(dist::WishartMessage) = entropy(convert(Wishart, dist))
 
 mean_cov(dist::WishartMessage) = mean_cov(convert(Wishart, dist))
 
