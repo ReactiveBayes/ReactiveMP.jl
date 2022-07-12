@@ -19,7 +19,7 @@ using Random
     return NormalMeanVariance(m, V)
 end
 
-@rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_in::Any, meta::LinearApproximation) where {f} = begin
+@rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_ins::Any, meta::LinearApproximation) where {f} = begin
     mean, var = mean(m_ins[1]), var(m_ins[1])
     (a, b) = localLinearization(g, mean)
     m = a * mean + b
@@ -51,19 +51,19 @@ end
 #     return standardMessage(msg_in.dist, λ_message)
 # end
 
-function ruleSPCVIOutNFactorNode(node_id::Symbol,
-    msg_out::Nothing,
-    msg_in::Message)
-    thenode = currentGraph().nodes[node_id]
+# function ruleSPCVIOutNFactorNode(node_id::Symbol,
+#     msg_out::Nothing,
+#     msg_in::Message)
+#     thenode = currentGraph().nodes[node_id]
 
-    sampl = thenode.g(sample(msg_in.dist))
-    if length(sampl) == 1
-        variate = Univariate
-    else
-        variate = Multivariate
-    end
-    return Message(variate, SetSampleList, node_id = node_id)
-end
+#     sampl = thenode.g(sample(msg_in.dist))
+#     if length(sampl) == 1
+#         variate = Univariate
+#     else
+#         variate = Multivariate
+#     end
+#     return Message(variate, SetSampleList, node_id = node_id)
+# end
 
 @rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
     return NormalMeanVariance(0, 1)

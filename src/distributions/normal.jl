@@ -2,6 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
+export NormalNaturalParametrs, naturalParams
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -243,6 +244,14 @@ end
 struct NormalNaturalParametrs <: NaturalParametrs
     weighted_mean
     precision
+end
+
+function NormalNaturalParametrs(v)
+    return NormalNaturalParametrs(v[1], v[2])
+end
+
+function Base.vec(p::NormalNaturalParametrs)
+    return [p.weighted_mean, p.precision]
 end
 
 # Standard parameters to natural parameters

@@ -1,4 +1,6 @@
 export Bernoulli
+export naturalParams
+export standardDist
 
 import Distributions: Bernoulli, succprob, failprob
 import Base

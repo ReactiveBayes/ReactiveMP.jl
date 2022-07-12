@@ -1,5 +1,6 @@
 export CVIApproximation
 export renderCVI
+using Flux 
 
 struct CVIApproximation
     learning_rate
@@ -27,19 +28,12 @@ function renderCVI(logp_nc::Function,
 
     for _ in 1:num_iterations
         q = standardDist(λ)
-        z_s = sample(q) # need to add rng here parameter
+        z_s = rand(q) # need to add rng here (or maybe better to do callback)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
         ∇f = NormalNaturalParametrs(df_μ1, df_μ2)
-
-        # λ_old = deepcopy(λ)
-
         ∇ = λ - η - ∇f
-        update!(opt, λ, ∇)
-
-        # if isProper(standardDist(λ)) == false
-        #     λ = λ_old
-        # end
+        λ = NormalNaturalParametrs(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
     end
 
     return λ
