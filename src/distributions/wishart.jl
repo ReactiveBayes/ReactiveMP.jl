@@ -30,6 +30,7 @@ Distributions.var(dist::WishartMessage)  = var(Wishart(params(dist)...))
 Distributions.cov(dist::WishartMessage)  = cov(Wishart(params(dist)...))
 Distributions.mode(dist::WishartMessage) = mode(Wishart(params(dist)...))
 
+Base.size(dist::WishartMessage)           = size(dist.S)
 Base.size(dist::WishartMessage, dim::Int) = size(dist.S, dim)
 
 const WishartDistributionsFamily{T} = Union{Wishart{T}, WishartMessage{T}}

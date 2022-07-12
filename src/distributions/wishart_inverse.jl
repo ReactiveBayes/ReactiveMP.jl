@@ -31,6 +31,7 @@ Distributions.var(dist::InverseWishartMessage)  = var(InverseWishart(params(dist
 Distributions.cov(dist::InverseWishartMessage)  = cov(InverseWishart(params(dist)...))
 Distributions.mode(dist::InverseWishartMessage) = mode(InverseWishart(params(dist)...))
 
+Base.size(dist::InverseWishartMessage)           = size(dist.S)
 Base.size(dist::InverseWishartMessage, dim::Int) = size(dist.S, dim)
 
 const InverseWishartDistributionsFamily{T} = Union{InverseWishart{T}, InverseWishartMessage{T}}

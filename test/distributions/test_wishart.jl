@@ -6,6 +6,8 @@ using Distributions
 using Random
 using LinearAlgebra
 
+import ReactiveMP: WishartMessage
+
 @testset "Wishart" begin
 
     # Wishart comes from Distributions.jl and most of the things should be covered there
