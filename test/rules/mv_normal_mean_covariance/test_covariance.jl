@@ -101,7 +101,10 @@ import ReactiveMP: InverseWishartMessage, @test_rules
         A = [3.5 -0.5 -0.25 0.0; -0.5 3.0 -0.25 0.0; -0.25 -0.25 6.0 0.25; 0.0 0.0 0.25 7.0]
 
         @test_rules [with_float_conversions = true, float32_atol = 1e-5] MvNormalMeanCovariance(:Σ, Marginalisation) [
-            (input = (q_out_μ = MvNormalMeanCovariance(a, A),), output = InverseWishartMessage(-2.0, [14.0 8.0; 8.0 26.0]))
+            (
+            input = (q_out_μ = MvNormalMeanCovariance(a, A),),
+            output = InverseWishartMessage(-2.0, [14.0 8.0; 8.0 26.0])
+        )
         ]
     end
 end
