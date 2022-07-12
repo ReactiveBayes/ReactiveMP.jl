@@ -844,7 +844,7 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) = 
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) =
     throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)

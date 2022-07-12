@@ -11,3 +11,16 @@ end
 ) where {f} = begin
     return NormalMeanVariance(0, 1)
 end
+
+@rule function DeltaFn{F}((:in, k), Marginalisation)
+    (msg_out, msg_in, meta::CVIApproximation)
+    η = naturalParams(msg_in)
+    λ_init = deepcopy(η)
+
+    logp_nc(z) = (meta.dataset_size / meta.batch_size) * logPdf(msg_out.dist, thenode.g(z))
+    λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, λ_init, msg_in)
+
+    λ_message = λ - η
+
+    return standardDist(λ_message)
+end

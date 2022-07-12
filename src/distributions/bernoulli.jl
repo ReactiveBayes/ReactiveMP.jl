@@ -26,8 +26,8 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     return prod(ProdPreserveType(Bernoulli), left, Bernoulli(first(probvec(right))))
 end
 
-struct BernoulliNaturalParametrs <: NaturalParametrs
-    η
+struct BernoulliNaturalParametrs{T} <: NaturalParametrs
+    η::T
 end
 
 get_natural_params(params::BernoulliNaturalParametrs) = params.η

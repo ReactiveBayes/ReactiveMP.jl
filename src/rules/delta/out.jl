@@ -27,32 +27,46 @@ end
     return NormalMeanVariance(m, V)
 end
 
-function ruleSPCVIIn1Factor(node_id::Symbol,
-    msg_out::Message{<:FactorFunction, <:VariateType},
-    msg_in::Message{<:FactorNode, <:VariateType})
+# function ruleSPCVIIn1Factor(node_id::Symbol,
+#     msg_out::Message{<:FactorFunction, <:VariateType},
+#     msg_in::Message{<:FactorNode, <:VariateType})
+#     thenode = currentGraph().nodes[node_id]
+
+#     η = deepcopy(naturalParams(msg_in.dist))
+#     if thenode.online_inference == false
+#         λ_init = deepcopy(η)
+#     else
+#         λ_init = deepcopy(naturalParams(thenode.q[1]))
+#     end
+
+#     logp_nc(z) = (thenode.dataset_size / thenode.batch_size) * logPdf(msg_out.dist, thenode.g(z))
+#     λ = renderCVI(logp_nc, thenode.num_iterations, thenode.opt, λ_init, msg_in, thenode.convergence_optimizer)
+
+#     λ_message = λ .- η
+#     # Implement proper message check for all the distributions later on.
+#     thenode.q = [standardDist(msg_in.dist, λ)]
+#     if thenode.online_inference == false
+#         thenode.q_memory = deepcopy(thenode.q)
+#     end
+#     return standardMessage(msg_in.dist, λ_message)
+# end
+
+function ruleSPCVIOutNFactorNode(node_id::Symbol,
+    msg_out::Nothing,
+    msg_in::Message)
     thenode = currentGraph().nodes[node_id]
 
-    η = deepcopy(naturalParams(msg_in.dist))
-    if thenode.online_inference == false
-        λ_init = deepcopy(η)
+    sampl = thenode.g(sample(msg_in.dist))
+    if length(sampl) == 1
+        variate = Univariate
     else
-        λ_init = deepcopy(naturalParams(thenode.q[1]))
+        variate = Multivariate
     end
-
-    logp_nc(z) = (thenode.dataset_size / thenode.batch_size) * logPdf(msg_out.dist, thenode.g(z))
-    λ = renderCVI(logp_nc, thenode.num_iterations, thenode.opt, λ_init, msg_in, thenode.convergence_optimizer)
-
-    λ_message = λ .- η
-    # Implement proper message check for all the distributions later on.
-    thenode.q = [standardDist(msg_in.dist, λ)]
-    if thenode.online_inference == false
-        thenode.q_memory = deepcopy(thenode.q)
-    end
-    return standardMessage(msg_in.dist, λ_message)
+    return Message(variate, SetSampleList, node_id = node_id)
 end
 
 @rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
-    natural_params_in = naturalParams(msg_in)
+    return NormalMeanVariance(0, 1)
 end
 
 # @rule DeltaFn{f}(:out, Marginalisation) (m_ins::NTuple{N, Any}, meta::LinearApproximationKnownInverse) where {f, N} =

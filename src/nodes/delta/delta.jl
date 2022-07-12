@@ -31,7 +31,7 @@ localmarginalnames(factornode::DeltaFnNode)               = map(name, localmargi
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
 # For missing rules error msg
-rule_method_error_extract_fform(f::Type{<: DeltaFn }) = "DeltaFn{f}"
+rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
     if iname === :out
