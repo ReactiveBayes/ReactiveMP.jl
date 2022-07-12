@@ -17,8 +17,8 @@ end
 function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt,
-    λ_init::NaturalParametrs,
-    msg_in)
+    λ_init::NormalNaturalParametrs,
+    msg_in::UnivariateGaussianDistributionsFamily)
     η = naturalParams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -30,7 +30,7 @@ function renderCVI(logp_nc::Function,
         z_s = sample(q) # need to add rng here parameter
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = [df_μ1, df_μ2]
+        ∇f = NormalNaturalParametrs(df_μ1, df_μ2)
 
         # λ_old = deepcopy(λ)
 
