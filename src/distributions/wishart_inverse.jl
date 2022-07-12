@@ -25,11 +25,12 @@ end
 InverseWishartMessage(ν::Integer, S::AbstractMatrix{Real}) = InverseWishartMessage(float(ν), S)
 
 Distributions.params(dist::InverseWishartMessage) = (dist.ν, dist.S)
+Distributions.mean(dist::InverseWishartMessage)   = mean(convert(InverseWishart, dist))
+Distributions.var(dist::InverseWishartMessage)    = var(convert(InverseWishart, dist))
+Distributions.cov(dist::InverseWishartMessage)    = cov(convert(InverseWishart, dist))
+Distributions.mode(dist::InverseWishartMessage)   = mode(convert(InverseWishart, dist))
 
-Distributions.mean(dist::InverseWishartMessage) = mean(InverseWishart(params(dist)...))
-Distributions.var(dist::InverseWishartMessage)  = var(InverseWishart(params(dist)...))
-Distributions.cov(dist::InverseWishartMessage)  = cov(InverseWishart(params(dist)...))
-Distributions.mode(dist::InverseWishartMessage) = mode(InverseWishart(params(dist)...))
+mean_cov(dist::InverseWishartMessage) = mean_cov(convert(InverseWishart, dist))
 
 Base.size(dist::InverseWishartMessage)           = size(dist.S)
 Base.size(dist::InverseWishartMessage, dim::Int) = size(dist.S, dim)
