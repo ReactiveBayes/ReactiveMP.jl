@@ -126,6 +126,7 @@ end
     addtests("distributions/test_normal.jl")
     addtests("distributions/test_pointmass.jl")
     addtests("distributions/test_wishart.jl")
+    addtests("distributions/test_wishart_inverse.jl")
     addtests("distributions/test_sample_list.jl")
 
     addtests("test_message.jl")
@@ -148,6 +149,7 @@ end
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
     addtests("nodes/test_poisson.jl")
+    addtests("nodes/test_wishart_inverse.jl")
 
     addtests("rules/uniform/test_out.jl")
 
@@ -198,6 +200,7 @@ end
 
     addtests("rules/mv_normal_mean_covariance/test_out.jl")
     addtests("rules/mv_normal_mean_covariance/test_mean.jl")
+    addtests("rules/mv_normal_mean_covariance/test_covariance.jl")
 
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
@@ -209,6 +212,9 @@ end
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
 
+    addtests("rules/wishart_inverse/test_marginals.jl")
+    addtests("rules/wishart_inverse/test_out.jl")
+
     addtests("rules/poisson/test_l.jl")
     addtests("rules/poisson/test_marginals.jl")
     addtests("rules/poisson/test_out.jl")
@@ -219,6 +225,7 @@ end
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
     addtests("models/test_linreg.jl")
+    addtests("models/test_mv_iid.jl")
     addtests("models/test_probit.jl")
 end
 

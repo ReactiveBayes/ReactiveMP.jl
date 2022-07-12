@@ -55,6 +55,7 @@ include("kernel_gcv/marginals.jl")
 
 include("mv_normal_mean_covariance/out.jl")
 include("mv_normal_mean_covariance/mean.jl")
+include("mv_normal_mean_covariance/covariance.jl")
 include("mv_normal_mean_covariance/marginals.jl")
 
 include("normal_mean_variance/out.jl")
@@ -76,6 +77,9 @@ include("normal_mean_precision/marginals.jl")
 
 include("wishart/out.jl")
 include("wishart/marginals.jl")
+
+include("wishart_inverse/out.jl")
+include("wishart_inverse/marginals.jl")
 
 include("normal_mixture/switch.jl")
 include("normal_mixture/m.jl")
