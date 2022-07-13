@@ -5,6 +5,7 @@ using Flux
 mutable struct CVIApproximation
     learning_rate
     n_samples
+    num_iterations
     rng
     opt
     dataset_size

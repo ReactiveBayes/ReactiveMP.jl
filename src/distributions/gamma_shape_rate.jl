@@ -4,6 +4,8 @@ import Distributions: Gamma, shape, rate
 import SpecialFunctions: loggamma, digamma, gamma
 import StatsFuns: log2π
 
+import Base
+
 struct GammaShapeRate{T <: Real} <: ContinuousUnivariateDistribution
     a::T
     b::T
@@ -65,3 +67,39 @@ end
 
 Distributions.pdf(dist::GammaShapeRate, x::Real)    = (rate(dist)^shape(dist)) / gamma(shape(dist)) * x^(shape(dist) - 1) * exp(-rate(dist) * x)
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
+
+struct GammaShapeRateNaturalParametrs{T <: Real} <: NaturalParametrs
+    a_::T
+    b::T
+end
+
+function GammaShapeRateNaturalParametrs(vec)
+    return GammaShapeRateNaturalParametrs(vec[1], vec[2])
+end
+
+naturalParams(dist::GammaShapeRate) = GammaShapeRateNaturalParametrs(dist.a - 1, -dist.b)
+
+# Natural parameters to standard dist. type
+function standardDist(η::GammaShapeRateNaturalParametrs)
+    GammaShapeRate(η.a_ + 1, -η.b)
+end
+
+function Base.vec(p::GammaShapeRateNaturalParametrs)
+    return [p.a_, p.b]
+end
+
+function Base.:+(left::GammaShapeRateNaturalParametrs, right::GammaShapeRateNaturalParametrs)
+    return GammaShapeRateNaturalParametrs(left.a_ + right.a_, left.b + right.b)
+end
+
+function Base.:-(left::GammaShapeRateNaturalParametrs, right::GammaShapeRateNaturalParametrs)
+    return GammaShapeRateNaturalParametrs(left.a_ - right.a_, left.b - right.b)
+end
+
+function logNormalizer(η::GammaShapeRateNaturalParametrs)
+    return loggamma(η.a_ + 1) - (η.a_ + 1) * log(-η.b)
+end
+
+function logPdf(η::GammaShapeRateNaturalParametrs, x)
+    return log(x) * η.a_ + x * η.b - logNormalizer(η)
+end

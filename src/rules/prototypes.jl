@@ -23,6 +23,7 @@ include("gamma/marginals.jl")
 
 include("gamma_shape_rate/out.jl")
 include("gamma_shape_rate/marginals.jl")
+include("gamma_shape_rate/a.jl")
 
 include("beta/out.jl")
 include("beta/marginals.jl")
