@@ -46,6 +46,10 @@ function logNormalizer(η::BernoulliNaturalParametrs)
     return log(1 + exp(get_natural_params(η)))
 end
 
+function log_normalizer(::Type{BernoulliNaturalParametrs})
+    return (v) -> log(1 + exp(v))
+end
+
 function logPdf(η::BernoulliNaturalParametrs, x)
     return x * get_natural_params(η) - logNormalizer(η)
 end

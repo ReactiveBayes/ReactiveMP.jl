@@ -40,3 +40,38 @@ function renderCVI(logp_nc::Function,
 
     return λ
 end
+
+function renderCVI(logp_nc::Function,
+    num_iterations::Int,
+    opt::Any,
+    λ_init::T,
+    msg_in::Any) where {T <: NaturalParametrs}
+    η = naturalParams(msg_in)
+    λ = deepcopy(λ_init)
+
+    # convert lambda to vector
+    # work within loop with vector
+
+    A(vec_params) = logNormalizer(T(vec_params)) # maybe convert here makes more sense
+    gradA(vec_params) = A'(vec_params) # Zygote
+    Fisher(vec_params) = ForwardDiff.jacobian(gradA, vec_params) # Zygote throws mutating array error
+    for _ in 1:num_iterations
+        q = standardDist(λ)
+        _, q_friendly = logpdf_sample_friendly(q)
+        z_s = rand(q_friendly) # use rng from CVI meta
+
+        logq(vec_params) = logPdf(T(vec_params), z_s)
+
+        ∇logq = logq'(vec(λ))
+        ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
+        ∇ = λ - η - T(∇f)
+        updated = T(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        if isProper(updated)
+            λ = updated
+        end
+    end
+
+    # convert vector result in parameters
+
+    return λ
+end

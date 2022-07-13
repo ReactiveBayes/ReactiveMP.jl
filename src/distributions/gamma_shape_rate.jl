@@ -1,4 +1,4 @@
-export GammaShapeRate
+export GammaShapeRate, GammaShapeRateNaturalParametrs, logNormalizer
 
 import Distributions: Gamma, shape, rate
 import SpecialFunctions: loggamma, digamma, gamma
@@ -73,7 +73,7 @@ struct GammaShapeRateNaturalParametrs{T <: Real} <: NaturalParametrs
     b::T
 end
 
-function GammaShapeRateNaturalParametrs(vec)
+function GammaShapeRateNaturalParametrs{T}(vec) where {T <: Real}
     return GammaShapeRateNaturalParametrs(vec[1], vec[2])
 end
 
@@ -102,4 +102,8 @@ end
 
 function logPdf(η::GammaShapeRateNaturalParametrs, x)
     return log(x) * η.a_ + x * η.b - logNormalizer(η)
+end
+
+function isProper(params::GammaShapeRateNaturalParametrs)
+    return (params.a_ >= tiny - 1) && (params.b <= tiny)
 end
