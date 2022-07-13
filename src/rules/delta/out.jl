@@ -28,5 +28,7 @@ end
 end
 
 @rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_ins::NTuple{1, Any}, meta::CVIApproximation) where {f, N} = begin
-    return meta.q_ins_marginal
+    q_marginal = meta.q_ins_marginal[1]
+    samples = f.(rand(q_marginal, meta.n_samples))
+    return ProdFinal(SampleList(samples))
 end

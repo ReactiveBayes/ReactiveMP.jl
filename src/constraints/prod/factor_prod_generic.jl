@@ -1,3 +1,4 @@
+export FactorProduct
 import Distributions
 import Base: getindex, show
 

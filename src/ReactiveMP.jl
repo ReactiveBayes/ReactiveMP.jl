@@ -20,6 +20,7 @@ include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
 include("constraints/prod/prod_final.jl")
 include("constraints/prod/prod_resolve.jl")
+include("constraints/prod/factor_prod_generic.jl")
 
 as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
