@@ -311,9 +311,9 @@ Float64
 """
 function deep_eltype end
 
-deep_eltype(::Type{T}) where {T <: Number} = T
-deep_eltype(::Type{T}) where {T}           = deep_eltype(eltype(T))
-deep_eltype(::T) where {T}                 = deep_eltype(T)
+deep_eltype(::Type{T}) where {T}                  = T
+deep_eltype(::Type{T}) where {T <: AbstractArray} = deep_eltype(eltype(T))
+deep_eltype(any)                                  = deep_eltype(typeof(any))
 
 ##
 
