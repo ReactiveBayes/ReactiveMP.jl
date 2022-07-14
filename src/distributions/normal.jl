@@ -2,7 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
-export NormalNaturalParametrs, naturalParams
+export NormalNaturalParametrs, MvNormalNaturalParametrs, naturalParams
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -246,6 +246,11 @@ struct NormalNaturalParametrs <: NaturalParametrs
     precision
 end
 
+struct MvNormalNaturalParametrs <: NaturalParametrs
+    weighted_mean
+    precesion_matrix
+end
+
 function NormalNaturalParametrs(v)
     return NormalNaturalParametrs(v[1], v[2])
 end
@@ -260,6 +265,11 @@ function naturalParams(dist::UnivariateNormalDistributionsFamily)
     return NormalNaturalParametrs(weighted_mean, -0.5 * precision)
 end
 
+function naturalParams(dist::MultivariateGaussianDistributionsFamily)
+    weighted_mean, precision = weightedmean_precision(dist)
+    MvNormalNaturalParametrs(weighted_mean, -0.5 * precision)
+end
+
 function standardDist(η::NormalNaturalParametrs)
     return GaussianWeighteMeanPrecision(η.weighted_mean, -2 * η.precision)
 end
@@ -268,8 +278,16 @@ function Base.:+(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
     return NormalNaturalParametrs(left.weighted_mean + right.weighted_mean, left.precision + right.precision)
 end
 
+function Base.:+(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
+    return NormalNaturalParametrs(left.weighted_mean .+ right.weighted_mean, left.precesion_matrix .+ right.precesion_matrix)
+end
+
 function Base.:-(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
     return NormalNaturalParametrs(left.weighted_mean - right.weighted_mean, left.precision - right.precision)
+end
+
+function Base.:-(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
+    return NormalNaturalParametrs(left.weighted_mean .- right.weighted_mean, left.precesion_matrix .- right.precesion_matrix)
 end
 
 function logNormalizer(η::NormalNaturalParametrs)
