@@ -120,8 +120,16 @@ update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 
 update!(datavar::DataVariable, data::Number)        = update!(eltype(datavar), datavar, data)
 update!(datavar::DataVariable, data::AbstractArray) = update!(eltype(datavar), datavar, data)
 
-update!(::Type{D}, datavar, data::D) where {D}        = next!(messageout(datavar, 1), Message(data, false, false))
-update!(::Type{D1}, datavar, data::D2) where {D1, D2} = error("'$(name(datavar)) = datavar($D1, ...)' accepts data of type $D1, but $D2 has been supplied. Check 'update!($(name(datavar)), data::$D2)' and explicitly convert data to type $D1.")
+update!(::Type{D}, datavar, data::D) where {D} = next!(messageout(datavar, 1), Message(data, false, false))
+
+function update!(::Type{D1}, datavar, data::D2) where {D1, D2}
+    error(
+        """
+        `$(name(datavar)) = datavar($D1, ...)` accepts data only of type `$D1`, but the value of type `$D2` has been used. 
+        Double check `update!($(name(datavar)), data)` call and explicitly convert data to the type $D1, e.g. `convert($D1, data)`.
+        """
+    )
+end
 
 update!(::Type{PointMass{D}}, datavar, data::D) where {D} =
     next!(messageout(datavar, 1), Message(PointMass(data), false, false))
