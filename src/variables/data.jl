@@ -120,16 +120,26 @@ update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 
 update!(datavar::DataVariable, data::Number)        = update!(eltype(datavar), datavar, data)
 update!(datavar::DataVariable, data::AbstractArray) = update!(eltype(datavar), datavar, data)
 
-update!(::Type{D}, datavar, data::D) where {D} = next!(messageout(datavar, 1), Message(data, false, false))
+update!(::Type{D}, datavar, data::D) where {D}        = next!(messageout(datavar, 1), Message(data, false, false))
+update!(::Type{D1}, datavar, data::D2) where {D1, D2} = __update_wrong_type_error(D1, D2, collection_type(datavar), datavar)
 
-function update!(::Type{D1}, datavar, data::D2) where {D1, D2}
-    error(
-        """
-        `$(name(datavar)) = datavar($D1, ...)` accepts data only of type `$D1`, but the value of type `$D2` has been used. 
-        Double check `update!($(name(datavar)), data)` call and explicitly convert data to the type $D1, e.g. `convert($D1, data)`.
-        """
-    )
-end
+__datavar_drop_pointmass(::Type{D})            where D = D
+__datavar_drop_pointmass(::Type{PointMass{D}}) where D = D
+
+__update_wrong_type_error(::Type{D1}, ::Type{D2}, ctype::VariableIndividual, datavar) where { D1, D2 } = error(
+    """
+    `$(name(datavar)) = datavar($(__datavar_drop_pointmass(D1)))` accepts data only of type `$(__datavar_drop_pointmass(D1))`, but the value of type `$D2` has been used. 
+    Double check `update!($(name(datavar)), data)` call and explicitly convert data to the type `$(__datavar_drop_pointmass(D1))`, e.g. `convert($(__datavar_drop_pointmass(D1)), data)`.
+    """
+)
+
+__update_wrong_type_error(::Type{D1}, ::Type{D2}, ctype::Union{VariableVector, VariableArray}, datavar) where { D1, D2 } = error(
+    """
+    `$(name(datavar)) = datavar($(__datavar_drop_pointmass(D1)), ...)` accepts data only of type `$(__datavar_drop_pointmass(D1))`, but the value of type `$D2` has been used. 
+    Double check `update!($(name(datavar))$(string_index(ctype)), d)` call and explicitly convert data to the type `$(__datavar_drop_pointmass(D1))`, e.g. `update!($(name(datavar))$(string_index(ctype)), convert($(__datavar_drop_pointmass(D1)), d))`.
+    If you use broadcasted version of the `update!` function, e.g. `update!($(name(datavar)), data)` you may broadcast `convert` function over the whole dataset as well, e.g. `update!($(name(datavar)), convert.($(__datavar_drop_pointmass(D1)), dataset))`
+    """
+)
 
 update!(::Type{PointMass{D}}, datavar, data::D) where {D} =
     next!(messageout(datavar, 1), Message(PointMass(data), false, false))
@@ -137,7 +147,9 @@ update!(::Type{PointMass{D}}, datavar, data::D) where {D} =
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 
 function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
-    @assert size(datavars) === size(data) "Invalid update! call: size of datavar array and data should match"
+    @assert size(datavars) === size(data) """
+    Invalid `update!` call: size of datavar array and data must match: `$(name(first(datavars)))` has size $(size(datavars)) and data has size $(size(data)). 
+    """
     foreach(zip(datavars, data)) do (var, d)
         update!(var, d)
     end
