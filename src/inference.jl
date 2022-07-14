@@ -393,17 +393,8 @@ function inference(;
         else
             foreach(filter(pair -> isdata(last(pair)), pairs(vardict))) do pair
                 varname = first(pair)
-                # First, check that `data` has entry for a particular `datavar`
                 haskey(data, varname) || error(
                     "Data entry `$(varname)` is missing in `data` argument. Double check `data = ($(varname) = ???, )`"
-                )
-                # Second, check that type of `data` elements match `type` of `datavar`
-                d   = data[varname]
-                var = last(pair)
-                VT  = __datavar_drop_pointmass(eltype(deep_eltype(var))) # Variable type
-                DT  = deep_eltype(d)                                     # Data type
-                (VT == DT) || error(
-                    "Data variable `$(varname)` expects data elements of type `$(VT)`, but data element of type `$(DT)` has been used. Double check `data = ($(varname) = ..., ).`"
                 )
             end
         end
