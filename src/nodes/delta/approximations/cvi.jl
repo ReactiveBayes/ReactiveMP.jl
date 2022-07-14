@@ -3,7 +3,6 @@ export renderCVI
 using Flux
 
 mutable struct CVIApproximation
-    learning_rate
     n_samples
     num_iterations
     rng
@@ -13,6 +12,17 @@ mutable struct CVIApproximation
     q_ins_marginal
 end
 
+function CVIApproximation(n_samples, num_iterations, opt, dataset_size, batch_size, q_ins_marginal)
+    return CVIApproximation(
+        n_samples,
+        num_iterations,
+        nothing,
+        opt,
+        dataset_size,
+        batch_size,
+        q_ins_marginal
+    )
+end
 #---------------------------
 # CVI implementations
 #---------------------------
@@ -20,6 +30,7 @@ end
 function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt,
+    rng,
     λ_init::NormalNaturalParametrs,
     msg_in::UnivariateGaussianDistributionsFamily)
     η = naturalParams(msg_in)
@@ -30,7 +41,13 @@ function renderCVI(logp_nc::Function,
 
     for _ in 1:num_iterations
         q = standardDist(λ)
-        z_s = rand(q) # need to add rng here (or maybe better to do callback)
+
+        if isnothing(rng)
+            z_s = rand(q) # need to add rng here (or maybe better to do callback)
+        else
+            z_s = rand(rng, q)
+        end
+
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
         ∇f = NormalNaturalParametrs(df_μ1, df_μ2)
@@ -44,6 +61,7 @@ end
 function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt::Any,
+    rng::Any,
     λ_init::T,
     msg_in::Any) where {T <: NaturalParametrs}
     η = naturalParams(msg_in)
@@ -58,7 +76,12 @@ function renderCVI(logp_nc::Function,
     for _ in 1:num_iterations
         q = standardDist(λ)
         _, q_friendly = logpdf_sample_friendly(q)
-        z_s = rand(q_friendly) # use rng from CVI meta
+
+        if isnothing(rng)
+            z_s = rand(q_friendly)
+        else
+            z_s = rand(rng, q_friendly)
+        end
 
         logq(vec_params) = logPdf(T(vec_params), z_s)
 
