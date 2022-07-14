@@ -13,5 +13,5 @@ end
 end
 
 @rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::FactorProduct, m_in::Any, meta::CVIApproximation) where {f} = begin
-    return q_ins[k]
+    return standardDist(naturalParams(q_ins[k]) - naturalParams(m_in))
 end

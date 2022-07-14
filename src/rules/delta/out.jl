@@ -39,13 +39,10 @@ end
 end
 
 @rule DeltaFn{f}(:out, Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
-    q_ins_sample_friendly = [logpdf_sample_friendly(q) for q in meta.q_ins_marginal]
+    q_ins_sample_friendly = [logpdf_sample_friendly(q)[2] for q in meta.q_ins_marginal]
 
-    if isnothing(meta.rng)
-        q_ins_samples = map(marginal -> rand(marginal, meta.n_samples), q_ins_sample_friendly)
-    else
-        q_ins_samples = map(marginal -> rand(rng, q_sample_friendly, meta.n_samples), q_ins_sample_friendly)
-    end
+    rng = something(meta.rng, Random.GLOBAL_RNG)
+    q_ins_samples = map(marginal -> rand(rng, q_sample_friendly, meta.n_samples), q_ins_sample_friendly)
 
     samples = map(x -> f(x...), zip(q_ins_samples))
 
