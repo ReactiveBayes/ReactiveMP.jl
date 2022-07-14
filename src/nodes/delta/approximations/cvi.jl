@@ -9,10 +9,9 @@ mutable struct CVIApproximation
     opt
     dataset_size
     batch_size
-    q_ins_marginal
 end
 
-function CVIApproximation(n_samples, num_iterations, opt, dataset_size, batch_size, q_ins_marginal)
+function CVIApproximation(n_samples, num_iterations, opt, dataset_size, batch_size)
     return CVIApproximation(
         n_samples,
         num_iterations,
@@ -20,7 +19,6 @@ function CVIApproximation(n_samples, num_iterations, opt, dataset_size, batch_si
         opt,
         dataset_size,
         batch_size,
-        q_ins_marginal
     )
 end
 #---------------------------
@@ -97,4 +95,54 @@ function renderCVI(logp_nc::Function,
     # convert vector result in parameters
 
     return λ
+end
+
+## DeltaFn node non-standard rule layout 
+
+struct CVIApproximationDeltaFnRuleLayout end
+
+deltafn_rule_layout(::DeltaFnNode, ::CVIApproximation) = CVIApproximationDeltaFnRuleLayout()
+
+deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :q_out }, model, factornode::DeltaFnNode) = 
+    deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), model, factornode)
+
+deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :q_ins }, model, factornode::DeltaFnNode) = 
+    deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), model, factornode)
+
+deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :m_in }, model, factornode::DeltaFnNode) = 
+    deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), model, factornode)
+
+# This function declares how to compute `m_out` 
+function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :m_out }, model, factornode::DeltaFnNode)
+    let interface = factornode.out
+        # By default, CVI does not need an inbound message 
+        msgs_names      = nothing
+        msgs_observable = of(nothing)
+
+        # By default, CVI requires `q_ins`
+        marginal_names       = Val{(:ins,)}
+        marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]),), PushNew())
+
+        fform       = functionalform(factornode)
+        vtag        = tag(interface)
+        vconstraint = local_constraint(interface)
+        meta        = metadata(factornode)
+
+        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        # TODO
+        # vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
+
+        mapping =
+            let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
+
+        vmessageout = vmessageout |> map(AbstractMessage, mapping)
+        vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+        # TODO
+        # vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+        vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
+
+        connect!(messageout(interface), vmessageout)
+    end
 end

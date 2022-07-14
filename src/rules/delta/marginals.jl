@@ -6,6 +6,5 @@ end
     η = naturalParams(m_ins[1])
     logp_nc(z) = (meta.dataset_size / meta.batch_size) * logpdf(m_out, f(z))
     λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, deepcopy(η), m_ins[1])
-    meta.q_ins_marginal = FactorProduct((standardDist(λ),))
-    return meta.q_ins_marginal
+    return FactorProduct((standardDist(λ),))
 end

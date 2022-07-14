@@ -82,30 +82,34 @@ function make_node(fform::F, options::FactorNodeCreationOptions, args::Vararg{<:
     return __make_delta_fn_node(fform, options, args[1], args[2:end])
 end
 
-# DeltaFn is very special, so it has a very special `activate!` function
-function activate!(model, factornode::DeltaFnNode)
-    fform = functionalform(factornode)
-    meta  = metadata(factornode)
+##
 
-    foreach(interfaces(factornode)) do interface
-        (connectedvar(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
-    end
+struct DeltaFnDefaultRuleLayout end
 
-    # First we declare local marginal clusters 
+# By default all `meta` objects fallback to the `DeltaFnDefaultRuleLayout`
+# We, however, allow for specific approximation methods to override the default `DeltaFn` rule layout for better efficiency
+deltafn_rule_layout(factornode::DeltaFnNode)       = deltafn_rule_layout(factornode, metadata(factornode))  
+deltafn_rule_layout(factornode::DeltaFnNode, meta) = DeltaFnDefaultRuleLayout()
+
+# This function declares how to compute `q_out` locally around `DeltaFn`
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :q_out }, model, factornode::DeltaFnNode)
     let out = factornode.out, localmarginal = factornode.localmarginals.marginals[1]
+        # We simply subscribe on the marginal of the connected variable on `out` edge
         setstream!(localmarginal, getmarginal(connectedvar(out), IncludeAll()))
     end
+end
 
-    # Second we declare how to compute a joint marginal over all inbound edges
-    # For this we need to collect all messages from `ins` edges and from `out` edge
+# This function declares how to compute `q_ins` locally around `DeltaFn`
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :q_ins }, model, factornode::DeltaFnNode)
     let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
         cmarginal = MarginalObservable()
         setstream!(localmarginal, cmarginal)
 
-        # We need messages both from `:out` and `:ins`
+        # By default to compute `q_ins` we need messages both from `:out` and `:ins`
         msgs_names      = Val{(:out, :ins)}
         msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew())), PushNew())
 
+        # By default, we should not need any local marginals
         marginal_names       = nothing
         marginals_observable = of(nothing)
 
@@ -118,21 +122,26 @@ function activate!(model, factornode::DeltaFnNode)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
     end
+end
 
-    # Second we declare message passing logic for out interface
-    # To compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge and `:out` edge
-    # In general, we don't need any marginals
+# This function declares how to compute `m_out` 
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :m_out }, model, factornode::DeltaFnNode)
     let interface = factornode.out
+        # By default, to compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge and `:out` edge
         msgs_names      = Val{(:out, :ins)}
         msgs_observable = combineLatestUpdates((messagein(interface), combineLatestUpdates(map((in) -> messagein(in), factornode.ins), PushNew())), PushNew())
 
+        # By default we don't need any marginals
         marginal_names       = nothing
         marginals_observable = of(nothing)
 
+        fform       = functionalform(factornode)
         vtag        = tag(interface)
         vconstraint = local_constraint(interface)
+        meta        = metadata(factornode)
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        # TODO
         # vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
         mapping =
@@ -142,13 +151,16 @@ function activate!(model, factornode::DeltaFnNode)
 
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+        # TODO
         # vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
         connect!(messageout(interface), vmessageout)
     end
+end
 
-    # At last we declare message passing logic for input interfaces
+# This function declares how to compute `m_in` for each `k` 
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :m_in }, model, factornode::DeltaFnNode)
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
         msgs_names      = Val{(:in,)}
@@ -157,8 +169,10 @@ function activate!(model, factornode::DeltaFnNode)
         marginal_names       = Val{(:ins,)}
         marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]),), PushNew())
 
+        fform       = functionalform(factornode)
         vtag        = tag(interface)
         vconstraint = local_constraint(interface)
+        meta        = metadata(factornode)
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
         # vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
@@ -170,9 +184,37 @@ function activate!(model, factornode::DeltaFnNode)
 
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+        # TODO
         # vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
         connect!(messageout(interface), vmessageout)
     end
+end
+
+##
+
+function activate!(model, factornode::DeltaFnNode)
+    # `DeltaFn` node may change rule arguments layout depending on the `meta`
+    # This feature is similar to `functional_dependencies` for a regular `FactorNode` implementation
+    return activate!(model, factornode, deltafn_rule_layout(factornode))
+end
+
+# DeltaFn is very special, so it has a very special `activate!` function
+function activate!(model, factornode::DeltaFnNode, layout)
+    foreach(interfaces(factornode)) do interface
+        (connectedvar(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
+    end
+
+    # First we declare local marginal for `out` edge
+    deltafn_apply_layout(layout, Val(:q_out), model, factornode)
+
+    # Second we declare how to compute a joint marginal over all inbound edges
+    deltafn_apply_layout(layout, Val(:q_ins), model, factornode)
+
+    # Second we declare message passing logic for out interface
+    deltafn_apply_layout(layout, Val(:m_out), model, factornode)
+
+    # At last we declare message passing logic for input interfaces
+    deltafn_apply_layout(layout, Val(:m_in), model, factornode)
 end
