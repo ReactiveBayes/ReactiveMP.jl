@@ -150,6 +150,7 @@ end
     addtests("nodes/test_mv_normal_mean_covariance.jl")
     addtests("nodes/test_poisson.jl")
     addtests("nodes/test_wishart_inverse.jl")
+    addtests("nodes/test_or.jl")
 
     addtests("rules/uniform/test_out.jl")
 
