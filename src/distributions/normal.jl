@@ -279,7 +279,10 @@ function Base.:+(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
 end
 
 function Base.:+(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
-    return NormalNaturalParametrs(left.weighted_mean .+ right.weighted_mean, left.precesion_matrix .+ right.precesion_matrix)
+    return NormalNaturalParametrs(
+        left.weighted_mean .+ right.weighted_mean,
+        left.precesion_matrix .+ right.precesion_matrix
+    )
 end
 
 function Base.:-(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
@@ -287,7 +290,10 @@ function Base.:-(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
 end
 
 function Base.:-(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
-    return NormalNaturalParametrs(left.weighted_mean .- right.weighted_mean, left.precesion_matrix .- right.precesion_matrix)
+    return NormalNaturalParametrs(
+        left.weighted_mean .- right.weighted_mean,
+        left.precesion_matrix .- right.precesion_matrix
+    )
 end
 
 function logNormalizer(η::NormalNaturalParametrs)
