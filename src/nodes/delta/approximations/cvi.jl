@@ -18,7 +18,7 @@ function CVIApproximation(n_samples, num_iterations, opt, dataset_size, batch_si
         nothing,
         opt,
         dataset_size,
-        batch_size,
+        batch_size
     )
 end
 #---------------------------
@@ -103,17 +103,17 @@ struct CVIApproximationDeltaFnRuleLayout end
 
 deltafn_rule_layout(::DeltaFnNode, ::CVIApproximation) = CVIApproximationDeltaFnRuleLayout()
 
-deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :q_out }, model, factornode::DeltaFnNode) = 
+deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:q_out}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), model, factornode)
 
-deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :q_ins }, model, factornode::DeltaFnNode) = 
+deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:q_ins}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), model, factornode)
 
-deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :m_in }, model, factornode::DeltaFnNode) = 
+deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), model, factornode)
 
 # This function declares how to compute `m_out` 
-function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{ :m_out }, model, factornode::DeltaFnNode)
+function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode)
     let interface = factornode.out
         # By default, CVI does not need an inbound message 
         msgs_names      = nothing

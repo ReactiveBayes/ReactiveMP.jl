@@ -88,11 +88,11 @@ struct DeltaFnDefaultRuleLayout end
 
 # By default all `meta` objects fallback to the `DeltaFnDefaultRuleLayout`
 # We, however, allow for specific approximation methods to override the default `DeltaFn` rule layout for better efficiency
-deltafn_rule_layout(factornode::DeltaFnNode)       = deltafn_rule_layout(factornode, metadata(factornode))  
+deltafn_rule_layout(factornode::DeltaFnNode)       = deltafn_rule_layout(factornode, metadata(factornode))
 deltafn_rule_layout(factornode::DeltaFnNode, meta) = DeltaFnDefaultRuleLayout()
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :q_out }, model, factornode::DeltaFnNode)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, model, factornode::DeltaFnNode)
     let out = factornode.out, localmarginal = factornode.localmarginals.marginals[1]
         # We simply subscribe on the marginal of the connected variable on `out` edge
         setstream!(localmarginal, getmarginal(connectedvar(out), IncludeAll()))
@@ -100,7 +100,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :q_out }, model
 end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :q_ins }, model, factornode::DeltaFnNode)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, model, factornode::DeltaFnNode)
     let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
         cmarginal = MarginalObservable()
         setstream!(localmarginal, cmarginal)
@@ -125,7 +125,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :q_ins }, model
 end
 
 # This function declares how to compute `m_out` 
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :m_out }, model, factornode::DeltaFnNode)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode)
     let interface = factornode.out
         # By default, to compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge and `:out` edge
         msgs_names      = Val{(:out, :ins)}
@@ -160,7 +160,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :m_out }, model
 end
 
 # This function declares how to compute `m_in` for each `k` 
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{ :m_in }, model, factornode::DeltaFnNode)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode)
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
         msgs_names      = Val{(:in,)}

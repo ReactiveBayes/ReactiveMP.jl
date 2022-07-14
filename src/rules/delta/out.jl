@@ -27,15 +27,16 @@ end
     return NormalMeanVariance(m, V)
 end
 
-@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where { f, P <: NTuple{1} } = begin
-    q_sample_friendly = logpdf_sample_friendly(q_ins[1])[2]
-    rng               = something(meta.rng, Random.GLOBAL_RNG)
-    samples           = f.(rand(rng, q_sample_friendly, meta.n_samples))
-    return ProdFinal(SampleList(samples))
-end
+@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where {f, P <: NTuple{1}} =
+    begin
+        q_sample_friendly = logpdf_sample_friendly(q_ins[1])[2]
+        rng               = something(meta.rng, Random.GLOBAL_RNG)
+        samples           = f.(rand(rng, q_sample_friendly, meta.n_samples))
+        return ProdFinal(SampleList(samples))
+    end
 
-@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where { f, P <: Tuple } = begin
-    q_ins_sample_friendly = [ logpdf_sample_friendly(q)[2] for q in q_ins ]
+@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where {f, P <: Tuple} = begin
+    q_ins_sample_friendly = [logpdf_sample_friendly(q)[2] for q in q_ins]
 
     rng = something(meta.rng, Random.GLOBAL_RNG)
     q_ins_samples = map(marginal -> rand(rng, q_sample_friendly, meta.n_samples), q_ins_sample_friendly)
