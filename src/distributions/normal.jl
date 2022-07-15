@@ -24,6 +24,7 @@ import Base: prod, convert
 import Random: rand!
 
 using LoopVectorization
+using LinearAlgebra
 
 # Variate forms promotion
 
@@ -255,8 +256,23 @@ function NormalNaturalParametrs(v)
     return NormalNaturalParametrs(v[1], v[2])
 end
 
+function MvNormalNaturalParametrs(v)
+    k = length(v)
+    d = convert(Int, (-1 + sqrt(4 * k + 1)) / 2)
+
+    if (d^2 + d) != k
+        error("Vector dimensionality constraints are not fullfiled")
+    end
+
+    return MvNormalNaturalParametrs(v[1:d], reshape(v[d+1:end], d, d))
+end
+
 function Base.vec(p::NormalNaturalParametrs)
     return [p.weighted_mean, p.precision]
+end
+
+function Base.vec(p::MvNormalNaturalParametrs)
+    return vcat(p.weighted_mean, vcat(p.precesion_matrix...))
 end
 
 # Standard parameters to natural parameters
@@ -272,6 +288,13 @@ end
 
 function standardDist(η::NormalNaturalParametrs)
     return GaussianWeighteMeanPrecision(η.weighted_mean, -2 * η.precision)
+end
+
+function standardDist(η::MvNormalNaturalParametrs)
+    d = length(η.weighted_mean)
+    XI, W = η.weighted_mean[1:d], reshape(-2 * η.precesion_matrix, d, d)
+    W = Matrix(Hermitian(W + tiny * diageye(d))) # Ensure precision is always invertible
+    return MvNormalWeightedMeanPrecision(XI, W)
 end
 
 function Base.:+(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
@@ -300,9 +323,18 @@ function logNormalizer(η::NormalNaturalParametrs)
     return -(η.weighted_mean^2) / (4 * η.precision) - 0.5 * log(-2 * η.precision)
 end
 
+function logNormalizer(η::MvNormalNaturalParametrs)
+    return -0.25 * η.weighted_mean' * (η.precesion_matrix \ η.weighted_mean) - 0.5 * logdet(-2 * η.precesion_matrix)
+end
+
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function logPdf(η::NormalNaturalParametrs, x)
     return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.precision - logNormalizer(η)
+end
+
+function logPdf(η::MvNormalNaturalParametrs, x)
+    ϕ(x) = [x; vec(x * transpose(x))]
+    return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - logNormalizer(η)
 end
