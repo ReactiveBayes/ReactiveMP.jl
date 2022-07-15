@@ -1,7 +1,7 @@
 export GammaInverse
 import Distributions: InverseGamma, shape, scale, cov
 
-const GammaInverse             = InverseGamma
+const GammaInverse = InverseGamma
 
 # TODO: which functions return Distribution.InverseGamma and which return ReactiveMP.GammaInverse?
 import Distributions: InverseGamma, shape, scale, cov

@@ -11,7 +11,7 @@ import SpecialFunctions: loggamma
     energy += α * log(β)
     energy -= loggamma(α)
     # 𝔼 log X
-    energy -= (α+1) * mean(log, q_out)
+    energy -= (α + 1) * mean(log, q_out)
     # 𝔼 X
     # TODO: mean(q_out) ?= 0
     energy -= β / mean(q_out)
