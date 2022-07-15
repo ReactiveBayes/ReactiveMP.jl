@@ -117,6 +117,7 @@ end
     addtests("distributions/test_dirichlet_matrix.jl")
     addtests("distributions/test_dirichlet.jl")
     addtests("distributions/test_gamma.jl")
+    addtests("distributions/test_gamma_inverse.jl")
     addtests("distributions/test_mv_normal_mean_covariance.jl")
     addtests("distributions/test_mv_normal_mean_precision.jl")
     addtests("distributions/test_mv_normal_weighted_mean_precision.jl")
@@ -141,6 +142,7 @@ end
     addtests("nodes/test_addition.jl")
     addtests("nodes/test_bifm.jl")
     addtests("nodes/test_bifm_helper.jl")
+    addtests("nodes/test_gamma_inverse.jl")
     addtests("nodes/test_subtraction.jl")
     addtests("nodes/test_probit.jl")
     addtests("nodes/test_autoregressive.jl")
@@ -189,6 +191,9 @@ end
     addtests("rules/dot_product/test_in1.jl")
     addtests("rules/dot_product/test_in2.jl")
     addtests("rules/dot_product/test_marginals.jl")
+
+    addtests("rules/gamma_inverse/test_marginals.jl")
+    addtests("rules/gamma_inverse/test_out.jl")
 
     addtests("rules/normal_mean_variance/test_out.jl")
     addtests("rules/normal_mean_variance/test_mean.jl")
