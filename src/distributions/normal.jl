@@ -2,7 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
-export NormalNaturalParametrs, MvNormalNaturalParametrs, naturalParams
+export NormalNaturalParametrs, MvNormalNaturalParametrs, naturalParams, logPdf
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -272,7 +272,7 @@ function Base.vec(p::NormalNaturalParametrs)
 end
 
 function Base.vec(p::MvNormalNaturalParametrs)
-    return vcat(p.weighted_mean, vcat(p.precesion_matrix...))
+    return [p.weighted_mean; vcat(p.precesion_matrix...)]
 end
 
 # Standard parameters to natural parameters
@@ -302,7 +302,7 @@ function Base.:+(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
 end
 
 function Base.:+(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
-    return NormalNaturalParametrs(
+    return MvNormalNaturalParametrs(
         left.weighted_mean .+ right.weighted_mean,
         left.precesion_matrix .+ right.precesion_matrix
     )
@@ -313,7 +313,7 @@ function Base.:-(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
 end
 
 function Base.:-(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
-    return NormalNaturalParametrs(
+    return MvNormalNaturalParametrs(
         left.weighted_mean .- right.weighted_mean,
         left.precesion_matrix .- right.precesion_matrix
     )
@@ -338,3 +338,5 @@ function logPdf(η::MvNormalNaturalParametrs, x)
     ϕ(x) = [x; vec(x * transpose(x))]
     return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - logNormalizer(η)
 end
+
+isProper(params::MvNormalNaturalParametrs) = isposdef(params.precesion_matrix)
