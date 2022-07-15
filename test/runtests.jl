@@ -151,6 +151,7 @@ end
     addtests("nodes/test_poisson.jl")
     addtests("nodes/test_wishart_inverse.jl")
     addtests("nodes/test_or.jl")
+    addtests("nodes/test_not.jl")
 
     addtests("rules/uniform/test_out.jl")
 
