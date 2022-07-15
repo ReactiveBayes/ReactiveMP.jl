@@ -1,5 +1,5 @@
-export implication
+export IMPL
 
-struct implication end
+struct IMPL end
 
-@node implication Deterministic [out, in1, in2]
+@node IMPL Deterministic [out, in1, in2]

@@ -1,4 +1,4 @@
-@rule typeof(implication)(:out, Marginalisation) (
+@rule typeof(IMPL)(:out, Marginalisation) (
     m_in1::Bernoulli,
     m_in2::Bernoulli
 ) = begin
