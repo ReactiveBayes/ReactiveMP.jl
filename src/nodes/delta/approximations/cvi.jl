@@ -81,11 +81,22 @@ function renderCVI(logp_nc::Function,
             z_s = rand(rng, q_friendly)
         end
 
+        println("sampling is okay")
+
+        println(λ)
+        println(z_s)
         logq(vec_params) = logPdf(T(vec_params), z_s)
 
         ∇logq = logq'(vec(λ))
+        print("logq is okay")
+
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
+        println("div is okay")
+
         ∇ = λ - η - T(∇f)
+
+        println("update is okay")
+
         updated = T(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
         if isProper(updated)
             λ = updated
@@ -93,6 +104,45 @@ function renderCVI(logp_nc::Function,
     end
 
     # convert vector result in parameters
+
+    return λ
+end
+
+function renderCVI(logp_nc::Function,
+    num_iterations::Int,
+    opt,
+    rng,
+    λ_init::MvNormalNaturalParametrs,
+    msg_in::MultivariateGaussianDistributionsFamily)
+    η = naturalParams(msg_in)
+    λ = deepcopy(λ_init)
+
+    df_m(z) = ForwardDiff.gradient(logp_nc, z)
+    df_v(z) = 0.5 * ForwardDiff.jacobian(df_m, z)
+
+    for _ in 1:num_iterations
+        q = standardDist(λ)
+
+        _, q_friendly = logpdf_sample_friendly(q)
+
+        if isnothing(rng)
+            z_s = rand(q_friendly) # need to add rng here (or maybe better to do callback)
+        else
+            z_s = rand(rng, q_friendly)
+        end
+
+        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
+        df_μ2 = df_v(z_s)
+        ∇f = MvNormalNaturalParametrs([df_μ1; vec(df_μ2)])
+
+        ∇ = λ - η - ∇f
+
+        updated = MvNormalNaturalParametrs(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+
+        if isProper(updated)
+            λ = updated
+        end
+    end
 
     return λ
 end
