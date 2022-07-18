@@ -117,6 +117,8 @@ include("nodes/flow/flow.jl")
 include("nodes/addition.jl")
 include("nodes/subtraction.jl")
 include("nodes/multiplication.jl")
+include("nodes/and.jl")
+include("nodes/implication.jl")
 
 include("rules/prototypes.jl")
 

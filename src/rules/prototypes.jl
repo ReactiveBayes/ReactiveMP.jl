@@ -117,3 +117,11 @@ include("bifm/zprev.jl")
 
 include("bifm_helper/in.jl")
 include("bifm_helper/out.jl")
+
+include("and/in1.jl")
+include("and/in2.jl")
+include("and/out.jl")
+
+include("implication/in1.jl")
+include("implication/in2.jl")
+include("implication/out.jl")
