@@ -1,4 +1,4 @@
-@rule typeof(OR)(:out, Marginalisation) (
+@rule OR(:out, Marginalisation) (
     m_in1::Bernoulli,
     m_in2::Bernoulli
 ) = begin

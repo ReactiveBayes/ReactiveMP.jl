@@ -1,4 +1,4 @@
-@rule typeof(NOT)(:in, Marginalisation) (
+@rule NOT(:in, Marginalisation) (
     m_out::Bernoulli
 ) = begin
     pout = mean(m_out)

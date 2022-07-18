@@ -10,18 +10,12 @@ import ReactiveMP: @test_rules
         node = make_node(NOT)
 
         @test functionalform(node) === NOT
-        @test sdtype(node) === Stochastic()
+        @test sdtype(node) === Deterministic()
         @test name.(interfaces(node)) === (:out, :in)
         @test factorisation(node) === ((1, 2),)
-        @test metadata(node) === ProbitMeta(32)
+        @test metadata(node) === nothing
 
-        node = make_node(NOT, FactorNodeCreationOptions(nothing, 1, nothing))
-
-        @test functionalform(node) === NOT
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :in)
-        @test factorisation(node) === ((1, 2),)
-        @test metadata(node) === 1
+        # node = make_node(NOT, FactorNodeCreationOptions(nothing, 1, nothing))
     end
 end
 end
