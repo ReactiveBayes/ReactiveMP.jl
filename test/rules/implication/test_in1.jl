@@ -14,7 +14,7 @@ import ReactiveMP: @test_rules
             ),
             (
                 input = (m_out = Bernoulli(0.2), m_in2 = Bernoulli(0.5)),
-                output = Bernoulli(0.5 / 1.1)
+                output = Bernoulli(0.5 / 0.7)
             )
         ]
     end
