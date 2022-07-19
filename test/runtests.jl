@@ -205,15 +205,15 @@ end
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
 
-
     addtests("rules/and/test_out.jl")
     addtests("rules/and/test_in1.jl")
     addtests("rules/and/test_in2.jl")
+    addtests("rules/and/test_marginals.jl")
 
     addtests("rules/implication/test_out.jl")
     addtests("rules/implication/test_in1.jl")
     addtests("rules/implication/test_in2.jl")
-
+    addtests("rules/implication/test_marginals.jl")
 
     addtests("models/test_lgssm.jl")
     addtests("models/test_hgf.jl")

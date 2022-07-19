@@ -10,12 +10,12 @@ import ReactiveMP: @test_rules
         @test_rules [with_float_conversions = true] IMPL(:in1, Marginalisation) [
             (
                 input = (m_out = Bernoulli(0.6), m_in2 = Bernoulli(0.5)),
-                output = Bernoulli(0.5/1.1)
+                output = Bernoulli(0.5 / 1.1)
             ),
             (
                 input = (m_out = Bernoulli(0.2), m_in2 = Bernoulli(0.5)),
-                output = Bernoulli(0.5/1.1)
-            ),
+                output = Bernoulli(0.5 / 1.1)
+            )
         ]
     end
 end
