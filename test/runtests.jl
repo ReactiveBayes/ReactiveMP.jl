@@ -148,17 +148,14 @@ end
     addtests("nodes/test_normal_mean_variance.jl")
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
-<<<<<<< HEAD
     addtests("nodes/test_poisson.jl")
     addtests("nodes/test_wishart_inverse.jl")
     addtests("nodes/test_or.jl")
     addtests("nodes/test_not.jl")
 
     addtests("rules/uniform/test_out.jl")
-=======
     addtests("nodes/test_and.jl")
     addtests("nodes/test_implication.jl")
->>>>>>> and_implication_node
 
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")
@@ -234,7 +231,7 @@ end
     addtests("rules/not/test_out.jl")
     addtests("rules/not/test_in.jl")
     addtests("rules/not/test_marginals.jl")
-    
+
     addtests("rules/and/test_out.jl")
     addtests("rules/and/test_in1.jl")
     addtests("rules/and/test_in2.jl")
