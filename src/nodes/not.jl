@@ -2,4 +2,4 @@ export NOT
 
 struct NOT end
 
-@node NOT Deterministic [out, in]
+@node NOT Deterministic [out, in1]

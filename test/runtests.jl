@@ -222,6 +222,13 @@ end
     addtests("rules/poisson/test_out.jl")
 
     addtests("rules/or/test_out.jl")
+    addtests("rules/or/test_in1.jl")
+    addtests("rules/or/test_in2.jl")
+    addtests("rules/or/test_marginals.jl")
+
+    addtests("rules/not/test_out.jl")
+    addtests("rules/not/test_in.jl")
+    addtests("rules/not/test_marginals.jl")
 
     addtests("models/test_lgssm.jl")
     addtests("models/test_hgf.jl")

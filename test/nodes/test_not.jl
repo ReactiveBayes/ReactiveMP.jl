@@ -14,8 +14,6 @@ import ReactiveMP: @test_rules
         @test name.(interfaces(node)) === (:out, :in)
         @test factorisation(node) === ((1, 2),)
         @test metadata(node) === nothing
-
-        # node = make_node(NOT, FactorNodeCreationOptions(nothing, 1, nothing))
     end
 end
 end
