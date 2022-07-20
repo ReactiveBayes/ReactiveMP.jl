@@ -136,3 +136,13 @@ include("or/marginals.jl")
 include("not/in1.jl")
 include("not/out.jl")
 include("not/marginals.jl")
+
+include("and/in1.jl")
+include("and/in2.jl")
+include("and/out.jl")
+include("and/marginals.jl")
+
+include("implication/in1.jl")
+include("implication/in2.jl")
+include("implication/out.jl")
+include("implication/marginals.jl")
