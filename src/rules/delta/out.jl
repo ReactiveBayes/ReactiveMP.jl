@@ -34,7 +34,7 @@ end
         rng               = something(meta.rng, Random.GLOBAL_RNG)
         # println(q_sample_friendly)
 
-        samples = [rand(rng, MvNormalMeanPrecision(zeros(4), diagm(0 => ones(4)))) for i in 1:meta.n_samples]
+        samples = [rand(rng, q_sample_friendly) for i in 1:meta.n_samples]
         q_out = [f(sample) for sample in samples]
         # samples = eachcol(rand(rng, q_sample_friendly, meta.n_samples))
         # println(map(x -> f(convert(Array, x)), samples))
