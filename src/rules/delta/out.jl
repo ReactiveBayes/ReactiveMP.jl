@@ -29,13 +29,20 @@ end
 
 @rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where {f, P <: NTuple{1}} =
     begin
+        # println("This method is called NTuple 1")
         q_sample_friendly = logpdf_sample_friendly(q_ins[1])[2]
         rng               = something(meta.rng, Random.GLOBAL_RNG)
-        samples           = f.(rand(rng, q_sample_friendly, meta.n_samples))
-        return ProdFinal(SampleList(samples))
+        # println(q_sample_friendly)
+
+        samples = [rand(rng, MvNormalMeanPrecision(zeros(4), diagm(0 => ones(4)))) for i in 1:meta.n_samples]
+        q_out = [f(sample) for sample in samples]
+        # samples = eachcol(rand(rng, q_sample_friendly, meta.n_samples))
+        # println(map(x -> f(convert(Array, x)), samples))
+        return ProdFinal(SampleList(q_out))
     end
 
 @rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where {f, P <: Tuple} = begin
+    println("This method is called Tuple")
     q_ins_sample_friendly = [logpdf_sample_friendly(q)[2] for q in q_ins]
 
     rng = something(meta.rng, Random.GLOBAL_RNG)
