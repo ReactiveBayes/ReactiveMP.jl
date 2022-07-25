@@ -12,5 +12,5 @@ vague(::Type{<:Contingency}, dims::Int) = Contingency(ones(dims, dims) ./ abs2(d
 
 function entropy(distribution::Contingency)
     P = contingency_matrix(distribution)
-    -sum(P .* log.(clamp.(P, tiny, Inf)))
+    return -mapreduce((p) -> p * clamplog(p), +, P)
 end
