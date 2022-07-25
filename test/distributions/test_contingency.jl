@@ -38,6 +38,8 @@ using Random
         @test entropy(Contingency([0.1 0.9; 0.9 0.1])) ≈ 0.6501659467828964
         @test entropy(Contingency([0.2 0.8; 0.8 0.2])) ≈ 1.0008048470763757
         @test entropy(Contingency([0.45 0.75; 0.55 0.25])) ≈ 1.2504739583323967
+        @test !isnan(entropy(Contingency([0.0 1.0; 1.0 0.0])))
+        @test !isinf(entropy(Contingency([0.0 1.0; 1.0 0.0])))
     end
 end
 
