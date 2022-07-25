@@ -1,8 +1,15 @@
 export DeltaFn
 
+import Base: map
+
 struct DeltaFnCallableWrapper{F} end
 
 (::Type{DeltaFnCallableWrapper{F}})(args...) where {F} = F.instance(args...)
+
+function Base.map(f::Type{DeltaFnCallableWrapper{F}}, any::AbstractArray) where {F}
+    return map(F.instance, any)
+end
+
 
 struct DeltaFn{F} end
 struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
