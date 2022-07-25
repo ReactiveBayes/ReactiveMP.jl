@@ -29,8 +29,8 @@ end
 # Renormalize by default
 Contingency(P::AbstractMatrix) = Contingency(P, Val(true))
 
-Contingency(P::M, renormalize::Val{true}) where { T, M <: AbstractMatrix{T} }  = Contingency{T, M}(P ./ sum(P))
-Contingency(P::M, renormalize::Val{false}) where { T, M <: AbstractMatrix{T} } = Contingency{T, M}(P)
+Contingency(P::M, renormalize::Val{true}) where {T, M <: AbstractMatrix{T}}  = Contingency{T, M}(P ./ sum(P))
+Contingency(P::M, renormalize::Val{false}) where {T, M <: AbstractMatrix{T}} = Contingency{T, M}(P)
 
 contingency_matrix(distribution::Contingency) = distribution.p
 
