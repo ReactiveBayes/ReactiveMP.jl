@@ -10,7 +10,7 @@ end
 end
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
-    pre_samples = zip([rand(m_ins[i], n_samples) for i in 1:length(m_ins)]...)
+    pre_samples = zip([rand(m_ins[i], meta.n_samples) for i in 1:length(m_ins)]...)
 
     function change_drop_index(ttuple, drop_index, z)
         return (ttuple[1:drop_index-1]..., z, ttuple[drop_index+1:length(ttuple)]...)
@@ -25,8 +25,8 @@ end
 
     function optimize_natural_parameters(i, pre_samples)
         logp_nc = (z) -> logp_nc_drop_index(z, i, pre_samples)
-        return renderCVI(logp_nc, 10, ADAM(), nothing, naturalParams(q_ins[i]), q_ins[i])
+        return renderCVI(logp_nc, 10, ADAM(), nothing, naturalParams(m_ins[i]), m_ins[i])
     end
 
-    return FactorProduct(Tuple([standardDist(optimize_natural_parameters(i, pre_samples)) for i in 1:length(q_ins)]))
+    return FactorProduct(Tuple([standardDist(optimize_natural_parameters(i, pre_samples)) for i in 1:length(m_ins)]))
 end
