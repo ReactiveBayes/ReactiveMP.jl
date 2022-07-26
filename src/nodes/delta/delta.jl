@@ -10,7 +10,6 @@ function Base.map(f::Type{DeltaFnCallableWrapper{F}}, any::AbstractArray) where 
     return map(F.instance, any)
 end
 
-
 struct DeltaFn{F} end
 struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
     fn::F

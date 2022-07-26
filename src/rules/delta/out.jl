@@ -31,19 +31,16 @@ end
     begin
         q_sample_friendly = logpdf_sample_friendly(q_ins[1])[2]
         rng               = something(meta.rng, Random.GLOBAL_RNG)
-        samples = rand(rng, q_sample_friendly, meta.n_samples)
-        q_out = map(f, collect.(eachcol(samples)))
+        samples           = rand(rng, q_sample_friendly, meta.n_samples)
+        q_out             = map(f, collect.(eachcol(samples)))
         return ProdFinal(SampleList(q_out))
     end
 
-@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where {f, P <: Tuple} = begin
-    println("This method is called Tuple")
-    q_ins_sample_friendly = [logpdf_sample_friendly(q)[2] for q in q_ins]
-
-    rng = something(meta.rng, Random.GLOBAL_RNG)
-    q_ins_samples = map(marginal -> rand(rng, q_sample_friendly, meta.n_samples), q_ins_sample_friendly)
-
-    samples = map(x -> f(x...), zip(q_ins_samples))
-
-    return ProdFinal(SampleList(samples))
-end
+@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{NTuple{N, Any}}, meta::CVIApproximation) where {f, N} =
+    begin
+        q_ins_sample_friendly = [logpdf_sample_friendly(q)[2] for q in q_ins]
+        rng = something(meta.rng, Random.GLOBAL_RNG)
+        q_ins_samples = map(marginal -> rand(rng, q_sample_friendly, meta.n_samples), q_ins_sample_friendly)
+        samples = map(x -> f(x...), zip(q_ins_samples))
+        return ProdFinal(SampleList(samples))
+    end
