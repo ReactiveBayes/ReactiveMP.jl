@@ -9,7 +9,7 @@ end
     return FactorProduct((standardDist(λ),))
 end
 
-@marginalrule Delta{f}(:ins) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {F, N} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
     pre_samples = zip([rand(m_ins[i], n_samples) for i in 1:length(m_ins)]...)
 
     function change_drop_index(ttuple, drop_index, z)
