@@ -24,11 +24,11 @@ A `Contingency` distribution over more than two variables requires higher-order 
 """
 struct Contingency{T, P <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     p::P
+
+    Contingency{T, P}(A::AbstractMatrix) where { T, P <: AbstractMatrix{T} } = new(A)
 end
 
-# Renormalize by default
-Contingency(P::AbstractMatrix) = Contingency(P, Val(true))
-
+Contingency(P::AbstractMatrix)                                               = Contingency(P, Val(true))
 Contingency(P::M, renormalize::Val{true}) where {T, M <: AbstractMatrix{T}}  = Contingency{T, M}(P ./ sum(P))
 Contingency(P::M, renormalize::Val{false}) where {T, M <: AbstractMatrix{T}} = Contingency{T, M}(P)
 
