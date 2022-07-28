@@ -1,3 +1,5 @@
+using TupleTools
+
 @marginalrule DeltaFn{f}(:ins) (q_out::Any, m_ins::NTuple{N, Any}, meta::SamplingApproximation) where {f, N} = begin
     return MvNormalMeanPrecision(zeros(N), diageye(N))
 end
@@ -12,12 +14,8 @@ end
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
     pre_samples = zip([rand(m_ins[i], meta.n_samples) for i in 1:length(m_ins)]...)
 
-    function change_drop_index(ttuple, drop_index, z)
-        return (ttuple[1:drop_index-1]..., z, ttuple[drop_index+1:length(ttuple)]...)
-    end
-
     function logp_nc_drop_index(z, i, pre_samples)
-        samples = map(ttuple -> change_drop_index(ttuple, i, z), pre_samples)
+        samples = map(ttuple -> TupleTools.insertat(ttuple, i, (z,)), pre_samples)
         t_samples = map(s -> f(s...), samples)
         logpdfs = map(out -> logpdf(m_out, out), t_samples)
         return sum(logpdfs)
