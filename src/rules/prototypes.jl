@@ -133,7 +133,7 @@ include("or/in2.jl")
 include("or/out.jl")
 include("or/marginals.jl")
 
-include("not/in1.jl")
+include("not/in.jl")
 include("not/out.jl")
 include("not/marginals.jl")
 
