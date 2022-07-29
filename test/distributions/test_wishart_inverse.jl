@@ -1,4 +1,4 @@
-module MatrixDirichletTest
+module InverseWishartTest
 
 using Test
 using ReactiveMP

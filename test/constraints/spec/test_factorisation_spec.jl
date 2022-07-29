@@ -8,7 +8,7 @@ import ReactiveMP: FunctionalIndex
 import ReactiveMP: CombinedRange, SplittedRange, is_splitted
 import ReactiveMP: __as_unit_range, __factorisation_specification_resolve_index
 import ReactiveMP: resolve_factorisation
-import ReactiveMP: DefaultConstraints
+import ReactiveMP: DefaultConstraints, UnspecifiedConstraints
 import ReactiveMP: setanonymous!, activate!
 
 using GraphPPL # for `@constraints` macro
@@ -579,7 +579,8 @@ using GraphPPL # for `@constraints` macro
                 # empty
             end
 
-            for cs in (empty, DefaultConstraints)
+            # DefaultConstraints are equal to `UnspecifiedConstraints()` for now, but it might change in the future so we test both
+            for cs in (empty, UnspecifiedConstraints(), DefaultConstraints)
                 let model = FactorGraphModel()
                     d = datavar(model, :d, Float64)
                     c = constvar(model, :c, 1.0)
@@ -587,6 +588,8 @@ using GraphPPL # for `@constraints` macro
                     y = randomvar(model, :y)
                     z = randomvar(model, :z)
 
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y)) === ((1, 2),)
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (y, x)) === ((1, 2),)
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, d)) === ((1,), (2,))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, c)) === ((1,), (2,))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, x)) === ((1,), (2,))

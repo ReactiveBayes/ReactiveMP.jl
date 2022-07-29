@@ -16,8 +16,12 @@ using Random
     end
 
     @testset "contingency_matrix" begin
-        @test ReactiveMP.contingency_matrix(Contingency(ones(3, 3))) == ones(3, 3)
-        @test ReactiveMP.contingency_matrix(Contingency(ones(4, 4))) == ones(4, 4)
+        @test ReactiveMP.contingency_matrix(Contingency(ones(3, 3))) == ones(3, 3) ./ 9
+        @test ReactiveMP.contingency_matrix(Contingency(ones(3, 3), Val(true))) == ones(3, 3) ./ 9
+        @test ReactiveMP.contingency_matrix(Contingency(ones(3, 3), Val(false))) == ones(3, 3) # Matrix is wrong, but just to test that `false` is working
+        @test ReactiveMP.contingency_matrix(Contingency(ones(4, 4))) == ones(4, 4) ./ 16
+        @test ReactiveMP.contingency_matrix(Contingency(ones(4, 4), Val(true))) == ones(4, 4) ./ 16
+        @test ReactiveMP.contingency_matrix(Contingency(ones(4, 4), Val(false))) == ones(4, 4)
     end
 
     @testset "vague" begin
@@ -35,9 +39,14 @@ using Random
     end
 
     @testset "entropy" begin
-        @test entropy(Contingency([0.1 0.9; 0.9 0.1])) ≈ 0.6501659467828964
-        @test entropy(Contingency([0.2 0.8; 0.8 0.2])) ≈ 1.0008048470763757
-        @test entropy(Contingency([0.45 0.75; 0.55 0.25])) ≈ 1.2504739583323967
+        @test entropy(Contingency([0.7 0.1; 0.1 0.1])) ≈ 0.9404479886553263
+        @test entropy(Contingency(10.0 * [0.7 0.1; 0.1 0.1])) ≈ 0.9404479886553263
+        @test entropy(Contingency([0.07 0.41; 0.31 0.21])) ≈ 1.242506182893139
+        @test entropy(Contingency(10.0 * [0.07 0.41; 0.31 0.21])) ≈ 1.242506182893139
+        @test entropy(Contingency([0.09 0.00; 0.00 0.91])) ≈ 0.30253782309749805
+        @test entropy(Contingency(10.0 * [0.09 0.00; 0.00 0.91])) ≈ 0.30253782309749805
+        @test !isnan(entropy(Contingency([0.0 1.0; 1.0 0.0])))
+        @test !isinf(entropy(Contingency([0.0 1.0; 1.0 0.0])))
     end
 end
 

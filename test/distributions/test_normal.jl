@@ -129,13 +129,8 @@ using Distributions
         @test promote_variate_type(Multivariate, MvNormalWeightedMeanPrecision) === MvNormalWeightedMeanPrecision
     end
 
-    @testset "Sampling" begin
+    @testset "Sampling univariate" begin
         rng = MersenneTwister(1234)
-
-        univariate_types = [
-            ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})...,
-            ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float32})...
-        ]
 
         for T in (Float32, Float64)
             let # NormalMeanVariance
@@ -172,6 +167,57 @@ using Distributions
 
                 @test isapprox(inv(var(samples)) * mean(samples), wμ, atol = 0.5)
                 @test isapprox(inv(var(samples)), w, atol = 0.5)
+            end
+        end
+    end
+
+    @testset "Sampling multivariate" begin
+        rng = MersenneTwister(1234)
+
+        for n in (2, 3), T in (Float64,), nsamples in (10_000,)
+            let # MvNormalMeanCovariance
+                μ = randn(rng, n)
+                L = randn(rng, n, n)
+                Σ = L * L'
+
+                d = convert(MvNormalMeanCovariance{T}, μ, Σ)
+
+                @test typeof(rand(d)) <: Vector{T}
+
+                samples = SampleList(Val((n,)), rand(rng, d, nsamples), fill(1 / nsamples, nsamples))
+
+                @test isapprox(mean(samples), mean(d), atol = n * 0.5)
+                @test isapprox(cov(samples), cov(d), atol = n * 0.5)
+            end
+
+            let # MvNormalMeanPrecision
+                μ = randn(rng, n)
+                L = randn(rng, n, n)
+                W = L * L'
+
+                d = convert(MvNormalMeanPrecision{T}, μ, W)
+
+                @test typeof(rand(d)) <: Vector{T}
+
+                samples = SampleList(Val((n,)), rand(rng, d, nsamples), fill(T(1 / nsamples), nsamples))
+
+                @test isapprox(mean(samples), mean(d), atol = n * 0.5)
+                @test isapprox(cov(samples), cov(d), atol = n * 0.5)
+            end
+
+            let # MvNormalWeightedMeanPrecision
+                ξ = randn(rng, n)
+                L = randn(rng, n, n)
+                W = L * L'
+
+                d = convert(MvNormalWeightedMeanPrecision{T}, ξ, W)
+
+                @test typeof(rand(d)) <: Vector{T}
+
+                samples = SampleList(Val((n,)), rand(rng, d, nsamples), fill(T(1 / nsamples), nsamples))
+
+                @test isapprox(mean(samples), mean(d), atol = n * 0.5)
+                @test isapprox(cov(samples), cov(d), atol = n * 0.5)
             end
         end
     end

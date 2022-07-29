@@ -4,7 +4,7 @@ using Test
 using ReactiveMP
 
 import ReactiveMP: SkipIndexIterator, skipindex
-import ReactiveMP: deep_eltype
+import ReactiveMP: clamplog, deep_eltype
 import ReactiveMP: InfCountingReal, ∞
 import ReactiveMP: FunctionalIndex
 
@@ -14,6 +14,11 @@ import ReactiveMP: FunctionalIndex
         @test typeof(s) <: SkipIndexIterator
         @test collect(s) == [1, 3]
         @test collect(skipindex(s, 1)) == [3]
+    end
+
+    @testset "clamplog" begin
+        @test !isnan(clamplog(0.0)) && !isinf(clamplog(0.0))
+        @test clamplog(tiny + 1.0) === log(tiny + 1.0)
     end
 
     @testset "deep_eltype" begin
