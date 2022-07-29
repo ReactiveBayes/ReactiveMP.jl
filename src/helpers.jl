@@ -264,6 +264,11 @@ end
 
 ## Other helpers 
 
+"""
+Same as `log` but clamps the input argument `x` to be in the range `tiny <= x <= typemax(x)` such that `log(0)` does not explode.
+"""
+clamplog(x) = log(clamp(x, tiny, typemax(x)))
+
 # We override this function for some specific types
 function is_typeof_equal(left, right)
     _isequal = typeof(left) === typeof(right)
