@@ -201,7 +201,7 @@ resolve_factorisation(::UnspecifiedConstraints, any, model, fform, variables) = 
 resolve_factorisation(::UnspecifiedConstraints, ::Deterministic, model, fform, variables) = FullFactorisation()
 
 # Preoptimised dispatch rules for unspecified constraints and a stochastic node with 2 inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: RandomVariable}                         = ((1, 2))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: RandomVariable}                         = ((1, 2),)
 resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable} = ((1,), (2,))
 resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,))
 
