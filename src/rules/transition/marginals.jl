@@ -1,17 +1,21 @@
 
 @marginalrule Transition(:out_in) (m_out::Categorical, m_in::Categorical, q_a::MatrixDirichlet) = begin
-    B = Diagonal(probvec(m_out)) * exp.(mean(log, q_a)) * Diagonal(probvec(m_in))
-    return Contingency(B ./ sum(B))
+    D = map(e -> clamp(exp(e), tiny, huge), mean(log, q_a))
+    B = Diagonal(probvec(m_out)) * D * Diagonal(probvec(m_in))
+    P = map!(Base.Fix2(/, sum(B)), B, B) # inplace version of B ./ sum(B)
+    return Contingency(P, Val(false))    # Matrix `P` has been normalized by hand
 end
 
 @marginalrule Transition(:out_in) (m_out::Categorical, m_in::Categorical, q_a::PointMass) = begin
     B = Diagonal(probvec(m_out)) * mean(q_a) * Diagonal(probvec(m_in))
-    return Contingency(B ./ sum(B))
+    P = map!(Base.Fix2(/, sum(B)), B, B) # inplace version of B ./ sum(B)
+    return Contingency(P, Val(false))    # Matrix `P` has been normalized by hand
 end
 
 @marginalrule Transition(:out_in_a) (m_out::Categorical, m_in::Categorical, m_a::PointMass) = begin
     B = Diagonal(probvec(m_out)) * mean(m_a) * Diagonal(probvec(m_in))
-    return (out_in = Contingency(B ./ sum(B)), a = m_a)
+    P = map!(Base.Fix2(/, sum(B)), B, B)                  # inplace version of B ./ sum(B)
+    return (out_in = Contingency(P, Val(false)), a = m_a) # Matrix `P` has been normalized by hand
 end
 
 @marginalrule Transition(:out_in_a) (m_out::PointMass, m_in::Categorical, m_a::PointMass, meta::Any) = begin
