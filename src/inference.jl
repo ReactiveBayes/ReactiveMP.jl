@@ -168,7 +168,7 @@ For more information about some of the arguments, please check below.
 - `meta  = nothing`: meta specification object, optional, may be required for some models, see `@meta`
 - `options = (;)`: model creation options, optional, see `model_options`
 - `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see below for more information
-- `iterations = nothing`: number of iterations, optional, defaults to `nothing`, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations, see belo for more information
+- `iterations = nothing`: number of iterations, optional, defaults to `nothing`, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations, see below for more information
 - `free_energy = false`: compute the Bethe free energy, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
 - `free_energy_diagnostics = BetheFreeEnergyDefaultChecks`: free energy diagnostic checks, optional, by default checks for possible `NaN`s and `Inf`s. `nothing` disables all checks.
 - `showprogress = false`: show progress module, optional, defaults to false
@@ -421,7 +421,7 @@ function inference(;
         end
 
         _iterations = something(iterations, 1)
-        _iterations isa Integer || error("`iterations` argument must be of type Integer")
+        _iterations isa Integer || error("`iterations` argument must be of type Integer or `nothing`")
         _iterations > 0 || error("`iterations` arguments must be greater than zero")
 
         for iteration in 1:_iterations
