@@ -1,4 +1,4 @@
-@marginalrule IMPL(:in1_in2) (
+@marginalrule IMPLY(:in1_in2) (
     m_out::Bernoulli,
     m_in1::Bernoulli,
     m_in2::Bernoulli

@@ -1,5 +1,5 @@
-export IMPL
+export IMPLY
 
-struct IMPL end
+struct IMPLY end
 
-@node IMPL Deterministic [out, in1, in2]
+@node IMPLY Deterministic [out, in1, in2]
