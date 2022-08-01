@@ -7,7 +7,7 @@ import ReactiveMP: @test_rules, @test_marginalrules
 
 @testset "rules:OR:marginals" begin
     @testset ":in1_in2 (m_out::Bernoulli, m_in1::Bernoulli, m_in2::Bernoulli)" begin
-        @test_marginalrules [with_float_conversions = false] OR(:in1_in2) [
+        @test_marginalrules [with_float_conversions = true] OR(:in1_in2) [
             (
                 input = (
                     m_out = Bernoulli(0.5),

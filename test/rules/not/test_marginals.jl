@@ -7,7 +7,7 @@ import ReactiveMP: @test_rules, @test_marginalrules
 
 @testset "rules:NOT:marginals" begin
     @testset ":in (m_out::Bernoulli, m_in::Bernoulli)" begin
-        @test_marginalrules [with_float_conversions = false] NOT(:in) [
+        @test_marginalrules [with_float_conversions = true] NOT(:in) [
             (
                 input = (
                     m_out = Bernoulli(0.4),

@@ -1,4 +1,4 @@
-module OrNodeTest
+module ImplicationNodeTest
 
 using Test
 using ReactiveMP
