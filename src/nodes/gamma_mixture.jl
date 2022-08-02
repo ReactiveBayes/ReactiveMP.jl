@@ -28,7 +28,6 @@ ReactiveMP.as_node_symbol(::Type{<:GammaMixture}) = :GammaMixture
 #
 # Base.show
 
-
 const GammaMixtureNodeFactorisationSupport = Union{MeanField}
 
 struct GammaMixtureNode{N, F <: GammaMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
@@ -205,11 +204,11 @@ as_node_functional_form(::Type{<:GammaMixture}) = ValidNodeFunctionalForm()
 sdtype(::Type{<:GammaMixture}) = Stochastic()
 
 collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::MeanField) where {N} = factorisation
-collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::Any)       where {N} = __gamma_mixture_incompatible_factorisation_error()
+collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::Any) where {N}       = __gamma_mixture_incompatible_factorisation_error()
 
 function collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::NTuple{R, Tuple{<:Integer}}) where {N, R}
     # 2 * (m, w) + s + out, equivalent to MeanField 
-    return (R === 2*N + 2) ? MeanField() : __gamma_mixture_incompatible_factorisation_error()
+    return (R === 2 * N + 2) ? MeanField() : __gamma_mixture_incompatible_factorisation_error()
 end
 
 __gamma_mixture_incompatible_factorisation_error() = error(

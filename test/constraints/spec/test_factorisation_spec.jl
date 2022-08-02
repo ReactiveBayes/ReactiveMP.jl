@@ -630,18 +630,18 @@ using GraphPPL # for `@constraints` macro
             y = randomvar(model, :y)
             z = randomvar(model, :z)
 
-            cs1 = @constraints begin 
+            cs1 = @constraints begin
                 q(x, y, z) = q(x)q(y)q(z)
             end
 
-            cs2 = @constraints begin 
+            cs2 = @constraints begin
                 q(x, y, z) = q(x)q(y, z)
             end
 
             @test ReactiveMP.resolve_factorisation(cs1, model, fform, (x, (y, z))) === ((1,), (2,), (3,))
-            @test ReactiveMP.resolve_factorisation(cs2, model, fform, (x, (y, z))) === ((1,), (2, 3,))
+            @test ReactiveMP.resolve_factorisation(cs2, model, fform, (x, (y, z))) === ((1,), (2, 3))
             @test ReactiveMP.resolve_factorisation(cs1, model, fform, ((x, y), z)) === ((1,), (2,), (3,))
-            @test ReactiveMP.resolve_factorisation(cs2, model, fform, ((x, y), z)) === ((1,), (2, 3,))
+            @test ReactiveMP.resolve_factorisation(cs2, model, fform, ((x, y), z)) === ((1,), (2, 3))
         end
 
         ## Warning testing below

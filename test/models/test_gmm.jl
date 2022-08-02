@@ -170,20 +170,23 @@ end
         end
         ## -------------------------------------------- ##
         ## Inference execution
-        constraints = @constraints begin 
+        constraints = @constraints begin
             q(z, s, m1, m2, w1, w2) = q(z)q(s)q(m1)q(w1)q(m2)q(w2)
         end
 
         # Execute inference for different constraints and option specification
-        results = map((specs) -> inference_univariate(y, 10, specs[1], specs[2]), [ 
-            (DefaultConstraints, model_options(default_factorisation = MeanField())) ,
-            (constraints, model_options())
-        ])
+        results = map(
+            (specs) -> inference_univariate(y, 10, specs[1], specs[2]),
+            [
+                (DefaultConstraints, model_options(default_factorisation = MeanField())),
+                (constraints, model_options())
+            ]
+        )
 
         fresult = results[begin]
 
         # All execution must be equivalent (check against first)
-        foreach(results[begin+1:end]) do result 
+        foreach(results[begin+1:end]) do result
             foreach(zip(fresult, result)) do (l, r)
                 @test ReactiveMP.getvalues(l) == ReactiveMP.getvalues(r)
             end
@@ -250,7 +253,12 @@ end
         ## -------------------------------------------- ##
         ## Create output benchmarks (skip if CI)
         if get(ENV, "CI", nothing) != "true"
-            benchmark = @benchmark inference_univariate($y, 10, $DefaultConstraints, model_options(default_factorisation = MeanField())) seconds = 15
+            benchmark = @benchmark inference_univariate(
+                $y,
+                10,
+                $DefaultConstraints,
+                model_options(default_factorisation = MeanField())
+            ) seconds = 15
             open(benchmark_output, "w") do io
                 show(io, MIME("text/plain"), benchmark)
                 versioninfo(io)
@@ -292,22 +300,25 @@ end
         ## -------------------------------------------- ##
         ## Inference execution
 
-        constraints = @constraints begin 
+        constraints = @constraints begin
             q(z, s, m, w) = q(z)q(s)q(m)q(w)
-            q(m) = q(m[begin])..q(m[end]) # Mean-field over `m`
-            q(w) = q(w[begin])..q(w[end]) # Mean-field over `w`
+            q(m) = q(m[begin]) .. q(m[end]) # Mean-field over `m`
+            q(w) = q(w[begin]) .. q(w[end]) # Mean-field over `w`
         end
 
         # Execute inference for different constraints and option specification
-        results = map((specs) -> inference_multivariate(specs[1], L, nmixtures, y, 25, specs[2], specs[3]), [ 
-            (StableRNG(42), DefaultConstraints, model_options(default_factorisation = MeanField())) ,
-            (StableRNG(42), constraints, model_options())
-        ])
+        results = map(
+            (specs) -> inference_multivariate(specs[1], L, nmixtures, y, 25, specs[2], specs[3]),
+            [
+                (StableRNG(42), DefaultConstraints, model_options(default_factorisation = MeanField())),
+                (StableRNG(42), constraints, model_options())
+            ]
+        )
 
         fresult = results[begin]
 
         # All execution must be equivalent (check against first)
-        foreach(results[begin+1:end]) do result 
+        foreach(results[begin+1:end]) do result
             foreach(zip(fresult, result)) do (l, r)
                 @test ReactiveMP.getvalues(l) == ReactiveMP.getvalues(r)
             end
@@ -369,7 +380,15 @@ end
         ## -------------------------------------------- ##
         ## Create output benchmarks (skip if CI)
         if get(ENV, "CI", nothing) != "true"
-            benchmark = @benchmark inference_multivariate(StableRNG(123), $L, $nmixtures, $y, 25, $DefaultConstraints, model_options(default_factorisation = MeanField())) seconds = 15
+            benchmark = @benchmark inference_multivariate(
+                StableRNG(123),
+                $L,
+                $nmixtures,
+                $y,
+                25,
+                $DefaultConstraints,
+                model_options(default_factorisation = MeanField())
+            ) seconds = 15
             open(benchmark_output, "w") do io
                 show(io, MIME("text/plain"), benchmark)
                 versioninfo(io)

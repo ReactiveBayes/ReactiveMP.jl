@@ -83,7 +83,7 @@ Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), lef
 function Base.:(==)(left::Message, right::Message)
     # We need this dummy method as Julia is not smart enough to 
     # do that automatically if `data` is mutable
-    return left.is_clamped == right.is_clamped && 
+    return left.is_clamped == right.is_clamped &&
            left.is_initial == right.is_initial &&
            left.data == right.data
 end

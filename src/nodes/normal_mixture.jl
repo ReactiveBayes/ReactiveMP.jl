@@ -262,11 +262,11 @@ as_node_functional_form(::Type{<:NormalMixture}) = ValidNodeFunctionalForm()
 sdtype(::Type{<:NormalMixture}) = Stochastic()
 
 collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::MeanField) where {N} = factorisation
-collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::Any)       where {N} = __normal_mixture_incompatible_factorisation_error()
+collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::Any) where {N}       = __normal_mixture_incompatible_factorisation_error()
 
 function collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::NTuple{R, Tuple{<:Integer}}) where {N, R}
     # 2 * (m, w) + s + out, equivalent to MeanField 
-    return (R === 2*N + 2) ? MeanField() : __normal_mixture_incompatible_factorisation_error()
+    return (R === 2 * N + 2) ? MeanField() : __normal_mixture_incompatible_factorisation_error()
 end
 
 __normal_mixture_incompatible_factorisation_error() = error(
