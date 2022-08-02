@@ -128,14 +128,14 @@ include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/flow/flow.jl")
 include("nodes/poisson.jl")
-include("nodes/or.jl")
-include("nodes/not.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
 include("nodes/subtraction.jl")
 include("nodes/multiplication.jl")
 include("nodes/and.jl")
+include("nodes/or.jl")
+include("nodes/not.jl")
 include("nodes/implication.jl")
 
 include("rules/prototypes.jl")
