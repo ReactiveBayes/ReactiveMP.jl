@@ -1,28 +1,27 @@
 export GammaInverse
-import Distributions: InverseGamma, shape, scale, cov
+import Distributions: InverseGamma, shape, scale
 
 const GammaInverse = InverseGamma
 
 # TODO: which functions return Distribution.InverseGamma and which return ReactiveMP.GammaInverse?
-import Distributions: InverseGamma, shape, scale, cov
 import SpecialFunctions: digamma
 
-# TODO: ?
-vague(::Type{<:InverseGamma}) = InverseGamma(1.0, 1.0)
+# uninformative prior
+vague(::Type{<:GammaInverse}) = InverseGamma(1.0, tiny)
 
-prod_analytical_rule(::Type{<:InverseGamma}, ::Type{<:InverseGamma}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = ProdAnalyticalRuleAvailable()
 
-function prod(::ProdAnalytical, left::InverseGamma, right::InverseGamma)
-    return InverseGamma(shape(left) + shape(right) + 1, scale(left) + scale(right))
+function prod(::ProdAnalytical, left::GammaInverse, right::InverseGamma)
+    return GammaInverse(shape(left) + shape(right) + 1, scale(left) + scale(right))
 end
 
-function mean(::typeof(log), dist::InverseGamma)
+function mean(::typeof(log), dist::GammaInverse)
     α = scale(dist)
     β = shape(dist)
     return log(α) - digamma(β)
 end
 
-function mean(::typeof(inv), dist::InverseGamma)
+function mean(::typeof(inv), dist::GammaInverse)
     α = scale(dist)
     β = shape(dist)
     return β / α
