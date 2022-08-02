@@ -28,7 +28,7 @@ ReactiveMP.as_node_symbol(::Type{<:NormalMixture}) = :NormalMixture
 # score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where T
 #
 # Base.show
-# 
+
 const NormalMixtureNodeFactorisationSupport = Union{MeanField}
 
 struct NormalMixtureNode{N, F <: NormalMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
@@ -261,7 +261,17 @@ as_node_functional_form(::Type{<:NormalMixture}) = ValidNodeFunctionalForm()
 
 sdtype(::Type{<:NormalMixture}) = Stochastic()
 
-collect_factorisation(::Type{<:NormalMixture}, factorisation) = factorisation
+collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::MeanField) where {N} = factorisation
+collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::Any)       where {N} = __normal_mixture_incompatible_factorisation_error()
+
+function collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::NTuple{R, Tuple{<:Integer}}) where {N, R}
+    # 2 * (m, w) + s + out, equivalent to MeanField 
+    return (R === 2*N + 2) ? MeanField() : __normal_mixture_incompatible_factorisation_error()
+end
+
+__normal_mixture_incompatible_factorisation_error() = error(
+    "`NormalMixtureNode` supports only following global factorisations: [ $(NormalMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints"
+)
 
 function ReactiveMP.make_node(
     ::Type{<:NormalMixture{N}},
@@ -269,8 +279,8 @@ function ReactiveMP.make_node(
     meta::M = nothing,
     pipeline::P = nothing
 ) where {N, F, M, P}
-    @assert N >= 2 "NormalMixtureNode requires at least two mixtures on input"
-    @assert typeof(factorisation) <: NormalMixtureNodeFactorisationSupport "NormalMixtureNode supports only following factorisations: [ $(NormalMixtureNodeFactorisationSupport) ]"
+    @assert N >= 2 "`NormalMixtureNode` requires at least two mixtures on input"
+    @assert typeof(factorisation) <: NormalMixtureNodeFactorisationSupport "`NormalMixtureNode` supports only following factorisations: [ $(NormalMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out, Marginalisation())
     switch = NodeInterface(:switch, Marginalisation())
     means  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:m, Marginalisation())), N)
@@ -288,9 +298,9 @@ function ReactiveMP.make_node(
 ) where {N}
     node = make_node(
         NormalMixture{N},
-        collect_factorisation(NormalMixture, factorisation(options)),
-        collect_meta(NormalMixture, metadata(options)),
-        collect_pipeline(NormalMixture, getpipeline(options))
+        collect_factorisation(NormalMixture{N}, factorisation(options)),
+        collect_meta(NormalMixture{N}, metadata(options)),
+        collect_pipeline(NormalMixture{N}, getpipeline(options))
     )
 
     # out

@@ -5,7 +5,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ndims, precision, length, size
+import Base: ==, ndims, precision, length, size
 
 struct Marginal{D}
     data       :: D
@@ -14,6 +14,14 @@ struct Marginal{D}
 end
 
 Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ")"))
+
+function Base.:(==)(left::Marginal, right::Marginal) 
+    # We need this dummy method as Julia is not smart enough to 
+    # do that automatically if `data` is mutable
+    return left.is_clamped == right.is_clamped && 
+           left.is_initial == right.is_initial &&
+           left.data == right.data
+end
 
 getdata(marginal::Marginal)    = marginal.data
 is_clamped(marginal::Marginal) = marginal.is_clamped

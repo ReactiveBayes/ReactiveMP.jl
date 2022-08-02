@@ -621,6 +621,29 @@ using GraphPPL # for `@constraints` macro
             end
         end
 
+        @testset "Use case #16" begin
+            # Tuple-based variables must be flattened
+
+            model = FactorGraphModel()
+
+            x = randomvar(model, :x)
+            y = randomvar(model, :y)
+            z = randomvar(model, :z)
+
+            cs1 = @constraints begin 
+                q(x, y, z) = q(x)q(y)q(z)
+            end
+
+            cs2 = @constraints begin 
+                q(x, y, z) = q(x)q(y, z)
+            end
+
+            @test ReactiveMP.resolve_factorisation(cs1, model, fform, (x, (y, z))) === ((1,), (2,), (3,))
+            @test ReactiveMP.resolve_factorisation(cs2, model, fform, (x, (y, z))) === ((1,), (2, 3,))
+            @test ReactiveMP.resolve_factorisation(cs1, model, fform, ((x, y), z)) === ((1,), (2,), (3,))
+            @test ReactiveMP.resolve_factorisation(cs2, model, fform, ((x, y), z)) === ((1,), (2, 3,))
+        end
+
         ## Warning testing below
 
         # Variable does not exist

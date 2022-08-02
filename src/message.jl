@@ -6,7 +6,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: *, +, ndims, precision, length, size, show
+import Base: ==, *, +, ndims, precision, length, size, show
 
 """
     AbstractMessage
@@ -79,6 +79,14 @@ materialize!(message::Message) = message
 Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ")"))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
+
+function Base.:(==)(left::Message, right::Message)
+    # We need this dummy method as Julia is not smart enough to 
+    # do that automatically if `data` is mutable
+    return left.is_clamped == right.is_clamped && 
+           left.is_initial == right.is_initial &&
+           left.data == right.data
+end
 
 function multiply_messages(prod_parametrisation, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
