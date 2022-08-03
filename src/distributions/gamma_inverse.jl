@@ -16,13 +16,13 @@ function prod(::ProdAnalytical, left::GammaInverse, right::InverseGamma)
 end
 
 function mean(::typeof(log), dist::GammaInverse)
-    α = scale(dist)
-    β = shape(dist)
-    return log(α) - digamma(β)
+    α = shape(dist)
+    θ = scale(dist)
+    return log(θ) - digamma(α)
 end
 
 function mean(::typeof(inv), dist::GammaInverse)
-    α = scale(dist)
-    β = shape(dist)
-    return β / α
+    α = shape(dist)
+    θ = scale(dist)
+    return α / θ
 end
