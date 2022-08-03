@@ -36,7 +36,7 @@ end
 
 # Variational                       #
 # --------------------------------- #
-@rule NormalMeanVariance(:v, Marginalisation) (q_out::PointMass, q_μ::UnivariateNormalDistributionsFamily, ) = begin
+@rule NormalMeanVariance(:v, Marginalisation) (q_out::Any, q_μ::Any, ) = begin
     mμ, vμ = mean_var(q_μ)
     mx, vx = mean_var(q_out)
 
@@ -47,7 +47,7 @@ end
 end
 
 # TODO: substitute
-@rule NormalMeanVariance(:v, Marginalisation) (q_out_μ::Any,) = begin
+@rule NormalMeanVariance(:v, Marginalisation) (q_out_μ::MultivariateNormalDistributionsFamily,) = begin
     m, V = mean_cov(q_out_μ)
     mx = m[1]
     mm = m[2]

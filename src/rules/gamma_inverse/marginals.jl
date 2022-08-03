@@ -8,6 +8,6 @@ export marginalrule
             m_out
         ),
         α = m_α,
-        β = m_θ
+        θ = m_θ
     )
 end

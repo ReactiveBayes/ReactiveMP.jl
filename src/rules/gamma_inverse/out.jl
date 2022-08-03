@@ -1,7 +1,9 @@
 export rule
 
-# case: inbound messages on edges [α, β] sum-product == belief propagation
-@rule GammaInverse(:out, Marginalisation) (m_α::Any, m_β::Any) = GammaInverse(mean(m_α), mean(m_β))
+# Belief propagation
+# case: inbound messages on edges [α, θ] sum-product
+@rule GammaInverse(:out, Marginalisation) (m_α::Any, m_θ::Any) = GammaInverse(mean(m_α), mean(m_θ))
 
-# case: inbound variational posterior on edges [α, β]
-@rule GammaInverse(:out, Marginalisation) (q_α::Any, q_β::Any) = GammaInverse(mean(q_α), mean(q_β))
+# Variational MP
+# case: inbound variational posterior on edges [α, θ]
+@rule GammaInverse(:out, Marginalisation) (q_α::Any, q_θ::Any) = GammaInverse(mean(q_α), mean(q_θ))
