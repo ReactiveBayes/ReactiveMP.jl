@@ -152,10 +152,10 @@ end
     addtests("nodes/test_wishart_inverse.jl")
     addtests("nodes/test_or.jl")
     addtests("nodes/test_not.jl")
-
-    addtests("rules/uniform/test_out.jl")
     addtests("nodes/test_and.jl")
     addtests("nodes/test_implication.jl")
+    
+    addtests("rules/uniform/test_out.jl")
 
     addtests("rules/flow/test_marginals.jl")
     addtests("rules/flow/test_in.jl")
