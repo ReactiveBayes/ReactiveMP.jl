@@ -1007,6 +1007,10 @@ function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:Abs
     )
 end
 
+# This error message should be displayed if a node receives an incompatible number of arguments
+function make_node_incompatible_number_of_arguments_error(fuppertype, fbottomtype, interfaces_list, args) 
+    error("`$(fbottomtype)` expects $(length(interfaces_list)) arguments, but $(length(args)) were given. Double check the `$(indexed_name(args[1])) ~ $(fbottomtype)($(join(map(indexed_name, args[begin+1:end]), ", ")))` expression.")
+end
 # end
 
 ## macro helpers
@@ -1180,6 +1184,11 @@ macro node(fformtype, sdtype, interfaces_list)
             $(interface_uniqueness...)
             $(interface_connections...)
             return node
+        end
+
+        # Fallback method for unsupported number of arguments, e.g. if node expects 2 inputs, but only 1 was given
+        function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
+            ReactiveMP.make_node_incompatible_number_of_arguments_error($fuppertype, $fbottomtype, $interfaces, args)
         end
 
         $(interface_name_getters...)
