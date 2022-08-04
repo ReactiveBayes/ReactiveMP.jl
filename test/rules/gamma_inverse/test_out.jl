@@ -7,6 +7,7 @@ using Distributions
 
 import ReactiveMP: @test_rules
 
+# TODO
 @testset "rules:GammaInverse:out" begin
     @testset "Belief Propagation: (m_α::Any, m_θ::Any)" begin
         @test_rules [with_float_conversions = true] GammaInverse(:out, Marginalisation) [

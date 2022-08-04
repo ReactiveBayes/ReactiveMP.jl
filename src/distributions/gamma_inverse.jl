@@ -1,13 +1,11 @@
 export GammaInverse
 import Distributions: InverseGamma, shape, scale
+import SpecialFunctions: digamma
 
 const GammaInverse = InverseGamma
 
-# TODO: which functions return Distribution.InverseGamma and which return ReactiveMP.GammaInverse?
-import SpecialFunctions: digamma
-
 # uninformative prior
-vague(::Type{<:GammaInverse}) = InverseGamma(1.0, tiny)
+vague(::Type{<:GammaInverse}) = InverseGamma(2.0, huge)
 
 prod_analytical_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = ProdAnalyticalRuleAvailable()
 

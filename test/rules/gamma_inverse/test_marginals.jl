@@ -7,6 +7,7 @@ using Distributions
 
 import ReactiveMP: @test_marginalrules
 
+# TODO
 @testset "marginalrules:GammaInverse" begin
     @testset "out_α_θ: (m_out::GammaInverse, m_α::PointMass, m_θ::PointMass)" begin
         @test_marginalrules [with_float_conversions = false] GammaInverse(:out_α_θ) [
