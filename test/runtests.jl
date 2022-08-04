@@ -154,7 +154,7 @@ end
     addtests("nodes/test_not.jl")
     addtests("nodes/test_and.jl")
     addtests("nodes/test_implication.jl")
-    
+
     addtests("rules/uniform/test_out.jl")
 
     addtests("rules/flow/test_marginals.jl")
