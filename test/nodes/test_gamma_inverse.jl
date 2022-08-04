@@ -9,22 +9,18 @@ import ReactiveMP: make_node
 @testset "InverseWishartNode" begin
     @testset "Creation" begin
         node = make_node(GammaInverse)
-
         @test functionalform(node) === GammaInverse
         @test sdtype(node) === Stochastic()
         @test name.(interfaces(node)) === (:out, :α, :θ)
-        # XXX ?
         @test factorisation(node) === ((1, 2, 3),)
         @test localmarginalnames(node) === (:out_α_θ,)
-        # XXX ?
         @test metadata(node) === nothing
 
-        # XXX ?
         node = make_node(InverseWishart, FactorNodeCreationOptions(nothing, 1, nothing))
         @test metadata(node) === 1
     end
 
-    # TODO: Average Energy testset
+    # g(a,b,x) = -a * log(b) + loggamma(a) + (a+1) * (log(scale(x)) - digamma(shape(x))) + b/mean(x)
     @testset "AverageEnergy" begin
         begin
             q_out = GammaInverse(2.0, 1.0)
@@ -37,7 +33,20 @@ import ReactiveMP: make_node
                 Marginal(q_θ, false, false)
             )
 
-            @test score(AverageEnergy(), GammaInverse, Val{(:out, :α, :θ)}, marginals, nothing) ≈ 1.1299587008097587
+            @test score(AverageEnergy(), GammaInverse, Val{(:out, :α, :θ)}, marginals, nothing) ≈ -0.26835300529540684
+        end
+        begin
+            q_out = GammaInverse(42.0, 42.0)
+            q_α = PointMass(42.0)
+            q_θ = PointMass(42.0)
+
+            marginals = (
+                Marginal(q_out, false, false),
+                Marginal(q_α, false, false),
+                Marginal(q_θ, false, false)
+            )
+
+            @test score(AverageEnergy(), GammaInverse, Val{(:out, :α, :θ)}, marginals, nothing) ≈ -1.433976171558072
         end
     end # testset: AverageEnergy
 end # testset
