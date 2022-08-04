@@ -18,7 +18,7 @@ end
     m_out, v_out   = mean_cov(q_out)
     m_Λ            = mean(q_γ) * diageye(dim)
 
-    result = zero(promote_type(eltype(q_out), eltype(q_μ), eltype(q_Λ)))
+    result = zero(promote_type(eltype(q_out), eltype(q_μ), eltype(q_γ)))
     result += dim * log2π
     result -= dim * mean(log, q_γ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
@@ -37,9 +37,9 @@ end
     m, V = mean_cov(q_out_μ)
     m_Λ  = mean(q_γ) * diageye(dim)
 
-    result = zero(promote_type(eltype(q_out_μ), eltype(q_Λ)))
+    result = zero(promote_type(eltype(q_out_μ), eltype(q_γ)))
     result += dim * log2π
-    result -= dim * mean(logdet, q_Λ)
+    result -= dim * mean(log, q_γ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
         result +=

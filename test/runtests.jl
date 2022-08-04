@@ -207,6 +207,10 @@ end
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
     addtests("rules/mv_normal_mean_precision/test_precision.jl")
 
+    addtests("rules/mv_normal_mean_scale_precision/test_out.jl")
+    addtests("rules/mv_normal_mean_scale_precision/test_mean.jl")
+    addtests("rules/mv_normal_mean_scale_precision/test_precision.jl")
+
     addtests("rules/probit/test_out.jl")
     addtests("rules/probit/test_in.jl")
 
