@@ -107,7 +107,7 @@ import ReactiveMP: @test_rules
         ]
     end
 
-    # XXX
+    # TODO
     @testset "Variational: (q_out::Any, q_μ::Any)" begin
         @test_rules [with_float_conversions = true] NormalMeanVariance(:v, Marginalisation) [
             (input = (q_out = PointMass(-1.0), q_μ = PointMass(2.0)), output = GammaInverse(1.5, 2.0 / 9.0)),
@@ -143,6 +143,7 @@ import ReactiveMP: @test_rules
         ]
     end
 
+    # TODO
     @testset "Variational: (q_out_μ::Any)" begin
         @test_rules [with_float_conversions = true] NormalMeanVariance(:v, Marginalisation) [
             (input = (q_out_μ = MvNormalMeanCovariance([1.0, 1.0], [1.0 0.0; 0.0 1.0]),), output = GammaInverse(1.5, 1.0)),
