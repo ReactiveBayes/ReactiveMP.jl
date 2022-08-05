@@ -644,6 +644,31 @@ using GraphPPL # for `@constraints` macro
             @test ReactiveMP.resolve_factorisation(cs2, model, fform, ((x, y), z)) === ((1,), (2, 3))
         end
 
+        @testset "Use case #17" begin
+            # Deterministic node must ignore multiple proxy vars 
+            model = FactorGraphModel()
+
+            x = randomvar(model, :x)
+            y = randomvar(model, :y)
+
+            # `z` is anonymous var composed of `x` and `y`
+            z = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y)), :z)
+            ReactiveMP.setanonymous!(z, true)
+
+            d = randomvar(model, :d)
+
+            cs = @constraints begin
+                q(d, x) = q(d)q(x)
+            end
+
+            # Remove this `@test_throws` when this feature is implemented, currently we throw an error
+            # But it would be nice to support this case too
+            @test_throws ErrorException ReactiveMP.resolve_factorisation(cs, model, TestFactorisationStochastic, (d, z))
+            # Deterministic node should ignore `resolve_factorisation` and multiple proxy vars
+            @test ReactiveMP.resolve_factorisation(cs, model, TestFactorisationDeterministic, (d, z)) ==
+                  FullFactorisation()
+        end
+
         ## Warning testing below
 
         # Variable does not exist
@@ -803,7 +828,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y) = q(x)q(y)
             end
 
-            @test_throws ErrorException ReactiveMP.resolve_factorisation(cs, model, :Normal, (x, y))
+            @test_throws ErrorException ReactiveMP.resolve_factorisation(cs, model, fform, (x, y))
         end
     end
 end
