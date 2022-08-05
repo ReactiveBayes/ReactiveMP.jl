@@ -85,11 +85,11 @@ end
         result_binary = binary_aliases_inference()
         ## -------------------------------------------- ##
         ## Test inference results
-        @test first(mean(result.posteriors[:x1])) ≈ 0.03030314940197132 # Here we simply test that it ran and gave some output 
-        @test first(result.free_energy) ≈ 2.6823450222125444
+        @test first(mean(result_normal.posteriors[:x1])) ≈ 0.03030314940197132 # Here we simply test that it ran and gave some output 
+        @test first(result_normal.free_energy) ≈ 2.6823450222125444
 
-        @test mean(result.posteriors[:x1]) ≈ 0.5
-        @test first(result.free_energy) ≈ 0.6931471805599454
+        @test mean(result_binary.posteriors[:x1]) ≈ 0.5
+        @test first(result_binary.free_energy) ≈ 0.6931471805599454
     end
 end
 
