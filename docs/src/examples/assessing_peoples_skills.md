@@ -89,3 +89,4 @@ inference_result = inference(
     data  = (res = test_results, )
 )
 ```
+The results make sense. On the one hand, the student answered the first question correctly, which immediately gives us reason to believe that he is not lazy. He answered the second question pretty well, but this does not mean that the student had the skills to answer this question (attendance,i.e., lack of laziness, could help). To answer the third question, it was necessary to answer the second and have additional skills (#3). Unfortunately, the student's answer was weak, so our confidence about skill #3 was shattered.
