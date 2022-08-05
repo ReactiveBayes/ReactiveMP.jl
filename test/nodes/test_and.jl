@@ -1,4 +1,4 @@
-module OrNodeTest
+module AndNodeTest
 
 using Test
 using ReactiveMP

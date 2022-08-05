@@ -250,6 +250,7 @@ end
     addtests("models/test_linreg.jl")
     addtests("models/test_mv_iid.jl")
     addtests("models/test_probit.jl")
+    addtests("models/test_aliases.jl")
 end
 
 end
