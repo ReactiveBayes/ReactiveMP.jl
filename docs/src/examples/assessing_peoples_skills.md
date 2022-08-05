@@ -69,10 +69,10 @@ end
     skill2 ~ Bernoulli(0.5)
     skill3 ~ Bernoulli(0.5)
 
-    test2 ~ IMPLY(laziness, skill2)
-    test3 ~ AND(test2, skill3)
+    test2 ~ laziness -> skill2
+    test3 ~ test2 && skill3
     
-    res[1] ~ AddNoise(NOT(laziness))
+    res[1] ~ AddNoise(¬laziness)
     res[2] ~ AddNoise(test2)
     res[3] ~ AddNoise(test3)
 
