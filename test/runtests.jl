@@ -150,6 +150,10 @@ end
     addtests("nodes/test_mv_normal_mean_covariance.jl")
     addtests("nodes/test_poisson.jl")
     addtests("nodes/test_wishart_inverse.jl")
+    addtests("nodes/test_or.jl")
+    addtests("nodes/test_not.jl")
+    addtests("nodes/test_and.jl")
+    addtests("nodes/test_implication.jl")
 
     addtests("rules/uniform/test_out.jl")
 
@@ -218,6 +222,25 @@ end
     addtests("rules/poisson/test_l.jl")
     addtests("rules/poisson/test_marginals.jl")
     addtests("rules/poisson/test_out.jl")
+
+    addtests("rules/or/test_out.jl")
+    addtests("rules/or/test_in1.jl")
+    addtests("rules/or/test_in2.jl")
+    addtests("rules/or/test_marginals.jl")
+
+    addtests("rules/not/test_out.jl")
+    addtests("rules/not/test_in.jl")
+    addtests("rules/not/test_marginals.jl")
+
+    addtests("rules/and/test_out.jl")
+    addtests("rules/and/test_in1.jl")
+    addtests("rules/and/test_in2.jl")
+    addtests("rules/and/test_marginals.jl")
+
+    addtests("rules/implication/test_out.jl")
+    addtests("rules/implication/test_in1.jl")
+    addtests("rules/implication/test_in2.jl")
+    addtests("rules/implication/test_marginals.jl")
 
     addtests("models/test_lgssm.jl")
     addtests("models/test_hgf.jl")
