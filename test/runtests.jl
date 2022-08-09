@@ -1,5 +1,4 @@
 
-
 ## https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
 ## https://gr-framework.org/workstations.html#no-output
 ENV["GKSwstype"] = "100"
@@ -15,7 +14,7 @@ worker_io(ident) = get!(() -> IOBuffer(), worker_ios, ident)
 # Dynamically overwrite default worker's `print` function for better control over stdout
 Distributed.redirect_worker_output(ident, stream) = begin
     task = @async while !eof(stream)
-        lock(worker_io_lock) do 
+        lock(worker_io_lock) do
             line = readline(stream)
             io   = worker_io(ident)
 
@@ -51,12 +50,12 @@ enabled_tests = lowercase.(ARGS)
 
 mutable struct TestRunner
     enabled_tests
-    test_tasks 
+    test_tasks
     workerpool
 
     function TestRunner(ARGS)
         enabled_tests = lowercase.(ARGS)
-        test_tasks    = []
+        test_tasks = []
         return new(enabled_tests, test_tasks, WorkerPool(collect(2:nprocs())))
     end
 end
@@ -64,9 +63,9 @@ end
 function Base.wait(testrunner::TestRunner)
     exceptions = []
 
-    foreach(testrunner.test_tasks) do task 
-        try 
-            (filename, ) = fetch(task)
+    foreach(testrunner.test_tasks) do task
+        try
+            (filename,) = fetch(task)
         catch exception
             push!(exceptions, exception)
         end
@@ -74,7 +73,7 @@ function Base.wait(testrunner::TestRunner)
 
     if !isempty(exceptions)
         println("Tests have failed: ")
-        foreach(exceptions) do exception 
+        foreach(exceptions) do exception
             println("="^80, "\n", exception)
         end
         error("Tests have failed")
@@ -90,12 +89,12 @@ println("`TestRunner` has been created. The number of available procs is $(nproc
 function addtests(testrunner::TestRunner, filename)
     key = filename_to_key(filename)
     if isempty(enabled_tests) || key in enabled_tests
-        task = remotecall(testrunner.workerpool, filename) do filename 
+        task = remotecall(testrunner.workerpool, filename) do filename
             lock(tasklock) do
                 include(filename)
                 println(WORKER_END_TOKEN)
             end
-            return (filename, )
+            return (filename,)
         end
         push!(testrunner.test_tasks, task)
     end
@@ -130,7 +129,6 @@ else
 end
 
 @testset ExtendedTestSet "ReactiveMP" begin
-
     @testset "Testset helpers" begin
         @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) ==
               "distributions/test_normal_mean_variance.jl"
@@ -304,5 +302,4 @@ end
     addtests(testrunner, "models/test_probit.jl")
 
     wait(testrunner)
-
 end
