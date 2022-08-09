@@ -14,10 +14,9 @@ worker_io(ident) = get!(() -> IOBuffer(), worker_ios, ident)
 # Dynamically overwrite default worker's `print` function for better control over stdout
 Distributed.redirect_worker_output(ident, stream) = begin
     task = @async while !eof(stream)
+        line = readline(stream)
         lock(worker_io_lock) do
-            line = readline(stream)
-            io   = worker_io(ident)
-
+            io = worker_io(ident)
             if startswith(line, WORKER_END_TOKEN)
                 println(stdout, String(take!(io)))
                 flush(stdout)
