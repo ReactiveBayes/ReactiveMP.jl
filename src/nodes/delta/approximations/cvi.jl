@@ -39,13 +39,11 @@ function renderCVI(logp_nc::Function,
 
     for _ in 1:num_iterations
         q = standardDist(λ)
-
         if isnothing(rng)
             z_s = rand(q) # need to add rng here (or maybe better to do callback)
         else
             z_s = rand(rng, q)
         end
-
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
         ∇f = NormalNaturalParametrs(df_μ1, df_μ2)
@@ -80,23 +78,10 @@ function renderCVI(logp_nc::Function,
         else
             z_s = rand(rng, q_friendly)
         end
-
-        println("sampling is okay")
-
-        println(λ)
-        println(z_s)
         logq(vec_params) = logPdf(T(vec_params), z_s)
-
         ∇logq = logq'(vec(λ))
-        print("logq is okay")
-
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
-        println("div is okay")
-
         ∇ = λ - η - T(∇f)
-
-        println("update is okay")
-
         updated = T(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
         if isProper(updated)
             λ = updated
