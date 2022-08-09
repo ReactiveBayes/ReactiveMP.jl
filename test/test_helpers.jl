@@ -9,6 +9,7 @@ import ReactiveMP: InfCountingReal, ∞
 import ReactiveMP: FunctionalIndex
 
 @testset "Helpers" begin
+
     @testset "SkipIndexIterator" begin
         s = skipindex(1:3, 2)
         @test typeof(s) <: SkipIndexIterator
