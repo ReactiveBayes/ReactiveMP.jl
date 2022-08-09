@@ -25,7 +25,9 @@ Distributed.redirect_worker_output(ident, stream) = begin
             end
         end
     end
-    Base.errormonitor(task)
+    @static if VERSION >= v"1.7"
+        Base.errormonitor(task)
+    end
 end
 
 # Unregistered GraphPPL, do not commit this two lines, but use them to test ReactiveMP locally
@@ -37,7 +39,7 @@ end
 # Example usage of a reduced testset
 # julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
 
-addprocs(4)
+addprocs(Sys.CPU_THREADS)
 
 @everywhere using Test, Documenter, ReactiveMP, Distributions
 @everywhere using TestSetExtensions, Suppressor
