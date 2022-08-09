@@ -207,6 +207,11 @@ function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily
     return μ + σ * randn(rng, float(T))
 end
 
+function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}, size::Int64) where {T}
+    container = Vector{T}(undef, size)
+    return rand!(rng, dist, container)
+end
+
 function Random.rand!(
     rng::AbstractRNG,
     dist::UnivariateNormalDistributionsFamily,
@@ -214,7 +219,7 @@ function Random.rand!(
 ) where {T <: Real}
     randn!(rng, container)
     μ, σ = mean_std(dist)
-    @turbo for i in 1:length(container)
+    @turbo for i in eachindex(container)
         container[i] = μ + σ * container[i]
     end
     container
@@ -227,6 +232,11 @@ function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFami
     return μ + L * randn(rng, length(μ))
 end
 
+function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}, size::Int64) where {T}
+    container = Matrix{T}(undef, ndims(dist), size)
+    return rand!(rng, dist, container)
+end
+
 function Random.rand!(
     rng::AbstractRNG,
     dist::MultivariateNormalDistributionsFamily,
@@ -235,7 +245,7 @@ function Random.rand!(
     preallocated = similar(container)
     randn!(rng, reshape(preallocated, length(preallocated)))
     μ, L = mean_std(dist)
-    @views for i in 1:size(preallocated)[2]
+    @views for i in axes(preallocated, 2)
         copyto!(container[:, i], μ)
         mul!(container[:, i], L, preallocated[:, i], 1, 1)
     end

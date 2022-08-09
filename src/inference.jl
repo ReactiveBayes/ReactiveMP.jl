@@ -147,7 +147,7 @@ unwrap_free_energy_option(option::Type{T}) where {T <: Real} = (true, T, InfCoun
         meta                    = nothing,
         options                 = (;),
         returnvars              = nothing, 
-        iterations              = 1,
+        iterations              = nothing,
         free_energy             = false,
         free_energy_diagnostics = BetheFreeEnergyDefaultChecks,
         showprogress            = false,
@@ -168,7 +168,7 @@ For more information about some of the arguments, please check below.
 - `meta  = nothing`: meta specification object, optional, may be required for some models, see `@meta`
 - `options = (;)`: model creation options, optional, see `model_options`
 - `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see below for more information
-- `iterations = 1`: number of iterations, optional, defaults to 1, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations
+- `iterations = nothing`: number of iterations, optional, defaults to `nothing`, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations, see below for more information
 - `free_energy = false`: compute the Bethe free energy, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
 - `free_energy_diagnostics = BetheFreeEnergyDefaultChecks`: free energy diagnostic checks, optional, by default checks for possible `NaN`s and `Inf`s. `nothing` disables all checks.
 - `showprogress = false`: show progress module, optional, defaults to false
@@ -211,11 +211,15 @@ See `?model_options`.
 
 - ### `returnvars`
 
-`returnvars` specifies the variables of interests and the amount of information to return about their posterior updates. By default the `inference` function tracks and returns every update for each iteration for every random variable in the model.
-`returnvars` accepts a `NamedTuple` or `Dict` or return var specification. There are two specifications:
+`returnvars` specifies the variables of interests and the amount of information to return about their posterior updates. 
 
+`returnvars` accepts a `NamedTuple` or `Dict` or return var specification. There are two specifications:
 - `KeepLast`: saves the last update for a variable, ignoring any intermediate results during iterations
 - `KeepEach`: saves all updates for a variable for all iterations
+
+Note: if `iterations` are specified as a number, the `inference` function tracks and returns every update for each iteration for every random variable in the model (equivalent to `KeepEach()`).
+If number of iterations is set to `nothing`, the `inference` function saves the 'last' (and the only one) update for every random variable in the model (equivalent to `KeepLast()`). 
+Use `iterations = 1` to force `KeepEach()` setting when number of iterations is equal to `1` or set `returnvars = KeepEach()` manually.
 
 Example: 
 
@@ -239,6 +243,10 @@ result = inference(
     returnvars = KeepLast()
 )
 ```
+
+- ### `iterations`
+
+Specifies the number of variational (or loopy BP) iterations. By default set to `nothing`, which is equivalent of doing 1 iteration. 
 
 - ### `free_energy` 
 
@@ -298,7 +306,7 @@ function inference(;
     # Return structure info, optional, defaults to return everything at each iteration
     returnvars = nothing,
     # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
-    iterations = 1,
+    iterations = nothing,
     # Do we compute FE, optional, defaults to false 
     # Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
     free_energy = false,
@@ -324,7 +332,7 @@ function inference(;
     # If so, we replace it with either `KeepEach` or `KeepLast` for each random and not-proxied variable in a model
     if returnvars === nothing || returnvars === KeepEach() || returnvars === KeepLast()
         # Checks if the first argument is `nothing`, in which case returns the second argument
-        returnoption = something(returnvars, KeepEach())
+        returnoption = something(returnvars, iterations isa Number ? KeepEach() : KeepLast())
         returnvars =
             Dict(
                 variable => returnoption for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value))
@@ -392,7 +400,10 @@ function inference(;
             error("Data is empty. Make sure you used `data` keyword argument with correct value.")
         else
             foreach(filter(pair -> isdata(last(pair)), pairs(vardict))) do pair
-                haskey(data, first(pair)) || error("Data entry $(first(pair)) is missing in `data` dictionary.")
+                varname = first(pair)
+                haskey(data, varname) || error(
+                    "Data entry `$(varname)` is missing in `data` argument. Double check `data = ($(varname) = ???, )`"
+                )
             end
         end
 
@@ -409,7 +420,11 @@ function inference(;
             return hk && is_data
         end
 
-        for iteration in 1:iterations
+        _iterations = something(iterations, 1)
+        _iterations isa Integer || error("`iterations` argument must be of type Integer or `nothing`")
+        _iterations > 0 || error("`iterations` arguments must be greater than zero")
+
+        for iteration in 1:_iterations
             inference_invoke_callback(callbacks, :before_iteration, fmodel, iteration)
             inference_invoke_callback(callbacks, :before_data_update, fmodel, data)
             for (key, value) in fdata

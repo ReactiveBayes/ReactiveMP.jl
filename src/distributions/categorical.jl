@@ -1,4 +1,4 @@
-export Bernoulli
+export Categorical
 
 import Distributions: Categorical, probs
 

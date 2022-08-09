@@ -56,6 +56,7 @@ include("kernel_gcv/marginals.jl")
 
 include("mv_normal_mean_covariance/out.jl")
 include("mv_normal_mean_covariance/mean.jl")
+include("mv_normal_mean_covariance/covariance.jl")
 include("mv_normal_mean_covariance/marginals.jl")
 
 include("normal_mean_variance/out.jl")
@@ -77,6 +78,9 @@ include("normal_mean_precision/marginals.jl")
 
 include("wishart/out.jl")
 include("wishart/marginals.jl")
+
+include("wishart_inverse/out.jl")
+include("wishart_inverse/marginals.jl")
 
 include("normal_mixture/switch.jl")
 include("normal_mixture/m.jl")
@@ -128,3 +132,22 @@ include("delta/out.jl")
 include("poisson/l.jl")
 include("poisson/marginals.jl")
 include("poisson/out.jl")
+
+include("or/in1.jl")
+include("or/in2.jl")
+include("or/out.jl")
+include("or/marginals.jl")
+
+include("not/in.jl")
+include("not/out.jl")
+include("not/marginals.jl")
+
+include("and/in1.jl")
+include("and/in2.jl")
+include("and/out.jl")
+include("and/marginals.jl")
+
+include("implication/in1.jl")
+include("implication/in2.jl")
+include("implication/out.jl")
+include("implication/marginals.jl")

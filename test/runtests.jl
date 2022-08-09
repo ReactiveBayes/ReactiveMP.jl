@@ -126,6 +126,7 @@ end
     addtests("distributions/test_normal.jl")
     addtests("distributions/test_pointmass.jl")
     addtests("distributions/test_wishart.jl")
+    addtests("distributions/test_wishart_inverse.jl")
     addtests("distributions/test_sample_list.jl")
 
     addtests("test_message.jl")
@@ -148,6 +149,11 @@ end
     addtests("nodes/test_mv_normal_mean_precision.jl")
     addtests("nodes/test_mv_normal_mean_covariance.jl")
     addtests("nodes/test_poisson.jl")
+    addtests("nodes/test_wishart_inverse.jl")
+    addtests("nodes/test_or.jl")
+    addtests("nodes/test_not.jl")
+    addtests("nodes/test_and.jl")
+    addtests("nodes/test_implication.jl")
 
     addtests("rules/uniform/test_out.jl")
 
@@ -198,6 +204,7 @@ end
 
     addtests("rules/mv_normal_mean_covariance/test_out.jl")
     addtests("rules/mv_normal_mean_covariance/test_mean.jl")
+    addtests("rules/mv_normal_mean_covariance/test_covariance.jl")
 
     addtests("rules/mv_normal_mean_precision/test_out.jl")
     addtests("rules/mv_normal_mean_precision/test_mean.jl")
@@ -209,9 +216,31 @@ end
     addtests("rules/wishart/test_marginals.jl")
     addtests("rules/wishart/test_out.jl")
 
+    addtests("rules/wishart_inverse/test_marginals.jl")
+    addtests("rules/wishart_inverse/test_out.jl")
+
     addtests("rules/poisson/test_l.jl")
     addtests("rules/poisson/test_marginals.jl")
     addtests("rules/poisson/test_out.jl")
+
+    addtests("rules/or/test_out.jl")
+    addtests("rules/or/test_in1.jl")
+    addtests("rules/or/test_in2.jl")
+    addtests("rules/or/test_marginals.jl")
+
+    addtests("rules/not/test_out.jl")
+    addtests("rules/not/test_in.jl")
+    addtests("rules/not/test_marginals.jl")
+
+    addtests("rules/and/test_out.jl")
+    addtests("rules/and/test_in1.jl")
+    addtests("rules/and/test_in2.jl")
+    addtests("rules/and/test_marginals.jl")
+
+    addtests("rules/implication/test_out.jl")
+    addtests("rules/implication/test_in1.jl")
+    addtests("rules/implication/test_in2.jl")
+    addtests("rules/implication/test_marginals.jl")
 
     addtests("models/test_lgssm.jl")
     addtests("models/test_hgf.jl")
@@ -219,7 +248,9 @@ end
     addtests("models/test_gmm.jl")
     addtests("models/test_hmm.jl")
     addtests("models/test_linreg.jl")
+    addtests("models/test_mv_iid.jl")
     addtests("models/test_probit.jl")
+    addtests("models/test_aliases.jl")
 end
 
 end

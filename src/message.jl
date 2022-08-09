@@ -6,7 +6,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: *, +, ndims, precision, length, size, show
+import Base: ==, *, +, ndims, precision, length, size, show
 
 """
     AbstractMessage
@@ -80,6 +80,14 @@ Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(messa
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
+function Base.:(==)(left::Message, right::Message)
+    # We need this dummy method as Julia is not smart enough to 
+    # do that automatically if `data` is mutable
+    return left.is_clamped == right.is_clamped &&
+           left.is_initial == right.is_initial &&
+           left.data == right.data
+end
+
 function multiply_messages(prod_parametrisation, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
@@ -101,6 +109,7 @@ prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
             constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
         Base.Generator(as_message, messages)
     )
+
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
     (messages) -> constrain_form_as_message(
         foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)),
@@ -113,6 +122,7 @@ prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
             constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
         Base.Generator(as_message, messages)
     )
+
 prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
     (messages) -> constrain_form_as_message(
         foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)),

@@ -31,6 +31,10 @@ linear_index(::VariableIndividual) = nothing
 linear_index(v::VariableVector)    = v.index
 linear_index(v::VariableArray)     = LinearIndices(v.size)[v.index]
 
+string_index(::VariableIndividual) = ""
+string_index(v::VariableVector)    = string("[", v.index, "]")
+string_index(v::VariableArray)     = string("[", join(v.index.I, ", "), "]")
+
 indexed_name(::VariableIndividual, name::Symbol) = string(name)
 indexed_name(seq::VariableVector, name::Symbol)  = string(name, "_", seq.index)
 indexed_name(array::VariableArray, name::Symbol) = string(name, "_", join(array.index.I, "_"))
@@ -147,12 +151,13 @@ This function is a part of private API and should not be used explicitly.
 """
 function resolve_variable_proxy end
 
-resolve_variable_proxy(var::AbstractVariable) =
+function resolve_variable_proxy(var::AbstractVariable)
     if !isanonymous(var)
-        resolve_variable_proxy(var, VariableReferenceProxyChecked(), nothing)
+        return resolve_variable_proxy(var, VariableReferenceProxyChecked(), nothing)
     else
-        resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy_variables(var))
+        return resolve_variable_proxy(var, VariableReferenceProxyUnchecked(), proxy_variables(var))
     end
+end
 
 resolve_variable_proxy(
     var::AbstractVariable,

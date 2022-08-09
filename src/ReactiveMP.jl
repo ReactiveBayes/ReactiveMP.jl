@@ -22,7 +22,19 @@ include("constraints/prod/prod_final.jl")
 include("constraints/prod/prod_resolve.jl")
 include("constraints/prod/factor_prod_generic.jl")
 
-as_marginal(message::Message)  = Marginal(getdata(message), is_clamped(message), is_initial(message))
+"""
+    to_marginal(any)
+
+Transforms an input to a proper marginal distribution.
+Called inside `as_marginal`. Some nodes do not use `Distributions.jl`, but instead implement their own equivalents for messages for better efficiency.
+Effectively `to_marginal` is needed to convert internal effective implementation to a user-friendly equivalent (e.g. from `Distributions.jl`).
+By default does nothing and returns its input, but some nodes may override this behaviour (see for example `Wishart` and `InverseWishart`).
+
+Note: This function is a part of the private API and is not intended to be used outside of the ReactiveMP package.
+"""
+to_marginal(any) = any
+
+as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
 include("variable.jl")
@@ -65,6 +77,7 @@ include("distributions/mv_normal_weighted_mean_precision.jl")
 include("distributions/normal.jl")
 include("distributions/exp_linear_quadratic.jl")
 include("distributions/wishart.jl")
+include("distributions/wishart_inverse.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
@@ -107,6 +120,7 @@ include("nodes/bernoulli.jl")
 include("nodes/gcv.jl")
 include("nodes/kernel_gcv.jl")
 include("nodes/wishart.jl")
+include("nodes/wishart_inverse.jl")
 include("nodes/normal_mixture.jl")
 include("nodes/gamma_mixture.jl")
 include("nodes/dot_product.jl")
@@ -122,6 +136,10 @@ include("nodes/poisson.jl")
 include("nodes/addition.jl")
 include("nodes/subtraction.jl")
 include("nodes/multiplication.jl")
+include("nodes/and.jl")
+include("nodes/or.jl")
+include("nodes/not.jl")
+include("nodes/implication.jl")
 
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")

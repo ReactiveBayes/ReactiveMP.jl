@@ -131,7 +131,7 @@ result = inference(
 ```
 
 ```@example coin 
-θestimated = last(result.posteriors[:θ])
+θestimated = result.posteriors[:θ]
 ```
 
 ```@example coin

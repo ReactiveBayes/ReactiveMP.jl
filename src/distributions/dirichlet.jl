@@ -16,7 +16,8 @@ end
 probvec(dist::Dirichlet) = params(dist)[1]
 
 # probvec is not normalised
-mean(::typeof(log), dist::Dirichlet) = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
+mean(::typeof(log), dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
+mean(::typeof(clamplog), dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
 
 # Variate forms promotion
 
