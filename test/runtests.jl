@@ -85,16 +85,14 @@ testrunner = TestRunner(ARGS)
 
 println("`TestRunner` has been created. The number of available procs is $(nprocs()).")
 
-@everywhere tasklock = ReentrantLock()
+# @everywhere tasklock = ReentrantLock()
 
 function addtests(testrunner::TestRunner, filename)
     key = filename_to_key(filename)
     if isempty(enabled_tests) || key in enabled_tests
         task = remotecall(testrunner.workerpool, filename) do filename
-            lock(tasklock) do
-                include(filename)
-                println(WORKER_END_TOKEN)
-            end
+            include(filename)
+            println(WORKER_END_TOKEN)
             return (filename,)
         end
         push!(testrunner.test_tasks, task)
