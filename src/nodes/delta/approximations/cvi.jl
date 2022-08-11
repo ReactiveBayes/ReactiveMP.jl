@@ -7,18 +7,14 @@ mutable struct CVIApproximation
     num_iterations
     rng
     opt
-    dataset_size
-    batch_size
 end
 
-function CVIApproximation(n_samples, num_iterations, opt, dataset_size, batch_size)
+function CVIApproximation(n_samples, num_iterations, opt)
     return CVIApproximation(
         n_samples,
         num_iterations,
         nothing,
-        opt,
-        dataset_size,
-        batch_size
+        opt
     )
 end
 #---------------------------
@@ -36,14 +32,11 @@ function renderCVI(logp_nc::Function,
 
     df_m(z) = ForwardDiff.derivative(logp_nc, z)
     df_v(z) = 0.5 * ForwardDiff.derivative(df_m, z)
+    rng     = something(rng, Random.GLOBAL_RNG)
 
     for _ in 1:num_iterations
         q = standardDist(λ)
-        if isnothing(rng)
-            z_s = rand(q) # need to add rng here (or maybe better to do callback)
-        else
-            z_s = rand(rng, q)
-        end
+        z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
         ∇f = NormalNaturalParametrs(df_μ1, df_μ2)

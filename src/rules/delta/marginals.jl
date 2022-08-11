@@ -6,7 +6,7 @@ end
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::CVIApproximation) where {f} = begin
     η = naturalParams(m_ins[1])
-    logp_nc(z) = (meta.dataset_size / meta.batch_size) * logpdf(m_out, f(z))
+    logp_nc(z) = logpdf(m_out, f(z))
     λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, deepcopy(η), m_ins[1])
     return FactorProduct((standardDist(λ),))
 end
