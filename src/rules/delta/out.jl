@@ -32,7 +32,7 @@ end
         q_sample_friendly = logpdf_sample_friendly(q_ins[1])[2]
         rng               = something(meta.rng, Random.GLOBAL_RNG)
         samples           = rand(rng, q_sample_friendly, meta.n_samples)
-        q_out             = map(f, collect.(eachcol(samples)))
+        q_out             = map(f, samples)
         return ProdFinal(SampleList(q_out))
     end
 
