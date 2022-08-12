@@ -43,11 +43,13 @@ ensure_update(model::FactorGraphModel, ::Nothing, variable_name::Symbol, updated
 __inference_process_error(error) = rethrow(error)
 
 function __inference_process_error(err::StackOverflowError)
-    error("""
-        Stack overflow error occurred during the inference procedure. 
-        The dataset size might be causing this error. 
-        To resolve this issue, try using `limit_stack_depth` option when creating a model. See also: `?model_options`
-    """)
+    @error """
+    Stack overflow error occurred during the inference procedure. 
+    The inference engine may execute message update rules recursively, hence, the model graph size might be causing this error. 
+    To resolve this issue, try using `limit_stack_depth` option for model creation. See `?model_options` and `?inference` documentation for more details.
+    The `limit_stack_depth` option does not help against over stack overflow errors that might hapenning outside of the model creation or message update rules execution.
+    """
+    rethrow(err) # Shows the original stack trace
 end
 
 __inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothing
