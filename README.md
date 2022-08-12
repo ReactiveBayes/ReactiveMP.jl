@@ -148,8 +148,8 @@ Once we have defined our model, the next step is to use `ReactiveMP` API to infe
 
 ```julia
 result = inference(
-    model = Model(coin_model, length(data)),
-    data  = (y = data, )
+    model = Model(coin_model, length(dataset)),
+    data  = (y = dataset, )
 )
 ```
 
