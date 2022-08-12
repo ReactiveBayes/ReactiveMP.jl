@@ -41,7 +41,10 @@ function renderCVI(logp_nc::Function,
         df_μ2 = df_v(z_s)
         ∇f = NormalNaturalParametrs(df_μ1, df_μ2)
         ∇ = λ - η - ∇f
-        λ = NormalNaturalParametrs(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        λ_new = NormalNaturalParametrs(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        if isProper(λ_new)
+            λ = λ_new
+        end
     end
 
     return λ
