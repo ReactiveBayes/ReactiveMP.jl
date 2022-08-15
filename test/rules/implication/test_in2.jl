@@ -1,4 +1,4 @@
-module RulesANDIn2Test
+module RulesImplicationIn2Test
 
 using Test
 using ReactiveMP
