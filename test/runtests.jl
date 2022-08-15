@@ -1,12 +1,38 @@
-module ReactiveMPTest
 
 ## https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
 ## https://gr-framework.org/workstations.html#no-output
 ENV["GKSwstype"] = "100"
 
-using Test, Documenter, ReactiveMP, Distributions
-using TestSetExtensions
-using Aqua
+using Distributed
+
+const worker_io_lock = ReentrantLock()
+const worker_ios     = Dict()
+
+worker_io(ident) = get!(() -> IOBuffer(), worker_ios, string(ident))
+
+# Dynamically overwrite default worker's `print` function for better control over stdout
+Distributed.redirect_worker_output(ident, stream) = begin
+    task = @async while !eof(stream)
+        line = readline(stream)
+        lock(worker_io_lock) do
+            io = worker_io(ident)
+            write(io, line, "\n")
+        end
+    end
+    @static if VERSION >= v"1.7"
+        Base.errormonitor(task)
+    end
+end
+
+# This function prints `worker's` standard output into the global standard output
+function flush_workerio(ident)
+    lock(worker_io_lock) do
+        wio = worker_io(ident)
+        str = String(take!(wio))
+        println(stdout, str)
+        flush(stdout)
+    end
+end
 
 # Unregistered GraphPPL, do not commit this two lines, but use them to test ReactiveMP locally
 # ENV["JULIA_PKG_USE_CLI_GIT"] = true
@@ -17,10 +43,122 @@ using Aqua
 # Example usage of a reduced testset
 # julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
 
-function addtests(filename)
+addprocs(Sys.CPU_THREADS)
+
+@everywhere using Test, Documenter, ReactiveMP, Distributions
+@everywhere using TestSetExtensions
+
+import Base: wait
+
+mutable struct TestRunner
+    enabled_tests
+    found_tests
+    test_tasks
+    workerpool
+    jobschannel
+    exschannel
+    iochannel
+
+    function TestRunner(ARGS)
+        enabled_tests = lowercase.(ARGS)
+        found_tests = Dict(map(test -> test => false, enabled_tests))
+        test_tasks = []
+        jobschannel = RemoteChannel(() -> Channel(Inf), myid()) # Channel for jobs
+        exschannel = RemoteChannel(() -> Channel(Inf), myid()) # Channel for exceptions
+        iochannel = RemoteChannel(() -> Channel(0), myid())
+        @async begin
+            while isopen(iochannel)
+                ident = take!(iochannel)
+                flush_workerio(ident)
+            end
+        end
+        return new(enabled_tests, found_tests, test_tasks, 2:nprocs(), jobschannel, exschannel, iochannel)
+    end
+end
+
+function Base.run(testrunner::TestRunner)
+    println("") # New line for 'better' alignment of the `testrunner` results
+
+    foreach(testrunner.workerpool) do worker
+        # For each worker we create a `nothing` token in the `jobschannel`
+        # This token indicates that there are no other jobs left
+        put!(testrunner.jobschannel, nothing)
+        # We create a remote call for another Julia process to execute our test with `include(filename)`
+        task = remotecall(
+            worker,
+            testrunner.jobschannel,
+            testrunner.exschannel,
+            testrunner.iochannel
+        ) do jobschannel, exschannel, iochannel
+            finish = false
+            while !finish
+                # Each worker takes jobs sequentially from the shared jobs pool 
+                job_filename = take!(jobschannel)
+                if isnothing(job_filename) # At the end there are should be only `emptyjobs`, in which case the worker finishes its tasks
+                    finish = true
+                else # Otherwise we assume that the `job` contains the valid `filename` and execute test
+                    try # Here we can easily get the `LoadError` if some tests are failing
+                        include(job_filename)
+                    catch iexception
+                        put!(exschannel, iexception)
+                    end
+                    # After the work is done we put the worker's `id` into `iochannel` (this triggers test info printing)
+                    put!(iochannel, myid())
+                end
+            end
+            return nothing
+        end
+        # We save the created task for later syncronization
+        push!(testrunner.test_tasks, task)
+    end
+
+    # For each remotelly called task we `fetch` its result or save an exception
+    foreach(fetch, testrunner.test_tasks)
+
+    # If exception are not empty we notify the user and force-fail
+    if isready(testrunner.exschannel)
+        println(stderr, "Tests have failed with the following exceptions: ")
+        while isready(testrunner.exschannel)
+            exception = take!(testrunner.exschannel)
+            showerror(stderr, exception)
+            println(stderr, "\n", "="^80)
+        end
+        exit(-1)
+    end
+
+    close(testrunner.iochannel)
+    close(testrunner.exschannel)
+    close(testrunner.jobschannel)
+
+    # At the very last stage we check that there are no "missing" tests, 
+    # aka tests that have been specified in the `enabled_tests`, 
+    # but for which the corresponding `filename` does not exist in the `test/` folder
+    notfound_tests = filter(v -> v[2] === false, testrunner.found_tests)
+    if !isempty(notfound_tests)
+        println(stderr, "There are missing tests, double check correct spelling/path for the following entries:")
+        foreach(keys(notfound_tests)) do key
+            println(stderr, " - ", key)
+        end
+        exit(-1)
+    end
+end
+
+const testrunner = TestRunner(lowercase.(ARGS))
+
+println("`TestRunner` has been created. The number of available procs is $(nprocs()).")
+
+@everywhere workerlocal_lock = ReentrantLock()
+
+function addtests(testrunner::TestRunner, filename)
+    # First we transform filename into `key` and check if we have this entry in the `enabled_tests` (if `enabled_tests` is not empty)
     key = filename_to_key(filename)
-    if isempty(enabled_tests) || key in enabled_tests
-        include(filename)
+    if isempty(testrunner.enabled_tests) || key in testrunner.enabled_tests
+        # If `enabled_tests` is not empty we mark the corresponding key with the `true` value to indicate that we found the corresponding `file` in the `/test` folder
+        if !isempty(testrunner.enabled_tests)
+            setindex!(testrunner.found_tests, true, key) # Mark that test has been found
+        end
+        # At this stage we simply put the `filename` into the `jobschannel` that will be processed later (see the `execute` function)
+        put!(testrunner.jobschannel, filename)
     end
 end
 
@@ -43,44 +181,21 @@ function filename_to_key(filename)
     end
 end
 
-enabled_tests = lowercase.(ARGS)
+using Aqua
 
-if isempty(enabled_tests)
+if isempty(testrunner.enabled_tests)
     println("Running all tests...")
     # `project_toml_formatting` is broken on CI, revise at some point
     Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
     # doctest(ReactiveMP)
 else
-    println("Running specific tests: $enabled_tests")
+    println("Running specific tests:")
+    foreach(testrunner.enabled_tests) do test
+        println(" - ", test)
+    end
 end
 
 @testset ExtendedTestSet "ReactiveMP" begin
-    function key_to_filename(key)
-        splitted = split(key, ":")
-        return if length(splitted) === 1
-            string("test_", first(splitted), ".jl")
-        else
-            string(join(splitted[1:end-1], "/"), "/test_", splitted[end], ".jl")
-        end
-    end
-
-    function filename_to_key(filename)
-        splitted = split(filename, "/")
-        if length(splitted) === 1
-            return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
-        else
-            path, name = splitted[1:end-1], splitted[end]
-            return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
-        end
-    end
-
-    function addtests(filename)
-        key = filename_to_key(filename)
-        if isempty(enabled_tests) || key in enabled_tests
-            include(filename)
-        end
-    end
-
     @testset "Testset helpers" begin
         @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) ==
               "distributions/test_normal_mean_variance.jl"
@@ -90,167 +205,167 @@ end
         @test filename_to_key(key_to_filename("message")) == "message"
     end
 
-    addtests("algebra/test_correction.jl")
-    addtests("algebra/test_helpers.jl")
-    addtests("algebra/test_permutation_matrix.jl")
-    addtests("algebra/test_standard_basis_vector.jl")
+    addtests(testrunner, "algebra/test_correction.jl")
+    addtests(testrunner, "algebra/test_helpers.jl")
+    addtests(testrunner, "algebra/test_permutation_matrix.jl")
+    addtests(testrunner, "algebra/test_standard_basis_vector.jl")
 
-    addtests("test_model.jl")
-    addtests("test_math.jl")
-    addtests("test_helpers.jl")
-    addtests("test_score.jl")
+    addtests(testrunner, "test_model.jl")
+    addtests(testrunner, "test_math.jl")
+    addtests(testrunner, "test_helpers.jl")
+    addtests(testrunner, "test_score.jl")
 
-    addtests("constraints/spec/test_factorisation_spec.jl")
-    addtests("constraints/spec/test_form_spec.jl")
-    addtests("constraints/form/test_form_point_mass.jl")
-    addtests("constraints/prod/test_prod_final.jl")
-    addtests("constraints/prod/test_prod_generic.jl")
-    addtests("constraints/meta/test_meta.jl")
+    addtests(testrunner, "constraints/spec/test_factorisation_spec.jl")
+    addtests(testrunner, "constraints/spec/test_form_spec.jl")
+    addtests(testrunner, "constraints/form/test_form_point_mass.jl")
+    addtests(testrunner, "constraints/prod/test_prod_final.jl")
+    addtests(testrunner, "constraints/prod/test_prod_generic.jl")
+    addtests(testrunner, "constraints/meta/test_meta.jl")
 
-    addtests("test_distributions.jl")
-    addtests("distributions/test_common.jl")
-    addtests("distributions/test_bernoulli.jl")
-    addtests("distributions/test_beta.jl")
-    addtests("distributions/test_categorical.jl")
-    addtests("distributions/test_contingency.jl")
-    addtests("distributions/test_exp_linear_quadratic.jl")
-    addtests("distributions/test_dirichlet_matrix.jl")
-    addtests("distributions/test_dirichlet.jl")
-    addtests("distributions/test_gamma.jl")
-    addtests("distributions/test_mv_normal_mean_covariance.jl")
-    addtests("distributions/test_mv_normal_mean_precision.jl")
-    addtests("distributions/test_mv_normal_weighted_mean_precision.jl")
-    addtests("distributions/test_normal_mean_variance.jl")
-    addtests("distributions/test_normal_mean_precision.jl")
-    addtests("distributions/test_normal_weighted_mean_precision.jl")
-    addtests("distributions/test_normal.jl")
-    addtests("distributions/test_pointmass.jl")
-    addtests("distributions/test_wishart.jl")
-    addtests("distributions/test_wishart_inverse.jl")
-    addtests("distributions/test_sample_list.jl")
+    addtests(testrunner, "test_distributions.jl")
+    addtests(testrunner, "distributions/test_common.jl")
+    addtests(testrunner, "distributions/test_bernoulli.jl")
+    addtests(testrunner, "distributions/test_beta.jl")
+    addtests(testrunner, "distributions/test_categorical.jl")
+    addtests(testrunner, "distributions/test_contingency.jl")
+    addtests(testrunner, "distributions/test_exp_linear_quadratic.jl")
+    addtests(testrunner, "distributions/test_dirichlet_matrix.jl")
+    addtests(testrunner, "distributions/test_dirichlet.jl")
+    addtests(testrunner, "distributions/test_gamma.jl")
+    addtests(testrunner, "distributions/test_mv_normal_mean_covariance.jl")
+    addtests(testrunner, "distributions/test_mv_normal_mean_precision.jl")
+    addtests(testrunner, "distributions/test_mv_normal_weighted_mean_precision.jl")
+    addtests(testrunner, "distributions/test_normal_mean_variance.jl")
+    addtests(testrunner, "distributions/test_normal_mean_precision.jl")
+    addtests(testrunner, "distributions/test_normal_weighted_mean_precision.jl")
+    addtests(testrunner, "distributions/test_normal.jl")
+    addtests(testrunner, "distributions/test_pointmass.jl")
+    addtests(testrunner, "distributions/test_wishart.jl")
+    addtests(testrunner, "distributions/test_wishart_inverse.jl")
+    addtests(testrunner, "distributions/test_sample_list.jl")
 
-    addtests("test_message.jl")
+    addtests(testrunner, "test_message.jl")
 
-    addtests("test_variable.jl")
-    addtests("variables/test_constant.jl")
-    addtests("variables/test_data.jl")
-    addtests("variables/test_random.jl")
+    addtests(testrunner, "test_variable.jl")
+    addtests(testrunner, "variables/test_constant.jl")
+    addtests(testrunner, "variables/test_data.jl")
+    addtests(testrunner, "variables/test_random.jl")
 
-    addtests("test_node.jl")
-    addtests("nodes/flow/test_flow.jl")
-    addtests("nodes/test_addition.jl")
-    addtests("nodes/test_bifm.jl")
-    addtests("nodes/test_bifm_helper.jl")
-    addtests("nodes/test_subtraction.jl")
-    addtests("nodes/test_probit.jl")
-    addtests("nodes/test_autoregressive.jl")
-    addtests("nodes/test_normal_mean_precision.jl")
-    addtests("nodes/test_normal_mean_variance.jl")
-    addtests("nodes/test_mv_normal_mean_precision.jl")
-    addtests("nodes/test_mv_normal_mean_covariance.jl")
-    addtests("nodes/test_poisson.jl")
-    addtests("nodes/test_wishart_inverse.jl")
-    addtests("nodes/test_or.jl")
-    addtests("nodes/test_not.jl")
-    addtests("nodes/test_and.jl")
-    addtests("nodes/test_implication.jl")
+    addtests(testrunner, "test_node.jl")
+    addtests(testrunner, "nodes/flow/test_flow.jl")
+    addtests(testrunner, "nodes/test_addition.jl")
+    addtests(testrunner, "nodes/test_bifm.jl")
+    addtests(testrunner, "nodes/test_bifm_helper.jl")
+    addtests(testrunner, "nodes/test_subtraction.jl")
+    addtests(testrunner, "nodes/test_probit.jl")
+    addtests(testrunner, "nodes/test_autoregressive.jl")
+    addtests(testrunner, "nodes/test_normal_mean_precision.jl")
+    addtests(testrunner, "nodes/test_normal_mean_variance.jl")
+    addtests(testrunner, "nodes/test_mv_normal_mean_precision.jl")
+    addtests(testrunner, "nodes/test_mv_normal_mean_covariance.jl")
+    addtests(testrunner, "nodes/test_poisson.jl")
+    addtests(testrunner, "nodes/test_wishart_inverse.jl")
+    addtests(testrunner, "nodes/test_or.jl")
+    addtests(testrunner, "nodes/test_not.jl")
+    addtests(testrunner, "nodes/test_and.jl")
+    addtests(testrunner, "nodes/test_implication.jl")
 
-    addtests("rules/uniform/test_out.jl")
+    addtests(testrunner, "rules/uniform/test_out.jl")
 
-    addtests("rules/flow/test_marginals.jl")
-    addtests("rules/flow/test_in.jl")
-    addtests("rules/flow/test_out.jl")
+    addtests(testrunner, "rules/flow/test_marginals.jl")
+    addtests(testrunner, "rules/flow/test_in.jl")
+    addtests(testrunner, "rules/flow/test_out.jl")
 
-    addtests("rules/addition/test_marginals.jl")
-    addtests("rules/addition/test_in1.jl")
-    addtests("rules/addition/test_in2.jl")
-    addtests("rules/addition/test_out.jl")
+    addtests(testrunner, "rules/addition/test_marginals.jl")
+    addtests(testrunner, "rules/addition/test_in1.jl")
+    addtests(testrunner, "rules/addition/test_in2.jl")
+    addtests(testrunner, "rules/addition/test_out.jl")
 
-    addtests("rules/bifm/test_marginals.jl")
-    addtests("rules/bifm/test_in.jl")
-    addtests("rules/bifm/test_out.jl")
-    addtests("rules/bifm/test_zprev.jl")
-    addtests("rules/bifm/test_znext.jl")
+    addtests(testrunner, "rules/bifm/test_marginals.jl")
+    addtests(testrunner, "rules/bifm/test_in.jl")
+    addtests(testrunner, "rules/bifm/test_out.jl")
+    addtests(testrunner, "rules/bifm/test_zprev.jl")
+    addtests(testrunner, "rules/bifm/test_znext.jl")
 
-    addtests("rules/bifm_helper/test_in.jl")
-    addtests("rules/bifm_helper/test_out.jl")
+    addtests(testrunner, "rules/bifm_helper/test_in.jl")
+    addtests(testrunner, "rules/bifm_helper/test_out.jl")
 
-    addtests("rules/normal_mixture/test_out.jl")
+    addtests(testrunner, "rules/normal_mixture/test_out.jl")
 
-    addtests("rules/subtraction/test_marginals.jl")
-    addtests("rules/subtraction/test_in1.jl")
-    addtests("rules/subtraction/test_in2.jl")
-    addtests("rules/subtraction/test_out.jl")
+    addtests(testrunner, "rules/subtraction/test_marginals.jl")
+    addtests(testrunner, "rules/subtraction/test_in1.jl")
+    addtests(testrunner, "rules/subtraction/test_in2.jl")
+    addtests(testrunner, "rules/subtraction/test_out.jl")
 
-    addtests("rules/bernoulli/test_out.jl")
-    addtests("rules/bernoulli/test_p.jl")
-    addtests("rules/bernoulli/test_marginals.jl")
+    addtests(testrunner, "rules/bernoulli/test_out.jl")
+    addtests(testrunner, "rules/bernoulli/test_p.jl")
+    addtests(testrunner, "rules/bernoulli/test_marginals.jl")
 
-    addtests("rules/beta/test_out.jl")
-    addtests("rules/beta/test_marginals.jl")
+    addtests(testrunner, "rules/beta/test_out.jl")
+    addtests(testrunner, "rules/beta/test_marginals.jl")
 
-    addtests("rules/dot_product/test_out.jl")
-    addtests("rules/dot_product/test_in1.jl")
-    addtests("rules/dot_product/test_in2.jl")
-    addtests("rules/dot_product/test_marginals.jl")
+    addtests(testrunner, "rules/dot_product/test_out.jl")
+    addtests(testrunner, "rules/dot_product/test_in1.jl")
+    addtests(testrunner, "rules/dot_product/test_in2.jl")
+    addtests(testrunner, "rules/dot_product/test_marginals.jl")
 
-    addtests("rules/normal_mean_variance/test_out.jl")
-    addtests("rules/normal_mean_variance/test_mean.jl")
-    addtests("rules/normal_mean_variance/test_var.jl")
+    addtests(testrunner, "rules/normal_mean_variance/test_out.jl")
+    addtests(testrunner, "rules/normal_mean_variance/test_mean.jl")
+    addtests(testrunner, "rules/normal_mean_variance/test_var.jl")
 
-    addtests("rules/normal_mean_precision/test_out.jl")
-    addtests("rules/normal_mean_precision/test_mean.jl")
-    addtests("rules/normal_mean_precision/test_precision.jl")
+    addtests(testrunner, "rules/normal_mean_precision/test_out.jl")
+    addtests(testrunner, "rules/normal_mean_precision/test_mean.jl")
+    addtests(testrunner, "rules/normal_mean_precision/test_precision.jl")
 
-    addtests("rules/mv_normal_mean_covariance/test_out.jl")
-    addtests("rules/mv_normal_mean_covariance/test_mean.jl")
-    addtests("rules/mv_normal_mean_covariance/test_covariance.jl")
+    addtests(testrunner, "rules/mv_normal_mean_covariance/test_out.jl")
+    addtests(testrunner, "rules/mv_normal_mean_covariance/test_mean.jl")
+    addtests(testrunner, "rules/mv_normal_mean_covariance/test_covariance.jl")
 
-    addtests("rules/mv_normal_mean_precision/test_out.jl")
-    addtests("rules/mv_normal_mean_precision/test_mean.jl")
-    addtests("rules/mv_normal_mean_precision/test_precision.jl")
+    addtests(testrunner, "rules/mv_normal_mean_precision/test_out.jl")
+    addtests(testrunner, "rules/mv_normal_mean_precision/test_mean.jl")
+    addtests(testrunner, "rules/mv_normal_mean_precision/test_precision.jl")
 
-    addtests("rules/probit/test_out.jl")
-    addtests("rules/probit/test_in.jl")
+    addtests(testrunner, "rules/probit/test_out.jl")
+    addtests(testrunner, "rules/probit/test_in.jl")
 
-    addtests("rules/wishart/test_marginals.jl")
-    addtests("rules/wishart/test_out.jl")
+    addtests(testrunner, "rules/wishart/test_marginals.jl")
+    addtests(testrunner, "rules/wishart/test_out.jl")
 
-    addtests("rules/wishart_inverse/test_marginals.jl")
-    addtests("rules/wishart_inverse/test_out.jl")
+    addtests(testrunner, "rules/wishart_inverse/test_marginals.jl")
+    addtests(testrunner, "rules/wishart_inverse/test_out.jl")
 
-    addtests("rules/poisson/test_l.jl")
-    addtests("rules/poisson/test_marginals.jl")
-    addtests("rules/poisson/test_out.jl")
+    addtests(testrunner, "rules/poisson/test_l.jl")
+    addtests(testrunner, "rules/poisson/test_marginals.jl")
+    addtests(testrunner, "rules/poisson/test_out.jl")
 
-    addtests("rules/or/test_out.jl")
-    addtests("rules/or/test_in1.jl")
-    addtests("rules/or/test_in2.jl")
-    addtests("rules/or/test_marginals.jl")
+    addtests(testrunner, "rules/or/test_out.jl")
+    addtests(testrunner, "rules/or/test_in1.jl")
+    addtests(testrunner, "rules/or/test_in2.jl")
+    addtests(testrunner, "rules/or/test_marginals.jl")
 
-    addtests("rules/not/test_out.jl")
-    addtests("rules/not/test_in.jl")
-    addtests("rules/not/test_marginals.jl")
+    addtests(testrunner, "rules/not/test_out.jl")
+    addtests(testrunner, "rules/not/test_in.jl")
+    addtests(testrunner, "rules/not/test_marginals.jl")
 
-    addtests("rules/and/test_out.jl")
-    addtests("rules/and/test_in1.jl")
-    addtests("rules/and/test_in2.jl")
-    addtests("rules/and/test_marginals.jl")
+    addtests(testrunner, "rules/and/test_out.jl")
+    addtests(testrunner, "rules/and/test_in1.jl")
+    addtests(testrunner, "rules/and/test_in2.jl")
+    addtests(testrunner, "rules/and/test_marginals.jl")
 
-    addtests("rules/implication/test_out.jl")
-    addtests("rules/implication/test_in1.jl")
-    addtests("rules/implication/test_in2.jl")
-    addtests("rules/implication/test_marginals.jl")
+    addtests(testrunner, "rules/implication/test_out.jl")
+    addtests(testrunner, "rules/implication/test_in1.jl")
+    addtests(testrunner, "rules/implication/test_in2.jl")
+    addtests(testrunner, "rules/implication/test_marginals.jl")
 
-    addtests("models/test_lgssm.jl")
-    addtests("models/test_hgf.jl")
-    addtests("models/test_ar.jl")
-    addtests("models/test_gmm.jl")
-    addtests("models/test_hmm.jl")
-    addtests("models/test_linreg.jl")
-    addtests("models/test_mv_iid.jl")
-    addtests("models/test_probit.jl")
-    addtests("models/test_aliases.jl")
-end
+    addtests(testrunner, "models/test_lgssm.jl")
+    addtests(testrunner, "models/test_hgf.jl")
+    addtests(testrunner, "models/test_ar.jl")
+    addtests(testrunner, "models/test_gmm.jl")
+    addtests(testrunner, "models/test_hmm.jl")
+    addtests(testrunner, "models/test_linreg.jl")
+    addtests(testrunner, "models/test_mv_iid.jl")
+    addtests(testrunner, "models/test_probit.jl")
+    addtests(testrunner, "models/test_aliases.jl")
 
+    run(testrunner)
 end
