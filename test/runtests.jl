@@ -55,12 +55,16 @@ mutable struct TestRunner
     found_tests
     test_tasks    
     workerpool
+    jobschannel
+    exschannel
     iochannel
 
     function TestRunner(ARGS)
         enabled_tests = lowercase.(ARGS)
         found_tests   = Dict(map(test -> test => false, enabled_tests)) 
         test_tasks    = []
+        jobschannel   = RemoteChannel(() -> Channel(Inf), myid()) # Channel for jobs
+        exschannel    = RemoteChannel(() -> Channel(Inf), myid()) # Channel for exceptions
         iochannel     = RemoteChannel(() -> Channel(0), myid())
         @async begin
             while isopen(iochannel)
@@ -68,41 +72,70 @@ mutable struct TestRunner
                 flush_workerio(ident)
             end
         end
-        return new(enabled_tests, found_tests, test_tasks, default_worker_pool(), iochannel)
+        return new(enabled_tests, found_tests, test_tasks, 2:nprocs(), jobschannel, exschannel, iochannel)
     end
 end
 
-function Base.wait(testrunner::TestRunner)
-    exceptions = []
+function Base.run(testrunner::TestRunner)
+
+    println("") # New line for 'better' alignment of the `testrunner` results
+
+    foreach(testrunner.workerpool) do worker
+        # For each worker we create a `nothing` token in the `jobschannel`
+        # This token indicates that there are no other jobs left
+        put!(testrunner.jobschannel, nothing)
+        # We create a remote call for another Julia process to execute our test with `include(filename)`
+        task = remotecall(worker, testrunner.jobschannel, testrunner.exschannel, testrunner.iochannel) do jobschannel, exschannel, iochannel
+            finish = false
+            while !finish
+                # Each worker takes jobs sequentially from the shared jobs pool 
+                job_filename = take!(jobschannel)
+                if isnothing(job_filename) # At the end there are should be only `emptyjobs`, in which case the worker finishes its tasks
+                    finish = true
+                else # Otherwise we assume that the `job` contains the valid `filename` and execute test
+                    try # Here we can easily get the `LoadError` if some tests are failing
+                        include(job_filename)
+                    catch iexception
+                        put!(exschannel, iexception)
+                    end
+                    # After the work is done we put the worker's `id` into `iochannel` (this triggers test info printing)
+                    put!(iochannel, myid())
+                end
+            end
+            return nothing
+        end
+        # We save the created task for later syncronization
+        push!(testrunner.test_tasks, task)
+    end 
 
     # For each remotelly called task we `fetch` its result or save an exception
-    foreach(testrunner.test_tasks) do task
-        try
-            fetch(task)
-        catch exception
-            push!(exceptions, exception)
-        end
-    end
+    foreach(fetch, testrunner.test_tasks)
 
     # If exception are not empty we notify the user and force-fail
-    if !isempty(exceptions)
-        println("Tests have failed with the following exceptions: ")
-        foreach(exceptions) do exception
-            println("="^80, "\n", exception)
+    if isready(testrunner.exschannel)
+        println(stderr, "Tests have failed with the following exceptions: ")
+        while isready(testrunner.exschannel)
+            exception = take!(testrunner.exschannel)
+            showerror(stderr, exception)
+            println(stderr, "\n", "="^80)
         end
-        error("Tests have failed")
+        exit(-1)
     end
+
+    close(testrunner.iochannel)
+    close(testrunner.exschannel)
+    close(testrunner.jobschannel)
 
     # At the very last stage we check that there are no "missing" tests, 
     # aka tests that have been specified in the `enabled_tests`, 
     # but for which the corresponding `filename` does not exist in the `test/` folder
     notfound_tests = filter(v -> v[2] === false, testrunner.found_tests)
     if !isempty(notfound_tests)
-        println("There are missing tests, double check correct spelling/path for the following entries:")
+        println(stderr, "There are missing tests, double check correct spelling/path for the following entries:")
         foreach(keys(notfound_tests)) do key
-            println(" - ", key)
+            println(stderr, " - ", key)
         end
-        error("Missing tests")
+        exit(-1)
     end
 end
 
@@ -120,17 +153,8 @@ function addtests(testrunner::TestRunner, filename)
         if !isempty(testrunner.enabled_tests)
             setindex!(testrunner.found_tests, true, key) # Mark that test has been found
         end
-        # We create a remote call for another Julia process to execute our test with `include(filename)`
-        task = remotecall(testrunner.workerpool, filename, testrunner.iochannel) do filename, iochannel
-            lock(workerlocal_lock) do
-                include(filename)
-                # After the work is done we put the worker's `id` into `iochannel` (this triggers test info printing)
-                put!(iochannel, myid())
-            end
-            return nothing
-        end
-        # We save the created task for later syncronization
-        push!(testrunner.test_tasks, task)
+        # At this stage we simply put the `filename` into the `jobschannel` that will be processed later (see the `execute` function)
+        put!(testrunner.jobschannel, filename)
     end
 end
 
@@ -168,6 +192,7 @@ else
 end
 
 @testset ExtendedTestSet "ReactiveMP" begin
+
     @testset "Testset helpers" begin
         @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) ==
               "distributions/test_normal_mean_variance.jl"
@@ -176,8 +201,6 @@ end
         @test key_to_filename(filename_to_key("test_message.jl")) == "test_message.jl"
         @test filename_to_key(key_to_filename("message")) == "message"
     end
-
-    println("") # New line for the `testrunner`
 
     addtests(testrunner, "algebra/test_correction.jl")
     addtests(testrunner, "algebra/test_helpers.jl")
@@ -340,5 +363,6 @@ end
     addtests(testrunner, "models/test_mv_iid.jl")
     addtests(testrunner, "models/test_probit.jl")
 
-    wait(testrunner)
+    run(testrunner)
+
 end
