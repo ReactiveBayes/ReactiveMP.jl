@@ -5,8 +5,8 @@ ENV["GKSwstype"] = "100"
 
 using Distributed
 
-const worker_io_lock   = ReentrantLock()
-const worker_ios       = Dict()
+const worker_io_lock = ReentrantLock()
+const worker_ios     = Dict()
 
 worker_io(ident) = get!(() -> IOBuffer(), worker_ios, string(ident))
 
@@ -53,7 +53,7 @@ import Base: wait
 mutable struct TestRunner
     enabled_tests
     found_tests
-    test_tasks    
+    test_tasks
     workerpool
     jobschannel
     exschannel
@@ -61,11 +61,11 @@ mutable struct TestRunner
 
     function TestRunner(ARGS)
         enabled_tests = lowercase.(ARGS)
-        found_tests   = Dict(map(test -> test => false, enabled_tests)) 
-        test_tasks    = []
-        jobschannel   = RemoteChannel(() -> Channel(Inf), myid()) # Channel for jobs
-        exschannel    = RemoteChannel(() -> Channel(Inf), myid()) # Channel for exceptions
-        iochannel     = RemoteChannel(() -> Channel(0), myid())
+        found_tests = Dict(map(test -> test => false, enabled_tests))
+        test_tasks = []
+        jobschannel = RemoteChannel(() -> Channel(Inf), myid()) # Channel for jobs
+        exschannel = RemoteChannel(() -> Channel(Inf), myid()) # Channel for exceptions
+        iochannel = RemoteChannel(() -> Channel(0), myid())
         @async begin
             while isopen(iochannel)
                 ident = take!(iochannel)
@@ -77,7 +77,6 @@ mutable struct TestRunner
 end
 
 function Base.run(testrunner::TestRunner)
-
     println("") # New line for 'better' alignment of the `testrunner` results
 
     foreach(testrunner.workerpool) do worker
@@ -85,7 +84,12 @@ function Base.run(testrunner::TestRunner)
         # This token indicates that there are no other jobs left
         put!(testrunner.jobschannel, nothing)
         # We create a remote call for another Julia process to execute our test with `include(filename)`
-        task = remotecall(worker, testrunner.jobschannel, testrunner.exschannel, testrunner.iochannel) do jobschannel, exschannel, iochannel
+        task = remotecall(
+            worker,
+            testrunner.jobschannel,
+            testrunner.exschannel,
+            testrunner.iochannel
+        ) do jobschannel, exschannel, iochannel
             finish = false
             while !finish
                 # Each worker takes jobs sequentially from the shared jobs pool 
@@ -106,7 +110,7 @@ function Base.run(testrunner::TestRunner)
         end
         # We save the created task for later syncronization
         push!(testrunner.test_tasks, task)
-    end 
+    end
 
     # For each remotelly called task we `fetch` its result or save an exception
     foreach(fetch, testrunner.test_tasks)
@@ -186,13 +190,12 @@ if isempty(testrunner.enabled_tests)
     # doctest(ReactiveMP)
 else
     println("Running specific tests:")
-    foreach(testrunner.enabled_tests) do test 
+    foreach(testrunner.enabled_tests) do test
         println(" - ", test)
     end
 end
 
 @testset ExtendedTestSet "ReactiveMP" begin
-
     @testset "Testset helpers" begin
         @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) ==
               "distributions/test_normal_mean_variance.jl"
@@ -364,5 +367,4 @@ end
     addtests(testrunner, "models/test_probit.jl")
 
     run(testrunner)
-
 end
