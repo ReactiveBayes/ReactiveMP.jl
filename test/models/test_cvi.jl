@@ -2,7 +2,7 @@ module ReactiveMPModelsLinearRegressionTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
+using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs, Flux
 
 # Please use StableRNGs for random number generators
 
@@ -43,13 +43,13 @@ end
 ## -------------------------------------------- ##
 ## Inference definition
 ## -------------------------------------------- ##
-function inference(transformed)
+function inference_cvi(transformed, rng)
     T = length(transformed)
 
     return inference(
-        model = Model(non_linear_dynamics, T, 1000, 2000, rng, 0.1),
+        model = Model(non_linear_dynamics, T, rng, 1000, 2000, 0.1),
         data = (y = transformed,),
-        iterations = 100,
+        iterations = 10,
         free_energy = false,
         returnvars = (z = KeepLast(),),
         constraints = constraints,
@@ -62,7 +62,7 @@ function inference(transformed)
     )
 end
 
-@testset "Linear regression" begin
+@testset "Non linear dynamics" begin
     @testset "Use case #1" begin
         ## -------------------------------------------- ##
         ## Data creation
@@ -81,10 +81,11 @@ end
         transformed = (data .- sensor_location) .^ 2 + rand(rng, NormalMeanVariance(0.0, sensor_var), T)
         ## -------------------------------------------- ##
         ## Inference execution
-        inference(transformed)
+        res = inference_cvi(transformed, rng)
         ## -------------------------------------------- ##
         ## Test inference results should be there
         ## -------------------------------------------- ##
+        @test length(res.posteriors[:z]) === T
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
@@ -93,7 +94,7 @@ end
         ## -------------------------------------------- ##
         ## Create output benchmarks (skip if CI)
         if get(ENV, "CI", nothing) != "true"
-            benchmark = @benchmark inference($transformed)#
+            benchmark = @benchmark inference_cvi($transformed, $rng)#
             open(benchmark_output, "w") do io
                 show(io, MIME("text/plain"), benchmark)
                 versioninfo(io)
