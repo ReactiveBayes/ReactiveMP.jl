@@ -5,11 +5,10 @@ ENV["GKSwstype"] = "100"
 
 using Distributed
 
-const WORKER_END_TOKEN = "[¬]" # Supposed to be somewhat unique
 const worker_io_lock   = ReentrantLock()
 const worker_ios       = Dict()
 
-worker_io(ident) = get!(() -> IOBuffer(), worker_ios, ident)
+worker_io(ident) = get!(() -> IOBuffer(), worker_ios, string(ident))
 
 # Dynamically overwrite default worker's `print` function for better control over stdout
 Distributed.redirect_worker_output(ident, stream) = begin
@@ -17,16 +16,21 @@ Distributed.redirect_worker_output(ident, stream) = begin
         line = readline(stream)
         lock(worker_io_lock) do
             io = worker_io(ident)
-            if startswith(line, WORKER_END_TOKEN)
-                println(stdout, String(take!(io)))
-                flush(stdout)
-            else
-                write(io, line, "\n")
-            end
+            write(io, line, "\n")
         end
     end
     @static if VERSION >= v"1.7"
         Base.errormonitor(task)
+    end
+end
+
+# This function prints `worker's` standard output into the global standard output
+function flush_workerio(ident)
+    lock(worker_io_lock) do
+        wio = worker_io(ident)
+        str = String(take!(wio))
+        println(stdout, str)
+        flush(stdout)
     end
 end
 
@@ -47,54 +51,82 @@ addprocs(Sys.CPU_THREADS)
 
 import Base: wait
 
-enabled_tests = lowercase.(ARGS)
-
 mutable struct TestRunner
     enabled_tests
-    test_tasks
+    found_tests
+    test_tasks    
     workerpool
+    iochannel
 
     function TestRunner(ARGS)
         enabled_tests = lowercase.(ARGS)
-        test_tasks = []
-        return new(enabled_tests, test_tasks, WorkerPool(collect(2:nprocs())))
+        found_tests   = Dict(map(test -> test => false, enabled_tests)) 
+        test_tasks    = []
+        iochannel     = RemoteChannel(() -> Channel(0), myid())
+        @async begin
+            while isopen(iochannel)
+                ident = take!(iochannel)
+                flush_workerio(ident)
+            end
+        end
+        return new(enabled_tests, found_tests, test_tasks, default_worker_pool(), iochannel)
     end
 end
 
 function Base.wait(testrunner::TestRunner)
     exceptions = []
 
+    # For each remotelly called task we `fetch` its result or save an exception
     foreach(testrunner.test_tasks) do task
         try
-            (filename,) = fetch(task)
+            fetch(task)
         catch exception
             push!(exceptions, exception)
         end
     end
 
+    # If exception are not empty we notify the user and force-fail
     if !isempty(exceptions)
-        println("Tests have failed: ")
+        println("Tests have failed with the following exceptions: ")
         foreach(exceptions) do exception
             println("="^80, "\n", exception)
         end
         error("Tests have failed")
     end
+
+    # At the very last stage we check that there are no "missing" tests, 
+    # aka tests that have been specified in the `enabled_tests`, 
+    # but for which the corresponding `filename` does not exist in the `test/` folder
+    notfound_tests = filter(v -> v[2] === false, testrunner.found_tests)
+    if !isempty(notfound_tests)
+        println("There are missing tests, double check correct spelling/path for the following entries:")
+        foreach(keys(notfound_tests)) do key
+            println(" - ", key)
+        end
+        error("Missing tests")
+    end
 end
 
-testrunner = TestRunner(ARGS)
+const testrunner = TestRunner(lowercase.(ARGS))
 
 println("`TestRunner` has been created. The number of available procs is $(nprocs()).")
 
-# @everywhere tasklock = ReentrantLock()
-
 function addtests(testrunner::TestRunner, filename)
+    # First we transform filename into `key` and check if we have this entry in the `enabled_tests` (if `enabled_tests` is not empty)
     key = filename_to_key(filename)
-    if isempty(enabled_tests) || key in enabled_tests
-        task = remotecall(testrunner.workerpool, filename) do filename
-            include(filename)
-            println(WORKER_END_TOKEN)
-            return (filename,)
+    if isempty(testrunner.enabled_tests) || key in testrunner.enabled_tests
+        # If `enabled_tests` is not empty we mark the corresponding key with the `true` value to indicate that we found the corresponding `file` in the `/test` folder
+        if !isempty(testrunner.enabled_tests)
+            setindex!(testrunner.found_tests, true, key) # Mark that test has been found
         end
+        # We create a remote call for another Julia process to execute our test with `include(filename)`
+        task = remotecall(testrunner.workerpool, filename, testrunner.iochannel) do filename, iochannel
+            include(filename)
+            # After the work is done we put the worker's `id` into `iochannel` (this triggers test info printing)
+            put!(iochannel, myid())
+            return nothing
+        end
+        # We save the created task for later syncronization
         push!(testrunner.test_tasks, task)
     end
 end
@@ -118,13 +150,16 @@ function filename_to_key(filename)
     end
 end
 
-if isempty(enabled_tests)
+if isempty(testrunner.enabled_tests)
     println("Running all tests...")
     # `project_toml_formatting` is broken on CI, revise at some point
     Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
     # doctest(ReactiveMP)
 else
-    println("Running specific tests: $enabled_tests")
+    println("Running specific tests:")
+    foreach(testrunner.enabled_tests) do test 
+        println(" - ", test)
+    end
 end
 
 @testset ExtendedTestSet "ReactiveMP" begin
