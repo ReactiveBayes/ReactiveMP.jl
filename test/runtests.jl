@@ -46,8 +46,7 @@ end
 addprocs(Sys.CPU_THREADS)
 
 @everywhere using Test, Documenter, ReactiveMP, Distributions
-@everywhere using TestSetExtensions, Suppressor
-@everywhere using Aqua
+@everywhere using TestSetExtensions
 
 import Base: wait
 
@@ -111,6 +110,8 @@ const testrunner = TestRunner(lowercase.(ARGS))
 
 println("`TestRunner` has been created. The number of available procs is $(nprocs()).")
 
+@everywhere workerlocal_lock = ReentrantLock()
+
 function addtests(testrunner::TestRunner, filename)
     # First we transform filename into `key` and check if we have this entry in the `enabled_tests` (if `enabled_tests` is not empty)
     key = filename_to_key(filename)
@@ -121,9 +122,11 @@ function addtests(testrunner::TestRunner, filename)
         end
         # We create a remote call for another Julia process to execute our test with `include(filename)`
         task = remotecall(testrunner.workerpool, filename, testrunner.iochannel) do filename, iochannel
-            include(filename)
-            # After the work is done we put the worker's `id` into `iochannel` (this triggers test info printing)
-            put!(iochannel, myid())
+            lock(workerlocal_lock) do
+                include(filename)
+                # After the work is done we put the worker's `id` into `iochannel` (this triggers test info printing)
+                put!(iochannel, myid())
+            end
             return nothing
         end
         # We save the created task for later syncronization
@@ -149,6 +152,8 @@ function filename_to_key(filename)
         return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
     end
 end
+
+using Aqua
 
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
