@@ -81,7 +81,7 @@ end
         transformed = (data .- sensor_location) .^ 2 + rand(rng, NormalMeanVariance(0.0, sensor_var), T)
         ## -------------------------------------------- ##
         ## Inference execution
-        ares, bres, fres = inference(transformed)
+        inference(transformed)
         ## -------------------------------------------- ##
         ## Test inference results should be there
         ## -------------------------------------------- ##
