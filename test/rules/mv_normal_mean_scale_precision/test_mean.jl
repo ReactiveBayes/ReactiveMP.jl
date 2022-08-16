@@ -8,7 +8,7 @@ import ReactiveMP: @test_rules
 
 @testset "rules:MvNormalMeanScalePrecision:mean" begin
     @testset "Variational: (q_out::MultivariateNormalDistributionsFamily, q_γ::Gamma)" begin
-        @test_rules [with_float_conversions = false] MvNormalMeanScalePrecision(:μ, Marginalisation) [
+        @test_rules [with_float_conversions = true] MvNormalMeanScalePrecision(:μ, Marginalisation) [
             (
                 input = (
                     q_out = MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]),
