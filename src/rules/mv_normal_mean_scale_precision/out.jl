@@ -5,5 +5,5 @@
 
 @rule MvNormalMeanScalePrecision(:out, Marginalisation) (m_μ::MultivariateNormalDistributionsFamily, q_γ::Any) = begin
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
-    return MvNormalMeanCovariance(m_μ_mean, m_μ_cov + cholinv(mean(q_γ) * diageye(ndims(m_μ))))
+    return MvNormalMeanCovariance(m_μ_mean, m_μ_cov + inv(mean(q_γ)) * diageye(ndims(m_μ)))
 end
