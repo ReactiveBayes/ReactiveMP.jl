@@ -1,23 +1,24 @@
 module GammaInverseTest
 
 using Test
-#using Distributions
 using ReactiveMP
+using Distributions # params
 using Random
 
 @testset "GammaInverse" begin
     @testset "vague" begin
         d = vague(GammaInverse)
+        print("OOF", d)
         @test typeof(d) <: GammaInverse
         @test mean(d) === huge
         @test params(d) === (2.0, huge)
     end
 
-    # TODO
+    # (α, θ) = (α_L + α_R + 1, θ_L + θ_R)
     @testset "prod" begin
-        @test prod(ProdAnalytical(), GammaInverse(3.0, 2.0), GammaInverse(2.0, 1.0)) ≈ GammaInverse(4.0, 2.0)
-        @test prod(ProdAnalytical(), GammaInverse(7.0, 1.0), GammaInverse(0.1, 4.5)) ≈ GammaInverse(6.1, 4.5)
-        @test prod(ProdAnalytical(), GammaInverse(1.0, 3.0), GammaInverse(0.2, 0.4)) ≈ GammaInverse(0.19999999999999996, 2.4)
+        @test prod(ProdAnalytical(), GammaInverse(3.0, 2.0), GammaInverse(2.0, 1.0)) ≈ GammaInverse(6.0, 3.0)
+        @test prod(ProdAnalytical(), GammaInverse(7.0, 1.0), GammaInverse(0.1, 4.5)) ≈ GammaInverse(8.1, 5.5)
+        @test prod(ProdAnalytical(), GammaInverse(1.0, 3.0), GammaInverse(0.2, 0.4)) ≈ GammaInverse(2.2, 3.4)
     end
 
     # log(θ) - digamma(α)
@@ -30,9 +31,13 @@ using Random
 
     # α / θ
     @testset "mean(::typeof(inv))" begin
-        @test mean(inv, GammaInverse(1.0, 3.0)) ≈ 0.3333333333333333
+        println("1: ",mean(inv, GammaInverse(1.0, 3.0)))
+        println("2: ",mean(inv, GammaInverse(0.1, 0.3)))
+        println("3: ",mean(inv, GammaInverse(4.5, 0.3)))
+        println("4: ",mean(inv, GammaInverse(42.0, 42.0)))
+        @test mean(inv, GammaInverse(1.0, 3.0)) ≈ 0.33333333333333333
         @test mean(inv, GammaInverse(0.1, 0.3)) ≈ 0.33333333333333337
-        @test mean(inv, GammaInverse(4.5, 0.3)) ≈ -15.0000000000000000
+        @test mean(inv, GammaInverse(4.5, 0.3)) ≈ 15.0000000000000000
         @test mean(inv, GammaInverse(42.0, 42.0)) ≈ 1.0000000000000000
     end
 end
