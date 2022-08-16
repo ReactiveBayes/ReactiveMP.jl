@@ -2,7 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
-export NormalNaturalParametrs, MvNormalNaturalParametrs, naturalParams, logPdf
+export NormalNaturalParameters, MvNormalNaturalParameters, naturalParams, logPdf
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -252,21 +252,21 @@ function Random.rand!(
     container
 end
 
-struct NormalNaturalParametrs <: NaturalParametrs
-    weighted_mean
-    precision
+struct NormalNaturalParameters{T <: Real} <: NaturalParameters
+    weighted_mean :: T
+    precision :: T
 end
 
-struct MvNormalNaturalParametrs <: NaturalParametrs
+struct MvNormalNaturalParameters <: NaturalParameters
     weighted_mean
     precesion_matrix
 end
 
-function NormalNaturalParametrs(v)
-    return NormalNaturalParametrs(v[1], v[2])
+function NormalNaturalParameters(v)
+    return NormalNaturalParameters(v[1], v[2])
 end
 
-function MvNormalNaturalParametrs(v)
+function MvNormalNaturalParameters(v)
     k = length(v)
     d = convert(Int, (-1 + sqrt(4 * k + 1)) / 2)
 
@@ -274,81 +274,81 @@ function MvNormalNaturalParametrs(v)
         error("Vector dimensionality constraints are not fullfiled")
     end
 
-    return MvNormalNaturalParametrs(v[1:d], reshape(v[d+1:end], d, d))
+    return MvNormalNaturalParameters(v[1:d], reshape(v[d+1:end], d, d))
 end
 
-function Base.vec(p::NormalNaturalParametrs)
+function Base.vec(p::NormalNaturalParameters)
     return [p.weighted_mean, p.precision]
 end
 
-function Base.vec(p::MvNormalNaturalParametrs)
+function Base.vec(p::MvNormalNaturalParameters)
     return [p.weighted_mean; vcat(p.precesion_matrix...)]
 end
 
 # Standard parameters to natural parameters
 function naturalParams(dist::UnivariateNormalDistributionsFamily)
     weighted_mean, precision = weightedmean_precision(dist)
-    return NormalNaturalParametrs(weighted_mean, -0.5 * precision)
+    return NormalNaturalParameters(weighted_mean, -0.5 * precision)
 end
 
 function naturalParams(dist::MultivariateGaussianDistributionsFamily)
     weighted_mean, precision = weightedmean_precision(dist)
-    MvNormalNaturalParametrs(weighted_mean, -0.5 * precision)
+    MvNormalNaturalParameters(weighted_mean, -0.5 * precision)
 end
 
-function standardDist(η::NormalNaturalParametrs)
+function standardDist(η::NormalNaturalParameters)
     return GaussianWeighteMeanPrecision(η.weighted_mean, -2 * η.precision)
 end
 
-function standardDist(η::MvNormalNaturalParametrs)
+function standardDist(η::MvNormalNaturalParameters)
     d = length(η.weighted_mean)
     XI, W = η.weighted_mean[1:d], reshape(-2 * η.precesion_matrix, d, d)
     W = Matrix(Hermitian(W + tiny * diageye(d))) # Ensure precision is always invertible
     return MvNormalWeightedMeanPrecision(XI, W)
 end
 
-function Base.:+(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
-    return NormalNaturalParametrs(left.weighted_mean + right.weighted_mean, left.precision + right.precision)
+function Base.:+(left::NormalNaturalParameters, right::NormalNaturalParameters)
+    return NormalNaturalParameters(left.weighted_mean + right.weighted_mean, left.precision + right.precision)
 end
 
-function Base.:+(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
-    return MvNormalNaturalParametrs(
+function Base.:+(left::MvNormalNaturalParameters, right::MvNormalNaturalParameters)
+    return MvNormalNaturalParameters(
         left.weighted_mean .+ right.weighted_mean,
         left.precesion_matrix .+ right.precesion_matrix
     )
 end
 
-function Base.:-(left::NormalNaturalParametrs, right::NormalNaturalParametrs)
-    return NormalNaturalParametrs(left.weighted_mean - right.weighted_mean, left.precision - right.precision)
+function Base.:-(left::NormalNaturalParameters, right::NormalNaturalParameters)
+    return NormalNaturalParameters(left.weighted_mean - right.weighted_mean, left.precision - right.precision)
 end
 
-function Base.:-(left::MvNormalNaturalParametrs, right::MvNormalNaturalParametrs)
-    return MvNormalNaturalParametrs(
+function Base.:-(left::MvNormalNaturalParameters, right::MvNormalNaturalParameters)
+    return MvNormalNaturalParameters(
         left.weighted_mean .- right.weighted_mean,
         left.precesion_matrix .- right.precesion_matrix
     )
 end
 
-function logNormalizer(η::NormalNaturalParametrs)
+function logNormalizer(η::NormalNaturalParameters)
     return -(η.weighted_mean^2) / (4 * η.precision) - 0.5 * log(-2 * η.precision)
 end
 
-function logNormalizer(η::MvNormalNaturalParametrs)
+function logNormalizer(η::MvNormalNaturalParameters)
     return -0.25 * η.weighted_mean' * (η.precesion_matrix \ η.weighted_mean) - 0.5 * logdet(-2 * η.precesion_matrix)
 end
 
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
-function logPdf(η::NormalNaturalParametrs, x)
+function logPdf(η::NormalNaturalParameters, x)
     return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.precision - logNormalizer(η)
 end
 
-function logPdf(η::MvNormalNaturalParametrs, x)
+function logPdf(η::MvNormalNaturalParameters, x)
     ϕ(x) = [x; vec(x * transpose(x))]
     return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - logNormalizer(η)
 end
 
-isProper(params::NormalNaturalParametrs) = params.precision < 0
+isProper(params::NormalNaturalParameters) = params.precision < 0
 
-isProper(params::MvNormalNaturalParametrs) = isposdef(params.precesion_matrix)
+isProper(params::MvNormalNaturalParameters) = isposdef(params.precesion_matrix)

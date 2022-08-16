@@ -25,7 +25,7 @@ function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt,
     rng,
-    λ_init::NormalNaturalParametrs,
+    λ_init::NormalNaturalParameters,
     msg_in::UnivariateGaussianDistributionsFamily)
     η = naturalParams(msg_in)
     λ = deepcopy(λ_init)
@@ -39,9 +39,9 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = NormalNaturalParametrs(df_μ1, df_μ2)
+        ∇f = NormalNaturalParameters(df_μ1, df_μ2)
         ∇ = λ - η - ∇f
-        λ_new = NormalNaturalParametrs(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        λ_new = NormalNaturalParameters(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
         if isProper(λ_new)
             λ = λ_new
         end
@@ -55,7 +55,7 @@ function renderCVI(logp_nc::Function,
     opt::Any,
     rng::Any,
     λ_init::T,
-    msg_in::Any) where {T <: NaturalParametrs}
+    msg_in::Any) where {T <: NaturalParameters}
     η = naturalParams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -93,7 +93,7 @@ function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt,
     rng,
-    λ_init::MvNormalNaturalParametrs,
+    λ_init::MvNormalNaturalParameters,
     msg_in::MultivariateGaussianDistributionsFamily)
     η = naturalParams(msg_in)
     λ = deepcopy(λ_init)
@@ -114,11 +114,11 @@ function renderCVI(logp_nc::Function,
 
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = MvNormalNaturalParametrs([df_μ1; vec(df_μ2)])
+        ∇f = MvNormalNaturalParameters([df_μ1; vec(df_μ2)])
 
         ∇ = λ - η - ∇f
 
-        updated = MvNormalNaturalParametrs(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        updated = MvNormalNaturalParameters(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
 
         if isProper(updated)
             λ = updated

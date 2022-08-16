@@ -28,34 +28,34 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     return prod(ProdPreserveType(Bernoulli), left, Bernoulli(first(probvec(right))))
 end
 
-struct BernoulliNaturalParametrs{T} <: NaturalParametrs
+struct BernoulliNaturalParameters{T} <: NaturalParameters
     η::T
 end
 
-get_natural_params(params::BernoulliNaturalParametrs) = params.η
+get_natural_params(params::BernoulliNaturalParameters) = params.η
 
-function Base.:+(left::BernoulliNaturalParametrs, right::BernoulliNaturalParametrs)
-    return BernoulliNaturalParametrs(get_natural_params(left) + get_natural_params(right))
+function Base.:+(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
+    return BernoulliNaturalParameters(get_natural_params(left) + get_natural_params(right))
 end
 
-function Base.:-(left::BernoulliNaturalParametrs, right::BernoulliNaturalParametrs)
-    return BernoulliNaturalParametrs(get_natural_params(left) - get_natural_params(right))
+function Base.:-(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
+    return BernoulliNaturalParameters(get_natural_params(left) - get_natural_params(right))
 end
 
-function logNormalizer(η::BernoulliNaturalParametrs)
+function logNormalizer(η::BernoulliNaturalParameters)
     return log(1 + exp(get_natural_params(η)))
 end
 
-function log_normalizer(::Type{BernoulliNaturalParametrs})
+function log_normalizer(::Type{BernoulliNaturalParameters})
     return (v) -> log(1 + exp(v))
 end
 
-function logPdf(η::BernoulliNaturalParametrs, x)
+function logPdf(η::BernoulliNaturalParameters, x)
     return x * get_natural_params(η) - logNormalizer(η)
 end
 
-function standardDist(η::BernoulliNaturalParametrs)
+function standardDist(η::BernoulliNaturalParameters)
     return Bernoulli(get_natural_params(η) / (1 + exp(get_natural_params(η))))
 end
 
-naturalParams(dist::Bernoulli) = BernoulliNaturalParametrs(log(dist.params[:p] / (1 - dist.params[:p])))
+naturalParams(dist::Bernoulli) = BernoulliNaturalParameters(log(dist.params[:p] / (1 - dist.params[:p])))

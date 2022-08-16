@@ -1,3 +1,3 @@
-export NaturalParametrs
+export NaturalParameters
 
-abstract type NaturalParametrs end
+abstract type NaturalParameters end

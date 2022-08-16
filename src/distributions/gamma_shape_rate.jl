@@ -1,4 +1,4 @@
-export GammaShapeRate, GammaShapeRateNaturalParametrs, logNormalizer
+export GammaShapeRate, GammaShapeRateNaturalParameters, logNormalizer
 
 import Distributions: Gamma, shape, rate
 import SpecialFunctions: loggamma, digamma, gamma
@@ -68,42 +68,42 @@ end
 Distributions.pdf(dist::GammaShapeRate, x::Real)    = (rate(dist)^shape(dist)) / gamma(shape(dist)) * x^(shape(dist) - 1) * exp(-rate(dist) * x)
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
 
-struct GammaShapeRateNaturalParametrs{T <: Real} <: NaturalParametrs
+struct GammaShapeRateNaturalParameters{T <: Real} <: NaturalParameters
     a_::T
     b::T
 end
 
-function GammaShapeRateNaturalParametrs{T}(vec) where {T <: Real}
-    return GammaShapeRateNaturalParametrs(vec[1], vec[2])
+function GammaShapeRateNaturalParameters{T}(vec) where {T <: Real}
+    return GammaShapeRateNaturalParameters(vec[1], vec[2])
 end
 
-naturalParams(dist::GammaShapeRate) = GammaShapeRateNaturalParametrs(dist.a - 1, -dist.b)
+naturalParams(dist::GammaShapeRate) = GammaShapeRateNaturalParameters(dist.a - 1, -dist.b)
 
 # Natural parameters to standard dist. type
-function standardDist(η::GammaShapeRateNaturalParametrs)
+function standardDist(η::GammaShapeRateNaturalParameters)
     GammaShapeRate(η.a_ + 1, -η.b)
 end
 
-function Base.vec(p::GammaShapeRateNaturalParametrs)
+function Base.vec(p::GammaShapeRateNaturalParameters)
     return [p.a_, p.b]
 end
 
-function Base.:+(left::GammaShapeRateNaturalParametrs, right::GammaShapeRateNaturalParametrs)
-    return GammaShapeRateNaturalParametrs(left.a_ + right.a_, left.b + right.b)
+function Base.:+(left::GammaShapeRateNaturalParameters, right::GammaShapeRateNaturalParameters)
+    return GammaShapeRateNaturalParameters(left.a_ + right.a_, left.b + right.b)
 end
 
-function Base.:-(left::GammaShapeRateNaturalParametrs, right::GammaShapeRateNaturalParametrs)
-    return GammaShapeRateNaturalParametrs(left.a_ - right.a_, left.b - right.b)
+function Base.:-(left::GammaShapeRateNaturalParameters, right::GammaShapeRateNaturalParameters)
+    return GammaShapeRateNaturalParameters(left.a_ - right.a_, left.b - right.b)
 end
 
-function logNormalizer(η::GammaShapeRateNaturalParametrs)
+function logNormalizer(η::GammaShapeRateNaturalParameters)
     return loggamma(η.a_ + 1) - (η.a_ + 1) * log(-η.b)
 end
 
-function logPdf(η::GammaShapeRateNaturalParametrs, x)
+function logPdf(η::GammaShapeRateNaturalParameters, x)
     return log(x) * η.a_ + x * η.b - logNormalizer(η)
 end
 
-function isProper(params::GammaShapeRateNaturalParametrs)
+function isProper(params::GammaShapeRateNaturalParameters)
     return (params.a_ >= tiny - 1) && (params.b <= tiny)
 end

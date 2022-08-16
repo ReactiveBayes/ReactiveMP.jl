@@ -1,4 +1,4 @@
-module ReactiveMPModelsLinearRegressionTest
+module ReactiveMPModelsNonLinearDynamicsTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
