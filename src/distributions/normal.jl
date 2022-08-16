@@ -253,8 +253,8 @@ function Random.rand!(
 end
 
 struct NormalNaturalParameters{T <: Real} <: NaturalParameters
-    weighted_mean :: T
-    precision :: T
+    weighted_mean::T
+    precision::T
 end
 
 struct MvNormalNaturalParameters <: NaturalParameters
@@ -329,11 +329,11 @@ function Base.:-(left::MvNormalNaturalParameters, right::MvNormalNaturalParamete
     )
 end
 
-function logNormalizer(η::NormalNaturalParameters)
+function lognormalizer(η::NormalNaturalParameters)
     return -(η.weighted_mean^2) / (4 * η.precision) - 0.5 * log(-2 * η.precision)
 end
 
-function logNormalizer(η::MvNormalNaturalParameters)
+function lognormalizer(η::MvNormalNaturalParameters)
     return -0.25 * η.weighted_mean' * (η.precesion_matrix \ η.weighted_mean) - 0.5 * logdet(-2 * η.precesion_matrix)
 end
 
@@ -341,12 +341,12 @@ end
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function logPdf(η::NormalNaturalParameters, x)
-    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.precision - logNormalizer(η)
+    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.precision - lognormalizer(η)
 end
 
 function logPdf(η::MvNormalNaturalParameters, x)
     ϕ(x) = [x; vec(x * transpose(x))]
-    return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - logNormalizer(η)
+    return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - lognormalizer(η)
 end
 
 isProper(params::NormalNaturalParameters) = params.precision < 0

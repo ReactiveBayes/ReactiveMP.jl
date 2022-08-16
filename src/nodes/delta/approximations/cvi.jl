@@ -62,7 +62,7 @@ function renderCVI(logp_nc::Function,
     # convert lambda to vector
     # work within loop with vector
 
-    A(vec_params) = logNormalizer(T(vec_params)) # maybe convert here makes more sense
+    A(vec_params) = lognormalizer(T(vec_params)) # maybe convert here makes more sense
     gradA(vec_params) = A'(vec_params) # Zygote
     Fisher(vec_params) = ForwardDiff.jacobian(gradA, vec_params) # Zygote throws mutating array error
     for _ in 1:num_iterations

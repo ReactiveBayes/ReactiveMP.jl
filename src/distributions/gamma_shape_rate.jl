@@ -1,4 +1,4 @@
-export GammaShapeRate, GammaShapeRateNaturalParameters, logNormalizer
+export GammaShapeRate, GammaShapeRateNaturalParameters, lognormalizer
 
 import Distributions: Gamma, shape, rate
 import SpecialFunctions: loggamma, digamma, gamma
@@ -96,12 +96,12 @@ function Base.:-(left::GammaShapeRateNaturalParameters, right::GammaShapeRateNat
     return GammaShapeRateNaturalParameters(left.a_ - right.a_, left.b - right.b)
 end
 
-function logNormalizer(η::GammaShapeRateNaturalParameters)
+function lognormalizer(η::GammaShapeRateNaturalParameters)
     return loggamma(η.a_ + 1) - (η.a_ + 1) * log(-η.b)
 end
 
 function logPdf(η::GammaShapeRateNaturalParameters, x)
-    return log(x) * η.a_ + x * η.b - logNormalizer(η)
+    return log(x) * η.a_ + x * η.b - lognormalizer(η)
 end
 
 function isProper(params::GammaShapeRateNaturalParameters)

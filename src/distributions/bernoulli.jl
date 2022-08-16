@@ -42,16 +42,12 @@ function Base.:-(left::BernoulliNaturalParameters, right::BernoulliNaturalParame
     return BernoulliNaturalParameters(get_natural_params(left) - get_natural_params(right))
 end
 
-function logNormalizer(η::BernoulliNaturalParameters)
+function lognormalizer(η::BernoulliNaturalParameters)
     return log(1 + exp(get_natural_params(η)))
 end
 
-function log_normalizer(::Type{BernoulliNaturalParameters})
-    return (v) -> log(1 + exp(v))
-end
-
 function logPdf(η::BernoulliNaturalParameters, x)
-    return x * get_natural_params(η) - logNormalizer(η)
+    return x * get_natural_params(η) - lognormalizer(η)
 end
 
 function standardDist(η::BernoulliNaturalParameters)
