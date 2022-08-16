@@ -8,7 +8,6 @@ using Random
 @testset "GammaInverse" begin
     @testset "vague" begin
         d = vague(GammaInverse)
-        print("OOF", d)
         @test typeof(d) <: GammaInverse
         @test mean(d) === huge
         @test params(d) === (2.0, huge)
@@ -31,10 +30,6 @@ using Random
 
     # α / θ
     @testset "mean(::typeof(inv))" begin
-        println("1: ",mean(inv, GammaInverse(1.0, 3.0)))
-        println("2: ",mean(inv, GammaInverse(0.1, 0.3)))
-        println("3: ",mean(inv, GammaInverse(4.5, 0.3)))
-        println("4: ",mean(inv, GammaInverse(42.0, 42.0)))
         @test mean(inv, GammaInverse(1.0, 3.0)) ≈ 0.33333333333333333
         @test mean(inv, GammaInverse(0.1, 0.3)) ≈ 0.33333333333333337
         @test mean(inv, GammaInverse(4.5, 0.3)) ≈ 15.0000000000000000
