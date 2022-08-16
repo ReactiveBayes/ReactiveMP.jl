@@ -2,11 +2,11 @@ export CVIApproximation
 export renderCVI
 using Flux
 
-mutable struct CVIApproximation
-    n_samples
-    num_iterations
-    rng
-    opt
+struct CVIApproximation{R, O} 
+    n_samples :: Int
+    num_iterations :: Int
+    rng :: R
+    opt :: O
 end
 
 function CVIApproximation(n_samples, num_iterations, opt)
