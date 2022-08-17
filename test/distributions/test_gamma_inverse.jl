@@ -5,6 +5,7 @@ using ReactiveMP
 using Distributions # params
 using Random
 
+# test this testset with $ make test testset='distributions:gamma_inverse'
 @testset "GammaInverse" begin
     @testset "vague" begin
         d = vague(GammaInverse)
