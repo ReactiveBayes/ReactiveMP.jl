@@ -134,6 +134,10 @@ include("nodes/poisson.jl")
 include("nodes/addition.jl")
 include("nodes/subtraction.jl")
 include("nodes/multiplication.jl")
+include("nodes/and.jl")
+include("nodes/or.jl")
+include("nodes/not.jl")
+include("nodes/implication.jl")
 
 include("rules/prototypes.jl")
 
