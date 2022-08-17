@@ -36,7 +36,7 @@ end
 
 # Variational                       #
 # --------------------------------- #
-@rule NormalMeanVariance(:v, Marginalisation) (q_out::Any, q_μ::Any, ) = begin
+@rule NormalMeanVariance(:v, Marginalisation) (q_out::Any, q_μ::Any) = begin
     mμ, vμ = mean_var(q_μ)
     mx, vx = mean_var(q_out)
 
@@ -51,11 +51,11 @@ end
     m, V = mean_cov(q_out_μ)
     mx = m[1]
     mm = m[2]
-    vxx = V[1,1]
-    vmx = V[1,2]
-    vmm = V[2,2]
+    vxx = V[1, 1]
+    vmx = V[1, 2]
+    vmm = V[2, 2]
 
-    θ = ((mx-mm)^2 + vxx - 2*vmx + vmm) / 2
+    θ = ((mx - mm)^2 + vxx - 2 * vmx + vmm) / 2
     α = convert(typeof(θ), -0.5)
 
     return GammaInverse(α, θ, check_args = false)
