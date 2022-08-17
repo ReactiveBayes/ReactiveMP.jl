@@ -9,8 +9,8 @@ using Random
     @testset "vague" begin
         d = vague(GammaInverse)
         @test typeof(d) <: GammaInverse
-        @test mean(d) === huge
-        @test params(d) === (2.0, huge)
+        @test mean(d) == huge
+        @test params(d) == (2.0, huge)
     end
 
     # (α, θ) = (α_L + α_R + 1, θ_L + θ_R)
