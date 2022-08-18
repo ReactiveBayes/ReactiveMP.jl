@@ -149,9 +149,9 @@ function randomvar(
         options.proxy_variables,                                # here we do allow `nothing`, so no need for `something(...)`
         something(options.prod_constraint, ProdAnalytical()),
         something(options.prod_strategy, FoldLeftProdStrategy()),
-        something(options.marginal_form_constraint, UnspecifiedFormConstraint()),
+        something(as_form_constraint(options.marginal_form_constraint), UnspecifiedFormConstraint()),
         something(options.marginal_form_check_strategy, FormConstraintCheckPickDefault()),
-        something(options.messages_form_constraint, UnspecifiedFormConstraint()),
+        something(as_form_constraint(options.messages_form_constraint), UnspecifiedFormConstraint()),
         something(options.messages_form_check_strategy, FormConstraintCheckPickDefault())
     )
 end

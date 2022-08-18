@@ -13,17 +13,13 @@ Base.show(io::IO, spec::FormConstraintSpecification) =
     print(io, spec.form_constraint, " [ prod_constraint = ", spec.prod_constraint, " ]")
 
 function resolve_marginal_messages_form_prod(constraints, model, name)
-    marginal_form_constraint, marginal_prod_constraint = resolve_marginal_form_prod(constraints, model, name)
-    messages_form_constraint, messages_prod_constraint = resolve_messages_form_prod(constraints, model, name)
-    return marginal_form_constraint,
-    messages_form_constraint,
-    resolve_prod_constraint(marginal_prod_constraint, messages_prod_constraint)
+    q_form_constraint, q_prod_constraint = resolve_marginal_form_prod(constraints, model, name)
+    m_form_constraint, m_prod_constraint = resolve_messages_form_prod(constraints, model, name)
+    return (q_form_constraint, m_form_constraint, resolve_prod_constraint(q_prod_constraint, m_prod_constraint))
 end
 
-resolve_marginal_form_prod(constraints, model, name) =
-    resolve_form_prod(constraints, model, constraints.marginalsform, name)
-resolve_messages_form_prod(constraints, model, name) =
-    resolve_form_prod(constraints, model, constraints.messagesform, name)
+resolve_marginal_form_prod(constraints, model, name) = resolve_form_prod(constraints, model, constraints.marginalsform, name)
+resolve_messages_form_prod(constraints, model, name) = resolve_form_prod(constraints, model, constraints.messagesform, name)
 
 # Preoptimised dispatch rule for empty form constraints
 resolve_form_prod(constraints, model, ::NamedTuple{()}, name) = (nothing, nothing)

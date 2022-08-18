@@ -19,11 +19,13 @@ import Base: +
 
 Every functional form constraint is a subtype of `AbstractFormConstraint` abstract type.
 
-Note: this is not strictly necessary, but it makes automatic dispatch easier and compatible with the `CompositeFormConstraint`.
-
 See also: [`CompositeFormConstraint`](@ref)
 """
 abstract type AbstractFormConstraint end
+
+as_form_constraint(something) = error("An object of type `$(typeof(something))` cannot be used as a functional form constraint, must be a subtype of the `ReactiveMP.AbstractFormConstraint`.")
+
+as_form_constraint(something::Union{AbstractFormConstraint, Nothing}) = something
 
 """
     FormConstraintCheckEach

@@ -141,6 +141,7 @@ include("nodes/implication.jl")
 
 include("rules/prototypes.jl")
 
+include("constraints/form/form_generator.jl")
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
 include("constraints/form/form_fixed_marginal.jl")
