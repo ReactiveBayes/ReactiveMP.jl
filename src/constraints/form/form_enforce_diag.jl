@@ -5,7 +5,8 @@ import LinearAlgebra: Diagonal
 """
     EnforceDiagFormConstraint
 
-Constrains the marginal of a matrix variate distribution to be diagonal, which is mostly applicable to (Inverse)Wishart distributions.
+Constrains the marginal of a matrix variate distribution to be diagonal. 
+Only applies to (Inverse)Wishart distributions.
 
 # Traits 
 - `is_point_mass_form_constraint` = `false`
@@ -26,18 +27,18 @@ ReactiveMP.default_prod_constraint(::EnforceDiagFormConstraint) = ProdAnalytical
 
 ReactiveMP.make_form_constraint(::Type{<:EnforceDiagFormConstraint}) = EnforceDiagFormConstraint()
 
-__drop_offdiag(S::Matrix{Float64}) = Matrix{Float64}(Diagonal(Diagonal(S)))    
+__drop_offdiag(S::Matrix{Float64}) = Matrix{Float64}(Diagonal(Diagonal(S)))
 
-function ReactiveMP.constrain_form(constraint::EnforceDiagFormConstraint, dist) 
+function ReactiveMP.constrain_form(constraint::EnforceDiagFormConstraint, dist)
     return dist
 end
 
-function ReactiveMP.constrain_form(constraint::EnforceDiagFormConstraint, dist::WishartMessage) 
+function ReactiveMP.constrain_form(constraint::EnforceDiagFormConstraint, dist::WishartMessage)
     df, S = ReactiveMP.params(dist)
     return WishartMessage(df, __drop_offdiag(S))
 end
 
-function ReactiveMP.constrain_form(constraint::EnforceDiagFormConstraint, dist::InverseWishartMessage) 
+function ReactiveMP.constrain_form(constraint::EnforceDiagFormConstraint, dist::InverseWishartMessage)
     df, S = ReactiveMP.params(dist)
     return InverseWishartMessage(df, __drop_offdiag(S))
 end
