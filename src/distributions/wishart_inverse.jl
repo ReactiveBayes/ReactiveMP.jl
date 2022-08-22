@@ -63,7 +63,7 @@ function Distributions.mean(::typeof(inv), dist::InverseWishartDistributionsFami
     return mean(Wishart(ν, cholinv(S)))
 end
 
-vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims, tiny .* diageye(dims))
+vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .* diageye(dims))
 
 Base.ndims(dist::InverseWishart) = size(dist, 1)
 
