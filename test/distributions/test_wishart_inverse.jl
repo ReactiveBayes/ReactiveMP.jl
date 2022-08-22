@@ -55,7 +55,6 @@ import ReactiveMP: InverseWishartMessage
 
         @test mean(d1) == S1
 
-
         dims = 4
         d2 = vague(InverseWishart, dims)
 
