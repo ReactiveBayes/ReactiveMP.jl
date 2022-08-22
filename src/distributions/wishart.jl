@@ -10,20 +10,23 @@ import SpecialFunctions: digamma
 
 Same as `Wishart` from `Distributions.jl`, but does not check input arguments and allows creating improper `Wishart` message.
 For model creation use `Wishart` from `Distributions.jl`. Regular user should never interact with `WishartMessage`.
+
+Note that internally `WishartMessage` stores (and creates with) inverse of its-scale matrix, but (for backward compatibility) `params()` function returns the scale matrix itself. 
+This is done for better stability in the message passing update rules.
 """
 struct WishartMessage{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
-    ν::T
-    S::A
+    ν    :: T
+    invS :: A
 end
 
-function WishartMessage(ν::Real, S::AbstractMatrix{<:Real})
-    T = promote_type(typeof(ν), eltype(S))
-    return WishartMessage(convert(T, ν), convert(AbstractArray{T}, S))
+function WishartMessage(ν::Real, invS::AbstractMatrix{<:Real})
+    T = promote_type(typeof(ν), eltype(invS))
+    return WishartMessage(convert(T, ν), convert(AbstractArray{T}, invS))
 end
 
-WishartMessage(ν::Integer, S::AbstractMatrix{Real}) = WishartMessage(float(ν), S)
+WishartMessage(ν::Integer, invS::AbstractMatrix{Real}) = WishartMessage(float(ν), invS)
 
-Distributions.params(dist::WishartMessage)  = (dist.ν, dist.S)
+Distributions.params(dist::WishartMessage)  = (dist.ν, cholinv(dist.invS))
 Distributions.mean(dist::WishartMessage)    = mean(convert(Wishart, dist))
 Distributions.var(dist::WishartMessage)     = var(convert(Wishart, dist))
 Distributions.cov(dist::WishartMessage)     = cov(convert(Wishart, dist))
@@ -32,25 +35,36 @@ Distributions.entropy(dist::WishartMessage) = entropy(convert(Wishart, dist))
 
 mean_cov(dist::WishartMessage) = mean_cov(convert(Wishart, dist))
 
-Base.size(dist::WishartMessage)           = size(dist.S)
-Base.size(dist::WishartMessage, dim::Int) = size(dist.S, dim)
+Base.size(dist::WishartMessage)           = size(dist.invS)
+Base.size(dist::WishartMessage, dim::Int) = size(dist.invS, dim)
 
 const WishartDistributionsFamily{T} = Union{Wishart{T}, WishartMessage{T}}
 
 to_marginal(dist::WishartMessage) = convert(Wishart, dist)
 
 function Base.convert(::Type{WishartMessage{T}}, distribution::WishartMessage) where {T}
-    (ν, S) = params(distribution)
-    return WishartMessage(convert(T, ν), convert(AbstractMatrix{T}, S))
+    (ν, invS) = (distribution.ν, distribution.invS)
+    return WishartMessage(convert(T, ν), convert(AbstractMatrix{T}, invS))
 end
 
-function Distributions.mean(::typeof(logdet), distribution::WishartDistributionsFamily)
-    d    = size(distribution, 1)
+function Distributions.mean(::typeof(logdet), distribution::WishartMessage)
+    d       = size(distribution, 1)
+    ν, invS = (distribution.ν, distributions.invS)
+    return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) - logdet(invS)
+end
+
+function Distributions.mean(::typeof(logdet), distribution::Wishart)
+    d = size(distribution, 1)
     ν, S = params(distribution)
     return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) + logdet(S)
 end
 
-function Distributions.mean(::typeof(inv), distribution::WishartDistributionsFamily)
+function Distributions.mean(::typeof(inv), distribution::WishartMessage)
+    ν, invS = (distribution.ν, distribution.invS)
+    return mean(InverseWishart(ν, invS))
+end
+
+function Distributions.mean(::typeof(inv), distribution::Wishart)
     ν, S = params(distribution)
     return mean(InverseWishart(ν, cholinv(S)))
 end
@@ -64,7 +78,10 @@ function Base.convert(::Type{Wishart}, dist::WishartMessage)
     return Wishart(ν, Matrix(Hermitian(S)))
 end
 
-Base.convert(::Type{WishartMessage}, dist::Wishart) = WishartMessage(params(dist)...)
+function Base.convert(::Type{WishartMessage}, dist::Wishart)
+    (ν, S) = params(dist)
+    return WishartMessage(ν, cholinv(S))
+end
 
 ## Friendly functions
 
@@ -82,11 +99,14 @@ function prod(::ProdAnalytical, left::WishartMessage, right::WishartMessage)
 
     d = size(left, 1)
 
-    ldf, lS = params(left)
-    rdf, rS = params(right)
+    ldf, linvS = (left.ν, left.invS)
+    rdf, rinvS = (right.ν, right.invS)
 
-    V  = lS * cholinv(lS + rS) * rS
-    df = ldf + rdf - d - 1
+    # See Matrix Cookbook 
+    # 3.2.5 The Searle Set of Identities - eq (163)
+    # V  = lS * cholinv(lS + rS) * rS
+    invV = linvS + rinvS
+    df   = ldf + rdf - d - 1
 
-    return WishartMessage(df, V)
+    return WishartMessage(df, invV)
 end
