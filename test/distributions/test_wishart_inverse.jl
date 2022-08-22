@@ -50,16 +50,21 @@ import ReactiveMP: InverseWishartMessage
 
         @test typeof(d1) <: InverseWishart
         ν1, S1 = params(d1)
-        @test ν1 == dims
+        @test ν1 == dims + 2
         @test S1 == tiny .* diageye(dims)
+
+        @test mean(d1) == S1
+
 
         dims = 4
         d2 = vague(InverseWishart, dims)
 
         @test typeof(d2) <: InverseWishart
         ν2, S2 = params(d2)
-        @test ν2 == dims
+        @test ν2 == dims + 2
         @test S2 == tiny .* diageye(dims)
+
+        @test mean(d2) == S2
     end
 
     @testset "entropy" begin
