@@ -28,7 +28,7 @@ import ReactiveMP: WishartMessage
         ) ≈ -3.4633310802040693
     end
 
-    @testset "mean(::cholinv)" begin 
+    @testset "mean(::cholinv)" begin
         L    = rand(2, 2)
         S    = L * L' + diageye(2)
         invS = cholinv(S)
