@@ -116,10 +116,12 @@ end
 
 function Base.getproperty(result::InferenceResult, property::Symbol)
     if property === :free_energy && getfield(result, :free_energy) === nothing
-        error("""
-            Bethe Free Energy has not been computed. 
-            Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
-        """)
+        error(
+            """
+          Bethe Free Energy has not been computed. 
+          Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
+      """
+        )
     else
         return getfield(result, property)
     end
@@ -408,7 +410,6 @@ function inference(;
                 )
             end
         end
-
 
         inference_invoke_callback(callbacks, :before_inference, fmodel)
 
