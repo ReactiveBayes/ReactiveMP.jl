@@ -118,6 +118,8 @@ import ReactiveMP: xtlog, mirrorlog
             @test dist[2] === matrix[2]
             @test dist[3] === matrix[3]
             @test dist[3, 3] === matrix[3, 3]
+            @test size(dist, 1) === size(matrix, 1)
+            @test size(dist, 2) === size(matrix, 2)
             @test_throws BoundsError dist[N^3]
             @test_throws BoundsError dist[N+1, N+1]
 
