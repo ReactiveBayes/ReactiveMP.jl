@@ -409,7 +409,6 @@ function inference(;
             end
         end
 
-        p = showprogress ? ProgressMeter.Progress(iterations) : nothing
 
         inference_invoke_callback(callbacks, :before_inference, fmodel)
 
@@ -425,6 +424,8 @@ function inference(;
         _iterations = something(iterations, 1)
         _iterations isa Integer || error("`iterations` argument must be of type Integer or `nothing`")
         _iterations > 0 || error("`iterations` arguments must be greater than zero")
+
+        p = showprogress ? ProgressMeter.Progress(_iterations) : nothing
 
         for iteration in 1:_iterations
             inference_invoke_callback(callbacks, :before_iteration, fmodel, iteration)
