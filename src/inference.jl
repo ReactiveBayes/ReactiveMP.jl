@@ -57,12 +57,12 @@ __inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothi
 function __inference_check_dicttype(keyword::Symbol, input::T) where {T}
     error(
         """
-      Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
-      If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
-      Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
+        Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
+        If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
+        Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
             The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
             The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
-  """
+        """
     )
 end
 ##
@@ -118,9 +118,9 @@ function Base.getproperty(result::InferenceResult, property::Symbol)
     if property === :free_energy && getfield(result, :free_energy) === nothing
         error(
             """
-          Bethe Free Energy has not been computed. 
-          Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
-      """
+            Bethe Free Energy has not been computed. 
+            Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
+            """
         )
     else
         return getfield(result, property)
