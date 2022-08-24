@@ -102,10 +102,12 @@ import ReactiveMP: InverseWishartMessage
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartMessage(ν, S)), mean(inv.(samples)), atol = 1e-2)
+        @test isapprox(mean(cholinv, InverseWishartMessage(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
 
         ν, S = 4.0, diageye(3)
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartMessage(ν, S)), mean(inv.(samples)), atol = 1e-2)
+        @test isapprox(mean(cholinv, InverseWishartMessage(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
     end
 
     @testset "prod" begin
