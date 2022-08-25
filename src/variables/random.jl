@@ -245,7 +245,7 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     end
 end
 
-function activate!(model, randomvar::RandomVariable)
+function activate!(randomvar::RandomVariable, scheduler = AsapScheduler())
     if randomvar.output_initialised === true
         error("Broken random variable ", randomvar, ". Unreachable reached.")
     end
@@ -253,8 +253,8 @@ function activate!(model, randomvar::RandomVariable)
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomvar) > 5
-        chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
-        chain_prod_fn = messages_prod_fn(randomvar)
+        chain_pipeline = schedule_on(scheduler)
+        chain_prod_fn  = messages_prod_fn(randomvar)
         randomvar.output_cache = EqualityChain(randomvar.input_messages, chain_pipeline, chain_prod_fn)
     end
 

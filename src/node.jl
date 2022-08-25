@@ -859,7 +859,7 @@ function get_marginals_observable(factornode, marginals)
     end
 end
 
-function activate!(model, factornode::AbstractFactorNode)
+function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler())
     fform                      = functionalform(factornode)
     meta                       = metadata(factornode)
     node_pipeline              = getpipeline(factornode)
@@ -885,9 +885,9 @@ function activate!(model, factornode::AbstractFactorNode)
                 end
 
             vmessageout = vmessageout |> map(AbstractMessage, mapping)
-            vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+            vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
             vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
-            vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
+            vmessageout = vmessageout |> schedule_on(scheduler)
 
             connect!(messageout(interface), vmessageout)
         elseif cvariable === nothing
