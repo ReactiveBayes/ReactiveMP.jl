@@ -1,4 +1,4 @@
-export ConstraintsSpecification, DefaultConstraints
+export ConstraintsSpecification, DefaultConstraints, UnspecifiedConstraints
 
 import Base: show
 
