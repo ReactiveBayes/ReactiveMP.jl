@@ -1,6 +1,5 @@
 module ReactiveMP
 
-include("rocket.jl")
 include("macrohelpers.jl")
 include("helpers.jl")
 include("math.jl")
