@@ -57,12 +57,12 @@ __inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothi
 function __inference_check_dicttype(keyword::Symbol, input::T) where {T}
     error(
         """
-      Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
-      If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
-      Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
+        Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
+        If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
+        Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
             The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
             The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
-  """
+        """
     )
 end
 ##
@@ -116,10 +116,12 @@ end
 
 function Base.getproperty(result::InferenceResult, property::Symbol)
     if property === :free_energy && getfield(result, :free_energy) === nothing
-        error("""
+        error(
+            """
             Bethe Free Energy has not been computed. 
             Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
-        """)
+            """
+        )
     else
         return getfield(result, property)
     end
@@ -409,8 +411,6 @@ function inference(;
             end
         end
 
-        p = showprogress ? ProgressMeter.Progress(iterations) : nothing
-
         inference_invoke_callback(callbacks, :before_inference, fmodel)
 
         fdata = filter(pairs(data)) do pair
@@ -425,6 +425,8 @@ function inference(;
         _iterations = something(iterations, 1)
         _iterations isa Integer || error("`iterations` argument must be of type Integer or `nothing`")
         _iterations > 0 || error("`iterations` arguments must be greater than zero")
+
+        p = showprogress ? ProgressMeter.Progress(_iterations) : nothing
 
         for iteration in 1:_iterations
             inference_invoke_callback(callbacks, :before_iteration, fmodel, iteration)

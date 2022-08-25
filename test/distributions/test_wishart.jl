@@ -13,7 +13,7 @@ import ReactiveMP: WishartMessage
     # Wishart comes from Distributions.jl and most of the things should be covered there
     # Here we test some extra ReactiveMP.jl specific functionality
 
-    @testset "mean(:logdet)" begin
+    @testset "mean(::logdet)" begin
         @test mean(logdet, Wishart(3, [1.0 0.0; 0.0 1.0])) ≈ 0.845568670196936
         @test mean(
             logdet,
@@ -26,6 +26,14 @@ import ReactiveMP: WishartMessage
                 ]
             )
         ) ≈ -3.4633310802040693
+    end
+
+    @testset "mean(::cholinv)" begin
+        L    = rand(2, 2)
+        S    = L * L' + diageye(2)
+        invS = cholinv(S)
+        @test mean(inv, Wishart(5, S)) ≈ mean(InverseWishart(5, invS))
+        @test mean(cholinv, Wishart(5, S)) ≈ mean(InverseWishart(5, invS))
     end
 
     @testset "vague" begin

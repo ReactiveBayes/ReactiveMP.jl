@@ -12,7 +12,7 @@ conjugate_type(::Type{<:MvNormalMeanCovariance}, ::Type{Val{:Σ}})   = InverseWi
 
     m_mean, v_mean = mean_cov(q_μ)
     m_out, v_out   = mean_cov(q_out)
-    inv_m_Σ        = mean(inv, q_Σ)
+    inv_m_Σ        = mean(cholinv, q_Σ)
 
     result = zero(promote_type(eltype(q_out), eltype(q_μ), eltype(q_Σ)))
     result += mean(logdet, q_Σ)
@@ -32,7 +32,7 @@ end
     dim = div(ndims(q_out_μ), 2)
 
     m, V = mean_cov(q_out_μ)
-    inv_m_Σ = mean(inv, q_Σ)
+    inv_m_Σ = mean(cholinv, q_Σ)
 
     result = zero(promote_type(eltype(q_out_μ), eltype(q_Σ)))
     result += mean(logdet, q_Σ)

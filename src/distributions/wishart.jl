@@ -59,12 +59,16 @@ function Distributions.mean(::typeof(logdet), distribution::Wishart)
     return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) + logdet(S)
 end
 
-function Distributions.mean(::typeof(inv), distribution::WishartMessage)
+function Distributions.mean(::typeof(inv), distribution::WishartDistributionsFamily)
+    return mean(cholinv, distribution)
+end
+
+function Distributions.mean(::typeof(cholinv), distribution::WishartMessage)
     ν, invS = (distribution.ν, distribution.invS)
     return mean(InverseWishart(ν, invS))
 end
 
-function Distributions.mean(::typeof(inv), distribution::Wishart)
+function Distributions.mean(::typeof(cholinv), distribution::Wishart)
     ν, S = params(distribution)
     return mean(InverseWishart(ν, cholinv(S)))
 end
