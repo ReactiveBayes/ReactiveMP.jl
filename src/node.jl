@@ -523,6 +523,10 @@ struct FactorNodesCollection
     node_ids :: Set{Symbol}
 end
 
+function Base.show(io::IO, collection::FactorNodesCollection)
+    print(io, "FactorNodesCollection(nodes: ", length(collection.nodes), ")")
+end
+
 function Base.push!(collection::FactorNodesCollection, node::AbstractFactorNode)
     push!(collections.nodes, node)
     push!(collection.node_ids, as_node_symbol(functionalform(node)))

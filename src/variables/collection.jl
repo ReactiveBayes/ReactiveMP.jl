@@ -1,13 +1,17 @@
 export VariablesCollection, getrandom, getconstant, getdata, getvardict
 export hasrandomvar, hasdatavar, hasconstvar
 
-import Base: haskey, getindex, firstindex, lastindex
+import Base: haskey, getindex, firstindex, lastindex, show
 
 struct VariablesCollection 
     random      :: Vector{RandomVariable}
     constant    :: Vector{ConstVariable}
     data        :: Vector{DataVariable}
     vardict     :: Dict{Symbol, Any}
+end
+
+function Base.show(io::IO, collection::VariablesCollection)
+    print(io, "VariablesCollection(random: ", length(getrandom(collection)), ", constant: ", length(getconstant(collection)), ", data: ", length(getdata(collection)), ")")
 end
 
 getrandom(collection::VariablesCollection)      = collection.random
