@@ -159,26 +159,19 @@ end
 
 function score(
     ::Type{T},
-    objective::BetheFreeEnergy,
     ::FactorBoundFreeEnergy,
     ::Stochastic,
     node::GammaMixtureNode{N, MeanField},
+    skip_strategy,
     scheduler
 ) where {T <: InfCountingReal, N}
-    skip_strategy = marginal_skip_strategy(objective)
 
     stream = combineLatest(
         (
             getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
             getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-            combineLatest(
-                map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as),
-                PushNew()
-            ),
-            combineLatest(
-                map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs),
-                PushNew()
-            )
+            combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew()),
+            combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew())
         ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)

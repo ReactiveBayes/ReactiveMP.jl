@@ -37,8 +37,6 @@ as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal)
 include("variable.jl")
 include("pipeline.jl")
 
-include("actors/score.jl")
-
 include("algebra/cholesky.jl")
 include("algebra/companion_matrix.jl")
 include("algebra/correction.jl")

@@ -67,8 +67,6 @@ Base.getindex(iter::SkipIndexIterator, i::CartesianIndex{1}) = Base.getindex(ite
 
 Rocket.similar_typeof(::SkipIndexIterator, ::Type{L}) where {L} = Vector{L}
 
-reduce_with_sum(array) = reduce(+, array)
-
 ## 
 
 import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
