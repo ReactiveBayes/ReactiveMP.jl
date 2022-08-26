@@ -533,7 +533,7 @@ function Base.push!(collection::FactorNodesCollection, node::AbstractFactorNode)
     return node
 end
 
-function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{ <: AbstractFactorNode })
+function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{ AbstractFactorNode })
     append!(collection.nodes, nodes)
     union!(collection.node_ids, Set(Base.Generator((node) -> as_node_symbol(functionalform(node)), nodes)))
     return nodes
