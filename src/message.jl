@@ -129,8 +129,7 @@ constrain_form_as_message(message::Message, form_constraint) =
 # We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
     (messages) -> foldl(
-        (left, right) ->
-            constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
+        (left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
         Base.Generator(as_message, messages)
     )
 
@@ -142,8 +141,7 @@ prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
 
 prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
     (messages) -> foldr(
-        (left, right) ->
-            constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
+        (left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
         Base.Generator(as_message, messages)
     )
 

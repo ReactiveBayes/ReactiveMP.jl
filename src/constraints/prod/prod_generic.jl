@@ -1,7 +1,7 @@
 export DistProduct, ProdGeneric, GenericLogPdfVectorisedProduct
 
 import Distributions
-import Distributions; VariateForm, ValueSupport
+import Distributions: VariateForm, ValueSupport
 import Base: prod, show
 
 """
@@ -119,30 +119,13 @@ prod(generic::ProdGeneric, ::ProdAnalyticalRuleAvailable, ::ProdAnalyticalRuleUn
 prod(generic::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleAvailable, left, right::DistProduct) = DistProduct(getleft(right), prod(get_constraint(generic), left, getright(right)))
 
 function prod(generic::ProdGeneric, left::DistProduct{L1, R1}, right::DistProduct{L2, R2}) where {L1, R1, L2, R2}
-    return prod(
-        generic,
-        prod_analytical_rule(L1, L2), prod_analytical_rule(L1, R2),
-        prod_analytical_rule(R1, L2), prod_analytical_rule(R1, R2),
-        left, right
-    )
+    return prod(generic, prod_analytical_rule(L1, L2), prod_analytical_rule(L1, R2), prod_analytical_rule(R1, L2), prod_analytical_rule(R1, R2), left, right)
 end
 
 prod(::ProdGeneric, _, _, _, _, left::DistProduct, right::DistProduct) = DistProduct(left, right)
 
-function prod(
-    generic::ProdGeneric,
-    ::ProdAnalyticalRuleAvailable,
-    _,
-    _,
-    ::ProdAnalyticalRuleAvailable,
-    left::DistProduct,
-    right::DistProduct
-)
-    return prod(
-        generic,
-        prod(get_constraint(generic), getleft(left), getleft(right)),
-        prod(get_constraint(generic), getright(left), getright(right))
-    )
+function prod(generic::ProdGeneric, ::ProdAnalyticalRuleAvailable, _, _, ::ProdAnalyticalRuleAvailable, left::DistProduct, right::DistProduct)
+    return prod(generic, prod(get_constraint(generic), getleft(left), getleft(right)), prod(get_constraint(generic), getright(left), getright(right)))
 end
 
 ## More efficient prod for same logpdfs
@@ -174,61 +157,34 @@ variate_form(::GenericLogPdfVectorisedProduct{F}) where {F}         = variate_fo
 value_support(::Type{<:GenericLogPdfVectorisedProduct{F}}) where {F} = value_support(F)
 value_support(::GenericLogPdfVectorisedProduct{F}) where {F}         = value_support(F)
 
-Base.show(io::IO, dist::GenericLogPdfVectorisedProduct) =
-    print(io, "GenericLogPdfVectorisedProduct(", Distributions.support(dist), ")")
+Base.show(io::IO, dist::GenericLogPdfVectorisedProduct) = print(io, "GenericLogPdfVectorisedProduct(", Distributions.support(dist), ")")
 
 Distributions.support(dist::GenericLogPdfVectorisedProduct) = Distributions.support(first(dist.vector))
 
-Distributions.logpdf(dist::GenericLogPdfVectorisedProduct, x) =
-    mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
+Distributions.logpdf(dist::GenericLogPdfVectorisedProduct, x) = mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
 
-Distributions.pdf(dist::GenericLogPdfVectorisedProduct, x) =
-    exp(logpdf(dist, x))
+Distributions.pdf(dist::GenericLogPdfVectorisedProduct, x) = exp(logpdf(dist, x))
 
-prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::DistProduct{L, R},
-    right::R
-) where {L, R} = DistProduct(getleft(left), GenericLogPdfVectorisedProduct(R[getright(left), right], 2))
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, R}, right::R) where {L, R} 
+    return DistProduct(getleft(left), GenericLogPdfVectorisedProduct(R[getright(left), right], 2))
+end
 
-prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::DistProduct{L, R},
-    right::L
-) where {L, R} = DistProduct(GenericLogPdfVectorisedProduct(L[getleft(left), right], 2), getright(left))
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, R}, right::L) where {L, R} 
+    return DistProduct(GenericLogPdfVectorisedProduct(L[getleft(left), right], 2), getright(left))
+end
 
-prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::L,
-    right::DistProduct{L, R}
-) where {L, R} = DistProduct(GenericLogPdfVectorisedProduct(L[left, getleft(right)], 2), getright(right))
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::L, right::DistProduct{L, R}) where {L, R} 
+    return DistProduct(GenericLogPdfVectorisedProduct(L[left, getleft(right)], 2), getright(right))
+end
 
-prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::R,
-    right::DistProduct{L, R}
-) where {L, R} = DistProduct(getleft(right), GenericLogPdfVectorisedProduct(R[left, getright(right)], 2))
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::R, right::DistProduct{L, R}) where {L, R} 
+    return DistProduct(getleft(right), GenericLogPdfVectorisedProduct(R[left, getright(right)], 2))
+end
 
-prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::DistProduct{L, GenericLogPdfVectorisedProduct{R}},
-    right::R
-) where {L, R} = DistProduct(getleft(left), push!(getright(left), right))
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, GenericLogPdfVectorisedProduct{R}}, right::R) where {L, R} 
+    return DistProduct(getleft(left), push!(getright(left), right))
+end
 
-prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::DistProduct{GenericLogPdfVectorisedProduct{L}, R},
-    right::L
-) where {L, R} = DistProduct(push!(getleft(left), right), getright(left))
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{GenericLogPdfVectorisedProduct{L}, R}, right::L) where {L, R}
+    return DistProduct(push!(getleft(left), right), getright(left))
+end

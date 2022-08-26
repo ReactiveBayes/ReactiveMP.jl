@@ -52,18 +52,9 @@ struct ConstraintsSpecification{F, M, S}
     preallocated  :: ConstraintsSpecificationPreallocated
 end
 
-ConstraintsSpecification(
-    factorisation::F,
-    marginalsform::M,
-    messagesform::S,
-    options::ConstraintsSpecificationOptions
-) where {F, M, S} = ConstraintsSpecification{F, M, S}(
-    factorisation,
-    marginalsform,
-    messagesform,
-    options,
-    ConstraintsSpecificationPreallocated()
-)
+function ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S, options::ConstraintsSpecificationOptions) where {F, M, S} 
+    return ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, options, ConstraintsSpecificationPreallocated())
+end
 
 getoptions(specification::ConstraintsSpecification) = specification.options
 
@@ -73,8 +64,7 @@ const DefaultConstraints = UnspecifiedConstraints()
 
 const __EmptyConstraints = ConstraintsSpecification((), (;), (;), ConstraintsSpecificationOptions(true))
 
-__reset_preallocated!(specification::ConstraintsSpecification, size::Int) =
-    __reset_preallocated!(specification.preallocated, size)
+__reset_preallocated!(specification::ConstraintsSpecification, size::Int) = __reset_preallocated!(specification.preallocated, size)
 
 function activate!(constraints::UnspecifiedConstraints, model)
     return nothing

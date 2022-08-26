@@ -17,10 +17,7 @@ include("constraints/prod/prod_preserve_type.jl")
 include("constraints/prod/prod_final.jl")
 include("constraints/prod/prod_resolve.jl")
 
-include("constraints/constraints.jl")
 include("constraints/form.jl")
-include("constraints/factorisation.jl")
-include("constraints/meta.jl")
 
 include("message.jl")
 include("marginal.jl")
@@ -136,9 +133,9 @@ include("nodes/implication.jl")
 
 include("rules/prototypes.jl")
 
-include("constraints/form/form_unspecified.jl")
-include("constraints/form/form_point_mass.jl")
-include("constraints/form/form_fixed_marginal.jl")
-include("constraints/form/form_sample_list.jl")
+include("constraints/specifications/constraints.jl")
+include("constraints/specifications/form.jl")
+include("constraints/specifications/factorisation.jl")
+include("constraints/specifications/meta.jl")
 
 end
