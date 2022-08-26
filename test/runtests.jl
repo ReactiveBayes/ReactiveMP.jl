@@ -206,14 +206,11 @@ end
     end
 
     addtests(testrunner, "algebra/test_correction.jl")
-    addtests(testrunner, "algebra/test_helpers.jl")
+    addtests(testrunner, "algebra/test_common.jl")
     addtests(testrunner, "algebra/test_permutation_matrix.jl")
     addtests(testrunner, "algebra/test_standard_basis_vector.jl")
 
-    addtests(testrunner, "test_model.jl")
-    addtests(testrunner, "test_math.jl")
-    addtests(testrunner, "test_helpers.jl")
-    addtests(testrunner, "test_score.jl")
+    addtests(testrunner, "helpers/test_helpers.jl")
 
     addtests(testrunner, "constraints/spec/test_factorisation_spec.jl")
     addtests(testrunner, "constraints/spec/test_form_spec.jl")
@@ -246,7 +243,7 @@ end
 
     addtests(testrunner, "test_message.jl")
 
-    addtests(testrunner, "test_variable.jl")
+    addtests(testrunner, "variables/test_variable.jl")
     addtests(testrunner, "variables/test_constant.jl")
     addtests(testrunner, "variables/test_data.jl")
     addtests(testrunner, "variables/test_random.jl")

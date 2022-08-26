@@ -62,30 +62,30 @@ using Rocket
             )
         end
 
-        # getmarginals is broken for matrices
-        # begin 
-        #     rs = randomvar(:r, 2, 2)
-        #     setmarginals!(rs, NormalMeanVariance(-2.0, 3.0))
-        #     subscribe!(getmarginals(rs, IncludeAll()), (marginals) -> begin
-        #         foreach(marginals) do marginal
-        #             @test typeof(marginal) <: Marginal{ <: NormalMeanPrecision }
-        #             @test mean(marginal) === -2.0
-        #             @test variance(marginal) === 3.0
-        #         end
-        #     end)
-        # end
+        # TODO: getmarginals was broken for matrices? remove if tests passes
+        begin 
+            rs = randomvar(:r, 2, 2)
+            setmarginals!(rs, NormalMeanVariance(-2.0, 3.0))
+            subscribe!(getmarginals(rs, IncludeAll()), (marginals) -> begin
+                foreach(marginals) do marginal
+                    @test typeof(marginal) <: Marginal{ <: NormalMeanPrecision }
+                    @test mean(marginal) === -2.0
+                    @test variance(marginal) === 3.0
+                end
+            end)
+        end
 
-        # begin 
-        #     rs = randomvar(:r, 2, 2)
-        #     setmarginals!(rs, NormalMeanPrecision(-2.0, 3.0))
-        #     subscribe!(getmarginals(rs, IncludeAll()), (marginals) -> begin
-        #         foreach(marginals) do marginal
-        #             @test typeof(marginal) <: Marginal{ <: NormalMeanPrecision }
-        #             @test mean(marginal) === -2.0
-        #             @test precision(marginal) === 3.0
-        #         end
-        #     end)
-        # end
+        begin 
+            rs = randomvar(:r, 2, 2)
+            setmarginals!(rs, NormalMeanPrecision(-2.0, 3.0))
+            subscribe!(getmarginals(rs, IncludeAll()), (marginals) -> begin
+                foreach(marginals) do marginal
+                    @test typeof(marginal) <: Marginal{ <: NormalMeanPrecision }
+                    @test mean(marginal) === -2.0
+                    @test precision(marginal) === 3.0
+                end
+            end)
+        end
 
     end
 end
