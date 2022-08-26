@@ -19,7 +19,7 @@ function MvNormalWeightedMeanPrecision(xi::AbstractVector{<:Integer}, Λ::Abstra
 end
 
 function MvNormalWeightedMeanPrecision(xi::AbstractVector, λ::AbstractVector)
-    return MvNormalWeightedMeanPrecision(xi, convert(Matrix, Diagonal(promote_type(eltype(xi), eltype(λ)), λ)))
+    return MvNormalWeightedMeanPrecision(xi, convert(Matrix, Diagonal(λ)))
 end
 
 function MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where {T}

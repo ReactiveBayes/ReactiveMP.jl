@@ -19,7 +19,7 @@ function MvNormalMeanPrecision(μ::AbstractVector{<:Integer}, Λ::AbstractMatrix
 end
 
 function MvNormalMeanPrecision(μ::AbstractVector, λ::AbstractVector)
-    return MvNormalMeanPrecision(μ, convert(Matrix, Diagonal(promote_type(eltype(μ), eltype(λ)), λ)))
+    return MvNormalMeanPrecision(μ, convert(Matrix, Diagonal(λ)))
 end
 
 function MvNormalMeanPrecision(μ::AbstractVector{T}) where {T}
