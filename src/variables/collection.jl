@@ -1,7 +1,7 @@
 export VariablesCollection, getrandom, getconstant, getdata, getvardict
 export hasrandomvar, hasdatavar, hasconstvar
 
-import Base: haskey
+import Base: haskey, getindex, firstindex, lastindex
 
 struct VariablesCollection 
     random      :: Vector{RandomVariable}
@@ -14,6 +14,9 @@ getrandom(collection::VariablesCollection)      = collection.random
 getconstant(collection::VariablesCollection)    = collection.constant
 getdata(collection::VariablesCollection)        = collection.data
 getvardict(collection::VariablesCollection)     = collection.vardict
+
+Base.firstindex(collection::VariablesCollection, symbol::Symbol) = firstindex(collection, getindex(collection, symbol))
+Base.lastindex(collection::VariablesCollection, symbol::Symbol)  = lastindex(collection, getindex(collection, symbol))
 
 function Base.getindex(collection::VariablesCollection, symbol::Symbol)
     vardict = getvardict(collection)
