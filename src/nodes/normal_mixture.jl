@@ -223,7 +223,6 @@ function score(
     skip_strategy,
     scheduler
 ) where {T <: InfCountingReal, N}
-
     stream = combineLatest(
         (
             getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),

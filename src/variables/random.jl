@@ -254,7 +254,7 @@ function activate!(randomvar::RandomVariable, scheduler = AsapScheduler())
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomvar) > 5
         chain_pipeline = schedule_on(scheduler)
-        chain_prod_fn  = messages_prod_fn(randomvar)
+        chain_prod_fn = messages_prod_fn(randomvar)
         randomvar.output_cache = EqualityChain(randomvar.input_messages, chain_pipeline, chain_prod_fn)
     end
 
