@@ -1,17 +1,6 @@
-export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
-export MeanField, FullFactorisation, collect_factorisation
-export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
-export AbstractInterfaceLocalConstraint, Marginalisation, MomentMatching
-export FactorNode,
-    FactorNodeCreationOptions, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
-export iscontain, isfactorised, getinterface
-export clusters, clusterindex
-export connect!, activate!
-export make_node
-export DefaultFunctionalDependencies,
-    RequireMessageFunctionalDependencies,
-    RequireMarginalFunctionalDependencies, RequireEverythingFunctionalDependencies
+export MeanField, FullFactorisation, Marginalisation, MomentMatching
+export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export @node
 
 using Rocket
@@ -182,10 +171,15 @@ default_meta(any) = nothing
 
 ## NodeInterface constraints
 
+"""
+    AbstractInterfaceLocalConstraint
+
+Every edge's interface may have a local "mathematical" constraint, which represent certain properties that the resulting outbound message should obey.
+"""
 abstract type AbstractInterfaceLocalConstraint end
 
 struct Marginalisation <: AbstractInterfaceLocalConstraint end
-struct MomentMatching <: AbstractInterfaceLocalConstraint end # TODO: WIP
+struct MomentMatching <: AbstractInterfaceLocalConstraint end
 
 is_marginalisation(::AbstractInterfaceLocalConstraint) = false
 is_marginalisation(::Marginalisation)                  = true
@@ -550,28 +544,14 @@ See also: [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveM
 """
 struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function message_dependencies(
-    ::DefaultFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
+function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     # First we remove current edge index from the list of dependencies
     vdependencies = TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex))
     # Second we map interface indices to the actual interfaces
     return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), vdependencies)
 end
 
-function marginal_dependencies(
-    ::DefaultFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
+function marginal_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     return TupleTools.deleteat(nodelocalmarginals, cindex)
 end
 
@@ -615,14 +595,7 @@ end
 
 Base.@deprecate_binding RequireInboundFunctionalDependencies RequireMessageFunctionalDependencies
 
-function message_dependencies(
-    dependencies::RequireMessageFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
+function message_dependencies(dependencies::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 
     # First we find dependency index in `indices`, we use it later to find `start_with` distribution
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
@@ -638,33 +611,12 @@ function message_dependencies(
         end
         return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), varcluster)
     else
-        return message_dependencies(
-            DefaultFunctionalDependencies(),
-            nodeinterfaces,
-            nodelocalmarginals,
-            varcluster,
-            cindex,
-            iindex
-        )
+        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     end
 end
 
-function marginal_dependencies(
-    ::RequireMessageFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
-    return marginal_dependencies(
-        DefaultFunctionalDependencies(),
-        nodeinterfaces,
-        nodelocalmarginals,
-        varcluster,
-        cindex,
-        iindex
-    )
+function marginal_dependencies(::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
+    return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 end
 
 ### With marginals
@@ -705,32 +657,11 @@ struct RequireMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDepe
     start_with :: S
 end
 
-function message_dependencies(
-    ::RequireMarginalFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
-    return message_dependencies(
-        DefaultFunctionalDependencies(),
-        nodeinterfaces,
-        nodelocalmarginals,
-        varcluster,
-        cindex,
-        iindex
-    )
+function message_dependencies(::RequireMarginalFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
+    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 end
 
-function marginal_dependencies(
-    dependencies::RequireMarginalFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
+function marginal_dependencies(dependencies::RequireMarginalFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     # First we find dependency index in `indices`, we use it later to find `start_with` distribution
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
 
@@ -744,26 +675,12 @@ function marginal_dependencies(
             setmarginal!(vmarginal, start_with)
         end
         setstream!(extra_localmarginal, vmarginal)
-        default = marginal_dependencies(
-            DefaultFunctionalDependencies(),
-            nodeinterfaces,
-            nodelocalmarginals,
-            varcluster,
-            cindex,
-            iindex
-        )
+        default = marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
         # Find insertion position (probably might be implemented more efficiently)
         insertafter = sum(first(el) < iindex ? 1 : 0 for el in default; init = 0)
         return TupleTools.insertafter(default, insertafter, (extra_localmarginal,))
     else
-        return marginal_dependencies(
-            DefaultFunctionalDependencies(),
-            nodeinterfaces,
-            nodelocalmarginals,
-            varcluster,
-            cindex,
-            iindex
-        )
+        return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     end
 end
 
@@ -779,26 +696,12 @@ See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDep
 """
 struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function ReactiveMP.message_dependencies(
-    ::RequireEverythingFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
+function ReactiveMP.message_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     # Return all node interfaces including the edge we are trying to compute a message on
     return nodeinterfaces
 end
 
-function ReactiveMP.marginal_dependencies(
-    ::RequireEverythingFunctionalDependencies,
-    nodeinterfaces,
-    nodelocalmarginals,
-    varcluster,
-    cindex,
-    iindex
-)
+function ReactiveMP.marginal_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
     # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
     return nodelocalmarginals
 end
@@ -959,8 +862,7 @@ function getmarginal!(
 
         mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
         # TODO: discontinue operator is needed for loopy belief propagation? Check
-        marginalout =
-            combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
 
