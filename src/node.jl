@@ -530,6 +530,13 @@ end
 function Base.push!(collection::FactorNodesCollection, node::AbstractFactorNode)
     push!(collections.nodes, node)
     push!(collection.node_ids, as_node_symbol(functionalform(node)))
+    return node
+end
+
+function Base.push!(collection::FactorNodesCollection, nodes::AbstractFactorNode)
+    append!(collection.nodes, nodes)
+    union!(collection.node_ids, Set(Base.Generator((node) -> as_node_symbol(functionalform(node)), nodes)))
+    return nodes
 end
 
 getnodes(collection::FactorNodesCollection)    = collection.nodes
