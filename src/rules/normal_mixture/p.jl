@@ -17,8 +17,8 @@ export rule
         m_out, v_out       = mean_cov(q_out)
         z_bar              = probvec(q_switch)
         d                  = length(m_mean_k)
-        return Wishart(
+        return WishartMessage(
             one(eltype(z_bar)) + z_bar[k] + d,
-            cholinv(z_bar[k] * (v_out + v_mean_k + (m_out - m_mean_k) * (m_out - m_mean_k)'))
+            z_bar[k] * (v_out + v_mean_k + (m_out - m_mean_k) * (m_out - m_mean_k)')
         )
     end

@@ -43,11 +43,13 @@ ensure_update(model::FactorGraphModel, ::Nothing, variable_name::Symbol, updated
 __inference_process_error(error) = rethrow(error)
 
 function __inference_process_error(err::StackOverflowError)
-    error("""
-        Stack overflow error occurred during the inference procedure. 
-        The dataset size might be causing this error. 
-        To resolve this issue, try using `limit_stack_depth` option when creating a model. See also: `?model_options`
-    """)
+    @error """
+    Stack overflow error occurred during the inference procedure. 
+    The inference engine may execute message update rules recursively, hence, the model graph size might be causing this error. 
+    To resolve this issue, try using `limit_stack_depth` option for model creation. See `?model_options` and `?inference` documentation for more details.
+    The `limit_stack_depth` option does not help against over stack overflow errors that might hapenning outside of the model creation or message update rules execution.
+    """
+    rethrow(err) # Shows the original stack trace
 end
 
 __inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothing
@@ -55,12 +57,12 @@ __inference_check_dicttype(::Symbol, ::Union{Nothing, NamedTuple, Dict}) = nothi
 function __inference_check_dicttype(keyword::Symbol, input::T) where {T}
     error(
         """
-      Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
-      If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
-      Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
+        Keyword argument `$(keyword)` expects either `Dict` or `NamedTuple` as an input, but a value of type `$(T)` has been used.
+        If you specify a `NamedTuple` with a single entry - make sure you put a trailing comma at then end, e.g. `(x = something, )`. 
+        Note: Julia's parser interprets `(x = something)` and (x = something, ) differently. 
             The first expression defines (or **overwrites!**) the local/global variable named `x` with `something` as a content. 
             The second expression defines `NamedTuple` with `x` as a key and `something` as a value.
-  """
+        """
     )
 end
 ##
@@ -114,10 +116,12 @@ end
 
 function Base.getproperty(result::InferenceResult, property::Symbol)
     if property === :free_energy && getfield(result, :free_energy) === nothing
-        error("""
+        error(
+            """
             Bethe Free Energy has not been computed. 
             Use `free_energy = true` keyword argument for the `inference` function to compute Bethe Free Energy values.
-        """)
+            """
+        )
     else
         return getfield(result, property)
     end
@@ -147,7 +151,7 @@ unwrap_free_energy_option(option::Type{T}) where {T <: Real} = (true, T, InfCoun
         meta                    = nothing,
         options                 = (;),
         returnvars              = nothing, 
-        iterations              = 1,
+        iterations              = nothing,
         free_energy             = false,
         free_energy_diagnostics = BetheFreeEnergyDefaultChecks,
         showprogress            = false,
@@ -168,7 +172,7 @@ For more information about some of the arguments, please check below.
 - `meta  = nothing`: meta specification object, optional, may be required for some models, see `@meta`
 - `options = (;)`: model creation options, optional, see `model_options`
 - `returnvars = nothing`: return structure info, optional, defaults to return everything at each iteration, see below for more information
-- `iterations = 1`: number of iterations, optional, defaults to 1, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations
+- `iterations = nothing`: number of iterations, optional, defaults to `nothing`, we do not distinguish between variational message passing or Loopy belief propagation or expectation propagation iterations, see below for more information
 - `free_energy = false`: compute the Bethe free energy, optional, defaults to false. Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
 - `free_energy_diagnostics = BetheFreeEnergyDefaultChecks`: free energy diagnostic checks, optional, by default checks for possible `NaN`s and `Inf`s. `nothing` disables all checks.
 - `showprogress = false`: show progress module, optional, defaults to false
@@ -211,11 +215,15 @@ See `?model_options`.
 
 - ### `returnvars`
 
-`returnvars` specifies the variables of interests and the amount of information to return about their posterior updates. By default the `inference` function tracks and returns every update for each iteration for every random variable in the model.
-`returnvars` accepts a `NamedTuple` or `Dict` or return var specification. There are two specifications:
+`returnvars` specifies the variables of interests and the amount of information to return about their posterior updates. 
 
+`returnvars` accepts a `NamedTuple` or `Dict` or return var specification. There are two specifications:
 - `KeepLast`: saves the last update for a variable, ignoring any intermediate results during iterations
 - `KeepEach`: saves all updates for a variable for all iterations
+
+Note: if `iterations` are specified as a number, the `inference` function tracks and returns every update for each iteration for every random variable in the model (equivalent to `KeepEach()`).
+If number of iterations is set to `nothing`, the `inference` function saves the 'last' (and the only one) update for every random variable in the model (equivalent to `KeepLast()`). 
+Use `iterations = 1` to force `KeepEach()` setting when number of iterations is equal to `1` or set `returnvars = KeepEach()` manually.
 
 Example: 
 
@@ -239,6 +247,10 @@ result = inference(
     returnvars = KeepLast()
 )
 ```
+
+- ### `iterations`
+
+Specifies the number of variational (or loopy BP) iterations. By default set to `nothing`, which is equivalent of doing 1 iteration. 
 
 - ### `free_energy` 
 
@@ -298,7 +310,7 @@ function inference(;
     # Return structure info, optional, defaults to return everything at each iteration
     returnvars = nothing,
     # Number of iterations, defaults to 1, we do not distinguish between VMP or Loopy belief or EP iterations
-    iterations = 1,
+    iterations = nothing,
     # Do we compute FE, optional, defaults to false 
     # Can be passed a floating point type, e.g. `Float64`, for better efficiency, but disables automatic differentiation packages, such as ForwardDiff.jl
     free_energy = false,
@@ -324,7 +336,7 @@ function inference(;
     # If so, we replace it with either `KeepEach` or `KeepLast` for each random and not-proxied variable in a model
     if returnvars === nothing || returnvars === KeepEach() || returnvars === KeepLast()
         # Checks if the first argument is `nothing`, in which case returns the second argument
-        returnoption = something(returnvars, KeepEach())
+        returnoption = something(returnvars, iterations isa Number ? KeepEach() : KeepLast())
         returnvars =
             Dict(
                 variable => returnoption for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value))
@@ -392,11 +404,12 @@ function inference(;
             error("Data is empty. Make sure you used `data` keyword argument with correct value.")
         else
             foreach(filter(pair -> isdata(last(pair)), pairs(vardict))) do pair
-                haskey(data, first(pair)) || error("Data entry $(first(pair)) is missing in `data` dictionary.")
+                varname = first(pair)
+                haskey(data, varname) || error(
+                    "Data entry `$(varname)` is missing in `data` argument. Double check `data = ($(varname) = ???, )`"
+                )
             end
         end
-
-        p = showprogress ? ProgressMeter.Progress(iterations) : nothing
 
         inference_invoke_callback(callbacks, :before_inference, fmodel)
 
@@ -409,7 +422,13 @@ function inference(;
             return hk && is_data
         end
 
-        for iteration in 1:iterations
+        _iterations = something(iterations, 1)
+        _iterations isa Integer || error("`iterations` argument must be of type Integer or `nothing`")
+        _iterations > 0 || error("`iterations` arguments must be greater than zero")
+
+        p = showprogress ? ProgressMeter.Progress(_iterations) : nothing
+
+        for iteration in 1:_iterations
             inference_invoke_callback(callbacks, :before_iteration, fmodel, iteration)
             inference_invoke_callback(callbacks, :before_data_update, fmodel, data)
             for (key, value) in fdata
