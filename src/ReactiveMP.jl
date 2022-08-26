@@ -3,6 +3,13 @@ module ReactiveMP
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
 
+include("helpers/algebra/cholesky.jl")
+include("helpers/algebra/companion_matrix.jl")
+include("helpers/algebra/correction.jl")
+include("helpers/algebra/common.jl")
+include("helpers/algebra/permutation_matrix.jl")
+include("helpers/algebra/standard_basis_vector.jl")
+
 include("constraints/prod/prod.jl")
 include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
@@ -33,13 +40,6 @@ to_marginal(any) = any
 
 as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
-
-include("algebra/cholesky.jl")
-include("algebra/companion_matrix.jl")
-include("algebra/correction.jl")
-include("algebra/common.jl")
-include("algebra/permutation_matrix.jl")
-include("algebra/standard_basis_vector.jl")
 
 include("approximations/approximations.jl")
 include("approximations/gausshermite.jl")
