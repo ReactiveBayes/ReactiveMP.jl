@@ -530,7 +530,7 @@ function Base.show(io::IO, collection::FactorNodesCollection)
 end
 
 function Base.push!(collection::FactorNodesCollection, node::AbstractFactorNode)
-    push!(collections.nodes, node)
+    push!(collection.nodes, node)
     push!(collection.node_ids, as_node_symbol(functionalform(node)))
     return node
 end

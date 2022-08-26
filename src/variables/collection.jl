@@ -44,36 +44,36 @@ Base.push!(::VariablesCollection, ::Nothing) = nothing
 
 function Base.push!(collection::VariablesCollection, randomvar::RandomVariable)
     push!(collection.random, randomvar)
-    setindex!(getvardict(collection), name(randomvar), randomvar)
+    setindex!(getvardict(collection), randomvar, name(randomvar))
     return randomvar
 end
 
 function Base.push!(collection::VariablesCollection, randomvars::AbstractArray{ <: RandomVariable })
     append!(collection.random, randomvars)
-    setindex!(getvardict(collection), name(first(randomvars)), randomvars)
+    setindex!(getvardict(collection), randomvars, name(first(randomvars)))
     return randomvars
 end 
 
 function Base.push!(collection::VariablesCollection, constvar::ConstVariable)
     push!(collection.constant, constvar)
-    setindex!(getvardict(collection), name(constvar), constvar)
+    setindex!(getvardict(collection), constvar, name(constvar))
     return constvar
 end
 
 function Base.push!(collection::VariablesCollection, constvars::AbstractArray{ <: ConstVariable })
     append!(collection.constant, constvars)
-    setindex!(getvardict(collection), name(first(constvars)), constvars)
+    setindex!(getvardict(collection), constvars, name(first(constvars)))
     return constvars
 end
 
 function Base.push!(collection::VariablesCollection, datavar::DataVariable)
     push!(collection.data, datavar)
-    setindex!(getvardict(collection), name(datavar), datavar)
+    setindex!(getvardict(collection), datavar, name(datavar))
     return datavar
 end
 
 function Base.push!(collection::VariablesCollection, datavars::AbstractArray{ <: DataVariable })
     append!(collection.data, datavars)
-    setindex!(getvardict(collection), name(first(datavars)), datavars)
+    setindex!(getvardict(collection), datavars, name(first(datavars)))
     return datavars
 end
