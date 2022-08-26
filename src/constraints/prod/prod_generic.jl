@@ -1,6 +1,7 @@
 export DistProduct, ProdGeneric, GenericLogPdfVectorisedProduct
 
 import Distributions
+import Distributions; VariateForm, ValueSupport
 import Base: prod, show
 
 """

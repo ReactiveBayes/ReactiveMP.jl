@@ -1,15 +1,11 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
-export mean_cov,
-    mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std,
-    weightedmean_invcov, weightedmean_precision
-export weightedmean, probvec
+export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, probvec
+export weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
 export variate_form, value_support, promote_variate_type, convert_eltype
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 import Distributions: VariateForm, ValueSupport, Distribution
-
-import Base: prod
 
 """
     vague(distribution_type, [ dims... ])
@@ -65,17 +61,21 @@ value_support(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueS
 """
     promote_variate_type(::Type{ <: VariateForm }, distribution_type)
 
-Promotes a `distribution_type` to be of the specified variate form (if possible)
+Promotes (if possible) a `distribution_type` to be of the specified variate form.
 """
 function promote_variate_type end
 
 promote_variate_type(::D, T) where {D <: Distribution}       = promote_variate_type(variate_form(D), T)
 promote_variate_type(::Type{D}, T) where {D <: Distribution} = promote_variate_type(variate_form(D), T)
 
+"""
+    convert_eltype(::Type{D}, ::Type{E}, distribution)
+
+Converts (if possible) a `distribution` to be of type `D{E}`.
+"""
 function convert_eltype end
 
-convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} =
-    convert(D{E}, distribution)
+convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} = convert(D{E}, distribution)
 
 """
     logpdf_sample_friendly(distribution) 

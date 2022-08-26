@@ -68,11 +68,37 @@ struct Message{D} <: AbstractMessage
     is_initial :: Bool
 end
 
-getdata(message::Message)    = message.data
+"""
+    getdata(message::Message)    
+
+Returns `data` associated with the `message`.
+"""
+getdata(message::Message) = message.data
+
+"""
+    is_clamped(message::Message)
+
+Checks if `message` is clamped or not.
+
+See also: [`is_initial`](@ref)
+"""
 is_clamped(message::Message) = message.is_clamped
+
+"""
+    is_initial(message::Message)
+
+Checks if `message` is initial or not.
+
+See also: [`is_clamped`](@ref)
+"""
 is_initial(message::Message) = message.is_initial
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
+getdata(messages::AbstractArray{ <:Message })    = map(getdata, messages)
+
+# TupleTools.prod is a more efficient version of Base.all for NTuple here
+is_clamped(messages::NTuple{N, <:Message}) where {N} = TupleTools.prod(map(is_clamped, messages))
+is_initial(messages::NTuple{N, <:Message}) where {N} = TupleTools.prod(map(is_initial, messages))
 
 materialize!(message::Message) = message
 
@@ -80,21 +106,19 @@ Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(messa
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
+# We need this dummy method as Julia is not smart enough to 
+# do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
-    # We need this dummy method as Julia is not smart enough to 
-    # do that automatically if `data` is mutable
-    return left.is_clamped == right.is_clamped &&
-           left.is_initial == right.is_initial &&
-           left.data == right.data
+    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data
 end
 
-function multiply_messages(prod_parametrisation, left::Message, right::Message)
+function multiply_messages(prod_constraint, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
     is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
 
-    return Message(prod(prod_parametrisation, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
+    return Message(prod(prod_constraint, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
 end
 
 constrain_form_as_message(message::Message, form_constraint) =

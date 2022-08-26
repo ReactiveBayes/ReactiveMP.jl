@@ -1,6 +1,7 @@
 export AR, Autoregressive, ARsafe, ARunsafe, ARMeta
 
 import LazyArrays
+import Distributions: VariateForm
 import StatsFuns: log2π
 
 struct AR end
