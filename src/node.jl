@@ -1,12 +1,13 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export MeanField, FullFactorisation, Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
+export FactorNodesCollection, getnodes, getnode_ids
 export @node
 
 using Rocket
 using TupleTools
 
-import Base: show, +
+import Base: show, +, push!
 import Base: getindex, setindex!, firstindex, lastindex
 
 ## Node traits
@@ -414,14 +415,7 @@ struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     pipeline       :: P
 end
 
-function FactorNode(
-    fform::Type{F},
-    interfaces::I,
-    factorisation::C,
-    localmarginals::M,
-    metadata::A,
-    pipeline::P
-) where {F, I, C, M, A, P}
+function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A, pipeline::P) where {F, I, C, M, A, P}
     return FactorNode{Type{F}, I, C, M, A, P}(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
 end
 
@@ -479,11 +473,9 @@ function varclusterindex(cluster, iindex::Int)
     return vcindex !== nothing ? vcindex : error("Invalid cluster '$(vars)' for a given interface index '$(iindex)'")
 end
 
-getinterface(factornode::FactorNode, iname::Symbol) =
-    @inbounds interfaces(factornode)[interfaceindex(factornode, iname)]
+getinterface(factornode::FactorNode, iname::Symbol) = @inbounds interfaces(factornode)[interfaceindex(factornode, iname)]
 
-getclusterinterfaces(factornode::FactorNode, cindex::Int) =
-    @inbounds map(i -> interfaces(factornode)[i], factorisation(factornode)[cindex])
+getclusterinterfaces(factornode::FactorNode, cindex::Int) = @inbounds map(i -> interfaces(factornode)[i], factorisation(factornode)[cindex])
 
 iscontain(factornode::FactorNode, iname::Symbol) = findfirst(interface -> name(interface) === iname, interfaces(factornode)) !== nothing
 isfactorised(factornode::FactorNode, factor)     = findfirst(f -> f == factor, factorisation(factornode)) !== nothing
@@ -523,6 +515,21 @@ collect_pipeline(T::Any, ::Nothing)                                       = Fact
 collect_pipeline(T::Any, stage::AbstractPipelineStage)                    = FactorNodePipeline(default_functional_dependencies_pipeline(T), stage)
 collect_pipeline(T::Any, fdp::AbstractNodeFunctionalDependenciesPipeline) = FactorNodePipeline(fdp, EmptyPipelineStage())
 collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipeline
+
+## Nodes collection
+
+struct FactorNodesCollection 
+    nodes    :: Vector{AbstractFactorNode}
+    node_ids :: Set{Symbol}
+end
+
+function Base.push!(collection::FactorNodesCollection, node::AbstractFactorNode)
+    push!(collections.nodes, node)
+    push!(collection.node_ids, as_node_symbol(functionalform(node)))
+end
+
+getnodes(collection::FactorNodesCollection)    = collection.nodes
+getnode_ids(collection::FactorNodesCollection) = collection.node_ids
 
 ## Functional Dependencies
 
@@ -825,11 +832,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
     return getmarginal!(factornode, localmarginal, IncludeAll())
 end
 
-function getmarginal!(
-    factornode::FactorNode,
-    localmarginal::FactorNodeLocalMarginal,
-    skip_strategy::MarginalSkipStrategy
-)
+function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal, skip_strategy::MarginalSkipStrategy)
     cached_stream = getstream(localmarginal)
 
     if cached_stream !== nothing
@@ -869,9 +872,6 @@ function getmarginal!(
         return apply_skip_filter(cmarginal, skip_strategy)
     end
 end
-
-## TODO
-function conjugate_type end
 
 ## make_node
 

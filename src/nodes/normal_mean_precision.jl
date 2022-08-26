@@ -2,10 +2,6 @@ import StatsFuns: log2π
 
 @node NormalMeanPrecision Stochastic [out, (μ, aliases = [mean]), (τ, aliases = [invcov, precision])]
 
-conjugate_type(::Type{<:NormalMeanPrecision}, ::Type{Val{:out}}) = NormalMeanPrecision
-conjugate_type(::Type{<:NormalMeanPrecision}, ::Type{Val{:μ}})   = NormalMeanPrecision
-conjugate_type(::Type{<:NormalMeanPrecision}, ::Type{Val{:τ}})   = Gamma
-
 @average_energy NormalMeanPrecision (q_out::Any, q_μ::Any, q_τ::Any) = begin
     μ_mean, μ_var     = mean_var(q_μ)
     out_mean, out_var = mean_var(q_out)

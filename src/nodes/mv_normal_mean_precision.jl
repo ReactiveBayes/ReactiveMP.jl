@@ -2,10 +2,6 @@ import StatsFuns: log2π
 
 @node MvNormalMeanPrecision Stochastic [out, (μ, aliases = [mean]), (Λ, aliases = [invcov, precision])]
 
-conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:out}}) = MvNormalMeanPrecision
-conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:μ}})   = MvNormalMeanPrecision
-conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:Λ}})   = Wishart
-
 # default method for mean-field assumption
 @average_energy MvNormalMeanPrecision (q_out::Any, q_μ::Any, q_Λ::Any) = begin
     # naive: (ndims(q_out) * log2π - mean(logdet, q_Λ) + tr(mean(q_Λ)*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))) / 2

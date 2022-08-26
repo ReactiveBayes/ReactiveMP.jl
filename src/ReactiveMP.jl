@@ -77,12 +77,12 @@ include("variables/variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
+include("variables/collection.jl")
 
 include("pipeline/pipeline.jl")
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
-include("pipeline/vague.jl")
 
 include("rule.jl")
 include("node.jl")

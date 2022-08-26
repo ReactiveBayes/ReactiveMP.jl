@@ -1,10 +1,6 @@
 
 @node MvNormalMeanCovariance Stochastic [out, (μ, aliases = [mean]), (Σ, aliases = [cov])]
 
-conjugate_type(::Type{<:MvNormalMeanCovariance}, ::Type{Val{:out}}) = MvNormalMeanCovariance
-conjugate_type(::Type{<:MvNormalMeanCovariance}, ::Type{Val{:μ}})   = MvNormalMeanCovariance
-conjugate_type(::Type{<:MvNormalMeanCovariance}, ::Type{Val{:Σ}})   = InverseWishart
-
 # default method for mean-field assumption
 @average_energy MvNormalMeanCovariance (q_out::Any, q_μ::Any, q_Σ::Any) = begin
     # naive: (ndims(q_out) * log2π + mean(logdet, q_Σ) + tr(cholinv(mean(q_Σ))*(v_out + v_mean + (m_out - m_mean)*(m_out - m_mean)'))) / 2

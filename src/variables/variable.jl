@@ -75,8 +75,7 @@ end
 
 function degree end
 
-add_pipeline_stage!(variable::AbstractVariable, stage) =
-    error("Its not possible to add a new pipeline stage for $(variable)")
+add_pipeline_stage!(variable::AbstractVariable, stage) = error("Its not possible to add a new pipeline stage for $(variable)")
 
 # Helper functions
 # Getters
@@ -124,7 +123,7 @@ function _setmessages!(::Any, variables::AbstractArray{<:AbstractVariable}, marg
     error("setmessages!() failed. Default value is neither an iterable object nor a distribution.")
 end
 
-##
+## Utility functions
 
 name(variable::AbstractVariable)        = variable.name
 isanonymous(variable::AbstractVariable) = false
@@ -159,11 +158,9 @@ function resolve_variable_proxy(var::AbstractVariable)
     end
 end
 
-resolve_variable_proxy(
-    var::AbstractVariable,
-    ::Union{VariableReferenceProxyChecked, VariableReferenceProxyUnchecked},
-    ::Nothing
-) = (name(var), linear_index(collection_type(var)), var)
+function resolve_variable_proxy(var::AbstractVariable, ::Union{VariableReferenceProxyChecked, VariableReferenceProxyUnchecked}, ::Nothing)
+    return (name(var), linear_index(collection_type(var)), var)
+end
 
 resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyUnchecked, proxy::Tuple{T}) where {T <: AbstractVariable} = resolve_variable_proxy(first(proxy))
 resolve_variable_proxy(var::AbstractVariable, ::VariableReferenceProxyUnchecked, proxy::Tuple)                                  = resolve_variable_proxy(var, VariableReferenceProxyChecked(), filter(v -> v isa RandomVariable, proxy))

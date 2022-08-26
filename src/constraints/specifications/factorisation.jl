@@ -194,46 +194,46 @@ __factorisation_specification_resolve_index(index::SplittedRange, collection::Ab
 
 ## Some pre-written optimised dispatch rules for the `UnspecifiedConstraints` case
 
-resolve_factorisation(::UnspecifiedConstraints, model, fform, variables)      = resolve_factorisation(UnspecifiedConstraints(), sdtype(fform), model, fform, variables)
-resolve_factorisation(::UnspecifiedConstraints, any, model, fform, variables) = resolve_factorisation(__EmptyConstraints, model, fform, variables)
+resolve_factorisation(::UnspecifiedConstraints, allvariables, fform, variables)      = resolve_factorisation(UnspecifiedConstraints(), sdtype(fform), allvariables, fform, variables)
+resolve_factorisation(::UnspecifiedConstraints, any, allvariables, fform, variables) = resolve_factorisation(__EmptyConstraints, allvariables, fform, variables)
 
 # Preoptimised dispatch rule for unspecified constraints and a deterministic node with any number of inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Deterministic, model, fform, variables) = FullFactorisation()
+resolve_factorisation(::UnspecifiedConstraints, ::Deterministic, allvariables, fform, variables) = FullFactorisation()
 
 # Preoptimised dispatch rules for unspecified constraints and a stochastic node with 2 inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: RandomVariable}                         = ((1, 2),)
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable} = ((1,), (2,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: RandomVariable}                         = ((1, 2),)
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable} = ((1,), (2,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,))
 
 # Preoptimised dispatch rules for unspecified constraints and a stochastic node with 3 inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: RandomVariable}                                                 = ((1, 2, 3),)
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable, V3 <: RandomVariable}                         = ((1,), (2, 3))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: RandomVariable}                         = ((1, 3), (2,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: Union{<:ConstVariable, <:DataVariable}}                         = ((1, 2), (3,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,), (3,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable, V3 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,), (3,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, model, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: RandomVariable} = ((1,), (2,), (3,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: RandomVariable}                                                 = ((1, 2, 3),)
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable, V3 <: RandomVariable}                         = ((1,), (2, 3))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: RandomVariable}                         = ((1, 3), (2,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: Union{<:ConstVariable, <:DataVariable}}                         = ((1, 2), (3,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,), (3,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable, V3 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,), (3,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: RandomVariable} = ((1,), (2,), (3,))
 
 """
-    resolve_factorisation(constraints, model, fform, variables) 
+    resolve_factorisation(constraints, allvariables, fform, variables) 
 
-This function resolves factorisation constraints in a form of a tuple for a given `constraints`, `model`, `fform`, and `variables`.
+This function resolves factorisation constraints in a form of a tuple for a given `constraints`, `allvariables`, `fform`, and `variables`.
 
 See also: [`ConstraintsSpecification`](@ref)
 """
 function resolve_factorisation end
 
-function resolve_factorisation(constraints, model, fform, _variables)
-    return resolve_factorisation(sdtype(fform), constraints, model, fform, _variables)
+function resolve_factorisation(constraints, allvariables, fform, variables)
+    return resolve_factorisation(sdtype(fform), constraints, allvariables, fform, variables)
 end
 
 # Deterministic nodes always have `FullFactorisation` constraint (by default)
-function resolve_factorisation(::Deterministic, constraints, model, fform, _variables)
+function resolve_factorisation(::Deterministic, constraints, allvariables, fform, variables)
     return FullFactorisation()
 end
 
 # Stochastic nodes may have different factorisation constraints
-function resolve_factorisation(::Stochastic, constraints, model, fform, _variables)
+function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _variables)
     # Input `_variables` may include 'tupled' variables in it (e.g. in NormalMixture node)
     # Before doing any computations we flatten the input and perform all computations in flatten space
     # The output of the `resolve_factorisation` is flattened too
@@ -256,14 +256,14 @@ function resolve_factorisation(::Stochastic, constraints, model, fform, _variabl
     var_refs_names   = map(r -> r[1], var_refs)
     var_refs_indices = map(r -> r[2], var_refs)
 
-    model_vardict = ReactiveMP.getvardict(model)
+    vardict = getvardict(allvariables)
 
     var_refs_collections = map(var_refs_names) do name
         return get(
             () -> error(
-                "Model has no variable named $(name). Double check the expression `$(var_refs_names[1]) ~ $(fform)($(join(var_refs_names[2:end], ", ")))`."
+                "Variables collection has no variable named $(name). Double check the expression `$(var_refs_names[1]) ~ $(fform)($(join(var_refs_names[2:end], ", ")))`."
             ),
-            model_vardict,
+            vardict,
             name
         )
     end
@@ -363,8 +363,8 @@ function resolve_factorisation(::Stochastic, constraints, model, fform, _variabl
             # We do checks every time though it is not strictly necessary (todo check once?)
             is_csentry_splitted::Bool = unrolled_all(index -> index isa SplittedRange, entry_indices)
             if is_csentry_splitted && length(entry_indices) >= 2
-                split_first_indices = unrolled_map((ename, eindex) -> __factorisation_specification_resolve_index(firstindex(eindex), model[ename]), entry_names, entry_indices)
-                split_last_indices  = unrolled_map((ename, eindex) -> __factorisation_specification_resolve_index(lastindex(eindex), model[ename]), entry_names, entry_indices)
+                split_first_indices = unrolled_map((ename, eindex) -> __factorisation_specification_resolve_index(firstindex(eindex), allvariables[ename]), entry_names, entry_indices)
+                split_last_indices  = unrolled_map((ename, eindex) -> __factorisation_specification_resolve_index(lastindex(eindex), allvariables[ename]), entry_names, entry_indices)
                 split_diff_indices  = unrolled_map(-, split_last_indices, split_first_indices)
                 split_diff_check    = unrolled_all(==(first(split_diff_indices)), split_diff_indices)
                 if !split_diff_check
@@ -420,7 +420,7 @@ function resolve_factorisation(::Stochastic, constraints, model, fform, _variabl
                             # `var_ref_index` for current entry and `index` for current symbol which aren't the same because of the previous checks
                             # We need to check that diffs between `var_ref_index` and `index` is the same as between diffs `firstindex` of `q_pair`s
                             # If not, we filter out `clusters_template`
-                            q_pair_diff = firstindex(__factorisation_specification_resolve_index(q_pair_index, model[q_pair_symbol])) - firstindex(__factorisation_specification_resolve_index(q_pair_index_for_current_symbol, model[symbol]))
+                            q_pair_diff = firstindex(__factorisation_specification_resolve_index(q_pair_index, allvariables[q_pair_symbol])) - firstindex(__factorisation_specification_resolve_index(q_pair_index_for_current_symbol, allvariables[symbol]))
                             index_diff  = var_ref_index - index
 
                             if q_pair_diff !== index_diff

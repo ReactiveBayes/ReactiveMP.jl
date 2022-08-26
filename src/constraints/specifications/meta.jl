@@ -56,13 +56,13 @@ struct UnspecifiedMeta end
 const DefaultMeta = UnspecifiedMeta()
 
 """
-    resolve_meta(expr::Expr, fform::Symbol, variables, metaspec, model) 
+    resolve_meta(metaspec, fform, variables)
 
-This function resolves meta for a given `expr` (needed for error printing), `fform`, `variables`, `constraints` and `model`.
+This function resolves meta for a given `expr` (needed for error printing), `fform`, `variables` and `constraints`.
 
 See also: [`ConstraintsSpecification`](@ref)
 """
-function resolve_meta(metaspec, model, fform, variables)
+function resolve_meta(metaspec, fform, variables)
     symfform = as_node_symbol(fform)
 
     var_names      = map(name, variables)
@@ -84,28 +84,26 @@ function resolve_meta(metaspec, model, fform, variables)
     return found === nothing ? nothing : metadata(found)
 end
 
-resolve_meta(metaspec::UnspecifiedMeta, model, fform, variables) = nothing
+resolve_meta(metaspec::UnspecifiedMeta, fform, variables) = nothing
 
 ## 
 
-function activate!(meta::UnspecifiedMeta, model)
+function activate!(meta::UnspecifiedMeta, nodes, variables)
     return nothing
 end
 
-function activate!(meta::MetaSpecification, model)
+function activate!(meta::MetaSpecification, nodes, variables)
     options = getoptions(meta)
-    stats   = getstats(model)
-
-    warn = iswarn(options)
+    warn    = iswarn(options)
 
     foreach(getentries(meta)) do entry
-        if warn && !hasnodeid(stats, functionalform(entry))
-            @warn "Meta specification `$(entry)` specifies node entry as `$(functionalform(entry))`, but model has no factor node `$(functionalform(entry))`. Use `warn = false` option during constraints specification to suppress this warning."
+        if warn && !hasnodeid(nodes, functionalform(entry))
+            @warn "Meta specification `$(entry)` specifies node entry as `$(functionalform(entry))`, but factor nodes collection has no factor node `$(functionalform(entry))`. Use `warn = false` option during constraints specification to suppress this warning."
         end
 
         foreach(getnames(entry)) do ename
-            if warn && !(hasrandomvar(model, ename) || hasdatavar(model, ename) || hasconstvar(model, ename))
-                @warn "Meta specification `$(entry)` uses `$(ename)`, but model has no variable named `$(ename)`. Use `warn = false` option during constraints specification to suppress this warning."
+            if warn && !(hasrandomvar(variables, ename) || hasdatavar(variables, ename) || hasconstvar(variables, ename))
+                @warn "Meta specification `$(entry)` uses `$(ename)`, but variables collection has no variable named `$(ename)`. Use `warn = false` option during constraints specification to suppress this warning."
             end
         end
     end
