@@ -7,7 +7,7 @@ export @node
 using Rocket
 using TupleTools
 
-import Base: show, +, push!
+import Base: show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
 import Base: getindex, setindex!, firstindex, lastindex
 
 ## Node traits
@@ -541,6 +541,17 @@ end
 
 getnodes(collection::FactorNodesCollection)    = collection.nodes
 getnode_ids(collection::FactorNodesCollection) = collection.node_ids
+
+Base.iterate(collection::FactorNodesCollection)        = iterate(getnodes(collection))
+Base.iterate(collection::FactorNodesCollection, state) = iterate(getnodes(collection), state)
+
+Base.IteratorSize(::Type{ FactorNodesCollection })   = Base.HasLength()
+Base.IteratorEltype(::Type{ FactorNodesCollection }) = Base.HasEltype()
+
+Base.eltype(::Type{ FactorNodesCollection }) = AbstractFactorNode
+
+Base.length(collection::FactorNodesCollection)        = length(getnodes(collection))
+Base.size(collection::FactorNodesCollection, dims...) = size(getnodes(collection), dims...)
 
 ## Functional Dependencies
 
