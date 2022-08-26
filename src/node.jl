@@ -550,6 +550,8 @@ end
 getnodes(collection::FactorNodesCollection)    = collection.nodes
 getnode_ids(collection::FactorNodesCollection) = collection.node_ids
 
+hasnodeid(collection::FactorNodesCollection, nodeid::Symbol) = nodeid ∈ getnode_ids(collection)
+
 Base.iterate(collection::FactorNodesCollection)        = iterate(getnodes(collection))
 Base.iterate(collection::FactorNodesCollection, state) = iterate(getnodes(collection), state)
 

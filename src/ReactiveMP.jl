@@ -38,6 +38,9 @@ to_marginal(any) = any
 as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
+getdata(collection::Tuple)         = map(getdata, collection)
+getdata(collection::AbstractArray) = map(getdata, collection)
+
 include("approximations/approximations.jl")
 include("approximations/gausshermite.jl")
 include("approximations/gausslaguerre.jl")
