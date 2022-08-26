@@ -212,12 +212,10 @@ end
 
     addtests(testrunner, "helpers/test_helpers.jl")
 
-    addtests(testrunner, "constraints/spec/test_factorisation_spec.jl")
-    addtests(testrunner, "constraints/spec/test_form_spec.jl")
-    addtests(testrunner, "constraints/form/test_form_point_mass.jl")
     addtests(testrunner, "constraints/prod/test_prod_final.jl")
     addtests(testrunner, "constraints/prod/test_prod_generic.jl")
-    addtests(testrunner, "constraints/meta/test_meta.jl")
+    addtests(testrunner, "constraints/test_factorisation.jl")
+    addtests(testrunner, "constraints/test_meta.jl")
 
     addtests(testrunner, "test_distributions.jl")
     addtests(testrunner, "distributions/test_common.jl")
