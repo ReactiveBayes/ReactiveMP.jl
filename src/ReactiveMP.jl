@@ -1,8 +1,7 @@
 module ReactiveMP
 
-include("macrohelpers.jl")
-include("helpers.jl")
-include("math.jl")
+include("helpers/macrohelpers.jl")
+include("helpers/helpers.jl")
 
 include("constraints/meta/meta.jl")
 
@@ -34,17 +33,14 @@ to_marginal(any) = any
 as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
-include("variable.jl")
-include("pipeline.jl")
-
 include("algebra/cholesky.jl")
 include("algebra/companion_matrix.jl")
 include("algebra/correction.jl")
-include("algebra/helpers.jl")
+include("algebra/common.jl")
 include("algebra/permutation_matrix.jl")
 include("algebra/standard_basis_vector.jl")
 
-include("approximations.jl")
+include("approximations/approximations.jl")
 include("approximations/gausshermite.jl")
 include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")
@@ -79,20 +75,21 @@ include("distributions/sample_list.jl")
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
+include("variables/variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 
+include("pipeline/pipeline.jl")
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
 include("pipeline/vague.jl")
 
 include("rule.jl")
-
 include("node.jl")
-include("score.jl")
 
+include("score/score.jl")
 include("score/variable.jl")
 include("score/node.jl")
 
@@ -146,7 +143,5 @@ include("constraints/form/form_sample_list.jl")
 include("constraints/spec/spec.jl")
 include("constraints/spec/factorisation_spec.jl")
 include("constraints/spec/form_spec.jl")
-
-include("fixes.jl")
 
 end

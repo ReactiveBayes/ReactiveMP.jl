@@ -19,7 +19,7 @@ function MvNormalMeanCovariance(μ::AbstractVector{<:Integer}, Σ::AbstractMatri
 end
 
 function MvNormalMeanCovariance(μ::AbstractVector, σ::AbstractVector)
-    return MvNormalMeanCovariance(μ, matrix_from_diagonal(promote_type(eltype(μ), eltype(σ)), σ))
+    return MvNormalMeanCovariance(μ, convert(Matrix, Diagonal(promote_type(eltype(μ), eltype(σ)), σ)))
 end
 
 function MvNormalMeanCovariance(μ::AbstractVector{T}) where {T}

@@ -150,25 +150,11 @@ end
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
 marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
-function MarginalMapping(
-    ::Type{F},
-    vtag::T,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    factornode::R
-) where {F, T, N, M, A, R}
+function MarginalMapping(::Type{F}, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F, T, N, M, A, R}
     return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
 end
 
-function MarginalMapping(
-    ::F,
-    vtag::T,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    factornode::R
-) where {F <: Function, T, N, M, A, R}
+function MarginalMapping(::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F <: Function, T, N, M, A, R}
     return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
 end
 

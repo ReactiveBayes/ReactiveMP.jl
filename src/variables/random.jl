@@ -13,7 +13,7 @@ mutable struct RandomVariable <: AbstractVariable
     output_initialised :: Bool
     output_cache       :: Union{Nothing, EqualityChain}
     marginal           :: MarginalObservable
-    pipeline           :: AbstractPipelineStage
+    pipeline
     proxy_variables
     prod_constraint
     prod_strategy
@@ -131,11 +131,7 @@ randomvar(name::Symbol, dims::Vararg{Int})                               = rando
 randomvar(options::RandomVariableCreationOptions, name::Symbol)                    = randomvar(options, name, VariableIndividual())
 randomvar(options::RandomVariableCreationOptions, name::Symbol, dims::Vararg{Int}) = randomvar(options, name, dims)
 
-function randomvar(
-    options::RandomVariableCreationOptions,
-    name::Symbol,
-    collection_type::AbstractVariableCollectionType
-)
+function randomvar(options::RandomVariableCreationOptions, name::Symbol, collection_type::AbstractVariableCollectionType)
     return RandomVariable(
         name,
         false,
@@ -197,9 +193,7 @@ isconst(::RandomVariable)                   = false
 isconst(::AbstractArray{<:RandomVariable})  = false
 
 function Base.getindex(randomvar::RandomVariable, i...)
-    error(
-        "Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed."
-    )
+    error("Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed.")
 end
 
 messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(

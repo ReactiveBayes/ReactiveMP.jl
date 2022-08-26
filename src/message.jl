@@ -251,27 +251,11 @@ end
 message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
-function MessageMapping(
-    ::Type{F},
-    vtag::T,
-    vconstraint::C,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    factornode::R
-) where {F, T, C, N, M, A, R}
+function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F, T, C, N, M, A, R}
     return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
 end
 
-function MessageMapping(
-    ::F,
-    vtag::T,
-    vconstraint::C,
-    msgs_names::N,
-    marginals_names::M,
-    meta::A,
-    factornode::R
-) where {F <: Function, T, C, N, M, A, R}
+function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F <: Function, T, C, N, M, A, R}
     return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
 end
 
