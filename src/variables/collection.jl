@@ -8,6 +8,8 @@ struct VariablesCollection
     constant    :: Vector{ConstVariable}
     data        :: Vector{DataVariable}
     vardict     :: Dict{Symbol, Any}
+
+    VariablesCollection() = new(Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
 end
 
 function Base.show(io::IO, collection::VariablesCollection)

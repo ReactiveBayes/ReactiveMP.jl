@@ -521,6 +521,8 @@ collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipe
 struct FactorNodesCollection 
     nodes    :: Vector{AbstractFactorNode}
     node_ids :: Set{Symbol}
+
+    FactorNodesCollection() = new(Vector{AbstractFactorNode}(), Set{Symbol}())
 end
 
 function Base.show(io::IO, collection::FactorNodesCollection)
