@@ -359,15 +359,5 @@ end
     addtests(testrunner, "rules/implication/test_in2.jl")
     addtests(testrunner, "rules/implication/test_marginals.jl")
 
-    addtests(testrunner, "models/test_lgssm.jl")
-    addtests(testrunner, "models/test_hgf.jl")
-    addtests(testrunner, "models/test_ar.jl")
-    addtests(testrunner, "models/test_gmm.jl")
-    addtests(testrunner, "models/test_hmm.jl")
-    addtests(testrunner, "models/test_linreg.jl")
-    addtests(testrunner, "models/test_mv_iid.jl")
-    addtests(testrunner, "models/test_probit.jl")
-    addtests(testrunner, "models/test_aliases.jl")
-
     run(testrunner)
 end

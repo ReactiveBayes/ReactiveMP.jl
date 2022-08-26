@@ -3,8 +3,8 @@ module AlgebraCommonTest
 using Test
 using ReactiveMP
 using Random
-
 using LinearAlgebra
+
 
 @testset "Common" begin
     @testset "mirrorlog" begin
@@ -87,6 +87,8 @@ using LinearAlgebra
     end
 
     @testset "tiny/huge" begin
+        import ReactiveMP: TinyNumber, HugeNumber
+
         @test typeof(tiny) === TinyNumber
         @test typeof(huge) === HugeNumber
 
