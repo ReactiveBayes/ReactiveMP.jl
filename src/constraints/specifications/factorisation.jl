@@ -232,6 +232,11 @@ function resolve_factorisation(::Deterministic, constraints, allvariables, fform
     return FullFactorisation()
 end
 
+# We simply return `constraints` if we get global factorisation constraints
+function resolve_factorisation(::Stochastic, constraints::Union{MeanField, FullFactorisation}, allvariables, fform, variables)
+    return constraints
+end
+
 # Stochastic nodes may have different factorisation constraints
 function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _variables)
     # Input `_variables` may include 'tupled' variables in it (e.g. in NormalMixture node)
