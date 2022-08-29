@@ -400,7 +400,7 @@ import ReactiveMP: WishartMessage
         (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [1e-1, 1e-1, 1e-1]),
         (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [3e-1, 3e-1, 3e-1]),
         (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [2e-1, 2e-1, 2e-1], cov_tol = [6e-1, 6e-1, 6e-1], entropy_tol = [4e-1, 4e-1, 4e-1]),
-        (x = WishartMessage(10.0, posdefm(rng, 3)), y = WishartMessage(5.0, posdefm(rng, 3)), mean_tol = [7e-1, 7e-1, 7e-1], cov_tol = [5e-1, 5e-1, 5e-1], entropy_tol = [2e-1, 2e-1, 2e-1])
+        (x = WishartMessage(10.0, cholinv(posdefm(rng, 3))), y = WishartMessage(5.0, cholinv(posdefm(rng, 3))), mean_tol = [7e-1, 7e-1, 7e-1], cov_tol = [5e-1, 5e-1, 5e-1], entropy_tol = [2e-1, 2e-1, 2e-1])
 ]
 
         for (i, N) in enumerate(sizes)
