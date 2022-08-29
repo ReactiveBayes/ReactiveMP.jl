@@ -22,6 +22,7 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 import Base
 import Base: prod, convert
 import Random: rand!
+import Distributions: logpdf
 
 using LoopVectorization
 using LinearAlgebra
@@ -355,8 +356,8 @@ end
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
-function logPdf(η::NormalNaturalParameters, x)
-    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
+function Distributions.logpdf(η::NormalNaturalParameters, x)
+    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.minus_half_precision + lognormalizer(η)
 end
 
 function logPdf(η::MvNormalNaturalParameters, x)
