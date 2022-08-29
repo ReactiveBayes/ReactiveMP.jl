@@ -345,7 +345,7 @@ function Base.:-(left::MvNormalNaturalParameters, right::MvNormalNaturalParamete
 end
 
 function lognormalizer(η::NormalNaturalParameters)
-    return -(η.weighted_mean^2) / (4 * η.minus_half_precision) - 0.5 * log(-2 * η.minus_half_precision)
+    return η.weighted_mean^2 / (4 * η.minus_half_precision) + 0.5 * log(-2 * η.minus_half_precision)
 end
 
 function lognormalizer(η::MvNormalNaturalParameters)
