@@ -1,9 +1,11 @@
 export Bernoulli
 export naturalParams
 export standardDist
+export BernoulliNaturalParameters
 
-import Distributions: Bernoulli, succprob, failprob
+import Distributions: Bernoulli, succprob, failprob, logpdf
 import Base
+import StatsFuns: logistic
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
@@ -28,7 +30,7 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     return prod(ProdPreserveType(Bernoulli), left, Bernoulli(first(probvec(right))))
 end
 
-struct BernoulliNaturalParameters{T} <: NaturalParameters
+struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
     η::T
 end
 
@@ -43,15 +45,20 @@ function Base.:-(left::BernoulliNaturalParameters, right::BernoulliNaturalParame
 end
 
 function lognormalizer(η::BernoulliNaturalParameters)
-    return log(1 + exp(get_natural_params(η)))
+    return log(logistic(-get_natural_params(η)))
 end
 
-function logPdf(η::BernoulliNaturalParameters, x)
-    return x * get_natural_params(η) - lognormalizer(η)
+function Distributions.logpdf(η::BernoulliNaturalParameters, x)
+    return x * get_natural_params(η) + lognormalizer(η)
 end
 
 function standardDist(η::BernoulliNaturalParameters)
-    return Bernoulli(get_natural_params(η) / (1 + exp(get_natural_params(η))))
+    return Bernoulli(exp(get_natural_params(η)) / (1 + exp(get_natural_params(η))))
 end
 
-naturalParams(dist::Bernoulli) = BernoulliNaturalParameters(log(dist.params[:p] / (1 - dist.params[:p])))
+function naturalParams(dist::Bernoulli) 
+    if succprob(dist) ≈ 1
+        error("Bernoulli natural parameter is not defiend for p = 1.")
+    end
+    return BernoulliNaturalParameters(log(succprob(dist) / (1 - succprob(dist))))
+end
