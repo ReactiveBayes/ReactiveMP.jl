@@ -254,7 +254,13 @@ end
 
 struct NormalNaturalParameters{T <: Real} <: NaturalParameters
     weighted_mean::T
-    precision::T
+    minus_half_precision::T
+    # NormalNaturalParameters(weighted_mean, minus_half_precision) =
+    #     if minus_half_precision >= 0
+    #         error("NormalNaturalParameters are not defiend for minus half precision equals to $minus_half_precision.")
+    #     else
+    #         new{eltype(promote(weighted_mean, minus_half_precision))}(weighted_mean, minus_half_precision)
+    #     end
 end
 
 struct MvNormalNaturalParameters <: NaturalParameters
@@ -263,6 +269,9 @@ struct MvNormalNaturalParameters <: NaturalParameters
 end
 
 function NormalNaturalParameters(v)
+    # if v[2] >= 0
+    #     error("NormalNaturalParameters are not defiend for minus half precision equals to $v[2].")
+    # end
     return NormalNaturalParameters(v[1], v[2])
 end
 
@@ -278,7 +287,7 @@ function MvNormalNaturalParameters(v)
 end
 
 function Base.vec(p::NormalNaturalParameters)
-    return [p.weighted_mean, p.precision]
+    return [p.weighted_mean, p.minus_half_precision]
 end
 
 function Base.vec(p::MvNormalNaturalParameters)
@@ -297,7 +306,7 @@ function naturalParams(dist::MultivariateGaussianDistributionsFamily)
 end
 
 function standardDist(η::NormalNaturalParameters)
-    return GaussianWeighteMeanPrecision(η.weighted_mean, -2 * η.precision)
+    return GaussianWeighteMeanPrecision(η.weighted_mean, -2 * η.minus_half_precision)
 end
 
 function standardDist(η::MvNormalNaturalParameters)
@@ -308,7 +317,10 @@ function standardDist(η::MvNormalNaturalParameters)
 end
 
 function Base.:+(left::NormalNaturalParameters, right::NormalNaturalParameters)
-    return NormalNaturalParameters(left.weighted_mean + right.weighted_mean, left.precision + right.precision)
+    return NormalNaturalParameters(
+        left.weighted_mean + right.weighted_mean,
+        left.minus_half_precision + right.minus_half_precision
+    )
 end
 
 function Base.:+(left::MvNormalNaturalParameters, right::MvNormalNaturalParameters)
@@ -319,7 +331,10 @@ function Base.:+(left::MvNormalNaturalParameters, right::MvNormalNaturalParamete
 end
 
 function Base.:-(left::NormalNaturalParameters, right::NormalNaturalParameters)
-    return NormalNaturalParameters(left.weighted_mean - right.weighted_mean, left.precision - right.precision)
+    return NormalNaturalParameters(
+        left.weighted_mean - right.weighted_mean,
+        left.minus_half_precision - right.minus_half_precision
+    )
 end
 
 function Base.:-(left::MvNormalNaturalParameters, right::MvNormalNaturalParameters)
@@ -330,7 +345,7 @@ function Base.:-(left::MvNormalNaturalParameters, right::MvNormalNaturalParamete
 end
 
 function lognormalizer(η::NormalNaturalParameters)
-    return -(η.weighted_mean^2) / (4 * η.precision) - 0.5 * log(-2 * η.precision)
+    return -(η.weighted_mean^2) / (4 * η.minus_half_precision) - 0.5 * log(-2 * η.minus_half_precision)
 end
 
 function lognormalizer(η::MvNormalNaturalParameters)
@@ -341,7 +356,7 @@ end
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function logPdf(η::NormalNaturalParameters, x)
-    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.precision - lognormalizer(η)
+    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
 end
 
 function logPdf(η::MvNormalNaturalParameters, x)
@@ -349,6 +364,6 @@ function logPdf(η::MvNormalNaturalParameters, x)
     return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - lognormalizer(η)
 end
 
-isProper(params::NormalNaturalParameters) = params.precision < 0
+isProper(params::NormalNaturalParameters) = params.minus_half_precision < 0
 
 isProper(params::MvNormalNaturalParameters) = isposdef(params.precesion_matrix)

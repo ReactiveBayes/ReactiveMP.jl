@@ -39,8 +39,10 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = NormalNaturalParameters(df_μ1, df_μ2)
-        ∇ = λ - η - ∇f
+        ∇ = NormalNaturalParameters(
+            λ.weighted_mean - η.weighted_mean - df_μ1,
+            λ.minus_half_precision - η.minus_half_precision - df_μ2
+        )
         λ_new = NormalNaturalParameters(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
         if isProper(λ_new)
             λ = λ_new

@@ -56,7 +56,7 @@ function standardDist(η::BernoulliNaturalParameters)
     return Bernoulli(exp(get_natural_params(η)) / (1 + exp(get_natural_params(η))))
 end
 
-function naturalParams(dist::Bernoulli) 
+function naturalParams(dist::Bernoulli)
     if succprob(dist) ≈ 1
         error("Bernoulli natural parameter is not defiend for p = 1.")
     end

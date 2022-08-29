@@ -124,6 +124,7 @@ end
     addtests("distributions/test_normal_mean_precision.jl")
     addtests("distributions/test_normal_weighted_mean_precision.jl")
     addtests("distributions/test_normal.jl")
+    addtests("distributions/test_normal_natural_parameters.jl")
     addtests("distributions/test_pointmass.jl")
     addtests("distributions/test_wishart.jl")
     addtests("distributions/test_wishart_inverse.jl")
