@@ -1,5 +1,9 @@
 export DeltaFn
 
+# include approximations
+include("approximations/extended.jl")
+include("approximations/unscented.jl")
+
 struct DeltaFnCallableWrapper{F} end
 
 (::Type{DeltaFnCallableWrapper{F}})(args...) where {F} = F.instance(args...)
