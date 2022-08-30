@@ -365,6 +365,6 @@ function logPdf(η::MvNormalNaturalParameters, x)
     return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - lognormalizer(η)
 end
 
-isProper(params::NormalNaturalParameters) = params.minus_half_precision < 0
+isproper(params::NormalNaturalParameters) = params.minus_half_precision < 0
 
-isProper(params::MvNormalNaturalParameters) = isposdef(params.precesion_matrix)
+isproper(params::MvNormalNaturalParameters) = isposdef(params.precesion_matrix)

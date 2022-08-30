@@ -44,7 +44,7 @@ function renderCVI(logp_nc::Function,
             λ.minus_half_precision - η.minus_half_precision - df_μ2
         )
         λ_new = NormalNaturalParameters(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
-        if isProper(λ_new)
+        if isproper(λ_new)
             λ = λ_new
         end
     end
@@ -81,7 +81,7 @@ function renderCVI(logp_nc::Function,
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
         ∇ = λ - η - T(∇f)
         updated = T(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
-        if isProper(updated)
+        if isproper(updated)
             λ = updated
         end
     end
@@ -122,7 +122,7 @@ function renderCVI(logp_nc::Function,
 
         updated = MvNormalNaturalParameters(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
 
-        if isProper(updated)
+        if isproper(updated)
             λ = updated
         end
     end

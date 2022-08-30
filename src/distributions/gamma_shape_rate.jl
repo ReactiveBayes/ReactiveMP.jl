@@ -104,6 +104,6 @@ function logPdf(η::GammaShapeRateNaturalParameters, x)
     return log(x) * η.a_ + x * η.b - lognormalizer(η)
 end
 
-function isProper(params::GammaShapeRateNaturalParameters)
+function isproper(params::GammaShapeRateNaturalParameters)
     return (params.a_ >= tiny - 1) && (params.b <= tiny)
 end
