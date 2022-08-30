@@ -62,3 +62,5 @@ function naturalParams(dist::Bernoulli)
     end
     return BernoulliNaturalParameters(log(succprob(dist) / (1 - succprob(dist))))
 end
+
+isproper(params::BernoulliNaturalParameters) = true
