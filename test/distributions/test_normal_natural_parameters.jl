@@ -7,7 +7,7 @@ using Distributions
 @testset "NormalNaturalParameters" begin
     @testset "Constructor" begin
         for i in 1:10
-            @test standardDist(NormalNaturalParameters(i, -i)) ≈ NormalWeightedMeanPrecision(i, 2*i)
+            @test standardDist(NormalNaturalParameters(i, -i)) ≈ NormalWeightedMeanPrecision(i, 2 * i)
         end
     end
 
@@ -17,7 +17,7 @@ using Distributions
 
     @testset "logpdf" begin
         for i in 1:10
-            @test logpdf(NormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2*i), 0)
+            @test logpdf(NormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
         end
     end
 
