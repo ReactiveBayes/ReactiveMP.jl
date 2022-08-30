@@ -2,7 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
-export NormalNaturalParameters, MvNormalNaturalParameters, naturalParams, logPdf, isproper
+export NormalNaturalParameters, MvNormalNaturalParameters, naturalParams, isproper
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -264,15 +264,27 @@ struct NormalNaturalParameters{T <: Real} <: NaturalParameters
     #     end
 end
 
-struct MvNormalNaturalParameters <: NaturalParameters
-    weighted_mean
-    precesion_matrix
+struct MvNormalNaturalParameters{T <: Real} <: NaturalParameters
+    weighted_mean::Array{T, 1}
+    minus_half_precision_matrix::Matrix{T}
+    MvNormalNaturalParameters(weighted_mean, minus_half_precision_matrix) =
+        if (
+            (size(weighted_mean)[1] != size(minus_half_precision_matrix)[1]) ||
+            (size(weighted_mean)[1] != size(minus_half_precision_matrix)[2])
+        )
+            error(
+                "MvNormalNaturalParameters can not be created from shapes:", " ",
+                "mean $(size(weighted_mean)) and matrix $(size(minus_half_precision_matrix))."
+            )
+        else
+            new{promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix))}(
+                weighted_mean,
+                minus_half_precision_matrix
+            )
+        end
 end
 
 function NormalNaturalParameters(v)
-    # if v[2] >= 0
-    #     error("NormalNaturalParameters are not defiend for minus half precision equals to $v[2].")
-    # end
     return NormalNaturalParameters(v[1], v[2])
 end
 
@@ -292,7 +304,7 @@ function Base.vec(p::NormalNaturalParameters)
 end
 
 function Base.vec(p::MvNormalNaturalParameters)
-    return [p.weighted_mean; vcat(p.precesion_matrix...)]
+    return [p.weighted_mean; vcat(p.minus_half_precision_matrix...)]
 end
 
 # Standard parameters to natural parameters
@@ -312,7 +324,7 @@ end
 
 function standardDist(η::MvNormalNaturalParameters)
     d = length(η.weighted_mean)
-    XI, W = η.weighted_mean[1:d], reshape(-2 * η.precesion_matrix, d, d)
+    XI, W = η.weighted_mean[1:d], reshape(-2 * η.minus_half_precision_matrix, d, d)
     W = Matrix(Hermitian(W + tiny * diageye(d))) # Ensure precision is always invertible
     return MvNormalWeightedMeanPrecision(XI, W)
 end
@@ -327,7 +339,7 @@ end
 function Base.:+(left::MvNormalNaturalParameters, right::MvNormalNaturalParameters)
     return MvNormalNaturalParameters(
         left.weighted_mean .+ right.weighted_mean,
-        left.precesion_matrix .+ right.precesion_matrix
+        left.minus_half_precision_matrix .+ right.minus_half_precision_matrix
     )
 end
 
@@ -341,7 +353,7 @@ end
 function Base.:-(left::MvNormalNaturalParameters, right::MvNormalNaturalParameters)
     return MvNormalNaturalParameters(
         left.weighted_mean .- right.weighted_mean,
-        left.precesion_matrix .- right.precesion_matrix
+        left.minus_half_precision_matrix .- right.minus_half_precision_matrix
     )
 end
 
@@ -350,7 +362,8 @@ function lognormalizer(η::NormalNaturalParameters)
 end
 
 function lognormalizer(η::MvNormalNaturalParameters)
-    return -0.25 * η.weighted_mean' * (η.precesion_matrix \ η.weighted_mean) - 0.5 * logdet(-2 * η.precesion_matrix)
+    return -0.25 * η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) -
+           0.5 * logdet(-2 * η.minus_half_precision_matrix)
 end
 
 # logPdf wrt natural params. ForwardDiff is not stable with reshape function which
@@ -360,11 +373,11 @@ function Distributions.logpdf(η::NormalNaturalParameters, x)
     return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.minus_half_precision + lognormalizer(η)
 end
 
-function logPdf(η::MvNormalNaturalParameters, x)
+function Distributions.logpdf(η::MvNormalNaturalParameters, x)
     ϕ(x) = [x; vec(x * transpose(x))]
     return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - lognormalizer(η)
 end
 
 isproper(params::NormalNaturalParameters) = params.minus_half_precision < 0
 
-isproper(params::MvNormalNaturalParameters) = isposdef(params.precesion_matrix)
+isproper(params::MvNormalNaturalParameters) = isposdef(-params.minus_half_precision_matrix)
