@@ -23,6 +23,7 @@ import Base
 import Base: prod, convert
 import Random: rand!
 import Distributions: logpdf
+import StatsFuns: invsqrt2π
 
 using LoopVectorization
 using LinearAlgebra
@@ -370,7 +371,7 @@ end
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function Distributions.logpdf(η::NormalNaturalParameters, x)
-    return log(1 / sqrt(2 * pi)) + x * η.weighted_mean + x^2 * η.minus_half_precision + lognormalizer(η)
+    return log(invsqrt2π) + x * η.weighted_mean + x^2 * η.minus_half_precision + lognormalizer(η)
 end
 
 function Distributions.logpdf(η::MvNormalNaturalParameters, x)
