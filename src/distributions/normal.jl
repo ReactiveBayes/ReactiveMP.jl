@@ -248,4 +248,3 @@ function Random.rand!(
     end
     container
 end
-

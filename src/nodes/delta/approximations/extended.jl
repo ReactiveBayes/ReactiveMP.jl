@@ -1,7 +1,7 @@
 export DeltaExtended, ET
 
 struct DeltaExtended{T}
-    inverse :: T
+    inverse::T
 end
 
 DeltaExtended() = DeltaExtended(nothing)

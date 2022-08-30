@@ -30,7 +30,7 @@ localmarginalnames(factornode::DeltaFnNode)               = map(name, localmargi
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
 # For missing rules error msg
-rule_method_error_extract_fform(f::Type{<: DeltaFn }) = "DeltaFn{f}"
+rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
     if iname === :out
@@ -102,8 +102,8 @@ function activate!(model, factornode::DeltaFnNode)
         setstream!(localmarginal, cmarginal)
 
         # We need messages both from `:out` and `:ins`
-        msgs_names      = Val{(:out, :ins,)}
-        msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
+        msgs_names      = Val{(:out, :ins)}
+        msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew())), PushNew())
 
         marginal_names       = nothing
         marginals_observable = of(nothing)
