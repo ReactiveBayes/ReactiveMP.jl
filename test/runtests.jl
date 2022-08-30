@@ -235,6 +235,7 @@ end
     addtests(testrunner, "distributions/test_mv_normal_mean_covariance.jl")
     addtests(testrunner, "distributions/test_mv_normal_mean_precision.jl")
     addtests(testrunner, "distributions/test_mv_normal_weighted_mean_precision.jl")
+    addtests(testrunner, "distributions/test_mv_normal_natural_parameters.jl")
     addtests(testrunner, "distributions/test_normal_mean_variance.jl")
     addtests(testrunner, "distributions/test_normal_mean_precision.jl")
     addtests(testrunner, "distributions/test_normal_weighted_mean_precision.jl")
