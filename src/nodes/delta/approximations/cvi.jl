@@ -30,8 +30,8 @@ function renderCVI(logp_nc::Function,
     η = naturalParams(msg_in)
     λ = deepcopy(λ_init)
 
-    df_m(z) = ForwardDiff.derivative(logp_nc, z)
-    df_v(z) = 0.5 * ForwardDiff.derivative(df_m, z)
+    df_m = (z) -> ForwardDiff.derivative(logp_nc, z)
+    df_v = (z) -> 0.5 * ForwardDiff.derivative(df_m, z)
     rng     = something(rng, Random.GLOBAL_RNG)
 
     for _ in 1:num_iterations
@@ -100,8 +100,8 @@ function renderCVI(logp_nc::Function,
     η = naturalParams(msg_in)
     λ = deepcopy(λ_init)
 
-    df_m(z) = ForwardDiff.gradient(logp_nc, z)
-    df_v(z) = 0.5 * ForwardDiff.jacobian(df_m, z)
+    df_m = (z) -> ForwardDiff.gradient(logp_nc, z)
+    df_v = (z) -> 0.5 * ForwardDiff.jacobian(df_m, z)
 
     for _ in 1:num_iterations
         q = standardDist(λ)
