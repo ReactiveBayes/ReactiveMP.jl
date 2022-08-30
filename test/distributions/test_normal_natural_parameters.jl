@@ -4,9 +4,11 @@ using Test
 using ReactiveMP
 using Distributions
 
-@testset "NormalMeanPrecision" begin
+@testset "NormalNaturalParameters" begin
     @testset "Constructor" begin
-        @test standardDist(NormalNaturalParameters(1, -1)) ≈ NormalWeightedMeanPrecision(1, 2)
+        for i in 1:10
+            @test standardDist(NormalNaturalParameters(i, -i)) ≈ NormalWeightedMeanPrecision(i, 2*i)
+        end
     end
 
     @testset "lognormalizer" begin
@@ -14,7 +16,16 @@ using Distributions
     end
 
     @testset "logpdf" begin
-        @test logpdf(NormalNaturalParameters(1, -1), 0) ≈ logpdf(NormalWeightedMeanPrecision(1, 2), 0)
+        for i in 1:10
+            @test logpdf(NormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2*i), 0)
+        end
+    end
+
+    @testset "isproper" begin
+        for i in 1:10
+            @test isproper(NormalNaturalParameters(i, -i)) === true
+            @test isproper(NormalNaturalParameters(i, i)) === false
+        end
     end
 end
 

@@ -40,6 +40,7 @@ using Random
             @test logpdf(bnp, 1) ≈ logpdf(Bernoulli(i / 10.0), 1)
             @test logpdf(bnp, 0) ≈ logpdf(Bernoulli(i / 10.0), 0)
         end
+        @test isproper(BernoulliNaturalParameters(10)) === true
     end
 end
 
