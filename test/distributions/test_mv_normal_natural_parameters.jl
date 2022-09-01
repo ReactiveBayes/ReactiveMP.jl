@@ -26,6 +26,13 @@ using Distributions
         mt = zeros(Float64, 1, 1) .- 2.0
         @test lognormalizer(MvNormalNaturalParameters([1], mt)) ≈ (log(2) - 1 / 8)
     end
+
+    @testset "isproper" begin
+        for i in 1:10
+            @test isproper(MvNormalNaturalParameters([i, 0], [-i 0; 0 -i])) === true
+            @test isproper(MvNormalNaturalParameters([i, 0], [i 0; 0 i])) === false
+        end
+    end
 end
 
 end
