@@ -32,7 +32,7 @@ function renderCVI(logp_nc::Function,
 
     df_m = (z) -> ForwardDiff.derivative(logp_nc, z)
     df_v = (z) -> 0.5 * ForwardDiff.derivative(df_m, z)
-    rng     = something(rng, Random.GLOBAL_RNG)
+    rng = something(rng, Random.GLOBAL_RNG)
 
     for _ in 1:num_iterations
         q = standardDist(λ)

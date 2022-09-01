@@ -363,7 +363,7 @@ function lognormalizer(η::NormalNaturalParameters)
 end
 
 function lognormalizer(η::MvNormalNaturalParameters)
-    return -0.25 * η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) -
+    return 0.25 * η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) +
            0.5 * logdet(-2 * η.minus_half_precision_matrix)
 end
 
@@ -376,7 +376,7 @@ end
 
 function Distributions.logpdf(η::MvNormalNaturalParameters, x)
     ϕ(x) = [x; vec(x * transpose(x))]
-    return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) - lognormalizer(η)
+    return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕ(x)) * vec(η) + lognormalizer(η)
 end
 
 isproper(params::NormalNaturalParameters) = params.minus_half_precision < 0

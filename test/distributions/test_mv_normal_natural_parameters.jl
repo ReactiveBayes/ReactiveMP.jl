@@ -23,6 +23,8 @@ using Distributions
     end
 
     @testset "lognormalizer" begin
+        mt = zeros(Float64, 1, 1) .- 2.0
+        @test lognormalizer(MvNormalNaturalParameters([1], mt)) ≈ (log(2) - 1 / 8)
     end
 end
 
