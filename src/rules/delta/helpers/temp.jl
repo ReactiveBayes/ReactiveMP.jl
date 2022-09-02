@@ -6,7 +6,7 @@ using ForwardDiff
 Return local linearization of g around expansion point x_hat
 for Delta node with single input interface
 """
-function localLinearization(g::Function, x_hat::Float64)
+function localLinearization(g, x_hat::Float64)
     a = ForwardDiff.derivative(g, x_hat)
     b = g(x_hat) - a * x_hat
 
@@ -17,10 +17,12 @@ end
 Return local linearization of g around expansion point x_hat
 for Delta node with multiple input interfaces
 """
-function localLinearization(g::Function, x_hat::Vector{Float64})
-    g_unpacked(x::Vector) = g(x...)
-    A = ForwardDiff.gradient(g_unpacked, x_hat)'
-    b = g(x_hat...) - A * x_hat
+function localLinearization(g, x_hat::Vector{Float64})
+    # g_unpacked(x::Vector) = g(x...)
+    @show "hello"
+    @show g(x_hat)
+    A = ForwardDiff.jacobian(g, x_hat)
+    b = g(x_hat) - A * x_hat
 
     return (A, b)
 end
@@ -34,8 +36,11 @@ function collectStatistics(msgs::Vararg{Union{Any, Nothing}})
 
     ms = [stat[1] for stat in stats]
     Vs = [stat[2] for stat in stats]
-    @show ms, Vs
     return (ms, Vs) # Return tuple with vectors for means and covariances
+end
+
+function collectStatistics(msg::Any)
+    return mean_cov(msg)
 end
 
 """
