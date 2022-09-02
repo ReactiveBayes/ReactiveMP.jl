@@ -84,7 +84,7 @@ function deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRul
         msgs_without_current = TupleTools.deleteat(factornode.ins, index)
         msgs_names           = Val{(:out, :ins,)}
         msgs_observable      = combineLatestUpdates((
-            messagein(factornode.out), combineLatestUpdates(map((in) -> messagein(in), msgs_without_current), PushNew()) |> default_if_empty(()),
+            messagein(factornode.out), combineLatestUpdates(map((in) -> messagein(in), msgs_without_current), PushNew()) |> default_if_empty(of(())),
         ), PushNew())
 
         marginal_names       = nothing
