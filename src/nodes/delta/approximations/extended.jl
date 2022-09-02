@@ -36,7 +36,7 @@ function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnR
 
         fform       = functionalform(factornode)
         vtag        = tag(out)
-        vconstraint = local_constraint(interface)
+        vconstraint = local_constraint(out)
         meta        = metadata(factornode)
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
@@ -54,7 +54,7 @@ function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnR
         # vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
-        connect!(messageout(interface), vmessageout)
+        connect!(messageout(out), vmessageout)
     end
 end
 
