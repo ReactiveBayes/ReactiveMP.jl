@@ -28,7 +28,9 @@ function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnR
     let out = factornode.out, ins = factornode.ins
         # By default, to compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge
         msgs_names      = Val{(:ins,)}
-        msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew())), PushNew())
+        msgs_observable = combineLatestUpdates(
+            (combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()), ), 
+        PushNew())
 
         # By default we don't need any marginals
         marginal_names       = nothing
