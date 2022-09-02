@@ -10,27 +10,28 @@ const ET = DeltaExtended
 
 
 # DeltaFn node non-standard rule layout for `DeltaExtended` approximation rule
+# `DeltaExtended` node changes the default layout in 2 ways:
+# - `m_out` requires only inbounds messages on `m_in`s (TODO consider exchanging this behaviour with CVI in the future)
+# - (ONLY WITH KNOWN INVERSE) `m_in(k)` requires only inbound message on `m_out` and inbound messages on the remaining `m_in`s
 
-struct DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout end
+struct DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout end
 
-deltafn_rule_layout(::DeltaFnNode, ::DeltaExtended{Nothing}) = DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::DeltaExtended{Nothing}) = DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout()
 
-deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:q_out}, model, factornode::DeltaFnNode) =
+deltafn_apply_layout(::DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout, ::Val{:q_out}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), model, factornode)
 
-deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:q_ins}, model, factornode::DeltaFnNode) =
+deltafn_apply_layout(::DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout, ::Val{:q_ins}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), model, factornode)
 
-deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) =
+deltafn_apply_layout(::DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), model, factornode)
 
-function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode)
+function deltafn_apply_layout(::DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode)
     let out = factornode.out, ins = factornode.ins
-        # By default, to compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge
+
         msgs_names      = Val{(:ins,)}
-        msgs_observable = combineLatestUpdates(
-            (combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()), ), 
-        PushNew())
+        msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()), ), PushNew())
 
         # By default we don't need any marginals
         marginal_names       = nothing
@@ -60,31 +61,36 @@ function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnR
     end
 end
 
-##
-
+# We use non-standard `DeltaFn` node layout in case if inverse is known
 struct DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout end
 
-# We use non-standard `DeltaFn` node layout in case if inverse is known
-deltafn_rule_layout(::DeltaFnNode, ::DeltaExtended{F}) where { F <: Function } = DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::DeltaExtended{F}) where { F <: Function }               = DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::DeltaExtended{F}) where { N, F <: NTuple{N, Function} } = DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout()
 
 deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, ::Val{:q_out}, model, factornode::DeltaFnNode) =
-    deltafn_apply_layout(DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_out), model, factornode)
+    deltafn_apply_layout(DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_out), model, factornode)
 
 deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, ::Val{:q_ins}, model, factornode::DeltaFnNode) =
-    deltafn_apply_layout(DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_ins), model, factornode)
+    deltafn_apply_layout(DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_ins), model, factornode)
 
 deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode) =
-    deltafn_apply_layout(DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout(), Val(:m_out), model, factornode)
+    deltafn_apply_layout(DeltaExtendedUknownInverseApproximationDeltaFnRuleLayout(), Val(:m_out), model, factornode)
 
 # This function declares how to compute `m_in` 
 
-function deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) 
+function deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode{F, N}) where {F, N} 
     # For each outbound message from `in_k` edge we need an inbound messages from all OTHER! `in_*` edges and inbound message on `m_out`
     foreach(enumerate(factornode.ins)) do (index, interface)
 
-        msgs_without_current = TupleTools.deleteat(factornode.ins, index)
+        # If we have only one `interface` we replace it with nothing
+        # In other cases we remove the current index from the list of interfaces
+        msgs_ins_stream = if N === 1 # `N` should be known at compile-time here so this `if` branch must be compiled out
+            of(Message(nothing, true, true))
+        else
+            combineLatestUpdates(map((in) -> messagein(in), TupleTools.deleteat(factornode.ins, index)), PushNew()) 
+        end
+
         msgs_names           = Val{(:out, :ins,)}
-        msgs_ins_stream      = !isempty(msgs_without_current) ? combineLatestUpdates(map((in) -> messagein(in), msgs_without_current), PushNew()) : of(Message(nothing, true, true))
         msgs_observable      = combineLatestUpdates((messagein(factornode.out), msgs_ins_stream,), PushNew())
 
         marginal_names       = nothing
