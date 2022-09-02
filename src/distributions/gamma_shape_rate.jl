@@ -1,6 +1,6 @@
 export GammaShapeRate, GammaShapeRateNaturalParameters, lognormalizer
 
-import Distributions: Gamma, shape, rate
+import Distributions: Gamma, shape, rate, logpdf
 import SpecialFunctions: loggamma, digamma, gamma
 import StatsFuns: log2π
 
@@ -100,7 +100,7 @@ function lognormalizer(η::GammaShapeRateNaturalParameters)
     return loggamma(η.a_ + 1) - (η.a_ + 1) * log(-η.b)
 end
 
-function logPdf(η::GammaShapeRateNaturalParameters, x)
+function Distributions.logpdf(η::GammaShapeRateNaturalParameters, x)
     return log(x) * η.a_ + x * η.b - lognormalizer(η)
 end
 
