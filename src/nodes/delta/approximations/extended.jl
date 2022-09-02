@@ -25,7 +25,7 @@ deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), model, factornode)
 
 function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode)
-    let ins = factornode.ins
+    let out = factornode.out, ins = factornode.ins
         # By default, to compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge
         msgs_names      = Val{(:ins,)}
         msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew())), PushNew())
@@ -35,7 +35,7 @@ function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnR
         marginals_observable = of(nothing)
 
         fform       = functionalform(factornode)
-        vtag        = tag(interface)
+        vtag        = tag(out)
         vconstraint = local_constraint(interface)
         meta        = metadata(factornode)
 
