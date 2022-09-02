@@ -77,15 +77,15 @@ deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, 
     deltafn_apply_layout(DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout(), Val(:m_out), model, factornode)
 
 # This function declares how to compute `m_in` 
+
 function deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) 
     # For each outbound message from `in_k` edge we need an inbound messages from all OTHER! `in_*` edges and inbound message on `m_out`
     foreach(enumerate(factornode.ins)) do (index, interface)
 
         msgs_without_current = TupleTools.deleteat(factornode.ins, index)
         msgs_names           = Val{(:out, :ins,)}
-        msgs_observable      = combineLatestUpdates((
-            messagein(factornode.out), combineLatestUpdates(map((in) -> messagein(in), msgs_without_current), PushNew()) |> default_if_empty(of(())),
-        ), PushNew())
+        msgs_ins_stream      = !isempty(msgs_without_current) ? combineLatestUpdates(map((in) -> messagein(in), msgs_without_current), PushNew()) : of(())
+        msgs_observable      = combineLatestUpdates((messagein(factornode.out), msgs_ins_stream,), PushNew())
 
         marginal_names       = nothing
         marginals_observable = of(nothing)
