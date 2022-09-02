@@ -21,7 +21,7 @@ deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout
 deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:q_ins}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), model, factornode)
 
-deltafn_apply_layout(::DeltaExtendedKnownInverseApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) =
+deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) =
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), model, factornode)
 
 function deltafn_apply_layout(::DeltaExtendednUknownInverseApproximationDeltaFnRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode)
