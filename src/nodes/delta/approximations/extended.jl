@@ -7,3 +7,60 @@ end
 DeltaExtended() = DeltaExtended(nothing)
 
 const ET = DeltaExtended
+
+
+# DeltaFn node non-standard rule layout for `DeltaExtended` approximation rule
+
+# We use default `DeltaFn` node layout in case if inverse is not known
+deltafn_rule_layout(::DeltaFnNode, ::DeltaExtended{Nothing}) = DeltaFnDefaultRuleLayout()
+
+struct DeltaExtendedKnownInferenceApproximationDeltaFnRuleLayout end
+
+# We use non-standard `DeltaFn` node layout in case if inverse is known
+deltafn_rule_layout(::DeltaFnNode, ::DeltaExtended{F}) where { F <: Function } = DeltaExtendedKnownInferenceApproximationDeltaFnRuleLayout()
+
+deltafn_apply_layout(::DeltaExtendedKnownInferenceApproximationDeltaFnRuleLayout, ::Val{:q_out}, model, factornode::DeltaFnNode) =
+    deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), model, factornode)
+
+deltafn_apply_layout(::DeltaExtendedKnownInferenceApproximationDeltaFnRuleLayout, ::Val{:q_ins}, model, factornode::DeltaFnNode) =
+    deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), model, factornode)
+
+deltafn_apply_layout(::DeltaExtendedKnownInferenceApproximationDeltaFnRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode) =
+    deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_out), model, factornode)
+
+# This function declares how to compute `m_in` 
+function deltafn_apply_layout(::DeltaExtendedKnownInferenceApproximationDeltaFnRuleLayout, ::Val{:m_in}, model, factornode::DeltaFnNode) 
+    # For each outbound message from `in_k` edge we need an inbound messages from all OTHER! `in_*` edges and inbound message on `m_out`
+    foreach(enumerate(factornode.ins)) do (index, interface)
+
+        msgs_without_current = TupleTools.deleteat(factornode.ins, index)
+        msgs_names           = Val{(:out, :ins,)}
+        msgs_observable      = combineLatestUpdates((
+            messagein(factornode.out), combineLatestUpdates(map((in) -> messagein(in), msgs_without_current), PushNew()),
+        ), PushNew())
+
+        marginal_names       = nothing
+        marginals_observable = of(nothing)
+
+        fform       = functionalform(factornode)
+        vtag        = tag(interface)
+        vconstraint = local_constraint(interface)
+        meta        = metadata(factornode)
+
+        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        # vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
+
+        mapping =
+            let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
+
+        vmessageout = vmessageout |> map(AbstractMessage, mapping)
+        vmessageout = apply_pipeline_stage(get_pipeline_stages(getoptions(model)), factornode, vtag, vmessageout)
+        # TODO
+        # vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+        vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
+
+        connect!(messageout(interface), vmessageout)
+    end
+end
