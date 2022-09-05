@@ -153,6 +153,11 @@ include("implication/out.jl")
 include("implication/marginals.jl")
 
 include("delta/helpers.jl")
+
 include("delta/extended/in.jl")
 include("delta/extended/out.jl")
 include("delta/extended/marginals.jl")
+
+include("delta/unscented/in.jl")
+include("delta/unscented/out.jl")
+include("delta/unscented/marginals.jl")

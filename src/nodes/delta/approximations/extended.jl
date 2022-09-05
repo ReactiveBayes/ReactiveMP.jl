@@ -1,10 +1,10 @@
+using Parameters
+
 export DeltaExtended, ET
 
-struct DeltaExtended{T}
-    inverse::T
+@with_kw struct DeltaExtended{T}
+    inverse::T = nothing
 end
-
-DeltaExtended() = DeltaExtended(nothing)
 
 const ET = DeltaExtended
 
