@@ -113,7 +113,7 @@ import ReactiveMP: xtlog
         @test rate(dist3) === 2.0
         @test entropy(dist3) ≈ 0.8840684843415857
         @test pdf(dist3, 1.0) ≈ 0.5413411329464508
-        @test logpdf(dist3, 1.0) ≈ -0.61370563888 01094
+        @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
     end
 
     @testset "GammaShapeRateNaturalParameters" begin
