@@ -21,6 +21,8 @@ Base.show(io::IO, prod::ProdFinal) = print(io, "ProdFinal(", getdist(prod), ")")
 
 getdist(dist::ProdFinal) = dist.dist
 
+to_marginal(dist::ProdFinal) = getdist(dist)
+
 MacroHelpers.@proxy_methods ProdFinal getdist [
     Distributions.mean,
     Distributions.median,

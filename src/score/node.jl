@@ -31,8 +31,8 @@ function score(
 
     stream = combineLatest(map(fnstream, interfaces(node)), PushNew())
 
-    vtag       = Val{clustername(tail(interfaces(node)))}
-    msgs_names = Val{map(name, interfaces(node))}
+    vtag       = Val{ inboundclustername(node) }
+    msgs_names = Val{ map(name, interfaces(node)) }
 
     mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
         (messages) -> begin

@@ -76,7 +76,7 @@ function renderCVI(logp_nc::Function,
         else
             z_s = rand(rng, q_friendly)
         end
-        logq(vec_params) = logPdf(T(vec_params), z_s)
+        logq(vec_params) = logpdf(T(vec_params), z_s)
         ∇logq = logq'(vec(λ))
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
         ∇ = λ - η - T(∇f)

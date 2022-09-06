@@ -1,5 +1,6 @@
 export FactorProduct
-import Distributions
+
+import Distributions: entropy
 import Base: getindex, show, length
 
 """
@@ -13,6 +14,9 @@ getmultipliers(product::FactorProduct) = product.multipliers
 
 Base.show(io::IO, product::FactorProduct) = print(io, "FactorProduct(", join(getmultipliers(product), ", ", ", "), ")")
 
-getindex(product::FactorProduct, i::Int) = product.multipliers[i]
+Base.getindex(product::FactorProduct, i::Int) = product.multipliers[i]
 
-length(product::FactorProduct) = length(product.multipliers)
+Base.length(product::FactorProduct) = length(product.multipliers)
+
+Distributions.entropy(product::FactorProduct) = mapreduce(entropy, +, getmultipliers(product))
+
