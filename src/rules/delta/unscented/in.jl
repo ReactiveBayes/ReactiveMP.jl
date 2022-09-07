@@ -5,7 +5,6 @@
     meta::DeltaUnscented{T}
 ) where {f, T <: Function} =
     begin
-        @show "in"
         (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
         (μ_tilde, Σ_tilde, _) = unscentedStatistics(
             μ_bw_out,
@@ -21,7 +20,7 @@
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
 
-# I expect this rule to be called when inverse is given, known inverse
+# I expect this rule to be called when inverse is given
 @rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::Any, meta::DeltaUnscented{T}) where {f, T} =
     begin
         @show "multiple input backward"
@@ -63,33 +62,28 @@
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
-# why this method is called for single input unknown inverse
-# TODO: This won't work, to discuss
+# TODO: This won't work for single input, to discuss
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     q_ins::Any,
     m_in::NormalDistributionsFamily,
     meta::DeltaUnscented{T}
 ) where {f, T <: Nothing} =
     begin
-        (μ_fw_in1, Σ_fw_in1) = mean_cov(q_ins)
-        @show (μ_tilde, Σ_tilde, C_tilde) =
-            unscentedStatistics(μ_fw_in1, Σ_fw_in1, f; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
+        inx = k
+        μ_in, Σ_in = mean_cov(q_ins)
+        ds = [(ndims(m_in),) for _ in 1:Int(round(length(μ_in) / ndims(m_in)))] # sorry, I assumed that all dimensions on the interfaces are same
+        
+        # Marginalize joint belief on in's
+        (μ_inx, Σ_inx) = marginalizeGaussianMV(μ_in, Σ_in, ds, inx) # Marginalization is overloaded on VariateType V
+        Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
+        ξ_inx = Λ_inx*μ_inx
 
-        # RTS smoother
-        (μ_bw_out, Σ_bw_out) = mean_cov(q_ins)
-        (μ_bw_in1, Σ_bw_in1) = smoothRTSMessage(μ_tilde, Σ_tilde, C_tilde, μ_fw_in1, Σ_fw_in1, μ_bw_out, Σ_bw_out)
+        # Divide marginal on inx by forward message
+        (ξ_fw_inx, Λ_fw_inx) = weightedmean_precision(m_in)
+        ξ_bw_inx = ξ_inx - ξ_fw_inx
+        Λ_bw_inx = Λ_inx - Λ_fw_inx # Note: subtraction might lead to posdef violations
 
-        F = size(μ_bw_in1, 1) == 1 ? Univariate : Multivariate
+        F = size(ξ_bw_inx, 1) == 1 ? Univariate : Multivariate
 
-        return convert(promote_variate_type(F, NormalWeightedMeanPrecision), μ_bw_in1, Σ_bw_in1)
-    end
-
-# why this method is called?, unknown inverse
-@rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaUnscented{T}) where {f, T <: Nothing} =
-    begin
-        @show "called"
-
-        F = size(ξ, 1) == 1 ? Univariate : Multivariate
-
-        return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ, Λ)
+        return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ_bw_inx, Λ_bw_inx)
     end

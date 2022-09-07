@@ -26,7 +26,7 @@ end
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
-# Why this method is being called?
+# Why this method is being called for forward message?
 @rule DeltaFn{f}(:out, Marginalisation) (
     m_out::NormalDistributionsFamily,
     m_ins::NTuple{N, NormalDistributionsFamily},

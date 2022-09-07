@@ -17,7 +17,6 @@ end
     meta::DeltaUnscented{T}
 ) where {f, N, T} =
     begin
-        @show "ignored"
         (μs_in, Σs_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
         (μ_tilde, Σ_tilde, _) =
             unscentedStatistics(μs_in, Σs_in, f; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
