@@ -34,6 +34,7 @@
 # why this method is called?, known inverse
 @rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaExtended{T}) where {f, T} =
     begin
+        # TODO: REWRITE BS
         @show meta.inverse[k](mean(q_ins))
         (A, b) = localLinearizationMultiIn(meta.inverse[k], mean(q_ins))
         (mc, Vc) = concatenateGaussianMV(ms, Vs)
@@ -65,7 +66,6 @@
 # why this method is called?, unknown inverse
 @rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaExtended{T}) where {f, T <: Nothing} =
     begin
-
         # we need dimension of the interface variables
         # Marginalize joint belief on in's
         inx = k
