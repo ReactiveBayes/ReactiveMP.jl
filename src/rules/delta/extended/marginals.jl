@@ -14,7 +14,7 @@ export marginalrule
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_fw_out, Σ_fw_out, C_fw, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
 
-    return MvNormalMeanPrecision(μ_in, Σ_in)
+    return MvNormalMeanCovariance(μ_in, Σ_in)
 end
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::DeltaExtended) where {f} = begin
@@ -36,5 +36,5 @@ end
     @show μ_fw_out
     (μ_in, Σ_in) = smoothRTS(μ_fw_out, Σ_fw_out, C_fw, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
 
-    return MvNormalMeanPrecision(μ_in, Σ_in)
+    return MvNormalMeanCovariance(μ_in, Σ_in)
 end

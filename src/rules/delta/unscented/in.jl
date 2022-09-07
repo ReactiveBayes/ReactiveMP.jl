@@ -71,13 +71,18 @@
     begin
         inx = k
         @show μ_in, Σ_in = mean_cov(q_ins)
-        ds = [(ndims(m_in),) for _ in 1:Int(round(length(μ_in) / ndims(m_in)))] # sorry, I assumed that all dimensions on the interfaces are same
-        # ds = [(1,) for _ in 1:Int(round(length(μ_in) / 1))] # sorry, I assumed that all dimensions on the interfaces are same
+        # ds = [(ndims(m_in),) for _ in 1:Int(round(length(μ_in) / ndims(m_in)))] # sorry, I assumed that all dimensions on the interfaces are same
+        ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
+
         
         # Marginalize joint belief on in's
         (μ_inx, Σ_inx) = marginalizeGaussianMV(μ_in, Σ_in, ds, inx) # Marginalization is overloaded on VariateType V
         Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
         ξ_inx = Λ_inx*μ_inx
+
+        # TODO: ugly
+        ξ_inx = size(ξ_inx, 1) == 1 ? first(ξ_inx) : ξ_inx
+        Λ_inx = size(Λ_inx, 1) == 1 ? first(Λ_inx) : Λ_inx
 
         # Divide marginal on inx by forward message
         (ξ_fw_inx, Λ_fw_inx) = weightedmean_precision(m_in)
