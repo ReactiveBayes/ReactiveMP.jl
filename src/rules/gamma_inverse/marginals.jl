@@ -1,5 +1,3 @@
-export marginalrule
-
 @marginalrule GammaInverse(:out_α_θ) (m_out::GammaInverse, m_α::PointMass, m_θ::PointMass) = begin
     return (
         out = prod(
