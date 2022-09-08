@@ -10,7 +10,6 @@ export marginalrule
     (μ_fw_in, Σ_fw_in, ds) = concatenateGaussianMV(μs_fw_in, Σs_fw_in)
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
-    @show "called marginal"
     return MvNormalMeanPrecision(μ_in, Σ_in)
 end
 
@@ -19,10 +18,8 @@ end
     μ_fw_in, Σ_fw_in = collectStatistics(m_ins...)
 
     (μ_tilde, Σ_tilde, C_tilde) = unscentedStatistics(μ_fw_in, Σ_fw_in, f; alpha=meta.alpha, beta=meta.beta, kappa=meta.kappa)
-    @show (μ_tilde, Σ_tilde, C_tilde)
     # RTS smoother
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
-    @show (μ_in, Σ_in)
     return MvNormalMeanPrecision(μ_in, Σ_in)
 end

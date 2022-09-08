@@ -21,10 +21,8 @@ end
     # Approximate joint inbounds
 
     # (μs_fw_in, Σs_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
-    @show m_ins
     (μs_fw_in, Σs_fw_in) = mean_cov(first(m_ins)) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationSingleIn(f, μs_fw_in)
-    @show A, b
     # (μ_fw_in, Σ_fw_in, _) = concatenateGaussianMV(μs_fw_in, Σs_fw_in)
     μ_fw_in, Σ_fw_in = μs_fw_in, Σs_fw_in
     μ_fw_out = A * μ_fw_in + b
@@ -33,7 +31,6 @@ end
 
     # RTS Smoother
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
-    @show μ_fw_out
     (μ_in, Σ_in) = smoothRTS(μ_fw_out, Σ_fw_out, C_fw, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
 
     return MvNormalMeanCovariance(μ_in, Σ_in)

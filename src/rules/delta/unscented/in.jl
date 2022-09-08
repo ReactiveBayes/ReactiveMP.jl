@@ -20,21 +20,6 @@
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
 
-# I expect this rule to be called when inverse is given
-@rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::Any, meta::DeltaUnscented{T}) where {f, T} =
-    begin
-        @show "multiple input backward"
-        (ms, Vs) = collectStatistics(m_in, q_ins...) # Returns arrays with individual means and covariances
-        (A, b) = localLinearization(meta.inverse, ms)
-        (mc, Vc) = concatenateGaussianMV(ms, Vs)
-        m = A * m_out + b
-        V = A * V_out * A'
-
-        F = size(m, 1) == 1 ? Univariate : Multivariate
-
-        return convert(promote_variate_type(F, NormalMeanVariance), m, V)
-    end
-
 @rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::DeltaUnscented{T}) where {f, N, T <: Any} =
 begin
 
@@ -46,19 +31,6 @@ begin
     return convert(promote_variate_type(F, NormalMeanVariance), m_tilde, V_tilde)
 end
 
-@rule DeltaFn{f}((:in, _), Marginalisation) (
-    m_out::Any,
-    m_in::Nothing,
-    meta::DeltaUnscented{T}
-) where {f, T <: Nothing} =
-    begin
-        @show "called"
-
-        F = size(m, 1) == 1 ? Univariate : Multivariate
-
-        return convert(promote_variate_type(F, NormalMeanVariance), m, V)
-    end
-
 # TODO: This won't work for single input, to discuss
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     q_ins::Any,
@@ -67,7 +39,7 @@ end
 ) where {f, T <: Nothing} =
     begin
         inx = k
-        @show μ_in, Σ_in = mean_cov(q_ins)
+        μ_in, Σ_in = mean_cov(q_ins)
         # ds = [(ndims(m_in),) for _ in 1:Int(round(length(μ_in) / ndims(m_in)))] # sorry, I assumed that all dimensions on the interfaces are same
         ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
 
