@@ -1035,6 +1035,8 @@ import .MacroHelpers
 - `sdtype`: Either `Stochastic` or `Deterministic`. Defines the type of the functional relationship
 - `interfaces_list`: Defines a fixed list of edges of a factor node, by convention the first element should be `out`. Example: `[ out, mean, variance ]`
 
+Note: `interfaces_list` must not include names that contain `_` symbol in them, as it is reserved to identify joint posteriors around the node object.
+
 # Examples
 ```julia
 
@@ -1079,7 +1081,16 @@ macro node(fformtype, sdtype, interfaces_list)
 
     @assert length(interfaces) !== 0 "Node should have at least one interface."
 
-    names = map(d -> first(d), interfaces)
+    names   = map(d -> d[1], interfaces)
+    aliases = map(d -> d[2], interfaces)
+
+    foreach(names) do name
+        @assert !occursin('_', string(name)) "Node interfaces names (and aliases) must not contain `_` symbol in them, found in $(name)."
+    end
+
+    foreach(Iterators.flatten(aliases)) do alias
+        @assert !occursin('_', string(alias)) "Node interfaces names (and aliases) must not contain `_` symbol in them, found in $(alias)."
+    end
 
     names_quoted_tuple     = Expr(:tuple, map(name -> Expr(:quote, name), names)...)
     names_indices          = Expr(:tuple, map(i -> i, 1:length(names))...)
