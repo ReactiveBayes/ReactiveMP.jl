@@ -17,14 +17,14 @@
     end
     
 # why this method is called?, known inverse should be just m_out::Any, m_ins
-@rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::Any, meta::DeltaExtended{T}) where {f, T <: Any} =
+@rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::DeltaExtended{T}) where {f, N, T <: Any} =
     begin
 
-        @show q_ins
-        (A, b) = localLinearizationMultiIn(meta.inverse[k], mean(q_ins))
-        (mc, Vc) = concatenateGaussianMV(ms, Vs)
-        m = A * m_out + b
-        V = A * V_out * A'
+        (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
+        (A, b) = localLinearizationMultiIn(meta.inverse[k], μs_in)
+        (μ_in, Σ_in, _) = concatenateGaussianMV(μs_in, Σs_in)
+        m = A * μ_in + b
+        V = A * Σ_in * A'
 
         F = size(m, 1) == 1 ? Univariate : Multivariate
 

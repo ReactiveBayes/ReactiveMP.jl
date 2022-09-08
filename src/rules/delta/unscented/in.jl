@@ -35,19 +35,16 @@
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
-# why this method is called?, known inverse
-@rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaUnscented{T}) where {f, T} =
-    begin
-        @show meta.inverse[k](mean(q_ins))
+@rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::DeltaUnscented{T}) where {f, N, T <: Any} =
+begin
 
-        @show (ms, Vs) = mean_cov(q_ins)
-        (m_tilde, V_tilde, _) =
-            unscentedStatistics(ms, Vs, meta.inverse[k]; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
+    (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
+    (m_tilde, V_tilde, _) = unscentedStatistics(μs_in, Σs_in, meta.inverse[k]; alpha=meta.alpha, beta=meta.beta, kappa=meta.kappa)
 
-        F = size(m_tilde, 1) == 1 ? Univariate : Multivariate
+    F = size(m_tilde, 1) == 1 ? Univariate : Multivariate
 
-        return convert(promote_variate_type(F, NormalMeanVariance), m_tilde, V_tilde)
-    end
+    return convert(promote_variate_type(F, NormalMeanVariance), m_tilde, V_tilde)
+end
 
 @rule DeltaFn{f}((:in, _), Marginalisation) (
     m_out::Any,
