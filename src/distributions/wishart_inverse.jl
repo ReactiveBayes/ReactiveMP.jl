@@ -59,11 +59,15 @@ function Distributions.mean(::typeof(logdet), dist::InverseWishartDistributionsF
 end
 
 function Distributions.mean(::typeof(inv), dist::InverseWishartDistributionsFamily)
+    return mean(cholinv, dist)
+end
+
+function Distributions.mean(::typeof(cholinv), dist::InverseWishartDistributionsFamily)
     ν, S = params(dist)
     return mean(Wishart(ν, cholinv(S)))
 end
 
-vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims, tiny .* diageye(dims))
+vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .* diageye(dims))
 
 Base.ndims(dist::InverseWishart) = size(dist, 1)
 

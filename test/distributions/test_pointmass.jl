@@ -104,6 +104,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test @test_inferred(AbstractVector{T}, probvec(dist)) == vector
             @test @test_inferred(AbstractVector{T}, mean(log, dist)) == log.(vector)
             @test_throws ErrorException mean(inv, dist)
+            @test_throws ErrorException mean(cholinv, dist)
             @test_throws ErrorException mean(mirrorlog, dist)
             @test @test_inferred(AbstractVector{T}, mean(loggamma, dist)) == loggamma.(vector)
         end
@@ -118,6 +119,8 @@ import ReactiveMP: xtlog, mirrorlog
             @test dist[2] === matrix[2]
             @test dist[3] === matrix[3]
             @test dist[3, 3] === matrix[3, 3]
+            @test size(dist, 1) === size(matrix, 1)
+            @test size(dist, 2) === size(matrix, 2)
             @test_throws BoundsError dist[N^3]
             @test_throws BoundsError dist[N+1, N+1]
 
@@ -154,7 +157,8 @@ import ReactiveMP: xtlog, mirrorlog
 
             @test_throws ErrorException probvec(dist)
             @test @test_inferred(AbstractMatrix{T}, mean(log, dist)) == log.(matrix)
-            @test @test_inferred(AbstractMatrix{T}, mean(inv, dist)) ≈ cholinv(matrix)
+            @test @test_inferred(AbstractMatrix{T}, mean(inv, dist)) ≈ inv(matrix)
+            @test @test_inferred(AbstractMatrix{T}, mean(cholinv, dist)) ≈ cholinv(matrix)
             @test_throws ErrorException mean(mirrorlog, dist)
             @test @test_inferred(AbstractMatrix{T}, mean(loggamma, dist)) == loggamma.(matrix)
         end

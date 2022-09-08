@@ -12,7 +12,7 @@ import ReactiveMP: WishartMessage, @test_marginalrules
         @test_marginalrules [with_float_conversions = true, float32_atol = 1e-5] Wishart(:out_ν_S) [
             (
                 input = (
-                    m_out = WishartMessage(3.0, [3.0 -1.0; -1.0 4.0]),
+                    m_out = WishartMessage(3.0, cholinv([3.0 -1.0; -1.0 4.0])),
                     m_ν = PointMass(2.0),
                     m_S = PointMass([1.0 0.0; 0.0 1.0])
                 ),
@@ -24,7 +24,7 @@ import ReactiveMP: WishartMessage, @test_marginalrules
             ),
             (
                 input = (
-                    m_out = WishartMessage(7.0, [9.0 -2.0; -2.0 1.0]),
+                    m_out = WishartMessage(7.0, cholinv([9.0 -2.0; -2.0 1.0])),
                     m_ν = PointMass(4.0),
                     m_S = PointMass([4.0 -2.0; -2.0 4.0])
                 ),
@@ -36,7 +36,7 @@ import ReactiveMP: WishartMessage, @test_marginalrules
             ),
             (
                 input = (
-                    m_out = WishartMessage(4.0, [9.0 -2.0 1.0; -2.0 5.0 -2.0; 1.0 -2.0 11.0]),
+                    m_out = WishartMessage(4.0, cholinv([9.0 -2.0 1.0; -2.0 5.0 -2.0; 1.0 -2.0 11.0])),
                     m_ν = PointMass(3.0),
                     m_S = PointMass([11.0 -2.0 1.0; -2.0 5.0 -2.0; 1.0 -2.0 9.0])
                 ),

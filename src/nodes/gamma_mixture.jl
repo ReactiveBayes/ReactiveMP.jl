@@ -27,7 +27,7 @@ ReactiveMP.as_node_symbol(::Type{<:GammaMixture}) = :GammaMixture
 # score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where T
 #
 # Base.show
-#
+
 const GammaMixtureNodeFactorisationSupport = Union{MeanField}
 
 struct GammaMixtureNode{N, F <: GammaMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
@@ -203,7 +203,17 @@ as_node_functional_form(::Type{<:GammaMixture}) = ValidNodeFunctionalForm()
 
 sdtype(::Type{<:GammaMixture}) = Stochastic()
 
-collect_factorisation(::Type{<:GammaMixture}, factorisation) = factorisation
+collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::MeanField) where {N} = factorisation
+collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::Any) where {N}       = __gamma_mixture_incompatible_factorisation_error()
+
+function collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::NTuple{R, Tuple{<:Integer}}) where {N, R}
+    # 2 * (m, w) + s + out, equivalent to MeanField 
+    return (R === 2 * N + 2) ? MeanField() : __gamma_mixture_incompatible_factorisation_error()
+end
+
+__gamma_mixture_incompatible_factorisation_error() = error(
+    "`GammaMixtureNode` supports only following global factorisations: [ $(GammaMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints"
+)
 
 function ReactiveMP.make_node(
     ::Type{<:GammaMixture{N}},
@@ -211,13 +221,12 @@ function ReactiveMP.make_node(
     meta::M = nothing,
     pipeline::P = nothing
 ) where {N, F, M, P}
-    @assert N >= 2 "GammaMixtureNode requires at least two mixtures on input"
-    @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "GammaMixtureNode supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
+    @assert N >= 2 "`GammaMixtureNode` requires at least two mixtures on input"
+    @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "`GammaMixtureNode` supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out, Marginalisation())
     switch = NodeInterface(:switch, Marginalisation())
     as     = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a, Marginalisation())), N)
     bs     = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b, Marginalisation())), N)
-    meta   = collect_meta(GammaMixture, meta)
     return GammaMixtureNode{N, F, typeof(meta), P}(factorisation, out, switch, as, bs, meta, pipeline)
 end
 
@@ -231,9 +240,9 @@ function ReactiveMP.make_node(
 ) where {N}
     node = make_node(
         GammaMixture{N},
-        collect_factorisation(GammaMixture, factorisation(options)),
-        collect_meta(GammaMixture, metadata(options)),
-        collect_pipeline(GammaMixture, getpipeline(options))
+        collect_factorisation(GammaMixture{N}, factorisation(options)),
+        collect_meta(GammaMixture{N}, metadata(options)),
+        collect_pipeline(GammaMixture{N}, getpipeline(options))
     )
 
     # out

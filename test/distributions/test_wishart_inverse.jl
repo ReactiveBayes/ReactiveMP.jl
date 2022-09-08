@@ -50,16 +50,20 @@ import ReactiveMP: InverseWishartMessage
 
         @test typeof(d1) <: InverseWishart
         ν1, S1 = params(d1)
-        @test ν1 == dims
+        @test ν1 == dims + 2
         @test S1 == tiny .* diageye(dims)
+
+        @test mean(d1) == S1
 
         dims = 4
         d2 = vague(InverseWishart, dims)
 
         @test typeof(d2) <: InverseWishart
         ν2, S2 = params(d2)
-        @test ν2 == dims
+        @test ν2 == dims + 2
         @test S2 == tiny .* diageye(dims)
+
+        @test mean(d2) == S2
     end
 
     @testset "entropy" begin
@@ -98,10 +102,12 @@ import ReactiveMP: InverseWishartMessage
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartMessage(ν, S)), mean(inv.(samples)), atol = 1e-2)
+        @test isapprox(mean(cholinv, InverseWishartMessage(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
 
         ν, S = 4.0, diageye(3)
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartMessage(ν, S)), mean(inv.(samples)), atol = 1e-2)
+        @test isapprox(mean(cholinv, InverseWishartMessage(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
     end
 
     @testset "prod" begin

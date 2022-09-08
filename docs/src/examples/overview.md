@@ -6,6 +6,8 @@ This section contains a set of examples for Bayesian Inference with `ReactiveMP`
     More examples can be found in [`demo/`](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) folder at GitHub repository.
 
 - [Linear regression](@ref examples-linear-regression): An example of linear regression Bayesian inference.
+- [Assessing Peoples Skills]: The demo is inspired by the example from Chapter 2 of Bishop's Model-Based Machine Learning book.
+We are going to perform an exact inference to assess the skills of a student given the results of the test.
 - [Gaussian Linear Dynamical System](@ref examples-linear-gaussian-state-space-model): An example of inference procedure for Gaussian Linear Dynamical System with multivariate noisy observations using Belief Propagation (Sum Product) algorithm. Reference: [Simo Sarkka, Bayesian Filtering and Smoothing](https://users.aalto.fi/~ssarkka/pub/cup_book_online_20131111.pdf).
 - [Hidden Markov Model](@ref examples-hidden-markov-model): An example of structured variational Bayesian inference in Hidden Markov Model with unknown transition and observational matrices.
 - [Hierarchical Gaussian Filter](@ref examples-hgf): An example of online inference procedure for Hierarchical Gaussian Filter with univariate noisy observations using Variational Message Passing algorithm. Reference: [Ismail Senoz, Online Message Passing-based Inference in the Hierarchical Gaussian Filter](https://ieeexplore.ieee.org/document/9173980).

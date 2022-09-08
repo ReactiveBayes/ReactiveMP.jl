@@ -221,8 +221,25 @@ This function resolves factorisation constraints in a form of a tuple for a give
 
 See also: [`ConstraintsSpecification`](@ref)
 """
-function resolve_factorisation(constraints, model, fform, variables)
-    N = length(variables)
+function resolve_factorisation end
+
+function resolve_factorisation(constraints, model, fform, _variables)
+    return resolve_factorisation(sdtype(fform), constraints, model, fform, _variables)
+end
+
+# Deterministic nodes always have `FullFactorisation` constraint (by default)
+function resolve_factorisation(::Deterministic, constraints, model, fform, _variables)
+    return FullFactorisation()
+end
+
+# Stochastic nodes may have different factorisation constraints
+function resolve_factorisation(::Stochastic, constraints, model, fform, _variables)
+    # Input `_variables` may include 'tupled' variables in it (e.g. in NormalMixture node)
+    # Before doing any computations we flatten the input and perform all computations in flatten space
+    # The output of the `resolve_factorisation` is flattened too
+    # TODO: This approach does not really work for "array"-ed variables, but we do not support this currently anyway
+    variables = TupleTools.flatten(_variables)
+    N         = length(variables)
 
     preallocated = constraints.preallocated
 
