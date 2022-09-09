@@ -48,16 +48,17 @@
         Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
         ξ_inx = Λ_inx * μ_inx
 
-        # TODO: ugly, requires immidiate fix
-        ξ_inx = size(ξ_inx, 1) == 1 ? first(ξ_inx) : ξ_inx
-        Λ_inx = size(Λ_inx, 1) == 1 ? first(Λ_inx) : Λ_inx
+        F = variate_form(m_in)
+
+        # FIXME: ugly, requires immidiate fix
+        ξ_inx = F == Univariate ? first(ξ_inx) : ξ_inx
+        Λ_inx = F == Univariate ? first(Λ_inx) : Λ_inx
 
         # Divide marginal on inx by forward message
         (ξ_fw_inx, Λ_fw_inx) = weightedmean_precision(m_in)
+
         ξ_bw_inx = ξ_inx - ξ_fw_inx
         Λ_bw_inx = Λ_inx - Λ_fw_inx # Note: subtraction might lead to posdef violations
-
-        F = size(ξ_bw_inx, 1) == 1 ? Univariate : Multivariate
 
         return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ_bw_inx, Λ_bw_inx)
     end

@@ -41,6 +41,11 @@ end
 Concatenate a vector (of vectors and floats) and return with original dimensions (for splitting)
 """
 function concatenate(xs::Vector)
+    # # FIXME: I still need to check it w FL
+    # for i in 1:length(xs)
+    #     xs[i] = size(xs[i]) == () ? [xs[i]] : xs[i]
+    # end
+    @show xs
     ds = size.(xs) # Extract dimensions
     x = vcat(vec.(xs)...)
 
@@ -75,8 +80,7 @@ function split(vec::Vector, ds::Vector{<:Tuple})
     return res
 end
 
-function localLinearizationMultiIn(g::Any, x_hat::Vector{Vector{Float64}})
-    # @show x_hat
+function localLinearizationMultiIn(g::Any, x_hat::Vector)
     (x_cat, ds) = concatenate(x_hat)
     g_unpacked(x::Vector) = g(split(x, ds)...)
     A = ForwardDiff.jacobian(g_unpacked, x_cat)
