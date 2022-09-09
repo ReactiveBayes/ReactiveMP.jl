@@ -5,7 +5,6 @@
     meta::DeltaExtended{T}
 ) where {f, T <: Function} =
     begin
-
         μ_out, Σ_out = mean_cov(m_out)
         (A, b) = localLinearizationSingleIn(meta.inverse, μ_out)
         m = A * μ_out + b
@@ -15,11 +14,14 @@
 
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
-    
-# why this method is called?, known inverse should be just m_out::Any, m_ins
-@rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::DeltaExtended{T}) where {f, N, T <: Any} =
-    begin
 
+# why this method is called?, known inverse should be just m_out::Any, m_ins
+@rule DeltaFn{f}((:in, k), Marginalisation) (
+    m_out::Any,
+    m_ins::NTuple{N, Any},
+    meta::DeltaExtended{T}
+) where {f, N, T <: Any} =
+    begin
         (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
         (A, b) = localLinearizationMultiIn(meta.inverse[k], μs_in)
         (μ_in, Σ_in, _) = concatenateGaussianMV(μs_in, Σs_in)
@@ -38,9 +40,10 @@
         # we need dimension of the interface variables
         # Marginalize joint belief on in's
         inx = k
+        @show q_ins, ds = q_ins.dist, q_ins.ds
         μ_in, Σ_in = mean_cov(q_ins)
 
-        ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
+        # @show ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
         (μ_inx, Σ_inx) = marginalizeGaussianMV(μ_in, Σ_in, ds, inx)
         Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
         ξ_inx = Λ_inx * μ_inx

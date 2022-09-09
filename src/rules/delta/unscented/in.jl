@@ -20,16 +20,20 @@
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
 
-@rule DeltaFn{f}((:in, k), Marginalisation) (m_out::Any, m_ins::NTuple{N, Any}, meta::DeltaUnscented{T}) where {f, N, T <: Any} =
-begin
+@rule DeltaFn{f}((:in, k), Marginalisation) (
+    m_out::Any,
+    m_ins::NTuple{N, Any},
+    meta::DeltaUnscented{T}
+) where {f, N, T <: Any} =
+    begin
+        (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
+        (m_tilde, V_tilde, _) =
+            unscentedStatistics(μs_in, Σs_in, meta.inverse[k]; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
 
-    (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
-    (m_tilde, V_tilde, _) = unscentedStatistics(μs_in, Σs_in, meta.inverse[k]; alpha=meta.alpha, beta=meta.beta, kappa=meta.kappa)
+        F = size(m_tilde, 1) == 1 ? Univariate : Multivariate
 
-    F = size(m_tilde, 1) == 1 ? Univariate : Multivariate
-
-    return convert(promote_variate_type(F, NormalMeanVariance), m_tilde, V_tilde)
-end
+        return convert(promote_variate_type(F, NormalMeanVariance), m_tilde, V_tilde)
+    end
 
 # TODO: This won't work for single input, to discuss
 @rule DeltaFn{f}((:in, k), Marginalisation) (
@@ -41,13 +45,12 @@ end
         inx = k
         μ_in, Σ_in = mean_cov(q_ins)
         # ds = [(ndims(m_in),) for _ in 1:Int(round(length(μ_in) / ndims(m_in)))] # sorry, I assumed that all dimensions on the interfaces are same
-        ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
+        @show ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
 
-        
         # Marginalize joint belief on in's
         (μ_inx, Σ_inx) = marginalizeGaussianMV(μ_in, Σ_in, ds, inx) # Marginalization is overloaded on VariateType V
         Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
-        ξ_inx = Λ_inx*μ_inx
+        ξ_inx = Λ_inx * μ_inx
 
         # TODO: ugly
         ξ_inx = size(ξ_inx, 1) == 1 ? first(ξ_inx) : ξ_inx

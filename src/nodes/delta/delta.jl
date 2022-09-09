@@ -29,6 +29,9 @@ metadata(factornode::DeltaFnNode)                         = factornode.metadata
 include("approximations/extended.jl")
 include("approximations/unscented.jl")
 
+# include special marginal struct for delta node
+include("marginals.jl")
+
 # For missing rules error msg
 rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
 

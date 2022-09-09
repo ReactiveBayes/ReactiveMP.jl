@@ -19,6 +19,7 @@ end
 
 function localLinearizationSingleIn(g::Any, x_hat::Vector{Float64})
     A = ForwardDiff.jacobian(g, x_hat)
+    @show "here"
     b = g(x_hat) - A * x_hat
 
     return (A, b)
@@ -28,8 +29,10 @@ end
 Return local linearization of g around expansion point x_hat
 for Delta node with multiple input interfaces
 """
-function localLinearizationMultiIn(g::Any, x_hat::Vector{Float64})
+function localLinearizationMultiIn(g::Any, x_hat::Vector)
     g_unpacked(x::Vector) = g(x...)
+    @show x_hat
+    @show typeof(x_hat)
     A = ForwardDiff.gradient(g_unpacked, x_hat)'
     b = g(x_hat...) - A * x_hat
 
@@ -157,7 +160,7 @@ end
 """
 Return the marginalized statistics of the Gaussian corresponding to an inbound inx
 """
-function marginalizeGaussianMV(m::Vector{Float64}, V::AbstractMatrix, ds::Vector{<:Tuple}, inx::Int64)
+function marginalizeGaussianMV(m::Vector{Float64}, V::AbstractMatrix, ds::Vector, inx::Int64)
     if ds[inx] == () # Univariate original
         return (m[inx], V[inx, inx]) # Return scalars
     else # Multivariate original
