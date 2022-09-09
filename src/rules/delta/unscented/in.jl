@@ -43,9 +43,10 @@
 ) where {f, T <: Nothing} =
     begin
         inx = k
-        μ_in, Σ_in = mean_cov(q_ins)
         # ds = [(ndims(m_in),) for _ in 1:Int(round(length(μ_in) / ndims(m_in)))] # sorry, I assumed that all dimensions on the interfaces are same
-        @show ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
+        # @show ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
+        q_ins, ds = q_ins.dist, q_ins.ds
+        μ_in, Σ_in = mean_cov(q_ins)
 
         # Marginalize joint belief on in's
         (μ_inx, Σ_inx) = marginalizeGaussianMV(μ_in, Σ_in, ds, inx) # Marginalization is overloaded on VariateType V

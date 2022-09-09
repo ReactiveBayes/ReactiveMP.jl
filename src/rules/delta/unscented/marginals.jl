@@ -11,7 +11,7 @@ export marginalrule
     (μ_fw_in, Σ_fw_in, ds) = concatenateGaussianMV(μs_fw_in, Σs_fw_in)
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
-    return MvNormalMeanCovariance(μ_in, Σ_in)
+    return DeltaMarginal(MvNormalMeanCovariance(μ_in, Σ_in), ds)
 end
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::DeltaUnscented) where {f} = begin
@@ -23,5 +23,6 @@ end
     # RTS smoother
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
-    return MvNormalMeanCovariance(μ_in, Σ_in)
+
+    return DeltaMarginal(MvNormalMeanCovariance(μ_in, Σ_in), [(length(μ_in),)])
 end

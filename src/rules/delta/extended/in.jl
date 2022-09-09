@@ -48,7 +48,7 @@
         Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
         ξ_inx = Λ_inx * μ_inx
 
-        # TODO: ugly
+        # TODO: ugly, requires immidiate fix
         ξ_inx = size(ξ_inx, 1) == 1 ? first(ξ_inx) : ξ_inx
         Λ_inx = size(Λ_inx, 1) == 1 ? first(Λ_inx) : Λ_inx
 
