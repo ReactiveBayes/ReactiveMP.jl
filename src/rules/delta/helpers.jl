@@ -19,7 +19,7 @@ end
 
 function localLinearizationSingleIn(g::Any, x_hat::Vector{Float64})
     A = ForwardDiff.jacobian(g, x_hat)
-    @show "here"
+    # @show "here"
     b = g(x_hat) - A * x_hat
 
     return (A, b)
@@ -76,7 +76,7 @@ function split(vec::Vector, ds::Vector{<:Tuple})
 end
 
 function localLinearizationMultiIn(g::Any, x_hat::Vector{Vector{Float64}})
-    @show x_hat
+    # @show x_hat
     (x_cat, ds) = concatenate(x_hat)
     g_unpacked(x::Vector) = g(split(x, ds)...)
     A = ForwardDiff.jacobian(g_unpacked, x_cat)

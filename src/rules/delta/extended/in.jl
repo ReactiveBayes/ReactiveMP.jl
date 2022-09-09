@@ -40,7 +40,7 @@
         # we need dimension of the interface variables
         # Marginalize joint belief on in's
         inx = k
-        @show q_ins, ds = q_ins.dist, q_ins.ds
+        # @show q_ins, ds = q_ins.dist, q_ins.ds
         μ_in, Σ_in = mean_cov(q_ins)
 
         # @show ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
