@@ -43,16 +43,13 @@
         q_ins, ds = q_ins.dist, q_ins.ds
         μ_in, Σ_in = mean_cov(q_ins)
 
-        # @show ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
         (μ_inx, Σ_inx) = marginalizeGaussianMV(μ_in, Σ_in, ds, inx)
         Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
         ξ_inx = Λ_inx * μ_inx
 
         F = variate_form(m_in)
 
-        # FIXME: ugly, requires immidiate fix
-        ξ_inx = F == Univariate ? first(ξ_inx) : ξ_inx
-        Λ_inx = F == Univariate ? first(Λ_inx) : Λ_inx
+        ξ_inx, Λ_inx = F == Univariate ? (first(ξ_inx), first(Λ_inx)) : (ξ_inx, Λ_inx)
 
         # Divide marginal on inx by forward message
         (ξ_fw_inx, Λ_fw_inx) = weightedmean_precision(m_in)

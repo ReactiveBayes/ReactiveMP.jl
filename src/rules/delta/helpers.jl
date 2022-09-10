@@ -1,4 +1,4 @@
-import Base: split
+import Base: split, vec
 
 export localLinearizationSingleIn,
     localLinearizationMultiIn, collectStatistics, concatenateGaussianMV, smoothRTS, marginalizeGaussianMV,
@@ -41,16 +41,13 @@ end
 Concatenate a vector (of vectors and floats) and return with original dimensions (for splitting)
 """
 function concatenate(xs::Vector)
-    # # FIXME: I still need to check it w FL
-    # for i in 1:length(xs)
-    #     xs[i] = size(xs[i]) == () ? [xs[i]] : xs[i]
-    # end
-    @show xs
     ds = size.(xs) # Extract dimensions
     x = vcat(vec.(xs)...)
 
     return (x, ds)
 end
+
+vec(d::Float64) = [d] # Extend vectorization to Float
 
 """
 Return integer dimensionality

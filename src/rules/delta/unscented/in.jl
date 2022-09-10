@@ -27,12 +27,12 @@
 ) where {f, N, T <: Any} =
     begin
         (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
-        (m_tilde, V_tilde, _) =
+        (μ_tilde, Σ_tilde, _) =
             unscentedStatistics(μs_in, Σs_in, meta.inverse[k]; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
 
-        F = size(m_tilde, 1) == 1 ? Univariate : Multivariate
+        F = size(μ_tilde, 1) == 1 ? Univariate : Multivariate
 
-        return convert(promote_variate_type(F, NormalMeanVariance), m_tilde, V_tilde)
+        return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
 
 # TODO: This won't work for single input, to discuss
@@ -43,8 +43,6 @@
 ) where {f, T <: Nothing} =
     begin
         inx = k
-        # ds = [(ndims(m_in),) for _ in 1:Int(round(length(μ_in) / ndims(m_in)))] # sorry, I assumed that all dimensions on the interfaces are same
-        # @show ds = [(length(mean(m_in)),) for _ in 1:Int(round(length(μ_in) / length(mean(m_in))))] # sorry, I assumed that all dimensions on the interfaces are same
         q_ins, ds = q_ins.dist, q_ins.ds
         μ_in, Σ_in = mean_cov(q_ins)
 
@@ -53,16 +51,13 @@
         Λ_inx = cholinv(Σ_inx) # Convert to canonical statistics
         ξ_inx = Λ_inx * μ_inx
 
-        # TODO: ugly
-        ξ_inx = size(ξ_inx, 1) == 1 ? first(ξ_inx) : ξ_inx
-        Λ_inx = size(Λ_inx, 1) == 1 ? first(Λ_inx) : Λ_inx
+        F = variate_form(m_in)
+        ξ_inx, Λ_inx = F == Univariate ? (first(ξ_inx), first(Λ_inx)) : (ξ_inx, Λ_inx)
 
         # Divide marginal on inx by forward message
         (ξ_fw_inx, Λ_fw_inx) = weightedmean_precision(m_in)
         ξ_bw_inx = ξ_inx - ξ_fw_inx
         Λ_bw_inx = Λ_inx - Λ_fw_inx # Note: subtraction might lead to posdef violations
-
-        F = size(ξ_bw_inx, 1) == 1 ? Univariate : Multivariate
 
         return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ_bw_inx, Λ_bw_inx)
     end
