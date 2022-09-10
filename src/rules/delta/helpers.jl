@@ -97,10 +97,6 @@ function collectStatistics(msgs::Vararg{Union{Any, Nothing}})
     return (ms, Vs) # Return tuple with vectors for means and covariances
 end
 
-function collectStatistics(msg::Any)
-    return mean_cov(msg)
-end
-
 """
 Concatenate independent means and (co)variances of separate Gaussians in a unified mean and covariance.
 Additionally returns a vector with the original dimensionalities, so statistics can later be re-separated.

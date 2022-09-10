@@ -13,7 +13,7 @@ end
 
 # multiple input; this should be called
 @rule DeltaFn{f}(:out, Marginalisation) (
-    m_ins::NTuple{N, NormalDistributionsFamily},
+    m_ins::NTuple{N, Any},
     meta::DeltaExtended{T}
 ) where {f, N, T} =
     begin
