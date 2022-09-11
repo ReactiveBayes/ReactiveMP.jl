@@ -232,6 +232,7 @@ end
     addtests(testrunner, "distributions/test_dirichlet_matrix.jl")
     addtests(testrunner, "distributions/test_dirichlet.jl")
     addtests(testrunner, "distributions/test_gamma.jl")
+    addtests(testrunner, "distributions/test_gamma_inverse.jl")
     addtests(testrunner, "distributions/test_mv_normal_mean_covariance.jl")
     addtests(testrunner, "distributions/test_mv_normal_mean_precision.jl")
     addtests(testrunner, "distributions/test_mv_normal_weighted_mean_precision.jl")
@@ -256,6 +257,7 @@ end
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
     addtests(testrunner, "nodes/test_bifm_helper.jl")
+    addtests(testrunner, "nodes/test_gamma_inverse.jl")
     addtests(testrunner, "nodes/test_subtraction.jl")
     addtests(testrunner, "nodes/test_probit.jl")
     addtests(testrunner, "nodes/test_autoregressive.jl")
@@ -309,6 +311,9 @@ end
     addtests(testrunner, "rules/dot_product/test_in1.jl")
     addtests(testrunner, "rules/dot_product/test_in2.jl")
     addtests(testrunner, "rules/dot_product/test_marginals.jl")
+
+    addtests(testrunner, "rules/gamma_inverse/test_marginals.jl")
+    addtests(testrunner, "rules/gamma_inverse/test_out.jl")
 
     addtests(testrunner, "rules/normal_mean_variance/test_out.jl")
     addtests(testrunner, "rules/normal_mean_variance/test_mean.jl")
