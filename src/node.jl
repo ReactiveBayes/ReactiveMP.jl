@@ -470,6 +470,10 @@ clusterindex(factornode::FactorNode, vindex::Int)                              =
 clusterindex(factornode::FactorNode, vars::NTuple{N, NodeInterface}) where {N} = clusterindex(factornode, map(v -> name(v), vars))
 clusterindex(factornode::FactorNode, vars::NTuple{N, Symbol}) where {N}        = clusterindex(factornode, map(v -> interfaceindex(factornode, v), vars))
 
+# We assume that `inbound` interfaces have indices 2..N
+inboundinterfaces(factornode::FactorNode)  = TupleTools.deleteat(interfaces(factornode), 1)
+inboundclustername(factornode::FactorNode) = clustername(inboundinterfaces(factornode))
+
 function interfaceindex(factornode::FactorNode, iname::Symbol)
     iindex = findfirst(interface -> name(interface) === iname, interfaces(factornode))
     return iindex !== nothing ? iindex : error("Unknown interface ':$(iname)' for $(functionalform(factornode)) node")
