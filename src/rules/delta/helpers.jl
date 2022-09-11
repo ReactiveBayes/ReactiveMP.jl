@@ -85,6 +85,7 @@ function localLinearizationMultiIn(g::Any, x_hat::Vector)
     return (A, b)
 end
 
+# TODO: In RMP there shouldn't be nothing
 function collectStatistics(msgs::Vararg{Union{Any, Nothing}})
     stats = []
     for msg in msgs
@@ -95,6 +96,10 @@ function collectStatistics(msgs::Vararg{Union{Any, Nothing}})
     ms = [stat[1] for stat in stats]
     Vs = [stat[2] for stat in stats]
     return (ms, Vs) # Return tuple with vectors for means and covariances
+end
+
+function collectStatistics(msg::NormalDistributionsFamily)
+    return mean_cov(msg)
 end
 
 """
