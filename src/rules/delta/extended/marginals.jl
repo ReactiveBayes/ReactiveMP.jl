@@ -20,8 +20,7 @@ end
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::DeltaExtended) where {f} = begin
     # Approximate joint inbounds
 
-    # (μs_fw_in, Σs_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
-    (μs_fw_in, Σs_fw_in) = mean_cov(first(m_ins)) # Returns arrays with individual means and covariances
+    (μs_fw_in, Σs_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationSingleIn(f, μs_fw_in)
     # (μ_fw_in, Σ_fw_in, _) = concatenateGaussianMV(μs_fw_in, Σs_fw_in)
     μ_fw_in, Σ_fw_in = μs_fw_in, Σs_fw_in

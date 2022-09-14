@@ -35,7 +35,6 @@
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
 
-# TODO: This won't work for single input, to discuss
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     q_ins::Any,
     m_in::NormalDistributionsFamily,

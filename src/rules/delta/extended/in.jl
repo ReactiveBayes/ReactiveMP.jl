@@ -1,4 +1,3 @@
-# known inverse, single input
 @rule DeltaFn{f}((:in, _), Marginalisation) (
     m_out::Any,
     m_ins::Nothing,
@@ -15,7 +14,6 @@
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
-# why this method is called?, known inverse should be just m_out::Any, m_ins
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     m_out::Any,
     m_ins::NTuple{N, Any},
@@ -33,8 +31,6 @@
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
-# TODO: ugly af
-# why this method is called?, unknown inverse
 @rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaExtended{T}) where {f, T <: Nothing} =
     begin
         # we need dimension of the interface variables
