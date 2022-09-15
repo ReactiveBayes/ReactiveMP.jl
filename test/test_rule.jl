@@ -381,7 +381,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             q_y = vague(NormalMeanPrecision),
             meta = 2
         ))
-        
+
         @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNode(:out, Marginalisation) (
             q_x = vague(NormalMeanPrecision),
             q_y = vague(NormalMeanPrecision),
