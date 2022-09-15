@@ -264,7 +264,7 @@ macro rule(fform, lambda)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
-    metatype                         = metatype === nothing ? :Any : metatype
+    metatype                         = metatype === nothing ? :Nothing : metatype
 
     options = map(options) do option
         @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")x
@@ -582,7 +582,7 @@ macro marginalrule(fform, lambda)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
-    metatype                         = metatype === nothing ? :Any : metatype
+    metatype                         = metatype === nothing ? :Nothing : metatype
 
     inputs = map(inputs) do input
         @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
