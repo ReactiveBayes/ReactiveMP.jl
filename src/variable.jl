@@ -65,6 +65,16 @@ messages_prod_fn(::FoldLeftProdStrategy, prod_constraint, form_constraint, form_
 messages_prod_fn(::FoldRightProdStrategy, prod_constraint, form_constraint, form_check_strategy)      = prod_foldr_reduce(prod_constraint, form_constraint, form_check_strategy)
 messages_prod_fn(strategy::CustomProdStrategy, prod_constraint, form_constraint, form_check_strategy) = strategy.prod_callback_generator(prod_constraint, form_constraint, form_check_strategy)
 
+# messages_prod_fn(::FoldLeftProdStrategy, prod_constraint, form_constraint, form_check_strategy, test_input::AbstractArray, train_input::AbstractArray)       = prod_foldl_reduce(prod_constraint, form_constraint, form_check_strategy, test_input, train_input)
+# messages_prod_fn(::FoldRightProdStrategy, prod_constraint, form_constraint, form_check_strategy, test_input::AbstractArray, train_input::AbstractArray)      = prod_foldr_reduce(prod_constraint, form_constraint, form_check_strategy, test_input, train_input)
+# messages_prod_fn(strategy::CustomProdStrategy, prod_constraint, form_constraint, form_check_strategy, test_input::AbstractArray, train_input::AbstractArray) = strategy.prod_callback_generator(prod_constraint, form_constraint, form_check_strategy, test_input, train_input)
+
+# function marginal_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy, test_input::AbstractArray, train_input::AbstractArray)
+#     return let prod_fn = messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy, test_input, train_input)
+#         return (messages) -> as_marginal(prod_fn(messages))
+#     end
+# end
+
 function marginal_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
     return let prod_fn = messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
         return (messages) -> as_marginal(prod_fn(messages))
@@ -204,6 +214,7 @@ function undo_as_variable end
 undo_as_variable(x)                   = error("Cannot undo `as_variable` operation for variable `x`. `x = $(x)` should be an instance of `AbstractVariable`")
 undo_as_variable(v::AbstractVariable) = v
 
+isprocess(v::AbstractArray{<:AbstractVariable})= all(isprocess,v)
 israndom(v::AbstractArray{<:AbstractVariable}) = all(israndom, v)
 isdata(v::AbstractArray{<:AbstractVariable})   = all(isdata, v)
 isconst(v::AbstractArray{<:AbstractVariable})  = all(isconst, v)

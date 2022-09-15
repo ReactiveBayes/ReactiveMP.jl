@@ -86,6 +86,7 @@ include("nodes/equality.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
+include("variables/process.jl")
 
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")

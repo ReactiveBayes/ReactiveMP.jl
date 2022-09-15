@@ -129,8 +129,6 @@ prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
         form_constraint
     )
 
-# Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
-
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 

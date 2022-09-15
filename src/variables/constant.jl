@@ -61,6 +61,8 @@ collection_type(constvar::ConstVariable) = constvar.collection_type
 
 isproxy(::ConstVariable) = false
 
+isprocess(::ConstVariable)              = false
+isprocess(::AbstractArray{<:ConstVariable}) = false
 israndom(::ConstVariable)                  = false
 israndom(::AbstractArray{<:ConstVariable}) = false
 isdata(::ConstVariable)                    = false

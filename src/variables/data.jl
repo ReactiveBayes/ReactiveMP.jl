@@ -98,6 +98,8 @@ nconnected(datavar::DataVariable)      = datavar.nconnected
 
 isproxy(::DataVariable) = false
 
+isprocess(::DataVariable)                 = false
+isprocess(::AbstractArray{<:DataVariable})= false
 israndom(::DataVariable)                  = false
 israndom(::AbstractArray{<:DataVariable}) = false
 isdata(::DataVariable)                    = true

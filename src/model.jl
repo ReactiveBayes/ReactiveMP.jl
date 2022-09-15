@@ -171,6 +171,7 @@ struct FactorGraphModel{C, M, O}
     options     :: O
     nodes       :: Vector{AbstractFactorNode}
     random      :: Vector{RandomVariable}
+    process     :: Vector{RandomProcess}
     constant    :: Vector{ConstVariable}
     data        :: Vector{DataVariable}
     vardict     :: Dict{Symbol, Any}
@@ -207,6 +208,7 @@ function FactorGraphModel(
         options,
         Vector{FactorNode}(),
         Vector{RandomVariable}(),
+        Vector{RandomProcess}(),
         Vector{ConstVariable}(),
         Vector{DataVariable}(),
         Dict{Symbol, Any}(),
@@ -219,6 +221,7 @@ getmeta(model::FactorGraphModel)        = model.meta
 getoptions(model::FactorGraphModel)     = model.options
 getnodes(model::FactorGraphModel)       = model.nodes
 getrandom(model::FactorGraphModel)      = model.random
+getprocess(model::FactorGraphModel)     = model.process
 getconstant(model::FactorGraphModel)    = model.constant
 getdata(model::FactorGraphModel)        = model.data
 getvardict(model::FactorGraphModel)     = model.vardict
@@ -239,6 +242,7 @@ end
 Base.broadcastable(model::FactorGraphModel) = Ref(model)
 
 hasrandomvar(model::FactorGraphModel, symbol::Symbol) = haskey(model, symbol) ? israndom(getindex(model, symbol)) : false
+hasprocessvar(model::FactorGraphModel, symbol::Symbol) = haskey(model, symbol) ? isprocess(getindex(model,symbol)) : false
 hasdatavar(model::FactorGraphModel, symbol::Symbol)   = haskey(model, symbol) ? isdata(getindex(model, symbol)) : false
 hasconstvar(model::FactorGraphModel, symbol::Symbol)  = haskey(model, symbol) ? isconst(getindex(model, symbol)) : false
 
@@ -264,6 +268,12 @@ function add!(model::FactorGraphModel, randomvar::RandomVariable)
     push!(model.random, randomvar)
     add!(getvardict(model), name(randomvar), randomvar)
     return randomvar
+end
+
+function add!(model::FactorGraphModel, randomprocess::RandomProcess)
+    push!(model.process, randomprocess)
+    add!(getvardict(model), name(randomprocess), randomprocess)
+    return randomprocess
 end
 
 function add!(model::FactorGraphModel, constvar::ConstVariable)
@@ -294,6 +304,12 @@ function add!(model::FactorGraphModel, array::AbstractArray{<:RandomVariable})
     return array
 end
 
+function add!(model::FactorGraphModel, array::AbstractArray{<:RandomProcess})
+    append!(model.process, array)
+    add!(getvardict(model), name(first(array)), array)
+    return array
+end
+
 function add!(model::FactorGraphModel, array::AbstractArray{<:ConstVariable})
     append!(model.constant, array)
     add!(getvardict(model), name(first(array)), array)
@@ -313,6 +329,12 @@ function activate!(model::FactorGraphModel)
         return degree(randomvar) >= 2
     end
 
+    filter!(getprocess(model)) do randomprocess
+        @assert degree(randomprocess) !== 0 "Unused random process has been found $(indexed_name(randomprocess))."
+        @assert degree(randomprocess) !== 1 "Half-edge has been found: $(indexed_name(randomprocess)). To terminate half-edges 'Uninformative' node can be used."
+        return degree(randomprocess) >= 2
+    end
+
     foreach(getdata(model)) do datavar
         if !isconnected(datavar)
             @warn "Unused data variable has been found: '$(indexed_name(datavar))'. Ignore if '$(indexed_name(datavar))' has been used in deterministic nonlinear tranformation."
@@ -324,6 +346,7 @@ function activate!(model::FactorGraphModel)
 
     filter!(c -> isconnected(c), getconstant(model))
     foreach(r -> activate!(model, r), getrandom(model))
+    foreach(p -> activate!(model, p), getprocess(model))
     foreach(n -> activate!(model, n), getnodes(model))
 end
 
@@ -374,7 +397,22 @@ function randomvar_resolve_options(model::FactorGraphModel, options::RandomVaria
     return roptions
 end
 
-## constraints
+## randomprocess
+function randomprocess_resolve_options(model::FactorGraphModel, options::RandomProcessCreationOptions, name)
+    qform, qprod = randomprocess_resolve_marginal_form_prod(model, options, name)
+    mform, mprod = randomprocess_resolve_messages_form_prod(model, options, name)
+
+    rprod = resolve_prod_constraint(options.prod_constraint, resolve_prod_constraint(qprod, mprod))
+
+    qoptions = randomprocess_options_set_marginal_form_constraint(options, qform)
+    moptions = randomprocess_options_set_messages_form_constraint(qoptions, mform)
+    roptions = randomprocess_options_set_prod_constraint(moptions, rprod)
+
+    return roptions
+end
+
+
+## constraints random variable
 
 randomvar_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, name)            = randomvar_resolve_marginal_form_prod(model, options, marginal_form_constraint(options), name)
 randomvar_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomVariableCreationOptions, something, name) = (something, nothing)
@@ -390,9 +428,26 @@ randomvar_resolve_messages_form_prod(model::FactorGraphModel, options::RandomVar
 randomvar_resolve_messages_form_prod(model::FactorGraphModel, ::UnspecifiedConstraints, name) = (nothing, nothing)
 randomvar_resolve_messages_form_prod(model::FactorGraphModel, constraints, name)              = resolve_messages_form_prod(constraints, model, name)
 
+## constraints random process
+
+randomprocess_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomProcessCreationOptions, name)            = randomprocess_resolve_marginal_form_prod(model, options, marginal_form_constraint(options), name)
+randomprocess_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomProcessCreationOptions, something, name) = (something, nothing)
+randomprocess_resolve_marginal_form_prod(model::FactorGraphModel, options::RandomProcessCreationOptions, ::Nothing, name) = randomprocess_resolve_marginal_form_prod(model, getconstraints(model), name)
+
+randomprocess_resolve_marginal_form_prod(model::FactorGraphModel, ::UnspecifiedConstraints, name) = (nothing, nothing)
+randomprocess_resolve_marginal_form_prod(model::FactorGraphModel, constraints, name)              = resolve_marginal_form_prod(constraints, model, name)
+
+randomprocess_resolve_messages_form_prod(model::FactorGraphModel, options::RandomProcessCreationOptions, name)            = randomprocess_resolve_messages_form_prod(model, options, messages_form_constraint(options), name)
+randomprocess_resolve_messages_form_prod(model::FactorGraphModel, options::RandomProcessCreationOptions, something, name) = (something, nothing)
+randomprocess_resolve_messages_form_prod(model::FactorGraphModel, options::RandomProcessCreationOptions, ::Nothing, name) = randomprocess_resolve_messages_form_prod(model, getconstraints(model), name)
+
+randomprocess_resolve_messages_form_prod(model::FactorGraphModel, ::UnspecifiedConstraints, name) = (nothing, nothing)
+randomprocess_resolve_messages_form_prod(model::FactorGraphModel, constraints, name)              = resolve_messages_form_prod(constraints, model, name)
+
 ## variable creation
 
 randomvar(model::FactorGraphModel, name::Symbol, args...) = randomvar(model, RandomVariableCreationOptions(), name, args...)
+randomprocess(model::FactorGraphModel, name::Symbol, test_input::AbstractArray,train_input::AbstractArray,args...) = randomprocess(model, RandomProcessCreationOptions(), name, test_input, train_input, args...)
 datavar(model::FactorGraphModel, name::Symbol, args...)   = datavar(model, DataVariableCreationOptions(Any), name, args...)
 
 function __check_variable_existence(model::FactorGraphModel, name::Symbol)
@@ -400,6 +455,12 @@ function __check_variable_existence(model::FactorGraphModel, name::Symbol)
         # Anonymous variables are allowed to be overwritten with the same name
         isanonymous(model[name]) || error("Variable named `$(name)` has been redefined")
     end
+end
+
+function randomprocess(model::FactorGraphModel, options::RandomProcessCreationOptions, name::Symbol, test_input,train_input,args...)
+    __check_variable_existence(model, name)
+
+    return add!(model, randomprocess(randomprocess_resolve_options(model, options, name), name, test_input,train_input,args...))
 end
 
 function randomvar(model::FactorGraphModel, options::RandomVariableCreationOptions, name::Symbol, args...)

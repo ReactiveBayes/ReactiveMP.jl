@@ -189,6 +189,9 @@ _messages_form_check_strategy(form_check_strategy, randomvar::RandomVariable)   
 
 isproxy(randomvar::RandomVariable) = proxy_variables(randomvar) !== nothing
 
+
+isprocess(::RandomVariable)                 = false
+isprocess(::AbstractArray{<:RandomVariable})= false
 israndom(::RandomVariable)                  = true
 israndom(::AbstractArray{<:RandomVariable}) = true
 isdata(::RandomVariable)                    = false

@@ -14,6 +14,13 @@ assign_message!(variable::AbstractVariable, message)                    = setmes
 struct KeepEach end
 struct KeepLast end
 
+make_actor(::RandomProcess, ::KeepEach)                       = keep(Marginal)
+make_actor(::Array{<:RandomProcess, N}, ::KeepEach) where {N} = keep(Array{Marginal, N})
+make_actor(x::AbstractArray{<:RandomProcess}, ::KeepEach)     = keep(typeof(similar(x, Marginal)))
+
+make_actor(::RandomProcess, ::KeepLast)                   = storage(Marginal)
+make_actor(x::AbstractArray{<:RandomProcess}, ::KeepLast) = buffer(Marginal, size(x))
+
 make_actor(::RandomVariable, ::KeepEach)                       = keep(Marginal)
 make_actor(::Array{<:RandomVariable, N}, ::KeepEach) where {N} = keep(Array{Marginal, N})
 make_actor(x::AbstractArray{<:RandomVariable}, ::KeepEach)     = keep(typeof(similar(x, Marginal)))
@@ -339,7 +346,7 @@ function inference(;
         returnoption = something(returnvars, iterations isa Number ? KeepEach() : KeepLast())
         returnvars =
             Dict(
-                variable => returnoption for (variable, value) in pairs(vardict) if (israndom(value) && !isproxy(value))
+                variable => returnoption for (variable, value) in pairs(vardict) if ((israndom(value) && !isproxy(value)) || (isprocess(value) && !isproxy(value)))
             )
     end
 
@@ -357,11 +364,13 @@ function inference(;
         return haskey_check && israndom_check
     end
 
+
     # Second, for each random variable entry we create an actor
     actors = Dict(
         variable => make_actor(vardict[variable], value) for
         (variable, value) in pairs(returnvars) if __check_has_randomvar(vardict, variable)
     )
+
 
     # At third, for each random variable entry we create a boolean flag to track their updates
     updates = Dict(variable => MarginalHasBeenUpdated(false) for (variable, _) in pairs(actors))
