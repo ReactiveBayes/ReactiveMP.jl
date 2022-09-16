@@ -1,6 +1,6 @@
 export rule
 
-@rule GCV(:x, Marginalisation) (m_y::UniNormalOrExpLinQuad, q_z::Any, q_κ::Any, q_ω::Any) = begin
+@rule GCV(:x, Marginalisation) (m_y::UniNormalOrExpLinQuad, q_z::Any, q_κ::Any, q_ω::Any, meta::Union{<:GCVMetadata, Nothing}) = begin
     y_mean, y_var = mean_var(m_y)
     z_mean, z_var = mean_var(q_z)
     κ_mean, κ_var = mean_var(q_κ)
@@ -13,7 +13,7 @@ export rule
     return NormalMeanVariance(y_mean, y_var + inv(A * B))
 end
 
-@rule GCV(:x, Marginalisation) (q_y::Any, q_z::Any, q_κ::Any, q_ω::Any) = begin
+@rule GCV(:x, Marginalisation) (q_y::Any, q_z::Any, q_κ::Any, q_ω::Any, meta::Union{<:GCVMetadata, Nothing}) = begin
     y_mean        = mean(q_y)
     z_mean, z_var = mean_var(q_z)
     κ_mean, κ_var = mean_var(q_κ)
