@@ -1,7 +1,12 @@
 
-@rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) = PointMass(mean(m_in) \ mean(m_out))
+@rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) =
+    PointMass(mean(m_in) \ mean(m_out))
 
-@rule typeof(*)(:A, Marginalisation) (m_out::GammaDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:A, Marginalisation) (
+    m_out::GammaDistributionsFamily,
+    m_in::PointMass{<:Real},
+    meta::Union{<:AbstractCorrection, Nothing}
+) = begin
     return GammaShapeRate(shape(m_out), rate(m_out) * mean(m_in))
 end
 

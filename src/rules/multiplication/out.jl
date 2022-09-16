@@ -1,11 +1,20 @@
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) = PointMass(mean(m_A) * mean(m_in))
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) =
+    PointMass(mean(m_A) * mean(m_in))
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::GammaDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:Real},
+    m_in::GammaDistributionsFamily,
+    meta::Union{<:AbstractCorrection, Nothing}
+) = begin
     return GammaShapeRate(shape(m_in), rate(m_in) / mean(m_A))
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::GammaDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::GammaDistributionsFamily,
+    m_in::PointMass{<:Real},
+    meta::Union{<:AbstractCorrection, Nothing}
+) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
 end
 
@@ -39,7 +48,11 @@ end
 #     v  out ~ Multivariate -> R^n
 # -->[x]-->
 # in1 ~ Univariate -> R^1
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractVector}, m_in::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) =
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:AbstractVector},
+    m_in::UnivariateNormalDistributionsFamily,
+    meta::Union{<:AbstractCorrection, Nothing}
+) =
     begin
         a = mean(m_A)
 
@@ -64,14 +77,22 @@ end
 #------------------------
 # Real * UnivariateNormalDistributions
 #------------------------
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:Real},
+    m_in::UnivariateNormalDistributionsFamily,
+    meta::Union{<:AbstractCorrection, Nothing}
+) = begin
     a = mean(m_A)
     μ_in, v_in = mean_var(m_in)
 
     return NormalMeanVariance(a * μ_in, a^2 * v_in)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) =
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::UnivariateNormalDistributionsFamily,
+    m_in::PointMass{<:Real},
+    meta::Union{<:AbstractCorrection, Nothing}
+) =
     begin
         return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
     end
