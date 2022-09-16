@@ -11,3 +11,7 @@ function prod(::ProdAnalytical, left::Uniform, right::Beta)
     # The special case for `Uniform(0, 1)` which is essentially `p(x) = 1` and does not change anything
     return right
 end
+
+@average_energy Uniform (q_out::Any, q_a::PointMass, q_b::PointMass) = begin
+    log(mean(q_b)-mean(q_a))
+end
