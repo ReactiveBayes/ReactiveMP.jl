@@ -26,6 +26,7 @@ struct NoCorrection <: AbstractCorrection end
 
 correction!(::NoCorrection, value::Real)            = value
 correction!(::NoCorrection, matrix::AbstractMatrix) = matrix
+correction!(::Nothing, something)                   = correction!(NoCorrection(), something)
 
 """
     TinyCorrection
