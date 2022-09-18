@@ -12,6 +12,6 @@ function prod(::ProdAnalytical, left::Uniform, right::Beta)
     return right
 end
 
-@average_energy Uniform (q_out::Any, q_a::PointMass, q_b::PointMass) = begin
+@average_energy Uniform (q_out::Uniform, q_a::PointMass, q_b::PointMass) = begin
     log(mean(q_b) - mean(q_a))
 end
