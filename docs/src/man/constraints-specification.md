@@ -4,7 +4,7 @@
 
 ## General syntax 
 
-`@constraints` macro accepts either regular julia function or a single `begin ... end` block. For example both are valid:
+`@constraints` macro accepts either regular Julia function or a single `begin ... end` block. For example both are valid:
 
 ```julia
 
@@ -74,7 +74,7 @@ indicates that the resulting marginal of the variable (or array of variables) na
 \mathrm{approximate~} q(x) = \frac{\overrightarrow{\mu}(x)\overleftarrow{\mu}(x)}{\int \overrightarrow{\mu}(x)\overleftarrow{\mu}(x) \mathrm{d}x}\mathrm{~as~PointMass}
 ```
 
-Sometimes it might be usefull to set a functional form constraint on messages too. For example if it is essential to keep a specific Gaussian parametrisation or if some messages are intractable and need approximation. To set messages form constraint `@constraints` macro uses `μ(...)` instead of `q(...)`:
+Sometimes it might be useful to set a functional form constraint on messages too. For example if it is essential to keep a specific Gaussian parametrisation or if some messages are intractable and need approximation. To set messages form constraint `@constraints` macro uses `μ(...)` instead of `q(...)`:
 
 ```julia
 @constraints begin 
@@ -102,7 +102,7 @@ You can find more information about built-in functional form constraint in the [
 
 ## Factorisation constraints on posterior distribution `q()`
 
-`@model` macro specifies generative model `p(s, y)` where `s` is a set of random variables and `y` is a set of observations. In a nutshell the goal of probabilistic programming is to find `p(s|y)`. ReactiveMP approximates `p(s|y)` with a proxy distribution `q(x)` using KL divergency and Bethe Free Energy optimisation procedure. By default there are no extra factorisation constraints on `q(s)` and the optimal solution is `q(s) = p(s|y)`. However, inference may be not tractable for every model without extra factorisation constraints. To circumvent this, `GraphPPL.jl` and `ReactiveMP.jl` accepts optional factorisation constraints specification syntax:
+`@model` macro specifies generative model `p(s, y)` where `s` is a set of random variables and `y` is a set of observations. In a nutshell the goal of probabilistic programming is to find `p(s|y)`. ReactiveMP approximates `p(s|y)` with a proxy distribution `q(x)` using KL divergence and Bethe Free Energy optimisation procedure. By default there are no extra factorisation constraints on `q(s)` and the optimal solution is `q(s) = p(s|y)`. However, inference may be not tractable for every model without extra factorisation constraints. To circumvent this, `GraphPPL.jl` and `ReactiveMP.jl` accept optional factorisation constraints specification syntax:
 
 For example:
 
@@ -112,7 +112,7 @@ For example:
 end
 ```
 
-specifies a so-called mean-field assumption on variables `x` and `y` in the model. Futhermore, if `x` is an array of variables in our model we may induce extra mean-field assumption on `x` in the following way.
+specifies a so-called mean-field assumption on variables `x` and `y` in the model. Furthermore, if `x` is an array of variables in our model we may induce extra mean-field assumption on `x` in the following way.
 
 ```julia
 @constraints begin 
@@ -121,7 +121,7 @@ specifies a so-called mean-field assumption on variables `x` and `y` in the mode
 end
 ```
 
-These constraints specifies a mean-field assumption between variables `x` and `y` (either single variable or collection of variables) and additionally specifies mean-field assumption on variables $x_i$.
+These constraints specify a mean-field assumption between variables `x` and `y` (either single variable or collection of variables) and additionally specify mean-field assumption on variables $x_i$.
 
 !!! note 
     `@constraints` macro does not support matrix-based collections of variables. E.g. it is not possible to write `q(x[begin, begin])..q(x[end, end])`
@@ -134,7 +134,7 @@ It is possible to write more complex factorisation constraints, for example:
 end
 ```
 
-Specifies a mean-field assumption between collection of variables named `x` and `y` only for variables with different indices. Another example is
+specifies a mean-field assumption between collection of variables named `x` and `y` only for variables with different indices. Another example is
 
 ```julia
 @constraints function make_constraints(k)

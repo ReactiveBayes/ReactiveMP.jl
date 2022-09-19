@@ -21,15 +21,28 @@ using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
 
     return a, b, x, y
 end
+
+@model function linear_regression_broadcasted(n)
+    a ~ NormalMeanVariance(0.0, 1.0)
+    b ~ NormalMeanVariance(0.0, 1.0)
+
+    x = datavar(Float64, n)
+    y = datavar(Float64, n)
+
+    # Variance over-complicated for a purpose of checking that this expressions are allowed, it should be equal to `1.0`
+    y .~ NormalMeanVariance(x .* b .+ a, det((diageye(2) .+ diageye(2)) ./ 2))
+
+    return a, b, x, y
+end
 ## -------------------------------------------- ##
 ## Inference definition
 ## -------------------------------------------- ##
-function inference(xdata, ydata)
+function inference(modelfn, xdata, ydata)
     @assert length(xdata) == length(ydata)
 
     n = length(xdata)
 
-    model, (a, b, x, y) = linear_regression(n)
+    model, (a, b, x, y) = modelfn(n)
 
     as = storage(Marginal)
     bs = storage(Marginal)
@@ -69,9 +82,14 @@ end
         ydata = reala .+ realb .* xdata
         ## -------------------------------------------- ##
         ## Inference execution
-        ares, bres, fres = inference(xdata, ydata)
+        ares, bres, fres = inference(linear_regression, xdata, ydata)
+        ## Broadcasted version
+        ares2, bres2, fres2 = inference(linear_regression_broadcasted, xdata, ydata)
         ## -------------------------------------------- ##
         ## Test inference results
+        @test mean(ares) ≈ mean(ares2) && var(ares) ≈ var(ares2) # Broadcasting may change the order of computations, so slight 
+        @test mean(bres) ≈ mean(bres2) && var(bres) ≈ var(bres2) # differences are allowed
+        @test all(fres .≈ fres2)
         @test isapprox(mean(ares), reala, atol = 5)
         @test isapprox(mean(bres), realb, atol = 0.1)
         @test fres[end] < fres[2] # Loopy belief propagation has no guaranties though
@@ -82,11 +100,13 @@ end
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
         benchmark_output = joinpath(base_output, "linear_regression_benchmark_$(timestamp)_v$(VERSION).txt")
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark = @benchmark inference($xdata, $ydata)#
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark = @benchmark inference(linear_regression, $xdata, $ydata)#
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end

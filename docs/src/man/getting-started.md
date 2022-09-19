@@ -16,6 +16,16 @@ Install `ReactiveMP` through the Julia package manager:
 !!! note
     For best user experience you also need to install `GraphPPL`, `Rocket` and `Distributions` packages.
 
+## Importing ReactiveMP
+
+To add `ReactiveMP` package (and all associated packages) into a running Julia session simply run:
+
+```julia
+using ReactiveMP, Rocket, GraphPPL, Distributions
+```
+
+Read more about about `using` in the [Using methods from ReactiveMP](@ref lib-using-methods) section of the documentation.
+
 ## Example: Inferring the bias of a coin
 The `ReactiveMP` approach to solving inference problems consists of three phases:
 
@@ -26,13 +36,13 @@ The `ReactiveMP` approach to solving inference problems consists of three phases
 ### Coin flip simulation
 Let's start by creating some dataset. One approach could be flipping a coin N times and recording each outcome. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
 
-First lets setup our environment by importing all needed packages:
+First let's setup our environment by importing all needed packages:
 
 ```@example coin
 using Rocket, GraphPPL, ReactiveMP, Distributions, Random
 ```
 
-Next, lets define our dataset:
+Next, let's define our dataset:
 
 ```@example coin
 rng = MersenneTwister(42)
@@ -87,6 +97,8 @@ Now let's see how to specify this model using GraphPPL's package syntax.
     
     # We endow θ parameter of our model with some prior
     θ ~ Beta(2.0, 7.0)
+    # or, in this particular case, the `Uniform(0.0, 1.0)` prior also works:
+    # θ ~ Uniform(0.0, 1.0)
     
     # We assume that outcome of each coin flip is governed by the Bernoulli distribution
     for i in 1:n
@@ -119,7 +131,7 @@ result = inference(
 ```
 
 ```@example coin 
-θestimated = last(result.posteriors[:θ])
+θestimated = result.posteriors[:θ]
 ```
 
 ```@example coin

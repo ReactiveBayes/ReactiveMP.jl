@@ -26,18 +26,20 @@ makedocs(
         ],
         "Library" => [
             "Messages"            => "lib/message.md",
-            "Functional forms"    => "lib/form.md",
-            "Prod implementation" => "lib/prod.md",
             "Factor nodes" => [ 
-                "Overview" => "lib/node.md",
+                "Overview" => "lib/nodes/nodes.md",
                 "Flow"     => "lib/nodes/flow.md"
             ],
-            "Math utils"       => "lib/math.md",
-            "Helper utils"     => "lib/helpers.md"
+            "Functional forms"    => "lib/form.md",
+            "Prod implementation" => "lib/prod.md",
+            "Math utils"          => "lib/math.md",
+            "Helper utils"        => "lib/helpers.md",
+            "Exported methods"    => "lib/methods.md"
         ],
         "Examples" => [
             "Overview"                         => "examples/overview.md",
             "Linear Regression"                => "examples/linear_regression.md",
+            "Assessing Peoples Skills"         => "examples/assessing_peoples_skills.md",
             "Linear Gaussian Dynamical System" => "examples/linear_gaussian_state_space_model.md",
             "Hidden Markov Model"              => "examples/hidden_markov_model.md",
             "Hierarchical Gaussian Filter"     => "examples/hierarchical_gaussian_filter.md",

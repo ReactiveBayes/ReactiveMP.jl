@@ -21,7 +21,7 @@ where ``j`` is an index of layer in hierarchy, ``k`` is a time step and ``f_k`` 
 \end{aligned}
 ```
 
-In this experiment we will create a single time step of the graph and perform variational message passing filtering alrogithm to estimate hidden states of the system.
+In this experiment we will create a single time step of the graph and perform variational message passing filtering algorithm to estimate hidden states of the system.
 For a more rigorous introduction to Hierarchical Gaussian Filter we refer to [Ismail Senoz, Online Message Passing-based Inference in the Hierarchical Gaussian Filter](https://ieeexplore.ieee.org/document/9173980) paper.
 
 For simplicity we will consider ``\tau_z``, ``\tau_y``, ``\kappa`` and ``\omega`` known and fixed.
@@ -78,7 +78,7 @@ z, x, y = generate_data(rng, real_k, real_w, z_variance, y_variance)
 nothing #hide
 ```
 
-Lets plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations.
+Let's plot our synthetic dataset. Lines represent our hidden states we want to estimate using noisy observations.
 
 ```@example hgf
 let 

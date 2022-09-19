@@ -66,13 +66,13 @@ Here we show a simple example of how to use ReactiveMP.jl for Bayesian inference
 
 Let's start by creating some dataset. For simplicity in this example we will use static pre-generated dataset. Each sample can be thought of as the outcome of single flip which is either heads or tails (1 or 0). We will assume that our virtual coin is biased, and lands heads up on 75% of the trials (on average).
 
-First lets setup our environment by importing all needed packages:
+First let's setup our environment by importing all needed packages:
 
 ```julia
 using Rocket, GraphPPL, ReactiveMP, Distributions, Random
 ```
 
-Next, lets define our dataset:
+Next, let's define our dataset:
 
 ```julia
 n = 500  # Number of coin flips
@@ -148,8 +148,8 @@ Once we have defined our model, the next step is to use `ReactiveMP` API to infe
 
 ```julia
 result = inference(
-    model = Model(coin_model, length(data)),
-    data  = (y = data, )
+    model = Model(coin_model, length(dataset)),
+    data  = (y = dataset, )
 )
 ```
 

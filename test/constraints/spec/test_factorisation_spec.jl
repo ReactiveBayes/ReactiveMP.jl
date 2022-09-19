@@ -8,7 +8,7 @@ import ReactiveMP: FunctionalIndex
 import ReactiveMP: CombinedRange, SplittedRange, is_splitted
 import ReactiveMP: __as_unit_range, __factorisation_specification_resolve_index
 import ReactiveMP: resolve_factorisation
-import ReactiveMP: DefaultConstraints
+import ReactiveMP: DefaultConstraints, UnspecifiedConstraints
 import ReactiveMP: setanonymous!, activate!
 
 using GraphPPL # for `@constraints` macro
@@ -579,7 +579,8 @@ using GraphPPL # for `@constraints` macro
                 # empty
             end
 
-            for cs in (empty, DefaultConstraints)
+            # DefaultConstraints are equal to `UnspecifiedConstraints()` for now, but it might change in the future so we test both
+            for cs in (empty, UnspecifiedConstraints(), DefaultConstraints)
                 let model = FactorGraphModel()
                     d = datavar(model, :d, Float64)
                     c = constvar(model, :c, 1.0)
@@ -587,6 +588,8 @@ using GraphPPL # for `@constraints` macro
                     y = randomvar(model, :y)
                     z = randomvar(model, :z)
 
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, y)) === ((1, 2),)
+                    @test ReactiveMP.resolve_factorisation(cs, model, fform, (y, x)) === ((1, 2),)
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, d)) === ((1,), (2,))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (c, c)) === ((1,), (2,))
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (d, x)) === ((1,), (2,))
@@ -616,6 +619,54 @@ using GraphPPL # for `@constraints` macro
                     @test ReactiveMP.resolve_factorisation(cs, model, fform, (x, d, y, c)) === ((1, 3), (2,), (4,))
                 end
             end
+        end
+
+        @testset "Use case #16" begin
+            # Tuple-based variables must be flattened
+
+            model = FactorGraphModel()
+
+            x = randomvar(model, :x)
+            y = randomvar(model, :y)
+            z = randomvar(model, :z)
+
+            cs1 = @constraints begin
+                q(x, y, z) = q(x)q(y)q(z)
+            end
+
+            cs2 = @constraints begin
+                q(x, y, z) = q(x)q(y, z)
+            end
+
+            @test ReactiveMP.resolve_factorisation(cs1, model, fform, (x, (y, z))) === ((1,), (2,), (3,))
+            @test ReactiveMP.resolve_factorisation(cs2, model, fform, (x, (y, z))) === ((1,), (2, 3))
+            @test ReactiveMP.resolve_factorisation(cs1, model, fform, ((x, y), z)) === ((1,), (2,), (3,))
+            @test ReactiveMP.resolve_factorisation(cs2, model, fform, ((x, y), z)) === ((1,), (2, 3))
+        end
+
+        @testset "Use case #17" begin
+            # Deterministic node must ignore multiple proxy vars 
+            model = FactorGraphModel()
+
+            x = randomvar(model, :x)
+            y = randomvar(model, :y)
+
+            # `z` is anonymous var composed of `x` and `y`
+            z = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y)), :z)
+            ReactiveMP.setanonymous!(z, true)
+
+            d = randomvar(model, :d)
+
+            cs = @constraints begin
+                q(d, x) = q(d)q(x)
+            end
+
+            # Remove this `@test_throws` when this feature is implemented, currently we throw an error
+            # But it would be nice to support this case too
+            @test_throws ErrorException ReactiveMP.resolve_factorisation(cs, model, TestFactorisationStochastic, (d, z))
+            # Deterministic node should ignore `resolve_factorisation` and multiple proxy vars
+            @test ReactiveMP.resolve_factorisation(cs, model, TestFactorisationDeterministic, (d, z)) ==
+                  FullFactorisation()
         end
 
         ## Warning testing below
@@ -734,15 +785,15 @@ using GraphPPL # for `@constraints` macro
             d = datavar(model, :d, Float64)
             c = constvar(model, :c, 1)
 
-            tmp1 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y)), :tmp)
-            tmp2 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, d)), :tmp)
-            tmp3 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, c)), :tmp)
-            tmp4 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d, x, y)), :tmp)
-            tmp5 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, c, y)), :tmp)
-            tmp6 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, d, y)), :tmp)
-            tmp7 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y)), :tmp)
-            tmp8 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y, d)), :tmp)
-            tmp9 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d, x, y, c)), :tmp)
+            tmp1 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y)), :tmp1)
+            tmp2 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, d)), :tmp2)
+            tmp3 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, y, c)), :tmp3)
+            tmp4 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d, x, y)), :tmp4)
+            tmp5 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, c, y)), :tmp5)
+            tmp6 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((x, d, y)), :tmp6)
+            tmp7 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y)), :tmp7)
+            tmp8 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((c, x, y, d)), :tmp8)
+            tmp9 = randomvar(model, ReactiveMP.randomvar_options_set_proxy_variables((d, x, y, c)), :tmp9)
 
             setanonymous!(tmp1, true)
             setanonymous!(tmp2, true)
@@ -777,7 +828,7 @@ using GraphPPL # for `@constraints` macro
                 q(x, y) = q(x)q(y)
             end
 
-            @test_throws ErrorException ReactiveMP.resolve_factorisation(cs, model, :Normal, (x, y))
+            @test_throws ErrorException ReactiveMP.resolve_factorisation(cs, model, fform, (x, y))
         end
     end
 end

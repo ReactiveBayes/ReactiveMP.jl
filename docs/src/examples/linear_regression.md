@@ -90,7 +90,7 @@ println("Real b: ", realb, " | Estimated b: ", mean(b), " | Error: ", abs(mean(b
 nothing #hide
 ```
 
-We can see that ReactiveMP.jl estimated real values of linear regression coefficients with high precision. Lets also test the benchmark of the resulting inference procedure.
+We can see that ReactiveMP.jl estimated real values of linear regression coefficients with high precision. Let's also test the benchmark of the resulting inference procedure.
 
 ```@example linreg
 @benchmark inference(

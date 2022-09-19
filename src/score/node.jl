@@ -24,14 +24,12 @@ function score(
     node::AbstractFactorNode,
     scheduler
 ) where {T <: InfCountingReal}
-    stream = combineLatest(
-        map(
-            (interface) ->
-                apply_skip_filter(messagein(interface), marginal_skip_strategy(objective)) |> schedule_on(scheduler),
-            interfaces(node)
-        ),
-        PushNew()
-    )
+    fnstream = let objective = objective, scheduler = scheduler
+        (interface) ->
+            apply_skip_filter(messagein(interface), marginal_skip_strategy(objective)) |> schedule_on(scheduler)
+    end
+
+    stream = combineLatest(map(fnstream, interfaces(node)), PushNew())
 
     vtag       = Val{clustername(tail(interfaces(node)))}
     msgs_names = Val{map(name, interfaces(node))}
@@ -44,7 +42,7 @@ function score(
         end
     end
 
-    return stream |> map(T, mapping)
+    return apply_diagnostic_check(objective, node, stream |> map(T, mapping))
 end
 
 ## Stochastic mapping
@@ -57,13 +55,11 @@ function score(
     node::AbstractFactorNode,
     scheduler
 ) where {T <: InfCountingReal}
-    stream = combineLatest(
-        map(
-            (cluster) -> getmarginal!(node, cluster, marginal_skip_strategy(objective)) |> schedule_on(scheduler),
-            localmarginals(node)
-        ),
-        PushNew()
-    )
+    fnstream = let objective = objective, scheduler = scheduler, node = node
+        (cluster) -> getmarginal!(node, cluster, marginal_skip_strategy(objective)) |> schedule_on(scheduler)
+    end
+
+    stream = combineLatest(map(fnstream, localmarginals(node)), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{localmarginalnames(node)}
         (marginals) -> begin
@@ -73,5 +69,5 @@ function score(
         end
     end
 
-    return stream |> map(T, mapping)
+    return apply_diagnostic_check(objective, node, stream |> map(T, mapping))
 end

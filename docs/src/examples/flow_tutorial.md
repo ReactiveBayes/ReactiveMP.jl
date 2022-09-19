@@ -346,7 +346,7 @@ The corresponding probabilistic model for the binary classification task can be 
         y_lat2[k] ~ dot(y_lat1[k], [1, 1])
 
         # specify observations
-        y[k] ~ Probit(y_lat2[k]) # default: where { pipeline = RequireInbound(in = NormalMeanPrecision(0, 1.0)) }
+        y[k] ~ Probit(y_lat2[k]) # default: where { pipeline = RequireMessage(in = NormalMeanPrecision(0, 1.0)) }
 
     end
 
@@ -374,12 +374,13 @@ For the optimization procedure, we will simplify our inference loop, such that i
 function f(params)
     Random.seed!(42) # Flow uses random permutation matrices, which is not good for the optimisation procedure
     result = inference(
-        model         = fcmodel, 
-        data          = data,
-        meta          = fmeta(model, params),
-        free_energy   = true,
-        iterations    = 10, 
-        showprogress  = false
+        model                   = fcmodel, 
+        data                    = data,
+        meta                    = fmeta(model, params),
+        free_energy             = true,
+        free_energy_diagnostics = nothing, # Free Energy can be set to NaN due to optimization procedure
+        iterations              = 10, 
+        showprogress            = false
     );
     
     result.free_energy[end]

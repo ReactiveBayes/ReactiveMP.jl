@@ -1,7 +1,7 @@
 export PointMass, getpointmass
 
 import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
-import Base: ndims, precision, getindex, convert, isapprox, eltype
+import Base: ndims, precision, getindex, size, convert, isapprox, eltype
 import SpecialFunctions: loggamma, logbeta
 
 struct PointMass{P}
@@ -19,6 +19,7 @@ getpointmass(distribution::PointMass) = distribution.point
 ##
 
 Base.getindex(distribution::PointMass, index...) = Base.getindex(getpointmass(distribution), index...)
+Base.size(distribution::PointMass, index...) = Base.size(getpointmass(distribution), index...)
 
 Distributions.entropy(distribution::PointMass) = InfCountingReal(eltype(distribution), -1)
 
@@ -61,7 +62,9 @@ Distributions.cov(distribution::PointMass{V}) where {T <: Real, V <: AbstractVec
 probvec(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}} = mean(distribution)
 
 mean(::typeof(inv), distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}       = error("mean of inverse of `::PointMass{ <: AbstractVector }` is not defined")
+mean(::typeof(cholinv), distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}   = error("mean of Cholesky inverse of `::PointMass{ <: AbstractVector }` is not defined")
 mean(::typeof(log), distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}       = log.(mean(distribution))
+mean(::typeof(clamplog), distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}  = clamplog.(mean(distribution))
 mean(::typeof(mirrorlog), distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}} = error("mean of mirrorlog of `::PointMass{ <: AbstractVector }` is not defined")
 mean(::typeof(loggamma), distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}  = loggamma.(mean(distribution))
 mean(::typeof(logdet), distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}    = error("mean of logdet of `::PointMass{ <: AbstractVector }` is not defined")
@@ -89,8 +92,10 @@ Distributions.cov(distribution::PointMass{M}) where {T <: Real, M <: AbstractMat
 probvec(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} =
     error("probvec(::PointMass{ <: AbstractMatrix }) is not defined")
 
-mean(::typeof(inv), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}       = cholinv(mean(distribution))
+mean(::typeof(inv), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}       = inv(mean(distribution))
+mean(::typeof(cholinv), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}   = cholinv(mean(distribution))
 mean(::typeof(log), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}       = log.(mean(distribution))
+mean(::typeof(clamplog), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}  = clamplog.(mean(distribution))
 mean(::typeof(mirrorlog), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = error("mean of mirrorlog of `::PointMass{ <: AbstractMatrix }` is not defined")
 mean(::typeof(loggamma), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}  = loggamma.(mean(distribution))
 mean(::typeof(logdet), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}    = logdet(mean(distribution))

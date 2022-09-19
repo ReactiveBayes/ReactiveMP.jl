@@ -18,7 +18,13 @@ const DefaultGCVNodeMetadata = GCVMetadata(GaussHermiteCubature(20))
 
 default_meta(::Type{GCV}) = DefaultGCVNodeMetadata
 
-@average_energy GCV (q_y_x::MultivariateNormalDistributionsFamily, q_z::NormalDistributionsFamily, q_κ::Any, q_ω::Any) =
+@average_energy GCV (
+    q_y_x::MultivariateNormalDistributionsFamily,
+    q_z::NormalDistributionsFamily,
+    q_κ::Any,
+    q_ω::Any,
+    meta::Union{<:GCVMetadata, Nothing}
+) =
     begin
         y_x_mean, y_x_cov = mean_cov(q_y_x)
         z_mean, z_var     = mean_var(q_z)

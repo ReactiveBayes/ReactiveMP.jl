@@ -1,10 +1,10 @@
 # [Meta Specification](@id user-guide-meta-specification)
 
-Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to change or customise the inference procedure or the way node computes outbound messages. As an example `GCV` node accepts the approxximation method that will be used to approximate non-conjugate relationships between variables in this node. `GraphPPL.jl` exports `@meta` macro to specify node-specific meta and contextual information. For example:
+Some nodes in `ReactiveMP.jl` accept optional meta structure that may be used to change or customise the inference procedure or the way node computes outbound messages. As an example `GCV` node accepts the approximation method that will be used to approximate non-conjugate relationships between variables in this node. `GraphPPL.jl` exports `@meta` macro to specify node-specific meta and contextual information. For example:
 
 ## General syntax 
 
-`@meta` macro accepts either regular julia function or a single `begin ... end` block. For example both are valid:
+`@meta` macro accepts either regular Julia function or a single `begin ... end` block. For example both are valid:
 
 ```julia
 
@@ -17,7 +17,7 @@ mymeta = @meta begin
 end
 ```
 
-In the first case it returns a function that return meta upon calling, e.g. 
+In the first case it returns a function that returns meta upon calling, e.g. 
 
 ```julia
 @meta function create_meta(flag)
@@ -50,7 +50,7 @@ List of available options:
 
 ## Meta specification
 
-First, lets start with an example:
+First, let's start with an example:
 
 ```julia
 meta = @meta begin 
@@ -60,7 +60,7 @@ end
 
 This meta specification indicates, that for every `GCV` node in the model with `x`, `k` and `w` as connected variables should use the `GCVMetadata(GaussHermiteCubature(20))` meta object.
 
-You can have a list of as many as possible meta specification entries for different nodes:
+You can have a list of as many meta specification entries as possible for different nodes:
 
 ```julia
 meta = @meta begin 
@@ -70,7 +70,7 @@ meta = @meta begin
 end
 ```
 
-To create a model with extra constraints user may pass optional `meta` positional argument (comes either first, or after `constraints` if there are any) for the model function:
+To create a model with extra constraints the user may pass an optional `meta` positional argument (comes either first, or after `constraints` if there are any) for the model function:
 
 ```julia
 @model function my_model(arguments...)

@@ -1,8 +1,9 @@
 using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
 
-@rule Probit(:in, Marginalisation) (q_out::PointMass,) = @call_rule Probit(:in, Marginalisation) (m_out = q_out,)
+@rule Probit(:in, Marginalisation) (q_out::PointMass, meta::Union{ProbitMeta, Nothing}) =
+    @call_rule Probit(:in, Marginalisation) (m_out = q_out,)
 
-@rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli},) = begin
+@rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, meta::Union{ProbitMeta, Nothing}) = begin
 
     # extract parameters
     p = mean(m_out)
@@ -14,10 +15,18 @@ using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
     return ContinuousUnivariateLogPdf(f)
 end
 
-@rule Probit(:in, MomentMatching) (q_out::PointMass, m_in::UnivariateNormalDistributionsFamily) =
-    @call_rule Probit(:in, MomentMatching) (m_out = q_out, m_in = m_in)
+@rule Probit(:in, MomentMatching) (
+    q_out::PointMass,
+    m_in::UnivariateNormalDistributionsFamily,
+    meta::Union{ProbitMeta, Nothing}
+) =
+    @call_rule Probit(:in, MomentMatching) (m_out = q_out, m_in = m_in, meta = meta)
 
-@rule Probit(:in, MomentMatching) (m_out::Union{PointMass, Bernoulli}, m_in::UnivariateNormalDistributionsFamily) =
+@rule Probit(:in, MomentMatching) (
+    m_out::Union{PointMass, Bernoulli},
+    m_in::UnivariateNormalDistributionsFamily,
+    meta::Union{ProbitMeta, Nothing}
+) =
     begin
 
         # extract parameters

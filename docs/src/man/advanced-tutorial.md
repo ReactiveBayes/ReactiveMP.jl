@@ -1,6 +1,6 @@
 # [Advanced Tutorial](@id user-guide-advanced-tutorial)
 
-This tutorials covers the fundametnal and advanced usage of the ReactiveMP.jl package.
+This tutorials covers the fundamental and advanced usage of the ReactiveMP.jl package.
 This tutorial also exists in the form of a Jupyter notebook in [demo/](https://github.com/biaslab/ReactiveMP.jl/tree/master/demo) folder at GitHub repository.
 
 ```@example api
@@ -68,7 +68,7 @@ model, (s, y) = ReactiveMP.create_model(modelgenerator)
 The benefits of using model generator as a way to create a model is that it allows to change inference constraints and meta specification for nodes. We will talk about factorisation and form constraints and meta specification later on in this demo.
 
 `GraphPPL.jl` returns a factor graph-based representation of a model. We can examine this factor graph structure with the help of some utility functions such as: 
-- `getnodes()`: returns an array of factor nodes in a correposning factor graph
+- `getnodes()`: returns an array of factor nodes in a corresponding factor graph
 - `getrandom()`: returns an array of random variable in the model
 - `getdata()`: returns an array of data inputs in the model
 - `getconstant()`: return an array of constant values in the model
@@ -250,7 +250,7 @@ end
 
 ## Probabilistic inference in ReactiveMP.jl
 
-`ReactiveMP.jl` uses the `Rocket.jl` package API for inference routines. `Rocket.jl` is a reactive programming extension for Julia that is higly inspired by `RxJS` and similar libraries from the `Rx` ecosystem. It consists of **observables**, **actors**, **subscriptions** and **operators**. For more infromation and rigorous examples see [Rocket.jl github page](https://github.com/biaslab/Rocket.jl).
+`ReactiveMP.jl` uses the `Rocket.jl` package API for inference routines. `Rocket.jl` is a reactive programming extension for Julia that is highly inspired by `RxJS` and similar libraries from the `Rx` ecosystem. It consists of **observables**, **actors**, **subscriptions** and **operators**. For more information and rigorous examples see [Rocket.jl github page](https://github.com/biaslab/Rocket.jl).
 
 ### Observables
 Observables are lazy push-based collections and they deliver their values over time.
@@ -652,7 +652,7 @@ nothing #hide
 
 ### Form constraints
 
-In order to support form constraints, the `randomvar()` function also supports a `where { ... }` clause with some optional arguments. One of these arguments is `form_constraint` that allows us to specify a form constraint to the random variables in our model. Another one is `prod_constraint` that allows to specify an additional constraints during computation of product of two colliding messages. For example we can perform the EM algorithm if we assign a point mass contraint on some variables in our model.
+In order to support form constraints, the `randomvar()` function also supports a `where { ... }` clause with some optional arguments. One of these arguments is `form_constraint` that allows us to specify a form constraint to the random variables in our model. Another one is `prod_constraint` that allows to specify an additional constraints during computation of product of two colliding messages. For example we can perform the EM algorithm if we assign a point mass constraint on some variables in our model.
 
 
 ```@example api
@@ -741,7 +741,7 @@ getvalues(μ_values) |> last
 getvalues(τ_values) |> last 
 ```
 
-By default `ReactiveMP.jl` tries to compute an analytical product of two colliding messages and throws an error if no analytical solution is known. However, it is possible to fall back to a generic product that does not require an analytical solution to be known. In this case the inference backend will simply propagate the product of two message in a form of a tuple. It is not possible to use such a tuple-product during an inference and in this case it is mandatory to use some form constraint to approximate this product.
+By default `ReactiveMP.jl` tries to compute an analytical product of two colliding messages and throws an error if no analytical solution is known. However, it is possible to fall back to a generic product that does not require an analytical solution to be known. In this case the inference backend will simply propagate the product of two messages in a form of a tuple. It is not possible to use such a tuple-product during an inference and in this case it is mandatory to use some form constraint to approximate this product.
 
 ```julia
 μ = randomvar() where { 

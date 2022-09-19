@@ -1,5 +1,4 @@
 export ContinuousUnivariateLogPdf, ContinuousMultivariateLogPdf
-export ContinuousGenericLogPdfVectorisedProduct
 
 using Distributions
 
@@ -176,46 +175,14 @@ function is_typeof_equal(
 end
 
 ## More efficient prod for same logpdfs
+## We need to implement this auxilary functions, because we define `prod_analytical_rule = ProdAnalyticalRuleAvailable()` for AbstractContinuousGenericLogPdf
+## By default `GenericLogPdfVectorisedProduct` works only if `prod_analytical_rule = ProdAnalyticalRuleUnknown()`
 
-"""
-    ContinuousGenericLogPdfVectorisedProduct
+prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericLogPdf} =
+    GenericLogPdfVectorisedProduct(F[left, right], 2)
 
-An efficient implementation of product of multiple generic log-pdf objects.
-
-See also: [`ContinuousUnivariateLogPdf`](@ref), [`ContinuousMultivariateLogPdf`](@ref)
-"""
-struct ContinuousGenericLogPdfVectorisedProduct{F} <: AbstractContinuousGenericLogPdf
-    vector::Vector{F}
-    length::Int # `length` here is needed for extra safety as we implicitly mutate `vector` in `prod`
-end
-
-variate_form(::Type{<:ContinuousGenericLogPdfVectorisedProduct{F}}) where {F} = variate_form(F)
-variate_form(::ContinuousGenericLogPdfVectorisedProduct{F}) where {F}         = variate_form(F)
-
-getdomain(dist::ContinuousGenericLogPdfVectorisedProduct) = getdomain(first(dist.vector))
-getlogpdf(dist::ContinuousGenericLogPdfVectorisedProduct) =
-    (x) -> mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
-
-Base.show(io::IO, dist::ContinuousGenericLogPdfVectorisedProduct) =
-    print(io, "ContinuousGenericLogPdfVectorisedProduct(", getdomain(dist), ")")
-Base.show(io::IO, ::Type{<:ContinuousGenericLogPdfVectorisedProduct}) =
-    print(io, "ContinuousGenericLogPdfVectorisedProduct")
-
-Distributions.support(dist::ContinuousGenericLogPdfVectorisedProduct) = Distributions.support(first(dist.vector))
-
-function prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericLogPdf}
-    return ContinuousGenericLogPdfVectorisedProduct(F[left, right], 2)
-end
-
-function prod(
-    ::ProdAnalytical,
-    left::ContinuousGenericLogPdfVectorisedProduct{F},
-    right::F
-) where {F <: AbstractContinuousGenericLogPdf}
-    vector  = left.vector
-    vlength = length(vector)
-    return ContinuousGenericLogPdfVectorisedProduct(push!(vector, right), vlength + 1)
-end
+prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where {F <: AbstractContinuousGenericLogPdf} =
+    push!(left, right)
 
 ## Utility methods for tests 
 

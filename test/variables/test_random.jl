@@ -269,6 +269,11 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
             @test isproxy(v2)
         end
     end
+
+    @testset "Error indexing" begin
+        # This test may be removed if we implement this feature in the future
+        @test_throws ErrorException randomvar(:x)[1]
+    end
 end
 
 end

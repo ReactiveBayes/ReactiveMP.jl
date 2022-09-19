@@ -191,7 +191,7 @@ We model a random variable by a probability distribution using the `~` operator.
 end
 ```
 
-Another example, but using a determnistic relation between random variables:
+Another example, but using a deterministic relation between random variables:
 
 ```julia
 @model function model_name(...)
@@ -207,7 +207,7 @@ end
     The `GraphPPL.jl` package uses the `~` operator for modelling both stochastic and deterministic relationships between random variables.
 
 
-The `@model` macro automatically resolves any inner function calls into anonymous extra nodes in case this inner function call is a non-linear transformations. It will also create needed anonymous random variables. But it is important to note that the inference backend will try to optimize inner non-linear deterministic function calls in the case where all arguments are constants or data inputs. For example:
+The `@model` macro automatically resolves any inner function calls into anonymous extra nodes in case this inner function call is a non-linear transformation. It will also create needed anonymous random variables. But it is important to note that the inference backend will try to optimize inner non-linear deterministic function calls in the case where all arguments are constants or data inputs. For example:
 
 ```julia
 noise ~ NormalMeanVariance(mean, inv(precision)) # Will create a non-linear `inv` node in case if `precision` is a random variable. Won't create an additional non-linear node in case if `precision` is a constant or data input.
@@ -231,6 +231,64 @@ node, y ~ NormalMeanVariance(mean, var)
 ```
 
 Having a node reference can be useful in case the user wants to return it from a model and to use it later on to specify initial joint marginal distributions.
+
+### Broadcasting syntax 
+
+!!! note 
+    Broadcasting syntax requires at least v2.1.0 of `GraphPPL.jl` 
+
+GraphPPL support broadcasting for `~` operator in the exact same way as Julia itself. A user is free to write an expression of the following form:
+
+```julia
+y = datavar(Float64, n)
+y .~ NormalMeanVariance(0.0, 1.0) # <- i.i.d observations
+```
+
+More complex expression are also allowed:
+
+```julia
+m ~ NormalMeanPrecision(0.0, 0.0001)
+t ~ Gamma(1.0, 1.0)
+
+y = randomvar(Float64, n)
+y .~ NormalMeanPrecision(m, t)
+```
+
+```julia
+A = constvar(...)
+x = randomvar(n)
+y = datavar(Vector{Float64}, n)
+
+w         ~ Wishart(3, diageye(2))
+x[1]      ~ MvNormalMeanPrecision(zeros(2), diageye(2))
+x[2:end] .~ A .* x[1:end-1] # <- State-space model with transition matrix A
+y        .~ MvNormalMeanPrecision(x, w) # <- Observations with unknown precision matrix
+```
+
+Note, however, that all variables that take part in the broadcasting operation must be defined before either with `randomvar` or `datavar`. The exception here is constants that are automatically converted to their `constvar` equivalent. If you want to prevent broadcasting for some constant (e.g. if you want to add a vector to a multivariate Gaussian distribution) use explicit `constvar` call:
+
+```julia
+# Suppose `x` is a 2-dimensional Gaussian distribution
+z .~ x .+ constvar([ 1, 1 ])
+# Which is equivalent to 
+for i in 1:n
+   z[i] ~ x[i] + constvar([ 1, 1 ])
+end
+```
+
+Without explicit `constvar` Julia's broadcasting machinery would instead attempt to unroll for loop in the following way:
+
+```julia
+# Without explicit `constvar`
+z .~ x .+ [ 1, 1 ]
+# Which is equivalent to 
+array = [1, 1]
+for i in 1:n
+   z[i] ~ x[i] + array[i] # This is wrong if `x[i]` is supposed to be a multivariate Gaussian 
+end
+```
+
+Read more about how broadcasting machinery works in Julia in [the official documentation](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting).
 
 ### Node creation options
 

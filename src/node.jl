@@ -9,7 +9,9 @@ export iscontain, isfactorised, getinterface
 export clusters, clusterindex
 export connect!, activate!
 export make_node
-export DefaultFunctionalDependencies, RequireInboundFunctionalDependencies, RequireEverythingFunctionalDependencies
+export DefaultFunctionalDependencies,
+    RequireMessageFunctionalDependencies,
+    RequireMarginalFunctionalDependencies, RequireEverythingFunctionalDependencies
 export @node
 
 using Rocket
@@ -21,7 +23,7 @@ import Base: getindex, setindex!, firstindex, lastindex
 ## Node traits
 
 """
-    ValidNodeFunctionalForm   
+    ValidNodeFunctionalForm
 
 Trait specification for an object that can be used in model specification as a factor node.
 
@@ -108,10 +110,11 @@ See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@re
 """
 function sdtype end
 
-# Any `Type` is considered to be a deterministic mapping unless stated otherwise
+# Any `Type` is considered to be a deterministic mapping unless stated otherwise (By convention, any `Distribution` type is not deterministic)
 # E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
-sdtype(::Type{T}) where {T} = Deterministic()
-sdtype(::Function)          = Deterministic()
+sdtype(::Type{T}) where {T}    = Deterministic()
+sdtype(::Type{<:Distribution}) = Stochastic()
+sdtype(::Function)             = Deterministic()
 
 """
     as_node_symbol(type)
@@ -145,7 +148,7 @@ struct FullFactorisation end
 """
     collect_factorisation(nodetype, factorisation)
 
-This function converts given factorisation to a correct internal factorisation representation for a given node. 
+This function converts given factorisation to a correct internal factorisation representation for a given node.
 
 See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
 """
@@ -154,7 +157,7 @@ function collect_factorisation end
 """
     collect_meta(nodetype, meta)
 
-This function converts given meta object to a correct internal meta representation for a given node. 
+This function converts given meta object to a correct internal meta representation for a given node.
 Fallbacks to `default_meta` in case if meta is `nothing`.
 
 See also: [`default_meta`](@ref), [`FactorNode`](@ref)
@@ -235,7 +238,7 @@ local_constraint(interface::NodeInterface) = interface.local_constraint
 """
     tag(interface)
 
-Returns a tag of the interface in the form of `Val{ name(interface) }`. 
+Returns a tag of the interface in the form of `Val{ name(interface) }`.
 The major difference between tag and name is that it is possible to dispath on interface's tag in message computation rule.
 
 See also: [`NodeInterface`](@ref), [`name`](@ref)
@@ -305,8 +308,8 @@ get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(connectedvar
 """
     IndexedNodeInterface
 
-`IndexedNodeInterface` object represents a repetative node-variable connection. 
-Used in cases when node may connect different number of random variables with the same name, e.g. means and precisions of Gaussian Mixture node.
+`IndexedNodeInterface` object represents a repetative node-variable connection.
+Used in cases when a node may connect to a different number of random variables with the same name, e.g. means and precisions of a Gaussian Mixture node.
 
 See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
@@ -338,19 +341,24 @@ get_pipeline_stages(interface::IndexedNodeInterface)               = get_pipelin
 """
     FactorNodeLocalMarginal
 
-This object represents local marginals for some specific factor node. 
-Local marginal can be joint in case of structured factorisation. 
+This object represents local marginals for some specific factor node.
+The local marginal can be joint in case of structured factorisation.
 Local to factor node marginal also can be shared with a corresponding marginal of some random variable.
 
 See also: [`FactorNodeLocalMarginals`](@ref)
 """
 mutable struct FactorNodeLocalMarginal
     index  :: Int
+    first  :: Int
     name   :: Symbol
     stream :: Union{Nothing, AbstractSubscribable{<:Marginal}}
 
-    FactorNodeLocalMarginal(index::Int, name::Symbol) = new(index, name, nothing)
+    FactorNodeLocalMarginal(index::Int, first::Int, name::Symbol) = new(index, first, name, nothing)
 end
+
+# `First` defines the index of the first element in the joint marginal
+# E.g. if the set of variables is (x, y, z, w) and joint is `z_w`, first is equal to 3
+Base.first(localmarginal::FactorNodeLocalMarginal) = localmarginal.first
 
 index(localmarginal::FactorNodeLocalMarginal) = localmarginal.index
 name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
@@ -361,7 +369,7 @@ setstream!(localmarginal::FactorNodeLocalMarginal, observable) = localmarginal.s
 """
     FactorNodeLocalMarginals
 
-This object acts as an iterable and indexable proxy for local marginals for some node. 
+This object acts as an iterable and indexable proxy for local marginals for some node.
 """
 struct FactorNodeLocalMarginals{M}
     marginals::M
@@ -370,10 +378,10 @@ end
 function FactorNodeLocalMarginals(variablenames, factorisation)
     marginal_names = map(fcluster -> clustername(map(i -> variablenames[i], fcluster)), factorisation)
     index          = 0 # its better not to use zip or enumerate here to preserve tuple-like structure
-    marginals      = map((mname) -> begin
+    marginals      = map(marginal_names) do mname
         index += 1
-        FactorNodeLocalMarginal(index, mname)
-    end, marginal_names)
+        return FactorNodeLocalMarginal(index, first(factorisation[index]), mname)
+    end
     return FactorNodeLocalMarginals(marginals)
 end
 
@@ -400,6 +408,8 @@ FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothin
 factorisation(options::FactorNodeCreationOptions) = options.factorisation
 metadata(options::FactorNodeCreationOptions)      = options.metadata
 getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
+
+Base.broadcastable(options::FactorNodeCreationOptions) = Ref(options)
 
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
@@ -432,6 +442,7 @@ function Base.show(io::IO, factornode::FactorNode)
     println(io, string(" form            : ", functionalform(factornode)))
     println(io, string(" sdtype          : ", sdtype(factornode)))
     println(io, string(" interfaces      : ", interfaces(factornode)))
+    println(io, string(" connectedvars   : ", map(indexed_name, connectedvars(factornode))))
     println(io, string(" factorisation   : ", factorisation(factornode)))
     println(io, string(" local marginals : ", localmarginalnames(factornode)))
     println(io, string(" metadata        : ", metadata(factornode)))
@@ -441,6 +452,7 @@ end
 functionalform(factornode::FactorNode)     = factornode.fform
 sdtype(factornode::FactorNode)             = sdtype(functionalform(factornode))
 interfaces(factornode::FactorNode)         = factornode.interfaces
+connectedvars(factornode::FactorNode)      = map((i) -> connectedvar(i), interfaces(factornode))
 factorisation(factornode::FactorNode)      = factornode.factorisation
 localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
 localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode))
@@ -449,7 +461,7 @@ getpipeline(factornode::FactorNode)        = factornode.pipeline
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
-# Cluster is reffered to a tuple of node interfaces 
+# Cluster is reffered to a tuple of node interfaces
 clusters(factornode::FactorNode) =
     map(factor -> map(i -> @inbounds(interfaces(factornode)[i]), factor), factorisation(factornode))
 
@@ -518,7 +530,7 @@ collect_pipeline(T::Any, stage::AbstractPipelineStage)                    = Fact
 collect_pipeline(T::Any, fdp::AbstractNodeFunctionalDependenciesPipeline) = FactorNodePipeline(fdp, EmptyPipelineStage())
 collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipeline
 
-## Functional Dependencies 
+## Functional Dependencies
 
 function message_dependencies end
 function marginal_dependencies end
@@ -526,50 +538,91 @@ function marginal_dependencies end
 Base.:+(left::AbstractNodeFunctionalDependenciesPipeline, right::AbstractPipelineStage) = FactorNodePipeline(left, right)
 Base.:+(left::FactorNodePipeline, right::AbstractPipelineStage)                         = FactorNodePipeline(left.functional_dependencies, left.extra_stages + right)
 
-### Default 
+### Default
 
 """
     DefaultFunctionalDependencies
+
+This pipeline translates directly to enforcing a variational message passing scheme. In order to compute a message out of some edge, this pipeline requires
+messages from edges within the same edge-cluster and marginals over other edge-clusters.
+
+See also: [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
 struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function message_dependencies(::DefaultFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+function message_dependencies(
+    ::DefaultFunctionalDependencies,
+    nodeinterfaces,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
     # First we remove current edge index from the list of dependencies
     vdependencies = TupleTools.deleteat(varcluster, varclusterindex(varcluster, iindex))
     # Second we map interface indices to the actual interfaces
     return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), vdependencies)
 end
 
-function marginal_dependencies(::DefaultFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
+function marginal_dependencies(
+    ::DefaultFunctionalDependencies,
+    nodeinterfaces,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
     return TupleTools.deleteat(nodelocalmarginals, cindex)
 end
 
-### With inbound
+### With inbound messages
 
-struct RequireInboundFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
+"""
+    RequireMessageFunctionalDependencies(indices::Tuple, start_with::Tuple)
+
+The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
+
+# Arguments
+
+- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages
+- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
+
+Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmessage!` overwrites whatever has been passed in `start_with`.
+
+`@model` macro accepts a simplified construction of this pipeline:
+
+```julia
+@model function some_model()
+    # ...
+    y ~ NormalMeanVariance(x, τ) where {
+        pipeline = RequireMessage(x = vague(NormalMeanPrecision),     τ)
+                                  # ^^^                               ^^^
+                                  # request 'inbound' for 'x'         we may do the same for 'τ',
+                                  # and initialise with `vague(...)`  but here we skip initialisation
+    }
+    # ...
+end
+```
+
+Deprecation warning: `RequireInboundFunctionalDependencies` has been deprecated in favor of `RequireMessageFunctionalDependencies`.
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+"""
+struct RequireMessageFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
     indices    :: I
     start_with :: S
 end
 
-struct InterfacePluginStartWithMessage{M, S}
-    msg        :: M
-    start_with :: S
-end
+Base.@deprecate_binding RequireInboundFunctionalDependencies RequireMessageFunctionalDependencies
 
-name(p::InterfacePluginStartWithMessage)      = name(p.msg)
-messagein(p::InterfacePluginStartWithMessage) = messagein(p.start_with, p)
-
-messagein(::Nothing, p::InterfacePluginStartWithMessage) = messagein(p.msg)
-
-function messagein(something, p::InterfacePluginStartWithMessage)
-    output = messagein(p.msg)
-    if isnothing(getrecent(output))
-        setmessage!(output, something)
-    end
-    return output
-end
-
-function message_dependencies(dependencies::RequireInboundFunctionalDependencies, nodeinterfaces, varcluster, iindex)
+function message_dependencies(
+    dependencies::RequireMessageFunctionalDependencies,
+    nodeinterfaces,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
 
     # First we find dependency index in `indices`, we use it later to find `start_with` distribution
     depindex = findfirst((i) -> i === iindex, dependencies.indices)
@@ -577,52 +630,194 @@ function message_dependencies(dependencies::RequireInboundFunctionalDependencies
     # If we have `depindex` in our `indices` we include it in our list of functional dependencies. It effectively forces rule to require inbound message
     if depindex !== nothing
         # `mapindex` is a lambda function here
-        mapindex = let nodeinterfaces = nodeinterfaces, depindex = depindex
-            (i) -> begin
-                interface = @inbounds nodeinterfaces[i]
-                # InterfacePluginStartWithMessage is a proxy structure for `name` and `messagein` method for an interface
-                # It returns the same name but modifies `messagein` to return an observable with `start_with` operator
-                return if i === iindex
-                    InterfacePluginStartWithMessage(interface, dependencies.start_with[depindex])
-                else
-                    interface
-                end
-            end
+        output     = messagein(nodeinterfaces[iindex])
+        start_with = dependencies.start_with[depindex]
+        # Initialise now, if message has not been initialised before and `start_with` element is not empty
+        if isnothing(getrecent(output)) && !isnothing(start_with)
+            setmessage!(output, start_with)
         end
-        return map(inds -> map(mapindex, inds), varcluster)
+        return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), varcluster)
     else
-        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, varcluster, iindex)
+        return message_dependencies(
+            DefaultFunctionalDependencies(),
+            nodeinterfaces,
+            nodelocalmarginals,
+            varcluster,
+            cindex,
+            iindex
+        )
     end
 end
 
-function marginal_dependencies(::RequireInboundFunctionalDependencies, nodelocalmarginals, varcluster, cindex)
-    return marginal_dependencies(DefaultFunctionalDependencies(), nodelocalmarginals, varcluster, cindex)
+function marginal_dependencies(
+    ::RequireMessageFunctionalDependencies,
+    nodeinterfaces,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
+    return marginal_dependencies(
+        DefaultFunctionalDependencies(),
+        nodeinterfaces,
+        nodelocalmarginals,
+        varcluster,
+        cindex,
+        iindex
+    )
+end
+
+### With marginals
+
+"""
+    RequireMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
+
+Similar to `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on that edge.
+
+# Arguments
+
+- `indices`::Tuple, tuple of integers, which indicates what edges should require their own marginals
+- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial marginal for edges in `indices`
+
+Note: `start_with` uses the `setmarginal!` mechanism, hence it can be visible to other listeners on the same edge. Explicit calls to `setmarginal!` overwrites whatever has been passed in `start_with`.
+
+`@model` macro accepts a simplified construction of this pipeline:
+
+```julia
+@model function some_model()
+    # ...
+    y ~ NormalMeanVariance(x, τ) where {
+        pipeline = RequireMarginal(x = vague(NormalMeanPrecision),     τ)
+                                   # ^^^                               ^^^
+                                   # request 'marginal' for 'x'        we may do the same for 'τ',
+                                   # and initialise with `vague(...)`  but here we skip initialisation
+    }
+    # ...
+end
+```
+
+Note: The simplified construction in `@model` macro syntax is only available in `GraphPPL.jl` of version `>2.2.0`.
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+"""
+struct RequireMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
+    indices    :: I
+    start_with :: S
+end
+
+function message_dependencies(
+    ::RequireMarginalFunctionalDependencies,
+    nodeinterfaces,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
+    return message_dependencies(
+        DefaultFunctionalDependencies(),
+        nodeinterfaces,
+        nodelocalmarginals,
+        varcluster,
+        cindex,
+        iindex
+    )
+end
+
+function marginal_dependencies(
+    dependencies::RequireMarginalFunctionalDependencies,
+    nodeinterfaces,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
+    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
+    depindex = findfirst((i) -> i === iindex, dependencies.indices)
+
+    if depindex !== nothing
+        # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
+        extra_localmarginal = FactorNodeLocalMarginal(-1, iindex, name(nodeinterfaces[iindex]))
+        vmarginal           = getmarginal(connectedvar(nodeinterfaces[iindex]), IncludeAll())
+        start_with          = dependencies.start_with[depindex]
+        # Initialise now, if marginal has not been initialised before and `start_with` element is not empty
+        if isnothing(getrecent(vmarginal)) && !isnothing(start_with)
+            setmarginal!(vmarginal, start_with)
+        end
+        setstream!(extra_localmarginal, vmarginal)
+        default = marginal_dependencies(
+            DefaultFunctionalDependencies(),
+            nodeinterfaces,
+            nodelocalmarginals,
+            varcluster,
+            cindex,
+            iindex
+        )
+        # Find insertion position (probably might be implemented more efficiently)
+        insertafter = sum(first(el) < iindex ? 1 : 0 for el in default; init = 0)
+        return TupleTools.insertafter(default, insertafter, (extra_localmarginal,))
+    else
+        return marginal_dependencies(
+            DefaultFunctionalDependencies(),
+            nodeinterfaces,
+            nodelocalmarginals,
+            varcluster,
+            cindex,
+            iindex
+        )
+    end
 end
 
 ### Everything
 
+"""
+   RequireEverythingFunctionalDependencies
+
+This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally.
+This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
+
+See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)
+"""
 struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function ReactiveMP.message_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, varcluster, iindex)
-    # Return all node interfaces including the edge we are trying to compuate a message on
+function ReactiveMP.message_dependencies(
+    ::RequireEverythingFunctionalDependencies,
+    nodeinterfaces,
+    nodelocalmarginals,
+    varcluster,
+    cindex,
+    iindex
+)
+    # Return all node interfaces including the edge we are trying to compute a message on
     return nodeinterfaces
 end
 
 function ReactiveMP.marginal_dependencies(
     ::RequireEverythingFunctionalDependencies,
+    nodeinterfaces,
     nodelocalmarginals,
     varcluster,
-    cindex
+    cindex,
+    iindex
 )
     # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
     return nodelocalmarginals
 end
 
-### 
+###
 
 default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
 
-### Generic
+### Generic `functional_dependencies` for `AbstractFactorNode`
+
+function functional_dependencies(factornode::AbstractFactorNode, iname::Symbol)
+    return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iname)
+end
+
+function functional_dependencies(factornode::AbstractFactorNode, iindex::Int)
+    return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iindex)
+end
+
+### `FactorNode` implementation of `functional_dependencies`
 
 function functional_dependencies(dependencies, factornode::FactorNode, iname::Symbol)
     return functional_dependencies(dependencies, factornode, interfaceindex(factornode, iname))
@@ -637,8 +832,8 @@ function functional_dependencies(dependencies, factornode::FactorNode, iindex::I
 
     varcluster = @inbounds nodeclusters[cindex]
 
-    messages  = message_dependencies(dependencies, nodeinterfaces, varcluster, iindex)
-    marginals = marginal_dependencies(dependencies, nodelocalmarginals, varcluster, cindex)
+    messages  = message_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
+    marginals = marginal_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 
     return tuple(messages...), tuple(marginals...)
 end
@@ -665,18 +860,15 @@ function get_marginals_observable(factornode, marginals)
 end
 
 function activate!(model, factornode::AbstractFactorNode)
-    fform = functionalform(factornode)
-    meta = metadata(factornode)
-    node_pipeline = getpipeline(factornode)
-
-    node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
+    fform                      = functionalform(factornode)
+    meta                       = metadata(factornode)
+    node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
     for (iindex, interface) in enumerate(interfaces(factornode))
         cvariable = connectedvar(interface)
         if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
-            message_dependencies, marginal_dependencies =
-                functional_dependencies(node_pipeline_dependencies, factornode, iindex)
+            message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
 
             msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
             marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
@@ -804,9 +996,23 @@ function interface_get_name(::Type{Val{Node}}, ::Type{Val{Interface}}) where {No
     error("Node $Node has no interface named $Interface")
 end
 
-make_node(fform, args::Vararg{<:AbstractVariable})                                     = make_node(fform, FactorNodeCreationOptions(), args...)
-make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable}) = error("Unknown functional form '$(fform)' used for node specification.")
+make_node(fform, args::Vararg{<:AbstractVariable}) = make_node(fform, FactorNodeCreationOptions(), args...)
 
+function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
+    error(
+        """
+        `$(fform)` is not available as a node in the inference engine. Used in `$(name(first(args))) ~ $(fform)(...)` expression.
+        Use `@node` macro to add a custom factor node corresponding to `$(fform)`. See `@node` macro for additional documentation and examples.
+        """
+    )
+end
+
+# This error message should be displayed if a node receives an incompatible number of arguments
+function make_node_incompatible_number_of_arguments_error(fuppertype, fbottomtype, interfaces_list, args)
+    error(
+        "`$(fbottomtype)` expects $(length(interfaces_list) - 1) arguments, but $(length(args) - 1) were given. Double check the `$(indexed_name(args[1])) ~ $(fbottomtype)($(join(map(indexed_name, args[begin+1:end]), ", ")))` expression."
+    )
+end
 # end
 
 ## macro helpers
@@ -825,10 +1031,12 @@ import .MacroHelpers
 - `sdtype`: Either `Stochastic` or `Deterministic`. Defines the type of the functional relationship
 - `interfaces_list`: Defines a fixed list of edges of a factor node, by convention the first element should be `out`. Example: `[ out, mean, variance ]`
 
+Note: `interfaces_list` must not include names that contain `_` symbol in them, as it is reserved to identify joint posteriors around the node object.
+
 # Examples
 ```julia
 
-struct MyNormalDistribution 
+struct MyNormalDistribution
     mean :: Float64
     var  :: Float64
 end
@@ -836,7 +1044,7 @@ end
 @node MyNormalDistribution Stochastic [ out, mean, var ]
 ```
 
-```julia 
+```julia
 
 @node typeof(+) Deterministic [ out, in1, in2 ]
 ```
@@ -869,14 +1077,43 @@ macro node(fformtype, sdtype, interfaces_list)
 
     @assert length(interfaces) !== 0 "Node should have at least one interface."
 
-    names = map(d -> first(d), interfaces)
+    names   = map(d -> d[1], interfaces)
+    aliases = map(d -> d[2], interfaces)
+
+    foreach(names) do name
+        @assert !occursin('_', string(name)) "Node interfaces names (and aliases) must not contain `_` symbol in them, found in $(name)."
+    end
+
+    foreach(Iterators.flatten(aliases)) do alias
+        @assert !occursin('_', string(alias)) "Node interfaces names (and aliases) must not contain `_` symbol in them, found in $(alias)."
+    end
 
     names_quoted_tuple     = Expr(:tuple, map(name -> Expr(:quote, name), names)...)
     names_indices          = Expr(:tuple, map(i -> i, 1:length(names))...)
     names_splitted_indices = Expr(:tuple, map(i -> Expr(:tuple, i), 1:length(names))...)
+    names_indexed          = Expr(:tuple, map(name -> Expr(:call, :(ReactiveMP.indexed_name), name), names)...)
 
     interface_args        = map(name -> :($name::AbstractVariable), names)
     interface_connections = map(name -> :(ReactiveMP.connect!(node, $(Expr(:quote, name)), $name)), names)
+
+    # Check that all arguments within interface refer to the unique var objects
+    non_unique_error_sym = gensym(:non_unique_error_sym)
+    non_unique_error_msg = :(
+        $non_unique_error_sym =
+            (fformtype, names) ->
+                """
+                Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed.
+                Check creation of the `$(fformtype)` with the `[ $(join(names, ", ")) ]` arguments.
+                """
+    )
+    interface_uniqueness = map(enumerate(names)) do (index, name)
+        names_without_current = skipindex(names, index)
+        return quote
+            if Base.in($(name), ($(names_without_current...),))
+                Base.error($(non_unique_error_sym)($fformtype, $names_indexed))
+            end
+        end
+    end
 
     # Here we create helpers function for GraphPPL.jl interfacing
     # They are used to convert interface names from `where { q = q(x, y)q(z) }` to an equivalent tuple respresentation, e.g. `((1, 2), (3, ))`
@@ -906,9 +1143,9 @@ macro node(fformtype, sdtype, interfaces_list)
         end
     end
 
-    # By default every argument passed to a factorisation option of the node is transformed by 
+    # By default every argument passed to a factorisation option of the node is transformed by
     # `collect_factorisation` function to have a tuple like structure.
-    # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects 
+    # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects
     # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a FullFactorisation equivalent
     factorisation_collectors = if sdtype === :Stochastic
         quote
@@ -948,16 +1185,27 @@ macro node(fformtype, sdtype, interfaces_list)
             return ReactiveMP.FactorNode(
                 $fbottomtype,
                 $names_quoted_tuple,
-                ReactiveMP.collect_factorisation($fbottomtype, factorisation(options)),
-                ReactiveMP.collect_meta($fbottomtype, metadata(options)),
+                ReactiveMP.collect_factorisation($fbottomtype, ReactiveMP.factorisation(options)),
+                ReactiveMP.collect_meta($fbottomtype, ReactiveMP.metadata(options)),
                 ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options))
             )
         end
 
         function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions, $(interface_args...))
             node = ReactiveMP.make_node($fbottomtype, options)
+            $(non_unique_error_msg)
+            $(interface_uniqueness...)
             $(interface_connections...)
             return node
+        end
+
+        # Fallback method for unsupported number of arguments, e.g. if node expects 2 inputs, but only 1 was given
+        function ReactiveMP.make_node(
+            ::$fuppertype,
+            options::FactorNodeCreationOptions,
+            args::Vararg{<:AbstractVariable}
+        )
+            ReactiveMP.make_node_incompatible_number_of_arguments_error($fuppertype, $fbottomtype, $interfaces, args)
         end
 
         $(interface_name_getters...)

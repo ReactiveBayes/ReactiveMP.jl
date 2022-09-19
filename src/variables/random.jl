@@ -196,6 +196,12 @@ isdata(::AbstractArray{<:RandomVariable})   = false
 isconst(::RandomVariable)                   = false
 isconst(::AbstractArray{<:RandomVariable})  = false
 
+function Base.getindex(randomvar::RandomVariable, i...)
+    error(
+        "Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed."
+    )
+end
+
 messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(
     prod_strategy(randomvar),
     prod_constraint(randomvar),

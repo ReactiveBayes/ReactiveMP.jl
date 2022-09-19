@@ -19,13 +19,13 @@ using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
     zt_min ~ NormalMeanVariance(zt_min_mean, zt_min_var)
     xt_min ~ NormalMeanVariance(xt_min_mean, xt_min_var)
 
-    meta = GCVMetadata(GaussHermiteCubature(9))
+    meta = GCVMetadata(GaussHermiteCubature(20))
 
     # Higher layer is modelled as a random walk 
-    zt ~ NormalMeanVariance(zt_min, z_variance) where {q = q(zt, zt_min)q(z_variance), meta = meta}
+    zt ~ NormalMeanVariance(zt_min, z_variance) where {q = q(zt, zt_min)q(z_variance)}
 
     # Lower layer is modelled with `GCV` node
-    gcv_node, xt ~ GCV(xt_min, zt, real_k, real_w) where {q = q(xt, xt_min)q(zt)q(κ)q(ω)}
+    gcv_node, xt ~ GCV(xt_min, zt, real_k, real_w) where {q = q(xt, xt_min)q(zt)q(κ)q(ω), meta = meta}
 
     # Noisy observations 
     y = datavar(Float64)
@@ -168,12 +168,14 @@ end
         p = plot(pz, px, pf, layout = @layout([a; b; c]))
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark =
-            @benchmark hgf_online_inference($y, $vmp_iters, $real_k, $real_w, $z_variance, $y_variance) seconds = 15
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark =
+                @benchmark hgf_online_inference($y, $vmp_iters, $real_k, $real_w, $z_variance, $y_variance) seconds = 15
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end

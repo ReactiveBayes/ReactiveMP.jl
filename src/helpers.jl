@@ -128,6 +128,11 @@ const ∞ = Infinity(Float64)
 value(a::InfCountingReal) = a.value
 infs(a::InfCountingReal)  = a.infs
 
+value_isnan(a) = isnan(a)
+value_isinf(a) = isinf(a)
+value_isnan(a::InfCountingReal) = isnan(value(a))
+value_isinf(a::InfCountingReal) = isinf(value(a))
+
 Base.isfinite(a::InfCountingReal) = infs(a) === 0
 Base.isinf(a::InfCountingReal)    = !(isfinite(a))
 
@@ -259,6 +264,11 @@ end
 
 ## Other helpers 
 
+"""
+Same as `log` but clamps the input argument `x` to be in the range `tiny <= x <= typemax(x)` such that `log(0)` does not explode.
+"""
+clamplog(x) = log(clamp(x, tiny, typemax(x)))
+
 # We override this function for some specific types
 function is_typeof_equal(left, right)
     _isequal = typeof(left) === typeof(right)
@@ -306,9 +316,9 @@ Float64
 """
 function deep_eltype end
 
-deep_eltype(::Type{T}) where {T <: Number} = T
-deep_eltype(::Type{T}) where {T}           = deep_eltype(eltype(T))
-deep_eltype(::T) where {T}                 = deep_eltype(T)
+deep_eltype(::Type{T}) where {T}                  = T
+deep_eltype(::Type{T}) where {T <: AbstractArray} = deep_eltype(eltype(T))
+deep_eltype(any)                                  = deep_eltype(typeof(any))
 
 ##
 

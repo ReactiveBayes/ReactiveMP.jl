@@ -23,7 +23,7 @@ using StatsFuns: normcdf
     for k in 2:nr_samples+1
         x[k] ~ NormalMeanPrecision(x[k-1] + 0.1, 100)
         y[k-1] ~ Probit(x[k]) where {
-            pipeline = RequireInbound(in = NormalMeanPrecision(0, 1.0))
+            pipeline = RequireMessage(in = NormalMeanPrecision(0, 1.0))
         }
     end
 
@@ -111,11 +111,13 @@ end
         p = plot(px, pf, size = (800, 400))
         savefig(p, plot_output)
         ## -------------------------------------------- ##
-        ## Create output benchmarks
-        benchmark = @benchmark probit_inference($data_y) seconds = 15#
-        open(benchmark_output, "w") do io
-            show(io, MIME("text/plain"), benchmark)
-            versioninfo(io)
+        ## Create output benchmarks (skip if CI)
+        if get(ENV, "CI", nothing) != "true"
+            benchmark = @benchmark probit_inference($data_y) seconds = 15#
+            open(benchmark_output, "w") do io
+                show(io, MIME("text/plain"), benchmark)
+                versioninfo(io)
+            end
         end
         ## -------------------------------------------- ##
     end
