@@ -2,7 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
-export NormalNaturalParameters, MvNormalNaturalParameters, naturalParams, isproper
+export NormalNaturalParameters, MvNormalNaturalParameters, naturalparams, isproper
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -309,12 +309,12 @@ function Base.vec(p::MvNormalNaturalParameters)
 end
 
 # Standard parameters to natural parameters
-function naturalParams(dist::UnivariateNormalDistributionsFamily)
+function naturalparams(dist::UnivariateNormalDistributionsFamily)
     weighted_mean, precision = weightedmean_precision(dist)
     return NormalNaturalParameters(weighted_mean, -0.5 * precision)
 end
 
-function naturalParams(dist::MultivariateGaussianDistributionsFamily)
+function naturalparams(dist::MultivariateGaussianDistributionsFamily)
     weighted_mean, precision = weightedmean_precision(dist)
     MvNormalNaturalParameters(weighted_mean, -0.5 * precision)
 end

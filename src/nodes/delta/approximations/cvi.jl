@@ -27,7 +27,7 @@ function renderCVI(logp_nc::Function,
     rng,
     λ_init::NormalNaturalParameters,
     msg_in::UnivariateGaussianDistributionsFamily)
-    η = naturalParams(msg_in)
+    η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
     df_m = (z) -> ForwardDiff.derivative(logp_nc, z)
@@ -58,7 +58,7 @@ function renderCVI(logp_nc::Function,
     rng::Any,
     λ_init::T,
     msg_in::Any) where {T <: NaturalParameters}
-    η = naturalParams(msg_in)
+    η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
     # convert lambda to vector
@@ -97,7 +97,7 @@ function renderCVI(logp_nc::Function,
     rng,
     λ_init::MvNormalNaturalParameters,
     msg_in::MultivariateGaussianDistributionsFamily)
-    η = naturalParams(msg_in)
+    η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
     df_m = (z) -> ForwardDiff.gradient(logp_nc, z)

@@ -77,7 +77,7 @@ function GammaShapeRateNaturalParameters{T}(vec) where {T <: Real}
     return GammaShapeRateNaturalParameters(vec[1], vec[2])
 end
 
-naturalParams(dist::GammaShapeRate) = GammaShapeRateNaturalParameters(dist.a - 1, -dist.b)
+naturalparams(dist::GammaShapeRate) = GammaShapeRateNaturalParameters(dist.a - 1, -dist.b)
 
 # Natural parameters to standard dist. type
 function standardDist(η::GammaShapeRateNaturalParameters)

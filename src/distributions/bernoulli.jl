@@ -1,5 +1,5 @@
 export Bernoulli
-export naturalParams
+export naturalparams
 export standardDist
 export BernoulliNaturalParameters
 
@@ -64,7 +64,7 @@ function standardDist(η::BernoulliNaturalParameters)
     return Bernoulli(exp(get_natural_params(η)) / (1 + exp(get_natural_params(η))))
 end
 
-function naturalParams(dist::Bernoulli)
+function naturalparams(dist::Bernoulli)
     if succprob(dist) ≈ 1
         error("Bernoulli natural parameter is not defiend for p = 1.")
     end
