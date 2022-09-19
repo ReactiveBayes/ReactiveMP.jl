@@ -235,12 +235,10 @@ function score(
 ) where {T <: InfCountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
-    qinsmarginal = apply_skip_filter(getstream(node.localmarginals.marginals[2]), marginal_skip_strategy(objective)) 
+    qinsmarginal = apply_skip_filter(getstream(node.localmarginals.marginals[2]), marginal_skip_strategy(objective))
 
     stream  = qinsmarginal |> schedule_on(scheduler)
     mapping = (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))
 
     return apply_diagnostic_check(objective, node, stream |> map(T, mapping))
 end
-
-

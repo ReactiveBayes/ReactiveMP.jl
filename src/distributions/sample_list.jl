@@ -203,7 +203,7 @@ mean(::typeof(mirrorlog), sl::SampleList) = sample_list_mirroredlogmean(variate_
 
 # Differential entropy for SampleList
 # Entropy is pre-computed during computation of the marginal in `approximate_prod_with_sample_list` function
-function Distributions.entropy(sl::SampleList) 
+function Distributions.entropy(sl::SampleList)
     # DO NOT MERGE THIS, FIND A BETTER WAY TO COMPUTE ENTROPY
     return -mapreduce(w -> w * log(w), +, get_weights(sl))
     # return get_entropy(get_meta(sl))
