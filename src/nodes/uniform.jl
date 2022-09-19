@@ -13,6 +13,6 @@ function prod(::ProdAnalytical, left::Uniform, right::Beta)
 end
 
 @average_energy Uniform (q_out::Beta, q_a::PointMass, q_b::PointMass) = begin
-    @assert (mean(q_a), mean(q_b)) == (0.0, 1.0) "a and b must be equal to 1 and 0 respectively"
+    @assert (mean(q_a), mean(q_b)) == (0.0, 1.0) "a and b must be equal to 0 and 1 respectively"
     0.0
 end
