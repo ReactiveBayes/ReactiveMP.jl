@@ -24,15 +24,14 @@ import ReactiveMP: make_node
 
     @testset "Average energy" begin
         node = ReactiveMP.make_node(Uniform)
-        for a in 0:0.1:1, b in 1.1:0.1:2.1
-            @test isapprox(
-                score(AverageEnergy(), Uniform, Val{(:out, :a, :b)},
-                    (
-                        Marginal(Uniform(a, b), false, false),
-                        Marginal(PointMass(a), false, false),
-                        Marginal(PointMass(b), false, false)
-                    ), nothing), entropy(Uniform(a, b)), rtol = 1e-12)
-        end
+        a, b = 0.0, 1.0
+        α, β = rand(0.1:0.1:1.0), rand(0.1:0.1:1.0)
+        @test score(AverageEnergy(), Uniform, Val{(:out, :a, :b)},
+            (
+                Marginal(Beta(α, β), false, false),
+                Marginal(PointMass(a), false, false),
+                Marginal(PointMass(b), false, false)
+            ), nothing) == 0.0
     end
 end
 end
