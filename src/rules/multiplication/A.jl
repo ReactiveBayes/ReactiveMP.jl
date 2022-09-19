@@ -1,7 +1,12 @@
 
-@rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::PointMass) = PointMass(mean(m_in) \ mean(m_out))
+@rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) =
+    PointMass(mean(m_in) \ mean(m_out))
 
-@rule typeof(*)(:A, Marginalisation) (m_out::GammaDistributionsFamily, m_in::PointMass{<:Real}) = begin
+@rule typeof(*)(:A, Marginalisation) (
+    m_out::GammaDistributionsFamily,
+    m_in::PointMass{<:Real},
+    meta::Union{<:AbstractCorrection, Nothing}
+) = begin
     return GammaShapeRate(shape(m_out), rate(m_out) * mean(m_in))
 end
 
@@ -9,7 +14,7 @@ end
 @rule typeof(*)(:A, Marginalisation) (
     m_out::MultivariateNormalDistributionsFamily,
     m_in::PointMass{<:AbstractMatrix},
-    meta::AbstractCorrection
+    meta::Union{<:AbstractCorrection, Nothing}
 ) = begin
     A = mean(m_in)
     ξ_out, W_out = weightedmean_precision(m_out)
@@ -22,7 +27,7 @@ end
 @rule typeof(*)(:A, Marginalisation) (
     m_out::MultivariateNormalDistributionsFamily,
     m_in::PointMass{<:AbstractVector},
-    meta::AbstractCorrection
+    meta::Union{<:AbstractCorrection, Nothing}
 ) = begin
     A = mean(m_in)
     ξ_out, W_out = weightedmean_precision(m_out)
@@ -34,7 +39,7 @@ end
 @rule typeof(*)(:A, Marginalisation) (
     m_out::F,
     m_in::PointMass{<:Real},
-    meta::AbstractCorrection
+    meta::Union{<:AbstractCorrection, Nothing}
 ) where {F <: NormalDistributionsFamily} = begin
     A = mean(m_in)
     ξ_out, W_out = weightedmean_precision(m_out)
@@ -46,7 +51,7 @@ end
 @rule typeof(*)(:A, Marginalisation) (
     m_out::MvNormalMeanCovariance,
     m_in::PointMass{<:AbstractMatrix},
-    meta::AbstractCorrection
+    meta::Union{<:AbstractCorrection, Nothing}
 ) = begin
     A = mean(m_in)
     μ_out, Σ_out = mean_cov(m_out)
@@ -61,7 +66,7 @@ end
 @rule typeof(*)(:A, Marginalisation) (
     m_out::MvNormalMeanCovariance,
     m_in::PointMass{<:AbstractVector},
-    meta::AbstractCorrection
+    meta::Union{<:AbstractCorrection, Nothing}
 ) = begin
     A = mean(m_in)
     μ_out, Σ_out = mean_cov(m_out)
