@@ -34,6 +34,14 @@ struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
     η::T
 end
 
+function Base.vec(p::BernoulliNaturalParameters)
+    return [p.η]
+end
+
+function BernoulliNaturalParameters(v)
+    return BernoulliNaturalParameters(v[1])
+end
+
 get_natural_params(params::BernoulliNaturalParameters) = params.η
 
 function Base.:+(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
