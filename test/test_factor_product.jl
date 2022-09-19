@@ -9,17 +9,19 @@ using Random
 
     # Bernoulli comes from Distributions.jl and most of the things should be covered there
     # Here we test some extra ReactiveMP.jl specific functionality
-
+    
+    
+    multipliers = (Normal(), Gamma(), MvNormal([0,0], diageye(2)))
     @testset "getindex" begin
-        product = FactorProduct((Normal(), Gamma(), Normal()))
+        product = FactorProduct(multipliers)
         @test product[1] === Normal()
         @test product[2] === Gamma()
-        @test product[3] === Normal()
+        @test product[3] ≈ MvNormal([0,0], diageye(2))
     end
 
     @testset "entopy" begin
-        product = FactorProduct((Normal(), Gamma(), Normal()))
-        @test entropy(product) ≈ sum(map(entropy, (Normal(), Gamma(), Normal())))
+        product = FactorProduct(multipliers)
+        @test entropy(product) ≈ mapreduce(entropy, +, multipliers)
     end
 end
 
