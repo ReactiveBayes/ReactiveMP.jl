@@ -1,11 +1,12 @@
 export Marginal, getdata, is_clamped, is_initial, as_marginal
 export SkipClamped, SkipInitial, SkipClampedAndInitial, IncludeAll
+export IndexedMarginals
 
 using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, ndims, precision, length, size
+import Base: ==, ndims, precision, length, size, nameof, iterate
 
 struct Marginal{D}
     data       :: D
@@ -26,6 +27,7 @@ end
 getdata(marginal::Marginal)    = marginal.data
 is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
+typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 
 # TupleTools.prod is a more efficient version of Base.all for NTuple here
 is_clamped(marginals::Tuple) = TupleTools.prod(map(is_clamped, marginals))
@@ -75,6 +77,9 @@ getdata(marginals::Tuple)         = map(getdata, marginals)
 getdata(marginals::AbstractArray) = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
+
+dropmarginaltype(::Type{ <: Marginal{T} }) where T = T
+dropmarginaltype(::Type{ T })              where T = T
 
 ## Marginal observable
 
@@ -202,3 +207,25 @@ function (mapping::MarginalMapping)(dependencies)
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{T, M}(mapping)
+
+"""
+Some nodes use `IndexedInterface`, `IndexedMarginals` structure reflects a collection of marginals from the collection of `IndexedInterface`s
+"""
+struct IndexedMarginals{N, T}
+    collection :: NTuple{N, T}
+end
+
+as_indexed_marginals(source) = source |> map(IndexedMarginals, (collection) -> IndexedMarginals(collection))
+
+Rocket.getrecent(indexed::IndexedMarginals{ N, <: MarginalObservable }) where { N } = IndexedMarginals(getrecent(indexed.collection))
+
+getdata(indexed::IndexedMarginals)    = getdata(indexed.collection)
+is_clamped(indexed::IndexedMarginals) = is_clamped(indexed.collection)
+is_initial(indexed::IndexedMarginals) = is_initial(indexed.collection)
+typeofdata(indexed::IndexedMarginals) = typeof(IndexedMarginals(indexed.collection))
+
+
+Base.nameof(::Type{ T }) where { N, R, T <: IndexedMarginals{N, R} } = string("IndexedMarginals{", N, ", ", nameof(dropmarginaltype(R)), "}")
+
+Base.iterate(indexed::IndexedMarginals)        = iterate(indexed.collection)
+Base.iterate(indexed::IndexedMarginals, state) = iterate(indexed.collection, state)

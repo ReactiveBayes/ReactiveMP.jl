@@ -59,6 +59,20 @@ getpipeline(factornode::NormalMixtureNode)                 = factornode.pipeline
 setmarginal!(factornode::NormalMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")
 getmarginal!(factornode::NormalMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")
 
+function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
+    if iname === :out
+        return 1
+    elseif iname === :switch
+        return 2
+    elseif iname === :m
+        return 3
+    elseif iname === :p
+        return 4
+    else
+        error("Unknown interface ':$(iname)' for the [ $(functionalform(factornode)) ] node")
+    end
+end
+
 ## activate!
 
 struct NormalMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
@@ -103,23 +117,15 @@ function get_marginals_observable(
     precsinterfaces = marginal_dependencies[3]
 
     marginal_names = Val{(name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1]))}
-    marginals_observable =
-        combineLatest(
-            (
-                getmarginal(connectedvar(varinterface), IncludeAll()),
-                combineLatest(
-                    map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)),
-                    PushNew()
-                ),
-                combineLatest(
-                    map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)),
-                    PushNew()
-                )
-            ), PushNew()) |> map_to((
-            getmarginal(connectedvar(varinterface), IncludeAll()),
-            map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces),
-            map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces)
-        ))
+    marginals_observable = combineLatest((
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        combineLatest(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
+        combineLatest(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
+    ), PushNew()) |> map_to((
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        IndexedMarginals(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces)),
+        IndexedMarginals(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces))
+    ))
 
     return marginal_names, marginals_observable
 end
@@ -133,10 +139,10 @@ function get_marginals_observable(
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}
     marginals_observable = combineLatestUpdates((
-    getmarginal(connectedvar(outinterface), IncludeAll()),
-    getmarginal(connectedvar(switchinterface), IncludeAll()),
-    getmarginal(connectedvar(varinterface), IncludeAll())
-), PushNew())
+        getmarginal(connectedvar(outinterface), IncludeAll()),
+        getmarginal(connectedvar(switchinterface), IncludeAll()),
+        getmarginal(connectedvar(varinterface), IncludeAll())
+    ), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -146,8 +152,8 @@ end
 @average_energy NormalMixture (
     q_out::Any,
     q_switch::Any,
-    q_m::NTuple{N, UnivariateGaussianDistributionsFamily},
-    q_p::NTuple{N, GammaDistributionsFamily}
+    q_m::IndexedMarginals{N, UnivariateGaussianDistributionsFamily},
+    q_p::IndexedMarginals{N, GammaDistributionsFamily}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
@@ -164,8 +170,8 @@ end
 @average_energy NormalMixture (
     q_out::Any,
     q_switch::Any,
-    q_m::NTuple{N, MultivariateGaussianDistributionsFamily},
-    q_p::NTuple{N, Wishart}
+    q_m::IndexedMarginals{N, MultivariateGaussianDistributionsFamily},
+    q_p::IndexedMarginals{N, Wishart}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
@@ -182,8 +188,8 @@ end
 @average_energy NormalMixture (
     q_out::Any,
     q_switch::Any,
-    q_m::NTuple{N, PointMass{T} where T <: Real},
-    q_p::NTuple{N, PointMass{T} where T <: Real}
+    q_m::IndexedMarginals{N, PointMass{T} where T <: Real},
+    q_p::IndexedMarginals{N, PointMass{T} where T <: Real}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
@@ -200,8 +206,8 @@ end
 @average_energy NormalMixture (
     q_out::Any,
     q_switch::Any,
-    q_m::NTuple{N, PointMass{T} where T <: AbstractVector},
-    q_p::NTuple{N, PointMass{T} where T <: AbstractMatrix}
+    q_m::IndexedMarginals{N, PointMass{T} where T <: AbstractVector},
+    q_p::IndexedMarginals{N, PointMass{T} where T <: AbstractMatrix}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
@@ -225,19 +231,12 @@ function score(
 ) where {T <: InfCountingReal, N}
     skip_strategy = marginal_skip_strategy(objective)
 
-    stream = combineLatest(
-        (
-            getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
-            getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-            combineLatest(
-                map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means),
-                PushNew()
-            ),
-            combineLatest(
-                map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs),
-                PushNew()
-            )
-        ), PushNew())
+    stream = combineLatest((
+        getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
+        getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
+        combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew()) |> as_indexed_marginals,
+        combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()) |> as_indexed_marginals
+    ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin

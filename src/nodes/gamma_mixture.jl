@@ -55,6 +55,20 @@ getpipeline(factornode::GammaMixtureNode)                 = factornode.pipeline
 setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
 getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
 
+function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
+    if iname === :out
+        return 1
+    elseif iname === :switch
+        return 2
+    elseif iname === :a
+        return 3
+    elseif iname === :b
+        return 4
+    else
+        error("Unknown interface ':$(iname)' for the [ $(functionalform(factornode)) ] node")
+    end
+end
+
 ## activate!
 
 struct GammaMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
@@ -99,23 +113,15 @@ function get_marginals_observable(
     bsinterfaces = marginal_dependencies[3]
 
     marginal_names = Val{(name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1]))}
-    marginals_observable =
-        combineLatest(
-            (
-                getmarginal(connectedvar(varinterface), IncludeAll()),
-                combineLatest(
-                    map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), reverse(bsinterfaces)),
-                    PushNew()
-                ),
-                combineLatest(
-                    map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)),
-                    PushNew()
-                )
-            ), PushNew()) |> map_to((
-            getmarginal(connectedvar(varinterface), IncludeAll()),
-            map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces),
-            map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces)
-        ))
+    marginals_observable = combineLatest((
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        combineLatest(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
+        combineLatest(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)), PushNew())
+    ), PushNew()) |> map_to((
+        getmarginal(connectedvar(varinterface), IncludeAll()),
+        IndexedMarginals(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces)),
+        IndexedMarginals(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces))
+    ))
 
     return marginal_names, marginals_observable
 end
@@ -129,10 +135,10 @@ function get_marginals_observable(
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}
     marginals_observable = combineLatestUpdates((
-    getmarginal(connectedvar(outinterface), IncludeAll()),
-    getmarginal(connectedvar(switchinterface), IncludeAll()),
-    getmarginal(connectedvar(varinterface), IncludeAll())
-), PushNew())
+        getmarginal(connectedvar(outinterface), IncludeAll()),
+        getmarginal(connectedvar(switchinterface), IncludeAll()),
+        getmarginal(connectedvar(varinterface), IncludeAll())
+    ), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -142,8 +148,8 @@ end
 @average_energy GammaMixture (
     q_out::Any,
     q_switch::Any,
-    q_a::NTuple{N, Any},
-    q_b::NTuple{N, GammaShapeRate}
+    q_a::IndexedMarginals{N, Any},
+    q_b::IndexedMarginals{N, GammaShapeRate}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
@@ -167,19 +173,12 @@ function score(
 ) where {T <: InfCountingReal, N}
     skip_strategy = marginal_skip_strategy(objective)
 
-    stream = combineLatest(
-        (
-            getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
-            getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-            combineLatest(
-                map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as),
-                PushNew()
-            ),
-            combineLatest(
-                map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs),
-                PushNew()
-            )
-        ), PushNew())
+    stream = combineLatest((
+        getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
+        getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
+        combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew()) |> as_indexed_marginals,
+        combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew()) |> as_indexed_marginals
+    ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin

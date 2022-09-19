@@ -10,8 +10,8 @@ export rule
 
 @rule NormalMixture{N}(:switch, Marginalisation) (
     q_out::Any,
-    q_m::NTuple{N, UnivariateNormalDistributionsFamily},
-    q_p::NTuple{N, GammaDistributionsFamily}
+    q_m::IndexedMarginals{N, UnivariateNormalDistributionsFamily},
+    q_p::IndexedMarginals{N, GammaDistributionsFamily}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(
@@ -27,8 +27,8 @@ end
 
 @rule NormalMixture{N}(:switch, Marginalisation) (
     q_out::Any,
-    q_m::NTuple{N, MultivariateNormalDistributionsFamily},
-    q_p::NTuple{N, Wishart}
+    q_m::IndexedMarginals{N, MultivariateNormalDistributionsFamily},
+    q_p::IndexedMarginals{N, Wishart}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(
@@ -44,8 +44,8 @@ end
 
 @rule NormalMixture{N}(:switch, Marginalisation) (
     q_out::Any,
-    q_m::NTuple{N, PointMass{T} where T <: Real},
-    q_p::NTuple{N, PointMass{T} where T <: Real}
+    q_m::IndexedMarginals{N, PointMass{T} where T <: Real},
+    q_p::IndexedMarginals{N, PointMass{T} where T <: Real}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(
@@ -61,8 +61,8 @@ end
 
 @rule NormalMixture{N}(:switch, Marginalisation) (
     q_out::Any,
-    q_m::NTuple{N, PointMass{T} where T <: AbstractVector},
-    q_p::NTuple{N, PointMass{T} where T <: AbstractMatrix}
+    q_m::IndexedMarginals{N, PointMass{T} where T <: AbstractVector},
+    q_p::IndexedMarginals{N, PointMass{T} where T <: AbstractMatrix}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
         return -score(

@@ -276,10 +276,8 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     output = quote
         $(
@@ -822,11 +820,10 @@ rule_method_error_extract_on(on::Tuple{Val{T}, Int}) where {T} = string("(:", ru
 
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
-rule_method_error_extract_names(::Type{Val{T}}) where {T} =
-    map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
-rule_method_error_extract_names(::Nothing) = ()
+rule_method_error_extract_names(::Type{Val{T}}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
+rule_method_error_extract_names(::Nothing)                = ()
 
-rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeof(getdata(e))), t)
+rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeofdata(e)), t)
 rule_method_error_extract_types(t::Nothing) = ()
 
 rule_method_error_extract_meta(something) = string("meta::", typeof(something))
@@ -848,6 +845,7 @@ rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) 
     throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)
+    try 
     print(io, "RuleMethodError: no method matching rule for the given arguments")
 
     node = error.node !== nothing ? error.node : NodeErrorStub()
@@ -908,6 +906,9 @@ function Base.showerror(io::IO, error::RuleMethodError)
         println(io, "rule.qnames: ", error.qnames)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
+    end
+    catch e
+        print(e)
     end
 end
 

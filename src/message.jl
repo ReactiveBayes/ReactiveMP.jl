@@ -1,12 +1,13 @@
 export AbstractMessage, Message, VariationalMessage
 export getdata, is_clamped, is_initial, as_message
 export multiply_messages
+export IndexedMessages
 
 using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, *, +, ndims, precision, length, size, show
+import Base: ==, *, +, ndims, precision, length, size, show, nameof
 
 """
     AbstractMessage
@@ -71,6 +72,7 @@ end
 getdata(message::Message)    = message.data
 is_clamped(message::Message) = message.is_clamped
 is_initial(message::Message) = message.is_initial
+typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 
@@ -300,4 +302,11 @@ function materialize!(mapping::MessageMapping, dependencies)
     )
 
     return Message(message, is_message_clamped, is_message_initial)
+end
+
+"""
+Some nodes use `IndexedInterface`, `IndexedMessages` structure reflects a collection of messages from the collection of `IndexedInterface`s
+"""
+struct IndexedMessages{N, T}
+    collection :: NTuple{N, T}
 end
