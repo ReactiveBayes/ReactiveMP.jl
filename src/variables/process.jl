@@ -222,7 +222,7 @@ function activate!(model, randomprocess::RandomProcess)
 
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
-    if degree(randomprocess) > 5
+    if degree(randomprocess) > 1000
         chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
         chain_prod_fn = messages_prod_fn(randomprocess)
         randomprocess.output_cache = EqualityChain(randomprocess.input_messages, chain_pipeline, chain_prod_fn)
