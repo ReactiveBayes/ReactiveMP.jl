@@ -22,8 +22,6 @@ struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
 end
 
 # include approximations
-include("approximations/linearization.jl")
-include("approximations/sampling.jl")
 include("approximations/cvi.jl")
 
 as_node_symbol(::Type{DeltaFn{ReactiveMP.DeltaFnCallableWrapper{F}}}) where {F} = Symbol(:DeltaFn, string(F))
