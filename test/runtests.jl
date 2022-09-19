@@ -375,5 +375,7 @@ end
     addtests(testrunner, "models/test_aliases.jl")
     addtests(testrunner, "models/test_cvi.jl")
 
+    addtests(testrunner, "test_factor_product.jl")
+
     run(testrunner)
 end
