@@ -333,6 +333,61 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             @test occursin("Possible fix, define", output)
         end
     end
+
+    @testset "Check that default meta is `nothing`" begin
+        struct DummyNode end
+        struct DummyNodeMeta end
+
+        @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision) = 1
+        @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision, meta::Int) = meta
+        @rule DummyNode(:out, Marginalisation) (q_x::NormalMeanPrecision, q_y::NormalMeanPrecision) = 3
+
+        @test (@call_rule DummyNode(:out, Marginalisation) (
+            m_x = vague(NormalMeanPrecision),
+            m_y = vague(NormalMeanPrecision)
+        )) === 1
+
+        @test (@call_rule DummyNode(:out, Marginalisation) (
+            m_x = vague(NormalMeanPrecision),
+            m_y = vague(NormalMeanPrecision),
+            meta = nothing
+        )) === 1
+
+        @test (@call_rule DummyNode(:out, Marginalisation) (
+            m_x = vague(NormalMeanPrecision),
+            m_y = vague(NormalMeanPrecision),
+            meta = 2
+        )) === 2
+
+        @test (@call_rule DummyNode(:out, Marginalisation) (
+            m_x = vague(NormalMeanPrecision),
+            m_y = vague(NormalMeanPrecision),
+            meta = 3
+        )) === 3
+
+        @test (@call_rule DummyNode(:out, Marginalisation) (
+            q_x = vague(NormalMeanPrecision),
+            q_y = vague(NormalMeanPrecision)
+        )) === 3
+
+        @test (@call_rule DummyNode(:out, Marginalisation) (
+            q_x = vague(NormalMeanPrecision),
+            q_y = vague(NormalMeanPrecision),
+            meta = nothing
+        )) === 3
+
+        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNode(:out, Marginalisation) (
+            q_x = vague(NormalMeanPrecision),
+            q_y = vague(NormalMeanPrecision),
+            meta = 2
+        ))
+
+        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNode(:out, Marginalisation) (
+            q_x = vague(NormalMeanPrecision),
+            q_y = vague(NormalMeanPrecision),
+            meta = 3
+        ))
+    end
 end
 
 end
