@@ -299,9 +299,9 @@ macro rule(fform, lambda)
                     $(on_index_init)
                     $(m_init_block...)
                     $(q_init_block...)
-                    message = $(body)
-                    addon = ReactiveMP.Addon(scaling_value)
-                    return message, addon
+                    _message = $(body)
+                    _addon = ReactiveMP.Addon(_addon_scaling_value)
+                    return _message, _addon
                 end
             end
         )
@@ -400,8 +400,7 @@ macro scaling(lambda)
         error("Error in macro. Lambda body specification is incorrect")
 
     # create scaling
-    output = quote $(esc(:scaling_value)) = () $(esc(body)) end
-        
+    output = quote $(esc(:_addon_scaling_value)) = $(esc(body)) end
 
     # return expression for @scaling
     return output
