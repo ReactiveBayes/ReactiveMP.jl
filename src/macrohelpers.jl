@@ -68,7 +68,7 @@ end
 
 function proxy_type(proxy, type::Expr)
     if @capture(type, Vararg{rest__})
-        error("Vararg{T, N} is forbidden in @rule macro, use `IndexedMessages{N, T}` or `IndexedMarginals{N, T}` instead.")
+        error("Vararg{T, N} is forbidden in @rule macro, use `ManyOf{N, T}` instead.")
     elseif @capture(type, ManyOf{N_, T_})
         # return :(NTuple{ $N, <: $(proxy_type(proxy, T)) }) # This doesn't work in all of the cases
         return :(ReactiveMP.ManyOf{<:Tuple{Vararg{X, $N} where X <: $(proxy_type(proxy, T))}})
