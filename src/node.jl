@@ -351,7 +351,7 @@ is_clamped(many::ManyOf) = is_clamped(many.collection)
 is_initial(many::ManyOf) = is_initial(many.collection)
 typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
 
-Base.nameof(::Type{T}) where {N, R, T <: ManyOf{Tuple{Vararg{R, N}}}}              = string("ManyOf{", N, ", ", nameof(dropproxytype(R)), "}")
+Base.nameof(::Type{T}) where {N, R, V <: NTuple{N, <:R}, T <: ManyOf{V}}           = string("ManyOf{", N, ", ", nameof(dropproxytype(R)), "}")
 Base.nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V}} = string("ManyOf{", N, ", Union{", join(map(r -> nameof(dropproxytype(r)), fieldtypes(V)), ","), "}}")
 
 Base.iterate(many::ManyOf)        = iterate(many.collection)
@@ -367,7 +367,7 @@ Rocket.getrecent(observable::ManyOfObservable) = ManyOf(Rocket.getrecent(observa
     return subscribe!(observable.source |> map(ManyOf, (d) -> ManyOf(d)), actor)
 end
 
-function combineLatestMessagesInUpdates(indexed::NTuple{N, T}) where {N, T <: IndexedNodeInterface}
+function combineLatestMessagesInUpdates(indexed::NTuple{N, <:IndexedNodeInterface}) where { N }
     return ManyOfObservable(combineLatestUpdates(map((in) -> messagein(in), indexed), PushNew()))
 end
 
