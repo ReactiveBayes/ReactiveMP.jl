@@ -174,19 +174,19 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
     # ManyOf are special cases
     function apply_proxy(any, proxy)
-        if any isa Expr && any.head === :call && any.args[1] === :ManyOf
+        if any isa Expr && any.head === :call && (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
             argsvar = gensym(:ManyOf)
             return quote 
                 let 
                     local $argsvar = ($(any.args[2:end]...), )
                     if length($argsvar) === 1 && first($argsvar) isa Tuple
-                        ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
+                        ReactiveMP.ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
                     else 
-                        ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), ))
+                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), ))
                     end
                 end
             end
-            return :(ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), )))
+            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), )))
         end
         return :($(proxy)($any, false, false))
     end
