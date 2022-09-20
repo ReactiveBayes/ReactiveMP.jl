@@ -119,8 +119,8 @@ function get_marginals_observable(
         combineLatest(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)), PushNew())
     ), PushNew()) |> map_to((
         getmarginal(connectedvar(varinterface), IncludeAll()),
-        IndexedMarginals(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces)),
-        IndexedMarginals(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces))
+        ManyOf(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces)),
+        ManyOf(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces))
     ))
 
     return marginal_names, marginals_observable
@@ -148,8 +148,8 @@ end
 @average_energy GammaMixture (
     q_out::Any,
     q_switch::Any,
-    q_a::IndexedMarginals{N, Any},
-    q_b::IndexedMarginals{N, GammaShapeRate}
+    q_a::ManyOf{N, Any},
+    q_b::ManyOf{N, GammaShapeRate}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
@@ -176,8 +176,8 @@ function score(
     stream = combineLatest((
         getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
         getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-        combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew()) |> as_indexed_marginals,
-        combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew()) |> as_indexed_marginals
+        ManyOfObservable(combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew())),
+        ManyOfObservable(combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew()))
     ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)

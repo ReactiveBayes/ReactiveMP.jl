@@ -72,6 +72,7 @@ end
 getdata(message::Message)    = message.data
 is_clamped(message::Message) = message.is_clamped
 is_initial(message::Message) = message.is_initial
+
 typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
@@ -201,6 +202,8 @@ end
 as_message(message::Message)             = message
 as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 
+dropproxytype(::Type{ <: Message{T} }) where T = T
+
 ## Message observable 
 
 struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
@@ -304,9 +307,3 @@ function materialize!(mapping::MessageMapping, dependencies)
     return Message(message, is_message_clamped, is_message_initial)
 end
 
-"""
-Some nodes use `IndexedInterface`, `IndexedMessages` structure reflects a collection of messages from the collection of `IndexedInterface`s
-"""
-struct IndexedMessages{N, T}
-    collection :: NTuple{N, T}
-end

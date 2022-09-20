@@ -78,8 +78,7 @@ getdata(marginals::AbstractArray) = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 
-dropmarginaltype(::Type{ <: Marginal{T} }) where T = T
-dropmarginaltype(::Type{ T })              where T = T
+dropproxytype(::Type{ <: Marginal{T} }) where T = T
 
 ## Marginal observable
 
@@ -207,25 +206,3 @@ function (mapping::MarginalMapping)(dependencies)
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{T, M}(mapping)
-
-"""
-Some nodes use `IndexedInterface`, `IndexedMarginals` structure reflects a collection of marginals from the collection of `IndexedInterface`s
-"""
-struct IndexedMarginals{N, T}
-    collection :: NTuple{N, T}
-end
-
-as_indexed_marginals(source) = source |> map(IndexedMarginals, (collection) -> IndexedMarginals(collection))
-
-Rocket.getrecent(indexed::IndexedMarginals{ N, <: MarginalObservable }) where { N } = IndexedMarginals(getrecent(indexed.collection))
-
-getdata(indexed::IndexedMarginals)    = getdata(indexed.collection)
-is_clamped(indexed::IndexedMarginals) = is_clamped(indexed.collection)
-is_initial(indexed::IndexedMarginals) = is_initial(indexed.collection)
-typeofdata(indexed::IndexedMarginals) = typeof(IndexedMarginals(indexed.collection))
-
-
-Base.nameof(::Type{ T }) where { N, R, T <: IndexedMarginals{N, R} } = string("IndexedMarginals{", N, ", ", nameof(dropmarginaltype(R)), "}")
-
-Base.iterate(indexed::IndexedMarginals)        = iterate(indexed.collection)
-Base.iterate(indexed::IndexedMarginals, state) = iterate(indexed.collection, state)

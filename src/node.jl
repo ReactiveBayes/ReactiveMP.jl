@@ -336,6 +336,36 @@ connectedvar(interface::IndexedNodeInterface)                      = connectedva
 connectedvarindex(interface::IndexedNodeInterface)                 = connectedvarindex(interface.interface)
 get_pipeline_stages(interface::IndexedNodeInterface)               = get_pipeline_stages(interface.interface)
 
+"""
+Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s. `@rule` macro 
+also treats `ManyOf` specially.
+"""
+struct ManyOf{T}
+    collection :: T
+end
+
+Rocket.getrecent(many::ManyOf) = ManyOf(getrecent(many.collection))
+
+getdata(many::ManyOf)    = getdata(many.collection)
+is_clamped(many::ManyOf) = is_clamped(many.collection)
+is_initial(many::ManyOf) = is_initial(many.collection)
+typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
+
+Base.nameof(::Type{ T }) where { N, R, T <: ManyOf{Tuple{Vararg{R, N}}} } = string("ManyOf{", N, ", ", nameof(dropproxytype(R)), "}")
+
+Base.iterate(many::ManyOf)        = iterate(many.collection)
+Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
+
+struct ManyOfObservable{S} <: Subscribable{ManyOf}
+    source :: S
+end
+
+Rocket.getrecent(observable::ManyOfObservable) = ManyOf(Rocket.getrecent(observable.source))
+
+@inline function Rocket.on_subscribe!(observable::ManyOfObservable, actor) 
+    return subscribe!(observable.source |> map(ManyOf, (d) -> ManyOf(d)), actor)
+end
+
 ## FactorNodeLocalMarginals
 
 """

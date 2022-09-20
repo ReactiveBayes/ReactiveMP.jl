@@ -1,8 +1,8 @@
 
 @rule NormalMixture{N}(:out, Marginalisation) (
     q_switch::Any,
-    q_m::IndexedMarginals{N, UnivariateNormalDistributionsFamily},
-    q_p::IndexedMarginals{N, GammaDistributionsFamily}
+    q_m::ManyOf{N, UnivariateNormalDistributionsFamily},
+    q_p::ManyOf{N, GammaDistributionsFamily}
 ) where {N} = begin
     πs = probvec(q_switch)
     return NormalMeanPrecision(sum(πs .* mean.(q_m)), sum(πs .* mean.(q_p)))
@@ -10,8 +10,8 @@ end
 
 @rule NormalMixture{N}(:out, Marginalisation) (
     q_switch::Any,
-    q_m::IndexedMarginals{N, MultivariateNormalDistributionsFamily},
-    q_p::IndexedMarginals{N, Wishart}
+    q_m::ManyOf{N, MultivariateNormalDistributionsFamily},
+    q_p::ManyOf{N, Wishart}
 ) where {N} = begin
     πs = probvec(q_switch)
     d  = ndims(first(q_m))
@@ -28,8 +28,8 @@ end
 
 @rule NormalMixture{N}(:out, Marginalisation) (
     q_switch::Any,
-    q_m::IndexedMarginals{N, PointMass{T} where T <: Real},
-    q_p::IndexedMarginals{N, PointMass{T} where T <: Real}
+    q_m::ManyOf{N, PointMass{T} where T <: Real},
+    q_p::ManyOf{N, PointMass{T} where T <: Real}
 ) where {N} = begin
     πs = probvec(q_switch)
     return NormalMeanPrecision(sum(πs .* mean.(q_m)), sum(πs .* mean.(q_p)))
@@ -37,8 +37,8 @@ end
 
 @rule NormalMixture{N}(:out, Marginalisation) (
     q_switch::Any,
-    q_m::IndexedMarginals{N, PointMass{<:AbstractVector}},
-    q_p::IndexedMarginals{N, PointMass{<:AbstractMatrix}}
+    q_m::ManyOf{N, PointMass{<:AbstractVector}},
+    q_p::ManyOf{N, PointMass{<:AbstractMatrix}}
 ) where {N} = begin
     πs = probvec(q_switch)
     d  = ndims(first(q_m))
