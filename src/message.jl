@@ -62,15 +62,23 @@ true
 
 See also: [`AbstractMessage`](@ref), [`materialize!`](@ref)
 """
-struct Message{D} <: AbstractMessage
+struct Message{D, A} <: AbstractMessage
     data       :: D
     is_clamped :: Bool
     is_initial :: Bool
+    addon     :: A
 end
+
+struct Addon{T}
+    scaling :: T
+end
+
+getscaling(addon::Addon) = addon.scaling
 
 getdata(message::Message)    = message.data
 is_clamped(message::Message) = message.is_clamped
 is_initial(message::Message) = message.is_initial
+getaddon(message::Message)   = message.addon
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 
@@ -287,7 +295,7 @@ function materialize!(mapping::MessageMapping, dependencies)
         !is_message_clamped &&
         (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    message = rule(
+    message, addon = rule(
         message_mapping_fform(mapping),
         mapping.vtag,
         mapping.vconstraint,
@@ -299,5 +307,5 @@ function materialize!(mapping::MessageMapping, dependencies)
         mapping.factornode
     )
 
-    return Message(message, is_message_clamped, is_message_initial)
+    return Message(message, is_message_clamped, is_message_initial, addon)
 end

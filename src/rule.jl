@@ -1,6 +1,7 @@
 export rule, marginalrule
 export @rule, @marginalrule
 export @call_rule, @call_marginalrule
+export @scaling
 
 using MacroTools
 using .MacroHelpers
@@ -82,7 +83,7 @@ See also: [`@rule`](@ref)
 function rule_macro_parse_on_tag(on)
     if @capture(on, :name_)
         # First we check on just quoted symbol expression
-        # If captures index exression and index initilisation expression are `nothing`
+        # If captures index expression and index initialisation expression are `nothing`
         return :(Type{Val{$(QuoteNode(name))}}), nothing, nothing
     elseif @capture(on, (:name_, index_Symbol))
         return :(Tuple{Val{$(QuoteNode(name))}, Int}), index, :($index = on[2])
@@ -179,7 +180,7 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
             output.args = map(v -> apply_proxy(v, proxy), any.args)
             return output
         end
-        return :($(proxy)($any, false, false))
+        return :($(proxy)($any, false, false, ReactiveMP.Addon(nothing)))
     end
 
     names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix+1):end])), names)...))})
@@ -259,7 +260,7 @@ macro rule(fform, lambda)
         error("Error in macro. Lambda body specification is incorrect")
 
     @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
-        error("Error in macro. Lambda body arguments speicifcation is incorrect")
+        error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
@@ -267,7 +268,7 @@ macro rule(fform, lambda)
     metatype                         = metatype === nothing ? :Any : metatype
 
     options = map(options) do option
-        @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")x
+        @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")
         return (name, value)
     end
 
@@ -298,7 +299,9 @@ macro rule(fform, lambda)
                     $(on_index_init)
                     $(m_init_block...)
                     $(q_init_block...)
-                    $(body)
+                    message = $(body)
+                    addon = ReactiveMP.Addon(scaling_value)
+                    return message, addon
                 end
             end
         )
@@ -389,6 +392,22 @@ macro rule(fform, lambda)
 
     return esc(output)
 end
+
+# addons
+macro scaling(lambda)
+
+    @capture(lambda, (body_)) ||
+        error("Error in macro. Lambda body specification is incorrect")
+
+    # create scaling
+    output = quote $(esc(:scaling_value)) = () $(esc(body)) end
+        
+
+    # return expression for @scaling
+    return output
+
+end
+
 
 macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) ||
@@ -577,7 +596,7 @@ macro marginalrule(fform, lambda)
         error("Error in macro. Lambda body specification is incorrect")
 
     @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
-        error("Error in macro. Lambda body arguments speicifcation is incorrect")
+        error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
