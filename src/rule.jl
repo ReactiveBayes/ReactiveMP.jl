@@ -158,7 +158,7 @@ This function is used to parse an `arguments` tuple for message and marginal cal
 end
 ```
 
-Accepts a vector of (name, vale) elements, specname, name prefix and proxy type. 
+Accepts a vector of (name, value) elements, specname, name prefix and proxy type. 
 Returns parsed names without prefix and proxied values
 
 See also: [`@rule`](@ref)
@@ -172,12 +172,21 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
     @assert all((n) -> length(string(n)) > lprefix, names) || error("Empty $(specname) name found in arguments")
 
-    # Tuples are special cases
+    # ManyOf are special cases
     function apply_proxy(any, proxy)
-        if any isa Expr && any.head === :tuple
-            output      = Expr(:tuple)
-            output.args = map(v -> apply_proxy(v, proxy), any.args)
-            return output
+        if any isa Expr && any.head === :call && (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
+            argsvar = gensym(:ManyOf)
+            return quote
+                let
+                    local $argsvar = ($(any.args[2:end]...),)
+                    if length($argsvar) === 1 && first($argsvar) isa Tuple
+                        ReactiveMP.ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
+                    else
+                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),))
+                    end
+                end
+            end
+            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),)))
         end
         return :($(proxy)($any, false, false))
     end
@@ -276,10 +285,8 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     output = quote
         $(
@@ -822,11 +829,10 @@ rule_method_error_extract_on(on::Tuple{Val{T}, Int}) where {T} = string("(:", ru
 
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
-rule_method_error_extract_names(::Type{Val{T}}) where {T} =
-    map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
-rule_method_error_extract_names(::Nothing) = ()
+rule_method_error_extract_names(::Type{Val{T}}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
+rule_method_error_extract_names(::Nothing)                = ()
 
-rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeof(getdata(e))), t)
+rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeofdata(e)), t)
 rule_method_error_extract_types(t::Nothing) = ()
 
 rule_method_error_extract_meta(something) = string("meta::", typeof(something))

@@ -6,7 +6,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, *, +, ndims, precision, length, size, show
+import Base: ==, *, +, ndims, precision, length, size, show, nameof
 
 """
     AbstractMessage
@@ -71,6 +71,8 @@ end
 getdata(message::Message)    = message.data
 is_clamped(message::Message) = message.is_clamped
 is_initial(message::Message) = message.is_initial
+
+typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 
@@ -198,6 +200,8 @@ end
 
 as_message(message::Message)             = message
 as_message(vmessage::VariationalMessage) = materialize!(vmessage)
+
+dropproxytype(::Type{<:Message{T}}) where {T} = T
 
 ## Message observable 
 

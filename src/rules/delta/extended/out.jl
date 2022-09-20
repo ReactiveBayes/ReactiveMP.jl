@@ -1,6 +1,6 @@
 # single input
 @rule DeltaFn{f}(:out, Marginalisation) (
-    m_ins::NTuple{1, NormalDistributionsFamily},
+    m_ins::ManyOf{1, NormalDistributionsFamily},
     meta::DeltaExtended{T}
 ) where {f, T} = begin
     μ_in, Σ_in = mean_cov(first(m_ins))
@@ -13,7 +13,7 @@ end
 
 # multiple input; this should be called
 @rule DeltaFn{f}(:out, Marginalisation) (
-    m_ins::NTuple{N, Any},
+    m_ins::ManyOf{N, Any},
     meta::DeltaExtended{T}
 ) where {f, N, T} =
     begin
@@ -29,7 +29,7 @@ end
 # Why this method is being called for forward message?
 @rule DeltaFn{f}(:out, Marginalisation) (
     m_out::NormalDistributionsFamily,
-    m_ins::NTuple{N, NormalDistributionsFamily},
+    m_ins::ManyOf{N, NormalDistributionsFamily},
     meta::DeltaExtended{T}
 ) where {f, N, T} =
     begin

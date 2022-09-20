@@ -109,7 +109,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, model, 
 
         # By default to compute `q_ins` we need messages both from `:out` and `:ins`
         msgs_names      = Val{(:out, :ins)}
-        msgs_observable = combineLatestUpdates((messagein(out), combineLatestUpdates(map((in) -> messagein(in), ins), PushNew())), PushNew())
+        msgs_observable = combineLatestUpdates((messagein(out), combineLatestMessagesInUpdates(ins)), PushNew())
 
         # By default, we should not need any local marginals
         marginal_names       = nothing
@@ -128,18 +128,18 @@ end
 
 # This function declares how to compute `m_out` 
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, model, factornode::DeltaFnNode)
-    let interface = factornode.out
+    let out = factornode.out, ins = factornode.ins
         # By default, to compute an outbound message on `:out` edge we need inbound messages both from `:ins` edge and `:out` edge
         msgs_names      = Val{(:out, :ins)}
-        msgs_observable = combineLatestUpdates((messagein(interface), combineLatestUpdates(map((in) -> messagein(in), factornode.ins), PushNew())), PushNew())
+        msgs_observable = combineLatestUpdates((messagein(out), combineLatestMessagesInUpdates(ins)), PushNew())
 
         # By default we don't need any marginals
         marginal_names       = nothing
         marginals_observable = of(nothing)
 
         fform       = functionalform(factornode)
-        vtag        = tag(interface)
-        vconstraint = local_constraint(interface)
+        vtag        = tag(out)
+        vconstraint = local_constraint(out)
         meta        = metadata(factornode)
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
@@ -157,7 +157,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, model, 
         # vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(global_reactive_scheduler(getoptions(model)))
 
-        connect!(messageout(interface), vmessageout)
+        connect!(messageout(out), vmessageout)
     end
 end
 
