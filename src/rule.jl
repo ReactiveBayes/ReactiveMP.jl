@@ -399,8 +399,11 @@ macro scaling(lambda)
     @capture(lambda, (body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
+    # specify scaling function
+    fun = quote () -> $(esc(body)) end
+
     # create scaling
-    output = quote $(esc(:_addon_scaling_value)) = $(esc(body)) end
+    output = quote $(esc(:_addon_scaling_value)) = $fun() end
 
     # return expression for @scaling
     return output
