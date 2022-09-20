@@ -50,7 +50,7 @@ function deltafn_apply_layout(
 )
     let out = factornode.out, ins = factornode.ins
         msgs_names      = Val{(:ins,)}
-        msgs_observable = combineLatestUpdates((combineLatestMessagesInUpdates(ins), ), PushNew())
+        msgs_observable = combineLatestUpdates((combineLatestMessagesInUpdates(ins),), PushNew())
 
         # By default we don't need any marginals
         marginal_names       = nothing

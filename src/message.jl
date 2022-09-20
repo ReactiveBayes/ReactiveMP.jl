@@ -201,7 +201,7 @@ end
 as_message(message::Message)             = message
 as_message(vmessage::VariationalMessage) = materialize!(vmessage)
 
-dropproxytype(::Type{ <: Message{T} }) where T = T
+dropproxytype(::Type{<:Message{T}}) where {T} = T
 
 ## Message observable 
 
@@ -305,4 +305,3 @@ function materialize!(mapping::MessageMapping, dependencies)
 
     return Message(message, is_message_clamped, is_message_initial)
 end
-

@@ -176,17 +176,17 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     function apply_proxy(any, proxy)
         if any isa Expr && any.head === :call && (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
             argsvar = gensym(:ManyOf)
-            return quote 
-                let 
-                    local $argsvar = ($(any.args[2:end]...), )
+            return quote
+                let
+                    local $argsvar = ($(any.args[2:end]...),)
                     if length($argsvar) === 1 && first($argsvar) isa Tuple
                         ReactiveMP.ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
-                    else 
-                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), ))
+                    else
+                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),))
                     end
                 end
             end
-            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), )))
+            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),)))
         end
         return :($(proxy)($any, false, false))
     end
@@ -854,7 +854,6 @@ rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) 
     throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)
-    try 
     print(io, "RuleMethodError: no method matching rule for the given arguments")
 
     node = error.node !== nothing ? error.node : NodeErrorStub()
@@ -915,9 +914,6 @@ function Base.showerror(io::IO, error::RuleMethodError)
         println(io, "rule.qnames: ", error.qnames)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
-    end
-    catch e
-        print(e)
     end
 end
 

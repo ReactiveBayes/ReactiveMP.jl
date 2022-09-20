@@ -77,7 +77,7 @@ getdata(marginals::AbstractArray) = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
 
-dropproxytype(::Type{ <: Marginal{T} }) where T = T
+dropproxytype(::Type{<:Marginal{T}}) where {T} = T
 
 ## Marginal observable
 

@@ -117,15 +117,17 @@ function get_marginals_observable(
     precsinterfaces = marginal_dependencies[3]
 
     marginal_names = Val{(name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1]))}
-    marginals_observable = combineLatest((
-        getmarginal(connectedvar(varinterface), IncludeAll()),
-        combineLatest(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
-        combineLatest(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
-    ), PushNew()) |> map_to((
-        getmarginal(connectedvar(varinterface), IncludeAll()),
-        ManyOf(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces)),
-        ManyOf(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces))
-    ))
+    marginals_observable =
+        combineLatest(
+            (
+                getmarginal(connectedvar(varinterface), IncludeAll()),
+                combineLatest(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
+                combineLatest(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
+            ), PushNew()) |> map_to((
+            getmarginal(connectedvar(varinterface), IncludeAll()),
+            ManyOf(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces)),
+            ManyOf(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces))
+        ))
 
     return marginal_names, marginals_observable
 end
@@ -139,10 +141,10 @@ function get_marginals_observable(
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}
     marginals_observable = combineLatestUpdates((
-        getmarginal(connectedvar(outinterface), IncludeAll()),
-        getmarginal(connectedvar(switchinterface), IncludeAll()),
-        getmarginal(connectedvar(varinterface), IncludeAll())
-    ), PushNew())
+    getmarginal(connectedvar(outinterface), IncludeAll()),
+    getmarginal(connectedvar(switchinterface), IncludeAll()),
+    getmarginal(connectedvar(varinterface), IncludeAll())
+), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -231,12 +233,13 @@ function score(
 ) where {T <: InfCountingReal, N}
     skip_strategy = marginal_skip_strategy(objective)
 
-    stream = combineLatest((
-        getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
-        getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-        ManyOfObservable(combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew())),
-        ManyOfObservable(combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()))
-    ), PushNew())
+    stream = combineLatest(
+        (
+            getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
+            getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
+            ManyOfObservable(combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew())),
+            ManyOfObservable(combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()))
+        ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin

@@ -71,7 +71,7 @@ function proxy_type(proxy, type::Expr)
         error("Vararg{T, N} is forbidden in @rule macro, use `IndexedMessages{N, T}` or `IndexedMarginals{N, T}` instead.")
     elseif @capture(type, ManyOf{N_, T_})
         # return :(NTuple{ $N, <: $(proxy_type(proxy, T)) }) # This doesn't work in all of the cases
-        return :(ReactiveMP.ManyOf{<:Tuple{Vararg{X, $N} where X <: $(proxy_type(proxy, T))} })
+        return :(ReactiveMP.ManyOf{<:Tuple{Vararg{X, $N} where X <: $(proxy_type(proxy, T))}})
     else
         return :($(proxy){<:$(type)})
     end
@@ -116,7 +116,7 @@ end
 
 function expression_convert_eltype(eltype::Type{T}, expr::Expr) where {T}
     if @capture(expr, ManyOf(inputs__))
-        return :(ReactiveMP.ManyOf(($(map(input -> expression_convert_eltype(eltype, input), inputs)...), )))
+        return :(ReactiveMP.ManyOf(($(map(input -> expression_convert_eltype(eltype, input), inputs)...),)))
     elseif @capture(expr, f_(inputs__))
         return :(ReactiveMP.convert_eltype($f, $T, $expr))
     else
