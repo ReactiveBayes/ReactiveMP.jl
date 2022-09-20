@@ -155,7 +155,11 @@ include("implication/in2.jl")
 include("implication/out.jl")
 include("implication/marginals.jl")
 
-include("delta/helpers.jl")
+# include("delta/helpers.jl")
+
+include("delta/helpers/shared.jl")
+include("delta/helpers/extended.jl")
+include("delta/helpers/unscented.jl")
 
 include("delta/extended/in.jl")
 include("delta/extended/out.jl")
