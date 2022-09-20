@@ -282,6 +282,10 @@ macro rule(fform, lambda)
     q_names, q_types, q_init_block =
         rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
+    # create global
+    fun = quote () -> $(body) end
+    # mess = quote $(esc(:_addon_scaling_value)) = $fun() end
+
     output = quote
         $(
             rule_function_expression(
@@ -299,7 +303,8 @@ macro rule(fform, lambda)
                     $(on_index_init)
                     $(m_init_block...)
                     $(q_init_block...)
-                    _message = $(body)
+                    _addon_scaling_value = nothing
+                    _message = $fun()
                     _addon = ReactiveMP.Addon(_addon_scaling_value)
                     return _message, _addon
                 end
