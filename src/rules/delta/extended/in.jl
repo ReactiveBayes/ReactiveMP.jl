@@ -16,7 +16,7 @@
 
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     m_out::Any,
-    m_ins::NTuple{N, Any},
+    m_ins::ManyOf{N, Any},
     meta::DeltaExtended{T}
 ) where {f, N, T <: Any} =
     begin

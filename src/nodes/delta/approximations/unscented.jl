@@ -59,7 +59,7 @@ function deltafn_apply_layout(
 )
     let out = factornode.out, ins = factornode.ins
         msgs_names      = Val{(:ins,)}
-        msgs_observable = combineLatestUpdates((combineLatestUpdates(map((in) -> messagein(in), ins), PushNew()),), PushNew())
+        msgs_observable = combineLatestUpdates((combineLatestMessagesInUpdates(ins),), PushNew())
 
         # By default we don't need any marginals
         marginal_names       = nothing
@@ -135,7 +135,7 @@ function deltafn_apply_layout(
         msgs_ins_stream = if N === 1 # `N` should be known at compile-time here so this `if` branch must be compiled out
             of(Message(nothing, true, true))
         else
-            combineLatestUpdates(map((in) -> messagein(in), TupleTools.deleteat(factornode.ins, index)), PushNew())
+            combineLatestMessagesInUpdates(TupleTools.deleteat(factornode.ins, index))
         end
 
         msgs_names      = Val{(:out, :ins)}

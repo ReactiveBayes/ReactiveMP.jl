@@ -1,6 +1,6 @@
 # single input
 @rule DeltaFn{f}(:out, Marginalisation) (
-    m_ins::NTuple{1, NormalDistributionsFamily},
+    m_ins::ManyOf{1, NormalDistributionsFamily},
     meta::DeltaUnscented{T}
 ) where {f, T} = begin
     (μ_fw_in1, Σ_fw_in1) = mean_cov(first(m_ins))
@@ -13,7 +13,7 @@ end
 
 # multiple input; this should be called
 @rule DeltaFn{f}(:out, Marginalisation) (
-    m_ins::NTuple{N, NormalDistributionsFamily},
+    m_ins::ManyOf{N, NormalDistributionsFamily},
     meta::DeltaUnscented{T}
 ) where {f, N, T} =
     begin
