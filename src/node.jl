@@ -1,7 +1,7 @@
 export ValidNodeFunctionalForm, UndefinedNodeFunctionalForm, as_node_functional_form
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export MeanField, FullFactorisation, collect_factorisation
-export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein
+export NodeInterface, IndexedNodeInterface, name, tag, messageout, messagein, ManyOf
 export AbstractInterfaceLocalConstraint, Marginalisation, MomentMatching
 export FactorNode,
     FactorNodeCreationOptions, functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata

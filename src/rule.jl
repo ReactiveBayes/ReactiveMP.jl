@@ -158,7 +158,7 @@ This function is used to parse an `arguments` tuple for message and marginal cal
 end
 ```
 
-Accepts a vector of (name, vale) elements, specname, name prefix and proxy type. 
+Accepts a vector of (name, value) elements, specname, name prefix and proxy type. 
 Returns parsed names without prefix and proxied values
 
 See also: [`@rule`](@ref)
@@ -172,12 +172,21 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
     @assert all((n) -> length(string(n)) > lprefix, names) || error("Empty $(specname) name found in arguments")
 
-    # Tuples are special cases
+    # ManyOf are special cases
     function apply_proxy(any, proxy)
-        if any isa Expr && any.head === :tuple
-            output      = Expr(:tuple)
-            output.args = map(v -> apply_proxy(v, proxy), any.args)
-            return output
+        if any isa Expr && any.head === :call && any.args[1] === :ManyOf
+            argsvar = gensym(:ManyOf)
+            return quote 
+                let 
+                    local $argsvar = ($(any.args[2:end]...), )
+                    if length($argsvar) === 1 && first($argsvar) isa Tuple
+                        ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
+                    else 
+                        ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), ))
+                    end
+                end
+            end
+            return :(ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...), )))
         end
         return :($(proxy)($any, false, false))
     end

@@ -1,6 +1,5 @@
 export Marginal, getdata, is_clamped, is_initial, as_marginal
 export SkipClamped, SkipInitial, SkipClampedAndInitial, IncludeAll
-export IndexedMarginals
 
 using Distributions
 using Rocket

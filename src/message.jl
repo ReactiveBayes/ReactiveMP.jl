@@ -1,7 +1,6 @@
 export AbstractMessage, Message, VariationalMessage
 export getdata, is_clamped, is_initial, as_message
 export multiply_messages
-export IndexedMessages
 
 using Distributions
 using Rocket
