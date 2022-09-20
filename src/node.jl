@@ -367,7 +367,7 @@ Rocket.getrecent(observable::ManyOfObservable) = ManyOf(Rocket.getrecent(observa
     return subscribe!(observable.source |> map(ManyOf, (d) -> ManyOf(d)), actor)
 end
 
-function combineLatestMessagesInUpdates(indexed::NTuple{N, <:IndexedNodeInterface}) where { N }
+function combineLatestMessagesInUpdates(indexed::NTuple{N, <:IndexedNodeInterface}) where {N}
     return ManyOfObservable(combineLatestUpdates(map((in) -> messagein(in), indexed), PushNew()))
 end
 
