@@ -25,6 +25,9 @@ localmarginals(factornode::DeltaFnNode)                   = factornode.localmarg
 localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
+# include layouts
+include("layouts.jl")
+
 # include approximations
 include("approximations/extended.jl")
 include("approximations/unscented.jl")
