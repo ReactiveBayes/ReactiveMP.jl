@@ -17,15 +17,15 @@ function f₁_inv(x)
     return x .^ 2
 end
 
-
 @model function delta_1input(meta)
     y2 = datavar(Float64)
-    c = zeros(2); c[1] = 1.0;
+    c = zeros(2)
+    c[1] = 1.0
 
-    x ~ MvNormal(μ=ones(2), Λ=diageye(2))
-    z ~ f₁(x) where {meta=meta}
-    y1 ~ Normal(μ=dot(z, c), σ²=1.0)
-    y2 ~ Normal(μ=y1, σ²=0.5)
+    x ~ MvNormal(μ = ones(2), Λ = diageye(2))
+    z ~ f₁(x) where {meta = meta}
+    y1 ~ Normal(μ = dot(z, c), σ² = 1.0)
+    y2 ~ Normal(μ = y1, σ² = 0.5)
 end
 
 function f₂(x, θ)
@@ -42,15 +42,15 @@ end
 
 @model function delta_2inputs(meta)
     y2 = datavar(Float64)
-    c = zeros(2); c[1] = 1.0;
+    c = zeros(2)
+    c[1] = 1.0
 
-    θ ~ MvNormal(μ=ones(2), Λ=diageye(2))
-    x ~ MvNormal(μ=zeros(2), Λ=diageye(2))
-    z ~ f₂(x, θ) where {meta=meta}
-    y1 ~ Normal(μ=dot(z, c), σ²=1.0)
-    y2 ~ Normal(μ=y1, σ²=0.5)
+    θ ~ MvNormal(μ = ones(2), Λ = diageye(2))
+    x ~ MvNormal(μ = zeros(2), Λ = diageye(2))
+    z ~ f₂(x, θ) where {meta = meta}
+    y1 ~ Normal(μ = dot(z, c), σ² = 1.0)
+    y2 ~ Normal(μ = y1, σ² = 0.5)
 end
-
 
 function f₃(x, θ, ζ)
     return x .+ θ .+ ζ
@@ -58,47 +58,64 @@ end
 
 @model function delta_3inputs(meta)
     y2 = datavar(Float64)
-    c = zeros(2); c[1] = 1.0;
+    c = zeros(2)
+    c[1] = 1.0
 
-    θ ~ MvNormal(μ=ones(2), Λ=diageye(2))
-    ζ ~ MvNormal(μ=0.5ones(2), Λ=diageye(2))
-    x ~ MvNormal(μ=zeros(2), Λ=diageye(2))
-    z ~ f₃(x, θ, ζ) where {meta=meta}
-    y1 ~ Normal(μ=dot(z, c), σ²=1.0)
-    y2 ~ Normal(μ=y1, σ²=0.5)
+    θ ~ MvNormal(μ = ones(2), Λ = diageye(2))
+    ζ ~ MvNormal(μ = 0.5ones(2), Λ = diageye(2))
+    x ~ MvNormal(μ = zeros(2), Λ = diageye(2))
+    z ~ f₃(x, θ, ζ) where {meta = meta}
+    y1 ~ Normal(μ = dot(z, c), σ² = 1.0)
+    y2 ~ Normal(μ = y1, σ² = 0.5)
 end
 
 function f₄(x, θ)
-    return θ.*x
+    return θ .* x
 end
 
 @model function delta_2input_1d2d(meta)
     y2 = datavar(Float64)
-    c = zeros(2); c[1] = 1.0;
+    c = zeros(2)
+    c[1] = 1.0
 
-    θ ~ Normal(μ=0.5, γ=1.0)
-    x ~ MvNormal(μ=zeros(2), Λ=diageye(2))
-    z ~ f₄(x, θ) where {meta=meta}
-    y1 ~ Normal(μ=dot(z, c), σ²=1.0)
-    y2 ~ Normal(μ=y1, σ²=0.5)
+    θ ~ Normal(μ = 0.5, γ = 1.0)
+    x ~ MvNormal(μ = zeros(2), Λ = diageye(2))
+    z ~ f₄(x, θ) where {meta = meta}
+    y1 ~ Normal(μ = dot(z, c), σ² = 1.0)
+    y2 ~ Normal(μ = y1, σ² = 0.5)
 end
-
 
 ## -------------------------------------------- ##
 ## Inference definition
 ## -------------------------------------------- ##
 function inference_1input(data)
     res = []
-    for meta in (ET(inverse=f₁_inv), UT(inverse=f₁_inv), ET(), UT())
-        push!(res, inference(model = Model(delta_1input, meta), data=(y2=data,), free_energy=true, free_energy_diagnostics=(BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())))
+    for meta in (ET(inverse = f₁_inv), UT(inverse = f₁_inv), ET(), UT())
+        push!(
+            res,
+            inference(
+                model = Model(delta_1input, meta),
+                data = (y2 = data,),
+                free_energy = true,
+                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
+            )
+        )
     end
     res
 end
 
 function inference_2inputs(data)
     res = []
-    for meta in (ET(inverse=(f₂_x, f₂_θ)), UT(inverse=(f₂_x, f₂_θ)), ET(), UT())
-        push!(res, inference(model = Model(delta_2inputs, meta), data=(y2=data,), free_energy=true, free_energy_diagnostics=(BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())))
+    for meta in (ET(inverse = (f₂_x, f₂_θ)), UT(inverse = (f₂_x, f₂_θ)), ET(), UT())
+        push!(
+            res,
+            inference(
+                model = Model(delta_2inputs, meta),
+                data = (y2 = data,),
+                free_energy = true,
+                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
+            )
+        )
     end
     res
 end
@@ -106,7 +123,15 @@ end
 function inference_3inputs(data)
     res = []
     for meta in (ET(), UT())
-        push!(res, inference(model = Model(delta_3inputs, meta), data=(y2=data,), free_energy=true, free_energy_diagnostics=(BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())))
+        push!(
+            res,
+            inference(
+                model = Model(delta_3inputs, meta),
+                data = (y2 = data,),
+                free_energy = true,
+                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
+            )
+        )
     end
     res
 end
@@ -114,11 +139,18 @@ end
 function inference_2input_1d2d(data)
     res = []
     for meta in (ET(), UT())
-        push!(res, inference(model = Model(delta_2input_1d2d, meta), data=(y2=data,), free_energy=true, free_energy_diagnostics=(BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())))
+        push!(
+            res,
+            inference(
+                model = Model(delta_2input_1d2d, meta),
+                data = (y2 = data,),
+                free_energy = true,
+                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
+            )
+        )
     end
     res
 end
-
 
 @testset "Delta models" begin
     @testset "Extended, Unscented transforms" begin

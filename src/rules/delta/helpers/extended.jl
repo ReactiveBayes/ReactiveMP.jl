@@ -79,7 +79,6 @@ function localLinearizationMultiIn(g::Any, x_hat::Vector{Float64})
     return (A, b)
 end
 
-
 """
 Return local linearization of g around expansion point x_hat
 for Delta node with multiple input interfaces
