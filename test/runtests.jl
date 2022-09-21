@@ -376,6 +376,7 @@ end
     addtests(testrunner, "models/test_mv_iid.jl")
     addtests(testrunner, "models/test_probit.jl")
     addtests(testrunner, "models/test_aliases.jl")
+    addtests(testrunner, "models/test_delta.jl")
 
     run(testrunner)
 end
