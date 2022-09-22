@@ -307,6 +307,8 @@ end
     addtests(testrunner, "rules/beta/test_out.jl")
     addtests(testrunner, "rules/beta/test_marginals.jl")
 
+    #addtests(testrunner, "rules/delta/unscented/test_out.jl")
+
     addtests(testrunner, "rules/dot_product/test_out.jl")
     addtests(testrunner, "rules/dot_product/test_in1.jl")
     addtests(testrunner, "rules/dot_product/test_in2.jl")

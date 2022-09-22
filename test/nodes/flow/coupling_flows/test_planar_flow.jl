@@ -288,10 +288,10 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logdet_jacobia
 
         # check utility functions jacobian (multivariate)
         f = PlanarFlow([1.0, 2.0], [3.0, 4.0], 0.0)
-        @test det_jacobian(f, [-4.0, 3.0]) == 12.0
+        @test det_jacobian(f, [-4.0, 3.0]) ≈ 12.0
         @test inv_jacobian(f, [-4.0, 3.0]) ≈ [0.75 -1/3; -0.5 1/3]
-        @test absdet_jacobian(f, [-4.0, 3.0]) == 12.0
-        @test logabsdet_jacobian(f, [-4.0, 3.0]) == (log(12.0), 1)
+        @test absdet_jacobian(f, [-4.0, 3.0]) ≈ 12.0
+        @test all(logabsdet_jacobian(f, [-4.0, 3.0]) .≈ (log(12.0), 1))
     end
 end
 
