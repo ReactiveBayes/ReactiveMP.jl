@@ -319,11 +319,11 @@ function naturalparams(dist::MultivariateGaussianDistributionsFamily)
     MvNormalNaturalParameters(weighted_mean, -0.5 * precision)
 end
 
-function standardDist(η::NormalNaturalParameters)
+function convert(Distribution, η::NormalNaturalParameters)
     return GaussianWeighteMeanPrecision(η.weighted_mean, -2 * η.minus_half_precision)
 end
 
-function standardDist(η::MvNormalNaturalParameters)
+function convert(Distribution, η::MvNormalNaturalParameters)
     d = length(η.weighted_mean)
     XI, W = η.weighted_mean[1:d], reshape(-2 * η.minus_half_precision_matrix, d, d)
     W = Matrix(Hermitian(W + tiny * diageye(d))) # Ensure precision is always invertible

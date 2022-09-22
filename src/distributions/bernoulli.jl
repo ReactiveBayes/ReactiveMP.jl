@@ -1,9 +1,8 @@
 export Bernoulli
 export naturalparams
-export standardDist
 export BernoulliNaturalParameters
 
-import Distributions: Bernoulli, succprob, failprob, logpdf
+import Distributions: Bernoulli, Distribution, succprob, failprob, logpdf
 import Base
 import StatsFuns: logistic
 
@@ -60,7 +59,7 @@ function Distributions.logpdf(η::BernoulliNaturalParameters, x)
     return x * get_natural_params(η) + lognormalizer(η)
 end
 
-function standardDist(η::BernoulliNaturalParameters)
+function convert(Distribution, η::BernoulliNaturalParameters)
     return Bernoulli(exp(get_natural_params(η)) / (1 + exp(get_natural_params(η))))
 end
 

@@ -35,7 +35,7 @@ function renderCVI(logp_nc::Function,
     rng = something(rng, Random.GLOBAL_RNG)
 
     for _ in 1:num_iterations
-        q = standardDist(λ)
+        q = convert(Distribution, λ)
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
@@ -68,7 +68,7 @@ function renderCVI(logp_nc::Function,
     gradA(vec_params) = A'(vec_params) # Zygote
     Fisher(vec_params) = ForwardDiff.jacobian(gradA, vec_params) # Zygote throws mutating array error
     for _ in 1:num_iterations
-        q = standardDist(λ)
+        q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
 
         if isnothing(rng)
@@ -104,7 +104,7 @@ function renderCVI(logp_nc::Function,
     df_v = (z) -> 0.5 * ForwardDiff.jacobian(df_m, z)
 
     for _ in 1:num_iterations
-        q = standardDist(λ)
+        q = convert(Distribution, λ)
 
         _, q_friendly = logpdf_sample_friendly(q)
 

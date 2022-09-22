@@ -7,7 +7,7 @@ using Distributions
 @testset "MvNormalNaturalParameters" begin
     @testset "Constructor" begin
         for i in 1:10
-            @test standardDist(MvNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈
+            @test convert(Distribution, MvNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈
                   MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
         end
     end

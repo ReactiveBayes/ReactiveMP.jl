@@ -1,10 +1,11 @@
 using TupleTools
+import Distributions: Distribution
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::CVIApproximation) where {f} = begin
     η = naturalparams(m_ins[1])
     logp_nc(z) = logpdf(m_out, f(z))
     λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, deepcopy(η), m_ins[1])
-    return FactorProduct((standardDist(λ),))
+    return FactorProduct((convert(Distribution, λ),))
 end
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
@@ -22,5 +23,7 @@ end
         return renderCVI(logp_nc, 10, ADAM(), nothing, naturalparams(m_ins[i]), m_ins[i])
     end
 
-    return FactorProduct(Tuple([standardDist(optimize_natural_parameters(i, pre_samples)) for i in 1:length(m_ins)]))
+    return FactorProduct(
+        Tuple([convert(Distribution, optimize_natural_parameters(i, pre_samples)) for i in 1:length(m_ins)])
+    )
 end

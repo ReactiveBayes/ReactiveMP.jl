@@ -80,7 +80,7 @@ end
 naturalparams(dist::GammaShapeRate) = GammaShapeRateNaturalParameters(dist.a - 1, -dist.b)
 
 # Natural parameters to standard dist. type
-function standardDist(η::GammaShapeRateNaturalParameters)
+function convert(Distribution, η::GammaShapeRateNaturalParameters)
     GammaShapeRate(η.a_ + 1, -η.b)
 end
 

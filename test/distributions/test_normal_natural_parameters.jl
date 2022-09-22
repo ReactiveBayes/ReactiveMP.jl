@@ -7,7 +7,7 @@ using Distributions
 @testset "NormalNaturalParameters" begin
     @testset "Constructor" begin
         for i in 1:10
-            @test standardDist(NormalNaturalParameters(i, -i)) ≈ NormalWeightedMeanPrecision(i, 2 * i)
+            @test convert(Distribution, NormalNaturalParameters(i, -i)) ≈ NormalWeightedMeanPrecision(i, 2 * i)
         end
     end
 
