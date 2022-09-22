@@ -1,32 +1,40 @@
 export CVIApproximation
 export renderCVI
+export flux_update!
 using Flux
 
-struct CVIApproximation{R, O}
+struct CVIApproximation{R, O, F}
     n_samples::Int
     num_iterations::Int
     rng::R
     opt::O
+    optupdate!::F
 end
 
-function CVIApproximation(n_samples, num_iterations, opt)
+function CVIApproximation(n_samples, num_iterations, opt, optupdate!)
     return CVIApproximation(
         n_samples,
         num_iterations,
         nothing,
-        opt
+        opt,
+        optupdate!
     )
 end
 #---------------------------
 # CVI implementations
 #---------------------------
 
+function flux_update!(opt::O, λ::T, ∇::T) where {O, T <: NaturalParameters}
+    return Flux.Optimise.update!(opt, vec(λ), vec(∇))
+end
+
 function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt,
     rng,
     λ_init::NormalNaturalParameters,
-    msg_in::UnivariateGaussianDistributionsFamily)
+    msg_in::UnivariateGaussianDistributionsFamily,
+    optupdate!)
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -43,7 +51,7 @@ function renderCVI(logp_nc::Function,
             λ.weighted_mean - η.weighted_mean - df_μ1,
             λ.minus_half_precision - η.minus_half_precision - df_μ2
         )
-        λ_new = NormalNaturalParameters(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        λ_new = NormalNaturalParameters(optupdate!(opt, λ, ∇))
         if isproper(λ_new)
             λ = λ_new
         end
@@ -57,7 +65,8 @@ function renderCVI(logp_nc::Function,
     opt::Any,
     rng::Any,
     λ_init::T,
-    msg_in::Any) where {T <: NaturalParameters}
+    msg_in::Any,
+    optupdate!) where {T <: NaturalParameters}
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -80,7 +89,7 @@ function renderCVI(logp_nc::Function,
         ∇logq = logq'(vec(λ))
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
         ∇ = λ - η - T(∇f)
-        updated = T(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        updated = T(optupdate!(opt, λ, ∇))
         if isproper(updated)
             λ = updated
         end
@@ -96,7 +105,8 @@ function renderCVI(logp_nc::Function,
     opt,
     rng,
     λ_init::MvNormalNaturalParameters,
-    msg_in::MultivariateGaussianDistributionsFamily)
+    msg_in::MultivariateGaussianDistributionsFamily,
+    optupdate!)
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -120,7 +130,7 @@ function renderCVI(logp_nc::Function,
 
         ∇ = λ - η - ∇f
 
-        updated = MvNormalNaturalParameters(Flux.Optimise.update!(opt, vec(λ), vec(∇)))
+        updated = MvNormalNaturalParameters(optupdate!(opt, λ, ∇))
 
         if isproper(updated)
             λ = updated
