@@ -1,7 +1,13 @@
 export CVIApproximation
 export renderCVI
-export flux_update!
-using Flux
+using Requires
+
+function __init__()
+    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" function flux_update!(opt::O, λ::T, ∇::T) where {O, T <: NaturalParameters}
+        return Flux.Optimise.update!(opt, vec(λ), vec(∇))
+    end
+    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" export flux_update!
+end
 
 struct CVIApproximation{R, O, F}
     n_samples::Int
@@ -24,9 +30,6 @@ end
 # CVI implementations
 #---------------------------
 
-function flux_update!(opt::O, λ::T, ∇::T) where {O, T <: NaturalParameters}
-    return Flux.Optimise.update!(opt, vec(λ), vec(∇))
-end
 
 function renderCVI(logp_nc::Function,
     num_iterations::Int,
