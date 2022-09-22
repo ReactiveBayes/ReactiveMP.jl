@@ -170,16 +170,6 @@ end
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
         plot_output      = joinpath(base_output, "template_model_plot_$(timestamp)_v$(VERSION).png")
         benchmark_output = joinpath(base_output, "template_model_benchmark_$(timestamp)_v$(VERSION).txt")
-        ## -------------------------------------------- ##
-        ## Create output benchmarks (skip if CI)
-        if get(ENV, "CI", nothing) != "true"
-            benchmark = @benchmark 1 + 1#
-            open(benchmark_output, "w") do io
-                show(io, MIME("text/plain"), benchmark)
-                versioninfo(io)
-            end
-        end
-        ## -------------------------------------------- ##
     end
 end
 
