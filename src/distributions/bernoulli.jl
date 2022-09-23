@@ -59,7 +59,7 @@ function Distributions.logpdf(η::BernoulliNaturalParameters, x)
     return x * get_natural_params(η) + lognormalizer(η)
 end
 
-function convert(Distribution, η::BernoulliNaturalParameters)
+function convert(::Type{<:Distribution}, η::BernoulliNaturalParameters)
     return Bernoulli(exp(get_natural_params(η)) / (1 + exp(get_natural_params(η))))
 end
 

@@ -1,43 +1,39 @@
 export CVIApproximation
-export renderCVI
-using Requires
 
-function __init__()
-    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" function flux_update!(opt::O, λ::T, ∇::T) where {O, T <: NaturalParameters}
-        return Flux.Optimise.update!(opt, vec(λ), vec(∇))
-    end
-    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" export flux_update!
+using Random
+
+"""
+    cvi_update!(opt, λ, ∇)
+
+TODO: Add documention
+"""
+function cvi_update! end
+
+function cvi_update!(callback::F, λ, ∇) where { F <: Function }
+    return callback(λ, ∇)
 end
 
-struct CVIApproximation{R, O, F}
+struct CVIApproximation{R, O}
+    rng::R
     n_samples::Int
     num_iterations::Int
-    rng::R
     opt::O
-    optupdate!::F
 end
 
-function CVIApproximation(n_samples, num_iterations, opt, optupdate!)
-    return CVIApproximation(
-        n_samples,
-        num_iterations,
-        nothing,
-        opt,
-        optupdate!
-    )
+function CVIApproximation(n_samples, num_iterations, opt)
+    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt)
 end
+
 #---------------------------
 # CVI implementations
 #---------------------------
-
 
 function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt,
     rng,
     λ_init::NormalNaturalParameters,
-    msg_in::UnivariateGaussianDistributionsFamily,
-    optupdate!)
+    msg_in::UnivariateGaussianDistributionsFamily)
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -54,7 +50,7 @@ function renderCVI(logp_nc::Function,
             λ.weighted_mean - η.weighted_mean - df_μ1,
             λ.minus_half_precision - η.minus_half_precision - df_μ2
         )
-        λ_new = NormalNaturalParameters(optupdate!(opt, λ, ∇))
+        λ_new = NormalNaturalParameters(cvi_update!(opt, λ, ∇))
         if isproper(λ_new)
             λ = λ_new
         end
@@ -68,13 +64,13 @@ function renderCVI(logp_nc::Function,
     opt::Any,
     rng::Any,
     λ_init::T,
-    msg_in::Any,
-    optupdate!) where {T <: NaturalParameters}
+    msg_in::Any) where {T <: NaturalParameters}
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
     # convert lambda to vector
     # work within loop with vector
+    rng = something(rng, Random.GLOBAL_RNG)
 
     A(vec_params) = lognormalizer(T(vec_params)) # maybe convert here makes more sense
     gradA(vec_params) = A'(vec_params) # Zygote
@@ -83,16 +79,13 @@ function renderCVI(logp_nc::Function,
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
 
-        if isnothing(rng)
-            z_s = rand(q_friendly)
-        else
-            z_s = rand(rng, q_friendly)
-        end
+        z_s = rand(rng, q_friendly)
+
         logq(vec_params) = logpdf(T(vec_params), z_s)
         ∇logq = logq'(vec(λ))
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
         ∇ = λ - η - T(∇f)
-        updated = T(optupdate!(opt, λ, ∇))
+        updated = T(cvi_update!(opt, λ, ∇))
         if isproper(updated)
             λ = updated
         end
@@ -108,10 +101,11 @@ function renderCVI(logp_nc::Function,
     opt,
     rng,
     λ_init::MvNormalNaturalParameters,
-    msg_in::MultivariateGaussianDistributionsFamily,
-    optupdate!)
+    msg_in::MultivariateGaussianDistributionsFamily)
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
+
+    rng = something(rng, Random.GLOBAL_RNG)
 
     df_m = (z) -> ForwardDiff.gradient(logp_nc, z)
     df_v = (z) -> 0.5 * ForwardDiff.jacobian(df_m, z)
@@ -121,11 +115,7 @@ function renderCVI(logp_nc::Function,
 
         _, q_friendly = logpdf_sample_friendly(q)
 
-        if isnothing(rng)
-            z_s = rand(q_friendly) # need to add rng here (or maybe better to do callback)
-        else
-            z_s = rand(rng, q_friendly)
-        end
+        z_s = rand(rng, q_friendly)
 
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
@@ -133,7 +123,7 @@ function renderCVI(logp_nc::Function,
 
         ∇ = λ - η - ∇f
 
-        updated = MvNormalNaturalParameters(optupdate!(opt, λ, ∇))
+        updated = MvNormalNaturalParameters(cvi_update!(opt, λ, ∇))
 
         if isproper(updated)
             λ = updated
