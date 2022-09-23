@@ -64,14 +64,13 @@ h(x::Float64, y::Vector{Float64}) = x^2 .- y
     end
 
     # ForneyLab:test_delta_unscented:SPDeltaUTOutNGX 2
-    # TODO: requires adaption of src/rules/delta/unscented/out.jl : determination of Univariate/Multivariate variate type (L:25)
-    #@testset "Belief Propagation: f(x,y) (m_ins::MvNormalMeanCovariance, *)" begin
-    #    @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
-    #        (
-    #            input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta=DeltaUnscented()),
-    #            output = MvNormalMeanCovariance([1.9999999997671694], [67.00000899657607])
-    #        ),
-    #    ]
-    #end
+    @testset "Belief Propagation: f(x,y) (m_ins::MvNormalMeanCovariance, *)" begin
+       @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
+           (
+               input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta=DeltaUnscented()),
+               output = MvNormalMeanCovariance([1.9999999997671694], [67.00000899657607])
+           ),
+       ]
+    end
 end
 end
