@@ -856,6 +856,11 @@ using Distributions
         @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [out]), in, x]))
         @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [1]), in, x]))
         @test_throws Exception eval(:(@node DummyStruct Stochastic []))
+
+        @test_throws LoadError eval(:(@node DummyStruct Stochastic [out, interfaces_with_underscore]))
+        @test_throws LoadError eval(
+            :(@node DummyStruct Stochastic [out, (interface, aliases = [alias_with_underscore])])
+        )
     end
 
     @testset "sdtype of an arbitrary distribution is Stochastic" begin
