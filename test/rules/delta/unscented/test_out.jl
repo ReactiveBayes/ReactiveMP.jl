@@ -6,7 +6,6 @@ using Random
 import ReactiveMP: @test_rules
 
 # TODO: with_float_conversions = true breaks
-# TODO: MvNormalMeanCovariance => MethodError: no method matching convert(::Type{NormalMeanVariance}, ::Vector{Float64}, ::Matrix{Float64})
 
 # g: single input, single output
 g(x::Float64) = x^2 - 5.0
