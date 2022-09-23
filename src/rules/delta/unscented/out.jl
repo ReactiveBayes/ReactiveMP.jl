@@ -7,8 +7,7 @@
     (μ_tilde, Σ_tilde, _) =
         unscentedStatistics(μ_fw_in1, Σ_fw_in1, f; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
 
-    #F = size(μ_tilde, 1) == 1 ? Univariate : Multivariate
-    F = variate_form(first(m_ins))
+    F = isa(μ_tilde, Number) ? Univariate : Multivariate
     return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
 end
 
@@ -22,7 +21,7 @@ end
         (μ_tilde, Σ_tilde, _) =
             unscentedStatistics(μs_in, Σs_in, f; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
 
-        F = size(μ_tilde, 1) == 1 ? Univariate : Multivariate
+        F = isa(μ_tilde, Number) ? Univariate : Multivariate
 
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end

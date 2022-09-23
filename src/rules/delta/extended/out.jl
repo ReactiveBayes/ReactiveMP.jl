@@ -7,7 +7,7 @@
     (A, b) = localLinearizationSingleIn(f, μ_in)
     m = A * μ_in + b
     V = A * Σ_in * A'
-    F = size(m, 1) == 1 ? Univariate : Multivariate
+    F = isa(m, Number) ? Univariate : Multivariate
     return convert(promote_variate_type(F, NormalMeanVariance), m, V)
 end
 
@@ -22,7 +22,7 @@ end
         (m_fw_in, V_fw_in, _) = concatenateGaussianMV(μs_in, Σs_in)
         m = A * m_fw_in + b
         V = A * V_fw_in * A'
-        F = size(m, 1) == 1 ? Univariate : Multivariate
+        F = isa(m, Number) ? Univariate : Multivariate
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
@@ -40,6 +40,6 @@ end
         m = A * μ_in + b
         V = A * Σ_in * A'
 
-        F = size(m, 1) == 1 ? Univariate : Multivariate
+        F = isa(m, Number) ? Univariate : Multivariate
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end

@@ -9,7 +9,7 @@
         m = A * μ_out + b
         V = A * Σ_out * A'
 
-        F = size(m, 1) == 1 ? Univariate : Multivariate
+        F = val(m, Number) ? Univariate : Multivariate
 
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
@@ -26,7 +26,7 @@
         m = A * μ_in + b
         V = A * Σ_in * A'
 
-        F = size(m, 1) == 1 ? Univariate : Multivariate
+        F = val(m, Number) ? Univariate : Multivariate
 
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end

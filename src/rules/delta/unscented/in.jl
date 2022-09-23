@@ -15,7 +15,8 @@
             kappa = meta.kappa
         )
 
-        F = size(μ_tilde, 1) == 1 ? Univariate : Multivariate
+        F = val(μ_tilde, Number) ? Univariate : Multivariate
+        
 
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
@@ -30,7 +31,7 @@
         (μ_tilde, Σ_tilde, _) =
             unscentedStatistics(μs_in, Σs_in, meta.inverse[k]; alpha = meta.alpha, beta = meta.beta, kappa = meta.kappa)
 
-        F = size(μ_tilde, 1) == 1 ? Univariate : Multivariate
+        F = val(μ_tilde, Number) ? Univariate : Multivariate
 
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
