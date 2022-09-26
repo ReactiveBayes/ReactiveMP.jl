@@ -33,11 +33,15 @@ function renderCVI(logp_nc::Function,
     opt,
     rng,
     λ_init::NormalNaturalParameters,
-    msg_in::UnivariateGaussianDistributionsFamily)
+    msg_in::GaussianDistributionsFamily,
+    optupdate!)
+    get_df_m(::Type{<:UnivariateNormalNaturalParameters}, ::Type{ <: UnivariateGaussianDistributionsFamily }, logp_nc::Function) = (z) -> ForwardDiff.derivative(logp_nc, z)
+    get_df_m(::Type{<:MvNormalNaturalParameters}, ::Type{ <: MultivariateGaussianDistributionsFamily }, logp_nc::Function) = (z) -> ForwardDiff.derivative(logp_nc, z)
+    
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
-    df_m = (z) -> ForwardDiff.derivative(logp_nc, z)
+    df_m = (z) -> get_df_m(typeof(λ_init), typeof(msg_in), logp_nc)(z)
     df_v = (z) -> 0.5 * ForwardDiff.derivative(df_m, z)
     rng = something(rng, Random.GLOBAL_RNG)
 
@@ -46,7 +50,7 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇ = NormalNaturalParameters(
+        ∇ = typeof(λ_init)(
             λ.weighted_mean - η.weighted_mean - df_μ1,
             λ.minus_half_precision - η.minus_half_precision - df_μ2
         )

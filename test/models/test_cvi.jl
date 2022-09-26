@@ -2,7 +2,7 @@ module ReactiveMPModelsNonLinearDynamicsTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs, Flux
+using BenchmarkTools, Random, Dates, StableRNGs, Flux
 
 # Please use StableRNGs for random number generators
 
