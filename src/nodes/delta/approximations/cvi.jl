@@ -28,32 +28,33 @@ end
 # CVI implementations
 #---------------------------
 
+get_df_m(
+    ::Type{<:UnivariateNormalNaturalParameters},
+    ::Type{<:UnivariateGaussianDistributionsFamily},
+    logp_nc::Function
+) = (z) -> ForwardDiff.derivative(logp_nc, z)
+
+get_df_m(
+    ::Type{<:MvNormalNaturalParameters},
+    ::Type{<:MultivariateGaussianDistributionsFamily},
+    logp_nc::Function
+) = (z) -> ForwardDiff.gradient(logp_nc, z)
+
+get_df_v(
+    ::Type{<:UnivariateNormalNaturalParameters},
+    ::Type{<:UnivariateGaussianDistributionsFamily},
+    df_m::Function
+) = (z) -> ForwardDiff.derivative(df_m, z)
+
+get_df_v(::Type{<:MvNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
+    (z) -> ForwardDiff.jacobian(df_m, z)
+
 function renderCVI(logp_nc::Function,
     num_iterations::Int,
     opt,
     rng,
-    λ_init::NormalNaturalParameters,
-    msg_in::GaussianDistributionsFamily)
-    get_df_m(
-        ::Type{<:UnivariateNormalNaturalParameters},
-        ::Type{<:UnivariateGaussianDistributionsFamily},
-        logp_nc::Function
-    ) = (z) -> ForwardDiff.derivative(logp_nc, z)
-    get_df_m(
-        ::Type{<:MvNormalNaturalParameters},
-        ::Type{<:MultivariateGaussianDistributionsFamily},
-        logp_nc::Function
-    ) = (z) -> ForwardDiff.gradient(logp_nc, z)
-    get_df_v(
-        ::Type{<:UnivariateNormalNaturalParameters},
-        ::Type{<:UnivariateGaussianDistributionsFamily},
-        df_m::Function
-    ) = (z) -> ForwardDiff.derivative(df_m, z)
-    get_df_v(::Type{<:MvNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
-        (z) -> ForwardDiff.jacobian(df_m, z)
-    format_input(x::Real, y::Real) = [x, y]
-    format_input(x, y) = [x; vec(y)]
-
+    λ_init::T,
+    msg_in::GaussianDistributionsFamily) where {T <: NormalNaturalParameters}
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -66,9 +67,9 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = typeof(η)(format_input(df_μ1, df_μ2))
+        ∇f = T(df_μ1, df_μ2)
         ∇ = λ - η - ∇f
-        λ_new = typeof(η)(cvi_update!(opt, λ, ∇))
+        λ_new = T(cvi_update!(opt, λ, ∇))
         if isproper(λ_new)
             λ = λ_new
         end
