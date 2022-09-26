@@ -300,8 +300,10 @@ function MvNormalNaturalParameters{T1}(v::Vector{T2}) where {T1 <: Real, T2 <: R
     )
 end
 
-
-function MvNormalNaturalParameters{T1}(weighted_mean::Vector{T2}, minus_half_precision_matrix::Matrix{T2}) where {T1 <: Real, T2 <: Real}
+function MvNormalNaturalParameters{T1}(
+    weighted_mean::Vector{T2},
+    minus_half_precision_matrix::Matrix{T2}
+) where {T1 <: Real, T2 <: Real}
     if (
         (size(weighted_mean)[1] != size(minus_half_precision_matrix)[1]) ||
         (size(weighted_mean)[1] != size(minus_half_precision_matrix)[2])
