@@ -1,20 +1,18 @@
-# [Example: Normalizing Flow tutorial](@id examples-flow)
+# [Example: Invertible Neural Network tutorial](@id examples-inn)
 
 *Table of contents*
-1. [Introduction](@ref examples-flow-introduction)
-2. [Model specification](@ref examples-flow-model-specification)
-3. [Model compilation](@ref examples-flow-model-compilation)
-4. [Probabilistic inference](@ref examples-flow-probabilistic-inference)
-5. [Parameter estimation](@ref examples-flow-parameter-estimation)
+1. [Introduction](@ref examples-inn-introduction)
+2. [Model specification](@ref examples-inn-model-specification)
+3. [Model compilation](@ref examples-inn-model-compilation)
+4. [Probabilistic inference](@ref examples-inn-probabilistic-inference)
+5. [Parameter estimation](@ref examples-inn-parameter-estimation)
 
-## [Introduction](@id examples-flow-introduction)
-*Normalizing flows* are parameterized mappings of random variables, which map simple base distributions to more complex distributions.
-These mappings are constrained to be invertible and differentiable and can be composed of multiple simpler mappings for improved expressivity.
+## [Introduction](@id examples-inn-introduction)
 
 ### Load required packages
 Before we can start, we need to import some packages:
 
-```@example flow
+```@example inn
 using ReactiveMP
 using Rocket
 using GraphPPL
@@ -22,16 +20,16 @@ using Random
 using StableRNGs
 
 using LinearAlgebra     # only used for some matrix specifics
-using PyPlot            # only used for visualisation
+using Plots             # only used for visualisation
 using Distributions     # only used for sampling from multivariate distributions
 using Optim             # only used for parameter optimisation
 ```
 
-## [Model specification](@id examples-flow-model-specification)
+## [Model specification](@id examples-inn-model-specification)
 
-Specifying a flow model is easy. The general recipe looks like follows: `model = FlowModel(input_dim, (layer1(options), layer2(options), ...))`. Here the first argument corresponds to the input dimension of the model and the second argument is a tuple of layers. An example flow model can be defined as
+Specifying an invertible neural network model is easy. The general recipe looks like follows: `model = FlowModel(input_dim, (layer1(options), layer2(options), ...))`. Here the first argument corresponds to the input dimension of the model and the second argument is a tuple of layers. An example model can be defined as
 
-```@example flow
+```@example inn
 model = FlowModel(2,
     (
         AdditiveCouplingLayer(PlanarFlow()),
@@ -43,7 +41,7 @@ nothing #hide
 
 Alternatively, the `input_dim` can also be passed as an `InputLayer` layer as 
 
-```@exampel flow
+```@exampel inn
 model = FlowModel(
     (
         InputLayer(2),
@@ -80,7 +78,7 @@ $f_n$ is an arbitrarily complex function, here chosen to be a `PlanarFlow`, but 
 
 A permutation layer can also be added by itself as a `PermutationLayer` layer with a custom permutation matrix if desired.
 
-```@example flow
+```@example inn
 model = FlowModel(
     (
         InputLayer(2),
@@ -92,15 +90,15 @@ model = FlowModel(
 nothing #hide
 ```
 
-## [Model compilation](@id examples-flow-model-compilation)
+## [Model compilation](@id examples-inn-model-compilation)
 In the current models, the layers are setup to work with the passed input dimension. This means that the function $f_n$ is repeated `input_dim-1` times for each of the partitions. Furthermore the permutation layers are set up with proper permutation matrices. If we print the model we get
 
-```@example flow
+```@example inn
 model
 ```
 
 The text below describes the terms above. Please note the distinction in typing and elements, i.e. `FlowModel{types}(elements)`:
-- `FlowModel` - specifies that we are dealing with a flow model.
+- `FlowModel` - specifies that we are dealing with an invertible neural network model.
 - `3` - Number of layers.
 - `Tuple{AdditiveCouplingLayerEmpty{...},PermutationLayer{Int64},AdditiveCouplingLayerEmpty{...}}` - tuple of layer types.
 - `Tuple{ReactiveMP.PlanarFlowEmpty{1},ReactiveMP.PlanarFlowEmpty{1}}` - tuple of functions $f_n$.
@@ -108,15 +106,15 @@ The text below describes the terms above. Please note the distinction in typing 
 
 From inspection we can see that the `AdditiveCouplingLayerEmpty` and `PlanarFlowEmpty` objects are different than before. They are initialized for the correct dimension, but they do not have any parameters registered to them. This is by design to allow for separating the model specification from potential optimization procedures. Before we perform inference in this model, the parameters should be initialized. We can randomly initialize the parameters as
 
-```@example flow
+```@example inn
 compiled_model = compile(model)
 ```
 
-## [Probabilistic inference](@id examples-flow-probabilistic-inference)
+## [Probabilistic inference](@id examples-inn-probabilistic-inference)
 
-We can perform inference in our compiled model through standard usage of ReactiveMP. Let's first generate some random 2D data which has been sampled from a standard normal distribution and is consecutively passed through a normalizing flow. Using the `forward(model, data)` function we can propagate data in the forward direction through the flow.
+We can perform inference in our compiled model through standard usage of ReactiveMP. Let's first generate some random 2D data which has been sampled from a standard normal distribution and is consecutively passed through an invertible neural network. Using the `forward(model, data)` function we can propagate data in the forward direction.
 
-```@example flow
+```@example inn
 function generate_data(nr_samples::Int64, model::CompiledFlowModel; seed = 123)
 
     rng = StableRNG(seed)
@@ -139,24 +137,20 @@ function generate_data(nr_samples::Int64, model::CompiledFlowModel; seed = 123)
 end;
 ```
 
-```@example flow
+```@example inn
 # generate data
 y, x = generate_data(1000, compiled_model)
 
 # plot generated data
-_, ax = plt.subplots(ncols=2, figsize=(15,5))
-ax[1].scatter(x[1,:], x[2,:], alpha=0.3)
-ax[2].scatter(y[1,:], y[2,:], alpha=0.3)
-ax[1].set_title("Original data")
-ax[2].set_title("Transformed data")
-ax[1].grid(), ax[2].grid()
-plt.gcf()
+p1 = scatter(x[1,:], x[2,:], alpha=0.3, title="Original data", size=(800,400))
+p2 = scatter(y[1,:], y[2,:], alpha=0.3, title="Transformed data", size=(800,400))
+plot(p1, p2, legend = false)
 ```
 
 The probabilistic model for doing inference can be described as 
 
-```@example flow
-@model function normalizing_flow(nr_samples::Int64)
+```@example inn
+@model function invertible_neural_network(nr_samples::Int64)
     
     # initialize variables
     z_μ   = randomvar()
@@ -189,13 +183,13 @@ The probabilistic model for doing inference can be described as
 end;
 ```
 
-Here the flow model is passed inside a meta data object of the flow node.
+Here the inverse neural network model is passed inside a meta data object of the flow node.
 Inference then resorts to
 
-```@example flow
+```@example inn
 observations = [y[:,k] for k=1:size(y,2)]
 
-fmodel         = Model(normalizing_flow, length(observations))
+fmodel         = Model(invertible_neural_network, length(observations))
 data          = (y = observations, )
 initmarginals = (z_μ = MvNormalMeanCovariance(zeros(2), huge*diagm(ones(2))), z_Λ = Wishart(2.0, tiny*diagm(ones(2))))
 returnvars    = (z_μ = KeepLast(), z_Λ = KeepLast(), x = KeepLast(), y_lat = KeepLast())
@@ -226,7 +220,7 @@ result = inference(
 
 The following line of code then executes the inference algorithm.
 
-```@example flow
+```@example inn
 fe_flow = result.free_energy
 zμ_flow = result.posteriors[:z_μ]
 zΛ_flow = result.posteriors[:z_Λ]
@@ -237,49 +231,36 @@ nothing #hide
 
 As we can see, the variational free energy decreases inside of our model.
 
-```@example flow
-plt.figure()
-plt.plot(1:10, fe_flow/size(y,2))
-plt.grid()
-plt.xlim(1,10)
-plt.xlabel("iteration")
-plt.ylabel("normalized variational free energy [nats/sample]")
-plt.gcf()
+```@example inn
+plot(1:10, fe_flow/size(y,2), xlabel="iteration", ylabel="normalized variational free energy [nats/sample]", legend=false)
 ```
 
 If we plot a random noisy observation and its approximated transformed uncertainty we obtain:
 
-```@example flow
+```@example inn
 # pick a random observation
-id = rand(1:size(y,2))
+id = rand(StableRNG(321), 1:size(y,2))
 rand_observation = MvNormal(y[:,id], 5e-1*diagm(ones(2)))
 warped_observation = MvNormal(ReactiveMP.backward(compiled_model, y[:,id]), ReactiveMP.inv_jacobian(compiled_model, y[:,id])*5e-1*diagm(ones(2))*ReactiveMP.inv_jacobian(compiled_model, y[:,id])');
 
-# plot inferred means and transformed point
-fig, ax = plt.subplots(ncols = 2, figsize=(15,5))
-ax[1].scatter(x[1,:], x[2,:], alpha=0.1, label="generated data")
-ax[1].contour(repeat(-5:0.1:5, 1, 101), repeat(-5:0.1:5, 1, 101)', map( (x) -> pdf(MvNormal([1.5, 0.5], I), [x...]), collect(Iterators.product(-5:0.1:5, -5:0.1:5))), label="true distribution")
-ax[1].scatter(mean(zμ_flow)[1], mean(zμ_flow)[2], color="red", marker="x", label="inferred mean")
-ax[1].contour(repeat(-10:0.01:10, 1, 2001), repeat(-10:0.01:10, 1, 2001)', map( (x) -> pdf(warped_observation, [x...]), collect(Iterators.product(-10:0.01:10, -10:0.01:10))), colors="red", levels=1)
-ax[1].scatter(mean(warped_observation)..., color="red", s=10, label="transformed noisy observation")
-ax[2].scatter(y[1,:], y[2,:], alpha=0.1, label="generated data")
-ax[2].scatter(ReactiveMP.forward(compiled_model, mean(zμ_flow))..., color="red", marker="x", label="inferred mean")
-ax[2].contour(repeat(-10:0.1:10, 1, 201), repeat(-10:0.1:10, 1, 201)', map( (x) -> pdf(MvNormal([1.5, 0.5], I), ReactiveMP.backward(compiled_model, [x...])), collect(Iterators.product(-10:0.1:10, -10:0.1:10))))
-ax[2].contour(repeat(-10:0.1:10, 1, 201), repeat(-10:0.1:10, 1, 201)', map( (x) -> pdf(rand_observation, [x...]), collect(Iterators.product(-10:0.1:10, -10:0.1:10))), colors="red", levels=1, label="random noisy observation")
-ax[2].scatter(mean(rand_observation)..., color="red", s=10, label="random noisy observation")
-ax[1].grid(), ax[2].grid()
-ax[1].set_xlim(-4,4), ax[1].set_ylim(-4,4), ax[2].set_xlim(-10,10), ax[2].set_ylim(-10,10)
-ax[1].legend(), ax[2].legend()
-fig.suptitle("Generated data")
-ax[1].set_title("Latent distribution"), ax[2].set_title("Observed distribution")
-plt.gcf()
+p1 = scatter(x[1,:], x[2,:], alpha=0.1, title="Latent distribution", size=(1200,500), label="generated data")
+contour!(-5:0.1:5, -5:0.1:5, (x, y) -> pdf(MvNormal([1.5, 0.5], I), [x, y]), c=:viridis, colorbar=false, linewidth=2)
+scatter!([mean(zμ_flow)[1]], [mean(zμ_flow)[2]], color="red", markershape=:x, markersize=5, label="inferred mean")
+contour!(-5:0.01:5, -5:0.01:5, (x, y) -> pdf(warped_observation, [x, y]), colors="red", levels=1, linewidth=2, colorbar=false)
+scatter!([mean(warped_observation)[1]], [mean(warped_observation)[2]], color="red", label="transformed noisy observation")
+p2 = scatter(y[1,:], y[2,:], alpha=0.1, label="generated data")
+scatter!([ReactiveMP.forward(compiled_model, mean(zμ_flow))[1]], [ReactiveMP.forward(compiled_model, mean(zμ_flow))[2]], color="red", marker=:x, label="inferred mean")
+contour!(-10:0.1:10, -10:0.1:10, (x, y) -> pdf(MvNormal([1.5, 0.5], I), ReactiveMP.backward(compiled_model, [x, y])), c=:viridis, colorbar=false, linewidth=2)
+contour!(-10:0.1:10, -10:0.1:10, (x, y) -> pdf(rand_observation, [x, y]), colors="red", levels=1, linewidth=2, label="random noisy observation", colorba=false)
+scatter!([mean(rand_observation)[1]], [mean(rand_observation)[2]], color="red", label="random noisy observation")
+plot(p1, p2, legend = true)
 ```
 
-## [Parameter estimation](@id examples-flow-parameter-estimation)
+## [Parameter estimation](@id examples-inn-parameter-estimation)
 
-The flow model is often used to learn unknown probabilistic mappings. Here we will demonstrate it as follows for a binary classification task with the following data:
+The invertible neural network model is often used to learn unknown probabilistic mappings. Here we will demonstrate it as follows for a binary classification task with the following data:
 
-```@example flow
+```@example inn
 function generate_data(nr_samples::Int64; seed = 123)
     
     rng = StableRNG(seed)
@@ -299,19 +280,14 @@ function generate_data(nr_samples::Int64; seed = 123)
 end;
 ```
 
-```@example flow
+```@example inn
 data_y, data_x = generate_data(50);
-plt.figure()
-plt.scatter(data_x[:,1], data_x[:,2], c=data_y)
-plt.grid()
-plt.xlabel("w1")
-plt.ylabel("w2")
-plt.gcf()
+scatter(data_x[:,1], data_x[:,2], marker_z=data_y, xlabel="w1", ylabel="w2", colorbar=false, legend=false)
 ```
 
-We will then specify a possible flow model as
+We will then specify a possible model as
 
-```@example flow
+```@example inn
 # specify flow model
 model = FlowModel(2,
     (
@@ -325,8 +301,8 @@ model = FlowModel(2,
 
 The corresponding probabilistic model for the binary classification task can be created as
 
-```@example flow
-@model [ default_factorisation = FullFactorisation() ] function flow_classifier(nr_samples::Int64)
+```@example inn
+@model [ default_factorisation = FullFactorisation() ] function invertible_neural_network_classifier(nr_samples::Int64)
     
     # initialize variables
     x_lat  = randomvar(nr_samples)
@@ -356,8 +332,8 @@ The corresponding probabilistic model for the binary classification task can be 
 end
 ```
 
-```@example flow 
-fcmodel       = Model(flow_classifier, length(data_y))
+```@example inn 
+fcmodel       = Model(invertible_neural_network_classifier, length(data_y))
 data          = (y = data_y, x = [data_x[k,:] for k=1:size(data_x,1)], )
 
 @meta function fmeta(model, params)
@@ -370,7 +346,7 @@ Here we see that the compilation occurs inside of our probabilistic model. As a 
 
 For the optimization procedure, we will simplify our inference loop, such that it only accepts parameters as an argument (which is wishes to optimize) and outputs a performance metric.
 
-```@example flow
+```@example inn
 function f(params)
     Random.seed!(42) # Flow uses random permutation matrices, which is not good for the optimisation procedure
     result = inference(
@@ -423,40 +399,29 @@ end
 
 ```
 
-```@example flow
+```@example inn
 res = optimize(f, randn(StableRNG(42), nr_params(model)), GradientDescent(), Optim.Options(store_trace = true, show_trace = true, show_every = 50), autodiff=:forward)
 nothing #hide
 ```
 
 optimization results are then given as
 
-```@example flow
+```@example inn
 params = Optim.minimizer(res)
 inferred_model = compile(model, params)
 trans_data_x_1 = hcat(map((x) -> ReactiveMP.forward(inferred_model, x), [data_x[k,:] for k=1:size(data_x,1)])...)'
 trans_data_x_2 = map((x) -> dot([1, 1], x), [trans_data_x_1[k,:] for k=1:size(data_x,1)])
 trans_data_x_2_split = [trans_data_x_2[data_y .== 1.0], trans_data_x_2[data_y .== 0.0]]
-fig, ax = plt.subplots(ncols = 3, figsize=(15,5))
-ax[1].scatter(data_x[:,1], data_x[:,2], c = data_y)
-ax[2].scatter(trans_data_x_1[:,1], trans_data_x_1[:,2], c = data_y)
-ax[3].hist(trans_data_x_2_split; stacked=true, bins=50, color = ["gold", "purple"])
-ax[1].grid(), ax[2].grid(), ax[3].grid()
-ax[1].set_xlim(-0.25,1.25), ax[1].set_ylim(-0.25,1.25)
-ax[1].set_title("original data"), ax[2].set_title("|> warp"), ax[3].set_title("|> dot")
-plt.gcf()
+p1 = scatter(data_x[:,1], data_x[:,2], marker_z = data_y, size=(1200,400), c=:viridis, colorbar=false, title="original data")
+p2 = scatter(trans_data_x_1[:,1], trans_data_x_1[:,2], marker_z = data_y, c=:viridis, size=(1200,400), colorbar=false, title="|> warp")
+p3 = histogram(trans_data_x_2_split; stacked=true, bins=50, size=(1200,400), title="|> dot")
+plot(p1, p2, p3, layout=(1,3), legend=false)
 ```
 
-```@example flow
+```@example inn
 using StatsFuns: normcdf
-classification_map = map((x) -> normcdf(dot([1,1],x)), map((x) -> ReactiveMP.forward(inferred_model, [x...]), collect(Iterators.product(0:0.01:1, 0:0.01:1))))
-fig, ax = plt.subplots(ncols = 3, figsize=(20,5))
-im1 = ax[1].scatter(data_x[:,1], data_x[:,2], c = data_y)
-im2 = ax[2].scatter(data_x[:,1], data_x[:,2], c = normcdf.(trans_data_x_2))
-ax[3].contour(repeat(0:0.01:1, 1, 101), repeat(0:0.01:1, 1, 101)', classification_map)
-plt.colorbar(im1, ax=ax[1])
-plt.colorbar(im2, ax=ax[2])
-ax[1].grid(), ax[2].grid(), ax[3].grid()
-ax[1].set_xlabel("weight 1"), ax[1].set_ylabel("weight 2"), ax[2].set_xlabel("weight 1"), ax[2].set_ylabel("weight 2"), ax[3].set_xlabel("weight 1"), ax[3].set_ylabel("weight 2")
-ax[1].set_title("original labels"), ax[2].set_title("predicted labels"), ax[3].set_title("Classification map")
-plt.gcf()
+p1 = scatter(data_x[:,1], data_x[:,2], marker_z = data_y, title="original labels", xlabel="weight 1", ylabel="weight 2", size=(1200,400), c=:viridis)
+p2 = scatter(data_x[:,1], data_x[:,2], marker_z = normcdf.(trans_data_x_2), title="predicted labels", xlabel="weight 1", ylabel="weight 2", size=(1200,400), c=:viridis)
+p3 = contour(0:0.01:1, 0:0.01:1, (x, y) -> normcdf(dot([1,1], ReactiveMP.forward(inferred_model, [x,y]))), title="Classification map", xlabel="weight 1", ylabel="weight 2", size=(1200,400), c=:viridis)
+plot(p1, p2, p3, layout=(1,3), legend=false)
 ```
