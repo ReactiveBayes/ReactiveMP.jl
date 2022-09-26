@@ -199,6 +199,7 @@ function rule_function_expression(
     q_names,
     q_types,
     metatype,
+    flagstype,
     whereargs
 )
     return quote
@@ -211,6 +212,7 @@ function rule_function_expression(
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
+            flags::$(flagstype),
             __node
         ) where {$(whereargs...)}
             $(body())
@@ -259,13 +261,14 @@ macro rule(fform, lambda)
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
+    @capture(args, (inputs__, meta::metatype_, ::flagstype_) | (inputs__,)) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
     metatype                         = metatype === nothing ? :Any : metatype
+    flagstype                        = flagstype === nothing ? :Tuple : flagstype
 
     options = map(options) do option
         @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")
@@ -282,10 +285,6 @@ macro rule(fform, lambda)
     q_names, q_types, q_init_block =
         rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
-    # create global
-    fun = quote () -> $(body) end
-    # mess = quote $(esc(:_addon_scaling_value)) = $fun() end
-
     output = quote
         $(
             rule_function_expression(
@@ -297,16 +296,16 @@ macro rule(fform, lambda)
                 q_names,
                 q_types,
                 metatype,
+                flagstype,
                 whereargs
             ) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
                     $(q_init_block...)
-                    _addon_scaling_value = nothing
-                    _message = $fun()
-                    _addon = ReactiveMP.Addon(_addon_scaling_value)
-                    return _message, _addon
+                    _addons = ()
+                    _message = $(MacroHelpers.remove_returns(body))
+                    return _message, _addons
                 end
             end
         )
@@ -398,17 +397,28 @@ macro rule(fform, lambda)
     return esc(output)
 end
 
+abstract type AbstractAddon end
+abstract type AbstractFlag end
+
+struct FlagScaling <: AbstractFlag end
+struct AddonScaling{T} <: AbstractAddon
+    scaling :: T
+end
+
 # addons
 macro scaling(lambda)
 
     @capture(lambda, (body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
-    # specify scaling function
-    fun = quote () -> $(esc(body)) end
-
     # create scaling
-    output = quote $(esc(:_addon_scaling_value)) = $fun() end
+    output = quote 
+        # $(esc(:_addon_scaling)) = begin 
+            if FlagScaling() in $(esc(:flags))
+                $(esc(:_addons)) = flatten($(esc(:_addons)), AddonScaling($(esc(MacroHelpers.remove_returns(body)))),)
+            end
+        # end
+    end
 
     # return expression for @scaling
     return output
@@ -420,7 +430,7 @@ macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) ||
         error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(args, (inputs__, meta = meta_) | (inputs__,)) ||
+    @capture(args, (inputs__, meta = meta_, flags = flags_) | (inputs__, flags = flags_) | (inputs__,)) ||
         error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
@@ -449,6 +459,7 @@ macro call_rule(fform, args)
             $q_names_arg,
             $q_values_arg,
             $meta,
+            $flags,
             nothing
         )
     end
