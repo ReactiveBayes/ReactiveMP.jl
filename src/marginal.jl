@@ -5,7 +5,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, ndims, precision, length, size
+import Base: ==, ndims, precision, length, size, nameof, iterate
 
 struct Marginal{D}
     data       :: D
@@ -26,6 +26,7 @@ end
 getdata(marginal::Marginal)    = marginal.data
 is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
+typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 
 # TupleTools.prod is a more efficient version of Base.all for NTuple here
 is_clamped(marginals::Tuple) = TupleTools.prod(map(is_clamped, marginals))
@@ -75,6 +76,8 @@ getdata(marginals::Tuple)         = map(getdata, marginals)
 getdata(marginals::AbstractArray) = map(getdata, marginals)
 
 as_marginal(marginal::Marginal) = marginal
+
+dropproxytype(::Type{<:Marginal{T}}) where {T} = T
 
 ## Marginal observable
 

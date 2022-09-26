@@ -88,7 +88,7 @@ function rule_macro_parse_on_tag(on)
         return :(Tuple{Val{$(QuoteNode(name))}, Int}), index, :($index = on[2])
     else
         error(
-            "Error in macro. `on` specification is incorrect: $(on). Must be ither a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
+            "Error in macro. `on` specification is incorrect: $(on). Must be either a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
         )
     end
 end
@@ -158,7 +158,7 @@ This function is used to parse an `arguments` tuple for message and marginal cal
 end
 ```
 
-Accepts a vector of (name, vale) elements, specname, name prefix and proxy type. 
+Accepts a vector of (name, value) elements, specname, name prefix and proxy type. 
 Returns parsed names without prefix and proxied values
 
 See also: [`@rule`](@ref)
@@ -172,12 +172,21 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
     @assert all((n) -> length(string(n)) > lprefix, names) || error("Empty $(specname) name found in arguments")
 
-    # Tuples are special cases
+    # ManyOf are special cases
     function apply_proxy(any, proxy)
-        if any isa Expr && any.head === :tuple
-            output      = Expr(:tuple)
-            output.args = map(v -> apply_proxy(v, proxy), any.args)
-            return output
+        if any isa Expr && any.head === :call && (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
+            argsvar = gensym(:ManyOf)
+            return quote
+                let
+                    local $argsvar = ($(any.args[2:end]...),)
+                    if length($argsvar) === 1 && first($argsvar) isa Tuple
+                        ReactiveMP.ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
+                    else
+                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),))
+                    end
+                end
+            end
+            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),)))
         end
         return :($(proxy)($any, false, false))
     end
@@ -264,7 +273,7 @@ macro rule(fform, lambda)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
-    metatype                         = metatype === nothing ? :Nothing : metatype
+    metatype                         = metatype === nothing ? :Any : metatype
 
     options = map(options) do option
         @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")x
@@ -276,10 +285,8 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     output = quote
         $(
@@ -582,7 +589,7 @@ macro marginalrule(fform, lambda)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
-    metatype                         = metatype === nothing ? :Nothing : metatype
+    metatype                         = metatype === nothing ? :Any : metatype
 
     inputs = map(inputs) do input
         @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
@@ -822,11 +829,10 @@ rule_method_error_extract_on(on::Tuple{Val{T}, Int}) where {T} = string("(:", ru
 
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
-rule_method_error_extract_names(::Type{Val{T}}) where {T} =
-    map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
-rule_method_error_extract_names(::Nothing) = ()
+rule_method_error_extract_names(::Type{Val{T}}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
+rule_method_error_extract_names(::Nothing)                = ()
 
-rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeof(getdata(e))), t)
+rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeofdata(e)), t)
 rule_method_error_extract_types(t::Nothing) = ()
 
 rule_method_error_extract_meta(something) = string("meta::", typeof(something))
