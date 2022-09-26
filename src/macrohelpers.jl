@@ -160,4 +160,17 @@ macro test_inferred(T, expression)
     )
 end
 
+"""
+    remove_returns(ex)
+
+Removes return keywords in expression.
+"""
+function remove_returns(ex)
+    MacroTools.postwalk(ex) do x
+        @capture(x, (return a_)) || return x
+        return a
+    end
+end
+
+
 end
