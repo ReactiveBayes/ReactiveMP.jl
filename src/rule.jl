@@ -88,7 +88,7 @@ function rule_macro_parse_on_tag(on)
         return :(Tuple{Val{$(QuoteNode(name))}, Int}), index, :($index = on[2])
     else
         error(
-            "Error in macro. `on` specification is incorrect: $(on). Must be ither a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
+            "Error in macro. `on` specification is incorrect: $(on). Must be either a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
         )
     end
 end

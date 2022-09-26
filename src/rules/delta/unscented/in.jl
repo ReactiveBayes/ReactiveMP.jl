@@ -16,7 +16,6 @@
         )
 
         F = isa(μ_tilde, Number) ? Univariate : Multivariate
-        
 
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
@@ -36,6 +35,7 @@
         return convert(promote_variate_type(F, NormalMeanVariance), μ_tilde, Σ_tilde)
     end
 
+# unknown inverse
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     q_ins::Any,
     m_in::NormalDistributionsFamily,
