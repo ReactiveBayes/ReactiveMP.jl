@@ -414,7 +414,7 @@ macro scaling(lambda)
     # create scaling
     output = quote 
         # $(esc(:_addon_scaling)) = begin 
-            if !isnothing($esc(:addons)) || AddonFlagScaling() in $(esc(:addons))
+            if !isnothing($esc(:addons)) && AddonFlagScaling() in $(esc(:addons))
                 $(esc(:_addons)) = flatten($(esc(:_addons)), AddonScaling($(esc(MacroHelpers.remove_returns(body)))),)
             end
         # end
