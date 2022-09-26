@@ -61,8 +61,9 @@ end
 
 # Model Options
 
-struct ModelOptions{P, F, S}
+struct ModelOptions{P, A, F, S}
     pipeline                  :: P
+    addons                    :: A
     default_factorisation     :: F
     global_reactive_scheduler :: S
 end
@@ -92,6 +93,7 @@ model_options(pairs::Base.Iterators.Pairs) = model_options(NamedTuple(pairs))
 
 available_option_names(::Type{<:ModelOptions}) = (
     :pipeline,
+    :addons,
     :default_factorisation,
     :global_reactive_scheduler,
     :limit_stack_depth
@@ -110,11 +112,16 @@ as_named_tuple(options::ModelOptions) = __as_named_tuple((;),
 
 function model_options(options::NamedTuple)
     pipeline                  = nothing
+    addons                    = nothing
     default_factorisation     = nothing
     global_reactive_scheduler = nothing
 
     if haskey(options, :pipeline)
         pipeline = options[:pipeline]
+    end
+
+    if haskey(options, :addons)
+        addons = options[:addons]
     end
 
     if haskey(options, :default_factorisation)
@@ -138,6 +145,7 @@ function model_options(options::NamedTuple)
 
     return ModelOptions(
         pipeline,
+        addons,
         default_factorisation,
         global_reactive_scheduler
     )
@@ -335,6 +343,7 @@ function node_resolve_options(model::FactorGraphModel, options::FactorNodeCreati
     return FactorNodeCreationOptions(
         node_resolve_factorisation(model, options, fform, variables),
         node_resolve_meta(model, options, fform, variables),
+        getaddons(options),
         getpipeline(options)
     )
 end

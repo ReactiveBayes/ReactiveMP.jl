@@ -199,7 +199,7 @@ function rule_function_expression(
     q_names,
     q_types,
     metatype,
-    flagstype,
+    addonstype,
     whereargs
 )
     return quote
@@ -212,7 +212,7 @@ function rule_function_expression(
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
-            flags::$(flagstype),
+            addons::$(addonstype),
             __node
         ) where {$(whereargs...)}
             $(body())
@@ -261,14 +261,14 @@ macro rule(fform, lambda)
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_, ::flagstype_) | (inputs__,)) ||
+    @capture(args, (inputs__, meta::metatype_, ::addonstype_) | (inputs__,)) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
     metatype                         = metatype === nothing ? :Any : metatype
-    flagstype                        = flagstype === nothing ? :Tuple : flagstype
+    addonstype                        = addonstype === nothing ? :Any : addonstype
 
     options = map(options) do option
         @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")
@@ -296,7 +296,7 @@ macro rule(fform, lambda)
                 q_names,
                 q_types,
                 metatype,
-                flagstype,
+                addonstype,
                 whereargs
             ) do
                 return quote
@@ -398,9 +398,9 @@ macro rule(fform, lambda)
 end
 
 abstract type AbstractAddon end
-abstract type AbstractFlag end
+abstract type AbstractAddonFlag end
 
-struct FlagScaling <: AbstractFlag end
+struct AddonFlagScaling <: AbstractAddonFlag end
 struct AddonScaling{T} <: AbstractAddon
     scaling :: T
 end
@@ -414,7 +414,7 @@ macro scaling(lambda)
     # create scaling
     output = quote 
         # $(esc(:_addon_scaling)) = begin 
-            if FlagScaling() in $(esc(:flags))
+            if AddonFlagScaling() in $(esc(:addons))
                 $(esc(:_addons)) = flatten($(esc(:_addons)), AddonScaling($(esc(MacroHelpers.remove_returns(body)))),)
             end
         # end
@@ -430,7 +430,7 @@ macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) ||
         error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(args, (inputs__, meta = meta_, flags = flags_) | (inputs__, flags = flags_) | (inputs__,)) ||
+    @capture(args, (inputs__, meta = meta_, addons = addons) | (inputs__, addons = addons) | (inputs__,)) ||
         error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
@@ -459,7 +459,7 @@ macro call_rule(fform, args)
             $q_names_arg,
             $q_values_arg,
             $meta,
-            $flags,
+            $addons,
             nothing
         )
     end
@@ -878,11 +878,12 @@ struct RuleMethodError
     qnames
     marginals
     meta
+    addons
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) =
-    throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) =
+    throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)
     print(io, "RuleMethodError: no method matching rule for the given arguments")
@@ -923,9 +924,10 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
         arguments_spec = join(spec, ", ")
         meta_spec      = rule_method_error_extract_meta(error.meta)
+        addons_spec    = error.addons
 
         possible_fix_definition = """
-        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
+        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec, $addons_spec) = begin 
             return ...
         end
         """
@@ -945,6 +947,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         println(io, "rule.qnames: ", error.qnames)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
+        println(io, "rule.addons: ", error.addons)
     end
 end
 

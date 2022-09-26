@@ -247,12 +247,13 @@ end
 ## We create a lambda-like callable structure to improve type inference and make it more stable
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 
-struct MessageMapping{F, T, C, N, M, A, R}
+struct MessageMapping{F, T, C, N, M, A, X, R}
     vtag            :: T
     vconstraint     :: C
     msgs_names      :: N
     marginals_names :: M
     meta            :: A
+    addons          :: X
     factornode      :: R
 end
 
@@ -266,9 +267,10 @@ function MessageMapping(
     msgs_names::N,
     marginals_names::M,
     meta::A,
+    addons::X,
     factornode::R
-) where {F, T, C, N, M, A, R}
-    return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+) where {F, T, C, N, M, A, X, R}
+    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
 end
 
 function MessageMapping(
@@ -278,9 +280,10 @@ function MessageMapping(
     msgs_names::N,
     marginals_names::M,
     meta::A,
+    addons::X,
     factornode::R
-) where {F <: Function, T, C, N, M, A, R}
-    return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+) where {F <: Function, T, C, N, M, A, X, R}
+    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
 end
 
 function materialize!(mapping::MessageMapping, dependencies)
@@ -304,6 +307,7 @@ function materialize!(mapping::MessageMapping, dependencies)
         mapping.marginals_names,
         marginals,
         mapping.meta,
+        mapping.addons,
         mapping.factornode
     )
 

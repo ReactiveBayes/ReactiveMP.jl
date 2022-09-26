@@ -143,7 +143,7 @@ __update_wrong_type_error(::Type{D1}, ::Type{D2}, ctype::Union{VariableVector, V
     )
 
 update!(::Type{PointMass{D}}, datavar, data::D) where {D} =
-    next!(messageout(datavar, 1), Message(PointMass(data), false, false))
+    next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
 
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 
