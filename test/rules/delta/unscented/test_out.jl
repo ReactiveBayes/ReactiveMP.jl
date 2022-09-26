@@ -1,4 +1,4 @@
-module RulesDeltaOutTest
+module RulesDeltaUTOutTest
 
 using Test
 using ReactiveMP

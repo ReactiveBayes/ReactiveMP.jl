@@ -310,6 +310,10 @@ end
     addtests(testrunner, "rules/delta/unscented/test_out.jl")
     #addtests(testrunner, "rules/delta/unscented/test_in.jl") # TODO: unusual edge rule syntax causes some errors
     #addtests(testrunner, "rules/delta/unscented/test_marginals.jl") # TODO: marginal is a DeltaMarginal object, requires an approx function to dispatch
+    #
+    addtests(testrunner, "rules/delta/extended/test_out.jl")
+    #addtests(testrunner, "rules/delta/extended/test_in.jl") # TODO: unusual edge rule syntax causes some errors
+    #addtests(testrunner, "rules/delta/extended/test_marginals.jl") # TODO: marginal is a DeltaMarginal object, requires an approx function to dispatch
 
     addtests(testrunner, "rules/dot_product/test_out.jl")
     addtests(testrunner, "rules/dot_product/test_in1.jl")
