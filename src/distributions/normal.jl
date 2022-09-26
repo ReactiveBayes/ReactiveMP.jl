@@ -300,6 +300,24 @@ function MvNormalNaturalParameters{T1}(v::Vector{T2}) where {T1 <: Real, T2 <: R
     )
 end
 
+
+function MvNormalNaturalParameters{T1}(weighted_mean::Vector{T2}, minus_half_precision_matrix::Matrix{T2}) where {T1 <: Real, T2 <: Real}
+    if (
+        (size(weighted_mean)[1] != size(minus_half_precision_matrix)[1]) ||
+        (size(weighted_mean)[1] != size(minus_half_precision_matrix)[2])
+    )
+        error(
+            "MvNormalNaturalParameters can not be created from shapes:", " ",
+            "mean $(size(weighted_mean)) and matrix $(size(minus_half_precision_matrix))."
+        )
+    else
+        promoted_type = promote_type(T1, T2)
+        promoted_weighted_mean = convert(Vector{promoted_type}, weighted_mean)
+        promoted_minus_half_precision_matrix = convert(Matrix{promoted_type}, minus_half_precision_matrix)
+        return MvNormalNaturalParameters(promoted_weighted_mean, promoted_minus_half_precision_matrix)
+    end
+end
+
 function Base.vec(p::UnivariateNormalNaturalParameters)
     return [p.weighted_mean, p.minus_half_precision]
 end
