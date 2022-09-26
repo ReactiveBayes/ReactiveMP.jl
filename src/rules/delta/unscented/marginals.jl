@@ -1,7 +1,6 @@
 export marginalrule
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaUnscented) where {f, N} = begin
-
     # Approximate joint inbounds
     (μs_fw_in, Σs_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
     (μ_tilde, Σ_tilde, C_tilde) =
