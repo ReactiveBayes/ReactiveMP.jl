@@ -414,7 +414,7 @@ macro scaling(lambda)
     # create scaling
     output = quote 
         # $(esc(:_addon_scaling)) = begin 
-            if AddonFlagScaling() in $(esc(:addons))
+            if !isnothing($esc(:addons)) || AddonFlagScaling() in $(esc(:addons))
                 $(esc(:_addons)) = flatten($(esc(:_addons)), AddonScaling($(esc(MacroHelpers.remove_returns(body)))),)
             end
         # end
@@ -430,7 +430,7 @@ macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) ||
         error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(args, (inputs__, meta = meta_, addons = addons) | (inputs__, addons = addons) | (inputs__,)) ||
+    @capture(args, (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__,)) ||
         error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
