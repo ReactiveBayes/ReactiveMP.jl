@@ -9,7 +9,7 @@ TODO: Add documention
 """
 function cvi_update! end
 
-function cvi_update!(callback::F, λ, ∇) where { F <: Function }
+function cvi_update!(callback::F, λ, ∇) where {F <: Function}
     return callback(λ, ∇)
 end
 
@@ -20,7 +20,7 @@ struct CVIApproximation{R, O}
     opt::O
 end
 
-function CVIApproximation(n_samples, num_iterations, opt)
+function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O) where {O}
     return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt)
 end
 
@@ -33,16 +33,32 @@ function renderCVI(logp_nc::Function,
     opt,
     rng,
     λ_init::NormalNaturalParameters,
-    msg_in::GaussianDistributionsFamily,
-    optupdate!)
-    get_df_m(::Type{<:UnivariateNormalNaturalParameters}, ::Type{ <: UnivariateGaussianDistributionsFamily }, logp_nc::Function) = (z) -> ForwardDiff.derivative(logp_nc, z)
-    get_df_m(::Type{<:MvNormalNaturalParameters}, ::Type{ <: MultivariateGaussianDistributionsFamily }, logp_nc::Function) = (z) -> ForwardDiff.derivative(logp_nc, z)
-    
+    msg_in::GaussianDistributionsFamily)
+    get_df_m(
+        ::Type{<:UnivariateNormalNaturalParameters},
+        ::Type{<:UnivariateGaussianDistributionsFamily},
+        logp_nc::Function
+    ) = (z) -> ForwardDiff.derivative(logp_nc, z)
+    get_df_m(
+        ::Type{<:MvNormalNaturalParameters},
+        ::Type{<:MultivariateGaussianDistributionsFamily},
+        logp_nc::Function
+    ) = (z) -> ForwardDiff.gradient(logp_nc, z)
+    get_df_v(
+        ::Type{<:UnivariateNormalNaturalParameters},
+        ::Type{<:UnivariateGaussianDistributionsFamily},
+        df_m::Function
+    ) = (z) -> ForwardDiff.derivative(df_m, z)
+    get_df_v(::Type{<:MvNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
+        (z) -> ForwardDiff.jacobian(df_m, z)
+    format_input(x::Real, y::Real) = [x, y]
+    format_input(x, y) = [x; vec(y)]
+
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
     df_m = (z) -> get_df_m(typeof(λ_init), typeof(msg_in), logp_nc)(z)
-    df_v = (z) -> 0.5 * ForwardDiff.derivative(df_m, z)
+    df_v = (z) -> 0.5 * get_df_v(typeof(λ_init), typeof(msg_in), df_m)(z)
     rng = something(rng, Random.GLOBAL_RNG)
 
     for _ in 1:num_iterations
@@ -50,11 +66,9 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇ = typeof(λ_init)(
-            λ.weighted_mean - η.weighted_mean - df_μ1,
-            λ.minus_half_precision - η.minus_half_precision - df_μ2
-        )
-        λ_new = NormalNaturalParameters(cvi_update!(opt, λ, ∇))
+        ∇f = typeof(η)(format_input(df_μ1, df_μ2))
+        ∇ = λ - η - ∇f
+        λ_new = typeof(η)(cvi_update!(opt, λ, ∇))
         if isproper(λ_new)
             λ = λ_new
         end
@@ -96,43 +110,6 @@ function renderCVI(logp_nc::Function,
     end
 
     # convert vector result in parameters
-
-    return λ
-end
-
-function renderCVI(logp_nc::Function,
-    num_iterations::Int,
-    opt,
-    rng,
-    λ_init::MvNormalNaturalParameters,
-    msg_in::MultivariateGaussianDistributionsFamily)
-    η = naturalparams(msg_in)
-    λ = deepcopy(λ_init)
-
-    rng = something(rng, Random.GLOBAL_RNG)
-
-    df_m = (z) -> ForwardDiff.gradient(logp_nc, z)
-    df_v = (z) -> 0.5 * ForwardDiff.jacobian(df_m, z)
-
-    for _ in 1:num_iterations
-        q = convert(Distribution, λ)
-
-        _, q_friendly = logpdf_sample_friendly(q)
-
-        z_s = rand(rng, q_friendly)
-
-        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
-        df_μ2 = df_v(z_s)
-        ∇f = MvNormalNaturalParameters([df_μ1; vec(df_μ2)])
-
-        ∇ = λ - η - ∇f
-
-        updated = MvNormalNaturalParameters(cvi_update!(opt, λ, ∇))
-
-        if isproper(updated)
-            λ = updated
-        end
-    end
 
     return λ
 end

@@ -281,19 +281,23 @@ struct MvNormalNaturalParameters{T <: Real} <: NormalNaturalParameters
         end
 end
 
-function UnivariateNormalNaturalParameters(v)
-    return UnivariateNormalNaturalParameters(v[1], v[2])
+function UnivariateNormalNaturalParameters{T1}(v::Vector{T2}) where {T1 <: Real, T2 <: Real}
+    promoted_type = promote_type(T1, T2)
+    return UnivariateNormalNaturalParameters{promoted_type}(convert(promoted_type, v[1]), convert(promoted_type, v[2]))
 end
 
-function MvNormalNaturalParameters(v)
+function MvNormalNaturalParameters{T1}(v::Vector{T2}) where {T1 <: Real, T2 <: Real}
     k = length(v)
     d = convert(Int, (-1 + sqrt(4 * k + 1)) / 2)
 
     if (d^2 + d) != k
         error("Vector dimensionality constraints are not fullfiled")
     end
-
-    return MvNormalNaturalParameters(v[1:d], reshape(v[d+1:end], d, d))
+    promoted_type = promote_type(T1, T2)
+    return MvNormalNaturalParameters(
+        convert(Vector{promoted_type}, v[1:d]),
+        convert(Matrix{promoted_type}, reshape(v[d+1:end], d, d))
+    )
 end
 
 function Base.vec(p::UnivariateNormalNaturalParameters)

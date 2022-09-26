@@ -24,12 +24,12 @@ end
     θ ~ GammaShapeRate(1.0, 1.0e-12)
 
     z[1] ~ NormalMeanPrecision(0, τ)
-    x[1] ~ f(z[1]) where {meta = CVIApproximation(n_iterations, n_samples, rng, Descent(learning_rate), flux_update!)}
+    x[1] ~ f(z[1]) where {meta = CVIApproximation(rng, n_iterations, n_samples, Descent(learning_rate))}
     y[1] ~ NormalMeanPrecision(x[1], θ)
 
     for t in 2:T
         z[t] ~ NormalMeanPrecision(z[t-1] + 1, τ)
-        x[t] ~ f(z[t]) where {meta = CVIApproximation(n_iterations, n_samples, rng, Descent(learning_rate), flux_update!)}
+        x[t] ~ f(z[t]) where {meta = CVIApproximation(rng, n_iterations, n_samples, Descent(learning_rate))}
         y[t] ~ NormalMeanPrecision(x[t], θ)
     end
 

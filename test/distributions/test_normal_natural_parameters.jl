@@ -7,7 +7,8 @@ using Distributions
 @testset "UnivariateNormalNaturalParameters" begin
     @testset "Constructor" begin
         for i in 1:10
-            @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) ≈ NormalWeightedMeanPrecision(i, 2 * i)
+            @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) ≈
+                  NormalWeightedMeanPrecision(i, 2 * i)
         end
     end
 
