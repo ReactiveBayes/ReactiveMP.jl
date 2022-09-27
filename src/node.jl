@@ -459,7 +459,7 @@ localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode
 metadata(factornode::FactorNode)           = factornode.metadata
 getpipeline(factornode::FactorNode)        = factornode.pipeline
 
-function nodefunction(factornode::FactorNode) 
+function nodefunction(factornode::FactorNode)
     return let fform = functionalform(factornode)
         (out, inputs...) -> pdf(convert(fform, inputs...), out)
     end

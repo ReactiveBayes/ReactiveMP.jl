@@ -193,7 +193,7 @@ end
 
 Creates a node object that will be used inside `@call_rule` macro.
 """
-function call_rule_create_node(::Type{ NodeType }, fformtype) where { NodeType }
+function call_rule_create_node(::Type{NodeType}, fformtype) where {NodeType}
     return make_node(NodeType)
 end
 
