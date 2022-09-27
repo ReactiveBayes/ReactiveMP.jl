@@ -188,6 +188,15 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     return names_arg, values_arg
 end
 
+"""
+    call_rule_create_node(::Type{ NodeType }, fformtype)
+
+Creates a node object that will be used inside `@call_rule` macro.
+"""
+function call_rule_create_node(::Type{ NodeType }, fformtype) where { NodeType }
+    return make_node(NodeType)
+end
+
 function rule_function_expression(
     body::Function,
     fuppertype,
@@ -200,6 +209,7 @@ function rule_function_expression(
     metatype,
     whereargs
 )
+    nodevar = gensym(:node)
     return quote
         function ReactiveMP.rule(
             fform::$(fuppertype),
@@ -210,8 +220,10 @@ function rule_function_expression(
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
-            __node
+            $nodevar
         ) where {$(whereargs...)}
+            local getnode = () -> $nodevar
+            local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
             $(body())
         end
     end
@@ -228,6 +240,7 @@ function marginalrule_function_expression(
     metatype,
     whereargs
 )
+    nodevar = gensym(:node)
     return quote
         function ReactiveMP.marginalrule(
             fform::$(fuppertype),
@@ -237,8 +250,10 @@ function marginalrule_function_expression(
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
-            __node
+            $nodevar
         ) where {$(whereargs...)}
+            local getnode = () -> $nodevar
+            local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
             $(body())
         end
     end
@@ -400,6 +415,7 @@ macro call_rule(fform, args)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
+    node                             = :(ReactiveMP.call_rule_create_node($fbottomtype, $fformtype))
 
     inputs = map(inputs) do input
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
@@ -423,7 +439,7 @@ macro call_rule(fform, args)
             $q_names_arg,
             $q_values_arg,
             $meta,
-            nothing
+            $node
         )
     end
 
@@ -629,6 +645,7 @@ macro call_marginalrule(fform, args)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
+    node                             = :(ReactiveMP.call_rule_create_node($fbottomtype, $fformtype))
 
     inputs = map(inputs) do input
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
@@ -651,7 +668,7 @@ macro call_marginalrule(fform, args)
             $q_names_arg,
             $q_values_arg,
             $meta,
-            nothing
+            $node
         )
     end
 

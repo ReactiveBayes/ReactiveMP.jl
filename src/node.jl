@@ -459,6 +459,12 @@ localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode
 metadata(factornode::FactorNode)           = factornode.metadata
 getpipeline(factornode::FactorNode)        = factornode.pipeline
 
+function nodefunction(factornode::FactorNode) 
+    return let fform = functionalform(factornode)
+        (out, inputs...) -> pdf(convert(fform, inputs...), out)
+    end
+end
+
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
 # Cluster is reffered to a tuple of node interfaces
