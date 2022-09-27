@@ -19,7 +19,6 @@ const UnivariateGaussianDistributionsFamily   = UnivariateNormalDistributionsFam
 const MultivariateGaussianDistributionsFamily = MultivariateNormalDistributionsFamily
 const GaussianDistributionsFamily             = NormalDistributionsFamily
 
-import Base
 import Base: prod, convert
 import Random: rand!
 import Distributions: logpdf

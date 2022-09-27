@@ -1,14 +1,14 @@
 using TupleTools
 import Distributions: Distribution
 
-@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{1, Any}, meta::CVIApproximation) where {f} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::CVIApproximation) where {f} = begin
     η = naturalparams(m_ins[1])
     logp_nc(z) = logpdf(m_out, f(z))
     λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, deepcopy(η), m_ins[1])
     return FactorProduct((convert(Distribution, λ),))
 end
 
-@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::NTuple{N, Any}, meta::CVIApproximation) where {f, N} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::CVIApproximation) where {f, N} = begin
     pre_samples = zip([rand(m_ins[i], meta.n_samples) for i in 1:length(m_ins)]...)
 
     logp_nc_drop_index =

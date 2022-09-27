@@ -14,7 +14,7 @@ using Random
         return ProdFinal(SampleList(q_out))
     end
 
-@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{NTuple{N, Any}}, meta::CVIApproximation) where {f, N} =
+@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where {f, P <: NTuple} =
     begin
         q_ins_sample_friendly = [logpdf_sample_friendly(q)[2] for q in q_ins]
         rng = something(meta.rng, Random.GLOBAL_RNG)

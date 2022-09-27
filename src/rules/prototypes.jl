@@ -133,10 +133,6 @@ include("bifm/zprev.jl")
 include("bifm_helper/in.jl")
 include("bifm_helper/out.jl")
 
-include("delta/in.jl")
-include("delta/marginals.jl")
-include("delta/out.jl")
-
 include("poisson/l.jl")
 include("poisson/marginals.jl")
 include("poisson/out.jl")
@@ -159,3 +155,11 @@ include("implication/in1.jl")
 include("implication/in2.jl")
 include("implication/out.jl")
 include("implication/marginals.jl")
+
+# include("delta/helpers.jl")
+
+include("delta/cvi/in.jl")
+include("delta/cvi/out.jl")
+include("delta/cvi/marginals.jl")
+
+

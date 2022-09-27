@@ -1,8 +1,8 @@
 
 @rule GammaMixture{N}(:switch, Marginalisation) (
     q_out::Any,
-    q_a::NTuple{N, Any},
-    q_b::NTuple{N, GammaDistributionsFamily}
+    q_a::ManyOf{N, Any},
+    q_b::ManyOf{N, GammaDistributionsFamily}
 ) where {N} = begin
     U = map(zip(q_a, q_b)) do (a, b)
         return -score(

@@ -2,7 +2,6 @@ module RulesGammaInverseMarginalsTest
 
 using Test
 using ReactiveMP
-using Random
 using Distributions
 
 import ReactiveMP: @test_marginalrules
