@@ -180,7 +180,7 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
             output.args = map(v -> apply_proxy(v, proxy), any.args)
             return output
         end
-        return :($(proxy)($any, false, false, ReactiveMP.Addon(nothing)))
+        return :($(proxy)($any, false, false, ()))
     end
 
     names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix+1):end])), names)...))})

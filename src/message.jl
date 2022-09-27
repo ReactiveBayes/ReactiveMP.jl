@@ -66,19 +66,13 @@ struct Message{D, A} <: AbstractMessage
     data       :: D
     is_clamped :: Bool
     is_initial :: Bool
-    addon     :: A
+    addons     :: A
 end
-
-struct Addon{T}
-    scaling :: T
-end
-
-getscaling(addon::Addon) = addon.scaling
 
 getdata(message::Message)    = message.data
 is_clamped(message::Message) = message.is_clamped
 is_initial(message::Message) = message.is_initial
-getaddon(message::Message)   = message.addon
+getaddons(message::Message)  = message.addons
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 
@@ -102,11 +96,22 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
     is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
 
-    return Message(prod(prod_parametrisation, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
+    # compute new distribution
+    new_dist = prod(prod_parametrisation, getdata(left), getdata(right))
+
+    # process addons
+    @assert typeof(getaddons(left)) == typeof(getaddons(right)) "Trying to perform computations with different sets of addons."
+    @assert length(getaddons(left)) == length(getaddons(right)) "Trying to perform computations with different lengths of addons."
+    new_addons = ()
+    for (addon_left, addon_right) in zip(getaddons(left), getaddons(right))
+        new_addons = TupleTools.flatten(new_addons, prod(addon_left, addon_right, new_dist, left, right))
+    end    
+
+    return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
 
 constrain_form_as_message(message::Message, form_constraint) =
-    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message))
+    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
@@ -298,7 +303,7 @@ function materialize!(mapping::MessageMapping, dependencies)
         !is_message_clamped &&
         (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    message, addon = rule(
+    message, addons = rule(
         message_mapping_fform(mapping),
         mapping.vtag,
         mapping.vconstraint,
@@ -311,5 +316,5 @@ function materialize!(mapping::MessageMapping, dependencies)
         mapping.factornode
     )
 
-    return Message(message, is_message_clamped, is_message_initial, addon)
+    return Message(message, is_message_clamped, is_message_initial, addons)
 end
