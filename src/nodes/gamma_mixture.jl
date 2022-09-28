@@ -203,7 +203,7 @@ as_node_functional_form(::Type{<:GammaMixture}) = ValidNodeFunctionalForm()
 
 sdtype(::Type{<:GammaMixture}) = Stochastic()
 
-collect_factorisation(::Type{<:GammaMixture}, ::Nothing)                = MeanField() 
+collect_factorisation(::Type{<:GammaMixture}, ::Nothing)                = MeanField()
 collect_factorisation(::Type{<:GammaMixture}, factorisation::MeanField) = factorisation
 collect_factorisation(::Type{<:GammaMixture}, factorisation::Any)       = __gamma_mixture_incompatible_factorisation_error()
 
@@ -216,7 +216,7 @@ __gamma_mixture_incompatible_factorisation_error() = error(
     "`GammaMixtureNode` supports only following global factorisations: [ $(GammaMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints"
 )
 
-function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options::FactorNodeCreationOptions,) where {N}
+function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options::FactorNodeCreationOptions) where {N}
     @assert N >= 2 "`GammaMixtureNode` requires at least two mixtures on input"
     out    = NodeInterface(:out, Marginalisation())
     switch = NodeInterface(:switch, Marginalisation())

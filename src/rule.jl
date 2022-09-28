@@ -193,11 +193,13 @@ end
 
 Creates a node object that will be used inside `@call_rule` macro. The node object always creates with the default options for factorisation. 
 """
-call_rule_make_node(fformtype, nodetype, meta) = call_rule_make_node(as_node_functional_form(nodetype), fformtype, nodetype, meta)
+call_rule_make_node(fformtype, nodetype, meta) =
+    call_rule_make_node(as_node_functional_form(nodetype), fformtype, nodetype, meta)
 
-call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta) = error("Cannot create a node of type `$nodetype` for the call rule routine.")
+call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta) =
+    error("Cannot create a node of type `$nodetype` for the call rule routine.")
 
-function call_rule_make_node(::ValidNodeFunctionalForm, fformtype, nodetype, meta) 
+function call_rule_make_node(::ValidNodeFunctionalForm, fformtype, nodetype, meta)
     return make_node(nodetype, FactorNodeCreationOptions(nothing, meta, nothing))
 end
 

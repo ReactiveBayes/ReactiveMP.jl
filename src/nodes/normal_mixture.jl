@@ -290,7 +290,7 @@ function ReactiveMP.make_node(::Type{<:NormalMixture{N}}, options::FactorNodeCre
     F = typeof(_factorisation)
     M = typeof(_meta)
     P = typeof(_pipeline)
- 
+
     return NormalMixtureNode{N, F, M, P}(_factorisation, out, switch, means, precs, _meta, _pipeline)
 end
 
