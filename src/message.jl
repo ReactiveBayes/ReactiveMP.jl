@@ -78,7 +78,7 @@ getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 
 materialize!(message::Message) = message
 
-Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ")"))
+Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with addons ", getaddons(message)))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
@@ -100,11 +100,10 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     new_dist = prod(prod_parametrisation, getdata(left), getdata(right))
 
     # process addons
-    @assert typeof(getaddons(left)) == typeof(getaddons(right)) "Trying to perform computations with different sets of addons."
     @assert length(getaddons(left)) == length(getaddons(right)) "Trying to perform computations with different lengths of addons."
     new_addons = ()
     for (addon_left, addon_right) in zip(getaddons(left), getaddons(right))
-        new_addons = TupleTools.flatten(new_addons, prod(addon_left, addon_right, new_dist, left, right))
+        new_addons = TupleTools.flatten(new_addons, prod(addon_left, addon_right, new_dist, getdata(left), getdata(right)))
     end    
 
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
@@ -242,7 +241,7 @@ function connect!(message::MessageObservable, source)
 end
 
 function setmessage!(message::MessageObservable, value)
-    next!(message.subject, Message(value, false, true))
+    next!(message.subject, Message(value, false, true, ()))
     return nothing
 end
 

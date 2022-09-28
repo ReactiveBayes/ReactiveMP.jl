@@ -154,6 +154,7 @@ end
 global_reactive_scheduler(options::ModelOptions) = something(options.global_reactive_scheduler, AsapScheduler())
 get_pipeline_stages(options::ModelOptions)       = something(options.pipeline, EmptyPipelineStage())
 default_factorisation(options::ModelOptions)     = something(options.default_factorisation, UnspecifiedConstraints())
+getaddons(options::ModelOptions)                 = options.addons
 
 Base.merge(nt::NamedTuple, options::ModelOptions) = model_options(merge(nt, as_named_tuple(options)))
 
@@ -343,7 +344,6 @@ function node_resolve_options(model::FactorGraphModel, options::FactorNodeCreati
     return FactorNodeCreationOptions(
         node_resolve_factorisation(model, options, fform, variables),
         node_resolve_meta(model, options, fform, variables),
-        getaddons(options),
         getpipeline(options)
     )
 end

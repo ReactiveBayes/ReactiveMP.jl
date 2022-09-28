@@ -32,11 +32,12 @@ Note: This function is a part of the private API and is not intended to be used 
 """
 to_marginal(any) = any
 
-as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
-as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
+as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getaddons(marginal))
 
 include("variable.jl")
 include("pipeline.jl")
+include("addons.jl")
 
 include("actors/score.jl")
 

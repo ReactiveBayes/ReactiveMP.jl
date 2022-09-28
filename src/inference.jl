@@ -237,7 +237,7 @@ result = inference(
 )
 ```
 
-It is also possible to set iether `returnvars = KeepLast()` or `returnvars = KeepEach()` that acts as an alias and sets the given option for __all__ random variables in the model.
+It is also possible to set either `returnvars = KeepLast()` or `returnvars = KeepEach()` that acts as an alias and sets the given option for __all__ random variables in the model.
 
 # Example: 
 

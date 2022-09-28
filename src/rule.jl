@@ -397,14 +397,6 @@ macro rule(fform, lambda)
     return esc(output)
 end
 
-abstract type AbstractAddon end
-abstract type AbstractAddonFlag end
-
-struct AddonFlagScaling <: AbstractAddonFlag end
-struct AddonScaling{T} <: AbstractAddon
-    scaling :: T
-end
-
 # addons
 macro scaling(lambda)
 

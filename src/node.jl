@@ -178,30 +178,6 @@ function default_meta end
 
 default_meta(any) = nothing
 
-"""
-    collect_addons(nodetype, addons)
-
-This function converts given addons object to a correct internal addons representation for a given node.
-Fallbacks to `default_addons` in case if addons is `nothing`.
-
-See also: [`default_addons`](@ref), [`FactorNode`](@ref)
-"""
-function collect_addons end
-
-collect_addons(T::Any, ::Nothing) = default_addons(T)
-collect_addons(T::Any, addons::Any) = addons
-
-"""
-    default_addons(nodetype)
-
-Returns default addons object for a given node type.
-
-See also: [`collect_addons`](@ref), [`FactorNode`](@ref)
-"""
-function default_addons end
-
-default_addons(any) = nothing
-
 ## NodeInterface
 
 ## NodeInterface constraints
@@ -421,29 +397,26 @@ interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) wher
 
 ## Generic Factor Node
 
-struct FactorNodeCreationOptions{F, M, A, P}
+struct FactorNodeCreationOptions{F, M, P}
     factorisation :: F
     metadata      :: M
-    addons        :: A
     pipeline      :: P
 end
 
-FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothing, nothing)
+FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothing)
 
 factorisation(options::FactorNodeCreationOptions) = options.factorisation
 metadata(options::FactorNodeCreationOptions)      = options.metadata
-getaddons(options::FactorNodeCreationOptions)     = options.addons
 getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
 
 Base.broadcastable(options::FactorNodeCreationOptions) = Ref(options)
 
-struct FactorNode{F, I, C, M, A, X, P} <: AbstractFactorNode
+struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
     interfaces     :: I
     factorisation  :: C
     localmarginals :: M
     metadata       :: A
-    addons         :: X
     pipeline       :: P
 end
 
@@ -453,16 +426,15 @@ function FactorNode(
     factorisation::C,
     localmarginals::M,
     metadata::A,
-    addons::X,
     pipeline::P
-) where {F, I, C, M, A, X, P}
-    return FactorNode{Type{F}, I, C, M, A, X, P}(fform, interfaces, factorisation, localmarginals, metadata, addons, pipeline)
+) where {F, I, C, M, A, P}
+    return FactorNode{Type{F}, I, C, M, A, P}(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
 end
 
-function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, addons, pipeline) where {N}
+function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, pipeline) where {N}
     interfaces     = map(varname -> NodeInterface(varname, default_interface_local_constraint(fform, Val(varname))), varnames)
     localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
-    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, addons, pipeline)
+    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
 end
 
 function Base.show(io::IO, factornode::FactorNode)
@@ -474,7 +446,6 @@ function Base.show(io::IO, factornode::FactorNode)
     println(io, string(" factorisation   : ", factorisation(factornode)))
     println(io, string(" local marginals : ", localmarginalnames(factornode)))
     println(io, string(" metadata        : ", metadata(factornode)))
-    println(io, string(" addons          : ", getaddons(factornode)))
     println(io, string(" pipeline        : ", getpipeline(factornode)))
 end
 
@@ -486,7 +457,6 @@ factorisation(factornode::FactorNode)      = factornode.factorisation
 localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
 localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode))
 metadata(factornode::FactorNode)           = factornode.metadata
-getaddons(factornode::FactorNode)          = factornode.addons
 getpipeline(factornode::FactorNode)        = factornode.pipeline
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
@@ -892,7 +862,7 @@ end
 function activate!(model, factornode::AbstractFactorNode)
     fform                      = functionalform(factornode)
     meta                       = metadata(factornode)
-    addons                     = getaddons(factornode)
+    addons                     = getaddons(getoptions(model))
     node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
@@ -1218,7 +1188,6 @@ macro node(fformtype, sdtype, interfaces_list)
                 $names_quoted_tuple,
                 ReactiveMP.collect_factorisation($fbottomtype, ReactiveMP.factorisation(options)),
                 ReactiveMP.collect_meta($fbottomtype, ReactiveMP.metadata(options)),
-                ReactiveMP.collect_addons($fbottomtype, ReactiveMP.getaddons(options)),
                 ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options))
             )
         end

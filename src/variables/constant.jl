@@ -83,7 +83,7 @@ messagein(constvar::ConstVariable, ::Int)  = error("It is not possible to get a 
 
 get_pipeline_stages(::ConstVariable) = EmptyPipelineStage()
 
-_getmarginal(constvar::ConstVariable)      = of(Marginal(constvar.constant, true, false))
+_getmarginal(constvar::ConstVariable)      = of(Marginal(constvar.constant, true, false, ()))
 _setmarginal!(::ConstVariable, observable) = error("It is not possible to set a marginal stream for `ConstVariable`")
 _makemarginal(::ConstVariable)             = error("It is not possible to make marginal stream for `ConstVariable`")
 

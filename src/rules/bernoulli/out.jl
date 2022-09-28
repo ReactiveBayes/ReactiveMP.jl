@@ -1,6 +1,7 @@
 export rule
 
 @rule Bernoulli(:out, Marginalisation) (m_p::PointMass,) = begin
+    @scaling 0
     return Bernoulli(mean(m_p))
 end
 

@@ -7,10 +7,11 @@ using Rocket
 import Rocket: getrecent
 import Base: ==, ndims, precision, length, size
 
-struct Marginal{D}
+struct Marginal{D, A}
     data       :: D
     is_clamped :: Bool
     is_initial :: Bool
+    addons     :: A
 end
 
 Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ")"))
@@ -20,12 +21,14 @@ function Base.:(==)(left::Marginal, right::Marginal)
     # do that automatically if `data` is mutable
     return left.is_clamped == right.is_clamped &&
            left.is_initial == right.is_initial &&
-           left.data == right.data
+           left.data == right.data &&
+           left.addons == right.addons
 end
 
 getdata(marginal::Marginal)    = marginal.data
 is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
+getaddons(marginal::Marginal) = marginal.addons
 
 # TupleTools.prod is a more efficient version of Base.all for NTuple here
 is_clamped(marginals::Tuple) = TupleTools.prod(map(is_clamped, marginals))
@@ -129,7 +132,7 @@ function connect!(marginal::MarginalObservable, source)
 end
 
 function setmarginal!(marginal::MarginalObservable, value)
-    next!(marginal.subject, Marginal(value, false, true))
+    next!(marginal.subject, Marginal(value, false, true, ()))
     return nothing
 end
 
