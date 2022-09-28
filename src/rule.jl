@@ -191,10 +191,14 @@ end
 """
     call_rule_create_node(::Type{ NodeType }, fformtype)
 
-Creates a node object that will be used inside `@call_rule` macro.
+Creates a node object that will be used inside `@call_rule` macro. The node object always creates with the default options for factorisation. 
 """
-function call_rule_create_node(::Type{NodeType}, fformtype) where {NodeType}
-    return make_node(NodeType)
+call_rule_make_node(fformtype, nodetype, meta) = call_rule_make_node(as_node_functional_form(nodetype), fformtype, nodetype, meta)
+
+call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta) = error("Cannot create a node of type `$nodetype` for the call rule routine.")
+
+function call_rule_make_node(::ValidNodeFunctionalForm, fformtype, nodetype, meta) 
+    return make_node(nodetype, FactorNodeCreationOptions(nothing, meta, nothing))
 end
 
 function rule_function_expression(
@@ -415,7 +419,7 @@ macro call_rule(fform, args)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
-    node                             = :(ReactiveMP.call_rule_create_node($fbottomtype, $fformtype))
+    node                             = :(ReactiveMP.call_rule_make_node($fformtype, $fbottomtype, $meta))
 
     inputs = map(inputs) do input
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
@@ -645,7 +649,7 @@ macro call_marginalrule(fform, args)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
-    node                             = :(ReactiveMP.call_rule_create_node($fbottomtype, $fformtype))
+    node                             = :(ReactiveMP.call_rule_make_node($fbottomtype, $fformtype, $meta))
 
     inputs = map(inputs) do input
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")

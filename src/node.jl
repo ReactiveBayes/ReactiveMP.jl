@@ -16,6 +16,7 @@ export @node
 
 using Rocket
 using TupleTools
+using MacroTools
 
 import Base: show, +
 import Base: getindex, setindex!, firstindex, lastindex
@@ -50,8 +51,7 @@ See also: [`ValidNodeFunctionalForm`](@ref), [`UndefinedNodeFunctionalForm`](@re
 """
 function as_node_functional_form end
 
-as_node_functional_form(::Function) = ValidNodeFunctionalForm()
-as_node_functional_form(some)       = UndefinedNodeFunctionalForm()
+as_node_functional_form(some) = UndefinedNodeFunctionalForm()
 
 ## Node types
 
@@ -1180,14 +1180,15 @@ macro node(fformtype, sdtype, interfaces_list)
     """
 
     res = quote
-        ReactiveMP.as_node_functional_form(::$fuppertype) = ReactiveMP.ValidNodeFunctionalForm()
+        ReactiveMP.as_node_functional_form(::$fuppertype)         = ReactiveMP.ValidNodeFunctionalForm()
+        ReactiveMP.as_node_functional_form(::Type{ $fuppertype }) = ReactiveMP.ValidNodeFunctionalForm()
 
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
 
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
 
         @doc $doc
-        function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions)
+        function ReactiveMP.make_node(::Union{ $fuppertype, Type{ $fuppertype } }, options::FactorNodeCreationOptions)
             return ReactiveMP.FactorNode(
                 $fbottomtype,
                 $names_quoted_tuple,
@@ -1197,7 +1198,7 @@ macro node(fformtype, sdtype, interfaces_list)
             )
         end
 
-        function ReactiveMP.make_node(::$fuppertype, options::FactorNodeCreationOptions, $(interface_args...))
+        function ReactiveMP.make_node(::Union{ $fuppertype, Type{ $fuppertype } }, options::FactorNodeCreationOptions, $(interface_args...))
             node = ReactiveMP.make_node($fbottomtype, options)
             $(non_unique_error_msg)
             $(interface_uniqueness...)
@@ -1207,7 +1208,7 @@ macro node(fformtype, sdtype, interfaces_list)
 
         # Fallback method for unsupported number of arguments, e.g. if node expects 2 inputs, but only 1 was given
         function ReactiveMP.make_node(
-            ::$fuppertype,
+            ::Union{ $fuppertype, Type{ $fuppertype } },
             options::FactorNodeCreationOptions,
             args::Vararg{<:AbstractVariable}
         )

@@ -92,9 +92,8 @@ include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
 include("pipeline/vague.jl")
 
-include("rule.jl")
-
 include("node.jl")
+include("rule.jl")
 include("score.jl")
 
 include("score/variable.jl")
