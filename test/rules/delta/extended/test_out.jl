@@ -41,9 +41,9 @@ h(x::Vector, y::Vector) = x .^ 2 .- y
     @testset "Belief Propagation: f(x,y) (m_ins::NormalMeanVariance, *)" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
             (
-                input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)), meta = DeltaExtended(inverse = nothing)),
-                output = NormalMeanVariance(-1.0, 49.0)
-            )
+            input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)), meta = DeltaExtended(inverse = nothing)),
+            output = NormalMeanVariance(-1.0, 49.0)
+        )
         ]
     end
 
@@ -51,9 +51,9 @@ h(x::Vector, y::Vector) = x .^ 2 .- y
     @testset "Belief Propagation: f(x,y) (m_ins::MvNormalMeanCovariance, *)" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
             (
-                input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaExtended()),
-                output = MvNormalMeanCovariance([-1.0], [49.0])
-            )
+            input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaExtended()),
+            output = MvNormalMeanCovariance([-1.0], [49.0])
+        )
         ]
     end
 end

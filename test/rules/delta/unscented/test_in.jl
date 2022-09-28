@@ -26,9 +26,9 @@ h_inv_x(z::Vector{Float64}, y::Vector{Float64}) = sqrt.(z .+ y)
     @testset "Belief Propagation: f(x) (m_ins::NormalMeanCovariance, meta.inverse::Nothing)" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k), Marginalisation) [
             (
-                input = (m_out = ManyOf(NormalMeanVariance(2.0, 3.0)), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaUnscented(inverse = nothing)),
-                output = NormalMeanVariance(2.499999999868301, 0.3125000002253504)
-            )
+            input = (m_out = ManyOf(NormalMeanVariance(2.0, 3.0)), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaUnscented(inverse = nothing)),
+            output = NormalMeanVariance(2.499999999868301, 0.3125000002253504)
+        )
         ]
     end
 end # testset
