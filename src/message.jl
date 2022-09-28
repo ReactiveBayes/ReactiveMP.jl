@@ -78,7 +78,7 @@ getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 
 materialize!(message::Message) = message
 
-Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with addons ", getaddons(message)))
+Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 

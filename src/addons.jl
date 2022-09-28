@@ -1,6 +1,6 @@
 export AddonFlagScaling
 
-import Base: prod
+import Base: prod, string
 
 abstract type AbstractAddon end
 abstract type AbstractAddonFlag end
@@ -19,4 +19,19 @@ function prod(left_addon::AddonScaling, right_addon::AddonScaling, new_dist::Dis
     right_scaling = getscaling(right_addon)
     new_scaling = prod(AddonProdScaling(), new_dist, left_dist, right_dist)
     return AddonScaling(left_scaling + right_scaling + new_scaling)
+end
+
+function string(addons::NTuple{N, <:AbstractAddon}) where { N }
+    if length(addons) == 0
+        return "no addons"
+    end
+    str = ""
+    for addon in addons
+        str = string(str, string(addon))
+    end
+    return str
+end
+
+function string(addon::AddonScaling)
+    return string("scaling = ", getscaling(addon), "; ")
 end

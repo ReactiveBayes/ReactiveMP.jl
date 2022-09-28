@@ -460,7 +460,7 @@ function inference(;
 
         unsubscribe!(fe_subscription)
 
-        posterior_values = Dict(variable => getdata(getvalues(actor)) for (variable, actor) in pairs(actors))
+        posterior_values = Dict(variable => getvalues(actor) for (variable, actor) in pairs(actors))
         fe_values        = fe_actor !== nothing ? getvalues(fe_actor) : nothing
 
         inference_invoke_callback(callbacks, :after_inference, fmodel)

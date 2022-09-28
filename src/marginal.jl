@@ -14,7 +14,7 @@ struct Marginal{D, A}
     addons     :: A
 end
 
-Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ")"))
+Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ") with ", string(getaddons(marginal))))
 
 function Base.:(==)(left::Marginal, right::Marginal)
     # We need this dummy method as Julia is not smart enough to 
