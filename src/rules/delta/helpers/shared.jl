@@ -76,7 +76,7 @@ end
 """
 Return the marginalized statistics of the Gaussian corresponding to an inbound inx
 """
-function marginalizeGaussianMV(m::Vector{T}, V::AbstractMatrix, ds::Vector, inx::Int64) where T<:Real
+function marginalizeGaussianMV(m::Vector{T}, V::AbstractMatrix, ds::Vector, inx::Int64) where {T <: Real}
     if ds[inx] == () # Univariate original
         return (m[inx], V[inx, inx]) # Return scalars
     else # Multivariate original

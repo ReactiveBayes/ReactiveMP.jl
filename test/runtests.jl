@@ -272,6 +272,7 @@ end
     addtests(testrunner, "nodes/test_not.jl")
     addtests(testrunner, "nodes/test_and.jl")
     addtests(testrunner, "nodes/test_implication.jl")
+    addtests(testrunner, "nodes/test_uniform.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
