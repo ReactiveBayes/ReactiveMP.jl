@@ -1,7 +1,7 @@
 export rule, marginalrule
 export @rule, @marginalrule
 export @call_rule, @call_marginalrule
-export @scaling
+export @logscale
 
 using MacroTools
 using .MacroHelpers
@@ -398,21 +398,19 @@ macro rule(fform, lambda)
 end
 
 # addons
-macro scaling(lambda)
+macro logscale(lambda)
 
     @capture(lambda, (body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
-    # create scaling
+    # create logscale
     output = quote 
-        # $(esc(:_addon_scaling)) = begin 
-            if !isnothing($(esc(:addons))) && AddonFlagScaling() in $(esc(:addons))
-                $(esc(:_addons)) = flatten($(esc(:_addons)), AddonScaling($(esc(MacroHelpers.remove_returns(body)))),)
-            end
-        # end
+        if !isnothing($(esc(:addons))) && AddonLogScale(nothing) in $(esc(:addons))
+            $(esc(:_addons)) = flatten($(esc(:_addons)), AddonLogScale($(esc(MacroHelpers.remove_returns(body)))),)
+        end
     end
 
-    # return expression for @scaling
+    # return expression for @logscale
     return output
 
 end

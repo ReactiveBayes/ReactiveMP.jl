@@ -14,7 +14,7 @@ function prod(::ProdAnalytical, left::Beta, right::Beta)
     return Beta(left_a + right_a - one(T), left_b + right_b - one(T))
 end
 
-function prod(::AddonProdScaling, new_dist::Beta, left_dist::Beta, right_dist::Beta)
+function prod(::AddonProdLogScale, new_dist::Beta, left_dist::Beta, right_dist::Beta)
     return beta(params(new_dist)...) / ( beta(params(left_dist)...) + beta(params(right_dist)...) )
 end
 

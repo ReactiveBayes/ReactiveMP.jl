@@ -1,24 +1,23 @@
-export AddonFlagScaling
+export AddonLogScale
 
 import Base: prod, string
 
 abstract type AbstractAddon end
-abstract type AbstractAddonFlag end
 abstract type AbstractAddonProd end
 
-struct AddonFlagScaling <: AbstractAddonFlag end
-struct AddonScaling{T} <: AbstractAddon
-    scaling :: T
+struct AddonLogScale{T} <: AbstractAddon
+    logscale :: T
 end
-struct AddonProdScaling <: AbstractAddonProd end
+AddonLogScale() = AddonLogScale(nothing)
+struct AddonProdLogScale <: AbstractAddonProd end
 
-getscaling(addon::AddonScaling) = addon.scaling
+getlogscale(addon::AddonLogScale) = addon.logscale
 
-function prod(left_addon::AddonScaling, right_addon::AddonScaling, new_dist::Distribution, left_dist::Distribution, right_dist::Distribution)
-    left_scaling = getscaling(left_addon)
-    right_scaling = getscaling(right_addon)
-    new_scaling = prod(AddonProdScaling(), new_dist, left_dist, right_dist)
-    return AddonScaling(left_scaling + right_scaling + new_scaling)
+function prod(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist::Distribution, left_dist::Distribution, right_dist::Distribution)
+    left_logscale = getlogscale(left_addon)
+    right_logscale = getlogscale(right_addon)
+    new_logscale = prod(AddonProdLogScale(), new_dist, left_dist, right_dist)
+    return AddonLogScale(left_logscale + right_logscale + new_logscale)
 end
 
 function string(addons::NTuple{N, <:AbstractAddon}) where { N }
@@ -32,6 +31,6 @@ function string(addons::NTuple{N, <:AbstractAddon}) where { N }
     return str
 end
 
-function string(addon::AddonScaling)
-    return string("scaling = ", getscaling(addon), "; ")
+function string(addon::AddonLogScale)
+    return string("log-scale = ", getlogscale(addon), "; ")
 end
