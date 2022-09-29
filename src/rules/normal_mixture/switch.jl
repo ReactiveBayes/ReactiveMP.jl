@@ -14,7 +14,7 @@ export rule
     q_p::NTuple{N, GammaDistributionsFamily}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
-        return -score(
+        -score(
             AverageEnergy(),
             NormalMeanPrecision,
             Val{(:out, :μ, :τ)},
@@ -31,7 +31,7 @@ end
     q_p::NTuple{N, Wishart}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
-        return -score(
+        -score(
             AverageEnergy(),
             MvNormalMeanPrecision,
             Val{(:out, :μ, :Λ)},
@@ -48,7 +48,7 @@ end
     q_p::NTuple{N, PointMass{T} where T <: Real}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
-        return -score(
+        -score(
             AverageEnergy(),
             NormalMeanPrecision,
             Val{(:out, :μ, :τ)},
@@ -65,7 +65,7 @@ end
     q_p::NTuple{N, PointMass{T} where T <: AbstractMatrix}
 ) where {N} = begin
     U = map(zip(q_m, q_p)) do (m, p)
-        return -score(
+        -score(
             AverageEnergy(),
             MvNormalMeanPrecision,
             Val{(:out, :μ, :Λ)},

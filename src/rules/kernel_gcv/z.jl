@@ -20,7 +20,7 @@ export rule
 
     logpdf = (z) -> begin
         gz = kernelfunction(z)
-        return -0.5 * (logdet(gz) + tr(cholinv(gz) * psi))
+        -0.5 * (logdet(gz) + tr(cholinv(gz) * psi))
     end
 
     return FnWithApproximation(logpdf, get_approximation(meta))
@@ -46,7 +46,7 @@ end
 
     logpdf = (z) -> begin
         gz = kernelfunction(z)
-        return -0.5 * (logdet(gz) + tr(cholinv(gz) * psi))
+        -0.5 * (logdet(gz) + tr(cholinv(gz) * psi))
     end
 
     return FnWithApproximation(logpdf, get_approximation(meta))

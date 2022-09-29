@@ -5,7 +5,7 @@
     q_b::NTuple{N, GammaDistributionsFamily}
 ) where {N} = begin
     U = map(zip(q_a, q_b)) do (a, b)
-        return -score(
+        -score(
             AverageEnergy(),
             GammaShapeRate,
             Val{(:out, :α, :β)},

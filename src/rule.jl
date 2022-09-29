@@ -264,6 +264,9 @@ macro rule(fform, lambda)
     @capture(args, (inputs__, meta::metatype_, ::addonstype_) | (inputs__,)) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
+    # check for number of return statements
+    @assert MacroHelpers.count_returns(body) < 2 "@rule macro contains multiple return statements"
+
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
