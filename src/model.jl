@@ -466,8 +466,7 @@ function ReactiveMP.make_node(
     autovar::AutoVar,
     args::Vararg
 )
-
-    foreach(args) do arg 
+    foreach(args) do arg
         @assert (typeof(arg) <: AbstractVariable || eltype(arg) <: AbstractVariable) "`make_node` cannot create a node with the given arguments autovar = $(autovar), args = [ $(args...) ]"
     end
 
