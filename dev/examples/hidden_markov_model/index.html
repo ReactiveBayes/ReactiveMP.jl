@@ -1141,22 +1141,22 @@ M1762.55 1009.07 L2279.97 1009.07 L2279.97 905.394 L1762.55 905.394  Z
     returnvars    = $ireturnvars,
     iterations    = 20,
     free_energy   = true
-)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 113 samples with 1 evaluation.
- Range (min … max):  36.592 ms … 84.054 ms  ┊ GC (min … max):  0.00% … 46.44%
- Time  (median):     38.432 ms              ┊ GC (median):     0.00%
- Time  (mean ± σ):   44.379 ms ± 14.806 ms  ┊ GC (mean ± σ):  11.34% ± 15.83%
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 88 samples with 1 evaluation.
+ Range (min … max):  43.189 ms … 108.516 ms  ┊ GC (min … max):  0.00% … 48.21%
+ Time  (median):     51.259 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   57.283 ms ±  17.308 ms  ┊ GC (mean ± σ):  11.28% ± 16.38%
 
-  ▆█▅                                                          
-  ███▆▅▄▄▄▃▁▁▁▁▁▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▁▃▄▃▅ ▃
-  36.6 ms         Histogram: frequency by time        83.3 ms &lt;
+      ▁▆█▄▇▂▂                                                   
+  ▄▆▄▄███████▆▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▄▃▁▃▃▁▄▃▁▃▃ ▁
+  43.2 ms         Histogram: frequency by time          106 ms &lt;
 
- Memory estimate: 23.52 MiB, allocs estimate: 398675.</code></pre><pre><code class="language-julia hljs">@benchmark custom_optimised_inference($x_data, 20)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 119 samples with 1 evaluation.
- Range (min … max):  34.683 ms … 81.107 ms  ┊ GC (min … max):  0.00% … 46.97%
- Time  (median):     36.407 ms              ┊ GC (median):     0.00%
- Time  (mean ± σ):   42.188 ms ± 14.462 ms  ┊ GC (mean ± σ):  11.95% ± 16.38%
+ Memory estimate: 23.52 MiB, allocs estimate: 398675.</code></pre><pre><code class="language-julia hljs">@benchmark custom_optimised_inference($x_data, 20)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 92 samples with 1 evaluation.
+ Range (min … max):  41.088 ms … 101.164 ms  ┊ GC (min … max):  0.00% … 48.07%
+ Time  (median):     48.237 ms               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   54.473 ms ±  16.922 ms  ┊ GC (mean ± σ):  11.24% ± 16.35%
 
-  █▂▂                                                          
-  ███▅▃▄▄▄▃▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▃▃▂▂▃▃ ▂
-  34.7 ms         Histogram: frequency by time        81.1 ms &lt;
+    ▂ ▂▁█▂▁ ▁                                                   
+  ▃▃█▇█████▄█▆▇▁▄▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▃▃▃▅▅▃ ▁
+  41.1 ms         Histogram: frequency by time         99.8 ms &lt;
 
- Memory estimate: 22.74 MiB, allocs estimate: 374792.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../linear_gaussian_state_space_model/">« Linear Gaussian Dynamical System</a><a class="docs-footer-nextpage" href="../hierarchical_gaussian_filter/">Hierarchical Gaussian Filter »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 23 September 2022 08:22">Friday 23 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ Memory estimate: 22.74 MiB, allocs estimate: 374792.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../linear_gaussian_state_space_model/">« Linear Gaussian Dynamical System</a><a class="docs-footer-nextpage" href="../hierarchical_gaussian_filter/">Hierarchical Gaussian Filter »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Thursday 29 September 2022 18:12">Thursday 29 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

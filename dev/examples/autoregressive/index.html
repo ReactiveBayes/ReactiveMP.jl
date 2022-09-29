@@ -2480,22 +2480,22 @@ Free Energy: Real[543.153, 537.758, 536.225, 535.696, 535.501, 535.426, 535.397,
 γ = GammaShapeRate{Float64}[GammaShapeRate{Float64}(a=251.0, b=99.00892750388891), G...
 θ = NormalWeightedMeanPrecision{Float64}[NormalWeightedMeanPrecision{Float64}(xi=-2....
 x = NormalWeightedMeanPrecision{Float64}[NormalWeightedMeanPrecision{Float64}(xi=0.2...
-</code></pre><pre><code class="language-julia hljs">println(&quot;1-order AR inference Bethe Free Energy: &quot;, last(fe))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-order AR inference Bethe Free Energy: 523.9398879407577</code></pre><p>We can see that, according to final Bethe Free Energy value, in this example 5-order AR process can describe data better than 1-order AR.</p><p>We may be also interested in benchmarking our algorithm:</p><pre><code class="language-julia hljs">@benchmark inference(model = $umodel, constraints = $constraints, meta = $umeta, data = $udata, initmarginals = $uinitmarginals, free_energy = true, iterations = 15, showprogress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 27 samples with 1 evaluation.
- Range (min … max):  158.011 ms … 224.059 ms  ┊ GC (min … max):  0.00% … 24.13%
- Time  (median):     192.891 ms               ┊ GC (median):    15.19%
- Time  (mean ± σ):   188.316 ms ±  19.395 ms  ┊ GC (mean ± σ):  13.97% ±  9.14%
+</code></pre><pre><code class="language-julia hljs">println(&quot;1-order AR inference Bethe Free Energy: &quot;, last(fe))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1-order AR inference Bethe Free Energy: 523.9398879407577</code></pre><p>We can see that, according to final Bethe Free Energy value, in this example 5-order AR process can describe data better than 1-order AR.</p><p>We may be also interested in benchmarking our algorithm:</p><pre><code class="language-julia hljs">@benchmark inference(model = $umodel, constraints = $constraints, meta = $umeta, data = $udata, initmarginals = $uinitmarginals, free_energy = true, iterations = 15, showprogress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 21 samples with 1 evaluation.
+ Range (min … max):  202.739 ms … 285.882 ms  ┊ GC (min … max):  0.00% … 24.56%
+ Time  (median):     250.627 ms               ┊ GC (median):    19.35%
+ Time  (mean ± σ):   240.242 ms ±  25.122 ms  ┊ GC (mean ± σ):  14.23% ±  9.81%
 
-  ▁   ▁                         █  ▁   ▁ ▄                       
-  █▆▁▆█▁▆▁▆▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▆▁▁█▁▆█▁▁▆█▆█▁▁▆▁▁▁▁▁▆▁▁▁▁▁▁▁▁▁▆▁▆ ▁
-  158 ms           Histogram: frequency by time          224 ms &lt;
+  ▁▁█  ▁▁ ▁               ▁       ▁ ▁▁█▁▁█ ▁ ▁     ▁          ▁  
+  ███▁▁██▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁█▁██████▁█▁█▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁█ ▁
+  203 ms           Histogram: frequency by time          286 ms &lt;
 
- Memory estimate: 86.02 MiB, allocs estimate: 1681202.</code></pre><pre><code class="language-julia hljs">@benchmark inference(model = $mmodel, constraints = $constraints, meta = $mmeta, data = $mdata, initmarginals = $minitmarginals, free_energy = true, iterations = 15, showprogress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10 samples with 1 evaluation.
- Range (min … max):  537.962 ms … 593.785 ms  ┊ GC (min … max): 17.30% … 20.32%
- Time  (median):     549.431 ms               ┊ GC (median):    17.99%
- Time  (mean ± σ):   555.347 ms ±  16.245 ms  ┊ GC (mean ± σ):  17.93% ±  1.92%
+ Memory estimate: 86.02 MiB, allocs estimate: 1681202.</code></pre><pre><code class="language-julia hljs">@benchmark inference(model = $mmodel, constraints = $constraints, meta = $mmeta, data = $mdata, initmarginals = $minitmarginals, free_energy = true, iterations = 15, showprogress = false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 9 samples with 1 evaluation.
+ Range (min … max):  556.636 ms … 625.397 ms  ┊ GC (min … max): 17.79% … 21.29%
+ Time  (median):     588.549 ms               ┊ GC (median):    18.87%
+ Time  (mean ± σ):   591.810 ms ±  22.391 ms  ┊ GC (mean ± σ):  18.89% ±  1.89%
 
-  ▁   ▁     ▁█ ▁  ▁          ▁     ▁                          ▁  
-  █▁▁▁█▁▁▁▁▁██▁█▁▁█▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
-  538 ms           Histogram: frequency by time          594 ms &lt;
+  █          █      █    █    █               █ ██            █  
+  █▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁█▁▁▁▁█▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁██▁▁▁▁▁▁▁▁▁▁▁▁█ ▁
+  557 ms           Histogram: frequency by time          625 ms &lt;
 
- Memory estimate: 291.41 MiB, allocs estimate: 2434230.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hierarchical_gaussian_filter/">« Hierarchical Gaussian Filter</a><a class="docs-footer-nextpage" href="../invertible_neural_network_tutorial/">Invertible Neural Networks »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 23 September 2022 08:22">Friday 23 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ Memory estimate: 291.41 MiB, allocs estimate: 2434230.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hierarchical_gaussian_filter/">« Hierarchical Gaussian Filter</a><a class="docs-footer-nextpage" href="../invertible_neural_network_tutorial/">Invertible Neural Networks »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Thursday 29 September 2022 18:12">Thursday 29 September 2022</span>. Using Julia version 1.8.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
