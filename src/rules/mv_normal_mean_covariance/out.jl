@@ -1,8 +1,10 @@
 
 # Belief Propagation                #
 # --------------------------------- #
-@rule MvNormalMeanCovariance(:out, Marginalisation) (m_μ::PointMass, m_Σ::PointMass) =
+@rule MvNormalMeanCovariance(:out, Marginalisation) (m_μ::PointMass, m_Σ::PointMass) = begin
+    @logscale 0
     MvNormalMeanCovariance(mean(m_μ), mean(m_Σ))
+end
 
 @rule MvNormalMeanCovariance(:out, Marginalisation) (m_μ::MultivariateNormalDistributionsFamily, m_Σ::PointMass) = begin
     m_μ_mean, m_μ_cov = mean_cov(m_μ)

@@ -1,10 +1,13 @@
 
 # Belief Propagation                #
 # --------------------------------- #
-@rule NormalMeanPrecision(:μ, Marginalisation) (m_out::PointMass, m_τ::PointMass) =
+@rule NormalMeanPrecision(:μ, Marginalisation) (m_out::PointMass, m_τ::PointMass) = begin
+    @logscale 0
     NormalMeanPrecision(mean(m_out), mean(m_τ))
+end
 
 @rule NormalMeanPrecision(:μ, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_τ::PointMass) = begin
+    @logscale 0
     m_out_mean, m_out_cov = mean_cov(m_out)
     return NormalMeanVariance(m_out_mean, m_out_cov + inv(mean(m_τ)))
 end
