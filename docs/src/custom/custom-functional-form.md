@@ -93,17 +93,5 @@ function ReactiveMP.constrain_form(::MeanPrecisionFormConstraint, distribution::
 end
 ```
 
-At this point we already can use our functional form constraint in the inference backend, however, lets also make our functional form constraint compatible with the `@constraints` macro from `GraphPPL.jl` package.
-
-```@example custom-functional-form-example
-ReactiveMP.make_form_constraint(::Type{ NormalMeanPrecision }, args...; kwargs...) = MeanPrecisionFormConstraint()
-```
-
-```@example custom-functional-form-example
-@constraints begin 
-    q(x) :: NormalMeanPrecision
-end
-```
-
 
 
