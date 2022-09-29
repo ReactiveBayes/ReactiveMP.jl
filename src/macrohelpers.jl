@@ -161,16 +161,37 @@ macro test_inferred(T, expression)
 end
 
 """
+    remove_returns_walk(f,x)
+
+custom walk for removing returns, without processing nested macros
+"""
+function remove_returns_walk(f,x) 
+    @capture(x, (return b_)) && return b
+    if @capture(x, (@macro_ a_))
+        return MacroTools.walk(f(x), identity, identity)
+    else
+        return MacroTools.walk(f(x), x -> remove_returns_walk(f, x), identity)
+    end
+end
+
+"""
     remove_returns(ex)
 
 Removes return keywords in expression.
 """
 function remove_returns(ex)
-    MacroTools.postwalk(ex) do x
-        @capture(x, (return a_)) || return x
-        return a
+    remove_returns_walk(ex) do x
+        return x
     end
 end
 
+"""
+    count_returns(ex)
+
+Counts the number of return keywords in expression.
+"""
+function count_returns(ex)
+    return length(collect(eachmatch(r"return", string(ex))))
+end
 
 end

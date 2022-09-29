@@ -403,6 +403,9 @@ macro logscale(lambda)
     @capture(lambda, (body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
+    # check for number of return statements
+    @assert MacroHelpers.count_returns(body) < 2 "@logscale macro contains multiple return statements"
+
     # create logscale
     output = quote 
         if !isnothing($(esc(:addons))) && AddonLogScale(nothing) in $(esc(:addons))
