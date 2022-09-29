@@ -10,7 +10,7 @@ import ReactiveMP: @test_rules
 g(x::Number) = x^2 - 5.0
 g(x::Vector) = x .^ 2 .- 5.0
 
-# h: multiple inut, single output
+# h: multiple input, single output
 h(x::Number, y::Number) = x^2 - y
 h(x::Vector, y::Vector) = x .^ 2 .- y
 

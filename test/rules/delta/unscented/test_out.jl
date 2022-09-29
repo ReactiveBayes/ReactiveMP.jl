@@ -10,7 +10,7 @@ import ReactiveMP: @test_rules
 g(x::Float64) = x^2 - 5.0
 g(x::Vector{Float64}) = x .^ 2 .- 5.0
 
-# h: multiple inut, single output
+# h: multiple input, single output
 h(x::Float64, y::Float64) = x^2 - y
 h(x::Vector{Float64}, y::Vector{Float64}) = x .^ 2 .- y
 h(x::Float64, y::Vector{Float64}) = x^2 .- y
