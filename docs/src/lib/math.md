@@ -6,6 +6,4 @@ ReactiveMP package exports [`tiny`](@ref) and [`huge`](@ref) objects to represen
 ```@docs
 tiny
 huge
-TinyNumber
-HugeNumber
 ```
