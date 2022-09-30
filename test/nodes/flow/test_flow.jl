@@ -4,10 +4,6 @@ using Test
 using ReactiveMP
 using ReactiveMP: getL, getα, getβ, getκ, getλ
 
-include("../../test_helpers.jl")
-
-using .ReactiveMPTestingHelpers
-
 @testset "FlowNode" begin
 
     # test for basics in the flow.jl file
