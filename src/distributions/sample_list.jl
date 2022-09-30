@@ -426,7 +426,6 @@ function approximate_prod_with_sample_list(
     else
         SampleListMeta(nothing, nothing, nothing, log_integrand)
     end
-    @show rweights
     return SampleList(Val(D), get_linear_samples(rsamples), rweights, meta)
 end
 
