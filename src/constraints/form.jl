@@ -140,7 +140,6 @@ make_form_constraint(::Type{<:Nothing}) = UnspecifiedFormConstraint()
 constrain_form(::UnspecifiedFormConstraint, something)              = something
 constrain_form(::UnspecifiedFormConstraint, something::DistProduct) = error("`DistProduct` object cannot be used as a functional form in inference backend. Use form constraints to restrict the functional form of marginal posteriors.")
 
-
 """
     CompositeFormConstraint
 

@@ -49,7 +49,7 @@ See also: [`is_clamped`](@ref)
 is_initial(marginal::Marginal) = marginal.is_initial
 
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
-getdata(marginals::AbstractArray{ <:Marginal })     = map(getdata, marginals)
+getdata(marginals::AbstractArray{<:Marginal})       = map(getdata, marginals)
 
 # TupleTools.prod is a more efficient version of Base.all for NTuple here
 is_clamped(marginals::NTuple{N, <:Marginal}) where {N} = TupleTools.prod(map(is_clamped, marginals))

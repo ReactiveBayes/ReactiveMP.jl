@@ -5,7 +5,6 @@ using ReactiveMP
 using Random
 using LinearAlgebra
 
-
 @testset "Common" begin
     @testset "mirrorlog" begin
         rng  = MersenneTwister(1234)

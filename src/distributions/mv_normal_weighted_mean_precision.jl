@@ -18,8 +18,8 @@ function MvNormalWeightedMeanPrecision(xi::AbstractVector{<:Integer}, Λ::Abstra
     return MvNormalWeightedMeanPrecision(float.(xi), float.(Λ))
 end
 
-function MvNormalWeightedMeanPrecision(xi::AbstractVector{L}, λ::AbstractVector{R}) where { L, R }
-    return MvNormalWeightedMeanPrecision(xi, convert(Matrix{ promote_type(L, R) }, Diagonal(λ)))
+function MvNormalWeightedMeanPrecision(xi::AbstractVector{L}, λ::AbstractVector{R}) where {L, R}
+    return MvNormalWeightedMeanPrecision(xi, convert(Matrix{promote_type(L, R)}, Diagonal(λ)))
 end
 
 function MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where {T}

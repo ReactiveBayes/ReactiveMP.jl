@@ -6,7 +6,6 @@ using Rocket
 using Distributions
 
 @testset "FactorNode" begin
-    
     @testset "Common" begin
         @test ReactiveMP.as_node_functional_form(() -> nothing) === ReactiveMP.ValidNodeFunctionalForm()
         @test ReactiveMP.as_node_functional_form(2) === ReactiveMP.UndefinedNodeFunctionalForm()
@@ -140,7 +139,6 @@ using Distributions
 
         @test sdtype(DummyDistribution) === Stochastic()
     end
-
 end
 
 end

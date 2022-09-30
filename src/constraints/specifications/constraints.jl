@@ -52,7 +52,7 @@ struct ConstraintsSpecification{F, M, S}
     preallocated  :: ConstraintsSpecificationPreallocated
 end
 
-function ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S, options::ConstraintsSpecificationOptions) where {F, M, S} 
+function ConstraintsSpecification(factorisation::F, marginalsform::M, messagesform::S, options::ConstraintsSpecificationOptions) where {F, M, S}
     return ConstraintsSpecification{F, M, S}(factorisation, marginalsform, messagesform, options, ConstraintsSpecificationPreallocated())
 end
 

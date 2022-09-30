@@ -5,13 +5,10 @@ using ReactiveMP
 using Rocket
 
 @testset "Variable" begin
-
     import ReactiveMP: activate!
 
     @testset "setmarginal! tests for randomvar" begin
-        
         for dist in (NormalMeanVariance(-2.0, 3.0), NormalMeanPrecision(-2.0, 3.0))
-
             T = typeof(dist)
             variable = randomvar(:r)
             flag = false
@@ -53,7 +50,7 @@ using Rocket
                     end
                     flagmv = true
                 end
-            )   
+            )
 
             # Test that subscription happenend
             @test flagmv === true
@@ -64,7 +61,7 @@ using Rocket
             flagmx = false
 
             activate!.(variablesmx)
-            
+
             setmarginals!(variablesmx, dist)
 
             subscriptionmx = subscribe!(getmarginals(variablesmx, IncludeAll()), (marginals) -> begin
@@ -81,9 +78,7 @@ using Rocket
             @test flagmx === true
 
             unsubscribe!(subscriptionmx)
-
         end
-
     end
 end
 

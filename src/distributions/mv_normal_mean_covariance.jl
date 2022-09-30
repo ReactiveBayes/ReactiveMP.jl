@@ -18,8 +18,8 @@ function MvNormalMeanCovariance(μ::AbstractVector{<:Integer}, Σ::AbstractMatri
     return MvNormalMeanCovariance(float.(μ), float.(Σ))
 end
 
-function MvNormalMeanCovariance(μ::AbstractVector{L}, σ::AbstractVector{R}) where { L, R }
-    return MvNormalMeanCovariance(μ, convert(Matrix{ promote_type(L, R) }, Diagonal(σ)))
+function MvNormalMeanCovariance(μ::AbstractVector{L}, σ::AbstractVector{R}) where {L, R}
+    return MvNormalMeanCovariance(μ, convert(Matrix{promote_type(L, R)}, Diagonal(σ)))
 end
 
 function MvNormalMeanCovariance(μ::AbstractVector{T}) where {T}

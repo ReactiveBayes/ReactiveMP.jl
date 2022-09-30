@@ -1,6 +1,6 @@
 import StatsFuns: log2π
 
-@node MvNormalWeightedMeanPrecision Stochastic [ out, (ξ, aliases = [xi, weightedmean]), (Λ, aliases = [invcov, precision]) ]
+@node MvNormalWeightedMeanPrecision Stochastic [out, (ξ, aliases = [xi, weightedmean]), (Λ, aliases = [invcov, precision])]
 
 @average_energy MvNormalWeightedMeanPrecision (q_out::Any, q_ξ::Any, q_Λ::Any) = begin
     m_mean, v_mean = mean_cov(q_ξ)

@@ -148,7 +148,6 @@ import ReactiveMP: setanonymous!, activate!
             collection
         )
     end
-
 end
 
 end

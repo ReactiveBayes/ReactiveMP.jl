@@ -165,26 +165,38 @@ Distributions.logpdf(dist::GenericLogPdfVectorisedProduct, x) = mapreduce((d) ->
 
 Distributions.pdf(dist::GenericLogPdfVectorisedProduct, x) = exp(logpdf(dist, x))
 
-function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, R}, right::R) where {L, R} 
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, R}, right::R) where {L, R}
     return DistProduct(getleft(left), GenericLogPdfVectorisedProduct(R[getright(left), right], 2))
 end
 
-function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, R}, right::L) where {L, R} 
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, R}, right::L) where {L, R}
     return DistProduct(GenericLogPdfVectorisedProduct(L[getleft(left), right], 2), getright(left))
 end
 
-function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::L, right::DistProduct{L, R}) where {L, R} 
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::L, right::DistProduct{L, R}) where {L, R}
     return DistProduct(GenericLogPdfVectorisedProduct(L[left, getleft(right)], 2), getright(right))
 end
 
-function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::R, right::DistProduct{L, R}) where {L, R} 
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::R, right::DistProduct{L, R}) where {L, R}
     return DistProduct(getleft(right), GenericLogPdfVectorisedProduct(R[left, getright(right)], 2))
 end
 
-function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, GenericLogPdfVectorisedProduct{R}}, right::R) where {L, R} 
+function prod(
+    ::ProdGeneric,
+    ::ProdAnalyticalRuleUnknown,
+    ::ProdAnalyticalRuleUnknown,
+    left::DistProduct{L, GenericLogPdfVectorisedProduct{R}},
+    right::R
+) where {L, R}
     return DistProduct(getleft(left), push!(getright(left), right))
 end
 
-function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{GenericLogPdfVectorisedProduct{L}, R}, right::L) where {L, R}
+function prod(
+    ::ProdGeneric,
+    ::ProdAnalyticalRuleUnknown,
+    ::ProdAnalyticalRuleUnknown,
+    left::DistProduct{GenericLogPdfVectorisedProduct{L}, R},
+    right::L
+) where {L, R}
     return DistProduct(push!(getleft(left), right), getright(left))
 end

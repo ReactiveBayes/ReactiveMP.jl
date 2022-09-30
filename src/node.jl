@@ -519,7 +519,7 @@ collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipe
 
 ## Nodes collection
 
-struct FactorNodesCollection 
+struct FactorNodesCollection
     nodes    :: Vector{AbstractFactorNode}
     node_ids :: Set{Symbol}
 
@@ -536,13 +536,13 @@ function Base.push!(collection::FactorNodesCollection, node::AbstractFactorNode)
     return node
 end
 
-function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{ AbstractFactorNode })
+function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{AbstractFactorNode})
     append!(collection.nodes, nodes)
     union!(collection.node_ids, Set(Base.Generator((node) -> as_node_symbol(functionalform(node)), nodes)))
     return nodes
 end
 
-function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{ N }) where { N <: AbstractFactorNode }
+function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{N}) where {N <: AbstractFactorNode}
     append!(collection.nodes, nodes)
     push!(collection.node_ids, as_node_symbol(functionalform(first(nodes))))
     return nodes
@@ -556,10 +556,10 @@ hasnodeid(collection::FactorNodesCollection, nodeid::Symbol) = nodeid ∈ getnod
 Base.iterate(collection::FactorNodesCollection)        = iterate(getnodes(collection))
 Base.iterate(collection::FactorNodesCollection, state) = iterate(getnodes(collection), state)
 
-Base.IteratorSize(::Type{ FactorNodesCollection })   = Base.HasLength()
-Base.IteratorEltype(::Type{ FactorNodesCollection }) = Base.HasEltype()
+Base.IteratorSize(::Type{FactorNodesCollection})   = Base.HasLength()
+Base.IteratorEltype(::Type{FactorNodesCollection}) = Base.HasEltype()
 
-Base.eltype(::Type{ FactorNodesCollection }) = AbstractFactorNode
+Base.eltype(::Type{FactorNodesCollection}) = AbstractFactorNode
 
 Base.length(collection::FactorNodesCollection)        = length(getnodes(collection))
 Base.size(collection::FactorNodesCollection, dims...) = size(getnodes(collection), dims...)
