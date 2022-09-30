@@ -22,6 +22,10 @@ struct ImportanceSamplingApproximation{T, R} <: AbstractFormConstraint
     rsamples   :: Vector{T}
 end
 
+function ImportanceSamplingApproximation(nsamples::Int; resampling::Bool = true)
+    return ImportanceSamplingApproximation(Float64, Random.GLOBAL_RNG, nsamples; resampling = resampling)
+end
+
 function ImportanceSamplingApproximation(rng::R, nsamples::Int; resampling::Bool = true) where {R}
     return ImportanceSamplingApproximation(Float64, rng, nsamples; resampling = resampling)
 end
