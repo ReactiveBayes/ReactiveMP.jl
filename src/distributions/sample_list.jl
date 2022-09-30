@@ -196,6 +196,7 @@ end
 weightedmean(sl::SampleList) = first(weightedmean_precision(sl))
 
 mean(::typeof(log), sl::SampleList)       = sample_list_logmean(variate_form(sl), sl)
+mean(::typeof(loggamma), sl::SampleList)  = sample_list_loggammamean(variate_form(sl), sl)
 mean(::typeof(xtlog), sl::SampleList)     = sample_list_meanlogmean(variate_form(sl), sl)
 mean(::typeof(mirrorlog), sl::SampleList) = sample_list_mirroredlogmean(variate_form(sl), sl)
 
@@ -515,6 +516,8 @@ function sample_list_covm! end
 function sample_list_mean_var end
 # Compute E[log(x)]
 function sample_list_logmean end
+# Compute E[log Γ(x)]
+function sample_list_loggammamean end
 # Compute E[xlog(x)]
 function sample_list_meanlogmean end
 # Compute E[log(1 - x)]
@@ -550,6 +553,16 @@ function sample_list_logmean(::Type{Univariate}, sl::SampleList)
     logμ = sample_list_zero_element(sl)
     @turbo for i in 1:n
         logμ += weights[i] * log(samples[i])
+    end
+    return logμ
+end
+
+function sample_list_loggammamean(::Type{Univariate}, sl::SampleList)
+    n, samples, weights = get_data(sl)
+    @show weights
+    logμ = sample_list_zero_element(sl)
+    for i in 1:n
+        logμ += weights[i] * loggamma(samples[i])
     end
     return logμ
 end
