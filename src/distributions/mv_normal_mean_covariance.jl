@@ -70,7 +70,7 @@ function Base.convert(::Type{<:MvNormalMeanCovariance{T}}, μ::AbstractVector, �
     return MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
 end
 
-vague(::Type{<:MvNormalMeanCovariance}, dims::Int) = MvNormalMeanCovariance(zeros(dims), fill(huge, dims))
+vague(::Type{<:MvNormalMeanCovariance}, dims::Int) = MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
 prod_analytical_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ProdAnalyticalRuleAvailable()
 

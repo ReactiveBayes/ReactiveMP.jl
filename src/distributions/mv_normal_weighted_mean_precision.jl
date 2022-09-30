@@ -74,7 +74,7 @@ function Base.convert(
     MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) = MvNormalWeightedMeanPrecision(zeros(dims), fill(tiny, dims))
+vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) = MvNormalWeightedMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
 prod_analytical_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
     ProdAnalyticalRuleAvailable()
