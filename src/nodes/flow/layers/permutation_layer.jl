@@ -68,8 +68,7 @@ function _forward(layer::PermutationLayer, input::AbstractVector{<:Real})
     return result
 end
 forward(layer::PermutationLayer, input::AbstractVector{<:Real}) = _forward(layer, input)
-Broadcast.broadcasted(::typeof(forward), layer::PermutationLayer, input::AbstractVector{<:AbstractVector{<:Real}}) =
-    broadcast(_forward, Ref(layer), input)
+Broadcast.broadcasted(::typeof(forward), layer::PermutationLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_forward, Ref(layer), input)
 
 # inplace forward pass through the permutation layer
 function forward!(output::AbstractVector{<:Real}, layer::PermutationLayer, input::AbstractVector{<:Real})
@@ -94,8 +93,7 @@ function _backward(layer::PermutationLayer, output::AbstractVector{<:Real})
     return result
 end
 backward(layer::PermutationLayer, output::AbstractVector{<:Real}) = _backward(layer, output)
-Broadcast.broadcasted(::typeof(backward), layer::PermutationLayer, output::AbstractVector{<:AbstractVector{<:Real}}) =
-    broadcast(_backward, Ref(layer), output)
+Broadcast.broadcasted(::typeof(backward), layer::PermutationLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_backward, Ref(layer), output)
 
 # inplace backward pass through the additive coupling layer
 function backward!(input::AbstractVector{<:Real}, layer::PermutationLayer, output::AbstractVector{<:Real})
@@ -114,8 +112,7 @@ function _jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})
     return getP(layer)
 end
 jacobian(layer::PermutationLayer, input::AbstractVector{<:Real}) = _jacobian(layer, input)
-Broadcast.broadcasted(::typeof(jacobian), layer::PermutationLayer, input::AbstractVector{<:AbstractVector{<:Real}}) =
-    broadcast(_jacobian, Ref(layer), input)
+Broadcast.broadcasted(::typeof(jacobian), layer::PermutationLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_jacobian, Ref(layer), input)
 
 # inverse jacobian of the additive coupling layer
 function _inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})
@@ -124,11 +121,7 @@ function _inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real})
     return getP(layer)'
 end
 inv_jacobian(layer::PermutationLayer, output::AbstractVector{<:Real}) = _inv_jacobian(layer, output)
-Broadcast.broadcasted(
-    ::typeof(inv_jacobian),
-    layer::PermutationLayer,
-    output::AbstractVector{<:AbstractVector{<:Real}}
-) = broadcast(_inv_jacobian, Ref(layer), output)
+Broadcast.broadcasted(::typeof(inv_jacobian), layer::PermutationLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_inv_jacobian, Ref(layer), output)
 
 # extra utility functions 
 det_jacobian(layer::PermutationLayer, input::AbstractVector{<:Real})       = det(getP(layer))

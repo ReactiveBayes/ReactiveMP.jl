@@ -1,11 +1,6 @@
 export marginalrule
 
-@marginalrule KernelGCV(:y_x) (
-    m_y::MvNormalMeanCovariance,
-    m_x::MvNormalMeanCovariance,
-    q_z::MvNormalMeanCovariance,
-    meta::KernelGCVMetadata
-) = begin
+@marginalrule KernelGCV(:y_x) (m_y::MvNormalMeanCovariance, m_x::MvNormalMeanCovariance, q_z::MvNormalMeanCovariance, meta::KernelGCVMetadata) = begin
     kernelfunction = get_kernelfn(meta)
     Λ = approximate_kernel_expectation(get_approximation(meta), (z) -> cholinv(kernelfunction(z)), q_z)
 
@@ -21,12 +16,7 @@ export marginalrule
     return MvNormalMeanCovariance(m, C)
 end
 
-@marginalrule KernelGCV(:y_x) (
-    m_y::MvNormalMeanPrecision,
-    m_x::MvNormalMeanPrecision,
-    q_z::MvNormalMeanPrecision,
-    meta::KernelGCVMetadata
-) = begin
+@marginalrule KernelGCV(:y_x) (m_y::MvNormalMeanPrecision, m_x::MvNormalMeanPrecision, q_z::MvNormalMeanPrecision, meta::KernelGCVMetadata) = begin
     kernelfunction = get_kernelfn(meta)
     C = approximate_kernel_expectation(get_approximation(meta), (z) -> cholinv(kernelfunction(z)), q_z)
 

@@ -18,23 +18,21 @@ import ReactiveMP: @test_rules
     @testset "Average energy" begin
         node = make_node(BIFMHelper)
 
-        @test score(AverageEnergy(),
+        @test score(
+            AverageEnergy(),
             BIFMHelper,
             Val{(:out, :in)},
-            (
-                Marginal(MvNormalMeanCovariance([1, 1], [2 0; 0 3]), false, false),
-                Marginal(MvNormalMeanCovariance([1, 1], [2 0; 0 3]), false, false)
-            ),
-            nothing) ≈ entropy(MvNormalMeanCovariance([1, 1], [2 0; 0 3]))
+            (Marginal(MvNormalMeanCovariance([1, 1], [2 0; 0 3]), false, false), Marginal(MvNormalMeanCovariance([1, 1], [2 0; 0 3]), false, false)),
+            nothing
+        ) ≈ entropy(MvNormalMeanCovariance([1, 1], [2 0; 0 3]))
 
-        @test score(AverageEnergy(),
+        @test score(
+            AverageEnergy(),
             BIFMHelper,
             Val{(:out, :in)},
-            (
-                Marginal(MvNormalMeanCovariance([1, 2], [2 0; 0 1]), false, false),
-                Marginal(MvNormalMeanPrecision([1, 2], [0.5 0; 0 1]), false, false)
-            ),
-            nothing) ≈ entropy(MvNormalMeanCovariance([1, 2], [2 0; 0 1]))
+            (Marginal(MvNormalMeanCovariance([1, 2], [2 0; 0 1]), false, false), Marginal(MvNormalMeanPrecision([1, 2], [0.5 0; 0 1]), false, false)),
+            nothing
+        ) ≈ entropy(MvNormalMeanCovariance([1, 2], [2 0; 0 1]))
     end
 end
 

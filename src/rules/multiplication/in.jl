@@ -1,21 +1,12 @@
 
-@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass, meta::Union{<:AbstractCorrection, Nothing}) =
-    PointMass(mean(m_A) \ mean(m_out))
+@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass, meta::Union{<:AbstractCorrection, Nothing}) = PointMass(mean(m_A) \ mean(m_out))
 
-@rule typeof(*)(:in, Marginalisation) (
-    m_out::GammaDistributionsFamily,
-    m_A::PointMass{<:Real},
-    meta::Union{<:AbstractCorrection, Nothing}
-) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::GammaDistributionsFamily, m_A::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     return GammaShapeRate(shape(m_out), rate(m_out) * mean(m_A))
 end
 
 # if A is a matrix, then the result is multivariate
-@rule typeof(*)(:in, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_A::PointMass{<:AbstractMatrix},
-    meta::Union{<:AbstractCorrection, Nothing}
-) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
     W = correction!(meta, A' * W_out * A)
@@ -24,11 +15,7 @@ end
 
 # if A is a vector, then the result is univariate
 # this rule links to the special case (AbstractVector * Univariate) for forward (:out) rule 
-@rule typeof(*)(:in, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_A::PointMass{<:AbstractVector},
-    meta::Union{<:AbstractCorrection, Nothing}
-) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
     W = correction!(meta, dot(A, W_out, A))
@@ -36,11 +23,7 @@ end
 end
 
 # if A is a scalar, then the input is either univariate or multivariate
-@rule typeof(*)(:in, Marginalisation) (
-    m_out::F,
-    m_A::PointMass{<:Real},
-    meta::Union{<:AbstractCorrection, Nothing}
-) where {F <: NormalDistributionsFamily} = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::F, m_A::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) where {F <: NormalDistributionsFamily} = begin
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
     W = correction!(meta, A^2 * W_out)
@@ -48,11 +31,7 @@ end
 end
 
 # specialized versions for mean-covariance parameterization
-@rule typeof(*)(:in, Marginalisation) (
-    m_out::MvNormalMeanCovariance,
-    m_A::PointMass{<:AbstractMatrix},
-    meta::Union{<:AbstractCorrection, Nothing}
-) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::MvNormalMeanCovariance, m_A::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     A = mean(m_A)
     μ_out, Σ_out = mean_cov(m_out)
 
@@ -63,11 +42,7 @@ end
     return MvNormalWeightedMeanPrecision(tmp * μ_out, W)
 end
 
-@rule typeof(*)(:in, Marginalisation) (
-    m_out::MvNormalMeanCovariance,
-    m_A::PointMass{<:AbstractVector},
-    meta::Union{<:AbstractCorrection, Nothing}
-) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::MvNormalMeanCovariance, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     A = mean(m_A)
     μ_out, Σ_out = mean_cov(m_out)
 

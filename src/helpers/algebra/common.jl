@@ -73,25 +73,11 @@ rank1update(A::AbstractMatrix, x::AbstractVector, y::AbstractVector) = rank1upda
 rank1update(A::Real, x::Real)          = rank1update(A, x, x)
 rank1update(A::Real, x::Real, y::Real) = A + x * y
 
-function rank1update(
-    ::Type{T},
-    ::Type{T},
-    ::Type{T},
-    A::Matrix,
-    x::Vector,
-    y::Vector
-) where {T <: LinearAlgebra.BlasFloat}
+function rank1update(::Type{T}, ::Type{T}, ::Type{T}, A::Matrix, x::Vector, y::Vector) where {T <: LinearAlgebra.BlasFloat}
     return LinearAlgebra.BLAS.ger!(one(T), x, y, copy(A))
 end
 
-function rank1update(
-    ::Type{T1},
-    ::Type{T2},
-    ::Type{T3},
-    A::AbstractMatrix,
-    x::AbstractVector,
-    y::AbstractVector
-) where {T1 <: Real, T2 <: Real, T3 <: Real}
+function rank1update(::Type{T1}, ::Type{T2}, ::Type{T3}, A::AbstractMatrix, x::AbstractVector, y::AbstractVector) where {T1 <: Real, T2 <: Real, T3 <: Real}
     T = promote_type(T1, T2, T3)
     B = Matrix{T}(undef, size(A))
     return rank1update!(B, A, x, y)
@@ -214,10 +200,8 @@ Base.promote_rule(::Type{HugeNumber}, ::Type{F}) where {F <: AbstractFloat} = F
 
 ##
 
-Base.promote_type(::Type{T}, ::Type{TinyNumber}, ::Type{HugeNumber}) where {T} =
-    promote_type(promote_type(T, TinyNumber), HugeNumber)
-Base.promote_type(::Type{T}, ::Type{HugeNumber}, ::Type{TinyNumber}) where {T} =
-    promote_type(promote_type(T, HugeNumber), TinyNumber)
+Base.promote_type(::Type{T}, ::Type{TinyNumber}, ::Type{HugeNumber}) where {T} = promote_type(promote_type(T, TinyNumber), HugeNumber)
+Base.promote_type(::Type{T}, ::Type{HugeNumber}, ::Type{TinyNumber}) where {T} = promote_type(promote_type(T, HugeNumber), TinyNumber)
 
 # 
 

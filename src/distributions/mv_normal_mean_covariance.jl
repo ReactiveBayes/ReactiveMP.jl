@@ -88,11 +88,7 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance, right::MvNorm
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
 end
 
-function Base.prod(
-    ::ProdAnalytical,
-    left::MvNormalMeanCovariance{T1},
-    right::MvNormalMeanCovariance{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance{T1}, right::MvNormalMeanCovariance{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
 
     # start with parameters of left
     xi, W = weightedmean_precision(left)

@@ -34,28 +34,24 @@ end
     return MvNormalMeanPrecision(μ_out, Λ_out)
 end
 
-@rule Flow(:out, Marginalisation) (m_in::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, Linearization}) where {M} =
-    begin
+@rule Flow(:out, Marginalisation) (m_in::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, Linearization}) where {M} = begin
 
-        # extract parameters
-        μ_in, Λ_in = mean_precision(m_in)
+    # extract parameters
+    μ_in, Λ_in = mean_precision(m_in)
 
-        # extract model
-        model = getmodel(meta)
+    # extract model
+    model = getmodel(meta)
 
-        # calculate new parameters
-        μ_out = forward(model, μ_in)
-        Ji    = inv_jacobian(model, μ_in)
-        Λ_out = Ji' * Λ_in * Ji
+    # calculate new parameters
+    μ_out = forward(model, μ_in)
+    Ji    = inv_jacobian(model, μ_in)
+    Λ_out = Ji' * Λ_in * Ji
 
-        # return distribution
-        return MvNormalMeanPrecision(μ_out, Λ_out)
-    end
+    # return distribution
+    return MvNormalMeanPrecision(μ_out, Λ_out)
+end
 
-@rule Flow(:out, Marginalisation) (
-    m_in::MultivariateNormalDistributionsFamily,
-    meta::FlowMeta{M, Unscented}
-) where {M} = begin
+@rule Flow(:out, Marginalisation) (m_in::MultivariateNormalDistributionsFamily, meta::FlowMeta{M, Unscented}) where {M} = begin
 
     # extract parameters
     μ_in, Σ_in = mean_cov(m_in)
@@ -77,9 +73,9 @@ end
     for k in 1:length(χ)
         χ[k] = copy(μ_in)
     end
-    for l in 2:L+1
-        χ[l]   .+= sqrtΣ[l-1, :]
-        χ[L+l] .-= sqrtΣ[l-1, :]
+    for l in 2:(L + 1)
+        χ[l]     .+= sqrtΣ[l - 1, :]
+        χ[L + l] .-= sqrtΣ[l - 1, :]
     end
 
     # transform sigma points
@@ -88,10 +84,10 @@ end
     # calculate new parameters
     μ_out = zeros(T, L)
     Σ_out = zeros(T, L, L)
-    for k in 1:2*L+1
+    for k in 1:(2 * L + 1)
         μ_out .+= Wm[k] .* Y[k]
     end
-    for k in 1:2*L+1
+    for k in 1:(2 * L + 1)
         Σ_out .+= Wc[k] .* (Y[k] - μ_out) * (Y[k] - μ_out)'
     end
 

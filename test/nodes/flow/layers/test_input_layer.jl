@@ -30,11 +30,7 @@ using ReactiveMP: getdim
     end
 
     @testset "Integration in flow model" begin
-        model = FlowModel((
-            InputLayer(5),
-            AdditiveCouplingLayer(PlanarFlow()),
-            AdditiveCouplingLayer(PlanarFlow(); permute = false)
-        ))
+        model = FlowModel((InputLayer(5), AdditiveCouplingLayer(PlanarFlow()), AdditiveCouplingLayer(PlanarFlow(); permute = false)))
         compiled_model = compile(model)
         @test typeof(first(getlayers(compiled_model))) <: AdditiveCouplingLayer
         for layer in getlayers(compiled_model)

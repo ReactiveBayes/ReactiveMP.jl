@@ -13,16 +13,7 @@ struct VariablesCollection
 end
 
 function Base.show(io::IO, collection::VariablesCollection)
-    print(
-        io,
-        "VariablesCollection(random: ",
-        length(getrandom(collection)),
-        ", constant: ",
-        length(getconstant(collection)),
-        ", data: ",
-        length(getdata(collection)),
-        ")"
-    )
+    print(io, "VariablesCollection(random: ", length(getrandom(collection)), ", constant: ", length(getconstant(collection)), ", data: ", length(getdata(collection)), ")")
 end
 
 getrandom(collection::VariablesCollection)   = collection.random

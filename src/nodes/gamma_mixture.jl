@@ -61,11 +61,7 @@ struct GammaMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenc
 
 default_functional_dependencies_pipeline(::Type{<:GammaMixture}) = GammaMixtureNodeFunctionalDependencies()
 
-function functional_dependencies(
-    ::GammaMixtureNodeFunctionalDependencies,
-    factornode::GammaMixtureNode{N, F},
-    iindex::Int
-) where {N, F <: MeanField}
+function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N, F}, iindex::Int) where {N, F <: MeanField}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -73,9 +69,9 @@ function functional_dependencies(
     elseif iindex === 2
         (factornode.out, factornode.as, factornode.bs)
     elseif 2 < iindex <= N + 2
-        (factornode.out, factornode.switch, factornode.bs[iindex-2])
+        (factornode.out, factornode.switch, factornode.bs[iindex - 2])
     elseif N + 2 < iindex <= 2N + 2
-        (factornode.out, factornode.switch, factornode.as[iindex-N-2])
+        (factornode.out, factornode.switch, factornode.as[iindex - N - 2])
     else
         error("Invalid index in functional_dependencies for GammaMixtureNode")
     end
@@ -83,16 +79,12 @@ function functional_dependencies(
     return message_dependencies, marginal_dependencies
 end
 
-function get_messages_observable(
-    factornode::GammaMixtureNode{N, F},
-    message_dependencies::Tuple{}
-) where {N, F <: MeanField}
+function get_messages_observable(factornode::GammaMixtureNode{N, F}, message_dependencies::Tuple{}) where {N, F <: MeanField}
     return nothing, of(nothing)
 end
 
 function get_marginals_observable(
-    factornode::GammaMixtureNode{N, F},
-    marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
+    factornode::GammaMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
 ) where {N, F <: MeanField}
     varinterface = marginal_dependencies[1]
     asinterfaces = marginal_dependencies[2]
@@ -103,15 +95,11 @@ function get_marginals_observable(
         combineLatest(
             (
                 getmarginal(connectedvar(varinterface), IncludeAll()),
-                combineLatest(
-                    map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), reverse(bsinterfaces)),
-                    PushNew()
-                ),
-                combineLatest(
-                    map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)),
-                    PushNew()
-                )
-            ), PushNew()) |> map_to((
+                combineLatest(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
+                combineLatest(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)), PushNew())
+            ),
+            PushNew()
+        ) |> map_to((
             getmarginal(connectedvar(varinterface), IncludeAll()),
             map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces),
             map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces)
@@ -120,58 +108,36 @@ function get_marginals_observable(
     return marginal_names, marginals_observable
 end
 
-function get_marginals_observable(
-    factornode::GammaMixtureNode{N, F},
-    marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N, F <: MeanField}
+function get_marginals_observable(factornode::GammaMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N, F <: MeanField}
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}
-    marginals_observable = combineLatestUpdates((
-    getmarginal(connectedvar(outinterface), IncludeAll()),
-    getmarginal(connectedvar(switchinterface), IncludeAll()),
-    getmarginal(connectedvar(varinterface), IncludeAll())
-), PushNew())
+    marginals_observable = combineLatestUpdates((getmarginal(connectedvar(outinterface), IncludeAll()), getmarginal(connectedvar(switchinterface), IncludeAll()), getmarginal(connectedvar(varinterface), IncludeAll())), PushNew())
 
     return marginal_names, marginals_observable
 end
 
 # FreeEnergy related functions
 
-@average_energy GammaMixture (
-    q_out::Any,
-    q_switch::Any,
-    q_a::NTuple{N, Any},
-    q_b::NTuple{N, GammaShapeRate}
-) where {N} = begin
+@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, Any}, q_b::NTuple{N, GammaShapeRate}) where {N} = begin
     z_bar = probvec(q_switch)
-    return mapreduce(+, 1:N, init = 0.0) do i
-        return z_bar[i] * score(
-            AverageEnergy(),
-            GammaShapeRate,
-            Val{(:out, :α, :β)},
-            map((q) -> Marginal(q, false, false), (q_out, q_a[i], q_b[i])),
-            nothing
-        )
+    return mapreduce(+, 1:N; init = 0.0) do i
+        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}, map((q) -> Marginal(q, false, false), (q_out, q_a[i], q_b[i])), nothing)
     end
 end
 
-function score(
-    ::Type{T},
-    ::FactorBoundFreeEnergy,
-    ::Stochastic,
-    node::GammaMixtureNode{N, MeanField},
-    skip_strategy,
-    scheduler
-) where {T <: InfCountingReal, N}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: InfCountingReal, N}
     stream = combineLatest(
         (
             getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
             getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
             combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew()),
             combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew())
-        ), PushNew())
+        ),
+        PushNew()
+    )
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin
@@ -203,16 +169,10 @@ function collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::NTuple{
     return (R === 2 * N + 2) ? MeanField() : __gamma_mixture_incompatible_factorisation_error()
 end
 
-__gamma_mixture_incompatible_factorisation_error() = error(
-    "`GammaMixtureNode` supports only following global factorisations: [ $(GammaMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints"
-)
+__gamma_mixture_incompatible_factorisation_error() =
+    error("`GammaMixtureNode` supports only following global factorisations: [ $(GammaMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints")
 
-function ReactiveMP.make_node(
-    ::Type{<:GammaMixture{N}},
-    factorisation::F = MeanField(),
-    meta::M = nothing,
-    pipeline::P = nothing
-) where {N, F, M, P}
+function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, factorisation::F = MeanField(), meta::M = nothing, pipeline::P = nothing) where {N, F, M, P}
     @assert N >= 2 "`GammaMixtureNode` requires at least two mixtures on input"
     @assert typeof(factorisation) <: GammaMixtureNodeFactorisationSupport "`GammaMixtureNode` supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out, Marginalisation())
@@ -223,12 +183,7 @@ function ReactiveMP.make_node(
 end
 
 function ReactiveMP.make_node(
-    ::Type{<:GammaMixture},
-    options::FactorNodeCreationOptions,
-    out::AbstractVariable,
-    switch::AbstractVariable,
-    as::NTuple{N, AbstractVariable},
-    bs::NTuple{N, AbstractVariable}
+    ::Type{<:GammaMixture}, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}
 ) where {N}
     node = make_node(
         GammaMixture{N},

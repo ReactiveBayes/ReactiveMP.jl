@@ -89,9 +89,7 @@ function rule_macro_parse_on_tag(on)
     elseif @capture(on, (:name_, k_ = index_Int))
         return :(Tuple{Val{$(QuoteNode(name))}, Int}),
         index,
-        :(error(
-            "`k = ...` syntax in the edge specification is only allowed in the `@call_rule` and `@call_marginalrule` macros"
-        ))
+        :(error("`k = ...` syntax in the edge specification is only allowed in the `@call_rule` and `@call_marginalrule` macros"))
     else
         error(
             "Error in macro. `on` specification is incorrect: $(on). Must be ither a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
@@ -142,7 +140,7 @@ function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     out_names = if isempty(names)
         :Nothing
     else
-        :(Type{Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix+1):end])), names)...))}})
+        :(Type{Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))}})
     end
     out_types = isempty(types) ? :Nothing : :(Tuple{$(map((t) -> MacroHelpers.proxy_type(proxy, t), types)...)})
 
@@ -188,7 +186,7 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
         return :($(proxy)($any, false, false))
     end
 
-    names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix+1):end])), names)...))})
+    names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))})
     values_arg = isempty(names) ? :nothing : :($(map(v -> apply_proxy(v, proxy), values)...),)
 
     return names_arg, values_arg
@@ -205,18 +203,7 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Int)
     end
 end
 
-function rule_function_expression(
-    body::Function,
-    fuppertype,
-    on_type,
-    vconstraint,
-    m_names,
-    m_types,
-    q_names,
-    q_types,
-    metatype,
-    whereargs
-)
+function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
     return quote
         function ReactiveMP.rule(
             fform::$(fuppertype),
@@ -234,27 +221,10 @@ function rule_function_expression(
     end
 end
 
-function marginalrule_function_expression(
-    body::Function,
-    fuppertype,
-    on_type,
-    m_names,
-    m_types,
-    q_names,
-    q_types,
-    metatype,
-    whereargs
-)
+function marginalrule_function_expression(body::Function, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs)
     return quote
         function ReactiveMP.marginalrule(
-            fform::$(fuppertype),
-            on::$(on_type),
-            messages_names::$(m_names),
-            messages::$(m_types),
-            marginals_names::$(q_names),
-            marginals::$(q_types),
-            meta::$(metatype),
-            __node
+            fform::$(fuppertype), on::$(on_type), messages_names::$(m_names), messages::$(m_types), marginals_names::$(q_names), marginals::$(q_types), meta::$(metatype), __node
         ) where {$(whereargs...)}
             $(body())
         end
@@ -268,15 +238,11 @@ import .MacroHelpers
 """
 macro rule(fform, lambda)
     @capture(fform, fformtype_(on_, vconstraint_, options__)) ||
-        error(
-            "Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_, options__)'"
-        )
+        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_, options__)'")
 
-    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
-        error("Error in macro. Lambda body specification is incorrect")
+    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
-        error("Error in macro. Lambda body arguments speicifcation is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
@@ -293,24 +259,12 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     output = quote
         $(
-            rule_function_expression(
-                fuppertype,
-                on_type,
-                vconstraint,
-                m_names,
-                m_types,
-                q_names,
-                q_types,
-                metatype,
-                whereargs
-            ) do
+            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
@@ -325,8 +279,7 @@ macro rule(fform, lambda)
 
         # Symmetrical option
         if first(option) === :symmetrical
-            @capture(last(option), [names__]) ||
-                error("Invalid symmetrical names specification. Name should be a symbol.")
+            @capture(last(option), [names__]) || error("Invalid symmetrical names specification. Name should be a symbol.")
 
             @assert length(names) > 1 "Invalid symmetrical names specification. Length of names should be greater than 1."
 
@@ -336,12 +289,7 @@ macro rule(fform, lambda)
             end
 
             indices = map(names) do name
-                return findfirst(
-                    input ->
-                        isequal(string("m_", name), string(first(input))) ||
-                            isequal(string("q_", name), string(first(input))),
-                    inputs
-                )
+                return findfirst(input -> isequal(string("m_", name), string(first(input))) || isequal(string("q_", name), string(first(input))), inputs)
             end
 
             foreach(enumerate(indices)) do (i, index)
@@ -353,7 +301,7 @@ macro rule(fform, lambda)
             @assert length(Set(prefixes)) === 1 "It is not possible to mix symmetric arguments from messages and marginals"
 
             prefix = first(prefixes)
-            swaps  = Iterators.flatten(map(i -> map(j -> (indices[i], indices[j]), i+1:length(indices)), 1:length(indices)))
+            swaps  = Iterators.flatten(map(i -> map(j -> (indices[i], indices[j]), (i + 1):length(indices)), 1:length(indices)))
 
             is_messages  = isequal(prefix, "m_")
             is_marginals = isequal(prefix, "q_")
@@ -362,10 +310,8 @@ macro rule(fform, lambda)
                 messages  = is_messages ? MacroHelpers.rearranged_tuple(:messages, length(m_init_block), swap) : :(messages)
                 marginals = is_marginals ? MacroHelpers.rearranged_tuple(:marginals, length(m_init_block), swap) : :(marginals)
 
-                swapped_m_types =
-                    is_messages ? :(Tuple{$(swapped(m_types.args[2:end], first(swap), last(swap))...)}) : m_types
-                swapped_q_types =
-                    is_marginals ? :(Tuple{$(swapped(q_types.args[2:end], first(swap), last(swap))...)}) : q_types
+                swapped_m_types = is_messages ? :(Tuple{$(swapped(m_types.args[2:end], first(swap), last(swap))...)}) : m_types
+                swapped_q_types = is_marginals ? :(Tuple{$(swapped(q_types.args[2:end], first(swap), last(swap))...)}) : q_types
 
                 @assert !is_messages || swapped_m_types != m_types "Message types are the same after arguments swap for indices = $(swap)"
                 @assert !is_marginals || swapped_q_types != q_types "Marginal types are the same after arguments swap for indices = $(swap)"
@@ -373,28 +319,8 @@ macro rule(fform, lambda)
                 output = quote
                     $output
                     $(
-                        rule_function_expression(
-                            fuppertype,
-                            on_type,
-                            vconstraint,
-                            m_names,
-                            swapped_m_types,
-                            q_names,
-                            swapped_q_types,
-                            metatype,
-                            whereargs
-                        ) do
-                            return :(ReactiveMP.rule(
-                                fform,
-                                on,
-                                vconstraint,
-                                messages_names,
-                                $(messages),
-                                marginals_names,
-                                $(marginals),
-                                meta,
-                                __node
-                            ))
+                        rule_function_expression(fuppertype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
+                            return :(ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginals_names, $(marginals), meta, __node))
                         end
                     )
                 end
@@ -408,11 +334,9 @@ macro rule(fform, lambda)
 end
 
 macro call_rule(fform, args)
-    @capture(fform, fformtype_(on_, vconstraint_)) ||
-        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
+    @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(args, (inputs__, meta = meta_) | (inputs__,)) ||
-        error("Error in macro. Arguments specification is incorrect")
+    @capture(args, (inputs__, meta = meta_) | (inputs__,)) || error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -423,25 +347,13 @@ macro call_rule(fform, args)
         return (iname, ivalue)
     end
 
-    m_names_arg, m_values_arg =
-        call_rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names_arg, q_values_arg =
-        call_rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
-        ReactiveMP.rule(
-            $fbottomtype,
-            $on_arg,
-            $(vconstraint)(),
-            $m_names_arg,
-            $m_values_arg,
-            $q_names_arg,
-            $q_values_arg,
-            $meta,
-            nothing
-        )
+        ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, nothing)
     end
 
     return esc(output)
@@ -451,8 +363,7 @@ end
     Documentation placeholder
 """
 macro test_rules(options, on, test_sequence)
-    @capture(options, [option_entries__]) ||
-        error("Invalid options specification. Options should be in the form on an array.")
+    @capture(options, [option_entries__]) || error("Invalid options specification. Options should be in the form on an array.")
 
     with_float_conversions = false
 
@@ -461,9 +372,7 @@ macro test_rules(options, on, test_sequence)
     bigfloat_atol = 1e-12
 
     foreach(option_entries) do option_entry
-        @capture(option_entry, (key_ = value_)) || error(
-            "Invalid option entry specification: $(option_entry). Option entry should be in the form of a 'key = value' pair."
-        )
+        @capture(option_entry, (key_ = value_)) || error("Invalid option entry specification: $(option_entry). Option entry should be in the form of a 'key = value' pair.")
         if key === :with_float_conversions
             if value === :true
                 with_float_conversions = true
@@ -487,8 +396,7 @@ macro test_rules(options, on, test_sequence)
         end
     end
 
-    @capture(test_sequence, [test_sequence_entries__]) ||
-        error("Invalid test sequence specification. Test sequence should be in the form of an array.")
+    @capture(test_sequence, [test_sequence_entries__]) || error("Invalid test sequence specification. Test sequence should be in the form of an array.")
 
     block      = Expr(:block)
     block.args = map(test_sequence_entries) do test_entry
@@ -496,15 +404,13 @@ macro test_rules(options, on, test_sequence)
 
         test_rule      = Expr(:block)
         test_output_s  = gensym()
-        test_rule.args = [
-        quote
+        test_rule.args = [quote
             begin
                 local $test_output_s = ReactiveMP.@call_rule($on, $input)
                 @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol)
                 @test ReactiveMP.is_typeof_equal($test_output_s, $output)
             end
-        end
-]
+        end]
 
         if with_float_conversions
             @capture(input, (input_entries__,)) || error("Invalid input entries. Input entries should be in the form of a named tuple. ")
@@ -587,14 +493,11 @@ end
     Documentation placeholder
 """
 macro marginalrule(fform, lambda)
-    @capture(fform, fformtype_(on_)) ||
-        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
+    @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
 
-    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
-        error("Error in macro. Lambda body specification is incorrect")
+    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
-        error("Error in macro. Lambda body arguments speicifcation is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
@@ -606,23 +509,12 @@ macro marginalrule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     output = quote
         $(
-            marginalrule_function_expression(
-                fuppertype,
-                on_type,
-                m_names,
-                m_types,
-                q_names,
-                q_types,
-                metatype,
-                whereargs
-            ) do
+            marginalrule_function_expression(fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
@@ -637,11 +529,9 @@ macro marginalrule(fform, lambda)
 end
 
 macro call_marginalrule(fform, args)
-    @capture(fform, fformtype_(on_)) ||
-        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
+    @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
 
-    @capture(args, (inputs__, meta = meta_) | (inputs__,)) ||
-        error("Error in macro. Arguments specification is incorrect")
+    @capture(args, (inputs__, meta = meta_) | (inputs__,)) || error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -652,24 +542,13 @@ macro call_marginalrule(fform, args)
         return (iname, ivalue)
     end
 
-    m_names_arg, m_values_arg =
-        call_rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names_arg, q_values_arg =
-        call_rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
-        ReactiveMP.marginalrule(
-            $fbottomtype,
-            $on_arg,
-            $m_names_arg,
-            $m_values_arg,
-            $q_names_arg,
-            $q_values_arg,
-            $meta,
-            nothing
-        )
+        ReactiveMP.marginalrule($fbottomtype, $on_arg, $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, nothing)
     end
 
     return esc(output)
@@ -679,8 +558,7 @@ end
     Documentation placeholder
 """
 macro test_marginalrules(options, on, test_sequence)
-    @capture(options, [option_entries__]) ||
-        error("Invalid options specification. Options should be in the form on an array.")
+    @capture(options, [option_entries__]) || error("Invalid options specification. Options should be in the form on an array.")
 
     with_float_conversions = false
 
@@ -689,9 +567,7 @@ macro test_marginalrules(options, on, test_sequence)
     bigfloat_atol = 1e-12
 
     foreach(option_entries) do option_entry
-        @capture(option_entry, (key_ = value_)) || error(
-            "Invalid option entry specification: $(option_entry). Option entry should be in the form of a 'key = value' pair."
-        )
+        @capture(option_entry, (key_ = value_)) || error("Invalid option entry specification: $(option_entry). Option entry should be in the form of a 'key = value' pair.")
         if key === :with_float_conversions
             if value === :true
                 with_float_conversions = true
@@ -715,8 +591,7 @@ macro test_marginalrules(options, on, test_sequence)
         end
     end
 
-    @capture(test_sequence, [test_sequence_entries__]) ||
-        error("Invalid test sequence specification. Test sequence should be in the form of an array.")
+    @capture(test_sequence, [test_sequence_entries__]) || error("Invalid test sequence specification. Test sequence should be in the form of an array.")
 
     block      = Expr(:block)
     block.args = map(test_sequence_entries) do test_entry
@@ -724,15 +599,13 @@ macro test_marginalrules(options, on, test_sequence)
 
         test_rule      = Expr(:block)
         test_output_s  = gensym()
-        test_rule.args = [
-        quote
+        test_rule.args = [quote
             begin
                 local $test_output_s = ReactiveMP.@call_marginalrule($on, $input)
                 @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol)
                 @test ReactiveMP.is_typeof_equal($test_output_s, $output)
             end
-        end
-]
+        end]
 
         if with_float_conversions
             @capture(input, (input_entries__,)) || error("Invalid input entries. Input entries should be in the form of a named tuple. ")
@@ -842,8 +715,7 @@ rule_method_error_extract_on(::Tuple{Val{T}, N}) where {T, N}       = string("("
 
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
-rule_method_error_extract_names(::Type{Val{T}}) where {T} =
-    map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
+rule_method_error_extract_names(::Type{Val{T}}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
 rule_method_error_extract_names(::Nothing) = ()
 
 rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeof(getdata(e))), t)
@@ -864,8 +736,7 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) =
-    throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) = throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)
     print(io, "RuleMethodError: no method matching rule for the given arguments")
@@ -895,7 +766,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         fill!(spec, nothing)
 
         for (i, j) in enumerate(m_indices)
-            spec[2j-1] = spec_m[i]
+            spec[2j - 1] = spec_m[i]
         end
 
         for (i, j) in enumerate(q_indices)
@@ -916,10 +787,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
     else
-        println(
-            io,
-            "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n"
-        )
+        println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)
         println(io, "rule.on: ", error.on)
         println(io, "rule.vconstraint: ", error.vconstraint)
@@ -942,8 +810,7 @@ struct MarginalRuleMethodError
     node
 end
 
-marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) =
-    throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
+marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) = throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
 
 function Base.showerror(io::IO, error::MarginalRuleMethodError)
     print(io, "MarginalRuleMethodError: no method matching rule for the given arguments")
@@ -971,7 +838,7 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
         fill!(spec, nothing)
 
         for (i, j) in enumerate(m_indices)
-            spec[2j-1] = spec_m[i]
+            spec[2j - 1] = spec_m[i]
         end
 
         for (i, j) in enumerate(q_indices)
@@ -992,10 +859,7 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
     else
-        println(
-            io,
-            "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n"
-        )
+        println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)
         println(io, "rule.on: ", error.on)
         println(io, "rule.mnames: ", error.mnames)

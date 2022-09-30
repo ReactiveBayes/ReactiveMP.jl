@@ -214,11 +214,7 @@ function Base.:*(e::StandardBasisVector, A::Adjoint{T, <:AbstractMatrix{T}}) whe
 end
 
 # custom
-function v_a_vT(
-    e1::StandardBasisVector{T1},
-    a::T3,
-    e2::StandardBasisVector{T2}
-) where {T1 <: Real, T2 <: Real, T3 <: Real}
+function v_a_vT(e1::StandardBasisVector{T1}, a::T3, e2::StandardBasisVector{T2}) where {T1 <: Real, T2 <: Real, T3 <: Real}
     T = promote_type(T1, T3, T2)
     Y = zeros(T, length(e1), length(e2))
     Y[getind(e1), getind(e2)] = e1.scale * a * e2.scale

@@ -30,10 +30,8 @@ import SpecialFunctions: loggamma
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
 
-        @test getdata(Message(dist1, false, false) * Message(dist2, false, false)) ==
-              prod(ProdAnalytical(), dist1, dist2)
-        @test getdata(Message(dist2, false, false) * Message(dist1, false, false)) ==
-              prod(ProdAnalytical(), dist2, dist1)
+        @test getdata(Message(dist1, false, false) * Message(dist2, false, false)) == prod(ProdAnalytical(), dist1, dist2)
+        @test getdata(Message(dist2, false, false) * Message(dist1, false, false)) == prod(ProdAnalytical(), dist2, dist1)
 
         for (left_is_initial, right_is_initial) in product(repeated([true, false], 2)...)
             @test is_clamped(Message(dist1, true, left_is_initial) * Message(dist2, false, right_is_initial)) == false
@@ -45,10 +43,8 @@ import SpecialFunctions: loggamma
         end
 
         for (left_is_clamped, right_is_clamped) in product(repeated([true, false], 2)...)
-            @test is_initial(Message(dist1, left_is_clamped, true) * Message(dist2, right_is_clamped, true)) ==
-                  !(left_is_clamped && right_is_clamped)
-            @test is_initial(Message(dist2, left_is_clamped, true) * Message(dist1, right_is_clamped, true)) ==
-                  !(left_is_clamped && right_is_clamped)
+            @test is_initial(Message(dist1, left_is_clamped, true) * Message(dist2, right_is_clamped, true)) == !(left_is_clamped && right_is_clamped)
+            @test is_initial(Message(dist2, left_is_clamped, true) * Message(dist1, right_is_clamped, true)) == !(left_is_clamped && right_is_clamped)
             @test is_initial(Message(dist1, left_is_clamped, false) * Message(dist2, right_is_clamped, false)) == false
             @test is_initial(Message(dist2, left_is_clamped, false) * Message(dist1, right_is_clamped, false)) == false
         end
@@ -134,18 +130,9 @@ import SpecialFunctions: loggamma
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
         _getpoint(rng, ::Type{<:Multivariate}, distribution) = 10 .* rand(rng, 2)
 
-        distributions2 = [
-            Gamma(10.0, 2.0),
-            NormalMeanVariance(-10.0, 1.0),
-            MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]),
-            Bernoulli(0.5),
-            Categorical([0.8, 0.2])
-        ]
+        distributions2 = [Gamma(10.0, 2.0), NormalMeanVariance(-10.0, 1.0), MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]), Bernoulli(0.5), Categorical([0.8, 0.2])]
 
-        methods_to_test2 = [
-            Distributions.pdf,
-            Distributions.logpdf
-        ]
+        methods_to_test2 = [Distributions.pdf, Distributions.logpdf]
 
         rng = MersenneTwister(1234)
 

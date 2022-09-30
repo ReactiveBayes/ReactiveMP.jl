@@ -54,10 +54,8 @@ using Distributions
     end
 
     @testset "Base methods" begin
-        @test convert(MvNormalMeanPrecision{Float32}, MvNormalMeanPrecision([0.0, 0.0])) ==
-              MvNormalMeanPrecision([0.0f0, 0.0f0], [1.0f0, 1.0f0])
-        @test convert(MvNormalMeanPrecision{Float64}, [0.0, 0.0], [2 0; 0 3]) ==
-              MvNormalMeanPrecision([0.0, 0.0], [2.0 0.0; 0.0 3.0])
+        @test convert(MvNormalMeanPrecision{Float32}, MvNormalMeanPrecision([0.0, 0.0])) == MvNormalMeanPrecision([0.0f0, 0.0f0], [1.0f0, 1.0f0])
+        @test convert(MvNormalMeanPrecision{Float64}, [0.0, 0.0], [2 0; 0 3]) == MvNormalMeanPrecision([0.0, 0.0], [2.0 0.0; 0.0 3.0])
 
         @test length(MvNormalMeanPrecision([0.0, 0.0])) === 2
         @test length(MvNormalMeanPrecision([0.0, 0.0, 0.0])) === 3
@@ -86,20 +84,17 @@ using Distributions
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), MvNormalMeanPrecision([-1, -1], [2, 2]), MvNormalMeanPrecision([1, 1], [2, 4])) ≈
-              MvNormalWeightedMeanPrecision([0, 2], [4, 6])
+        @test prod(ProdAnalytical(), MvNormalMeanPrecision([-1, -1], [2, 2]), MvNormalMeanPrecision([1, 1], [2, 4])) ≈ MvNormalWeightedMeanPrecision([0, 2], [4, 6])
 
         μ    = [1.0, 2.0, 3.0]
         Λ    = diagm(1 ./ [1.0, 2.0, 3.0])
         dist = MvNormalMeanPrecision(μ, Λ)
 
-        @test prod(ProdAnalytical(), dist, dist) ≈
-              MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+        @test prod(ProdAnalytical(), dist, dist) ≈ MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
     end
 
     @testset "Primitive types conversion" begin
-        @test convert(MvNormalMeanPrecision, zeros(2), Matrix(Diagonal(ones(2)))) ==
-              MvNormalMeanPrecision(zeros(2), Matrix(Diagonal(ones(2))))
+        @test convert(MvNormalMeanPrecision, zeros(2), Matrix(Diagonal(ones(2)))) == MvNormalMeanPrecision(zeros(2), Matrix(Diagonal(ones(2))))
         @test begin
             m = rand(5)
             c = Matrix(Symmetric(rand(5, 5)))

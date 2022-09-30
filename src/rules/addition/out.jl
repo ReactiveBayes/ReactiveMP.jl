@@ -3,19 +3,13 @@
     return convolve(m_in1, m_in2)
 end
 
-@rule typeof(+)(:out, Marginalisation) (
-    m_in1::UnivariateNormalDistributionsFamily,
-    m_in2::UnivariateNormalDistributionsFamily
-) = begin
+@rule typeof(+)(:out, Marginalisation) (m_in1::UnivariateNormalDistributionsFamily, m_in2::UnivariateNormalDistributionsFamily) = begin
     min1, vin1 = mean_var(m_in1)
     min2, vin2 = mean_var(m_in2)
     return NormalMeanVariance(min1 + min2, vin1 + vin2)
 end
 
-@rule typeof(+)(:out, Marginalisation) (
-    m_in1::MultivariateNormalDistributionsFamily,
-    m_in2::MultivariateNormalDistributionsFamily
-) = begin
+@rule typeof(+)(:out, Marginalisation) (m_in1::MultivariateNormalDistributionsFamily, m_in2::MultivariateNormalDistributionsFamily) = begin
     min1, vin1 = mean_cov(m_in1)
     min2, vin2 = mean_cov(m_in2)
     return MvNormalMeanCovariance(min1 + min2, vin1 + vin2)
@@ -62,8 +56,7 @@ end
 
 # specialized
 @rule typeof(+)(:out, Marginalisation) (
-    m_in1::MvNormalWeightedMeanPrecision{T1},
-    m_in2::MvNormalWeightedMeanPrecision{T2}
+    m_in1::MvNormalWeightedMeanPrecision{T1}, m_in2::MvNormalWeightedMeanPrecision{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat} = begin
     min2, vin2 = mean_cov(m_in2)
     vin1 = cov(m_in1)

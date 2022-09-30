@@ -17,15 +17,12 @@ using Rocket
 
             setmarginal!(variable, dist)
 
-            subscription = subscribe!(
-                getmarginal(variable, IncludeAll()),
-                (marginal) -> begin
-                    @test typeof(marginal) <: Marginal{T}
-                    @test mean(marginal) === mean(dist)
-                    @test var(marginal) === var(dist)
-                    flag = true
-                end
-            )
+            subscription = subscribe!(getmarginal(variable, IncludeAll()), (marginal) -> begin
+                @test typeof(marginal) <: Marginal{T}
+                @test mean(marginal) === mean(dist)
+                @test var(marginal) === var(dist)
+                flag = true
+            end)
 
             # Test that subscription happenend
             @test flag === true
@@ -39,18 +36,15 @@ using Rocket
 
             setmarginals!(variablesmv, dist)
 
-            subscriptionmv = subscribe!(
-                getmarginals(variablesmv, IncludeAll()),
-                (marginals) -> begin
-                    @test length(marginals) === 2
-                    foreach(marginals) do marginal
-                        @test typeof(marginal) <: Marginal{T}
-                        @test mean(marginal) === mean(dist)
-                        @test var(marginal) === var(dist)
-                    end
-                    flagmv = true
+            subscriptionmv = subscribe!(getmarginals(variablesmv, IncludeAll()), (marginals) -> begin
+                @test length(marginals) === 2
+                foreach(marginals) do marginal
+                    @test typeof(marginal) <: Marginal{T}
+                    @test mean(marginal) === mean(dist)
+                    @test var(marginal) === var(dist)
                 end
-            )
+                flagmv = true
+            end)
 
             # Test that subscription happenend
             @test flagmv === true

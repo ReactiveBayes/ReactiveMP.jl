@@ -30,10 +30,7 @@ prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = Pro
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)
     T = promote_type(eltype(left), eltype(right))
-    return GammaShapeScale(
-        shape(left) + shape(right) - one(T),
-        (scale(left) * scale(right)) / (scale(left) + scale(right))
-    )
+    return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
 # Conversion to shape - scale parametrisation
@@ -68,10 +65,7 @@ end
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeRate)
     T = promote_type(eltype(left), eltype(right))
-    return GammaShapeScale(
-        shape(left) + shape(right) - one(T),
-        (scale(left) * scale(right)) / (scale(left) + scale(right))
-    )
+    return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
 ## Friendly functions

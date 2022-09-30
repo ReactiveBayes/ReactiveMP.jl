@@ -153,7 +153,7 @@ end
 Base.show(io::IO, constraint::CompositeFormConstraint) = join(io, constraint.constraints, " :: ")
 
 function constrain_form(composite::CompositeFormConstraint, something)
-    return reduce((form, constraint) -> constrain_form(constraint, form), composite.constraints, init = something)
+    return reduce((form, constraint) -> constrain_form(constraint, form), composite.constraints; init = something)
 end
 
 function default_prod_constraint(constraint::CompositeFormConstraint)

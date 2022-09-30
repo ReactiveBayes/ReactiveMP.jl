@@ -1,9 +1,6 @@
 
 @rule BIFM(:zprev, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_in::MultivariateNormalDistributionsFamily,
-    m_znext::MultivariateNormalDistributionsFamily,
-    meta::BIFMMeta
+    m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta
 ) = begin
 
     # fetch information from meta data

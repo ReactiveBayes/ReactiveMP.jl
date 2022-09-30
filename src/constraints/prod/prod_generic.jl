@@ -105,10 +105,8 @@ prod(generic::ProdGeneric, ::ProdAnalyticalRuleUnknown, left, right)   = DistPro
 # In case of ProdPointMass we want to propagate a single `DistProduct` as much as possible and do not create a big tree of product which will reduce performance significantly
 # In this methods the general rule is the folowing: If we see that one of the arguments of `DistProduct` has the same function form 
 # as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
-prod(generic::ProdGeneric, left::DistProduct{L, R}, right::T) where {L, R, T} =
-    prod(generic, prod_analytical_rule(L, T), prod_analytical_rule(R, T), left, right)
-prod(generic::ProdGeneric, left::T, right::DistProduct{L, R}) where {L, R, T} =
-    prod(generic, prod_analytical_rule(T, L), prod_analytical_rule(T, R), left, right)
+prod(generic::ProdGeneric, left::DistProduct{L, R}, right::T) where {L, R, T} = prod(generic, prod_analytical_rule(L, T), prod_analytical_rule(R, T), left, right)
+prod(generic::ProdGeneric, left::T, right::DistProduct{L, R}) where {L, R, T} = prod(generic, prod_analytical_rule(T, L), prod_analytical_rule(T, R), left, right)
 
 prod(generic::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct, right)   = DistProduct(left, right)
 prod(generic::ProdGeneric, ::ProdAnalyticalRuleAvailable, ::ProdAnalyticalRuleUnknown, left::DistProduct, right) = DistProduct(prod(get_constraint(generic), getleft(left), right), getright(left))
@@ -181,22 +179,10 @@ function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUn
     return DistProduct(getleft(right), GenericLogPdfVectorisedProduct(R[left, getright(right)], 2))
 end
 
-function prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::DistProduct{L, GenericLogPdfVectorisedProduct{R}},
-    right::R
-) where {L, R}
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{L, GenericLogPdfVectorisedProduct{R}}, right::R) where {L, R}
     return DistProduct(getleft(left), push!(getright(left), right))
 end
 
-function prod(
-    ::ProdGeneric,
-    ::ProdAnalyticalRuleUnknown,
-    ::ProdAnalyticalRuleUnknown,
-    left::DistProduct{GenericLogPdfVectorisedProduct{L}, R},
-    right::L
-) where {L, R}
+function prod(::ProdGeneric, ::ProdAnalyticalRuleUnknown, ::ProdAnalyticalRuleUnknown, left::DistProduct{GenericLogPdfVectorisedProduct{L}, R}, right::L) where {L, R}
     return DistProduct(push!(getleft(left), right), getright(left))
 end

@@ -49,8 +49,7 @@ using Distributions
         @test ReactiveMP.interface_get_name(Val{:CustomStochasticNode}, Val{3}) === :y
         @test ReactiveMP.interface_get_name(Val{:CustomStochasticNode}, Val{4}) === :z
 
-        @test ReactiveMP.collect_factorisation(CustomStochasticNode, ((1,), (2,), (3,), (4,))) ===
-              ((1,), (2,), (3,), (4,))
+        @test ReactiveMP.collect_factorisation(CustomStochasticNode, ((1,), (2,), (3,), (4,))) === ((1,), (2,), (3,), (4,))
         @test ReactiveMP.collect_factorisation(CustomStochasticNode, ((1, 2), (3,), (4,))) === ((1, 2), (3,), (4,))
         @test ReactiveMP.collect_factorisation(CustomStochasticNode, ((1, 2, 3), (4,))) === ((1, 2, 3), (4,))
         @test ReactiveMP.collect_factorisation(CustomStochasticNode, ((1, 2, 3), (4,))) === ((1, 2, 3), (4,))
@@ -129,9 +128,7 @@ using Distributions
         @test_throws Exception eval(:(@node DummyStruct Stochastic []))
 
         @test_throws LoadError eval(:(@node DummyStruct Stochastic [out, interfaces_with_underscore]))
-        @test_throws LoadError eval(
-            :(@node DummyStruct Stochastic [out, (interface, aliases = [alias_with_underscore])])
-        )
+        @test_throws LoadError eval(:(@node DummyStruct Stochastic [out, (interface, aliases = [alias_with_underscore])]))
     end
 
     @testset "sdtype of an arbitrary distribution is Stochastic" begin

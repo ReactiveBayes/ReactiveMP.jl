@@ -85,10 +85,8 @@ Base.show(io::IO, sl::SampleList)         = sample_list_show(io, variate_form(sl
 Base.similar(sl::SampleList{D}) where {D} = SampleList(Val(D), similar(sl.samples), similar(sl.weights))
 
 sample_list_show(io::IO, ::Type{Univariate}, sl::SampleList) = print(io, "SampleList(Univariate, ", length(sl), ")")
-sample_list_show(io::IO, ::Type{Multivariate}, sl::SampleList) =
-    print(io, "SampleList(Multivariate(", ndims(sl), "), ", length(sl), ")")
-sample_list_show(io::IO, ::Type{Matrixvariate}, sl::SampleList) =
-    print(io, "SampleList(Matrixvariate", ndims(sl), ", ", length(sl), ")")
+sample_list_show(io::IO, ::Type{Multivariate}, sl::SampleList) = print(io, "SampleList(Multivariate(", ndims(sl), "), ", length(sl), ")")
+sample_list_show(io::IO, ::Type{Matrixvariate}, sl::SampleList) = print(io, "SampleList(Matrixvariate", ndims(sl), ", ", length(sl), ")")
 
 function SampleList(samples::S) where {S <: AbstractVector}
     N = length(samples)
@@ -227,13 +225,7 @@ end
 
 # `x` is proposal distribution
 # `y` is integrand distribution
-function approximate_prod_with_sample_list(
-    rng::AbstractRNG,
-    ::BootstrapImportanceSampling,
-    x::Any,
-    y::Any,
-    nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES
-)
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::Any, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     @assert nsamples >= 1 "Number of samples should be non-positive"
 
     xlogpdf, xsample = logpdf_sample_friendly(x)
@@ -290,35 +282,17 @@ function approximate_prod_with_sample_list(
     return SampleList(Val(xsize), preallocated, norm_weights, meta)
 end
 
-function approximate_prod_with_sample_list(
-    rng::AbstractRNG,
-    ::AbstractSampleListSamplingMethod,
-    x::SampleList,
-    y::SampleList,
-    nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES
-)
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::AbstractSampleListSamplingMethod, x::SampleList, y::SampleList, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     error("Unsupported SampleList × SampleList prod operation.")
 end
 
-function approximate_prod_with_sample_list(
-    rng::AbstractRNG,
-    method::AbstractSampleListSamplingMethod,
-    x::SampleList,
-    y::Any,
-    nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES
-)
+function approximate_prod_with_sample_list(rng::AbstractRNG, method::AbstractSampleListSamplingMethod, x::SampleList, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
     return approximate_prod_with_sample_list(rng, method, y, x, nsamples)
 end
 
 # prod of a pdf (or distribution) message and a SampleList message
 # this function is capable to calculate entropy with SampleList messages in VMP setting
-function approximate_prod_with_sample_list(
-    rng::AbstractRNG,
-    ::BootstrapImportanceSampling,
-    x::Any,
-    y::SampleList{D},
-    nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES
-) where {D}
+function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::Any, y::SampleList{D}, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) where {D}
 
     # TODO: In principle it is possible to implement different prod approximation for different nsamples
     # TODO: This feature would be probably super rare in use so lets postpone it and mark as todo
@@ -586,7 +560,7 @@ function sample_list_mean!(μ, ::Type{Multivariate}, sl::SampleList)
     n, samples, weights = get_data(sl)
     k = length(μ)
     @turbo for i in 1:n, j in 1:k
-        μ[j] += (weights[i] * samples[(i-1)*k+j])
+        μ[j] += (weights[i] * samples[(i - 1) * k + j])
     end
     return μ
 end
@@ -598,11 +572,11 @@ function sample_list_covm!(Σ, μ, ::Type{Multivariate}, sl::SampleList)
 
     @inbounds for i in 1:n
         for j in 1:k
-            tmp[j] = samples[(i-1)*k+j] - μ[j]
+            tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
         for h in 1:k, l in 1:k
-            Σ[(h-1)*k+l] += weights[i] * tmp[h] * tmp[l]
+            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
         end
     end
     s = n / (n - 1)
@@ -622,7 +596,7 @@ function sample_list_logmean(::Type{Multivariate}, sl::SampleList)
     logμ = sample_list_zero_element(sl)
     k = length(logμ)
     @turbo for i in 1:n, j in 1:k
-        logμ[j] += (weights[i] * log(samples[(i-1)*k+j]))
+        logμ[j] += (weights[i] * log(samples[(i - 1) * k + j]))
     end
     return logμ
 end
@@ -632,7 +606,7 @@ function sample_list_meanlogmean(::Type{Multivariate}, sl::SampleList)
     μlogμ = sample_list_zero_element(sl)
     k = length(μlogμ)
     @turbo for i in 1:n, j in 1:k
-        cs = samples[(i-1)*k+j]
+        cs = samples[(i - 1) * k + j]
         μlogμ[j] += (weights[i] * cs * log(cs))
     end
     return μlogμ
@@ -651,7 +625,7 @@ function sample_list_mean!(μ, ::Type{Matrixvariate}, sl::SampleList)
     n, samples, weights = get_data(sl)
     k = length(μ)
     @turbo for i in 1:n, j in 1:k
-        μ[j] += (weights[i] * samples[(i-1)*k+j])
+        μ[j] += (weights[i] * samples[(i - 1) * k + j])
     end
     return μ
 end
@@ -663,11 +637,11 @@ function sample_list_covm!(Σ, μ, ::Type{Matrixvariate}, sl::SampleList)
     tmp = similar(rμ)
     @inbounds for i in 1:n
         for j in 1:k
-            tmp[j] = samples[(i-1)*k+j] - μ[j]
+            tmp[j] = samples[(i - 1) * k + j] - μ[j]
         end
         # Fast equivalent of Σ += w .* (tmp * tmp')
         for h in 1:k, l in 1:k
-            Σ[(h-1)*k+l] += weights[i] * tmp[h] * tmp[l]
+            Σ[(h - 1) * k + l] += weights[i] * tmp[h] * tmp[l]
         end
     end
     s = n / (n - 1)
@@ -687,7 +661,7 @@ function sample_list_logmean(::Type{Matrixvariate}, sl::SampleList)
     logμ = sample_list_zero_element(sl)
     k = length(logμ)
     @turbo for i in 1:n, j in 1:k
-        logμ[j] += (weights[i] * log(samples[(i-1)*k+j]))
+        logμ[j] += (weights[i] * log(samples[(i - 1) * k + j]))
     end
     return logμ
 end
@@ -697,7 +671,7 @@ function sample_list_meanlogmean(::Type{Matrixvariate}, sl::SampleList)
     μlogμ = sample_list_zero_element(sl)
     k = length(μlogμ)
     @turbo for i in 1:n, j in 1:k
-        cs = samples[(i-1)*k+j]
+        cs = samples[(i - 1) * k + j]
         μlogμ[j] += (weights[i] * cs * log(cs))
     end
     return μlogμ
@@ -798,10 +772,7 @@ function sample_list_transform_samples(::Type{U}, f::Function, sl::SampleList) w
         # We use static matrix size to ensure that we do not allocate extra memory on a heap
         # Instead we try to do all computations on stack as much as possible
         # If `f` function is "bad" and still allocates matrices this optimisation doesn't really work well
-        copyto!(
-            preallocated[output_left:output_right],
-            f(input_for_transform(U, samples, input_size, input_left, input_right))
-        )
+        copyto!(preallocated[output_left:output_right], f(input_for_transform(U, samples, input_size, input_left, input_right)))
     end
 
     # if `f` is type stable and returns StaticArray `output_size` is a compile-time constant

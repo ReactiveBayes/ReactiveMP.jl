@@ -111,8 +111,7 @@ Base.:(*)(
     right::Union{<:FactorisationConstraintsSpecification, <:FactorisationConstraintsEntry}
 ) = (left..., right)
 Base.:(*)(
-    left::Union{<:FactorisationConstraintsSpecification, <:FactorisationConstraintsEntry},
-    right::Union{<:FactorisationConstraintsSpecification, <:FactorisationConstraintsEntry}
+    left::Union{<:FactorisationConstraintsSpecification, <:FactorisationConstraintsEntry}, right::Union{<:FactorisationConstraintsSpecification, <:FactorisationConstraintsEntry}
 ) = (left, right)
 
 Base.:(*)(::FactorisationSpecificationNotDefinedYet{S}, something::Any) where {S}                                      = error("Cannot multiply $S and $something. $S has not been defined yet.")
@@ -136,10 +135,7 @@ end
 
 # Split related functions
 
-Base.:(*)(
-    left::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}},
-    right::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}}
-) = (left..., right...)
+Base.:(*)(left::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}}, right::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}}) = (left..., right...)
 
 # Only these combinations are allowed to be merged
 __factorisation_split_merge_range(a::Int, b::Int)                         = SplittedRange(a, b)
@@ -148,16 +144,11 @@ __factorisation_split_merge_range(a::Int, b::FunctionalIndex)             = Spli
 __factorisation_split_merge_range(a::FunctionalIndex, b::FunctionalIndex) = SplittedRange(a, b)
 __factorisation_split_merge_range(a::Any, b::Any)                         = error("Cannot merge $(a) and $(b) indexes in `factorisation_split`")
 
-function factorisation_split(
-    left::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}},
-    right::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}}
-)
+function factorisation_split(left::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}}, right::Tuple{Vararg{T where T <: FactorisationConstraintsEntry}})
     left_last   = last(left)
     right_first = first(right)
-    (getnames(left_last) === getnames(right_first)) ||
-        error("Cannot split $(left_last) and $(right_first). Names or their order does not match.")
-    (length(getnames(left_last)) === length(Set(getnames(left_last)))) ||
-        error("Cannot split $(left_last) and $(right_first). Names should be unique.")
+    (getnames(left_last) === getnames(right_first)) || error("Cannot split $(left_last) and $(right_first). Names or their order does not match.")
+    (length(getnames(left_last)) === length(Set(getnames(left_last)))) || error("Cannot split $(left_last) and $(right_first). Names should be unique.")
     lindices = getindices(left_last)
     rindices = getindices(right_first)
     split_merged = unrolled_map(__factorisation_split_merge_range, lindices, rindices)
@@ -166,11 +157,7 @@ function factorisation_split(
     # first_split = first(split_merged)
     # unrolled_all(e -> e === first_split, split_merged) || error("Inconsistent indices within factorisation split. Check $(split_merged) indices for $(getnames(left_last)) variables.")
 
-    return (
-        left[1:end-1]...,
-        FactorisationConstraintsEntry(Val(getnames(left_last)), Val(split_merged)),
-        right[begin+1:end]...
-    )
+    return (left[1:(end - 1)]..., FactorisationConstraintsEntry(Val(getnames(left_last)), Val(split_merged)), right[(begin + 1):end]...)
 end
 
 ## 
@@ -265,9 +252,7 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
 
     var_refs_collections = map(var_refs_names) do name
         return get(
-            () -> error(
-                "Variables collection has no variable named $(name). Double check the expression `$(var_refs_names[1]) ~ $(fform)($(join(var_refs_names[2:end], ", ")))`."
-            ),
+            () -> error("Variables collection has no variable named $(name). Double check the expression `$(var_refs_names[1]) ~ $(fform)($(join(var_refs_names[2:end], ", ")))`."),
             vardict,
             name
         )
@@ -278,11 +263,7 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
     # end
 
     # Note from bvdmitri: see explanation about explicit `::Tuple{Bool, Int, UnitRange{Int}, Bool}` further in main filter procedure
-    function __resolve_var_ref_position(
-        qpair_name::Symbol,
-        qpair_index::Nothing,
-        start_with::Int
-    )::Tuple{Bool, Int, UnitRange{Int}, Bool}
+    function __resolve_var_ref_position(qpair_name::Symbol, qpair_index::Nothing, start_with::Int)::Tuple{Bool, Int, UnitRange{Int}, Bool}
         position    = findnext(==(qpair_name), var_refs_names, start_with)
         is_found    = position !== nothing
         _position   = is_found ? position : 0
@@ -293,9 +274,7 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
 
     # Note from bvdmitri: see explanation about explicit `::Tuple{Bool, Int, UnitRange{Int}, Bool}` further in main filter procedure
     function __resolve_var_ref_position(
-        qpair_name::Symbol,
-        qpair_index::Union{Integer, FunctionalIndex, CombinedRange, SplittedRange},
-        start_with::Int
+        qpair_name::Symbol, qpair_index::Union{Integer, FunctionalIndex, CombinedRange, SplittedRange}, start_with::Int
     )::Tuple{Bool, Int, UnitRange{Int}, Bool}
         qpair_name_position = findnext(==(qpair_name), var_refs_names, start_with)
         if qpair_name_position === nothing
@@ -304,18 +283,9 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
         qpair_name_collection = @inbounds var_refs_collections[qpair_name_position]
         qpair_resolved_index  = __factorisation_specification_resolve_index(qpair_index, qpair_name_collection)
         if (@inbounds var_refs_indices[qpair_name_position]) ∈ qpair_resolved_index
-            return (
-                true,
-                qpair_name_position,
-                __as_unit_range(qpair_resolved_index),
-                is_splitted(qpair_resolved_index)
-            )::Tuple{Bool, Int, UnitRange{Int}, Bool}
+            return (true, qpair_name_position, __as_unit_range(qpair_resolved_index), is_splitted(qpair_resolved_index))::Tuple{Bool, Int, UnitRange{Int}, Bool}
         else
-            return __resolve_var_ref_position(
-                qpair_name,
-                qpair_resolved_index,
-                qpair_name_position + 1
-            )::Tuple{Bool, Int, UnitRange{Int}, Bool}
+            return __resolve_var_ref_position(qpair_name, qpair_resolved_index, qpair_name_position + 1)::Tuple{Bool, Int, UnitRange{Int}, Bool}
         end
     end
 
@@ -334,16 +304,12 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
             for entry in factorisation_entries
                 is_found = __filter_template!(Val(true), entry)
                 if is_found && found_once
-                    error(
-                        "Found variable $(__repr_symbol_index(symbol, index)) twice in the factorisation specification $(spec)."
-                    )
+                    error("Found variable $(__repr_symbol_index(symbol, index)) twice in the factorisation specification $(spec).")
                 end
                 found_once = found_once | is_found
             end
             if !found_once
-                error(
-                    "Variable $(__repr_symbol_index(symbol, index)) has not been found on the RHS of the factorisation specification $(spec)"
-                )
+                error("Variable $(__repr_symbol_index(symbol, index)) has not been found on the RHS of the factorisation specification $(spec)")
             end
             return found_once
         end
@@ -396,20 +362,16 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
                     # Nevertheless, it solves type-instability issues and makes x10 performance speedup for free?. Probably there is something else to improve,
                     # but overall performance is acceptable. (see also: `__resolve_var_ref_position` with explicit type annotation)
                     is_found, var_ref_position, var_ref_resolved_range, var_ref_is_splitted =
-                        __resolve_var_ref_position(
-                            q_pair_symbol,
-                            q_pair_index,
-                            var_ref_position + 1
-                        )::Tuple{Bool, Int, UnitRange{Int}, Bool}
+                        __resolve_var_ref_position(q_pair_symbol, q_pair_index, var_ref_position + 1)::Tuple{Bool, Int, UnitRange{Int}, Bool}
                     if is_found
                         var_ref_index = var_refs_indices[var_ref_position]
                         if is_external_name
-                            clusters_template[shift+var_ref_position] = false
+                            clusters_template[shift + var_ref_position] = false
                         elseif q_pair_symbol === symbol && ((index === nothing) || (index ∈ var_ref_resolved_range))
                             if index === var_ref_index
                                 current_found = true
                             elseif var_ref_is_splitted
-                                clusters_template[shift+var_ref_position] = false
+                                clusters_template[shift + var_ref_position] = false
                             end
                         elseif q_pair_symbol !== symbol && is_csentry_splitted
                             # So this check is quite computationally expensive, but we assume it would happen rather rare
@@ -417,8 +379,7 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
 
                             # this should not be `nothing` by any means
                             # this also should be unique since we don't allow multiple entries with the same name in splitted range
-                            q_pair_index_for_current_symbol =
-                                entry_indices[findnext(==(symbol), entry_names, 1)::Integer]
+                            q_pair_index_for_current_symbol = entry_indices[findnext(==(symbol), entry_names, 1)::Integer]
 
                             # So here we have
                             # `q_pair` for current entry and `q_pair for current symbol` which aren't the same because of the previous checks
@@ -429,7 +390,7 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
                             index_diff  = var_ref_index - index
 
                             if q_pair_diff !== index_diff
-                                clusters_template[shift+var_ref_position] = false
+                                clusters_template[shift + var_ref_position] = false
                             end
                         else
                             save_var_ref_position_tmp += 1
@@ -443,7 +404,7 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
 
             if !is_external_name && !current_found
                 @inbounds for i in 1:save_var_ref_position_tmp
-                    clusters_template[shift+var_refs_positions[i]] = false
+                    clusters_template[shift + var_refs_positions[i]] = false
                 end
             end
 
@@ -465,8 +426,8 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
             # We filter out varref from all clusters if it is not random
             for k in 1:N
                 if k !== index
-                    clusters_template[shift+k] = false
-                    clusters_template[(k-1)*N+index] = false
+                    clusters_template[shift + k] = false
+                    clusters_template[(k - 1) * N + index] = false
                 end
             end
         end
@@ -518,14 +479,10 @@ struct ClusterIntersectionError
     constraints
 end
 
-__throw_intersection_error(fform, varrefs, varrefsnames, clusters, constraints) =
-    throw(ClusterIntersectionError(fform, varrefs, varrefsnames, clusters, constraints))
+__throw_intersection_error(fform, varrefs, varrefsnames, clusters, constraints) = throw(ClusterIntersectionError(fform, varrefs, varrefsnames, clusters, constraints))
 
 function Base.showerror(io::IO, error::ClusterIntersectionError)
-    print(
-        io,
-        "Cluster intersection error in the expression `$(__io_entry_pair(error.varrefs[1])) ~ $(error.fform)($(join(map(__io_entry_pair, error.varrefs[2:end]), ", ")))`.\n"
-    )
+    print(io, "Cluster intersection error in the expression `$(__io_entry_pair(error.varrefs[1])) ~ $(error.fform)($(join(map(__io_entry_pair, error.varrefs[2:end]), ", ")))`.\n")
     print(io, "Based on factorisation constraints the resulting local constraint ")
     print(io, "q(")
     join(io, map(r -> __io_entry_pair(r[1], r[2]), error.varrefs), ", ")

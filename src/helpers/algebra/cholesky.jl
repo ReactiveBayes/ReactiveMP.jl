@@ -59,7 +59,7 @@ end
 function fastcholesky!(A::AbstractMatrix)
     n = LinearAlgebra.checksquare(A)
     @inbounds for col in 1:n
-        @inbounds @simd for idx in 1:col-1
+        @inbounds @simd for idx in 1:(col - 1)
             A[col, col] -= A[col, idx]^2
         end
         if A[col, col] <= 0
@@ -67,8 +67,8 @@ function fastcholesky!(A::AbstractMatrix)
         end
         A[col, col] = sqrt(A[col, col])
 
-        @inbounds for row in col+1:n
-            @inbounds @simd for idx in 1:col-1
+        @inbounds for row in (col + 1):n
+            @inbounds @simd for idx in 1:(col - 1)
                 A[row, col] -= A[row, idx] * A[col, idx]
             end
             A[row, col] /= A[col, col]
@@ -87,19 +87,19 @@ function fastcholesky!(A::AbstractMatrix{T}) where {T <: LinearAlgebra.BlasFloat
     z = 1
     @inbounds for c in 1:n
         if c == z + s
-            BLAS.gemm!('N', 'T', -one(T), view(A, c:n, z:c-1), view(A, c:n, z:c-1), one(T), view(A, c:n, c:n)) # replace with syrk once julia bug has been fixed
+            BLAS.gemm!('N', 'T', -one(T), view(A, c:n, z:(c - 1)), view(A, c:n, z:(c - 1)), one(T), view(A, c:n, c:n)) # replace with syrk once julia bug has been fixed
             z = c
         end
 
-        @inbounds for k in z:c-1
+        @inbounds for k in z:(c - 1)
             A[c, c] -= A[c, k]^2
         end
         if A[c, c] <= 0
             return Cholesky(A, 'L', convert(BlasInt, -1))
         end
         A[c, c] = sqrt(A[c, c])
-        @inbounds for i in c+1:n
-            @inbounds for k in z:c-1
+        @inbounds for i in (c + 1):n
+            @inbounds for k in z:(c - 1)
                 A[i, c] -= A[i, k] * A[c, k]
             end
             A[i, c] /= A[c, c]

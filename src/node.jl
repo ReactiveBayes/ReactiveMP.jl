@@ -205,12 +205,10 @@ mutable struct NodeInterface
     connected_variable :: Union{Nothing, AbstractVariable}
     connected_index    :: Int
 
-    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) =
-        new(name, local_constraint, MessageObservable(AbstractMessage), nothing, 0)
+    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, MessageObservable(AbstractMessage), nothing, 0)
 end
 
-Base.show(io::IO, interface::NodeInterface) =
-    print(io, string("Interface(", name(interface), ", ", local_constraint(interface), ")"))
+Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ", ", local_constraint(interface), ")"))
 
 """
     name(interface)
@@ -314,10 +312,7 @@ struct IndexedNodeInterface
     interface :: NodeInterface
 end
 
-Base.show(io::IO, interface::IndexedNodeInterface) = print(
-    io,
-    string("IndexedInterface(", name(interface), ", ", local_constraint(interface), ", ", index(interface), ")")
-)
+Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", name(interface), ", ", local_constraint(interface), ", ", index(interface), ")"))
 
 name(interface::IndexedNodeInterface)             = name(interface.interface)
 local_constraint(interface::IndexedNodeInterface) = local_constraint(interface.interface)
@@ -451,8 +446,7 @@ getpipeline(factornode::FactorNode)        = factornode.pipeline
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
 # Cluster is reffered to a tuple of node interfaces
-clusters(factornode::FactorNode) =
-    map(factor -> map(i -> @inbounds(interfaces(factornode)[i]), factor), factorisation(factornode))
+clusters(factornode::FactorNode) = map(factor -> map(i -> @inbounds(interfaces(factornode)[i]), factor), factorisation(factornode))
 
 clusterindex(factornode::FactorNode, v::Symbol)                                = clusterindex(factornode, (v,))
 clusterindex(factornode::FactorNode, vindex::Int)                              = clusterindex(factornode, (vindex,))
@@ -504,10 +498,7 @@ get_pipeline_dependencies(pipeline::FactorNodePipeline) = pipeline.functional_de
 get_pipeline_stages(pipeline::FactorNodePipeline)       = pipeline.extra_stages
 
 function Base.show(io::IO, pipeline::FactorNodePipeline)
-    print(
-        io,
-        "FactorNodePipeline(functional_dependencies = $(pipeline.functional_dependencies), extra_stages = $(pipeline.extra_stages)"
-    )
+    print(io, "FactorNodePipeline(functional_dependencies = $(pipeline.functional_dependencies), extra_stages = $(pipeline.extra_stages)")
 end
 
 function collect_pipeline end
@@ -822,10 +813,9 @@ function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipeli
             vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-            mapping =
-                let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
-                    (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
-                end
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
 
             vmessageout = vmessageout |> map(AbstractMessage, mapping)
             vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
@@ -934,12 +924,10 @@ end
 make_node(fform, args::Vararg{<:AbstractVariable}) = make_node(fform, FactorNodeCreationOptions(), args...)
 
 function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
-    error(
-        """
-        `$(fform)` is not available as a node in the inference engine. Used in `$(name(first(args))) ~ $(fform)(...)` expression.
-        Use `@node` macro to add a custom factor node corresponding to `$(fform)`. See `@node` macro for additional documentation and examples.
-        """
-    )
+    error("""
+          `$(fform)` is not available as a node in the inference engine. Used in `$(name(first(args))) ~ $(fform)(...)` expression.
+          Use `@node` macro to add a custom factor node corresponding to `$(fform)`. See `@node` macro for additional documentation and examples.
+          """)
 end
 
 # This error message should be displayed if a node receives an incompatible number of arguments
@@ -996,8 +984,7 @@ macro node(fformtype, sdtype, interfaces_list)
 
     @assert sdtype ∈ [:Stochastic, :Deterministic] "Invalid sdtype $(sdtype). Can be either Stochastic or Deterministic."
 
-    @capture(interfaces_list, [interfaces_args__]) ||
-        error("Invalid interfaces specification.")
+    @capture(interfaces_list, [interfaces_args__]) || error("Invalid interfaces specification.")
 
     interfaces = map(interfaces_args) do arg
         if @capture(arg, name_Symbol)
@@ -1033,14 +1020,10 @@ macro node(fformtype, sdtype, interfaces_list)
 
     # Check that all arguments within interface refer to the unique var objects
     non_unique_error_sym = gensym(:non_unique_error_sym)
-    non_unique_error_msg = :(
-        $non_unique_error_sym =
-            (fformtype, names) ->
-                """
-                Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed.
-                Check creation of the `$(fformtype)` with the `[ $(join(names, ", ")) ]` arguments.
-                """
-    )
+    non_unique_error_msg = :($non_unique_error_sym = (fformtype, names) -> """
+                                                                           Non-unique variables used for the creation of the `$(fformtype)` node, which is disallowed.
+                                                                           Check creation of the `$(fformtype)` with the `[ $(join(names, ", ")) ]` arguments.
+                                                                           """)
     interface_uniqueness = map(enumerate(names)) do (index, name)
         names_without_current = skipindex(names, index)
         return quote
@@ -1062,12 +1045,7 @@ macro node(fformtype, sdtype, interfaces_list)
         name_index_getter  = :(ReactiveMP.interface_get_name(::Type{Val{$(Expr(:quote, fbottomtype))}}, ::Type{Val{$index}}) = $(Expr(:quote, name)))
 
         alias_getters = map(aliases) do alias
-            return :(
-                ReactiveMP.interface_get_name(
-                    ::Type{Val{$(Expr(:quote, fbottomtype))}},
-                    ::Type{Val{$(Expr(:quote, alias))}}
-                ) = $(Expr(:quote, name))
-            )
+            return :(ReactiveMP.interface_get_name(::Type{Val{$(Expr(:quote, fbottomtype))}}, ::Type{Val{$(Expr(:quote, alias))}}) = $(Expr(:quote, name)))
         end
 
         return quote
@@ -1115,8 +1093,7 @@ macro node(fformtype, sdtype, interfaces_list)
 
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
 
-        @doc $doc
-        function ReactiveMP.make_node(::$fuppertype, options::ReactiveMP.FactorNodeCreationOptions)
+        @doc $doc function ReactiveMP.make_node(::$fuppertype, options::ReactiveMP.FactorNodeCreationOptions)
             return ReactiveMP.FactorNode(
                 $fbottomtype,
                 $names_quoted_tuple,
@@ -1135,11 +1112,7 @@ macro node(fformtype, sdtype, interfaces_list)
         end
 
         # Fallback method for unsupported number of arguments, e.g. if node expects 2 inputs, but only 1 was given
-        function ReactiveMP.make_node(
-            ::$fuppertype,
-            options::ReactiveMP.FactorNodeCreationOptions,
-            args::Vararg{<:ReactiveMP.AbstractVariable}
-        )
+        function ReactiveMP.make_node(::$fuppertype, options::ReactiveMP.FactorNodeCreationOptions, args::Vararg{<:ReactiveMP.AbstractVariable})
             ReactiveMP.make_node_incompatible_number_of_arguments_error($fuppertype, $fbottomtype, $interfaces, args)
         end
 

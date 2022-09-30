@@ -34,8 +34,7 @@ resolve_prod_constraint(left::ProdGeneric, right::ProdGeneric) = ProdGeneric(res
 resolve_prod_constraint(left::ProdFinal, right::AbstractProdConstraint) = left
 resolve_prod_constraint(left::AbstractProdConstraint, right::ProdFinal) = right
 
-resolve_prod_constraint(left::ProdFinal, right::ProdFinal) =
-    error("Cannot resolve `prod_constraint`. Both $(left) and $(right) prod constraints are of type `ProdFinal`")
+resolve_prod_constraint(left::ProdFinal, right::ProdFinal) = error("Cannot resolve `prod_constraint`. Both $(left) and $(right) prod constraints are of type `ProdFinal`")
 
 # Utility case
 resolve_prod_constraint(left::Nothing, right::AbstractProdConstraint) = right

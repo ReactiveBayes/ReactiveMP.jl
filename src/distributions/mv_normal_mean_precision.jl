@@ -70,11 +70,7 @@ function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNor
     return MvNormalMeanPrecision(μ, Λ)
 end
 
-function Base.prod(
-    ::ProdPreserveType,
-    left::MvNormalMeanPrecision{T1},
-    right::MvNormalMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     Λ = precision(left) + precision(right)
 
     # fast & efficient implementation of precision(right)*mean(right) + precision(left)*mean(left)
@@ -96,11 +92,7 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNorma
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
-function Base.prod(
-    ::ProdAnalytical,
-    left::MvNormalMeanPrecision{T1},
-    right::MvNormalMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
     # fast & efficient implementation of xi = precision(right)*mean(right) + precision(left)*mean(left)

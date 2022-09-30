@@ -1,11 +1,6 @@
 using PkgBenchmark, BenchmarkCI, Base64
 
-BenchmarkCI.judge(
-    target = PkgBenchmark.BenchmarkConfig(;
-        id = nothing,
-        juliacmd = `julia -O3 --startup-file=no`
-    )
-)
+BenchmarkCI.judge(; target = PkgBenchmark.BenchmarkConfig(; id = nothing, juliacmd = `julia -O3 --startup-file=no`))
 BenchmarkCI.displayjudgement()
 
 if get(ENV, "PUBLISH_BENCHMARKS", "FALSE") == "TRUE" && haskey(ENV, "BENCHMARK_KEY")

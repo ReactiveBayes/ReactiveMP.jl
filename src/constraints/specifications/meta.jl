@@ -72,8 +72,7 @@ function resolve_meta(metaspec, fform, variables)
     found = nothing
 
     unrolled_foreach(getentries(metaspec)) do fentry
-        if functionalform(fentry) === symfform &&
-           (all(s -> s ∈ var_names, getnames(fentry)) || all(s -> s ∈ var_refs_names, getnames(fentry)))
+        if functionalform(fentry) === symfform && (all(s -> s ∈ var_names, getnames(fentry)) || all(s -> s ∈ var_refs_names, getnames(fentry)))
             if found !== nothing
                 error("Ambigous meta object resolution for the node $(fform). Check $(found) and $(fentry).")
             end

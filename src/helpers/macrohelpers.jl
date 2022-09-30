@@ -26,8 +26,7 @@ This function returns `T` expression for the following input expressions:
 # See also: [`extract_fformtype`](@ref), [`upper_type`](@ref)
 """
 function bottom_type(type)
-    @capture(type, (typeof(T_)) | (Type{<:T_}) | (Type{T_}) | (T_)) ||
-        error("Expression $(type) doesnt seem to be a valid type expression.")
+    @capture(type, (typeof(T_)) | (Type{<:T_}) | (Type{T_}) | (T_)) || error("Expression $(type) doesnt seem to be a valid type expression.")
     return T
 end
 
@@ -107,8 +106,7 @@ Distributions.var(proxy::Message)  = Distributions.mean(getdata(proxy))
 ```
 """
 macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
-    @capture(proxy_methods, [methods__]) ||
-        error("Invalid specification of proxy methods, should be an array of methods")
+    @capture(proxy_methods, [methods__]) || error("Invalid specification of proxy methods, should be an array of methods")
 
     output      = Expr(:block)
     output.args = map(method -> :(($method)(proxy::$(proxy_type)) = ($method)($(proxy_getter)(proxy))), methods)
@@ -127,10 +125,7 @@ function expression_convert_eltype(eltype::Type{T}, expr::Expr) where {T}
                 )
                 return (name, value)
             end
-            return Expr(
-                :tuple,
-                map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...
-            )
+            return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
         else
             return Expr(:tuple, map(elem -> :($(expression_convert_eltype(eltype, elem))), elems)...)
         end
@@ -149,9 +144,7 @@ macro test_inferred(T, expression)
             let
                 local result = Test.@inferred($expression)
                 if !(ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T)
-                    error(
-                        "Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T"
-                    )
+                    error("Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T")
                 end
                 @test ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
                 result

@@ -1,9 +1,5 @@
 
-@rule typeof(dot)(:in2, Marginalisation) (
-    m_out::UnivariateNormalDistributionsFamily,
-    m_in1::PointMass,
-    meta::AbstractCorrection
-) = begin
+@rule typeof(dot)(:in2, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in1::PointMass, meta::AbstractCorrection) = begin
     A = mean(m_in1)
     out_wmean, out_prec = weightedmean_precision(m_out)
 

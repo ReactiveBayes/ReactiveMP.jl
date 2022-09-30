@@ -18,9 +18,7 @@ Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(ma
 function Base.:(==)(left::Marginal, right::Marginal)
     # We need this dummy method as Julia is not smart enough to 
     # do that automatically if `data` is mutable
-    return left.is_clamped == right.is_clamped &&
-           left.is_initial == right.is_initial &&
-           left.data == right.data
+    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data
 end
 
 """
@@ -185,20 +183,9 @@ function (mapping::MarginalMapping)(dependencies)
     is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_marginal_initial =
-        !is_marginal_clamped &&
-        (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
+    is_marginal_initial = !is_marginal_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    marginal = marginalrule(
-        marginal_mapping_fform(mapping),
-        mapping.vtag,
-        mapping.msgs_names,
-        messages,
-        mapping.marginals_names,
-        marginals,
-        mapping.meta,
-        mapping.factornode
-    )
+    marginal = marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
 
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
 end

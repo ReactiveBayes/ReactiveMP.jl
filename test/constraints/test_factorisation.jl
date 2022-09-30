@@ -47,8 +47,8 @@ import ReactiveMP: setanonymous!, activate!
         end
 
         for i in 1:3
-            __as_unit_range(CombinedRange(i, i + 1)) === (i):(i+1)
-            __as_unit_range(SplittedRange(i, i + 1)) === (i):(i+1)
+            __as_unit_range(CombinedRange(i, i + 1)) === (i):(i + 1)
+            __as_unit_range(SplittedRange(i, i + 1)) === (i):(i + 1)
         end
     end
 
@@ -57,10 +57,7 @@ import ReactiveMP: setanonymous!, activate!
 
         @test __factorisation_specification_resolve_index(nothing, randomvar(:x)) === nothing
         @test_throws ErrorException __factorisation_specification_resolve_index(1, randomvar(:x))
-        @test_throws ErrorException __factorisation_specification_resolve_index(
-            FunctionalIndex{:begin}(firstindex),
-            randomvar(:x)
-        )
+        @test_throws ErrorException __factorisation_specification_resolve_index(FunctionalIndex{:begin}(firstindex), randomvar(:x))
 
         @test __factorisation_specification_resolve_index(nothing, collection) === nothing
         @test __factorisation_specification_resolve_index(1, collection) === 1
@@ -72,80 +69,42 @@ import ReactiveMP: setanonymous!, activate!
         @test __factorisation_specification_resolve_index(FunctionalIndex{:begin}(firstindex) + 1 + 1, collection) === 3
         @test __factorisation_specification_resolve_index(FunctionalIndex{:end}(lastindex) - 1, collection) === 2
 
-        @test_throws ErrorException __factorisation_specification_resolve_index(
-            FunctionalIndex{:begin}(firstindex) + 100,
-            collection
-        )
-        @test_throws ErrorException __factorisation_specification_resolve_index(
-            FunctionalIndex{:end}(lastindex) - 100,
-            collection
-        )
+        @test_throws ErrorException __factorisation_specification_resolve_index(FunctionalIndex{:begin}(firstindex) + 100, collection)
+        @test_throws ErrorException __factorisation_specification_resolve_index(FunctionalIndex{:end}(lastindex) - 100, collection)
 
         @test __factorisation_specification_resolve_index(CombinedRange(1, 3), collection) === CombinedRange(1, 3)
         @test __factorisation_specification_resolve_index(CombinedRange(1, 2), collection) === CombinedRange(1, 2)
-        @test __factorisation_specification_resolve_index(
-            CombinedRange(FunctionalIndex{:begin}(firstindex), 2),
-            collection
-        ) === CombinedRange(1, 2)
-        @test __factorisation_specification_resolve_index(
-            CombinedRange(1, FunctionalIndex{:end}(lastindex)),
-            collection
-        ) === CombinedRange(1, 3)
-        @test __factorisation_specification_resolve_index(
-            CombinedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 1),
-            collection
-        ) === CombinedRange(2, 2)
+        @test __factorisation_specification_resolve_index(CombinedRange(FunctionalIndex{:begin}(firstindex), 2), collection) === CombinedRange(1, 2)
+        @test __factorisation_specification_resolve_index(CombinedRange(1, FunctionalIndex{:end}(lastindex)), collection) === CombinedRange(1, 3)
+        @test __factorisation_specification_resolve_index(CombinedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 1), collection) ===
+            CombinedRange(2, 2)
 
         @test __factorisation_specification_resolve_index(SplittedRange(1, 3), collection) === SplittedRange(1, 3)
         @test __factorisation_specification_resolve_index(SplittedRange(1, 2), collection) === SplittedRange(1, 2)
-        @test __factorisation_specification_resolve_index(
-            SplittedRange(FunctionalIndex{:begin}(firstindex), 2),
-            collection
-        ) === SplittedRange(1, 2)
-        @test __factorisation_specification_resolve_index(
-            SplittedRange(1, FunctionalIndex{:end}(lastindex)),
-            collection
-        ) === SplittedRange(1, 3)
-        @test __factorisation_specification_resolve_index(
-            SplittedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 1),
-            collection
-        ) === SplittedRange(2, 2)
+        @test __factorisation_specification_resolve_index(SplittedRange(FunctionalIndex{:begin}(firstindex), 2), collection) === SplittedRange(1, 2)
+        @test __factorisation_specification_resolve_index(SplittedRange(1, FunctionalIndex{:end}(lastindex)), collection) === SplittedRange(1, 3)
+        @test __factorisation_specification_resolve_index(SplittedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 1), collection) ===
+            SplittedRange(2, 2)
 
         @test_throws ErrorException __factorisation_specification_resolve_index(CombinedRange(1, 5), collection)
         @test_throws ErrorException __factorisation_specification_resolve_index(SplittedRange(1, 5), collection)
 
+        @test_throws ErrorException __factorisation_specification_resolve_index(CombinedRange(FunctionalIndex{:begin}(firstindex) + 100, 2), collection)
+        @test_throws ErrorException __factorisation_specification_resolve_index(CombinedRange(1, FunctionalIndex{:end}(lastindex) - 100), collection)
         @test_throws ErrorException __factorisation_specification_resolve_index(
-            CombinedRange(FunctionalIndex{:begin}(firstindex) + 100, 2),
-            collection
+            CombinedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 100), collection
         )
         @test_throws ErrorException __factorisation_specification_resolve_index(
-            CombinedRange(1, FunctionalIndex{:end}(lastindex) - 100),
-            collection
-        )
-        @test_throws ErrorException __factorisation_specification_resolve_index(
-            CombinedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 100),
-            collection
-        )
-        @test_throws ErrorException __factorisation_specification_resolve_index(
-            CombinedRange(FunctionalIndex{:begin}(firstindex) + 100, FunctionalIndex{:end}(lastindex)),
-            collection
+            CombinedRange(FunctionalIndex{:begin}(firstindex) + 100, FunctionalIndex{:end}(lastindex)), collection
         )
 
+        @test_throws ErrorException __factorisation_specification_resolve_index(SplittedRange(FunctionalIndex{:begin}(firstindex) + 100, 2), collection)
+        @test_throws ErrorException __factorisation_specification_resolve_index(SplittedRange(1, FunctionalIndex{:end}(lastindex) - 100), collection)
         @test_throws ErrorException __factorisation_specification_resolve_index(
-            SplittedRange(FunctionalIndex{:begin}(firstindex) + 100, 2),
-            collection
+            SplittedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 100), collection
         )
         @test_throws ErrorException __factorisation_specification_resolve_index(
-            SplittedRange(1, FunctionalIndex{:end}(lastindex) - 100),
-            collection
-        )
-        @test_throws ErrorException __factorisation_specification_resolve_index(
-            SplittedRange(FunctionalIndex{:begin}(firstindex) + 1, FunctionalIndex{:end}(lastindex) - 100),
-            collection
-        )
-        @test_throws ErrorException __factorisation_specification_resolve_index(
-            SplittedRange(FunctionalIndex{:begin}(firstindex) + 100, FunctionalIndex{:end}(lastindex)),
-            collection
+            SplittedRange(FunctionalIndex{:begin}(firstindex) + 100, FunctionalIndex{:end}(lastindex)), collection
         )
     end
 end

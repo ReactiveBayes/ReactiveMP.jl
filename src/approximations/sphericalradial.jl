@@ -11,7 +11,7 @@ end
 
 function getweights(::SphericalRadialCubature, mean::AbstractVector{T}, covariance::AbstractMatrix{T}) where {T <: Real}
     d = length(mean)
-    return Base.Generator(1:2d+1) do i
+    return Base.Generator(1:(2d + 1)) do i
         return i === (2d + 1) ? 1.0 / (d + 1) : 1.0 / (2.0(d + 1))
     end
 end
@@ -21,13 +21,13 @@ function getpoints(::SphericalRadialCubature, mean::AbstractVector{T}, covarianc
     L = cholsqrt(covariance)
 
     tmpbuffer = zeros(d)
-    sigma_points = Base.Generator(1:2d+1) do i
+    sigma_points = Base.Generator(1:(2d + 1)) do i
         if i === (2d + 1)
             fill!(tmpbuffer, 0.0)
         else
-            tmpbuffer[rem((i - 1), d)+1] = sqrt(d + 1) * (-1)^(div(i - 1, d))
+            tmpbuffer[rem((i - 1), d) + 1] = sqrt(d + 1) * (-1)^(div(i - 1, d))
             if i !== 1
-                tmpbuffer[rem((i - 2), d)+1] = 0.0
+                tmpbuffer[rem((i - 2), d) + 1] = 0.0
             end
         end
         return tmpbuffer

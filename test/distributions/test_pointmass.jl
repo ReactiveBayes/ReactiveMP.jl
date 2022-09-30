@@ -68,8 +68,8 @@ import ReactiveMP: xtlog, mirrorlog
             @test variate_form(dist) === Multivariate
             @test dist[2] === vector[2]
             @test dist[3] === vector[3]
-            @test_throws BoundsError dist[N+1]
-            @test_throws BoundsError dist[N-1, N-1]
+            @test_throws BoundsError dist[N + 1]
+            @test_throws BoundsError dist[N - 1, N - 1]
 
             @test insupport(dist, vector)
             @test !insupport(dist, vector .+ tiny)
@@ -122,7 +122,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test size(dist, 1) === size(matrix, 1)
             @test size(dist, 2) === size(matrix, 2)
             @test_throws BoundsError dist[N^3]
-            @test_throws BoundsError dist[N+1, N+1]
+            @test_throws BoundsError dist[N + 1, N + 1]
 
             @test insupport(dist, matrix)
             @test !insupport(dist, matrix .+ tiny)

@@ -48,7 +48,7 @@ This exception is thrown in the `prod` function in case if an analytical prod be
 See also: [`ProdAnalytical`](@ref), [`prod`]
 """
 struct NoAnalyticalProdException{L, R} <: Exception
-    left  :: L 
+    left  :: L
     right :: R
 end
 
@@ -57,4 +57,3 @@ function Base.showerror(io::IO, err::NoAnalyticalProdException)
     print(io, "  No analytical rule available to compute a product of $(err.left) and $(err.right).")
     print(io, "  Possible fix: implement `prod(::ProdAnalytical, left::$(typeof(err.left)), right::$(typeof(err.right))) = ...`")
 end
-

@@ -121,35 +121,22 @@ function multiply_messages(prod_constraint, left::Message, right::Message)
     return Message(prod(prod_constraint, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
 end
 
-constrain_form_as_message(message::Message, form_constraint) =
-    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message))
+constrain_form_as_message(message::Message, form_constraint) = Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message))
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
 # We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
-    (messages) -> foldl(
-        (left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
-        Base.Generator(as_message, messages)
-    )
+    (messages) -> foldl((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
 
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
-    (messages) -> constrain_form_as_message(
-        foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)),
-        form_constraint
-    )
+    (messages) -> constrain_form_as_message(foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)), form_constraint)
 
 prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
-    (messages) -> foldr(
-        (left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint),
-        Base.Generator(as_message, messages)
-    )
+    (messages) -> foldr((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
 
 prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
-    (messages) -> constrain_form_as_message(
-        foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)),
-        form_constraint
-    )
+    (messages) -> constrain_form_as_message(foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)), form_constraint)
 
 # Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
@@ -198,8 +185,7 @@ mutable struct VariationalMessage{R, S, F} <: AbstractMessage
     cache     :: Union{Nothing, Message}
 end
 
-VariationalMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
-    VariationalMessage(messages, marginals, mappingFn, nothing)
+VariationalMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = VariationalMessage(messages, marginals, mappingFn, nothing)
 
 Base.show(io::IO, ::VariationalMessage) = print(io, "VariationalMessage()")
 
@@ -289,20 +275,10 @@ function materialize!(mapping::MessageMapping, dependencies)
     is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_message_initial =
-        !is_message_clamped &&
-        (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
+    is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
     message = rule(
-        message_mapping_fform(mapping),
-        mapping.vtag,
-        mapping.vconstraint,
-        mapping.msgs_names,
-        messages,
-        mapping.marginals_names,
-        marginals,
-        mapping.meta,
-        mapping.factornode
+        message_mapping_fform(mapping), mapping.vtag, mapping.vconstraint, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode
     )
 
     return Message(message, is_message_clamped, is_message_initial)

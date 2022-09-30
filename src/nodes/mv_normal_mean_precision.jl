@@ -61,11 +61,7 @@ end
     result -= mean(logdet, q_Λ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result +=
-            m_Λ[k1, k2] * (
-                V[k1, k2] + V[dim+k1, dim+k2] - V[dim+k1, k2] - V[k1, dim+k2] +
-                (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2])
-            )
+        result += m_Λ[k1, k2] * (V[k1, k2] + V[dim + k1, dim + k2] - V[dim + k1, k2] - V[k1, dim + k2] + (m[k1] - m[dim + k1]) * (m[k2] - m[dim + k2]))
     end
     result /= 2
 
@@ -84,11 +80,7 @@ end
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result +=
-            S_Λ[k1, k2] * (
-                V[k1, k2] + V[dim+k1, dim+k2] - V[dim+k1, k2] - V[k1, dim+k2] +
-                (m[k1] - m[dim+k1]) * (m[k2] - m[dim+k2])
-            )
+        result += S_Λ[k1, k2] * (V[k1, k2] + V[dim + k1, dim + k2] - V[dim + k1, k2] - V[k1, dim + k2] + (m[k1] - m[dim + k1]) * (m[k2] - m[dim + k2]))
     end
     result *= df_Λ
     result += dim * log2π

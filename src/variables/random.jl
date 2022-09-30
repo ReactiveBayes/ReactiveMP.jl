@@ -57,8 +57,7 @@ function RandomVariableCreationOptions()
     )
 end
 
-const EmptyRandomVariableCreationOptions =
-    RandomVariableCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+const EmptyRandomVariableCreationOptions = RandomVariableCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
 
 # Immutable setters return a new object, this API is considered to be private
 randomvar_options_set_pipeline(pipeline)                                         = randomvar_options_set_pipeline(RandomVariableCreationOptions(), pipeline)
@@ -196,18 +195,10 @@ function Base.getindex(randomvar::RandomVariable, i...)
     error("Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed.")
 end
 
-messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(
-    prod_strategy(randomvar),
-    prod_constraint(randomvar),
-    messages_form_constraint(randomvar),
-    messages_form_check_strategy(randomvar)
-)
-marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(
-    prod_strategy(randomvar),
-    prod_constraint(randomvar),
-    marginal_form_constraint(randomvar),
-    marginal_form_check_strategy(randomvar)
-)
+messages_prod_fn(randomvar::RandomVariable) =
+    messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), messages_form_constraint(randomvar), messages_form_check_strategy(randomvar))
+marginal_prod_fn(randomvar::RandomVariable) =
+    marginal_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), marginal_form_constraint(randomvar), marginal_form_check_strategy(randomvar))
 
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 

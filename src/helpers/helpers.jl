@@ -62,7 +62,7 @@ Base.eltype(::Type{<:SkipIndexIterator{T}}) where {T} = T
 Base.length(iter::SkipIndexIterator)                  = length(iter.iterator) - 1
 Base.size(iter::SkipIndexIterator)                    = (length(iter),)
 
-Base.getindex(iter::SkipIndexIterator, i::Int)               = i < skip(iter) ? @inbounds(iter.iterator[i]) : @inbounds(iter.iterator[i+1])
+Base.getindex(iter::SkipIndexIterator, i::Int)               = i < skip(iter) ? @inbounds(iter.iterator[i]) : @inbounds(iter.iterator[i + 1])
 Base.getindex(iter::SkipIndexIterator, i::CartesianIndex{1}) = Base.getindex(iter, first(i.I))
 
 Rocket.similar_typeof(::SkipIndexIterator, ::Type{L}) where {L} = Vector{L}
@@ -169,8 +169,7 @@ Base.show(io::IO, a::InfCountingReal{T}) where {T} = print(io, "InfCountingReal(
 Base.promote_rule(::Type{InfCountingReal{T1}}, ::Type{T2}) where {T1 <: Real, T2 <: Real} = InfCountingReal{promote_type(T1, T2)}
 Base.promote_rule(::Type{InfCountingReal}, ::Type{T}) where {T <: Real}                   = InfCountingReal{T}
 
-Base.:(==)(left::InfCountingReal{T}, right::InfCountingReal{T}) where {T} =
-    (left.value == right.value) && (left.infs == right.infs)
+Base.:(==)(left::InfCountingReal{T}, right::InfCountingReal{T}) where {T} = (left.value == right.value) && (left.infs == right.infs)
 
 # Union helpers
 
@@ -195,7 +194,7 @@ hasfield(field::Symbol, ntuple::NamedTuple) = field ∈ fields(ntuple)
 
 function swapped(tuple::Tuple, i, j)
     @assert j > i
-    return (tuple[1:i-1]..., tuple[j], tuple[i+1:j-1]..., tuple[i], tuple[j+1:end]...)
+    return (tuple[1:(i - 1)]..., tuple[j], tuple[(i + 1):(j - 1)]..., tuple[i], tuple[(j + 1):end]...)
 end
 
 function swapped(array::AbstractArray, i, j)
@@ -233,13 +232,13 @@ macro symmetrical(fn::Expr)
     # 2. function foo([ args... ]) [ where ... [ where ... [ ... ] ] ]
     #        :block
     #    end
-    if (fn.head === :(=) || fn.head === :function) &&
-       (fn.args[1] isa Expr && fn.args[2] isa Expr) &&
-       (fn.args[2].head === :block)
-        return esc(quote
-            $fn
-            $(swap_arguments(fn))
-        end)
+    if (fn.head === :(=) || fn.head === :function) && (fn.args[1] isa Expr && fn.args[2] isa Expr) && (fn.args[2].head === :block)
+        return esc(
+            quote
+                $fn
+                $(swap_arguments(fn))
+            end
+        )
     else
         error("@symmetrical macro can be applied only to function definitions")
     end
@@ -332,8 +331,7 @@ end
 
 ##
 
-forward_range(range::OrdinalRange)::UnitRange =
-    step(range) > 0 ? (first(range):last(range)) : (last(range):first(range))
+forward_range(range::OrdinalRange)::UnitRange = step(range) > 0 ? (first(range):last(range)) : (last(range):first(range))
 
 ## 
 
