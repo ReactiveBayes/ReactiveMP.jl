@@ -79,7 +79,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
         FoldRightProdStrategy(),
         CustomFunctionalFormConstraint1(),
         FormConstraintCheckEach(),
-        CustomFunctionalFormConstraint2()
+        CustomFunctionalFormConstraint2(),
         FormConstraintCheckLast()
 )
 
