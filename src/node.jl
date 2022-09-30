@@ -2,6 +2,7 @@ export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export MeanField, FullFactorisation, Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export FactorNodesCollection, getnodes, getnode_ids
+export make_node, FactorNodeCreationOptions
 export @node
 
 using Rocket

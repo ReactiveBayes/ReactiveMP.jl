@@ -68,17 +68,21 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
     end
 
     @testset "Creation via options" begin
+
+        struct CustomFunctionalFormConstraint1 <: ReactiveMP.AbstractFormConstraint end
+        struct CustomFunctionalFormConstraint2 <: ReactiveMP.AbstractFormConstraint end
+
         test_var     = randomvar(:tmp)
         test_options = RandomVariableCreationOptions(
-        LoggerPipelineStage(),
-        (test_var,),
-        ProdGeneric(),
-        FoldRightProdStrategy(),
-        PointMassFormConstraint(),
-        FormConstraintCheckEach(),
-        SampleListFormConstraint(5000, LeftProposal()),
-        FormConstraintCheckLast()
-)
+            LoggerPipelineStage(),
+            (test_var,),
+            ProdGeneric(),
+            FoldRightProdStrategy(),
+            CustomFunctionalFormConstraint1(),
+            FormConstraintCheckEach(),
+            CustomFunctionalFormConstraint2()
+            FormConstraintCheckLast()
+        )
 
         for sym in (:x, :y, :z)
             v = randomvar(test_options, sym)

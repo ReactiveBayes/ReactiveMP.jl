@@ -13,8 +13,6 @@ import ReactiveMP: @test_rules
         @test sdtype(node) === Stochastic()
         @test name.(interfaces(node)) === (:out, :in)
         @test factorisation(node) === ((1, 2),)
-
-        @test length(methods(functional_dependencies, (Any, FactorNode{Type{BIFMHelper}}, Int))) === 1
     end
 
     @testset "Average energy" begin

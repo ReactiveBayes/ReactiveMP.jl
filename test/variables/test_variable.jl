@@ -5,86 +5,75 @@ using ReactiveMP
 using Rocket
 
 @testset "Variable" begin
-    @testset "setmarginal!" begin
-        begin
-            r = randomvar(:r)
-            setmarginal!(r, NormalMeanVariance(-2.0, 3.0))
-            subscribe!(
-                getmarginal(r, IncludeAll()),
+    @testset "setmarginal! tests for randomvar" begin
+        
+
+        for dist in (NormalMeanVariance(-2.0, 3.0), NormalMeanPrecision(-2.0, 3.0))
+
+            T = typeof(dist)
+            variable = randomvar(:r)
+            flag = false
+
+            setmarginal!(variable, dist)
+
+            subscription = subscribe!(
+                getmarginal(variable, IncludeAll()),
                 (marginal) -> begin
-                    @test typeof(marginal) <: Marginal{<:NormalMeanVariance}
-                    @test mean(marginal) === -2.0
-                    @test var(marginal) === 3.0
+                    @test typeof(marginal) <: Marginal{T}
+                    @test mean(marginal) === mean(dist)
+                    @test var(marginal) === var(dist)
+                    flag = true
                 end
             )
-        end
 
-        begin
-            r = randomvar(:r)
-            setmarginal!(r, NormalMeanPrecision(-2.0, 3.0))
-            subscribe!(
-                getmarginal(r, IncludeAll()),
-                (marginal) -> begin
-                    @test typeof(marginal) <: Marginal{<:NormalMeanPrecision}
-                    @test mean(marginal) === -2.0
-                    @test precision(marginal) === 3.0
-                end
-            )
-        end
+            # Test that subscription happenend
+            @test flag === true
 
-        begin
-            rs = randomvar(:r, 2)
-            setmarginals!(rs, NormalMeanVariance(-2.0, 3.0))
-            subscribe!(
-                getmarginals(rs, IncludeAll()),
+            unsubscribe!(subscription)
+
+            variables = randomvar(:r, 2)
+            flagmv = false
+
+            setmarginals!(variables, dist)
+
+            subscriptionmv = subscribe!(
+                getmarginals(variables, IncludeAll()),
                 (marginals) -> begin
+                    @test length(marginals) === 2
                     foreach(marginals) do marginal
-                        @test typeof(marginal) <: Marginal{<:NormalMeanVariance}
-                        @test mean(marginal) === -2.0
-                        @test var(marginal) === 3.0
+                        @test typeof(marginal) <: Marginal{T}
+                        @test mean(marginal) === mean(dist)
+                        @test var(marginal) === var(dist)
                     end
+                    flagmv = true
                 end
-            )
-        end
+            )   
 
-        begin
-            rs = randomvar(:r, 2)
-            setmarginals!(rs, NormalMeanPrecision(-2.0, 3.0))
-            subscribe!(
-                getmarginals(rs, IncludeAll()),
-                (marginals) -> begin
-                    foreach(marginals) do marginal
-                        @test typeof(marginal) <: Marginal{<:NormalMeanPrecision}
-                        @test mean(marginal) === -2.0
-                        @test precision(marginal) === 3.0
-                    end
-                end
-            )
-        end
+            # Test that subscription happenend
+            @test flagmv === true
 
-        # TODO: getmarginals was broken for matrices? remove if tests passes
-        begin 
-            rs = randomvar(:r, 2, 2)
-            setmarginals!(rs, NormalMeanVariance(-2.0, 3.0))
-            subscribe!(getmarginals(rs, IncludeAll()), (marginals) -> begin
+            unsubscribe!(subscriptionmv)
+
+            variablesmx = randomvar(:r, 2, 2)
+            flagmx = false
+            
+            setmarginals!(variablesmx, dist)
+
+            subscriptionmx = subscribe!(getmarginals(variablesmx, IncludeAll()), (marginals) -> begin
+                @test length(marginals) === 4
                 foreach(marginals) do marginal
-                    @test typeof(marginal) <: Marginal{ <: NormalMeanPrecision }
-                    @test mean(marginal) === -2.0
-                    @test variance(marginal) === 3.0
+                    @test typeof(marginal) <: Marginal{T}
+                    @test mean(marginal) === mean(dist)
+                    @test var(marginal) === var(dist)
                 end
+                flagmx = true
             end)
-        end
 
-        begin 
-            rs = randomvar(:r, 2, 2)
-            setmarginals!(rs, NormalMeanPrecision(-2.0, 3.0))
-            subscribe!(getmarginals(rs, IncludeAll()), (marginals) -> begin
-                foreach(marginals) do marginal
-                    @test typeof(marginal) <: Marginal{ <: NormalMeanPrecision }
-                    @test mean(marginal) === -2.0
-                    @test precision(marginal) === 3.0
-                end
-            end)
+            # Test that subscription happenend
+            @test flagmx === true
+
+            unsubscribe!(subscriptionmx)
+
         end
 
     end

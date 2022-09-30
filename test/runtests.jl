@@ -215,7 +215,6 @@ end
     addtests(testrunner, "constraints/prod/test_prod_final.jl")
     addtests(testrunner, "constraints/prod/test_prod_generic.jl")
     addtests(testrunner, "constraints/test_factorisation.jl")
-    addtests(testrunner, "constraints/test_meta.jl")
 
     addtests(testrunner, "test_distributions.jl")
     addtests(testrunner, "distributions/test_common.jl")
