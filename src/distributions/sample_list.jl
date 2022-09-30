@@ -272,7 +272,7 @@ function approximate_prod_with_sample_list(
     @turbo for i in 1:nsamples
         norm_weights[i] /= weights_sum
     end
-    
+
     # Renormalise H_x
     H_x /= weights_sum
 

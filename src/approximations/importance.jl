@@ -95,11 +95,12 @@ default_prod_constraint(::ImportanceSamplingApproximation)       = ProdGeneric()
 function constrain_form(approximation::ImportanceSamplingApproximation, distribution::DistProduct)
     m, v = approximate_meancov(approximation, x -> pdf(getright(distribution), x), getleft(distribution))
 
-    a = m ^ 2 / v
+    a = m^2 / v
     b = m / v
     return GammaShapeRate(a, b)
 end
 
 constrain_form(::ImportanceSamplingApproximation, distribution::Any) = distribution
 
-make_form_constraint(::Type{ ImportanceSamplingApproximation }, args...; kwargs...) = ImportanceSamplingApproximation(args..., kwargs...)
+make_form_constraint(::Type{ImportanceSamplingApproximation}, args...; kwargs...) =
+    ImportanceSamplingApproximation(args..., kwargs...)
