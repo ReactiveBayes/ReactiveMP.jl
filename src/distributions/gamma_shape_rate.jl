@@ -65,3 +65,7 @@ end
 
 Distributions.pdf(dist::GammaShapeRate, x::Real)    = (rate(dist)^shape(dist)) / gamma(shape(dist)) * x^(shape(dist) - 1) * exp(-rate(dist) * x)
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
+
+function Random.rand(rng::AbstractRNG, dist::GammaShapeRate)
+    return rand(rng, convert(GammaShapeScale, dist))
+end

@@ -272,7 +272,7 @@ function approximate_prod_with_sample_list(
     @turbo for i in 1:nsamples
         norm_weights[i] /= weights_sum
     end
-
+    
     # Renormalise H_x
     H_x /= weights_sum
 
@@ -426,7 +426,7 @@ function approximate_prod_with_sample_list(
     else
         SampleListMeta(nothing, nothing, nothing, log_integrand)
     end
-
+    @show rweights
     return SampleList(Val(D), get_linear_samples(rsamples), rweights, meta)
 end
 
@@ -559,7 +559,7 @@ end
 
 function sample_list_loggammamean(::Type{Univariate}, sl::SampleList)
     n, samples, weights = get_data(sl)
-    @show weights
+    # @show weights
     logμ = sample_list_zero_element(sl)
     for i in 1:n
         logμ += weights[i] * loggamma(samples[i])

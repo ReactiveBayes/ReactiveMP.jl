@@ -143,7 +143,7 @@ end
     q_out::Any,
     q_switch::Any,
     q_a::NTuple{N, Any},
-    q_b::NTuple{N, GammaShapeRate}
+    q_b::NTuple{N, GammaDistributionsFamily}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N, init = 0.0) do i
