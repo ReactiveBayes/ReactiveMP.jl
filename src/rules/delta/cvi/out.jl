@@ -15,11 +15,20 @@ using ReactiveMP
         return ProdFinal(SampleList(q_out))
     end
 
+function sampling(rng, something, n_samples::Int)
+    return rand(rng, something, n_samples)
+end
+
+function sampling(rng, dist::MvNormal, n_samples::Int)
+    samples = rand(rng, dist, n_samples)
+    return map(i -> samples[:, i], 1:n_samples)
+end
+
 @rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct, meta::CVIApproximation) where {f} =
     begin
         q_ins_sample_friendly = map(marginal -> ReactiveMP.logpdf_sample_friendly(marginal)[2], getmultipliers(q_ins))
         rng = something(meta.rng, Random.GLOBAL_RNG)
-        q_ins_samples = map(marginal -> rand(rng, marginal, meta.n_samples), q_ins_sample_friendly)
+        q_ins_samples = map(marginal -> sampling(rng, marginal, meta.n_samples), q_ins_sample_friendly)
         samples = map(x -> f(x...), zip(q_ins_samples...))
         return ProdFinal(SampleList(samples))
     end
