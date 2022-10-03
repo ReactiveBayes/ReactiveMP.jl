@@ -32,7 +32,7 @@ h(x::Vector, y::Vector) = x .^ 2 .- y
                 ),
                 Any[(), ()] # [1, 1] # TODO: dimensions "ds" are not correct for the left marginal
             )
-            )
+        )
         ]
     end
 
@@ -52,7 +52,7 @@ h(x::Vector, y::Vector) = x .^ 2 .- y
                 ),
                 Any[(1,), (1,)] # [1, 1] # TODO: dimensions "ds" are not correct for the left marginal
             )
-            )
+        )
         ]
     end
 end # testset

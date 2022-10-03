@@ -35,7 +35,7 @@ h(x::Float64, y::Vector{Float64}) = x^2 .- y
                 ),
                 Any[(), ()] # [2] # TODO: dimensions "ds" are not correct for the left marginal
             )
-            )
+        )
         ]
     end
 
@@ -55,7 +55,7 @@ h(x::Float64, y::Vector{Float64}) = x^2 .- y
                 ),
                 Any[(1,), (1,)] # [1, 1] # TODO: dimensions "ds" are not correct for the left marginal:
             )
-            )
+        )
         ]
     end
 end # testset
