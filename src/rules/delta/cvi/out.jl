@@ -15,9 +15,6 @@ using ReactiveMP
         return ProdFinal(SampleList(q_out))
     end
 
-cvilinearize(vector::AbstractVector) = vector
-cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
-
 @rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct, meta::CVIApproximation) where {f} =
     begin
         q_ins_sample_friendly = map(marginal -> ReactiveMP.logpdf_sample_friendly(marginal)[2], getmultipliers(q_ins))

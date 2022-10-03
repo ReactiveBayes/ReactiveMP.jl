@@ -13,6 +13,9 @@ function cvi_update!(callback::F, λ, ∇) where {F <: Function}
     return callback(λ, ∇)
 end
 
+cvilinearize(vector::AbstractVector) = vector
+cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
+
 struct CVIApproximation{R, O}
     rng::R
     n_samples::Int

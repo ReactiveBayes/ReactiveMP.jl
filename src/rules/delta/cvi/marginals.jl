@@ -9,7 +9,9 @@ import Distributions: Distribution
 end
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::CVIApproximation) where {f, N} = begin
-    pre_samples = zip([rand(m_ins[i], meta.n_samples) for i in 1:length(m_ins)]...)
+    rng = something(meta.rng, Random.GLOBAL_RNG)
+
+    pre_samples = zip(map(m_in_k -> cvilinearize(rand(rng, m_in_k, meta.n_samples)), m_ins)...)
 
     logp_nc_drop_index =
         (z, i, pre_samples) -> begin
