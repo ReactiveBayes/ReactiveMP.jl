@@ -76,9 +76,11 @@ end
     end
 
     @testset "Gamma shape rate" begin
-        cvi_out_test(first_argument, FactorProduct((PointMass(0), GammaShapeRate())), test_meta, 0)
-        cvi_out_test(second_argument, FactorProduct((PointMass(0), GammaShapeRate(2.0, 3.0))), test_meta, 2 / 3, 0.1)
-        cvi_out_test(to_vector, FactorProduct((PointMass(2), GammaShapeRate(2.0, 3.0))), test_meta, [2.0, 2 / 3], 0.1)
+        for i in 1:100
+            cvi_out_test(first_argument, FactorProduct((PointMass(i), GammaShapeRate())), test_meta, i)
+            cvi_out_test(second_argument, FactorProduct((PointMass(0), GammaShapeRate(i, 3.0))), test_meta, i / 3.0, 0.5)
+            cvi_out_test(to_vector, FactorProduct((PointMass(2), GammaShapeRate(2.0, i))), test_meta, [2.0, 2.0 / i], 0.5)
+        end
     end
 end # testset
 end # module
