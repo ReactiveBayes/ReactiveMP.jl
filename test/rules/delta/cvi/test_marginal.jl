@@ -1,4 +1,4 @@
-module RulesDeltaCVIMarginalsTest
+module RulesDeltaCVIInTest
 
 using Test
 using ReactiveMP
@@ -12,7 +12,7 @@ g(x) = x
 struct EmptyOptimizer end
 
 # test this set with $ make test testset='rules:gamma_inverse:out'
-@testset "rules:Delta:cvi:marginals" begin
+@testset "rules:Delta:cvi:in" begin
     @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
         (
         input = (
