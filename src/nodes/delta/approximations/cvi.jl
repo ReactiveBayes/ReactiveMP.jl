@@ -27,6 +27,13 @@ function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O) where {O}
     return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt)
 end
 
+"""
+Alias for the `CVIApproximation` method.
+
+See also: [`CVIApproximation`](@ref)
+"""
+const CVI = CVIApproximation
+
 #---------------------------
 # CVI implementations
 #---------------------------
