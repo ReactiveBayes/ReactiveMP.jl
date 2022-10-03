@@ -309,11 +309,11 @@ end
     addtests(testrunner, "rules/beta/test_marginals.jl")
 
     addtests(testrunner, "rules/delta/unscented/test_out.jl")
-    #addtests(testrunner, "rules/delta/unscented/test_in.jl") # TODO: unusual edge rule syntax causes some errors (issue:216)
+    addtests(testrunner, "rules/delta/unscented/test_in.jl") 
     addtests(testrunner, "rules/delta/unscented/test_marginals.jl")
 
     addtests(testrunner, "rules/delta/extended/test_out.jl")
-    #addtests(testrunner, "rules/delta/extended/test_in.jl") # TODO: unusual edge rule syntax causes some errors (issue:216)
+    addtests(testrunner, "rules/delta/extended/test_in.jl")
     addtests(testrunner, "rules/delta/extended/test_marginals.jl")
 
     addtests(testrunner, "rules/dot_product/test_out.jl")

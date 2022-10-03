@@ -52,7 +52,7 @@ h_inv_x(z::Vector, y::Vector) = sqrt.(z .+ y)
     @testset "Belief Propagation: f(x,y) (m_ins::MvNormalMeanCovariance, *)" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}(:in, Marginalisation) [
             (
-            input = (m_out = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), MvNormalMeanCovariance([2.0], [1.0]),MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaExtended()),
+            input = (m_out = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), MvNormalMeanCovariance([2.0], [1.0]),MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaExtended(),
             output = MvNormalMeanPrecision([10.999999999999996], [3.9999999999999982])
         )
         ]
