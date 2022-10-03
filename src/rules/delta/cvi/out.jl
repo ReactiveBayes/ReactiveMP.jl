@@ -19,8 +19,8 @@ using ReactiveMP
     begin
         q_ins_sample_friendly = map(marginal -> ReactiveMP.logpdf_sample_friendly(marginal)[2], getmultipliers(q_ins))
         rng = something(meta.rng, Random.GLOBAL_RNG)
-        q_ins_samples  = map(marginal -> rand(rng, marginal, meta.n_samples), q_ins_sample_friendly)
+        q_ins_samples = map(marginal -> rand(rng, marginal, meta.n_samples), q_ins_sample_friendly)
         samples_linear = map(cvilinearize, q_ins_samples)
-        samples        = map(x -> f(x...), zip(samples_linear...))
+        samples = map(x -> f(x...), zip(samples_linear...))
         return ProdFinal(SampleList(samples))
     end

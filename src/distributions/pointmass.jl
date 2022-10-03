@@ -126,4 +126,3 @@ end
 function Random.rand(dist::PointMass, size::Int64)
     return rand(Random.GLOBAL_RNG, dist, size)
 end
-
