@@ -18,7 +18,7 @@ struct EmptyOptimizer end
         input = (
             q_ins = FactorProduct((NormalMeanVariance(),)),
             m_in = NormalMeanVariance(1, 2),
-            meta = CVIApproximation(1, 1, EmptyOptimizer)
+            meta = CVIApproximation(1, 1, EmptyOptimizer())
         ),
         output = NormalWeightedMeanPrecision(-0.5, 0.5)
     )

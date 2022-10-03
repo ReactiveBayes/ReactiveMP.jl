@@ -4,7 +4,7 @@ import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
 import Base: ndims, precision, getindex, size, convert, isapprox, eltype
 import SpecialFunctions: loggamma, logbeta
 
-import Random: rand!
+import Random: rand!, rand
 
 struct PointMass{P}
     point::P
@@ -115,14 +115,15 @@ Base.isapprox(left::PointMass, right::PointMass; kwargs...) =
 Base.isapprox(left::PointMass, right; kwargs...) = false
 Base.isapprox(left, right::PointMass; kwargs...) = false
 
-function Random.rand(rng::AbstractRNG, dist::PointMass)
+function Random.rand(::AbstractRNG, dist::PointMass)
     return mean(dist)
 end
 
-function Random.rand(rng::AbstractRNG, dist::PointMass, size::Int64)
+function Random.rand(::AbstractRNG, dist::PointMass, size::Int64)
     return fill(mean(dist), size)
 end
 
 function Random.rand(dist::PointMass, size::Int64)
     return rand(Random.GLOBAL_RNG, dist, size)
 end
+
