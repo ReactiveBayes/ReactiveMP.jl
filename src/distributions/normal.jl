@@ -260,6 +260,11 @@ struct UnivariateNormalNaturalParameters{T <: Real} <: NormalNaturalParameters
     minus_half_precision::T
 end
 
+function UnivariateNormalNaturalParameters(weighted_mean::T2, minus_half_precision::T3) where {T2 <: Real, T3 <: Real}
+    promoted_type = promote_type(T2, T3)
+    return UnivariateNormalNaturalParameters{promoted_type}(convert(promoted_type, weighted_mean), convert(promoted_type, minus_half_precision))
+end
+
 struct MvNormalNaturalParameters{T <: Real} <: NormalNaturalParameters
     weighted_mean::Array{T, 1}
     minus_half_precision_matrix::Matrix{T}
