@@ -5,6 +5,7 @@ using ReactiveMP
 using Random
 using Distributions
 using Flux
+using StableRNGs
 
 import ReactiveMP: @test_marginalrules
 
@@ -13,24 +14,21 @@ id(x) = x
 @testset "marginalrules:CVI" begin
     @testset "[id(x) - y] x~Normal, y~Normal" begin
         seed = 123
-        rng = MersenneTwister(seed)
+        rng = StableRNG(seed)
         optimizer = Descent(0.01)
         test_meta = CVIApproximation(rng, 1, 500, optimizer)
-
-        m_in = NormalMeanVariance()
-        m_out = NormalMeanVariance(1, 1)
-        marginals = @call_marginalrule DeltaFn{id}(:ins) (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(m_in), meta = test_meta)
-
-        @show marginals
-        @show naturalparams(marginals[1])
-        @show naturalparams(m_in) + naturalparams(m_out)
-
-        result_marginal = convert(Distribution, naturalparams(marginals[1]) - naturalparams(m_in))
-
-        @test_marginalrules DeltaFn{id}(:ins) [
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{id}(:ins) [
             (
                 input = (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = (out = convert(Distribution, naturalparams(m_in) + naturalparams(m_out)),)
+                output = FactorProduct((NormalWeightedMeanPrecision(1.0, 2.0),))
+            ),
+            (
+                input = (m_out = NormalMeanVariance(2, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorProduct((NormalWeightedMeanPrecision(2.0, 2.0),))
+            ),
+            (
+                input = (m_out = NormalMeanVariance(10, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorProduct((NormalWeightedMeanPrecision(10.0, 2.0),))
             )
         ]
     end
