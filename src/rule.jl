@@ -86,9 +86,15 @@ function rule_macro_parse_on_tag(on)
         return :(Type{Val{$(QuoteNode(name))}}), nothing, nothing
     elseif @capture(on, (:name_, index_Symbol))
         return :(Tuple{Val{$(QuoteNode(name))}, Int}), index, :($index = on[2])
+    elseif @capture(on, (:name_, k_ = index_Int))
+        return :(Tuple{Val{$(QuoteNode(name))}, Int}),
+        index,
+        :(error(
+            "`k = ...` syntax in the edge specification is only allowed in the `@call_rule` and `@call_marginalrule` macros"
+        ))
     else
         error(
-            "Error in macro. `on` specification is incorrect: $(on). Must be ither a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
+            "Error in macro. `on` specification is incorrect: $(on). Must be either a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
         )
     end
 end
@@ -158,7 +164,7 @@ This function is used to parse an `arguments` tuple for message and marginal cal
 end
 ```
 
-Accepts a vector of (name, vale) elements, specname, name prefix and proxy type. 
+Accepts a vector of (name, value) elements, specname, name prefix and proxy type. 
 Returns parsed names without prefix and proxied values
 
 See also: [`@rule`](@ref)
@@ -172,12 +178,21 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
     @assert all((n) -> length(string(n)) > lprefix, names) || error("Empty $(specname) name found in arguments")
 
-    # Tuples are special cases
+    # ManyOf are special cases
     function apply_proxy(any, proxy)
-        if any isa Expr && any.head === :tuple
-            output      = Expr(:tuple)
-            output.args = map(v -> apply_proxy(v, proxy), any.args)
-            return output
+        if any isa Expr && any.head === :call && (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
+            argsvar = gensym(:ManyOf)
+            return quote
+                let
+                    local $argsvar = ($(any.args[2:end]...),)
+                    if length($argsvar) === 1 && first($argsvar) isa Tuple
+                        ReactiveMP.ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
+                    else
+                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),))
+                    end
+                end
+            end
+            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),)))
         end
         return :($(proxy)($any, false, false))
     end
@@ -186,6 +201,17 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     values_arg = isempty(names) ? :nothing : :($(map(v -> apply_proxy(v, proxy), values)...),)
 
     return names_arg, values_arg
+end
+
+call_rule_macro_construct_on_arg(on_type, on_index::Nothing) = MacroHelpers.bottom_type(on_type)
+
+function call_rule_macro_construct_on_arg(on_type, on_index::Int)
+    bottomtype = MacroHelpers.bottom_type(on_type)
+    if @capture(bottomtype, Tuple{Val{R_}, Int})
+        return :((Val($R), $on_index))
+    else
+        error("Internal indexed call rule error: Invalid `on_type` in the `call_rule_macro_construct_on_arg` function.")
+    end
 end
 
 function rule_function_expression(
@@ -276,10 +302,8 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
-    m_names, m_types, m_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block =
-        rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs, specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     output = quote
         $(
@@ -411,7 +435,7 @@ macro call_rule(fform, args)
     q_names_arg, q_values_arg =
         call_rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
-    on_arg = MacroHelpers.bottom_type(on_type)
+    on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
         ReactiveMP.rule(
@@ -640,7 +664,7 @@ macro call_marginalrule(fform, args)
     q_names_arg, q_values_arg =
         call_rule_macro_parse_fn_args(inputs, specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
-    on_arg = MacroHelpers.bottom_type(on_type)
+    on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
         ReactiveMP.marginalrule(
@@ -817,16 +841,18 @@ end
 rule_method_error_extract_fform(f::Function) = string("typeof(", f, ")")
 rule_method_error_extract_fform(f)           = string(f)
 
-rule_method_error_extract_on(::Type{Val{T}}) where {T}         = T
-rule_method_error_extract_on(on::Tuple{Val{T}, Int}) where {T} = string("(:", rule_method_error_extract_on(typeof(on[1])), ", k)")
+rule_method_error_extract_on(::Type{Val{T}}) where {T}              = string(":", T)
+rule_method_error_extract_on(::Type{Tuple{Val{T}, Int}}) where {T}  = string("(", rule_method_error_extract_on(Val{T}), ", k)")
+rule_method_error_extract_on(::Type{Tuple{Val{T}, N}}) where {T, N} = string("(", rule_method_error_extract_on(Val{T}), ", ", convert(Int, N), ")")
+rule_method_error_extract_on(::Tuple{Val{T}, Int}) where {T}        = string("(", rule_method_error_extract_on(Val{T}), ", k)")
+rule_method_error_extract_on(::Tuple{Val{T}, N}) where {T, N}       = string("(", rule_method_error_extract_on(Val{T}), ", ", convert(Int, N), ")")
 
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
-rule_method_error_extract_names(::Type{Val{T}}) where {T} =
-    map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
-rule_method_error_extract_names(::Nothing) = ()
+rule_method_error_extract_names(::Type{Val{T}}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
+rule_method_error_extract_names(::Nothing)                = ()
 
-rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeof(getdata(e))), t)
+rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeofdata(e)), t)
 rule_method_error_extract_types(t::Nothing) = ()
 
 rule_method_error_extract_meta(something) = string("meta::", typeof(something))
@@ -888,7 +914,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         meta_spec      = rule_method_error_extract_meta(error.meta)
 
         possible_fix_definition = """
-        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
+        @rule $(spec_fform)($spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
             return ...
         end
         """
@@ -900,9 +926,9 @@ function Base.showerror(io::IO, error::RuleMethodError)
             io,
             "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n"
         )
-        println(io, "rule.fform: ", error.fform)
-        println(io, "rule.on: ", error.on)
-        println(io, "rule.vconstraint: ", error.vconstraint)
+        println(io, "rule.fform: ", spec_fform)
+        println(io, "rule.on: ", spec_on)
+        println(io, "rule.vconstraint: ", spec_vconstraint)
         println(io, "rule.mnames: ", error.mnames)
         println(io, "rule.messages: ", error.messages)
         println(io, "rule.qnames: ", error.qnames)
@@ -976,8 +1002,8 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
             io,
             "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n"
         )
-        println(io, "rule.fform: ", error.fform)
-        println(io, "rule.on: ", error.on)
+        println(io, "rule.fform: ", spec_fform)
+        println(io, "rule.on: ", spec_on)
         println(io, "rule.mnames: ", error.mnames)
         println(io, "rule.messages: ", error.messages)
         println(io, "rule.qnames: ", error.qnames)

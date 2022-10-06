@@ -272,6 +272,7 @@ end
     addtests(testrunner, "nodes/test_not.jl")
     addtests(testrunner, "nodes/test_and.jl")
     addtests(testrunner, "nodes/test_implication.jl")
+    addtests(testrunner, "nodes/test_uniform.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
@@ -376,6 +377,9 @@ end
     addtests(testrunner, "models/test_mv_iid.jl")
     addtests(testrunner, "models/test_probit.jl")
     addtests(testrunner, "models/test_aliases.jl")
+    addtests(testrunner, "models/test_cvi.jl")
+
+    addtests(testrunner, "test_factor_product.jl")
 
     run(testrunner)
 end

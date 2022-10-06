@@ -1,3 +1,4 @@
+
 module ReactiveMP
 
 include("rocket.jl")
@@ -19,6 +20,7 @@ include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
 include("constraints/prod/prod_final.jl")
 include("constraints/prod/prod_resolve.jl")
+include("constraints/prod/factor_prod_generic.jl")
 
 """
     to_marginal(any)
@@ -55,6 +57,7 @@ include("approximations/laplace.jl")
 include("approximations/importance.jl")
 include("approximations/optimizers.jl")
 
+include("distributions/natural_parametrs.jl")
 include("distributions/pointmass.jl")
 include("distributions/uniform.jl")
 include("distributions/gamma_shape_rate.jl")
@@ -142,8 +145,6 @@ include("nodes/or.jl")
 include("nodes/not.jl")
 include("nodes/implication.jl")
 
-include("rules/prototypes.jl")
-
 include("constraints/form/form_unspecified.jl")
 include("constraints/form/form_point_mass.jl")
 include("constraints/form/form_fixed_marginal.jl")
@@ -156,5 +157,20 @@ include("constraints/spec/form_spec.jl")
 include("model.jl")
 include("fixes.jl")
 include("inference.jl")
+
+# Delta node depends on model.jl (use AutoVar)
+include("nodes/delta/delta.jl")
+
+include("rules/prototypes.jl")
+
+using Requires
+
+function __init__()
+    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
+        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::T, ∇::T) where {T <: NaturalParameters}
+            return Flux.Optimise.update!(opt, vec(λ), vec(∇))
+        end
+    end
+end
 
 end

@@ -525,8 +525,12 @@ function ReactiveMP.make_node(
     options::FactorNodeCreationOptions,
     fform,
     autovar::AutoVar,
-    args::Vararg{<:ReactiveMP.AbstractVariable}
+    args::Vararg
 )
+    foreach(args) do arg
+        @assert (typeof(arg) <: AbstractVariable || eltype(arg) <: AbstractVariable) "`make_node` cannot create a node with the given arguments autovar = $(autovar), args = [ $(args...) ]"
+    end
+
     proxy     = isdeterministic(sdtype(fform)) ? args : nothing
     rvoptions = ReactiveMP.randomvar_options_set_proxy_variables(ReactiveMP.EmptyRandomVariableCreationOptions, proxy)
     var       = ReactiveMP.make_autovar(model, rvoptions, ReactiveMP.name(autovar), true) # add! is inside
