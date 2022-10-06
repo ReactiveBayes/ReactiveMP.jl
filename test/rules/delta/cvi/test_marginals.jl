@@ -8,6 +8,13 @@ using Flux
 using StableRNGs
 
 import ReactiveMP: @test_marginalrules
+import ReactiveMP: getmultipliers
+
+add_1 = (x::Real) -> x + 1
+
+function two_into_one(x::Real, y::Real)
+    return [x, y]
+end
 
 @testset "marginalrules:CVI" begin
     @testset "id, x~Normal, y~Normal" begin
@@ -48,6 +55,43 @@ import ReactiveMP: @test_marginalrules
                 input = (m_out = MvGaussianMeanCovariance(ones(2), [2 -1; -1 2]), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
                 output = FactorProduct(((MvNormalWeightedMeanPrecision(ones(2), [1+2/3 1/3; 1/3 1+2/3])),))
             )
+        ]
+    end
+    @testset "f(x) = x + k, x~Normal, y~Normal" begin
+        seed = 123
+        rng = StableRNG(seed)
+        optimizer = Descent(0.01)
+        test_meta = CVIApproximation(rng, 1, 500, optimizer)
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{add_1}(:ins) [
+            (
+                input = (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorProduct((NormalWeightedMeanPrecision(0, 2.0),))
+            ),
+            (
+                input = (m_out = NormalMeanVariance(2, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorProduct((NormalWeightedMeanPrecision(1, 2.0),))
+            ),
+            (
+                input = (m_out = NormalMeanVariance(10, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorProduct((NormalWeightedMeanPrecision(9, 2.0),))
+            )
+        ]
+    end
+
+    @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization CVI)" begin
+        seed = 123
+        rng = StableRNG(seed)
+        optimizer = Descent(0.01)
+        test_meta = CVIApproximation(rng, 1, 2000, optimizer)
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{two_into_one}(:ins) [
+            (
+            input = (
+                m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
+                m_ins = ManyOf(NormalMeanVariance(), NormalMeanVariance(1, 2)),
+                meta = test_meta
+            ),
+            output = FactorProduct((NormalWeightedMeanPrecision(1 / 2, 1.5), NormalWeightedMeanPrecision(1.0, 1.0)))
+        )
         ]
     end
 end
