@@ -78,7 +78,7 @@ end
         ]
     end
 
-    @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization CVI)" begin
+    @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
         seed = 123
         rng = StableRNG(seed)
         optimizer = Descent(0.01)
