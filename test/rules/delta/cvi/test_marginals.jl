@@ -38,15 +38,15 @@ import ReactiveMP: @test_marginalrules
         @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{identity}(:ins) [
             (
                 input = (m_out = MvGaussianMeanCovariance(ones(2)), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
-                output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2), diageye(2)*2),))
+                output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2), diageye(2) * 2),))
             ),
             (
-                input = (m_out = MvGaussianMeanCovariance(ones(2)*10), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
-                output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2)*10, diageye(2)*2),))
+                input = (m_out = MvGaussianMeanCovariance(ones(2) * 10), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
+                output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2) * 10, diageye(2) * 2),))
             ),
             (
                 input = (m_out = MvGaussianMeanCovariance(ones(2), [2 -1; -1 2]), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
-                output = FactorProduct(((MvNormalWeightedMeanPrecision(ones(2), [1 + 2/3 1/3; 1/3 1 + 2/3])),))
+                output = FactorProduct(((MvNormalWeightedMeanPrecision(ones(2), [1+2/3 1/3; 1/3 1+2/3])),))
             )
         ]
     end
