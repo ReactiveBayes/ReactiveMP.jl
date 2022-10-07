@@ -4,13 +4,52 @@ using Test
 using ReactiveMP
 import ReactiveMP: @test_marginalrules
 
+# g: single input, single output
+g(x) = x .^ 2 .- 5.0
+
 # h: multiple input, single output
-h(x::Float64, y::Float64) = x^2 - y
-h(x::Vector{Float64}, y::Vector{Float64}) = x .^ 2 .- y
-h(x::Float64, y::Vector{Float64}) = x^2 .- y
+h(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:marginals" begin
-    @testset "Marginal: f(x) (m_ins::NormalMeanVariance, meta.inverse::Nothing)" begin
+    @testset "Single univariate input" begin
+        @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [
+            (
+            input = (
+                m_out = NormalMeanVariance(2.0, 3.0),
+                m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)),
+                meta  = DeltaExtended(inverse = nothing)
+            ),
+            output = DeltaMarginal(
+                NormalMeanVariance(
+                    2.6315789473684212,
+                    0.1578947368421053
+                ),
+                [(1,)]
+            )
+        )
+        ]
+    end
+
+    @testset "Single multivariate input" begin
+        @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [
+            (
+            input = (
+                m_out = MvNormalMeanCovariance([2.0], [3.0]),
+                m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0])),
+                meta  = DeltaExtended(inverse = nothing)
+            ),
+            output = DeltaMarginal(
+                MvNormalMeanCovariance(
+                    [2.6315789473684212],
+                    [0.1578947368421053]
+                ),
+                [(1,)]
+            )
+        )
+        ]
+    end
+
+    @testset "Multiple univairate input" begin
         # ForneyLab:test_delta_unscented:MDeltaUTInGX 1
         @test_marginalrules [with_float_conversions = false, atol = 1e-4] DeltaFn{h}(:ins) [
             (
@@ -32,7 +71,7 @@ h(x::Float64, y::Vector{Float64}) = x^2 .- y
         ]
     end
 
-    @testset "Marginal: f(x) (m_ins::MvNormalMeanCovariance, meta.inverse::Nothing)" begin
+    @testset "Multiple multivariate input" begin
         @test_marginalrules [with_float_conversions = false] DeltaFn{h}(:ins) [
             (
             input = (

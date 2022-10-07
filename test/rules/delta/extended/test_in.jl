@@ -10,24 +10,15 @@ Random.seed!(11)
 # TODO: with_float_conversions = true breaks
 
 # g: single input, single output
-g(x) = x^2 - 5.0
-g(x::AbstractVector) = x .^ 2 .- 5.0
-g_inv(y) = sqrt(y + 5.0)
-g_inv(y::AbstractVector) = sqrt.(y .+ 5.0)
+g(x) = x .^ 2 .- 5.0
+g_inv(y) = sqrt.(y .+ 5.0)
 
 # h: multiple input, single output
-h(x, y) = x^2 - y
-h(x::AbstractVector, y::AbstractVector) = x .^ 2 .- y
-h(x, y::AbstractVector) = x^2 .- y
-h_inv_x(z, y) = sqrt(z + y)
-h_inv_x(z::AbstractVector, y::AbstractVector) = sqrt.(z .+ y)
-h_inv_z(x, y) = x^2 - y
-h_inv_z(x::AbstractVector, y::AbstractVector) = x .^ 2 .- y
+h(x, y) = x .^ 2 .- y
+h_inv_x(z, y) = sqrt.(z .+ y)
+h_inv_z(x, y) = x .^ 2 .- y
 
-# g provided in a similar syntax like the N parameter in normal_mixture/test_out.jl
-# normal_mixture is the only example with this syntax (that has a test; gamma_mixture is another candidate but ∄ test)
-
-@testset "rules:Delta:unscented:in" begin
+@testset "rules:Delta:extended:in" begin
     @testset "Single input with known inverse" begin
         @test_rules [with_float_conversions = false, atol = 1e-5] DeltaFn{g}((:in, k = 1), Marginalisation) [
             (

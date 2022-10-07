@@ -1,7 +1,7 @@
 export DeltaMarginal
 
 struct DeltaMarginal
-    dist :: MultivariateNormalDistributionsFamily
+    dist :: NormalDistributionsFamily
     ds   :: Vector{Any}
 end
 

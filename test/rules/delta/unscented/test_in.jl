@@ -7,22 +7,13 @@ import ReactiveMP: @test_rules
 # TODO: with_float_conversions = true breaks
 
 # g: single input, single output
-g(x::Float64) = x^2 - 5.0
-g(x::Vector{Float64}) = x .^ 2 .- 5.0
-g_inv(y::Float64) = sqrt(y + 5.0)
-g_inv(y::Vector{Float64}) = sqrt.(y .+ 5.0)
+g(x) = x .^ 2 .- 5.0
+g_inv(y) = sqrt.(y .+ 5.0)
 
 # h: multiple input, single output
-h(x::Float64, y::Float64) = x^2 - y
-h(x::Vector{Float64}, y::Vector{Float64}) = x .^ 2 .- y
-h(x::Float64, y::Vector{Float64}) = x^2 .- y
-h_inv_x(z::Float64, y::Float64) = sqrt(z + y)
-h_inv_x(z::Vector{Float64}, y::Vector{Float64}) = sqrt.(z .+ y)
-h_inv_z(x::Float64, y::Float64) = x^2 - y
-h_inv_z(x::Vector{Float64}, y::Vector{Float64}) = x .^ 2 .- y
-
-# g provided in a similar syntax like the N parameter in normal_mixture/test_out.jl
-# normal_mixture is the only example with this syntax (that has a test; gamma_mixture is another candidate but ∄ test)
+h(x, y) = x .^ 2 .- y
+h_inv_x(z, y) = sqrt.(z .+ y)
+h_inv_z(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:in" begin
     @testset "Single input with known inverse" begin

@@ -7,19 +7,15 @@ import ReactiveMP: @test_rules
 # TODO: with_float_conversions = true breaks
 
 # g: single input, single output
-g(x::Float64) = x^2 - 5.0
-g(x::Vector{Float64}) = x .^ 2 .- 5.0
+g(x) = x .^ 2 .- 5.0
 
 # h: multiple input, single output
-h(x::Float64, y::Float64) = x^2 - y
-h(x::Vector{Float64}, y::Vector{Float64}) = x .^ 2 .- y
-h(x::Float64, y::Vector{Float64}) = x^2 .- y
+h(x, y) = x .^ 2 .- y
 
 # g provided in a similar syntax like the N parameter in normal_mixture/test_out.jl
 # normal_mixture is the only example with this syntax (that has a test; gamma_mixture is another candidate but ∄ test)
 @testset "rules:Delta:unscented:out" begin
-    # ForneyLab:test_delta_unscented:SPDeltaUTOutNG 1-2
-    @testset "Belief Propagation: f(x) (m_ins::NormalMeanVariance, *)" begin
+    @testset "Single univariate input" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}(:out, Marginalisation) [
             (
                 input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaUnscented()),
@@ -32,8 +28,7 @@ h(x::Float64, y::Vector{Float64}) = x^2 .- y
         ]
     end
 
-    # ForneyLab:test_delta_unscented:SPDeltaUTOutNG 3-4
-    @testset "Belief Propagation: f(x): (m_ins::MvNormalMeanCovariance, *)" begin
+    @testset "Single multivariate input" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}(:out, Marginalisation) [
             (
                 input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaUnscented()),
@@ -46,8 +41,7 @@ h(x::Float64, y::Vector{Float64}) = x^2 .- y
         ]
     end
 
-    # ForneyLab:test_delta_unscented:SPDeltaUTOutNGX 1
-    @testset "Belief Propagation: f(x,y) (m_ins::NormalMeanVariance, *)" begin
+    @testset "Multiple univariate input" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
             (
             input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)), meta = DeltaUnscented()),
@@ -56,8 +50,7 @@ h(x::Float64, y::Vector{Float64}) = x^2 .- y
         ]
     end
 
-    # ForneyLab:test_delta_unscented:SPDeltaUTOutNGX 2
-    @testset "Belief Propagation: f(x,y) (m_ins::MvNormalMeanCovariance, *)" begin
+    @testset "Multiple multivariate input" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
             (
             input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaUnscented()),

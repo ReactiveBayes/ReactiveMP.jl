@@ -163,6 +163,9 @@ end
         result₂ = inference_2inputs(data)
         result₃ = inference_3inputs(data)
         result₄ = inference_2input_1d2d(data)
+
+        @error "fuck"
+
         ## -------------------------------------------- ##
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
