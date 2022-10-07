@@ -4,7 +4,6 @@ using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
 using BenchmarkTools, Random, Plots, Dates, LinearAlgebra, StableRNGs
 
-# Please use StableRNGs for random number generators
 
 ## Model definition
 ## -------------------------------------------- ##
@@ -163,8 +162,6 @@ end
         result₂ = inference_2inputs(data)
         result₃ = inference_3inputs(data)
         result₄ = inference_2input_1d2d(data)
-
-        @error "fuck"
 
         ## -------------------------------------------- ##
         ## Form debug output
