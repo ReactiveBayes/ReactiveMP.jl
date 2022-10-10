@@ -112,7 +112,7 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q_friendly)
 
         logq = (vec_params) -> logpdf(T(vec_params), z_s)
-        ∇logq = logq'(vec(λ))
+        ∇logq = ForwardDiff.gradient(logq, vec(λ))
 
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
         ∇ = λ - η - T(∇f)
