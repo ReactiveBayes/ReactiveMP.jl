@@ -102,10 +102,19 @@ end
     @testset "f(x) -> x[1], x~MvNormal out~Normal" begin
         seed = 123
         rng = StableRNG(seed)
-        optimizer = Descent(0.01)
-        test_meta = CVIApproximation(rng, 1, 2000, optimizer)
-        output = @call_marginalrule DeltaFn{extract_coordinate}(:ins) (m_out = NormalMeanVariance(0, 1), m_ins = ManyOf(MvGaussianMeanCovariance(ones(2), [2 -1; -1 2])), meta = test_meta)
-        @show output
-    end 
+        optimizer = Descent(0.001)
+        test_meta = CVIApproximation(rng, 1, 10000, optimizer)
+
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{extract_coordinate}(:ins) [
+            (
+            input = (
+                m_out = NormalMeanVariance(0, 1),
+                m_ins = ManyOf(MvGaussianMeanCovariance(ones(2), [1 0; 0 1])),
+                meta = test_meta
+            ),
+            output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2), [2 0; 0 1]),))
+        )
+        ]
+    end
 end
 end
