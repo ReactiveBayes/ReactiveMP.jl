@@ -101,17 +101,19 @@ function renderCVI(logp_nc::Function,
     # work within loop with vector
     rng = something(rng, Random.GLOBAL_RNG)
 
-    A(vec_params) = lognormalizer(T(vec_params)) # maybe convert here makes more sense
-    gradA(vec_params) = A'(vec_params) # Zygote
-    Fisher(vec_params) = ForwardDiff.jacobian(gradA, vec_params) # Zygote throws mutating array error
+    A = (vec_params) -> lognormalizer(T(vec_params)) # maybe convert here makes more sense
+    gradA = (vec_params) -> A'(vec_params)
+    Fisher = (vec_params) -> ForwardDiff.jacobian(gradA, vec_params)
+
     for _ in 1:num_iterations
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
 
         z_s = rand(rng, q_friendly)
 
-        logq(vec_params) = logpdf(T(vec_params), z_s)
+        logq = (vec_params) -> logpdf(T(vec_params), z_s)
         ∇logq = logq'(vec(λ))
+
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
         ∇ = λ - η - T(∇f)
         updated = T(cvi_update!(opt, λ, ∇))
