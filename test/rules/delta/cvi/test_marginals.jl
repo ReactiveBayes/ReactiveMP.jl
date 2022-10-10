@@ -16,6 +16,10 @@ function two_into_one(x::Real, y::Real)
     return [x, y]
 end
 
+function extract_coordinate(x::Vector)
+    return x[1]
+end
+
 @testset "marginalrules:CVI" begin
     @testset "id, x~Normal, y~Normal" begin
         seed = 123
@@ -94,5 +98,14 @@ end
         )
         ]
     end
+
+    @testset "f(x) -> x[1], x~MvNormal out~Normal" begin
+        seed = 123
+        rng = StableRNG(seed)
+        optimizer = Descent(0.01)
+        test_meta = CVIApproximation(rng, 1, 2000, optimizer)
+        output = @call_marginalrule DeltaFn{extract_coordinate}(:ins) (m_out = NormalMeanVariance(0, 1), m_ins = ManyOf(MvGaussianMeanCovariance(ones(2), [2 -1; -1 2])), meta = test_meta)
+        @show output
+    end 
 end
 end
