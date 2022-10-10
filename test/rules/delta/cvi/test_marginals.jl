@@ -117,13 +117,22 @@ end
         ]
     end
 
-    @testset "identity, x~Gamma out~Gamma" begin
+    @testset "id, x~Gamma out~Gamma" begin
         seed = 123
         rng = StableRNG(seed)
-        optimizer = Descent(0.001)
+        optimizer = Descent(0.005)
         test_meta = CVIApproximation(rng, 1, 50000, optimizer)
-        output = @call_marginalrule DeltaFn{identity}(:ins) (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 1)), meta = test_meta)
-        @show convert(Distribution, naturalparams(output[1]) - naturalparams(GammaShapeRate(1, 1)))
+        
+        @test_marginalrules [with_float_conversions = false, atol = 0.2] DeltaFn{identity}(:ins) [
+            (
+            input = (
+                m_out = GammaShapeRate(1, 1),
+                m_ins = ManyOf(GammaShapeRate(1, 1)),
+                meta = test_meta
+            ),
+            output = FactorProduct((GammaShapeRate(1, 2),))
+        )
+        ]
     end
 end
 end
