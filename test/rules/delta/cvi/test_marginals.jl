@@ -122,7 +122,7 @@ end
         rng = StableRNG(seed)
         optimizer = Descent(0.005)
         test_meta = CVIApproximation(rng, 1, 50000, optimizer)
-        
+
         @test_marginalrules [with_float_conversions = false, atol = 0.2] DeltaFn{identity}(:ins) [
             (
             input = (
