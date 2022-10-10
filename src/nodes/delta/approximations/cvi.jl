@@ -102,7 +102,7 @@ function renderCVI(logp_nc::Function,
     rng = something(rng, Random.GLOBAL_RNG)
 
     A = (vec_params) -> lognormalizer(T(vec_params)) # maybe convert here makes more sense
-    gradA = (vec_params) -> A'(vec_params)
+    gradA = (vec_params) -> ForwardDiff.gradient(A, vec_params)
     Fisher = (vec_params) -> ForwardDiff.jacobian(gradA, vec_params)
 
     for _ in 1:num_iterations
