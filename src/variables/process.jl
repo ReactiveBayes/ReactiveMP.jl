@@ -1,32 +1,12 @@
-export RandomProcess, RandomProcessCreationOptions, randomprocess, ProcessMeta
+export RandomProcess, RandomProcessCreationOptions, randomprocess
 
 import Base: show
-###new###
 
-struct ProcessMeta
-    index 
-    Kxx
-    Kff
-    Kfx
-end
-"""
-index : index of data
-Kxx: covariance matrix on training set 
-Kff: covariance matrix on test set
-Kfx: cross covariance matrix of test and training 
-"""
-
-# function ProcessMeta(index, Kxx, Kff, Kfx)
-#     return ProcessMeta(index, Kxx, Kff, Kfx)
-# end
-#########
 ## Random variable implementation
-#change here
 mutable struct RandomProcess <: AbstractVariable
     name               :: Symbol
     test_input         :: AbstractArray
     train_input        :: AbstractArray
-    meta               :: ProcessMeta   #add meta
     anonymous          :: Bool
     collection_type    :: AbstractVariableCollectionType
     input_messages     :: Vector{MessageObservable{AbstractMessage}}
@@ -114,7 +94,6 @@ randomprocess_options_set_messages_form_check_strategy(options::RandomProcessCre
 function randomprocess end
 
 randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray)                                                  = randomprocess(RandomProcessCreationOptions(), name,test_input,train_input, VariableIndividual())
-randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, meta::ProcessMeta)                               = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, meta) #add new line
 randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, collection_type::AbstractVariableCollectionType) = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, collection_type)
 randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, length::Int)                                     = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, length)
 randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, dims::Tuple)                                     = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, dims)
@@ -122,22 +101,17 @@ randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArra
 
 randomprocess(options::RandomProcessCreationOptions, name::Symbol, test_input::AbstractArray, train_input::AbstractArray)                    = randomprocess(options, name, test_input, train_input, VariableIndividual())
 randomprocess(options::RandomProcessCreationOptions, name::Symbol, test_input::AbstractArray, train_input::AbstractArray, dims::Vararg{Int}) = randomprocess(options, name, test_input, train_input, dims)
-#new line
-randomprocess(options::RandomProcessCreationOptions, name::Symbol, test_input::AbstractArray, train_input::AbstractArray, meta::ProcessMeta) = randomprocess(options, name, test_input, train_input, meta, VariableIndividual())
-#change here
 function randomprocess(
     options::RandomProcessCreationOptions,
     name::Symbol,
     test_input::AbstractArray,
     train_input::AbstractArray,
-    meta::ProcessMeta,
     collection_type::AbstractVariableCollectionType
 )
     return RandomProcess(
         name,
         test_input,
         train_input,
-        meta,
         false,
         collection_type,
         Vector{MessageObservable{AbstractMessage}}(),
@@ -166,7 +140,6 @@ prod_constraint(randomprocess::RandomProcess) = randomprocess.prod_constraint
 prod_strategy(randomprocess::RandomProcess)   = randomprocess.prod_strategy
 test_input(randomprocess::RandomProcess)      = randomprocess.test_input
 train_input(randomprocess::RandomProcess)     = randomprocess.train_input
-meta(randomprocess::RandomProcess)            = randomprocess.meta
 
 marginal_form_constraint(randomprocess::RandomProcess)     = randomprocess.marginal_form_constraint
 marginal_form_check_strategy(randomprocess::RandomProcess) = _marginal_form_check_strategy(randomprocess.marginal_form_check_strategy, randomprocess)
