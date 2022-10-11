@@ -34,6 +34,7 @@ end
         λ = ReactiveMP.renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, deepcopy(η), m_in)
         @test convert(NormalMeanVariance, λ) ≈ NormalMeanVariance(0, 1)
     end
+
     @testset "counting optimizer" begin
         m_in = NormalMeanVariance(0, 1)
         m_out = NormalMeanVariance(0, 1)
