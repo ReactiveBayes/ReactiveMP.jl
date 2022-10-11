@@ -2,7 +2,7 @@ module ReactiveMPModelsNonLinearDynamicsTest
 
 using Test, InteractiveUtils
 using Rocket, ReactiveMP, GraphPPL, Distributions
-using BenchmarkTools, Random, Dates, StableRNGs, Flux
+using BenchmarkTools, Random, Plots, Dates, StableRNGs, Flux
 
 # Please use StableRNGs for random number generators
 
@@ -43,14 +43,14 @@ end
 ## -------------------------------------------- ##
 ## Inference definition
 ## -------------------------------------------- ##
-function inference_cvi(transformed, rng)
+function inference_cvi(transformed, rng, iterations)
     T = length(transformed)
 
     return inference(
-        model = Model(non_linear_dynamics, T, rng, 1000, 2000, 0.1),
+        model = Model(non_linear_dynamics, T, rng, 600, 600, 0.01),
         data = (y = transformed,),
-        iterations = 10,
-        free_energy = false,
+        iterations = iterations,
+        free_energy = true,
         returnvars = (z = KeepLast(),),
         constraints = constraints,
         initmessages = (z = NormalMeanVariance(0, P),),
@@ -81,20 +81,43 @@ end
         transformed = (data .- sensor_location) .^ 2 + rand(rng, NormalMeanVariance(0.0, sensor_var), T)
         ## -------------------------------------------- ##
         ## Inference execution
-        res = inference_cvi(transformed, rng)
+        res = inference_cvi(transformed, rng, 250)
         ## -------------------------------------------- ##
         ## Test inference results should be there
         ## -------------------------------------------- ##
+        mz = res.posteriors[:z]
+        fe = res.free_energy
         @test length(res.posteriors[:z]) === T
+        @test all(mean.(mz) .- 6 .* std.(mz) .< hidden .< (mean.(mz) .+ 6 .* std.(mz)))
+        @test (sum((mean.(mz) .- 3 .* std.(mz)) .< hidden .< (mean.(mz) .+ 3 .* std.(mz))) / T) > 0.95
+        @test abs(last(fe) - 363.004) < 0.01
+        @test all(filter(e -> abs(e) > 1, diff(fe)) .< 0)
         ## Form debug output
         base_output = joinpath(pwd(), "_output", "models")
         mkpath(base_output)
         timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
+        plot_output      = joinpath(base_output, "cvi_plot_$(timestamp)_v$(VERSION).png")
         benchmark_output = joinpath(base_output, "non_linear_dynamics_$(timestamp)_v$(VERSION).txt")
+
+        px = plot()
+
+        px = plot!(px, hidden, label = "Hidden Signal", color = :red)
+        px = plot!(px, map(mean, res.posteriors[:z]), label = "Estimated signal location", color = :orange)
+        px = plot!(
+            px,
+            map(mean, res.posteriors[:z]),
+            ribbon = (9 .* var.(res.posteriors[:z])) .|> sqrt,
+            fillalpha = 0.5,
+            label = "Estimated Signal confidence",
+            color = :blue
+        )
+        pf = plot(fe, label = "Bethe Free Energy")
+        p = plot(px, pf, layout = @layout([a; b]))
+        savefig(p, plot_output)
         ## -------------------------------------------- ##
         ## Create output benchmarks (skip if CI)
         if get(ENV, "CI", nothing) != "true"
-            benchmark = @benchmark inference_cvi($transformed, $rng)#
+            benchmark = @benchmark inference_cvi($transformed, $rng, 5)#
             open(benchmark_output, "w") do io
                 show(io, MIME("text/plain"), benchmark)
                 versioninfo(io)
