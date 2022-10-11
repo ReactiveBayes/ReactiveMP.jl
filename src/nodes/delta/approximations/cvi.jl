@@ -4,8 +4,6 @@ using Random
 
 """
     cvi_update!(opt, λ, ∇)
-
-TODO: Add documention
 """
 function cvi_update! end
 
@@ -16,6 +14,20 @@ end
 cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 
+"""
+CVIApproximation
+
+To call the delta node with CVI method, you need to specify its meta to CVIApproximation.
+CVIApproximation object is a container for 4 CVI parameters:
+    rng - random number generator
+    n_samples - number of samples for our rule
+    num_iterations - number of iteration inside renderCVI
+    opt - optimizer, which will be used for iteration call inside render CVI
+
+CVIApproximation has two constructors, one with all parameters specified and one where rng is missed (in this case, the global rng will be used in its place):
+    `CVIApproximation(rng, number of out sample, number of iterations inside render cvi, optimizer)`: all parameters specified
+    `CVIApproximation(number of out samples, number of iterations inside render cvi, optimizer)`: you will use global rng
+"""
 struct CVIApproximation{R, O}
     rng::R
     n_samples::Int
