@@ -158,12 +158,12 @@ include("implication/marginals.jl")
 # include("delta/helpers.jl")
 
 include("delta/helpers/shared.jl")
-include("delta/helpers/extended.jl")
+include("delta/helpers/linearization.jl")
 include("delta/helpers/unscented.jl")
 
-include("delta/extended/in.jl")
-include("delta/extended/out.jl")
-include("delta/extended/marginals.jl")
+include("delta/linearization/in.jl")
+include("delta/linearization/out.jl")
+include("delta/linearization/marginals.jl")
 
 include("delta/unscented/in.jl")
 include("delta/unscented/out.jl")

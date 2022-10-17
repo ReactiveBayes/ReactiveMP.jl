@@ -1,12 +1,12 @@
-# DeltaFn node non-standard rule layout for `DeltaUnscented` and `DeltaExtended` approximations rule
-# `DeltaUnscented` and `DeltaExtended` nodes change the default layout in 2 ways:
+# DeltaFn node non-standard rule layout for `DeltaUnscented` and `DeltaLinearization` approximations rule
+# `DeltaUnscented` and `DeltaLinearization` nodes change the default layout in 2 ways:
 # - `m_out` requires only inbounds messages on `m_in`s (TODO consider exchanging this behaviour with CVI in the future)
 # - (ONLY WITH KNOWN INVERSE) `m_in(k)` requires only inbound message on `m_out` and inbound messages on the remaining `m_in`s
 
-struct DeltaUEUknownInverseApproximationDeltaFnRuleLayout end
+struct DeltaUknownInverseApproximationDeltaFnRuleLayout end
 
 deltafn_apply_layout(
-    ::DeltaUEUknownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaUknownInverseApproximationDeltaFnRuleLayout,
     ::Val{:q_out},
     model,
     factornode::DeltaFnNode
@@ -14,7 +14,7 @@ deltafn_apply_layout(
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), model, factornode)
 
 deltafn_apply_layout(
-    ::DeltaUEUknownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaUknownInverseApproximationDeltaFnRuleLayout,
     ::Val{:q_ins},
     model,
     factornode::DeltaFnNode
@@ -22,7 +22,7 @@ deltafn_apply_layout(
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), model, factornode)
 
 deltafn_apply_layout(
-    ::DeltaUEUknownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaUknownInverseApproximationDeltaFnRuleLayout,
     ::Val{:m_in},
     model,
     factornode::DeltaFnNode
@@ -30,7 +30,7 @@ deltafn_apply_layout(
     deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), model, factornode)
 
 function deltafn_apply_layout(
-    ::DeltaUEUknownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaUknownInverseApproximationDeltaFnRuleLayout,
     ::Val{:m_out},
     model,
     factornode::DeltaFnNode
@@ -68,36 +68,36 @@ function deltafn_apply_layout(
 end
 
 # We use non-standard `DeltaFn` node layout in case if inverse is known
-struct DeltaUEKnownInverseApproximationDeltaFnRuleLayout end
+struct DeltaKnownInverseApproximationDeltaFnRuleLayout end
 
 deltafn_apply_layout(
-    ::DeltaUEKnownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaKnownInverseApproximationDeltaFnRuleLayout,
     ::Val{:q_out},
     model,
     factornode::DeltaFnNode
 ) =
-    deltafn_apply_layout(DeltaUEUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_out), model, factornode)
+    deltafn_apply_layout(DeltaUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_out), model, factornode)
 
 deltafn_apply_layout(
-    ::DeltaUEKnownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaKnownInverseApproximationDeltaFnRuleLayout,
     ::Val{:q_ins},
     model,
     factornode::DeltaFnNode
 ) =
-    deltafn_apply_layout(DeltaUEUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_ins), model, factornode)
+    deltafn_apply_layout(DeltaUknownInverseApproximationDeltaFnRuleLayout(), Val(:q_ins), model, factornode)
 
 deltafn_apply_layout(
-    ::DeltaUEKnownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaKnownInverseApproximationDeltaFnRuleLayout,
     ::Val{:m_out},
     model,
     factornode::DeltaFnNode
 ) =
-    deltafn_apply_layout(DeltaUEUknownInverseApproximationDeltaFnRuleLayout(), Val(:m_out), model, factornode)
+    deltafn_apply_layout(DeltaUknownInverseApproximationDeltaFnRuleLayout(), Val(:m_out), model, factornode)
 
 # This function declares how to compute `m_in` 
 
 function deltafn_apply_layout(
-    ::DeltaUEKnownInverseApproximationDeltaFnRuleLayout,
+    ::DeltaKnownInverseApproximationDeltaFnRuleLayout,
     ::Val{:m_in},
     model,
     factornode::DeltaFnNode{F, N}

@@ -90,7 +90,7 @@ end
 ## -------------------------------------------- ##
 function inference_1input(data)
     res = []
-    for meta in (ET(inverse = f₁_inv), UT(inverse = f₁_inv), ET(), UT())
+    for meta in (DeltaLinearization(inverse = f₁_inv), UT(inverse = f₁_inv), DeltaLinearization(), UT())
         push!(
             res,
             inference(
@@ -106,7 +106,7 @@ end
 
 function inference_2inputs(data)
     res = []
-    for meta in (ET(inverse = (f₂_x, f₂_θ)), UT(inverse = (f₂_x, f₂_θ)), ET(), UT())
+    for meta in (DeltaLinearization(inverse = (f₂_x, f₂_θ)), UT(inverse = (f₂_x, f₂_θ)), DeltaLinearization(), UT())
         push!(
             res,
             inference(
@@ -122,7 +122,7 @@ end
 
 function inference_3inputs(data)
     res = []
-    for meta in (ET(), UT())
+    for meta in (DeltaLinearization(), UT())
         push!(
             res,
             inference(
@@ -138,7 +138,7 @@ end
 
 function inference_2input_1d2d(data)
     res = []
-    for meta in (ET(), UT())
+    for meta in (DeltaLinearization(), UT())
         push!(
             res,
             inference(
@@ -153,7 +153,7 @@ function inference_2input_1d2d(data)
 end
 
 @testset "Delta models" begin
-    @testset "Extended, Unscented transforms" begin
+    @testset "Linearization, Unscented transforms" begin
         ## -------------------------------------------- ##
         ## Data creation
         data = 4.0

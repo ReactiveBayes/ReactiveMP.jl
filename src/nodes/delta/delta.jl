@@ -29,7 +29,7 @@ metadata(factornode::DeltaFnNode)                         = factornode.metadata
 include("layouts.jl")
 
 # include approximations
-include("approximations/extended.jl")
+include("approximations/linearization.jl")
 include("approximations/unscented.jl")
 
 # include special marginal struct for delta node

@@ -19,7 +19,7 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),
                 m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)),
-                meta  = DeltaExtended(inverse = nothing)
+                meta  = DeltaLinearization(inverse = nothing)
             ),
             output = DeltaMarginal(
                 NormalMeanVariance(
@@ -38,7 +38,7 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]),
                 m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0])),
-                meta  = DeltaExtended(inverse = nothing)
+                meta  = DeltaLinearization(inverse = nothing)
             ),
             output = DeltaMarginal(
                 MvNormalMeanCovariance(
@@ -57,7 +57,7 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),
                 m_ins = ManyOf(NormalMeanVariance(2.0, 1.0), NormalMeanVariance(5.0, 1.0)),
-                meta  = DeltaExtended(inverse = nothing)
+                meta  = DeltaLinearization(inverse = nothing)
             ),
             output = DeltaMarginal(
                 MvNormalMeanCovariance(
@@ -77,7 +77,7 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]),
                 m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0]), MvNormalMeanCovariance([5.0], [1.0])),
-                meta  = DeltaExtended(inverse = nothing)
+                meta  = DeltaLinearization(inverse = nothing)
             ),
             output = DeltaMarginal(
                 MvNormalMeanCovariance(

@@ -1,6 +1,6 @@
 export marginalrule
 
-@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaExtended) where {f, N} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaLinearization) where {f, N} = begin
     # Approximate joint inbounds
     (μs_fw_in, Σs_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationMultiIn(f, μs_fw_in)
@@ -17,7 +17,7 @@ export marginalrule
     return DeltaMarginal(MvNormalMeanCovariance(μ_in, Σ_in), ds)
 end
 
-@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaExtended) where {f} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaLinearization) where {f} = begin
     # Approximate joint inbounds
 
     (μ_fw_in, Σ_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances

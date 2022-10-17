@@ -12,17 +12,17 @@ h(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:marginals" begin
     @testset "Single univariate input" begin
-        @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [
+        @test_marginalrules [with_float_conversions = false, atol=1e-10] DeltaFn{g}(:ins) [
             (
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),
                 m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)),
-                meta  = DeltaExtended(inverse = nothing)
+                meta  = DeltaUnscented(inverse = nothing)
             ),
             output = DeltaMarginal(
                 NormalMeanVariance(
-                    2.6315789473684212,
-                    0.1578947368421053
+                    2.3809523807887425,
+                    0.23809523822182999
                 ),
                 [(1,)]
             )
@@ -35,13 +35,13 @@ h(x, y) = x .^ 2 .- y
             (
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]),
-                m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0])),
-                meta  = DeltaExtended(inverse = nothing)
+                m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0;;])),
+                meta  = DeltaUnscented(inverse = nothing)
             ),
             output = DeltaMarginal(
                 MvNormalMeanCovariance(
-                    [2.6315789473684212],
-                    [0.1578947368421053]
+                    [2.3809523807887425],
+                    [0.23809523822182999;;]
                 ),
                 [(1,)]
             )

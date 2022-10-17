@@ -1,7 +1,7 @@
 # single input
 @rule DeltaFn{f}(:out, Marginalisation) (
     m_ins::ManyOf{1, NormalDistributionsFamily},
-    meta::DeltaExtended{T}
+    meta::DeltaLinearization{T}
 ) where {f, T} = begin
     μ_in, Σ_in = mean_cov(first(m_ins))
     (A, b) = localLinearizationSingleIn(f, μ_in)
@@ -14,7 +14,7 @@ end
 # multiple input; this should be called
 @rule DeltaFn{f}(:out, Marginalisation) (
     m_ins::ManyOf{N, Any},
-    meta::DeltaExtended{T}
+    meta::DeltaLinearization{T}
 ) where {f, N, T} =
     begin
         (μs_in, Σs_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
@@ -26,11 +26,10 @@ end
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
-# Why this method is being called for forward message?
 @rule DeltaFn{f}(:out, Marginalisation) (
     m_out::NormalDistributionsFamily,
     m_ins::ManyOf{N, NormalDistributionsFamily},
-    meta::DeltaExtended{T}
+    meta::DeltaLinearization{T}
 ) where {f, N, T} =
     begin
         (μs_in, Σs_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances

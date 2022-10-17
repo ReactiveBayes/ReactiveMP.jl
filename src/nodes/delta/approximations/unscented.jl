@@ -16,7 +16,7 @@ end
 const UT = DeltaUnscented
 
 deltafn_rule_layout(::DeltaFnNode, ::DeltaUnscented{Nothing}) =
-    DeltaUEUknownInverseApproximationDeltaFnRuleLayout()
+    DeltaUknownInverseApproximationDeltaFnRuleLayout()
 
-deltafn_rule_layout(::DeltaFnNode, ::DeltaUnscented{F}) where {F <: Function}               = DeltaUEKnownInverseApproximationDeltaFnRuleLayout()
-deltafn_rule_layout(::DeltaFnNode, ::DeltaUnscented{F}) where {N, F <: NTuple{N, Function}} = DeltaUEKnownInverseApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::DeltaUnscented{F}) where {F <: Function}               = DeltaKnownInverseApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::DeltaUnscented{F}) where {N, F <: NTuple{N, Function}} = DeltaKnownInverseApproximationDeltaFnRuleLayout()

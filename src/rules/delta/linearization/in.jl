@@ -1,7 +1,7 @@
 @rule DeltaFn{f}((:in, _), Marginalisation) (
     m_out::Any,
     m_ins::Nothing,
-    meta::DeltaExtended{T}
+    meta::DeltaLinearization{T}
 ) where {f, T <: Function} =
     begin
         μ_out, Σ_out = mean_cov(m_out)
@@ -17,7 +17,7 @@
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     m_out::Any,
     m_ins::ManyOf{N, Any},
-    meta::DeltaExtended{T}
+    meta::DeltaLinearization{T}
 ) where {f, N, T <: Any} =
     begin
         (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
@@ -31,7 +31,7 @@
         return convert(promote_variate_type(F, NormalMeanVariance), m, V)
     end
 
-@rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaExtended{T}) where {f, T <: Nothing} =
+@rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaLinearization{T}) where {f, T <: Nothing} =
     begin
         # we need dimension of the interface variables
         # Marginalize joint belief on in's

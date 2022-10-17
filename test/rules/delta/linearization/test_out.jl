@@ -17,7 +17,7 @@ h(x, y) = x .^ 2 .- y
     @testset "Belief Propagation: f(x) (m_ins::NormalMeanVariance, *)" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}(:out, Marginalisation) [
             (
-            input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaExtended(inverse = nothing)),
+            input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaLinearization(inverse = nothing)),
             output = NormalMeanVariance(-1.0, 48.0)
         )
         ]
@@ -27,7 +27,7 @@ h(x, y) = x .^ 2 .- y
     @testset "Belief Propagation: f(x): (m_ins::MvNormalMeanCovariance, *)" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}(:out, Marginalisation) [
             (
-            input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaExtended(inverse = nothing)),
+            input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaLinearization(inverse = nothing)),
             output = MvNormalMeanCovariance([-1.0], [48.0])
         )
         ]
@@ -37,7 +37,7 @@ h(x, y) = x .^ 2 .- y
     @testset "Belief Propagation: f(x,y) (m_ins::NormalMeanVariance, *)" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
             (
-            input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)), meta = DeltaExtended(inverse = nothing)),
+            input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)), meta = DeltaLinearization(inverse = nothing)),
             output = NormalMeanVariance(-1.0, 49.0)
         )
         ]
@@ -47,7 +47,7 @@ h(x, y) = x .^ 2 .- y
     @testset "Belief Propagation: f(x,y) (m_ins::MvNormalMeanCovariance, *)" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}(:out, Marginalisation) [
             (
-            input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaExtended()),
+            input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaLinearization()),
             output = MvNormalMeanCovariance([-1.0], [49.0])
         )
         ]
