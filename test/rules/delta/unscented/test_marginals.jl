@@ -12,7 +12,7 @@ h(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:marginals" begin
     @testset "Single univariate input" begin
-        @test_marginalrules [with_float_conversions = false, atol=1e-10] DeltaFn{g}(:ins) [
+        @test_marginalrules [with_float_conversions = false, atol = 1e-10] DeltaFn{g}(:ins) [
             (
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),

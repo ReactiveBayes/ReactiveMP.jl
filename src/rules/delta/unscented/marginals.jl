@@ -1,4 +1,5 @@
 export marginalrule
+# most of routines are ported from ForneyLab.jl
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaUnscented) where {f, N} = begin
     # Approximate joint inbounds
@@ -23,7 +24,7 @@ end
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
 
     (μ_in, Σ_in) = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
-    
+
     F = isa(μ_in, Number) ? Univariate : Multivariate
     return DeltaMarginal(convert(promote_variate_type(F, NormalMeanVariance), μ_in, Σ_in), [(length(μ_in),)])
 end

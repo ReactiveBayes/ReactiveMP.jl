@@ -1,5 +1,6 @@
 import Base: split, vec
 
+# ported from ForneyLab.jl
 export localLinearizationSingleIn,
     localLinearizationMultiIn
 

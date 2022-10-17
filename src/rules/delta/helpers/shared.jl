@@ -1,7 +1,8 @@
 export collectStatistics, concatenateGaussianMV, smoothRTS, marginalizeGaussianMV
 
-# TODO: In RMP there shouldn't be nothing
-function collectStatistics(msgs::Vararg{Union{Any, Nothing}})
+# ported from ForneyLab.jl
+
+function collectStatistics(msgs::Vararg{Any})
     stats = []
     for msg in msgs
         (msg === nothing) && continue # Skip unreported messages

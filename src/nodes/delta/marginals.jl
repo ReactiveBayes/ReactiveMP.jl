@@ -1,8 +1,9 @@
 export DeltaMarginal
 
 struct DeltaMarginal
-    dist :: NormalDistributionsFamily
-    ds   :: Vector{Any}
+    dist::NormalDistributionsFamily
+    # ds is a vector with the original dimensionalities, so statistics can later be re-separated (from ForneyLab.jl)
+    ds::Vector{Any}
 end
 
 entropy(d::DeltaMarginal) = entropy(d.dist)
