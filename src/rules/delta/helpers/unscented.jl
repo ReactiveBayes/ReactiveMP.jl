@@ -105,15 +105,15 @@ function sigmaPointsAndWeights(
     d = length(m)
     lambda = (d + kappa) * alpha^2 - d
 
+    if lambda < 0
+        @warn "`lambda` in the sigma points computation routine is negative. This may lead to the incorrect results. Adjust the `alpha`, `kappa` and `beta` parameters."
+    end
+
     sigma_points = Vector{Vector{Float64}}(undef, 2 * d + 1)
     weights_m = Vector{Float64}(undef, 2 * d + 1)
     weights_c = Vector{Float64}(undef, 2 * d + 1)
 
-    if isa(V, Diagonal)
-        L = sqrt((d + lambda) * V) # Matrix square root
-    else
-        L = sqrt(Hermitian((d + lambda) * V))
-    end
+    L = cholsqrt((d + lambda) * V)
 
     sigma_points[1] = m
     weights_m[1] = lambda / (d + lambda)
