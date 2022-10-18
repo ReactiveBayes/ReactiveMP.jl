@@ -78,6 +78,10 @@ function sigmaPointsAndWeights(
 )
     lambda = (1 + kappa) * alpha^2 - 1
 
+    if (1 + lambda) < 0
+        @warn "`(1 + lambda)` in the sigma points computation routine is negative. This may lead to the incorrect results. Adjust the `alpha`, `kappa` and `beta` parameters."
+    end
+
     sigma_points = Vector{Float64}(undef, 3)
     weights_m = Vector{Float64}(undef, 3)
     weights_c = Vector{Float64}(undef, 3)
@@ -105,8 +109,8 @@ function sigmaPointsAndWeights(
     d = length(m)
     lambda = (d + kappa) * alpha^2 - d
 
-    if lambda < 0
-        @warn "`lambda` in the sigma points computation routine is negative. This may lead to the incorrect results. Adjust the `alpha`, `kappa` and `beta` parameters."
+    if (d + lambda) < 0
+        @warn "`(d + lambda)` in the sigma points computation routine is negative. This may lead to the incorrect results. Adjust the `alpha`, `kappa` and `beta` parameters."
     end
 
     sigma_points = Vector{Vector{Float64}}(undef, 2 * d + 1)

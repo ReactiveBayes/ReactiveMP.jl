@@ -89,67 +89,47 @@ end
 ## Inference definition
 ## -------------------------------------------- ##
 function inference_1input(data)
-    res = []
-    for meta in (DeltaLinearization(inverse = f₁_inv), UT(inverse = f₁_inv), DeltaLinearization(), UT())
-        push!(
-            res,
-            inference(
-                model = Model(delta_1input, meta),
-                data = (y2 = data,),
-                free_energy = true,
-                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
-            )
+    return map((DeltaLinearization(inverse = f₁_inv), UT(inverse = f₁_inv), DeltaLinearization(), UT())) do meta
+        return inference(
+            model = Model(delta_1input, meta),
+            data = (y2 = data,),
+            free_energy = true,
+            free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
-    res
 end
 
 function inference_2inputs(data)
-    res = []
-    for meta in (DeltaLinearization(inverse = (f₂_x, f₂_θ)), UT(inverse = (f₂_x, f₂_θ)), DeltaLinearization(), UT())
-        push!(
-            res,
-            inference(
-                model = Model(delta_2inputs, meta),
-                data = (y2 = data,),
-                free_energy = true,
-                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
-            )
+    return map((DeltaLinearization(inverse = (f₂_x, f₂_θ)), UT(inverse = (f₂_x, f₂_θ)), DeltaLinearization(), UT())) do meta
+        return inference(
+            model = Model(delta_2inputs, meta),
+            data = (y2 = data,),
+            free_energy = true,
+            free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
-    res
 end
 
 function inference_3inputs(data)
-    res = []
-    for meta in (DeltaLinearization(), UT())
-        push!(
-            res,
-            inference(
-                model = Model(delta_3inputs, meta),
-                data = (y2 = data,),
-                free_energy = true,
-                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
-            )
+    return map((DeltaLinearization(), UT())) do meta
+        return inference(
+            model = Model(delta_3inputs, meta),
+            data = (y2 = data,),
+            free_energy = true,
+            free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
-    res
 end
 
 function inference_2input_1d2d(data)
-    res = []
-    for meta in (DeltaLinearization(), UT())
-        push!(
-            res,
-            inference(
-                model = Model(delta_2input_1d2d, meta),
-                data = (y2 = data,),
-                free_energy = true,
-                free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
-            )
+    return map((DeltaLinearization(), UT())) do meta
+        return inference(
+            model = Model(delta_2input_1d2d, meta),
+            data = (y2 = data,),
+            free_energy = true,
+            free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
-    res
 end
 
 @testset "Delta models" begin
