@@ -92,12 +92,16 @@ end
 
 # Multiple inbounds of possibly mixed variate type
 function unscented_statistics(method::Unscented, ms::AbstractVector, Vs::AbstractVector, g)
-    (m, V, ds) = concatenateGaussianMV(ms, Vs)
+    joint = convert(JointNormal, ms, Vs)
+
+    (m, V) = mean_cov(joint)
+    ds     = dimensionalities(joint)
+
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
-    g_sigma = [ g(split(JointNormal, sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
+    g_sigma = [ g(splitjoint(sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
 
-    d = sum(intdim.(ds)) # Dimensionality of joint
+    d = sum(prod.(ds)) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1] * g_sigma[k+1] for k in 0:2*d]) # Vector
     V_tilde = sum([weights_c[k+1] * (g_sigma[k+1] - m_tilde) * (g_sigma[k+1] - m_tilde)' for k in 0:2*d]) # Matrix
     C_tilde = sum([weights_c[k+1] * (sigma_points[k+1] - m) * (g_sigma[k+1] - m_tilde)' for k in 0:2*d]) # Matrix

@@ -5,7 +5,10 @@
     (μs_fw_in, Σs_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationMultiIn(f, μs_fw_in)
 
-    (μ_fw_in, Σ_fw_in, ds) = concatenateGaussianMV(μs_fw_in, Σs_fw_in)
+    joint              = convert(JointNormal, μs_fw_in, Σs_fw_in)
+    (μ_fw_in, Σ_fw_in) = mean_cov(joint)
+    ds                 = dimensionalities(joint)
+    
     μ_fw_out = A * μ_fw_in + b
     Σ_fw_out = A * Σ_fw_in * A'
     C_fw = Σ_fw_in * A'
@@ -22,7 +25,7 @@ end
 
     (μ_fw_in, Σ_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationSingleIn(f, μ_fw_in)
-    # (μ_fw_in, Σ_fw_in, _) = concatenateGaussianMV(μs_fw_in, Σs_fw_in)
+    # (μ_fw_in, Σ_fw_in, _) = mean_cov(convert(JointNormal, μs_fw_in, Σs_fw_in))
     μ_fw_out = A * μ_fw_in + b
     Σ_fw_out = A * Σ_fw_in * A'
     C_fw = Σ_fw_in * A'

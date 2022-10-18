@@ -41,18 +41,19 @@ struct JointNormal{ D <: NormalDistributionsFamily, S }
     ds   :: S
 end
 
-entropy(d::JointNormal) = entropy(d.dist)
+dimensionalities(joint::JointNormal) = joint.ds
 
-import Base: split
+mean_cov(joint::JointNormal) = mean_cov(joint.dist)
+entropy(joint::JointNormal)  = entropy(joint.dist)
 
 """Split a vector in chunks of lengths specified by ds."""
-function Base.split(::Type{JointNormal}, vec::AbstractVector, ds::Vector{<:Tuple})
+function splitjoint(vec::AbstractVector, ds::Vector{<:Tuple})
     N = length(ds)
     res = Vector{Any}(undef, N)
 
     d_start = 1
     for k in 1:N # For each original statistic
-        d_end = d_start + intdim(ds[k]) - 1
+        d_end = d_start + prod(ds[k]) - 1 # `prod` here returns the dimensionality
 
         if ds[k] == () # Univariate
             res[k] = vec[d_start] # Return scalar
@@ -64,6 +65,55 @@ function Base.split(::Type{JointNormal}, vec::AbstractVector, ds::Vector{<:Tuple
     end
 
     return res
+end
+
+"""
+Concatenate independent means and (co)variances of separate Gaussians in a unified mean and covariance.
+Additionally returns a vector with the original dimensionalities, so statistics can later be re-separated.
+"""
+function Base.convert(::Type{JointNormal}, ms::AbstractVector, Vs::AbstractVector)
+    # Extract dimensions
+    ds = [ size(m_k) for m_k in ms ]
+    dl = prod.(ds) # `prod` here returns the dimensionality
+    d_in_tot = sum(dl)
+
+    # Initialize concatenated statistics
+    m = zeros(d_in_tot)
+    V = zeros(d_in_tot, d_in_tot)
+
+    # Construct concatenated statistics
+    d_start = 1
+    for k in 1:length(ms) # For each inbound statistic
+        d_end = d_start + dl[k] - 1
+        if ds[k] == () # Univariate
+            m[d_start] = ms[k]
+            V[d_start, d_start] = Vs[k]
+        else # Multivariate
+            m[d_start:d_end] = ms[k]
+            V[d_start:d_end, d_start:d_end] = Vs[k]
+        end
+        d_start = d_end + 1
+    end
+
+    # Return concatenated mean and covariance with original dimensions (for splitting)
+    return JointNormal(MvNormalMeanCovariance(m, V), ds) 
+end
+
+"""
+Return the marginalized statistics of the Gaussian corresponding to an inbound inx
+"""
+function marginalizeGaussianMV(m::Vector{T}, V::AbstractMatrix, ds::Vector, inx::Int64) where {T <: Real}
+    if ds[inx] == () # Univariate original
+        return (m[inx], V[inx, inx]) # Return scalars
+    else # Multivariate original
+        dl = prod.(ds) # `prod` here returns the dimensionality
+        dl_start = cumsum([1; dl]) # Starting indices
+        d_start = dl_start[inx]
+        d_end = dl_start[inx+1] - 1
+        mx = m[d_start:d_end] # Vector
+        Vx = V[d_start:d_end, d_start:d_end] # Matrix
+        return (mx, Vx)
+    end
 end
 
 # comparing JointNormals - similar to src/distributions/pointmass.jl

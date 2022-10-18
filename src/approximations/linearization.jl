@@ -10,11 +10,6 @@ as_vec(d::Float64) = [d] # Extend vectorization to Float
 as_vec(something)  = vec(something) # Avoid type-piracy, but better to refactor this
 
 """
-Return integer dimensionality
-"""
-intdim(tup::Tuple) = prod(tup) # Returns 1 for ()
-
-"""
 Concatenate a vector (of vectors and floats) and return with original dimensions (for splitting)
 """
 function linearizationConcatenate(xs::AbstractVector)
@@ -66,7 +61,7 @@ function localLinearizationMultiIn(g::Any, x_hat::AbstractVector)
     (x_cat, ds) = linearizationConcatenate(x_hat)
 
     g_unpacked = let ds = ds, g = g
-        (x) -> g(split(JointNormal, x, ds)...)
+        (x) -> g(splitjoint(x, ds)...)
     end
 
     A = ForwardDiff.jacobian(g_unpacked, x_cat)

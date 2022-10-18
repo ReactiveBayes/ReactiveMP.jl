@@ -7,7 +7,10 @@
     (μ_tilde, Σ_tilde, C_tilde) = unscented_statistics(getmethod(meta), μs_fw_in, Σs_fw_in, f)
 
     # RTS smoother
-    (μ_fw_in, Σ_fw_in, ds) = concatenateGaussianMV(μs_fw_in, Σs_fw_in)
+    joint              = convert(JointNormal, μs_fw_in, Σs_fw_in)
+    (μ_fw_in, Σ_fw_in) = mean_cov(joint) 
+    ds                 = dimensionalities(joint)
+
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_tilde, Σ_tilde, C_tilde, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
     return JointNormal(MvNormalMeanCovariance(μ_in, Σ_in), ds)
