@@ -1,20 +1,69 @@
-export unscentedStatistics, sigmaPointsAndWeights
+export Unscented
 
-# ported from ForneyLab.jl
+const default_alpha = 1e-3 # Default value for the spread parameter
+const default_beta = 2.0
+const default_kappa = 0.0
+
+struct UnscentedExtra{T, R, M, C}
+    L  :: R
+    λ  :: R
+    Wm :: M
+    Wc :: C
+end
+
+struct Unscented{A, B, K, L, E} <: AbstractApproximationMethod
+    α  :: A
+    β  :: B
+    κ  :: K
+    e  :: E
+end
+
+function Unscented(α::Real = default_alpha, β::Real = default_beta, κ::Real = default_kappa)
+    return Unscented(α, β, κ, nothing)
+end
+
+function Unscented(dim::Int64; α::Real = default_alpha, β::Real = default_beta, κ::Real = default_kappa)
+    λ = α^2 * (dim + κ) - dim
+    Wm = ones(2 * dim + 1)
+    Wc = ones(2 * dim + 1)
+    Wm ./= (2 * (dim + λ))
+    Wc ./= (2 * (dim + λ))
+    Wm[1] = λ / (dim + λ)
+    Wc[1] = λ / (dim + λ) + (1 - α^2 + β)
+    return Unscented(α, β, κ, UnscentedExtra(dim, λ, Wm, Wc))
+end
+
+"""An alias for the [`Unscented`](@ref) approximation method."""
+const UT = Unscented
+
+"""An alias for the [`Unscented`](@ref) approximation method."""
+const UnscentedTransformt = Unscented
+
+# get-functions for the Unscented structure
+
+getα(approximation::Unscented)  = approximation.α
+getβ(approximation::Unscented)  = approximation.β
+getκ(approximation::Unscented)  = approximation.κ
+
+getextra(approximation::Unscented) = approximation.e
+
+getL(approximation::Unscented)  = getL(getextra(approximation))
+getλ(approximation::Unscented)  = getλ(getextra(approximation))
+getWm(approximation::Unscented) = getWm(getextra(approximation))
+getWc(approximation::Unscented) = getWc(getextra(approximation))
+
+getL(extra::UnscentedExtra)  = extra.L
+getλ(extra::UnscentedExtra)  = extra.λ
+getWm(extra::UnscentedExtra) = extra.Wm
+getWc(extra::UnscentedExtra) = extra.Wc
+
+# Copied and refactored from ForneyLab.jl
 
 """
 Return the statistics for the unscented approximation to the forward joint
 """
-# Single univariate inbound
-function unscentedStatistics(
-    m::Float64,
-    V::Float64,
-    g::Any;
-    alpha = default_alpha,
-    beta = default_beta,
-    kappa = default_kappa
-)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha = alpha, beta = beta, kappa = kappa)
+function unscented_statistics(method::Unscented, m::Real, V::Real, g) # Single univariate inbound
+    (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     g_sigma = g.(sigma_points)
     m_tilde = sum(weights_m .* g_sigma)
@@ -25,15 +74,9 @@ function unscentedStatistics(
 end
 
 # Single multivariate inbound
-function unscentedStatistics(
-    m::Vector{Float64},
-    V::AbstractMatrix,
-    g::Any;
-    alpha = default_alpha,
-    beta = default_beta,
-    kappa = default_kappa
-)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha = alpha, beta = beta, kappa = kappa)
+function unscented_statistics(method::Uncented, m::AbstractVector, V::AbstractMatrix, g)
+    (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
+
     d = length(m)
 
     g_sigma = g.(sigma_points)
@@ -45,16 +88,9 @@ function unscentedStatistics(
 end
 
 # Multiple inbounds of possibly mixed variate type
-function unscentedStatistics(
-    ms::Vector,
-    Vs::Vector,
-    g::Any;
-    alpha = default_alpha,
-    beta = default_beta,
-    kappa = default_kappa
-)
+function unscented_statistics(method::Unscented, ms::AbstractVector, Vs::AbstractVector, g)
     (m, V, ds) = concatenateGaussianMV(ms, Vs)
-    (sigma_points, weights_m, weights_c) = sigmaPointsAndWeights(m, V; alpha = alpha, beta = beta, kappa = kappa)
+    (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     g_sigma = [g(split(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
 
@@ -69,13 +105,10 @@ end
 """
 Return the sigma points and weights for a Gaussian distribution
 """
-function sigmaPointsAndWeights(
-    m::Float64,
-    V::Float64;
-    alpha = default_alpha,
-    beta = default_beta,
-    kappa = default_kappa
-)
+function sigma_points_weights(method::Unscented, m::Real, V::Real)
+    alpha  = getα(method)
+    beta   = getβ(method)
+    kappa  = getκ(method)
     lambda = (1 + kappa) * alpha^2 - 1
 
     if (1 + lambda) < 0
@@ -99,14 +132,11 @@ function sigmaPointsAndWeights(
     return (sigma_points, weights_m, weights_c)
 end
 
-function sigmaPointsAndWeights(
-    m::Vector{Float64},
-    V::AbstractMatrix;
-    alpha = default_alpha,
-    beta = default_beta,
-    kappa = default_kappa
-)
-    d = length(m)
+function sigma_points_weights(method::Unscented, m::AbstractVector, V::AbstractMatrix)
+    d      = length(m)
+    alpha  = getα(method)
+    beta   = getβ(method)
+    kappa  = getκ(method)
     lambda = (d + kappa) * alpha^2 - d
 
     if (d + lambda) < 0

@@ -55,6 +55,8 @@ include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
 include("approximations/optimizers.jl")
+include("approximations/linearization.jl")
+include("approximations/unscented.jl")
 
 include("distributions/pointmass.jl")
 include("distributions/uniform.jl")

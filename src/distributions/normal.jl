@@ -23,6 +23,28 @@ import Random: rand!
 
 using LoopVectorization
 
+# Joint over multiple Gaussians
+
+"""
+    JointNormal
+
+`JointNormal` is an auxilary structure used for the joint marginal over Normally distributed variables.
+`JointNormal` stores a vector with the original dimensionalities (ds), so statistics can later be re-separated.
+
+# Fields
+- `dist`: joint Normal distribution (typically just a big `MvNormal` distribution)
+- `ds`: a vector with the original dimensionalities of individual `Normal`` distributions
+"""
+struct JointNormal{ D <: NormalDistributionsFamily, S }
+    dist :: D
+    ds   :: S
+end
+
+entropy(d::JointNormal) = entropy(d.dist)
+
+# comparing JointNormals - similar to src/distributions/pointmass.jl
+Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.dist, right.dist; kwargs...) && left.ds == right.ds
+
 # Variate forms promotion
 
 promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F

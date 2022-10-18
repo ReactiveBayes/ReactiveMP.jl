@@ -89,7 +89,18 @@ end
 ## Inference definition
 ## -------------------------------------------- ##
 function inference_1input(data)
-    return map((DeltaLinearization(inverse = f₁_inv), UT(inverse = f₁_inv), DeltaLinearization(), UT())) do meta
+
+    # We test here different approximation methods
+    metas = (
+        DeltaMeta(method = DeltaLinearization(), inverse = f₁_inv),
+        DeltaMeta(method = Unscented(), inverse = f₁_inv),
+        DeltaMeta(method = Linearization(), ),
+        DeltaMeta(method = Unscented(), ),
+        Linearization(),
+        Unscented()
+    )
+
+    return map(metas) do meta
         return inference(
             model = Model(delta_1input, meta),
             data = (y2 = data,),
@@ -97,10 +108,21 @@ function inference_1input(data)
             free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
+
 end
 
 function inference_2inputs(data)
-    return map((DeltaLinearization(inverse = (f₂_x, f₂_θ)), UT(inverse = (f₂_x, f₂_θ)), DeltaLinearization(), UT())) do meta
+
+    metas = (
+        DeltaMeta(method = DeltaLinearization(), inverse = (f₂_x, f₂_θ)),
+        DeltaMeta(method = Unscented(), inverse = (f₂_x, f₂_θ)),
+        DeltaMeta(method = Linearization(), ),
+        DeltaMeta(method = Unscented(), ),
+        Linearization(),
+        Unscented()
+    )
+
+    return map(metas) do meta
         return inference(
             model = Model(delta_2inputs, meta),
             data = (y2 = data,),
@@ -108,10 +130,19 @@ function inference_2inputs(data)
             free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
+
 end
 
 function inference_3inputs(data)
-    return map((DeltaLinearization(), UT())) do meta
+
+    metas = (
+        DeltaMeta(method = Linearization(), ),
+        DeltaMeta(method = Unscented(), ),
+        Linearization(),
+        Unscented()
+    )
+
+    return map(metas) do meta
         return inference(
             model = Model(delta_3inputs, meta),
             data = (y2 = data,),
@@ -122,7 +153,15 @@ function inference_3inputs(data)
 end
 
 function inference_2input_1d2d(data)
-    return map((DeltaLinearization(), UT())) do meta
+
+    metas = (
+        DeltaMeta(method = Linearization(), ),
+        DeltaMeta(method = Unscented(), ),
+        Linearization(),
+        Unscented()
+    )
+
+    return map(metas) do meta
         return inference(
             model = Model(delta_2input_1d2d, meta),
             data = (y2 = data,),

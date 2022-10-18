@@ -1,8 +1,6 @@
-export marginalrule
+# most of the routines are ported directly from ForneyLab.jl
 
-# most of routines are ported from ForneyLab.jl
-
-@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaLinearization) where {f, N} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M}) where {f, N, M <: Linearization} = begin
     # Approximate joint inbounds
     (μs_fw_in, Σs_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
     (A, b) = localLinearizationMultiIn(f, μs_fw_in)
@@ -16,10 +14,10 @@ export marginalrule
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_fw_out, Σ_fw_out, C_fw, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
 
-    return DeltaMarginal(MvNormalMeanCovariance(μ_in, Σ_in), ds)
+    return JointNormal(MvNormalMeanCovariance(μ_in, Σ_in), ds)
 end
 
-@marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaLinearization) where {f} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{1, NormalDistributionsFamily}, meta::DeltaMeta{M}) where {f, M <: Linearization} = begin
     # Approximate joint inbounds
 
     (μ_fw_in, Σ_fw_in) = collectStatistics(m_ins...) # Returns arrays with individual means and covariances
@@ -33,7 +31,8 @@ end
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
     (μ_in, Σ_in) = smoothRTS(μ_fw_out, Σ_fw_out, C_fw, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
 
-    F = isa(μ_in, Number) ? Univariate : Multivariate
+    dist = convert(promote_variate_type(variate_form(μ_in), NormalMeanVariance), μ_in, Σ_in)
+    ds   = [ (length(μ_in),) ]
 
-    return DeltaMarginal(convert(promote_variate_type(F, NormalMeanVariance), μ_in, Σ_in), [(length(μ_in),)])
+    return JointNormal(dist, ds)
 end
