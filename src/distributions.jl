@@ -53,15 +53,14 @@ See also: [`ReactiveMP.value_support`](@ref)
 variate_form(::Distribution{F, S}) where {F <: VariateForm, S <: ValueSupport} = F
 variate_form(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueSupport} = F
 
+variate_form(::Type{T}) where {T <: Real} = Univariate
+variate_form(::T) where {T <: Real}       = Univariate
 
-variate_form(::Type{T}) where { T <: Real } = Univariate
-variate_form(::T)       where { T <: Real } = Univariate
+variate_form(::Type{V}) where {T <: Real, V <: AbstractVector{T}} = Multivariate
+variate_form(::V) where {T <: Real, V <: AbstractVector{T}}       = Multivariate
 
-variate_form(::Type{V}) where { T <: Real, V <: AbstractVector{T} } = Univariate
-variate_form(::V)       where { T <: Real, V <: AbstractVector{T} } = Multivariate
-
-variate_form(::Type{M}) where { T <: Real, M <: AbstractVector{T} } = Matrixvariate
-variate_form(::M)       where { T <: Real, M <: AbstractVector{T} } = Matrixvariate
+variate_form(::Type{M}) where {T <: Real, M <: AbstractMatrix{T}} = Matrixvariate
+variate_form(::M) where {T <: Real, M <: AbstractMatrix{T}}       = Matrixvariate
 
 # Note that the recent version of `Distributions.jl` has the exact same methods (`variate_form`) with the exact same names, however, old versions do not.
 # We keep that for backward-compatibility with old `Distributions.jl` versions,
