@@ -1,16 +1,14 @@
-using Parameters
-
 export DeltaUnscented, UT
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
 const default_kappa = 0.0
 
-@with_kw struct DeltaUnscented{T}
+Base.@kwdef struct DeltaUnscented{T, A, B, K}
     inverse::T = nothing
-    alpha::Real = default_alpha
-    beta::Real = default_beta
-    kappa::Real = default_kappa
+    alpha::A = default_alpha
+    beta::B = default_beta
+    kappa::K = default_kappa
 end
 
 const UT = DeltaUnscented

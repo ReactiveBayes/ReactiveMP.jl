@@ -1,8 +1,6 @@
-using Parameters
-
 export DeltaLinearization
 
-@with_kw struct DeltaLinearization{T}
+Base.@kwdef struct DeltaLinearization{T}
     inverse::T = nothing
 end
 
