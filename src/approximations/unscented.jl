@@ -18,11 +18,14 @@ struct Unscented{A, B, K, E} <: AbstractApproximationMethod
     e  :: E
 end
 
-function Unscented(α::A = default_alpha, β::B = default_beta, κ::K = default_kappa) where { A <: Real, B <: Real, K <: Real }
-    return Unscented{A, B, K, Nothing}(α, β, κ, nothing)
+function Unscented(; alpha::A = default_alpha, beta::B = default_beta, kappa::K = default_kappa) where { A <: Real, B <: Real, K <: Real }
+    return Unscented{A, B, K, Nothing}(alpha, beta, kappa, nothing)
 end
 
-function Unscented(dim::Int64; α::Real = default_alpha, β::Real = default_beta, κ::Real = default_kappa)
+function Unscented(dim::Int64; alpha::Real = default_alpha, beta::Real = default_beta, kappa::Real = default_kappa)
+    α = alpha
+    β = beta
+    κ = kappa
     λ = α^2 * (dim + κ) - dim
     Wm = ones(2 * dim + 1)
     Wc = ones(2 * dim + 1)

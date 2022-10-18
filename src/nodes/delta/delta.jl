@@ -1,4 +1,4 @@
-export DeltaMeta
+export DeltaFn, DeltaFnNode, DeltaMeta
 
 """
     DeltaMeta(method = ..., [ inverse = ... ])

@@ -17,9 +17,9 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),
                 m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)),
-                meta  = DeltaUnscented(inverse = nothing)
+                meta  = DeltaMeta(method = Unscented(), inverse = nothing)
             ),
-            output = DeltaMarginal(
+            output = JointNormal(
                 NormalMeanVariance(
                     2.3809523807887425,
                     0.23809523822182999
@@ -36,9 +36,9 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]),
                 m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0;;])),
-                meta  = DeltaUnscented(inverse = nothing)
+                meta  = DeltaMeta(method = Unscented(), inverse = nothing)
             ),
-            output = DeltaMarginal(
+            output = JointNormal(
                 MvNormalMeanCovariance(
                     [2.3809523807887425],
                     [0.23809523822182999;;]
@@ -56,14 +56,14 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),
                 m_ins = ManyOf(NormalMeanVariance(2.0, 1.0), NormalMeanVariance(5.0, 1.0)),
-                meta  = DeltaUnscented(inverse = nothing)
+                meta  = DeltaMeta(method = Unscented(), inverse = nothing)
             ),
-            output = DeltaMarginal(
+            output = JointNormal(
                 MvNormalMeanCovariance(
                     [2.3636363470614055, 4.9090909132334355],
                     [0.2727273058237252 0.1818181735464949; 0.18181817354649488 0.9545454566127697]
                 ),
-                Any[(), ()]
+                [(), ()]
             )
         )
         ]
@@ -75,14 +75,14 @@ h(x, y) = x .^ 2 .- y
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]),
                 m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0]), MvNormalMeanCovariance([5.0], [1.0])),
-                meta  = DeltaUnscented(inverse = nothing)
+                meta  = DeltaMeta(method = Unscented(), inverse = nothing)
             ),
-            output = DeltaMarginal(
+            output = JointNormal(
                 MvNormalMeanCovariance(
                     [2.3636363470609245, 4.909090913233555],
                     [0.2727273058246874 0.18181817354625435; 0.18181817354625435 0.9545454566128299]
                 ),
-                Any[(1,), (1,)] # [1, 1]
+                [(1,), (1,)] # [1, 1]
             )
         )
         ]

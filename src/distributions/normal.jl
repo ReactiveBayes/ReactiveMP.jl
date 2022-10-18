@@ -2,6 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
+export JointNormal, JointGaussian
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -67,6 +68,9 @@ end
 
 # comparing JointNormals - similar to src/distributions/pointmass.jl
 Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.dist, right.dist; kwargs...) && left.ds == right.ds
+
+"""An alias for the [`JointNormal`](@ref)."""
+const JointGaussian = JointNormal
 
 # Variate forms promotion
 

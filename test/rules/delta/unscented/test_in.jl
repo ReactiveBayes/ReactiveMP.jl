@@ -16,46 +16,55 @@ h_inv_x(z, y) = sqrt.(z .+ y)
 h_inv_z(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:in" begin
+    
     @testset "Single input with known inverse" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
             (
-                input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = nothing, meta = DeltaUnscented(inverse = g_inv)),
+                input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = nothing, meta = DeltaMeta(method = Unscented(), inverse = g_inv)),
                 output = NormalMeanVariance(2.6255032138433307, 0.10796282966583703)
             ),
             (
-                input = (m_out = MvNormalMeanCovariance([2.0], [3.0;;]), m_ins = nothing, meta = DeltaUnscented(inverse = g_inv)),
+                input = (m_out = MvNormalMeanCovariance([2.0], [3.0;;]), m_ins = nothing, meta = DeltaMeta(method = Unscented(), inverse = g_inv)),
                 output = MvNormalMeanCovariance([2.6255032138433307], [0.10796282966583703;;])
             )
         ]
     end
+
     @testset "Multiple input with known inverse" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 1), Marginalisation) [
             (
                 input = (
                     m_out = NormalMeanVariance(2.0, 3.0),
                     m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)),
-                    meta = DeltaUnscented(inverse = (h_inv_x, h_inv_z))
+                    meta = DeltaMeta(method = Unscented(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = NormalMeanVariance(2.6187538476660848, 0.14431487274498522)
             ),
             (
-                input = (m_out = MvNormalMeanCovariance([2.0], [3.0;;]),
-                    m_ins = ManyOf(MvNormalMeanCovariance([5.0], [1.0;;])), meta = DeltaUnscented(inverse = (h_inv_x, h_inv_z))),
+                input = (
+                    m_out = MvNormalMeanCovariance([2.0], [3.0;;]),
+                    m_ins = ManyOf(MvNormalMeanCovariance([5.0], [1.0;;])), 
+                    meta = DeltaMeta(method = Unscented(), inverse = (h_inv_x, h_inv_z))
+                ),
                 output = MvNormalMeanCovariance([2.6187538476660848], [0.14431487274498522;;])
             )
         ]
+
         @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 2), Marginalisation) [
             (
                 input = (
                     m_out = NormalMeanVariance(2.0, 1.0),
                     m_ins = ManyOf(NormalMeanVariance(3.0, 1.0)),
-                    meta = DeltaUnscented(inverse = (h_inv_x, h_inv_z))
+                    meta = DeltaMeta(method = Unscented(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = NormalMeanVariance(2.0000000002328306, 19.00000100088073)
             ),
             (
-                input = (m_out = MvNormalMeanCovariance([2.0], [1.0]),
-                    m_ins = ManyOf(MvNormalMeanCovariance([3.0], [1.0])), meta = DeltaUnscented(inverse = (h_inv_x, h_inv_z))),
+                input = (
+                    m_out = MvNormalMeanCovariance([2.0], [1.0]),
+                    m_ins = ManyOf(MvNormalMeanCovariance([3.0], [1.0])), 
+                    meta = DeltaMeta(method = Unscented(), inverse = (h_inv_x, h_inv_z))
+                ),
                 output = MvNormalMeanCovariance([2.0000000002328306], [19.00000100088073;;])
             )
         ]
@@ -65,34 +74,38 @@ h_inv_z(x, y) = x .^ 2 .- y
         @test_rules [with_float_conversions = false, atol = 1e-3] DeltaFn{h}((:in, k = 1), Marginalisation) [
             (
                 input = (
-                    q_ins = DeltaMarginal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), [(), ()]),
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), [(), ()]),
                     m_in = NormalMeanVariance(5.0, 10.0),
-                    meta = DeltaUnscented()
+                    meta = DeltaMeta(method = Unscented())
                 ),
                 output = NormalWeightedMeanPrecision(0.5, 0.9)
             ),
             (
-                input = (q_ins = DeltaMarginal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), [(1,), (1,)]),
-                    m_in = MvNormalMeanCovariance([5.0], [10.0;;]), meta = DeltaUnscented()),
+                input = (
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), [(1,), (1,)]),
+                    m_in = MvNormalMeanCovariance([5.0], [10.0;;]), 
+                    meta = DeltaMeta(method = Unscented())
+                ),
                 output = MvNormalWeightedMeanPrecision([0.5], [0.9;;])
             )
         ]
     end
+
     @testset "Multiple input with unknown inverse" begin
         @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 2), Marginalisation) [
             (
                 input = (
-                    q_ins = DeltaMarginal(MvNormalMeanCovariance(ones(3), diageye(3)), [(), (), ()]),
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), [(), (), ()]),
                     m_in = NormalMeanVariance(0.0, 10.0),
-                    meta = DeltaUnscented()
+                    meta = DeltaMeta(method = Unscented())
                 ),
                 output = NormalWeightedMeanPrecision(1.0, 0.9)
             ),
             (
                 input = (
-                    q_ins = DeltaMarginal(MvNormalMeanCovariance(ones(3), diageye(3)), [(1,), (2,), ()]),
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), [(1,), (2,), ()]),
                     m_in = MvNormalMeanCovariance(zeros(2), 10 * diageye(2)),
-                    meta = DeltaUnscented()
+                    meta = DeltaMeta(method = Unscented())
                 ),
                 output = MvNormalWeightedMeanPrecision(ones(2), 0.9 * diageye(2))
             )
