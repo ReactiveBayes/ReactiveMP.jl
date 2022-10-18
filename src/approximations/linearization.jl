@@ -2,8 +2,6 @@ export Linearization
 
 struct Linearization <: AbstractApproximationMethod end
 
-import Base: split, vec
-
 # ported from ForneyLab.jl
 
 using ForwardDiff
@@ -15,29 +13,6 @@ as_vec(something)  = vec(something) # Avoid type-piracy, but better to refactor 
 Return integer dimensionality
 """
 intdim(tup::Tuple) = prod(tup) # Returns 1 for ()
-
-"""
-Split a vector in chunks of lengths specified by ds.
-"""
-function linearizationSplit(vec::Vector, ds::Vector{<:Tuple})
-    N = length(ds)
-    res = Vector{Any}(undef, N)
-
-    d_start = 1
-    for k in 1:N # For each original statistic
-        d_end = d_start + intdim(ds[k]) - 1
-
-        if ds[k] == () # Univariate
-            res[k] = vec[d_start] # Return scalar
-        else # Multi- of matrix variate
-            res[k] = reshape(vec[d_start:d_end], ds[k]) # Return vector or matrix
-        end
-
-        d_start = d_end + 1
-    end
-
-    return res
-end
 
 """
 Concatenate a vector (of vectors and floats) and return with original dimensions (for splitting)
@@ -73,7 +48,11 @@ Return local linearization of g around expansion point x_hat
 for Delta node with multiple input interfaces
 """
 function localLinearizationMultiIn(g, x_hat::AbstractVector{T}) where { T <: Real }
-    g_unpacked(x) = g(x...)
+
+    g_unpacked = let g = g
+        (x) -> g(x...)
+    end
+
     A = ForwardDiff.gradient(g_unpacked, x_hat)'
     b = g(x_hat...) - A * x_hat
     return (A, b)
@@ -85,7 +64,11 @@ for Delta node with multiple input interfaces
 """
 function localLinearizationMultiIn(g::Any, x_hat::AbstractVector)
     (x_cat, ds) = linearizationConcatenate(x_hat)
-    g_unpacked(x) = g(linearizationSplit(x, ds)...)
+
+    g_unpacked = let ds = ds, g = g
+        (x) -> g(split(JointNormal, x, ds)...)
+    end
+
     A = ForwardDiff.jacobian(g_unpacked, x_cat)
     b = g(x_hat...) - A * x_cat
     return (A, b)

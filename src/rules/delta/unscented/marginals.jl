@@ -25,5 +25,5 @@ end
     dist = convert(promote_variate_type(variate_form(μ_in), NormalMeanVariance), μ_in, Σ_in)
     ds   = [ (length(μ_in),) ]
 
-    return DeltaMarginal(dist, ds)
+    return JointNormal(dist, ds)
 end

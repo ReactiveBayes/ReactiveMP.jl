@@ -92,7 +92,7 @@ function inference_1input(data)
 
     # We test here different approximation methods
     metas = (
-        DeltaMeta(method = DeltaLinearization(), inverse = f₁_inv),
+        DeltaMeta(method = Linearization(), inverse = f₁_inv),
         DeltaMeta(method = Unscented(), inverse = f₁_inv),
         DeltaMeta(method = Linearization(), ),
         DeltaMeta(method = Unscented(), ),
@@ -114,7 +114,7 @@ end
 function inference_2inputs(data)
 
     metas = (
-        DeltaMeta(method = DeltaLinearization(), inverse = (f₂_x, f₂_θ)),
+        DeltaMeta(method = Linearization(), inverse = (f₂_x, f₂_θ)),
         DeltaMeta(method = Unscented(), inverse = (f₂_x, f₂_θ)),
         DeltaMeta(method = Linearization(), ),
         DeltaMeta(method = Unscented(), ),

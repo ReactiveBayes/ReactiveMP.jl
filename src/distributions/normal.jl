@@ -42,6 +42,29 @@ end
 
 entropy(d::JointNormal) = entropy(d.dist)
 
+import Base: split
+
+"""Split a vector in chunks of lengths specified by ds."""
+function Base.split(::Type{JointNormal}, vec::AbstractVector, ds::Vector{<:Tuple})
+    N = length(ds)
+    res = Vector{Any}(undef, N)
+
+    d_start = 1
+    for k in 1:N # For each original statistic
+        d_end = d_start + intdim(ds[k]) - 1
+
+        if ds[k] == () # Univariate
+            res[k] = vec[d_start] # Return scalar
+        else # Multi- of matrix variate
+            res[k] = reshape(vec[d_start:d_end], ds[k]) # Return vector or matrix
+        end
+
+        d_start = d_end + 1
+    end
+
+    return res
+end
+
 # comparing JointNormals - similar to src/distributions/pointmass.jl
 Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.dist, right.dist; kwargs...) && left.ds == right.ds
 

@@ -1,4 +1,4 @@
-export Unscented
+export Unscented, UT, UnscentedTransform
 
 const default_alpha = 1e-3 # Default value for the spread parameter
 const default_beta = 2.0
@@ -11,15 +11,15 @@ struct UnscentedExtra{T, R, M, C}
     Wc :: C
 end
 
-struct Unscented{A, B, K, L, E} <: AbstractApproximationMethod
+struct Unscented{A, B, K, E} <: AbstractApproximationMethod
     α  :: A
     β  :: B
     κ  :: K
     e  :: E
 end
 
-function Unscented(α::Real = default_alpha, β::Real = default_beta, κ::Real = default_kappa)
-    return Unscented(α, β, κ, nothing)
+function Unscented(α::A = default_alpha, β::B = default_beta, κ::K = default_kappa) where { A <: Real, B <: Real, K <: Real }
+    return Unscented{A, B, K, Nothing}(α, β, κ, nothing)
 end
 
 function Unscented(dim::Int64; α::Real = default_alpha, β::Real = default_beta, κ::Real = default_kappa)
@@ -37,7 +37,7 @@ end
 const UT = Unscented
 
 """An alias for the [`Unscented`](@ref) approximation method."""
-const UnscentedTransformt = Unscented
+const UnscentedTransform = Unscented
 
 # get-functions for the Unscented structure
 
@@ -74,7 +74,7 @@ function unscented_statistics(method::Unscented, m::Real, V::Real, g) # Single u
 end
 
 # Single multivariate inbound
-function unscented_statistics(method::Uncented, m::AbstractVector, V::AbstractMatrix, g)
+function unscented_statistics(method::Unscented, m::AbstractVector, V::AbstractMatrix, g)
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     d = length(m)
@@ -92,7 +92,7 @@ function unscented_statistics(method::Unscented, ms::AbstractVector, Vs::Abstrac
     (m, V, ds) = concatenateGaussianMV(ms, Vs)
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
-    g_sigma = [g(split(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
+    g_sigma = [ g(split(JointNormal, sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
 
     d = sum(intdim.(ds)) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1] * g_sigma[k+1] for k in 0:2*d]) # Vector

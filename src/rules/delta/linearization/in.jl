@@ -1,5 +1,5 @@
 
-@rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::NormalDistributionsFamily, m_in::NormalDistributionsFamily, meta::DeltaMeta{M, Nothing}) where {f, M <: Linearization} = begin
+@rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::JointNormal, m_in::NormalDistributionsFamily, meta::DeltaMeta{M, Nothing}) where {f, M <: Linearization} = begin
     # we need dimension of the interface variables
     # Marginalize joint belief on in's
     inx = k

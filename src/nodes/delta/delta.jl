@@ -51,9 +51,9 @@ localmarginals(factornode::DeltaFnNode)                   = factornode.localmarg
 localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
-collect_meta(::Type{DeltaFn}, something)       = error("Delta node requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`.")
-collect_meta(::Type{DeltaFn}, meta::DeltaMeta) = meta
-collect_meta(::Type{DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(method = method, inverse = nothing)
+collect_meta(::Type{<:DeltaFn}, something)       = error("Delta node requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`.")
+collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
+collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(method = method, inverse = nothing)
 
 # For missing rules error msg
 rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
@@ -84,7 +84,7 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
     end
 
     localmarginals = FactorNodeLocalMarginals((FactorNodeLocalMarginal(1, 1, :out), FactorNodeLocalMarginal(2, 2, :ins)))
-    meta           = collect_meta(DeltaFn{F}, metadata(options))
+    meta           = collect_meta(DeltaFn, metadata(options))
     pipeline       = getpipeline(options)
 
     if !isnothing(pipeline)
