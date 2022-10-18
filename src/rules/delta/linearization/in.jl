@@ -8,10 +8,7 @@
         (A, b) = localLinearizationSingleIn(meta.inverse, μ_out)
         m = A * μ_out + b
         V = A * Σ_out * A'
-
-        F = isa(m, Number) ? Univariate : Multivariate
-
-        return convert(promote_variate_type(F, NormalMeanVariance), m, V)
+        return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
     end
 
 @rule DeltaFn{f}((:in, k), Marginalisation) (
@@ -25,10 +22,7 @@
         (μ_in, Σ_in, _) = concatenateGaussianMV(μs_in, Σs_in)
         m = A * μ_in + b
         V = A * Σ_in * A'
-
-        F = isa(m, Number) ? Univariate : Multivariate
-
-        return convert(promote_variate_type(F, NormalMeanVariance), m, V)
+        return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
     end
 
 @rule DeltaFn{f}((:in, k), Marginalisation) (q_ins::Any, m_in::Any, meta::DeltaLinearization{T}) where {f, T <: Nothing} =

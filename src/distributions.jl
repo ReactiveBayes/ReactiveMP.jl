@@ -41,12 +41,31 @@ Returns the `VariateForm` sub-type (defined in `Distributions.jl`):
 - `Univariate`, a scalar number
 - `Multivariate`, a numeric vector
 - `Matrixvariate`, a numeric matrix
+
+Note: supports real-valued containers, for which it defines:
+
+- `variate_form(real) = Univariate`
+- `variate_form(vector_of_reals) = Multivariate`
+- `variate_form(matrix_of_reals) = Matrixvariate`
+
+See also: [`ReactiveMP.value_support`](@ref)
 """
 variate_form(::Distribution{F, S}) where {F <: VariateForm, S <: ValueSupport} = F
 variate_form(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueSupport} = F
 
-# Note that the recent version of `Distributions.jl` has the exact same methods (`variate_form`) with the exact same names, however, old versions do not
-# We keep that for backward-compatibility with old `Distributions.jl` versions, but probably we should revise this at some point and remove our implementations
+
+variate_form(::Type{T}) where { T <: Real } = Univariate
+variate_form(::T)       where { T <: Real } = Univariate
+
+variate_form(::Type{V}) where { T <: Real, V <: AbstractVector{T} } = Univariate
+variate_form(::V)       where { T <: Real, V <: AbstractVector{T} } = Multivariate
+
+variate_form(::Type{M}) where { T <: Real, M <: AbstractVector{T} } = Matrixvariate
+variate_form(::M)       where { T <: Real, M <: AbstractVector{T} } = Matrixvariate
+
+# Note that the recent version of `Distributions.jl` has the exact same methods (`variate_form`) with the exact same names, however, old versions do not.
+# We keep that for backward-compatibility with old `Distributions.jl` versions,
+# but probably we should revise this at some point and remove our implementations (except for the `real` constrained versions)
 
 """
     value_support(distribution_or_type)
@@ -55,6 +74,8 @@ Returns the `ValueSupport` sub-type (defined in `Distributions.jl`):
 
 - `Discrete`, samples take discrete values
 - `Continuous`, samples take continuous real values
+
+See also: [`ReactiveMP.variate_form`](@ref)
 """
 value_support(::Distribution{F, S}) where {F <: VariateForm, S <: ValueSupport} = S
 value_support(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueSupport} = S
@@ -74,8 +95,7 @@ promote_variate_type(::Type{D}, T) where {D <: Distribution} = promote_variate_t
 
 function convert_eltype end
 
-convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} =
-    convert(D{E}, distribution)
+convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} = convert(D{E}, distribution)
 
 """
     logpdf_sample_friendly(distribution) 
