@@ -210,6 +210,8 @@ end
     addtests(testrunner, "algebra/test_permutation_matrix.jl")
     addtests(testrunner, "algebra/test_standard_basis_vector.jl")
 
+    addtests(testrunner, "approximations/test_unscented.jl")
+
     addtests(testrunner, "test_model.jl")
     addtests(testrunner, "test_math.jl")
     addtests(testrunner, "test_helpers.jl")
