@@ -22,6 +22,7 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 import Base: prod, convert
 import Random: rand!
 
+using LazyArrays, BlockDiagonals
 using LoopVectorization
 
 # Joint over multiple Gaussians
@@ -38,15 +39,23 @@ using LoopVectorization
   - `ds[k] = (n,)` where `n` is an integer indicates `Multivariate` normal of size `n`
   - `ds[k] = ()` indicates `Univariate` normal
 """
-struct JointNormal{D <: NormalDistributionsFamily, S}
+struct JointNormal{D, S}
     dist :: D
     ds   :: S
 end
 
 dimensionalities(joint::JointNormal) = joint.ds
 
-mean_cov(joint::JointNormal) = mean_cov(joint.dist)
-entropy(joint::JointNormal)  = entropy(joint.dist)
+mean_cov(joint::JointNormal) = mean_cov(joint, joint.dist)
+
+# In case if `JointNormal` internal representation stores tuples of individual means and covariance 
+# we simply concatenate them into a large mean and block diagonal covariance matrix
+mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple})    = (LazyArrays.ApplyArray(vcat, first(dist)...), BlockDiagonal(collect(as_mat.(last(dist)))))
+
+# In case if `JointNormal` internal representation stores the actual distribution we simply returns its statistics
+mean_cov(::JointNormal, dist::MvNormalMeanCovariance) = mean_cov(dist)
+
+entropy(joint::JointNormal)  = entropy(convert(MvNormalMeanCovariance, mean_cov(joint)...))
 
 """Split a vector in chunks of lengths specified by ds."""
 function splitjoint(vec::AbstractVector, ds::Vector{<:Tuple})
@@ -67,6 +76,10 @@ function splitjoint(vec::AbstractVector, ds::Vector{<:Tuple})
     end
 
     return res
+end
+
+function Base.convert(::Type{JointNormal}, means::NTuple{N}, covs::NTuple{N}) where {N}
+    return JointNormal((means, covs), size.(means))
 end
 
 """

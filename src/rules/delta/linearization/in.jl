@@ -17,7 +17,7 @@
     meta::DeltaMeta{M, I}
 ) where {f, M <: Linearization, I <: Function} = begin
     μ_out, Σ_out = mean_cov(m_out)
-    (A, b) = localLinearizationSingleIn(getinverse(meta), μ_out)
+    (A, b) = local_linearization(getinverse(meta), (μ_out, ))
     m = A * μ_out + b
     V = A * Σ_out * A'
     return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
@@ -28,11 +28,18 @@ end
     m_ins::ManyOf{N, NormalDistributionsFamily},
     meta::DeltaMeta{M, I}
 ) where {f, N, M <: Linearization, L, I <: NTuple{L, Function}} = begin
-    (μs_in, Σs_in) = collectStatistics(m_out, m_ins...)
-    (A, b) = localLinearizationMultiIn(getinverse(meta, k), μs_in)
-    joint = convert(JointNormal, μs_in, Σs_in)
+
+    # TODO here, write a proper `JointNormal` constructor
+    statistics = mean_cov.((m_out, m_ins...))
+    μs_in      = first.(statistics)
+    Σs_in      = last.(statistics)
+    joint      = convert(JointNormal, collect(μs_in), collect(Σs_in))
     μ_in, Σ_in = mean_cov(joint)
+
+    (A, b) = local_linearization(getinverse(meta, k), μs_in)
+    
     m = A * μ_in + b
     V = A * Σ_in * A'
+
     return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
 end

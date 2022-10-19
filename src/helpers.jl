@@ -274,6 +274,8 @@ function is_typeof_equal(left, right)
     _isequal = typeof(left) === typeof(right)
     if !_isequal
         @warn "typeof($left) !== typeof($right)"
+        @warn "typeof($left) = $(typeof(left))"
+        @warn "typeof($right) = $(typeof(right))"
     end
     return _isequal
 end
