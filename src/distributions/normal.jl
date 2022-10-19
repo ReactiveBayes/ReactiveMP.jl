@@ -34,7 +34,9 @@ using LoopVectorization
 
 # Fields
 - `dist`: joint Normal distribution (typically just a big `MvNormal` distribution)
-- `ds`: a vector with the original dimensionalities of individual `Normal`` distributions
+- `ds`: a tuple with the original dimensionalities of individual `Normal` distributions
+  - `ds[k] = (n,)` where `n` is an integer indicates `Multivariate` normal of size `n`
+  - `ds[k] = ()` indicates `Univariate` normal
 """
 struct JointNormal{ D <: NormalDistributionsFamily, S }
     dist :: D
@@ -73,8 +75,9 @@ Additionally returns a vector with the original dimensionalities, so statistics 
 """
 function Base.convert(::Type{JointNormal}, ms::AbstractVector, Vs::AbstractVector)
     # Extract dimensions
+    
     ds = [ size(m_k) for m_k in ms ]
-    dl = prod.(ds) # `prod` here returns the dimensionality
+    dl = prod.(ds) 
     d_in_tot = sum(dl)
 
     # Initialize concatenated statistics
@@ -99,12 +102,12 @@ function Base.convert(::Type{JointNormal}, ms::AbstractVector, Vs::AbstractVecto
     return JointNormal(MvNormalMeanCovariance(m, V), ds) 
 end
 
-"""
-Return the marginalized statistics of the Gaussian corresponding to an inbound inx
-"""
-function marginalizeGaussianMV(m::Vector{T}, V::AbstractMatrix, ds::Vector, inx::Int64) where {T <: Real}
+"""Return the marginalized statistics of the Gaussian corresponding to an index `inx`"""
+function getmarginal(joint::JointNormal, inx)
+    m, V = mean_cov(joint)
+    ds = dimensionalities(joint)
     if ds[inx] == () # Univariate original
-        return (m[inx], V[inx, inx]) # Return scalars
+        return NormalMeanVariance(m[inx], V[inx, inx]) # Return scalars
     else # Multivariate original
         dl = prod.(ds) # `prod` here returns the dimensionality
         dl_start = cumsum([1; dl]) # Starting indices
@@ -112,7 +115,7 @@ function marginalizeGaussianMV(m::Vector{T}, V::AbstractMatrix, ds::Vector, inx:
         d_end = dl_start[inx+1] - 1
         mx = m[d_start:d_end] # Vector
         Vx = V[d_start:d_end, d_start:d_end] # Matrix
-        return (mx, Vx)
+        return MvNormalMeanCovariance(mx, Vx)
     end
 end
 
@@ -121,6 +124,25 @@ Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.
 
 """An alias for the [`JointNormal`](@ref)."""
 const JointGaussian = JointNormal
+
+# collectStatistics
+
+# TODO remove later on
+function collectStatistics(msgs::Vararg{Any})
+    stats = []
+    for msg in msgs
+        (msg === nothing) && continue # Skip unreported messages
+        push!(stats, mean_cov(msg))
+    end
+
+    ms = [stat[1] for stat in stats]
+    Vs = [stat[2] for stat in stats]
+    return (ms, Vs) # Return tuple with vectors for means and covariances
+end
+
+function collectStatistics(msg::NormalDistributionsFamily)
+    return mean_cov(msg)
+end
 
 # Variate forms promotion
 
