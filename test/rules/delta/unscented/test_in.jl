@@ -16,7 +16,6 @@ h_inv_x(z, y) = sqrt.(z .+ y)
 h_inv_z(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:in" begin
-    
     @testset "Single input with known inverse" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
             (
@@ -43,7 +42,7 @@ h_inv_z(x, y) = x .^ 2 .- y
             (
                 input = (
                     m_out = MvNormalMeanCovariance([2.0], [3.0;;]),
-                    m_ins = ManyOf(MvNormalMeanCovariance([5.0], [1.0;;])), 
+                    m_ins = ManyOf(MvNormalMeanCovariance([5.0], [1.0;;])),
                     meta = DeltaMeta(method = Unscented(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = MvNormalMeanCovariance([2.6187538476660848], [0.14431487274498522;;])
@@ -62,7 +61,7 @@ h_inv_z(x, y) = x .^ 2 .- y
             (
                 input = (
                     m_out = MvNormalMeanCovariance([2.0], [1.0]),
-                    m_ins = ManyOf(MvNormalMeanCovariance([3.0], [1.0])), 
+                    m_ins = ManyOf(MvNormalMeanCovariance([3.0], [1.0])),
                     meta = DeltaMeta(method = Unscented(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = MvNormalMeanCovariance([2.0000000002328306], [19.00000100088073;;])
@@ -83,7 +82,7 @@ h_inv_z(x, y) = x .^ 2 .- y
             (
                 input = (
                     q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), [(1,), (1,)]),
-                    m_in = MvNormalMeanCovariance([5.0], [10.0;;]), 
+                    m_in = MvNormalMeanCovariance([5.0], [10.0;;]),
                     meta = DeltaMeta(method = Unscented())
                 ),
                 output = MvNormalWeightedMeanPrecision([0.5], [0.9;;])

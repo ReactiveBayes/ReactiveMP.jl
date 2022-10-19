@@ -18,7 +18,7 @@ struct DeltaMeta{M, I}
     inverse :: I
 end
 
-function DeltaMeta(; method::M, inverse::I = nothing) where { M, I }
+function DeltaMeta(; method::M, inverse::I = nothing) where {M, I}
     return DeltaMeta{M, I}(method, inverse)
 end
 
@@ -51,7 +51,9 @@ localmarginals(factornode::DeltaFnNode)                   = factornode.localmarg
 localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
-collect_meta(::Type{<:DeltaFn}, something)       = error("Delta node requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`.")
+collect_meta(::Type{<:DeltaFn}, something) = error(
+    "Delta node requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
+)
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
 collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(method = method, inverse = nothing)
 

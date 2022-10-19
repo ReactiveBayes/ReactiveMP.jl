@@ -32,7 +32,7 @@ end
 Return local linearization of g around expansion point x_hat
 for Delta node with single (multivariate) input interface
 """
-function localLinearizationSingleIn(g, x_hat::AbstractVector{T}) where { T <: Real }
+function localLinearizationSingleIn(g, x_hat::AbstractVector{T}) where {T <: Real}
     A = ForwardDiff.jacobian(g, x_hat)
     b = g(x_hat) - A * x_hat
     return (A, b)
@@ -42,8 +42,7 @@ end
 Return local linearization of g around expansion point x_hat
 for Delta node with multiple input interfaces
 """
-function localLinearizationMultiIn(g, x_hat::AbstractVector{T}) where { T <: Real }
-
+function localLinearizationMultiIn(g, x_hat::AbstractVector{T}) where {T <: Real}
     g_unpacked = let g = g
         (x) -> g(x...)
     end

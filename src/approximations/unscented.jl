@@ -12,13 +12,13 @@ struct UnscentedExtra{T, R, M, C}
 end
 
 struct Unscented{A, B, K, E} <: AbstractApproximationMethod
-    α  :: A
-    β  :: B
-    κ  :: K
-    e  :: E
+    α :: A
+    β :: B
+    κ :: K
+    e :: E
 end
 
-function Unscented(; alpha::A = default_alpha, beta::B = default_beta, kappa::K = default_kappa) where { A <: Real, B <: Real, K <: Real }
+function Unscented(; alpha::A = default_alpha, beta::B = default_beta, kappa::K = default_kappa) where {A <: Real, B <: Real, K <: Real}
     return Unscented{A, B, K, Nothing}(alpha, beta, kappa, nothing)
 end
 
@@ -44,9 +44,9 @@ const UnscentedTransform = Unscented
 
 # get-functions for the Unscented structure
 
-getα(approximation::Unscented)  = approximation.α
-getβ(approximation::Unscented)  = approximation.β
-getκ(approximation::Unscented)  = approximation.κ
+getα(approximation::Unscented) = approximation.α
+getβ(approximation::Unscented) = approximation.β
+getκ(approximation::Unscented) = approximation.κ
 
 getextra(approximation::Unscented) = approximation.e
 
@@ -99,7 +99,7 @@ function unscented_statistics(method::Unscented, ms::AbstractVector, Vs::Abstrac
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
-    g_sigma = [ g(splitjoint(sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
+    g_sigma = [g(splitjoint(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
 
     d = sum(prod.(ds)) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1] * g_sigma[k+1] for k in 0:2*d]) # Vector

@@ -38,7 +38,7 @@ using LoopVectorization
   - `ds[k] = (n,)` where `n` is an integer indicates `Multivariate` normal of size `n`
   - `ds[k] = ()` indicates `Univariate` normal
 """
-struct JointNormal{ D <: NormalDistributionsFamily, S }
+struct JointNormal{D <: NormalDistributionsFamily, S}
     dist :: D
     ds   :: S
 end
@@ -75,9 +75,9 @@ Additionally returns a vector with the original dimensionalities, so statistics 
 """
 function Base.convert(::Type{JointNormal}, ms::AbstractVector, Vs::AbstractVector)
     # Extract dimensions
-    
-    ds = [ size(m_k) for m_k in ms ]
-    dl = prod.(ds) 
+
+    ds = [size(m_k) for m_k in ms]
+    dl = prod.(ds)
     d_in_tot = sum(dl)
 
     # Initialize concatenated statistics
@@ -99,7 +99,7 @@ function Base.convert(::Type{JointNormal}, ms::AbstractVector, Vs::AbstractVecto
     end
 
     # Return concatenated mean and covariance with original dimensions (for splitting)
-    return JointNormal(MvNormalMeanCovariance(m, V), ds) 
+    return JointNormal(MvNormalMeanCovariance(m, V), ds)
 end
 
 """Return the marginalized statistics of the Gaussian corresponding to an index `inx`"""

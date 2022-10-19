@@ -94,8 +94,8 @@ function inference_1input(data)
     metas = (
         DeltaMeta(method = Linearization(), inverse = f₁_inv),
         DeltaMeta(method = Unscented(), inverse = f₁_inv),
-        DeltaMeta(method = Linearization(), ),
-        DeltaMeta(method = Unscented(), ),
+        DeltaMeta(method = Linearization()),
+        DeltaMeta(method = Unscented()),
         Linearization(),
         Unscented()
     )
@@ -108,16 +108,14 @@ function inference_1input(data)
             free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
-
 end
 
 function inference_2inputs(data)
-
     metas = (
         DeltaMeta(method = Linearization(), inverse = (f₂_x, f₂_θ)),
         DeltaMeta(method = Unscented(), inverse = (f₂_x, f₂_θ)),
-        DeltaMeta(method = Linearization(), ),
-        DeltaMeta(method = Unscented(), ),
+        DeltaMeta(method = Linearization()),
+        DeltaMeta(method = Unscented()),
         Linearization(),
         Unscented()
     )
@@ -130,14 +128,12 @@ function inference_2inputs(data)
             free_energy_diagnostics = (BetheFreeEnergyCheckNaNs(), BetheFreeEnergyCheckInfs())
         )
     end
-
 end
 
 function inference_3inputs(data)
-
     metas = (
-        DeltaMeta(method = Linearization(), ),
-        DeltaMeta(method = Unscented(), ),
+        DeltaMeta(method = Linearization()),
+        DeltaMeta(method = Unscented()),
         Linearization(),
         Unscented()
     )
@@ -153,10 +149,9 @@ function inference_3inputs(data)
 end
 
 function inference_2input_1d2d(data)
-
     metas = (
-        DeltaMeta(method = Linearization(), ),
-        DeltaMeta(method = Unscented(), ),
+        DeltaMeta(method = Linearization()),
+        DeltaMeta(method = Unscented()),
         Linearization(),
         Unscented()
     )
