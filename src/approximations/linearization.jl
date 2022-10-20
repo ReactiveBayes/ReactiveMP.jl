@@ -4,7 +4,6 @@ struct Linearization <: AbstractApproximationMethod end
 
 # ported from ForneyLab.jl
 
-using LazyArrays
 using ForwardDiff
 
 as_vec(d::Float64) = [d] # Extend vectorization to Float
