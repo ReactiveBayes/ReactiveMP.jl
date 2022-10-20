@@ -1,15 +1,3 @@
-
-"""
-RTS smoother update for backward message
-"""
-function smoothRTSMessage(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
-    C_tilde_inv = pinv(C_tilde)
-    V_bw_in = V_fw_in * C_tilde_inv' * (V_tilde + V_bw_out) * C_tilde_inv * V_fw_in - V_fw_in
-    m_bw_in = m_fw_in + V_fw_in * C_tilde_inv' * (m_bw_out - m_tilde)
-
-    return (m_bw_in, V_bw_in) # Statistics for backward message on in
-end
-
 """
 RTS smoother update for inbound marginal; based on (Petersen et al. 2018; On Approximate Delta Gaussian Message Passing on Factor Graphs)
 """
