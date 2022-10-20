@@ -5,7 +5,7 @@ const default_beta = 2.0
 const default_kappa = 0.0
 
 struct UnscentedExtra{T, R, M, C}
-    L  :: R
+    L  :: T
     λ  :: R
     Wm :: M
     Wc :: C

@@ -4,7 +4,7 @@
 @marginalrule Flow(:in) (
     m_out::MvNormalMeanCovariance,
     m_in::NormalDistributionsFamily,
-    meta::FlowMeta{M, Linearization}
+    meta::FlowMeta{M, <:Linearization}
 ) where {M} = begin
     # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
     # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
@@ -27,7 +27,7 @@ end
 @marginalrule Flow(:in) (
     m_out::MvNormalMeanPrecision,
     m_in::NormalDistributionsFamily,
-    meta::FlowMeta{M, Linearization}
+    meta::FlowMeta{M, <:Linearization}
 ) where {M} = begin
     # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
     # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
@@ -51,7 +51,7 @@ end
 @marginalrule Flow(:in) (
     m_out::MvNormalWeightedMeanPrecision,
     m_in::NormalDistributionsFamily,
-    meta::FlowMeta{M, Linearization}
+    meta::FlowMeta{M, <:Linearization}
 ) where {M} = begin
     # Here, calculate q(out,μ,Σ) from μ(out)μ(μ)μ(Σ)f(out,μ,Σ). 
     # As m_out and m_Σ are pointmasses, we integrate these out and explicitly return them in a tuple.
@@ -75,7 +75,7 @@ end
 @marginalrule Flow(:in) (
     m_out::NormalDistributionsFamily,
     m_in::NormalDistributionsFamily,
-    meta::FlowMeta{M, Unscented}
+    meta::FlowMeta{M, <:Unscented}
 ) where {M} = begin
 
     # extract parameters

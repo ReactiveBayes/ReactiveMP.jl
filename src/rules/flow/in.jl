@@ -1,7 +1,7 @@
 ## TODO: pointmass rules
 ## TODO: save sigma vectors in meta to limit allocations
 
-@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanCovariance, meta::FlowMeta{M, Linearization}) where {M} = begin
+@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanCovariance, meta::FlowMeta{M, <:Linearization}) where {M} = begin
 
     # extract parameters
     μ_out, Σ_out = mean_cov(m_out)
@@ -17,7 +17,7 @@
     return MvNormalMeanCovariance(μ_in, Σ_in)
 end
 
-@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanPrecision, meta::FlowMeta{M, Linearization}) where {M} = begin
+@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanPrecision, meta::FlowMeta{M, <:Linearization}) where {M} = begin
 
     # extract parameters
     μ_out, Λ_out = mean_precision(m_out)
@@ -34,7 +34,7 @@ end
     return MvNormalMeanPrecision(μ_in, Λ_in)
 end
 
-@rule Flow(:in, Marginalisation) (m_out::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, Linearization}) where {M} =
+@rule Flow(:in, Marginalisation) (m_out::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, <:Linearization}) where {M} =
     begin
 
         # extract parameters
@@ -54,7 +54,7 @@ end
 
 @rule Flow(:in, Marginalisation) (
     m_out::MultivariateNormalDistributionsFamily,
-    meta::FlowMeta{M, Unscented}
+    meta::FlowMeta{M, <:Unscented}
 ) where {M} = begin
 
     # extract parameters
