@@ -63,12 +63,18 @@ getWc(extra::UnscentedExtra) = extra.Wc
 # Copied and refactored from ForneyLab.jl
 
 function approximate(method::Unscented, f::F, means::Tuple, covs::Tuple) where {F}
-    (m, V, C) = unscented_statistics(method, f, means, covs)
+    # `Val(false)` indicates that we do not compute the `C` component
+    (m, V, _) = unscented_statistics(method, Val(false), f, means, covs)
     return (m, V)
 end
 
+function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple) where {G}
+    # By default we compute the `C` component, thus `Val(true)`
+    return unscented_statistics(method, Val(true), g, means, covs)
+end
+
 # Single univariate variable
-function unscented_statistics(method::Unscented, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {G}
+function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {C, G}
     m = first(means)
     V = first(covs)
 
@@ -77,13 +83,15 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple{Real}, covs:
     g_sigma = g.(sigma_points)
     m_tilde = sum(weights_m .* g_sigma)
     V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
-    C_tilde = sum(weights_c .* (sigma_points .- m) .* (g_sigma .- m_tilde))
+
+    # Compute `C_tilde` only if `C === true`
+    C_tilde = C ? sum(weights_c .* (sigma_points .- m) .* (g_sigma .- m_tilde)) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
 end
 
 # Single multivariate inbound
-function unscented_statistics(method::Unscented, g::G, means::Tuple{AbstractVector}, covs::Tuple{AbstractMatrix}) where {G}
+function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{AbstractVector}, covs::Tuple{AbstractMatrix}) where {C, G}
     m = first(means)
     V = first(covs)
 
@@ -92,15 +100,17 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple{AbstractVect
     d = length(m)
 
     g_sigma = g.(sigma_points)
-    m_tilde = sum([weights_m[k+1] * g_sigma[k+1] for k in 0:2*d])
-    V_tilde = sum([weights_c[k+1] * (g_sigma[k+1] - m_tilde) * (g_sigma[k+1] - m_tilde)' for k in 0:2*d])
-    C_tilde = sum([weights_c[k+1] * (sigma_points[k+1] - m) * (g_sigma[k+1] - m_tilde)' for k in 0:2*d])
+    @inbounds m_tilde = sum(weights_m[k+1] * g_sigma[k+1] for k in 0:2d)
+    @inbounds V_tilde = sum(weights_c[k+1] * (g_sigma[k+1] - m_tilde) * (g_sigma[k+1] - m_tilde)' for k in 0:2d)
+
+    # Compute `C_tilde` only if `C === true`
+    @inbounds C_tilde = C ? sum(weights_c[k+1] * (sigma_points[k+1] - m) * (g_sigma[k+1] - m_tilde)' for k in 0:2d) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
 end
 
 # Multiple inbounds of possibly mixed variate type
-function unscented_statistics(method::Unscented, g::G, ms::Tuple, Vs::Tuple) where {G}
+function unscented_statistics(method::Unscented, ::Val{C}, g::G, ms::Tuple, Vs::Tuple) where {C, G}
     joint = convert(JointNormal, ms, Vs)
 
     (m, V) = mean_cov(joint)
@@ -108,19 +118,19 @@ function unscented_statistics(method::Unscented, g::G, ms::Tuple, Vs::Tuple) whe
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
-    g_sigma = [g(__splitjoin(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
+    g_sigma = [ g(__splitjoin(sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
 
     d = sum(prod.(ds)) # Dimensionality of joint
-    m_tilde = sum([weights_m[k+1] * g_sigma[k+1] for k in 0:2*d]) # Vector
-    V_tilde = sum([weights_c[k+1] * (g_sigma[k+1] - m_tilde) * (g_sigma[k+1] - m_tilde)' for k in 0:2*d]) # Matrix
-    C_tilde = sum([weights_c[k+1] * (sigma_points[k+1] - m) * (g_sigma[k+1] - m_tilde)' for k in 0:2*d]) # Matrix
+    @inbounds m_tilde = sum(weights_m[k+1] * g_sigma[k+1] for k in 0:2d) # Vector
+    @inbounds V_tilde = sum(weights_c[k+1] * (g_sigma[k+1] - m_tilde) * (g_sigma[k+1] - m_tilde)' for k in 0:2d) # Matrix
+
+    # Compute `C_tilde` only if `C === true`
+    @inbounds C_tilde = C ? sum(weights_c[k+1] * (sigma_points[k+1] - m) * (g_sigma[k+1] - m_tilde)' for k in 0:2d) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
 end
 
-"""
-Return the sigma points and weights for a Gaussian distribution
-"""
+"""Return the sigma points and weights for a Gaussian distribution"""
 function sigma_points_weights(method::Unscented, m::Real, V::Real)
     alpha  = getα(method)
     beta   = getβ(method)
@@ -131,19 +141,11 @@ function sigma_points_weights(method::Unscented, m::Real, V::Real)
         @warn "`(1 + lambda)` in the sigma points computation routine is negative. This may lead to the incorrect results. Adjust the `alpha`, `kappa` and `beta` parameters."
     end
 
-    sigma_points = Vector{Float64}(undef, 3)
-    weights_m = Vector{Float64}(undef, 3)
-    weights_c = Vector{Float64}(undef, 3)
-
     l = sqrt((1 + lambda) * V)
 
-    sigma_points[1] = m
-    sigma_points[2] = m + l
-    sigma_points[3] = m - l
-    weights_m[1] = lambda / (1 + lambda)
-    weights_m[2] = weights_m[3] = 1 / (2 * (1 + lambda))
-    weights_c[1] = weights_m[1] + (1 - alpha^2 + beta)
-    weights_c[2] = weights_c[3] = 1 / (2 * (1 + lambda))
+    sigma_points = (m, m + l, m - l)
+    weights_m    = (lambda / (1 + lambda), 1 / (2 * (1 + lambda)), 1 / (2 * (1 + lambda)))
+    weights_c    = (weights_m[1] + (1 - alpha^2 + beta), 1 / (2 * (1 + lambda)), 1 / (2 * (1 + lambda)))
 
     return (sigma_points, weights_m, weights_c)
 end
@@ -159,21 +161,25 @@ function sigma_points_weights(method::Unscented, m::AbstractVector, V::AbstractM
         @warn "`(d + lambda)` in the sigma points computation routine is negative. This may lead to the incorrect results. Adjust the `alpha`, `kappa` and `beta` parameters."
     end
 
-    sigma_points = Vector{Vector{Float64}}(undef, 2 * d + 1)
-    weights_m = Vector{Float64}(undef, 2 * d + 1)
-    weights_c = Vector{Float64}(undef, 2 * d + 1)
+    T = promote_type(eltype(m), eltype(V))
+
+    sigma_points = Vector{Vector{T}}(undef, 2 * d + 1)
+    weights_m    = Vector{T}(undef, 2 * d + 1)
+    weights_c    = Vector{T}(undef, 2 * d + 1)
 
     L = cholsqrt((d + lambda) * V)
 
     sigma_points[1] = m
-    weights_m[1] = lambda / (d + lambda)
-    weights_c[1] = weights_m[1] + (1 - alpha^2 + beta)
-    for i in 1:d
+    weights_m[1]    = lambda / (d + lambda)
+    weights_c[1]    = weights_m[1] + (1 - alpha^2 + beta)
+
+    @inbounds @views for i in 1:d
         sigma_points[2*i] = m + L[:, i]
         sigma_points[2*i+1] = m - L[:, i]
     end
-    weights_m[2:end] .= 1 / (2 * (d + lambda))
-    weights_c[2:end] .= 1 / (2 * (d + lambda))
+
+    @inbounds @views weights_m[2:end] .= 1 / (2 * (d + lambda))
+    @inbounds @views weights_c[2:end] .= 1 / (2 * (d + lambda))
 
     return (sigma_points, weights_m, weights_c)
 end
