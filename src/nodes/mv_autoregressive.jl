@@ -8,14 +8,19 @@ struct MAR end
 const MvAutoregressive = MAR
 
 struct MARMeta
-    order::Int
+    order :: Int # order (lag) of MAR
+    ds    :: Int # dimensionality of MAR process, i.e., the number of correlated AR processes
 end
 
-function MARMeta(order)
-    return MARMeta(order)
+function MARMeta(order, ds=2)
+    if ds < 2
+        @error "ds parameter should be > 1. Use AR node if ds = 1"
+    end
+    return MARMeta(order, ds)
 end
 
 getorder(meta::MARMeta)              = meta.order
+getdimensionality(meta::MARMeta)     = meta.ds
 
 @node MAR Stochastic [y, x, θ, Λ]
 
@@ -27,44 +32,45 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
     q_Λ::Wishart,
     meta::ARMeta
 ) = begin
-    mθ, Vθ   = mean_cov(q_θ)
-    myx, Vyx = mean_cov(q_y_x)
-    mΛ       = mean(q_Λ)
+    # mθ, Vθ   = mean_cov(q_θ)
+    # myx, Vyx = mean_cov(q_y_x)
+    # mΛ       = mean(q_Λ)
 
-    order = getorder(meta)
+    # order = getorder(meta)
 
-    mx, Vx   = ar_slice(getvform(meta), myx, (order+1):2order), ar_slice(getvform(meta), Vyx, (order+1):2order, (order+1):2order)
-    my1, Vy1 = first(myx), first(Vyx)
-    Vy1x     = ar_slice(getvform(meta), Vyx, 1, order+1:2order)
+    # mx, Vx   = ar_slice(getvform(meta), myx, (order+1):2order), ar_slice(getvform(meta), Vyx, (order+1):2order, (order+1):2order)
+    # my1, Vy1 = first(myx), first(Vyx)
+    # Vy1x     = ar_slice(getvform(meta), Vyx, 1, order+1:2order)
 
-    # Euivalento to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
-    AE =
-        (
-            -mean(log, q_γ) + log2π +
-            mγ * (
-                Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) +
-                abs2(dot(mθ, mx))
-            )
-        ) / 2
+    # # Euivalento to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
+    # AE =
+    #     (
+    #         -mean(log, q_γ) + log2π +
+    #         mγ * (
+    #             Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) +
+    #             abs2(dot(mθ, mx))
+    #         )
+    #     ) / 2
 
-    # correction
-    if getorder(meta) > 1
-        AE += entropy(q_y_x)
-        idc = LazyArrays.Vcat(1, (order+1):2order)
-        myx_n = view(myx, idc)
-        Vyx_n = view(Vyx, idc, idc)
-        q_y_x = MvNormalMeanCovariance(myx_n, Vyx_n)
-        AE -= entropy(q_y_x)
-    end
+    # # correction
+    # if getorder(meta) > 1
+    #     AE += entropy(q_y_x)
+    #     idc = LazyArrays.Vcat(1, (order+1):2order)
+    #     myx_n = view(myx, idc)
+    #     Vyx_n = view(Vyx, idc, idc)
+    #     q_y_x = MvNormalMeanCovariance(myx_n, Vyx_n)
+    #     AE -= entropy(q_y_x)
+    # end
 
-    return AE
+    # return AE
+    0
 end
 
 # Helpers for AR rules
 
 ## MAllocation-free AR Precision Matrix
 
-struct MARPrecisionMatrix{T} <: AbstractMatrix{T}
+struct MARPrecisionMatrix{T} <: AbstractMatrix{AbstractMatrix{T}}
     order :: Int
     Λ     :: T
 end
@@ -93,12 +99,13 @@ mar_precision(::Type{Univariate}, order, γ)   = γ
 
 ## Allocation-free AR Transition matrix
 
-struct ARTransitionMatrix{T} <: AbstractMatrix{T}
+struct MARTransitionMatrix{T} <: AbstractMatrix{AbstractMatrix{T}}
     order::Int
-    inv_γ::T
+    ds   ::Int
+    inv_Λ::T
 
-    function ARTransitionMatrix(order::Int, γ::T) where {T <: Real}
-        return new{T}(order, inv(γ))
+    function ARTransitionMatrix(order::Int, ds::Int, inv_Λ::T) where {T <: AbstractMatrix}
+        return new{T}(order, ds, inv(inv_Λ))
     end
 end
 
