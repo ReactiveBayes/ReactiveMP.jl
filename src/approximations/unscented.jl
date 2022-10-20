@@ -12,10 +12,10 @@ struct UnscentedExtra{T, R, M, C}
 end
 
 struct Unscented{A, B, K, E} <: AbstractApproximationMethod
-    α :: A
-    β :: B
-    κ :: K
-    e :: E
+    α::A
+    β::B
+    κ::K
+    e::E
 end
 
 function Unscented(; alpha::A = default_alpha, beta::B = default_beta, kappa::K = default_kappa) where {A <: Real, B <: Real, K <: Real}
@@ -68,8 +68,7 @@ function approximate(method::Unscented, f::F, means::Tuple, covs::Tuple) where {
 end
 
 # Single univariate variable
-function unscented_statistics(method::Unscented, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {G} 
-
+function unscented_statistics(method::Unscented, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {G}
     m = first(means)
     V = first(covs)
 
@@ -84,8 +83,7 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple{Real}, covs:
 end
 
 # Single multivariate inbound
-function unscented_statistics(method::Unscented, g::G, means::Tuple{AbstractVector}, covs::Tuple{AbstractMatrix}) where {G} 
-
+function unscented_statistics(method::Unscented, g::G, means::Tuple{AbstractVector}, covs::Tuple{AbstractMatrix}) where {G}
     m = first(means)
     V = first(covs)
 
@@ -110,7 +108,7 @@ function unscented_statistics(method::Unscented, g::G, ms::Tuple, Vs::Tuple) whe
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
-    g_sigma = [ g(__splitjoin(sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
+    g_sigma = [g(__splitjoin(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
 
     d = sum(prod.(ds)) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1] * g_sigma[k+1] for k in 0:2*d]) # Vector

@@ -16,7 +16,7 @@
     m_ins::Nothing,
     meta::DeltaMeta{M, I}
 ) where {f, M <: Linearization, I <: Function} = begin
-    return approximate(getmethod(meta), getinverse(meta), (m_out, ))
+    return approximate(getmethod(meta), getinverse(meta), (m_out,))
 end
 
 @rule DeltaFn{f}((:in, k), Marginalisation) (

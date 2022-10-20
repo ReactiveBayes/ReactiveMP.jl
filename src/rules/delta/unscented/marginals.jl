@@ -10,8 +10,8 @@
     statistics = mean_cov.(m_ins)
     μs_fw_in = first.(statistics)
     Σs_fw_in = last.(statistics)
-    sizes    = size.(m_ins)
-    
+    sizes = size.(m_ins)
+
     (μ_tilde, Σ_tilde, C_tilde) = unscented_statistics(getmethod(meta), f, μs_fw_in, Σs_fw_in)
 
     joint              = convert(JointNormal, μs_fw_in, Σs_fw_in)

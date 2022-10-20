@@ -67,8 +67,8 @@ function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
     start = 1
     @inbounds for (index, size) in enumerate(sizes)
         dm, dc = first(dist)[index], last(dist)[index]
-        μ[start:(start + size - 1)] .= dm
-        Σ[start:(start + size - 1), start:(start + size - 1)] .= dc
+        μ[start:(start+size-1)] .= dm
+        Σ[start:(start+size-1), start:(start+size-1)] .= dc
         start += size
     end
 
@@ -126,10 +126,10 @@ end
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Multivariate
 function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
-    start  = sum(prod.(ds[1:index - 1]); init = 0) + 1
-    len    = first(sz) 
-    stop   = start + len - 1
-    μ, Σ = mean_cov(dist)
+    start = sum(prod.(ds[1:index-1]); init = 0) + 1
+    len   = first(sz)
+    stop  = start + len - 1
+    μ, Σ  = mean_cov(dist)
     # Return the slice of the original `MvNormalMeanCovariance`
     return MvNormalMeanCovariance(view(μ, start:stop), view(Σ, start:stop, start:stop))
 end
@@ -137,7 +137,7 @@ end
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Univariate
 function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
-    start  = sum(prod.(ds[1:index - 1]); init = 0) + 1
+    start = sum(prod.(ds[1:index-1]); init = 0) + 1
     μ, Σ = mean_cov(dist)
     # Return the slice of the original `MvNormalMeanCovariance`
     return NormalMeanVariance(μ[start], Σ[start, start])
@@ -153,7 +153,6 @@ function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tu
     return NormalMeanVariance(first(dist)[index], last(dist)[index])
 end
 
-
 # comparing JointNormals - similar to src/distributions/pointmass.jl
 Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.dist, right.dist; kwargs...) && left.ds == right.ds
 
@@ -164,14 +163,14 @@ const JointGaussian = JointNormal
 
 # This function extends the `Linearization` approximation method in case if all inputs are from the `NormalDistributionsFamily`
 function approximate(method::Linearization, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
-    
+
     # Collect statistics for the inputs of the function `f`
     statistics = mean_cov.(distributions)
     means      = first.(statistics)
     covs       = last.(statistics)
 
     # Compute the local approximation for the function `f`
-    (A, b) = approximate(method, f, means) 
+    (A, b) = approximate(method, f, means)
 
     # Execute the 'joint' message in the linearized version of `f`
     joint       = convert(JointNormal, means, covs)
@@ -179,13 +178,12 @@ function approximate(method::Linearization, f::F, distributions::NTuple{N, Norma
 
     m = A * jmean + b
     V = A * jcov * A'
-    
+
     return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
 end
 
 # This function extends the `Unscented` approximation method in case if all inputs are from the `NormalDistributionsFamily`
 function approximate(method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
-    
     statistics = mean_cov.(distributions)
     means      = first.(statistics)
     covs       = last.(statistics)
