@@ -85,28 +85,6 @@ entropy(joint::JointNormal) = entropy(joint, joint.dist)
 entropy(joint::JointNormal, dist::NormalDistributionsFamily) = entropy(dist)
 entropy(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = entropy(convert(MvNormalMeanCovariance, mean_cov(joint)...))
 
-# We need this function in the unscented still
-"""Split a vector in chunks of lengths specified by ds."""
-function splitjoint(vec::AbstractVector, ds::Vector{<:Tuple})
-    N = length(ds)
-    res = Vector{Any}(undef, N)
-
-    d_start = 1
-    for k in 1:N # For each original statistic
-        d_end = d_start + prod(ds[k]) - 1 # `prod` here returns the dimensionality
-
-        if ds[k] == () # Univariate
-            res[k] = vec[d_start] # Return scalar
-        else # Multi- of matrix variate
-            res[k] = reshape(vec[d_start:d_end], ds[k]) # Return vector or matrix
-        end
-
-        d_start = d_end + 1
-    end
-
-    return res
-end
-
 function Base.convert(::Type{JointNormal}, distribution::UnivariateNormalDistributionsFamily, sizes::Tuple{Tuple{}})
     return JointNormal(distribution, sizes)
 end
@@ -215,25 +193,6 @@ function approximate(method::Unscented, f::F, distributions::NTuple{N, NormalDis
     μ_tilde, Σ_tilde = approximate(method, f, means, covs)
 
     return convert(promote_variate_type(variate_form(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
-end
-
-# collectStatistics
-
-# This functions are still needed for the `Unscented`
-function collectStatistics(msgs::Vararg{Any})
-    stats = []
-    for msg in msgs
-        (msg === nothing) && continue # Skip unreported messages
-        push!(stats, mean_cov(msg))
-    end
-
-    ms = [stat[1] for stat in stats]
-    Vs = [stat[2] for stat in stats]
-    return (ms, Vs) # Return tuple with vectors for means and covariances
-end
-
-function collectStatistics(msg::NormalDistributionsFamily)
-    return mean_cov(msg)
 end
 
 # Variate forms promotion
