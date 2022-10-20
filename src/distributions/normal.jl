@@ -22,7 +22,6 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 import Base: prod, convert
 import Random: rand!
 
-using LazyArrays, BlockDiagonals
 using LoopVectorization
 
 # Joint over multiple Gaussians
@@ -43,6 +42,8 @@ struct JointNormal{D, S}
     dist :: D
     ds   :: S
 end
+
+dimensionalities(joint::JointNormal) = joint.ds
 
 mean_cov(joint::JointNormal) = mean_cov(joint, joint.dist, joint.ds)
 
@@ -103,6 +104,10 @@ function splitjoint(vec::AbstractVector, ds::Vector{<:Tuple})
     return res
 end
 
+function Base.convert(::Type{JointNormal}, distribution::UnivariateNormalDistributionsFamily, sizes::Tuple{Tuple{}})
+    return JointNormal(distribution, sizes)
+end
+
 function Base.convert(::Type{JointNormal}, distribution::MultivariateNormalDistributionsFamily, sizes::Tuple)
     return JointNormal(distribution, sizes)
 end
@@ -114,6 +119,13 @@ end
 
 """Return the marginalized statistics of the Gaussian corresponding to an index `index`"""
 getmarginal(joint::JointNormal, index) = getmarginal(joint, joint.dist, joint.ds, joint.ds[index], index)
+
+# `JointNormal` holds a single univariate gaussian and the dimensionalities indicate only a single Univariate element
+function getmarginal(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+    @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
+    @assert size(dist) === sz "Broken `JointNormal` state"
+    return dist
+end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Multivariate element
 function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
