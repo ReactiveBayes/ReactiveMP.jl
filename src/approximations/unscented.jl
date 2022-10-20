@@ -118,7 +118,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, ms::Tuple, Vs::
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
-    g_sigma = [ g(__splitjoin(sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
+    g_sigma = [g(__splitjoin(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
 
     d = sum(prod.(ds)) # Dimensionality of joint
     @inbounds m_tilde = sum(weights_m[k+1] * g_sigma[k+1] for k in 0:2d) # Vector
@@ -173,13 +173,13 @@ function sigma_points_weights(method::Unscented, m::AbstractVector, V::AbstractM
     weights_m[1]    = lambda / (d + lambda)
     weights_c[1]    = weights_m[1] + (1 - alpha^2 + beta)
 
-    @inbounds @views for i in 1:d
-        sigma_points[2*i] = m + L[:, i]
-        sigma_points[2*i+1] = m - L[:, i]
+    @inbounds for i in 1:d
+        @views sigma_points[2*i] = m + L[:, i]
+        @views sigma_points[2*i+1] = m - L[:, i]
     end
 
-    @inbounds @views weights_m[2:end] .= 1 / (2 * (d + lambda))
-    @inbounds @views weights_c[2:end] .= 1 / (2 * (d + lambda))
+    @inbounds weights_m[2:end] .= 1 / (2 * (d + lambda))
+    @inbounds weights_c[2:end] .= 1 / (2 * (d + lambda))
 
     return (sigma_points, weights_m, weights_c)
 end
