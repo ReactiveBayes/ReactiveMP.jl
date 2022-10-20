@@ -178,13 +178,8 @@ end
         result₃ = inference_3inputs(data)
         result₄ = inference_2input_1d2d(data)
 
-        ## -------------------------------------------- ##
-        ## Form debug output
-        base_output = joinpath(pwd(), "_output", "models")
-        mkpath(base_output)
-        timestamp        = Dates.format(now(), "dd-mm-yyyy-HH-MM")
-        plot_output      = joinpath(base_output, "template_model_plot_$(timestamp)_v$(VERSION).png")
-        benchmark_output = joinpath(base_output, "template_model_benchmark_$(timestamp)_v$(VERSION).txt")
+        ## All models have been created. The inference finished without errors ##
+        @test true
     end
 end
 
