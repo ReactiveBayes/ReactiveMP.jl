@@ -24,3 +24,18 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     @assert length(probvec(right)) === 2 "Improper Bernoulli x Categorical product"
     return prod(ProdPreserveType(Bernoulli), left, Bernoulli(first(probvec(right))))
 end
+
+function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
+    left_p = succprob(left_dist)
+    right_p = succprob(right_dist)
+    a = left_p * right_p + (one(left_p) - left_p) * (one(right_p) - right_p)
+    return log(a)
+end
+
+function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Categorical)
+    @assert length(probvec(right_dist)) === 2 "Improper Bernoulli x Categorical product"
+    left_p = succprob(left_dist)
+    right_p = first(probvec(right_dist))
+    a = left_p * right_p + (one(left_p) - left_p) * (one(right_p) - right_p)
+    return log(a)
+end
