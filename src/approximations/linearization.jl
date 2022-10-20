@@ -22,8 +22,8 @@ function __linearization_starts_at(sizes::Tuple)
     end)
 end
 
-@propagate_inbounds __as_vec_copyto!(container, start, input::Real)             = container[start] = input
-@propagate_inbounds __as_vec_copyto!(container, start, input::AbstractVecOrMat) = copyto!(container, start, input, 1, length(input))
+Base.@propagate_inbounds __as_vec_copyto!(container, start, input::Real)             = container[start] = input
+Base.@propagate_inbounds __as_vec_copyto!(container, start, input::AbstractVecOrMat) = copyto!(container, start, input, 1, length(input))
 
 # This function linearizes the `inputs` argument into one (potentially big) vector
 # For example (1, 2) becomes `[ 1, 2 ]`
@@ -72,6 +72,10 @@ function __linearization_splitjoin(x::AbstractVector, sizes::Tuple)
     end
 end
 
+function approximate(::Linearization, g::G, x_hat) where {G}
+    return local_linearization(g, x_hat)
+end
+
 """
     local_linearization(g, x)
 
@@ -103,20 +107,20 @@ function local_linearization(g::G, x_hat::Tuple) where {G}
         (x) -> g(__linearization_splitjoin(x, ds)...)
     end
 
-    return localLinearizationMultiIn(g(x_hat...), splitg, g, x_hat)
+    return local_linearization(g(x_hat...), splitg, g, x_hat)
 end
 
 # In case if `g(x_hat)` returns a number and inputs are numbers too
-function localLinearizationMultiIn(r::Real, splitg::S, g::G, x_hat) where { S, G }
-    return localLinearizationMultiIn(r, splitg, g, (g, lx_hat) -> (ForwardDiff.gradient(splitg, lx_hat)::Vector{eltype(lx_hat)})', x_hat)
+function local_linearization(r::Real, splitg::S, g::G, x_hat) where { S, G }
+    return local_linearization(r, splitg, g, (g, lx_hat) -> (ForwardDiff.gradient(splitg, lx_hat)::Vector{eltype(lx_hat)})', x_hat)
 end
 
 # In case if `g(x_hat)` returns a vector, but inputs are numbers
-function localLinearizationMultiIn(r::AbstractVector, splitg::S, g::G, x_hat) where { S, G }
-    return localLinearizationMultiIn(r, splitg, g, (g, lx_hat) -> (ForwardDiff.jacobian(splitg, lx_hat)::Matrix{eltype(lx_hat)}), x_hat)
+function local_linearization(r::AbstractVector, splitg::S, g::G, x_hat) where { S, G }
+    return local_linearization(r, splitg, g, (g, lx_hat) -> (ForwardDiff.jacobian(splitg, lx_hat)::Matrix{eltype(lx_hat)}), x_hat)
 end
 
-function localLinearizationMultiIn(r, splitg::S, g::G, fA::F, x_hat) where {S, G, F}
+function local_linearization(r, splitg::S, g::G, fA::F, x_hat) where {S, G, F}
     lx_hat = __linearization_as_vec(x_hat)
     # `fA` calls either `gradient` or `jacobian`, depending on the type of the `r`
     A = fA(splitg, lx_hat)

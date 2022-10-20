@@ -111,6 +111,47 @@ using Distributions
         end
     end
 
+    @testset "JointNormal" begin 
+
+        # `@inferred` for type-stability check
+        @test @inferred(mean_cov(convert(JointNormal, (1.0, ), (1.0, ))) == (1.0, 1.0))
+        @test @inferred(mean_cov(convert(JointNormal, (1.0, ), (2.0, ))) == (1.0, 2.0))
+
+        @test getmarginal(convert(JointNormal, (1.0, ), (1.0, )), 1) == NormalMeanVariance(1.0, 1.0)
+        @test getmarginal(convert(JointNormal, (1.0, ), (2.0, )), 1) == NormalMeanVariance(1.0, 2.0)
+
+        @test @inferred(mean_cov(convert(JointNormal, ([ 1.0, 1.0 ], ), ([ 1.0 0.0; 0.0 1.0 ], )))) == ([ 1.0, 1.0 ], [ 1.0 0.0; 0.0 1.0 ])
+        @test getmarginal(convert(JointNormal, ([ 1.0, 1.0 ], ), ([ 1.0 0.0; 0.0 1.0 ], )), 1) == MvNormalMeanCovariance([ 1.0, 1.0 ], [ 1.0 0.0; 0.0 1.0 ])
+
+        @test @inferred(mean_cov(convert(JointNormal, (1.0, -1.0), (1.0, 2.0)))) == ([ 1.0, -1.0 ], [ 1.0 0.0; 0.0 2.0 ])
+        @test @inferred(mean_cov(convert(JointNormal, (3.0, 4.0), (2.0, 1.0)))) == ([ 3.0, 4.0 ], [ 2.0 0.0; 0.0 1.0 ])
+
+        @test getmarginal(convert(JointNormal, (1.0, -1.0), (1.0, 2.0)), 1) == NormalMeanVariance(1.0, 1.0)
+        @test getmarginal(convert(JointNormal, (1.0, -1.0), (1.0, 2.0)), 2) == NormalMeanVariance(-1.0, 2.0)
+
+        @test getmarginal(convert(JointNormal, (3.0, 4.0), (2.0, 1.0)), 1) == NormalMeanVariance(3.0, 2.0)
+        @test getmarginal(convert(JointNormal, (3.0, 4.0), (2.0, 1.0)), 2) == NormalMeanVariance(4.0, 1.0)
+
+        @test @inferred(mean_cov(convert(JointNormal, (1.0, [ 1.0, -1.0 ]), (1.0, [ 2.0 -1.0; -1.0 3.0 ])))) == ([ 1.0, 1.0, -1.0 ], [ 1.0 0.0 0.0; 0.0 2.0 -1.0; 0.0 -1.0 3.0 ])
+        @test @inferred(mean_cov(convert(JointNormal, ([ 1.0, -1.0 ], [ 2.0, -2.0 ]), ([ 2.0 -1.0; -1.0 3.0 ], [ 3.0 -1.0; -1.0 2.0 ])))) == ([ 1.0, -1.0, 2.0, -2.0 ], [ 2.0 -1.0 0.0 0.0; -1.0 3.0 0.0 0.0; 0.0 0.0 3.0 -1.0; 0.0 0.0 -1.0 2.0 ])
+
+        @test getmarginal(convert(JointNormal, (1.0, [ 1.0, -1.0 ]), (1.0, [ 2.0 -1.0; -1.0 3.0 ])), 1) == NormalMeanVariance(1.0, 1.0)
+        @test getmarginal(convert(JointNormal, (1.0, [ 1.0, -1.0 ]), (1.0, [ 2.0 -1.0; -1.0 3.0 ])), 2) == MvNormalMeanCovariance([ 1.0, -1.0 ], [ 2.0 -1.0; -1.0 3.0 ])
+
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([ 0.0, ], [ 2.0 ]), ((), )))) == (0.0, 2.0)
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([ 0.0, 1.0 ], [ 2.0  -0.5; -0.5 1.0 ]), ((2, ), )))) == ([0.0, 1.0], [ 2.0 -0.5; -0.5 1.0 ])
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([ 0.0, 1.0 ], [ 2.0  -0.5; -0.5 1.0 ]), ((1, ), (1, ))))) == ([0.0, 1.0], [ 2.0 -0.5; -0.5 1.0 ])
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([ 0.0, 1.0 ], [ 2.0  -0.5; -0.5 1.0 ]), ((), ())))) == ([0.0, 1.0], [ 2.0 -0.5; -0.5 1.0 ])
+
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([ 0.0, ], [ 2.0 ]), ((), )), 1) == NormalMeanVariance(0.0, 2.0)
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([ 0.0, 1.0 ], [ 2.0  -0.5; -0.5 1.0]), ((2, ), )), 1) == MvNormalMeanCovariance([0.0, 1.0], [ 2.0 -0.5; -0.5 1.0 ])
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([ 0.0, 1.0 ], [ 2.0  -0.5; -0.5 1.0]), ((1, ), (1, ))), 1) == MvNormalMeanCovariance([0.0], [ 2.0;; ])
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([ 0.0, 1.0 ], [ 2.0  -0.5; -0.5 1.0]), ((), ())), 1) == NormalMeanVariance(0.0, 2.0)
+
+
+
+    end
+
     @testset "Variate forms promotions" begin
         @test promote_variate_type(Univariate, NormalMeanVariance) === NormalMeanVariance
         @test promote_variate_type(Univariate, NormalMeanPrecision) === NormalMeanPrecision

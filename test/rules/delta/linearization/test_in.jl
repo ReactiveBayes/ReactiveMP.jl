@@ -75,7 +75,7 @@ h_inv_z(x, y) = x .^ 2 .- y
         @test_rules [with_float_conversions = false, atol = 1e-3] DeltaFn{h}((:in, k = 1), Marginalisation) [
             (
                 input = (
-                    q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), [(), ()]),
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), ((), ())),
                     m_in = NormalMeanVariance(5.0, 10.0),
                     meta = DeltaMeta(method = Linearization())
                 ),
@@ -83,7 +83,7 @@ h_inv_z(x, y) = x .^ 2 .- y
             ),
             (
                 input = (
-                    q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), [(1,), (1,)]),
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), ((1,), (1,))),
                     m_in = MvNormalMeanCovariance([5.0], [10.0;;]),
                     meta = DeltaMeta(method = Linearization())
                 ),
@@ -96,7 +96,7 @@ h_inv_z(x, y) = x .^ 2 .- y
         @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 2), Marginalisation) [
             (
                 input = (
-                    q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), [(), (), ()]),
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), ((), (), ())),
                     m_in = NormalMeanVariance(0.0, 10.0),
                     meta = DeltaMeta(method = Linearization())
                 ),
@@ -104,7 +104,7 @@ h_inv_z(x, y) = x .^ 2 .- y
             ),
             (
                 input = (
-                    q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), [(1,), (2,), ()]),
+                    q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), ((1,), (2,), ())),
                     m_in = MvNormalMeanCovariance(zeros(2), 10 * diageye(2)),
                     meta = DeltaMeta(method = Linearization())
                 ),
