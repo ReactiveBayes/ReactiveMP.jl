@@ -49,6 +49,7 @@ include("algebra/permutation_matrix.jl")
 include("algebra/standard_basis_vector.jl")
 
 include("approximations.jl")
+include("approximations/shared.jl")
 include("approximations/gausshermite.jl")
 include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")

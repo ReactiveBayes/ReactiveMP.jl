@@ -184,7 +184,7 @@ const JointGaussian = JointNormal
 
 # Approximation methods extensions for Normal distributions family
 
-# This function extends the `Linearization` approximation method in case if all inputs are from `NormalDistributionsFamily`
+# This function extends the `Linearization` approximation method in case if all inputs are from the `NormalDistributionsFamily`
 function approximate(method::Linearization, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
     
     # Collect statistics for the inputs of the function `f`
@@ -203,6 +203,18 @@ function approximate(method::Linearization, f::F, distributions::NTuple{N, Norma
     V = A * jcov * A'
     
     return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
+end
+
+# This function extends the `Unscented` approximation method in case if all inputs are from the `NormalDistributionsFamily`
+function approximate(method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
+    
+    statistics = mean_cov.(distributions)
+    means      = first.(statistics)
+    covs       = last.(statistics)
+
+    μ_tilde, Σ_tilde = approximate(method, f, means, covs)
+
+    return convert(promote_variate_type(variate_form(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
 end
 
 # collectStatistics

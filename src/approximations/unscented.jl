@@ -62,10 +62,23 @@ getWc(extra::UnscentedExtra) = extra.Wc
 
 # Copied and refactored from ForneyLab.jl
 
-"""
-Return the statistics for the unscented approximation to the forward joint
-"""
-function unscented_statistics(method::Unscented, m::Real, V::Real, g) # Single univariate inbound
+function approximate(method::Unscented, f::F, means::Tuple{Real}, covs::Tuple{Real}) where {F}
+    (m, V, C) = unscented_statistics_single_univariate(method, f, first(means), last(covs))
+    return (m, V)
+end
+
+function approximate(method::Unscented, f::F, means::Tuple{AbstractVector}, covs::Tuple{AbstractMatrix}) where {F}
+    (m, V, C) = unscented_statistics_single_multivariate(method, f, first(means), last(covs))
+    return (m, V)
+end
+
+function approximate(method::Unscented, f::F, means::Tuple, covs::Tuple) where {F}
+    (m, V, C) = unscented_statistics_generic(method, f, means, covs)
+    return (m, V)
+end
+
+# Single univariate variable
+function unscented_statistics_single_univariate(method::Unscented, g::G, m::Real, V::Real) where {G} 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     g_sigma = g.(sigma_points)
@@ -77,7 +90,7 @@ function unscented_statistics(method::Unscented, m::Real, V::Real, g) # Single u
 end
 
 # Single multivariate inbound
-function unscented_statistics(method::Unscented, m::AbstractVector, V::AbstractMatrix, g)
+function unscented_statistics_single_multivariate(method::Unscented, g::G, m::AbstractVector, V::AbstractMatrix) where {G} 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     d = length(m)
@@ -91,7 +104,7 @@ function unscented_statistics(method::Unscented, m::AbstractVector, V::AbstractM
 end
 
 # Multiple inbounds of possibly mixed variate type
-function unscented_statistics(method::Unscented, ms::AbstractVector, Vs::AbstractVector, g)
+function unscented_statistics_generic(method::Unscented, g::G, ms::Tuple, Vs::Tuple) where {G}
     joint = convert(JointNormal, ms, Vs)
 
     (m, V) = mean_cov(joint)
@@ -99,7 +112,7 @@ function unscented_statistics(method::Unscented, ms::AbstractVector, Vs::Abstrac
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
-    g_sigma = [g(splitjoint(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
+    g_sigma = [ g(splitjoint(sp, ds)...) for sp in sigma_points ] # Unpack each sigma point in g
 
     d = sum(prod.(ds)) # Dimensionality of joint
     m_tilde = sum([weights_m[k+1] * g_sigma[k+1] for k in 0:2*d]) # Vector

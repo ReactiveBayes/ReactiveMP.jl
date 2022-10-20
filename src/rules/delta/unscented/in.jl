@@ -16,19 +16,18 @@
 end
 
 # known inverse, single input
-@rule DeltaFn{f}((:in, _), Marginalisation) (m_out::NormalDistributionsFamily, m_ins::Nothing, meta::DeltaMeta{M, I}) where {f, M <: Unscented, I <: Function} =
-    begin
-        (μ_bw_out, Σ_bw_out)  = mean_cov(m_out)
-        (μ_tilde, Σ_tilde, _) = unscented_statistics(getmethod(meta), μ_bw_out, Σ_bw_out, getinverse(meta))
-        return convert(promote_variate_type(variate_form(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
-    end
+@rule DeltaFn{f}((:in, _), Marginalisation) (
+    m_out::NormalDistributionsFamily, 
+    m_ins::Nothing, 
+    meta::DeltaMeta{M, I}
+) where {f, M <: Unscented, I <: Function} = begin
+    return approximate(getmethod(meta), getinverse(meta), (m_out, ))
+end
 
 @rule DeltaFn{f}((:in, k), Marginalisation) (
     m_out::NormalDistributionsFamily,
     m_ins::ManyOf{N, NormalDistributionsFamily},
     meta::DeltaMeta{M, I}
 ) where {f, N, M <: Unscented, L, I <: NTuple{L, Function}} = begin
-    (μs_in, Σs_in)        = collectStatistics(m_out, m_ins...)
-    (μ_tilde, Σ_tilde, _) = unscented_statistics(getmethod(meta), μs_in, Σs_in, getinverse(meta, k))
-    return convert(promote_variate_type(variate_form(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
+    return approximate(getmethod(meta), getinverse(meta, k), (m_out, m_ins...))
 end
