@@ -48,13 +48,13 @@ import ReactiveMP: Linearization
 
     end
 
-    @testset "localLinearizationMultiIn tests" begin 
-        import ReactiveMP: localLinearizationMultiIn
+    @testset "linearization `approximate` tests" begin 
+        import ReactiveMP: approximate, Linearization
 
-        @inferred localLinearizationMultiIn((x, y) -> x + y, (1, 2))
-        @inferred localLinearizationMultiIn((x, y) -> x - y, (1, 2))
-        @inferred localLinearizationMultiIn((x, y) -> x .- y, ([ 1.0, 2.0 ], 1.0))
-        @inferred localLinearizationMultiIn((x, y) -> x .- y, ([ 1.0, 2.0 ], [ 1.0, 1.0 ]))
+        @test @inferred(approximate(Linearization(), (x, y) -> x + y, (1, 2))) == ([ 1 1 ], 0)
+        @test @inferred(approximate(Linearization(), (x, y) -> x - y, (1, 2))) == ([ 1 -1 ], 0)
+        @test @inferred(approximate(Linearization(), (x, y) -> x .- y, ([ 1.0, 2.0 ], 1.0))) == ([1.0 0.0 -1.0; 0.0 1.0 -1.0], [0.0, 0.0])
+        @test @inferred(approximate(Linearization(), (x, y) -> x .- y, ([ 1.0, 2.0 ], [ 1.0, 1.0 ]))) == ([1.0 0.0 -1.0 0.0; 0.0 1.0 0.0 -1.0], [0.0, 0.0])
 
     end
 
