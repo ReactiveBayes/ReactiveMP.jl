@@ -13,7 +13,7 @@ struct AddonProdLogScale <: AbstractAddonProd end
 
 getlogscale(message::Message) = getlogscale(getaddons(message))
 getlogscale(addon::AddonLogScale) = addon.logscale
-getlogscale(::Any) = 0
+getlogscale(::AbstractAddon) = 0
 getlogscale(addons::Tuple{<:AbstractAddon}) = mapreduce(getlogscale, +, addons)
 
 function prod(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist::Distribution, left_dist::Distribution, right_dist::Distribution)
