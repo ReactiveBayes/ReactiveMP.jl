@@ -80,7 +80,10 @@ function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple{Tuple})
     return (first(first(dist)), first(last(dist)))
 end
 
-entropy(joint::JointNormal) = entropy(convert(NormalDistributionsFamily, joint))
+entropy(joint::JointNormal) = entropy(joint, joint.dist)
+
+entropy(joint::JointNormal, dist::NormalDistributionsFamily) = entropy(dist)
+entropy(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = entropy(convert(MvNormalMeanCovariance, mean_cov(joint)...))
 
 # We need this function in the unscented still
 """Split a vector in chunks of lengths specified by ds."""
@@ -204,7 +207,7 @@ end
 
 # collectStatistics
 
-# TODO remove later on
+# This functions are still needed for the `Unscented`
 function collectStatistics(msgs::Vararg{Any})
     stats = []
     for msg in msgs
