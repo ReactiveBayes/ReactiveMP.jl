@@ -240,7 +240,7 @@ import ReactiveMP: WishartMessage
         # Checking i = 1:2 that cache is not corrupted
         for i in 1:2
             @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
-            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 1.0)
+            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 2.5)
             @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 5.0)
         end
     end
@@ -394,12 +394,12 @@ import ReactiveMP: WishartMessage
             L' * L
         end
 
-        sizes  = [2_500, 5_000, 10_000]
+        sizes  = [10_000, 15_000, 20_000]
         inputs = [
         (x = NormalMeanPrecision(3.0, 7.0), y = NormalMeanVariance(-4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [1e-1, 1e-1, 1e-1]),
         (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [1e-1, 1e-1, 1e-1]),
         (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [3e-1, 3e-1, 3e-1]),
-        (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [2e-1, 2e-1, 2e-1], cov_tol = [6e-1, 6e-1, 6e-1], entropy_tol = [4e-1, 4e-1, 4e-1]),
+        (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [3e-1, 3e-1, 3e-1], cov_tol = [6e-1, 6e-1, 6e-1], entropy_tol = [4e-1, 4e-1, 4e-1]),
         (x = WishartMessage(10.0, cholinv(posdefm(rng, 3))), y = WishartMessage(5.0, cholinv(posdefm(rng, 3))), mean_tol = [7e-1, 7e-1, 7e-1], cov_tol = [5e-1, 5e-1, 5e-1], entropy_tol = [2e-1, 2e-1, 2e-1])
 ]
 
