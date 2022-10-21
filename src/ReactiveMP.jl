@@ -151,9 +151,4 @@ include("constraints/specifications/form.jl")
 include("constraints/specifications/factorisation.jl")
 include("constraints/specifications/meta.jl")
 
-# Delta node depends on model.jl (use AutoVar)
-include("nodes/delta/delta.jl")
-
-include("rules/prototypes.jl")
-
 end
