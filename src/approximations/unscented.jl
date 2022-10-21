@@ -100,11 +100,11 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Ab
     d = length(m)
 
     g_sigma = g.(sigma_points)
-    @inbounds m_tilde = sum(weights_m[k+1] * g_sigma[k+1] for k in 0:2d)
-    @inbounds V_tilde = sum(weights_c[k+1] * (g_sigma[k+1] - m_tilde) * (g_sigma[k+1] - m_tilde)' for k in 0:2d)
+    @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d))
+    @inbounds V_tilde = sum(weights_c[k + 1] * (g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d))
 
     # Compute `C_tilde` only if `C === true`
-    @inbounds C_tilde = C ? sum(weights_c[k+1] * (sigma_points[k+1] - m) * (g_sigma[k+1] - m_tilde)' for k in 0:2d) : nothing
+    @inbounds C_tilde = C ? sum(weights_c[k + 1] * (sigma_points[k + 1] - m) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
 end
@@ -121,11 +121,11 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, ms::Tuple, Vs::
     g_sigma = [g(__splitjoin(sp, ds)...) for sp in sigma_points] # Unpack each sigma point in g
 
     d = sum(prod.(ds)) # Dimensionality of joint
-    @inbounds m_tilde = sum(weights_m[k+1] * g_sigma[k+1] for k in 0:2d) # Vector
-    @inbounds V_tilde = sum(weights_c[k+1] * (g_sigma[k+1] - m_tilde) * (g_sigma[k+1] - m_tilde)' for k in 0:2d) # Matrix
+    @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d)) # Vector
+    @inbounds V_tilde = sum(weights_c[k + 1] * (g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) # Matrix
 
     # Compute `C_tilde` only if `C === true`
-    @inbounds C_tilde = C ? sum(weights_c[k+1] * (sigma_points[k+1] - m) * (g_sigma[k+1] - m_tilde)' for k in 0:2d) : nothing
+    @inbounds C_tilde = C ? sum(weights_c[k + 1] * (sigma_points[k + 1] - m) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
 end
@@ -174,8 +174,8 @@ function sigma_points_weights(method::Unscented, m::AbstractVector, V::AbstractM
     weights_c[1]    = weights_m[1] + (1 - alpha^2 + beta)
 
     @inbounds for i in 1:d
-        @views sigma_points[2*i] = m + L[:, i]
-        @views sigma_points[2*i+1] = m - L[:, i]
+        @views sigma_points[2 * i] = m + L[:, i]
+        @views sigma_points[2 * i + 1] = m - L[:, i]
     end
 
     @inbounds weights_m[2:end] .= 1 / (2 * (d + lambda))

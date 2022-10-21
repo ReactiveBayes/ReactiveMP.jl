@@ -10,30 +10,24 @@ import ReactiveMP: @test_rules
 @testset "rules:NormalMixture:out" begin
     @testset "Variational : (m_μ::PointMass{ <: Real }..., m_p::PointMass{ <: Real }...)" begin
         @test_rules [with_float_conversions = true] NormalMixture{2}(:out, Marginalisation) [
-            (input = (q_switch = Categorical([0.5, 0.5]), q_m = ManyOf(PointMass(1.0), PointMass(1.0)), q_p = ManyOf(PointMass(1.0), PointMass(1.0))), output = NormalMeanPrecision(1.0, 1.0)),
-            (input = (q_switch = Categorical([1.0, 0.0]), q_m = ManyOf(PointMass(1.0), PointMass(2.0)), q_p = ManyOf(PointMass(2.0), PointMass(1.0))), output = NormalMeanPrecision(1.0, 2.0)),
             (
-                input = (
-                    q_switch = Categorical([0.5, 0.5]),
-                    q_m = ManyOf(PointMass(1.0), PointMass(1.0)),
-                    q_p = ManyOf(PointMass(1.0), PointMass(1.0))
-                ),
+                input = (q_switch = Categorical([0.5, 0.5]), q_m = ManyOf(PointMass(1.0), PointMass(1.0)), q_p = ManyOf(PointMass(1.0), PointMass(1.0))),
                 output = NormalMeanPrecision(1.0, 1.0)
             ),
             (
-                input = (
-                    q_switch = Categorical([1.0, 0.0]),
-                    q_m = ManyOf(PointMass(1.0), PointMass(2.0)),
-                    q_p = ManyOf(PointMass(2.0), PointMass(1.0))
-                ),
+                input = (q_switch = Categorical([1.0, 0.0]), q_m = ManyOf(PointMass(1.0), PointMass(2.0)), q_p = ManyOf(PointMass(2.0), PointMass(1.0))),
                 output = NormalMeanPrecision(1.0, 2.0)
             ),
             (
-                input = (
-                    q_switch = Categorical([0.0, 1.0]),
-                    q_m = ManyOf(PointMass(2.0), PointMass(-3.0)),
-                    q_p = ManyOf(PointMass(4.0), PointMass(3.0))
-                ),
+                input = (q_switch = Categorical([0.5, 0.5]), q_m = ManyOf(PointMass(1.0), PointMass(1.0)), q_p = ManyOf(PointMass(1.0), PointMass(1.0))),
+                output = NormalMeanPrecision(1.0, 1.0)
+            ),
+            (
+                input = (q_switch = Categorical([1.0, 0.0]), q_m = ManyOf(PointMass(1.0), PointMass(2.0)), q_p = ManyOf(PointMass(2.0), PointMass(1.0))),
+                output = NormalMeanPrecision(1.0, 2.0)
+            ),
+            (
+                input = (q_switch = Categorical([0.0, 1.0]), q_m = ManyOf(PointMass(2.0), PointMass(-3.0)), q_p = ManyOf(PointMass(4.0), PointMass(3.0))),
                 output = NormalMeanPrecision(-3.0, 3.0)
             )
         ]
@@ -102,10 +96,7 @@ import ReactiveMP: @test_rules
             (
                 input = (
                     q_switch = Categorical([0.5, 0.5]),
-                    q_m = ManyOf(
-                        MvNormalMeanCovariance([2.0, 3.0], [2.0 0.0; 0.0 1.0]),
-                        MvNormalMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0])
-                    ),
+                    q_m = ManyOf(MvNormalMeanCovariance([2.0, 3.0], [2.0 0.0; 0.0 1.0]), MvNormalMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0])),
                     q_p = ManyOf(Wishart(3.0, [2.0 -0.25; -0.25 1.0]), Wishart(3.0, [1.0 -0.25; -0.25 2.0]))
                 ),
                 output = MvNormalWeightedMeanPrecision([6.75, 12.0], [4.5 -0.75; -0.75 4.5])
@@ -113,10 +104,7 @@ import ReactiveMP: @test_rules
             (
                 input = (
                     q_switch = Categorical([0.75, 0.25]),
-                    q_m = ManyOf(
-                        MvNormalWeightedMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0]),
-                        MvNormalMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0])
-                    ),
+                    q_m = ManyOf(MvNormalWeightedMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0]), MvNormalMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0])),
                     q_p = ManyOf(Wishart(3.0, [2.0 -0.25; -0.25 1.0]), Wishart(3.0, [1.0 -0.25; -0.25 2.0]))
                 ),
                 output = MvNormalWeightedMeanPrecision([3.75, 10.3125], [5.25 -0.75; -0.75 3.75])
@@ -124,10 +112,7 @@ import ReactiveMP: @test_rules
             (
                 input = (
                     q_switch = Categorical([0.0, 1.0]),
-                    q_m = ManyOf(
-                        MvNormalMeanCovariance([2.0, 3.0], [2.0 0.0; 0.0 1.0]),
-                        MvNormalWeightedMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0])
-                    ),
+                    q_m = ManyOf(MvNormalMeanCovariance([2.0, 3.0], [2.0 0.0; 0.0 1.0]), MvNormalWeightedMeanPrecision([2.0, 3.0], [2.0 0.0; 0.0 1.0])),
                     q_p = ManyOf(Wishart(3.0, [2.0 -0.25; -0.25 1.0]), Wishart(3.0, [1.0 -0.25; -0.25 2.0]))
                 ),
                 output = MvNormalWeightedMeanPrecision([0.75, 17.25], [3.0 -0.75; -0.75 6.0])

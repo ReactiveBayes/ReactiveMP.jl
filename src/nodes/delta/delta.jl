@@ -55,7 +55,7 @@ collect_meta(::Type{<:DeltaFn}, something) = error(
     "Delta node requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
 )
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
-collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(method = method, inverse = nothing)
+collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(; method = method, inverse = nothing)
 
 # For missing rules error msg
 rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
@@ -105,35 +105,37 @@ end
 deltafn_rule_layout(factornode::DeltaFnNode)                  = deltafn_rule_layout(factornode, metadata(factornode))
 deltafn_rule_layout(factornode::DeltaFnNode, meta::DeltaMeta) = deltafn_rule_layout(factornode, getmethod(meta), getinverse(meta))
 
+abstract type AbstractDeltaNodeDependenciesLayout end
+
 include("layouts/default.jl")
 
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Nothing)                       = DeltaFnDefaultRuleLayout()
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Function)                      = DeltaFnDefaultKnownInverseRuleLayout()
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::NTuple{N, Function}) where {N} = DeltaFnDefaultKnownInverseRuleLayout()
 
-function activate!(model, factornode::DeltaFnNode)
+function activate!(factornode::DeltaFnNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler())
     # `DeltaFn` node may change rule arguments layout depending on the `meta`
     # This feature is similar to `functional_dependencies` for a regular `FactorNode` implementation
-    return activate!(model, factornode, deltafn_rule_layout(factornode))
+    return activate!(factornode, deltafn_rule_layout(factornode), pipeline_stages, scheduler)
 end
 
 # DeltaFn is very special, so it has a very special `activate!` function
-function activate!(model, factornode::DeltaFnNode, layout)
+function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependenciesLayout, pipeline_stages, scheduler)
     foreach(interfaces(factornode)) do interface
         (connectedvar(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
     end
 
     # First we declare local marginal for `out` edge
-    deltafn_apply_layout(layout, Val(:q_out), model, factornode)
+    deltafn_apply_layout(layout, Val(:q_out), factornode, pipeline_stages, scheduler)
 
     # Second we declare how to compute a joint marginal over all inbound edges
-    deltafn_apply_layout(layout, Val(:q_ins), model, factornode)
+    deltafn_apply_layout(layout, Val(:q_ins), factornode, pipeline_stages, scheduler)
 
     # Second we declare message passing logic for out interface
-    deltafn_apply_layout(layout, Val(:m_out), model, factornode)
+    deltafn_apply_layout(layout, Val(:m_out), factornode, pipeline_stages, scheduler)
 
     # At last we declare message passing logic for input interfaces
-    deltafn_apply_layout(layout, Val(:m_in), model, factornode)
+    deltafn_apply_layout(layout, Val(:m_in), factornode, pipeline_stages, scheduler)
 end
 
 # DeltaFn has a bit a non-standard interface layout so it has a specialised `score` function too

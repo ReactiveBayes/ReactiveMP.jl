@@ -125,10 +125,7 @@ function expression_convert_eltype(eltype::Type{T}, expr::Expr) where {T}
                 )
                 return (name, value)
             end
-            return Expr(
-                :tuple,
-                map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...
-            )
+            return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
         else
             return Expr(:tuple, map(elem -> :($(expression_convert_eltype(eltype, elem))), elems)...)
         end

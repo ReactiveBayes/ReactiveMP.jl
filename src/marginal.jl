@@ -50,10 +50,6 @@ typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
 getdata(marginals::AbstractArray{<:Marginal})       = map(getdata, marginals)
 
-# TupleTools.prod is a more efficient version of Base.all for NTuple here
-is_clamped(marginals::NTuple{N, <:Marginal}) where {N} = TupleTools.prod(map(is_clamped, marginals))
-is_initial(marginals::NTuple{N, <:Marginal}) where {N} = TupleTools.prod(map(is_initial, marginals))
-
 ## Statistics 
 
 Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)

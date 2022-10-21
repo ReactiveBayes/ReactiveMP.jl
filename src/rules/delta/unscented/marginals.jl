@@ -1,11 +1,7 @@
 
 # most of routines are ported from ForneyLab.jl
 
-@marginalrule DeltaFn{f}(:ins) (
-    m_out::NormalDistributionsFamily,
-    m_ins::ManyOf{N, NormalDistributionsFamily},
-    meta::DeltaMeta{M}
-) where {f, N, M <: Unscented} = begin
+@marginalrule DeltaFn{f}(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M}) where {f, N, M <: Unscented} = begin
     # Approximate joint inbounds
     statistics = mean_cov.(m_ins)
     μs_fw_in = first.(statistics)

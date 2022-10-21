@@ -34,8 +34,7 @@ end
     return MvNormalMeanPrecision(μ_in, Λ_in)
 end
 
-@rule Flow(:in, Marginalisation) (m_out::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, <:Linearization}) where {M} =
-    begin
+@rule Flow(:in, Marginalisation) (m_out::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, <:Linearization}) where {M} = begin
 
     # extract parameters
     μ_out, Λ_out = mean_precision(m_out)
@@ -52,10 +51,7 @@ end
     return MvNormalMeanPrecision(μ_in, Λ_in)
 end
 
-@rule Flow(:in, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily,
-    meta::FlowMeta{M, <:Unscented}
-) where {M} = begin
+@rule Flow(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, meta::FlowMeta{M, <:Unscented}) where {M} = begin
 
     # extract parameters
     μ_out, Σ_out = mean_cov(m_out)

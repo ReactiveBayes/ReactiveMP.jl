@@ -7,11 +7,13 @@ as_mat(mat::AbstractMatrix) = mat
 
 # This function computes cumulative start indices in the tuple `sizes`, note that `()` acts as size 1`
 function __starts_at(sizes::Tuple)
-    return last(reduce(sizes; init = (0, ())) do result, size
-        current, accumulated = result
-        next = current + prod(size)
-        return (next, (accumulated..., current + 1))
-    end)
+    return last(
+        reduce(sizes; init = (0, ())) do result, size
+            current, accumulated = result
+            next = current + prod(size)
+            return (next, (accumulated..., current + 1))
+        end
+    )
 end
 
 Base.@propagate_inbounds __as_vec_copyto!(container, start, input::Real)             = container[start] = input
@@ -46,13 +48,13 @@ end
 # This function extracts elements from the linearized version of inputs from the `__as_vec` function
 # In case of `size = (Int, )` we extract the specified amount of elements as a view and treat it as a Multivariate variable
 function __splitjoinelement(x::AbstractVector, start, size::Tuple{Int})
-    return view(x, start:(start+prod(size)-1))
+    return view(x, start:(start + prod(size) - 1))
 end
 
 # This function extracts elements from the linearized version of inputs from the `__as_vec` function
 # In case of `size = (Int, Int)` we extract the specified amount of elements, reshape it into a matrix and treat it as a Matrixvariate variable
 function __splitjoinelement(x::AbstractVector, start, size::Tuple{Int, Int})
-    return reshape(view(x, start:(start+prod(size)-1)), first(size), last(size))
+    return reshape(view(x, start:(start + prod(size) - 1)), first(size), last(size))
 end
 
 # This function extracts elements from the linearized version of inputs from the `__as_vec` function all at once

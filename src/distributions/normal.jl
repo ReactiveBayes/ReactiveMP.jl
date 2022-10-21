@@ -67,8 +67,8 @@ function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
     start = 1
     @inbounds for (index, size) in enumerate(sizes)
         dm, dc = first(dist)[index], last(dist)[index]
-        μ[start:(start+size-1)] .= dm
-        Σ[start:(start+size-1), start:(start+size-1)] .= dc
+        μ[start:(start + size - 1)] .= dm
+        Σ[start:(start + size - 1), start:(start + size - 1)] .= dc
         start += size
     end
 
@@ -126,7 +126,7 @@ end
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Multivariate
 function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
-    start = sum(prod.(ds[1:index-1]); init = 0) + 1
+    start = sum(prod.(ds[1:(index - 1)]); init = 0) + 1
     len   = first(sz)
     stop  = start + len - 1
     μ, Σ  = mean_cov(dist)
@@ -137,7 +137,7 @@ end
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Univariate
 function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
-    start = sum(prod.(ds[1:index-1]); init = 0) + 1
+    start = sum(prod.(ds[1:(index - 1)]); init = 0) + 1
     μ, Σ = mean_cov(dist)
     # Return the slice of the original `MvNormalMeanCovariance`
     return NormalMeanVariance(μ[start], Σ[start, start])

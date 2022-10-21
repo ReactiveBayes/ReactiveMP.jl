@@ -22,11 +22,11 @@ h_inv_z(x, y) = x .^ 2 .- y
     @testset "Single input with known inverse" begin
         @test_rules [with_float_conversions = false, atol = 1e-5] DeltaFn{g}((:in, k = 1), Marginalisation) [
             (
-                input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = nothing, meta = DeltaMeta(method = Linearization(), inverse = g_inv)),
+                input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = nothing, meta = DeltaMeta(; method = Linearization(), inverse = g_inv)),
                 output = NormalMeanVariance(2.6457513110645907, 0.10714285714285711)
             ),
             (
-                input = (m_out = MvNormalMeanCovariance([2.0], [3.0;;]), m_ins = nothing, meta = DeltaMeta(method = Linearization(), inverse = g_inv)),
+                input = (m_out = MvNormalMeanCovariance([2.0], [3.0;;]), m_ins = nothing, meta = DeltaMeta(; method = Linearization(), inverse = g_inv)),
                 output = MvNormalMeanCovariance([2.6457513110645907], [0.10714285714285711;;])
             )
         ]
@@ -36,9 +36,7 @@ h_inv_z(x, y) = x .^ 2 .- y
         @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 1), Marginalisation) [
             (
                 input = (
-                    m_out = NormalMeanVariance(2.0, 3.0),
-                    m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)),
-                    meta  = DeltaMeta(method = Linearization(), inverse = (h_inv_x, h_inv_z))
+                    m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)), meta  = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = NormalMeanVariance(2.6457513110645907, 0.14285714285714282)
             ),
@@ -46,7 +44,7 @@ h_inv_z(x, y) = x .^ 2 .- y
                 input = (
                     m_out = MvNormalMeanCovariance([2.0], [3.0;;]),
                     m_ins = ManyOf(MvNormalMeanCovariance([5.0], [1.0;;])),
-                    meta  = DeltaMeta(method = Linearization(), inverse = (h_inv_x, h_inv_z))
+                    meta  = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = MvNormalMeanCovariance([2.6457513110645907], [0.14285714285714282;;])
             )
@@ -54,9 +52,7 @@ h_inv_z(x, y) = x .^ 2 .- y
         @test_rules [with_float_conversions = false, atol = 1e-5] DeltaFn{h}((:in, k = 2), Marginalisation) [
             (
                 input = (
-                    m_out = NormalMeanVariance(2.0, 1.0),
-                    m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)),
-                    meta = DeltaMeta(method = Linearization(), inverse = (h_inv_x, h_inv_z))
+                    m_out = NormalMeanVariance(2.0, 1.0), m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)), meta = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = NormalMeanVariance(-1.0, 17)
             ),
@@ -64,7 +60,7 @@ h_inv_z(x, y) = x .^ 2 .- y
                 input = (
                     m_out = MvNormalMeanCovariance([2.0], [1.0]),
                     m_ins = ManyOf(MvNormalMeanCovariance([5.0], [1.0])),
-                    meta = DeltaMeta(method = Linearization(), inverse = (h_inv_x, h_inv_z))
+                    meta = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = MvNormalMeanCovariance([-1.0], [17.0;;])
             )
@@ -77,7 +73,7 @@ h_inv_z(x, y) = x .^ 2 .- y
                 input = (
                     q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), ((), ())),
                     m_in = NormalMeanVariance(5.0, 10.0),
-                    meta = DeltaMeta(method = Linearization())
+                    meta = DeltaMeta(; method = Linearization())
                 ),
                 output = NormalWeightedMeanPrecision(0.5, 0.9)
             ),
@@ -85,7 +81,7 @@ h_inv_z(x, y) = x .^ 2 .- y
                 input = (
                     q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), ((1,), (1,))),
                     m_in = MvNormalMeanCovariance([5.0], [10.0;;]),
-                    meta = DeltaMeta(method = Linearization())
+                    meta = DeltaMeta(; method = Linearization())
                 ),
                 output = MvNormalWeightedMeanPrecision([0.5], [0.9;;])
             )
@@ -98,7 +94,7 @@ h_inv_z(x, y) = x .^ 2 .- y
                 input = (
                     q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), ((), (), ())),
                     m_in = NormalMeanVariance(0.0, 10.0),
-                    meta = DeltaMeta(method = Linearization())
+                    meta = DeltaMeta(; method = Linearization())
                 ),
                 output = NormalWeightedMeanPrecision(1.0, 0.9)
             ),
@@ -106,7 +102,7 @@ h_inv_z(x, y) = x .^ 2 .- y
                 input = (
                     q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), ((1,), (2,), ())),
                     m_in = MvNormalMeanCovariance(zeros(2), 10 * diageye(2)),
-                    meta = DeltaMeta(method = Linearization())
+                    meta = DeltaMeta(; method = Linearization())
                 ),
                 output = MvNormalWeightedMeanPrecision(ones(2), 0.9 * diageye(2))
             )

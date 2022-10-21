@@ -96,11 +96,7 @@ is_initial(message::Message) = message.is_initial
 typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
-getdata(messages::AbstractArray{<:Message}) = map(getdata, messages)
-
-# TupleTools.prod is a more efficient version of Base.all for NTuple here
-is_clamped(messages::NTuple{N, <:Message}) where {N} = TupleTools.prod(map(is_clamped, messages))
-is_initial(messages::NTuple{N, <:Message}) where {N} = TupleTools.prod(map(is_initial, messages))
+getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
 
 materialize!(message::Message) = message
 

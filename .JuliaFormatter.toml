@@ -22,5 +22,5 @@ align_conditional = true
 align_pair_arrow = true
 align_matrix = false
 join_lines_based_on_source = false
-separate_kwargs_with_semicolon = true
+separate_kwargs_with_semicolon = false
 surround_whereop_typeparameters = true

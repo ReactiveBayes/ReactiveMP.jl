@@ -42,6 +42,10 @@ as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal)
 getdata(collection::Tuple)         = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
 
+# TupleTools.prod is a more efficient version of Base.all for Tuple here
+is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
+is_initial(tuple::Tuple) = TupleTools.prod(map(is_initial, tuple))
+
 include("approximations/approximations.jl")
 include("approximations/shared.jl")
 include("approximations/gausshermite.jl")
@@ -133,7 +137,6 @@ include("nodes/poisson.jl")
 
 include("nodes/flow/flow.jl")
 include("nodes/delta/delta.jl")
-
 
 # Deterministic nodes
 include("nodes/addition.jl")
