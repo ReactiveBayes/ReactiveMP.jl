@@ -55,6 +55,20 @@ getpipeline(factornode::GammaMixtureNode)                 = factornode.pipeline
 setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
 getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
 
+function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
+    if iname === :out
+        return 1
+    elseif iname === :switch
+        return 2
+    elseif iname === :a
+        return 3
+    elseif iname === :b
+        return 4
+    else
+        error("Unknown interface ':$(iname)' for the [ $(functionalform(factornode)) ] node")
+    end
+end
+
 ## activate!
 
 struct GammaMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
@@ -97,12 +111,10 @@ function get_marginals_observable(
                 getmarginal(connectedvar(varinterface), IncludeAll()),
                 combineLatest(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
                 combineLatest(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), reverse(asinterfaces)), PushNew())
-            ),
-            PushNew()
-        ) |> map_to((
+            ), PushNew()) |> map_to((
             getmarginal(connectedvar(varinterface), IncludeAll()),
-            map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces),
-            map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces)
+            ManyOf(map((shape) -> getmarginal(connectedvar(shape), IncludeAll()), asinterfaces)),
+            ManyOf(map((rate) -> getmarginal(connectedvar(rate), IncludeAll()), bsinterfaces))
         ))
 
     return marginal_names, marginals_observable
@@ -121,7 +133,12 @@ end
 
 # FreeEnergy related functions
 
-@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::NTuple{N, Any}, q_b::NTuple{N, GammaShapeRate}) where {N} = begin
+@average_energy GammaMixture (
+    q_out::Any,
+    q_switch::Any,
+    q_a::ManyOf{N, Any},
+    q_b::ManyOf{N, GammaShapeRate}
+) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
         return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}, map((q) -> Marginal(q, false, false), (q_out, q_a[i], q_b[i])), nothing)
@@ -133,11 +150,9 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixt
         (
             getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
             getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-            combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew()),
-            combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew())
-        ),
-        PushNew()
-    )
+            ManyOfObservable(combineLatest(map((as) -> getmarginal(connectedvar(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew())),
+            ManyOfObservable(combineLatest(map((bs) -> getmarginal(connectedvar(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew()))
+        ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin

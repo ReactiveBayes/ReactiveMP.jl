@@ -5,7 +5,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, ndims, precision, length, size
+import Base: ==, ndims, precision, length, size, nameof, iterate
 
 struct Marginal{D}
     data       :: D
@@ -45,6 +45,7 @@ Checks if `marginal` is initial or not.
 See also: [`is_clamped`](@ref)
 """
 is_initial(marginal::Marginal) = marginal.is_initial
+typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
 getdata(marginals::AbstractArray{<:Marginal})       = map(getdata, marginals)
@@ -93,6 +94,8 @@ Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal
 
 as_marginal(marginal::Marginal) = marginal
 
+dropproxytype(::Type{<:Marginal{T}}) where {T} = T
+
 ## Marginal observable
 
 abstract type MarginalSkipStrategy end
@@ -126,6 +129,9 @@ end
 Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
 Rocket.getrecent(observables::Tuple)             = Rocket.getrecent.(observables)
 Rocket.getrecent(::Nothing)                      = nothing
+
+# todo add this method to Rocket.jl
+Rocket.getrecent(observable::Rocket.CombineLatestUpdatesObservable) = getrecent(observable.sources)
 
 @inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(observable.stream, actor)
 

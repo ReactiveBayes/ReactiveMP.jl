@@ -59,6 +59,20 @@ getpipeline(factornode::NormalMixtureNode)                 = factornode.pipeline
 setmarginal!(factornode::NormalMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")
 getmarginal!(factornode::NormalMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")
 
+function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
+    if iname === :out
+        return 1
+    elseif iname === :switch
+        return 2
+    elseif iname === :m
+        return 3
+    elseif iname === :p
+        return 4
+    else
+        error("Unknown interface ':$(iname)' for the [ $(functionalform(factornode)) ] node")
+    end
+end
+
 ## activate!
 
 struct NormalMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
@@ -101,12 +115,10 @@ function get_marginals_observable(
                 getmarginal(connectedvar(varinterface), IncludeAll()),
                 combineLatest(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
                 combineLatest(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
-            ),
-            PushNew()
-        ) |> map_to((
+            ), PushNew()) |> map_to((
             getmarginal(connectedvar(varinterface), IncludeAll()),
-            map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces),
-            map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces)
+            ManyOf(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces)),
+            ManyOf(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces))
         ))
 
     return marginal_names, marginals_observable
@@ -125,7 +137,12 @@ end
 
 # FreeEnergy related functions
 
-@average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::NTuple{N, UnivariateGaussianDistributionsFamily}, q_p::NTuple{N, GammaDistributionsFamily}) where {N} = begin
+@average_energy NormalMixture (
+    q_out::Any,
+    q_switch::Any,
+    q_m::ManyOf{N, UnivariateGaussianDistributionsFamily},
+    q_p::ManyOf{N, GammaDistributionsFamily}
+) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
         return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
@@ -147,7 +164,10 @@ end
 end
 
 @average_energy NormalMixture (
-    q_out::Any, q_switch::Any, q_m::NTuple{N, PointMass{T} where T <: AbstractVector}, q_p::NTuple{N, PointMass{T} where T <: AbstractMatrix}
+    q_out::Any,
+    q_switch::Any,
+    q_m::ManyOf{N, MultivariateGaussianDistributionsFamily},
+    q_p::ManyOf{N, Wishart}
 ) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
@@ -155,16 +175,59 @@ end
     end
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: InfCountingReal, N}
+@average_energy NormalMixture (
+    q_out::Any,
+    q_switch::Any,
+    q_m::ManyOf{N, PointMass{T} where T <: Real},
+    q_p::ManyOf{N, PointMass{T} where T <: Real}
+) where {N} = begin
+    z_bar = probvec(q_switch)
+    return mapreduce(+, 1:N, init = 0.0) do i
+        return z_bar[i] * score(
+            AverageEnergy(),
+            NormalMeanPrecision,
+            Val{(:out, :μ, :τ)},
+            map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])),
+            nothing
+        )
+    end
+end
+
+@average_energy NormalMixture (
+    q_out::Any,
+    q_switch::Any,
+    q_m::ManyOf{N, PointMass{T} where T <: AbstractVector},
+    q_p::ManyOf{N, PointMass{T} where T <: AbstractMatrix}
+) where {N} = begin
+    z_bar = probvec(q_switch)
+    return mapreduce(+, 1:N, init = 0.0) do i
+        return z_bar[i] * score(
+            AverageEnergy(),
+            MvNormalMeanPrecision,
+            Val{(:out, :μ, :Λ)},
+            map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])),
+            nothing
+        )
+    end
+end
+
+function score(
+    ::Type{T},
+    objective::BetheFreeEnergy,
+    ::FactorBoundFreeEnergy,
+    ::Stochastic,
+    node::NormalMixtureNode{N, MeanField},
+    scheduler
+) where {T <: InfCountingReal, N}
+    skip_strategy = marginal_skip_strategy(objective)
+
     stream = combineLatest(
         (
             getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
             getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-            combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew()),
-            combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew())
-        ),
-        PushNew()
-    )
+            ManyOfObservable(combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew())),
+            ManyOfObservable(combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()))
+        ), PushNew())
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin

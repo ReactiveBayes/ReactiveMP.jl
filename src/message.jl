@@ -6,7 +6,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, *, +, ndims, precision, length, size, show
+import Base: ==, *, +, ndims, precision, length, size, show, nameof
 
 """
     AbstractMessage
@@ -92,6 +92,8 @@ Checks if `message` is initial or not.
 See also: [`is_clamped`](@ref)
 """
 is_initial(message::Message) = message.is_initial
+
+typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 getdata(messages::AbstractArray{<:Message}) = map(getdata, messages)
@@ -206,6 +208,8 @@ end
 
 as_message(message::Message)             = message
 as_message(vmessage::VariationalMessage) = materialize!(vmessage)
+
+dropproxytype(::Type{<:Message{T}}) where {T} = T
 
 ## Message observable 
 

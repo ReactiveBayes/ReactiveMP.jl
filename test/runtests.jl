@@ -205,6 +205,10 @@ end
 
     addtests(testrunner, "helpers/test_helpers.jl")
 
+    addtests(testrunner, "approximations/test_shared.jl")
+    addtests(testrunner, "approximations/test_unscented.jl")
+    addtests(testrunner, "approximations/test_linearization.jl")
+
     addtests(testrunner, "constraints/prod/test_prod_analytical.jl")
     addtests(testrunner, "constraints/prod/test_prod_final.jl")
     addtests(testrunner, "constraints/prod/test_prod_generic.jl")
@@ -295,6 +299,14 @@ end
 
     addtests(testrunner, "rules/beta/test_out.jl")
     addtests(testrunner, "rules/beta/test_marginals.jl")
+
+    addtests(testrunner, "rules/delta/unscented/test_out.jl")
+    addtests(testrunner, "rules/delta/unscented/test_in.jl")
+    addtests(testrunner, "rules/delta/unscented/test_marginals.jl")
+
+    addtests(testrunner, "rules/delta/linearization/test_out.jl")
+    addtests(testrunner, "rules/delta/linearization/test_in.jl")
+    addtests(testrunner, "rules/delta/linearization/test_marginals.jl")
 
     addtests(testrunner, "rules/dot_product/test_out.jl")
     addtests(testrunner, "rules/dot_product/test_in1.jl")

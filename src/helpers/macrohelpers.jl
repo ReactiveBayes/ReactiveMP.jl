@@ -67,12 +67,10 @@ end
 
 function proxy_type(proxy, type::Expr)
     if @capture(type, Vararg{rest__})
-        error("Vararg{T, N} is forbidden in @rule macro, use NTuple{N, T} instead.")
-    elseif @capture(type, NTuple{N_, T_})
+        error("Vararg{T, N} is forbidden in @rule macro, use `ManyOf{N, T}` instead.")
+    elseif @capture(type, ManyOf{N_, T_})
         # return :(NTuple{ $N, <: $(proxy_type(proxy, T)) }) # This doesn't work in all of the cases
-        return :(Tuple{Vararg{X, $N} where X <: $(proxy_type(proxy, T))})
-    elseif @capture(type, Tuple{T__})
-        return :(Tuple{$(map(t -> :(<:$(proxy_type(proxy, t))), T)...)})
+        return :(ReactiveMP.ManyOf{<:Tuple{Vararg{X, $N} where X <: $(proxy_type(proxy, T))}})
     else
         return :($(proxy){<:$(type)})
     end
@@ -115,7 +113,9 @@ macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
 end
 
 function expression_convert_eltype(eltype::Type{T}, expr::Expr) where {T}
-    if @capture(expr, f_(args__))
+    if @capture(expr, ManyOf(inputs__))
+        return :(ReactiveMP.ManyOf(($(map(input -> expression_convert_eltype(eltype, input), inputs)...),)))
+    elseif @capture(expr, f_(inputs__))
         return :(ReactiveMP.convert_eltype($f, $T, $expr))
     elseif @capture(expr, (elems__,))
         if @capture(first(elems), (name_ = value_))
@@ -125,7 +125,10 @@ function expression_convert_eltype(eltype::Type{T}, expr::Expr) where {T}
                 )
                 return (name, value)
             end
-            return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
+            return Expr(
+                :tuple,
+                map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...
+            )
         else
             return Expr(:tuple, map(elem -> :($(expression_convert_eltype(eltype, elem))), elems)...)
         end

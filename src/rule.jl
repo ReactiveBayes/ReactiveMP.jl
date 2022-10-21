@@ -92,7 +92,7 @@ function rule_macro_parse_on_tag(on)
         :(error("`k = ...` syntax in the edge specification is only allowed in the `@call_rule` and `@call_marginalrule` macros"))
     else
         error(
-            "Error in macro. `on` specification is incorrect: $(on). Must be ither a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
+            "Error in macro. `on` specification is incorrect: $(on). Must be either a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
         )
     end
 end
@@ -162,7 +162,7 @@ This function is used to parse an `arguments` tuple for message and marginal cal
 end
 ```
 
-Accepts a vector of (name, vale) elements, specname, name prefix and proxy type. 
+Accepts a vector of (name, value) elements, specname, name prefix and proxy type. 
 Returns parsed names without prefix and proxied values
 
 See also: [`@rule`](@ref)
@@ -176,12 +176,21 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
     @assert all((n) -> length(string(n)) > lprefix, names) || error("Empty $(specname) name found in arguments")
 
-    # Tuples are special cases
+    # ManyOf are special cases
     function apply_proxy(any, proxy)
-        if any isa Expr && any.head === :tuple
-            output      = Expr(:tuple)
-            output.args = map(v -> apply_proxy(v, proxy), any.args)
-            return output
+        if any isa Expr && any.head === :call && (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
+            argsvar = gensym(:ManyOf)
+            return quote
+                let
+                    local $argsvar = ($(any.args[2:end]...),)
+                    if length($argsvar) === 1 && first($argsvar) isa Tuple
+                        ReactiveMP.ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
+                    else
+                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),))
+                    end
+                end
+            end
+            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),)))
         end
         return :($(proxy)($any, false, false))
     end
@@ -716,9 +725,9 @@ rule_method_error_extract_on(::Tuple{Val{T}, N}) where {T, N}       = string("("
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
 rule_method_error_extract_names(::Type{Val{T}}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
-rule_method_error_extract_names(::Nothing) = ()
+rule_method_error_extract_names(::Nothing)                = ()
 
-rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeof(getdata(e))), t)
+rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeofdata(e)), t)
 rule_method_error_extract_types(t::Nothing) = ()
 
 rule_method_error_extract_meta(something) = string("meta::", typeof(something))

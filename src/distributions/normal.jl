@@ -2,6 +2,7 @@ export GaussianMeanVariance, GaussianMeanPrecision, GaussianWeighteMeanPrecision
 export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMeanPrecision
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
+export JointNormal, JointGaussian
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -22,6 +23,175 @@ import Base: prod, convert
 import Random: rand!
 
 using LoopVectorization
+
+# Joint over multiple Gaussians
+
+"""
+    JointNormal
+
+`JointNormal` is an auxilary structure used for the joint marginal over Normally distributed variables.
+`JointNormal` stores a vector with the original dimensionalities (ds), so statistics can later be re-separated.
+
+# Fields
+- `dist`: joint distribution (typically just a big `MvNormal` distribution, but maybe a tuple of individual means and covariance matrices)
+- `ds`: a tuple with the original dimensionalities of individual `Normal` distributions
+  - `ds[k] = (n,)` where `n` is an integer indicates `Multivariate` normal of size `n`
+  - `ds[k] = ()` indicates `Univariate` normal
+"""
+struct JointNormal{D, S}
+    dist :: D
+    ds   :: S
+end
+
+dimensionalities(joint::JointNormal) = joint.ds
+
+mean_cov(joint::JointNormal) = mean_cov(joint, joint.dist, joint.ds)
+
+# In case if `JointNormal` internal representation stores the actual distribution we simply returns its statistics
+mean_cov(::JointNormal, dist::MvNormalMeanCovariance, ::Tuple) = mean_cov(dist)
+
+# In case if `JointNormal` internal representation stores the actual distribution with a single univariate element we return its statistics as numbers
+mean_cov(::JointNormal, dist::MvNormalMeanCovariance, ::Tuple{Tuple{}}) = first.(mean_cov(dist))
+
+# In case if `JointNormal` internal representation stores tuples of means and covariances we need to concatenate them
+function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
+    total = sum(prod.(ds); init = 0)
+    @assert total !== 0 "Broken `JointNormal` state"
+
+    T = promote_type(eltype.(first(dist))..., eltype.(last(dist))...)
+    μ = zeros(T, total)
+    Σ = zeros(T, total, total)
+
+    sizes = prod.(ds)
+
+    start = 1
+    @inbounds for (index, size) in enumerate(sizes)
+        dm, dc = first(dist)[index], last(dist)[index]
+        μ[start:(start+size-1)] .= dm
+        Σ[start:(start+size-1), start:(start+size-1)] .= dc
+        start += size
+    end
+
+    return (μ, Σ)
+end
+
+# In case if `JointNormal` internal representation stores tuples of means and covariances with a single univariate element we return its statistics
+function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple{Tuple})
+    return (first(first(dist)), first(last(dist)))
+end
+
+entropy(joint::JointNormal) = entropy(joint, joint.dist)
+
+entropy(joint::JointNormal, dist::NormalDistributionsFamily) = entropy(dist)
+entropy(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = entropy(convert(MvNormalMeanCovariance, mean_cov(joint)...))
+
+function Base.convert(::Type{JointNormal}, distribution::UnivariateNormalDistributionsFamily, sizes::Tuple{Tuple{}})
+    return JointNormal(distribution, sizes)
+end
+
+function Base.convert(::Type{JointNormal}, distribution::MultivariateNormalDistributionsFamily, sizes::Tuple)
+    return JointNormal(distribution, sizes)
+end
+
+function Base.convert(::Type{JointNormal}, means::Tuple, covs::Tuple)
+    @assert length(means) === length(covs) "Cannot create the `JointNormal` with different number of statistics"
+    return JointNormal((means, covs), size.(means))
+end
+
+"""Return the marginalized statistics of the Gaussian corresponding to an index `index`"""
+getmarginal(joint::JointNormal, index) = getmarginal(joint, joint.dist, joint.ds, joint.ds[index], index)
+
+# `JointNormal` holds a single univariate gaussian and the dimensionalities indicate only a single Univariate element
+function getmarginal(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+    @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
+    @assert size(dist) === sz "Broken `JointNormal` state"
+    return dist
+end
+
+# `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Multivariate element
+function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
+    @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
+    @assert size(dist) === sz "Broken `JointNormal` state"
+    return dist
+end
+
+# `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Univariate element
+function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+    @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
+    @assert length(dist) === 1 "Broken `JointNormal` state"
+    m, V = mean_cov(dist)
+    return NormalMeanVariance(first(m), first(V))
+end
+
+# `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Multivariate
+function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
+    @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
+    start = sum(prod.(ds[1:index-1]); init = 0) + 1
+    len   = first(sz)
+    stop  = start + len - 1
+    μ, Σ  = mean_cov(dist)
+    # Return the slice of the original `MvNormalMeanCovariance`
+    return MvNormalMeanCovariance(view(μ, start:stop), view(Σ, start:stop, start:stop))
+end
+
+# `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Univariate
+function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
+    @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
+    start = sum(prod.(ds[1:index-1]); init = 0) + 1
+    μ, Σ = mean_cov(dist)
+    # Return the slice of the original `MvNormalMeanCovariance`
+    return NormalMeanVariance(μ[start], Σ[start, start])
+end
+
+# `JointNormal` holds gaussians individually, simply returns a Multivariate gaussian at index `index`
+function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{Int}, index)
+    return MvNormalMeanCovariance(first(dist)[index], last(dist)[index])
+end
+
+# `JointNormal` holds gaussians individually, simply returns a Univariate gaussian at index `index`
+function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{}, index)
+    return NormalMeanVariance(first(dist)[index], last(dist)[index])
+end
+
+# comparing JointNormals - similar to src/distributions/pointmass.jl
+Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.dist, right.dist; kwargs...) && left.ds == right.ds
+
+"""An alias for the [`JointNormal`](@ref)."""
+const JointGaussian = JointNormal
+
+# Approximation methods extensions for Normal distributions family
+
+# This function extends the `Linearization` approximation method in case if all inputs are from the `NormalDistributionsFamily`
+function approximate(method::Linearization, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
+
+    # Collect statistics for the inputs of the function `f`
+    statistics = mean_cov.(distributions)
+    means      = first.(statistics)
+    covs       = last.(statistics)
+
+    # Compute the local approximation for the function `f`
+    (A, b) = approximate(method, f, means)
+
+    # Execute the 'joint' message in the linearized version of `f`
+    joint       = convert(JointNormal, means, covs)
+    jmean, jcov = mean_cov(joint)
+
+    m = A * jmean + b
+    V = A * jcov * A'
+
+    return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
+end
+
+# This function extends the `Unscented` approximation method in case if all inputs are from the `NormalDistributionsFamily`
+function approximate(method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
+    statistics = mean_cov.(distributions)
+    means      = first.(statistics)
+    covs       = last.(statistics)
+
+    μ_tilde, Σ_tilde = approximate(method, f, means, covs)
+
+    return convert(promote_variate_type(variate_form(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
+end
 
 # Variate forms promotion
 
