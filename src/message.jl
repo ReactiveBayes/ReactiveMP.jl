@@ -95,18 +95,31 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
     is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
+    
+    new_dist, new_addons = multiply_messages(prod_parametrisation, getdata(left), getaddons(left), getdata(right), getaddons(right))
+    
+    return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
+end
 
+function multiply_messages(prod_parametrisation, left_dist::Distribution, left_addons, right_dist::Distribution, right_addons)
     # compute new distribution
-    new_dist = prod(prod_parametrisation, getdata(left), getdata(right))
+    new_dist = prod(prod_parametrisation, left_dist, right_dist)
 
     # process addons
-    @assert length(getaddons(left)) == length(getaddons(right)) "Trying to perform computations with different lengths of addons."
+    @assert length(left_addons) == length(right_addons) "Trying to perform computations with different lengths of addons."
     new_addons = ()
-    for (addon_left, addon_right) in zip(getaddons(left), getaddons(right))
-        new_addons = TupleTools.flatten(new_addons, prod(addon_left, addon_right, new_dist, getdata(left), getdata(right)))
-    end    
+    for (addon_left, addon_right) in zip(left_addons, right_addons)
+        new_addons = TupleTools.flatten(new_addons, prod(addon_left, addon_right, new_dist, left_dist, right_dist))
+    end
+    return new_dist, new_addons
+end
 
-    return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
+function multiply_messages(prod_parametrisation, left_dist::Distribution, left_addons, right_dist::Missing, right_addons::Nothing)
+    return left_dist, left_addons
+end
+
+function multiply_messages(prod_parametrisation, left_dist::Missing, left_addons::Nothing, right_dist::Distribution, right_addons)
+    return right_dist, right_addons
 end
 
 constrain_form_as_message(message::Message, form_constraint) =

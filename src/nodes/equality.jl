@@ -100,7 +100,7 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
     if __check_indices(type, chain, node_index)
         return getcache(type, getnode(chain, node_index))
     else
-        return Message(missing, true, true)
+        return Message(missing, true, true, nothing)
     end
 end
 
@@ -131,7 +131,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
             return materialize!(type, chain, node_index)
         end
     else
-        return Message(missing, true, true)
+        return Message(missing, true, true, nothing)
     end
 end
 
