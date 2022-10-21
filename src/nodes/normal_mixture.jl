@@ -211,15 +211,7 @@ end
     end
 end
 
-function score(
-    ::Type{T},
-    objective::BetheFreeEnergy,
-    ::FactorBoundFreeEnergy,
-    ::Stochastic,
-    node::NormalMixtureNode{N, MeanField},
-    scheduler
-) where {T <: InfCountingReal, N}
-    skip_strategy = marginal_skip_strategy(objective)
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: InfCountingReal, N}
 
     stream = combineLatest(
         (

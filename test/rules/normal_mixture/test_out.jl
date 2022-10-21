@@ -10,8 +10,8 @@ import ReactiveMP: @test_rules
 @testset "rules:NormalMixture:out" begin
     @testset "Variational : (m_μ::PointMass{ <: Real }..., m_p::PointMass{ <: Real }...)" begin
         @test_rules [with_float_conversions = true] NormalMixture{2}(:out, Marginalisation) [
-            (input = (q_switch = Categorical([0.5, 0.5]), q_m = (PointMass(1.0), PointMass(1.0)), q_p = (PointMass(1.0), PointMass(1.0))), output = NormalMeanPrecision(1.0, 1.0)),
-            (input = (q_switch = Categorical([1.0, 0.0]), q_m = (PointMass(1.0), PointMass(2.0)), q_p = (PointMass(2.0), PointMass(1.0))), output = NormalMeanPrecision(1.0, 2.0)),
+            (input = (q_switch = Categorical([0.5, 0.5]), q_m = ManyOf(PointMass(1.0), PointMass(1.0)), q_p = ManyOf(PointMass(1.0), PointMass(1.0))), output = NormalMeanPrecision(1.0, 1.0)),
+            (input = (q_switch = Categorical([1.0, 0.0]), q_m = ManyOf(PointMass(1.0), PointMass(2.0)), q_p = ManyOf(PointMass(2.0), PointMass(1.0))), output = NormalMeanPrecision(1.0, 2.0)),
             (
                 input = (
                     q_switch = Categorical([0.5, 0.5]),

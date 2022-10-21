@@ -96,11 +96,6 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
     return DeltaFnNode(fn, out_interface, ins_interface, localmarginals, meta)
 end
 
-function make_node(fform::F, options::FactorNodeCreationOptions, autovar::AutoVar, args::Vararg{<:AbstractVariable}) where {F <: Function}
-    out = randomvar(getname(autovar))
-    return __make_delta_fn_node(fform, options, out, args), out
-end
-
 function make_node(fform::F, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable}) where {F <: Function}
     return __make_delta_fn_node(fform, options, args[1], args[2:end])
 end
@@ -143,13 +138,13 @@ end
 
 # DeltaFn has a bit a non-standard interface layout so it has a specialised `score` function too
 
-function score(::Type{T}, objective::BetheFreeEnergy, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, scheduler) where {T <: InfCountingReal}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, skip_strategy, scheduler) where {T <: InfCountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
-    qinsmarginal = apply_skip_filter(getstream(node.localmarginals.marginals[2]), marginal_skip_strategy(objective))
+    qinsmarginal = apply_skip_filter(getstream(node.localmarginals.marginals[2]), skip_strategy)
 
     stream  = qinsmarginal |> schedule_on(scheduler)
     mapping = (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))
 
-    return apply_diagnostic_check(objective, node, stream |> map(T, mapping))
+    return stream |> map(T, mapping)
 end
