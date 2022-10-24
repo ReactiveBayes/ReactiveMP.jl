@@ -174,7 +174,10 @@ import ReactiveMP: make_node
             q_Λ = Wishart(3, [0.6202203324986401 0.6037236520027125; 0.6037236520027125 1.140352058799863])
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
-                marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing))
+                marginals = (
+                    Marginal(convert(N, q_out_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
+                )
                 @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out_μ, :Λ)}, marginals, nothing) ≈
                       28.552276936591902
             end
@@ -193,7 +196,10 @@ import ReactiveMP: make_node
             q_Λ = Wishart(3, [1.545789934380036 1.1984283177361577; 1.1984283177361577 1.1061038557496674])
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
-                marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing))
+                marginals = (
+                    Marginal(convert(N, q_out_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
+                )
                 @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out_μ, :Λ)}, marginals, nothing) ≈
                       1938.6631975673586
             end

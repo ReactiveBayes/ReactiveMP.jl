@@ -20,7 +20,7 @@ end
 end
 
 @rule Transition(:in, Marginalisation) (m_out::Categorical, m_a::PointMass) = begin
-    @logscale log(sum(mean(A)'*probvec(m_out)))
+    @logscale log(sum(mean(A)' * probvec(m_out)))
     p = mean(m_a)' * probvec(m_out)
     normalize!(p, 1)
     return Categorical(p)

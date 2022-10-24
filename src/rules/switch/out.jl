@@ -19,5 +19,4 @@
 
     # return mixture 
     return MixtureModel(collect(m_inputs), w)
-
 end

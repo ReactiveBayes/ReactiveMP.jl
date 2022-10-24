@@ -278,7 +278,11 @@ macro rule(fform, lambda)
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_, addons::addonstype_) | (inputs__, meta::metatype_) | (inputs__, addons::addonstype_) | (inputs__,)) ||
+    @capture(
+        args,
+        (inputs__, meta::metatype_, addons::addonstype_) | (inputs__, meta::metatype_) |
+        (inputs__, addons::addonstype_) | (inputs__,)
+    ) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
     # check for number of return statements
@@ -419,7 +423,6 @@ end
 
 # addons
 macro logscale(lambda)
-
     @capture(lambda, (body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
@@ -427,23 +430,25 @@ macro logscale(lambda)
     @assert MacroHelpers.count_returns(body) < 2 "@logscale macro contains multiple return statements"
 
     # create logscale
-    output = quote 
+    output = quote
         if !isnothing($(esc(:addons))) && AddonLogScale(nothing) in $(esc(:addons))
-            $(esc(:_addons)) = flatten($(esc(:_addons)), AddonLogScale($(esc(MacroHelpers.remove_returns(body)))),)
+            $(esc(:_addons)) = flatten($(esc(:_addons)), AddonLogScale($(esc(MacroHelpers.remove_returns(body)))))
         end
     end
 
     # return expression for @logscale
     return output
-
 end
-
 
 macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) ||
         error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(args, (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__, meta = meta_) | (inputs__,)) ||
+    @capture(
+        args,
+        (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__, meta = meta_) |
+        (inputs__,)
+    ) ||
         error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
@@ -477,7 +482,7 @@ macro call_rule(fform, args)
             $meta,
             $addons,
             nothing
-        );
+        )
         $distributionsym
     end
 

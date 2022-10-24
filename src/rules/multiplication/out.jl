@@ -1,7 +1,7 @@
 
 @rule typeof(*)(:out, Marginalisation) (
-    m_A::PointMass, 
-    m_in::PointMass, 
+    m_A::PointMass,
+    m_in::PointMass,
     meta::Union{<:AbstractCorrection, Nothing}
 ) = begin
     return PointMass(mean(m_A) * mean(m_in))

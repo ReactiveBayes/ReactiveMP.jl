@@ -165,7 +165,7 @@ end
 
 custom walk for removing returns, without processing nested macros
 """
-function remove_returns_walk(f,x) 
+function remove_returns_walk(f, x)
     @capture(x, (return b_)) && return b
     if @capture(x, (@macro_ a_))
         return MacroTools.walk(f(x), identity, identity)

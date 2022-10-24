@@ -78,7 +78,8 @@ getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 
 materialize!(message::Message) = message
 
-Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
+Base.show(io::IO, message::Message) =
+    print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
@@ -95,13 +96,20 @@ function multiply_messages(prod_parametrisation, left::Message, right::Message)
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
     is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
-    
-    new_dist, new_addons = multiply_messages(prod_parametrisation, getdata(left), getaddons(left), getdata(right), getaddons(right))
-    
+
+    new_dist, new_addons =
+        multiply_messages(prod_parametrisation, getdata(left), getaddons(left), getdata(right), getaddons(right))
+
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
 
-function multiply_messages(prod_parametrisation, left_dist::Distribution, left_addons, right_dist::Distribution, right_addons)
+function multiply_messages(
+    prod_parametrisation,
+    left_dist::Distribution,
+    left_addons,
+    right_dist::Distribution,
+    right_addons
+)
     # compute new distribution
     new_dist = prod(prod_parametrisation, left_dist, right_dist)
 
@@ -114,22 +122,45 @@ function multiply_messages(prod_parametrisation, left_dist::Distribution, left_a
     return new_dist, new_addons
 end
 
-function multiply_messages(prod_parametrisation, left_dist::Distribution, left_addons::Nothing, right_dist::Distribution, right_addons::Nothing)
+function multiply_messages(
+    prod_parametrisation,
+    left_dist::Distribution,
+    left_addons::Nothing,
+    right_dist::Distribution,
+    right_addons::Nothing
+)
     # compute new distribution
     new_dist = prod(prod_parametrisation, left_dist, right_dist)
     return new_dist, nothing
 end
 
-function multiply_messages(prod_parametrisation, left_dist::Distribution, left_addons, right_dist::Missing, right_addons::Nothing)
+function multiply_messages(
+    prod_parametrisation,
+    left_dist::Distribution,
+    left_addons,
+    right_dist::Missing,
+    right_addons::Nothing
+)
     return left_dist, left_addons
 end
 
-function multiply_messages(prod_parametrisation, left_dist::Missing, left_addons::Nothing, right_dist::Distribution, right_addons)
+function multiply_messages(
+    prod_parametrisation,
+    left_dist::Missing,
+    left_addons::Nothing,
+    right_dist::Distribution,
+    right_addons
+)
     return right_dist, right_addons
 end
 
 constrain_form_as_message(message::Message, form_constraint) =
-    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
+    Message(
+        constrain_form(form_constraint, getdata(message)),
+        is_clamped(message),
+        is_initial(message),
+        getaddons(message)
+    )
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
@@ -293,7 +324,15 @@ function MessageMapping(
     addons::X,
     factornode::R
 ) where {F, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
+    return MessageMapping{F, T, C, N, M, A, X, R}(
+        vtag,
+        vconstraint,
+        msgs_names,
+        marginals_names,
+        meta,
+        addons,
+        factornode
+    )
 end
 
 function MessageMapping(
@@ -306,7 +345,15 @@ function MessageMapping(
     addons::X,
     factornode::R
 ) where {F <: Function, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
+    return MessageMapping{F, T, C, N, M, A, X, R}(
+        vtag,
+        vconstraint,
+        msgs_names,
+        marginals_names,
+        meta,
+        addons,
+        factornode
+    )
 end
 
 function materialize!(mapping::MessageMapping, dependencies)

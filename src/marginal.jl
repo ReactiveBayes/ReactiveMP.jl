@@ -14,7 +14,8 @@ struct Marginal{D, A}
     addons     :: A
 end
 
-Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ") with ", string(getaddons(marginal))))
+Base.show(io::IO, marginal::Marginal) =
+    print(io, string("Marginal(", getdata(marginal), ") with ", string(getaddons(marginal))))
 
 function Base.:(==)(left::Marginal, right::Marginal)
     # We need this dummy method as Julia is not smart enough to 
@@ -28,7 +29,7 @@ end
 getdata(marginal::Marginal)    = marginal.data
 is_clamped(marginal::Marginal) = marginal.is_clamped
 is_initial(marginal::Marginal) = marginal.is_initial
-getaddons(marginal::Marginal) = marginal.addons
+getaddons(marginal::Marginal)  = marginal.addons
 
 # TupleTools.prod is a more efficient version of Base.all for NTuple here
 is_clamped(marginals::Tuple) = TupleTools.prod(map(is_clamped, marginals))

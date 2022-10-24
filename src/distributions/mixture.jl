@@ -3,7 +3,7 @@ export MixtureModel
 import Distributions: MixtureModel
 
 function prod(::ProdAnalytical, left::MixtureModel, right::Any)
-    
+
     # get prior weights and components
     w = probvec(left.prior)
     dists = left.components
@@ -19,7 +19,6 @@ function prod(::ProdAnalytical, left::MixtureModel, right::Any)
 
     # return mixture distributions
     return MixtureModel(dists_new, Categorical(softmax(logscales_new)))
-
 end
 
 function prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::MixtureModel, right_dist::Any)
@@ -38,5 +37,4 @@ function prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::MixtureMod
     logscales_new = log.(w) + logscales
 
     return logsumexp(logscales_new)
-
 end

@@ -37,7 +37,12 @@ function score(
     mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
         (messages) -> begin
             # We do not really care about (is_clamped, is_initial) at this stage, so it can be (false, false)
-            marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), false, false, nothing)
+            marginal = Marginal(
+                marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node),
+                false,
+                false,
+                nothing
+            )
             return convert(T, -score(DifferentialEntropy(), marginal))
         end
     end

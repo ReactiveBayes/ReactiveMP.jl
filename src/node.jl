@@ -881,7 +881,8 @@ function activate!(model, factornode::AbstractFactorNode)
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
             mapping =
-                let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
+                let messagemap =
+                        MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
                     (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
                 end
 
