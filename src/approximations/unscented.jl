@@ -12,8 +12,8 @@ struct UnscentedExtra{T, R, M, C}
 end
 
 """
-The `Unscented` structure defines the approximating method of the `Delta` and `Flow` factor nodes. 
-More specifically, it contains the hyperparameters used for sigma points computataion.
+The `Unscented` structure defines the approximation method of the `Delta` and `Flow` factor nodes. 
+More specifically, it contains the hyperparameters used for sigma points computation.
 
 # Arguments
 - `α`: Spread parameter for unscented transform #1

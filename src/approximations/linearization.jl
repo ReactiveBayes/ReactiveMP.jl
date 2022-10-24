@@ -1,7 +1,7 @@
 export Linearization
 
 """
-The `Linearization` structure defines the approxumationg method of the `Delta` and `Flow` factor nodes. 
+The `Linearization` structure defines the approximation method of the `Delta` and `Flow` factor nodes. 
 This method performs a local linearization of f around expansion point x.
 
 The `Linearization` structure with default parameters can be constructed as `Linearization()`.
