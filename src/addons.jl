@@ -1,4 +1,5 @@
 export AddonLogScale
+export getlogscale
 
 import Base: prod, string
 
