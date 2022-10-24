@@ -212,7 +212,6 @@ function Distributions.entropy(sl::SampleList{D, S, W, C, Nothing}) where {D, S,
     # return get_entropy(get_meta(sl))
 end
 
-
 ## 
 
 vague(::Type{SampleList}; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)                        = sample_list_vague(Univariate, nsamples)
