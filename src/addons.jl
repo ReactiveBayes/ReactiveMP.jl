@@ -13,6 +13,7 @@ AddonLogScale() = AddonLogScale(nothing)
 struct AddonProdLogScale <: AbstractAddonProd end
 
 getlogscale(message::Message) = getlogscale(getaddons(message))
+getlogscale(marginal::Marginal) = getlogscale(getaddons(marginal))
 getlogscale(addon::AddonLogScale) = addon.logscale
 getlogscale(::AbstractAddon) = 0
 getlogscale(addons::Tuple{<:AbstractAddon}) = mapreduce(getlogscale, +, addons)
