@@ -368,6 +368,10 @@ end
     addtests(testrunner, "rules/implication/test_in2.jl")
     addtests(testrunner, "rules/implication/test_marginals.jl")
 
+    addprocs(testrunner, "rules/nodes/delta/cvi/test_in.jl")
+    addprocs(testrunner, "rules/nodes/delta/cvi/test_marginals.jl")
+    addprocs(testrunner, "rules/nodes/delta/cvi/test_out.jl")
+
     addtests(testrunner, "models/test_lgssm.jl")
     addtests(testrunner, "models/test_hgf.jl")
     addtests(testrunner, "models/test_ar.jl")
@@ -380,6 +384,7 @@ end
     addtests(testrunner, "models/test_cvi.jl")
 
     addtests(testrunner, "test_factor_product.jl")
+    addtests(testrunner, "test_render_cvi.jl")
 
     run(testrunner)
 end
