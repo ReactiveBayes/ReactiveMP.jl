@@ -10,7 +10,7 @@ The `Linearization` structure is used inside the `DeltaMeta` or `FlowMeta` struc
 ```
     y ~ f(x) where { meta = DeltaMeta(method = Linearization()) }
     # or
-    y ~ f(x) where { meta = FlowMeta(method = Linearization()) }
+    y ~ Flow(x) where { meta = FlowMeta(flowmodel, Linearization()) }
 ```
 """
 struct Linearization <: AbstractApproximationMethod end

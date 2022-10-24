@@ -27,7 +27,7 @@ The `Unscented` structure is used inside the `DeltaMeta` or `FlowMeta` structure
 ```
     y ~ f(x) where { meta = DeltaMeta(method = Unscented()) }
     # or
-    y ~ f(x) where { meta = FlowMeta(method = Unscented()) }
+    y ~ Flow(x) where { meta = FlowMeta(flowmodel, Unscented()) }
 ```
 """
 struct Unscented{A, B, K, E} <: AbstractApproximationMethod
