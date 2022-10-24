@@ -14,6 +14,11 @@ end
 
 # Variational                       # 
 # --------------------------------- #
+@rule NormalMeanVariance(:out, Marginalisation) (q_μ::PointMass, q_v::PointMass) = begin
+    @logscale 0
+    NormalMeanVariance(mean(q_μ), mean(q_v))
+end
+
 @rule NormalMeanVariance(:out, Marginalisation) (q_μ::Any, q_v::Any) = NormalMeanVariance(mean(q_μ), mean(q_v))
 
 @rule NormalMeanVariance(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, q_v::Any) = begin

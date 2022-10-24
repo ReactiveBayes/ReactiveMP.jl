@@ -114,6 +114,12 @@ function multiply_messages(prod_parametrisation, left_dist::Distribution, left_a
     return new_dist, new_addons
 end
 
+function multiply_messages(prod_parametrisation, left_dist::Distribution, left_addons::Nothing, right_dist::Distribution, right_addons::Nothing)
+    # compute new distribution
+    new_dist = prod(prod_parametrisation, left_dist, right_dist)
+    return new_dist, nothing
+end
+
 function multiply_messages(prod_parametrisation, left_dist::Distribution, left_addons, right_dist::Missing, right_addons::Nothing)
     return left_dist, left_addons
 end

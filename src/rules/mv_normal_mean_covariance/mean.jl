@@ -14,6 +14,11 @@ end
 
 # Variational                       # 
 # --------------------------------- #
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (q_out::PointMass, q_Σ::PointMass) = begin
+    @logscale 0
+    return MvNormalMeanCovariance(mean(q_out), mean(q_Σ))
+end
+
 @rule MvNormalMeanCovariance(:μ, Marginalisation) (q_out::Any, q_Σ::Any) =
     MvNormalMeanCovariance(mean(q_out), mean(q_Σ))
 

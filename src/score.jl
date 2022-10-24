@@ -157,7 +157,7 @@ score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
 
 function score(::DifferentialEntropy, marginal::Marginal{<:NamedTuple})
     compute_score = let is_marginal_clamped = is_clamped(marginal), is_marginal_initial = is_initial(marginal)
-        (data) -> score(DifferentialEntropy(), Marginal(data, is_marginal_clamped, is_marginal_initial))
+        (data) -> score(DifferentialEntropy(), Marginal(data, is_marginal_clamped, is_marginal_initial, nothing))
     end
 
     return mapreduce(compute_score, +, values(getdata(marginal)))

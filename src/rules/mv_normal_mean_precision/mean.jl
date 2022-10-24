@@ -14,6 +14,11 @@ end
 
 # Variational                       # 
 # --------------------------------- #
+@rule MvNormalMeanPrecision(:μ, Marginalisation) (q_out::PointMass, q_Λ::PointMass) = begin
+    @logscale 0
+    return MvNormalMeanPrecision(mean(q_out), mean(q_Λ))
+end
+
 @rule MvNormalMeanPrecision(:μ, Marginalisation) (q_out::Any, q_Λ::Any) = MvNormalMeanPrecision(mean(q_out), mean(q_Λ))
 
 @rule MvNormalMeanPrecision(:μ, Marginalisation) (m_out::PointMass, q_Λ::Any) =

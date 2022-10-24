@@ -155,7 +155,7 @@ end
             AverageEnergy(),
             NormalMeanPrecision,
             Val{(:out, :μ, :τ)},
-            map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])),
+            map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])),
             nothing
         )
     end
@@ -173,7 +173,7 @@ end
             AverageEnergy(),
             MvNormalMeanPrecision,
             Val{(:out, :μ, :Λ)},
-            map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])),
+            map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])),
             nothing
         )
     end
@@ -191,7 +191,7 @@ end
             AverageEnergy(),
             NormalMeanPrecision,
             Val{(:out, :μ, :τ)},
-            map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])),
+            map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])),
             nothing
         )
     end
@@ -209,7 +209,7 @@ end
             AverageEnergy(),
             MvNormalMeanPrecision,
             Val{(:out, :μ, :Λ)},
-            map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])),
+            map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])),
             nothing
         )
     end

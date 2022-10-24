@@ -1,6 +1,11 @@
 
-@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass, meta::Union{<:AbstractCorrection, Nothing}) =
-    PointMass(mean(m_A) \ mean(m_out))
+@rule typeof(*)(:in, Marginalisation) (
+    m_out::PointMass, 
+    m_A::PointMass, 
+    meta::Union{<:AbstractCorrection, Nothing}
+) = begin
+    return PointMass(mean(m_A) \ mean(m_out))
+end
 
 @rule typeof(*)(:in, Marginalisation) (
     m_out::GammaDistributionsFamily,

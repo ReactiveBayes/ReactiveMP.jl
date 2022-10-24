@@ -1,6 +1,11 @@
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) =
-    PointMass(mean(m_A) * mean(m_in))
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass, 
+    m_in::PointMass, 
+    meta::Union{<:AbstractCorrection, Nothing}
+) = begin
+    return PointMass(mean(m_A) * mean(m_in))
+end
 
 @rule typeof(*)(:out, Marginalisation) (
     m_A::PointMass{<:Real},
@@ -13,9 +18,10 @@ end
 @rule typeof(*)(:out, Marginalisation) (
     m_A::GammaDistributionsFamily,
     m_in::PointMass{<:Real},
-    meta::Union{<:AbstractCorrection, Nothing}
+    meta::Union{<:AbstractCorrection, Nothing},
+    addons::Union{Tuple, Nothing}
 ) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
 end
 
 @rule typeof(*)(:out, Marginalisation) (
@@ -31,9 +37,10 @@ end
 @rule typeof(*)(:out, Marginalisation) (
     m_A::F,
     m_in::PointMass{<:AbstractMatrix},
-    meta::Union{<:AbstractCorrection, Nothing}
+    meta::Union{<:AbstractCorrection, Nothing},
+    addons::Union{Tuple, Nothing}
 ) where {F <: NormalDistributionsFamily} = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
 end
 
 #------------------------
@@ -69,9 +76,10 @@ end
 @rule typeof(*)(:out, Marginalisation) (
     m_A::UnivariateNormalDistributionsFamily,
     m_in::PointMass{<:AbstractVector},
-    meta::Union{<:AbstractCorrection, Nothing}
+    meta::Union{<:AbstractCorrection, Nothing},
+    addons::Union{Tuple, Nothing}
 ) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
 end
 
 #------------------------
@@ -91,8 +99,9 @@ end
 @rule typeof(*)(:out, Marginalisation) (
     m_A::UnivariateNormalDistributionsFamily,
     m_in::PointMass{<:Real},
-    meta::Union{<:AbstractCorrection, Nothing}
+    meta::Union{<:AbstractCorrection, Nothing},
+    addons::Union{Tuple, Nothing}
 ) =
     begin
-        return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
+        return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
     end

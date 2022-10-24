@@ -198,7 +198,7 @@ function (mapping::MarginalMapping)(dependencies)
         mapping.factornode
     )
 
-    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
+    return Marginal(marginal, is_marginal_clamped, is_marginal_initial, nothing)
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{T, M}(mapping)

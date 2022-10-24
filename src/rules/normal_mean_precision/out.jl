@@ -14,6 +14,11 @@ end
 
 # Variational                       # 
 # --------------------------------- #
+@rule NormalMeanPrecision(:out, Marginalisation) (q_μ::PointMass, q_τ::PointMass) = begin
+    @logscale 0
+    NormalMeanPrecision(mean(q_μ), mean(q_τ))
+end
+
 @rule NormalMeanPrecision(:out, Marginalisation) (q_μ::Any, q_τ::Any) = NormalMeanPrecision(mean(q_μ), mean(q_τ))
 
 @rule NormalMeanPrecision(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, q_τ::Any) = begin

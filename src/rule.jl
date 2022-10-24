@@ -278,7 +278,7 @@ macro rule(fform, lambda)
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
         error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_, ::addonstype_) | (inputs__,)) ||
+    @capture(args, (inputs__, meta::metatype_, addons::addonstype_) | (inputs__, meta::metatype_) | (inputs__, addons::addonstype_) | (inputs__,)) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
     # check for number of return statements
@@ -443,7 +443,7 @@ macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) ||
         error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(args, (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__,)) ||
+    @capture(args, (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__, meta = meta_) | (inputs__,)) ||
         error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
@@ -462,8 +462,11 @@ macro call_rule(fform, args)
 
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
+    distributionsym = gensym(:distributionsym)
+    addonsym = gensym(:addonsym)
+
     output = quote
-        ReactiveMP.rule(
+        $distributionsym, $addonsym = ReactiveMP.rule(
             $fbottomtype,
             $on_arg,
             $(vconstraint)(),
@@ -474,7 +477,8 @@ macro call_rule(fform, args)
             $meta,
             $addons,
             nothing
-        )
+        );
+        $distributionsym
     end
 
     return esc(output)
@@ -595,12 +599,12 @@ macro test_rules(options, on, test_sequence)
 
             for m_bigf_input in modified_bigf_inputs
                 m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
-                output_s = gensym()
+                output_dist = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_s = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
-                        @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output)
+                        local $output_dist = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
+                        @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
+                        @test ReactiveMP.is_typeof_equal($output_dist, $m_bigf_output)
                     end
                 end)
             end
@@ -802,11 +806,11 @@ macro test_marginalrules(options, on, test_sequence)
 
             for m_f32_input in modified_f32_inputs
                 m_f32_output = m_f32_input[2] ? MacroHelpers.expression_convert_eltype(Float32, output) : output
-                output_s = gensym()
+                output_dist = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_s = ReactiveMP.@call_marginalrule($on, $(m_f32_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)
+                        local $output_dist = ReactiveMP.@call_marginalrule($on, $(m_f32_input[1]))
+                        @test ReactiveMP.custom_isapprox($output_dist, $m_f32_output; atol = $float32_atol)
                         # @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output) # broken
                     end
                 end)
@@ -823,11 +827,11 @@ macro test_marginalrules(options, on, test_sequence)
 
             for m_bigf_input in modified_bigf_inputs
                 m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
-                output_s = gensym()
+                output_dist = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_s = ReactiveMP.@call_marginalrule($on, $(m_bigf_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
+                        local $output_dist = ReactiveMP.@call_marginalrule($on, $(m_bigf_input[1]))
+                        @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
                         # @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output) # broken
                     end
                 end)
