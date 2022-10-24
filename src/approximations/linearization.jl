@@ -1,5 +1,18 @@
 export Linearization
 
+"""
+The `Linearization` structure defines the approxumationg method of the `Delta` and `Flow` factor nodes. 
+This method performs a local linearization of f around expansion point x.
+
+The `Linearization` structure with default parameters can be constructed as `Linearization()`.
+
+The `Linearization` structure is used inside the `DeltaMeta` or `FlowMeta` structures and can be included as:
+```
+    y ~ f(x) where { meta = DeltaMeta(method = Linearization()) }
+    # or
+    y ~ f(x) where { meta = FlowMeta(method = Linearization()) }
+```
+"""
 struct Linearization <: AbstractApproximationMethod end
 
 # ported from ForneyLab.jl

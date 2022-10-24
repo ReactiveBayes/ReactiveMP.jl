@@ -7,7 +7,7 @@ export DeltaFn, DeltaFnNode, DeltaMeta
 
 # Arguments
 - `method`: required, the approximation method, currently supported methods are [`Linearization`](@ref), [`Unscented`](@ref) and [`CVI`](@ref).
-- `inverse`: optional, some methods benefit from the explicit definition of the inverse function.
+- `inverse`: optional, if no inverse provided, the backward rule will be computed based on RTS (Petersen et al. 2018; On Approximate Delta Gaussian Message Passing on Factor Graphs)
 
 Is is also possible to pass the `AbstractApproximationMethod` to the meta of the delta node directly. In this case `inverse` is set to `nothing`.
 
