@@ -145,7 +145,7 @@ function score(::AverageEnergy, fform, ::Type{<:Val}, marginals::Tuple{<:Margina
     joint = marginals[1]
 
     transform = let is_joint_clamped = is_clamped(joint), is_joint_initial = is_initial(joint)
-        (data) -> Marginal(data, is_joint_clamped, is_joint_initial)
+        (data) -> Marginal(data, is_joint_clamped, is_joint_initial, nothing)
     end
 
     return score(AverageEnergy(), fform, Val{N}, map(transform, values(getdata(joint))), meta)

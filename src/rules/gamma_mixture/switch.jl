@@ -9,7 +9,7 @@
             AverageEnergy(),
             GammaShapeRate,
             Val{(:out, :α, :β)},
-            map((q) -> Marginal(q, false, false), (q_out, a, b)),
+            map((q) -> Marginal(q, false, false, nothing), (q_out, a, b)),
             nothing
         )
     end
