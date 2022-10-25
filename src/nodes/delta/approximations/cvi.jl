@@ -18,7 +18,7 @@ cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 CVIApproximation
 
 The `CVIApproximation` structure defines the approximation method of the `Delta` factor node.
-This method performs an approximation of the messages through the `Delta` factor node through Extended Variational Message Passing (EVMP) (See [`https://research.tue.nl/en/publications/extended-variational-message-passing-for-automated-approximate-ba`](@ref)).
+This method performs an approximation of the messages through the `Delta` factor node with Extended Variational Message Passing (EVMP) (See [`Extended Variational Message Passing for Automated Approximate Bayesian Inference`](@ref https://research.tue.nl/en/publications/extended-variational-message-passing-for-automated-approximate-ba)).
 More specifically, it contains the hyperparameters used for the EVMP computataion flow.
 
 Arguments
