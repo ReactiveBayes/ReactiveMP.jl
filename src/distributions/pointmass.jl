@@ -115,12 +115,21 @@ Base.isapprox(left::PointMass, right::PointMass; kwargs...) =
 Base.isapprox(left::PointMass, right; kwargs...) = false
 Base.isapprox(left, right::PointMass; kwargs...) = false
 
+function Random.rand!(::AbstractRNG, dist::PointMass{P}, container::AbstractVector{P}) where {P}
+    point = mean(dist)
+    for i in 1:length(container)
+        container[i] = point
+    end
+    container
+end
+
 function Random.rand(::AbstractRNG, dist::PointMass)
     return mean(dist)
 end
 
-function Random.rand(::AbstractRNG, dist::PointMass, size::Int64)
-    return fill(mean(dist), size)
+function Random.rand(rng::AbstractRNG, dist::PointMass{P}, size::Int64) where {P}
+    container = Vector{P}(undef, size)
+    return rand!(rng, dist, container)
 end
 
 function Random.rand(dist::PointMass, size::Int64)
