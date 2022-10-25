@@ -14,19 +14,20 @@ end
 cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 
-"""
+@doc raw"""
 CVIApproximation
 
-To call the delta node with CVI method, you need to specify its meta to CVIApproximation.
-CVIApproximation object is a container for 4 CVI parameters:
-    rng - random number generator
-    n_samples - number of samples for our rule
-    num_iterations - number of iteration inside renderCVI
-    opt - optimizer, which will be used for iteration call inside render CVI
+The `CVIApproximation` structure defines the approximation method of the `Delta` factor node.
+This method performs an approximation of the messages through the `Delta` factor node through Extended Variational Message Passing (EVMP) (See [`https://research.tue.nl/en/publications/extended-variational-message-passing-for-automated-approximate-ba`](@ref)).
+More specifically, it contains the hyperparameters used for the EVMP computataion flow.
 
-CVIApproximation has two constructors, one with all parameters specified and one where rng is missed (in this case, the global rng will be used in its place):
-    `CVIApproximation(rng, number of out sample, number of iterations inside render cvi, optimizer)`: all parameters specified
-    `CVIApproximation(number of out samples, number of iterations inside render cvi, optimizer)`: you will use global rng
+Arguments
+ - `rng`: random number generator
+ - `n_samples`: number of samples to use for message approximation (more better)
+ - `num_iterations`: number of iteration of the inner EVMP optimization (more better)
+ - `opt`: optimizer, which will be used to perform EVMP step
+
+The `CVIApproximation` structure with global random number generator can be constructed as `CVIApproximation(n_samples, num_iterations, optimizer)`.
 """
 struct CVIApproximation{R, O}
     rng::R
