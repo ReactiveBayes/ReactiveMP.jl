@@ -186,7 +186,7 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
             output.args = map(v -> apply_proxy(v, proxy), any.args)
             return output
         end
-        return :($(proxy)($any, false, false, ()))
+        return :($(proxy)($any, false, false, nothing))
     end
 
     names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix+1):end])), names)...))})
@@ -330,6 +330,28 @@ macro rule(fform, lambda)
                     _addons = ()
                     _message = $(MacroHelpers.remove_returns(body))
                     return _message, _addons
+                end
+            end
+        )
+        $(
+            rule_function_expression(
+                fuppertype,
+                on_type,
+                vconstraint,
+                m_names,
+                m_types,
+                q_names,
+                q_types,
+                metatype,
+                :Nothing,
+                whereargs
+            ) do
+                return quote
+                    $(on_index_init)
+                    $(m_init_block...)
+                    $(q_init_block...)
+                    _message = $(MacroHelpers.remove_returns(body))
+                    return _message, nothing
                 end
             end
         )

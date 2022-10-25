@@ -27,7 +27,7 @@ See also: [`Message`](@ref)
 function materialize! end
 
 """
-    Message{D} <: AbstractMessage
+    Message{D, A} <: AbstractMessage
 
 `Message` structure encodes a **Belief Propagation** message, which holds some `data` that usually a probability distribution, but can also be an arbitrary object.
 Message acts as a proxy structure to `data` object and proxies most of the statistical functions, e.g. `mean`, `mode`, `cov` etc.
@@ -36,6 +36,7 @@ Message acts as a proxy structure to `data` object and proxies most of the stati
 - `data::D`: message always holds some data object associated with it
 - `is_clamped::Bool`, specifies if this message is clamped
 - `is_initial::Bool`, specifies if this message is initial
+- `addons::A`, specifies the addons of the message
 
 # Example 
 
@@ -43,7 +44,7 @@ Message acts as a proxy structure to `data` object and proxies most of the stati
 julia> distribution = Gamma(10.0, 2.0)
 Gamma{Float64}(α=10.0, θ=2.0)
 
-julia> message = Message(distribution, false, true)
+julia> message = Message(distribution, false, true, nothing)
 Message(Gamma{Float64}(α=10.0, θ=2.0))
 
 julia> mean(message) 
@@ -80,6 +81,8 @@ materialize!(message::Message) = message
 
 Base.show(io::IO, message::Message) =
     print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
+Base.show(io::IO, message::Message{T, Nothing}) where {T} =
+    print(io, string("Message(", getdata(message), ")"))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
@@ -291,7 +294,7 @@ function connect!(message::MessageObservable, source)
 end
 
 function setmessage!(message::MessageObservable, value)
-    next!(message.subject, Message(value, false, true, ()))
+    next!(message.subject, Message(value, false, true, nothing))
     return nothing
 end
 

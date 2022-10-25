@@ -133,7 +133,7 @@ function connect!(marginal::MarginalObservable, source)
 end
 
 function setmarginal!(marginal::MarginalObservable, value)
-    next!(marginal.subject, Marginal(value, false, true, ()))
+    next!(marginal.subject, Marginal(value, false, true, nothing))
     return nothing
 end
 
