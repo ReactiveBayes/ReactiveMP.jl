@@ -12,7 +12,6 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             for i in 1:10
                 @test ReactiveMP.sampletype(Wishart(i, diageye(i))) === Matrix{Float64}
             end
-            @test ReactiveMP.sampletype(Wishart(1.0f0, [1.0f0 0; 0 1.0f0])) === Matrix{Float32}
         end
         @testset "MvNormalMeanPrecision" begin
             @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0, 1.0])) === Vector{Float64}
