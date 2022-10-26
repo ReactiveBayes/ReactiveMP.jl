@@ -14,7 +14,8 @@ conjugate_type(::Type{<:MvNormalMeanCovariance}, ::Type{Val{:Σ}})   = InverseWi
     m_out, v_out   = mean_cov(q_out)
     inv_m_Σ        = mean(cholinv, q_Σ)
 
-    result = zero(promote_type(ReactiveMP.sampletype(q_out), ReactiveMP.sampletype(q_μ), ReactiveMP.sampletype(q_Σ)))
+    result =
+        zero(promote_type(ReactiveMP.sampletype(q_out), ReactiveMP.sampletype(q_μ), ReactiveMP.sampletype(q_Σ)))
     result += mean(logdet, q_Σ)
     result += dim * log2π
     @inbounds for k1 in 1:dim, k2 in 1:dim   # optimize trace operation (indices can be interchanges because of symmetry)

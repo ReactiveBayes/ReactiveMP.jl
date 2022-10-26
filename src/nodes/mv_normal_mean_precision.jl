@@ -15,7 +15,8 @@ conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:Λ}})   = Wishart
     m_out, v_out   = mean_cov(q_out)
     m_Λ            = mean(q_Λ)
 
-    result = zero(promote_type(ReactiveMP.sampletype(q_out), ReactiveMP.sampletype(q_μ), ReactiveMP.sampletype(q_Λ)))
+    result =
+        zero(promote_type(ReactiveMP.sampletype(q_out), ReactiveMP.sampletype(q_μ), ReactiveMP.sampletype(q_Λ)))
     result += dim * log2π
     result -= mean(logdet, q_Λ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
@@ -38,7 +39,8 @@ end
     m_out, v_out   = mean_cov(q_out)
     df_Λ, S_Λ      = params(q_Λ)  # prevent allocation of mean matrix
 
-    result = zero(promote_type(ReactiveMP.sampletype(q_out), ReactiveMP.sampletype(q_μ), ReactiveMP.sampletype(q_Λ)))
+    result =
+        zero(promote_type(ReactiveMP.sampletype(q_out), ReactiveMP.sampletype(q_μ), ReactiveMP.sampletype(q_Λ)))
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
