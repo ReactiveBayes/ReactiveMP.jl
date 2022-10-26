@@ -1,4 +1,4 @@
-sampletype(::Any) = error("sampletype for arbitrary input is not implemented")
+sampletype(obj::Any) = error("sampletype for arbitrary input is not implemented for $(typeof(obj))")
 samplefloattype(obj) = deep_eltype(sampletype(obj))
 variate_form2type(::Type{Univariate}, ::Type{T}) where {T} = T
 variate_form2type(::Type{Multivariate}, ::Type{T}) where {T} = Vector{T}

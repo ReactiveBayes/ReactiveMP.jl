@@ -77,7 +77,7 @@ end
     ξout, wout = weightedmean_precision(m_out)
     ξin1 = wout * mean(m_in2)
     ξin1 .-= ξout
-    T = promote_type(T1, eltype(m_in2))
+    T = promote_type(T1, samplefloattype(m_in2))
     ξin1 .*= -one(T)
     return MvNormalWeightedMeanPrecision(ξin1, wout)
 end

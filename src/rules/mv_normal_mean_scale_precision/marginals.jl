@@ -8,7 +8,7 @@ export marginalrule
     return (
         out = prod(
             ProdAnalytical(),
-            MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * diageye(eltype(m_out), ndims(m_out))),
+            MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * diageye(samplefloattype(m_out), ndims(m_out))),
             m_out
         ),
         μ = m_μ,
@@ -40,7 +40,7 @@ end
     xi_y, W_y = weightedmean_precision(m_out)
     xi_m, W_m = weightedmean_precision(m_μ)
 
-    W_bar = mean(m_γ) * diageye(eltype(m_out), ndims(m_out))
+    W_bar = mean(m_γ) * diageye(samplefloattype(m_out), ndims(m_out))
 
     T = promote_type(eltype(W_bar), eltype(W_y), eltype(W_m))
     d = length(xi_y)
@@ -104,7 +104,7 @@ end
             out = m_out,
             μ = prod(
                 ProdAnalytical(),
-                MvNormalMeanPrecision(mean(m_out), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))),
+                MvNormalMeanPrecision(mean(m_out), mean(q_γ) * diageye(samplefloattype(m_out), ndims(m_out))),
                 m_μ
             )
         )
@@ -119,7 +119,7 @@ end
         return (
             out = prod(
                 ProdAnalytical(),
-                MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))),
+                MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * diageye(samplefloattype(m_out), ndims(m_out))),
                 m_out
             ),
             μ = m_μ
