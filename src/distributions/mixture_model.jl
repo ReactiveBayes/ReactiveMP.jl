@@ -4,7 +4,7 @@ import Distributions: MixtureModel
 
 function MixtureModel(components::Vector, prior::Bernoulli)
     @assert length(components) == 2 "A mixture model can only be specified with a Bernoulli distribution, if there are 2 components."
-    prior_cat = Categorical([prior.p, 1-prior.p])
+    prior_cat = Categorical([prior.p, 1 - prior.p])
     return MixtureModel(components, prior_cat)
 end
 
@@ -45,4 +45,5 @@ function prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::MixtureMod
 
     return logsumexp(logscales_new)
 end
-prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::Any, right_dist::MixtureModel) = prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
+prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::Any, right_dist::MixtureModel) =
+    prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
