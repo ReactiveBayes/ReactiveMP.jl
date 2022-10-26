@@ -94,6 +94,8 @@ include("pipeline/vague.jl")
 
 include("rule.jl")
 
+include("sampletype.jl")
+
 include("node.jl")
 include("score.jl")
 
