@@ -108,7 +108,8 @@ const DEFAULT_SAMPLE_LIST_N_SAMPLES = 5000
 ## Utility functions
 
 Base.eltype(::Type{<:SampleList{D, S, W}}) where {D, S, W} = Tuple{sample_list_eltype(SampleList, D, S), eltype(W)}
-sampletype(samplelist::SampleList{D, S, W, C, M}) where {D, S, W, C, M}= variate_form2type(variate_form(samplelist), eltype(W))
+sampletype(samplelist::SampleList{D, S, W, C, M}) where {D, S, W, C, M} =
+    variate_form2type(variate_form(samplelist), eltype(W))
 
 sample_list_eltype(::Type{SampleList}, ndims::Tuple{}, ::Type{S}) where {S}         = eltype(S)
 sample_list_eltype(::Type{SampleList}, ndims::Tuple{Int}, ::Type{S}) where {S}      = SVector{ndims[1], eltype(S)}
