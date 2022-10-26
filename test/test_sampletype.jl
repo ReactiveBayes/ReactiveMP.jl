@@ -8,13 +8,19 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
 @testset "sampletype" begin
     @testset "distributions" begin
+        @testset "Wishart" begin
+            for i in 1:10
+                @test ReactiveMP.sampletype(Wishart(i, diageye(i))) === Matrix{Float64}
+            end
+            @test ReactiveMP.sampletype(Wishart(1.0f0, [1.0f0 0; 0 1.0f0])) === Matrix{Float32}
+        end
         @testset "MvNormalMeanPrecision" begin
-            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0, 1.0])) === Float64
-            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0, 1.0], [1.0, 1.0])) === Float64
-            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1, 1])) === Float64
-            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1, 1], [1, 1])) === Float64
-            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0f0, 1.0f0])) === Float32
-            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0f0, 1.0f0], [1.0f0, 1.0f0])) === Float32
+            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0, 1.0])) === Vector{Float64}
+            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0, 1.0], [1.0, 1.0])) === Vector{Float64}
+            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1, 1])) === Vector{Float64}
+            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1, 1], [1, 1])) === Vector{Float64}
+            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0f0, 1.0f0])) === Vector{Float32}
+            @test ReactiveMP.sampletype(MvNormalMeanPrecision([1.0f0, 1.0f0], [1.0f0, 1.0f0])) === Vector{Float32}
         end
 
         @testset "NormalMeanPrecision" begin
@@ -59,8 +65,8 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
     @testset "samplelist" begin
         @test ReactiveMP.sampletype(SampleList([1, 1.0])) === Float64
-        @test ReactiveMP.sampletype(SampleList([[1, 1.0], [1.0, 1.0]])) === Float64
-        @test ReactiveMP.sampletype(SampleList([[1 1; 1.0 1], [1.0 1; 1.0 1]])) === Float64
+        @test ReactiveMP.sampletype(SampleList([[1, 1.0], [1.0, 1.0]])) === Vector{Float64}
+        @test ReactiveMP.sampletype(SampleList([[1 1; 1.0 1], [1.0 1; 1.0 1]])) === Matrix{Float64}
     end
 end
 
