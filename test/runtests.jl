@@ -244,6 +244,8 @@ end
     addtests(testrunner, "distributions/test_wishart.jl")
     addtests(testrunner, "distributions/test_wishart_inverse.jl")
     addtests(testrunner, "distributions/test_sample_list.jl")
+    addtests(testrunner, "distributions/test_sampletype.jl")
+    addtests(testrunner, "distributions/test_samplefloattype.jl")
 
     addtests(testrunner, "test_message.jl")
 
