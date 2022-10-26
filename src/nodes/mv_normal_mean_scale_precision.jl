@@ -19,7 +19,7 @@ end
     m_Λ            = mean(q_γ) * diageye(dim)
 
     result =
-        zero(promote_type(ReactiveMP.sampletype(q_out), ReactiveMP.sampletype(q_μ), ReactiveMP.sampletype(q_γ)))
+        zero(promote_type(eltype(m_mean), eltype(m_out), eltype(m_Λ)))
     result += dim * log2π
     result -= dim * mean(log, q_γ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
@@ -38,7 +38,7 @@ end
     m, V = mean_cov(q_out_μ)
     m_Λ  = mean(q_γ) * diageye(dim)
 
-    result = zero(promote_type(ReactiveMP.sampletype(q_out_μ), ReactiveMP.sampletype(q_γ)))
+    result = zero(promote_type(eltype(m), eltype(m_Λ)))
     result += dim * log2π
     result -= dim * mean(log, q_γ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
