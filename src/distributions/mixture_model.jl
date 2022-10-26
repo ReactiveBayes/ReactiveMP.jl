@@ -2,6 +2,12 @@ export MixtureModel
 
 import Distributions: MixtureModel
 
+function MixtureModel(components::Vector, prior::Bernoulli)
+    @assert length(components) == 2 "A mixture model can only be specified with a Bernoulli distribution, if there are 2 components."
+    prior_cat = Categorical([prior.p, 1-prior.p])
+    return MixtureModel(components, prior_cat)
+end
+
 function prod(::ProdAnalytical, left::MixtureModel, right::Any)
 
     # get prior weights and components
