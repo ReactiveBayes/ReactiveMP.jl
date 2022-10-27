@@ -163,98 +163,6 @@ Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.
 """An alias for the [`JointNormal`](@ref)."""
 const JointGaussian = JointNormal
 
-# Approximation methods extensions for Normal distributions family
-
-# This function extends the `Linearization` approximation method in case if all inputs are from the `NormalDistributionsFamily`
-function approximate(method::Linearization, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
-
-    # Collect statistics for the inputs of the function `f`
-    statistics = mean_cov.(distributions)
-    means      = first.(statistics)
-    covs       = last.(statistics)
-
-    # Compute the local approximation for the function `f`
-    (A, b) = approximate(method, f, means)
-
-    # Execute the 'joint' message in the linearized version of `f`
-    joint       = convert(JointNormal, means, covs)
-    jmean, jcov = mean_cov(joint)
-
-    m = A * jmean + b
-    V = A * jcov * A'
-
-    return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
-end
-
-# This function extends the `Unscented` approximation method in case if all inputs are from the `NormalDistributionsFamily`
-function approximate(method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
-    statistics = mean_cov.(distributions)
-    means      = first.(statistics)
-    covs       = last.(statistics)
-
-    μ_tilde, Σ_tilde = approximate(method, f, means, covs)
-
-    return convert(promote_variate_type(variate_form(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
-end
-
-# Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
-
-get_df_m(
-    ::Type{<:UnivariateNormalNaturalParameters},
-    ::Type{<:UnivariateGaussianDistributionsFamily},
-    logp_nc::Function
-) = (z) -> ForwardDiff.derivative(logp_nc, z)
-
-get_df_m(
-    ::Type{<:MultivariateNormalNaturalParameters},
-    ::Type{<:MultivariateGaussianDistributionsFamily},
-    logp_nc::Function
-) = (z) -> ForwardDiff.gradient(logp_nc, z)
-
-get_df_v(
-    ::Type{<:UnivariateNormalNaturalParameters},
-    ::Type{<:UnivariateGaussianDistributionsFamily},
-    df_m::Function
-) = (z) -> ForwardDiff.derivative(df_m, z)
-
-get_df_v(::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
-    (z) -> ForwardDiff.jacobian(df_m, z)
-
-function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
-    η = naturalparams(initial)
-    λ = naturalparams(initial)
-    T = typeof(η)
-
-    rng = something(approximation.rng, Random.GLOBAL_RNG)
-    opt = approximation.opt
-    its = approximation.num_iterations
-
-    df_m = (z) -> get_df_m(typeof(λ), typeof(initial), logp_nc)(z)
-    df_v = (z) -> get_df_v(typeof(λ), typeof(initial), df_m)(z) / 2
-
-    hasupdated = false
-
-    for _ in 1:its
-        q = convert(Distribution, λ)
-        z_s = rand(rng, q)
-        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
-        df_μ2 = df_v(z_s)
-        ∇f = as_naturalparams(T, df_μ1, df_μ2)
-        ∇ = λ - η - ∇f
-        λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
-        if isproper(λ_new)
-            λ = λ_new
-            hasupdated = true
-        end
-    end
-
-    if !hasupdated && approximation.warn
-        @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
-    end
-
-    return λ
-end
-
 # Variate forms promotion
 
 promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F
@@ -604,3 +512,95 @@ end
 isproper(params::UnivariateNormalNaturalParameters) = params.minus_half_precision < 0
 
 isproper(params::MultivariateNormalNaturalParameters) = isposdef(-params.minus_half_precision_matrix)
+
+# Approximation methods extensions for Normal distributions family
+
+# This function extends the `Linearization` approximation method in case if all inputs are from the `NormalDistributionsFamily`
+function approximate(method::Linearization, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
+
+    # Collect statistics for the inputs of the function `f`
+    statistics = mean_cov.(distributions)
+    means      = first.(statistics)
+    covs       = last.(statistics)
+
+    # Compute the local approximation for the function `f`
+    (A, b) = approximate(method, f, means)
+
+    # Execute the 'joint' message in the linearized version of `f`
+    joint       = convert(JointNormal, means, covs)
+    jmean, jcov = mean_cov(joint)
+
+    m = A * jmean + b
+    V = A * jcov * A'
+
+    return convert(promote_variate_type(variate_form(m), NormalMeanVariance), m, V)
+end
+
+# This function extends the `Unscented` approximation method in case if all inputs are from the `NormalDistributionsFamily`
+function approximate(method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
+    statistics = mean_cov.(distributions)
+    means      = first.(statistics)
+    covs       = last.(statistics)
+
+    μ_tilde, Σ_tilde = approximate(method, f, means, covs)
+
+    return convert(promote_variate_type(variate_form(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
+end
+
+# Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
+
+get_df_m(
+    ::Type{<:UnivariateNormalNaturalParameters},
+    ::Type{<:UnivariateGaussianDistributionsFamily},
+    logp_nc::Function
+) = (z) -> ForwardDiff.derivative(logp_nc, z)
+
+get_df_m(
+    ::Type{<:MultivariateNormalNaturalParameters},
+    ::Type{<:MultivariateGaussianDistributionsFamily},
+    logp_nc::Function
+) = (z) -> ForwardDiff.gradient(logp_nc, z)
+
+get_df_v(
+    ::Type{<:UnivariateNormalNaturalParameters},
+    ::Type{<:UnivariateGaussianDistributionsFamily},
+    df_m::Function
+) = (z) -> ForwardDiff.derivative(df_m, z)
+
+get_df_v(::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
+    (z) -> ForwardDiff.jacobian(df_m, z)
+
+function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
+    η = naturalparams(initial)
+    λ = naturalparams(initial)
+    T = typeof(η)
+
+    rng = something(approximation.rng, Random.GLOBAL_RNG)
+    opt = approximation.opt
+    its = approximation.num_iterations
+
+    df_m = (z) -> get_df_m(typeof(λ), typeof(initial), logp_nc)(z)
+    df_v = (z) -> get_df_v(typeof(λ), typeof(initial), df_m)(z) / 2
+
+    hasupdated = false
+
+    for _ in 1:its
+        q = convert(Distribution, λ)
+        z_s = rand(rng, q)
+        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
+        df_μ2 = df_v(z_s)
+        ∇f = as_naturalparams(T, df_μ1, df_μ2)
+        ∇ = λ - η - ∇f
+        λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
+        if isproper(λ_new)
+            λ = λ_new
+            hasupdated = true
+        end
+    end
+
+    if !hasupdated && approximation.warn
+        @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
+    end
+
+    return λ
+end

@@ -24,7 +24,7 @@ import ReactiveMP: FactorizedJoint
             end
         end
 
-        @testset "entopy" begin
+        @testset "entropy" begin
             for multipliers in vmultipliers
                 product = FactorizedJoint(multipliers)
                 @test entropy(product) ≈ mapreduce(entropy, +, multipliers)
