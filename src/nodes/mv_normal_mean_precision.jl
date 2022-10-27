@@ -15,7 +15,7 @@ conjugate_type(::Type{<:MvNormalMeanPrecision}, ::Type{Val{:Λ}})   = Wishart
     m_out, v_out   = mean_cov(q_out)
     m_Λ            = mean(q_Λ)
 
-    result = zero(promote_type(eltype(q_out), eltype(q_μ), eltype(q_Λ)))
+    result = zero(promote_type(eltype(m_mean), eltype(m_out), eltype(m_Λ)))
     result += dim * log2π
     result -= mean(logdet, q_Λ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
@@ -38,7 +38,7 @@ end
     m_out, v_out   = mean_cov(q_out)
     df_Λ, S_Λ      = params(q_Λ)  # prevent allocation of mean matrix
 
-    result = zero(promote_type(eltype(q_out), eltype(q_μ), eltype(q_Λ)))
+    result = zero(promote_type(eltype(m_mean), eltype(m_out), eltype(S_Λ)))
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
@@ -60,7 +60,7 @@ end
     m, V = mean_cov(q_out_μ)
     m_Λ  = mean(q_Λ)
 
-    result = zero(promote_type(eltype(q_out_μ), eltype(q_Λ)))
+    result = zero(promote_type(eltype(m), eltype(m_Λ)))
     result += dim * log2π
     result -= mean(logdet, q_Λ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
@@ -84,7 +84,7 @@ end
     m, V      = mean_cov(q_out_μ)
     df_Λ, S_Λ = params(q_Λ)     # prevent allocation of mean matrix
 
-    result = zero(promote_type(eltype(q_out_μ), eltype(q_Λ)))
+    result = zero(promote_type(eltype(m), eltype(S_Λ)))
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)

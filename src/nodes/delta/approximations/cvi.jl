@@ -25,7 +25,7 @@ Arguments
  - `n_samples`: number of samples to use for statistics approximation
  - `num_iterations`: number of iteration for the natural parameters gradient optimization
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
- - `warn`: optional, defaults to true, enables or disables warnings related to the optimization steps
+ - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
 
 !!! note 
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
@@ -40,10 +40,10 @@ struct CVIApproximation{R, O}
 end
 
 function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return CVIApproximation(rng, n_samples, num_iterations, opt, true)
+    return CVIApproximation(rng, n_samples, num_iterations, opt, false)
 end
 
-function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = true) where {O}
+function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
     return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, warn)
 end
 
