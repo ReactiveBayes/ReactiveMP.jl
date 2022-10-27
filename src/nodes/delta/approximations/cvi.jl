@@ -14,30 +14,37 @@ end
 cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 
-@doc raw"""
-CVIApproximation
+"""
+    CVIApproximation
 
 The `CVIApproximation` structure defines the approximation method of the `Delta` factor node.
-This method performs an approximation of the messages through the `Delta` factor node with Extended Variational Message Passing (EVMP) (See [`Extended Variational Message Passing for Automated Approximate Bayesian Inference`](@ref https://research.tue.nl/en/publications/extended-variational-message-passing-for-automated-approximate-ba)).
-More specifically, it contains the hyperparameters used for the EVMP computataion flow.
+This method performs an approximation of the messages through the `Delta` factor node with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
 
 Arguments
  - `rng`: random number generator
- - `n_samples`: number of samples to use for message approximation (more better)
- - `num_iterations`: number of iteration of the inner EVMP optimization (more better)
- - `opt`: optimizer, which will be used to perform EVMP step
+ - `n_samples`: number of samples to use for statistics approximation
+ - `num_iterations`: number of iteration for the natural parameters gradient optimization
+ - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
+ - `warn`: optional, defaults to true, enables or disables warnings related to the optimization steps
 
-The `CVIApproximation` structure with global random number generator can be constructed as `CVIApproximation(n_samples, num_iterations, optimizer)`.
+!!! note 
+    Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
+
 """
 struct CVIApproximation{R, O}
     rng::R
     n_samples::Int
     num_iterations::Int
     opt::O
+    warn::Bool
 end
 
-function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt)
+function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
+    return CVIApproximation(rng, n_samples, num_iterations, opt, true)
+end
+
+function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = true) where {O}
+    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, warn)
 end
 
 """
@@ -72,20 +79,21 @@ get_df_v(
 get_df_v(::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
     (z) -> ForwardDiff.jacobian(df_m, z)
 
-function renderCVI(logp_nc::Function,
-    num_iterations::Int,
-    opt,
-    rng,
-    λ_init::T,
-    msg_in::GaussianDistributionsFamily) where {T <: NaturalParameters}
-    η = naturalparams(msg_in)
-    λ = deepcopy(λ_init)
+function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
+    η = naturalparams(initial)
+    λ = naturalparams(initial)
+    T = typeof(η)
 
-    df_m = (z) -> get_df_m(typeof(λ_init), typeof(msg_in), logp_nc)(z)
-    df_v = (z) -> 0.5 * get_df_v(typeof(λ_init), typeof(msg_in), df_m)(z)
-    rng = something(rng, Random.GLOBAL_RNG)
+    rng = something(approximation.rng, Random.GLOBAL_RNG)
+    opt = approximation.opt
+    its = approximation.num_iterations
 
-    for _ in 1:num_iterations
+    df_m = (z) -> get_df_m(typeof(λ), typeof(initial), logp_nc)(z)
+    df_v = (z) -> get_df_v(typeof(λ), typeof(initial), df_m)(z) / 2
+
+    hasupdated = false
+
+    for _ in 1:its
         q = convert(Distribution, λ)
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
@@ -95,30 +103,33 @@ function renderCVI(logp_nc::Function,
         λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
         if isproper(λ_new)
             λ = λ_new
+            hasupdated = true
         end
+    end
+
+    if !hasupdated && approximation.warn
+        @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
     end
 
     return λ
 end
 
-function renderCVI(logp_nc::Function,
-    num_iterations::Int,
-    opt::Any,
-    rng::Any,
-    λ_init::T,
-    msg_in::Any) where {T <: NaturalParameters}
-    η = naturalparams(msg_in)
-    λ = deepcopy(λ_init)
+function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where {F}
+    η = naturalparams(initial)
+    λ = naturalparams(initial)
+    T = typeof(η)
 
-    # convert lambda to vector
-    # work within loop with vector
-    rng = something(rng, Random.GLOBAL_RNG)
+    rng = something(approximation.rng, Random.GLOBAL_RNG)
+    opt = approximation.opt
+    its = approximation.num_iterations
+
+    hasupdated = false
 
     A = (vec_params) -> lognormalizer(as_naturalparams(T, vec_params))
     gradA = (vec_params) -> ForwardDiff.gradient(A, vec_params)
     Fisher = (vec_params) -> ForwardDiff.jacobian(gradA, vec_params)
 
-    for _ in 1:num_iterations
+    for _ in 1:its
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
 
@@ -130,12 +141,16 @@ function renderCVI(logp_nc::Function,
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
         ∇ = λ - η - as_naturalparams(T, ∇f)
         updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
+
         if isproper(updated)
             λ = updated
+            hasupdated = true
         end
     end
 
-    # convert vector result in parameters
+    if !hasupdated && approximation.warn
+        @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
+    end
 
     return λ
 end
