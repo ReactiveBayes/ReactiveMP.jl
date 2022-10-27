@@ -6,6 +6,7 @@ using Random
 using Distributions
 
 import ReactiveMP: @test_rules
+import ReactiveMP: FactorizedJoint
 
 g(x) = x
 
@@ -15,7 +16,7 @@ struct EmptyOptimizer end
     @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
         (
         input = (
-            q_ins = FactorProduct((NormalMeanVariance(),)),
+            q_ins = FactorizedJoint((NormalMeanVariance(),)),
             m_in = NormalMeanVariance(1, 2),
             meta = CVIApproximation(1, 1, EmptyOptimizer())
         ),

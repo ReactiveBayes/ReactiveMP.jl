@@ -8,7 +8,7 @@ using Flux
 using StableRNGs
 
 import ReactiveMP: @test_marginalrules
-import ReactiveMP: getmultipliers
+import ReactiveMP: FactorizedJoint, getmultipliers
 
 add_1 = (x::Real) -> x + 1
 
@@ -29,15 +29,15 @@ end
         @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{identity}(:ins) [
             (
                 input = (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorProduct((NormalWeightedMeanPrecision(1.0, 2.0),))
+                output = FactorizedJoint((NormalWeightedMeanPrecision(1.0, 2.0),))
             ),
             (
                 input = (m_out = NormalMeanVariance(2, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorProduct((NormalWeightedMeanPrecision(2.0, 2.0),))
+                output = FactorizedJoint((NormalWeightedMeanPrecision(2.0, 2.0),))
             ),
             (
                 input = (m_out = NormalMeanVariance(10, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorProduct((NormalWeightedMeanPrecision(10.0, 2.0),))
+                output = FactorizedJoint((NormalWeightedMeanPrecision(10.0, 2.0),))
             )
         ]
     end
@@ -49,15 +49,15 @@ end
         @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{identity}(:ins) [
             (
                 input = (m_out = MvGaussianMeanCovariance(ones(2)), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
-                output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2), diageye(2) * 2),))
+                output = FactorizedJoint((MvNormalWeightedMeanPrecision(ones(2), diageye(2) * 2),))
             ),
             (
                 input = (m_out = MvGaussianMeanCovariance(ones(2) * 10), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
-                output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2) * 10, diageye(2) * 2),))
+                output = FactorizedJoint((MvNormalWeightedMeanPrecision(ones(2) * 10, diageye(2) * 2),))
             ),
             (
                 input = (m_out = MvGaussianMeanCovariance(ones(2), [2 -1; -1 2]), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
-                output = FactorProduct(((MvNormalWeightedMeanPrecision(ones(2), [1+2/3 1/3; 1/3 1+2/3])),))
+                output = FactorizedJoint(((MvNormalWeightedMeanPrecision(ones(2), [1+2/3 1/3; 1/3 1+2/3])),))
             )
         ]
     end
@@ -69,15 +69,15 @@ end
         @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{add_1}(:ins) [
             (
                 input = (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorProduct((NormalWeightedMeanPrecision(0, 2.0),))
+                output = FactorizedJoint((NormalWeightedMeanPrecision(0, 2.0),))
             ),
             (
                 input = (m_out = NormalMeanVariance(2, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorProduct((NormalWeightedMeanPrecision(1, 2.0),))
+                output = FactorizedJoint((NormalWeightedMeanPrecision(1, 2.0),))
             ),
             (
                 input = (m_out = NormalMeanVariance(10, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorProduct((NormalWeightedMeanPrecision(9, 2.0),))
+                output = FactorizedJoint((NormalWeightedMeanPrecision(9, 2.0),))
             )
         ]
     end
@@ -94,7 +94,7 @@ end
                 m_ins = ManyOf(NormalMeanVariance(), NormalMeanVariance(1, 2)),
                 meta = test_meta
             ),
-            output = FactorProduct((NormalWeightedMeanPrecision(1 / 2, 1.5), NormalWeightedMeanPrecision(1.0, 1.0)))
+            output = FactorizedJoint((NormalWeightedMeanPrecision(1 / 2, 1.5), NormalWeightedMeanPrecision(1.0, 1.0)))
         )
         ]
     end
@@ -112,7 +112,7 @@ end
                 m_ins = ManyOf(MvGaussianMeanCovariance(ones(2), [1 0; 0 1])),
                 meta = test_meta
             ),
-            output = FactorProduct((MvNormalWeightedMeanPrecision(ones(2), [2 0; 0 1]),))
+            output = FactorizedJoint((MvNormalWeightedMeanPrecision(ones(2), [2 0; 0 1]),))
         )
         ]
     end
@@ -130,14 +130,15 @@ end
                     m_ins = ManyOf(GammaShapeRate(1, 1)),
                     meta = test_meta
                 ),
-                output = FactorProduct((GammaShapeRate(1, 2),))
-            ), (
+                output = FactorizedJoint((GammaShapeRate(1, 2),))
+            ),
+            (
                 input = (
                     m_out = GammaShapeRate(1, 1),
                     m_ins = ManyOf(GammaShapeRate(1, 2)),
                     meta = test_meta
                 ),
-                output = FactorProduct((GammaShapeRate(1, 3),))
+                output = FactorizedJoint((GammaShapeRate(1, 3),))
             )
         ]
     end

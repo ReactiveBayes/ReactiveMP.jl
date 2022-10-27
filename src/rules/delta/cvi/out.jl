@@ -6,7 +6,7 @@ using ReactiveMP
 # `meta` handles reference to our meta object
 # `N` can be used for dispatch and can handle special cases, e.g `m_ins::NTuple{1, NormalMeanPrecision}` means that `DeltaFn` has only 1 input
 
-@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct{P}, meta::CVIApproximation) where {f, P <: NTuple{1}} =
+@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorizedJoint{P}, meta::CVIApproximation) where {f, P <: NTuple{1}} =
     begin
         q_sample_friendly = ReactiveMP.logpdf_sample_friendly(q_ins[1])[2]
         rng               = something(meta.rng, Random.GLOBAL_RNG)
@@ -15,7 +15,7 @@ using ReactiveMP
         return ProdFinal(SampleList(q_out))
     end
 
-@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorProduct, meta::CVIApproximation) where {f} =
+@rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorizedJoint, meta::CVIApproximation) where {f} =
     begin
         q_ins_sample_friendly = map(marginal -> ReactiveMP.logpdf_sample_friendly(marginal)[2], getmultipliers(q_ins))
         rng = something(meta.rng, Random.GLOBAL_RNG)

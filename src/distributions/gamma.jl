@@ -80,5 +80,3 @@ function logpdf_sample_friendly(dist::GammaDistributionsFamily)
     friendly = convert(GammaShapeScale, dist)
     return (friendly, friendly)
 end
-
-# isproper(dist::ProbabilityDistribution{Univariate, Gamma}) = (dist.params[:a] >= tiny) && (dist.params[:b] >= tiny)

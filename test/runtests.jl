@@ -254,6 +254,7 @@ end
 
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
+    addtests(testrunner, "nodes/delta/cvi/test_cvi.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
     addtests(testrunner, "nodes/test_bifm_helper.jl")
@@ -382,9 +383,6 @@ end
     addtests(testrunner, "models/test_probit.jl")
     addtests(testrunner, "models/test_aliases.jl")
     addtests(testrunner, "models/test_cvi.jl")
-
-    addtests(testrunner, "test_factor_product.jl")
-    addtests(testrunner, "test_render_cvi.jl")
 
     run(testrunner)
 end

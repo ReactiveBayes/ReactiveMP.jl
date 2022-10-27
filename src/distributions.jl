@@ -5,11 +5,12 @@ export mean_cov,
     weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec
 export variate_form, value_support, promote_variate_type, convert_eltype
+export naturalparams, NaturalParameters
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 import Distributions: VariateForm, ValueSupport, Distribution
 
-import Base: prod
+import Base: prod, convert
 
 """
     vague(distribution_type, [ dims... ])
@@ -109,3 +110,38 @@ dim: 2
 ```
 """
 logpdf_sample_friendly(something) = (something, something)
+
+"""Abstract type for structures that represent natural parameters of the exponential distributions family"""
+abstract type NaturalParameters end
+
+Base.convert(::Type{T}, params::NaturalParameters) where {T <: Distribution} = convert(T, convert(Distribution, params))
+
+"""
+    naturalparams(distribution)
+
+Returns the natural parameters for the `distribution`. The `distribution` must be a member of the exponential family of distributions.
+"""
+function naturalparams end
+
+"""
+    FactorizedJoint
+
+`FactorizedJoint` represents a joint distribution of independent random variables. Use `getindex()` function or square-brackets indexing to access
+the marginal distribution for individual variables.
+"""
+struct FactorizedJoint{T}
+    multipliers::T
+end
+
+getmultipliers(joint::FactorizedJoint) = joint.multipliers
+
+Base.getindex(joint::FactorizedJoint, i::Int) = getindex(getmultipliers(joint), i)
+
+Base.length(joint::FactorizedJoint) = length(joint.multipliers)
+
+function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
+    length(x) === length(y) &&
+        all(pair -> isapprox(pair[1], pair[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
+end
+
+Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))

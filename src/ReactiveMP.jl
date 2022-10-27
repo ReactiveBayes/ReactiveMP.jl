@@ -20,7 +20,6 @@ include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
 include("constraints/prod/prod_final.jl")
 include("constraints/prod/prod_resolve.jl")
-include("constraints/prod/factor_prod_generic.jl")
 
 """
     to_marginal(any)
@@ -57,7 +56,6 @@ include("approximations/laplace.jl")
 include("approximations/importance.jl")
 include("approximations/optimizers.jl")
 
-include("distributions/natural_parametrs.jl")
 include("distributions/pointmass.jl")
 include("distributions/uniform.jl")
 include("distributions/gamma_shape_rate.jl")

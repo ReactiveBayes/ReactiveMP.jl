@@ -5,7 +5,7 @@ import Distributions: Distribution
     η = naturalparams(m_ins[1])
     logp_nc = (z) -> logpdf(m_out, f(z))
     λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, deepcopy(η), m_ins[1])
-    return FactorProduct((convert(Distribution, λ),))
+    return FactorizedJoint((convert(Distribution, λ),))
 end
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::CVIApproximation) where {f, N} = begin
@@ -26,5 +26,5 @@ end
             return renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, naturalparams(m_ins[i]), m_ins[i])
         end
 
-    return FactorProduct(ntuple(i -> convert(Distribution, optimize_natural_parameters(i, pre_samples)), length(m_ins)))
+    return FactorizedJoint(ntuple(i -> convert(Distribution, optimize_natural_parameters(i, pre_samples)), length(m_ins)))
 end

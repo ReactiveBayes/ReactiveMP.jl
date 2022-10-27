@@ -1,6 +1,4 @@
-export Bernoulli
-export naturalparams
-export BernoulliNaturalParameters
+export Bernoulli, BernoulliNaturalParameters
 
 import Distributions: Bernoulli, Distribution, succprob, failprob, logpdf
 import Base
