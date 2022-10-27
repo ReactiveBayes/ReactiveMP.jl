@@ -69,7 +69,8 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test new_dist.components[1] == convert(NormalWeightedMeanPrecision, NormalMeanVariance(3, 1 / 2))
         @test new_dist.components[2] == NormalWeightedMeanPrecision(3 + 2 / 4, 1 / 4 + 1)
-        @test new_dist.prior ≈ Categorical([p, 1 - p])
+        @test typeof(new_dist.prior) <: Categorical
+        @test probvec(new_dist.prior) ≈ [p, 1 - p]
     end
 
     @testset "prod beta" begin
@@ -86,7 +87,8 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test new_dist.components[1] == Beta(5, 1)
         @test new_dist.components[2] == Beta(4, 4)
-        @test new_dist.prior ≈ Categorical([p, 1 - p])
+        @test typeof(new_dist.prior) <: Categorical
+        @test probvec(new_dist.prior) ≈ [p, 1 - p]
     end
 
     @testset "prod bernoulli" begin
@@ -103,7 +105,8 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test new_dist.components[1] == Bernoulli(0.6 * 0.6 / (0.6 * 0.6 + 0.4 * 0.4))
         @test new_dist.components[2] == Bernoulli(0.1 * 0.6 / (0.1 * 0.6 + 0.9 * 0.4))
-        @test new_dist.prior ≈ Categorical([p, 1 - p])
+        @test typeof(new_dist.prior) <: Categorical
+        @test probvec(new_dist.prior) ≈ [p, 1 - p]
     end
 
     @testset "prod dirichlet" begin
@@ -120,7 +123,8 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test new_dist.components[1] == Dirichlet([11, 1, 4])
         @test new_dist.components[2] == Dirichlet([10, 2, 11])
-        @test new_dist.prior ≈ Categorical([p, 1 - p])
+        @test typeof(new_dist.prior) <: Categorical
+        @test probvec(new_dist.prior) ≈ [p, 1 - p]
     end
 
     @testset "prod categorical" begin
@@ -139,7 +143,8 @@ using ReactiveMP: mvbeta, logmvbeta
               Categorical([0.1 * 0.1, 0.6 * 0.6, 0.3 * 0.3] / (0.1 * 0.1 + 0.6 * 0.6 + 0.3 * 0.3))
         @test new_dist.components[2] ==
               Categorical([0.1 * 0.4, 0.6 * 0.4, 0.3 * 0.2] / (0.1 * 0.4 + 0.6 * 0.4 + 0.3 * 0.2))
-        @test new_dist.prior ≈ Categorical([p, 1 - p])
+        @test typeof(new_dist.prior) <: Categorical
+        @test probvec(new_dist.prior) ≈ [p, 1 - p]
     end
 
     @testset "prod gamma" begin
@@ -156,7 +161,8 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test new_dist.components[1] == GammaShapeRate(5, 2)
         @test new_dist.components[2] == GammaShapeRate(4, 5)
-        @test new_dist.prior ≈ Categorical([p, 1 - p])
+        @test typeof(new_dist.prior) <: Categorical
+        @test probvec(new_dist.prior) ≈ [p, 1 - p]
     end
 end
 end
