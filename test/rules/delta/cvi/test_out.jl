@@ -21,7 +21,7 @@ to_vector(x, y) = [x, y]
 
 struct EmptyOptimizer end
 
-function cvi_out_test(func::Function, factor_product::FactorizedJoint, meta::CVIApproximation, output, atol::Real = 1e-11)
+function cvi_out_test(func::Function, factor_product::FactorizedJoint, meta, output, atol::Real = 1e-11)
     sample_list_output = @call_rule DeltaFn{func}(:out, Marginalisation) (q_ins = factor_product, meta = meta)
     @test isapprox(mean(sample_list_output.dist), output, atol = atol)
 end
@@ -30,7 +30,7 @@ end
 @testset "rules:Delta:cvi:out" begin
     seed = 123
     rng = MersenneTwister(seed)
-    test_meta = CVIApproximation(rng, 1000, 1, EmptyOptimizer())
+    test_meta = DeltaMeta(method = CVIApproximation(rng, 1000, 1, EmptyOptimizer()))
 
     @testset "Exact value comparison (Pointmass)" begin
         for i in 1:100
