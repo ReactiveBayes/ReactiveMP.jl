@@ -16,6 +16,8 @@ end
 
 Base.show(io::IO, marginal::Marginal) =
     print(io, string("Marginal(", getdata(marginal), ") with ", string(getaddons(marginal))))
+Base.show(io::IO, marginal::Marginal{T, Nothing}) where {T} =
+    print(io, string("Marginal(", getdata(marginal), ")"))
 
 function Base.:(==)(left::Marginal, right::Marginal)
     # We need this dummy method as Julia is not smart enough to 
