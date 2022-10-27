@@ -7,7 +7,7 @@ using ReactiveMP
 # `N` can be used for dispatch and can handle special cases, e.g `m_ins::NTuple{1, NormalMeanPrecision}` means that `DeltaFn` has only 1 input
 
 @rule DeltaFn{f}(:out, Marginalisation) (q_ins::FactorizedJoint{P}, meta::DeltaMeta{M}) where {f, P <: NTuple{1}, M <: CVIApproximation} = begin
-    method = getmethod(meta)
+    method            = getmethod(meta)
     q_sample_friendly = ReactiveMP.logpdf_sample_friendly(q_ins[1])[2]
     rng               = something(method.rng, Random.GLOBAL_RNG)
     samples           = map(x -> rand(rng, q_sample_friendly), 1:(method.n_samples))
