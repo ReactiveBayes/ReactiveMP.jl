@@ -2,9 +2,9 @@ using TupleTools
 import Distributions: Distribution
 
 @marginalrule DeltaFn{f}(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::CVIApproximation) where {f} = begin
-    η = naturalparams(m_ins[1])
+    η = naturalparams(first(m_ins))
     logp_nc = (z) -> logpdf(m_out, f(z))
-    λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, deepcopy(η), m_ins[1])
+    λ = renderCVI(logp_nc, meta.num_iterations, meta.opt, meta.rng, η, first(m_ins))
     return FactorizedJoint((convert(Distribution, λ),))
 end
 

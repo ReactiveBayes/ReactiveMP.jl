@@ -164,7 +164,7 @@ using Requires
 
 function __init__()
     @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::T, ∇::T) where {T <: NaturalParameters}
+        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::NaturalParameters, ∇::NaturalParameters)
             return Flux.Optimise.update!(opt, vec(λ), vec(∇))
         end
     end

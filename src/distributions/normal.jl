@@ -319,7 +319,7 @@ function MultivariateNormalNaturalParameters(v::AbstractVector{T}) where {T}
 
     @assert (d^2 + d) === k "Vector dimensionality constraints are not fullfiled"
 
-    return MultivariateNormalNaturalParameters(view(v, 1:d), reshape(view(v, (d+1):lastindex(v)), d, d))
+    return MultivariateNormalNaturalParameters(collect(view(v, 1:d)), collect(reshape(view(v, (d+1):lastindex(v)), d, d)))
 end
 
 Base.convert(::Type{MultivariateNormalNaturalParameters}, weighted_mean::AbstractVector, minus_half_precision_matrix::AbstractMatrix) =

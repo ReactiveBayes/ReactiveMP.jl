@@ -77,7 +77,7 @@ function renderCVI(logp_nc::Function,
     opt,
     rng,
     λ_init::T,
-    msg_in::GaussianDistributionsFamily) where {T <: UnivariateNormalNaturalParameters}
+    msg_in::GaussianDistributionsFamily) where {T <: NaturalParameters}
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
