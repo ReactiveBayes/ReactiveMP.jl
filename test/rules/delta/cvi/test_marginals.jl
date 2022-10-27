@@ -57,7 +57,7 @@ end
             ),
             (
                 input = (m_out = MvGaussianMeanCovariance(ones(2), [2 -1; -1 2]), m_ins = ManyOf(MvGaussianMeanCovariance(zeros(2))), meta = test_meta),
-                output = FactorizedJoint(((MvNormalWeightedMeanPrecision(ones(2), [1+2/3 1/3; 1/3 1+2/3])),))
+                output = FactorizedJoint(((MvNormalWeightedMeanPrecision(ones(2), [1+2 / 3 1/3; 1/3 1+2 / 3])),))
             )
         ]
     end
@@ -67,18 +67,9 @@ end
         optimizer = Descent(0.01)
         test_meta = CVIApproximation(rng, 1, 500, optimizer)
         @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{add_1}(:ins) [
-            (
-                input = (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorizedJoint((NormalWeightedMeanPrecision(0, 2.0),))
-            ),
-            (
-                input = (m_out = NormalMeanVariance(2, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorizedJoint((NormalWeightedMeanPrecision(1, 2.0),))
-            ),
-            (
-                input = (m_out = NormalMeanVariance(10, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
-                output = FactorizedJoint((NormalWeightedMeanPrecision(9, 2.0),))
-            )
+            (input = (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta), output = FactorizedJoint((NormalWeightedMeanPrecision(0, 2.0),))),
+            (input = (m_out = NormalMeanVariance(2, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta), output = FactorizedJoint((NormalWeightedMeanPrecision(1, 2.0),))),
+            (input = (m_out = NormalMeanVariance(10, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta), output = FactorizedJoint((NormalWeightedMeanPrecision(9, 2.0),)))
         ]
     end
 
@@ -87,16 +78,10 @@ end
         rng = StableRNG(seed)
         optimizer = Descent(0.01)
         test_meta = CVIApproximation(rng, 1, 2000, optimizer)
-        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{two_into_one}(:ins) [
-            (
-            input = (
-                m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]),
-                m_ins = ManyOf(NormalMeanVariance(), NormalMeanVariance(1, 2)),
-                meta = test_meta
-            ),
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{two_into_one}(:ins) [(
+            input = (m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]), m_ins = ManyOf(NormalMeanVariance(), NormalMeanVariance(1, 2)), meta = test_meta),
             output = FactorizedJoint((NormalWeightedMeanPrecision(1 / 2, 1.5), NormalWeightedMeanPrecision(1.0, 1.0)))
-        )
-        ]
+        )]
     end
 
     @testset "f(x) -> x[1], x~MvNormal out~Normal" begin
@@ -105,16 +90,10 @@ end
         optimizer = Descent(0.001)
         test_meta = CVIApproximation(rng, 1, 10000, optimizer)
 
-        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{extract_coordinate}(:ins) [
-            (
-            input = (
-                m_out = NormalMeanVariance(0, 1),
-                m_ins = ManyOf(MvGaussianMeanCovariance(ones(2), [1 0; 0 1])),
-                meta = test_meta
-            ),
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{extract_coordinate}(:ins) [(
+            input = (m_out = NormalMeanVariance(0, 1), m_ins = ManyOf(MvGaussianMeanCovariance(ones(2), [1 0; 0 1])), meta = test_meta),
             output = FactorizedJoint((MvNormalWeightedMeanPrecision(ones(2), [2 0; 0 1]),))
-        )
-        ]
+        )]
     end
 
     @testset "id, x~Gamma out~Gamma" begin
@@ -124,22 +103,8 @@ end
         test_meta = CVIApproximation(rng, 1, 50000, optimizer)
 
         @test_marginalrules [with_float_conversions = false, atol = 0.3] DeltaFn{identity}(:ins) [
-            (
-                input = (
-                    m_out = GammaShapeRate(1, 1),
-                    m_ins = ManyOf(GammaShapeRate(1, 1)),
-                    meta = test_meta
-                ),
-                output = FactorizedJoint((GammaShapeRate(1, 2),))
-            ),
-            (
-                input = (
-                    m_out = GammaShapeRate(1, 1),
-                    m_ins = ManyOf(GammaShapeRate(1, 2)),
-                    meta = test_meta
-                ),
-                output = FactorizedJoint((GammaShapeRate(1, 3),))
-            )
+            (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 1)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 2),))),
+            (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 3),)))
         ]
     end
 end

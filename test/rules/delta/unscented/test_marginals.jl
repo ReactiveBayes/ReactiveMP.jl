@@ -13,7 +13,7 @@ h(x, y) = x .^ 2 .- y
 @testset "rules:Delta:unscented:marginals" begin
     @testset "Single univariate input" begin
         @test_marginalrules [with_float_conversions = false, atol = 1e-10] DeltaFn{g}(:ins) [(
-            input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta  = DeltaMeta(; method = Unscented(), inverse = nothing)),
+            input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaMeta(; method = Unscented(), inverse = nothing)),
             output = JointNormal(NormalMeanVariance(2.3809523807887425, 0.23809523822182999), ((),))
         )]
     end
@@ -21,7 +21,7 @@ h(x, y) = x .^ 2 .- y
     @testset "Single multivariate input" begin
         @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [(
             input = (
-                m_out = MvNormalMeanCovariance([2.0], [3.0]), m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0;;])), meta  = DeltaMeta(; method = Unscented(), inverse = nothing)
+                m_out = MvNormalMeanCovariance([2.0], [3.0]), m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0;;])), meta = DeltaMeta(; method = Unscented(), inverse = nothing)
             ),
             output = JointNormal(MvNormalMeanCovariance([2.3809523807887425], [0.23809523822182999;;]), ((1,),))
         )]

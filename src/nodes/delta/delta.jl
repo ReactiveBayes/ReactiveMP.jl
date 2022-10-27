@@ -122,7 +122,7 @@ deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::NTupl
 
 deltafn_rule_layout(::DeltaFnNode, ::CVIApproximationDeltaFnRuleLayout, inverse::Nothing) = CVIApproximationDeltaFnRuleLayout()
 
-function deltafn_rule_layout(::DeltaFnNode, ::CVIApproximationDeltaFnRuleLayout, inverse::Any) 
+function deltafn_rule_layout(::DeltaFnNode, ::CVIApproximationDeltaFnRuleLayout, inverse::Any)
     @warn "CVI Approximation does not accept the inverse function. Ignoring the provided inverse."
     return CVIApproximationDeltaFnRuleLayout()
 end

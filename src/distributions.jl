@@ -172,8 +172,7 @@ Base.getindex(joint::FactorizedJoint, i::Int) = getindex(getmultipliers(joint), 
 Base.length(joint::FactorizedJoint) = length(joint.multipliers)
 
 function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
-    length(x) === length(y) &&
-        all(pair -> isapprox(pair[1], pair[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
+    length(x) === length(y) && all(pair -> isapprox(pair[1], pair[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
 end
 
 Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))

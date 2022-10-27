@@ -22,10 +22,7 @@ to_vector(x, y) = [x, y]
 struct EmptyOptimizer end
 
 function cvi_out_test(func::Function, factor_product::FactorizedJoint, meta::CVIApproximation, output, atol::Real = 1e-11)
-    sample_list_output = @call_rule DeltaFn{func}(:out, Marginalisation) (
-        q_ins = factor_product,
-        meta = meta
-    )
+    sample_list_output = @call_rule DeltaFn{func}(:out, Marginalisation) (q_ins = factor_product, meta = meta)
     @test isapprox(mean(sample_list_output.dist), output, atol = atol)
 end
 
@@ -48,14 +45,9 @@ end
 
     @testset "Multivariate normal distributions sampling" begin
         factor_product = FactorizedJoint((MvNormalMeanPrecision(zeros(2)), PointMass([0, 0])))
-        sample_list_output = @call_rule DeltaFn{first_argument}(:out, Marginalisation) (
-            q_ins = factor_product,
-            meta = test_meta
-        )
+        sample_list_output = @call_rule DeltaFn{first_argument}(:out, Marginalisation) (q_ins = factor_product, meta = test_meta)
         @test length(mean(sample_list_output)) === 2
-        cvi_out_test(second_argument,
-            FactorizedJoint((MvNormalMeanPrecision(zeros(2)), PointMass(1))),
-            test_meta, 1)
+        cvi_out_test(second_argument, FactorizedJoint((MvNormalMeanPrecision(zeros(2)), PointMass(1))), test_meta, 1)
     end
 
     @testset "Bernoulli" begin

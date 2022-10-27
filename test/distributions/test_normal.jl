@@ -263,8 +263,7 @@ using Distributions
     @testset "UnivariateNormalNaturalParameters" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) ==
-                      NormalWeightedMeanPrecision(i, 2 * i)
+                @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) == NormalWeightedMeanPrecision(i, 2 * i)
 
                 @test convert(UnivariateNormalNaturalParameters, i, -i) == UnivariateNormalNaturalParameters(i, -i)
                 @test convert(UnivariateNormalNaturalParameters, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
@@ -294,8 +293,7 @@ using Distributions
     @testset "MultivariateNormalNaturalParameters" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈
-                      MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
+                @test convert(Distribution, MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈ MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
 
                 @test convert(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
                 @test convert(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])

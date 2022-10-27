@@ -25,11 +25,7 @@ end
 
 @testset "cvi:render_cvi" begin
     @testset "empty optimizer" begin
-        for (m_in, m_out) in (
-            (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
-            (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
-            (Bernoulli(0.5), Bernoulli(0.5))
-        )
+        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
             opt = EmptyOptimizer()
             meta = CVIApproximation(1, 100, opt)
             λ = ReactiveMP.render_cvi(meta, (z) -> logpdf(m_out, z), m_in)
@@ -38,11 +34,7 @@ end
     end
 
     @testset "counting optimizer" begin
-        for (m_in, m_out) in (
-            (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
-            (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
-            (Bernoulli(0.5), Bernoulli(0.5))
-        )
+        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
             opt = CountingOptimizer(0)
             meta = CVIApproximation(1, 100, opt)
             λ = ReactiveMP.render_cvi(meta, (z) -> logpdf(m_out, z), m_in)
@@ -52,11 +44,7 @@ end
     end
 
     @testset "counting lambda optimizer" begin
-        for (m_in, m_out) in (
-            (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
-            (GammaShapeRate(2, 2), GammaShapeRate(2, 2)),
-            (Bernoulli(0.5), Bernoulli(0.5))
-        )
+        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
             η = naturalparams(m_in)
             logp_nc = (z) -> logpdf(m_out, z)
             num_its = 0

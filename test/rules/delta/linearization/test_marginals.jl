@@ -15,7 +15,7 @@ h(x, y) = x .^ 2 .- y
 @testset "rules:Delta:extended:marginals" begin
     @testset "Single univariate input" begin
         @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [(
-            input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta  = DeltaMeta(; method = Linearization(), inverse = nothing)),
+            input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaMeta(; method = Linearization(), inverse = nothing)),
             output = JointNormal(NormalMeanVariance(2.6315789473684212, 0.1578947368421053), ((),))
         )]
     end
@@ -23,7 +23,7 @@ h(x, y) = x .^ 2 .- y
     @testset "Single multivariate input" begin
         @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [(
             input = (
-                m_out = MvNormalMeanCovariance([2.0], [3.0]), m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0])), meta  = DeltaMeta(; method = Linearization(), inverse = nothing)
+                m_out = MvNormalMeanCovariance([2.0], [3.0]), m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0])), meta = DeltaMeta(; method = Linearization(), inverse = nothing)
             ),
             output = JointNormal(MvNormalMeanCovariance([2.6315789473684212], [0.1578947368421053]), ((1,),))
         )]

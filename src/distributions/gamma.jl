@@ -90,24 +90,19 @@ function GammaNaturalParameters(vec::AbstractVector)
     return GammaNaturalParameters(vec[1], vec[2])
 end
 
-Base.convert(::Type{GammaNaturalParameters}, a::Real, b::Real) =
-    convert(GammaNaturalParameters{promote_type(typeof(a), typeof(b))}, a, b)
+Base.convert(::Type{GammaNaturalParameters}, a::Real, b::Real) = convert(GammaNaturalParameters{promote_type(typeof(a), typeof(b))}, a, b)
 
-Base.convert(::Type{GammaNaturalParameters{T}}, a::Real, b::Real) where {T} =
-    GammaNaturalParameters(convert(T, a), convert(T, b))
+Base.convert(::Type{GammaNaturalParameters{T}}, a::Real, b::Real) where {T} = GammaNaturalParameters(convert(T, a), convert(T, b))
 
-Base.convert(::Type{GammaNaturalParameters}, vec::AbstractVector) =
-    convert(GammaNaturalParameters{eltype(vec)}, vec)
+Base.convert(::Type{GammaNaturalParameters}, vec::AbstractVector) = convert(GammaNaturalParameters{eltype(vec)}, vec)
 
-Base.convert(::Type{GammaNaturalParameters{T}}, vec::AbstractVector) where {T} =
-    GammaNaturalParameters(convert(AbstractVector{T}, vec))
+Base.convert(::Type{GammaNaturalParameters{T}}, vec::AbstractVector) where {T} = GammaNaturalParameters(convert(AbstractVector{T}, vec))
 
 function Base.:(==)(left::GammaNaturalParameters, right::GammaNaturalParameters)
     return left.a == right.a && left.b == right.b
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: GammaNaturalParameters} =
-    convert(GammaNaturalParameters, args...)
+as_naturalparams(::Type{T}, args...) where {T <: GammaNaturalParameters} = convert(GammaNaturalParameters, args...)
 
 function Base.convert(::Type{Distribution}, η::GammaNaturalParameters)
     return GammaShapeRate(η.a + 1, -η.b)

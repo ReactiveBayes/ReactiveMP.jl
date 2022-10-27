@@ -36,7 +36,7 @@ h_inv_z(x, y) = x .^ 2 .- y
         @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 1), Marginalisation) [
             (
                 input = (
-                    m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)), meta  = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z))
+                    m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)), meta = DeltaMeta(; method = Linearization(), inverse = (h_inv_x, h_inv_z))
                 ),
                 output = NormalMeanVariance(2.6457513110645907, 0.14285714285714282)
             ),

@@ -119,8 +119,7 @@ import ReactiveMP: xtlog
     @testset "GammaShapeRateNaturalParameters" begin
         for i in 2:10
             @test convert(Distribution, GammaNaturalParameters(i, -i)) ≈ GammaShapeRate(i + 1, i)
-            @test Distributions.logpdf(GammaNaturalParameters(i, -i), 10) ≈
-                  Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
+            @test Distributions.logpdf(GammaNaturalParameters(i, -i), 10) ≈ Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
             @test isproper(GammaNaturalParameters(i, -i)) === true
             @test isproper(GammaNaturalParameters(-i, i)) === false
 
