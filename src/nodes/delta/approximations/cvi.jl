@@ -58,7 +58,7 @@ get_df_m(
 ) = (z) -> ForwardDiff.derivative(logp_nc, z)
 
 get_df_m(
-    ::Type{<:MvNormalNaturalParameters},
+    ::Type{<:MultivariateNormalNaturalParameters},
     ::Type{<:MultivariateGaussianDistributionsFamily},
     logp_nc::Function
 ) = (z) -> ForwardDiff.gradient(logp_nc, z)
@@ -69,7 +69,7 @@ get_df_v(
     df_m::Function
 ) = (z) -> ForwardDiff.derivative(df_m, z)
 
-get_df_v(::Type{<:MvNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
+get_df_v(::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
     (z) -> ForwardDiff.jacobian(df_m, z)
 
 function renderCVI(logp_nc::Function,
@@ -77,7 +77,7 @@ function renderCVI(logp_nc::Function,
     opt,
     rng,
     λ_init::T,
-    msg_in::GaussianDistributionsFamily) where {T <: NormalNaturalParameters}
+    msg_in::GaussianDistributionsFamily) where {T <: UnivariateNormalNaturalParameters}
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
 
@@ -90,9 +90,9 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = T(df_μ1, df_μ2)
+        ∇f = convert(T, df_μ1, df_μ2)
         ∇ = λ - η - ∇f
-        λ_new = T(cvi_update!(opt, λ, ∇))
+        λ_new = convert(T, cvi_update!(opt, λ, ∇))
         if isproper(λ_new)
             λ = λ_new
         end
@@ -114,7 +114,7 @@ function renderCVI(logp_nc::Function,
     # work within loop with vector
     rng = something(rng, Random.GLOBAL_RNG)
 
-    A = (vec_params) -> lognormalizer(T(vec_params)) # maybe convert here makes more sense
+    A = (vec_params) -> lognormalizer(convert(T, vec_params)) 
     gradA = (vec_params) -> ForwardDiff.gradient(A, vec_params)
     Fisher = (vec_params) -> ForwardDiff.jacobian(gradA, vec_params)
 
@@ -128,8 +128,8 @@ function renderCVI(logp_nc::Function,
         ∇logq = ForwardDiff.gradient(logq, vec(λ))
 
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
-        ∇ = λ - η - T(∇f)
-        updated = T(cvi_update!(opt, λ, ∇))
+        ∇ = λ - η - convert(T, ∇f)
+        updated = convert(T, cvi_update!(opt, λ, ∇))
         if isproper(updated)
             λ = updated
         end

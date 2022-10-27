@@ -31,7 +31,7 @@ using Random
         @test probvec(Bernoulli(0.6)) === (0.6, 0.4)
     end
 
-    @testset "naturalparameters" begin
+    @testset "BernoulliNaturalParameters" begin
         @test naturalparams(Bernoulli(0.5)).η === 0.0
         @test lognormalizer(naturalparams(Bernoulli(0.5))) ≈ -log(2)
         for i in 1:9

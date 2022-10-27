@@ -3,7 +3,7 @@ export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, p
 export mean_cov,
     mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std,
     weightedmean_invcov, weightedmean_precision
-export weightedmean, probvec
+export weightedmean, probvec, isproper
 export variate_form, value_support, promote_variate_type, convert_eltype
 export naturalparams, NaturalParameters
 
@@ -31,6 +31,7 @@ weightedmean_std(something)       = (weightedmean(something), std(something))
 weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
 weightedmean_precision(something) = weightedmean_invcov(something)
 
+isproper(something)     = error("`isproper` is not defined for $(something)")
 probvec(something)      = error("Probability vector function probvec() is not defined for $(something)")
 weightedmean(something) = error("Weighted mean is not defined for $(something)")
 
