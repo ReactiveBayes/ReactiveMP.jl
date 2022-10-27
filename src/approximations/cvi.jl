@@ -31,7 +31,7 @@ Arguments
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
 
 """
-struct CVIApproximation{R, O}
+struct CVIApproximation{R, O} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
     num_iterations::Int
@@ -57,62 +57,6 @@ const CVI = CVIApproximation
 #---------------------------
 # CVI implementations
 #---------------------------
-
-get_df_m(
-    ::Type{<:UnivariateNormalNaturalParameters},
-    ::Type{<:UnivariateGaussianDistributionsFamily},
-    logp_nc::Function
-) = (z) -> ForwardDiff.derivative(logp_nc, z)
-
-get_df_m(
-    ::Type{<:MultivariateNormalNaturalParameters},
-    ::Type{<:MultivariateGaussianDistributionsFamily},
-    logp_nc::Function
-) = (z) -> ForwardDiff.gradient(logp_nc, z)
-
-get_df_v(
-    ::Type{<:UnivariateNormalNaturalParameters},
-    ::Type{<:UnivariateGaussianDistributionsFamily},
-    df_m::Function
-) = (z) -> ForwardDiff.derivative(df_m, z)
-
-get_df_v(::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) =
-    (z) -> ForwardDiff.jacobian(df_m, z)
-
-function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
-    η = naturalparams(initial)
-    λ = naturalparams(initial)
-    T = typeof(η)
-
-    rng = something(approximation.rng, Random.GLOBAL_RNG)
-    opt = approximation.opt
-    its = approximation.num_iterations
-
-    df_m = (z) -> get_df_m(typeof(λ), typeof(initial), logp_nc)(z)
-    df_v = (z) -> get_df_v(typeof(λ), typeof(initial), df_m)(z) / 2
-
-    hasupdated = false
-
-    for _ in 1:its
-        q = convert(Distribution, λ)
-        z_s = rand(rng, q)
-        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
-        df_μ2 = df_v(z_s)
-        ∇f = as_naturalparams(T, df_μ1, df_μ2)
-        ∇ = λ - η - ∇f
-        λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
-        if isproper(λ_new)
-            λ = λ_new
-            hasupdated = true
-        end
-    end
-
-    if !hasupdated && approximation.warn
-        @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
-    end
-
-    return λ
-end
 
 function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where {F}
     η = naturalparams(initial)
