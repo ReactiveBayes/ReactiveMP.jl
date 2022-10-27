@@ -265,7 +265,7 @@ end
 UnivariateNormalNaturalParameters(weighted_mean::Real, minus_half_precision::Real)       = UnivariateNormalNaturalParameters(promote(weighted_mean, minus_half_precision)...)
 UnivariateNormalNaturalParameters(weighted_mean::Integer, minus_half_precision::Integer) = UnivariateNormalNaturalParameters(float(weighted_mean), float(minus_half_precision))
 
-function UnivariateNormalNaturalParameters(v::Vector{T}) where {T <: Real}
+function UnivariateNormalNaturalParameters(v::AbstractVector{T}) where {T <: Real}
     @assert length(v) === 2 "`NormalNaturalParameters` must accept a vector of length `2`."
     return UnivariateNormalNaturalParameters(v[1], v[2])
 end
@@ -310,7 +310,7 @@ function MultivariateNormalNaturalParameters(weighted_mean::AbstractVector{T}, m
     return MultivariateNormalNaturalParameters{T, typeof(weighted_mean), typeof(minus_half_precision_matrix)}(weighted_mean, minus_half_precision_matrix)
 end
 
-function MultivariateNormalNaturalParameters(v::Vector{T}) where {T}
+function MultivariateNormalNaturalParameters(v::AbstractVector{T}) where {T}
     k = length(v)
     d = convert(Int, (-1 + sqrt(4 * k + 1)) / 2)
 
