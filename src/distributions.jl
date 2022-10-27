@@ -1,11 +1,14 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
-export weightedmean, probvec
+export weightedmean, probvec, isproper
 export variate_form, value_support, promote_variate_type, convert_eltype
+export naturalparams, as_naturalparams, lognormalizer, NaturalParameters
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 import Distributions: VariateForm, ValueSupport, Distribution
+
+import Base: prod, convert
 
 """
     vague(distribution_type, [ dims... ])
@@ -26,6 +29,7 @@ weightedmean_std(something)       = (weightedmean(something), std(something))
 weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
 weightedmean_precision(something) = weightedmean_invcov(something)
 
+isproper(something)     = error("`isproper` is not defined for $(something)")
 probvec(something)      = error("Probability vector function probvec() is not defined for $(something)")
 weightedmean(something) = error("Weighted mean is not defined for $(something)")
 
@@ -129,3 +133,47 @@ dim: 2
 ```
 """
 logpdf_sample_friendly(something) = (something, something)
+
+"""Abstract type for structures that represent natural parameters of the exponential distributions family"""
+abstract type NaturalParameters end
+
+Base.convert(::Type{T}, params::NaturalParameters) where {T <: Distribution} = convert(T, convert(Distribution, params))
+
+"""
+    naturalparams(distribution)
+
+Returns the natural parameters for the `distribution`. The `distribution` must be a member of the exponential family of distributions.
+"""
+function naturalparams end
+
+"""
+    as_naturalparams(::Type{T}, args...)
+
+Converts `args` (and promotes if necessary) to the natural parameters ot type `T`. Does not always returns an instance of type `T` but the closes one after type promotion.
+"""
+function as_naturalparams end
+
+function lognormalizer end
+
+"""
+    FactorizedJoint
+
+`FactorizedJoint` represents a joint distribution of independent random variables. Use `getindex()` function or square-brackets indexing to access
+the marginal distribution for individual variables.
+"""
+struct FactorizedJoint{T}
+    multipliers::T
+end
+
+getmultipliers(joint::FactorizedJoint) = joint.multipliers
+
+Base.getindex(joint::FactorizedJoint, i::Int) = getindex(getmultipliers(joint), i)
+
+Base.length(joint::FactorizedJoint) = length(joint.multipliers)
+
+function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
+    length(x) === length(y) &&
+        all(pair -> isapprox(pair[1], pair[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
+end
+
+Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))

@@ -1,8 +1,10 @@
 export GammaShapeRate
 
-import Distributions: Gamma, shape, rate
+import Distributions: Gamma, shape, rate, logpdf
 import SpecialFunctions: loggamma, digamma, gamma
 import StatsFuns: log2π
+
+import Base
 
 struct GammaShapeRate{T <: Real} <: ContinuousUnivariateDistribution
     a::T

@@ -57,6 +57,7 @@ include("approximations/optimizers.jl")
 include("approximations/rts.jl")
 include("approximations/linearization.jl")
 include("approximations/unscented.jl")
+include("approximations/cvi.jl")
 
 include("distributions/pointmass.jl")
 include("distributions/uniform.jl")
@@ -153,5 +154,15 @@ include("constraints/specifications/constraints.jl")
 include("constraints/specifications/form.jl")
 include("constraints/specifications/factorisation.jl")
 include("constraints/specifications/meta.jl")
+
+using Requires
+
+function __init__()
+    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
+        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::NaturalParameters, ∇::NaturalParameters)
+            return Flux.Optimise.update!(opt, vec(λ), vec(∇))
+        end
+    end
+end
 
 end

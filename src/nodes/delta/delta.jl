@@ -26,9 +26,15 @@ getmethod(meta::DeltaMeta)          = meta.method
 getinverse(meta::DeltaMeta)         = meta.inverse
 getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
 
+import Base: map
+
 struct DeltaFnCallableWrapper{F} end
 
 (::Type{DeltaFnCallableWrapper{F}})(args...) where {F} = F.instance(args...)
+
+function Base.map(f::Type{DeltaFnCallableWrapper{F}}, any::AbstractArray) where {F}
+    return map(F.instance, any)
+end
 
 struct DeltaFn{F} end
 struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
@@ -108,10 +114,18 @@ deltafn_rule_layout(factornode::DeltaFnNode, meta::DeltaMeta) = deltafn_rule_lay
 abstract type AbstractDeltaNodeDependenciesLayout end
 
 include("layouts/default.jl")
+include("layouts/cvi.jl")
 
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Nothing)                       = DeltaFnDefaultRuleLayout()
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Function)                      = DeltaFnDefaultKnownInverseRuleLayout()
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::NTuple{N, Function}) where {N} = DeltaFnDefaultKnownInverseRuleLayout()
+
+deltafn_rule_layout(::DeltaFnNode, ::CVIApproximationDeltaFnRuleLayout, inverse::Nothing) = CVIApproximationDeltaFnRuleLayout()
+
+function deltafn_rule_layout(::DeltaFnNode, ::CVIApproximationDeltaFnRuleLayout, inverse::Any) 
+    @warn "CVI Approximation does not accept the inverse function. Ignoring the provided inverse."
+    return CVIApproximationDeltaFnRuleLayout()
+end
 
 function activate!(factornode::DeltaFnNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler())
     # `DeltaFn` node may change rule arguments layout depending on the `meta`

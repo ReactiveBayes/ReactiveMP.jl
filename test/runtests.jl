@@ -246,6 +246,7 @@ end
 
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
+    addtests(testrunner, "nodes/delta/cvi/test_cvi.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
     addtests(testrunner, "nodes/test_bifm_helper.jl")
@@ -307,6 +308,10 @@ end
     addtests(testrunner, "rules/delta/linearization/test_out.jl")
     addtests(testrunner, "rules/delta/linearization/test_in.jl")
     addtests(testrunner, "rules/delta/linearization/test_marginals.jl")
+
+    addtests(testrunner, "rules/delta/cvi/test_in.jl")
+    addtests(testrunner, "rules/delta/cvi/test_marginals.jl")
+    addtests(testrunner, "rules/delta/cvi/test_out.jl")
 
     addtests(testrunner, "rules/dot_product/test_out.jl")
     addtests(testrunner, "rules/dot_product/test_in1.jl")
