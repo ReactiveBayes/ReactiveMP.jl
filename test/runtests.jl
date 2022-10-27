@@ -214,6 +214,7 @@ end
     addtests(testrunner, "test_math.jl")
     addtests(testrunner, "test_helpers.jl")
     addtests(testrunner, "test_score.jl")
+    addtests(testrunner, "test_addons.jl")
 
     addtests(testrunner, "constraints/spec/test_factorisation_spec.jl")
     addtests(testrunner, "constraints/spec/test_form_spec.jl")
