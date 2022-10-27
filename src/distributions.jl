@@ -5,7 +5,7 @@ export mean_cov,
     weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, isproper
 export variate_form, value_support, promote_variate_type, convert_eltype
-export naturalparams, NaturalParameters
+export naturalparams, lognormalizer, NaturalParameters
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 import Distributions: VariateForm, ValueSupport, Distribution
@@ -123,6 +123,8 @@ Base.convert(::Type{T}, params::NaturalParameters) where {T <: Distribution} = c
 Returns the natural parameters for the `distribution`. The `distribution` must be a member of the exponential family of distributions.
 """
 function naturalparams end
+
+function lognormalizer end
 
 """
     FactorizedJoint
