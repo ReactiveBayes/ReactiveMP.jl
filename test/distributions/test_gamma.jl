@@ -126,6 +126,9 @@ import ReactiveMP: xtlog
 
             @test convert(GammaNaturalParameters, i, -i) == GammaNaturalParameters(i, -i)
             @test convert(GammaNaturalParameters{Float64}, i, -i) == GammaNaturalParameters(i, -i)
+
+            @test as_naturalparams(GammaNaturalParameters, i, -i) == GammaNaturalParameters(i, -i)
+            @test as_naturalparams(GammaNaturalParameters{Float64}, i, -i) == GammaNaturalParameters(i, -i)
         end
     end
 

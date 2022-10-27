@@ -270,21 +270,24 @@ function UnivariateNormalNaturalParameters(v::AbstractVector{T}) where {T <: Rea
     return UnivariateNormalNaturalParameters(v[1], v[2])
 end
 
-Base.convert(::Type{UnivariateNormalNaturalParameters}, weighted_mean::Real, minus_half_precision::Real) = 
-    convert(UnivariateNormalNaturalParameters{ promote_type(typeof(weighted_mean), typeof(minus_half_precision)) }, weighted_mean, minus_half_precision)
+Base.convert(::Type{UnivariateNormalNaturalParameters}, weighted_mean::Real, minus_half_precision::Real) =
+    convert(UnivariateNormalNaturalParameters{promote_type(typeof(weighted_mean), typeof(minus_half_precision))}, weighted_mean, minus_half_precision)
 
 Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, weighted_mean::Real, minus_half_precision::Real) where {T} =
     UnivariateNormalNaturalParameters(convert(T, weighted_mean), convert(T, minus_half_precision))
 
-Base.convert(::Type{UnivariateNormalNaturalParameters}, vector::AbstractVector) = 
+Base.convert(::Type{UnivariateNormalNaturalParameters}, vector::AbstractVector) =
     convert(UnivariateNormalNaturalParameters{eltype(vector)}, vector)
 
-Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} = 
+Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} =
     UnivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
 
 function Base.:(==)(left::UnivariateNormalNaturalParameters, right::UnivariateNormalNaturalParameters)
     return left.weighted_mean == right.weighted_mean && left.minus_half_precision == right.minus_half_precision
 end
+
+as_naturalparams(::Type{T}, args...) where {T <: UnivariateNormalNaturalParameters} =
+    convert(UnivariateNormalNaturalParameters, args...)
 
 ### Multivariate case
 
@@ -304,7 +307,7 @@ end
 
 function MultivariateNormalNaturalParameters(weighted_mean::AbstractVector{T}, minus_half_precision_matrix::AbstractMatrix{T}) where {T <: Real}
     if (length(weighted_mean) !== size(minus_half_precision_matrix, 1)) ||
-        (length(weighted_mean) !== size(minus_half_precision_matrix, 2))
+       (length(weighted_mean) !== size(minus_half_precision_matrix, 2))
         error("`MvNormalNaturalParameters` can not be created from shapes: mean `$(size(weighted_mean))` and matrix `$(size(minus_half_precision_matrix))`.")
     end
     return MultivariateNormalNaturalParameters{T, typeof(weighted_mean), typeof(minus_half_precision_matrix)}(weighted_mean, minus_half_precision_matrix)
@@ -316,27 +319,34 @@ function MultivariateNormalNaturalParameters(v::AbstractVector{T}) where {T}
 
     @assert (d^2 + d) === k "Vector dimensionality constraints are not fullfiled"
 
-    return MultivariateNormalNaturalParameters(view(v, 1:d), reshape(view(v, (d + 1):lastindex(v)), d, d))
+    return MultivariateNormalNaturalParameters(view(v, 1:d), reshape(view(v, (d+1):lastindex(v)), d, d))
 end
 
-Base.convert(::Type{MultivariateNormalNaturalParameters}, weighted_mean::AbstractVector, minus_half_precision_matrix::AbstractMatrix) = 
-    convert(MultivariateNormalNaturalParameters{ promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix)) }, weighted_mean, minus_half_precision_matrix)
+Base.convert(::Type{MultivariateNormalNaturalParameters}, weighted_mean::AbstractVector, minus_half_precision_matrix::AbstractMatrix) =
+    convert(
+        MultivariateNormalNaturalParameters{promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix))},
+        weighted_mean,
+        minus_half_precision_matrix
+    )
 
 Base.convert(::Type{MultivariateNormalNaturalParameters{T}}, weighted_mean::AbstractVector, minus_half_precision_matrix::AbstractMatrix) where {T} =
     MultivariateNormalNaturalParameters(convert(AbstractVector{T}, weighted_mean), convert(AbstractMatrix{T}, minus_half_precision_matrix))
 
-Base.convert(::Type{MultivariateNormalNaturalParameters}, vector::AbstractVector) = 
+Base.convert(::Type{MultivariateNormalNaturalParameters}, vector::AbstractVector) =
     convert(MultivariateNormalNaturalParameters{eltype(vector)}, vector)
 
-Base.convert(::Type{MultivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} = 
+Base.convert(::Type{MultivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} =
     MultivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
 
 function Base.:(==)(left::MultivariateNormalNaturalParameters, right::MultivariateNormalNaturalParameters)
     return left.weighted_mean == right.weighted_mean && left.minus_half_precision_matrix == right.minus_half_precision_matrix
 end
 
+as_naturalparams(::Type{T}, args...) where {T <: MultivariateNormalNaturalParameters} =
+    convert(MultivariateNormalNaturalParameters, args...)
+
 function Base.vec(p::UnivariateNormalNaturalParameters)
-    return [ p.weighted_mean, p.minus_half_precision ]
+    return [p.weighted_mean, p.minus_half_precision]
 end
 
 function Base.vec(p::MultivariateNormalNaturalParameters)

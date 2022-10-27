@@ -32,7 +32,7 @@ struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
 end
 
 function Base.vec(p::BernoulliNaturalParameters)
-    return [ p.η ]
+    return [p.η]
 end
 
 function BernoulliNaturalParameters(v::AbstractVector)
@@ -40,21 +40,24 @@ function BernoulliNaturalParameters(v::AbstractVector)
     return BernoulliNaturalParameters(v[1])
 end
 
-Base.convert(::Type{BernoulliNaturalParameters}, η::Real) = 
+Base.convert(::Type{BernoulliNaturalParameters}, η::Real) =
     convert(BernoulliNaturalParameters{typeof(η)}, η)
 
-Base.convert(::Type{BernoulliNaturalParameters{T}}, η::Real) where {T} = 
+Base.convert(::Type{BernoulliNaturalParameters{T}}, η::Real) where {T} =
     BernoulliNaturalParameters(convert(T, η))
 
-Base.convert(::Type{BernoulliNaturalParameters}, vec::AbstractVector) = 
+Base.convert(::Type{BernoulliNaturalParameters}, vec::AbstractVector) =
     convert(BernoulliNaturalParameters{eltype(vec)}, vec)
 
-Base.convert(::Type{BernoulliNaturalParameters{T}}, vec::AbstractVector) where {T} = 
+Base.convert(::Type{BernoulliNaturalParameters{T}}, vec::AbstractVector) where {T} =
     BernoulliNaturalParameters(convert(AbstractVector{T}, vec))
 
 function Base.:(==)(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
     return left.η == right.η
 end
+
+as_naturalparams(::Type{T}, args...) where {T <: BernoulliNaturalParameters} =
+    convert(BernoulliNaturalParameters, args...)
 
 function Base.:+(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
     return BernoulliNaturalParameters(left.η + right.η)

@@ -92,27 +92,30 @@ GammaNaturalParameters(a::Real, b::Real)       = GammaNaturalParameters(promote(
 GammaNaturalParameters(a::Integer, b::Integer) = GammaNaturalParameters(float(a), float(b))
 
 function GammaNaturalParameters(vec::AbstractVector)
-    @assert length(v) === 2 "`GammaNaturalParameters` must accept a vector of length `2`."
+    @assert length(vec) === 2 "`GammaNaturalParameters` must accept a vector of length `2`."
     return GammaNaturalParameters(vec[1], vec[2])
 end
 
-Base.convert(::Type{GammaNaturalParameters}, a::Real, b::Real) = 
+Base.convert(::Type{GammaNaturalParameters}, a::Real, b::Real) =
     convert(GammaNaturalParameters{promote_type(typeof(a), typeof(b))}, a, b)
 
-Base.convert(::Type{GammaNaturalParameters{T}}, a::Real, b::Real) where {T} = 
+Base.convert(::Type{GammaNaturalParameters{T}}, a::Real, b::Real) where {T} =
     GammaNaturalParameters(convert(T, a), convert(T, b))
 
-Base.convert(::Type{GammaNaturalParameters}, vec::AbstractVector) = 
+Base.convert(::Type{GammaNaturalParameters}, vec::AbstractVector) =
     convert(GammaNaturalParameters{eltype(vec)}, vec)
 
-Base.convert(::Type{GammaNaturalParameters{T}}, vec::AbstractVector) where {T} = 
+Base.convert(::Type{GammaNaturalParameters{T}}, vec::AbstractVector) where {T} =
     GammaNaturalParameters(convert(AbstractVector{T}, vec))
 
 function Base.:(==)(left::GammaNaturalParameters, right::GammaNaturalParameters)
     return left.a == right.a && left.b == right.b
 end
 
-function convert(::Type{Distribution}, η::GammaNaturalParameters)
+as_naturalparams(::Type{T}, args...) where {T <: GammaNaturalParameters} =
+    convert(GammaNaturalParameters, args...)
+
+function Base.convert(::Type{Distribution}, η::GammaNaturalParameters)
     return GammaShapeRate(η.a + 1, -η.b)
 end
 
@@ -121,7 +124,7 @@ naturalparams(dist::GammaDistributionsFamily) = GammaNaturalParameters(shape(dis
 # Natural parameters to standard dist. type
 
 function Base.vec(p::GammaNaturalParameters)
-    return [ p.a, p.b ]
+    return [p.a, p.b]
 end
 
 function Base.:+(left::GammaNaturalParameters, right::GammaNaturalParameters)

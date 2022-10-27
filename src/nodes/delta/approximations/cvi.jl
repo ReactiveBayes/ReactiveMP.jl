@@ -90,9 +90,9 @@ function renderCVI(logp_nc::Function,
         z_s = rand(rng, q)
         df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
         df_μ2 = df_v(z_s)
-        ∇f = convert(T, df_μ1, df_μ2)
+        ∇f = as_naturalparams(T, df_μ1, df_μ2)
         ∇ = λ - η - ∇f
-        λ_new = convert(T, cvi_update!(opt, λ, ∇))
+        λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
         if isproper(λ_new)
             λ = λ_new
         end
@@ -114,7 +114,7 @@ function renderCVI(logp_nc::Function,
     # work within loop with vector
     rng = something(rng, Random.GLOBAL_RNG)
 
-    A = (vec_params) -> lognormalizer(convert(T, vec_params)) 
+    A = (vec_params) -> lognormalizer(as_naturalparams(T, vec_params))
     gradA = (vec_params) -> ForwardDiff.gradient(A, vec_params)
     Fisher = (vec_params) -> ForwardDiff.jacobian(gradA, vec_params)
 
@@ -124,12 +124,12 @@ function renderCVI(logp_nc::Function,
 
         z_s = rand(rng, q_friendly)
 
-        logq = (vec_params) -> logpdf(T(vec_params), z_s)
+        logq = (vec_params) -> logpdf(as_naturalparams(T, vec_params), z_s)
         ∇logq = ForwardDiff.gradient(logq, vec(λ))
 
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
-        ∇ = λ - η - convert(T, ∇f)
-        updated = convert(T, cvi_update!(opt, λ, ∇))
+        ∇ = λ - η - as_naturalparams(T, ∇f)
+        updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
         if isproper(updated)
             λ = updated
         end

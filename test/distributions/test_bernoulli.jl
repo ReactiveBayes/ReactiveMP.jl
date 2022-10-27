@@ -42,6 +42,9 @@ using Random
 
             @test convert(BernoulliNaturalParameters, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
             @test convert(BernoulliNaturalParameters{Float64}, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+
+            @test as_naturalparams(BernoulliNaturalParameters, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+            @test as_naturalparams(BernoulliNaturalParameters{Float64}, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
         end
         @test isproper(BernoulliNaturalParameters(10)) === true
     end

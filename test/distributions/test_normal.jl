@@ -226,25 +226,25 @@ using Distributions
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) ==
-                    NormalWeightedMeanPrecision(i, 2 * i)
+                      NormalWeightedMeanPrecision(i, 2 * i)
 
                 @test convert(UnivariateNormalNaturalParameters, i, -i) == UnivariateNormalNaturalParameters(i, -i)
-                @test convert(UnivariateNormalNaturalParameters, [ i, -i ]) == UnivariateNormalNaturalParameters(i, -i)
+                @test convert(UnivariateNormalNaturalParameters, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
                 @test convert(UnivariateNormalNaturalParameters{Float64}, i, -i) == UnivariateNormalNaturalParameters(i, -i)
-                @test convert(UnivariateNormalNaturalParameters{Float64}, [ i, -i ]) == UnivariateNormalNaturalParameters(i, -i)
+                @test convert(UnivariateNormalNaturalParameters{Float64}, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
             end
         end
-    
+
         @testset "lognormalizer" begin
             @test lognormalizer(UnivariateNormalNaturalParameters(1, -2)) ≈ (log(2) - 1 / 8)
         end
-    
+
         @testset "logpdf" begin
             for i in 1:10
                 @test logpdf(UnivariateNormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
             end
         end
-    
+
         @testset "isproper" begin
             for i in 1:10
                 @test isproper(UnivariateNormalNaturalParameters(i, -i)) === true
@@ -263,9 +263,12 @@ using Distributions
                 @test convert(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
                 @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
                 @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+
+                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
             end
         end
-    
+
         @testset "logpdf" begin
             for i in 1:10
                 mv_np = MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
@@ -275,12 +278,12 @@ using Distributions
                 @test logpdf(distribution, [1.0, 1.0]) ≈ logpdf(mv_np, [1.0, 1.0])
             end
         end
-    
+
         @testset "lognormalizer" begin
             mt = zeros(Float64, 1, 1) .- 2.0
             @test lognormalizer(MultivariateNormalNaturalParameters([1], mt)) ≈ (log(2) - 1 / 8)
         end
-    
+
         @testset "isproper" begin
             for i in 1:10
                 @test isproper(MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) === true
