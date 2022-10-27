@@ -42,8 +42,9 @@ constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollecti
 constvar(name::Symbol, constval::AbstractVector, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 constvar(name::Symbol, constval::AbstractMatrix, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 
-constvar(name::Symbol, fn::Function, dims::Vararg{Int}) = constvar(name, fn, dims)
+constvar(name::Symbol, fn::Function, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(fn), collection_type)
 
+constvar(name::Symbol, fn::Function, dims::Vararg{Int}) = constvar(name, fn, dims)
 function constvar(name::Symbol, fn::Function, length::Int)
     return map(i -> constvar(name, fn(i), VariableVector(i)), 1:length)
 end
