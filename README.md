@@ -26,6 +26,10 @@
 
 ReactiveMP.jl is a Julia package that provides an efficient reactive message passing based Bayesian inference engine on a factor graph. The package is a part of the bigger and user-friendly ecosystem for automatic Bayesian inference called [RxInfer](https://github.com/biaslab/RxInfer.jl). While ReactiveMP.jl exports only the inference engine, RxInfer provides convenient tools for model and inference constraints specification as well as routines for running efficient inference both for static and real-time datasets. 
 
+# Examples 
+
+Tutorials and examples are available in the [RxInfer documentation](https://biaslab.github.io/RxInfer.jl/stable/).
+
 # License
 
 MIT License Copyright (c) 2021-2022 BIASlab
