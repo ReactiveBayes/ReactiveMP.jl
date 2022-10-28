@@ -1,27 +1,27 @@
-
-@rule MAR(:y, Marginalisation) (m_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_Λ::Any, meta::ARMeta) =
+@rule MAR(:y, Marginalisation) (m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta) =
 begin
-    mθ, Vθ = mean_cov(q_θ)
+    ma, Va = mean_cov(q_a)
     mx, Wx = mean_invcov(m_x)
 
     mΛ = mean(q_Λ)
 
-    mA = as_companion_matrix(mθ)
-    mV = ar_transition(getvform(meta), getorder(meta), mγ)
+    order, ds = getorder(meta), getdimensionality(meta)
 
-    D = Wx + mγ * Vθ
-    C = mA * inv(D)
+    mA = mar_companion_matrix(order, ds, ma)
+    mW = mar_transition(getorder(meta), mΛ)
+    dim = order*ds
+    # this should be inside MARMeta
+    es = [uvector(dim, i) for i in 1:order]
+    Fs = [mask_mar(order, ds, i) for i in 1:order]
+    
+    Σ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
 
-    my = C * Wx * mx
-    Vy = add_transition!(C * mA', mV)
 
-    return convert(promote_variate_type(getvform(meta), NormalMeanVariance), my, Vy)
-end
+    Ξ = inv(Σ) + Wx
+    z = Wx*mx
 
-@rule AR(:y, Marginalisation) (q_x::Any, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
-mA = as_companion_matrix(mean(q_θ))
+    Vy = mA*inv(Ξ)*mA' + inv(Wx)
+    my = mA*inv(Ξ)*z
 
-mV = ar_transition(getvform(meta), getorder(meta), mean(q_γ))
-
-return convert(promote_variate_type(getvform(meta), NormalMeanVariance), mA * mean(q_x), mV)
+    return MvNormalMeanCovariance(my, Vy)
 end
