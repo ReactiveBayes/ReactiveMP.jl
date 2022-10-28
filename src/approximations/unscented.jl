@@ -11,6 +11,25 @@ struct UnscentedExtra{T, R, M, C}
     Wc :: C
 end
 
+"""
+The `Unscented` structure defines the approximation method of the `Delta` and `Flow` factor nodes. 
+More specifically, it contains the hyperparameters used for sigma points computation.
+
+# Arguments
+- `α`: Spread parameter for unscented transform #1
+- `β`: Algorithm parameter for incorporating prior information on the (non-Gaussian) distribution of Delta node input
+- `κ`: Spread parameter for unscented transform #2
+- `e`: Internal cache
+
+The `Unscented` structure with default parameters can be constructed as `Unscented()`.
+
+The `Unscented` structure is used inside the `DeltaMeta` or `FlowMeta` structure and can be included as: 
+```
+    y ~ f(x) where { meta = DeltaMeta(method = Unscented()) }
+    # or
+    y ~ Flow(x) where { meta = FlowMeta(flowmodel, Unscented()) }
+```
+"""
 struct Unscented{A, B, K, E} <: AbstractApproximationMethod
     α::A
     β::B
@@ -18,6 +37,7 @@ struct Unscented{A, B, K, E} <: AbstractApproximationMethod
     e::E
 end
 
+# Structure constructor
 function Unscented(; alpha::A = default_alpha, beta::B = default_beta, kappa::K = default_kappa) where {A <: Real, B <: Real, K <: Real}
     return Unscented{A, B, K, Nothing}(alpha, beta, kappa, nothing)
 end
