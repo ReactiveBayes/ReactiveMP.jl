@@ -1,6 +1,12 @@
 
 module ReactiveMP
 
+# List global dependencies here
+using TinyHugeNumbers
+
+# Reexport `tiny` and `huge` from the `TinyHugeNumbers`
+export tiny, huge
+
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
 
