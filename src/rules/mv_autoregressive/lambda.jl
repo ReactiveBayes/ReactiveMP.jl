@@ -31,7 +31,7 @@
     G₄ = sum(sum(es[i]*ma'Fs[i]'*vmx*Fs[j]*ma*es[j]' + es[i]*tr(Va*Fs[i]'*vmx*Fs[j])*es[j]' for i in 1:order) for j in 1:order)
     G = G₁ + G₂ + G₃ + G₄
     
-    @show Δ = G + Vy + my*my' - (Vyx + my*mx')*mA' - mA*(Vyx'+ mx*my')
-
-    return WishartMessage(n-2, Δ)
+    Δ = G + Vy + my*my' - (Vyx + my*mx')*mA' - mA*(Vyx'+ mx*my')
+    # TODO check for n
+    return WishartMessage(n+2, Δ[1:order, 1:order])
 end

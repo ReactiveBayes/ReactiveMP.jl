@@ -22,7 +22,7 @@ end
 getorder(meta::MARMeta)              = meta.order
 getdimensionality(meta::MARMeta)     = meta.ds
 
-@node MAR Stochastic [y, x, θ, Λ]
+@node MAR Stochastic [y, x, a, Λ]
 
 default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag explicitly specified")
 
@@ -59,11 +59,11 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
     g₃ = g₂
     G = sum(sum(Fs[i]*(ma*es[i]'*mΛ*es[j]*ma' + Va*es[i]'*mΛ*es[j])*Fs[j]' for i in 1:order) for j in 1:order)
     g₄ = mx'*G*mx + tr(Vx*G)
-    AE =  -mean(logdet, q_Λ) + n/2*log2π + 0.5 + g₁ + g₂ + g₃ + g₄
+    AE =  mean(logdet, q_Λ) - n/2*log2π + 0.5 + g₁ + g₂ + g₃ + g₄
 
     if order > 1
         AE += entropy(q_y_x)
-        @show idc = LazyArrays.Vcat(1:order, (dim+1):2dim)
+        idc = LazyArrays.Vcat(1:order, (dim+1):2dim)
         myx_n = view(myx, idc)
         Vyx_n = view(Vyx, idc, idc)
         q_y_x = MvNormalMeanCovariance(myx_n, Vyx_n)
