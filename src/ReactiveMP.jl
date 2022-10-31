@@ -98,8 +98,8 @@ include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
 
-include("rule.jl")
 include("node.jl")
+include("rule.jl")
 
 include("score/score.jl")
 include("score/variable.jl")

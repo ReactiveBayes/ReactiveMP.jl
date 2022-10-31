@@ -206,11 +206,13 @@ end
 
 Creates a node object that will be used inside `@call_rule` macro. The node object always creates with the default options for factorisation. 
 """
-call_rule_make_node(fformtype, nodetype, meta) =
-    call_rule_make_node(as_node_functional_form(nodetype), fformtype, nodetype, meta)
+function call_rule_make_node(fformtype, nodetype, meta)
+    return call_rule_make_node(ReactiveMP.as_node_functional_form(nodetype), fformtype, nodetype, meta)
+end
 
-call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta) =
-    error("Cannot create a node of type `$nodetype` for the call rule routine.")
+function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta) 
+    return error("Cannot create a node of type `$nodetype` for the call rule routine.")
+end
 
 function call_rule_make_node(::ValidNodeFunctionalForm, fformtype, nodetype, meta)
     return make_node(nodetype, FactorNodeCreationOptions(nothing, meta, nothing))
@@ -605,7 +607,7 @@ macro call_marginalrule(fform, args)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
-    node                             = :(ReactiveMP.call_rule_make_node($fbottomtype, $fformtype, $meta))
+    node                             = :(ReactiveMP.call_rule_make_node($fformtype, $fbottomtype, $meta))
 
     inputs = map(inputs) do input
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
@@ -840,7 +842,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
         spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-        spec = Vector(undef, 2length(interfaces(node)))
+        spec = Vector(undef, 4length(interfaces(node)))
 
         fill!(spec, nothing)
 
@@ -911,7 +913,7 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
     spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
     spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-    spec = Vector(undef, 2length(interfaces(node)))
+    spec = Vector(undef, 4length(interfaces(node)))
 
     if isempty(intersect(Set(m_indices), Set(q_indices)))
         fill!(spec, nothing)
@@ -930,7 +932,7 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
         meta_spec      = rule_method_error_extract_meta(error.meta)
 
         possible_fix_definition = """
-        @marginalrule $(spec_fform)(:$spec_on) ($arguments_spec, $meta_spec) = begin 
+        @marginalrule $(spec_fform)($spec_on) ($arguments_spec, $meta_spec) = begin 
             return ...
         end
         """

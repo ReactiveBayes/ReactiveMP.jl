@@ -1,5 +1,5 @@
 # most of the routines are ported directly from ForneyLab.jl
-@marginalrule DeltaFn{f}(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M}) where {f, N, M <: Linearization} = begin
+@marginalrule DeltaFn(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M}) where { N, M <: Linearization } = begin
     # Approximate joint inbounds
     # Collect individual means and covariances
     statistics = mean_cov.(m_ins)
@@ -8,7 +8,7 @@
     sizes = size.(m_ins)
 
     # Calculate local linear components
-    (A, b) = approximate(getmethod(meta), f, μs_fw_in)
+    (A, b) = approximate(getmethod(meta), getnodefn(Val(:out)), μs_fw_in)
 
     # Invoke the "concatenated" messages in the local linearization
     joint              = convert(JointNormal, μs_fw_in, Σs_fw_in)

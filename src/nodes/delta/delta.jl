@@ -28,14 +28,6 @@ getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
 
 import Base: map
 
-struct DeltaFnCallableWrapper{F} end
-
-(::Type{DeltaFnCallableWrapper{F}})(args...) where {F} = F.instance(args...)
-
-function Base.map(f::Type{DeltaFnCallableWrapper{F}}, any::AbstractArray) where {F}
-    return map(F.instance, any)
-end
-
 struct DeltaFn{F} end
 struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
     fn::F
@@ -47,9 +39,9 @@ struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
     metadata       :: M
 end
 
-as_node_symbol(::Type{DeltaFn{ReactiveMP.DeltaFnCallableWrapper{F}}}) where {F} = Symbol(:DeltaFn, string(F))
+as_node_symbol(::Type{DeltaFn{F}}) where {F} = Symbol(:DeltaFn, string(F))
 
-functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{DeltaFnCallableWrapper{F}}
+functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{F}
 sdtype(factornode::DeltaFnNode)                           = Deterministic()
 interfaces(factornode::DeltaFnNode)                       = (factornode.out, factornode.ins...)
 factorisation(factornode::DeltaFnNode{F, N}) where {F, N} = ntuple(identity, N + 1)
@@ -63,8 +55,35 @@ collect_meta(::Type{<:DeltaFn}, something) = error(
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
 collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(; method = method, inverse = nothing)
 
+function nodefunction(factornode::DeltaFnNode) 
+    # `DeltaFnNode` `nodefunction` is `δ(y - f(ins...))`
+    return let f = nodefunction(factornode, Val(:out))
+        (y, ins...) -> ((y - f(ins...)) ≈ 0) ? 1 : 0
+    end
+end
+
+nodefunction(factornode::DeltaFnNode, ::Val{ :out })            = factornode.fn
+nodefunction(factornode::DeltaFnNode, ::Val{ :in })             = getinverse(metadata(factornode))
+nodefunction(factornode::DeltaFnNode, ::Val{ :in }, k::Integer) = getinverse(metadata(factornode), k)
+
+# Rules for `::Function` objects, but with the `DeltaFn` related meta and node should redirect to the `DeltaFn` rules
+function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F<:Function}
+    return rule(DeltaFn{F}, on, vconstraint, mnames, messages, qnames, marginals, meta, node)
+end
+
+function marginalrule(::F, on, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F<:Function}
+    return marginalrule(DeltaFn{F}, on, mnames, messages, qnames, marginals, meta, node)
+end
+
 # For missing rules error msg
 rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
+
+# For `@call_rule` and `@call_marginalrule`
+function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype::Type{ <: DeltaFn }, nodetype::F, meta::DeltaMeta) where { F }
+    # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
+    # Doing so will most likely throw an error
+    return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn, meta))
+end
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
     # Julia's constant propagation should compile-out this if-else branch

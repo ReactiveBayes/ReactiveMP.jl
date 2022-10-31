@@ -9,6 +9,11 @@ import ReactiveMP: @test_rules
 # g: single input, single output
 g(x) = x .^ 2 .- 5.0
 
+# g2: same as `g`, but depends on the global variables
+t = 2
+v = 5.0
+g2(x) = x.^ t .- v
+
 # h: multiple input, single output
 h(x, y) = x .^ 2 .- y
 
@@ -24,6 +29,23 @@ h(x, y) = x .^ 2 .- y
 
     @testset "Single multivariate input" begin
         @test_rules [with_float_conversions = false] DeltaFn{g}(:out, Marginalisation) [
+            (
+                input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Unscented())),
+                output = MvNormalMeanCovariance([2.0000000001164153], [66.00000000093132])
+            ),
+            (input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Unscented(; alpha = 1.0))), output = MvNormalMeanCovariance([2.0], [66.0]))
+        ]
+    end
+
+    @testset "Single univariate input" begin
+        @test_rules [with_float_conversions = false] DeltaFn{g2}(:out, Marginalisation) [
+            (input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaMeta(; method = Unscented())), output = NormalMeanVariance(2.0000000001164153, 66.00000000093132)),
+            (input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaMeta(; method = Unscented(; alpha = 1.0))), output = NormalMeanVariance(2.0, 66.0))
+        ]
+    end
+
+    @testset "Single multivariate input" begin
+        @test_rules [with_float_conversions = false] DeltaFn{g2}(:out, Marginalisation) [
             (
                 input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Unscented())),
                 output = MvNormalMeanCovariance([2.0000000001164153], [66.00000000093132])
