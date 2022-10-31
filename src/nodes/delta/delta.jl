@@ -39,7 +39,7 @@ struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
     metadata       :: M
 end
 
-as_node_symbol(::Type{DeltaFn{F}}) where {F} = Symbol(:DeltaFn, string(F))
+as_node_symbol(::Type{<:DeltaFn{F}}) where {F} = Symbol(replace(string(nameof(F)), "#" => ""))
 
 functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{F}
 sdtype(factornode::DeltaFnNode)                           = Deterministic()
@@ -49,9 +49,10 @@ localmarginals(factornode::DeltaFnNode)                   = factornode.localmarg
 localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
-collect_meta(::Type{<:DeltaFn}, something) = error(
-    "Delta node requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
+collect_meta(::Type{D}, something::Nothing) where { D <: DeltaFn } = error(
+    "Delta node `$(as_node_symbol(D))` requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
 )
+
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
 collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(; method = method, inverse = nothing)
 
@@ -82,7 +83,7 @@ rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
 function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
     # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
     # Doing so will most likely throw an error
-    return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn, meta))
+    return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn{F}, meta))
 end
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
@@ -111,7 +112,7 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
     end
 
     localmarginals = FactorNodeLocalMarginals((FactorNodeLocalMarginal(1, 1, :out), FactorNodeLocalMarginal(2, 2, :ins)))
-    meta           = collect_meta(DeltaFn, metadata(options))
+    meta           = collect_meta(DeltaFn{F}, metadata(options))
     pipeline       = getpipeline(options)
 
     if !isnothing(pipeline)
