@@ -42,19 +42,6 @@ import ReactiveMP: FunctionalIndex
         end
     end
 
-    @testset "CountingReal" begin
-        r = CountingReal(0.0, 0)
-        @test float(r) ≈ 0.0
-        @test float(r + 1) ≈ 1.0
-        @test float(1 + r) ≈ 1.0
-        @test float(r - 1) ≈ -1.0
-        @test float(1 - r) ≈ 1.0
-        @test float(r - 1 + ∞) ≈ Inf
-        @test float(1 - r + ∞) ≈ Inf
-        @test float(r - 1 + ∞ - ∞) ≈ -1.0
-        @test float(1 - r + ∞ - ∞) ≈ 1.0
-    end
-
     @testset "FunctionalIndex" begin
         for N in 1:5
             collection = ones(N)

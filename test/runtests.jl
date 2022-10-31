@@ -205,6 +205,8 @@ end
 
     addtests(testrunner, "helpers/test_helpers.jl")
 
+    addtests(testrunner, "score/test_counting.jl")
+
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
     addtests(testrunner, "approximations/test_linearization.jl")
