@@ -204,10 +204,9 @@ mean(::typeof(mirrorlog), sl::SampleList) = sample_list_mirroredlogmean(variate_
 
 Distributions.entropy(sl::SampleList) = get_entropy(get_meta(sl))
 
-function Distributions.entropy(sl::SampleList{D, S, W, C, Nothing}) where {D, S, W, C}
-    # DO NOT MERGE THIS, FIND A BETTER WAY TO COMPUTE ENTROPY
-    return -mapreduce(w -> w * log(w), +, get_weights(sl))
-    # return get_entropy(get_meta(sl))
+# `entropy` for the `SampleList` is not defined if `meta` is of type `Nothing`
+function Distributions.entropy(::SampleList{D, S, W, C, Nothing}) where {D, S, W, C}
+    return CountingReal(eltype(distribution), -1)
 end
 
 ## 

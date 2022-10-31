@@ -10,10 +10,10 @@ ReactiveMP.SkipIndexIterator
 ReactiveMP.skipindex
 ```
 
-## [InfCountingReal](@id lib-helpers-inf-counting-real)
+## [CountingReal](@id lib-helpers-inf-counting-real)
 
 ```@docs
-ReactiveMP.InfCountingReal
+ReactiveMP.CountingReal
 ReactiveMP.∞
 ```
 

@@ -6,7 +6,7 @@ using Distributions
 using Random
 using SpecialFunctions
 
-import ReactiveMP: InfCountingReal, tiny, huge
+import ReactiveMP: CountingReal, tiny, huge
 import ReactiveMP.MacroHelpers: @test_inferred
 import ReactiveMP: xtlog, mirrorlog
 
@@ -41,7 +41,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test_throws MethodError logpdf(dist, ones(T, 2))
             @test_throws MethodError logpdf(dist, ones(T, 2, 2))
 
-            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
+            @test (@inferred entropy(dist)) == CountingReal(eltype(dist), -1)
 
             @test @test_inferred(T, mean(dist)) == scalar
             @test @test_inferred(T, mode(dist)) == scalar
@@ -90,7 +90,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test_throws MethodError logpdf(dist, one(T))
             @test_throws MethodError logpdf(dist, ones(T, 2, 2))
 
-            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
+            @test (@inferred entropy(dist)) == CountingReal(eltype(dist), -1)
 
             @test @test_inferred(AbstractVector{T}, mean(dist)) == vector
             @test @test_inferred(AbstractVector{T}, mode(dist)) == vector
@@ -143,7 +143,7 @@ import ReactiveMP: xtlog, mirrorlog
             @test_throws MethodError logpdf(dist, one(T))
             @test_throws MethodError logpdf(dist, ones(T, 2))
 
-            @test (@inferred entropy(dist)) == InfCountingReal(eltype(dist), -1)
+            @test (@inferred entropy(dist)) == CountingReal(eltype(dist), -1)
 
             @test @test_inferred(AbstractMatrix{T}, mean(dist)) == matrix
             @test @test_inferred(AbstractMatrix{T}, mode(dist)) == matrix

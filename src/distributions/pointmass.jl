@@ -23,7 +23,8 @@ getpointmass(distribution::PointMass) = distribution.point
 Base.getindex(distribution::PointMass, index...) = Base.getindex(getpointmass(distribution), index...)
 Base.size(distribution::PointMass, index...) = Base.size(getpointmass(distribution), index...)
 
-Distributions.entropy(distribution::PointMass) = InfCountingReal(eltype(distribution), -1)
+# `entropy` for the `PointMass` is not defined
+Distributions.entropy(distribution::PointMass) = CountingReal(eltype(distribution), -1)
 
 # Real-based univariate point mass
 

@@ -5,7 +5,7 @@ using ReactiveMP
 
 import ReactiveMP: SkipIndexIterator, skipindex
 import ReactiveMP: clamplog, deep_eltype
-import ReactiveMP: InfCountingReal, ∞
+import ReactiveMP: CountingReal, ∞
 import ReactiveMP: FunctionalIndex
 
 @testset "Helpers" begin
@@ -42,8 +42,8 @@ import ReactiveMP: FunctionalIndex
         end
     end
 
-    @testset "InfCountingReal" begin
-        r = InfCountingReal(0.0, 0)
+    @testset "CountingReal" begin
+        r = CountingReal(0.0, 0)
         @test float(r) ≈ 0.0
         @test float(r + 1) ≈ 1.0
         @test float(1 + r) ≈ 1.0

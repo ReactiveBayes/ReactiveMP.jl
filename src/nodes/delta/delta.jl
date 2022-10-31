@@ -173,7 +173,7 @@ end
 
 # DeltaFn has a bit a non-standard interface layout so it has a specialised `score` function too
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, skip_strategy, scheduler) where {T <: InfCountingReal}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, skip_strategy, scheduler) where {T <: CountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
     qinsmarginal = apply_skip_filter(getstream(node.localmarginals.marginals[2]), skip_strategy)

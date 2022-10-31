@@ -10,6 +10,9 @@ export tiny, huge
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
 
+# This should be included before `distributions/*.jl`
+include("score/counting.jl")
+
 include("helpers/algebra/cholesky.jl")
 include("helpers/algebra/companion_matrix.jl")
 include("helpers/algebra/correction.jl")

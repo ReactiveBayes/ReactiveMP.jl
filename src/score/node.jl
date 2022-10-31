@@ -4,13 +4,13 @@ import Base: tail
 
 struct FactorBoundFreeEnergy end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: InfCountingReal}
+function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
     return score(T, FactorBoundFreeEnergy(), sdtype(node), node, skip_strategy, scheduler)
 end
 
 ## Deterministic mapping
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: InfCountingReal}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
     fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
         (interface) -> apply_skip_filter(messagein(interface), skip_strategy) |> schedule_on(scheduler)
     end
@@ -33,7 +33,7 @@ end
 
 ## Stochastic mapping
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: InfCountingReal}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
     fnstream = let node = node, skip_strategy = skip_strategy, scheduler = scheduler
         (cluster) -> getmarginal!(node, cluster, skip_strategy) |> schedule_on(scheduler)
     end
