@@ -206,7 +206,7 @@ Distributions.entropy(sl::SampleList) = get_entropy(get_meta(sl))
 
 # `entropy` for the `SampleList` is not defined if `meta` is of type `Nothing`
 function Distributions.entropy(::SampleList{D, S, W, C, Nothing}) where {D, S, W, C}
-    return CountingReal(eltype(distribution), -1)
+    return CountingReal(deep_eltype(S), -1)
 end
 
 ## 

@@ -65,9 +65,13 @@ Base.:-(a::CountingReal, b::Real) = CountingReal(value(a) - b, improper(a))
 Base.:+(b::Real, a::CountingReal) = CountingReal(b + value(a), +improper(a))
 Base.:-(b::Real, a::CountingReal) = CountingReal(b - value(a), -improper(a))
 
-Base.:*(::CountingReal, ::Real) = error("`CountingReal` multiplication is dissalowed")
+Base.:*(::CountingReal, ::Real) = error("`CountingReal` multiplication with `Real` is dissalowed")
+Base.:*(::Real, ::CountingReal) = error("`CountingReal` multiplication with `Real` is dissalowed")
+
+Base.:*(a::CountingReal, b::Integer) = CountingReal(value(a) * b, improper(a) * b)
+Base.:*(a::Integer, b::CountingReal) = CountingReal(a * value(b), a * improper(b))
+
 Base.:/(::CountingReal, ::Real) = error("`CountingReal` division is dissalowed")
-Base.:*(::Real, ::CountingReal) = error("`CountingReal` multiplication is dissalowed")
 Base.:/(::Real, ::CountingReal) = error("`CountingReal` division is dissalowed")
 
 Base.:+(a::CountingReal, b::CountingReal) = CountingReal(value(a) + value(b), improper(a) + improper(b))
