@@ -7,6 +7,7 @@ export @node
 
 using Rocket
 using TupleTools
+using MacroTools
 
 import Base: show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
 import Base: getindex, setindex!, firstindex, lastindex
@@ -41,8 +42,7 @@ See also: [`ValidNodeFunctionalForm`](@ref), [`UndefinedNodeFunctionalForm`](@re
 """
 function as_node_functional_form end
 
-as_node_functional_form(::Function) = ValidNodeFunctionalForm()
-as_node_functional_form(some)       = UndefinedNodeFunctionalForm()
+as_node_functional_form(some) = UndefinedNodeFunctionalForm()
 
 ## Node types
 
@@ -477,6 +477,12 @@ localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
 localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode))
 metadata(factornode::FactorNode)           = factornode.metadata
 getpipeline(factornode::FactorNode)        = factornode.pipeline
+
+function nodefunction(factornode::FactorNode)
+    return let fform = functionalform(factornode)
+        (out, inputs...) -> pdf(convert(fform, inputs...), out)
+    end
+end
 
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
@@ -1126,13 +1132,15 @@ macro node(fformtype, sdtype, interfaces_list)
     """
 
     res = quote
-        ReactiveMP.as_node_functional_form(::$fuppertype) = ReactiveMP.ValidNodeFunctionalForm()
+        ReactiveMP.as_node_functional_form(::$fuppertype)       = ReactiveMP.ValidNodeFunctionalForm()
+        ReactiveMP.as_node_functional_form(::Type{$fuppertype}) = ReactiveMP.ValidNodeFunctionalForm()
 
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
 
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
 
-        @doc $doc function ReactiveMP.make_node(::$fuppertype, options::ReactiveMP.FactorNodeCreationOptions)
+        @doc $doc
+        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions)
             return ReactiveMP.FactorNode(
                 $fbottomtype,
                 $names_quoted_tuple,
@@ -1142,7 +1150,7 @@ macro node(fformtype, sdtype, interfaces_list)
             )
         end
 
-        function ReactiveMP.make_node(::$fuppertype, options::ReactiveMP.FactorNodeCreationOptions, $(interface_args...))
+        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions, $(interface_args...))
             node = ReactiveMP.make_node($fbottomtype, options)
             $(non_unique_error_msg)
             $(interface_uniqueness...)
@@ -1151,7 +1159,7 @@ macro node(fformtype, sdtype, interfaces_list)
         end
 
         # Fallback method for unsupported number of arguments, e.g. if node expects 2 inputs, but only 1 was given
-        function ReactiveMP.make_node(::$fuppertype, options::ReactiveMP.FactorNodeCreationOptions, args::Vararg{<:ReactiveMP.AbstractVariable})
+        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
             ReactiveMP.make_node_incompatible_number_of_arguments_error($fuppertype, $fbottomtype, $interfaces, args)
         end
 

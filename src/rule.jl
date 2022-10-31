@@ -201,6 +201,21 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     return names_arg, values_arg
 end
 
+"""
+    call_rule_create_node(::Type{ NodeType }, fformtype)
+
+Creates a node object that will be used inside `@call_rule` macro. The node object always creates with the default options for factorisation. 
+"""
+call_rule_make_node(fformtype, nodetype, meta) =
+    call_rule_make_node(as_node_functional_form(nodetype), fformtype, nodetype, meta)
+
+call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta) =
+    error("Cannot create a node of type `$nodetype` for the call rule routine.")
+
+function call_rule_make_node(::ValidNodeFunctionalForm, fformtype, nodetype, meta)
+    return make_node(nodetype, FactorNodeCreationOptions(nothing, meta, nothing))
+end
+
 call_rule_macro_construct_on_arg(on_type, on_index::Nothing) = MacroHelpers.bottom_type(on_type)
 
 function call_rule_macro_construct_on_arg(on_type, on_index::Int)
@@ -212,7 +227,19 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Int)
     end
 end
 
-function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
+function rule_function_expression(
+    body::Function,
+    fuppertype,
+    on_type,
+    vconstraint,
+    m_names,
+    m_types,
+    q_names,
+    q_types,
+    metatype,
+    whereargs
+)
+    nodevar = gensym(:node)
     return quote
         function ReactiveMP.rule(
             fform::$(fuppertype),
@@ -223,18 +250,40 @@ function rule_function_expression(body::Function, fuppertype, on_type, vconstrai
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
-            __node
+            $nodevar
         ) where {$(whereargs...)}
+            local getnode = () -> $nodevar
+            local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
             $(body())
         end
     end
 end
 
-function marginalrule_function_expression(body::Function, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs)
+function marginalrule_function_expression(
+    body::Function,
+    fuppertype,
+    on_type,
+    m_names,
+    m_types,
+    q_names,
+    q_types,
+    metatype,
+    whereargs
+)
+    nodevar = gensym(:node)
     return quote
         function ReactiveMP.marginalrule(
-            fform::$(fuppertype), on::$(on_type), messages_names::$(m_names), messages::$(m_types), marginals_names::$(q_names), marginals::$(q_types), meta::$(metatype), __node
+            fform::$(fuppertype),
+            on::$(on_type),
+            messages_names::$(m_names),
+            messages::$(m_types),
+            marginals_names::$(q_names),
+            marginals::$(q_types),
+            meta::$(metatype),
+            $nodevar
         ) where {$(whereargs...)}
+            local getnode = () -> $nodevar
+            local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
             $(body())
         end
     end
@@ -350,6 +399,7 @@ macro call_rule(fform, args)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
+    node                             = :(ReactiveMP.call_rule_make_node($fformtype, $fbottomtype, $meta))
 
     inputs = map(inputs) do input
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
@@ -362,7 +412,17 @@ macro call_rule(fform, args)
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
-        ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, nothing)
+        ReactiveMP.rule(
+            $fbottomtype,
+            $on_arg,
+            $(vconstraint)(),
+            $m_names_arg,
+            $m_values_arg,
+            $q_names_arg,
+            $q_values_arg,
+            $meta,
+            $node
+        )
     end
 
     return esc(output)
@@ -545,6 +605,7 @@ macro call_marginalrule(fform, args)
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
+    node                             = :(ReactiveMP.call_rule_make_node($fbottomtype, $fformtype, $meta))
 
     inputs = map(inputs) do input
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
@@ -557,7 +618,16 @@ macro call_marginalrule(fform, args)
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
-        ReactiveMP.marginalrule($fbottomtype, $on_arg, $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, nothing)
+        ReactiveMP.marginalrule(
+            $fbottomtype,
+            $on_arg,
+            $m_names_arg,
+            $m_values_arg,
+            $q_names_arg,
+            $q_values_arg,
+            $meta,
+            $node
+        )
     end
 
     return esc(output)
