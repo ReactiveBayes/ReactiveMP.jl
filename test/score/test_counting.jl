@@ -17,5 +17,5 @@ import ReactiveMP: CountingReal, ImproperReal
     @test float(r - 1 + ImproperReal() - ImproperReal()) ≈ -1.0
     @test float(1 - r + ImproperReal() - ImproperReal()) ≈ 1.0
 end
-    
+
 end

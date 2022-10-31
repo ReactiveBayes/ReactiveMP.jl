@@ -12,7 +12,7 @@ g(x) = x .^ 2 .- 5.0
 # g2: same as `g`, but depends on the global variables
 t = 2
 v = 5.0
-g2(x) = x.^ t .- v
+g2(x) = x .^ t .- v
 
 # h: multiple input, single output
 h(x, y) = x .^ 2 .- y

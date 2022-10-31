@@ -210,7 +210,7 @@ function call_rule_make_node(fformtype, nodetype, meta)
     return call_rule_make_node(ReactiveMP.as_node_functional_form(nodetype), fformtype, nodetype, meta)
 end
 
-function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta) 
+function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta)
     return error("Cannot create a node of type `$nodetype` for the call rule routine.")
 end
 
@@ -229,18 +229,7 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Int)
     end
 end
 
-function rule_function_expression(
-    body::Function,
-    fuppertype,
-    on_type,
-    vconstraint,
-    m_names,
-    m_types,
-    q_names,
-    q_types,
-    metatype,
-    whereargs
-)
+function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
     nodevar = gensym(:node)
     return quote
         function ReactiveMP.rule(
@@ -261,28 +250,11 @@ function rule_function_expression(
     end
 end
 
-function marginalrule_function_expression(
-    body::Function,
-    fuppertype,
-    on_type,
-    m_names,
-    m_types,
-    q_names,
-    q_types,
-    metatype,
-    whereargs
-)
+function marginalrule_function_expression(body::Function, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs)
     nodevar = gensym(:node)
     return quote
         function ReactiveMP.marginalrule(
-            fform::$(fuppertype),
-            on::$(on_type),
-            messages_names::$(m_names),
-            messages::$(m_types),
-            marginals_names::$(q_names),
-            marginals::$(q_types),
-            meta::$(metatype),
-            $nodevar
+            fform::$(fuppertype), on::$(on_type), messages_names::$(m_names), messages::$(m_types), marginals_names::$(q_names), marginals::$(q_types), meta::$(metatype), $nodevar
         ) where {$(whereargs...)}
             local getnode = () -> $nodevar
             local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
@@ -414,17 +386,7 @@ macro call_rule(fform, args)
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
-        ReactiveMP.rule(
-            $fbottomtype,
-            $on_arg,
-            $(vconstraint)(),
-            $m_names_arg,
-            $m_values_arg,
-            $q_names_arg,
-            $q_values_arg,
-            $meta,
-            $node
-        )
+        ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $node)
     end
 
     return esc(output)
@@ -620,16 +582,7 @@ macro call_marginalrule(fform, args)
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
-        ReactiveMP.marginalrule(
-            $fbottomtype,
-            $on_arg,
-            $m_names_arg,
-            $m_values_arg,
-            $q_names_arg,
-            $q_values_arg,
-            $meta,
-            $node
-        )
+        ReactiveMP.marginalrule($fbottomtype, $on_arg, $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $node)
     end
 
     return esc(output)

@@ -14,7 +14,7 @@ end
     rng = something(method.rng, Random.GLOBAL_RNG)
     q_ins_samples = map(marginal -> rand(rng, marginal, method.n_samples), q_ins_sample_friendly)
     samples_linear = map(cvilinearize, q_ins_samples)
-    g       = getnodefn(Val(:out))
+    g = getnodefn(Val(:out))
     samples = map(x -> g(x...), zip(samples_linear...))
     return ProdFinal(SampleList(samples))
 end

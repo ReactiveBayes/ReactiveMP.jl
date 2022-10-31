@@ -1,5 +1,5 @@
 # most of the routines are ported directly from ForneyLab.jl
-@marginalrule DeltaFn(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M}) where { N, M <: Linearization } = begin
+@marginalrule DeltaFn(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M}) where {N, M <: Linearization} = begin
     # Approximate joint inbounds
     # Collect individual means and covariances
     statistics = mean_cov.(m_ins)

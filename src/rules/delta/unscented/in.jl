@@ -1,6 +1,6 @@
 
 # unknown inverse
-@rule DeltaFn((:in, k), Marginalisation) (q_ins::JointNormal, m_in::NormalDistributionsFamily, meta::DeltaMeta{M, I}) where { M <: Unscented, I <: Nothing} = begin
+@rule DeltaFn((:in, k), Marginalisation) (q_ins::JointNormal, m_in::NormalDistributionsFamily, meta::DeltaMeta{M, I}) where {M <: Unscented, I <: Nothing} = begin
     # Divide marginal on inx by forward message
     ξ_inx, Λ_inx       = weightedmean_precision(getmarginal(q_ins, k))
     ξ_fw_inx, Λ_fw_inx = weightedmean_precision(m_in)
@@ -12,7 +12,7 @@
 end
 
 # known inverse, single input
-@rule DeltaFn((:in, _), Marginalisation) (m_out::NormalDistributionsFamily, m_ins::Nothing, meta::DeltaMeta{M, I}) where { M <: Unscented, I <: Function} = begin
+@rule DeltaFn((:in, _), Marginalisation) (m_out::NormalDistributionsFamily, m_ins::Nothing, meta::DeltaMeta{M, I}) where {M <: Unscented, I <: Function} = begin
     return approximate(getmethod(meta), getnodefn(Val(:in)), (m_out,))
 end
 

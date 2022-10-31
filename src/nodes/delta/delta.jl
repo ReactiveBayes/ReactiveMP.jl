@@ -55,23 +55,23 @@ collect_meta(::Type{<:DeltaFn}, something) = error(
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
 collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(; method = method, inverse = nothing)
 
-function nodefunction(factornode::DeltaFnNode) 
+function nodefunction(factornode::DeltaFnNode)
     # `DeltaFnNode` `nodefunction` is `δ(y - f(ins...))`
     return let f = nodefunction(factornode, Val(:out))
         (y, ins...) -> ((y - f(ins...)) ≈ 0) ? 1 : 0
     end
 end
 
-nodefunction(factornode::DeltaFnNode, ::Val{ :out })            = factornode.fn
-nodefunction(factornode::DeltaFnNode, ::Val{ :in })             = getinverse(metadata(factornode))
-nodefunction(factornode::DeltaFnNode, ::Val{ :in }, k::Integer) = getinverse(metadata(factornode), k)
+nodefunction(factornode::DeltaFnNode, ::Val{:out})            = factornode.fn
+nodefunction(factornode::DeltaFnNode, ::Val{:in})             = getinverse(metadata(factornode))
+nodefunction(factornode::DeltaFnNode, ::Val{:in}, k::Integer) = getinverse(metadata(factornode), k)
 
 # Rules for `::Function` objects, but with the `DeltaFn` related meta and node should redirect to the `DeltaFn` rules
-function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F<:Function}
+function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F <: Function}
     return rule(DeltaFn{F}, on, vconstraint, mnames, messages, qnames, marginals, meta, node)
 end
 
-function marginalrule(::F, on, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F<:Function}
+function marginalrule(::F, on, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F <: Function}
     return marginalrule(DeltaFn{F}, on, mnames, messages, qnames, marginals, meta, node)
 end
 
@@ -79,7 +79,7 @@ end
 rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
 
 # For `@call_rule` and `@call_marginalrule`
-function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype::Type{ <: DeltaFn }, nodetype::F, meta::DeltaMeta) where { F }
+function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
     # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
     # Doing so will most likely throw an error
     return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn, meta))

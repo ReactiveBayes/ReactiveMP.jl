@@ -1139,8 +1139,7 @@ macro node(fformtype, sdtype, interfaces_list)
 
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
 
-        @doc $doc
-        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions)
+        @doc $doc function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions)
             return ReactiveMP.FactorNode(
                 $fbottomtype,
                 $names_quoted_tuple,

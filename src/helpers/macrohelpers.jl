@@ -26,7 +26,7 @@ This function returns `T` expression for the following input expressions:
 # See also: [`extract_fformtype`](@ref), [`upper_type`](@ref)
 """
 function bottom_type(type)
-    @capture(type, (DeltaFn{ T_ }) | (ReactiveMP.DeltaFn{ T_ }) | (typeof(T_)) | (Type{<:T_}) | (Type{T_}) | (T_)) || 
+    @capture(type, (DeltaFn{T_}) | (ReactiveMP.DeltaFn{T_}) | (typeof(T_)) | (Type{<:T_}) | (Type{T_}) | (T_)) ||
         error("Expression $(type) doesnt seem to be a valid type expression.")
     return T
 end
@@ -48,8 +48,8 @@ This function returns `Type{ <: T }` expression for the following input expressi
 function upper_type(type)
     if @capture(type, typeof(T_))
         return :(typeof($(ensure_symbol(T))))
-    elseif @capture(type, (DeltaFn{ T_ }) | (ReactiveMP.DeltaFn{ T_ }))
-        return :(Type{<:DeltaFn{ <: $T }})
+    elseif @capture(type, (DeltaFn{T_}) | (ReactiveMP.DeltaFn{T_}))
+        return :(Type{<:DeltaFn{<:$T}})
     else
         return :(Type{<:$(bottom_type(type))})
     end

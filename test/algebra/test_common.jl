@@ -84,7 +84,6 @@ using LinearAlgebra
             @test ReactiveMP.mul_trace(a, b) ≈ a * b
         end
     end
-
 end
 
 end
