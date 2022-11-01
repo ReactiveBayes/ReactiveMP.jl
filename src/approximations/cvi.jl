@@ -1,4 +1,4 @@
-export CVIApproximation
+export CVIApproximation, CVI
 
 using Random
 
