@@ -1137,7 +1137,7 @@ macro node(fformtype, sdtype, interfaces_list)
             quote
                 # If a variable `$name` is a constvar or a datavar
                 if ReactiveMP.isconst($(name)) || ReactiveMP.isdata($(name))
-                    local __factorisation = ReactiveMP.factorisation(options)
+                    local __factorisation = ReactiveMP.factorisation(node)
                     # Find the factorization cluster associated with the constvar `$name`
                     local __index  = ReactiveMP.interface_get_index(Val{$(QuoteNode(fbottomtype))}, Val{$(QuoteNode(name))})
                     local __cindex = Base.findnext(c -> Base.in(__index, c), __factorisation, 1)
