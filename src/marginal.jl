@@ -123,11 +123,6 @@ function as_marginal_observable(observable, skip_strategy::MarginalSkipStrategy)
 end
 
 Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
-Rocket.getrecent(observables::Tuple)             = Rocket.getrecent.(observables)
-Rocket.getrecent(::Nothing)                      = nothing
-
-# todo add this method to Rocket.jl
-Rocket.getrecent(observable::Rocket.CombineLatestUpdatesObservable) = getrecent(observable.sources)
 
 @inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(observable.stream, actor)
 

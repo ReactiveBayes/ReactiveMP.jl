@@ -10,13 +10,6 @@ ReactiveMP.SkipIndexIterator
 ReactiveMP.skipindex
 ```
 
-## [CountingReal](@id lib-helpers-inf-counting-real)
-
-```@docs
-ReactiveMP.CountingReal
-ReactiveMP.∞
-```
-
 ## [deep_eltype](@id lib-helpers-deep-eltype)
 
 ```@docs

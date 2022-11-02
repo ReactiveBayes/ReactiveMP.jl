@@ -66,7 +66,7 @@ make_form_constraint
 In this demo we show how to build a custom functional form constraint that is compatible with the `ReactiveMP.jl` inference backend. An important part of the functional forms constraint implementation is the [`prod`](@ref) function. More information about [`prod`](@ref) function is present in the [Prod Implementation](@ref lib-prod) section. We show a relatively simple use-case, which might not be very useful in practice, but serves as a simple step-by-step guide. Assume that we want a specific posterior marginal of some random variable in our model to have a specific Gaussian parametrisation, for example mean-precision. We can use built-in `NormalMeanPrecision` distribution, but we still need to define our custom functional form constraint:
 
 ```@example custom-functional-form-example
-using ReactiveMP, GraphPPL
+using ReactiveMP
 
 # First we define our functional form structure with no fields
 struct MeanPrecisionFormConstraint <: AbstractFormConstraint end

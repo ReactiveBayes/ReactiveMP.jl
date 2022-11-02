@@ -23,7 +23,6 @@ makedocs(
                 "Flow"     => "lib/nodes/flow.md"
             ],
             "Prod implementation" => "lib/prod.md",
-            "Math utils"          => "lib/math.md",
             "Helper utils"        => "lib/helpers.md",
             "Exported methods"    => "lib/methods.md"
         ],
