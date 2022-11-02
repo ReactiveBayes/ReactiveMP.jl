@@ -20,13 +20,23 @@ using ReactiveMP
     @testset "__as_vec tests" begin
         import ReactiveMP: __as_vec
 
-        # `@inferred` is need for type-stability
-        @test @inferred(__as_vec((1, 2, 3))) == [1, 2, 3]
-        @test @inferred(__as_vec((3, 2, 1))) == [3, 2, 1]
-        @test @inferred(__as_vec((3, [2.0], 1))) == [3.0, 2.0, 1.0]
-        @test @inferred(__as_vec(([3.0, 2.0], [2.0], 1))) == [3.0, 2.0, 2.0, 1.0]
-        @test @inferred(__as_vec((3, 2, [1.0 0.0; 0.0 1.0]))) == [3.0, 2.0, 1.0, 0.0, 0.0, 1.0]
-        @test @inferred(__as_vec(([3.0, 2.0], 2, [1.0 0.0; 0.0 1.0]))) == [3.0, 2.0, 2.0, 1.0, 0.0, 0.0, 1.0]
+        @static if VERSION >= v"1.7"
+            # `@inferred` is need for type-stability
+            @test @inferred(__as_vec((1, 2, 3))) == [1, 2, 3]
+            @test @inferred(__as_vec((3, 2, 1))) == [3, 2, 1]
+            @test @inferred(__as_vec((3, [2.0], 1))) == [3.0, 2.0, 1.0]
+            @test @inferred(__as_vec(([3.0, 2.0], [2.0], 1))) == [3.0, 2.0, 2.0, 1.0]
+            @test @inferred(__as_vec((3, 2, [1.0 0.0; 0.0 1.0]))) == [3.0, 2.0, 1.0, 0.0, 0.0, 1.0]
+            @test @inferred(__as_vec(([3.0, 2.0], 2, [1.0 0.0; 0.0 1.0]))) == [3.0, 2.0, 2.0, 1.0, 0.0, 0.0, 1.0]
+        else
+            # Julia's compiler on <= v1.6 is not smart enough to infer the type of the result
+            @test __as_vec((1, 2, 3)) == [1, 2, 3]
+            @test __as_vec((3, 2, 1)) == [3, 2, 1]
+            @test __as_vec((3, [2.0], 1)) == [3.0, 2.0, 1.0]
+            @test __as_vec(([3.0, 2.0], [2.0], 1)) == [3.0, 2.0, 2.0, 1.0]
+            @test __as_vec((3, 2, [1.0 0.0; 0.0 1.0])) == [3.0, 2.0, 1.0, 0.0, 0.0, 1.0]
+            @test __as_vec(([3.0, 2.0], 2, [1.0 0.0; 0.0 1.0])) == [3.0, 2.0, 2.0, 1.0, 0.0, 0.0, 1.0]
+        end
     end
 
     @testset "__splitjoin tests" begin
