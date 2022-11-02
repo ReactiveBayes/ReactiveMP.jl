@@ -96,7 +96,6 @@ function activate!(meta::MetaSpecification, nodes, variables)
     warn    = iswarn(options)
 
     foreach(getentries(meta)) do entry
-        
         if warn && !hasnodeid(nodes, functionalform(entry))
             @warn "Meta specification `$(entry)` specifies node entry as `$(functionalform(entry))`, but factor nodes collection has no factor node `$(functionalform(entry))`. Use `warn = false` option during constraints specification to suppress this warning."
         end

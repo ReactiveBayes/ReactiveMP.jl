@@ -1060,8 +1060,11 @@ macro node(fformtype, sdtype, interfaces_list)
     names_splitted_indices = Expr(:tuple, map(i -> Expr(:tuple, i), 1:length(names))...)
     names_indexed          = Expr(:tuple, map(name -> Expr(:call, :(ReactiveMP.indexed_name), name), names)...)
 
+    interface_names       = map(name -> :(ReactiveMP.indexed_name($name)), names)
     interface_args        = map(name -> :($name::AbstractVariable), names)
     interface_connections = map(name -> :(ReactiveMP.connect!(node, $(Expr(:quote, name)), $name)), names)
+
+    joined_interface_names = :(join((($(interface_names...)),), ", "))
 
     # Check that all arguments within interface refer to the unique var objects
     non_unique_error_sym = gensym(:non_unique_error_sym)
@@ -1124,6 +1127,44 @@ macro node(fformtype, sdtype, interfaces_list)
         error("Unreachable in @node macro.")
     end
 
+    # Here we attempt to double-check that the factorisation provided around a node is 'correct' with respect to the constant values and data values
+    # `constvar`s and `datavar`s should not (even though a user can do that) be included in the factorisation clusters, all constvars should be factorised out
+    # otherwise the user might face BFE computation issues
+    # NOTE: there is no difference between factorized and non-factorized constvars/datavars from mathematical point of view 
+    factorisation_check = if sdtype === :Stochastic
+        map(names) do name
+            missingclustererr = "Cannot find the cluster for the variable connected to the `$(name)` interface around the `$fformtype` node."
+            quote
+                # If a variable `$name` is a constvar or a datavar
+                if ReactiveMP.isconst($(name)) || ReactiveMP.isdata($(name))
+                    local __factorisation = ReactiveMP.factorisation(options)
+                    # Find the factorization cluster associated with the constvar `$name`
+                    local __index  = ReactiveMP.interface_get_index(Val{$(QuoteNode(fbottomtype))}, Val{$(QuoteNode(name))})
+                    local __cindex = Base.findnext(c -> Base.in(__index, c), __factorisation, 1)
+                    if isnothing(__cindex)
+                        error($missingclustererr)
+                    elseif length(__factorisation[__cindex]) !== 1
+                        # This `lambda` call is needed because of the double-interpolation issues between `quote` expressions and strings
+                        local __warnmsg =
+                            (fformtype, joined_names, joint, var_name, interface_name) ->
+                                "The specified factorization constraint for `$(joint)` around the `$(fformtype)($joined_names)` node includes a variable `$(var_name)` that is constrained to a `PointMass` distribution. Because this variable is constrained to a `PointMass` distribution, it should be excluded from the structured part of the factorization. Instead, specify the posterior over this variable independent from the rest of the variables (e.g. replace `$(joint)` with `q($(interface_name))q(...)`)."
+                        # which includes a `PointMass` distributed variable connected to the `$(interface_name)` interface. Consider factorizing out the `PointMass` distributed variable connected to the `$(interface_name)` interface, otherwise the Bethe Free Energy computation might be broken
+                        local __joint = string(
+                            "q(", join(map((ci) -> ReactiveMP.interface_get_name(Val{$(QuoteNode(fbottomtype))}, Val{ci}), __factorisation[__cindex]), ", "), ")"
+                        )
+                        @warn __warnmsg($fformtype, $joined_interface_names, __joint, ReactiveMP.indexed_name($(name)), $(QuoteNode(name)))
+                    end
+                end
+            end
+        end
+    elseif sdtype === :Deterministic
+        # There is no factorisation check in case of the `Deterministic` node
+        # as the Deterministic nodes ignores the factorisation field in any case
+        (:(nothing),)
+    else
+        error("Unreachable in @node macro.")
+    end
+
     doctype   = rpad(fbottomtype, 30)
     docsdtype = rpad(sdtype, 15)
     docedges  = string(interfaces_list)
@@ -1153,6 +1194,7 @@ macro node(fformtype, sdtype, interfaces_list)
             node = ReactiveMP.make_node($fbottomtype, options)
             $(non_unique_error_msg)
             $(interface_uniqueness...)
+            $(factorisation_check...)
             $(interface_connections...)
             return node
         end

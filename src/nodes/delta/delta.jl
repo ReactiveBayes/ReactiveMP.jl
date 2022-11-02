@@ -49,7 +49,7 @@ localmarginals(factornode::DeltaFnNode)                   = factornode.localmarg
 localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
 
-collect_meta(::Type{D}, something::Nothing) where { D <: DeltaFn } = error(
+collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
     "Delta node `$(as_node_symbol(D))` requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
 )
 

@@ -20,7 +20,7 @@ const UnivariateGaussianDistributionsFamily   = UnivariateNormalDistributionsFam
 const MultivariateGaussianDistributionsFamily = MultivariateNormalDistributionsFamily
 const GaussianDistributionsFamily             = NormalDistributionsFamily
 
-import Base: prod, convert
+import Base: prod, convert, ndims
 import Random: rand!
 import Distributions: logpdf
 import StatsFuns: invsqrt2π
@@ -88,6 +88,11 @@ entropy(joint::JointNormal) = entropy(joint, joint.dist)
 
 entropy(joint::JointNormal, dist::NormalDistributionsFamily) = entropy(dist)
 entropy(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = entropy(convert(MvNormalMeanCovariance, mean_cov(joint)...))
+
+Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
+
+Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
+Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
 
 function Base.convert(::Type{JointNormal}, distribution::UnivariateNormalDistributionsFamily, sizes::Tuple{Tuple{}})
     return JointNormal(distribution, sizes)

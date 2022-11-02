@@ -116,6 +116,20 @@ using Distributions
             end
         end
 
+        # `make_node` must show a warning in case if factorisation include the `PointMass` distributed variables jointly with other variables
+        struct DummyNodeCheckFactorisationWarning end
+
+        @node DummyNodeCheckFactorisationWarning Stochastic [a, b, c]
+
+        for a in (datavar(:a, Float64), constvar(:a, 1.0)), b in (randomvar(:b),), c in (randomvar(:c),)
+            @test_logs (:warn, r".*replace `q\(a, b, c\)` with `q\(a\)q\(\.\.\.\)`.*") make_node(
+                DummyNodeCheckFactorisationWarning, FactorNodeCreationOptions(((1, 2, 3),), nothing, nothing), a, b, c
+            )
+            @test_logs (:warn, r".*replace `q\(a, b\)` with `q\(a\)q\(\.\.\.\)`.*") make_node(
+                DummyNodeCheckFactorisationWarning, FactorNodeCreationOptions(((1, 2), (3,)), nothing, nothing), a, b, c
+            )
+        end
+
         # Testing expected exceptions
 
         struct DummyStruct end
