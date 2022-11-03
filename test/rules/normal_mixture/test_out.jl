@@ -66,7 +66,7 @@ import ReactiveMP: @test_rules
                     q_p = ManyOf(GammaShapeRate(1.0, 1.0), GammaShapeScale(2.0, 0.1))
                 ),
                 output = NormalWeightedMeanPrecision(1, 1)
-            ),
+            )
         ]
     end
 
