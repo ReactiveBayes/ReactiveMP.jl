@@ -49,14 +49,16 @@ end
 
 function Distributions.mean(::typeof(logdet), distribution::WishartMessage)
     d       = size(distribution, 1)
-    ν, invS = (distribution.ν, distributions.invS)
-    return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) - logdet(invS)
+    ν, invS = (distribution.ν, distribution.invS)
+    T       = promote_type(typeof(ν), eltype(invS))
+    return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(convert(T, 2)) - logdet(invS)
 end
 
 function Distributions.mean(::typeof(logdet), distribution::Wishart)
-    d = size(distribution, 1)
+    d    = size(distribution, 1)
     ν, S = params(distribution)
-    return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) + logdet(S)
+    T    = promote_type(typeof(ν), eltype(S))
+    return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(convert(T, 2)) + logdet(S)
 end
 
 function Distributions.mean(::typeof(inv), distribution::WishartDistributionsFamily)

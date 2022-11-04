@@ -268,6 +268,7 @@ end
     addtests(testrunner, "nodes/test_and.jl")
     addtests(testrunner, "nodes/test_implication.jl")
     addtests(testrunner, "nodes/test_uniform.jl")
+    addtests(testrunner, "nodes/test_normal_mixture.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
@@ -292,6 +293,7 @@ end
     addtests(testrunner, "rules/normal_mixture/test_out.jl")
     addtests(testrunner, "rules/normal_mixture/test_m.jl")
     addtests(testrunner, "rules/normal_mixture/test_p.jl")
+    addtests(testrunner, "rules/normal_mixture/test_switch.jl")
 
     addtests(testrunner, "rules/subtraction/test_marginals.jl")
     addtests(testrunner, "rules/subtraction/test_in1.jl")

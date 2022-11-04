@@ -34,14 +34,16 @@ end
     m_out, v_out   = mean_cov(q_out)
     df_Λ, S_Λ      = params(q_Λ)  # prevent allocation of mean matrix
 
-    result = zero(promote_type(eltype(m_mean), eltype(m_out), eltype(S_Λ)))
+    T = promote_type(eltype(m_mean), eltype(m_out), eltype(S_Λ))
+    result = zero(T)
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
         result += S_Λ[k1, k2] * (v_out[k1, k2] + v_mean[k1, k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
     end
+
     result *= df_Λ
-    result += dim * log2π
+    result += dim * convert(T, log2π)
     result -= mean(logdet, q_Λ)
     result /= 2
 
@@ -56,8 +58,10 @@ end
     m, V = mean_cov(q_out_μ)
     m_Λ  = mean(q_Λ)
 
-    result = zero(promote_type(eltype(m), eltype(m_Λ)))
-    result += dim * log2π
+    T = promote_type(eltype(m), eltype(m_Λ))
+
+    result = zero(T)
+    result += dim * convert(T, log2π)
     result -= mean(logdet, q_Λ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
