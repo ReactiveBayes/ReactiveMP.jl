@@ -65,18 +65,31 @@ See also: [`ConstraintsSpecification`](@ref)
 function resolve_meta(metaspec, fform, variables)
     symfform = as_node_symbol(fform)
 
-    var_names      = map(name, variables)
-    var_refs       = map(resolve_variable_proxy, variables)
+    var_names      = map(name, TupleTools.flatten(variables))
+    var_refs       = map(resolve_variable_proxy, TupleTools.flatten(variables))
     var_refs_names = map(r -> r[1], var_refs)
 
     found = nothing
 
     unrolled_foreach(getentries(metaspec)) do fentry
+        # We iterate over all entries in the meta specification
         if functionalform(fentry) === symfform && (all(s -> s ∈ var_names, getnames(fentry)) || all(s -> s ∈ var_refs_names, getnames(fentry)))
-            if found !== nothing
+            if isnothing(found)
+                # if we find an appropriate meta spec we simply set it 
+                found = fentry
+            elseif !isnothing(found) && issubset(getnames(fentry), getnames(found)) && issubset(getnames(found), getnames(fentry))
+                # The error case is the meta specification collision, two sets of names are exactly the same
+                error("Ambigous meta object resolution for the node $(fform). Check $(found) and $(fentry).")
+            elseif !isnothing(found) && issubset(getnames(fentry), getnames(found))
+                # If we find another matching meta spec, but it has fewer names in it we simply keep the previous one
+                nothing
+            elseif !isnothing(found) && issubset(getnames(found), getnames(fentry))
+                # If we find another matching meta spec, and it has more names we override the previous one
+                found = fentry
+            elseif !isnothing(found) && !issubset(getnames(fentry), getnames(found)) && !issubset(getnames(found), getnames(fentry))
+                # The error case is the meta specification collision, two sets of names are different and do not include each other
                 error("Ambigous meta object resolution for the node $(fform). Check $(found) and $(fentry).")
             end
-            found = fentry
         end
     end
 
