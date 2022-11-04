@@ -290,6 +290,7 @@ end
     addtests(testrunner, "rules/bifm_helper/test_out.jl")
 
     addtests(testrunner, "rules/normal_mixture/test_out.jl")
+    addtests(testrunner, "rules/normal_mixture/test_m.jl")
 
     addtests(testrunner, "rules/subtraction/test_marginals.jl")
     addtests(testrunner, "rules/subtraction/test_in1.jl")
