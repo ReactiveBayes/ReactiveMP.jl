@@ -25,7 +25,7 @@ import ReactiveMP: WishartMessage
             input = (
                 q_out = MvNormalMeanCovariance([8.5], [0.5]),
                 q_m = ManyOf(MvNormalMeanCovariance([5.0], [2.0]), MvNormalMeanCovariance([10.0], [3.0])),
-                q_p = ManyOf(Wishart(2.0, [0.25;;]), Wishart(4.0, [0.5;;]))
+                q_p = ManyOf(Wishart(2.0, fill(0.25, 1, 1)), Wishart(4.0, fill(0.5, 1, 1)))
             ),
             output = Categorical([0.7713458788198754, 0.22865412118012463])
         )]

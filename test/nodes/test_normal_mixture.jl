@@ -71,7 +71,7 @@ import ReactiveMP: WishartMessage, ManyOf
             q_out = MvNormalMeanCovariance([0.0], [1.0])
             q_switch = Categorical([0.5, 0.5])
             q_m = (MvNormalMeanPrecision([1.0], [2.0]), MvNormalMeanPrecision([3.0], [4.0]))
-            q_p = (WishartMessage(3.0, [3.0;;]), WishartMessage(4.0, [5.0;;]))
+            q_p = (WishartMessage(3.0, fill(3.0, 1, 1)), WishartMessage(4.0, fill(5.0, 1, 1)))
 
             marginals = (
                 Marginal(q_out, false, false),
