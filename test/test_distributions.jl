@@ -8,14 +8,11 @@ import ReactiveMP: convert_eltype
 import ReactiveMP: FactorizedJoint
 
 @testset "Distributions" begin
-
-    @testset "convert_eltype" begin 
+    @testset "convert_eltype" begin
         for T in (Float32, Float64, BigFloat)
-
-            @test @inferred(eltype(convert_eltype(T, [ 1.0, 1.0 ]))) === T
-            @test @inferred(eltype(convert_eltype(T, [ 1.0 1.0; 1.0 1.0 ]))) === T
+            @test @inferred(eltype(convert_eltype(T, [1.0, 1.0]))) === T
+            @test @inferred(eltype(convert_eltype(T, [1.0 1.0; 1.0 1.0]))) === T
             @test @inferred(eltype(convert_eltype(T, 1.0))) === T
-
         end
     end
 

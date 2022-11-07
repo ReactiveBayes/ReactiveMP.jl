@@ -105,7 +105,7 @@ convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Dis
 Converts (if possible) the elements of the `container` to be of type `E`.
 """
 convert_eltype(::Type{E}, container::AbstractArray) where {E} = convert(AbstractArray{E}, container)
-convert_eltype(::Type{E}, number::Number)           where {E} = convert(E, number)
+convert_eltype(::Type{E}, number::Number) where {E} = convert(E, number)
 
 """
     logpdf_sample_friendly(distribution) 

@@ -20,7 +20,6 @@ h_inv_z(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:extended:in" begin
     @testset "Single input with known inverse" begin
-        
         @test_rules [with_float_conversions = true, atol = 1e-5] DeltaFn{g}((:in, k = 1), Marginalisation) [
             (
                 input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = nothing, meta = DeltaMeta(; method = Linearization(), inverse = g_inv)),

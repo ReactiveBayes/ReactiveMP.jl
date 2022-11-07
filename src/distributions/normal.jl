@@ -96,7 +96,7 @@ Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, fi
 
 convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal) where {T} = convert_eltype(JointNormal, T, joint, joint.dist)
 
-function convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T} 
+function convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
     μ, Σ  = map(e -> convert_eltype(T, e), mean_cov(dist))
     cdist = convert(promote_variate_type(variate_form(μ), NormalMeanVariance), μ, Σ)
     return JointNormal(cdist, joint.ds)
