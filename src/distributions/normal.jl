@@ -52,10 +52,10 @@ dimensionalities(joint::JointNormal) = joint.ds
 mean_cov(joint::JointNormal) = mean_cov(joint, joint.dist, joint.ds)
 
 # In case if `JointNormal` internal representation stores the actual distribution we simply returns its statistics
-mean_cov(::JointNormal, dist::MvNormalMeanCovariance, ::Tuple) = mean_cov(dist)
+mean_cov(::JointNormal, dist::NormalDistributionsFamily, ::Tuple) = mean_cov(dist)
 
 # In case if `JointNormal` internal representation stores the actual distribution with a single univariate element we return its statistics as numbers
-mean_cov(::JointNormal, dist::MvNormalMeanCovariance, ::Tuple{Tuple{}}) = first.(mean_cov(dist))
+mean_cov(::JointNormal, dist::NormalDistributionsFamily, ::Tuple{Tuple{}}) = first.(mean_cov(dist))
 
 # In case if `JointNormal` internal representation stores tuples of means and covariances we need to concatenate them
 function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
@@ -93,6 +93,14 @@ Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
 
 Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
 Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
+
+convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal) where {T} = convert_eltype(JointNormal, T, joint, joint.dist)
+
+function convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
+    μ, Σ  = map(e -> convert_eltype(T, e), mean_cov(dist))
+    cdist = convert(promote_variate_type(variate_form(μ), NormalMeanVariance), μ, Σ)
+    return JointNormal(cdist, joint.ds)
+end
 
 function Base.convert(::Type{JointNormal}, distribution::UnivariateNormalDistributionsFamily, sizes::Tuple{Tuple{}})
     return JointNormal(distribution, sizes)

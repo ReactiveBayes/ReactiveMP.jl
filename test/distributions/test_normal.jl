@@ -6,6 +6,8 @@ using Random
 using LinearAlgebra
 using Distributions
 
+import ReactiveMP: convert_eltype
+
 @testset "Normal" begin
     @testset "Univariate conversions" begin
         check_basic_statistics = (left, right) -> begin
@@ -157,6 +159,9 @@ using Distributions
         @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((2,),)), 1) == MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0])
         @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((1,), (1,))), 1) == MvNormalMeanCovariance([0.0], [2.0;;])
         @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((), ())), 1) == NormalMeanVariance(0.0, 2.0)
+
+        @test @inferred(mean_cov(convert_eltype(JointNormal, Float32, JointNormal(NormalMeanVariance(0.0, 1.0), ((),))))) === (0.0f0, 1.0f0)
+        @test @inferred(mean_cov(convert_eltype(JointNormal, Float32, JointNormal(MvNormalMeanCovariance([0.0], [1.0;;]), ((),))))) === (0.0f0, 1.0f0)
     end
 
     @testset "Variate forms promotions" begin

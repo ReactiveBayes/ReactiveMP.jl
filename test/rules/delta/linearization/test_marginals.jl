@@ -7,21 +7,21 @@ import ReactiveMP: @test_marginalrules
 # TODO: with_float_conversions = true breaks
 
 # g: single input, single output
-g(x) = x .^ 2 .- 5.0
+g(x) = x .^ 2 .- 5
 
 # h: multiple input, single output
 h(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:extended:marginals" begin
     @testset "Single univariate input" begin
-        @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [(
+        @test_marginalrules [with_float_conversions = true] DeltaFn{g}(:ins) [(
             input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaMeta(; method = Linearization(), inverse = nothing)),
             output = JointNormal(NormalMeanVariance(2.6315789473684212, 0.1578947368421053), ((),))
         )]
     end
 
     @testset "Single multivariate input" begin
-        @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [(
+        @test_marginalrules [with_float_conversions = true] DeltaFn{g}(:ins) [(
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]), m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0])), meta = DeltaMeta(; method = Linearization(), inverse = nothing)
             ),
@@ -30,7 +30,7 @@ h(x, y) = x .^ 2 .- y
     end
 
     @testset "Multiple univairate input" begin
-        @test_marginalrules [with_float_conversions = false] DeltaFn{h}(:ins) [(
+        @test_marginalrules [with_float_conversions = true] DeltaFn{h}(:ins) [(
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),
                 m_ins = ManyOf(NormalMeanVariance(2.0, 1.0), NormalMeanVariance(5.0, 1.0)),
@@ -42,7 +42,7 @@ h(x, y) = x .^ 2 .- y
 
     @testset "Multiple multivariate input" begin
         # ForneyLab:test_delta_extended:MDeltaEInGX 2
-        @test_marginalrules [with_float_conversions = false] DeltaFn{h}(:ins) [(
+        @test_marginalrules [with_float_conversions = true] DeltaFn{h}(:ins) [(
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]),
                 m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0]), MvNormalMeanCovariance([5.0], [1.0])),
