@@ -449,9 +449,10 @@ macro test_rules(options, on, test_sequence)
             @capture(input, (input_entries__,)) || error("Invalid input entries. Input entries should be in the form of a named tuple. ")
 
             # We filter out indices only for inputs that start with 'm_' or 'q_'
+            # + we ignore `m_\q_* = nothing`
             inputs = map(first, filter(collect(enumerate(input_entries))) do i
                 @capture(i[2], (key_ = value_))
-                if key !== nothing
+                if key !== nothing && value !== :nothing
                     skey = string(key)
                     return startswith(skey, "m_") || startswith(skey, "q_")
                 end

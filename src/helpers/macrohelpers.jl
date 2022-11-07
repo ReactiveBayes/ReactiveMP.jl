@@ -115,6 +115,10 @@ macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
     return esc(output)
 end
 
+function expression_convert_eltype(eltype::Type{T}, symbol::Symbol) where {T}
+    return :(ReactiveMP.convert_eltype($T, $symbol))
+end
+
 function expression_convert_eltype(eltype::Type{T}, expr::Expr) where {T}
     if @capture(expr, ManyOf(inputs__))
         return :(ReactiveMP.ManyOf(($(map(input -> expression_convert_eltype(eltype, input), inputs)...),)))
