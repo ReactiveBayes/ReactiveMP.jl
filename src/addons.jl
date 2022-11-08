@@ -21,8 +21,7 @@ function multiply_addons(left_addons, right_addons, new_dist, left_dist, right_d
     @assert length(left_addons) == length(right_addons) "Trying to perform computations with different lengths of addons."
     new_addons = ()
     for (addon_left, addon_right) in zip(left_addons, right_addons)
-        new_addons =
-            TupleTools.flatten(new_addons, multiply_addons(addon_left, addon_right, new_dist, left_dist, right_dist))
+        new_addons = TupleTools.flatten(new_addons, multiply_addons(addon_left, addon_right, new_dist, left_dist, right_dist))
     end
     return new_addons
 end
@@ -32,13 +31,7 @@ multiply_addons(addon::Any, ::Nothing, ::Any, ::Any, ::Missing) = addon
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Missing, ::Any) = nothing
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Any, ::Missing) = nothing
 
-function multiply_addons(
-    left_addon::AddonLogScale,
-    right_addon::AddonLogScale,
-    new_dist::Distribution,
-    left_dist::Distribution,
-    right_dist::Distribution
-)
+function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist::Distribution, left_dist::Distribution, right_dist::Distribution)
     left_logscale = getlogscale(left_addon)
     right_logscale = getlogscale(right_addon)
     new_logscale = prod(AddonProdLogScale(), new_dist, left_dist, right_dist)

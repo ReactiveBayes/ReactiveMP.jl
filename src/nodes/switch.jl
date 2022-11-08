@@ -60,11 +60,7 @@ struct SwitchNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPip
 
 default_functional_dependencies_pipeline(::Type{<:Switch}) = SwitchNodeFunctionalDependencies()
 
-function functional_dependencies(
-    ::SwitchNodeFunctionalDependencies,
-    factornode::SwitchNode{N, F},
-    iindex::Int
-) where {N, F <: FullFactorisation}
+function functional_dependencies(::SwitchNodeFunctionalDependencies, factornode::SwitchNode{N, F}, iindex::Int) where {N, F <: FullFactorisation}
     message_dependencies = if iindex === 1
         # output depends on:
         (factornode.switch, factornode.inputs)
@@ -73,7 +69,7 @@ function functional_dependencies(
         (factornode.out, factornode.inputs)
     elseif 2 < iindex <= N + 2
         # k'th input depends on:
-        (factornode.out, factornode.switch, factornode.inputs[1:end!=iindex-2])
+        (factornode.out, factornode.switch, factornode.inputs[1:end != iindex - 2])
     else
         error("Bad index in functional_dependencies for SwitchNode")
     end
@@ -84,36 +80,18 @@ function functional_dependencies(
 end
 
 # create an observable that is used to compute the output
-function get_messages_observable(
-    factornode::SwitchNode{N, F},
-    messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
-) where {N, F <: FullFactorisation}
+function get_messages_observable(factornode::SwitchNode{N, F}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}) where {N, F <: FullFactorisation}
     switchinterface  = messages[1]
     inputsinterfaces = messages[2]
 
     msgs_names = Val{(name(switchinterface), name(inputsinterfaces[1]))}
     msgs_observable =
-        combineLatest(
-            (
-                messagein(switchinterface),
-                combineLatest(
-                    map((input) -> messagein(input), inputsinterfaces),
-                    PushNew()
-                )
-            ), PushNew()
-        ) |> map_to(
-            (
-            messagein(switchinterface),
-            map((input) -> messagein(input), inputsinterfaces)
-        )
-        )
+        combineLatest((messagein(switchinterface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
+        map_to((messagein(switchinterface), map((input) -> messagein(input), inputsinterfaces)))
     return msgs_names, msgs_observable
 end
 
-function get_marginals_observable(
-    factornode::SwitchNode{N, F},
-    marginal_dependencies::Tuple{}
-) where {N, F <: MeanField}
+function get_marginals_observable(factornode::SwitchNode{N, F}, marginal_dependencies::Tuple{}) where {N, F <: MeanField}
     return nothing, of(nothing)
 end
 
@@ -131,16 +109,10 @@ function collect_factorisation(::Type{<:Switch{N}}, factorisation::NTuple{R, Tup
     return (R === N + 2) ? FullFactorisation() : __switch_incompatible_factorisation_error()
 end
 
-__switch_incompatible_factorisation_error() = error(
-    "`SwitchNode` supports only following global factorisations: [ $(SwitchNodeFactorisationSupport) ] or manually set to equivalent via constraints"
-)
+__switch_incompatible_factorisation_error() =
+    error("`SwitchNode` supports only following global factorisations: [ $(SwitchNodeFactorisationSupport) ] or manually set to equivalent via constraints")
 
-function ReactiveMP.make_node(
-    ::Type{<:Switch{N}},
-    factorisation::F = FullFactorisation(),
-    meta::M = nothing,
-    pipeline::P = nothing
-) where {N, F, M, P}
+function ReactiveMP.make_node(::Type{<:Switch{N}}, factorisation::F = FullFactorisation(), meta::M = nothing, pipeline::P = nothing) where {N, F, M, P}
     @assert N >= 2 "`SwitchNode` requires at least two mixtures on input"
     @assert typeof(factorisation) <: SwitchNodeFactorisationSupport "`SwitchNode` supports only following factorisations: [ $(SwitchNodeFactorisationSupport) ]"
     out    = NodeInterface(:out, Marginalisation())
@@ -149,18 +121,9 @@ function ReactiveMP.make_node(
     return SwitchNode{N, F, M, P}(factorisation, out, switch, inputs, meta, pipeline)
 end
 
-function ReactiveMP.make_node(
-    ::Type{<:Switch},
-    options::FactorNodeCreationOptions,
-    out::AbstractVariable,
-    switch::AbstractVariable,
-    inputs::NTuple{N, AbstractVariable}
-) where {N}
+function ReactiveMP.make_node(::Type{<:Switch}, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, inputs::NTuple{N, AbstractVariable}) where {N}
     node = make_node(
-        Switch{N},
-        collect_factorisation(Switch{N}, factorisation(options)),
-        collect_meta(Switch{N}, metadata(options)),
-        collect_pipeline(Switch{N}, getpipeline(options))
+        Switch{N}, collect_factorisation(Switch{N}, factorisation(options)), collect_meta(Switch{N}, metadata(options)), collect_pipeline(Switch{N}, getpipeline(options))
     )
 
     # out

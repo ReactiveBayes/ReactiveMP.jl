@@ -60,24 +60,12 @@ end
 
         ## -------------------------------------------- ##
         ## Inference execution
-        result1 = inference(
-            model = Model(beta_model1, length(dataset)),
-            data = (y = dataset,),
-            returnvars = (θ = KeepLast(),),
-            free_energy = true
-        )
+        result1 = inference(model = Model(beta_model1, length(dataset)), data = (y = dataset,), returnvars = (θ = KeepLast(),), free_energy = true)
 
-        result2 = inference(
-            model = Model(beta_model2, length(dataset)),
-            data = (y = dataset,),
-            returnvars = (θ = KeepLast(),),
-            free_energy = true
-        )
+        result2 = inference(model = Model(beta_model2, length(dataset)), data = (y = dataset,), returnvars = (θ = KeepLast(),), free_energy = true)
 
         resultswitch = inference(
-            model = Model(beta_switch_model, length(dataset)),
-            data = (y = dataset,),
-            returnvars = (θ = KeepLast(), in1 = KeepLast(), in2 = KeepLast(), selector = KeepLast())
+            model = Model(beta_switch_model, length(dataset)), data = (y = dataset,), returnvars = (θ = KeepLast(), in1 = KeepLast(), in2 = KeepLast(), selector = KeepLast())
         )
 
         ## -------------------------------------------- ##
@@ -95,10 +83,8 @@ end
         @test -result2.free_energy[1] ≈ getlogscale(result2.posteriors[:θ])
         @test getlogscale(resultswitch.posteriors[:in1]) ≈ log(0.7) - result1.free_energy[1]
         @test getlogscale(resultswitch.posteriors[:in2]) ≈ log(0.3) - result2.free_energy[1]
-        @test log(0.7 * exp(-result1.free_energy[1]) + 0.3 * exp(-result2.free_energy[1])) ≈
-              getlogscale(resultswitch.posteriors[:selector])
-        @test log(0.7 * exp(-result1.free_energy[1]) + 0.3 * exp(-result2.free_energy[1])) ≈
-              getlogscale(resultswitch.posteriors[:θ])
+        @test log(0.7 * exp(-result1.free_energy[1]) + 0.3 * exp(-result2.free_energy[1])) ≈ getlogscale(resultswitch.posteriors[:selector])
+        @test log(0.7 * exp(-result1.free_energy[1]) + 0.3 * exp(-result2.free_energy[1])) ≈ getlogscale(resultswitch.posteriors[:θ])
         @test getlogscale(resultswitch.posteriors[:θ]) ≈ getlogscale(resultswitch.posteriors[:selector])
 
         ## -------------------------------------------- ##
@@ -114,14 +100,7 @@ end
         θestimated = resultswitch.posteriors[:θ]
         p = plot(title = "Inference results")
 
-        plot!(
-            rθ,
-            (x) -> pdf(MixtureModel([Beta(4.0, 8.0), Beta(8.0, 4.0)], Categorical([0.5, 0.5])), x),
-            fillalpha = 0.3,
-            fillrange = 0,
-            label = "P(θ)",
-            c = 1
-        )
+        plot!(rθ, (x) -> pdf(MixtureModel([Beta(4.0, 8.0), Beta(8.0, 4.0)], Categorical([0.5, 0.5])), x), fillalpha = 0.3, fillrange = 0, label = "P(θ)", c = 1)
         plot!(rθ, (x) -> pdf(getdata(θestimated), x), fillalpha = 0.3, fillrange = 0, label = "P(θ|y)", c = 3)
         vline!([θ_real], label = "Real θ")
         savefig(p, plot_output)

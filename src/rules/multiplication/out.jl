@@ -5,12 +5,7 @@
     return GammaShapeRate(shape(m_in), rate(m_in) / mean(m_A))
 end
 
-@rule typeof(*)(:out, Marginalisation) (
-    m_A::GammaDistributionsFamily,
-    m_in::PointMass{<:Real},
-    meta::Union{<:AbstractCorrection, Nothing},
-    addons::Union{Tuple, Nothing}
-) = begin
+@rule typeof(*)(:out, Marginalisation) (m_A::GammaDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}, addons::Union{Tuple, Nothing}) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
 end
 
@@ -21,10 +16,7 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (
-    m_A::F,
-    m_in::PointMass{<:AbstractMatrix},
-    meta::Union{<:AbstractCorrection, Nothing},
-    addons::Union{Tuple, Nothing}
+    m_A::F, m_in::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrection, Nothing}, addons::Union{Tuple, Nothing}
 ) where {F <: NormalDistributionsFamily} = begin
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
 end
@@ -55,10 +47,7 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (
-    m_A::UnivariateNormalDistributionsFamily,
-    m_in::PointMass{<:AbstractVector},
-    meta::Union{<:AbstractCorrection, Nothing},
-    addons::Union{Tuple, Nothing}
+    m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}, addons::Union{Tuple, Nothing}
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
 end
@@ -74,10 +63,7 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (
-    m_A::UnivariateNormalDistributionsFamily,
-    m_in::PointMass{<:Real},
-    meta::Union{<:AbstractCorrection, Nothing},
-    addons::Union{Tuple, Nothing}
+    m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}, addons::Union{Tuple, Nothing}
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
 end

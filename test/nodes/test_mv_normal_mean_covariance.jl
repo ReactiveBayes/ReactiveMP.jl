@@ -43,13 +43,8 @@ import ReactiveMP: make_node
             q_Σ   = PointMass([2.0 0.0; 0.0 2.0])
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
-                marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(q_Σ, false, false, nothing)
-                )
-                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out, :μ, :Σ)}, marginals, nothing) ≈
-                      3.0310242469692907
+                marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(q_Σ, false, false, nothing))
+                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out, :μ, :Σ)}, marginals, nothing) ≈ 3.0310242469692907
             end
         end
 
@@ -61,13 +56,8 @@ import ReactiveMP: make_node
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
 
-                marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing),
-                    Marginal(convert(N2, q_μ), false, false, nothing),
-                    Marginal(q_Σ, false, false, nothing)
-                )
-                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out, :μ, :Σ)}, marginals, nothing) ≈
-                      4.863921806562866
+                marginals = (Marginal(convert(N1, q_out), false, false, nothing), Marginal(convert(N2, q_μ), false, false, nothing), Marginal(q_Σ, false, false, nothing))
+                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out, :μ, :Σ)}, marginals, nothing) ≈ 4.863921806562866
             end
         end
 
@@ -79,13 +69,8 @@ import ReactiveMP: make_node
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
 
-                marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing),
-                    Marginal(convert(N2, q_μ), false, false, nothing),
-                    Marginal(q_Σ, false, false, nothing)
-                )
-                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out, :μ, :Σ)}, marginals, nothing) ≈
-                      2.867156770180465
+                marginals = (Marginal(convert(N1, q_out), false, false, nothing), Marginal(convert(N2, q_μ), false, false, nothing), Marginal(q_Σ, false, false, nothing))
+                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out, :μ, :Σ)}, marginals, nothing) ≈ 2.867156770180465
             end
         end
 
@@ -103,8 +88,7 @@ import ReactiveMP: make_node
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
                 marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(q_Σ, false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out_μ, :Σ)}, marginals, nothing) ≈
-                      6.741420950973408
+                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out_μ, :Σ)}, marginals, nothing) ≈ 6.741420950973408
             end
         end
 
@@ -122,8 +106,7 @@ import ReactiveMP: make_node
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
                 marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(q_Σ, false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out_μ, :Σ)}, marginals, nothing) ≈
-                      60.075730792149585
+                @test score(AverageEnergy(), MvNormalMeanCovariance, Val{(:out_μ, :Σ)}, marginals, nothing) ≈ 60.075730792149585
             end
         end
     end

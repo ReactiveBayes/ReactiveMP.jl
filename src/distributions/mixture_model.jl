@@ -45,5 +45,4 @@ function prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::MixtureMod
 
     return logsumexp(logscales_new)
 end
-prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::Any, right_dist::MixtureModel) =
-    prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
+prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::Any, right_dist::MixtureModel) = prod(AddonProdLogScale(), new_dist, right_dist, left_dist)

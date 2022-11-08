@@ -50,9 +50,7 @@ using ReactiveMP: mvbeta, logmvbeta
         dist = MixtureModel([component1, component2], prior)
 
         @test mean(dist) ≈ 0.3 * (0.1 / (0.1 + 0.3)) + 0.7 * 2
-        @test var(dist) ≈
-              0.3 * ((0.1 * 0.3) / ((0.1 + 0.3)^2 * (0.1 + 0.3 + 1)) + (0.1 / (0.1 + 0.3))^2) + 0.7 * (2.6^2 + 2^2) -
-              mean(dist)^2
+        @test var(dist) ≈ 0.3 * ((0.1 * 0.3) / ((0.1 + 0.3)^2 * (0.1 + 0.3 + 1)) + (0.1 / (0.1 + 0.3))^2) + 0.7 * (2.6^2 + 2^2) - mean(dist)^2
     end
 
     @testset "prod normal" begin
@@ -139,10 +137,8 @@ using ReactiveMP: mvbeta, logmvbeta
         sf2 = 0.7 * (0.1 * 0.4 + 0.6 * 0.4 + 0.3 * 0.2)
         p = sf1 / (sf1 + sf2)
 
-        @test new_dist.components[1] ==
-              Categorical([0.1 * 0.1, 0.6 * 0.6, 0.3 * 0.3] / (0.1 * 0.1 + 0.6 * 0.6 + 0.3 * 0.3))
-        @test new_dist.components[2] ==
-              Categorical([0.1 * 0.4, 0.6 * 0.4, 0.3 * 0.2] / (0.1 * 0.4 + 0.6 * 0.4 + 0.3 * 0.2))
+        @test new_dist.components[1] == Categorical([0.1 * 0.1, 0.6 * 0.6, 0.3 * 0.3] / (0.1 * 0.1 + 0.6 * 0.6 + 0.3 * 0.3))
+        @test new_dist.components[2] == Categorical([0.1 * 0.4, 0.6 * 0.4, 0.3 * 0.2] / (0.1 * 0.4 + 0.6 * 0.4 + 0.3 * 0.2))
         @test typeof(new_dist.prior) <: Categorical
         @test probvec(new_dist.prior) ≈ [p, 1 - p]
     end

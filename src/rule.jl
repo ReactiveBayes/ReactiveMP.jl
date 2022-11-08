@@ -276,11 +276,7 @@ macro rule(fform, lambda)
 
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(
-        args,
-        (inputs__, meta::metatype_, addons::addonstype_) | (inputs__, meta::metatype_) |
-        (inputs__, addons::addonstype_) | (inputs__,)
-    ) ||
+    @capture(args, (inputs__, meta::metatype_, addons::addonstype_) | (inputs__, meta::metatype_) | (inputs__, addons::addonstype_) | (inputs__,)) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
     # check for number of return statements
@@ -319,18 +315,7 @@ macro rule(fform, lambda)
             end
         )
         $(
-            rule_function_expression(
-                fuppertype,
-                on_type,
-                vconstraint,
-                m_names,
-                m_types,
-                q_names,
-                q_types,
-                metatype,
-                :Nothing,
-                whereargs
-            ) do
+            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, :Nothing, whereargs) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
@@ -402,8 +387,7 @@ end
 
 # addons
 macro logscale(lambda)
-    @capture(lambda, (body_)) ||
-        error("Error in macro. Lambda body specification is incorrect")
+    @capture(lambda, (body_)) || error("Error in macro. Lambda body specification is incorrect")
 
     # check for number of return statements
     @assert MacroHelpers.count_returns(body) < 2 "@logscale macro contains multiple return statements"
@@ -422,11 +406,7 @@ end
 macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(
-        args,
-        (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__, meta = meta_) |
-        (inputs__,)
-    ) ||
+    @capture(args, (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__, meta = meta_) | (inputs__,)) ||
         error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
@@ -448,18 +428,7 @@ macro call_rule(fform, args)
     addonsym = gensym(:addonsym)
 
     output = quote
-        $distributionsym, $addonsym = ReactiveMP.rule(
-            $fbottomtype,
-            $on_arg,
-            $(vconstraint)(),
-            $m_names_arg,
-            $m_values_arg,
-            $q_names_arg,
-            $q_values_arg,
-            $meta,
-            $addons,
-            $node
-        )
+        $distributionsym, $addonsym = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
         $distributionsym
     end
 
@@ -605,8 +574,7 @@ macro marginalrule(fform, lambda)
 
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
-        error("Error in macro. Lambda body arguments specification is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
@@ -847,7 +815,7 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) = 
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) =
     throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)

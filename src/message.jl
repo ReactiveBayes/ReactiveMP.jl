@@ -94,7 +94,7 @@ Checks if `message` is initial or not.
 See also: [`is_clamped`](@ref)
 """
 is_initial(message::Message) = message.is_initial
-getaddons(message::Message)  = message.addons
+getaddons(message::Message) = message.addons
 
 typeofdata(message::Message) = typeof(getdata(message))
 
@@ -103,10 +103,8 @@ getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
 
 materialize!(message::Message) = message
 
-Base.show(io::IO, message::Message) =
-    print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
-Base.show(io::IO, message::Message{T, Nothing}) where {T} =
-    print(io, string("Message(", getdata(message), ")"))
+Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
+Base.show(io::IO, message::Message{T, Nothing}) where {T} = print(io, string("Message(", getdata(message), ")"))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 

@@ -37,8 +37,7 @@ mutable struct EqualityNode
     cache_left  :: Message
     cache_right :: Message
 
-    EqualityNode() =
-        new(lazy(Missing), lazy(Missing), Message(missing, true, true, nothing), Message(missing, true, true, nothing))
+    EqualityNode() = new(lazy(Missing), lazy(Missing), Message(missing, true, true, nothing), Message(missing, true, true, nothing))
 end
 
 getoutbound(::EqualityLeftOutbound, node::EqualityNode)  = node.left

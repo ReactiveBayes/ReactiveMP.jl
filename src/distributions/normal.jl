@@ -284,11 +284,9 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: UnivariateNo
     return prod(ProdAnalytical(), wleft, wright)
 end
 
-function Base.prod(::AddonProdLogScale, ::N, left::L, right::R) where {
-    N <: UnivariateNormalDistributionsFamily,
-    L <: UnivariateNormalDistributionsFamily,
-    R <: UnivariateNormalDistributionsFamily
-}
+function Base.prod(
+    ::AddonProdLogScale, ::N, left::L, right::R
+) where {N <: UnivariateNormalDistributionsFamily, L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
     m_left, v_left   = mean_cov(left)
     m_right, v_right = mean_cov(right)
     v                = v_left + v_right
@@ -304,11 +302,9 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: Multivariate
     return prod(ProdAnalytical(), wleft, wright)
 end
 
-function Base.prod(::AddonProdLogScale, ::N, left::L, right::R) where {
-    N <: MultivariateNormalDistributionsFamily,
-    L <: MultivariateNormalDistributionsFamily,
-    R <: MultivariateNormalDistributionsFamily
-}
+function Base.prod(
+    ::AddonProdLogScale, ::N, left::L, right::R
+) where {N <: MultivariateNormalDistributionsFamily, L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     m_left, v_left   = mean_cov(left)
     m_right, v_right = mean_cov(right)
     v                = v_left + v_right

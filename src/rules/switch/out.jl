@@ -1,7 +1,4 @@
-@rule Switch(:out, Marginalisation) (
-    m_switch::Any,
-    m_inputs::NTuple{N, Any}
-) where {N} = begin
+@rule Switch(:out, Marginalisation) (m_switch::Any, m_inputs::NTuple{N, Any}) where {N} = begin
 
     # get logscales of different inputs
     logscales_inputs = map(getlogscale, messages[2])
