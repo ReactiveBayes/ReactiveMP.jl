@@ -7,7 +7,7 @@ struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDis
     a::A
 end
 
-Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a, dims = 1)
+Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a; dims = 1)
 
 Base.eltype(::MatrixDirichlet{T}) where {T} = T
 
@@ -22,7 +22,7 @@ function Distributions.entropy(dist::MatrixDirichlet)
     end
 end
 
-mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a, dims = 1))
+mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
 
 prod_analytical_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = ProdAnalyticalRuleAvailable()
 

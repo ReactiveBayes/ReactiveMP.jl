@@ -20,16 +20,14 @@ struct FnWithApproximation{F, A}
     approximation :: A
 end
 
-prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:FnWithApproximation}) =
-    ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:FnWithApproximation}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::MultivariateNormalDistributionsFamily, right::FnWithApproximation)
     μ, Σ = approximate_meancov(right.approximation, (s) -> exp(right.fn(s)), left)
     return MvNormalMeanCovariance(μ, Σ)
 end
 
-prod_analytical_rule(::Type{<:FnWithApproximation}, ::Type{<:MultivariateNormalDistributionsFamily}) =
-    ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:FnWithApproximation}, ::Type{<:MultivariateNormalDistributionsFamily}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::FnWithApproximation, right::MultivariateNormalDistributionsFamily)
     return prod(ProdAnalytical(), right, left)

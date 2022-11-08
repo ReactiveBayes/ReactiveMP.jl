@@ -30,6 +30,24 @@ using Random
         @test probvec(Bernoulli(0.3)) === (0.3, 0.7)
         @test probvec(Bernoulli(0.6)) === (0.6, 0.4)
     end
+
+    @testset "BernoulliNaturalParameters" begin
+        @test naturalparams(Bernoulli(0.5)) == BernoulliNaturalParameters(0.0)
+        @test lognormalizer(naturalparams(Bernoulli(0.5))) ≈ -log(2)
+        for i in 1:9
+            bnp = naturalparams(Bernoulli(i / 10.0))
+            @test convert(Distribution, bnp) ≈ Bernoulli(i / 10.0)
+            @test logpdf(bnp, 1) ≈ logpdf(Bernoulli(i / 10.0), 1)
+            @test logpdf(bnp, 0) ≈ logpdf(Bernoulli(i / 10.0), 0)
+
+            @test convert(BernoulliNaturalParameters, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+            @test convert(BernoulliNaturalParameters{Float64}, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+
+            @test as_naturalparams(BernoulliNaturalParameters, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+            @test as_naturalparams(BernoulliNaturalParameters{Float64}, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+        end
+        @test isproper(BernoulliNaturalParameters(10)) === true
+    end
 end
 
 end

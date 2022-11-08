@@ -6,7 +6,8 @@ import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:BIFM" begin
     @testset ":in_zprev_znext (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily)" begin
-        meta = BIFMMeta([2.0 0; 0 1], # A
+        meta = BIFMMeta(
+            [2.0 0; 0 1], # A
             [3.0 0; 0 2], # B
             [4.0 0; 0 3], # C
             [5.0 0; 0 4], # H
@@ -19,9 +20,7 @@ import ReactiveMP: @test_marginalrules
             [9.0 0; 0 8]  # Σu
         )
 
-        @test_marginalrules [with_float_conversions = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(
-            :in_zprev_znext
-        ) [
+        @test_marginalrules [with_float_conversions = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(:in_zprev_znext) [
             (
                 input  = (m_out = MvNormalMeanPrecision([1, 2], [2 0; 0 1]), m_in = MvNormalMeanPrecision([1, 2], [1 0; 0 2]), m_zprev = ProdFinal(MvNormalMeanPrecision([1, 2], [1 0; 0 2])), m_znext = MvNormalMeanPrecision([1, 2], [1 0; 0 3]), meta = meta),
                 output = MvNormalWeightedMeanPrecision([28.0, 28.0, 15.0, 13.0], [298.0 0.0 198.0 0.0; 0.0 50.0 0.0 24.0; 198.0 0.0 101.0 0.0; 0.0 24.0 0.0 7.0])
@@ -33,7 +32,8 @@ import ReactiveMP: @test_marginalrules
             (
                 input  = (m_out = MvNormalMeanPrecision([5, 6], [2 0; 0 5]), m_in = MvNormalMeanPrecision([1, 9], [1 0; 0 1]), m_zprev = ProdFinal(MvNormalMeanPrecision([6, 2], [1 0; 0 1])), m_znext = MvNormalMeanPrecision([1, 2], [1 0; 0 3]), meta = meta),
                 output = MvNormalWeightedMeanPrecision([124.0, 201.0, 84.0, 95.0], [298.0 0.0 198.0 0.0; 0.0 193.0 0.0 96.0; 198.0 0.0 101.0 0.0; 0.0 96.0 0.0 42.0])
-            )]
+            )
+        ]
     end
 end
 

@@ -15,11 +15,7 @@ using DomainIntegrals
             a, b, c, d = rand(rng, 4)
             dist = ExponentialLinearQuadratic(approximation, a, b, c, d)
 
-            μ, v = ReactiveMP.approximate_meancov(
-                approximation,
-                (x) -> exp(-(a * x + b * exp(c * x + d * x^2 / 2)) / 2) * exp(x^2 / 2),
-                NormalMeanVariance(0.0, 1.0)
-            )
+            μ, v = ReactiveMP.approximate_meancov(approximation, (x) -> exp(-(a * x + b * exp(c * x + d * x^2 / 2)) / 2) * exp(x^2 / 2), NormalMeanVariance(0.0, 1.0))
 
             σ = sqrt(v)
             w = inv(v)
@@ -58,13 +54,7 @@ using DomainIntegrals
             μ, v = 5.0 * randn(rng), 5.0 * rand(rng)
             right = NormalMeanVariance(μ, v)
 
-            q = NormalMeanVariance(
-                ReactiveMP.approximate_meancov(
-                    approximation,
-                    (x) -> exp(logpdf(left, x) + logpdf(right, x) + x^2 / 2),
-                    NormalMeanVariance(0.0, 1.0)
-                )...
-            )
+            q = NormalMeanVariance(ReactiveMP.approximate_meancov(approximation, (x) -> exp(logpdf(left, x) + logpdf(right, x) + x^2 / 2), NormalMeanVariance(0.0, 1.0))...)
 
             @test all(isapprox.(mean_var(q), mean_var(prod(ProdAnalytical(), left, right)), atol = 1e-2))
             @test all(isapprox.(mean_var(q), mean_var(prod(ProdAnalytical(), right, left)), atol = 1e-2))

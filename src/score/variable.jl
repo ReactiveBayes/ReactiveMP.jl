@@ -2,16 +2,9 @@ export VariableBoundEntropy
 
 struct VariableBoundEntropy end
 
-function score(
-    ::Type{T},
-    objective::BetheFreeEnergy,
-    ::VariableBoundEntropy,
-    variable::RandomVariable,
-    scheduler
-) where {T <: InfCountingReal}
+function score(::Type{T}, ::VariableBoundEntropy, variable::RandomVariable, skip_strategy, scheduler) where {T <: CountingReal}
     mapping = let d = degree(variable)
         (marginal) -> convert(T, (d - 1) * score(DifferentialEntropy(), marginal))
     end
-    stream = getmarginal(variable, marginal_skip_strategy(objective)) |> schedule_on(scheduler)
-    return apply_diagnostic_check(objective, variable, stream |> map(T, mapping))
+    return getmarginal(variable, skip_strategy) |> schedule_on(scheduler) |> map(T, mapping)
 end

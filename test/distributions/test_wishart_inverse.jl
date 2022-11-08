@@ -67,12 +67,7 @@ import ReactiveMP: InverseWishartMessage
     end
 
     @testset "entropy" begin
-        @test entropy(
-            InverseWishartMessage(
-                2.0,
-                [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
-            )
-        ) ≈ 10.111427477184794
+        @test entropy(InverseWishartMessage(2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712])) ≈ 10.111427477184794
         @test entropy(InverseWishartMessage(5.0, diageye(4))) ≈ 8.939145914882221
     end
 
@@ -114,14 +109,12 @@ import ReactiveMP: InverseWishartMessage
         d1 = InverseWishartMessage(3.0, diageye(2))
         d2 = InverseWishartMessage(-3.0, [0.6423504672769315 0.9203141654948761; 0.9203141654948761 1.528137747462735])
 
-        @test prod(ProdAnalytical(), d1, d2) ≈
-              InverseWishartMessage(3.0, [1.6423504672769313 0.9203141654948761; 0.9203141654948761 2.528137747462735])
+        @test prod(ProdAnalytical(), d1, d2) ≈ InverseWishartMessage(3.0, [1.6423504672769313 0.9203141654948761; 0.9203141654948761 2.528137747462735])
 
         d1 = InverseWishartMessage(4.0, diageye(3))
         d2 = InverseWishartMessage(-2.0, diageye(3))
 
-        @test prod(ProdAnalytical(), d1, d2) ≈
-              InverseWishartMessage(6.0, 2 * diageye(3))
+        @test prod(ProdAnalytical(), d1, d2) ≈ InverseWishartMessage(6.0, 2 * diageye(3))
     end
 end
 

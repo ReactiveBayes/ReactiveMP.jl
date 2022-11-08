@@ -3,10 +3,8 @@ module FlowNodeModelsFlowModelTest
 using Test
 using ReactiveMP
 using ReactiveMP: getforward, getbackward, getjacobian, getinv_jacobian
-using ReactiveMP: forward, forward!, backward, backward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!,
-    forward_jacobian, backward_inv_jacobian
-using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian, detinv_jacobian,
-    absdetinv_jacobian, logabsdetinv_jacobian
+using ReactiveMP: forward, forward!, backward, backward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!, forward_jacobian, backward_inv_jacobian
+using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian, detinv_jacobian, absdetinv_jacobian, logabsdetinv_jacobian
 @testset "Flow Model" begin
     @testset "Constructor" begin
 
@@ -94,8 +92,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         compiled_model = compile(model, params)
         @test forward(compiled_model, [5.0, 1.5]) == [5.0, 7.4999983369439445]
         @test forward(compiled_model, [4.0, 2.5]) == [4.0, 7.499909204262595]
-        @test forward.(compiled_model, [[5.0, 1.5], [4.0, 2.5]]) ==
-              [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]
+        @test forward.(compiled_model, [[5.0, 1.5], [4.0, 2.5]]) == [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]
 
         # check forward function (multiple layers)
         params = [1.0, 2.0, -3.0, 1.0, 2.0, -3.0]
@@ -107,8 +104,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         compiled_model = compile(model, params)
         @test forward(compiled_model, [5.0, 1.5]) == [7.4999983369439445, 13.49999833686844]
         @test forward(compiled_model, [4.0, 2.5]) == [7.499909204262595, 12.499909204187064]
-        @test forward.(compiled_model, [[5.0, 1.5], [4.0, 2.5]]) ==
-              [[7.4999983369439445, 13.49999833686844], [7.499909204262595, 12.499909204187064]]
+        @test forward.(compiled_model, [[5.0, 1.5], [4.0, 2.5]]) == [[7.4999983369439445, 13.49999833686844], [7.499909204262595, 12.499909204187064]]
 
         # check forward! function (single layer)
         params = [1.0, 2.0, -3.0]
@@ -144,8 +140,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         compiled_model = compile(model, params)
         @test backward(compiled_model, [5.0, 7.4999983369439445]) == [5.0, 1.5]
         @test backward(compiled_model, [4.0, 7.499909204262595]) == [4.0, 2.5]
-        @test backward.(compiled_model, [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]) ==
-              [[5.0, 1.5], [4.0, 2.5]]
+        @test backward.(compiled_model, [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]) == [[5.0, 1.5], [4.0, 2.5]]
 
         # check backward function (multiple layers)
         params = [1.0, 2.0, -3.0, 1.0, 2.0, -3.0]
@@ -157,10 +152,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         compiled_model = compile(model, params)
         @test backward(compiled_model, [7.4999983369439445, 13.49999833686844]) == [5.0, 1.5]
         @test backward(compiled_model, [7.499909204262595, 12.499909204187064]) == [4.0, 2.5]
-        @test backward.(
-            compiled_model,
-            [[7.4999983369439445, 13.49999833686844], [7.499909204262595, 12.499909204187064]]
-        ) == [[5.0, 1.5], [4.0, 2.5]]
+        @test backward.(compiled_model, [[7.4999983369439445, 13.49999833686844], [7.499909204262595, 12.499909204187064]]) == [[5.0, 1.5], [4.0, 2.5]]
 
         # check backward! function (single layer)
         params = [1.0, 2.0, -3.0]
@@ -199,8 +191,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         compiled_model = compile(model, params)
         @test jacobian(compiled_model, [3.0, 1.5]) == [1.0 0.0; 1.0197320743308804 1.0]
         @test jacobian(compiled_model, [2.5, 5.0]) == [1.0 0.0; 1.1413016497063289 1.0]
-        @test jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) ==
-              [[1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]]
+        @test jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]]
 
         # check jacobian! function (single layer)
         params = [1.0, 2.0, -3.0]
@@ -224,10 +215,8 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         compiled_model = compile(model, params)
         @test jacobian(compiled_model, [3.0, 1.5]) == [1.0197320743308804 1.0; 2.0197330107171334 1.0000009182669414]
         @test jacobian(compiled_model, [2.5, 5.0]) == [1.1413016497063289 1.0; 2.1413016497136192 1.0000000000063878]
-        @test jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) == [
-            [1.0197320743308804 1.0; 2.0197330107171334 1.0000009182669414],
-            [1.1413016497063289 1.0; 2.1413016497136192 1.0000000000063878]
-        ]
+        @test jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) ==
+            [[1.0197320743308804 1.0; 2.0197330107171334 1.0000009182669414], [1.1413016497063289 1.0; 2.1413016497136192 1.0000000000063878]]
 
         # check jacobian! function (multiple layers)
         params = [1.0, 2.0, -3.0, 1.0, 2.0, -3.0]
@@ -251,8 +240,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         compiled_model = compile(model, params)
         @test inv_jacobian(compiled_model, [3.0, 1.5]) == [1.0 0.0; -1.0197320743308804 1.0]
         @test inv_jacobian(compiled_model, [2.5, 5.0]) == [1.0 0.0; -1.1413016497063289 1.0]
-        @test inv_jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) ==
-              [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]
+        @test inv_jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]
 
         # check inv_jacobian! function (single layer)
         params = [1.0, 2.0, -3.0]
@@ -288,24 +276,14 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         layer2 = AdditiveCouplingLayer(f2; permute = false)
         model = FlowModel(2, (layer1, layer2))
         compiled_model = compile(model, params)
-        @test inv_jacobian(compiled_model, [3.0, 1.5]) ==
-              [-1.0197320743308804 1.0; 2.0197330107171334 -1.0000009182669414]
-        @test inv_jacobian(compiled_model, [2.5, 5.0]) ==
-              [-1.1413016497063289 1.0; 4.412130707993816 -2.9896834976728544]
-        @test inv_jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) == [
-            [-1.0197320743308804 1.0; 2.0197330107171334 -1.0000009182669414],
-            [-1.1413016497063289 1.0; 4.412130707993816 -2.9896834976728544]
-        ]
+        @test inv_jacobian(compiled_model, [3.0, 1.5]) == [-1.0197320743308804 1.0; 2.0197330107171334 -1.0000009182669414]
+        @test inv_jacobian(compiled_model, [2.5, 5.0]) == [-1.1413016497063289 1.0; 4.412130707993816 -2.9896834976728544]
+        @test inv_jacobian.(compiled_model, [[3.0, 1.5], [2.5, 5.0]]) ==
+            [[-1.0197320743308804 1.0; 2.0197330107171334 -1.0000009182669414], [-1.1413016497063289 1.0; 4.412130707993816 -2.9896834976728544]]
     end
 
     @testset "Joint processing functions" begin
-        model = FlowModel(
-            (
-            InputLayer(8),
-            AdditiveCouplingLayer(PlanarFlow()),
-            AdditiveCouplingLayer(PlanarFlow(); permute = false)
-        )
-        )
+        model = FlowModel((InputLayer(8), AdditiveCouplingLayer(PlanarFlow()), AdditiveCouplingLayer(PlanarFlow(); permute = false)))
         compiled_model = compile(model)
         x = randn(8)
         @test forward_jacobian(compiled_model, x) == (forward(compiled_model, x), jacobian(compiled_model, x))

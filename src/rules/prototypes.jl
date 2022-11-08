@@ -26,6 +26,7 @@ include("gamma_inverse/marginals.jl")
 
 include("gamma_shape_rate/out.jl")
 include("gamma_shape_rate/marginals.jl")
+include("gamma_shape_rate/a.jl")
 
 include("beta/out.jl")
 include("beta/marginals.jl")
@@ -158,3 +159,15 @@ include("implication/marginals.jl")
 include("switch/inputs.jl")
 include("switch/out.jl")
 include("switch/switch.jl")
+
+include("delta/linearization/in.jl")
+include("delta/linearization/out.jl")
+include("delta/linearization/marginals.jl")
+
+include("delta/unscented/in.jl")
+include("delta/unscented/out.jl")
+include("delta/unscented/marginals.jl")
+
+include("delta/cvi/in.jl")
+include("delta/cvi/out.jl")
+include("delta/cvi/marginals.jl")

@@ -19,11 +19,9 @@ end
     return MvNormalMeanCovariance(mean(q_out), mean(q_Σ))
 end
 
-@rule MvNormalMeanCovariance(:μ, Marginalisation) (q_out::Any, q_Σ::Any) =
-    MvNormalMeanCovariance(mean(q_out), mean(q_Σ))
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (q_out::Any, q_Σ::Any) = MvNormalMeanCovariance(mean(q_out), mean(q_Σ))
 
-@rule MvNormalMeanCovariance(:μ, Marginalisation) (m_out::PointMass, q_Σ::Any) =
-    MvNormalMeanCovariance(mean(m_out), mean(q_Σ))
+@rule MvNormalMeanCovariance(:μ, Marginalisation) (m_out::PointMass, q_Σ::Any) = MvNormalMeanCovariance(mean(m_out), mean(q_Σ))
 
 @rule MvNormalMeanCovariance(:μ, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, q_Σ::Any) = begin
     m_out_mean, m_out_cov = mean_cov(m_out)

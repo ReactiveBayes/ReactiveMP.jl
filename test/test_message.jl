@@ -16,13 +16,25 @@ import SpecialFunctions: loggamma
     @testset "Default methods" begin
         data = PointMass(1)
 
-        for clamped in [true, false], initial in [true, false]
-            msg = Message(data, clamped, initial, nothing)
+        for clamped in (true, false), initial in (true, false)
+            msg = Message(data, clamped, initial)
             @test getdata(msg) === data
             @test is_clamped(msg) === clamped
             @test is_initial(msg) === initial
             @test materialize!(msg) === msg
             @test occursin("Message", repr(msg))
+        end
+
+        dist1 = NormalMeanVariance(0.0, 1.0)
+        dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
+
+        for clamped1 in (true, false), clamped2 in (true, false), initial1 in (true, false), initial2 in (true, false)
+            msg1 = Message(dist1, clamped1, initial1)
+            msg2 = Message(dist2, clamped2, initial2)
+
+            @test getdata((msg1, msg2)) === (dist1, dist2)
+            @test is_clamped((msg1, msg2)) === all([clamped1, clamped2])
+            @test is_initial((msg1, msg2)) === all([initial1, initial2])
         end
     end
 
@@ -154,18 +166,9 @@ import SpecialFunctions: loggamma
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
         _getpoint(rng, ::Type{<:Multivariate}, distribution) = 10 .* rand(rng, 2)
 
-        distributions2 = [
-            Gamma(10.0, 2.0),
-            NormalMeanVariance(-10.0, 1.0),
-            MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]),
-            Bernoulli(0.5),
-            Categorical([0.8, 0.2])
-        ]
+        distributions2 = [Gamma(10.0, 2.0), NormalMeanVariance(-10.0, 1.0), MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]), Bernoulli(0.5), Categorical([0.8, 0.2])]
 
-        methods_to_test2 = [
-            Distributions.pdf,
-            Distributions.logpdf
-        ]
+        methods_to_test2 = [Distributions.pdf, Distributions.logpdf]
 
         rng = MersenneTwister(1234)
 

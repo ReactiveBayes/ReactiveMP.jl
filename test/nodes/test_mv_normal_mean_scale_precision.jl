@@ -59,7 +59,8 @@ import ReactiveMP: make_node
             q_γ   = Gamma(2.0, 1.0)
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
-                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), g in (Gamma,)
+                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
+                g in (Gamma,)
 
                 marginals = (
                     Marginal(convert(N1, q_out), false, false, nothing),
