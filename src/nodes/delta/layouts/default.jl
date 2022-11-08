@@ -149,7 +149,7 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_i
         # If we have only one `interface` we replace it with nothing
         # In other cases we remove the current index from the list of interfaces
         msgs_ins_stream = if N === 1 # `N` should be known at compile-time here so this `if` branch must be compiled out
-            of(Message(nothing, true, true))
+            of(Message(nothing, true, true, nothing))
         else
             combineLatestMessagesInUpdates(TupleTools.deleteat(factornode.ins, index))
         end
