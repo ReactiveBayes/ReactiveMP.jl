@@ -54,6 +54,8 @@ See also: [`is_clamped`](@ref)
 is_initial(marginal::Marginal) = marginal.is_initial
 typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 
+getaddons(marginal::Marginal) = marginal.addons
+
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
 getdata(marginals::AbstractArray{<:Marginal})       = map(getdata, marginals)
 

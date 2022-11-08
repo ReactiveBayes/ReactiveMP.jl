@@ -147,11 +147,11 @@ end
 end
 
 function avg_energy_nm(::Type{Univariate}, q_out, q_m, q_p, z_bar, i)
-    return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
+    return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
 end
 
 function avg_energy_nm(::Type{Multivariate}, q_out, q_m, q_p, z_bar, i)
-    return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}, map((q) -> Marginal(q, false, false), (q_out, q_m[i], q_p[i])), nothing)
+    return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: CountingReal, N}

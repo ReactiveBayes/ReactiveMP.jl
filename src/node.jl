@@ -841,7 +841,7 @@ end
 function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler())
     fform                      = functionalform(factornode)
     meta                       = metadata(factornode)
-    addons                     = getaddons(getoptions(model))
+    addons                     = nothing # getaddons(getoptions(model))
     node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 

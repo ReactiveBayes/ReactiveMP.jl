@@ -45,7 +45,8 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+        # TODO add addons
+        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, nothing, factornode)
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
 

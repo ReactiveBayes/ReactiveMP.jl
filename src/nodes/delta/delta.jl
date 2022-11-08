@@ -68,8 +68,8 @@ nodefunction(factornode::DeltaFnNode, ::Val{:in})             = getinverse(metad
 nodefunction(factornode::DeltaFnNode, ::Val{:in}, k::Integer) = getinverse(metadata(factornode), k)
 
 # Rules for `::Function` objects, but with the `DeltaFn` related meta and node should redirect to the `DeltaFn` rules
-function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F <: Function}
-    return rule(DeltaFn{F}, on, vconstraint, mnames, messages, qnames, marginals, meta, node)
+function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, addons::Any, node::DeltaFnNode) where {F <: Function}
+    return rule(DeltaFn{F}, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, node)
 end
 
 function marginalrule(::F, on, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F <: Function}

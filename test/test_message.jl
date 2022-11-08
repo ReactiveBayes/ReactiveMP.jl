@@ -16,12 +16,13 @@ import SpecialFunctions: loggamma
     @testset "Default methods" begin
         data = PointMass(1)
 
-        for clamped in (true, false), initial in (true, false)
-            msg = Message(data, clamped, initial)
+        for clamped in (true, false), initial in (true, false), addons in (1, 2)
+            msg = Message(data, clamped, initial, addons)
             @test getdata(msg) === data
             @test is_clamped(msg) === clamped
             @test is_initial(msg) === initial
             @test materialize!(msg) === msg
+            @test getaddons(msg) === addons 
             @test occursin("Message", repr(msg))
         end
 
@@ -29,8 +30,8 @@ import SpecialFunctions: loggamma
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false), clamped2 in (true, false), initial1 in (true, false), initial2 in (true, false)
-            msg1 = Message(dist1, clamped1, initial1)
-            msg2 = Message(dist2, clamped2, initial2)
+            msg1 = Message(dist1, clamped1, initial1, nothing)
+            msg2 = Message(dist2, clamped2, initial2, nothing)
 
             @test getdata((msg1, msg2)) === (dist1, dist2)
             @test is_clamped((msg1, msg2)) === all([clamped1, clamped2])
