@@ -87,7 +87,7 @@ function get_messages_observable(factornode::SwitchNode{N, F}, messages::Tuple{N
     msgs_names = Val{(name(switchinterface), name(inputsinterfaces[1]))}
     msgs_observable =
         combineLatest((messagein(switchinterface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
-        map_to((messagein(switchinterface), map((input) -> messagein(input), inputsinterfaces)))
+        map_to((messagein(switchinterface), ManyOf(map((input) -> messagein(input), inputsinterfaces))))
     return msgs_names, msgs_observable
 end
 

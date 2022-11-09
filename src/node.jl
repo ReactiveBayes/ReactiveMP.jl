@@ -348,6 +348,8 @@ Base.nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V
 Base.iterate(many::ManyOf)        = iterate(many.collection)
 Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
 
+Base.length(many::ManyOf) = length(many.collection)
+
 struct ManyOfObservable{S} <: Subscribable{ManyOf}
     source::S
 end
@@ -838,10 +840,9 @@ function get_marginals_observable(factornode, marginals)
     end
 end
 
-function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler())
+function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler(), addons = nothing)
     fform                      = functionalform(factornode)
     meta                       = metadata(factornode)
-    addons                     = nothing # getaddons(getoptions(model))
     node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 

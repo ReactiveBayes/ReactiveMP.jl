@@ -1,4 +1,4 @@
-@rule Switch((:inputs, k), Marginalisation) (m_out::Any, m_switch::Any, m_inputs::Tuple{Any}) = begin
+@rule Switch((:inputs, k), Marginalisation) (m_out::Any, m_switch::Any, m_inputs::ManyOf{N, Any}) where {N} = begin
     @logscale getlogscale(messages[1]) + getlogscale(messages[2]) + log(probvec(messages[2])[k])
     return m_out
 end
