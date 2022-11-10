@@ -479,7 +479,7 @@ function Base.:-(left::MultivariateNormalNaturalParameters, right::MultivariateN
 end
 
 function lognormalizer(η::UnivariateNormalNaturalParameters)
-    return - η.weighted_mean^2 / (4 * η.minus_half_precision) - log(-2 * η.minus_half_precision) / 2
+    return -η.weighted_mean^2 / (4 * η.minus_half_precision) - log(-2 * η.minus_half_precision) / 2
 end
 
 function lognormalizer(η::MultivariateNormalNaturalParameters)
