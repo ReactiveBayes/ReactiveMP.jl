@@ -479,7 +479,7 @@ function Base.:-(left::MultivariateNormalNaturalParameters, right::MultivariateN
 end
 
 function lognormalizer(η::UnivariateNormalNaturalParameters)
-    return η.weighted_mean^2 / (4 * η.minus_half_precision) + log(-2 * η.minus_half_precision) / 2
+    return - η.weighted_mean^2 / (4 * η.minus_half_precision) - log(-2 * η.minus_half_precision) / 2
 end
 
 function lognormalizer(η::MultivariateNormalNaturalParameters)
@@ -490,7 +490,7 @@ end
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function Distributions.logpdf(η::UnivariateNormalNaturalParameters, x)
-    return log(invsqrt2π) + x * η.weighted_mean + x^2 * η.minus_half_precision + lognormalizer(η)
+    return log(invsqrt2π) + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
 end
 
 function Distributions.logpdf(η::MultivariateNormalNaturalParameters, x)
