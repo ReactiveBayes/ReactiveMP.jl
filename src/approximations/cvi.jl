@@ -47,6 +47,10 @@ function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int,
     return CVIApproximation(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true)
 end
 
+function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G) where {O, G}
+    return CVIApproximation(rng, n_samples, num_iterations, opt, grad, false, true)
+end
+
 function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
     return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true)
 end

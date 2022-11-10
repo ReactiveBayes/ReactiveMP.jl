@@ -5,10 +5,21 @@ using ReactiveMP
 using Random
 using Distributions
 using Flux
+using Zygote
 using StableRNGs
 
 import ReactiveMP: @test_marginalrules
 import ReactiveMP: FactorizedJoint, getmultipliers
+
+struct ZygoteGrad end
+
+function ReactiveMP.compute_grad(::ZygoteGrad, A::F, vec_params) where {F}
+    Zygote.gradient(A, vec_params)[1]
+end
+
+function ReactiveMP.compute_hessian(::ZygoteGrad, A::G, ::F, vec_params) where {G, F}
+    Zygote.hessian(A, vec_params)
+end
 
 add_1 = (x::Real) -> x + 1
 
@@ -99,14 +110,22 @@ end
     @testset "id, x~Gamma out~Gamma" begin
         seed = 123
         rng = StableRNG(seed)
-        optimizer = Flux.Descent(0.00)
-        test_meta = DeltaMeta(method = CVIApproximation(rng, 1, 10000, optimizer))
+        optimizer = Flux.Descent(0.01)
+        test_meta = DeltaMeta(method = CVIApproximation(rng, 1, 1000, optimizer))
 
         @test_marginalrules [with_float_conversions = false, atol = 0.2] DeltaFn{identity}(:ins) [
             (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 1)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 2),))),
             (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 3),))),
+        ]
+
+        seed = 123
+        rng = StableRNG(seed)
+        optimizer = Flux.Descent(0.001)
+        test_meta = DeltaMeta(method = CVIApproximation(rng, 1, 50000, optimizer, ZygoteGrad()))
+
+        @test_marginalrules [with_float_conversions = false, atol = 0.3] DeltaFn{identity}(:ins) [
             (input = (m_out = GammaShapeRate(2, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(2, 3),))),
-            (input = (m_out = GammaShapeRate(2, 1), m_ins = ManyOf(GammaShapeRate(1, 3)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(2, 4),)))
+            (input = (m_out = GammaShapeRate(2, 2), m_ins = ManyOf(GammaShapeRate(1, 3)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(2, 5),)))
         ]
     end
 end
