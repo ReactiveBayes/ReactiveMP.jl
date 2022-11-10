@@ -99,12 +99,14 @@ end
     @testset "id, x~Gamma out~Gamma" begin
         seed = 123
         rng = StableRNG(seed)
-        optimizer = Descent(0.005)
-        test_meta = DeltaMeta(method = CVIApproximation(rng, 1, 50000, optimizer))
+        optimizer = Flux.Descent(0.00)
+        test_meta = DeltaMeta(method = CVIApproximation(rng, 1, 10000, optimizer))
 
-        @test_marginalrules [with_float_conversions = false, atol = 0.3] DeltaFn{identity}(:ins) [
+        @test_marginalrules [with_float_conversions = false, atol = 0.2] DeltaFn{identity}(:ins) [
             (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 1)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 2),))),
-            (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 3),)))
+            (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 3),))),
+            (input = (m_out = GammaShapeRate(2, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(2, 3),))),
+            (input = (m_out = GammaShapeRate(2, 1), m_ins = ManyOf(GammaShapeRate(1, 3)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(2, 4),)))
         ]
     end
 end
