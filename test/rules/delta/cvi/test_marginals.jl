@@ -105,7 +105,7 @@ end
 
         @test_marginalrules [with_float_conversions = false, atol = 0.2] DeltaFn{identity}(:ins) [
             (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 1)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 2),))),
-            (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 3),))),
+            (input = (m_out = GammaShapeRate(1, 1), m_ins = ManyOf(GammaShapeRate(1, 2)), meta = test_meta), output = FactorizedJoint((GammaShapeRate(1, 3),)))
         ]
 
         seed = 123
