@@ -11,16 +11,6 @@ using StableRNGs
 import ReactiveMP: @test_marginalrules
 import ReactiveMP: FactorizedJoint, getmultipliers
 
-struct ZygoteGrad end
-
-function ReactiveMP.compute_grad(::ZygoteGrad, A::F, vec_params) where {F}
-    Zygote.gradient(A, vec_params)[1]
-end
-
-function ReactiveMP.compute_hessian(::ZygoteGrad, A::G, ::F, vec_params) where {G, F}
-    Zygote.hessian(A, vec_params)
-end
-
 add_1 = (x::Real) -> x + 1
 
 function two_into_one(x::Real, y::Real)

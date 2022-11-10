@@ -1,4 +1,4 @@
-export CVIApproximation, CVI
+export CVIApproximation, CVI, ForwardDiffGrad
 
 using Random
 
@@ -31,6 +31,9 @@ Arguments
 
 !!! note 
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
+
+!!! note 
+    Run `using Zygote` in your Julia session to enable the `ZygoteGrad` option support for the CVI grad.
 
 """
 struct CVIApproximation{R, O, G} <: AbstractApproximationMethod

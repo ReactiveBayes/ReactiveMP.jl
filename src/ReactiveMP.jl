@@ -172,6 +172,20 @@ function __init__()
             return Flux.Optimise.update!(opt, vec(λ), vec(∇))
         end
     end
+
+    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
+        export ZygoteGrad
+
+        struct ZygoteGrad end
+
+        function compute_grad(::ZygoteGrad, A::F, vec_params) where {F}
+            Zygote.gradient(A, vec_params)[1]
+        end
+
+        function compute_hessian(::ZygoteGrad, A::G, ::F, vec_params) where {G, F}
+            Zygote.hessian(A, vec_params)
+        end
+    end
 end
 
 end
