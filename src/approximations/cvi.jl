@@ -95,7 +95,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
         ∇logq = compute_grad(approximation.grad, logq, vec(λ))
 
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
-        ∇ = λ - as_naturalparams(T, ∇f)
+        ∇ = λ - η - as_naturalparams(T, ∇f)
         updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
 
         if isproper(updated)
