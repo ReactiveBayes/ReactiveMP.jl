@@ -31,20 +31,21 @@ Arguments
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
 
 """
-struct CVIApproximation{R, O} <: AbstractApproximationMethod
+struct CVIApproximation{R, O, G} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
     num_iterations::Int
     opt::O
     warn::Bool
+    grad::G
 end
 
 function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return CVIApproximation(rng, n_samples, num_iterations, opt, false)
+    return CVIApproximation(rng, n_samples, num_iterations, opt, false, ForwardDiffGrad())
 end
 
 function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, warn)
+    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, warn, ForwardDiffGrad())
 end
 
 """
@@ -58,6 +59,17 @@ const CVI = CVIApproximation
 # CVI implementations
 #---------------------------
 
+struct ForwardDiffGrad end
+
+function compute_grad(::ForwardDiffGrad, A::F, vec_params) where {F}
+    ForwardDiff.gradient(A, vec_params)
+end
+
+function compute_hessian(::ForwardDiffGrad, A::G, ::F, vec_params) where {G, F}
+    ForwardDiff.hessian(A, vec_params)
+end
+
+
 function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where {F}
     η = naturalparams(initial)
     λ = naturalparams(initial)
@@ -70,8 +82,8 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
     hasupdated = false
 
     A = (vec_params) -> lognormalizer(as_naturalparams(T, vec_params))
-    gradA = (vec_params) -> ForwardDiff.gradient(A, vec_params)
-    Fisher = (vec_params) -> ForwardDiff.jacobian(gradA, vec_params)
+    gradA = (vec_params) -> compute_grad(approximation.grad, A, vec_params)
+    Fisher = (vec_params) -> compute_hessian(approximation.grad, A, gradA, vec_params)
 
     for _ in 1:its
         q = convert(Distribution, λ)
@@ -80,10 +92,10 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
         z_s = rand(rng, q_friendly)
 
         logq = (vec_params) -> logpdf(as_naturalparams(T, vec_params), z_s)
-        ∇logq = ForwardDiff.gradient(logq, vec(λ))
+        ∇logq = compute_grad(approximation.grad, logq, vec(λ))
 
         ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
-        ∇ = λ - η - as_naturalparams(T, ∇f)
+        ∇ = λ - as_naturalparams(T, ∇f)
         updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
 
         if isproper(updated)
