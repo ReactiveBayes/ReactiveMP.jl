@@ -38,14 +38,15 @@ struct CVIApproximation{R, O, G} <: AbstractApproximationMethod
     opt::O
     warn::Bool
     grad::G
+    proper_message::Bool
 end
 
 function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return CVIApproximation(rng, n_samples, num_iterations, opt, false, ForwardDiffGrad())
+    return CVIApproximation(rng, n_samples, num_iterations, opt, false, ForwardDiffGrad(), true)
 end
 
 function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, warn, ForwardDiffGrad())
+    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, warn, ForwardDiffGrad(), true)
 end
 
 """
@@ -69,6 +70,9 @@ function compute_hessian(::ForwardDiffGrad, A::G, ::F, vec_params) where {G, F}
     ForwardDiff.hessian(A, vec_params)
 end
 
+function inforce_proper_message(inforce::Bool, λ::NaturalParameters, η::NaturalParameters)
+    return !inforce || (inforce && isproper(λ - η))
+end
 
 function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where {F}
     η = naturalparams(initial)
@@ -98,7 +102,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
         ∇ = λ - η - as_naturalparams(T, ∇f)
         updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
 
-        if isproper(updated)
+        if isproper(updated) && inforce_proper_message(approximation.proper_message, updated, η)
             λ = updated
             hasupdated = true
         end
