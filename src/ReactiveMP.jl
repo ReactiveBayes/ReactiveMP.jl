@@ -185,6 +185,12 @@ function __init__()
         function compute_hessian(::ZygoteGrad, A::G, ::F, vec_params) where {G, F}
             Zygote.hessian(A, vec_params)
         end
+
+        get_df_m(::ZygoteGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function) =
+            (z) -> Zygote.gradient(logp_nc, z)[1]
+
+        get_df_v(::ZygoteGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function, df_m::Function) =
+            (z) -> Zygote.hessian(logp_nc, z)
     end
 end
 

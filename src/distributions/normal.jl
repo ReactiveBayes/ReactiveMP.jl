@@ -538,13 +538,17 @@ end
 
 # Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
 
-get_df_m(::ForwardDiffGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function) = (z) -> ForwardDiff.derivative(logp_nc, z)
+get_df_m(::ForwardDiffGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function) =
+    (z) -> ForwardDiff.derivative(logp_nc, z)
 
-get_df_m(::ForwardDiffGrad, ::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, logp_nc::Function) = (z) -> ForwardDiff.gradient(logp_nc, z)
+get_df_m(::ForwardDiffGrad, ::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, logp_nc::Function) =
+    (z) -> ForwardDiff.gradient(logp_nc, z)
 
-get_df_v(::ForwardDiffGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, df_m::Function) = (z) -> ForwardDiff.derivative(df_m, z)
+get_df_v(::ForwardDiffGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function, df_m::Function) =
+    (z) -> ForwardDiff.derivative(df_m, z)
 
-get_df_v(::ForwardDiffGrad, ::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) = (z) -> ForwardDiff.jacobian(df_m, z)
+get_df_v(::ForwardDiffGrad, ::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, logp_nc::Function, df_m::Function) =
+    (z) -> ForwardDiff.jacobian(df_m, z)
 
 function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
     η = naturalparams(initial)
@@ -556,7 +560,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::Gaussi
     its = approximation.num_iterations
 
     df_m = (z) -> get_df_m(approximation.grad, typeof(λ), typeof(initial), logp_nc)(z)
-    df_v = (z) -> get_df_v(approximation.grad, typeof(λ), typeof(initial), df_m)(z) / 2
+    df_v = (z) -> get_df_v(approximation.grad, typeof(λ), typeof(initial), logp_nc, df_m)(z) / 2
 
     hasupdated = false
 

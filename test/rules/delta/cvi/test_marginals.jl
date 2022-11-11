@@ -42,6 +42,36 @@ end
             )
         ]
     end
+    @testset "id, x~Normal, y~Normal (Zygote)" begin
+        seed = 123
+        optimizer = Descent(0.01)
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{identity}(:ins) [
+            (
+                input = (
+                    m_out = NormalMeanVariance(1, 1),
+                    m_ins = ManyOf(NormalMeanVariance()),
+                    meta = DeltaMeta(method = CVIApproximation(StableRNG(seed), 1, 1000, optimizer, ZygoteGrad(), false, false))
+                ),
+                output = FactorizedJoint((NormalWeightedMeanPrecision(1.0, 2.0),))
+            ),
+            (
+                input = (
+                    m_out = NormalMeanVariance(2, 1),
+                    m_ins = ManyOf(NormalMeanVariance()),
+                    meta = DeltaMeta(method = CVIApproximation(StableRNG(seed), 1, 1000, optimizer, ZygoteGrad(), false, false))
+                ),
+                output = FactorizedJoint((NormalWeightedMeanPrecision(2.0, 2.0),))
+            ),
+            (
+                input = (
+                    m_out = NormalMeanVariance(10, 1),
+                    m_ins = ManyOf(NormalMeanVariance()),
+                    meta = DeltaMeta(method = CVIApproximation(StableRNG(seed), 1, 1000, optimizer, ZygoteGrad(), false, false))
+                ),
+                output = FactorizedJoint((NormalWeightedMeanPrecision(10.0, 2.0),))
+            )
+        ]
+    end
     @testset "id, x ~ MvNormal, y ~ MvNormal" begin
         seed = 123
         rng = StableRNG(seed)
