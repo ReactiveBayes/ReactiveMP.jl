@@ -568,7 +568,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::Gaussi
         ∇f = as_naturalparams(T, df_μ1, df_μ2)
         ∇ = λ - η - ∇f
         λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
-        if isproper(λ_new) && enforce_proper_message(approximation.proper_message, λ, η)
+        if isproper(λ_new) && enforce_proper_message(approximation.proper_message, λ_new, η)
             λ = λ_new
             hasupdated = true
         end
