@@ -8,8 +8,9 @@ end
 AddonMemory() = AddonMemory(nothing)
 struct AddonProdMemory <: AbstractAddonProd end
 
+getmemoryaddon(addons::NTuple{N, AbstractAddon}) where {N} = first(filter(x -> typeof(x) <: AddonMemory, addons))
 getmemory(addon::AddonMemory) = addon.memory
-getmemory(addons::NTuple{N, AbstractAddon}) where {N} = first(filter(x -> typeof(x) <: AddonMemory, addons)).memory
+getmemory(addons::NTuple{N, AbstractAddon}) where {N} = getmemoryaddon(addons).memory
 
 struct AddonMemoryMessage{T, I, F}
     messages   :: T
@@ -17,18 +18,28 @@ struct AddonMemoryMessage{T, I, F}
     factornode :: F
 end
 
-struct AddonMemoryMarginal{T}
+struct AddonMemoryProd{T}
     messages :: Vector{T}
 end
 
 
-function multiply_addons(::AddonMemory, ::AddonMemory, ::Distribution, left_message::Message, right_message::Message)
+function multiply_addons(::AddonMemory{<:AddonMemoryMessage}, ::AddonMemory, ::Distribution, left_message::Message, right_message::Message)
 
     # construct new memory object
-    memory = AddonMemoryMarginal([left_message, right_message])
+    memory = AddonMemoryProd(Message[left_message, right_message])
 
     # return addon
     return AddonMemory(memory)
+
+end
+
+function multiply_addons(::AddonMemory{<:AddonMemoryProd}, ::AddonMemory, ::Distribution, left_message::Message, right_message::Message)
+
+    # add new message to existing memory object
+    push!(getmemory(left_message).messages, right_message)
+    
+    # return addon
+    return getmemoryaddon(left_message)
 
 end
 
@@ -48,9 +59,9 @@ function show(io::IO, addon::AddonMemoryMessage)
     println(io, ' '^indent, "At interfaces: ", addon.interfaces)
 end
 
-function show(io::IO, addon::AddonMemoryMarginal)    
+function show(io::IO, addon::AddonMemoryProd)    
     indent = get(io, :indent, 0)
-    println(io, ' '^indent, "Marginal memory:")
+    println(io, ' '^indent, "Product memory:")
     for message in addon.messages
         show(IOContext(io, :indent => indent+4), message)
     end

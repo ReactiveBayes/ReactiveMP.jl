@@ -55,10 +55,12 @@ as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal)
 getdata(collection::Tuple)         = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
 
-getlogscale(message::Message)   = getlogscale(getaddons(message))
-getlogscale(marginal::Marginal) = getlogscale(getaddons(marginal))
-getmemory(message::Message)     = getmemory(getaddons(message))
-getmemory(marginal::Marginal)   = getmemory(getaddons(marginal))
+getlogscale(message::Message)      = getlogscale(getaddons(message))
+getlogscale(marginal::Marginal)    = getlogscale(getaddons(marginal))
+getmemoryaddon(message::Message)   = getmemoryaddon(getaddons(message))
+getmemoryaddon(marginal::Marginal) = getmemoryaddon(getaddons(marginal))
+getmemory(message::Message)        = getmemory(getaddons(message))
+getmemory(marginal::Marginal)      = getmemory(getaddons(marginal))
 
 # TupleTools.prod is a more efficient version of Base.all for Tuple here
 is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
