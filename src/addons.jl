@@ -1,44 +1,37 @@
-export AddonLogScale, getlogscale, getaddons
-
-using Distributions
-
-import Base: prod, string
-
 abstract type AbstractAddon end
 abstract type AbstractAddonProd end
 
-struct AddonLogScale{T} <: AbstractAddon
-    logscale::T
-end
-AddonLogScale() = AddonLogScale(nothing)
-struct AddonProdLogScale <: AbstractAddonProd end
+import Base: string, show
 
-getlogscale(addon::AddonLogScale) = addon.logscale
-getlogscale(::AbstractAddon) = 0
-getlogscale(addons::Tuple{<:AbstractAddon}) = mapreduce(getlogscale, +, addons)
+function multiply_addons(new_dist, left_message, right_message)
 
-function multiply_addons(left_addons, right_addons, new_dist, left_dist, right_dist)
+    # fetch addons
+    left_addons = getaddons(left_message)
+    right_addons = getaddons(right_message)
+
+    # perform sanity check on the length of the addons
     @assert length(left_addons) == length(right_addons) "Trying to perform computations with different lengths of addons."
+
+    # compute addon product elementwise
     new_addons = ()
     for (addon_left, addon_right) in zip(left_addons, right_addons)
-        new_addons = TupleTools.flatten(new_addons, multiply_addons(addon_left, addon_right, new_dist, left_dist, right_dist))
+        new_addons = TupleTools.flatten(new_addons, multiply_addons(addon_left, addon_right, new_dist, left_message, right_message))
     end
+
+    # return addons
     return new_addons
 end
+
+multiply_addons(::Any, ::Message{<:Any, Nothing}, ::Message{<:Any, Nothing}) = nothing
+multiply_addons(::Any, message::Message{<:Any, <:Any}, ::Message{Missing, Nothing}) = getaddons(message)
+multiply_addons(::Any, ::Message{Missing, Nothing}, message::Message{<:Any, <:Any}) = getaddons(message)
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Any, ::Any) = nothing
 multiply_addons(::Nothing, addon::Any, ::Any, ::Missing, ::Any) = addon
 multiply_addons(addon::Any, ::Nothing, ::Any, ::Any, ::Missing) = addon
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Missing, ::Any) = nothing
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Any, ::Missing) = nothing
 
-function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist::Distribution, left_dist::Distribution, right_dist::Distribution)
-    left_logscale = getlogscale(left_addon)
-    right_logscale = getlogscale(right_addon)
-    new_logscale = prod(AddonProdLogScale(), new_dist, left_dist, right_dist)
-    return AddonLogScale(left_logscale + right_logscale + new_logscale)
-end
-
-function string(addons::NTuple{N, <:AbstractAddon}) where {N}
+function string(addons::NTuple{N, AbstractAddon}) where {N}
     if length(addons) == 0
         return "no addons"
     end
@@ -49,6 +42,4 @@ function string(addons::NTuple{N, <:AbstractAddon}) where {N}
     return str
 end
 
-function string(addon::AddonLogScale)
-    return string("log-scale = ", getlogscale(addon), "; ")
-end
+show(io::IO, addons::NTuple{N, AbstractAddon}) where {N} = print(io, string(addons))

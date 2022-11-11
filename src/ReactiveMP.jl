@@ -29,10 +29,13 @@ include("constraints/prod/prod_resolve.jl")
 
 include("constraints/form.jl")
 
-include("addons.jl")
 include("message.jl")
 include("marginal.jl")
 include("distributions.jl")
+include("addons.jl")
+
+include("addons/logscale.jl")
+include("addons/memory.jl")
 
 """
     to_marginal(any)
@@ -54,6 +57,8 @@ getdata(collection::AbstractArray) = map(getdata, collection)
 
 getlogscale(message::Message)   = getlogscale(getaddons(message))
 getlogscale(marginal::Marginal) = getlogscale(getaddons(marginal))
+getmemory(message::Message)     = getmemory(getaddons(message))
+getmemory(marginal::Marginal)   = getmemory(getaddons(marginal))
 
 # TupleTools.prod is a more efficient version of Base.all for Tuple here
 is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))

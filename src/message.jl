@@ -103,7 +103,13 @@ getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
 
 materialize!(message::Message) = message
 
-Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
+# Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
+function show(io::IO, message::Message)
+    indent = get(io, :indent, 0)
+    print(io, ' '^indent, "Message(")
+    show(IOContext(io, :indent => indent+4), getdata(message))
+    print(io, ") with ", string(getaddons(message)), "\n")
+end
 Base.show(io::IO, message::Message{T, Nothing}) where {T} = print(io, string("Message(", getdata(message), ")"))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
@@ -124,9 +130,7 @@ function multiply_messages(prod_constraint, left::Message, right::Message)
     new_dist = prod(prod_constraint, getdata(left), getdata(right))
 
     # process addons
-    left_addons = getaddons(left)
-    right_addons = getaddons(right)
-    new_addons = multiply_addons(left_addons, right_addons, new_dist, getdata(left), getdata(right))
+    new_addons = multiply_addons(new_dist, left, right)
 
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
