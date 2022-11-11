@@ -79,7 +79,7 @@ function compute_hessian(::ForwardDiffGrad, A::G, ::F, vec_params) where {G, F}
     ForwardDiff.hessian(A, vec_params)
 end
 
-function inforce_proper_message(inforce::Bool, λ::NaturalParameters, η::NaturalParameters)
+function enforce_proper_message(inforce::Bool, λ::NaturalParameters, η::NaturalParameters)
     return !inforce || (inforce && isproper(λ - η))
 end
 
@@ -112,7 +112,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
         ∇ = λ - η - as_naturalparams(T, ∇f)
         updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
 
-        if isproper(updated) && inforce_proper_message(approximation.proper_message, updated, η)
+        if isproper(updated) && enforce_proper_message(approximation.proper_message, updated, η)
             λ = updated
             hasupdated = true
         end
