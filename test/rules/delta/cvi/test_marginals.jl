@@ -42,6 +42,26 @@ end
             )
         ]
     end
+    @testset "id, x~Normal, y~Normal (proper message)" begin
+        seed = 123
+        rng = StableRNG(seed)
+        optimizer = Descent(0.01)
+        test_meta = DeltaMeta(method = CVIApproximation(rng, 1, 500, optimizer, ForwardDiffGrad(), false, true))
+        @test_marginalrules [with_float_conversions = false, atol = 0.1] DeltaFn{identity}(:ins) [
+            (
+                input = (m_out = NormalMeanVariance(1, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorizedJoint((NormalWeightedMeanPrecision(1.0, 2.0),))
+            ),
+            (
+                input = (m_out = NormalMeanVariance(2, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorizedJoint((NormalWeightedMeanPrecision(2.0, 2.0),))
+            ),
+            (
+                input = (m_out = NormalMeanVariance(10, 1), m_ins = ManyOf(NormalMeanVariance()), meta = test_meta),
+                output = FactorizedJoint((NormalWeightedMeanPrecision(10.0, 2.0),))
+            )
+        ]
+    end
     @testset "id, x~Normal, y~Normal (Zygote)" begin
         seed = 123
         optimizer = Descent(0.01)
