@@ -84,12 +84,7 @@ function Base.run(testrunner::TestRunner)
         # This token indicates that there are no other jobs left
         put!(testrunner.jobschannel, nothing)
         # We create a remote call for another Julia process to execute our test with `include(filename)`
-        task = remotecall(
-            worker,
-            testrunner.jobschannel,
-            testrunner.exschannel,
-            testrunner.iochannel
-        ) do jobschannel, exschannel, iochannel
+        task = remotecall(worker, testrunner.jobschannel, testrunner.exschannel, testrunner.iochannel) do jobschannel, exschannel, iochannel
             finish = false
             while !finish
                 # Each worker takes jobs sequentially from the shared jobs pool 
@@ -167,7 +162,7 @@ function key_to_filename(key)
     return if length(splitted) === 1
         string("test_", first(splitted), ".jl")
     else
-        string(join(splitted[1:end-1], "/"), "/test_", splitted[end], ".jl")
+        string(join(splitted[1:(end - 1)], "/"), "/test_", splitted[end], ".jl")
     end
 end
 
@@ -176,7 +171,7 @@ function filename_to_key(filename)
     if length(splitted) === 1
         return replace(replace(first(splitted), ".jl" => ""), "test_" => "")
     else
-        path, name = splitted[1:end-1], splitted[end]
+        path, name = splitted[1:(end - 1)], splitted[end]
         return string(join(path, ":"), ":", replace(replace(name, ".jl" => ""), "test_" => ""))
     end
 end
@@ -197,30 +192,29 @@ end
 
 @testset ExtendedTestSet "ReactiveMP" begin
     @testset "Testset helpers" begin
-        @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) ==
-              "distributions/test_normal_mean_variance.jl"
-        @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) ==
-              "distributions:normal_mean_variance"
+        @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) == "distributions/test_normal_mean_variance.jl"
+        @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) == "distributions:normal_mean_variance"
         @test key_to_filename(filename_to_key("test_message.jl")) == "test_message.jl"
         @test filename_to_key(key_to_filename("message")) == "message"
     end
 
     addtests(testrunner, "algebra/test_correction.jl")
-    addtests(testrunner, "algebra/test_helpers.jl")
+    addtests(testrunner, "algebra/test_common.jl")
     addtests(testrunner, "algebra/test_permutation_matrix.jl")
     addtests(testrunner, "algebra/test_standard_basis_vector.jl")
 
-    addtests(testrunner, "test_model.jl")
-    addtests(testrunner, "test_math.jl")
-    addtests(testrunner, "test_helpers.jl")
-    addtests(testrunner, "test_score.jl")
+    addtests(testrunner, "helpers/test_helpers.jl")
 
-    addtests(testrunner, "constraints/spec/test_factorisation_spec.jl")
-    addtests(testrunner, "constraints/spec/test_form_spec.jl")
-    addtests(testrunner, "constraints/form/test_form_point_mass.jl")
+    addtests(testrunner, "score/test_counting.jl")
+
+    addtests(testrunner, "approximations/test_shared.jl")
+    addtests(testrunner, "approximations/test_unscented.jl")
+    addtests(testrunner, "approximations/test_linearization.jl")
+
+    addtests(testrunner, "constraints/prod/test_prod_analytical.jl")
     addtests(testrunner, "constraints/prod/test_prod_final.jl")
     addtests(testrunner, "constraints/prod/test_prod_generic.jl")
-    addtests(testrunner, "constraints/meta/test_meta.jl")
+    addtests(testrunner, "constraints/test_factorisation.jl")
 
     addtests(testrunner, "test_distributions.jl")
     addtests(testrunner, "distributions/test_common.jl")
@@ -247,13 +241,14 @@ end
 
     addtests(testrunner, "test_message.jl")
 
-    addtests(testrunner, "test_variable.jl")
+    addtests(testrunner, "variables/test_variable.jl")
     addtests(testrunner, "variables/test_constant.jl")
     addtests(testrunner, "variables/test_data.jl")
     addtests(testrunner, "variables/test_random.jl")
 
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
+    addtests(testrunner, "nodes/delta/cvi/test_cvi.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
     addtests(testrunner, "nodes/test_bifm_helper.jl")
@@ -273,6 +268,7 @@ end
     addtests(testrunner, "nodes/test_and.jl")
     addtests(testrunner, "nodes/test_implication.jl")
     addtests(testrunner, "nodes/test_uniform.jl")
+    addtests(testrunner, "nodes/test_normal_mixture.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
@@ -295,6 +291,9 @@ end
     addtests(testrunner, "rules/bifm_helper/test_out.jl")
 
     addtests(testrunner, "rules/normal_mixture/test_out.jl")
+    addtests(testrunner, "rules/normal_mixture/test_m.jl")
+    addtests(testrunner, "rules/normal_mixture/test_p.jl")
+    addtests(testrunner, "rules/normal_mixture/test_switch.jl")
 
     addtests(testrunner, "rules/subtraction/test_marginals.jl")
     addtests(testrunner, "rules/subtraction/test_in1.jl")
@@ -307,6 +306,18 @@ end
 
     addtests(testrunner, "rules/beta/test_out.jl")
     addtests(testrunner, "rules/beta/test_marginals.jl")
+
+    addtests(testrunner, "rules/delta/unscented/test_out.jl")
+    addtests(testrunner, "rules/delta/unscented/test_in.jl")
+    addtests(testrunner, "rules/delta/unscented/test_marginals.jl")
+
+    addtests(testrunner, "rules/delta/linearization/test_out.jl")
+    addtests(testrunner, "rules/delta/linearization/test_in.jl")
+    addtests(testrunner, "rules/delta/linearization/test_marginals.jl")
+
+    addtests(testrunner, "rules/delta/cvi/test_in.jl")
+    addtests(testrunner, "rules/delta/cvi/test_marginals.jl")
+    addtests(testrunner, "rules/delta/cvi/test_out.jl")
 
     addtests(testrunner, "rules/dot_product/test_out.jl")
     addtests(testrunner, "rules/dot_product/test_in1.jl")
@@ -367,16 +378,6 @@ end
     addtests(testrunner, "rules/implication/test_in1.jl")
     addtests(testrunner, "rules/implication/test_in2.jl")
     addtests(testrunner, "rules/implication/test_marginals.jl")
-
-    addtests(testrunner, "models/test_lgssm.jl")
-    addtests(testrunner, "models/test_hgf.jl")
-    addtests(testrunner, "models/test_ar.jl")
-    addtests(testrunner, "models/test_gmm.jl")
-    addtests(testrunner, "models/test_hmm.jl")
-    addtests(testrunner, "models/test_linreg.jl")
-    addtests(testrunner, "models/test_mv_iid.jl")
-    addtests(testrunner, "models/test_probit.jl")
-    addtests(testrunner, "models/test_aliases.jl")
 
     run(testrunner)
 end

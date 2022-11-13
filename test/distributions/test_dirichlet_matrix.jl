@@ -21,12 +21,12 @@ using Random
         d1 = vague(MatrixDirichlet, 3)
 
         @test typeof(d1) <: MatrixDirichlet
-        @test mean(d1) == ones(3, 3) ./ sum(ones(3, 3), dims = 1)
+        @test mean(d1) == ones(3, 3) ./ sum(ones(3, 3); dims = 1)
 
         d2 = vague(MatrixDirichlet, 4)
 
         @test typeof(d2) <: MatrixDirichlet
-        @test mean(d2) == ones(4, 4) ./ sum(ones(4, 4), dims = 1)
+        @test mean(d2) == ones(4, 4) ./ sum(ones(4, 4); dims = 1)
 
         @test vague(MatrixDirichlet, 3, 3) == vague(MatrixDirichlet, (3, 3))
         @test vague(MatrixDirichlet, 4, 4) == vague(MatrixDirichlet, (4, 4))
@@ -36,7 +36,7 @@ using Random
         d3 = vague(MatrixDirichlet, 3, 4)
 
         @test typeof(d3) <: MatrixDirichlet
-        @test mean(d3) == ones(3, 4) ./ sum(ones(3, 4), dims = 1)
+        @test mean(d3) == ones(3, 4) ./ sum(ones(3, 4); dims = 1)
     end
 
     @testset "entropy" begin
@@ -68,11 +68,8 @@ using Random
         d2 = MatrixDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])
         d3 = MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])
 
-        @test prod(ProdAnalytical(), d1, d2) ==
-              MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test prod(ProdAnalytical(), d1, d3) == MatrixDirichlet(
-            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
-        )
+        @test prod(ProdAnalytical(), d1, d2) == MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
+        @test prod(ProdAnalytical(), d1, d3) == MatrixDirichlet([0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001])
         @test prod(ProdAnalytical(), d2, d3) == MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
     end
 

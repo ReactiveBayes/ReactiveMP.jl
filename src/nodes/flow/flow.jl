@@ -15,9 +15,6 @@ abstract type AbstractCouplingFlow end
 abstract type AbstractCouplingFlowEmpty end
 abstract type AbstractCouplingFlowPlaceholder end
 
-# specify abstract types of nonlinear approximation
-abstract type AbstractNonLinearApproximation end
-
 @doc raw"""
 The `FlowMeta` structure contains the meta data of the `Flow` factor node. More specifically, it contains the model of the `Flow` factor node. The `FlowMeta` structure can be constructed as `FlowMeta(model)`.
 Make sure that the flow model has been compiled.
@@ -26,17 +23,14 @@ The `FlowMeta` structure is required for the `Flow` factor node and can be inclu
     y ~ Flow(x) where { meta = FlowMeta(...) }
 ```
 """
-struct FlowMeta{T <: AbstractCompiledFlowModel, A <: AbstractNonLinearApproximation}
+struct FlowMeta{T <: AbstractCompiledFlowModel, A <: AbstractApproximationMethod}
     model         :: T
     approximation :: A
 end
+
 default_meta(::Type{Flow}) = error(
     "The Flow node requires the meta flag to be explicitly specified. Please create a `FlowMeta` structure for this purpose and include it with the Flow node as: `y ~ Flow(x) where { meta = FlowMeta(...) }` "
 )
-
-# include approximations
-include("approximations/linearization.jl")
-include("approximations/unscented.jl")
 
 # structure constructors
 function FlowMeta(model::T) where {T <: AbstractCompiledFlowModel}

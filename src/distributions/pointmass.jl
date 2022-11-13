@@ -4,6 +4,8 @@ import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
 import Base: ndims, precision, getindex, size, convert, isapprox, eltype
 import SpecialFunctions: loggamma, logbeta
 
+import Random: rand!, rand
+
 struct PointMass{P}
     point::P
 end
@@ -21,7 +23,8 @@ getpointmass(distribution::PointMass) = distribution.point
 Base.getindex(distribution::PointMass, index...) = Base.getindex(getpointmass(distribution), index...)
 Base.size(distribution::PointMass, index...) = Base.size(getpointmass(distribution), index...)
 
-Distributions.entropy(distribution::PointMass) = InfCountingReal(eltype(distribution), -1)
+# `entropy` for the `PointMass` is not defined
+Distributions.entropy(distribution::PointMass) = CountingReal(eltype(distribution), -1)
 
 # Real-based univariate point mass
 
@@ -42,8 +45,7 @@ mean(fn::F, distribution::PointMass{T}) where {T <: Real, F <: Function} = fn(me
 Base.precision(::PointMass{T}) where {T <: Real} = convert(T, Inf)
 Base.ndims(::PointMass{T}) where {T <: Real}     = 1
 
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: Real, R <: Real} =
-    PointMass(convert(T, getpointmass(distribution)))
+convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: Real, R <: Real} = PointMass(convert(T, getpointmass(distribution)))
 
 Base.eltype(::PointMass{T}) where {T <: Real} = T
 
@@ -89,8 +91,7 @@ Distributions.var(distribution::PointMass{M}) where {T <: Real, M <: AbstractMat
 Distributions.std(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}  = zeros(T, ndims(distribution))
 Distributions.cov(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}  = error("Distributions.cov(::PointMass{ <: AbstractMatrix }) is not defined")
 
-probvec(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} =
-    error("probvec(::PointMass{ <: AbstractMatrix }) is not defined")
+probvec(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = error("probvec(::PointMass{ <: AbstractMatrix }) is not defined")
 
 mean(::typeof(inv), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}       = inv(mean(distribution))
 mean(::typeof(cholinv), distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}   = cholinv(mean(distribution))
@@ -108,7 +109,27 @@ convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {
 
 Base.eltype(::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = T
 
-Base.isapprox(left::PointMass, right::PointMass; kwargs...) =
-    Base.isapprox(getpointmass(left), getpointmass(right); kwargs...)
+Base.isapprox(left::PointMass, right::PointMass; kwargs...) = Base.isapprox(getpointmass(left), getpointmass(right); kwargs...)
 Base.isapprox(left::PointMass, right; kwargs...) = false
 Base.isapprox(left, right::PointMass; kwargs...) = false
+
+function Random.rand!(::AbstractRNG, dist::PointMass{P}, container::AbstractVector{P}) where {P}
+    point = mean(dist)
+    for i in 1:length(container)
+        container[i] = point
+    end
+    container
+end
+
+function Random.rand(::AbstractRNG, dist::PointMass)
+    return mean(dist)
+end
+
+function Random.rand(rng::AbstractRNG, dist::PointMass{P}, size::Int64) where {P}
+    container = Vector{P}(undef, size)
+    return rand!(rng, dist, container)
+end
+
+function Random.rand(dist::PointMass, size::Int64)
+    return rand(Random.GLOBAL_RNG, dist, size)
+end

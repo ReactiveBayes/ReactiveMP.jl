@@ -27,14 +27,7 @@ function ImportanceSamplingApproximation(rng::R, nsamples::Int; resampling::Bool
 end
 
 function ImportanceSamplingApproximation(::Type{T}, rng::R, nsamples::Int; resampling::Bool = true) where {T, R}
-    return ImportanceSamplingApproximation{T, R}(
-        rng,
-        nsamples,
-        Vector{T}(undef, nsamples),
-        Vector{T}(undef, nsamples),
-        resampling,
-        Vector{T}(undef, nsamples)
-    )
+    return ImportanceSamplingApproximation{T, R}(rng, nsamples, Vector{T}(undef, nsamples), Vector{T}(undef, nsamples), resampling, Vector{T}(undef, nsamples))
 end
 
 getsamples(approximation::ImportanceSamplingApproximation, distribution)           = getsamples(approximation, distribution, approximation.nsamples)

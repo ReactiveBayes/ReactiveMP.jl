@@ -192,11 +192,7 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
         from_left  = getoutbound(Right, chain, nextindex(Right, index)) # Inbound message comming from left direction  (is a right from `index - 1`)
         from_right = getoutbound(Left, chain, nextindex(Left, index))  # Inbound message comming from right direction (is a left from `index + 1`)
 
-        connect!(
-            outputmsgs[index],
-            combineLatestUpdates((from_left, from_right), PushNew()) |>
-            map(Message, ChainOutboundMapping(index, chain))
-        )
+        connect!(outputmsgs[index], combineLatestUpdates((from_left, from_right), PushNew()) |> map(Message, ChainOutboundMapping(index, chain)))
     end
 
     return nothing

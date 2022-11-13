@@ -91,12 +91,9 @@ using ReactiveMP
     end
 
     @testset "Base methods" begin
-        @test convert(NormalWeightedMeanPrecision{Float32}, NormalWeightedMeanPrecision()) ==
-              NormalWeightedMeanPrecision{Float32}(0.0f0, 1.0f0)
-        @test convert(NormalWeightedMeanPrecision{Float64}, NormalWeightedMeanPrecision(0.0, 10.0)) ==
-              NormalWeightedMeanPrecision{Float64}(0.0, 10.0)
-        @test convert(NormalWeightedMeanPrecision{Float64}, NormalWeightedMeanPrecision(0.0, 0.1)) ==
-              NormalWeightedMeanPrecision{Float64}(0.0, 0.1)
+        @test convert(NormalWeightedMeanPrecision{Float32}, NormalWeightedMeanPrecision()) == NormalWeightedMeanPrecision{Float32}(0.0f0, 1.0f0)
+        @test convert(NormalWeightedMeanPrecision{Float64}, NormalWeightedMeanPrecision(0.0, 10.0)) == NormalWeightedMeanPrecision{Float64}(0.0, 10.0)
+        @test convert(NormalWeightedMeanPrecision{Float64}, NormalWeightedMeanPrecision(0.0, 0.1)) == NormalWeightedMeanPrecision{Float64}(0.0, 0.1)
         @test convert(NormalWeightedMeanPrecision{Float64}, 0, 1) == NormalWeightedMeanPrecision{Float64}(0.0, 1.0)
         @test convert(NormalWeightedMeanPrecision{Float64}, 0, 10) == NormalWeightedMeanPrecision{Float64}(0.0, 10.0)
         @test convert(NormalWeightedMeanPrecision{Float64}, 0, 0.1) == NormalWeightedMeanPrecision{Float64}(0.0, 0.1)
@@ -114,12 +111,9 @@ using ReactiveMP
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1 / 1), NormalWeightedMeanPrecision(1, 1 / 1)) ≈
-              NormalWeightedMeanPrecision(0, 2)
-        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1 / 2), NormalWeightedMeanPrecision(1, 1 / 4)) ≈
-              NormalWeightedMeanPrecision(0, 3 / 4)
-        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(2, 1 / 2), NormalWeightedMeanPrecision(0, 1 / 10)) ≈
-              NormalWeightedMeanPrecision(2, 3 / 5)
+        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1 / 1), NormalWeightedMeanPrecision(1, 1 / 1)) ≈ NormalWeightedMeanPrecision(0, 2)
+        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1 / 2), NormalWeightedMeanPrecision(1, 1 / 4)) ≈ NormalWeightedMeanPrecision(0, 3 / 4)
+        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(2, 1 / 2), NormalWeightedMeanPrecision(0, 1 / 10)) ≈ NormalWeightedMeanPrecision(2, 3 / 5)
     end
 end
 

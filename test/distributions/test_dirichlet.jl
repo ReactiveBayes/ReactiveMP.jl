@@ -25,12 +25,9 @@ using Random
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0])) ==
-              Dirichlet([1.0, 1.0, 1.0])
-        @test prod(ProdAnalytical(), Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0])) ==
-              Dirichlet([1.1, 1.2000000000000002, 2.0])
-        @test prod(ProdAnalytical(), Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0])) ==
-              Dirichlet([3.0999999999999996, 2.2, 6.0])
+        @test prod(ProdAnalytical(), Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0])) == Dirichlet([1.0, 1.0, 1.0])
+        @test prod(ProdAnalytical(), Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0])) == Dirichlet([1.1, 1.2000000000000002, 2.0])
+        @test prod(ProdAnalytical(), Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0])) == Dirichlet([3.0999999999999996, 2.2, 6.0])
     end
 
     @testset "probvec" begin

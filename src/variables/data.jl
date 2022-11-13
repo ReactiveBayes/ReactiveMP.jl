@@ -69,12 +69,8 @@ datavar(name::Symbol, ::Type{D}, length::Int) where {D}                         
 datavar(name::Symbol, ::Type{D}, dims::Tuple) where {D}                                                            = datavar(DataVariableCreationOptions(D), name, D, dims)
 datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}) where {D}                                                      = datavar(DataVariableCreationOptions(D), name, D, dims)
 
-datavar(
-    options::DataVariableCreationOptions{S},
-    name::Symbol,
-    ::Type{D},
-    collection_type::AbstractVariableCollectionType = VariableIndividual()
-) where {S, D} = DataVariable{D, S}(name, collection_type, options.subject, 0)
+datavar(options::DataVariableCreationOptions{S}, name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where {S, D} =
+    DataVariable{D, S}(name, collection_type, options.subject, 0)
 
 function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, length::Int) where {D}
     return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
@@ -106,9 +102,7 @@ isconst(::DataVariable)                   = false
 isconst(::AbstractArray{<:DataVariable})  = false
 
 function Base.getindex(datavar::DataVariable, i...)
-    error(
-        "Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed."
-    )
+    error("Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed.")
 end
 
 getlastindex(::DataVariable) = 1
@@ -133,17 +127,15 @@ __update_wrong_type_error(::Type{D1}, ::Type{D2}, ctype::VariableIndividual, dat
     """
 )
 
-__update_wrong_type_error(::Type{D1}, ::Type{D2}, ctype::Union{VariableVector, VariableArray}, datavar) where {D1, D2} =
-    error(
-        """
-        `$(name(datavar)) = datavar($(__datavar_drop_pointmass(D1)), ...)` accepts data only of type `$(__datavar_drop_pointmass(D1))`, but the value of type `$D2` has been used. 
-        Double check `update!($(name(datavar))$(string_index(ctype)), d)` call and explicitly convert data to the type `$(__datavar_drop_pointmass(D1))`, e.g. `update!($(name(datavar))$(string_index(ctype)), convert($(__datavar_drop_pointmass(D1)), d))`.
-        If you use broadcasted version of the `update!` function, e.g. `update!($(name(datavar)), data)` you may broadcast `convert` function over the whole dataset as well, e.g. `update!($(name(datavar)), convert.($(__datavar_drop_pointmass(D1)), dataset))`
-        """
-    )
+__update_wrong_type_error(::Type{D1}, ::Type{D2}, ctype::Union{VariableVector, VariableArray}, datavar) where {D1, D2} = error(
+    """
+    `$(name(datavar)) = datavar($(__datavar_drop_pointmass(D1)), ...)` accepts data only of type `$(__datavar_drop_pointmass(D1))`, but the value of type `$D2` has been used. 
+    Double check `update!($(name(datavar))$(string_index(ctype)), d)` call and explicitly convert data to the type `$(__datavar_drop_pointmass(D1))`, e.g. `update!($(name(datavar))$(string_index(ctype)), convert($(__datavar_drop_pointmass(D1)), d))`.
+    If you use broadcasted version of the `update!` function, e.g. `update!($(name(datavar)), data)` you may broadcast `convert` function over the whole dataset as well, e.g. `update!($(name(datavar)), convert.($(__datavar_drop_pointmass(D1)), dataset))`
+    """
+)
 
-update!(::Type{PointMass{D}}, datavar, data::D) where {D} =
-    next!(messageout(datavar, 1), Message(PointMass(data), false, false))
+update!(::Type{PointMass{D}}, datavar, data::D) where {D} = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
 
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 
@@ -165,9 +157,7 @@ _setmarginal!(datavar::DataVariable, observable) = error("It is not possible to 
 _makemarginal(datavar::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
 # Extension for _getmarginal
-function Rocket.getrecent(
-    proxy::ProxyObservable{<:Marginal, S, M}
-) where {S <: Rocket.RecentSubjectInstance, D, M <: Rocket.MapProxy{D, typeof(as_marginal)}}
+function Rocket.getrecent(proxy::ProxyObservable{<:Marginal, S, M}) where {S <: Rocket.RecentSubjectInstance, D, M <: Rocket.MapProxy{D, typeof(as_marginal)}}
     return as_marginal(Rocket.getrecent(proxy.proxied_source))
 end
 

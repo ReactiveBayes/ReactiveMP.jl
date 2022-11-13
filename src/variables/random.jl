@@ -13,7 +13,7 @@ mutable struct RandomVariable <: AbstractVariable
     output_initialised :: Bool
     output_cache       :: Union{Nothing, EqualityChain}
     marginal           :: MarginalObservable
-    pipeline           :: AbstractPipelineStage
+    pipeline
     proxy_variables
     prod_constraint
     prod_strategy
@@ -57,8 +57,7 @@ function RandomVariableCreationOptions()
     )
 end
 
-const EmptyRandomVariableCreationOptions =
-    RandomVariableCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+const EmptyRandomVariableCreationOptions = RandomVariableCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
 
 # Immutable setters return a new object, this API is considered to be private
 randomvar_options_set_pipeline(pipeline)                                         = randomvar_options_set_pipeline(RandomVariableCreationOptions(), pipeline)
@@ -131,11 +130,7 @@ randomvar(name::Symbol, dims::Vararg{Int})                               = rando
 randomvar(options::RandomVariableCreationOptions, name::Symbol)                    = randomvar(options, name, VariableIndividual())
 randomvar(options::RandomVariableCreationOptions, name::Symbol, dims::Vararg{Int}) = randomvar(options, name, dims)
 
-function randomvar(
-    options::RandomVariableCreationOptions,
-    name::Symbol,
-    collection_type::AbstractVariableCollectionType
-)
+function randomvar(options::RandomVariableCreationOptions, name::Symbol, collection_type::AbstractVariableCollectionType)
     return RandomVariable(
         name,
         false,
@@ -197,23 +192,13 @@ isconst(::RandomVariable)                   = false
 isconst(::AbstractArray{<:RandomVariable})  = false
 
 function Base.getindex(randomvar::RandomVariable, i...)
-    error(
-        "Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed."
-    )
+    error("Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed.")
 end
 
-messages_prod_fn(randomvar::RandomVariable) = messages_prod_fn(
-    prod_strategy(randomvar),
-    prod_constraint(randomvar),
-    messages_form_constraint(randomvar),
-    messages_form_check_strategy(randomvar)
-)
-marginal_prod_fn(randomvar::RandomVariable) = marginal_prod_fn(
-    prod_strategy(randomvar),
-    prod_constraint(randomvar),
-    marginal_form_constraint(randomvar),
-    marginal_form_check_strategy(randomvar)
-)
+messages_prod_fn(randomvar::RandomVariable) =
+    messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), messages_form_constraint(randomvar), messages_form_check_strategy(randomvar))
+marginal_prod_fn(randomvar::RandomVariable) =
+    marginal_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), marginal_form_constraint(randomvar), marginal_form_check_strategy(randomvar))
 
 getlastindex(randomvar::RandomVariable) = degree(randomvar) + 1
 
@@ -245,7 +230,7 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     end
 end
 
-function activate!(model, randomvar::RandomVariable)
+function activate!(randomvar::RandomVariable, scheduler = AsapScheduler())
     if randomvar.output_initialised === true
         error("Broken random variable ", randomvar, ". Unreachable reached.")
     end
@@ -253,7 +238,7 @@ function activate!(model, randomvar::RandomVariable)
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomvar) > 5
-        chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
+        chain_pipeline = schedule_on(scheduler)
         chain_prod_fn = messages_prod_fn(randomvar)
         randomvar.output_cache = EqualityChain(randomvar.input_messages, chain_pipeline, chain_prod_fn)
     end

@@ -7,11 +7,7 @@ end
     return (out = m_out, μ = prod(ProdAnalytical(), m_μ, NormalMeanVariance(mean(m_out), mean(m_v))), v = m_v)
 end
 
-@marginalrule NormalMeanVariance(:out_μ_v) (
-    m_out::UnivariateNormalDistributionsFamily,
-    m_μ::UnivariateNormalDistributionsFamily,
-    m_v::PointMass
-) = begin
+@marginalrule NormalMeanVariance(:out_μ_v) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, m_v::PointMass) = begin
     xi_out, W_out = weightedmean_precision(m_out)
     xi_μ, W_μ     = weightedmean_precision(m_μ)
 
@@ -23,11 +19,7 @@ end
     return (out_μ = MvNormalWeightedMeanPrecision(xi, W), v = m_v)
 end
 
-@marginalrule NormalMeanVariance(:out_μ) (
-    m_out::UnivariateNormalDistributionsFamily,
-    m_μ::UnivariateNormalDistributionsFamily,
-    q_v::Any
-) = begin
+@marginalrule NormalMeanVariance(:out_μ) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, q_v::Any) = begin
     xi_out, W_out = weightedmean_precision(m_out)
     xi_μ, W_μ     = weightedmean_precision(m_μ)
 
