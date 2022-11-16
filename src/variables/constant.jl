@@ -2,6 +2,7 @@ export ConstVariable, constvar, getconst, isconnected
 
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex, show
+import KernelFunctions: Kernel 
 
 mutable struct ConstVariable{C, M} <: AbstractVariable
     name            :: Symbol
@@ -36,6 +37,11 @@ end
     
 """
 function constvar end
+
+#### additional lines for random process 
+constvar(name::Symbol, fn::Function) = ConstVariable(name, ReactiveMP.VariableIndividual(), PointMass(fn), of(Message(PointMass(fn), true, false)), 0)
+constvar(name::Symbol, kernel::Kernel ) = ConstVariable(name, ReactiveMP.VariableIndividual(), PointMass(kernel), of(Message(PointMass(kernel), true, false)), 0)
+##########
 
 constvar(name::Symbol, constval, collection_type::AbstractVariableCollectionType = VariableIndividual())                 = ConstVariable(name, collection_type, constval, of(Message(constval, true, false)), 0)
 constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollectionType = VariableIndividual())           = constvar(name, PointMass(constval), collection_type)

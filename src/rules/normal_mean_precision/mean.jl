@@ -17,3 +17,9 @@ end
     m_out_mean, m_out_cov = mean_cov(m_out)
     return NormalMeanVariance(m_out_mean, m_out_cov + cholinv(mean(q_τ)))
 end
+
+# GP meta                           # 
+# --------------------------------- #
+@rule NormalMeanPrecision(:μ, Marginalisation) (q_out::PointMass, q_τ::GammaShapeRate, meta::ProcessMeta) = begin 
+    return @call_rule NormalMeanPrecision(:μ, Marginalisation) (q_out=q_out,q_τ=q_τ,meta=nothing)
+end

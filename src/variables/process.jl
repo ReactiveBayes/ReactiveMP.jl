@@ -1,7 +1,6 @@
 export RandomProcess, RandomProcessCreationOptions, randomprocess
 
 import Base: show
-
 ## Random variable implementation
 mutable struct RandomProcess <: AbstractVariable
     name               :: Symbol
@@ -22,6 +21,8 @@ mutable struct RandomProcess <: AbstractVariable
     marginal_form_check_strategy
     messages_form_constraint
     messages_form_check_strategy
+    inducing_input     :: AbstractArray     #add inducing input 
+    covariance_strategy::AbstractCovarianceStrategyType      #add covariance strategy 
 end
 
 Base.show(io::IO, randomprocess::RandomProcess) = print(io, "RandomProcess(", indexed_name(randomprocess), ")")
@@ -35,10 +36,8 @@ struct RandomProcessCreationOptions{L, P, C, S, T, G, M, N}
     marginal_form_check_strategy :: G
     messages_form_constraint     :: M
     messages_form_check_strategy :: N
-    # test_input                   :: X
-    # train_input                  :: Y
+    covariance_strategy         
 end
-
 
 prod_constraint(options::RandomProcessCreationOptions)              = options.prod_constraint
 prod_strategy(options::RandomProcessCreationOptions)                = options.prod_strategy
@@ -46,8 +45,7 @@ marginal_form_constraint(options::RandomProcessCreationOptions)     = options.ma
 marginal_form_check_strategy(options::RandomProcessCreationOptions) = options.marginal_form_check_strategy
 messages_form_constraint(options::RandomProcessCreationOptions)     = options.messages_form_constraint
 messages_form_check_strategy(options::RandomProcessCreationOptions) = options.messages_form_check_strategy
-# test_input(options::RandomProcessCreationOptions)                   = options.test_input
-# train_input(options::RandomProcessCreationOptions)                   = options.train_input
+covariance_strategy(options::RandomProcessCreationOptions)          = options.covariance_strategy  # add function for covariance strategy 
 
 function RandomProcessCreationOptions()
     # Return default settings
@@ -59,14 +57,12 @@ function RandomProcessCreationOptions()
         UnspecifiedFormConstraint(),      # marginal_form_constraint
         FormConstraintCheckPickDefault(), # marginal_form_check_strategy
         UnspecifiedFormConstraint(),      # messages_form_constraint
-        FormConstraintCheckPickDefault()  # messages_form_check_strategy
-        # nothing,                          # test_input
-        # nothing,                          # train_input
+        FormConstraintCheckPickDefault(), # messages_form_check_strategy
+        CovarianceMatrixStrategy()        # covariance_matrix_strategy
     )
 end
 
-const EmptyRandomProcessCreationOptions =
-    RandomProcessCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+const EmptyRandomProcessCreationOptions = RandomProcessCreationOptions(nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing) 
 
 randomprocess_options_set_pipeline(pipeline)                                         = randomprocess_options_set_pipeline(RandomProcessCreationOptions(), pipeline)
 randomprocess_options_set_proxy_variables(proxy_variables)                           = randomprocess_options_set_proxy_variables(RandomProcessCreationOptions(), proxy_variables)
@@ -76,31 +72,35 @@ randomprocess_options_set_marginal_form_constraint(marginal_form_constraint)    
 randomprocess_options_set_marginal_form_check_strategy(marginal_form_check_strategy) = randomprocess_options_set_marginal_form_check_strategy(RandomProcessCreationOptions(), marginal_form_check_strategy)
 randomprocess_options_set_messages_form_constraint(messages_form_constraint)         = randomprocess_options_set_messages_form_constraint(RandomProcessCreationOptions(), messages_form_constraint)
 randomprocess_options_set_messages_form_check_strategy(messages_form_check_strategy) = randomprocess_options_set_messages_form_check_strategy(RandomProcessCreationOptions(), messages_form_check_strategy)
-# randomprocess_options_set_test_input(test_input)                                     = randomprocess_options_set_test_input(RandomProcessCreationOptions(),test_input)
-# randomprocess_options_set_train_input(train_input)                                   = randomprocess_options_set_train_input(RandomProcessCreationOptions(),train_input)
+randomprocess_options_set_covariance_strategy(covariance_strategy)                   = randomprocess_options_set_covariance_strategy(RandomProcessCreationOptions(),covariance_strategy)
 
 
-randomprocess_options_set_pipeline(options::RandomProcessCreationOptions, pipeline)                                         = RandomProcessCreationOptions(pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
-randomprocess_options_set_proxy_variables(options::RandomProcessCreationOptions, proxy_variables)                           = RandomProcessCreationOptions(options.pipeline, proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
-randomprocess_options_set_prod_constraint(options::RandomProcessCreationOptions, prod_constraint)                           = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
-randomprocess_options_set_prod_strategy(options::RandomProcessCreationOptions, prod_strategy)                               = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
-randomprocess_options_set_marginal_form_constraint(options::RandomProcessCreationOptions, marginal_form_constraint)         = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
-randomprocess_options_set_marginal_form_check_strategy(options::RandomProcessCreationOptions, marginal_form_check_strategy) = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy)
-randomprocess_options_set_messages_form_constraint(options::RandomProcessCreationOptions, messages_form_constraint)         = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, messages_form_constraint, options.messages_form_check_strategy)
-randomprocess_options_set_messages_form_check_strategy(options::RandomProcessCreationOptions, messages_form_check_strategy) = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, messages_form_check_strategy)
+randomprocess_options_set_pipeline(options::RandomProcessCreationOptions, pipeline)                                         = RandomProcessCreationOptions(pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, options.covariance_strategy)
+randomprocess_options_set_proxy_variables(options::RandomProcessCreationOptions, proxy_variables)                           = RandomProcessCreationOptions(options.pipeline, proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, options.covariance_strategy)
+randomprocess_options_set_prod_constraint(options::RandomProcessCreationOptions, prod_constraint)                           = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, options.covariance_strategy)
+randomprocess_options_set_prod_strategy(options::RandomProcessCreationOptions, prod_strategy)                               = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, options.covariance_strategy)
+randomprocess_options_set_marginal_form_constraint(options::RandomProcessCreationOptions, marginal_form_constraint)         = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, options.covariance_strategy)
+randomprocess_options_set_marginal_form_check_strategy(options::RandomProcessCreationOptions, marginal_form_check_strategy) = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, options.covariance_strategy)
+randomprocess_options_set_messages_form_constraint(options::RandomProcessCreationOptions, messages_form_constraint)         = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, messages_form_constraint, options.messages_form_check_strategy, options.covariance_strategy)
+randomprocess_options_set_messages_form_check_strategy(options::RandomProcessCreationOptions, messages_form_check_strategy) = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, messages_form_check_strategy, options.covariance_strategy)
 # randomprocess_options_set_test_input(options::RandomProcessCreationOptions,test_input)                                      = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, test_input,options.train_input)
 # randomprocess_options_set_train_input(options::RandomProcessCreationOptions,train_input)                                    = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, options.test_input,train_input)
+randomprocess_options_set_covariance_strategy(options::RandomProcessCreationOptions, covariance_strategy)                   = RandomProcessCreationOptions(options.pipeline, options.proxy_variables, options.prod_constraint, options.prod_strategy, options.marginal_form_constraint, options.marginal_form_check_strategy, options.messages_form_constraint, options.messages_form_check_strategy, covariance_strategy)
 
 function randomprocess end
 
-randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray)                                                  = randomprocess(RandomProcessCreationOptions(), name,test_input,train_input, VariableIndividual())
-randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, collection_type::AbstractVariableCollectionType) = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, collection_type)
-randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, length::Int)                                     = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, length)
-randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, dims::Tuple)                                     = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, dims)
-randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, dims::Vararg{Int})                               = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, dims)
+randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray)                                                      = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, VariableIndividual())
+randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, covariance_strategy::AbstractCovarianceStrategyType) = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, covariance_strategy, VariableIndividual()) #add cov strategy
+randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, collection_type::AbstractVariableCollectionType)     = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, collection_type)
+
+randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, length::Int)                                         = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, length)
+randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, dims::Tuple)                                         = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, dims)
+randomprocess(name::Symbol, test_input::AbstractArray, train_input::AbstractArray, dims::Vararg{Int})                                   = randomprocess(RandomProcessCreationOptions(), name, test_input, train_input, dims)
 
 randomprocess(options::RandomProcessCreationOptions, name::Symbol, test_input::AbstractArray, train_input::AbstractArray)                    = randomprocess(options, name, test_input, train_input, VariableIndividual())
+randomprocess(options::RandomProcessCreationOptions, name::Symbol, test_input::AbstractArray, train_input::AbstractArray, covariance_strategy::AbstractCovarianceStrategyType) = randomprocess(options, name, test_input, train_input, covariance_strategy, VariableIndividual())
 randomprocess(options::RandomProcessCreationOptions, name::Symbol, test_input::AbstractArray, train_input::AbstractArray, dims::Vararg{Int}) = randomprocess(options, name, test_input, train_input, dims)
+
 function randomprocess(
     options::RandomProcessCreationOptions,
     name::Symbol,
@@ -126,7 +126,45 @@ function randomprocess(
         something(options.marginal_form_constraint, UnspecifiedFormConstraint()),
         something(options.marginal_form_check_strategy, FormConstraintCheckPickDefault()),
         something(options.messages_form_constraint, UnspecifiedFormConstraint()),
-        something(options.messages_form_check_strategy, FormConstraintCheckPickDefault())
+        something(options.messages_form_check_strategy, FormConstraintCheckPickDefault()),
+        nothing,
+        something(options.covariance_strategy, CovarianceMatrixStrategy())
+    )
+end
+
+function randomprocess(
+    options::RandomProcessCreationOptions,
+    name::Symbol,
+    test_input::AbstractArray,
+    train_input::AbstractArray,
+    covariance_strategy::AbstractCovarianceStrategyType,
+    collection_type::AbstractVariableCollectionType
+)
+    rng = covariance_strategy.strategy.rng 
+    num_inducing = covariance_strategy.strategy.n_inducing
+    isnothing(num_inducing) ? pos = nothing : pos = sort(randperm(rng,length(train_input))[1:num_inducing])
+    isnothing(pos) ? inducing_input = nothing : inducing_input = train_input[pos] # inducing points 
+    return RandomProcess(
+        name,
+        test_input,
+        train_input,
+        false,
+        collection_type,
+        Vector{MessageObservable{AbstractMessage}}(),
+        Vector{MessageObservable{Message}}(),
+        false,
+        nothing,
+        MarginalObservable(),
+        something(options.pipeline, EmptyPipelineStage()),      # `something(args..)` returns the first `notnothing` object
+        options.proxy_variables,                                # here we do allow `nothing`, so no need for `something(...)`
+        something(options.prod_constraint, ProdAnalytical()),
+        something(options.prod_strategy, FoldLeftProdStrategy()),
+        something(options.marginal_form_constraint, UnspecifiedFormConstraint()),
+        something(options.marginal_form_check_strategy, FormConstraintCheckPickDefault()),
+        something(options.messages_form_constraint, UnspecifiedFormConstraint()),
+        something(options.messages_form_check_strategy, FormConstraintCheckPickDefault()),
+        inducing_input,
+        covariance_strategy
     )
 end
 
@@ -140,6 +178,8 @@ prod_constraint(randomprocess::RandomProcess) = randomprocess.prod_constraint
 prod_strategy(randomprocess::RandomProcess)   = randomprocess.prod_strategy
 test_input(randomprocess::RandomProcess)      = randomprocess.test_input
 train_input(randomprocess::RandomProcess)     = randomprocess.train_input
+inducing_input(randomprocess::RandomProcess)  = randomprocess.inducing_input
+covariance_strategy(randomprocess::RandomProcess) = randomprocess.covariance_strategy
 
 marginal_form_constraint(randomprocess::RandomProcess)     = randomprocess.marginal_form_constraint
 marginal_form_check_strategy(randomprocess::RandomProcess) = _marginal_form_check_strategy(randomprocess.marginal_form_check_strategy, randomprocess)
@@ -182,15 +222,54 @@ isconst(::AbstractArray{<:RandomProcess})  = false
 #     train_input(randomprocess)
 # )
 
+########## messages and marginal prod functions ############
+function make_multivariate_message(messages) ## function for concatinating messages
+    m = mean.(messages) 
+    v = Diagonal(var.(messages))
+    return m,v
+end 
+
+# marginal_prod_fn(randomprocess::RandomProcess) = marginal_prod_fn(
+#     covariance_strategy(randomprocess)
+#     test_input(randomprocess)
+#     train_input(randomprocess)
+#     inducing_input(randomprocess)
+# )
+
+function marginal_prod_fn(randomprocess::RandomProcess)
+    test           = randomprocess.test_input
+    train          = randomprocess.train_input
+    cov_strategy   = randomprocess.covariance_strategy
+    inducing       = randomprocess.inducing_input 
+    return messages -> begin 
+        message_vector = map(ReactiveMP.as_message, messages)
+        process_message = getdata(message_vector[1])
+        meanf = process_message.meanfunction
+        kernelf = process_message.kernelfunction
+        likelihood_messages = message_vector[2:end]
+        m_right,cov_right = make_multivariate_message(likelihood_messages)
+        
+        m, K= predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,cov_right,inducing)
+        return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false)
+    end
+end
+
+function messages_prod_fn(randomprocess::RandomProcess)
+    return marginal_prod_fn(randomprocess::RandomProcess)
+end
+
+
+#####################################
+
 getlastindex(randomprocess::RandomProcess) = degree(randomprocess) + 1
 
 messagein(randomprocess::RandomProcess, index::Int) = @inbounds randomprocess.input_messages[index]
 
 function messageout(randomprocess::RandomProcess, index::Int)
-    if randomprocess.output_initialised === false
+    if randomprocess.output_initialised === false      
         initialize_output_messages!(randomprocess)
     end
-    return @inbounds randomprocess.output_messages[index]
+    return @inbounds randomprocess.output_messages[index] 
 end
 
 
@@ -205,7 +284,7 @@ setanonymous!(randomprocess::RandomProcess, anonymous::Bool) = randomprocess.ano
 
 function setmessagein!(randomprocess::RandomProcess, index::Int, messagein)
     if index === degree(randomprocess) + 1
-        push!(randomprocess.input_messages, messagein)
+        push!(randomprocess.input_messages, messagein)  
     else
         error(
             "Inconsistent state in setmessagein! function for random variable $(randomprocess). `index` should be equal to `degree(randomprocess) + 1 = $(degree(randomprocess) + 1)`, $(index) is given instead"
@@ -214,7 +293,7 @@ function setmessagein!(randomprocess::RandomProcess, index::Int, messagein)
 end
 
 function activate!(model, randomprocess::RandomProcess)
-    if randomprocess.output_initialised === true
+    if randomprocess.output_initialised === true     
         error("Broken random variable ", randomprocess, ". Unreachable reached.")
     end
 
@@ -223,7 +302,7 @@ function activate!(model, randomprocess::RandomProcess)
     if degree(randomprocess) > 1000
         chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
         chain_prod_fn = messages_prod_fn(randomprocess)
-        randomprocess.output_cache = EqualityChain(randomprocess.input_messages, chain_pipeline, chain_prod_fn)
+        randomprocess.base.output_cache = EqualityChain(randomprocess.input_messages, chain_pipeline, chain_prod_fn) 
     end
 
     _setmarginal!(randomprocess, _makemarginal(randomprocess))
@@ -237,8 +316,8 @@ initialize_output_messages!(randomprocess::RandomProcess) = initialize_output_me
 # We do not create equality chain in this cases, but simply do eager product
 function initialize_output_messages!(::Nothing, randomprocess::RandomProcess)
     d          = degree(randomprocess)
-    outputmsgs = randomprocess.output_messages
-    inputmsgs  = randomprocess.input_messages
+    outputmsgs = randomprocess.output_messages  
+    inputmsgs  = randomprocess.input_messages    
     prod_fn    = messages_prod_fn(randomprocess)
     resize!(outputmsgs, d)
 
@@ -249,7 +328,7 @@ function initialize_output_messages!(::Nothing, randomprocess::RandomProcess)
     end
 
     
-    randomprocess.output_initialised = true
+    randomprocess.output_initialised = true     
 
     return nothing
 end
@@ -258,7 +337,7 @@ end
 # In this cases it is more efficient to create an equality chain structure, but it does allocate way more memory
 function initialize_output_messages!(chain::EqualityChain, randomprocess::RandomProcess)
     d          = degree(randomprocess)
-    outputmsgs = randomprocess.output_messages
+    outputmsgs = randomprocess.output_messages   
 
     resize!(outputmsgs, d)
 
@@ -267,7 +346,7 @@ function initialize_output_messages!(chain::EqualityChain, randomprocess::Random
     end
 
     initialize!(chain, outputmsgs)
-    randomprocess.output_initialised = true
+    randomprocess.output_initialised = true 
 
     return nothing
 end

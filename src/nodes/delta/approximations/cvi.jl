@@ -1,6 +1,6 @@
 export CVIApproximation
 
-using Random
+using Random, Zygote 
 
 """
     cvi_update!(opt, λ, ∇)
@@ -38,12 +38,24 @@ const CVI = CVIApproximation
 # CVI implementations
 #---------------------------
 
+# get_df_m(
+#     ::Type{<:UnivariateNormalNaturalParameters},
+#     ::Type{<:UnivariateGaussianDistributionsFamily},
+#     logp_nc::Function
+# ) = (z) -> ForwardDiff.derivative(logp_nc, z)
+###### using Zygote.gradient 
 get_df_m(
     ::Type{<:UnivariateNormalNaturalParameters},
     ::Type{<:UnivariateGaussianDistributionsFamily},
     logp_nc::Function
-) = (z) -> ForwardDiff.derivative(logp_nc, z)
+) = (z) -> Zygote.gradient(logp_nc, z)[1]
 
+# get_df_m(
+#     ::Type{<:MvNormalNaturalParameters},
+#     ::Type{<:MultivariateGaussianDistributionsFamily},
+#     logp_nc::Function
+# ) = (z) -> Zygote.gradient(logp_nc, z)[1]
+####################
 get_df_m(
     ::Type{<:MvNormalNaturalParameters},
     ::Type{<:MultivariateGaussianDistributionsFamily},
@@ -67,15 +79,13 @@ function renderCVI(logp_nc::Function,
     msg_in::GaussianDistributionsFamily) where {T <: NormalNaturalParameters}
     η = naturalparams(msg_in)
     λ = deepcopy(λ_init)
-
     df_m = (z) -> get_df_m(typeof(λ_init), typeof(msg_in), logp_nc)(z)
     df_v = (z) -> 0.5 * get_df_v(typeof(λ_init), typeof(msg_in), df_m)(z)
     rng = something(rng, Random.GLOBAL_RNG)
-
     for _ in 1:num_iterations
         q = convert(Distribution, λ)
         z_s = rand(rng, q)
-        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
+        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q) # here 
         df_μ2 = df_v(z_s)
         ∇f = T(df_μ1, df_μ2)
         ∇ = λ - η - ∇f

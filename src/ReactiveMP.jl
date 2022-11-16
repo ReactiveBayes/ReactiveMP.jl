@@ -15,6 +15,9 @@ include("message.jl")
 include("marginal.jl")
 include("distributions.jl")
 
+## add gp strategy
+include("gpstrategy.jl")
+
 include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
@@ -135,6 +138,9 @@ include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/flow/flow.jl")
 include("nodes/poisson.jl")
+
+#add gp node
+include("nodes/gp.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
