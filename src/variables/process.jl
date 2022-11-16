@@ -21,13 +21,13 @@ mutable struct RandomProcess <: AbstractVariable
     marginal_form_check_strategy
     messages_form_constraint
     messages_form_check_strategy
-    inducing_input     :: AbstractArray     #add inducing input 
+    inducing_input         #add inducing input 
     covariance_strategy::AbstractCovarianceStrategyType      #add covariance strategy 
 end
 
 Base.show(io::IO, randomprocess::RandomProcess) = print(io, "RandomProcess(", indexed_name(randomprocess), ")")
 
-struct RandomProcessCreationOptions{L, P, C, S, T, G, M, N}
+struct RandomProcessCreationOptions{L, P, C, S, T, G, M, N, K}
     pipeline                     :: L
     proxy_variables              :: P
     prod_constraint              :: C
@@ -36,7 +36,7 @@ struct RandomProcessCreationOptions{L, P, C, S, T, G, M, N}
     marginal_form_check_strategy :: G
     messages_form_constraint     :: M
     messages_form_check_strategy :: N
-    covariance_strategy         
+    covariance_strategy          :: K
 end
 
 prod_constraint(options::RandomProcessCreationOptions)              = options.prod_constraint
