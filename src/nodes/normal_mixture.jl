@@ -73,8 +73,6 @@ function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
     end
 end
 
-## activate!
-
 struct NormalMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
 default_functional_dependencies_pipeline(::Type{<:NormalMixture}) = NormalMixtureNodeFunctionalDependencies()

@@ -9,6 +9,8 @@ using Rocket
 using TupleTools
 using MacroTools
 
+import Rocket: getscheduler
+
 import Base: show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
 import Base: getindex, setindex!, firstindex, lastindex
 
@@ -840,7 +842,11 @@ function get_marginals_observable(factornode, marginals)
     end
 end
 
-function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler(), addons = nothing)
+# options here must implement at least `ReactiveMP.get_pipeline_stages`, `Rocket.getscheduler` and `ReactiveMP.getaddons` functions
+function activate!(factornode::AbstractFactorNode, options)
+    pipeline_stages            = get_pipeline_stages(options)
+    scheduler                  = getscheduler(options)
+    addons                     = getaddons(options)
     fform                      = functionalform(factornode)
     meta                       = metadata(factornode)
     node_pipeline              = getpipeline(factornode)

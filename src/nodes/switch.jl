@@ -54,8 +54,6 @@ getpipeline(factornode::SwitchNode)                 = factornode.pipeline
 setmarginal!(factornode::SwitchNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")
 getmarginal!(factornode::SwitchNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")
 
-## activate!
-
 struct SwitchNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
 default_functional_dependencies_pipeline(::Type{<:Switch}) = SwitchNodeFunctionalDependencies()

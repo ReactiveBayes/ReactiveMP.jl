@@ -6,6 +6,12 @@ using Rocket
 
 @testset "Variable" begin
     import ReactiveMP: activate!
+    import Rocket: getscheduler
+
+    struct TestOptions end
+
+    Rocket.getscheduler(::TestOptions) = AsapScheduler()
+    Base.broadcastable(::TestOptions) = Ref(TestOptions()) # for broadcasting
 
     @testset "setmarginal! tests for randomvar" begin
         for dist in (NormalMeanVariance(-2.0, 3.0), NormalMeanPrecision(-2.0, 3.0))
@@ -13,7 +19,7 @@ using Rocket
             variable = randomvar(:r)
             flag = false
 
-            activate!(variable)
+            activate!(variable, TestOptions())
 
             setmarginal!(variable, dist)
 
@@ -32,7 +38,7 @@ using Rocket
             variablesmv = randomvar(:r, 2)
             flagmv = false
 
-            activate!.(variablesmv)
+            activate!.(variablesmv, TestOptions())
 
             setmarginals!(variablesmv, dist)
 
@@ -54,7 +60,7 @@ using Rocket
             variablesmx = randomvar(:r, 2, 2)
             flagmx = false
 
-            activate!.(variablesmx)
+            activate!.(variablesmx, TestOptions())
 
             setmarginals!(variablesmx, dist)
 

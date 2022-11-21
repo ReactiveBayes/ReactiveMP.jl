@@ -8,6 +8,7 @@ using Random
 import InteractiveUtils: methodswith
 import Base: methods
 import Base.Iterators: repeated, product
+import ReactiveMP: getaddons
 import ReactiveMP: materialize!
 import ReactiveMP: mirrorlog, xtlog
 import SpecialFunctions: loggamma

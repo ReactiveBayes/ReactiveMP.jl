@@ -1,6 +1,7 @@
 export RandomVariable, RandomVariableCreationOptions, randomvar
 
 import Base: show
+import Rocket: getscheduler
 
 ## Random variable implementation
 
@@ -230,10 +231,13 @@ function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
     end
 end
 
-function activate!(randomvar::RandomVariable, scheduler = AsapScheduler())
+# options here must implement at least `Rocket.getscheduler`
+function activate!(randomvar::RandomVariable, options)
     if randomvar.output_initialised === true
         error("Broken random variable ", randomvar, ". Unreachable reached.")
     end
+
+    scheduler = getscheduler(options)
 
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 

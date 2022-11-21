@@ -52,6 +52,7 @@ to_marginal(any) = any
 as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getaddons(marginal))
 
+getdata(::Nothing)                 = nothing
 getdata(collection::Tuple)         = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
 

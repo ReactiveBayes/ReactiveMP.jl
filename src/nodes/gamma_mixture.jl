@@ -69,8 +69,6 @@ function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
     end
 end
 
-## activate!
-
 struct GammaMixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
 default_functional_dependencies_pipeline(::Type{<:GammaMixture}) = GammaMixtureNodeFunctionalDependencies()

@@ -107,7 +107,7 @@ materialize!(message::Message) = message
 function show(io::IO, message::Message)
     indent = get(io, :indent, 0)
     print(io, ' '^indent, "Message(")
-    show(IOContext(io, :indent => indent+4), getdata(message))
+    show(IOContext(io, :indent => indent + 4), getdata(message))
     print(io, ") with ", string(getaddons(message)), "\n")
 end
 Base.show(io::IO, message::Message{T, Nothing}) where {T} = print(io, string("Message(", getdata(message), ")"))
@@ -127,10 +127,16 @@ function multiply_messages(prod_constraint, left::Message, right::Message)
     is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
 
     # process distributions
-    new_dist = prod(prod_constraint, getdata(left), getdata(right))
+    left_dist  = getdata(left)
+    right_dist = getdata(right)
+    new_dist   = prod(prod_constraint, left_dist, right_dist)
 
     # process addons
-    new_addons = multiply_addons(new_dist, left, right)
+    left_addons  = getaddons(left)
+    right_addons = getaddons(right)
+
+    # process addons
+    new_addons = multiply_addons(left_addons, right_addons, new_dist, left_dist, right_dist)
 
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
@@ -277,6 +283,21 @@ end
 message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
+## Some addons add post rule execution logic
+message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons) = message_mapping_addons(mapping, mapping.addons, messages, marginals, result, addons)
+
+message_mapping_addons(mapping::MessageMapping, maddons::Nothing, messages, marginals, result, addons) = nothing
+message_mapping_addons(mapping::MessageMapping, maddons::Tuple{}, messages, marginals, result, addons) = addons
+
+function message_mapping_addons(mapping::MessageMapping, maddons::Tuple, messages, marginals, result, addons)
+    post_rule_execution_addons = message_mapping_addon(first(maddons), mapping, messages, marginals, result, addons)
+    return message_mapping_addons(mapping, TupleTools.unsafe_tail(maddons), messages, marginals, result, post_rule_execution_addons)
+end
+
+function message_mapping_addon(addon, mapping, messages, marginals, result, addons)
+    return addons
+end
+
 function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F, T, C, N, M, A, X, R}
     return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
 end
@@ -295,7 +316,7 @@ function materialize!(mapping::MessageMapping, dependencies)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    message, addons = rule(
+    result, addons = rule(
         message_mapping_fform(mapping),
         mapping.vtag,
         mapping.vconstraint,
@@ -308,5 +329,8 @@ function materialize!(mapping::MessageMapping, dependencies)
         mapping.factornode
     )
 
-    return Message(message, is_message_clamped, is_message_initial, addons)
+    # Inject extra addons after the rule has been executed
+    addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)
+
+    return Message(result, is_message_clamped, is_message_initial, addons)
 end

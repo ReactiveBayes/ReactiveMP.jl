@@ -7,20 +7,22 @@ import Base: prod, string
 struct AddonLogScale{T} <: AbstractAddon
     logscale::T
 end
+
 AddonLogScale() = AddonLogScale(nothing)
+
 struct AddonProdLogScale <: AbstractAddonProd end
 
 getlogscale(addon::AddonLogScale) = addon.logscale
-getlogscale(::AbstractAddon) = 0
-getlogscale(addons::NTuple{N, AbstractAddon}) where {N} = mapreduce(getlogscale, +, addons)
+getlogscale(addons::NTuple{N, AbstractAddon}) where {N} = mapreduce(getlogscale, +, filter(addon -> addon isa AddonLogScale, addons))
 
-function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist::Distribution, left_message::Message, right_message::Message)
+# TODO: for later review, do we need such a fallback
+# getlogscale(::AbstractAddon) = 0
 
-    # fetch addons and messages
+function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist, left_dist, right_dist)
+
+    # fetch log scales from addons
     left_logscale = getlogscale(left_addon)
     right_logscale = getlogscale(right_addon)
-    left_dist = getdata(left_message)
-    right_dist = getdata(right_message)
 
     # compute new logscale
     new_logscale = prod(AddonProdLogScale(), new_dist, left_dist, right_dist)

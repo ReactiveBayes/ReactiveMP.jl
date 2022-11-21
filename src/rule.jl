@@ -309,9 +309,6 @@ macro rule(fform, lambda)
                     $(m_init_block...)
                     $(q_init_block...)
                     _addons = ()
-                    if !isnothing($(:addons)) && AddonMemory(nothing) in $(:addons)
-                        _addons = flatten(_addons, AddonMemory(AddonMemoryMessage($(:messages), $(m_names), $(fuppertype))))
-                    end
                     _message = $(MacroHelpers.remove_returns(body))
                     return _message, _addons
                 end

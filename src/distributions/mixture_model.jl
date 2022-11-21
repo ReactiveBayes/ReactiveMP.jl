@@ -29,6 +29,7 @@ function prod(::ProdAnalytical, left::MixtureModel, right::Any)
     # return mixture distributions
     return MixtureModel(dists_new, Categorical(softmax(logscales_new)))
 end
+
 prod(::ProdAnalytical, left::Any, right::MixtureModel) = prod(ProdAnalytical(), right, left)
 
 function prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::MixtureModel, right_dist::Any)
@@ -48,27 +49,33 @@ function prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::MixtureMod
 
     return logsumexp(logscales_new)
 end
+
 prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::Any, right_dist::MixtureModel) = prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
 
 # improved printing in nested statements
-function show(io::IO, d::MixtureModel)
-    indent = get(io, :indent, 0)
-    K = ncomponents(d)
-    pr = probs(d)
-    println(io, "\n", ' '^indent, "MixtureModel{$(component_type(d))}(K = $K)")
-    Ks = min(K, 8)
-    for i = 1:Ks
-        print(io, ' '^(indent+4), "components[", string(i), "] (prior = ", string(round.(pr[i]; digits=4)), ")")
-        println(io, component(d, i))
-    end
-    if Ks < K
-        println(io, "The rest are omitted ...")
-    end
-end
+
+# commented out by bvdmitri: it overrides the default printing:
+# WARNING: Method definition show(IO, Distributions.MixtureModel{VF, VS, C, CT} where CT<:(Distributions.DiscreteNonParametric{Int64, P, Base.OneTo{Int64}, Ps} where Ps<:AbstractArray{P, 1} where P<:Real) where C<:(Distributions.Distribution{F, S} where S<:Distributions.ValueSupport where F<:Distributions.VariateForm) where VS<:Distributions.ValueSupport where VF<:Distributions.VariateForm) in module Distributions at /Users/bvdmitri/.julia/packages/Distributions/t2DAm/src/mixtures/mixturemodel.jl:257 overwritten in module ReactiveMP at /Users/bvdmitri/.julia/dev/ReactiveMP.jl/src/distributions/mixture_model.jl:54.
+# ** incremental compilation may be fatally broken for this module **
+
+# function show(io::IO, d::MixtureModel)
+#     indent = get(io, :indent, 0)
+#     K = ncomponents(d)
+#     pr = probs(d)
+#     println(io, "\n", ' '^indent, "MixtureModel{$(component_type(d))}(K = $K)")
+#     Ks = min(K, 8)
+#     for i = 1:Ks
+#         print(io, ' '^(indent+4), "components[", string(i), "] (prior = ", string(round.(pr[i]; digits=4)), ")")
+#         println(io, component(d, i))
+#     end
+#     if Ks < K
+#         println(io, "The rest are omitted ...")
+#     end
+# end
 
 function show(io::IO, message::Message{<:MixtureModel, <:Any})
     indent = get(io, :indent, 0)
     print(io, ' '^indent, "Message(")
-    show(IOContext(io, :indent => indent+4), getdata(message))
+    show(IOContext(io, :indent => indent + 4), getdata(message))
     print(io, ' '^indent, ") with ", string(getaddons(message)), "\n")
 end
