@@ -113,7 +113,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
         ∇ = λ - η - as_naturalparams(T, ∇f)
         updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
 
-        if isproper(updated) && enforce_proper_message(approximation.proper_message, updated, η)
+        if isproper(updated) && enforce_proper_message(approximation.enforce_proper_messages, updated, η)
             λ = updated
             hasupdated = true
         end
