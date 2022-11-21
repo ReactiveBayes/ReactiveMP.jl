@@ -22,7 +22,7 @@ end
     cov_strategy = q_μ.covariance_strategy
     x_u = q_μ.inducing_input
 
-    mμ, vμ = predictMVN(cov_strategy, kernelf,meanf,test,[train[meta.index]],m_right, cov_right,x_u) #changed here
+    mμ, vμ = predictMVN(cov_strategy, kernelf,meanf,test,[train[meta.index]],m_right, x_u) #changed here
     vμ = clamp(vμ[1],1e-8,huge)
     θ = 2 / (var(q_out) + vμ[1] + abs2(mean(q_out) - mμ[1]))
     α = convert(typeof(θ), 1.5)

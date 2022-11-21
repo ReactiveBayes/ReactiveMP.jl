@@ -249,7 +249,9 @@ function marginal_prod_fn(randomprocess::RandomProcess)
         likelihood_messages = message_vector[2:end]
         m_right,cov_right = make_multivariate_message(likelihood_messages)
         
-        m, K= predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,cov_right,inducing)
+        extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing, true)
+        m, K= predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
+        extractmatrix!(cov_strategy, kernelf, test, K, inducing, false)
         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false)
     end
 end
