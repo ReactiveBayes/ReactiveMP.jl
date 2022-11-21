@@ -20,15 +20,16 @@ function multiply_addons(left_addons::Tuple, right_addons::Tuple, new_dist, left
     end
 end
 
-function string(addons::NTuple{N, AbstractAddon}) where {N}
-    if length(addons) == 0
-        return "no addons"
-    end
-    str = ""
-    for addon in addons
-        str = string(str, string(addon))
-    end
-    return str
-end
+# TODO: This method is invoked on empty tuples, which messes up printing of tuples
+# function string(addons::NTuple{N, AbstractAddon}) where {N}
+#     if length(addons) == 0
+#         return "no addons"
+#     end
+#     str = ""
+#     for addon in addons
+#         str = string(str, string(addon))
+#     end
+#     return str
+# end
 
-show(io::IO, addons::NTuple{N, AbstractAddon}) where {N} = print(io, string(addons))
+# show(io::IO, addons::NTuple{N, AbstractAddon}) where {N} = print(io, string(addons))
