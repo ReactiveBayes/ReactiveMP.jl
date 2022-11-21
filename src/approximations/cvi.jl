@@ -73,12 +73,12 @@ const CVI = CVIApproximation
 
 struct ForwardDiffGrad end
 
-function compute_grad(::ForwardDiffGrad, A::F, vec_params) where {F}
-    ForwardDiff.gradient(A, vec_params)
+function compute_grad(::ForwardDiffGrad, f::F, vec_params) where {F}
+    ForwardDiff.gradient(f, vec_params)
 end
 
-function compute_hessian(::ForwardDiffGrad, A::G, ::F, vec_params) where {G, F}
-    ForwardDiff.hessian(A, vec_params)
+function compute_hessian(::ForwardDiffGrad, f::F, vec_params) where {F}
+    ForwardDiff.hessian(f, vec_params)
 end
 
 function enforce_proper_message(enforce::Bool, λ::NaturalParameters, η::NaturalParameters)
@@ -97,8 +97,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
     hasupdated = false
 
     A = (vec_params) -> lognormalizer(as_naturalparams(T, vec_params))
-    gradA = (vec_params) -> compute_grad(get_grad(approximation), A, vec_params)
-    Fisher = (vec_params) -> compute_hessian(get_grad(approximation), A, gradA, vec_params)
+    Fisher = (vec_params) -> compute_hessian(get_grad(approximation), A, vec_params)
 
     for _ in 1:its
         q = convert(Distribution, λ)
