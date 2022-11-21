@@ -27,7 +27,7 @@ Arguments
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
  - `grad`: optional, default to `ForwardDiffGrad`, structure to select how the gradient and the hessian will be computed
  - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
- - `proper_message`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution
+ - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution
 
 !!! note 
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
@@ -43,7 +43,7 @@ struct CVIApproximation{R, O, G} <: AbstractApproximationMethod
     opt::O
     grad::G
     warn::Bool
-    proper_message::Bool
+    enforce_proper_messages::Bool
 end
 
 get_grad(approximation::CVIApproximation) = approximation.grad
