@@ -25,15 +25,15 @@ Arguments
  - `n_samples`: number of samples to use for statistics approximation
  - `num_iterations`: number of iteration for the natural parameters gradient optimization
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
- - `grad`: optional, structure to select how the gradient and the hessian will be computed
+ - `grad`: optional, default to `ForwardDiffGrad`, structure to select how the gradient and the hessian will be computed
  - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
- - `proper_message`: optional, defaults to true, enables or disables inforce for the approximation be a proper distribution
+ - `proper_message`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution
 
 !!! note 
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
 
 !!! note 
-    Run `using Zygote` in your Julia session to enable the `ZygoteGrad` option support for the CVI grad.
+    Run `using Zygote` in your Julia session to enable the `ZygoteGrad` option support for the CVI `grad` parameter.
 
 """
 struct CVIApproximation{R, O, G} <: AbstractApproximationMethod
@@ -45,6 +45,8 @@ struct CVIApproximation{R, O, G} <: AbstractApproximationMethod
     warn::Bool
     proper_message::Bool
 end
+
+get_grad(approximation::CVIApproximation) = approximation.grad
 
 function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
     return CVIApproximation(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true)
@@ -79,8 +81,8 @@ function compute_hessian(::ForwardDiffGrad, A::G, ::F, vec_params) where {G, F}
     ForwardDiff.hessian(A, vec_params)
 end
 
-function enforce_proper_message(inforce::Bool, λ::NaturalParameters, η::NaturalParameters)
-    return !inforce || (inforce && isproper(λ - η))
+function enforce_proper_message(enforce::Bool, λ::NaturalParameters, η::NaturalParameters)
+    return !enforce || (enforce && isproper(λ - η))
 end
 
 function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where {F}
@@ -95,8 +97,8 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
     hasupdated = false
 
     A = (vec_params) -> lognormalizer(as_naturalparams(T, vec_params))
-    gradA = (vec_params) -> compute_grad(approximation.grad, A, vec_params)
-    Fisher = (vec_params) -> compute_hessian(approximation.grad, A, gradA, vec_params)
+    gradA = (vec_params) -> compute_grad(get_grad(approximation), A, vec_params)
+    Fisher = (vec_params) -> compute_hessian(get_grad(approximation), A, gradA, vec_params)
 
     for _ in 1:its
         q = convert(Distribution, λ)

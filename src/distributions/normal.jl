@@ -559,8 +559,8 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::Gaussi
     opt = approximation.opt
     its = approximation.num_iterations
 
-    df_m = (z) -> get_df_m(approximation.grad, typeof(λ), typeof(initial), logp_nc)(z)
-    df_v = (z) -> get_df_v(approximation.grad, typeof(λ), typeof(initial), logp_nc, df_m)(z) / 2
+    df_m = (z) -> get_df_m(get_grad(approximation), typeof(λ), typeof(initial), logp_nc)(z)
+    df_v = (z) -> get_df_v(get_grad(approximation), typeof(λ), typeof(initial), logp_nc, df_m)(z) / 2
 
     hasupdated = false
 
