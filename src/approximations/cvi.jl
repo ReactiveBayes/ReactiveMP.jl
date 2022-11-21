@@ -107,7 +107,7 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
         z_s = rand(rng, q_friendly)
 
         logq = (vec_params) -> logpdf(as_naturalparams(T, vec_params), z_s)
-        ∇logq = compute_grad(approximation.grad, logq, vec(λ))
+        ∇logq = compute_grad(get_grad(approximation), logq, vec(λ))
 
         fisher_matrix = Fisher(vec(λ))
         ∇f = cholinv(fisher_matrix) * (logp_nc(z_s) .* ∇logq)
