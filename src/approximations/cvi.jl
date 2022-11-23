@@ -1,4 +1,4 @@
-export CVIApproximation, CVI, ForwardDiffGrad
+export CVI, ForwardDiffGrad
 
 using Random
 
@@ -15,9 +15,9 @@ cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 
 """
-    CVIApproximation
+    ProdCVI
 
-The `CVIApproximation` structure defines the approximation method of the `Delta` factor node.
+The `ProdCVI` structure defines the approximation method of the `Delta` factor node.
 This method performs an approximation of the messages through the `Delta` factor node with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
 
 Arguments
@@ -36,7 +36,7 @@ Arguments
     Run `using Zygote` in your Julia session to enable the `ZygoteGrad` option support for the CVI `grad` parameter.
 
 """
-struct CVIApproximation{R, O, G} <: AbstractApproximationMethod
+struct ProdCVI{R, O, G} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
     num_iterations::Int
@@ -46,26 +46,30 @@ struct CVIApproximation{R, O, G} <: AbstractApproximationMethod
     enforce_proper_messages::Bool
 end
 
-get_grad(approximation::CVIApproximation) = approximation.grad
+get_grad(approximation::ProdCVI) = approximation.grad
 
-function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return CVIApproximation(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true)
+function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
+    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true)
 end
 
-function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G) where {O, G}
-    return CVIApproximation(rng, n_samples, num_iterations, opt, grad, false, true)
+function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G) where {O, G}
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, true)
 end
 
-function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true)
+function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true)
+end
+
+function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, true)
 end
 
 """
-Alias for the `CVIApproximation` method.
+Alias for the `ProdCVI` method.
 
-See also: [`CVIApproximation`](@ref)
+See also: [`ProdCVI`](@ref)
 """
-const CVI = CVIApproximation
+const CVI = ProdCVI
 
 #---------------------------
 # CVI implementations
@@ -73,11 +77,11 @@ const CVI = CVIApproximation
 
 struct ForwardDiffGrad end
 
-function compute_derivative(::ForwardDiffGrad, f::F, param) where {F}
+function compute_derivative(::ForwardDiffGrad, f::F, param::Real) where {F}
     ForwardDiff.derivative(f, param)
 end
 
-function compute_grad(::ForwardDiffGrad, f::F, vec_params) where {F}
+function compute_gradient(::ForwardDiffGrad, f::F, vec_params) where {F}
     ForwardDiff.gradient(f, vec_params)
 end
 
@@ -93,7 +97,7 @@ function enforce_proper_message(enforce::Bool, λ::NaturalParameters, η::Natura
     return !enforce || (enforce && isproper(λ - η))
 end
 
-function compute_fisher_matrix(approximation::CVIApproximation, ::Type{T}, params::Vector) where { T <: NaturalParameters }
+function compute_fisher_matrix(approximation::CVI, ::Type{T}, params::Vector) where {T <: NaturalParameters}
 
     # specify lognormalizer function
     lognormalizer_function = (x) -> lognormalizer(as_naturalparams(T, x))
@@ -103,26 +107,26 @@ function compute_fisher_matrix(approximation::CVIApproximation, ::Type{T}, param
 
     #  return Fisher matrix
     return F
-
 end
 
-prod(approximation::ProdCVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
+# prod(approximation::CVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
 
-function prod(approximation::ProdCVI, logp::F, dist) where {F}
-    
-    T = typeof(η)
+function prod(approximation::CVI, logp::F, dist) where {F <: Function}
     rng = something(approximation.rng, Random.GLOBAL_RNG)
-    
+
     #  natural parameters of incoming distribution message
     η = naturalparams(dist)
-    
+
+    # Natural parameter type of incoming distribution
+    T = typeof(η)
+
     # initial parameters of projected distribution
     λ = naturalparams(dist)
-    
+
     # initialize update flag
     hasupdated = false
 
-    for _ in 1:approximation.num_iterations
+    for _ in 1:(approximation.num_iterations)
 
         # create distribution to sample from and sample from it
         q = convert(Distribution, λ)
@@ -131,11 +135,11 @@ function prod(approximation::ProdCVI, logp::F, dist) where {F}
 
         # compute gradient of log-likelihood
         logq = (x) -> logpdf(as_naturalparams(T, x), z_s)
-        ∇logq = logp(z_s) .* compute_grad(get_grad(approximation), logq, vec(λ))
+        ∇logq = logp(z_s) .* compute_gradient(get_grad(approximation), logq, vec(λ))
 
         #  compute Fisher matrix and Cholesky decomposition
-        F = compute_fisher_matrix(approximation, T, vec(λ))
-        F_chol = fastcholesky!(F)
+        Fisher = compute_fisher_matrix(approximation, T, vec(λ))
+        F_chol = fastcholesky!(Fisher)
 
         # compute natural gradient
         ∇f = F_chol \ ∇logq
@@ -151,7 +155,6 @@ function prod(approximation::ProdCVI, logp::F, dist) where {F}
             λ = λ_new
             hasupdated = true
         end
-
     end
 
     if !hasupdated && approximation.warn

@@ -5,6 +5,7 @@ using ReactiveMP
 using Random
 using StableRNGs
 using Distributions
+using Zygote
 
 import ReactiveMP: naturalparams, NaturalParameters
 
@@ -23,12 +24,12 @@ function ReactiveMP.cvi_update!(opt::CountingOptimizer, λ, ∇)
     return vec(λ)
 end
 
-@testset "cvi:render_cvi" begin
+@testset "cvi:prod" begin
     @testset "empty optimizer" begin
         for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
             opt = EmptyOptimizer()
-            meta = CVIApproximation(1, 100, opt)
-            λ = ReactiveMP.render_cvi(meta, (z) -> logpdf(m_out, z), m_in)
+            meta = CVI(1, 100, opt)
+            λ = prod(meta, (z) -> logpdf(m_out, z), m_in)
             @test all(mean_var(convert(Distribution, λ)) .== mean_var(m_in))
         end
     end
@@ -36,8 +37,8 @@ end
     @testset "counting optimizer" begin
         for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
             opt = CountingOptimizer(0)
-            meta = CVIApproximation(1, 100, opt)
-            λ = ReactiveMP.render_cvi(meta, (z) -> logpdf(m_out, z), m_in)
+            meta = CVI(1, 100, opt)
+            λ = prod(meta, (z) -> logpdf(m_out, z), m_in)
             @test all(mean_var(convert(Distribution, λ)) .== mean_var(m_in))
             @test opt.num_its === 100
         end
@@ -52,8 +53,24 @@ end
                 num_its += 1
                 return vec(λ)
             end
-            meta = CVIApproximation(1, 100, opt)
-            λ = ReactiveMP.render_cvi(meta, (z) -> logpdf(m_out, z), m_in)
+            meta = CVI(1, 100, opt)
+            λ = prod(meta, (z) -> logpdf(m_out, z), m_in)
+            @test all(mean_var(convert(Distribution, λ)) .== mean_var(m_in))
+            @test num_its === 100
+        end
+    end
+
+    @testset "counting lambda optimizer (Zygote Grad)" begin
+        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
+            η = naturalparams(m_in)
+            logp_nc = (z) -> logpdf(m_out, z)
+            num_its = 0
+            opt = (λ, ∇) -> begin
+                num_its += 1
+                return vec(λ)
+            end
+            meta = CVI(1, 100, opt, ZygoteGrad())
+            λ = prod(meta, (z) -> logpdf(m_out, z), m_in)
             @test all(mean_var(convert(Distribution, λ)) .== mean_var(m_in))
             @test num_its === 100
         end

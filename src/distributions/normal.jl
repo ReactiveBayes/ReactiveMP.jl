@@ -538,21 +538,26 @@ end
 
 # Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
 
-function compute_df_mv(approximation::CVIApproximation, logp_nc::F, z_s::Real) where {F}
-    df_m = compute_derivative(get_grad(approximation), logp_nc, z_s)
-    df_v = compute_derivative(get_grad(approximation), df_m, z_s)
-    return df_m, df_v/2
+function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
+    first_derivative = (x) -> compute_derivative(grad, logp, x)
+    return compute_derivative(grad, first_derivative, z_s)
 end
 
-function compute_df_mv(approximation::CVIApproximation, logp_nc::F, z_s::Vector) where {F}
+function compute_df_mv(approximation::CVI, logp::F, z_s::Real) where {F}
+    df_m = compute_derivative(get_grad(approximation), logp, z_s)
+    df_v = compute_second_derivative(get_grad(approximation), logp, z_s)
+    return df_m, df_v / 2
+end
+
+function compute_df_mv(approximation::CVI, logp_nc::F, z_s::Vector) where {F}
     df_m = compute_gradient(get_grad(approximation), logp_nc, z_s)
-    df_v = compute_jacobian(get_grad(approximation), df_m, z_s)
-    return df_m, df_v./2
+    df_v = compute_hessian(get_grad(approximation), logp_nc, z_s)
+    return df_m, df_v ./ 2
 end
 
-function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
-    η = naturalparams(initial)
-    λ = naturalparams(initial)
+function prod(approximation::CVI, logp::F, dist::GaussianDistributionsFamily) where {F <: Function}
+    η = naturalparams(dist)
+    λ = naturalparams(dist)
     T = typeof(η)
 
     rng = something(approximation.rng, Random.GLOBAL_RNG)
@@ -564,8 +569,8 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::Gaussi
     for _ in 1:its
         q = convert(Distribution, λ)
         z_s = rand(rng, q)
-        
-        df_m, df_v = compute_df_mv(approximation, logp_nc, z_s)
+
+        df_m, df_v = compute_df_mv(approximation, logp, z_s)
         df_μ1 = df_m - 2 * df_v * mean(q)
         df_μ2 = df_v
         ∇f = as_naturalparams(T, df_μ1, df_μ2)

@@ -178,19 +178,17 @@ function __init__()
 
         struct ZygoteGrad end
 
-        function compute_grad(::ZygoteGrad, f::F, vec_params) where {F}
+        function compute_gradient(::ZygoteGrad, f::F, vec_params::Vector) where {F}
             Zygote.gradient(f, vec_params)[1]
         end
 
-        function compute_hessian(::ZygoteGrad, f::F, vec_params) where {F}
+        function compute_hessian(::ZygoteGrad, f::F, vec_params::Vector) where {F}
             Zygote.hessian(f, vec_params)
         end
 
-        get_df_m(::ZygoteGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function) =
-            (z) -> Zygote.gradient(logp_nc, z)[1]
-
-        get_df_v(::ZygoteGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function, df_m::Function) =
-            (z) -> Zygote.hessian(logp_nc, z)
+        function compute_derivative(::ZygoteGrad, f::F, value::Real) where {F}
+            Zygote.gradient(f, value)[1]
+        end
     end
 end
 

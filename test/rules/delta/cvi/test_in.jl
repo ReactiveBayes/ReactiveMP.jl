@@ -15,11 +15,11 @@ struct EmptyOptimizer end
 @testset "rules:Delta:cvi:in" begin
     @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
         (
-            input = (q_ins = FactorizedJoint((NormalMeanVariance(),)), m_in = NormalMeanVariance(1, 2), meta = DeltaMeta(method = CVIApproximation(1, 1, EmptyOptimizer()))),
+            input = (q_ins = FactorizedJoint((NormalMeanVariance(),)), m_in = NormalMeanVariance(1, 2), meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer()))),
             output = NormalWeightedMeanPrecision(-0.5, 0.5)
         ),
         (
-            input = (q_ins = FactorizedJoint((GammaShapeRate(2, 2),)), m_in = GammaShapeRate(1, 1), meta = DeltaMeta(method = CVIApproximation(1, 1, EmptyOptimizer()))),
+            input = (q_ins = FactorizedJoint((GammaShapeRate(2, 2),)), m_in = GammaShapeRate(1, 1), meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer()))),
             output = GammaShapeRate(2.0, 1.0)
         )
     ]
@@ -27,18 +27,12 @@ struct EmptyOptimizer end
     @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 2), Marginalisation) [
         (
             input = (
-                q_ins = FactorizedJoint((GammaShapeRate(2, 2), NormalMeanVariance())),
-                m_in = NormalMeanVariance(1, 2),
-                meta = DeltaMeta(method = CVIApproximation(1, 1, EmptyOptimizer()))
+                q_ins = FactorizedJoint((GammaShapeRate(2, 2), NormalMeanVariance())), m_in = NormalMeanVariance(1, 2), meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer()))
             ),
             output = NormalWeightedMeanPrecision(-0.5, 0.5)
         ),
         (
-            input = (
-                q_ins = FactorizedJoint((NormalMeanVariance(), GammaShapeRate(2, 2))),
-                m_in = GammaShapeRate(1, 1),
-                meta = DeltaMeta(method = CVIApproximation(1, 1, EmptyOptimizer()))
-            ),
+            input = (q_ins = FactorizedJoint((NormalMeanVariance(), GammaShapeRate(2, 2))), m_in = GammaShapeRate(1, 1), meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer()))),
             output = GammaShapeRate(2.0, 1.0)
         )
     ]
