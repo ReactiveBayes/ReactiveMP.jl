@@ -538,17 +538,17 @@ end
 
 # Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
 
-get_df_m(::ForwardDiffGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function) =
-    (z) -> ForwardDiff.derivative(logp_nc, z)
+function compute_df_mv(approximation::CVIApproximation, logp_nc::F, z_s::Real) where {F}
+    df_m = compute_derivative(get_grad(approximation), logp_nc, z_s)
+    df_v = compute_derivative(get_grad(approximation), df_m, z_s)
+    return df_m, df_v/2
+end
 
-get_df_m(::ForwardDiffGrad, ::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, logp_nc::Function) =
-    (z) -> ForwardDiff.gradient(logp_nc, z)
-
-get_df_v(::ForwardDiffGrad, ::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function, df_m::Function) =
-    (z) -> ForwardDiff.derivative(df_m, z)
-
-get_df_v(::ForwardDiffGrad, ::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, logp_nc::Function, df_m::Function) =
-    (z) -> ForwardDiff.jacobian(df_m, z)
+function compute_df_mv(approximation::CVIApproximation, logp_nc::F, z_s::Vector) where {F}
+    df_m = compute_gradient(get_grad(approximation), logp_nc, z_s)
+    df_v = compute_jacobian(get_grad(approximation), df_m, z_s)
+    return df_m, df_v./2
+end
 
 function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
     η = naturalparams(initial)
@@ -559,16 +559,15 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::Gaussi
     opt = approximation.opt
     its = approximation.num_iterations
 
-    df_m = (z) -> get_df_m(get_grad(approximation), typeof(λ), typeof(initial), logp_nc)(z)
-    df_v = (z) -> get_df_v(get_grad(approximation), typeof(λ), typeof(initial), logp_nc, df_m)(z) / 2
-
     hasupdated = false
 
     for _ in 1:its
         q = convert(Distribution, λ)
         z_s = rand(rng, q)
-        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
-        df_μ2 = df_v(z_s)
+        
+        df_m, df_v = compute_df_mv(approximation, logp_nc, z_s)
+        df_μ1 = df_m - 2 * df_v * mean(q)
+        df_μ2 = df_v
         ∇f = as_naturalparams(T, df_μ1, df_μ2)
         ∇ = λ - η - ∇f
         λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))

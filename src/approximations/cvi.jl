@@ -73,6 +73,10 @@ const CVI = CVIApproximation
 
 struct ForwardDiffGrad end
 
+function compute_derivative(::ForwardDiffGrad, f::F, param) where {F}
+    ForwardDiff.derivative(f, param)
+end
+
 function compute_grad(::ForwardDiffGrad, f::F, vec_params) where {F}
     ForwardDiff.gradient(f, vec_params)
 end
@@ -81,42 +85,73 @@ function compute_hessian(::ForwardDiffGrad, f::F, vec_params) where {F}
     ForwardDiff.hessian(f, vec_params)
 end
 
+function compute_jacobian(::ForwardDiffGrad, f::F, vec_params) where {F}
+    ForwardDiff.jacobian(f, vec_params)
+end
+
 function enforce_proper_message(enforce::Bool, λ::NaturalParameters, η::NaturalParameters)
     return !enforce || (enforce && isproper(λ - η))
 end
 
-function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where {F}
-    η = naturalparams(initial)
-    λ = naturalparams(initial)
+function compute_fisher_matrix(approximation::CVIApproximation, ::Type{T}, params::Vector) where { T <: NaturalParameters }
+
+    # specify lognormalizer function
+    lognormalizer_function = (x) -> lognormalizer(as_naturalparams(T, x))
+
+    #  compute Fisher matrix
+    F = compute_hessian(get_grad(approximation), lognormalizer_function, params)
+
+    #  return Fisher matrix
+    return F
+
+end
+
+prod(approximation::ProdCVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
+
+function prod(approximation::ProdCVI, logp::F, dist) where {F}
+    
     T = typeof(η)
-
     rng = something(approximation.rng, Random.GLOBAL_RNG)
-    opt = approximation.opt
-    its = approximation.num_iterations
-
+    
+    #  natural parameters of incoming distribution message
+    η = naturalparams(dist)
+    
+    # initial parameters of projected distribution
+    λ = naturalparams(dist)
+    
+    # initialize update flag
     hasupdated = false
 
-    A = (vec_params) -> lognormalizer(as_naturalparams(T, vec_params))
-    Fisher = (vec_params) -> compute_hessian(get_grad(approximation), A, vec_params)
+    for _ in 1:approximation.num_iterations
 
-    for _ in 1:its
+        # create distribution to sample from and sample from it
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
-
         z_s = rand(rng, q_friendly)
 
-        logq = (vec_params) -> logpdf(as_naturalparams(T, vec_params), z_s)
-        ∇logq = compute_grad(get_grad(approximation), logq, vec(λ))
+        # compute gradient of log-likelihood
+        logq = (x) -> logpdf(as_naturalparams(T, x), z_s)
+        ∇logq = logp(z_s) .* compute_grad(get_grad(approximation), logq, vec(λ))
 
-        fisher_matrix = Fisher(vec(λ))
-        ∇f = cholinv(fisher_matrix) * (logp_nc(z_s) .* ∇logq)
+        #  compute Fisher matrix and Cholesky decomposition
+        F = compute_fisher_matrix(approximation, T, vec(λ))
+        F_chol = fastcholesky!(F)
+
+        # compute natural gradient
+        ∇f = F_chol \ ∇logq
+
+        # compute gradient on natural parameters
         ∇ = λ - η - as_naturalparams(T, ∇f)
-        updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
 
-        if isproper(updated) && enforce_proper_message(approximation.enforce_proper_messages, updated, η)
-            λ = updated
+        # perform gradient descent step
+        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+
+        # check whether updated natural parameters are proper
+        if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)
+            λ = λ_new
             hasupdated = true
         end
+
     end
 
     if !hasupdated && approximation.warn
