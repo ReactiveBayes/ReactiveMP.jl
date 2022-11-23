@@ -192,13 +192,11 @@ function __init__()
     end
 
     @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
-        
         function compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::Vector) where {R, O, F}
             result = DiffResults.HessianResult(vec)
             result = ForwardDiff.hessian!(result, logp, vec)
             return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
         end
-
     end
 end
 
