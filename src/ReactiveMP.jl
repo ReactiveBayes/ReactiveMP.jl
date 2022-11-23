@@ -196,7 +196,7 @@ function __init__()
         function compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::Vector) where {R, O, F}
             result = DiffResults.HessianResult(vec)
             result = ForwardDiff.hessian!(result, logp, vec)
-            return (DiffResults.gradient(result), DiffResults.hessian(result))
+            return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
         end
 
     end
