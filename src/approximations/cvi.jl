@@ -17,8 +17,8 @@ cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 """
     ProdCVI
 
-The `ProdCVI` structure defines the approximation method of the `Delta` factor node.
-This method performs an approximation of the messages through the `Delta` factor node with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
+The `ProdCVI` structure defines the approximation method hyperparameters of the `prod(approximation::CVI, logp::F, dist)`.
+This method performs an approximation of the product of the `dist` and `logp` with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
 
 Arguments
  - `rng`: random number generator
@@ -43,25 +43,29 @@ struct ProdCVI{R, O, G} <: AbstractApproximationMethod
     opt::O
     grad::G
     warn::Bool
-    enforce_proper_messages::Bool
+    enforce_proper_messages::Val
 end
 
 get_grad(approximation::ProdCVI) = approximation.grad
 
+function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}())
+end
+
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true)
+    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, Val{true}())
 end
 
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, true)
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, Val{true}())
 end
 
 function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, Val{true}())
 end
 
 function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, true)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, Val{true}())
 end
 
 """
@@ -89,8 +93,12 @@ function compute_hessian(::ForwardDiffGrad, f::F, vec_params) where {F}
     ForwardDiff.hessian(f, vec_params)
 end
 
-function enforce_proper_message(enforce::Bool, λ::NaturalParameters, η::NaturalParameters)
-    return !enforce || (enforce && isproper(λ - η))
+function enforce_proper_message(::Val{true}, λ::NaturalParameters, η::NaturalParameters)
+    return isproper(λ - η)
+end
+
+function enforce_proper_message(::Val{false}, λ::NaturalParameters, η::NaturalParameters)
+    return true
 end
 
 function compute_fisher_matrix(approximation::CVI, ::Type{T}, params::Vector) where {T <: NaturalParameters}
