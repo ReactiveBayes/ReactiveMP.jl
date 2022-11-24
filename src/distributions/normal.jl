@@ -549,33 +549,44 @@ function compute_df_mv(approximation::CVI, logp::F, z_s::Real) where {F}
     return df_m, df_v / 2
 end
 
-function compute_df_mv(approximation::CVI, logp_nc::F, z_s::Vector) where {F}
-    df_m = compute_gradient(get_grad(approximation), logp_nc, z_s)
-    df_v = compute_hessian(get_grad(approximation), logp_nc, z_s)
+function compute_df_mv(approximation::CVI, logp::F, z_s::Vector) where {F}
+    df_m = compute_gradient(get_grad(approximation), logp, z_s)
+    df_v = compute_hessian(get_grad(approximation), logp, z_s)
     return df_m, df_v ./ 2
 end
 
 function prod(approximation::CVI, logp::F, dist::GaussianDistributionsFamily) where {F <: Function}
+    rng = something(approximation.rng, Random.GLOBAL_RNG)
+    # Natural parameters of incoming distribution message
     η = naturalparams(dist)
-    λ = naturalparams(dist)
     T = typeof(η)
 
-    rng = something(approximation.rng, Random.GLOBAL_RNG)
-    opt = approximation.opt
-    its = approximation.num_iterations
+    # Initial parameters of projected distribution
+    λ = naturalparams(dist)
 
+    # Initialize update flag
     hasupdated = false
 
-    for _ in 1:its
+    for _ in 1:(approximation.num_iterations)
+        # create distribution to sample from and sample from it
         q = convert(Distribution, λ)
         z_s = rand(rng, q)
 
+        # compute gradient on mean parameters
         df_m, df_v = compute_df_mv(approximation, logp, z_s)
+
+        # convert mean parameter gradient into natural gradient
         df_μ1 = df_m - 2 * df_v * mean(q)
         df_μ2 = df_v
         ∇f = as_naturalparams(T, df_μ1, df_μ2)
+
+        # compute gradient on natural parameters
         ∇ = λ - η - ∇f
-        λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
+
+        # perform gradient descent step
+        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+
+        # check whether updated natural parameters are proper
         if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)
             λ = λ_new
             hasupdated = true

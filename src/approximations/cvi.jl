@@ -111,16 +111,16 @@ end
 function prod(approximation::CVI, logp::F, dist) where {F <: Function}
     rng = something(approximation.rng, Random.GLOBAL_RNG)
 
-    #  natural parameters of incoming distribution message
+    # Natural parameters of incoming distribution message
     η = naturalparams(dist)
 
     # Natural parameter type of incoming distribution
     T = typeof(η)
 
-    # initial parameters of projected distribution
+    # Initial parameters of projected distribution
     λ = naturalparams(dist)
 
-    # initialize update flag
+    # Initialize update flag
     hasupdated = false
 
     for _ in 1:(approximation.num_iterations)
