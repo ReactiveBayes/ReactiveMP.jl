@@ -36,14 +36,14 @@ Arguments
     Run `using Zygote` in your Julia session to enable the `ZygoteGrad` option support for the CVI `grad` parameter.
 
 """
-struct ProdCVI{R, O, G} <: AbstractApproximationMethod
+struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
     num_iterations::Int
     opt::O
     grad::G
     warn::Bool
-    enforce_proper_messages::Val
+    enforce_proper_messages::Val{B}
 end
 
 get_grad(approximation::ProdCVI) = approximation.grad
