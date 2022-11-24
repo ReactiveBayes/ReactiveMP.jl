@@ -105,6 +105,7 @@ function compute_fisher_matrix(approximation::CVI, ::Type{T}, params::Vector) wh
     return F
 end
 
+# without type constraints it will create stakeoverflow error
 # prod(approximation::CVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
 
 function prod(approximation::CVI, logp::F, dist) where {F <: Function}
@@ -133,7 +134,7 @@ function prod(approximation::CVI, logp::F, dist) where {F <: Function}
         logq = (x) -> logpdf(as_naturalparams(T, x), z_s)
         ∇logq = logp(z_s) .* compute_gradient(get_grad(approximation), logq, vec(λ))
 
-        #  compute Fisher matrix and Cholesky decomposition
+        # compute Fisher matrix and Cholesky decomposition
         Fisher = compute_fisher_matrix(approximation, T, vec(λ))
         F_chol = fastcholesky!(Fisher)
 
