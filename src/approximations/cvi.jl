@@ -89,10 +89,6 @@ function compute_hessian(::ForwardDiffGrad, f::F, vec_params) where {F}
     ForwardDiff.hessian(f, vec_params)
 end
 
-function compute_jacobian(::ForwardDiffGrad, f::F, vec_params) where {F}
-    ForwardDiff.jacobian(f, vec_params)
-end
-
 function enforce_proper_message(enforce::Bool, λ::NaturalParameters, η::NaturalParameters)
     return !enforce || (enforce && isproper(λ - η))
 end
