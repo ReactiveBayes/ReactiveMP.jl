@@ -27,6 +27,7 @@ import StatsFuns: invsqrt2π
 
 using LoopVectorization
 using LinearAlgebra
+using SpecialFunctions
 
 # Joint over multiple Gaussians
 
@@ -490,12 +491,12 @@ end
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function Distributions.logpdf(η::UnivariateNormalNaturalParameters, x)
-    return log(invsqrt2π) + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
+    return -log2π / 2 + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
 end
 
 function Distributions.logpdf(η::MultivariateNormalNaturalParameters, x)
     ϕx = vcat(x, vec(x * transpose(x)))
-    return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕx) * vec(η) + lognormalizer(η)
+    return -length(η.weighted_mean)*log2π / 2 + transpose(ϕx) * vec(η) + lognormalizer(η)
 end
 
 isproper(params::UnivariateNormalNaturalParameters) = params.minus_half_precision < 0
