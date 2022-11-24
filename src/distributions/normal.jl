@@ -599,9 +599,3 @@ function prod(approximation::CVI, logp::F, dist::GaussianDistributionsFamily) wh
 
     return λ
 end
-
-struct TestValField
-    valfield::Val
-end
-
-test_val_field(::Val{true}) = true
