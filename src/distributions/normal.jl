@@ -496,7 +496,7 @@ end
 
 function Distributions.logpdf(η::MultivariateNormalNaturalParameters, x)
     ϕx = vcat(x, vec(x * transpose(x)))
-    return -length(η.weighted_mean)*log2π / 2 + transpose(ϕx) * vec(η) + lognormalizer(η)
+    return -length(η.weighted_mean) * log2π / 2 + transpose(ϕx) * vec(η) + lognormalizer(η)
 end
 
 isproper(params::UnivariateNormalNaturalParameters) = params.minus_half_precision < 0
