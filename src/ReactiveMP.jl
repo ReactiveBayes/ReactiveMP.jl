@@ -21,7 +21,6 @@ include("helpers/algebra/permutation_matrix.jl")
 include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/prod/prod.jl")
-include("constraints/form/form.jl")
 
 include("message.jl")
 include("marginal.jl")
