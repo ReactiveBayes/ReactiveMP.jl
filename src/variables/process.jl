@@ -13,7 +13,7 @@ mutable struct RandomProcess <: AbstractVariable
     output_initialised :: Bool
     output_cache       :: Union{Nothing, EqualityChain}
     marginal           :: MarginalObservable
-    pipeline           :: AbstractPipelineStage
+    pipeline           
     proxy_variables
     prod_constraint
     prod_strategy
