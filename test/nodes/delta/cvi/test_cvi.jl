@@ -90,16 +90,18 @@ end
         end
     end
 
-    @testset "Normal x Normal (Fisher preconditioner prod)" begin
-        seed = 123
-        rng = StableRNG(seed)
-        optimizer = Descent(0.001)
-        meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), false, false)
+    @static if VERSION ≥ v"1.7"
+        @testset "Normal x Normal (Fisher preconditioner prod)" begin
+            seed = 123
+            rng = StableRNG(seed)
+            optimizer = Descent(0.001)
+            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), false, false)
 
-        for i in 1:3
-            m_out, m_in = NormalMeanVariance(i, 1), NormalMeanVariance(0, 1)
-            λ = Base.@invoke prod(meta::CVI, ((z) -> logpdf(m_out, z))::Function, m_in::Any)
-            @test isapprox(convert(Distribution, λ), NormalWeightedMeanPrecision(i, 2), atol = 0.5)
+            for i in 1:3
+                m_out, m_in = NormalMeanVariance(i, 1), NormalMeanVariance(0, 1)
+                λ = Base.@invoke prod(meta::CVI, ((z) -> logpdf(m_out, z))::Function, m_in::Any)
+                @test isapprox(convert(Distribution, λ), NormalWeightedMeanPrecision(i, 2), atol = 0.5)
+            end
         end
     end
 end
