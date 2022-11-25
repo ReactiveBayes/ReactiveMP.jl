@@ -44,11 +44,7 @@ function getpoints(gh::GaussHermiteCubature, mean::T, variance::T) where {T <: R
     end
 end
 
-function getpoints(
-    cubature::GaussHermiteCubature,
-    mean::AbstractVector{T},
-    covariance::AbstractMatrix{T}
-) where {T <: Real}
+function getpoints(cubature::GaussHermiteCubature, mean::AbstractVector{T}, covariance::AbstractMatrix{T}) where {T <: Real}
     sqrtP = cholsqrt(covariance)
     sqrt2 = sqrt(2)
 

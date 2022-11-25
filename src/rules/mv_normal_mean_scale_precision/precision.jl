@@ -18,8 +18,8 @@ end
 
     α = d / 2 + 1
 
-    mdiff = @views m_out_μ[1:d] - m_out_μ[d+1:end]
-    vdiff = @views v_out_μ[1:d, 1:d] - v_out_μ[1:d, d+1:end] - v_out_μ[d+1:end, 1:d] + v_out_μ[d+1:end, d+1:end]
+    mdiff = @views m_out_μ[1:d] - m_out_μ[(d + 1):end]
+    vdiff = @views v_out_μ[1:d, 1:d] - v_out_μ[1:d, (d + 1):end] - v_out_μ[(d + 1):end, 1:d] + v_out_μ[(d + 1):end, (d + 1):end]
     β     = (tr(vdiff) + mdiff' * mdiff) / 2
 
     return GammaShapeRate(convert(eltype(β), α), β)

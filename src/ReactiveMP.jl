@@ -1,12 +1,24 @@
 
 module ReactiveMP
 
-include("rocket.jl")
-include("macrohelpers.jl")
-include("helpers.jl")
-include("math.jl")
+# List global dependencies here
+using TinyHugeNumbers
 
-include("constraints/meta/meta.jl")
+# Reexport `tiny` and `huge` from the `TinyHugeNumbers`
+export tiny, huge
+
+include("helpers/macrohelpers.jl")
+include("helpers/helpers.jl")
+
+# This should be included before `distributions/*.jl`
+include("score/counting.jl")
+
+include("helpers/algebra/cholesky.jl")
+include("helpers/algebra/companion_matrix.jl")
+include("helpers/algebra/correction.jl")
+include("helpers/algebra/common.jl")
+include("helpers/algebra/permutation_matrix.jl")
+include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/prod/prod.jl")
 include("constraints/form/form.jl")
@@ -23,7 +35,12 @@ include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
 include("constraints/prod/prod_final.jl")
 include("constraints/prod/prod_resolve.jl")
-include("constraints/prod/factor_prod_generic.jl")
+
+include("constraints/form.jl")
+
+include("message.jl")
+include("marginal.jl")
+include("distributions.jl")
 
 """
     to_marginal(any)
@@ -40,27 +57,26 @@ to_marginal(any) = any
 as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
 as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
 
-include("variable.jl")
-include("pipeline.jl")
+getdata(collection::Tuple)         = map(getdata, collection)
+getdata(collection::AbstractArray) = map(getdata, collection)
 
-include("actors/score.jl")
+# TupleTools.prod is a more efficient version of Base.all for Tuple here
+is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
+is_initial(tuple::Tuple) = TupleTools.prod(map(is_initial, tuple))
 
-include("algebra/cholesky.jl")
-include("algebra/companion_matrix.jl")
-include("algebra/correction.jl")
-include("algebra/helpers.jl")
-include("algebra/permutation_matrix.jl")
-include("algebra/standard_basis_vector.jl")
-
-include("approximations.jl")
+include("approximations/approximations.jl")
+include("approximations/shared.jl")
 include("approximations/gausshermite.jl")
 include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
 include("approximations/optimizers.jl")
+include("approximations/rts.jl")
+include("approximations/linearization.jl")
+include("approximations/unscented.jl")
+include("approximations/cvi.jl")
 
-include("distributions/natural_parametrs.jl")
 include("distributions/pointmass.jl")
 include("distributions/uniform.jl")
 include("distributions/gamma_shape_rate.jl")
@@ -89,21 +105,22 @@ include("distributions/sample_list.jl")
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
+include("variables/variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 include("variables/process.jl")
+include("variables/collection.jl")
 
+include("pipeline/pipeline.jl")
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
-include("pipeline/vague.jl")
-
-include("rule.jl")
 
 include("node.jl")
-include("score.jl")
+include("rule.jl")
 
+include("score/score.jl")
 include("score/variable.jl")
 include("score/node.jl")
 
@@ -136,11 +153,12 @@ include("nodes/autoregressive.jl")
 include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
-include("nodes/flow/flow.jl")
 include("nodes/poisson.jl")
 
 #add gp node
 include("nodes/gp.jl")
+include("nodes/flow/flow.jl")
+include("nodes/delta/delta.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
@@ -151,29 +169,18 @@ include("nodes/or.jl")
 include("nodes/not.jl")
 include("nodes/implication.jl")
 
-include("constraints/form/form_unspecified.jl")
-include("constraints/form/form_point_mass.jl")
-include("constraints/form/form_fixed_marginal.jl")
-include("constraints/form/form_sample_list.jl")
-
-include("constraints/spec/spec.jl")
-include("constraints/spec/factorisation_spec.jl")
-include("constraints/spec/form_spec.jl")
-
-include("model.jl")
-include("fixes.jl")
-include("inference.jl")
-
-# Delta node depends on model.jl (use AutoVar)
-include("nodes/delta/delta.jl")
-
 include("rules/prototypes.jl")
+
+include("constraints/specifications/constraints.jl")
+include("constraints/specifications/form.jl")
+include("constraints/specifications/factorisation.jl")
+include("constraints/specifications/meta.jl")
 
 using Requires
 
 function __init__()
     @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::T, ∇::T) where {T <: NaturalParameters}
+        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::NaturalParameters, ∇::NaturalParameters)
             return Flux.Optimise.update!(opt, vec(λ), vec(∇))
         end
     end

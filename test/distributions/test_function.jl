@@ -41,9 +41,9 @@ import DomainSets
         @testset "pdf/logpdf" begin
             d1 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> -x^2)
 
-            f32_points1 = range(Float32(-10.0), Float32(10.0), length = 50)
-            f64_points1 = range(-10.0, 10.0, length = 50)
-            bf_points1  = range(BigFloat(-10.0), BigFloat(10.0), length = 50)
+            f32_points1 = range(Float32(-10.0), Float32(10.0); length = 50)
+            f64_points1 = range(-10.0, 10.0; length = 50)
+            bf_points1  = range(BigFloat(-10.0), BigFloat(10.0); length = 50)
             points1     = vcat(f32_points1, f64_points1, bf_points1)
 
             @test all(map(p -> -p^2 == d1(p), points1))
@@ -55,9 +55,9 @@ import DomainSets
 
             d2 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> -x^4)
 
-            f32_points2 = range(Float32(0.0), Float32(10.0), length = 50)
-            f64_points2 = range(0.0, 10.0, length = 50)
-            bf_points2  = range(BigFloat(0.0), BigFloat(10.0), length = 50)
+            f32_points2 = range(Float32(0.0), Float32(10.0); length = 50)
+            f64_points2 = range(0.0, 10.0; length = 50)
+            bf_points2  = range(BigFloat(0.0), BigFloat(10.0); length = 50)
             points2     = vcat(f32_points2, f64_points2, bf_points2)
 
             @test all(map(p -> -p^4 == d2(p), points2))
@@ -184,7 +184,7 @@ import DomainSets
             @test support(pr2) === support(d4)
             @test isapprox(pr2, pt2, atol = 1e-12)
 
-            @test !isapprox(pr1, pr2, atol = 1e-12)
+            @test !isapprox(pr1, pr2; atol = 1e-12)
 
             d5 = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 2.0 * -x^2)
             d6 = ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (x) -> 2.0 * -x^2)
@@ -254,9 +254,9 @@ import DomainSets
         @testset "pdf/logpdf" begin
             d1 = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^2, (x) -> -x'x)
 
-            f32_points1 = range(Float32(-10.0), Float32(10.0), length = 5)
-            f64_points1 = range(-10.0, 10.0, length = 5)
-            bf_points1  = range(BigFloat(-10.0), BigFloat(10.0), length = 5)
+            f32_points1 = range(Float32(-10.0), Float32(10.0); length = 5)
+            f64_points1 = range(-10.0, 10.0; length = 5)
+            bf_points1  = range(BigFloat(-10.0), BigFloat(10.0); length = 5)
 
             points1 = vcat(
                 vec(map(collect, Iterators.product(f32_points1, f32_points1))),
@@ -270,9 +270,9 @@ import DomainSets
 
             d2 = ContinuousMultivariateLogPdf(DomainSets.HalfLine()^2, (x) -> -x'x / 4)
 
-            f32_points2 = range(Float32(0.0), Float32(10.0), length = 5)
-            f64_points2 = range(0.0, 10.0, length = 5)
-            bf_points2  = range(BigFloat(0.0), BigFloat(10.0), length = 5)
+            f32_points2 = range(Float32(0.0), Float32(10.0); length = 5)
+            f64_points2 = range(0.0, 10.0; length = 5)
+            bf_points2  = range(BigFloat(0.0), BigFloat(10.0); length = 5)
 
             points2 = vcat(
                 vec(map(collect, Iterators.product(f32_points2, f32_points2))),
@@ -336,7 +336,7 @@ import DomainSets
             @test support(pr2) === support(d4)
             @test isapprox(pr2, pt2, atol = 1e-12)
 
-            @test !isapprox(pr1, pr2, atol = 1e-12)
+            @test !isapprox(pr1, pr2; atol = 1e-12)
 
             d5 = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^2, (x) -> 2.0 * -x'x)
             d6 = ContinuousMultivariateLogPdf(DomainSets.HalfLine()^2, (x) -> 2.0 * -x'x)

@@ -16,8 +16,8 @@ end
 
     d = div(ndims(q_out_μ), 2)
 
-    mdiff = @views m_out_μ[1:d] - m_out_μ[d+1:end]
-    vdiff = @views v_out_μ[1:d, 1:d] - v_out_μ[1:d, d+1:end] - v_out_μ[d+1:end, 1:d] + v_out_μ[d+1:end, d+1:end]
+    mdiff = @views m_out_μ[1:d] - m_out_μ[(d + 1):end]
+    vdiff = @views v_out_μ[1:d, 1:d] - v_out_μ[1:d, (d + 1):end] - v_out_μ[(d + 1):end, 1:d] + v_out_μ[(d + 1):end, (d + 1):end]
     S     = vdiff + mdiff * mdiff'
 
     return InverseWishartMessage(-d, S)

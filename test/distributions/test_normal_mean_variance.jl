@@ -93,10 +93,8 @@ using ReactiveMP
 
     @testset "Base methods" begin
         @test convert(NormalMeanVariance{Float32}, NormalMeanVariance()) === NormalMeanVariance{Float32}(0.0f0, 1.0f0)
-        @test convert(NormalMeanVariance{Float64}, NormalMeanVariance(0.0, 10.0)) ==
-              NormalMeanVariance{Float64}(0.0, 10.0)
-        @test convert(NormalMeanVariance{Float64}, NormalMeanVariance(0.0, 0.1)) ==
-              NormalMeanVariance{Float64}(0.0, 0.1)
+        @test convert(NormalMeanVariance{Float64}, NormalMeanVariance(0.0, 10.0)) == NormalMeanVariance{Float64}(0.0, 10.0)
+        @test convert(NormalMeanVariance{Float64}, NormalMeanVariance(0.0, 0.1)) == NormalMeanVariance{Float64}(0.0, 0.1)
         @test convert(NormalMeanVariance{Float64}, 0, 1) == NormalMeanVariance{Float64}(0.0, 1.0)
         @test convert(NormalMeanVariance{Float64}, 0, 10) == NormalMeanVariance{Float64}(0.0, 10.0)
         @test convert(NormalMeanVariance{Float64}, 0, 0.1) == NormalMeanVariance{Float64}(0.0, 0.1)
@@ -114,12 +112,9 @@ using ReactiveMP
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), NormalMeanVariance(-1, 1), NormalMeanVariance(1, 1)) ≈
-              NormalWeightedMeanPrecision(0.0, 2.0)
-        @test prod(ProdAnalytical(), NormalMeanVariance(-1, 2), NormalMeanVariance(1, 4)) ≈
-              NormalWeightedMeanPrecision(-1 / 4, 3 / 4)
-        @test prod(ProdAnalytical(), NormalMeanVariance(2, 2), NormalMeanVariance(0, 10)) ≈
-              NormalWeightedMeanPrecision(1.0, 3 / 5)
+        @test prod(ProdAnalytical(), NormalMeanVariance(-1, 1), NormalMeanVariance(1, 1)) ≈ NormalWeightedMeanPrecision(0.0, 2.0)
+        @test prod(ProdAnalytical(), NormalMeanVariance(-1, 2), NormalMeanVariance(1, 4)) ≈ NormalWeightedMeanPrecision(-1 / 4, 3 / 4)
+        @test prod(ProdAnalytical(), NormalMeanVariance(2, 2), NormalMeanVariance(0, 10)) ≈ NormalWeightedMeanPrecision(1.0, 3 / 5)
     end
 end
 

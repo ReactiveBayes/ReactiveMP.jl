@@ -43,13 +43,8 @@ import ReactiveMP: make_node
             q_γ   = GammaShapeRate(1.0, 1.0)
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), g in (Gamma,)
-                marginals = (
-                    Marginal(q_out, false, false),
-                    Marginal(convert(N, q_μ), false, false),
-                    Marginal(convert(g, q_γ), false, false)
-                )
-                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out, :μ, :γ)}, marginals, nothing) ≈
-                      3.415092731310877
+                marginals = (Marginal(q_out, false, false), Marginal(convert(N, q_μ), false, false), Marginal(convert(g, q_γ), false, false))
+                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out, :μ, :γ)}, marginals, nothing) ≈ 3.415092731310877
             end
         end
 
@@ -59,15 +54,11 @@ import ReactiveMP: make_node
             q_γ   = Gamma(2.0, 1.0)
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
-                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), g in (Gamma,)
+                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
+                g in (Gamma,)
 
-                marginals = (
-                    Marginal(convert(N1, q_out), false, false),
-                    Marginal(convert(N2, q_μ), false, false),
-                    Marginal(convert(g, q_γ), false, false)
-                )
-                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out, :μ, :γ)}, marginals, nothing) ≈
-                      188.7235844555108
+                marginals = (Marginal(convert(N1, q_out), false, false), Marginal(convert(N2, q_μ), false, false), Marginal(convert(g, q_γ), false, false))
+                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out, :μ, :γ)}, marginals, nothing) ≈ 188.7235844555108
             end
         end
 
@@ -85,8 +76,7 @@ import ReactiveMP: make_node
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
                 marginals = (Marginal(convert(N, q_out_μ), false, false), Marginal(q_γ, false, false))
-                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out_μ, :γ)}, marginals, nothing) ≈
-                      86.41549408285206
+                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out_μ, :γ)}, marginals, nothing) ≈ 86.41549408285206
             end
         end
 
@@ -104,8 +94,7 @@ import ReactiveMP: make_node
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
                 marginals = (Marginal(convert(N, q_out_μ), false, false), Marginal(q_γ, false, false))
-                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out_μ, :γ)}, marginals, nothing) ≈
-                      11.887416710256351
+                @test score(AverageEnergy(), MvNormalMeanScalePrecision, Val{(:out_μ, :γ)}, marginals, nothing) ≈ 11.887416710256351
             end
         end
     end
