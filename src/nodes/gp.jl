@@ -5,8 +5,10 @@ struct GaussianProcess
     meanfunction        :: Function 
     kernelfunction      :: Kernel
     finitemarginal      
-    testinput           
-    traininput          
+    testinput                
+    traininput
+    observation 
+    observation_noise          
     inducing_input      
     covariance_strategy 
 end
