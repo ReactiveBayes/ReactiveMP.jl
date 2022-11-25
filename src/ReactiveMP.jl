@@ -21,14 +21,6 @@ include("helpers/algebra/permutation_matrix.jl")
 include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/prod/prod.jl")
-
-include("message.jl")
-include("marginal.jl")
-include("distributions.jl")
-
-## add gp strategy
-include("gpstrategy.jl")
-
 include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
@@ -40,6 +32,9 @@ include("constraints/form.jl")
 include("message.jl")
 include("marginal.jl")
 include("distributions.jl")
+
+## add gp strategy
+include("gpstrategy.jl")
 
 """
     to_marginal(any)
