@@ -77,7 +77,7 @@ end
         end
     end
 
-    @testset "Normal x Normal (Specific prod)" begin
+    @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
         seed = 123
         rng = StableRNG(seed)
         optimizer = Descent(0.01)
@@ -90,7 +90,7 @@ end
         end
     end
 
-    @testset "Normal x Normal (Generic prod)" begin
+    @testset "Normal x Normal (Fisher preconditioner prod)" begin
         seed = 123
         rng = StableRNG(seed)
         optimizer = Descent(0.001)
