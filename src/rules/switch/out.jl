@@ -20,8 +20,6 @@ end
 
 @rule Switch(:out, Marginalisation) (m_inputs::ManyOf{N, Any}, q_switch::PointMass) where {N} = begin
 
-    println("Test")
-
     # check whether mean is one-hot
     p = mean(q_switch)
     @assert sum(p) ≈ 1 "The selector variable connected to the switch node is not normalized."
