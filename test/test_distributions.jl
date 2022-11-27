@@ -4,9 +4,18 @@ using Test
 using ReactiveMP
 using Distributions
 
+import ReactiveMP: convert_eltype
 import ReactiveMP: FactorizedJoint
 
 @testset "Distributions" begin
+    @testset "convert_eltype" begin
+        for T in (Float32, Float64, BigFloat)
+            @test @inferred(eltype(convert_eltype(T, [1.0, 1.0]))) === T
+            @test @inferred(eltype(convert_eltype(T, [1.0 1.0; 1.0 1.0]))) === T
+            @test @inferred(eltype(convert_eltype(T, 1.0))) === T
+        end
+    end
+
     @testset "FactorizedJoint" begin
         vmultipliers = [(NormalMeanPrecision(),), (NormalMeanVariance(), Beta(1.0, 1.0)), (Normal(), Gamma(), MvNormal(zeros(2), diageye(2)))]
 
