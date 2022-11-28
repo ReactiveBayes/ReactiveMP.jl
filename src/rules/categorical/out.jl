@@ -1,5 +1,10 @@
 export rule
 
+@rule Categorical(:out, Marginalisation) (m_p::Dirichlet,) = begin
+    @logscale 0
+    return Categorical(normalize(mean(m_p), 1))
+end
+
 @rule Categorical(:out, Marginalisation) (q_p::Dirichlet,) = begin
     rho = clamp.(exp.(mean(log, q_p)), tiny, Inf) # Softens the parameter
     return Categorical(rho ./ sum(rho))
