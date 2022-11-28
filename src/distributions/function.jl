@@ -6,14 +6,22 @@ import DomainSets
 import DomainIntegrals
 import HCubature
 
-import DomainSets: Domain
+import DomainSets: Domain, dimension
 
 import Base: isapprox, in
 
 # Unknown domain that is used as a placeholder when exact domain knowledge is unavailable
 struct UnspecifiedDomain <: Domain{Any} end
 
-Base.in(::UnspecifiedDomain, ::Any) = true
+# Unknown dimension is equal and not equal to any number
+struct UnspecifiedDimension end
+
+DomainSets.dimension(::UnspecifiedDomain) = UnspecifiedDimension()
+
+Base.in(::Any, ::UnspecifiedDomain) = true
+
+Base.:(!==)(::UnspecifiedDimension, ::Int) = true
+Base.:(==)(::UnspecifiedDimension, ::Int)  = true
 
 abstract type AbstractContinuousGenericLogPdf end
 
@@ -81,7 +89,7 @@ struct ContinuousUnivariateLogPdf{D <: DomainSets.Domain, F} <: AbstractContinuo
     logpdf::F
 
     ContinuousUnivariateLogPdf(domain::D, logpdf::F) where {D, F} = begin
-        @assert DomainSets.dimension(domain) === 1 "Cannot create ContinuousUnivariateLogPdf. Dimension of domain = $(domain) is not equal to 1."
+        @assert DomainSets.dimension(domain) == 1 "Cannot create ContinuousUnivariateLogPdf. Dimension of domain = $(domain) is not equal to 1."
         return new{D, F}(domain, logpdf)
     end
 end
