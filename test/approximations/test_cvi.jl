@@ -91,18 +91,20 @@ end
             n2 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
 
             n_analytical = prod(ProdAnalytical(), n1, n2)
-            n_cvi = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(n1, x)), n2)
 
-            @test n_analytical ≈ n_cvi atol = test[:tol]
+            @test prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(n1, x)), n2) ≈ n_analytical atol = test[:tol]
+            @test prod(test[:method], n1, n2) ≈ n_analytical atol = test[:tol]
 
             # Univariate `Gamma`
             g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
             g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
 
             g_analytical = prod(ProdAnalytical(), g1, g2)
-            g_cvi = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
+            g_cvi1 = prod(test[:method], g1, g2)
+            g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
 
-            @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi), atol = test[:tol]))
+            @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi1), atol = test[:tol]))
+            @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi2), atol = test[:tol]))
 
             # Multivariate `Normal`
             if !(ReactiveMP.get_grad(test[:method]) isa ZygoteGrad) # `Zygote` does not support mutations
@@ -111,9 +113,9 @@ end
                     mn2 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
 
                     mn_analytical = prod(ProdAnalytical(), mn1, mn2)
-                    mn_cvi = prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2)
 
-                    @test mn_analytical ≈ mn_cvi atol = test[:tol]
+                    @test prod(test[:method], mn1, mn2) ≈ mn_analytical atol = test[:tol]
+                    @test prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2) ≈ mn_analytical atol = test[:tol]
                 end
             end
         end

@@ -20,6 +20,7 @@ DomainSets.dimension(::UnspecifiedDomain) = UnspecifiedDimension()
 
 Base.in(::Any, ::UnspecifiedDomain) = true
 
+Base.:(!=)(::UnspecifiedDimension, ::Int)  = true
 Base.:(!==)(::UnspecifiedDimension, ::Int) = true
 Base.:(==)(::UnspecifiedDimension, ::Int)  = true
 

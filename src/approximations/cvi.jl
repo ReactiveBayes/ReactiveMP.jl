@@ -71,11 +71,7 @@ function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Boo
     return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, Val{true}())
 end
 
-"""
-Alias for the `ProdCVI` method.
-
-See also: [`ProdCVI`](@ref)
-"""
+"""Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
 const CVI = ProdCVI
 
 #---------------------------
@@ -114,6 +110,7 @@ end
 # without type constraints it will create stack-overflow error
 # prod(approximation::CVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
 
+# The function assumes only `logpdf` for `left` and that we can sample from `dist`
 function prod(approximation::CVI, left, dist)
     rng = something(approximation.rng, Random.GLOBAL_RNG)
 
