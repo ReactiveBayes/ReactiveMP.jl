@@ -551,8 +551,11 @@ function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {
     return df_m, df_v ./ 2
 end
 
-function prod(approximation::CVI, logp::F, dist::GaussianDistributionsFamily) where {F <: Function}
+function prod(approximation::CVI, left, dist::GaussianDistributionsFamily) 
     rng = something(approximation.rng, Random.GLOBAL_RNG)
+
+    logp = (x) -> logpdf(left, x)
+
     # Natural parameters of incoming distribution message
     η = naturalparams(dist)
     T = typeof(η)
@@ -593,5 +596,5 @@ function prod(approximation::CVI, logp::F, dist::GaussianDistributionsFamily) wh
         @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
     end
 
-    return λ
+    return convert(Distribution, λ)
 end

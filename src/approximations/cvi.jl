@@ -1,4 +1,4 @@
-export CVI, ForwardDiffGrad
+export CVI, ProdCVI, ForwardDiffGrad
 
 using Random
 
@@ -111,11 +111,13 @@ function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVecto
     return F
 end
 
-# without type constraints it will create stakeoverflow error
+# without type constraints it will create stack-overflow error
 # prod(approximation::CVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
 
-function prod(approximation::CVI, logp::F, dist) where {F <: Function}
+function prod(approximation::CVI, left, dist)
     rng = something(approximation.rng, Random.GLOBAL_RNG)
+
+    logp = (x) -> logpdf(left, x)
 
     # Natural parameters of incoming distribution message
     η = naturalparams(dist)
@@ -164,5 +166,5 @@ function prod(approximation::CVI, logp::F, dist) where {F <: Function}
         @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
     end
 
-    return λ
+    return convert(Distribution, λ)
 end
