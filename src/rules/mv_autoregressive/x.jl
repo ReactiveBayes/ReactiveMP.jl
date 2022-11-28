@@ -17,9 +17,9 @@ begin
     Fs = [mask_mar(order, ds, i) for i in 1:order]
 
     # ∏ = Iterators.product(transpose.(es), mW, es, Fs, Va, transpose.(Fs))
-    Σ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
+    Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
 
-    Ξ = mA'*inv(Vy + inv(mW))*mA + inv(Σ)
+    Ξ = mA*inv(inv(mW) + Vy)*mA' + Λ
     z = mA'*inv(Vy + inv(mW))*my
 
     mx = inv(Ξ)*z

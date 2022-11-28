@@ -14,10 +14,10 @@ begin
     es = [uvector(dim, i) for i in 1:order]
     Fs = [mask_mar(order, ds, i) for i in 1:order]
     
-    Σ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
+    Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
 
 
-    Ξ = inv(Σ) + Wx
+    Ξ = Λ + Wx
     z = Wx*mx
 
     Vy = mA*inv(Ξ)*mA' + inv(Wx)

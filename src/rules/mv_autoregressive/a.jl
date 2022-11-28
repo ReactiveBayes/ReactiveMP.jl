@@ -12,7 +12,7 @@
     Vyx      = ar_slice(F, Vyx, (dim+1):2dim, 1:dim)
     mΛ = mean(q_Λ)
     mW = mar_transition(order, mΛ)
-    mW
+
     # this should be inside MARMeta
     es = [uvector(dim, i) for i in 1:order]
     Fs = [mask_mar(order, ds, i) for i in 1:order]
@@ -20,7 +20,7 @@
     # @show sum(prod, Iterators.product(transpose.(es), mW, es))
     # ∏ = Iterators.product(transpose.(es), mW, es, transpose.(Fs), (Vx + mx*mx'), Fs)
 
-    D = sum(sum(es[i]'*mW*es[j]*Fs[i]'*(Vx + mx*mx')*Fs[j] for i in 1:order) for j in 1:order)
-    z = sum(Fs[i]'*(Vyx + my*mx')*mW*es[i] for i in 1:order)
+    D = sum(sum(es[i]'*mW*es[j]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:order) for j in 1:order)
+    z = sum(Fs[i]'*(mx*my'+Vyx')*mW*es[i] for i in 1:order)
     return MvNormalMeanCovariance(inv(D)*z, inv(D))
 end
