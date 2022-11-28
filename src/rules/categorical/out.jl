@@ -2,7 +2,7 @@ export rule
 
 @rule Categorical(:out, Marginalisation) (m_p::Dirichlet,) = begin
     @logscale 0
-    return Categorical(normalize(mean(m_p), 1))
+    return Categorical(mean(m_p))
 end
 
 @rule Categorical(:out, Marginalisation) (q_p::Dirichlet,) = begin
