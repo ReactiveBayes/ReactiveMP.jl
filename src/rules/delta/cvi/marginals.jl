@@ -8,7 +8,7 @@ import Distributions: Distribution
     F = promote_variate_type(variate_form(first(m_ins)), AbstractContinuousGenericLogPdf)
     f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
     q = prod(getmethod(meta), f, first(m_ins))
-    
+
     return FactorizedJoint((q,))
 end
 
@@ -26,9 +26,8 @@ end
         end
     end
 
-    
     optimize_natural_parameters = let method = method, m_ins = m_ins, logp_nc_drop_index = logp_nc_drop_index
-        (i, pre_samples) -> begin 
+        (i, pre_samples) -> begin
             # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
             df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
                 (z) -> logp_nc_drop_index(z, i, pre_samples)

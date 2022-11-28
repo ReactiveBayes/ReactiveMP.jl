@@ -551,7 +551,7 @@ function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {
     return df_m, df_v ./ 2
 end
 
-function prod(approximation::CVI, left, dist::GaussianDistributionsFamily) 
+function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
     rng = something(approximation.rng, Random.GLOBAL_RNG)
 
     logp = (x) -> logpdf(left, x)

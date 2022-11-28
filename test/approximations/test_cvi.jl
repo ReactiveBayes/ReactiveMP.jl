@@ -76,7 +76,6 @@ end
     end
 
     @testset "cvi `prod` tests" begin
-
         rng = StableRNG(42)
 
         tests = (
@@ -94,7 +93,7 @@ end
             n_analytical = prod(ProdAnalytical(), n1, n2)
             n_cvi = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(n1, x)), n2)
 
-            @test n_analytical ≈ n_cvi atol=test[:tol]
+            @test n_analytical ≈ n_cvi atol = test[:tol]
 
             # Univariate `Gamma`
             g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
@@ -114,12 +113,10 @@ end
                     mn_analytical = prod(ProdAnalytical(), mn1, mn2)
                     mn_cvi = prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2)
 
-                    @test mn_analytical ≈ mn_cvi atol=test[:tol]
+                    @test mn_analytical ≈ mn_cvi atol = test[:tol]
                 end
             end
-
         end
-
     end
 
     @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
@@ -152,4 +149,3 @@ end
 end
 
 end
-

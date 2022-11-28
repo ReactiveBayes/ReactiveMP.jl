@@ -89,7 +89,7 @@ end
 variate_form(::Type{<:ContinuousUnivariateLogPdf}) = Univariate
 variate_form(::ContinuousUnivariateLogPdf)         = Univariate
 
-promote_variate_type(::Type{ Univariate }, ::Type{ AbstractContinuousGenericLogPdf }) = ContinuousUnivariateLogPdf
+promote_variate_type(::Type{Univariate}, ::Type{AbstractContinuousGenericLogPdf}) = ContinuousUnivariateLogPdf
 
 getdomain(dist::ContinuousUnivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousUnivariateLogPdf) = dist.logpdf
@@ -147,7 +147,7 @@ end
 variate_form(::Type{<:ContinuousMultivariateLogPdf}) = Multivariate
 variate_form(::ContinuousMultivariateLogPdf)         = Multivariate
 
-promote_variate_type(::Type{ Multivariate }, ::Type{ AbstractContinuousGenericLogPdf }) = ContinuousMultivariateLogPdf
+promote_variate_type(::Type{Multivariate}, ::Type{AbstractContinuousGenericLogPdf}) = ContinuousMultivariateLogPdf
 
 getdomain(dist::ContinuousMultivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousMultivariateLogPdf) = dist.logpdf
