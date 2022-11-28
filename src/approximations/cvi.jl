@@ -25,7 +25,7 @@ Arguments
  - `n_samples`: number of samples to use for statistics approximation
  - `num_iterations`: number of iteration for the natural parameters gradient optimization
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
- - `grad`: optional, default to `ForwardDiffGrad`, structure to select how the gradient and the hessian will be computed
+ - `grad`: optional, defaults to `ForwardDiffGrad()`, structure to select how the gradient and the hessian will be computed
  - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
  - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution
 
@@ -33,7 +33,10 @@ Arguments
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
 
 !!! note 
-    Run `using Zygote` in your Julia session to enable the `ZygoteGrad` option support for the CVI `grad` parameter.
+    Run `using Zygote` in your Julia session to enable the `ZygoteGrad()` option support for the CVI `grad` parameter.
+
+!!! note 
+    Run `using DiffResults` in your Julia session to enable faster gradient computations in case if all inputs are of the `Gaussian` type.
 
 """
 struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
@@ -81,33 +84,28 @@ const CVI = ProdCVI
 
 struct ForwardDiffGrad end
 
-function compute_derivative(::ForwardDiffGrad, f::F, param::Real) where {F}
-    ForwardDiff.derivative(f, param)
+compute_derivative(::ForwardDiffGrad, f::F, value::Real) where {F}       = ForwardDiff.derivative(f, value)
+compute_gradient(::ForwardDiffGrad, f::F, vec::AbstractVector) where {F} = ForwardDiff.gradient(f, vec)
+compute_hessian(::ForwardDiffGrad, f::F, vec::AbstractVector) where {F}  = ForwardDiff.hessian(f, vec)
+
+function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
+    first_derivative = (x) -> compute_derivative(grad, logp, x)
+    return compute_derivative(grad, first_derivative, z_s)
 end
 
-function compute_gradient(::ForwardDiffGrad, f::F, vec_params) where {F}
-    ForwardDiff.gradient(f, vec_params)
-end
+# We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
+enforce_proper_message(::Val{true}, λ::NaturalParameters, η::NaturalParameters) = isproper(λ - η)
 
-function compute_hessian(::ForwardDiffGrad, f::F, vec_params) where {F}
-    ForwardDiff.hessian(f, vec_params)
-end
+# We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
+enforce_proper_message(::Val{false}, λ::NaturalParameters, η::NaturalParameters) = true
 
-function enforce_proper_message(::Val{true}, λ::NaturalParameters, η::NaturalParameters)
-    return isproper(λ - η)
-end
-
-function enforce_proper_message(::Val{false}, λ::NaturalParameters, η::NaturalParameters)
-    return true
-end
-
-function compute_fisher_matrix(approximation::CVI, ::Type{T}, params::Vector) where {T <: NaturalParameters}
+function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVector) where {T <: NaturalParameters}
 
     # specify lognormalizer function
     lognormalizer_function = (x) -> lognormalizer(as_naturalparams(T, x))
 
     #  compute Fisher matrix
-    F = compute_hessian(get_grad(approximation), lognormalizer_function, params)
+    F = compute_hessian(get_grad(approximation), lognormalizer_function, vec)
 
     #  return Fisher matrix
     return F

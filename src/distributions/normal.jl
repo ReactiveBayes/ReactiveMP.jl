@@ -539,18 +539,13 @@ end
 
 # Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
 
-function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
-    first_derivative = (x) -> compute_derivative(grad, logp, x)
-    return compute_derivative(grad, first_derivative, z_s)
-end
-
 function compute_df_mv(approximation::CVI, logp::F, z_s::Real) where {F}
     df_m = compute_derivative(get_grad(approximation), logp, z_s)
     df_v = compute_second_derivative(get_grad(approximation), logp, z_s)
     return df_m, df_v / 2
 end
 
-function compute_df_mv(approximation::CVI, logp::F, z_s::Vector) where {F}
+function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {F}
     df_m = compute_gradient(get_grad(approximation), logp, z_s)
     df_v = compute_hessian(get_grad(approximation), logp, z_s)
     return df_m, df_v ./ 2

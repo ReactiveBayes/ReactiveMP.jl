@@ -178,21 +178,13 @@ function __init__()
 
         struct ZygoteGrad end
 
-        function compute_gradient(::ZygoteGrad, f::F, vec_params::Vector) where {F}
-            Zygote.gradient(f, vec_params)[1]
-        end
-
-        function compute_hessian(::ZygoteGrad, f::F, vec_params::Vector) where {F}
-            Zygote.hessian(f, vec_params)
-        end
-
-        function compute_derivative(::ZygoteGrad, f::F, value::Real) where {F}
-            Zygote.gradient(f, value)[1]
-        end
+        compute_gradient(::ZygoteGrad, f::F, vec::AbstractVector) where {F} = Zygote.gradient(f, vec)[1]
+        compute_hessian(::ZygoteGrad, f::F, vec::AbstractVector) where {F}  = Zygote.hessian(f, vec)
+        compute_derivative(::ZygoteGrad, f::F, value::Real) where {F}       = Zygote.gradient(f, value)[1]
     end
 
     @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
-        function compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::Vector) where {R, O, F}
+        function compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
             result = DiffResults.HessianResult(vec)
             result = ForwardDiff.hessian!(result, logp, vec)
             return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
