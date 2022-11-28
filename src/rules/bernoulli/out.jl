@@ -1,5 +1,10 @@
 export rule
 
+@rule Bernoulli(:out, Marginalisation) (m_p::Beta,) = begin
+    @logscale 0
+    return Bernoulli(mean(m_p))
+end
+
 @rule Bernoulli(:out, Marginalisation) (m_p::PointMass,) = begin
     @logscale 0
     return Bernoulli(mean(m_p))
