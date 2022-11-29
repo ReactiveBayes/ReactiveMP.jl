@@ -47,28 +47,33 @@ struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     grad::G
     warn::Bool
     enforce_proper_messages::Val{B}
+    use_cholesky::Bool
 end
 
 get_grad(approximation::ProdCVI) = approximation.grad
 
+function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool, use_cholesky::Bool) where {O, G}
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}(), use_cholesky)
+end
+
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}())
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}(), true)
 end
 
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, Val{true}())
+    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true, true)
 end
 
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, Val{true}())
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, true, true)
 end
 
 function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, Val{true}())
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true, true)
 end
 
 function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, Val{true}())
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, true, true)
 end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
@@ -141,10 +146,14 @@ function prod(approximation::CVI, left, dist)
 
         # compute Fisher matrix and Cholesky decomposition
         Fisher = compute_fisher_matrix(approximation, T, vec(λ))
-        F_chol = fastcholesky!(Fisher)
 
         # compute natural gradient
-        ∇f = F_chol \ ∇logq
+        if approximation.use_cholesky
+            F_chol = fastcholesky!(Fisher)
+            ∇f = F_chol \ ∇logq
+        else
+            ∇f = Fisher \ ∇logq
+        end
 
         # compute gradient on natural parameters
         ∇ = λ - η - as_naturalparams(T, ∇f)

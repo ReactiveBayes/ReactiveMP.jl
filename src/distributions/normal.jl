@@ -484,8 +484,9 @@ function lognormalizer(η::UnivariateNormalNaturalParameters)
 end
 
 function lognormalizer(η::MultivariateNormalNaturalParameters)
-    L = fastcholesky(-η.minus_half_precision_matrix)
-    return η.weighted_mean' * (L \ η.weighted_mean) / 4 - (length(η.weighted_mean) * log(2) + logdet(L)) / 2
+    # L = fastcholesky(-η.minus_half_precision_matrix)
+    # return η.weighted_mean' * (L \ η.weighted_mean) / 4 - (length(η.weighted_mean) * log(2) + logdet(L)) / 2
+    return -η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) / 4 - logdet(-2 * η.minus_half_precision_matrix) / 2
 end
 
 # Semih: logpdf wrt natural params. ForwardDiff is not stable with reshape function which
