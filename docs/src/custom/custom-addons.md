@@ -40,6 +40,27 @@ end
 Here we add the number of operations from the addons that are being multiplied and we add one (for the current operation). We are aware that this is likely not valid for iterative message passing schemes, but it still serves as a nice example. The `left_addon` and `right_addon` argument specify the `AddonCount` objects that are being multiplied. Corresponding to these addons, there are the distributions `left_dist` and `right_dist`, which might contain information for computing the product. The new distribution `new_dist ∝ left_dist * right_dist` is also passed along for potentially reusing the result of earlier computations.
 
 ### Step 3: Computing messages
-As a final step we need to specify how the addon behaves when a new message is computed in a factor node. This step is a bit more advanced as it requires making changes in the `@rule` macro.
+As a final step we need to specify how the addon behaves when a new message is computed in a factor node. 
+For this purpose we need to implement a specialized version of the `message_mapping_addon()` function. This function accepts the mapping variables of the factor node and updates the addons by extending the tuple.
 
-> Uhm this changed
+In our example we could write
+```julia
+function message_mapping_addon(::AddonCount{Nothing}, mapping, messages, marginals, result, addons)
+
+    # get number of operations of messages
+    message_count = 0
+    for message in messages
+        message_count += getaddons(getcount(message))
+    end
+
+    # get number of operations of marginals
+    marginal_count
+    for marginal in marginals
+        marginal_count += getaddons(getcount(marginal))
+    end
+
+    # extend addons with AddonCount() structure
+    return (addons..., AddonCount(message_count + marginal_count + 1))
+end
+
+```
