@@ -198,7 +198,7 @@ isproxy(randomprocess::RandomProcess) = proxy_variables(randomprocess) !== nothi
 isprocess(::RandomProcess)                 = true
 isprocess(::AbstractArray{<:RandomProcess})= true
 israndom(::RandomProcess)                  = true
-israndom(::AbstractArray{<:RandomProcess}) = true
+israndom(::AbstractArray{<:RandomProcess}) = true 
 isdata(::RandomProcess)                    = false
 isdata(::AbstractArray{<:RandomProcess})   = false
 isconst(::RandomProcess)                   = false
@@ -294,7 +294,7 @@ function setmessagein!(randomprocess::RandomProcess, index::Int, messagein)
     end
 end
 
-function activate!(model, randomprocess::RandomProcess)
+function activate!(randomprocess::RandomProcess, scheduler = AsapScheduler())
     if randomprocess.output_initialised === true     
         error("Broken random variable ", randomprocess, ". Unreachable reached.")
     end
@@ -302,7 +302,7 @@ function activate!(model, randomprocess::RandomProcess)
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if degree(randomprocess) > 1000
-        chain_pipeline = schedule_on(global_reactive_scheduler(getoptions(model)))
+        chain_pipeline = schedule_on(scheduler)
         chain_prod_fn = messages_prod_fn(randomprocess)
         randomprocess.base.output_cache = EqualityChain(randomprocess.input_messages, chain_pipeline, chain_prod_fn) 
     end

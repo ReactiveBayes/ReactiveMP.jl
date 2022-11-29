@@ -1,5 +1,5 @@
-export VariablesCollection, getrandom, getconstant, getdata, getvardict
-export hasrandomvar, hasdatavar, hasconstvar
+export VariablesCollection, getrandom, getconstant, getdata, getvardict, getprocess
+export hasrandomvar, hasdatavar, hasconstvar, hasprocess 
 
 import Base: haskey, getindex, firstindex, lastindex, show
 
@@ -8,18 +8,20 @@ struct VariablesCollection
     constant :: Vector{ConstVariable}
     data     :: Vector{DataVariable}
     vardict  :: Dict{Symbol, Any}
+    process  :: Vector{RandomProcess} #add random process 
 
-    VariablesCollection() = new(Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}())
+    VariablesCollection() = new(Vector{RandomVariable}(), Vector{ConstVariable}(), Vector{DataVariable}(), Dict{Symbol, Any}(), Vector{RandomProcess}())
 end
 
 function Base.show(io::IO, collection::VariablesCollection)
-    print(io, "VariablesCollection(random: ", length(getrandom(collection)), ", constant: ", length(getconstant(collection)), ", data: ", length(getdata(collection)), ")")
+    print(io, "VariablesCollection(random: ", length(getrandom(collection)), ", constant: ", length(getconstant(collection)), ", data: ", length(getdata(collection)), ", process: ",length(getprocess(collection)), ")")
 end
 
 getrandom(collection::VariablesCollection)   = collection.random
 getconstant(collection::VariablesCollection) = collection.constant
 getdata(collection::VariablesCollection)     = collection.data
 getvardict(collection::VariablesCollection)  = collection.vardict
+getprocess(collection::VariablesCollection)  = collection.process  #add process 
 
 Base.firstindex(collection::VariablesCollection, symbol::Symbol) = firstindex(collection, getindex(collection, symbol))
 Base.lastindex(collection::VariablesCollection, symbol::Symbol)  = lastindex(collection, getindex(collection, symbol))
@@ -39,6 +41,8 @@ end
 hasrandomvar(collection::VariablesCollection, symbol::Symbol) = haskey(collection, symbol) ? israndom(getindex(collection, symbol)) : false
 hasdatavar(collection::VariablesCollection, symbol::Symbol)   = haskey(collection, symbol) ? isdata(getindex(collection, symbol)) : false
 hasconstvar(collection::VariablesCollection, symbol::Symbol)  = haskey(collection, symbol) ? isconst(getindex(collection, symbol)) : false
+## add random process 
+hasprocess(collection::VariablesCollection, symbol::Symbol)   = haskey(collection, symbol) ? isprocess(getindex(collection,symbol)) : false
 
 Base.push!(::VariablesCollection, ::Nothing) = nothing
 
@@ -76,4 +80,16 @@ function Base.push!(collection::VariablesCollection, datavars::AbstractArray{<:D
     append!(collection.data, datavars)
     setindex!(getvardict(collection), datavars, name(first(datavars)))
     return datavars
+end
+## add push! for random process 
+function Base.push!(collection::VariablesCollection, randomprocess::RandomProcess)
+    push!(collection.process, randomprocess)
+    setindex!(getvardict(collection), randomprocess, name(randomprocess))
+    return randomprocess
+end
+
+function Base.push!(collection::VariablesCollection, randomprocesses::AbstractArray{<:RandomProcess})
+    append!(collection.process, randomprocesses)
+    setindex!(getvardict(collection), randomprocesses, name(first(randomprocesses)))
+    return randomprocesses
 end

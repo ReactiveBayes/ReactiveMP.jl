@@ -83,7 +83,7 @@ function activate!(constraints::ConstraintsSpecification, nodes::FactorNodesColl
         if warn && (hasdatavar(variables, specname) || hasconstvar(variables, specname))
             @warn "Constraints specification has marginal form constraint for `q($(specname))`, but `$(specname)` is not a random variable. It is not possible to set a form constrain on non-random variable. Form constraint is ignored. Use `warn = false` option during constraints specification to suppress this warning."
             # Check if variable does not exist 
-        elseif warn && !hasrandomvar(variables, specname)
+        elseif warn && !hasrandomvar(variables, specname) && !hasprocess(variables, specname)
             @warn "Constraints specification has marginal form constraint for `q($(specname))`, but variables collection has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to suppress this warning."
         end
     end
@@ -95,7 +95,7 @@ function activate!(constraints::ConstraintsSpecification, nodes::FactorNodesColl
         if warn && (hasdatavar(variables, specname) || hasconstvar(variables, specname))
             @warn "Constraints specification has messages form constraint for `μ($(specname))`, but `$(specname)` is not a random variable. It is not possible to set a form constrain on non-random variable. Form constraint is ignored. Use `warn = false` option during constraints specification to suppress this warning."
             # Check if variable does not exist 
-        elseif warn && !hasrandomvar(variables, specname)
+        elseif warn && !hasrandomvar(variables, specname) && !hasprocess(variables, specname)
             @warn "Constraints specification has messages form constraint for `μ($(specname))`, but variables collection has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to suppress this warning."
         end
     end
@@ -106,7 +106,7 @@ function activate!(constraints::ConstraintsSpecification, nodes::FactorNodesColl
         foreach(specnames) do specname
             if warn && (hasdatavar(variables, specname) || hasconstvar(variables, specname))
                 @warn "Constraints specification has factorisation constraint for `q($(join(specnames, ", ")))`, but `$(specname)` is not a random variable. Data variables and constants in the model are forced to be factorized by default such that `q($(join(specnames, ", "))) = q($(specname))q(...)` . Use `warn = false` option during constraints specification to suppress this warning."
-            elseif warn && !hasrandomvar(variables, specname)
+            elseif warn && !hasrandomvar(variables, specname) && !hasprocess(variables, specname)
                 @warn "Constraints specification has factorisation constraint for `q($(join(specnames, ", ")))`, but variables collection has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to suppress this warning."
             end
         end

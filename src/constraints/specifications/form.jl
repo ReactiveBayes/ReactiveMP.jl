@@ -20,7 +20,7 @@ end
 resolve_marginal_form_prod(::Union{MeanField, FullFactorisation}, name) = (nothing, nothing)
 resolve_messages_form_prod(::Union{MeanField, FullFactorisation}, name) = (nothing, nothing)
 
-resolve_marginal_form_prod(constraints, name) = resolve_form_prod(constraints, constraints.marginalsform, name)
+resolve_marginal_form_prod(constraints, name) = resolve_form_prod(constraints, constraints.marginalsform, name)  
 resolve_messages_form_prod(constraints, name) = resolve_form_prod(constraints, constraints.messagesform, name)
 
 # Preoptimised dispatch rule for empty form constraints
