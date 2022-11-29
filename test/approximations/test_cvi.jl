@@ -165,11 +165,11 @@ end
             end
         end
 
-        @testset "MvNormal x MvNormal 2d (Fisher preconditioner prod)" begin
+        @testset "MvNormal x MvNormal 2D (Fisher preconditioner prod)" begin
             seed = 123
             rng = StableRNG(seed)
             optimizer = Descent(0.001)
-            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), false, true)
+            meta = CVI(rng, 1, 5000, optimizer, ZygoteGrad(), true, true)
 
             for i in 1:3
                 m_out, m_in = MvGaussianMeanCovariance(fill(i, 2)), MvGaussianMeanCovariance(zeros(2))
