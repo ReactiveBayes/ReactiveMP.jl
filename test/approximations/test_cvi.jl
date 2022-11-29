@@ -148,6 +148,36 @@ end
             end
         end
     end
+
+    @static if VERSION ≥ v"1.7" # Base.@invoke is available only in Julia >= 1.7
+        @testset "MvNormal x MvNormal 1D (Fisher preconditioner prod)" begin
+            seed = 123
+            rng = StableRNG(seed)
+            optimizer = Descent(0.001)
+            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), false, false)
+
+            for i in 1:3
+                m_out, m_in = MvNormalMeanCovariance([i], [1]), MvNormalMeanCovariance([0], [1])
+                λ = Base.@invoke prod(
+                    meta::CVI, (ContinuousMultivariateLogPdf(ReactiveMP.UnspecifiedDomain(), (x) -> logpdf(m_out, x)))::AbstractContinuousGenericLogPdf, m_in::Any
+                )
+                @test isapprox(convert(Distribution, λ), MvNormalWeightedMeanPrecision([i], [2]), atol = 0.5)
+            end
+        end
+
+        @testset "MvNormal x MvNormal 2d (Fisher preconditioner prod)" begin
+            seed = 123
+            rng = StableRNG(seed)
+            optimizer = Descent(0.001)
+            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), false, true)
+
+            for i in 1:3
+                m_out, m_in = MvGaussianMeanCovariance(fill(i, 2)), MvGaussianMeanCovariance(zeros(2))
+                λ = Base.@invoke prod(meta::CVI, (ContinuousMultivariateLogPdf(2, (x) -> logpdf(m_out, x)))::AbstractContinuousGenericLogPdf, m_in::Any)
+                @test isapprox(convert(Distribution, λ), MvNormalWeightedMeanPrecision(fill(i, 2), diageye(2) * 2), atol = 0.5)
+            end
+        end
+    end
 end
 
 end
