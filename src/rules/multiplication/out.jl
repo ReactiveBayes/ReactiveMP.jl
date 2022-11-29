@@ -10,6 +10,7 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractMatrix}, m_in::F, meta::Union{<:AbstractCorrection, Nothing}) where {F <: NormalDistributionsFamily} = begin
+    @logscale 0
     A = mean(m_A)
     μ_in, Σ_in = mean_cov(m_in)
     return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
@@ -34,6 +35,7 @@ end
 # -->[x]-->
 # in1 ~ Univariate -> R^1
 @rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractVector}, m_in::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
+    @logscale 0
     a = mean(m_A)
 
     μ_in, v_in = mean_var(m_in)
@@ -56,9 +58,9 @@ end
 # Real * UnivariateNormalDistributions
 #------------------------
 @rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
+    @logscale 0
     a = mean(m_A)
     μ_in, v_in = mean_var(m_in)
-
     return NormalMeanVariance(a * μ_in, a^2 * v_in)
 end
 
