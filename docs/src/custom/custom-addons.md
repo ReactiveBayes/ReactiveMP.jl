@@ -2,7 +2,7 @@
 
 Standard message passing schemes only pass along distributions to other nodes. However, for more advanced usage, there might be a need for passing along additional information in messages and/or marginals. One can for example think of passing along the scaling of the distribution or some information that specifies how the message or marginal was computed, i.e. which messages were used for its computation and which node was preceding it.
 
-Addons provide a solution here. Basically, addons are structures that contain extra information that are passed along the graph with messages and marginals in a tuple. Its usage and operations can differ significantly for each application, yet below gives a concise overview on how to implement them on your own.
+Addons provide a solution here. Basically, addons are structures that contain extra information that are passed along the graph with messages and marginals in a tuple. These addons can be extracted using the `get_addons(message/marginal)` function. Its usage and operations can differ significantly for each application, yet below gives a concise overview on how to implement them on your own.
 
 ## Example
 
