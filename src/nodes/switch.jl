@@ -189,7 +189,6 @@ __switch_incompatible_factorisation_error() =
     error("`SwitchNode` supports only following global factorisations: [ $(SwitchNodeFactorisationSupport) ] or manually set to equivalent via constraints")
 
 function ReactiveMP.make_node(::Type{<:Switch{N}}, factorisation::F = FullFactorisation(), meta::M = nothing, pipeline::P = nothing) where {N, F, M, P}
-    @assert N >= 2 "`SwitchNode` requires at least two mixtures on input"
     @assert typeof(factorisation) <: SwitchNodeFactorisationSupport "`SwitchNode` supports only following factorisations: [ $(SwitchNodeFactorisationSupport) ]"
     out    = NodeInterface(:out, Marginalisation())
     switch = NodeInterface(:switch, Marginalisation())
