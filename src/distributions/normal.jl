@@ -568,7 +568,7 @@ function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
     # Initialize update flag
     hasupdated = false
 
-    for _ in 1:(approximation.num_iterations)
+    for _ in 1:(approximation.n_iterations)
         # create distribution to sample from and sample from it
         q = convert(Distribution, λ)
         z_s = rand(rng, q)

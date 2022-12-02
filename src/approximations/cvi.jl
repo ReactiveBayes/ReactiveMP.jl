@@ -24,7 +24,7 @@ This method performs an approximation of the product of the `dist` and `logp` wi
 Arguments
  - `rng`: random number generator
  - `n_samples`: number of samples to use for statistics approximation
- - `num_iterations`: number of iteration for the natural parameters gradient optimization
+ - `n_iterations`: number of iteration for the natural parameters gradient optimization
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
  - `grad`: optional, defaults to `ForwardDiffGrad()`, structure to select how the gradient and the hessian will be computed
  - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
@@ -43,7 +43,7 @@ Arguments
 struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
-    num_iterations::Int
+    n_iterations::Int
     opt::O
     grad::G
     warn::Bool
@@ -52,24 +52,24 @@ end
 
 get_grad(approximation::ProdCVI) = approximation.grad
 
-function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}())
+function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
+    return ProdCVI(rng, n_samples, n_iterations, opt, grad, warn, Val{enforce_proper_messages}())
 end
 
-function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true)
+function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O) where {O}
+    return ProdCVI(rng, n_samples, n_iterations, opt, ForwardDiffGrad(), false, true)
 end
 
-function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, true)
+function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O, grad::G) where {O, G}
+    return ProdCVI(rng, n_samples, n_iterations, opt, grad, false, true)
 end
 
-function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true)
+function ProdCVI(n_samples::Int, n_iterations::Int, opt::O, warn::Bool = false) where {O}
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, ForwardDiffGrad(), warn, true)
 end
 
-function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, true)
+function ProdCVI(n_samples::Int, n_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, warn, true)
 end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
@@ -135,7 +135,7 @@ function prod(approximation::CVI, left, dist)
     # Initialize update flag
     hasupdated = false
 
-    for _ in 1:(approximation.num_iterations)
+    for _ in 1:(approximation.n_iterations)
 
         # create distribution to sample from and sample from it
         q = convert(Distribution, λ)
