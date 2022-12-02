@@ -121,6 +121,30 @@ end
         end
     end
 
+    @testset "cvi `prod` tests (n_gradpoints = 60)" begin
+        rng = StableRNG(42)
+
+        tests = (
+            (method = CVI(StableRNG(42), 1, 600, 60, Descent(0.01), ForwardDiffGrad(), false, true), tol = 2e-1),
+            (method = CVI(StableRNG(42), 1, 600, 60, Descent(0.01), ZygoteGrad(), false, true), tol = 2e-1)
+        )
+
+        # Check several prods against their analytical solutions
+        for test in tests, i in 1:5
+
+            # Univariate `Gamma`
+            g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
+            g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
+
+            g_analytical = prod(ProdAnalytical(), g1, g2)
+            g_cvi1 = prod(test[:method], g1, g2)
+            g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
+
+            @test g_cvi1 ≈ g_analytical atol = test[:tol]
+            @test g_cvi2 ≈ g_analytical atol = test[:tol]
+        end
+    end
+
     @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
         seed = 123
         rng = StableRNG(seed)
