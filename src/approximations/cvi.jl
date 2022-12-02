@@ -147,13 +147,13 @@ function prod(approximation::CVI, left, dist)
     for _ in 1:(approximation.n_iterations)
 
         # create distribution to sample from and sample from it
-        
+
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
         z_s = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
 
         # compute gradient of log-likelihood
-        logq = (x) -> mean(map((z) -> logp(z)*logpdf(as_naturalparams(T, x), z), z_s))
+        logq = (x) -> mean(map((z) -> logp(z) * logpdf(as_naturalparams(T, x), z), z_s))
         ∇logq = compute_gradient(get_grad(approximation), logq, vec(λ))
 
         # compute Fisher matrix and Cholesky decomposition
