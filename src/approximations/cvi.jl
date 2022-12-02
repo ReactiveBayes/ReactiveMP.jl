@@ -44,6 +44,7 @@ struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
     n_iterations::Int
+    n_gradpoints::Int
     opt::O
     grad::G
     warn::Bool
@@ -52,24 +53,28 @@ end
 
 get_grad(approximation::ProdCVI) = approximation.grad
 
+function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, n_gradpoints::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
+    return ProdCVI(rng, n_samples, n_iterations, n_gradpoints, opt, grad, warn, Val{enforce_proper_messages}())
+end
+
 function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
-    return ProdCVI(rng, n_samples, n_iterations, opt, grad, warn, Val{enforce_proper_messages}())
+    return ProdCVI(rng, n_samples, n_iterations, 1, opt, grad, warn, Val{enforce_proper_messages}())
 end
 
 function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O) where {O}
-    return ProdCVI(rng, n_samples, n_iterations, opt, ForwardDiffGrad(), false, true)
+    return ProdCVI(rng, n_samples, n_iterations, 1, opt, ForwardDiffGrad(), false, true)
 end
 
 function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O, grad::G) where {O, G}
-    return ProdCVI(rng, n_samples, n_iterations, opt, grad, false, true)
+    return ProdCVI(rng, n_samples, n_iterations, 1, opt, grad, false, true)
 end
 
 function ProdCVI(n_samples::Int, n_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, ForwardDiffGrad(), warn, true)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, 1, opt, ForwardDiffGrad(), warn, true)
 end
 
 function ProdCVI(n_samples::Int, n_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, warn, true)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, 1, opt, grad, warn, true)
 end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
@@ -138,13 +143,14 @@ function prod(approximation::CVI, left, dist)
     for _ in 1:(approximation.n_iterations)
 
         # create distribution to sample from and sample from it
+        
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
-        z_s = rand(rng, q_friendly)
+        z_s = rand(rng, q_friendly, approximation.n_gradpoints)
 
         # compute gradient of log-likelihood
-        logq = (x) -> logpdf(as_naturalparams(T, x), z_s)
-        ∇logq = logp(z_s) .* compute_gradient(get_grad(approximation), logq, vec(λ))
+        logq = (x) -> mean(map((z) -> logp(z)*logpdf(as_naturalparams(T, x), z), z_s))
+        ∇logq = compute_gradient(get_grad(approximation), logq, vec(λ))
 
         # compute Fisher matrix and Cholesky decomposition
         Fisher = compute_fisher_matrix(approximation, T, vec(λ))
