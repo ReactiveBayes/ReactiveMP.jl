@@ -1,6 +1,7 @@
 export CVI, ProdCVI, ForwardDiffGrad
 
 using Random
+using LinearAlgebra
 
 """
     cvi_update!(opt, λ, ∇)
@@ -47,33 +48,28 @@ struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     grad::G
     warn::Bool
     enforce_proper_messages::Val{B}
-    use_cholesky::Bool
 end
 
 get_grad(approximation::ProdCVI) = approximation.grad
 
-function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool, use_cholesky::Bool) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}(), use_cholesky)
-end
-
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}(), true)
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, warn, Val{enforce_proper_messages}())
 end
 
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true, true)
+    return ProdCVI(rng, n_samples, num_iterations, opt, ForwardDiffGrad(), false, true)
 end
 
 function ProdCVI(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O, grad::G) where {O, G}
-    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, true, true)
+    return ProdCVI(rng, n_samples, num_iterations, opt, grad, false, true)
 end
 
 function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true, true)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, ForwardDiffGrad(), warn, true)
 end
 
 function ProdCVI(n_samples::Int, num_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, true, true)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, num_iterations, opt, grad, warn, true)
 end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
@@ -103,10 +99,10 @@ enforce_proper_message(::Val{false}, λ::NaturalParameters, η::NaturalParameter
 function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVector) where {T <: NaturalParameters}
 
     # specify lognormalizer function
-    lognormalizer_function = (x) -> lognormalizer(as_naturalparams(T, x))
+    lognormalizer_function = (x) -> -lognormalizer(as_naturalparams(T, x))
 
     #  compute Fisher matrix
-    F = compute_hessian(get_grad(approximation), lognormalizer_function, vec)
+    F = -compute_hessian(get_grad(approximation), lognormalizer_function, vec)
 
     #  return Fisher matrix
     return F
@@ -116,6 +112,12 @@ end
 # prod(approximation::CVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
 
 # The function assumes only `logpdf` for `left` and that we can sample from `dist`
+
+# init(dist) = dist
+# function init(dist::MultivariateNormalDistributionsFamily)
+#     return MvNormalMeanCovariance(rand(NormalMeanVariance(0, 1000), size(dist)[1]))
+# end
+
 function prod(approximation::CVI, left, dist)
     rng = something(approximation.rng, Random.GLOBAL_RNG)
 
@@ -148,12 +150,7 @@ function prod(approximation::CVI, left, dist)
         Fisher = compute_fisher_matrix(approximation, T, vec(λ))
 
         # compute natural gradient
-        if approximation.use_cholesky
-            F_chol = fastcholesky!(Fisher)
-            ∇f = F_chol \ ∇logq
-        else
-            ∇f = Fisher \ ∇logq
-        end
+        ∇f = Fisher \ ∇logq
 
         # compute gradient on natural parameters
         ∇ = λ - η - as_naturalparams(T, ∇f)
