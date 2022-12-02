@@ -32,6 +32,9 @@ Arguments
  - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution
 
 !!! note 
+    Run `n_gradpoints` is not used at all in the Gaussian case
+
+!!! note 
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
 
 !!! note 
@@ -147,7 +150,7 @@ function prod(approximation::CVI, left, dist)
         
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
-        z_s = rand(rng, q_friendly, approximation.n_gradpoints)
+        z_s = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
 
         # compute gradient of log-likelihood
         logq = (x) -> mean(map((z) -> logp(z)*logpdf(as_naturalparams(T, x), z), z_s))
