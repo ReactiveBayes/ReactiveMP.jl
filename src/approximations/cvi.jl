@@ -48,17 +48,18 @@ struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     n_gradpoints::Int
     enforce_proper_messages::Val{B}
     warn::Bool
+
+    function ProdCVI(
+        rng::R, n_samples::Int, n_iterations::Int, opt::O, grad::G = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val{B} = Val(true), warn::Bool = false
+    ) where {R, O, G, B}
+        return new{R, O, G, B}(rng, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
+    end
 end
 
 function ProdCVI(n_samples::Int, n_iterations::Int, opt, grad = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val = Val(true), warn::Bool = false)
     return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
 end
 
-function ProdCVI(
-    rng::R, n_samples::Int, n_iterations::Int, opt::O, grad::G = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val{B} = Val(true), warn::Bool = false
-) where {R, O, G, B}
-    return ProdCVI{R, O, G, B}(rng, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
-end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
 const CVI = ProdCVI
