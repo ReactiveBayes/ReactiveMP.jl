@@ -60,7 +60,6 @@ function ProdCVI(n_samples::Int, n_iterations::Int, opt, grad = ForwardDiffGrad(
     return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
 end
 
-
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
 const CVI = ProdCVI
 
