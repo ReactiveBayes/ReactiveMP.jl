@@ -193,7 +193,7 @@ end
             seed = 123
             rng = StableRNG(seed)
             optimizer = Descent(0.001)
-            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 1, Val(false), false)
+            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 10, Val(false), false)
             for i in 1:3
                 m_out, m_in = MvGaussianMeanCovariance(fill(i, 2)), MvGaussianMeanCovariance(zeros(2))
                 g_cvi1 = Base.@invoke prod(meta::CVI, (ContinuousMultivariateLogPdf(2, (x) -> logpdf(m_out, x)))::AbstractContinuousGenericLogPdf, m_in::Any)
