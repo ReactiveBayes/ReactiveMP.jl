@@ -29,56 +29,35 @@ Arguments
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
  - `grad`: optional, defaults to `ForwardDiffGrad()`, structure to select how the gradient and the hessian will be computed
  - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
- - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution
+ - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution, must be of type `Val(true)/Val(false)`
 
 !!! note 
-    Run `n_gradpoints` is not used at all in the Gaussian case
+    `n_gradpoints` option is ignored in the Gaussian case
 
 !!! note 
     Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
-
-!!! note 
     Run `using Zygote` in your Julia session to enable the `ZygoteGrad()` option support for the CVI `grad` parameter.
-
-!!! note 
     Run `using DiffResults` in your Julia session to enable faster gradient computations in case if all inputs are of the `Gaussian` type.
-
 """
 struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
     n_iterations::Int
-    n_gradpoints::Int
     opt::O
     grad::G
-    warn::Bool
+    n_gradpoints::Int
     enforce_proper_messages::Val{B}
+    warn::Bool
 end
 
-get_grad(approximation::ProdCVI) = approximation.grad
-
-function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, n_gradpoints::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
-    return ProdCVI(rng, n_samples, n_iterations, n_gradpoints, opt, grad, warn, Val{enforce_proper_messages}())
+function ProdCVI(n_samples::Int, n_iterations::Int, opt, grad = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val = Val(true), warn::Bool = false)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
 end
 
-function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O, grad::G, warn::Bool, enforce_proper_messages::Bool) where {O, G}
-    return ProdCVI(rng, n_samples, n_iterations, 1, opt, grad, warn, Val{enforce_proper_messages}())
-end
-
-function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O) where {O}
-    return ProdCVI(rng, n_samples, n_iterations, 1, opt, ForwardDiffGrad(), false, true)
-end
-
-function ProdCVI(rng::AbstractRNG, n_samples::Int, n_iterations::Int, opt::O, grad::G) where {O, G}
-    return ProdCVI(rng, n_samples, n_iterations, 1, opt, grad, false, true)
-end
-
-function ProdCVI(n_samples::Int, n_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, 1, opt, ForwardDiffGrad(), warn, true)
-end
-
-function ProdCVI(n_samples::Int, n_iterations::Int, opt::O, grad::G, warn::Bool = false) where {O, G}
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, 1, opt, grad, warn, true)
+function ProdCVI(
+    rng::R, n_samples::Int, n_iterations::Int, opt::O, grad::G = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val{B} = Val(true), warn::Bool = false
+) where {R, O, G, B}
+    return ProdCVI{R, O, G, B}(rng, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
 end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
@@ -111,21 +90,11 @@ function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVecto
     lognormalizer_function = (x) -> -lognormalizer(as_naturalparams(T, x))
 
     #  compute Fisher matrix
-    F = -compute_hessian(get_grad(approximation), lognormalizer_function, vec)
+    F = -compute_hessian(approximation.grad, lognormalizer_function, vec)
 
     #  return Fisher matrix
     return F
 end
-
-# without type constraints it will create stack-overflow error
-# prod(approximation::CVI, dist, logp::F) where {F} = prod(approximation, logp, dist)
-
-# The function assumes only `logpdf` for `left` and that we can sample from `dist`
-
-# init(dist) = dist
-# function init(dist::MultivariateNormalDistributionsFamily)
-#     return MvNormalMeanCovariance(rand(NormalMeanVariance(0, 1000), size(dist)[1]))
-# end
 
 function prod(approximation::CVI, left, dist)
     rng = something(approximation.rng, Random.GLOBAL_RNG)
@@ -153,8 +122,8 @@ function prod(approximation::CVI, left, dist)
         z_s = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
 
         # compute gradient of log-likelihood
-        logq = (x) -> mean(map((z) -> logp(z) * logpdf(as_naturalparams(T, x), z), z_s))
-        ∇logq = compute_gradient(get_grad(approximation), logq, vec(λ))
+        logq = (x) -> mean((z) -> logp(z) * logpdf(as_naturalparams(T, x), z), z_s)
+        ∇logq = compute_gradient(approximation.grad, logq, vec(λ))
 
         # compute Fisher matrix and Cholesky decomposition
         Fisher = compute_fisher_matrix(approximation, T, vec(λ))

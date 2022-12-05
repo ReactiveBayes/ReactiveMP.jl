@@ -188,6 +188,16 @@ prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericL
 
 prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where {F <: AbstractContinuousGenericLogPdf} = push!(left, right)
 
+## Symmetric CVI prod method
+
+function prod(approximation::CVI, left, dist::AbstractContinuousGenericLogPdf)
+    return prod(approximation, dist, left) # We swap arguments in case if `AbstractContinuousGenericLogPdf` on the right hand side
+end
+
+function prod(approximation::CVI, left::AbstractContinuousGenericLogPdf, dist::AbstractContinuousGenericLogPdf)
+    error("The `CVI` approximation expects at least on of the arguments to be a distribution")
+end
+
 ## Utility methods for tests 
 
 # These methods are inaccurate and relies on various approximation methods, which may fail in different scenarios
