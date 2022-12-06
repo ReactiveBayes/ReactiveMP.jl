@@ -142,8 +142,8 @@ function randomprocess(
 )
     rng = covariance_strategy.strategy.rng 
     num_inducing = covariance_strategy.strategy.n_inducing
-    isnothing(num_inducing) ? pos = nothing : pos = sort(randperm(rng,length(train_input))[1:num_inducing])
-    isnothing(pos) ? inducing_input = nothing : inducing_input = train_input[pos] # inducing points 
+    isempty(num_inducing) ? pos = Float64[] : pos = sort(randperm(rng,length(train_input))[1:num_inducing])
+    isempty(pos) ? inducing_input = Float64[] : inducing_input = train_input[pos] # inducing points 
     return RandomProcess(
         name,
         test_input,
@@ -249,9 +249,9 @@ function marginal_prod_fn(randomprocess::RandomProcess)
         likelihood_messages = message_vector[2:end]
         m_right,cov_right = make_multivariate_message(likelihood_messages)
         
-        extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing, true)
+        extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
         m, K= predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
-        extractmatrix!(cov_strategy, kernelf, test, K, inducing, false)
+        extractmatrix!(cov_strategy, kernelf, test, K, inducing)
         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, m_right, cov_right, inducing, cov_strategy),false,false)
     end
 end

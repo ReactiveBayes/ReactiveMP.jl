@@ -23,7 +23,7 @@ import KernelFunctions: kernelmatrix, Kernel
     λ_init = naturalparams(msg_in)
     #use "inv" instead of "cholinv"
     logp_nc(x) = -1/2 * (y - meanf.(train))' * inv_cov_mat(cov_strategy,kernelfunc,train, Σ, x, inducing)*(y - meanf.(train)) + 1/2 * logdet(inv_cov_mat(cov_strategy,kernelfunc,train, Σ, x, inducing)) - length(train)/2 * log(2π)
-    λ = renderCVI(logp_nc, n_iter, optimizer, RNG, λ_init, msg_in)
+    λ = render_cvi(logp_nc, n_iter, optimizer, RNG, λ_init, msg_in)
     return convert(NormalMeanVariance, λ)
 end
 
@@ -56,7 +56,7 @@ end
     λ_init = naturalparams(msg_in)
     #use "inv" instead of "cholinv"
     logp_nc(x) = -1/2 * (y - meanf.(train))' * inv_cov_mat(cov_strategy,kernelfunc,train, Σ, x, inducing)*(y - meanf.(train)) + 1/2 * logdet(inv_cov_mat(cov_strategy,kernelfunc,train, Σ, x, inducing)) - length(train)/2 * log(2π)
-    λ = renderCVI(logp_nc, n_iter, optimizer, RNG, λ_init, msg_in)
+    λ = render_cvi(logp_nc, n_iter, optimizer, RNG, λ_init, msg_in)
     return convert(MvNormalMeanCovariance, λ)
 end
 
@@ -94,3 +94,7 @@ function inv_cov_mat(::CovarianceMatrixStrategy{FullyIndependentTrainingConditio
 
     return inv(Λ) - inv(Λ) * Kfu * inv(Kuu + Kfu' *inv(Λ)*Kfu) * Kfu' * inv(Λ) + 1e-5*diageye(length(input))
 end
+
+
+#function for computing the derivative of the log-likelihood 
+# function dllh()
