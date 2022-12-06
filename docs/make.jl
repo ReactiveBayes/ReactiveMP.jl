@@ -24,6 +24,9 @@ makedocs(
             ],
             "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
+            "Algebra utils"       => [
+                "Common" => "lib/algebra/common.md"
+            ],
             "Exported methods"    => "lib/methods.md"
         ],
         "Contributing" => "extra/contributing.md",

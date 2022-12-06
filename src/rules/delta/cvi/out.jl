@@ -1,5 +1,5 @@
 
-@rule DeltaFn(:out, Marginalisation) (q_ins::FactorizedJoint{P}, meta::DeltaMeta{M}) where {P <: NTuple{1}, M <: CVIApproximation} = begin
+@rule DeltaFn(:out, Marginalisation) (q_ins::FactorizedJoint{P}, meta::DeltaMeta{M}) where {P <: NTuple{1}, M <: CVI} = begin
     method            = getmethod(meta)
     q_sample_friendly = ReactiveMP.logpdf_sample_friendly(q_ins[1])[2]
     rng               = something(method.rng, Random.GLOBAL_RNG)
@@ -8,7 +8,7 @@
     return ProdFinal(SampleList(q_out))
 end
 
-@rule DeltaFn(:out, Marginalisation) (q_ins::FactorizedJoint, meta::DeltaMeta{M}) where {M <: CVIApproximation} = begin
+@rule DeltaFn(:out, Marginalisation) (q_ins::FactorizedJoint, meta::DeltaMeta{M}) where {M <: CVI} = begin
     method = getmethod(meta)
     q_ins_sample_friendly = map(marginal -> ReactiveMP.logpdf_sample_friendly(marginal)[2], getmultipliers(q_ins))
     rng = something(method.rng, Random.GLOBAL_RNG)

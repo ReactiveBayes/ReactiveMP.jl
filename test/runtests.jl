@@ -210,6 +210,7 @@ end
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
     addtests(testrunner, "approximations/test_linearization.jl")
+    addtests(testrunner, "approximations/test_cvi.jl")
 
     addtests(testrunner, "constraints/prod/test_prod_analytical.jl")
     addtests(testrunner, "constraints/prod/test_prod_final.jl")
@@ -248,7 +249,6 @@ end
 
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
-    addtests(testrunner, "nodes/delta/cvi/test_cvi.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
     addtests(testrunner, "nodes/test_bifm_helper.jl")

@@ -288,7 +288,7 @@ import ReactiveMP: convert_eltype
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(UnivariateNormalNaturalParameters(1, -2)) ≈ (log(2) - 1 / 8)
+            @test lognormalizer(UnivariateNormalNaturalParameters(1, -2)) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "logpdf" begin
@@ -332,7 +332,7 @@ import ReactiveMP: convert_eltype
 
         @testset "lognormalizer" begin
             mt = zeros(Float64, 1, 1) .- 2.0
-            @test lognormalizer(MultivariateNormalNaturalParameters([1], mt)) ≈ (log(2) - 1 / 8)
+            @test lognormalizer(MultivariateNormalNaturalParameters([1], mt)) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "isproper" begin

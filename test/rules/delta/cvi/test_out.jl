@@ -30,7 +30,7 @@ end
 @testset "rules:Delta:cvi:out" begin
     seed = 123
     rng = MersenneTwister(seed)
-    test_meta = DeltaMeta(method = CVIApproximation(rng, 1000, 1, EmptyOptimizer()))
+    test_meta = DeltaMeta(method = CVI(rng, 1000, 1, EmptyOptimizer()))
 
     @testset "Exact value comparison (Pointmass)" begin
         for i in 1:100
