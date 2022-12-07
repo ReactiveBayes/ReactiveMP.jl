@@ -15,11 +15,11 @@ end
 
 # when we have CVI meta 
 @rule GaussianProcess(:out, Marginalisation) (q_meanfunc::PointMass, q_kernelfunc::PointMass, 
-                                    q_params::Any, meta::CVIApproximation) = begin 
+                                    q_params::Any, meta::CVI) = begin 
     return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = q_params)
 end
 
 @rule GaussianProcess(:out, Marginalisation) (q_meanfunc::PointMass, q_kernelfunc::PointMass, 
-                                    m_params::Any, meta::CVIApproximation) = begin 
+                                    m_params::Any, meta::CVI) = begin 
     return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
 end
