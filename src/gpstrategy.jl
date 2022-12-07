@@ -5,6 +5,8 @@ export DeterministicInducingConditional, DIC, SoR, SubsetOfRegressors
 export DeterministicTrainingConditional, DTC
 export FullyIndependentTrainingConditional, FITC
 
+using KernelFunctions
+
 import KernelFunctions: kernelmatrix, kernelmatrix!,Kernel 
 abstract type AbstractCovarianceStrategyType end 
 
@@ -24,6 +26,21 @@ end
 
 function getcache(cache::GPCache, label::Tuple{Symbol, Int})
     return get!(() -> Vector{Float64}(undef, label[2]), cache.cache_vectors, label)
+end
+
+function KernelFunctions.kernelmatrix!(cache::GPCache, label::Symbol, kernel, x, y)
+    result = getcache(cache, (label, (length(x), length(y))))
+    return kernelmatrix!(result, kernel, x, y)
+end
+
+function mul_A_B_At!(cache::GPCache, A, B)
+    AB = getcache(cache, (:mul_A_B_At!_AB, (size(A, 1), size(B, 2))))
+    ABAt = getcache(cache, (:mul_A_B_At!_ABAt, (size(AB, 1), size(A, 1))))
+
+    mul!(AB, A, B)
+    mul!(ABAt, AB, A')
+
+    return ABAt
 end
 
 #------- Cache  ------- #
@@ -123,13 +140,12 @@ function dtc(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditi
 
     cache = gpstrategy.strategy.cache
 
-    Kfu_size = (length(xtest), length(x_u))
-    Kfu = getcache(cache, (:Kfu, Kfu_size))
-    Kff_size = (length(xtest), length(xtest))
-    Kff = getcache(cache, (:Kff, Kff_size))
+    Kfu = kernelmatrix!(cache, :Kfu, kernelfunc, xtest, x_u) # cross covariance K_*u between test and inducing points
+    Kff = kernelmatrix!(cache, :Kff, kernelfunc, xtest, xtest) # K** the covariance of the test points  
 
-    Kfu = kernelmatrix!(Kfu, kernelfunc,xtest,x_u) # cross covariance K_*u between test and inducing points
-    Kff = kernelmatrix!(Kff, kernelfunc,xtest,xtest) # K** the covariance of the test points  
+    invΛ = gpstrategy.strategy.invΛ
+    Kuf = gpstrategy.strategy.Kuf
+    Σ = gpstrategy.strategy.Σ
 
     xtest_transformed = getcache(cache, (:xtest, length(xtest)))
     xtrain_transformed = getcache(cache, (:xtrain, length(xtrain)))
@@ -137,18 +153,20 @@ function dtc(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditi
     map!(meanfunc, xtest_transformed, xtest) # xtest_transformed = meanfunc.(xtest)
     map!((y, x) -> y - meanfunc(x), xtrain_transformed, y, xtrain) # xtrain_transformed = y .- meanfunc.(xtrain)
 
-    result1 = getcache(cache, (:result1, size(gpstrategy.strategy.invΛ, 1)))
-    result2 = getcache(cache, (:result2, size(gpstrategy.strategy.Kuf, 1)))
-    result3 = getcache(cache, (:result3, size(gpstrategy.strategy.Σ, 1)))
+    result1 = getcache(cache, (:result1, size(invΛ, 1)))
+    result2 = getcache(cache, (:result2, size(Kuf, 1)))
+    result3 = getcache(cache, (:result3, size(Σ, 1)))
     result4 = getcache(cache, (:result4, size(Kfu, 1)))
 
-    mul!(result1, gpstrategy.strategy.invΛ, xtrain_transformed)
-    mul!(result2, gpstrategy.strategy.Kuf, result1)
-    mul!(result3, gpstrategy.strategy.Σ, result2)
+    mul!(result1, invΛ, xtrain_transformed)
+    mul!(result2, Kuf, result1)
+    mul!(result3, Σ, result2)
     mul!(result4, Kfu, result3)
 
     μ_DTC = xtest_transformed + result4
-    Σ_DTC = Kff - Kfu * gpstrategy.strategy.invKuu * Kfu' + Kfu * gpstrategy.strategy.Σ * Kfu'
+
+    Σ_DTC = Kff - mul_A_B_At!(cache, Kfu, gpstrategy.strategy.invKuu) 
+    Σ_DTC = Σ_DTC + mul_A_B_At!(cache, Kfu, gpstrategy.strategy.Σ)
     return μ_DTC, Σ_DTC 
 end
 
