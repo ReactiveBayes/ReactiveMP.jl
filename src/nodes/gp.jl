@@ -1,16 +1,16 @@
 export GaussianProcess, ProcessMeta 
 
 # Create GP structure 
-struct GaussianProcess
-    meanfunction        ::Function 
-    kernelfunction      ::Kernel
-    finitemarginal      
-    testinput           ::Array{Float64, 1}    
-    traininput          ::Array{Float64, 1}
-    observation         ::Array{Float64, 1}
-    observation_noise   ::Array{Float64, 2}     
-    inducing_input      ::Array{Float64, 1}
-    covariance_strategy ::AbstractCovarianceStrategyType
+struct GaussianProcess{F, K, M, I1, I2, I3, I4, I5, S}
+    meanfunction        ::F
+    kernelfunction      ::K
+    finitemarginal      ::M  
+    testinput           ::I1
+    traininput          ::I2
+    observation         ::I3
+    observation_noise   ::I4
+    inducing_input      ::I5
+    covariance_strategy ::S
 end
 
 struct ProcessMeta 

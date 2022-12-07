@@ -8,6 +8,26 @@ export FullyIndependentTrainingConditional, FITC
 import KernelFunctions: kernelmatrix, kernelmatrix!,Kernel 
 abstract type AbstractCovarianceStrategyType end 
 
+
+#------- Cache  ------- #
+
+struct GPCache
+    cache_matrices::Dict{Tuple{Symbol, Tuple{Int, Int}}, Matrix{Float64}}
+    cache_vectors::Dict{Tuple{Symbol, Int}, Vector{Float64}}
+end
+
+GPCache() = GPCache(Dict{Tuple{Symbol, Tuple{Int, Int}}, Matrix{Float64}}(), Dict{Tuple{Symbol, Int}, Vector{Float64}}())
+
+function getcache(cache::GPCache, label::Tuple{Symbol, Tuple{Int, Int}})
+    return get!(() -> Matrix{Float64}(undef, label[2]), cache.cache_matrices, label)
+end
+
+function getcache(cache::GPCache, label::Tuple{Symbol, Int})
+    return get!(() -> Vector{Float64}(undef, label[2]), cache.cache_vectors, label)
+end
+
+#------- Cache  ------- #
+
 struct CovarianceMatrixStrategy{S} <: AbstractCovarianceStrategyType
     strategy :: S
 end
@@ -42,15 +62,17 @@ DeterministicInducingConditional(n_inducing) = DeterministicInducingConditional(
 mutable struct DeterministicTrainingConditional{R}
     n_inducing :: Int
     rng        :: R
-    Kuu        :: Array{Float64}   
-    Kuf        :: AbstractArray  # this is a vector of matrices. It stores 2 matrices.
-    Σ          :: AbstractArray    
-    invKuu     :: Array{Float64} 
-    invΛ       :: AbstractArray
+    Kuu   
+    Kuf   
+    Σ     
+    invKuu
+    invΛ  
+    cache      :: GPCache
 end
+
 const DTC = DeterministicTrainingConditional
 
-DeterministicTrainingConditional(n_inducing) = DeterministicTrainingConditional(n_inducing, MersenneTwister(1),Float64[1;;],Float64[1.;;],Float64[1;;],Float64[1;;], Float64[1.;;])
+DeterministicTrainingConditional(n_inducing) = DeterministicTrainingConditional(n_inducing, MersenneTwister(1), Float64[1;;],Float64[1;;],Float64[1;;],Float64[1;;],Float64[1;;],GPCache())
 
 # -------------- FITC ----------------- #
 mutable struct FullyIndependentTrainingConditional{R}
@@ -98,10 +120,34 @@ end
 
 #### DTC strategy 
 function dtc(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditional},kernelfunc::Kernel, meanfunc::Function, xtrain::Array{Float64}, xtest::Array{Float64}, y::Array{Float64}, x_u::Array{Float64})
-    Kfu = kernelmatrix(kernelfunc,xtest,x_u) # cross covariance K_*u between test and inducing points
-    Kff = kernelmatrix(kernelfunc,xtest,xtest) # K** the covariance of the test points  
 
-    μ_DTC = meanfunc.(xtest) + Kfu * gpstrategy.strategy.Σ * gpstrategy.strategy.Kuf * gpstrategy.strategy.invΛ * (y - meanfunc.(xtrain))
+    cache = gpstrategy.strategy.cache
+
+    Kfu_size = (length(xtest), length(x_u))
+    Kfu = getcache(cache, (:Kfu, Kfu_size))
+    Kff_size = (length(xtest), length(xtest))
+    Kff = getcache(cache, (:Kff, Kff_size))
+
+    Kfu = kernelmatrix!(Kfu, kernelfunc,xtest,x_u) # cross covariance K_*u between test and inducing points
+    Kff = kernelmatrix!(Kff, kernelfunc,xtest,xtest) # K** the covariance of the test points  
+
+    xtest_transformed = getcache(cache, (:xtest, length(xtest)))
+    xtrain_transformed = getcache(cache, (:xtrain, length(xtrain)))
+
+    map!(meanfunc, xtest_transformed, xtest) # xtest_transformed = meanfunc.(xtest)
+    map!((y, x) -> y - meanfunc(x), xtrain_transformed, y, xtrain) # xtrain_transformed = y .- meanfunc.(xtrain)
+
+    result1 = getcache(cache, (:result1, size(gpstrategy.strategy.invΛ, 1)))
+    result2 = getcache(cache, (:result2, size(gpstrategy.strategy.Kuf, 1)))
+    result3 = getcache(cache, (:result3, size(gpstrategy.strategy.Σ, 1)))
+    result4 = getcache(cache, (:result4, size(Kfu, 1)))
+
+    mul!(result1, gpstrategy.strategy.invΛ, xtrain_transformed)
+    mul!(result2, gpstrategy.strategy.Kuf, result1)
+    mul!(result3, gpstrategy.strategy.Σ, result2)
+    mul!(result4, Kfu, result3)
+
+    μ_DTC = xtest_transformed + result4
     Σ_DTC = Kff - Kfu * gpstrategy.strategy.invKuu * Kfu' + Kfu * gpstrategy.strategy.Σ * Kfu'
     return μ_DTC, Σ_DTC 
 end
@@ -152,7 +198,9 @@ function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicIndu
 end
 
 #--------------- DTC strategy -------------------------#
-function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditional}, kernel::Kernel, x_train::Array{Float64}, Σ_noise::AbstractArray, x_induc::Array{Float64})
+function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditional}, kernel::Kernel, x_train::AbstractArray, Σ_noise::AbstractArray, x_induc::AbstractArray)
+    cache = gpstrategy.strategy.cache
+
     if length(gpstrategy.strategy.Kuu) == 1
         Kuu = kernelmatrix(kernel,x_induc,x_induc) 
         Kuf = kernelmatrix(kernel,x_induc,x_train) #cross covariance between inducing and training points 
@@ -165,7 +213,9 @@ function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrai
         gpstrategy.strategy.invΛ = invΛ
         gpstrategy.strategy.Kuu = Kuu
     else 
+        Kuu = gpstrategy.strategy.Kuu
         Kuf = kernelmatrix(kernel,x_induc,x_train) #cross covariance between inducing and training points 
+
         invΛ = cholinv(Diagonal(Σ_noise))
         Σ = cholinv(gpstrategy.strategy.Kuu + Kuf * invΛ * Kuf') 
 
