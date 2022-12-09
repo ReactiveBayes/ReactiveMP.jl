@@ -25,11 +25,11 @@ Arguments
  - `rng`: random number generator
  - `n_samples`: number of samples to use for statistics approximation
  - `n_iterations`: number of iteration for the natural parameters gradient optimization
- - `n_gradpoints`: optional, defaults to 1, number of points to estimate gradient of the likelihood (dist*logp)
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
  - `grad`: optional, defaults to `ForwardDiffGrad()`, structure to select how the gradient and the hessian will be computed
- - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
+ - `n_gradpoints`: optional, defaults to 1, number of points to estimate gradient of the likelihood (dist*logp)
  - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution, must be of type `Val(true)/Val(false)`
+ - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
 
 !!! note 
     `n_gradpoints` option is ignored in the Gaussian case
