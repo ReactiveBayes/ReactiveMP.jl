@@ -45,7 +45,7 @@ end
 
 # Makes it hard to use your computer if Julia occupies all cpus, so we max at 4
 # GitHub actions has 2 cores in most of the cases 
-addprocs(max(Sys.CPU_THREADS, 4)) 
+addprocs(max(Sys.CPU_THREADS, 4))
 
 @everywhere using Test, Documenter, ReactiveMP, Distributions
 @everywhere using TestSetExtensions
