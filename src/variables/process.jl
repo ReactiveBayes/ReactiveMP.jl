@@ -251,7 +251,7 @@ function marginal_prod_fn(randomprocess::RandomProcess)
         
         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
         m, K= predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
-        extractmatrix!(cov_strategy, kernelf, test, K, inducing)
+        extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, m_right, cov_right, inducing, cov_strategy),false,false)
     end
 end
