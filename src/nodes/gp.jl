@@ -28,5 +28,17 @@ end
     meanfunc = q_meanfunc.point 
     K = kernelmatrix(kernel(exp.(θ)),xtest,xtest)
     N = length(xtest)
-    return ((y - meanfunc.(xtest))' * cholinv(K + Σ) * (y - meanfunc.(xtest)) + logdet(K + Σ + 1e-6*diageye(length(y))) + N*log(2π))/2
+    return ((y - meanfunc.(xtest))' * cholinv(Σ) * (y - meanfunc.(xtest)) + logdet(Σ + 1e-6*diageye(length(y))) + N*log(2π))/2
+end
+
+function Distributions.entropy(pm::PointMass{F}) where {F <: Function}
+    return ReactiveMP.CountingReal(Float64,-1)
+end
+
+function Distributions.entropy(pm::PointMass{F}) where {F <: Kernel}
+    return ReactiveMP.CountingReal(Float64,-1)
+end
+
+function ReactiveMP.entropy(p::GaussianProcess)
+    return ReactiveMP.entropy(p.finitemarginal)
 end
