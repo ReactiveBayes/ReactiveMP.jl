@@ -92,7 +92,7 @@ function functional_dependencies(::RequireMarginalFunctionalDependencies, factor
         (factornode.out, factornode.inputs)
     elseif 2 < iindex <= N + 2
         # k'th input depends on:
-        (factornode.out, )
+        (factornode.out,)
     else
         error("Bad index in functional_dependencies for SwitchNode")
     end
@@ -113,56 +113,63 @@ function functional_dependencies(::RequireMarginalFunctionalDependencies, factor
     return message_dependencies, marginal_dependencies
 end
 
-
 # create message observable for output or switch edge without pipeline constraints (the message towards the inputs are fine by default behaviour, i.e. they depend only on switch and output and no longer on all other inputs)
-function get_messages_observable(factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}) where {N, F <: FullFactorisation, P <: SwitchNodeFunctionalDependencies}
-    output_or_switch_interface  = messages[1]
+function get_messages_observable(
+    factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
+) where {N, F <: FullFactorisation, P <: SwitchNodeFunctionalDependencies}
+    output_or_switch_interface = messages[1]
     inputsinterfaces = messages[2]
-    
+
     msgs_names = Val{(name(output_or_switch_interface), name(inputsinterfaces[1]))}
     msgs_observable =
-    combineLatest((messagein(output_or_switch_interface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
-    map_to((messagein(output_or_switch_interface), ManyOf(map((input) -> messagein(input), inputsinterfaces))))
+        combineLatest((messagein(output_or_switch_interface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
+        map_to((messagein(output_or_switch_interface), ManyOf(map((input) -> messagein(input), inputsinterfaces))))
     return msgs_names, msgs_observable
 end
 
 # create an observable that is used to compute the switch with pipeline constraints
-function get_messages_observable(factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+function get_messages_observable(
+    factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
+) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     switchinterface  = messages[1]
     inputsinterfaces = messages[2]
 
     msgs_names = Val{(name(switchinterface), name(inputsinterfaces[1]))}
     msgs_observable =
-    combineLatest((messagein(switchinterface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
+        combineLatest((messagein(switchinterface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
         map_to((messagein(switchinterface), ManyOf(map((input) -> messagein(input), inputsinterfaces))))
     return msgs_names, msgs_observable
 end
 
 # create an observable that is used to compute the output with pipeline constraints
-function get_messages_observable(factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NTuple{N, IndexedNodeInterface}}) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+function get_messages_observable(
+    factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NTuple{N, IndexedNodeInterface}}
+) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     inputsinterfaces = messages[1]
 
-    msgs_names = Val{(name(inputsinterfaces[1]), )}
-    msgs_observable =
-    combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew()) |>
-        map_to((ManyOf(map((input) -> messagein(input), inputsinterfaces)),))
+    msgs_names = Val{(name(inputsinterfaces[1]),)}
+    msgs_observable = combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew()) |> map_to((ManyOf(map((input) -> messagein(input), inputsinterfaces)),))
     return msgs_names, msgs_observable
 end
 
 # create an observable that is used to compute the input with pipeline constraints
-function get_messages_observable(factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface}) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+function get_messages_observable(
+    factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface}
+) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     outputinterface = messages[1]
 
-    msgs_names = Val{(name(outputinterface), )}
-    msgs_observable = combineLatestUpdates((messagein(outputinterface), ), PushNew())
+    msgs_names = Val{(name(outputinterface),)}
+    msgs_observable = combineLatestUpdates((messagein(outputinterface),), PushNew())
     return msgs_names, msgs_observable
 end
 
-function get_marginals_observable(factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, marginals::Tuple{NodeInterface}) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+function get_marginals_observable(
+    factornode::SwitchNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, marginals::Tuple{NodeInterface}
+) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     switchinterface = marginals[1]
 
-    marginal_names       = Val{(name(switchinterface), )}
-    marginals_observable = combineLatestUpdates((getmarginal(connectedvar(switchinterface), IncludeAll()), ), PushNew())
+    marginal_names       = Val{(name(switchinterface),)}
+    marginals_observable = combineLatestUpdates((getmarginal(connectedvar(switchinterface), IncludeAll()),), PushNew())
 
     return marginal_names, marginals_observable
 end

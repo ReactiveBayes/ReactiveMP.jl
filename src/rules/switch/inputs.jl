@@ -9,11 +9,11 @@ end
     # check whether mean is one-hot
     p = mean(q_switch)
     @assert sum(p) ≈ 1 "The selector variable connected to the switch node is not normalized."
-    @assert all(x-> x==1 || x==0, p) "The selector variable connected to the switch node is not one-hot encoded."
-    
+    @assert all(x -> x == 1 || x == 0, p) "The selector variable connected to the switch node is not one-hot encoded."
+
     # get selected cluster
     kmax = argmax(p)
-    
+
     if k == kmax
         @logscale 0
         m_out
