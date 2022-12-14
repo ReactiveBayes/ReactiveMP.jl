@@ -1,7 +1,7 @@
 abstract type AbstractAddon end
 abstract type AbstractAddonProd end
 
-import Base: string, show
+import Base: string, show, +
 
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Any, ::Any) = nothing
 multiply_addons(::Nothing, addon::Any, ::Any, ::Missing, ::Any) = addon
@@ -19,6 +19,11 @@ function multiply_addons(left_addons::Tuple, right_addons::Tuple, new_dist, left
         multiply_addons(left_addon, right_addon, new_dist, left_dist, right_dist)
     end
 end
+
+# Nice functionality, allows to write `addons = Addon1() + Addon2() + ...`
++(left::AbstractAddon, right::AbstractAddon) = (left, right)
++(left::NTuple{N, AbstractAddon}, right::AbstractAddon) where {N} = (left..., right)
++(left::AbstractAddon, right::NTuple{N, AbstractAddon}) where {N} = (left, right...)
 
 # TODO: This method is invoked on empty tuples, which messes up printing of tuples
 # function string(addons::NTuple{N, AbstractAddon}) where {N}

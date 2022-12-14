@@ -13,7 +13,14 @@ AddonLogScale() = AddonLogScale(nothing)
 struct AddonProdLogScale <: AbstractAddonProd end
 
 getlogscale(addon::AddonLogScale) = addon.logscale
-getlogscale(addons::NTuple{N, AbstractAddon}) where {N} = mapreduce(getlogscale, +, filter(addon -> addon isa AddonLogScale, addons))
+
+function getlogscale(addons::NTuple{N, AbstractAddon}) where {N}
+    logscales = filter(addon -> addon isa AddonLogScale, addons)
+    if length(logscales) === 0
+        error("Log-scale addon is not available.")
+    end
+    return mapreduce(getlogscale, +, logscales)
+end
 
 # TODO: for later review, do we need such a fallback
 # getlogscale(::AbstractAddon) = 0
