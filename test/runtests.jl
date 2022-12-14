@@ -43,7 +43,9 @@ end
 # Example usage of a reduced testset
 # julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
 
-addprocs(Sys.CPU_THREADS)
+# Makes it hard to use your computer if Julia occupies all cpus, so we max at 4
+# GitHub actions has 2 cores in most of the cases 
+addprocs(max(Sys.CPU_THREADS, 4))
 
 @everywhere using Test, Documenter, ReactiveMP, Distributions
 @everywhere using TestSetExtensions
@@ -212,6 +214,7 @@ end
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
     addtests(testrunner, "approximations/test_linearization.jl")
+    addtests(testrunner, "approximations/test_cvi.jl")
 
     addtests(testrunner, "constraints/prod/test_prod_analytical.jl")
     addtests(testrunner, "constraints/prod/test_prod_final.jl")
@@ -251,7 +254,6 @@ end
 
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
-    addtests(testrunner, "nodes/delta/cvi/test_cvi.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
     addtests(testrunner, "nodes/test_bifm_helper.jl")

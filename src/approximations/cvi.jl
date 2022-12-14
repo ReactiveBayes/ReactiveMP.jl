@@ -1,6 +1,7 @@
-export CVIApproximation, CVI
+export CVI, ProdCVI, ForwardDiffGrad
 
 using Random
+using LinearAlgebra
 
 """
     cvi_update!(opt, λ, ∇)
@@ -15,79 +16,130 @@ cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 
 """
-    CVIApproximation
+    ProdCVI
 
-The `CVIApproximation` structure defines the approximation method of the `Delta` factor node.
-This method performs an approximation of the messages through the `Delta` factor node with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
+The `ProdCVI` structure defines the approximation method hyperparameters of the `prod(approximation::CVI, logp::F, dist)`.
+This method performs an approximation of the product of the `dist` and `logp` with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
 
 Arguments
  - `rng`: random number generator
  - `n_samples`: number of samples to use for statistics approximation
- - `num_iterations`: number of iteration for the natural parameters gradient optimization
+ - `n_iterations`: number of iteration for the natural parameters gradient optimization
  - `opt`: optimizer, which will be used to perform the natural parameters gradient optimization step
+ - `grad`: optional, defaults to `ForwardDiffGrad()`, structure to select how the gradient and the hessian will be computed
+ - `n_gradpoints`: optional, defaults to 1, number of points to estimate gradient of the likelihood (dist*logp)
+ - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution, must be of type `Val(true)/Val(false)`
  - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
 
 !!! note 
-    Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
+    `n_gradpoints` option is ignored in the Gaussian case
 
+!!! note 
+    Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
+    Run `using Zygote` in your Julia session to enable the `ZygoteGrad()` option support for the CVI `grad` parameter.
+    Run `using DiffResults` in your Julia session to enable faster gradient computations in case if all inputs are of the `Gaussian` type.
 """
-struct CVIApproximation{R, O} <: AbstractApproximationMethod
+struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     rng::R
     n_samples::Int
-    num_iterations::Int
+    n_iterations::Int
     opt::O
+    grad::G
+    n_gradpoints::Int
+    enforce_proper_messages::Val{B}
     warn::Bool
+
+    function ProdCVI(
+        rng::R, n_samples::Int, n_iterations::Int, opt::O, grad::G = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val{B} = Val(true), warn::Bool = false
+    ) where {R, O, G, B}
+        return new{R, O, G, B}(rng, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
+    end
 end
 
-function CVIApproximation(rng::AbstractRNG, n_samples::Int, num_iterations::Int, opt::O) where {O}
-    return CVIApproximation(rng, n_samples, num_iterations, opt, false)
+function ProdCVI(n_samples::Int, n_iterations::Int, opt, grad = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val = Val(true), warn::Bool = false)
+    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
 end
 
-function CVIApproximation(n_samples::Int, num_iterations::Int, opt::O, warn::Bool = false) where {O}
-    return CVIApproximation(Random.GLOBAL_RNG, n_samples, num_iterations, opt, warn)
-end
-
-"""
-Alias for the `CVIApproximation` method.
-
-See also: [`CVIApproximation`](@ref)
-"""
-const CVI = CVIApproximation
+"""Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
+const CVI = ProdCVI
 
 #---------------------------
 # CVI implementations
 #---------------------------
 
-function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where {F}
-    η = naturalparams(initial)
-    λ = naturalparams(initial)
+struct ForwardDiffGrad end
+
+compute_derivative(::ForwardDiffGrad, f::F, value::Real) where {F}       = ForwardDiff.derivative(f, value)
+compute_gradient(::ForwardDiffGrad, f::F, vec::AbstractVector) where {F} = ForwardDiff.gradient(f, vec)
+compute_hessian(::ForwardDiffGrad, f::F, vec::AbstractVector) where {F}  = ForwardDiff.hessian(f, vec)
+
+function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
+    first_derivative = (x) -> compute_derivative(grad, logp, x)
+    return compute_derivative(grad, first_derivative, z_s)
+end
+
+# We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
+enforce_proper_message(::Val{true}, λ::NaturalParameters, η::NaturalParameters) = isproper(λ - η)
+
+# We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
+enforce_proper_message(::Val{false}, λ::NaturalParameters, η::NaturalParameters) = true
+
+function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVector) where {T <: NaturalParameters}
+
+    # specify lognormalizer function
+    lognormalizer_function = (x) -> -lognormalizer(as_naturalparams(T, x))
+
+    #  compute Fisher matrix
+    F = -compute_hessian(approximation.grad, lognormalizer_function, vec)
+
+    #  return Fisher matrix
+    return F
+end
+
+function prod(approximation::CVI, left, dist)
+    rng = something(approximation.rng, Random.GLOBAL_RNG)
+
+    logp = (x) -> logpdf(left, x)
+
+    # Natural parameters of incoming distribution message
+    η = naturalparams(dist)
+
+    # Natural parameter type of incoming distribution
     T = typeof(η)
 
-    rng = something(approximation.rng, Random.GLOBAL_RNG)
-    opt = approximation.opt
-    its = approximation.num_iterations
+    # Initial parameters of projected distribution
+    λ = naturalparams(dist)
 
+    # Initialize update flag
     hasupdated = false
 
-    A = (vec_params) -> lognormalizer(as_naturalparams(T, vec_params))
-    gradA = (vec_params) -> ForwardDiff.gradient(A, vec_params)
-    Fisher = (vec_params) -> ForwardDiff.jacobian(gradA, vec_params)
+    for _ in 1:(approximation.n_iterations)
 
-    for _ in 1:its
+        # create distribution to sample from and sample from it
+
         q = convert(Distribution, λ)
         _, q_friendly = logpdf_sample_friendly(q)
+        z_s = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
 
-        z_s = rand(rng, q_friendly)
+        # compute gradient of log-likelihood
+        logq = (x) -> mean((z) -> logp(z) * logpdf(as_naturalparams(T, x), z), z_s)
+        ∇logq = compute_gradient(approximation.grad, logq, vec(λ))
 
-        logq = (vec_params) -> logpdf(as_naturalparams(T, vec_params), z_s)
-        ∇logq = ForwardDiff.gradient(logq, vec(λ))
+        # compute Fisher matrix and Cholesky decomposition
+        Fisher = compute_fisher_matrix(approximation, T, vec(λ))
 
-        ∇f = Fisher(vec(λ)) \ (logp_nc(z_s) .* ∇logq)
+        # compute natural gradient
+        ∇f = Fisher \ ∇logq
+
+        # compute gradient on natural parameters
         ∇ = λ - η - as_naturalparams(T, ∇f)
-        updated = as_naturalparams(T, cvi_update!(opt, λ, ∇))
 
-        if isproper(updated)
-            λ = updated
+        # perform gradient descent step
+        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+
+        # check whether updated natural parameters are proper
+        if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)
+            λ = λ_new
             hasupdated = true
         end
     end
@@ -96,5 +148,5 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial) where 
         @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
     end
 
-    return λ
+    return convert(Distribution, λ)
 end
