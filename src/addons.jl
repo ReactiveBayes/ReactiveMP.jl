@@ -1,5 +1,6 @@
 import MacroTools: @capture
 import Base: string, show, +
+import TupleTools
 
 abstract type AbstractAddon end
 abstract type AbstractAddonProd end
@@ -41,7 +42,7 @@ macro invokeaddon(Type, callback)
                 local $addon = () -> $(Type)($(callback))
                 local $value = $(addon)()
                 # Here we replace the previous value of the addon at the specified index
-                TupleTools.insertat(_addons, $index, ($value,))
+                ReactiveMP.TupleTools.insertat(_addons, $index, ($value,))
             else
                 _addons
             end
