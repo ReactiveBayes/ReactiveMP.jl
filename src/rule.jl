@@ -303,14 +303,25 @@ macro rule(fform, lambda)
         $(
             rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
-                    _addons = getaddons()
-                    _messagebody = () -> begin
+                    local _addons = getaddons()
+                    # This trick allows us to use arbitrary control-flow logic
+                    # inside rules, e.g. if-else-returns etc, however 
+                    # it makes it not-type-stable with respect to addons
+                    # on my (bvdmitri) benchmarks it accounted for 2-3% slowdown
+                    # when using addons, which is IMO acceptable, but can be changed 
+                    # in the future by banning return statements from the `@rule` macro
+                    # I'm against of manually removing return statements as 
+                    # it is very hard to implement correctly, I would rather make it more stable 
+                    # when fast but error-prone
+                    # Another way to speed-up this part a little bit would be to refactor addons 
+                    # in such a way that their structure is always known to the compiler and type stable
+                    local _messagebody = () -> begin
                         $(on_index_init)
                         $(m_init_block...)
                         $(q_init_block...)
                         $(body)
                     end
-                    _message = _messagebody()
+                    local _message = _messagebody()
                     return _message, _addons
                 end
             end

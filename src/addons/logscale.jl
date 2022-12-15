@@ -25,9 +25,16 @@ end
 # Log scale macro for the message update rules
 macro logscale(lambda)
     @capture(lambda, (body_)) || error("Error in macro. Lambda body specification is incorrect")
-
     # return expression for @logscale
     return esc(:(ReactiveMP.@invokeaddon AddonLogScale $body))
+end
+
+function multiply_addons(left_addon::AddonLogScale{Missing}, right_addon::AddonLogScale, new_dist, left_dist::Missing, right_dist)
+    return right_addon 
+end
+
+function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale{Missing}, new_dist, left_dist, right_dist::Missing)
+    return left_addon
 end
 
 function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist, left_dist, right_dist)
