@@ -285,7 +285,7 @@ message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
 # Some addons add post rule execution logic
-function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons) 
+function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons)
     return message_mapping_addons(mapping, mapping.addons, messages, marginals, result, addons)
 end
 
