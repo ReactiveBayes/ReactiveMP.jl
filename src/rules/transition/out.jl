@@ -14,7 +14,6 @@ end
 end
 
 @rule Transition(:out, Marginalisation) (q_in::PointMass, q_a::PointMass) = begin
-    @logscale 0
     p = mean(q_a) * mean(q_in)
     normalize!(p, 1)
     return Categorical(p)

@@ -22,6 +22,23 @@ function getlogscale(addons::NTuple{N, AbstractAddon}) where {N}
     return mapreduce(getlogscale, +, logscales)
 end
 
+function message_mapping_addon(::AddonLogScale{Nothing}, mapping, messages, marginals, result::Distribution)
+    # Here we assume
+    # 1. If log-scale value has not been computed during the message update rule
+    # 2. Either all messages or marginals are of type PointMass
+    # 3. The result of the message update rule is a proper distribution
+    #  THEN: logscale is equal to zero
+    #  OTHERWISE: show an error
+    #  This logic probably can be improved, e.g. if some tracks conjugacy between the node and messages
+    if isnothing(marginals) && all(data -> data isa PointMass, messages)
+        return AddonLogScale(0)
+    elseif isnothing(messages) && all(data -> data isa PointMass, marginals)
+        return AddonLogScale(0)
+    else
+        error("Log-scale value has not been computed for the message update rule = $(mapping)")
+    end
+end
+
 # Log scale macro for the message update rules
 macro logscale(lambda)
     @capture(lambda, (body_)) || error("Error in macro. Lambda body specification is incorrect")

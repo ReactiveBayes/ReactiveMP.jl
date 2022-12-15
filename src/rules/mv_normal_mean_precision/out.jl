@@ -1,10 +1,7 @@
 
 # Belief Propagation                #
 # --------------------------------- #
-@rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::PointMass, m_Λ::PointMass) = begin
-    @logscale 0
-    return MvNormalMeanPrecision(mean(m_μ), mean(m_Λ))
-end
+@rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::PointMass, m_Λ::PointMass) = MvNormalMeanPrecision(mean(m_μ), mean(m_Λ))
 
 @rule MvNormalMeanPrecision(:out, Marginalisation) (m_μ::MultivariateNormalDistributionsFamily, m_Λ::PointMass) = begin
     @logscale 0
@@ -14,10 +11,7 @@ end
 
 # Variational                       # 
 # --------------------------------- #
-@rule MvNormalMeanPrecision(:out, Marginalisation) (q_μ::PointMass, q_Λ::PointMass) = begin
-    @logscale 0
-    return MvNormalMeanPrecision(mean(q_μ), mean(q_Λ))
-end
+@rule MvNormalMeanPrecision(:out, Marginalisation) (q_μ::PointMass, q_Λ::PointMass) = MvNormalMeanPrecision(mean(q_μ), mean(q_Λ))
 
 @rule MvNormalMeanPrecision(:out, Marginalisation) (q_μ::Any, q_Λ::Any) = MvNormalMeanPrecision(mean(q_μ), mean(q_Λ))
 
