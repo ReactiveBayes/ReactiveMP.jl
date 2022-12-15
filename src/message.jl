@@ -110,6 +110,7 @@ function show(io::IO, message::Message)
     show(IOContext(io, :indent => indent + 4), getdata(message))
     print(io, ") with ", string(getaddons(message)), "\n")
 end
+
 Base.show(io::IO, message::Message{T, Nothing}) where {T} = print(io, string("Message(", getdata(message), ")"))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
@@ -283,13 +284,20 @@ end
 message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
-## Some addons add post rule execution logic
-message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons::Nothing) = nothing
-message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons::Tuple{}) = nothing
+# Some addons add post rule execution logic
+function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons) 
+    return message_mapping_addons(mapping, mapping.addons, messages, marginals, result, addons)
+end
+
+# `enabled_addons` are always type-stable, whether `addons` are not, so we check based on the `enabled_addons` and ignore the `addons`
+# As a consequence if any message update rule returns non-empty `addons`, but `enabled_addons` is empty, then the resulting value 
+# of the `addons` will be simply ignored
+message_mapping_addons(mapping::MessageMapping, enabled_addons::Nothing, messages, marginals, result, addons) = enabled_addons
+message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple{}, messages, marginals, result, addons) = enabled_addons
 
 # The main logic here is that some addons may add extra computation AFTER the rule has been computed
 # The benefit of that is that we have an access to the `MessageMapping` structure and is mostly useful for debug addons
-function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons::Tuple)
+function message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple, messages, marginals, result, addons)
     return map(addons) do addon
         return message_mapping_addon(addon, mapping, messages, marginals, result)
     end
