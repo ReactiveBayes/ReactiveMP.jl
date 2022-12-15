@@ -284,19 +284,20 @@ message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
 ## Some addons add post rule execution logic
-message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons) = message_mapping_addons(mapping, mapping.addons, messages, marginals, result, addons)
+message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons::Nothing) = nothing
+message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons::Tuple{}) = nothing
 
-message_mapping_addons(mapping::MessageMapping, maddons::Nothing, messages, marginals, result, addons) = nothing
-message_mapping_addons(mapping::MessageMapping, maddons::Tuple{}, messages, marginals, result, addons) = addons
-
-function message_mapping_addons(mapping::MessageMapping, maddons::Tuple, messages, marginals, result, addons)
-    post_rule_execution_addons = message_mapping_addon(first(maddons), mapping, messages, marginals, result, addons)
-    return message_mapping_addons(mapping, TupleTools.unsafe_tail(maddons), messages, marginals, result, post_rule_execution_addons)
+# The main logic here is that some addons may add extra computation AFTER the rule has been computed
+# The benefit of that is that we have an access to the `MessageMapping` structure and is mostly useful for debug addons
+function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons::Tuple)
+    return map(addons) do addon 
+        return message_mapping_addon(addon, mapping, messages, marginals, result)
+    end
 end
 
-function message_mapping_addon(addon, mapping, messages, marginals, result, addons)
-    return addons
-end
+# By default `message_mapping_addon` does nothing and simply returns the addon itself
+# Other addons may override this behaviour (if necessary, see e.g. AddonMemory)
+message_mapping_addon(addon, mapping, messages, marginals, result) = addon
 
 function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F, T, C, N, M, A, X, R}
     return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
