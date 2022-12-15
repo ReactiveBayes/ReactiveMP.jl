@@ -281,9 +281,6 @@ macro rule(fform, lambda)
     @capture(args, (inputs__, meta::metatype_, addons::addonstype_) | (inputs__, meta::metatype_) | (inputs__, addons::addonstype_) | (inputs__,)) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
-    # check for number of return statements
-    @assert MacroHelpers.count_returns(body) < 2 "@rule macro contains multiple return statements"
-
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
@@ -306,11 +303,14 @@ macro rule(fform, lambda)
         $(
             rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
-                    $(on_index_init)
-                    $(m_init_block...)
-                    $(q_init_block...)
                     _addons = getaddons()
-                    _message = $(MacroHelpers.remove_returns(body))
+                    _messagebody = () -> begin
+                        $(on_index_init)
+                        $(m_init_block...)
+                        $(q_init_block...)
+                        $(body)
+                    end
+                    _message = _messagebody()
                     return _message, _addons
                 end
             end

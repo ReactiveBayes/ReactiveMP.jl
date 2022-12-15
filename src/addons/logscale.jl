@@ -26,9 +26,6 @@ end
 macro logscale(lambda)
     @capture(lambda, (body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    # check for number of return statements
-    # @assert MacroHelpers.count_returns(body) < 2 "@logscale macro contains multiple return statements"
-
     # return expression for @logscale
     return esc(:(ReactiveMP.@invokeaddon AddonLogScale $body))
 end

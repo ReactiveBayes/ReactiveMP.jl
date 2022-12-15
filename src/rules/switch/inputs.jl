@@ -16,9 +16,9 @@ end
 
     if k == kmax
         @logscale 0
-        m_out
+        return m_out
     else
-        _addons = nothing
-        Missing()
+        @logscale missing
+        return missing
     end
 end
