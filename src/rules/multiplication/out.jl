@@ -16,10 +16,8 @@ end
     return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
 end
 
-@rule typeof(*)(:out, Marginalisation) (
-    m_A::F, m_in::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrection, Nothing}, addons::Union{Tuple, Nothing}
-) where {F <: NormalDistributionsFamily} = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
+@rule typeof(*)(:out, Marginalisation) (m_A::F, m_in::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrection, Nothing}) where {F <: NormalDistributionsFamily} = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
 end
 
 #------------------------
@@ -48,10 +46,8 @@ end
     return MvNormalMeanCovariance(μ, Σ)
 end
 
-@rule typeof(*)(:out, Marginalisation) (
-    m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}, addons::Union{Tuple, Nothing}
-) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
 end
 
 #------------------------
@@ -64,8 +60,6 @@ end
     return NormalMeanVariance(a * μ_in, a^2 * v_in)
 end
 
-@rule typeof(*)(:out, Marginalisation) (
-    m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}, addons::Union{Tuple, Nothing}
-) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = addons) # symmetric rule
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
 end

@@ -230,7 +230,8 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Int)
     end
 end
 
-function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, addonstype, whereargs)
+function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
+    addonsvar = gensym(:addons)
     nodevar = gensym(:node)
     return quote
         function ReactiveMP.rule(
@@ -242,11 +243,12 @@ function rule_function_expression(body::Function, fuppertype, on_type, vconstrai
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
-            addons::$(addonstype),
-            $nodevar
+            $(addonsvar),
+            $(nodevar)
         ) where {$(whereargs...)}
             local getnode = () -> $nodevar
             local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
+            local getaddons = () -> $addonsvar
             $(body())
         end
     end
@@ -286,7 +288,6 @@ macro rule(fform, lambda)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
     metatype                         = metatype === nothing ? :Nothing : metatype
-    addonstype                       = addonstype === nothing ? :Any : addonstype
 
     options = map(options) do option
         @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")
@@ -303,25 +304,14 @@ macro rule(fform, lambda)
 
     output = quote
         $(
-            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, addonstype, whereargs) do
+            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
                     $(q_init_block...)
-                    _addons = ()
+                    _addons = getaddons()
                     _message = $(MacroHelpers.remove_returns(body))
                     return _message, _addons
-                end
-            end
-        )
-        $(
-            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, :Nothing, whereargs) do
-                return quote
-                    $(on_index_init)
-                    $(m_init_block...)
-                    $(q_init_block...)
-                    _message = $(MacroHelpers.remove_returns(body))
-                    return _message, nothing
                 end
             end
         )
@@ -383,24 +373,6 @@ macro rule(fform, lambda)
     end
 
     return esc(output)
-end
-
-# addons
-macro logscale(lambda)
-    @capture(lambda, (body_)) || error("Error in macro. Lambda body specification is incorrect")
-
-    # check for number of return statements
-    @assert MacroHelpers.count_returns(body) < 2 "@logscale macro contains multiple return statements"
-
-    # create logscale
-    output = quote
-        if !isnothing($(esc(:addons))) && AddonLogScale(nothing) in $(esc(:addons))
-            $(esc(:_addons)) = flatten($(esc(:_addons)), AddonLogScale($(esc(MacroHelpers.remove_returns(body)))))
-        end
-    end
-
-    # return expression for @logscale
-    return output
 end
 
 macro call_rule(fform, args)

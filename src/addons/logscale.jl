@@ -22,8 +22,16 @@ function getlogscale(addons::NTuple{N, AbstractAddon}) where {N}
     return mapreduce(getlogscale, +, logscales)
 end
 
-# TODO: for later review, do we need such a fallback
-# getlogscale(::AbstractAddon) = 0
+# Log scale macro for the message update rules
+macro logscale(lambda)
+    @capture(lambda, (body_)) || error("Error in macro. Lambda body specification is incorrect")
+
+    # check for number of return statements
+    # @assert MacroHelpers.count_returns(body) < 2 "@logscale macro contains multiple return statements"
+
+    # return expression for @logscale
+    return esc(:(ReactiveMP.@invokeaddon AddonLogScale $body))
+end
 
 function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, new_dist, left_dist, right_dist)
 
