@@ -26,9 +26,9 @@ end
     xtest = q_out.testinput
     kernel = q_kernelfunc.point
     meanfunc = q_meanfunc.point 
-    K = kernelmatrix(kernel(exp.(θ)),xtest,xtest)
-    N = length(xtest)
-    return ((y - meanfunc.(xtest))' * cholinv(Σ) * (y - meanfunc.(xtest)) + logdet(Σ + 1e-6*diageye(length(y))) + N*log(2π))/2
+    xu = q_out.inducing_input
+    strategy = q_out.covariance_strategy
+    return gp_avg_energy(strategy,meanfunc,kernel,Σ,y,xtest,θ,xu)
 end
 
 function Distributions.entropy(pm::PointMass{F}) where {F <: Function}
@@ -41,4 +41,42 @@ end
 
 function ReactiveMP.entropy(p::GaussianProcess)
     return ReactiveMP.entropy(p.finitemarginal)
+end
+
+function gp_avg_energy end 
+
+function gp_avg_energy(::CovarianceMatrixStrategy{<:FullCovarianceStrategy},meanfunc, kernel, Σ_finitemarginal, y_finitemarginal, x, θ, x_inducing)
+    N = length(y_finitemarginal)
+    K = kernelmatrix(kernel(exp.(θ)),x,x)
+    m = meanfunc.(x)
+    return  1/2 * (tr(cholinv(K) * Σ_finitemarginal) + y_finitemarginal' * cholinv(K) * y_finitemarginal) - m'*cholinv(K)*y_finitemarginal - 1/2 * m' * cholinv(K) * m + chollogdet(K) + N*log(2π)/2
+end
+#### The below functions give incorrect FE for SoR, DTC and FITC
+function gp_avg_energy(::CovarianceMatrixStrategy{<:DeterministicInducingConditional},meanfunc,kernel, Σ_finitemarginal, y_finitemarginal, x, θ, x_inducing)
+    N = length(y_finitemarginal)
+    Kuu = kernelmatrix(kernel(exp.(θ)),x_inducing, x_inducing)
+    Kfu = kernelmatrix(kernel(exp.(θ)),x,x_inducing)
+    Qff = Kfu * cholinv(Kuu) * Kfu'
+    m = meanfunc.(x)
+
+    return  1/2 * (tr(cholinv(Qff) * Σ_finitemarginal) + y_finitemarginal' * cholinv(Qff) * y_finitemarginal) - m'*cholinv(Qff)*y_finitemarginal - 1/2 * m' * cholinv(Qff) * m + chollogdet(Qff) + N*log(2π)/2 
+end
+
+function gp_avg_energy(::CovarianceMatrixStrategy{<:DeterministicTrainingConditional},meanfunc,kernel, Σ_finitemarginal, y_finitemarginal, x, θ, x_inducing)
+    N = length(y_finitemarginal)
+    Kuu = kernelmatrix(kernel(exp.(θ)),x_inducing, x_inducing)
+    Kfu = kernelmatrix(kernel(exp.(θ)),x,x_inducing)
+    Qff = Kfu * cholinv(Kuu) * Kfu'
+    m = meanfunc.(x)
+    return  1/2 * (tr(cholinv(Qff) * Σ_finitemarginal) + y_finitemarginal' * cholinv(Qff) * y_finitemarginal) - m'*cholinv(Qff)*y_finitemarginal - 1/2 * m' * cholinv(Qff) * m + chollogdet(Qff) + N*log(2π)/2
+end
+
+function gp_avg_energy(::CovarianceMatrixStrategy{<:FullyIndependentTrainingConditional},meanfunc,kernel, Σ_finitemarginal, y_finitemarginal, x, θ, x_inducing)
+    N = length(y_finitemarginal)
+    Kuu = kernelmatrix(kernel(exp.(θ)),x_inducing, x_inducing)
+    Kff = kernelmatrix(kernel(exp.(θ)),x,x)
+    Kfu = kernelmatrix(kernel(exp.(θ)),x,x_inducing)
+    Qff = Kfu * cholinv(Kuu) * Kfu'
+    Λ = Diagonal(Kff - Qff)
+    return  1/2 * (tr(cholinv(Qff + Λ) * Σ_finitemarginal) + y_finitemarginal' * cholinv(Qff + Λ) * y_finitemarginal) + chollogdet(Qff + Λ) + N*log(2π)/2
 end

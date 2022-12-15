@@ -78,6 +78,11 @@ function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
     return compute_derivative(grad, first_derivative, z_s)
 end
 
+# function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
+#     first_derivative = (x) -> compute_derivative(grad, logp, x)
+#     return compute_derivative(ForwardDiffGrad(), first_derivative, z_s)
+# end
+
 # We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
 enforce_proper_message(::Val{true}, λ::NaturalParameters, η::NaturalParameters) = isproper(λ - η)
 

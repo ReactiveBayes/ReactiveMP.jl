@@ -23,3 +23,8 @@ end
                                     m_params::Any, meta::CVI) = begin 
     return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
 end
+
+@rule GaussianProcess(:out, Marginalisation) (q_meanfunc::PointMass, q_kernelfunc::PointMass, 
+                                    q_params::Any, meta::UT) = begin 
+    return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = q_params)
+end
