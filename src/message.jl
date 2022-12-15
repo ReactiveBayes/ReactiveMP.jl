@@ -290,7 +290,7 @@ message_mapping_addons(mapping::MessageMapping, messages, marginals, result, add
 # The main logic here is that some addons may add extra computation AFTER the rule has been computed
 # The benefit of that is that we have an access to the `MessageMapping` structure and is mostly useful for debug addons
 function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons::Tuple)
-    return map(addons) do addon 
+    return map(addons) do addon
         return message_mapping_addon(addon, mapping, messages, marginals, result)
     end
 end

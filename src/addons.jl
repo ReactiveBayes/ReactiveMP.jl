@@ -31,7 +31,7 @@ macro invokeaddon(Type, callback)
     index = gensym(:index)
     addon = gensym(:addon)
     value = gensym(:value)
-    body = quote 
+    body = quote
         # First we check is the `_addons` field of the `@rule` macro has the associated addon enabled
         # To do that we check if the type of the addon is present in the `_addons` tuple
         _addons = if !isnothing(_addons)
@@ -41,7 +41,7 @@ macro invokeaddon(Type, callback)
                 local $addon = () -> $(Type)($(callback))
                 local $value = $(addon)()
                 # Here we replace the previous value of the addon at the specified index
-                TupleTools.insertat(_addons, $index, ($value, )) 
+                TupleTools.insertat(_addons, $index, ($value,))
             else
                 _addons
             end

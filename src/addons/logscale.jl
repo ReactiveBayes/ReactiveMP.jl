@@ -30,7 +30,7 @@ macro logscale(lambda)
 end
 
 function multiply_addons(left_addon::AddonLogScale{Missing}, right_addon::AddonLogScale, new_dist, left_dist::Missing, right_dist)
-    return right_addon 
+    return right_addon
 end
 
 function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale{Missing}, new_dist, left_dist, right_dist::Missing)
