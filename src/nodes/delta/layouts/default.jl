@@ -68,7 +68,6 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        # TODO add addons
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
@@ -98,7 +97,6 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        # TODO add addons
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end

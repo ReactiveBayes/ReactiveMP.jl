@@ -15,7 +15,6 @@ function score(::AverageEnergy, fform, ::Type{<:Val}, marginals::Tuple{<:Margina
     joint = marginals[1]
 
     transform = let is_joint_clamped = is_clamped(joint), is_joint_initial = is_initial(joint)
-        # TODO add addons?
         (data) -> Marginal(data, is_joint_clamped, is_joint_initial, nothing)
     end
 
@@ -28,7 +27,6 @@ score(::DifferentialEntropy, marginal::Marginal) = entropy(marginal)
 
 function score(::DifferentialEntropy, marginal::Marginal{<:NamedTuple})
     compute_score = let is_marginal_clamped = is_clamped(marginal), is_marginal_initial = is_initial(marginal)
-        # TODO add addons?
         (data) -> score(DifferentialEntropy(), Marginal(data, is_marginal_clamped, is_marginal_initial, nothing))
     end
 

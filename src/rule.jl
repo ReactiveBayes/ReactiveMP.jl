@@ -278,7 +278,7 @@ macro rule(fform, lambda)
 
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_, addons::addonstype_) | (inputs__, meta::metatype_) | (inputs__, addons::addonstype_) | (inputs__,)) ||
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
         error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
@@ -411,6 +411,7 @@ macro call_rule(fform, args)
     addonsym = gensym(:addonsym)
 
     output = quote
+        # TODO: (bvdmitri At the moment we cannot really get the result of the addon by calling `@call_rule`
         $distributionsym, $addonsym = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
         $distributionsym
     end
@@ -840,16 +841,18 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
         arguments_spec = join(spec, ", ")
         meta_spec      = rule_method_error_extract_meta(error.meta)
-        addons_spec    = error.addons
 
         possible_fix_definition = """
-        @rule $(spec_fform)(:$spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec, $addons_spec) = begin 
+        @rule $(spec_fform)($spec_on, $spec_vconstraint) ($arguments_spec, $meta_spec) = begin 
             return ...
         end
         """
 
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
+        if !isnothing(error.addons)
+            println(io, "\n\nEnabled addons: ", error.addons, "\n")
+        end
     else
         println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)
