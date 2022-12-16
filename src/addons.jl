@@ -10,6 +10,7 @@ multiply_addons(::Nothing, addon::Any, ::Any, ::Missing, ::Any) = addon
 multiply_addons(addon::Any, ::Nothing, ::Any, ::Any, ::Missing) = addon
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Missing, ::Any) = nothing
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Any, ::Missing) = nothing
+multiply_addons(::Nothing, ::Nothing, ::Any, ::Missing, ::Missing) = nothing
 
 function multiply_addons(left_addons::Tuple, right_addons::Tuple, new_dist, left_dist, right_dist)
 
