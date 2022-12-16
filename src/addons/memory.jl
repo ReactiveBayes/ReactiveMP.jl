@@ -64,7 +64,12 @@ function show(io::IO, addon::AddonMemoryMessageMapping)
     println(io, ' '^indent, "At the node: ", functionalform(addon.mapping.factornode))
     println(io, ' '^indent, "Towards interface: ", addon.mapping.vtag)
     println(io, ' '^indent, "With local constraint: ", addon.mapping.vconstraint)
-    println(io, ' '^indent, "With meta: ", addon.mapping.meta)
+    if !isnothing(addon.mapping.meta)
+        println(io, ' '^indent, "With meta: ", addon.mapping.meta)
+    end
+    if !isnothing(addon.mapping.addons)
+        println(io, ' '^indent, "With addons: ", addon.mapping.addons)
+    end
     if !isnothing(addon.messages)
         println(io, ' '^indent, "With input messages on ", addon.mapping.msgs_names, " edges: ", addon.messages)
     end
