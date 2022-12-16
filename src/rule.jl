@@ -278,8 +278,7 @@ macro rule(fform, lambda)
 
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) ||
-        error("Error in macro. Lambda body arguments specification is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
