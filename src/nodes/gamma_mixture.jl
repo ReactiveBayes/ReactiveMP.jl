@@ -136,7 +136,7 @@ end
 @average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::ManyOf{N, Any}, q_b::ManyOf{N, GammaShapeRate}) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
-        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}, map((q) -> Marginal(q, false, false), (q_out, q_a[i], q_b[i])), nothing)
+        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[i], q_b[i])), nothing)
     end
 end
 
