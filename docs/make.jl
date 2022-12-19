@@ -15,6 +15,7 @@ makedocs(
         "Introduction"    => "index.md",
         "Custom functionality" => [
             "Custom functional form" => "custom/custom-functional-form.md",
+            "Custom addons" => "custom/custom-addons.md"
         ],
         "Library" => [
             "Messages"     => "lib/message.md",

@@ -209,6 +209,8 @@ end
 
     addtests(testrunner, "score/test_counting.jl")
 
+    addtests(testrunner, "test_addons.jl")
+
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
     addtests(testrunner, "approximations/test_linearization.jl")
@@ -241,6 +243,7 @@ end
     addtests(testrunner, "distributions/test_wishart.jl")
     addtests(testrunner, "distributions/test_wishart_inverse.jl")
     addtests(testrunner, "distributions/test_sample_list.jl")
+    addtests(testrunner, "distributions/test_mixture_model.jl")
 
     addtests(testrunner, "test_message.jl")
 

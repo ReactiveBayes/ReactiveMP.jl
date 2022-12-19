@@ -32,6 +32,10 @@ include("constraints/form.jl")
 include("message.jl")
 include("marginal.jl")
 include("distributions.jl")
+include("addons.jl")
+
+include("addons/logscale.jl")
+include("addons/memory.jl")
 
 """
     to_marginal(any)
@@ -45,11 +49,19 @@ Note: This function is a part of the private API and is not intended to be used 
 """
 to_marginal(any) = any
 
-as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
-as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
+as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getaddons(marginal))
 
+getdata(::Nothing)                 = nothing
 getdata(collection::Tuple)         = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
+
+getlogscale(message::Message)      = getlogscale(getaddons(message))
+getlogscale(marginal::Marginal)    = getlogscale(getaddons(marginal))
+getmemoryaddon(message::Message)   = getmemoryaddon(getaddons(message))
+getmemoryaddon(marginal::Marginal) = getmemoryaddon(getaddons(marginal))
+getmemory(message::Message)        = getmemory(getaddons(message))
+getmemory(marginal::Marginal)      = getmemory(getaddons(marginal))
 
 # TupleTools.prod is a more efficient version of Base.all for Tuple here
 is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
@@ -92,6 +104,7 @@ include("distributions/wishart_inverse.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
+include("distributions/mixture_model.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
@@ -156,6 +169,7 @@ include("nodes/and.jl")
 include("nodes/or.jl")
 include("nodes/not.jl")
 include("nodes/implication.jl")
+include("nodes/switch.jl")
 
 include("rules/prototypes.jl")
 

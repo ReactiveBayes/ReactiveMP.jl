@@ -68,8 +68,8 @@ nodefunction(factornode::DeltaFnNode, ::Val{:in})             = getinverse(metad
 nodefunction(factornode::DeltaFnNode, ::Val{:in}, k::Integer) = getinverse(metadata(factornode), k)
 
 # Rules for `::Function` objects, but with the `DeltaFn` related meta and node should redirect to the `DeltaFn` rules
-function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F <: Function}
-    return rule(DeltaFn{F}, on, vconstraint, mnames, messages, qnames, marginals, meta, node)
+function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, addons::Any, node::DeltaFnNode) where {F <: Function}
+    return rule(DeltaFn{F}, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, node)
 end
 
 function marginalrule(::F, on, mnames, messages, qnames, marginals, meta::DeltaMeta, node::DeltaFnNode) where {F <: Function}
@@ -147,29 +147,33 @@ function deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Any)
     return CVIApproximationDeltaFnRuleLayout()
 end
 
-function activate!(factornode::DeltaFnNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler())
+function activate!(factornode::DeltaFnNode, options)
     # `DeltaFn` node may change rule arguments layout depending on the `meta`
     # This feature is similar to `functional_dependencies` for a regular `FactorNode` implementation
-    return activate!(factornode, deltafn_rule_layout(factornode), pipeline_stages, scheduler)
+    return activate!(factornode, deltafn_rule_layout(factornode), options)
 end
 
 # DeltaFn is very special, so it has a very special `activate!` function
-function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependenciesLayout, pipeline_stages, scheduler)
+function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependenciesLayout, options)
     foreach(interfaces(factornode)) do interface
         (connectedvar(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
     end
 
+    pipeline_stages = get_pipeline_stages(options)
+    scheduler       = getscheduler(options)
+    addons          = getaddons(options)
+
     # First we declare local marginal for `out` edge
-    deltafn_apply_layout(layout, Val(:q_out), factornode, pipeline_stages, scheduler)
+    deltafn_apply_layout(layout, Val(:q_out), factornode, pipeline_stages, scheduler, addons)
 
     # Second we declare how to compute a joint marginal over all inbound edges
-    deltafn_apply_layout(layout, Val(:q_ins), factornode, pipeline_stages, scheduler)
+    deltafn_apply_layout(layout, Val(:q_ins), factornode, pipeline_stages, scheduler, addons)
 
     # Second we declare message passing logic for out interface
-    deltafn_apply_layout(layout, Val(:m_out), factornode, pipeline_stages, scheduler)
+    deltafn_apply_layout(layout, Val(:m_out), factornode, pipeline_stages, scheduler, addons)
 
     # At last we declare message passing logic for input interfaces
-    deltafn_apply_layout(layout, Val(:m_in), factornode, pipeline_stages, scheduler)
+    deltafn_apply_layout(layout, Val(:m_in), factornode, pipeline_stages, scheduler, addons)
 end
 
 # DeltaFn has a bit a non-standard interface layout so it has a specialised `score` function too

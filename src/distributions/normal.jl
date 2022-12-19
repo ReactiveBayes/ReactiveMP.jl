@@ -26,6 +26,7 @@ import Distributions: logpdf
 import StatsFuns: invsqrt2π
 
 using LoopVectorization
+using StatsFuns: log2π
 using LinearAlgebra
 using SpecialFunctions
 
@@ -284,12 +285,34 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: UnivariateNo
     return prod(ProdAnalytical(), wleft, wright)
 end
 
+function Base.prod(
+    ::AddonProdLogScale, ::N, left::L, right::R
+) where {N <: UnivariateNormalDistributionsFamily, L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
+    m_left, v_left   = mean_cov(left)
+    m_right, v_right = mean_cov(right)
+    v                = v_left + v_right
+    m                = m_left - m_right
+    return -(logdet(v) + log2π) / 2 - m^2 / v / 2
+end
+
 prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
     return prod(ProdAnalytical(), wleft, wright)
+end
+
+function Base.prod(
+    ::AddonProdLogScale, ::N, left::L, right::R
+) where {N <: MultivariateNormalDistributionsFamily, L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
+    m_left, v_left   = mean_cov(left)
+    m_right, v_right = mean_cov(right)
+    v                = v_left + v_right
+    n                = length(left)
+    v_inv, v_logdet  = cholinv_logdet(v)
+    m                = m_left - m_right
+    return -(v_logdet + n * log2π) / 2 - dot(m, v_inv, m) / 2
 end
 
 ## Friendly functions

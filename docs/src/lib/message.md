@@ -31,7 +31,7 @@ using ReactiveMP
 
 ```@example bp-message
 distribution = NormalMeanPrecision(0.0, 1.0)
-message      = Message(distribution, false, true)
+message      = Message(distribution, false, true, nothing)
 ```
 
 ```@example bp-message

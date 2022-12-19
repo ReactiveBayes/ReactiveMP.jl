@@ -9,6 +9,8 @@ using Rocket
 using TupleTools
 using MacroTools
 
+import Rocket: getscheduler
+
 import Base: show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
 import Base: getindex, setindex!, firstindex, lastindex
 
@@ -347,6 +349,8 @@ Base.nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V
 
 Base.iterate(many::ManyOf)        = iterate(many.collection)
 Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
+
+Base.length(many::ManyOf) = length(many.collection)
 
 struct ManyOfObservable{S} <: Subscribable{ManyOf}
     source::S
@@ -838,7 +842,11 @@ function get_marginals_observable(factornode, marginals)
     end
 end
 
-function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipelineStage(), scheduler = AsapScheduler())
+# options here must implement at least `ReactiveMP.get_pipeline_stages`, `Rocket.getscheduler` and `ReactiveMP.getaddons` functions
+function activate!(factornode::AbstractFactorNode, options)
+    pipeline_stages            = get_pipeline_stages(options)
+    scheduler                  = getscheduler(options)
+    addons                     = getaddons(options)
     fform                      = functionalform(factornode)
     meta                       = metadata(factornode)
     node_pipeline              = getpipeline(factornode)
@@ -858,7 +866,7 @@ function activate!(factornode::AbstractFactorNode, pipeline_stages = EmptyPipeli
             vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, factornode)
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
                 (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
             end
 
