@@ -72,10 +72,3 @@ prod(::AddonProdLogScale, new_dist::MixtureModel, left_dist::Any, right_dist::Mi
 #         println(io, "The rest are omitted ...")
 #     end
 # end
-
-function show(io::IO, message::Message{<:MixtureModel, <:Any})
-    indent = get(io, :indent, 0)
-    print(io, ' '^indent, "Message(")
-    show(IOContext(io, :indent => indent + 4), getdata(message))
-    print(io, ' '^indent, ") with ", string(getaddons(message)), "\n")
-end

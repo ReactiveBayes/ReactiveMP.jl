@@ -105,20 +105,18 @@ materialize!(message::Message) = message
 
 # Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
 function show(io::IO, message::Message)
-    indent = get(io, :indent, 0)
-    print(io, ' '^indent, "Message(")
-    show(IOContext(io, :indent => indent + 4), getdata(message))
-    print(io, ") with ", string(getaddons(message)), "\n")
+    print(io, string("Message(", getdata(message), ")"))
+    if !isnothing(getaddons(message))
+        print(io, ") with ", string(getaddons(message)))
+    end
 end
-
-Base.show(io::IO, message::Message{T, Nothing}) where {T} = print(io, string("Message(", getdata(message), ")"))
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
 # We need this dummy method as Julia is not smart enough to 
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
-    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data
+    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
 end
 
 function multiply_messages(prod_constraint, left::Message, right::Message)
