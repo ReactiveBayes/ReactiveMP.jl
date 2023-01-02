@@ -16,7 +16,6 @@ begin
     es = [uvector(dim, i) for i in 1:order]
     Fs = [mask_mar(order, ds, i) for i in 1:order]
 
-    # ∏ = Iterators.product(transpose.(es), mW, es, Fs, Va, transpose.(Fs))
     Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
 
     Ξ = mA*inv(inv(mW) + Vy)*mA' + Λ
