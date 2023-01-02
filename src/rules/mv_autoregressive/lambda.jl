@@ -19,17 +19,15 @@
     mx, Vx   = ar_slice(F, myx, (dim+1):2dim), ar_slice(F, Vyx, (dim+1):2dim, (dim+1):2dim)
     Vyx      = ar_slice(F, Vyx, (dim+1):2dim, 1:dim)
 
-    es = [uvector(dim, i) for i in 1:order]
-    Fs = [mask_mar(order, ds, i) for i in 1:order]
-
+    es = [uvector(dim, i) for i in 1:ds]
+    Fs = [mask_mar(order, ds, i) for i in 1:ds]
     S = mar_shift(order, ds)
-
-    G₁ = Vy[1:order, 1:order]
-    G₂ = (my*mx'*mA')[1:order, 1:order]
+    G₁ = Vy[1:ds, 1:ds]
+    G₂ = (my*mx'*mA')[1:ds, 1:ds]
     G₃ = transpose(G₂)
     Ex_xx = mx*mx' + Vx
-    G₅ = sum(sum(es[i]*ma'*Fs[j]'Ex_xx*Fs[i]*ma*es[j]' for i in 1:order) for j in 1:order)[1:order, 1:order]
-    G₆ = sum(sum(es[i]*tr(Va*Fs[i]'*Ex_xx*Fs[j])*es[j]' for i in 1:order) for j in 1:order)[1:order, 1:order]
+    G₅ = sum(sum(es[i]*ma'*Fs[j]'Ex_xx*Fs[i]*ma*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
+    G₆ = sum(sum(es[i]*tr(Va*Fs[i]'*Ex_xx*Fs[j])*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
     Δ = G₁ + G₂ + G₃ + G₅ + G₆
 
     return WishartMessage(n+2, Δ)

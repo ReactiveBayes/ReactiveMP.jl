@@ -13,10 +13,10 @@ begin
     mW = mar_transition(getorder(meta), mΛ)
     
     # this should be inside MARMeta
-    es = [uvector(dim, i) for i in 1:order]
-    Fs = [mask_mar(order, ds, i) for i in 1:order]
+    es = [uvector(dim, i) for i in 1:ds]
+    Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
-    Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
+    Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:ds) for j in 1:ds)
 
     Ξ = mA*inv(inv(mW) + Vy)*mA' + Λ
     z = mA'*inv(Vy + inv(mW))*my

@@ -43,21 +43,20 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
 
 
     ma, Va = mean_cov(q_a)
-    mA = mar_companion_matrix(order, ds, ma)[1:order, 1:dim]
-
+    mA = mar_companion_matrix(order, ds, ma)[1:ds, 1:dim]
     mx, Vx   = ar_slice(F, myx, (dim+1):2dim), ar_slice(F, Vyx, (dim+1):2dim, (dim+1):2dim)
     my1, Vy1 = myx[1:ds], Vyx[1:ds, 1:ds]
     Vy1x     = ar_slice(F, Vyx, 1:ds, dim+1:2dim)
 
     # this should be inside MARMeta
-    es = [uvector(order, i) for i in 1:order]
-    Fs = [mask_mar(order, ds, i) for i in 1:order]
+    es = [uvector(ds, i) for i in 1:ds]
+    Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
     # # Euivalento to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
     g₁ = my1'*mΛ*my1 + tr(Vy1*mΛ)
     g₂ = -mx'*mA'*mΛ*my1 + tr(Vy1x*mA'*mΛ)
     g₃ = -g₂
-    G = sum(sum(es[i]'*mΛ*es[j]*Fs[i]*(ma*ma' + Va)*Fs[j]' for i in 1:order) for j in 1:order)
+    G = sum(sum(es[i]'*mΛ*es[j]*Fs[i]*(ma*ma' + Va)*Fs[j]' for i in 1:ds) for j in 1:ds)
     g₄ = mx'*G*mx + tr(Vx*G)
     AE =  n/2*log2π - 0.5*mean(logdet, q_Λ) + 0.5*(g₁ + g₂ + g₃ + g₄)
 
