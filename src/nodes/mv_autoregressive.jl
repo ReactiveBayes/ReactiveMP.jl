@@ -74,29 +74,6 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
 end
 
 # Helpers for AR rules
-
-
-# p, d, i
-# function mask_mar(order, ds, index)
-#     Frows = order * ds
-#     Fcols = ds * Frows
-#     F = zeros(Frows, Fcols)
-#     FB = BlockArray(F, )
-#     for k in 1:ds*order
-#         for j in 1:ds*order^2
-#             if j == ds*(index+(k-1)*ds)
-#                 F[k, j] = 1.0
-#             else
-#                 F[k, j] = .0
-#             end
-#         end
-#         end
-#     # F[1:order, ds*index-1:ds*index] = diageye(ds)
-#     # F[ds+1:end, ds*index+ds+1:ds*index+ds+ds] = diageye(ds)
-#     @show F
-#     return F
-# end
-
 function mask_mar(p, d, index)
     F = zeros(d*p, d*d*p)
     rows = repeat([d], p)

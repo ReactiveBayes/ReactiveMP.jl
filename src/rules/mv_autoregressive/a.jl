@@ -16,11 +16,9 @@
     # this should be inside MARMeta
     es = [uvector(dim, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
-    # @show Iterators.product(transpose.(es), mW, es)
-    # @show sum(prod, Iterators.product(transpose.(es), mW, es))
-    # ∏ = Iterators.product(transpose.(es), mW, es, transpose.(Fs), (Vx + mx*mx'), Fs)
 
-    D = sum(sum(es[i]'*mW*es[j]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
+    D = sum(sum(es[j]'*mW*es[i]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
     z = sum(Fs[i]'*(mx*my'+Vyx')*mW*es[i] for i in 1:ds)
-    return MvNormalMeanCovariance(inv(D)*z, inv(D))
+
+    return MvNormalWeightedMeanPrecision(z, D)
 end

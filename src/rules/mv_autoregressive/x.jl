@@ -18,11 +18,8 @@ begin
 
     Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:ds) for j in 1:ds)
 
-    Ξ = mA*inv(inv(mW) + Vy)*mA' + Λ
+    Ξ = mA'*inv(Vy + inv(mW))*mA + Λ
     z = mA'*inv(Vy + inv(mW))*my
 
-    mx = inv(Ξ)*z
-    Vx = inv(Ξ)
-
-    return MvNormalMeanCovariance(mx, Vx)
+    return MvNormalWeightedMeanPrecision(z, Ξ)
 end
