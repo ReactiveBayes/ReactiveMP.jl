@@ -52,7 +52,6 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
     es = [uvector(ds, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
-    # # Euivalento to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
     g₁ = my1'*mΛ*my1 + tr(Vy1*mΛ)
     g₂ = -mx'*mA'*mΛ*my1 + tr(Vy1x*mA'*mΛ)
     g₃ = -g₂
@@ -61,8 +60,7 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
     AE =  n/2*log2π - 0.5*mean(logdet, q_Λ) + 0.5*(g₁ + g₂ + g₃ + g₄)
 
     if order > 1
-        mean(q_y_x)
-        AE += entropy(q_y_x)
+        # AE += entropy(q_y_x)
         idc = LazyArrays.Vcat(1:order, (dim+1):2dim)
         myx_n = view(myx, idc)
         Vyx_n = view(Vyx, idc, idc)
@@ -74,15 +72,15 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
 end
 
 # Helpers for AR rules
-function mask_mar(p, d, index)
-    F = zeros(d*p, d*d*p)
-    rows = repeat([d], p)
-    cols = repeat([d], d*p)
+function mask_mar(order, dimension, index)
+    F = zeros(dimension*order, dimension*dimension*order)
+    rows = repeat([dimension], order)
+    cols = repeat([dimension], dimension*order)
     FB = BlockArrays.BlockArray(F, rows, cols)
-    for k in 1:p
-        for j in 1:d*p
-            if j == index + (k-1)*d
-                view(FB, BlockArrays.Block(k, j)) .= diageye(d)
+    for k in 1:order
+        for j in 1:dimension*order
+            if j == index + (k-1)*dimension
+                view(FB, BlockArrays.Block(k, j)) .= diageye(dimension)
             end
         end
     end
