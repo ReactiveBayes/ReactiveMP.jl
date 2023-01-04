@@ -72,6 +72,48 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
     return AE
 end
 
+@average_energy MAR (
+    q_y::MultivariateNormalDistributionsFamily,
+    q_x::MultivariateNormalDistributionsFamily,
+    q_a::MultivariateNormalDistributionsFamily,
+    q_Λ::Wishart,
+    meta::MARMeta
+) = begin
+    ma, Va   = mean_cov(q_a)
+    my, Vy = mean_cov(q_y)
+    mx, Vx = mean_cov(q_y)
+    mΛ       = mean(q_Λ)
+
+    order, ds = getorder(meta), getdimensionality(meta)
+    F = Multivariate
+    dim = order*ds
+    n = dim
+
+    ma, Va = mean_cov(q_a)
+    mA = mar_companion_matrix(order, ds, ma)[1:ds, 1:dim]
+
+    my1, Vy1 = my[1:ds], Vy[1:ds, 1:ds]
+
+    # this should be inside MARMeta
+    es = [uvector(ds, i) for i in 1:ds]
+    Fs = [mask_mar(order, ds, i) for i in 1:ds]
+
+    g₁ = my1'*mΛ*my1 + tr(Vy1*mΛ)
+    g₂ = -mx'*mA'*mΛ*my1
+    g₃ = -g₂
+    G = sum(sum(es[i]'*mΛ*es[j]*Fs[i]*(ma*ma' + Va)*Fs[j]' for i in 1:ds) for j in 1:ds)
+    g₄ = mx'*G*mx + tr(Vx*G)
+    AE =  n/2*log2π - 0.5*mean(logdet, q_Λ) + 0.5*(g₁ + g₂ + g₃ + g₄)
+
+    if order > 1
+        # AE += entropy(q_y)
+        q_y = MvNormalMeanCovariance(my1, Vy1)
+        AE -= entropy(q_y)
+    end
+
+    return AE
+end
+
 # Helpers for AR rules
 function mask_mar(order, dimension, index)
     F = zeros(dimension*order, dimension*dimension*order)

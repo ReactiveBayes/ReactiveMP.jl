@@ -55,7 +55,7 @@ default_meta(::Type{AR}) = error("Autoregressive node requires meta flag explici
 
     # correction
     if is_multivariate(meta)
-        # AE += entropy(q_y_x)
+        AE += entropy(q_y_x)
         idc = LazyArrays.Vcat(1, (order + 1):(2order))
         myx_n = view(myx, idc)
         Vyx_n = view(Vyx, idc, idc)
@@ -80,7 +80,7 @@ end
 
     # correction
     if is_multivariate(meta)
-        # AE += entropy(q_y)
+        AE += entropy(q_y)
         q_y = NormalMeanVariance(my1, Vy1)
         AE -= entropy(q_y)
     end
