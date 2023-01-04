@@ -1,7 +1,7 @@
 export Beta
 
 import Distributions: Beta, params
-import SpecialFunctions: digamma
+import SpecialFunctions: digamma, logbeta
 
 vague(::Type{<:Beta}) = Beta(1.0, 1.0)
 
@@ -12,6 +12,10 @@ function prod(::ProdAnalytical, left::Beta, right::Beta)
     right_a, right_b = params(right)
     T                = promote_type(eltype(left), eltype(right))
     return Beta(left_a + right_a - one(T), left_b + right_b - one(T))
+end
+
+function prod(::AddonProdLogScale, new_dist::Beta, left_dist::Beta, right_dist::Beta)
+    return logbeta(params(new_dist)...) - logbeta(params(left_dist)...) - logbeta(params(right_dist)...)
 end
 
 function mean(::typeof(log), dist::Beta)

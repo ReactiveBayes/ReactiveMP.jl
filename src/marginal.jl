@@ -7,18 +7,24 @@ using Rocket
 import Rocket: getrecent
 import Base: ==, ndims, precision, length, size, nameof, iterate
 
-struct Marginal{D}
+struct Marginal{D, A}
     data       :: D
     is_clamped :: Bool
     is_initial :: Bool
+    addons     :: A
 end
 
-Base.show(io::IO, marginal::Marginal) = print(io, string("Marginal(", getdata(marginal), ")"))
+function Base.show(io::IO, marginal::Marginal)
+    print(io, string("Marginal(", getdata(marginal), ")"))
+    if !isnothing(getaddons(marginal))
+        print(io, ") with ", string(getaddons(marginal)))
+    end
+end
 
 function Base.:(==)(left::Marginal, right::Marginal)
     # We need this dummy method as Julia is not smart enough to 
     # do that automatically if `data` is mutable
-    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data
+    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
 end
 
 """
@@ -46,6 +52,8 @@ See also: [`is_clamped`](@ref)
 """
 is_initial(marginal::Marginal) = marginal.is_initial
 typeofdata(marginal::Marginal) = typeof(getdata(marginal))
+
+getaddons(marginal::Marginal) = marginal.addons
 
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
 getdata(marginals::AbstractArray{<:Marginal})       = map(getdata, marginals)
@@ -143,7 +151,7 @@ function connect!(marginal::MarginalObservable, source)
 end
 
 function setmarginal!(marginal::MarginalObservable, value)
-    next!(marginal.subject, Marginal(value, false, true))
+    next!(marginal.subject, Marginal(value, false, true, nothing))
     return nothing
 end
 
@@ -184,7 +192,7 @@ function (mapping::MarginalMapping)(dependencies)
 
     marginal = marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
 
-    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
+    return Marginal(marginal, is_marginal_clamped, is_marginal_initial, nothing)
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{T, M}(mapping)

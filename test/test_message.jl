@@ -8,6 +8,7 @@ using Random
 import InteractiveUtils: methodswith
 import Base: methods
 import Base.Iterators: repeated, product
+import ReactiveMP: getaddons
 import ReactiveMP: materialize!
 import ReactiveMP: mirrorlog, xtlog
 import SpecialFunctions: loggamma
@@ -16,12 +17,13 @@ import SpecialFunctions: loggamma
     @testset "Default methods" begin
         data = PointMass(1)
 
-        for clamped in (true, false), initial in (true, false)
-            msg = Message(data, clamped, initial)
+        for clamped in (true, false), initial in (true, false), addons in (1, 2)
+            msg = Message(data, clamped, initial, addons)
             @test getdata(msg) === data
             @test is_clamped(msg) === clamped
             @test is_initial(msg) === initial
             @test materialize!(msg) === msg
+            @test getaddons(msg) === addons
             @test occursin("Message", repr(msg))
         end
 
@@ -29,8 +31,8 @@ import SpecialFunctions: loggamma
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false), clamped2 in (true, false), initial1 in (true, false), initial2 in (true, false)
-            msg1 = Message(dist1, clamped1, initial1)
-            msg2 = Message(dist2, clamped2, initial2)
+            msg1 = Message(dist1, clamped1, initial1, nothing)
+            msg2 = Message(dist2, clamped2, initial2, nothing)
 
             @test getdata((msg1, msg2)) === (dist1, dist2)
             @test is_clamped((msg1, msg2)) === all([clamped1, clamped2])
@@ -42,35 +44,35 @@ import SpecialFunctions: loggamma
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
 
-        @test getdata(Message(dist1, false, false) * Message(dist2, false, false)) == prod(ProdAnalytical(), dist1, dist2)
-        @test getdata(Message(dist2, false, false) * Message(dist1, false, false)) == prod(ProdAnalytical(), dist2, dist1)
+        @test getdata(Message(dist1, false, false, nothing) * Message(dist2, false, false, nothing)) == prod(ProdAnalytical(), dist1, dist2)
+        @test getdata(Message(dist2, false, false, nothing) * Message(dist1, false, false, nothing)) == prod(ProdAnalytical(), dist2, dist1)
 
         for (left_is_initial, right_is_initial) in product(repeated([true, false], 2)...)
-            @test is_clamped(Message(dist1, true, left_is_initial) * Message(dist2, false, right_is_initial)) == false
-            @test is_clamped(Message(dist1, false, left_is_initial) * Message(dist2, true, right_is_initial)) == false
-            @test is_clamped(Message(dist1, true, left_is_initial) * Message(dist2, true, right_is_initial)) == true
-            @test is_clamped(Message(dist2, true, left_is_initial) * Message(dist1, false, right_is_initial)) == false
-            @test is_clamped(Message(dist2, false, left_is_initial) * Message(dist1, true, right_is_initial)) == false
-            @test is_clamped(Message(dist2, true, left_is_initial) * Message(dist1, true, right_is_initial)) == true
+            @test is_clamped(Message(dist1, true, left_is_initial, nothing) * Message(dist2, false, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist1, false, left_is_initial, nothing) * Message(dist2, true, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist1, true, left_is_initial, nothing) * Message(dist2, true, right_is_initial, nothing)) == true
+            @test is_clamped(Message(dist2, true, left_is_initial, nothing) * Message(dist1, false, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist2, false, left_is_initial, nothing) * Message(dist1, true, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist2, true, left_is_initial, nothing) * Message(dist1, true, right_is_initial, nothing)) == true
         end
 
         for (left_is_clamped, right_is_clamped) in product(repeated([true, false], 2)...)
-            @test is_initial(Message(dist1, left_is_clamped, true) * Message(dist2, right_is_clamped, true)) == !(left_is_clamped && right_is_clamped)
-            @test is_initial(Message(dist2, left_is_clamped, true) * Message(dist1, right_is_clamped, true)) == !(left_is_clamped && right_is_clamped)
-            @test is_initial(Message(dist1, left_is_clamped, false) * Message(dist2, right_is_clamped, false)) == false
-            @test is_initial(Message(dist2, left_is_clamped, false) * Message(dist1, right_is_clamped, false)) == false
+            @test is_initial(Message(dist1, left_is_clamped, true, nothing) * Message(dist2, right_is_clamped, true, nothing)) == !(left_is_clamped && right_is_clamped)
+            @test is_initial(Message(dist2, left_is_clamped, true, nothing) * Message(dist1, right_is_clamped, true, nothing)) == !(left_is_clamped && right_is_clamped)
+            @test is_initial(Message(dist1, left_is_clamped, false, nothing) * Message(dist2, right_is_clamped, false, nothing)) == false
+            @test is_initial(Message(dist2, left_is_clamped, false, nothing) * Message(dist1, right_is_clamped, false, nothing)) == false
         end
 
-        @test is_initial(Message(dist1, true, true) * Message(dist2, true, true)) == false
-        @test is_initial(Message(dist1, true, true) * Message(dist2, true, false)) == false
-        @test is_initial(Message(dist1, true, false) * Message(dist2, true, true)) == false
-        @test is_initial(Message(dist1, false, true) * Message(dist2, true, false)) == true
-        @test is_initial(Message(dist1, true, false) * Message(dist2, false, true)) == true
-        @test is_initial(Message(dist2, true, true) * Message(dist1, true, true)) == false
-        @test is_initial(Message(dist2, true, true) * Message(dist1, true, false)) == false
-        @test is_initial(Message(dist2, true, false) * Message(dist1, true, true)) == false
-        @test is_initial(Message(dist2, false, true) * Message(dist1, true, false)) == true
-        @test is_initial(Message(dist2, true, false) * Message(dist1, false, true)) == true
+        @test is_initial(Message(dist1, true, true, nothing) * Message(dist2, true, true, nothing)) == false
+        @test is_initial(Message(dist1, true, true, nothing) * Message(dist2, true, false, nothing)) == false
+        @test is_initial(Message(dist1, true, false, nothing) * Message(dist2, true, true, nothing)) == false
+        @test is_initial(Message(dist1, false, true, nothing) * Message(dist2, true, false, nothing)) == true
+        @test is_initial(Message(dist1, true, false, nothing) * Message(dist2, false, true, nothing)) == true
+        @test is_initial(Message(dist2, true, true, nothing) * Message(dist1, true, true, nothing)) == false
+        @test is_initial(Message(dist2, true, true, nothing) * Message(dist1, true, false, nothing)) == false
+        @test is_initial(Message(dist2, true, false, nothing) * Message(dist1, true, true, nothing)) == false
+        @test is_initial(Message(dist2, false, true, nothing) * Message(dist1, true, false, nothing)) == true
+        @test is_initial(Message(dist2, true, false, nothing) * Message(dist1, false, true, nothing)) == true
     end
 
     @testset "Statistics" begin
@@ -117,7 +119,7 @@ import SpecialFunctions: loggamma
 
         for (distribution, distribution_methods) in zip(distributions, dists_methods), method in methods_to_test
             T       = typeof(distribution)
-            message = Message(distribution, false, false)
+            message = Message(distribution, false, false, nothing)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(method, (T,))
             if !isempty(ms) && all(m -> m ∈ distribution_methods, ms)
@@ -130,7 +132,7 @@ import SpecialFunctions: loggamma
         for distribution in distributions, fn_mean in fn_mean_functions
             F       = typeof(fn_mean)
             T       = typeof(distribution)
-            message = Message(distribution, false, false)
+            message = Message(distribution, false, false, nothing)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(mean, (F, T), ReactiveMP)
             if !isempty(ms)
@@ -149,7 +151,7 @@ import SpecialFunctions: loggamma
         rng = MersenneTwister(1234)
 
         for distribution in distributions2, method in methods_to_test2
-            message = Message(distribution, false, false)
+            message = Message(distribution, false, false, nothing)
 
             for _ in 1:3
                 point = _getpoint(rng, distribution)

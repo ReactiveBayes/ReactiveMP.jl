@@ -68,6 +68,13 @@ function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeRate)
     return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
+function prod(::AddonProdLogScale, new_dist::GammaDistributionsFamily, left_dist::GammaDistributionsFamily, right_dist::GammaDistributionsFamily)
+    ay, by = shape(new_dist), rate(new_dist)
+    ax, bx = shape(left_dist), rate(left_dist)
+    az, bz = shape(right_dist), rate(right_dist)
+    return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
+end
+
 ## Friendly functions
 
 function logpdf_sample_friendly(dist::GammaDistributionsFamily)

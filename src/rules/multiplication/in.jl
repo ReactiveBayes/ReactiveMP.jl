@@ -25,6 +25,7 @@ end
 # if A is a scalar, then the input is either univariate or multivariate
 @rule typeof(*)(:in, Marginalisation) (m_out::F, m_A::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) where {F <: NormalDistributionsFamily} = begin
     A = mean(m_A)
+    @logscale -logdet(A)
     ξ_out, W_out = weightedmean_precision(m_out)
     W = correction!(meta, A^2 * W_out)
     return convert(promote_variate_type(F, NormalWeightedMeanPrecision), A * ξ_out, W)
