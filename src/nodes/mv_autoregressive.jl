@@ -10,14 +10,15 @@ const MvAutoregressive = MAR
 struct MARMeta
     order :: Int # order (lag) of MAR
     ds    :: Int # dimensionality of MAR process, i.e., the number of correlated AR processes
+
+    function MARMeta(order, ds=2)
+        if ds < 2
+            @error "ds parameter should be > 1. Use AR node if ds = 1"
+        end
+        return new(order, ds)
+    end
 end
 
-function MARMeta(order, ds=2)
-    if ds < 2
-        @error "ds parameter should be > 1. Use AR node if ds = 1"
-    end
-    return MARMeta(order, ds)
-end
 
 getorder(meta::MARMeta)              = meta.order
 getdimensionality(meta::MARMeta)     = meta.ds
