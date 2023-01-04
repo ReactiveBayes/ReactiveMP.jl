@@ -1,6 +1,6 @@
 export MAR, MvAutoregressive, MARMeta, mar_transition, mar_shift
 
-import LazyArrays
+import LazyArrays, BlockArrays
 import StatsFuns: log2π
 
 struct MAR end
@@ -43,26 +43,24 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
 
 
     ma, Va = mean_cov(q_a)
-    mA = mar_companion_matrix(order, ds, ma)[1:order, 1:dim]
-
+    mA = mar_companion_matrix(order, ds, ma)[1:ds, 1:dim]
     mx, Vx   = ar_slice(F, myx, (dim+1):2dim), ar_slice(F, Vyx, (dim+1):2dim, (dim+1):2dim)
     my1, Vy1 = myx[1:ds], Vyx[1:ds, 1:ds]
     Vy1x     = ar_slice(F, Vyx, 1:ds, dim+1:2dim)
 
     # this should be inside MARMeta
-    es = [uvector(order, i) for i in 1:order]
-    Fs = [mask_mar(order, ds, i) for i in 1:order]
+    es = [uvector(ds, i) for i in 1:ds]
+    Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
-    # # Euivalento to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
     g₁ = my1'*mΛ*my1 + tr(Vy1*mΛ)
-    g₂ = mx'*mA'*mΛ*my1 + tr(Vy1x*mA'*mΛ)
-    g₃ = g₂
-    G = sum(sum(Fs[i]*(ma*es[i]'*mΛ*es[j]*ma' + Va*es[i]'*mΛ*es[j])*Fs[j]' for i in 1:order) for j in 1:order)
+    g₂ = -mx'*mA'*mΛ*my1 + tr(Vy1x*mA'*mΛ)
+    g₃ = -g₂
+    G = sum(sum(es[i]'*mΛ*es[j]*Fs[i]*(ma*ma' + Va)*Fs[j]' for i in 1:ds) for j in 1:ds)
     g₄ = mx'*G*mx + tr(Vx*G)
-    AE =  mean(logdet, q_Λ) - n/2*log2π + 0.5 + g₁ + g₂ + g₃ + g₄
+    AE =  n/2*log2π - 0.5*mean(logdet, q_Λ) + 0.5*(g₁ + g₂ + g₃ + g₄)
 
     if order > 1
-        AE += entropy(q_y_x)
+        # AE += entropy(q_y_x)
         idc = LazyArrays.Vcat(1:order, (dim+1):2dim)
         myx_n = view(myx, idc)
         Vyx_n = view(Vyx, idc, idc)
@@ -74,14 +72,19 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
 end
 
 # Helpers for AR rules
-
-
-function mask_mar(order, ds, index)
-    theta_len = order * order * ds
-    F = zeros(order * ds, theta_len)
-    F[1:order, order*index-1:order*index] = diageye(order)
-    F[ds+1:end, order*index+ds+1:order*index+ds+order] = diageye(order)
-    return F
+function mask_mar(order, dimension, index)
+    F = zeros(dimension*order, dimension*dimension*order)
+    rows = repeat([dimension], order)
+    cols = repeat([dimension], dimension*order)
+    FB = BlockArrays.BlockArray(F, rows, cols)
+    for k in 1:order
+        for j in 1:dimension*order
+            if j == index + (k-1)*dimension
+                view(FB, BlockArrays.Block(k, j)) .= diageye(dimension)
+            end
+        end
+    end
+    return Matrix(FB)
 end
 
 function mar_transition(order, Λ)

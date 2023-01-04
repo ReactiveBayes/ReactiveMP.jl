@@ -34,10 +34,10 @@ function ar_y_x_marginal(
     inv_f_Vx = cholinv(f_Vx)
 
     # this should be inside MARMeta
-    es = [uvector(dim, i) for i in 1:order]
-    Fs = [mask_mar(order, ds, i) for i in 1:order]
+    es = [uvector(dim, i) for i in 1:ds]
+    Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
-    Ξ = inv_f_Vx + sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:order) for j in 1:order)
+    Ξ = inv_f_Vx + sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:ds) for j in 1:ds)
 
     W_11 = inv_b_Vy + mW
 
