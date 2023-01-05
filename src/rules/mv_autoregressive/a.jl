@@ -16,9 +16,10 @@
     # this should be inside MARMeta
     es = [uvector(dim, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
-
+    S = mar_shift(order, ds)
+    
     D = sum(sum(es[j]'*mW*es[i]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
-    z = sum(Fs[i]'*(mx*my'+Vyx')*mW*es[i] for i in 1:ds)
+    z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my'+Vyx')*mW*es[i] for i in 1:ds)
 
     return MvNormalWeightedMeanPrecision(z, D)
 end
@@ -41,7 +42,7 @@ end
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
     D = sum(sum(es[j]'*mW*es[i]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
-    z = sum(Fs[i]'*mx*my'*mW*es[i] for i in 1:ds)
+    z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my)*mW*es[i] for i in 1:ds)
 
     return MvNormalWeightedMeanPrecision(z, D)
 end
