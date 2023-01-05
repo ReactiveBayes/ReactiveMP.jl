@@ -15,6 +15,7 @@ makedocs(
         "Introduction"    => "index.md",
         "Custom functionality" => [
             "Custom functional form" => "custom/custom-functional-form.md",
+            "Custom addons" => "custom/custom-addons.md"
         ],
         "Library" => [
             "Messages"     => "lib/message.md",
@@ -24,6 +25,9 @@ makedocs(
             ],
             "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
+            "Algebra utils"       => [
+                "Common" => "lib/algebra/common.md"
+            ],
             "Exported methods"    => "lib/methods.md"
         ],
         "Contributing" => "extra/contributing.md",

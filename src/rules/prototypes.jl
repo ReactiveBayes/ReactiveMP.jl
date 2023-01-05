@@ -162,6 +162,10 @@ include("implication/in2.jl")
 include("implication/out.jl")
 include("implication/marginals.jl")
 
+include("switch/inputs.jl")
+include("switch/out.jl")
+include("switch/switch.jl")
+
 include("delta/linearization/in.jl")
 include("delta/linearization/out.jl")
 include("delta/linearization/marginals.jl")

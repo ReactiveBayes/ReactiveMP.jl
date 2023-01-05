@@ -27,7 +27,7 @@ import ReactiveMP: make_node
 
         for l in 1:20, k in 1:20
             @test isapprox(
-                score(AverageEnergy(), Poisson, Val{(:out, :l)}, (Marginal(PointMass(k), false, false), Marginal(PointMass(l), false, false)), nothing),
+                score(AverageEnergy(), Poisson, Val{(:out, :l)}, (Marginal(PointMass(k), false, false, nothing), Marginal(PointMass(l), false, false, nothing)), nothing),
                 -logpdf(Poisson(l), k),
                 rtol = 1e-12
             )
@@ -35,7 +35,7 @@ import ReactiveMP: make_node
 
         for k in 1:100
             @test isapprox(
-                score(AverageEnergy(), Poisson, Val{(:out, :l)}, (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing),
+                score(AverageEnergy(), Poisson, Val{(:out, :l)}, (Marginal(Poisson(k), false, false, nothing), Marginal(PointMass(k), false, false, nothing)), nothing),
                 entropy(Poisson(k)),
                 rtol = 1e-3
             )
@@ -43,7 +43,7 @@ import ReactiveMP: make_node
 
         for k in 101:110
             @test isapprox(
-                score(AverageEnergy(), Poisson, Val{(:out, :l)}, (Marginal(Poisson(k), false, false), Marginal(PointMass(k), false, false)), nothing),
+                score(AverageEnergy(), Poisson, Val{(:out, :l)}, (Marginal(Poisson(k), false, false, nothing), Marginal(PointMass(k), false, false, nothing)), nothing),
                 entropy(Poisson(k)),
                 rtol = 1e-1
             )

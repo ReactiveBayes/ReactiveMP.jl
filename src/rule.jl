@@ -1,6 +1,7 @@
 export rule, marginalrule
 export @rule, @marginalrule
 export @call_rule, @call_marginalrule
+export @logscale
 
 using MacroTools
 using .MacroHelpers
@@ -82,7 +83,7 @@ See also: [`@rule`](@ref)
 function rule_macro_parse_on_tag(on)
     if @capture(on, :name_)
         # First we check on just quoted symbol expression
-        # If captures index exression and index initilisation expression are `nothing`
+        # If captures index expression and index initialisation expression are `nothing`
         return :(Type{Val{$(QuoteNode(name))}}), nothing, nothing
     elseif @capture(on, (:name_, index_Symbol))
         return :(Tuple{Val{$(QuoteNode(name))}, Int}), index, :($index = on[2])
@@ -192,7 +193,7 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
             end
             return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),)))
         end
-        return :($(proxy)($any, false, false))
+        return :($(proxy)($any, false, false, nothing))
     end
 
     names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))})
@@ -230,6 +231,7 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Int)
 end
 
 function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
+    addonsvar = gensym(:addons)
     nodevar = gensym(:node)
     return quote
         function ReactiveMP.rule(
@@ -241,10 +243,12 @@ function rule_function_expression(body::Function, fuppertype, on_type, vconstrai
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
-            $nodevar
+            $(addonsvar),
+            $(nodevar)
         ) where {$(whereargs...)}
             local getnode = () -> $nodevar
             local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
+            local getaddons = () -> $addonsvar
             $(body())
         end
     end
@@ -274,15 +278,15 @@ macro rule(fform, lambda)
 
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
-    metatype                         = metatype === nothing ? :Any : metatype
+    metatype                         = metatype === nothing ? :Nothing : metatype
 
     options = map(options) do option
-        @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")x
+        @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")
         return (name, value)
     end
 
@@ -298,10 +302,26 @@ macro rule(fform, lambda)
         $(
             rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
-                    $(on_index_init)
-                    $(m_init_block...)
-                    $(q_init_block...)
-                    $(body)
+                    local _addons = getaddons()
+                    # This trick allows us to use arbitrary control-flow logic
+                    # inside rules, e.g. if-else-returns etc, however 
+                    # it makes it not-type-stable with respect to addons
+                    # on my (bvdmitri) benchmarks it accounted for 2-3% slowdown
+                    # when using addons, which is IMO acceptable, but can be changed 
+                    # in the future by banning return statements from the `@rule` macro
+                    # I'm against of manually removing return statements as 
+                    # it is very hard to implement correctly, I would rather make it more stable 
+                    # when fast but error-prone
+                    # Another way to speed-up this part a little bit would be to refactor addons 
+                    # in such a way that their structure is always known to the compiler and type stable
+                    local _messagebody = () -> begin
+                        $(on_index_init)
+                        $(m_init_block...)
+                        $(q_init_block...)
+                        $(body)
+                    end
+                    local _message = _messagebody()
+                    return _message, _addons
                 end
             end
         )
@@ -368,7 +388,8 @@ end
 macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
-    @capture(args, (inputs__, meta = meta_) | (inputs__,)) || error("Error in macro. Arguments specification is incorrect")
+    @capture(args, (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__, meta = meta_) | (inputs__,)) ||
+        error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -385,8 +406,13 @@ macro call_rule(fform, args)
 
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
+    distributionsym = gensym(:distributionsym)
+    addonsym = gensym(:addonsym)
+
     output = quote
-        ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $node)
+        # TODO: (bvdmitri At the moment we cannot really get the result of the addon by calling `@call_rule`
+        $distributionsym, $addonsym = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
+        $distributionsym
     end
 
     return esc(output)
@@ -502,12 +528,12 @@ macro test_rules(options, on, test_sequence)
 
             for m_bigf_input in modified_bigf_inputs
                 m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
-                output_s = gensym()
+                output_dist = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_s = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
-                        @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output)
+                        local $output_dist = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
+                        @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
+                        @test ReactiveMP.is_typeof_equal($output_dist, $m_bigf_output)
                     end
                 end)
             end
@@ -531,7 +557,7 @@ macro marginalrule(fform, lambda)
 
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments speicifcation is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
@@ -677,11 +703,11 @@ macro test_marginalrules(options, on, test_sequence)
 
             for m_f32_input in modified_f32_inputs
                 m_f32_output = m_f32_input[2] ? MacroHelpers.expression_convert_eltype(Float32, output) : output
-                output_s = gensym()
+                output_dist = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_s = ReactiveMP.@call_marginalrule($on, $(m_f32_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)
+                        local $output_dist = ReactiveMP.@call_marginalrule($on, $(m_f32_input[1]))
+                        @test ReactiveMP.custom_isapprox($output_dist, $m_f32_output; atol = $float32_atol)
                         # @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output) # broken
                     end
                 end)
@@ -698,11 +724,11 @@ macro test_marginalrules(options, on, test_sequence)
 
             for m_bigf_input in modified_bigf_inputs
                 m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
-                output_s = gensym()
+                output_dist = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_s = ReactiveMP.@call_marginalrule($on, $(m_bigf_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_s, $m_bigf_output; atol = $bigfloat_atol)
+                        local $output_dist = ReactiveMP.@call_marginalrule($on, $(m_bigf_input[1]))
+                        @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
                         # @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output) # broken
                     end
                 end)
@@ -768,10 +794,12 @@ struct RuleMethodError
     qnames
     marginals
     meta
+    addons
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node) = throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, __node))
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) =
+    throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node))
 
 function Base.showerror(io::IO, error::RuleMethodError)
     print(io, "RuleMethodError: no method matching rule for the given arguments")
@@ -821,6 +849,9 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
+        if !isnothing(error.addons)
+            println(io, "\n\nEnabled addons: ", error.addons, "\n")
+        end
     else
         println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)
@@ -831,6 +862,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         println(io, "rule.qnames: ", error.qnames)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
+        println(io, "rule.addons: ", error.addons)
     end
 end
 

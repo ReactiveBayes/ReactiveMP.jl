@@ -5,7 +5,7 @@ using ReactiveMP
 
 import ReactiveMP: SkipIndexIterator, skipindex
 import ReactiveMP: clamplog, deep_eltype
-import ReactiveMP: CountingReal, ∞
+import ReactiveMP: CountingReal
 import ReactiveMP: FunctionalIndex
 
 @testset "Helpers" begin

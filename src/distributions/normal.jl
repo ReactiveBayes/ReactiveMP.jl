@@ -26,7 +26,9 @@ import Distributions: logpdf
 import StatsFuns: invsqrt2π
 
 using LoopVectorization
+using StatsFuns: log2π
 using LinearAlgebra
+using SpecialFunctions
 
 # Joint over multiple Gaussians
 
@@ -283,12 +285,34 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: UnivariateNo
     return prod(ProdAnalytical(), wleft, wright)
 end
 
+function Base.prod(
+    ::AddonProdLogScale, ::N, left::L, right::R
+) where {N <: UnivariateNormalDistributionsFamily, L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
+    m_left, v_left   = mean_cov(left)
+    m_right, v_right = mean_cov(right)
+    v                = v_left + v_right
+    m                = m_left - m_right
+    return -(logdet(v) + log2π) / 2 - m^2 / v / 2
+end
+
 prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
     return prod(ProdAnalytical(), wleft, wright)
+end
+
+function Base.prod(
+    ::AddonProdLogScale, ::N, left::L, right::R
+) where {N <: MultivariateNormalDistributionsFamily, L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
+    m_left, v_left   = mean_cov(left)
+    m_right, v_right = mean_cov(right)
+    v                = v_left + v_right
+    n                = length(left)
+    v_inv, v_logdet  = cholinv_logdet(v)
+    m                = m_left - m_right
+    return -(v_logdet + n * log2π) / 2 - dot(m, v_inv, m) / 2
 end
 
 ## Friendly functions
@@ -479,23 +503,23 @@ function Base.:-(left::MultivariateNormalNaturalParameters, right::MultivariateN
 end
 
 function lognormalizer(η::UnivariateNormalNaturalParameters)
-    return η.weighted_mean^2 / (4 * η.minus_half_precision) + log(-2 * η.minus_half_precision) / 2
+    return -η.weighted_mean^2 / (4 * η.minus_half_precision) - log(-2 * η.minus_half_precision) / 2
 end
 
 function lognormalizer(η::MultivariateNormalNaturalParameters)
-    return η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) / 4 + logdet(-2 * η.minus_half_precision_matrix) / 2
+    return -η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) / 4 - logdet(-2 * η.minus_half_precision_matrix) / 2
 end
 
 # Semih: logpdf wrt natural params. ForwardDiff is not stable with reshape function which
 # precludes the usage of logPdf functions previously defined. Below function is
 # meant to be used with Zygote.
 function Distributions.logpdf(η::UnivariateNormalNaturalParameters, x)
-    return log(invsqrt2π) + x * η.weighted_mean + x^2 * η.minus_half_precision + lognormalizer(η)
+    return -log2π / 2 + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
 end
 
 function Distributions.logpdf(η::MultivariateNormalNaturalParameters, x)
     ϕx = vcat(x, vec(x * transpose(x)))
-    return log((2 * pi)^(-0.5 * length(η.weighted_mean))) + transpose(ϕx) * vec(η) + lognormalizer(η)
+    return -length(η.weighted_mean) * log2π / 2 + transpose(ϕx) * vec(η) - lognormalizer(η)
 end
 
 isproper(params::UnivariateNormalNaturalParameters) = params.minus_half_precision < 0
@@ -538,37 +562,54 @@ end
 
 # Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
 
-get_df_m(::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, logp_nc::Function) = (z) -> ForwardDiff.derivative(logp_nc, z)
+function compute_df_mv(approximation::CVI, logp::F, z_s::Real) where {F}
+    df_m = compute_derivative(approximation.grad, logp, z_s)
+    df_v = compute_second_derivative(approximation.grad, logp, z_s)
+    return df_m, df_v / 2
+end
 
-get_df_m(::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, logp_nc::Function) = (z) -> ForwardDiff.gradient(logp_nc, z)
+function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {F}
+    df_m = compute_gradient(approximation.grad, logp, z_s)
+    df_v = compute_hessian(approximation.grad, logp, z_s)
+    return df_m, df_v ./ 2
+end
 
-get_df_v(::Type{<:UnivariateNormalNaturalParameters}, ::Type{<:UnivariateGaussianDistributionsFamily}, df_m::Function) = (z) -> ForwardDiff.derivative(df_m, z)
+function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
+    rng = something(approximation.rng, Random.GLOBAL_RNG)
 
-get_df_v(::Type{<:MultivariateNormalNaturalParameters}, ::Type{<:MultivariateGaussianDistributionsFamily}, df_m::Function) = (z) -> ForwardDiff.jacobian(df_m, z)
+    logp = (x) -> logpdf(left, x)
 
-function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::GaussianDistributionsFamily) where {F}
-    η = naturalparams(initial)
-    λ = naturalparams(initial)
+    # Natural parameters of incoming distribution message
+    η = naturalparams(dist)
     T = typeof(η)
 
-    rng = something(approximation.rng, Random.GLOBAL_RNG)
-    opt = approximation.opt
-    its = approximation.num_iterations
+    # Initial parameters of projected distribution
+    λ = naturalparams(dist)
 
-    df_m = (z) -> get_df_m(typeof(λ), typeof(initial), logp_nc)(z)
-    df_v = (z) -> get_df_v(typeof(λ), typeof(initial), df_m)(z) / 2
-
+    # Initialize update flag
     hasupdated = false
 
-    for _ in 1:its
+    for _ in 1:(approximation.n_iterations)
+        # create distribution to sample from and sample from it
         q = convert(Distribution, λ)
         z_s = rand(rng, q)
-        df_μ1 = df_m(z_s) - 2 * df_v(z_s) * mean(q)
-        df_μ2 = df_v(z_s)
+
+        # compute gradient on mean parameters
+        df_m, df_v = compute_df_mv(approximation, logp, z_s)
+
+        # convert mean parameter gradient into natural gradient
+        df_μ1 = df_m - 2 * df_v * mean(q)
+        df_μ2 = df_v
         ∇f = as_naturalparams(T, df_μ1, df_μ2)
+
+        # compute gradient on natural parameters
         ∇ = λ - η - ∇f
-        λ_new = as_naturalparams(T, cvi_update!(opt, λ, ∇))
-        if isproper(λ_new)
+
+        # perform gradient descent step
+        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+
+        # check whether updated natural parameters are proper
+        if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)
             λ = λ_new
             hasupdated = true
         end
@@ -578,5 +619,5 @@ function render_cvi(approximation::CVIApproximation, logp_nc::F, initial::Gaussi
         @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
     end
 
-    return λ
+    return convert(Distribution, λ)
 end

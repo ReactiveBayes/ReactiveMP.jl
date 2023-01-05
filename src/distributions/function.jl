@@ -6,7 +6,23 @@ import DomainSets
 import DomainIntegrals
 import HCubature
 
-import Base: isapprox
+import DomainSets: Domain, dimension
+
+import Base: isapprox, in
+
+# Unknown domain that is used as a placeholder when exact domain knowledge is unavailable
+struct UnspecifiedDomain <: Domain{Any} end
+
+# Unknown dimension is equal and not equal to any number
+struct UnspecifiedDimension end
+
+DomainSets.dimension(::UnspecifiedDomain) = UnspecifiedDimension()
+
+Base.in(::Any, ::UnspecifiedDomain) = true
+
+Base.:(!=)(::UnspecifiedDimension, ::Int)  = true
+Base.:(!==)(::UnspecifiedDimension, ::Int) = true
+Base.:(==)(::UnspecifiedDimension, ::Int)  = true
 
 abstract type AbstractContinuousGenericLogPdf end
 
@@ -74,13 +90,15 @@ struct ContinuousUnivariateLogPdf{D <: DomainSets.Domain, F} <: AbstractContinuo
     logpdf::F
 
     ContinuousUnivariateLogPdf(domain::D, logpdf::F) where {D, F} = begin
-        @assert DomainSets.dimension(domain) === 1 "Cannot create ContinuousUnivariateLogPdf. Dimension of domain = $(domain) is not equal to 1."
+        @assert DomainSets.dimension(domain) == 1 "Cannot create ContinuousUnivariateLogPdf. Dimension of domain = $(domain) is not equal to 1."
         return new{D, F}(domain, logpdf)
     end
 end
 
 variate_form(::Type{<:ContinuousUnivariateLogPdf}) = Univariate
 variate_form(::ContinuousUnivariateLogPdf)         = Univariate
+
+promote_variate_type(::Type{Univariate}, ::Type{AbstractContinuousGenericLogPdf}) = ContinuousUnivariateLogPdf
 
 getdomain(dist::ContinuousUnivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousUnivariateLogPdf) = dist.logpdf
@@ -138,6 +156,8 @@ end
 variate_form(::Type{<:ContinuousMultivariateLogPdf}) = Multivariate
 variate_form(::ContinuousMultivariateLogPdf)         = Multivariate
 
+promote_variate_type(::Type{Multivariate}, ::Type{AbstractContinuousGenericLogPdf}) = ContinuousMultivariateLogPdf
+
 getdomain(dist::ContinuousMultivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousMultivariateLogPdf) = dist.logpdf
 
@@ -167,6 +187,16 @@ end
 prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericLogPdf} = GenericLogPdfVectorisedProduct(F[left, right], 2)
 
 prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where {F <: AbstractContinuousGenericLogPdf} = push!(left, right)
+
+## Symmetric CVI prod method
+
+function prod(approximation::CVI, left, dist::AbstractContinuousGenericLogPdf)
+    return prod(approximation, dist, left) # We swap arguments in case if `AbstractContinuousGenericLogPdf` on the right hand side
+end
+
+function prod(approximation::CVI, left::AbstractContinuousGenericLogPdf, dist::AbstractContinuousGenericLogPdf)
+    error("The `CVI` approximation expects at least on of the arguments to be a distribution")
+end
 
 ## Utility methods for tests 
 

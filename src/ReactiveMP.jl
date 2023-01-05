@@ -32,6 +32,10 @@ include("constraints/form.jl")
 include("message.jl")
 include("marginal.jl")
 include("distributions.jl")
+include("addons.jl")
+
+include("addons/logscale.jl")
+include("addons/memory.jl")
 
 """
     to_marginal(any)
@@ -45,11 +49,19 @@ Note: This function is a part of the private API and is not intended to be used 
 """
 to_marginal(any) = any
 
-as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
-as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
+as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getaddons(marginal))
 
+getdata(::Nothing)                 = nothing
 getdata(collection::Tuple)         = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
+
+getlogscale(message::Message)      = getlogscale(getaddons(message))
+getlogscale(marginal::Marginal)    = getlogscale(getaddons(marginal))
+getmemoryaddon(message::Message)   = getmemoryaddon(getaddons(message))
+getmemoryaddon(marginal::Marginal) = getmemoryaddon(getaddons(marginal))
+getmemory(message::Message)        = getmemory(getaddons(message))
+getmemory(marginal::Marginal)      = getmemory(getaddons(marginal))
 
 # TupleTools.prod is a more efficient version of Base.all for Tuple here
 is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
@@ -92,6 +104,7 @@ include("distributions/wishart_inverse.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
+include("distributions/mixture_model.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
@@ -157,6 +170,7 @@ include("nodes/and.jl")
 include("nodes/or.jl")
 include("nodes/not.jl")
 include("nodes/implication.jl")
+include("nodes/switch.jl")
 
 include("rules/prototypes.jl")
 
@@ -171,6 +185,24 @@ function __init__()
     @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
         function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::NaturalParameters, ∇::NaturalParameters)
             return Flux.Optimise.update!(opt, vec(λ), vec(∇))
+        end
+    end
+
+    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
+        export ZygoteGrad
+
+        struct ZygoteGrad end
+
+        compute_gradient(::ZygoteGrad, f::F, vec::AbstractVector) where {F} = Zygote.gradient(f, vec)[1]
+        compute_hessian(::ZygoteGrad, f::F, vec::AbstractVector) where {F}  = Zygote.hessian(f, vec)
+        compute_derivative(::ZygoteGrad, f::F, value::Real) where {F}       = Zygote.gradient(f, value)[1]
+    end
+
+    @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
+        function compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
+            result = DiffResults.HessianResult(vec)
+            result = ForwardDiff.hessian!(result, logp, vec)
+            return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
         end
     end
 end
