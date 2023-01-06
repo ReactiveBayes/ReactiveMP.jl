@@ -7,11 +7,11 @@
     dim = order*ds
 
     m, V     = mean_cov(q_y_x)
-    # @show V
 
     my, Vy   = ar_slice(F, m, 1:dim), ar_slice(F, V, 1:dim, 1:dim)
     mx, Vx   = ar_slice(F, m, (dim+1):2dim), ar_slice(F, V, (dim+1):2dim, (dim+1):2dim)
-    Vyx      = ar_slice(F, V, (dim+1):2dim, (dim+1):2dim)
+    Vyx      = ar_slice(F, V, 1:dim, dim+1:2dim)
+    
 
 
     mΛ = mean(q_Λ)
@@ -26,8 +26,6 @@
     D = sum(sum(es[i]'*mW*es[j]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
     # z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my'+Vyx')*mW*es[i] for i in 1:ds)
     z = sum(Fs[i]'*(mx*my'+Vyx')*mW*es[i] for i in 1:ds)
-
-    # @show mx*my'
 
     return MvNormalWeightedMeanPrecision(z, D)
 end
