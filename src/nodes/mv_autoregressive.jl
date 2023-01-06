@@ -132,7 +132,7 @@ end
 
 function mar_transition(order, Λ)
     dim = size(Λ, 1)
-    W = 1e12*diageye(dim*order)
+    W = huge*diageye(dim*order)
     W[1:dim, 1:dim] = Λ
     return W
 end
@@ -157,7 +157,8 @@ end
 function mar_companion_matrix(order, ds, a)
     dim = order*ds
     S = mar_shift(order, ds)
-    es = [uvector(dim, i) for i in 1:order]
-    Fs = [mask_mar(order, ds, i) for i in 1:order]
-    return S .+ sum(es[i]*a'*Fs[i]' for i in 1:order)
+    es = [uvector(dim, i) for i in 1:ds]
+    Fs = [mask_mar(order, ds, i) for i in 1:ds]
+    L =  S .+ sum(es[i]*a'*Fs[i]' for i in 1:ds)
+    return L
 end

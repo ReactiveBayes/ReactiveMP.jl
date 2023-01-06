@@ -6,10 +6,14 @@
 
     dim = order*ds
 
-    myx, Vyx = mean_cov(q_y_x)
-    my, Vy   = ar_slice(F, myx, 1:dim), ar_slice(F, Vyx, 1:dim, 1:dim)
-    mx, Vx   = ar_slice(F, myx, (dim+1):2dim), ar_slice(F, Vyx, (dim+1):2dim, (dim+1):2dim)
-    Vyx      = ar_slice(F, Vyx, (dim+1):2dim, 1:dim)
+    m, V     = mean_cov(q_y_x)
+    # @show V
+
+    my, Vy   = ar_slice(F, m, 1:dim), ar_slice(F, V, 1:dim, 1:dim)
+    mx, Vx   = ar_slice(F, m, (dim+1):2dim), ar_slice(F, V, (dim+1):2dim, (dim+1):2dim)
+    Vyx      = ar_slice(F, V, (dim+1):2dim, (dim+1):2dim)
+
+
     mΛ = mean(q_Λ)
     mW = mar_transition(order, mΛ)
 
@@ -17,9 +21,13 @@
     es = [uvector(dim, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
     S = mar_shift(order, ds)
-    
-    D = sum(sum(es[j]'*mW*es[i]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
-    z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my'+Vyx')*mW*es[i] for i in 1:ds)
+    # NOTE: prove that sum(Fs[i]'*((mx*mx'+Vx')*S')*mW*es[i] for i in 1:ds) == 0.0
+
+    D = sum(sum(es[i]'*mW*es[j]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
+    # z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my'+Vyx')*mW*es[i] for i in 1:ds)
+    z = sum(Fs[i]'*(mx*my'+Vyx')*mW*es[i] for i in 1:ds)
+
+    # @show mx*my'
 
     return MvNormalWeightedMeanPrecision(z, D)
 end

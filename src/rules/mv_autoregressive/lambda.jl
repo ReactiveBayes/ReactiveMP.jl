@@ -17,7 +17,7 @@
     myx, Vyx = mean_cov(q_y_x)
     my, Vy   = ar_slice(F, myx, 1:dim), ar_slice(F, Vyx, 1:dim, 1:dim)
     mx, Vx   = ar_slice(F, myx, (dim+1):2dim), ar_slice(F, Vyx, (dim+1):2dim, (dim+1):2dim)
-    Vyx      = ar_slice(F, Vyx, (dim+1):2dim, 1:dim)
+    Vyx      = ar_slice(F, Vyx, (dim+1):2dim, (dim+1):2dim)
 
     es = [uvector(dim, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
