@@ -26,9 +26,9 @@
     G₂ = ((my*mx' + Vyx)*mA')[1:ds, 1:ds]
     G₃ = transpose(G₂)
     Ex_xx = mx*mx' + Vx
-    G₅ = sum(sum(es[i]*ma'*Fs[j]'Ex_xx*Fs[i]*ma*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
-    G₆ = sum(sum(es[i]*tr(Va*Fs[i]'*Ex_xx*Fs[j])*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
-    @show Δ = G₁ - G₂ - G₃ + G₅ + G₆
+    G₅ = sum(sum(es[i]*ma'*Fs[i]'Ex_xx*Fs[j]*ma*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
+    G₆ = sum(sum(es[i]*tr(Fs[i]'*Ex_xx*Fs[j]*Va)*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
+    Δ = G₁ - G₂ - G₃ + G₅ + G₆
 
     return WishartMessage(n+2, Δ)
 

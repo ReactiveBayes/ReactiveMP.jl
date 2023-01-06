@@ -44,8 +44,7 @@ function ar_y_x_marginal(
     # negate_inplace!(mW * mA)
     W_12 = -(mW * mA)
 
-    # Equivalent to 
-    W_21 = (-mA' * mW)
+    W_21 = (-mA' * mW')
 
     W_22 = Ξ + mA' * mW * mA
 
