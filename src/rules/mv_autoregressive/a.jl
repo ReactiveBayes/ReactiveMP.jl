@@ -11,8 +11,6 @@
     my, Vy   = ar_slice(F, m, 1:dim), ar_slice(F, V, 1:dim, 1:dim)
     mx, Vx   = ar_slice(F, m, (dim+1):2dim), ar_slice(F, V, (dim+1):2dim, (dim+1):2dim)
     Vyx      = ar_slice(F, V, 1:dim, dim+1:2dim)
-    
-
 
     mΛ = mean(q_Λ)
     mW = mar_transition(order, mΛ)

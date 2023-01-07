@@ -6,8 +6,8 @@
     order, ds = getorder(meta), getdimensionality(meta)
     F = Multivariate
     dim = order*ds
-
-    n = div(ndims(q_y_x), 2)
+    
+    # n = div(ndims(q_y_x), 2)
 
     # y_x_mean, y_x_cov = mean_cov(q_y_x)
     ma, Va = mean_cov(q_a)
@@ -24,13 +24,14 @@
     S = mar_shift(order, ds)
     G₁ = (my*my' + Vy)[1:ds, 1:ds]
     G₂ = ((my*mx' + Vyx)*mA')[1:ds, 1:ds]
-    G₃ = transpose(G₂)
+    # G₃ = transpose(G₂)
+    G₃ = (mA*(mx*my' + Vyx'))[1:ds, 1:ds]
     Ex_xx = mx*mx' + Vx
     G₅ = sum(sum(es[i]*ma'*Fs[i]'Ex_xx*Fs[j]*ma*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
     G₆ = sum(sum(es[i]*tr(Fs[i]'*Ex_xx*Fs[j]*Va)*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
     Δ = G₁ - G₂ - G₃ + G₅ + G₆
 
-    return WishartMessage(n+2, Δ)
+    return WishartMessage(ds+2, Δ)
 
 end
 
@@ -59,7 +60,7 @@ end
     Ex_xx = mx*mx' + Vx
     G₅ = sum(sum(es[i]*ma'*Fs[j]'Ex_xx*Fs[i]*ma*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
     G₆ = sum(sum(es[i]*tr(Va*Fs[i]'*Ex_xx*Fs[j])*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
-    Δ = G₁ + G₂ + G₃ + G₅ + G₆
+    Δ = G₁ - G₂ - G₃ + G₅ + G₆
 
-    return WishartMessage(length(my)+2, Δ)
+    return WishartMessage(length(my)+2, inv(Δ))
 end
