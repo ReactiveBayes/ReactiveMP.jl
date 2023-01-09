@@ -18,10 +18,13 @@ begin
 
     Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:ds) for j in 1:ds)
 
-    Ξ = mA'*inv(Vy + inv(mW))*mA + Λ
-    z = mA'*inv(Vy + inv(mW))*my
+    Σ₁ = pinv(mA)*(Vy)*pinv(mA)' + pinv(mA'*mW*mA)
+    @show Σ₁ == pinv(mA)*(Vy + inv(mW))*pinv(mA)'
+    Σ₂ = inv(Λ)
+    θ = pinv(pinv(Σ₁) + inv(Σ₂))
+    z = θ*pinv(Σ₁)*pinv(mA)*my
 
-    return MvNormalWeightedMeanPrecision(z, Ξ)
+    return MvNormalMeanCovariance(z, θ)
 end
 
 @rule MAR(:x, Marginalisation) (q_y::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta) = begin
