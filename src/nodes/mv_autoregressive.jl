@@ -45,24 +45,28 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
 
     ma, Va = mean_cov(q_a)
     mA = mar_companion_matrix(order, ds, ma)[1:ds, 1:dim]
+
     mx, Vx   = ar_slice(F, myx, (dim+1):2dim), ar_slice(F, Vyx, (dim+1):2dim, (dim+1):2dim)
     my1, Vy1 = myx[1:ds], Vyx[1:ds, 1:ds]
     Vy1x     = ar_slice(F, Vyx, 1:ds, dim+1:2dim)
+
+    # @show Vyx
+    # @show Vy1x
 
     # this should be inside MARMeta
     es = [uvector(ds, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
     g₁ = my1'*mΛ*my1 + tr(Vy1*mΛ)
-    g₂ = -mx'*mA'*mΛ*my1 + tr(Vy1x*mA'*mΛ)
-    g₃ = -g₂
+    g₂ = mx'*mA'*mΛ*my1 + tr(Vy1x*mA'*mΛ)
+    g₃ = g₂
     G = sum(sum(es[i]'*mΛ*es[j]*Fs[i]*(ma*ma' + Va)*Fs[j]' for i in 1:ds) for j in 1:ds)
     g₄ = mx'*G*mx + tr(Vx*G)
-    AE =  n/2*log2π - 0.5*mean(logdet, q_Λ) + 0.5*(g₁ + g₂ + g₃ + g₄)
+    AE =  n/2*log2π - 0.5*mean(logdet, q_Λ) + 0.5*(g₁ - g₂ - g₃ + g₄)
 
     if order > 1
-        # AE += entropy(q_y_x)
-        idc = LazyArrays.Vcat(1:order, (dim+1):2dim)
+        AE += entropy(q_y_x)
+        idc = LazyArrays.Vcat(1:ds, dim+1:2dim)
         myx_n = view(myx, idc)
         Vyx_n = view(Vyx, idc, idc)
         q_y_x = MvNormalMeanCovariance(myx_n, Vyx_n)
