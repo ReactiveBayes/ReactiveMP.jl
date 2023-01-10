@@ -110,7 +110,7 @@ end
     AE =  n/2*log2π - 0.5*mean(logdet, q_Λ) + 0.5*(g₁ + g₂ + g₃ + g₄)
 
     if order > 1
-        # AE += entropy(q_y)
+        AE += entropy(q_y)
         q_y = MvNormalMeanCovariance(my1, Vy1)
         AE -= entropy(q_y)
     end

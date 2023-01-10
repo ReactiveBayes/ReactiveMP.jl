@@ -7,9 +7,6 @@
     F = Multivariate
     dim = order*ds
     
-    # n = div(ndims(q_y_x), 2)
-
-    # y_x_mean, y_x_cov = mean_cov(q_y_x)
     ma, Va = mean_cov(q_a)
 
     mA = mar_companion_matrix(order, ds, ma)
@@ -24,8 +21,7 @@
     S = mar_shift(order, ds)
     G₁ = (my*my' + Vy)[1:ds, 1:ds]
     G₂ = ((my*mx' + Vyx)*mA')[1:ds, 1:ds]
-    # G₃ = transpose(G₂)
-    G₃ = (mA*(mx*my' + Vyx'))[1:ds, 1:ds]
+    G₃ = transpose(G₂)
     Ex_xx = mx*mx' + Vx
     G₅ = sum(sum(es[i]*ma'*Fs[i]'Ex_xx*Fs[j]*ma*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
     G₆ = sum(sum(es[i]*tr(Fs[i]'*Ex_xx*Fs[j]*Va)*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]

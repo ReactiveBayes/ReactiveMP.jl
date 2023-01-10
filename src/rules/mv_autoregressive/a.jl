@@ -19,10 +19,9 @@
     es = [uvector(dim, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
     S = mar_shift(order, ds)
-    # NOTE: prove that sum(Fs[i]'*((mx*mx'+Vx')*S')*mW*es[i] for i in 1:ds) == 0.0
 
+    # NOTE: prove that sum(Fs[i]'*((mx*mx'+Vx')*S')*mW*es[i] for i in 1:ds) == 0.0
     D = sum(sum(es[i]'*mW*es[j]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
-    # z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my'+Vyx')*mW*es[i] for i in 1:ds)
     z = sum(Fs[i]'*(mx*my'+Vyx')*mW*es[i] for i in 1:ds)
 
     return MvNormalWeightedMeanPrecision(z, D)
