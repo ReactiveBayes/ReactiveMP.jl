@@ -43,7 +43,9 @@ end
 # Example usage of a reduced testset
 # julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
 
-addprocs(Sys.CPU_THREADS)
+# Makes it hard to use your computer if Julia occupies all cpus, so we max at 4
+# GitHub actions has 2 cores in most of the cases 
+addprocs(max(Sys.CPU_THREADS, 4))
 
 @everywhere using Test, Documenter, ReactiveMP, Distributions
 @everywhere using TestSetExtensions
