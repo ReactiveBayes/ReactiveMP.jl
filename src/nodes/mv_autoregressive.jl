@@ -132,7 +132,7 @@ end
 
 function mar_transition(order, Λ)
     dim = size(Λ, 1)
-    W = huge*diageye(dim*order)
+    W = 1.0*diageye(dim*order)
     W[1:dim, 1:dim] = Λ
     return W
 end
