@@ -209,32 +209,23 @@ isconst(::AbstractArray{<:RandomProcess})  = false
 #     prod_strategy(randomprocess),
 #     prod_constraint(randomprocess),
 #     messages_form_constraint(randomprocess),
-#     messages_form_check_strategy(randomprocess),
-#     test_input(randomprocess),
-#     train_input(randomprocess)
+#     messages_form_check_strategy(randomprocess)
 # )
 # marginal_prod_fn(randomprocess::RandomProcess) = marginal_prod_fn(
 #     prod_strategy(randomprocess),
 #     prod_constraint(randomprocess),
 #     marginal_form_constraint(randomprocess),
-#     marginal_form_check_strategy(randomprocess),
-#     test_input(randomprocess),
-#     train_input(randomprocess)
+#     marginal_form_check_strategy(randomprocess)
 # )
 
 ########## messages and marginal prod functions ############
+# this function returns means and covariances of messages 
 function make_multivariate_message(messages) ## function for concatinating messages
     m = mean.(messages) 
     v = Diagonal(var.(messages))
     return m,v
 end 
 
-# marginal_prod_fn(randomprocess::RandomProcess) = marginal_prod_fn(
-#     covariance_strategy(randomprocess)
-#     test_input(randomprocess)
-#     train_input(randomprocess)
-#     inducing_input(randomprocess)
-# )
 
 function marginal_prod_fn(randomprocess::RandomProcess)
     test           = randomprocess.test_input
@@ -252,14 +243,13 @@ function marginal_prod_fn(randomprocess::RandomProcess)
         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
         m, K= predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
         extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
-        return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, m_right, cov_right, inducing, cov_strategy),false,false)
+        return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false)
     end
 end
 
 function messages_prod_fn(randomprocess::RandomProcess)
-    return marginal_prod_fn(randomprocess::RandomProcess)
+    error("No message for process node")
 end
-
 
 #####################################
 
@@ -272,6 +262,7 @@ function messageout(randomprocess::RandomProcess, index::Int)
         initialize_output_messages!(randomprocess)
     end
     return @inbounds randomprocess.output_messages[index] 
+    # return getmarginal(randomprocess, IncludeAll()) |> map(AbstractMessage, as_message)
 end
 
 
@@ -319,13 +310,15 @@ initialize_output_messages!(randomprocess::RandomProcess) = initialize_output_me
 function initialize_output_messages!(::Nothing, randomprocess::RandomProcess)
     d          = degree(randomprocess)
     outputmsgs = randomprocess.output_messages  
-    inputmsgs  = randomprocess.input_messages    
-    prod_fn    = messages_prod_fn(randomprocess)
+    #inputmsgs  = randomprocess.input_messages    
+    #prod_fn    = messages_prod_fn(randomprocess)
     resize!(outputmsgs, d)
 
+    #just return the marginal as message and doesn't care about messages on other edges. This is inefficient because we send a sream of message.
     @inbounds for i in 1:d
         outputmsgs[i] = MessageObservable(Message)
-        outputmsg     = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
+        outputmsg     = getmarginal(randomprocess) |> map(Message, as_message)
+        # outputmsg     = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
         connect!(outputmsgs[i], outputmsg)
     end
 
