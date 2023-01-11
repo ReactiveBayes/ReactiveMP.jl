@@ -37,15 +37,18 @@ end
 
     my, Vy   = mean_cov(q_y)
     mx, Vx   = mean_cov(q_x)
-    mΛ = mean(q_Λ)
+    mΛ       = mean(q_Λ)
+
     mW = mar_transition(order, mΛ)
+    S  = mar_shift(order, ds)
 
     # this should be inside MARMeta
     es = [uvector(dim, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
+
     D = sum(sum(es[j]'*mW*es[i]*Fs[i]'*(mx*mx' + Vx)*Fs[j] for i in 1:ds) for j in 1:ds)
-    z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my)*mW*es[i] for i in 1:ds)
+    z = sum(Fs[i]'*((mx*mx'+Vx')*S' + mx*my')*mW*es[i] for i in 1:ds)
 
     return MvNormalWeightedMeanPrecision(z, D)
 end
