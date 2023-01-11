@@ -58,5 +58,5 @@ end
     G₆ = sum(sum(es[i]*tr(Va*Fs[i]'*Ex_xx*Fs[j])*es[j]' for i in 1:ds) for j in 1:ds)[1:ds, 1:ds]
     Δ = G₁ - G₂ - G₃ + G₅ + G₆
 
-    return WishartMessage(length(my)+2, inv(Δ))
+    return WishartMessage(ds+2, Δ)
 end

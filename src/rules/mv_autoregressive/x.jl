@@ -18,8 +18,9 @@ begin
     Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:ds) for j in 1:ds)
 
     Σ₁ = Hermitian(pinv(mA)*(Vy)*pinv(mA') + pinv(mA'*mW*mA))
-    Ξ = Hermitian(inv(Σ₁) + Λ)
-    z = inv(Σ₁)*pinv(mA)*my
+
+    Ξ = (pinv(Σ₁) + Λ)
+    z = pinv(Σ₁)*pinv(mA)*my
 
     return MvNormalWeightedMeanPrecision(z, Ξ)
 end
@@ -42,9 +43,10 @@ end
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
     Λ = sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:ds) for j in 1:ds)
+    Λ₀ = Hermitian(mA'*mW*mA)
 
-    Ξ = mA'*mW*mA + Λ
-    z = mA'*mW*my
+    Ξ = Λ₀ + Λ
+    z = Λ₀*pinv(mA)*my
 
     return MvNormalWeightedMeanPrecision(z, Ξ)
 end
