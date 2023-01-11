@@ -1,21 +1,21 @@
 export GaussianProcess, ProcessMeta 
 
 # Create GP structure 
-struct GaussianProcess{F, K, M, I1, I2, I3, I4, I5, S}
+struct GaussianProcess{F, K, M, I1, I2, I4, S}
     meanfunction        ::F
     kernelfunction      ::K
     finitemarginal      ::M  
     testinput           ::I1
     traininput          ::I2
-    observation         ::I3
-    observation_noise   ::I4
-    inducing_input      ::I5
+    inducing_input      ::I4
     covariance_strategy ::S
 end
 
+#ProcessMeta to store the index of observation 
 struct ProcessMeta 
     index :: Int 
 end 
+
 
 @node GaussianProcess Stochastic [out, meanfunc, kernelfunc, params]
 
@@ -42,7 +42,12 @@ end
 function ReactiveMP.entropy(p::GaussianProcess)
     return ReactiveMP.entropy(p.finitemarginal)
 end
-
+function mean(p::GaussianProcess)
+    return mean(p.finitemarginal)
+end
+function cov(p::GaussianProcess)
+    return cov(p.finitemarginal)
+end
 function gp_avg_energy end 
 
 function gp_avg_energy(::CovarianceMatrixStrategy{<:FullCovarianceStrategy},meanfunc, kernel, Σ_finitemarginal, y_finitemarginal, x, θ, x_inducing)

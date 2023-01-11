@@ -169,5 +169,6 @@ include("delta/cvi/out.jl")
 include("delta/cvi/marginals.jl")
 
 #add rule for gp node 
+include("gp/marginals.jl")
 include("gp/out.jl")
 include("gp/params.jl")

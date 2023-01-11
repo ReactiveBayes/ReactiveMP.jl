@@ -119,6 +119,7 @@ include("score/variable.jl")
 include("score/node.jl")
 
 # Stochastic nodes
+#add gp node
 include("nodes/gp.jl")
 include("nodes/uninformative.jl")
 include("nodes/uniform.jl")
@@ -149,8 +150,6 @@ include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/poisson.jl")
-
-#add gp node
 
 include("nodes/flow/flow.jl")
 include("nodes/delta/delta.jl")
