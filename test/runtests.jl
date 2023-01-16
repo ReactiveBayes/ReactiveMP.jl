@@ -182,8 +182,8 @@ using Aqua
 
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
-    # `project_toml_formatting` is broken on CI, revise at some point
-    Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
+    # `piracy` is broken on CI, see https://github.com/JuliaTesting/Aqua.jl/issues/95, revise at some point
+    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
     # doctest(ReactiveMP)
 else
     println("Running specific tests:")
