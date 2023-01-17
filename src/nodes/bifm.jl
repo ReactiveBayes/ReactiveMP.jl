@@ -89,13 +89,7 @@ meta = BIFMMeta(A, B, C, μu, Σu)
 ```
 where `A`, `B` and `C` are the transition matrices in the model. `μu` and `Σu` are the mean vector and covariance matrix of the input. Importantly, in this setting we assume that these are known and do not change due to an external model.
 """
-function BIFMMeta(
-    A::Array{T1, 2},
-    B::Array{T2, 2},
-    C::Array{T3, 2},
-    μu::Array{T4, 1},
-    Σu::Array{T5, 2}
-) where {T1, T2, T3, T4, T5}
+function BIFMMeta(A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}, μu::Array{T4, 1}, Σu::Array{T5, 2}) where {T1, T2, T3, T4, T5}
     T = promote_type(T1, T2, T3, T4, T5)
     # check whether the dimensionality of transition matrices makes sense
     @assert size(A, 1) == size(B, 1)

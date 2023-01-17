@@ -23,11 +23,7 @@ function mean_var(dist::ExponentialLinearQuadratic)
     adjusted_pdf = let a = dist.a, b = dist.b, c = dist.c, d = dist.d
         (x) -> exp(-(a * x - x^2 + b * exp(c * x + d * x^2 / 2)) / 2)
     end
-    return approximate_meancov(
-        dist.approximation,
-        adjusted_pdf,
-        NormalMeanVariance(zero(eltype(dist)), one(eltype(dist)))
-    )
+    return approximate_meancov(dist.approximation, adjusted_pdf, NormalMeanVariance(zero(eltype(dist)), one(eltype(dist))))
 end
 
 mean_invcov(dist::ExponentialLinearQuadratic)      = mean_cov(dist) .|> (identity, inv)
@@ -56,10 +52,8 @@ invcov(dist::ExponentialLinearQuadratic)       = mean_invcov(dist)[2]
 precision(dist::ExponentialLinearQuadratic)    = mean_invcov(dist)[2]
 weightedmean(dist::ExponentialLinearQuadratic) = weightedmean_invcov(dist)[1]
 
-prod_analytical_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:ExponentialLinearQuadratic}) =
-    ProdAnalyticalRuleAvailable()
-prod_analytical_rule(::Type{<:ExponentialLinearQuadratic}, ::Type{<:UnivariateNormalDistributionsFamily}) =
-    ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:ExponentialLinearQuadratic}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:ExponentialLinearQuadratic}, ::Type{<:UnivariateNormalDistributionsFamily}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::UnivariateNormalDistributionsFamily, right::ExponentialLinearQuadratic)
     mean, variance = approximate_meancov(right.approximation, (z) -> pdf(right, z), left)

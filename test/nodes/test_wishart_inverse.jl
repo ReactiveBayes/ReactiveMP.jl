@@ -28,13 +28,8 @@ import ReactiveMP: make_node
             q_ν   = PointMass(2.0)
             q_S   = PointMass([2.0 0.0; 0.0 2.0])
 
-            marginals = (
-                Marginal(q_out, false, false),
-                Marginal(q_ν, false, false),
-                Marginal(q_S, false, false)
-            )
-            @test score(AverageEnergy(), InverseWishart, Val{(:out, :ν, :S)}, marginals, nothing) ≈
-                  9.496544113156787
+            marginals = (Marginal(q_out, false, false, nothing), Marginal(q_ν, false, false, nothing), Marginal(q_S, false, false, nothing))
+            @test score(AverageEnergy(), InverseWishart, Val{(:out, :ν, :S)}, marginals, nothing) ≈ 9.496544113156787
         end
 
         begin
@@ -44,13 +39,8 @@ import ReactiveMP: make_node
             q_ν   = PointMass(ν)
             q_S   = PointMass(S)
 
-            marginals = (
-                Marginal(q_out, false, false),
-                Marginal(q_ν, false, false),
-                Marginal(q_S, false, false)
-            )
-            @test score(AverageEnergy(), InverseWishart, Val{(:out, :ν, :S)}, marginals, nothing) ≈
-                  1.1299587008097587
+            marginals = (Marginal(q_out, false, false, nothing), Marginal(q_ν, false, false, nothing), Marginal(q_S, false, false, nothing))
+            @test score(AverageEnergy(), InverseWishart, Val{(:out, :ν, :S)}, marginals, nothing) ≈ 1.1299587008097587
         end
     end
 end

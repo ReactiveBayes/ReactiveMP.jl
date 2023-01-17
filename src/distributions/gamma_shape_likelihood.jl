@@ -14,8 +14,7 @@ Distributions.@distr_support GammaShapeLikelihood 0 Inf
 
 Distributions.support(dist::GammaShapeLikelihood) = Distributions.RealInterval(minimum(dist), maximum(dist))
 
-Base.show(io::IO, distribution::GammaShapeLikelihood{T}) where {T} =
-    print(io, "GammaShapeLikelihood{$T}(π = $(distribution.p), γ = $(distribution.γ))")
+Base.show(io::IO, distribution::GammaShapeLikelihood{T}) where {T} = print(io, "GammaShapeLikelihood{$T}(π = $(distribution.p), γ = $(distribution.γ))")
 
 Distributions.logpdf(distribution::GammaShapeLikelihood, x::Real) = distribution.γ * x - distribution.p * loggamma(x)
 

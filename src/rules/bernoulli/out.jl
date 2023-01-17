@@ -1,12 +1,13 @@
 export rule
 
-@rule Bernoulli(:out, Marginalisation) (m_p::PointMass,) = begin
+@rule Bernoulli(:out, Marginalisation) (m_p::Beta,) = begin
+    @logscale 0
     return Bernoulli(mean(m_p))
 end
 
-@rule Bernoulli(:out, Marginalisation) (q_p::PointMass,) = begin
-    return Bernoulli(mean(q_p))
-end
+@rule Bernoulli(:out, Marginalisation) (m_p::PointMass,) = Bernoulli(mean(m_p))
+
+@rule Bernoulli(:out, Marginalisation) (q_p::PointMass,) = Bernoulli(mean(q_p))
 
 @rule Bernoulli(:out, Marginalisation) (q_p::Beta,) = begin
     rho_1 = clamp(exp(mean(log, q_p)), tiny, huge)

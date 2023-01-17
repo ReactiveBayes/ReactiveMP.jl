@@ -1,24 +1,41 @@
+
 module ReactiveMP
 
-include("rocket.jl")
-include("macrohelpers.jl")
-include("helpers.jl")
-include("math.jl")
+# List global dependencies here
+using TinyHugeNumbers
 
-include("constraints/meta/meta.jl")
+# Reexport `tiny` and `huge` from the `TinyHugeNumbers`
+export tiny, huge
+
+include("helpers/macrohelpers.jl")
+include("helpers/helpers.jl")
+
+# This should be included before `distributions/*.jl`
+include("score/counting.jl")
+
+include("helpers/algebra/cholesky.jl")
+include("helpers/algebra/companion_matrix.jl")
+include("helpers/algebra/correction.jl")
+include("helpers/algebra/common.jl")
+include("helpers/algebra/permutation_matrix.jl")
+include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/prod/prod.jl")
-include("constraints/form/form.jl")
-
-include("message.jl")
-include("marginal.jl")
-include("distributions.jl")
-
 include("constraints/prod/prod_analytical.jl")
 include("constraints/prod/prod_generic.jl")
 include("constraints/prod/prod_preserve_type.jl")
 include("constraints/prod/prod_final.jl")
 include("constraints/prod/prod_resolve.jl")
+
+include("constraints/form.jl")
+
+include("message.jl")
+include("marginal.jl")
+include("distributions.jl")
+include("addons.jl")
+
+include("addons/logscale.jl")
+include("addons/memory.jl")
 
 """
     to_marginal(any)
@@ -32,28 +49,36 @@ Note: This function is a part of the private API and is not intended to be used 
 """
 to_marginal(any) = any
 
-as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message))
-as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal))
+as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getaddons(marginal))
 
-include("variable.jl")
-include("pipeline.jl")
+getdata(::Nothing)                 = nothing
+getdata(collection::Tuple)         = map(getdata, collection)
+getdata(collection::AbstractArray) = map(getdata, collection)
 
-include("actors/score.jl")
+getlogscale(message::Message)      = getlogscale(getaddons(message))
+getlogscale(marginal::Marginal)    = getlogscale(getaddons(marginal))
+getmemoryaddon(message::Message)   = getmemoryaddon(getaddons(message))
+getmemoryaddon(marginal::Marginal) = getmemoryaddon(getaddons(marginal))
+getmemory(message::Message)        = getmemory(getaddons(message))
+getmemory(marginal::Marginal)      = getmemory(getaddons(marginal))
 
-include("algebra/cholesky.jl")
-include("algebra/companion_matrix.jl")
-include("algebra/correction.jl")
-include("algebra/helpers.jl")
-include("algebra/permutation_matrix.jl")
-include("algebra/standard_basis_vector.jl")
+# TupleTools.prod is a more efficient version of Base.all for Tuple here
+is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
+is_initial(tuple::Tuple) = TupleTools.prod(map(is_initial, tuple))
 
-include("approximations.jl")
+include("approximations/approximations.jl")
+include("approximations/shared.jl")
 include("approximations/gausshermite.jl")
 include("approximations/gausslaguerre.jl")
 include("approximations/sphericalradial.jl")
 include("approximations/laplace.jl")
 include("approximations/importance.jl")
 include("approximations/optimizers.jl")
+include("approximations/rts.jl")
+include("approximations/linearization.jl")
+include("approximations/unscented.jl")
+include("approximations/cvi.jl")
 
 include("distributions/pointmass.jl")
 include("distributions/uniform.jl")
@@ -79,24 +104,26 @@ include("distributions/wishart_inverse.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
+include("distributions/mixture_model.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
+include("variables/variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
+include("variables/collection.jl")
 
+include("pipeline/pipeline.jl")
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
-include("pipeline/vague.jl")
-
-include("rule.jl")
 
 include("node.jl")
-include("score.jl")
+include("rule.jl")
 
+include("score/score.jl")
 include("score/variable.jl")
 include("score/node.jl")
 
@@ -129,8 +156,10 @@ include("nodes/autoregressive.jl")
 include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
-include("nodes/flow/flow.jl")
 include("nodes/poisson.jl")
+
+include("nodes/flow/flow.jl")
+include("nodes/delta/delta.jl")
 
 # Deterministic nodes
 include("nodes/addition.jl")
@@ -140,20 +169,41 @@ include("nodes/and.jl")
 include("nodes/or.jl")
 include("nodes/not.jl")
 include("nodes/implication.jl")
+include("nodes/switch.jl")
 
 include("rules/prototypes.jl")
 
-include("constraints/form/form_unspecified.jl")
-include("constraints/form/form_point_mass.jl")
-include("constraints/form/form_fixed_marginal.jl")
-include("constraints/form/form_sample_list.jl")
+include("constraints/specifications/constraints.jl")
+include("constraints/specifications/form.jl")
+include("constraints/specifications/factorisation.jl")
+include("constraints/specifications/meta.jl")
 
-include("constraints/spec/spec.jl")
-include("constraints/spec/factorisation_spec.jl")
-include("constraints/spec/form_spec.jl")
+using Requires
 
-include("model.jl")
-include("fixes.jl")
-include("inference.jl")
+function __init__()
+    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
+        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::NaturalParameters, ∇::NaturalParameters)
+            return Flux.Optimise.update!(opt, vec(λ), vec(∇))
+        end
+    end
+
+    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
+        export ZygoteGrad
+
+        struct ZygoteGrad end
+
+        compute_gradient(::ZygoteGrad, f::F, vec::AbstractVector) where {F} = Zygote.gradient(f, vec)[1]
+        compute_hessian(::ZygoteGrad, f::F, vec::AbstractVector) where {F}  = Zygote.hessian(f, vec)
+        compute_derivative(::ZygoteGrad, f::F, value::Real) where {F}       = Zygote.gradient(f, value)[1]
+    end
+
+    @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
+        function compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
+            result = DiffResults.HessianResult(vec)
+            result = ForwardDiff.hessian!(result, logp, vec)
+            return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
+        end
+    end
+end
 
 end

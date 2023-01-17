@@ -39,7 +39,7 @@ end
 compile(f::RadialFlowEmpty{1})         = RadialFlow(randn(), rand(), randn())
 compile(f::RadialFlowEmpty)            = RadialFlow(randn(getdim(f)), rand(), randn())
 compile(f::RadialFlowEmpty{1}, params) = RadialFlow(params[1], params[2], params[3])
-compile(f::RadialFlowEmpty, params)    = RadialFlow(params[1:getdim(f)], params[getdim(f)+1], params[getdim(f)+2])
+compile(f::RadialFlowEmpty, params)    = RadialFlow(params[1:getdim(f)], params[getdim(f) + 1], params[getdim(f) + 2])
 
 @doc raw"""
 The `RadialFlow(dim::Int64)` function creates a mutable `RadialFlow` structure with parameters corresponding to input of dimensions `dim`. The parameters are each random sampled from a standard (multivariate) normal distribution.
@@ -106,8 +106,7 @@ function _forward(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
     return result
 end
 forward(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} =
-    broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(_forward, Ref(f), input)
 
 # forward pass through the RadialFlow function (univariate input)
 function _forward(f::RadialFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real}
@@ -128,11 +127,7 @@ function _forward(f::RadialFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Rea
     return result
 end
 forward(f::RadialFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _forward(f, input)
-Broadcast.broadcasted(
-    ::typeof(forward),
-    f::RadialFlow{T1, T2},
-    input::AbstractVector{<:Real}
-) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
 
 function _forward(f::RadialFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     # function when the input is an array with 1 element
@@ -140,8 +135,7 @@ function _forward(f::RadialFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     return forward(f, input[1])
 end
 forward(f::RadialFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real} = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} =
-    broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::RadialFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
 
 # inplace forward pass through the RadialFlow function (multivariate input)
 function forward!(output::T1, f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
@@ -184,8 +178,7 @@ function _jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
     return result
 end
 jacobian(f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} =
-    broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
 
 function _jacobian(f::RadialFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     # function when the input is an array with 1 element
@@ -193,8 +186,7 @@ function _jacobian(f::RadialFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     return jacobian(f, input[1])
 end
 jacobian(f::RadialFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real} = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} =
-    broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
 
 # jacobian of the RadialFlow function (univariate input)
 function _jacobian(f::RadialFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real}
@@ -211,11 +203,7 @@ function _jacobian(f::RadialFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Re
     return result
 end
 jacobian(f::RadialFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _jacobian(f, input)
-Broadcast.broadcasted(
-    ::typeof(jacobian),
-    f::RadialFlow{T1, T2},
-    input::AbstractVector{<:Real}
-) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::RadialFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
 
 # inplace jacobian of the RadialFlow function (multivariate input)
 function jacobian!(output::AbstractMatrix{T2}, f::RadialFlow{T1, T2}, input::T1) where {T1, T2 <: Real}

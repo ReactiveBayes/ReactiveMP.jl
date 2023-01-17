@@ -11,12 +11,9 @@ using Random
     # Here we test some extra ReactiveMP.jl specific functionality
 
     @testset "Bernoulli × Categorical" begin
-        @test prod(ProdAnalytical(), Bernoulli(0.3), Categorical([1 / 2, 1 / 2])) ≈
-              prod(ProdAnalytical(), Bernoulli(0.3), Bernoulli(0.5))
-        @test prod(ProdAnalytical(), Bernoulli(0.1), Categorical([0.2, 0.8])) ≈
-              prod(ProdAnalytical(), Bernoulli(0.1), Bernoulli(0.2))
-        @test prod(ProdAnalytical(), Bernoulli(0.9), Categorical([0.8, 0.2])) ≈
-              prod(ProdAnalytical(), Bernoulli(0.9), Bernoulli(0.8))
+        @test prod(ProdAnalytical(), Bernoulli(0.3), Categorical([1 / 2, 1 / 2])) ≈ prod(ProdAnalytical(), Bernoulli(0.3), Bernoulli(0.5))
+        @test prod(ProdAnalytical(), Bernoulli(0.1), Categorical([0.2, 0.8])) ≈ prod(ProdAnalytical(), Bernoulli(0.1), Bernoulli(0.2))
+        @test prod(ProdAnalytical(), Bernoulli(0.9), Categorical([0.8, 0.2])) ≈ prod(ProdAnalytical(), Bernoulli(0.9), Bernoulli(0.8))
     end
 end
 

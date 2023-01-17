@@ -32,8 +32,7 @@ __schedule_updates(var::AbstractVariable)                         = __schedule_u
 __schedule_updates(vars::NTuple{N, <:AbstractVariable}) where {N} = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
 __schedule_updates(vars::AbstractArray{<:AbstractVariable})       = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
 
-__schedule_updates(pipeline_stage::ScheduleOnPipelineStage, var::AbstractVariable) =
-    __schedule_updates(pipeline_stage, (var,))
+__schedule_updates(pipeline_stage::ScheduleOnPipelineStage, var::AbstractVariable) = __schedule_updates(pipeline_stage, (var,))
 
 function __schedule_updates(pipeline_stage::ScheduleOnPipelineStage, vars::NTuple{N, <:AbstractVariable}) where {N}
     foreach((v) -> add_pipeline_stage!(v, pipeline_stage), vars)

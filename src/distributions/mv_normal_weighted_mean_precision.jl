@@ -18,8 +18,8 @@ function MvNormalWeightedMeanPrecision(xi::AbstractVector{<:Integer}, Λ::Abstra
     return MvNormalWeightedMeanPrecision(float.(xi), float.(Λ))
 end
 
-function MvNormalWeightedMeanPrecision(xi::AbstractVector, λ::AbstractVector)
-    return MvNormalWeightedMeanPrecision(xi, matrix_from_diagonal(promote_type(eltype(xi), eltype(λ)), λ))
+function MvNormalWeightedMeanPrecision(xi::AbstractVector{L}, λ::AbstractVector{R}) where {L, R}
+    return MvNormalWeightedMeanPrecision(xi, convert(Matrix{promote_type(L, R)}, Diagonal(λ)))
 end
 
 function MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where {T}
@@ -63,21 +63,15 @@ Base.length(dist::MvNormalWeightedMeanPrecision)          = length(weightedmean(
 Base.ndims(dist::MvNormalWeightedMeanPrecision)           = length(dist)
 Base.size(dist::MvNormalWeightedMeanPrecision)            = (length(dist),)
 
-Base.convert(::Type{<:MvNormalWeightedMeanPrecision}, xi::AbstractVector, Λ::AbstractMatrix) =
-    MvNormalWeightedMeanPrecision(xi, Λ)
+Base.convert(::Type{<:MvNormalWeightedMeanPrecision}, xi::AbstractVector, Λ::AbstractMatrix) = MvNormalWeightedMeanPrecision(xi, Λ)
 
-function Base.convert(
-    ::Type{<:MvNormalWeightedMeanPrecision{T}},
-    xi::AbstractVector,
-    Λ::AbstractMatrix
-) where {T <: Real}
+function Base.convert(::Type{<:MvNormalWeightedMeanPrecision{T}}, xi::AbstractVector, Λ::AbstractMatrix) where {T <: Real}
     MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) = MvNormalWeightedMeanPrecision(zeros(dims), fill(tiny, dims))
+vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) = MvNormalWeightedMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-prod_analytical_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
-    ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdPreserveType, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)

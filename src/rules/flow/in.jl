@@ -1,7 +1,7 @@
 ## TODO: pointmass rules
 ## TODO: save sigma vectors in meta to limit allocations
 
-@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanCovariance, meta::FlowMeta{M, Linearization}) where {M} = begin
+@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanCovariance, meta::FlowMeta{M, <:Linearization}) where {M} = begin
 
     # extract parameters
     μ_out, Σ_out = mean_cov(m_out)
@@ -17,7 +17,7 @@
     return MvNormalMeanCovariance(μ_in, Σ_in)
 end
 
-@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanPrecision, meta::FlowMeta{M, Linearization}) where {M} = begin
+@rule Flow(:in, Marginalisation) (m_out::MvNormalMeanPrecision, meta::FlowMeta{M, <:Linearization}) where {M} = begin
 
     # extract parameters
     μ_out, Λ_out = mean_precision(m_out)
@@ -34,28 +34,24 @@ end
     return MvNormalMeanPrecision(μ_in, Λ_in)
 end
 
-@rule Flow(:in, Marginalisation) (m_out::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, Linearization}) where {M} =
-    begin
+@rule Flow(:in, Marginalisation) (m_out::MvNormalWeightedMeanPrecision, meta::FlowMeta{M, <:Linearization}) where {M} = begin
 
-        # extract parameters
-        μ_out, Λ_out = mean_precision(m_out)
+    # extract parameters
+    μ_out, Λ_out = mean_precision(m_out)
 
-        # extract model
-        model = getmodel(meta)
+    # extract model
+    model = getmodel(meta)
 
-        # calculate new parameters
-        μ_in = backward(model, μ_out)
-        J    = jacobian(model, μ_out)
-        Λ_in = J' * Λ_out * J
+    # calculate new parameters
+    μ_in = backward(model, μ_out)
+    J    = jacobian(model, μ_out)
+    Λ_in = J' * Λ_out * J
 
-        # return distribution
-        return MvNormalMeanPrecision(μ_in, Λ_in)
-    end
+    # return distribution
+    return MvNormalMeanPrecision(μ_in, Λ_in)
+end
 
-@rule Flow(:in, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily,
-    meta::FlowMeta{M, Unscented}
-) where {M} = begin
+@rule Flow(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, meta::FlowMeta{M, <:Unscented}) where {M} = begin
 
     # extract parameters
     μ_out, Σ_out = mean_cov(m_out)
@@ -77,9 +73,9 @@ end
     for k in 1:length(χ)
         χ[k] = copy(μ_out)
     end
-    for l in 2:L+1
-        χ[l]   .+= sqrtΣ[l-1, :]
-        χ[L+l] .-= sqrtΣ[l-1, :]
+    for l in 2:(L + 1)
+        χ[l]     .+= sqrtΣ[l - 1, :]
+        χ[L + l] .-= sqrtΣ[l - 1, :]
     end
 
     # transform sigma points
@@ -88,10 +84,10 @@ end
     # calculate new parameters
     μ_in = zeros(T, L)
     Σ_in = zeros(T, L, L)
-    for k in 1:2*L+1
+    for k in 1:(2 * L + 1)
         μ_in .+= Wm[k] .* Y[k]
     end
-    for k in 1:2*L+1
+    for k in 1:(2 * L + 1)
         Σ_in .+= Wc[k] .* (Y[k] - μ_in) * (Y[k] - μ_in)'
     end
 

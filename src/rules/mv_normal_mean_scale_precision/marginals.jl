@@ -1,42 +1,14 @@
 export marginalrule
 
-@marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_μ::PointMass,
-    m_γ::PointMass
-) = begin
-    return (
-        out = prod(
-            ProdAnalytical(),
-            MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * diageye(eltype(m_out), ndims(m_out))),
-            m_out
-        ),
-        μ = m_μ,
-        γ = m_γ
-    )
+@marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_γ::PointMass) = begin
+    return (out = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * diageye(eltype(m_out), ndims(m_out))), m_out), μ = m_μ, γ = m_γ)
 end
 
-@marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (
-    m_out::PointMass,
-    m_μ::MultivariateNormalDistributionsFamily,
-    m_γ::PointMass
-) = begin
-    return (
-        out = m_out,
-        μ = prod(
-            ProdAnalytical(),
-            m_μ,
-            MvNormalMeanPrecision(mean(m_out), mean(m_γ) * diageye(eltype(m_out), ndims(m_out)))
-        ),
-        γ = m_γ
-    )
+@marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass) = begin
+    return (out = m_out, μ = prod(ProdAnalytical(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_γ) * diageye(eltype(m_out), ndims(m_out)))), γ = m_γ)
 end
 
-@marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_μ::MultivariateNormalDistributionsFamily,
-    m_γ::PointMass
-) = begin
+@marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass) = begin
     xi_y, W_y = weightedmean_precision(m_out)
     xi_m, W_m = weightedmean_precision(m_μ)
 
@@ -63,11 +35,7 @@ end
     return (out_μ = MvNormalWeightedMeanPrecision(ξ, Λ), Λ = m_Λ)
 end
 
-@marginalrule MvNormalMeanScalePrecision(:out_μ) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_μ::MultivariateNormalDistributionsFamily,
-    q_γ::Any
-) = begin
+@marginalrule MvNormalMeanScalePrecision(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any) = begin
     xi_y, W_y = weightedmean_precision(m_out)
     xi_m, W_m = weightedmean_precision(m_μ)
 
@@ -94,34 +62,10 @@ end
     return MvNormalWeightedMeanPrecision(ξ, Λ)
 end
 
-@marginalrule MvNormalMeanScalePrecision(:out_μ) (
-    m_out::PointMass,
-    m_μ::MultivariateNormalDistributionsFamily,
-    q_γ::Any
-) =
-    begin
-        return (
-            out = m_out,
-            μ = prod(
-                ProdAnalytical(),
-                MvNormalMeanPrecision(mean(m_out), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))),
-                m_μ
-            )
-        )
-    end
+@marginalrule MvNormalMeanScalePrecision(:out_μ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any) = begin
+    return (out = m_out, μ = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_out), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))), m_μ))
+end
 
-@marginalrule MvNormalMeanScalePrecision(:out_μ) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_μ::PointMass,
-    q_γ::Any
-) =
-    begin
-        return (
-            out = prod(
-                ProdAnalytical(),
-                MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))),
-                m_out
-            ),
-            μ = m_μ
-        )
-    end
+@marginalrule MvNormalMeanScalePrecision(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_γ::Any) = begin
+    return (out = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))), m_out), μ = m_μ)
+end

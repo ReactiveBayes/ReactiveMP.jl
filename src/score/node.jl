@@ -4,59 +4,38 @@ import Base: tail
 
 struct FactorBoundFreeEnergy end
 
-function score(
-    ::Type{T},
-    objective::BetheFreeEnergy,
-    ::FactorBoundFreeEnergy,
-    node::AbstractFactorNode,
-    scheduler
-) where {T <: InfCountingReal}
-    return score(T, objective, FactorBoundFreeEnergy(), sdtype(node), node, scheduler)
+function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
+    return score(T, FactorBoundFreeEnergy(), sdtype(node), node, skip_strategy, scheduler)
 end
 
 ## Deterministic mapping
 
-function score(
-    ::Type{T},
-    objective::BetheFreeEnergy,
-    ::FactorBoundFreeEnergy,
-    ::Deterministic,
-    node::AbstractFactorNode,
-    scheduler
-) where {T <: InfCountingReal}
-    fnstream = let objective = objective, scheduler = scheduler
-        (interface) ->
-            apply_skip_filter(messagein(interface), marginal_skip_strategy(objective)) |> schedule_on(scheduler)
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
+    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
+        (interface) -> apply_skip_filter(messagein(interface), skip_strategy) |> schedule_on(scheduler)
     end
 
     stream = combineLatest(map(fnstream, interfaces(node)), PushNew())
 
-    vtag       = Val{clustername(tail(interfaces(node)))}
+    vtag       = Val{inboundclustername(node)}
     msgs_names = Val{map(name, interfaces(node))}
 
     mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
         (messages) -> begin
             # We do not really care about (is_clamped, is_initial) at this stage, so it can be (false, false)
-            marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), false, false)
+            marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), false, false, nothing)
             return convert(T, -score(DifferentialEntropy(), marginal))
         end
     end
 
-    return apply_diagnostic_check(objective, node, stream |> map(T, mapping))
+    return stream |> map(T, mapping)
 end
 
 ## Stochastic mapping
 
-function score(
-    ::Type{T},
-    objective::BetheFreeEnergy,
-    ::FactorBoundFreeEnergy,
-    ::Stochastic,
-    node::AbstractFactorNode,
-    scheduler
-) where {T <: InfCountingReal}
-    fnstream = let objective = objective, scheduler = scheduler, node = node
-        (cluster) -> getmarginal!(node, cluster, marginal_skip_strategy(objective)) |> schedule_on(scheduler)
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
+    fnstream = let node = node, skip_strategy = skip_strategy, scheduler = scheduler
+        (cluster) -> getmarginal!(node, cluster, skip_strategy) |> schedule_on(scheduler)
     end
 
     stream = combineLatest(map(fnstream, localmarginals(node)), PushNew())
@@ -69,5 +48,5 @@ function score(
         end
     end
 
-    return apply_diagnostic_check(objective, node, stream |> map(T, mapping))
+    return stream |> map(T, mapping)
 end

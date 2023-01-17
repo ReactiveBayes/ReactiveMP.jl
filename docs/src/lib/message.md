@@ -26,12 +26,12 @@ Message
 From implementation point a view `Message` structure does nothing but holds some `data` object and redirects most of the statistical related functions to that `data` object. However it used extensively in Julia's multiple dispatch. Implementation also uses extra `is_initial` and `is_clamped` fields to determine if product of two messages results in `is_initial` or `is_clamped` posterior marginal.
 
 ```@setup bp-message
-using Rocket, GraphPPL, ReactiveMP, Distributions, Random
+using ReactiveMP
 ```
 
 ```@example bp-message
 distribution = NormalMeanPrecision(0.0, 1.0)
-message      = Message(distribution, false, true)
+message      = Message(distribution, false, true, nothing)
 ```
 
 ```@example bp-message

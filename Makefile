@@ -3,13 +3,13 @@ SHELL = /bin/bash
 
 .PHONY: lint format
 
-lint_init:
-	julia --project=scripts/ -e 'using Pkg; Pkg.instantiate();'
+scripts_init:
+	julia --project=scripts/ -e 'using Pkg; Pkg.instantiate(); Pkg.update(); Pkg.precompile();'
 
-lint: lint_init ## Code formating check
+lint: scripts_init ## Code formating check
 	julia --project=scripts/ scripts/format.jl
 
-format: lint_init ## Code formating run
+format: scripts_init ## Code formating run
 	julia --project=scripts/ scripts/format.jl --overwrite
 
 .PHONY: benchmark
@@ -23,7 +23,7 @@ benchmark: benchmark_init ## Runs simple benchmark
 .PHONY: docs
 
 doc_init:
-	julia --project=docs -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyPlot"); using PyPlot;'
+	julia --project=docs -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate();'
 
 docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl

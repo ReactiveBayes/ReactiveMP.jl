@@ -37,7 +37,7 @@ mutable struct EqualityNode
     cache_left  :: Message
     cache_right :: Message
 
-    EqualityNode() = new(lazy(Missing), lazy(Missing), Message(missing, true, true), Message(missing, true, true))
+    EqualityNode() = new(lazy(Missing), lazy(Missing), Message(missing, true, true, nothing), Message(missing, true, true, nothing))
 end
 
 getoutbound(::EqualityLeftOutbound, node::EqualityNode)  = node.left
@@ -100,7 +100,7 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
     if __check_indices(type, chain, node_index)
         return getcache(type, getnode(chain, node_index))
     else
-        return Message(missing, true, true)
+        return Message(missing, true, true, nothing)
     end
 end
 
@@ -131,7 +131,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
             return materialize!(type, chain, node_index)
         end
     else
-        return Message(missing, true, true)
+        return Message(missing, true, true, nothing)
     end
 end
 
@@ -192,11 +192,7 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
         from_left  = getoutbound(Right, chain, nextindex(Right, index)) # Inbound message comming from left direction  (is a right from `index - 1`)
         from_right = getoutbound(Left, chain, nextindex(Left, index))  # Inbound message comming from right direction (is a left from `index + 1`)
 
-        connect!(
-            outputmsgs[index],
-            combineLatestUpdates((from_left, from_right), PushNew()) |>
-            map(Message, ChainOutboundMapping(index, chain))
-        )
+        connect!(outputmsgs[index], combineLatestUpdates((from_left, from_right), PushNew()) |> map(Message, ChainOutboundMapping(index, chain)))
     end
 
     return nothing

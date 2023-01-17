@@ -6,7 +6,23 @@ import DomainSets
 import DomainIntegrals
 import HCubature
 
-import Base: isapprox
+import DomainSets: Domain, dimension
+
+import Base: isapprox, in
+
+# Unknown domain that is used as a placeholder when exact domain knowledge is unavailable
+struct UnspecifiedDomain <: Domain{Any} end
+
+# Unknown dimension is equal and not equal to any number
+struct UnspecifiedDimension end
+
+DomainSets.dimension(::UnspecifiedDomain) = UnspecifiedDimension()
+
+Base.in(::Any, ::UnspecifiedDomain) = true
+
+Base.:(!=)(::UnspecifiedDimension, ::Int)  = true
+Base.:(!==)(::UnspecifiedDimension, ::Int) = true
+Base.:(==)(::UnspecifiedDimension, ::Int)  = true
 
 abstract type AbstractContinuousGenericLogPdf end
 
@@ -15,9 +31,8 @@ value_support(::AbstractContinuousGenericLogPdf)         = Continuous
 
 # We throw an error on purpose, since we do not want to use `AbstractContinuousGenericLogPdf` much without approximations
 # We want to encourage a user to use functional form constraints and approximate generic log-pdfs as much as possible instead
-__error_not_defined(dist::AbstractContinuousGenericLogPdf, f::Symbol) = error(
-    "`$f` is not defined for `$(dist)`. Use functional form constraints to approximate the resulting generic log-pdf object and to use it in the inference procedure."
-)
+__error_not_defined(dist::AbstractContinuousGenericLogPdf, f::Symbol) =
+    error("`$f` is not defined for `$(dist)`. Use functional form constraints to approximate the resulting generic log-pdf object and to use it in the inference procedure.")
 
 Distributions.mean(dist::AbstractContinuousGenericLogPdf)    = __error_not_defined(dist, :mean)
 Distributions.median(dist::AbstractContinuousGenericLogPdf)  = __error_not_defined(dist, :median)
@@ -44,8 +59,7 @@ end
 # We don't expect neither `pdf` nor `logpdf` to be normalised
 Distributions.pdf(dist::AbstractContinuousGenericLogPdf, x) = exp(logpdf(dist, x))
 
-prod_analytical_rule(::Type{<:AbstractContinuousGenericLogPdf}, ::Type{<:AbstractContinuousGenericLogPdf}) =
-    ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:AbstractContinuousGenericLogPdf}, ::Type{<:AbstractContinuousGenericLogPdf}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf)
     @assert value_support(typeof(left)) === value_support(typeof(right)) "Cannot compute a product of $(left) and $(right). Inputs have different value support: $(value_support(typeof(left))) and $(value_support(typeof(right)))"
@@ -76,13 +90,15 @@ struct ContinuousUnivariateLogPdf{D <: DomainSets.Domain, F} <: AbstractContinuo
     logpdf::F
 
     ContinuousUnivariateLogPdf(domain::D, logpdf::F) where {D, F} = begin
-        @assert DomainSets.dimension(domain) === 1 "Cannot create ContinuousUnivariateLogPdf. Dimension of domain = $(domain) is not equal to 1."
+        @assert DomainSets.dimension(domain) == 1 "Cannot create ContinuousUnivariateLogPdf. Dimension of domain = $(domain) is not equal to 1."
         return new{D, F}(domain, logpdf)
     end
 end
 
 variate_form(::Type{<:ContinuousUnivariateLogPdf}) = Univariate
 variate_form(::ContinuousUnivariateLogPdf)         = Univariate
+
+promote_variate_type(::Type{Univariate}, ::Type{AbstractContinuousGenericLogPdf}) = ContinuousUnivariateLogPdf
 
 getdomain(dist::ContinuousUnivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousUnivariateLogPdf) = dist.logpdf
@@ -92,8 +108,7 @@ ContinuousUnivariateLogPdf(f::Function) = ContinuousUnivariateLogPdf(DomainSets.
 Base.show(io::IO, dist::ContinuousUnivariateLogPdf) = print(io, "ContinuousUnivariateLogPdf(", getdomain(dist), ")")
 Base.show(io::IO, ::Type{<:ContinuousUnivariateLogPdf{D}}) where {D} = print(io, "ContinuousUnivariateLogPdf{", D, "}")
 
-Distributions.support(dist::ContinuousUnivariateLogPdf) =
-    Distributions.RealInterval(DomainSets.infimum(getdomain(dist)), DomainSets.supremum(getdomain(dist)))
+Distributions.support(dist::ContinuousUnivariateLogPdf) = Distributions.RealInterval(DomainSets.infimum(getdomain(dist)), DomainSets.supremum(getdomain(dist)))
 
 # Fallback for various optimisation packages which may pass arguments as vectors
 function Distributions.logpdf(dist::ContinuousUnivariateLogPdf, x::AbstractVector{<:Real})
@@ -101,19 +116,14 @@ function Distributions.logpdf(dist::ContinuousUnivariateLogPdf, x::AbstractVecto
     return logpdf(dist, first(x))
 end
 
-Base.convert(::Type{<:ContinuousUnivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} =
-    ContinuousUnivariateLogPdf(domain, logpdf)
+Base.convert(::Type{<:ContinuousUnivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} = ContinuousUnivariateLogPdf(domain, logpdf)
 
-convert_eltype(::Type{ContinuousUnivariateLogPdf}, ::Type{T}, dist::ContinuousUnivariateLogPdf) where {T <: Real} =
-    convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
+convert_eltype(::Type{ContinuousUnivariateLogPdf}, ::Type{T}, dist::ContinuousUnivariateLogPdf) where {T <: Real} = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
 
 vague(::Type{<:ContinuousUnivariateLogPdf}) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
 
 # We do not check typeof of a different functions because in most of the cases lambdas have different types, but they can still be the same
-function is_typeof_equal(
-    ::ContinuousUnivariateLogPdf{D, F1},
-    ::ContinuousUnivariateLogPdf{D, F2}
-) where {D, F1 <: Function, F2 <: Function}
+function is_typeof_equal(::ContinuousUnivariateLogPdf{D, F1}, ::ContinuousUnivariateLogPdf{D, F2}) where {D, F1 <: Function, F2 <: Function}
     return true
 end
 
@@ -146,31 +156,27 @@ end
 variate_form(::Type{<:ContinuousMultivariateLogPdf}) = Multivariate
 variate_form(::ContinuousMultivariateLogPdf)         = Multivariate
 
+promote_variate_type(::Type{Multivariate}, ::Type{AbstractContinuousGenericLogPdf}) = ContinuousMultivariateLogPdf
+
 getdomain(dist::ContinuousMultivariateLogPdf) = dist.domain
 getlogpdf(dist::ContinuousMultivariateLogPdf) = dist.logpdf
 
 ContinuousMultivariateLogPdf(dims::Int, f::Function) = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^dims, f)
 
 Base.show(io::IO, dist::ContinuousMultivariateLogPdf) = print(io, "ContinuousMultivariateLogPdf(", getdomain(dist), ")")
-Base.show(io::IO, ::Type{<:ContinuousMultivariateLogPdf{D}}) where {D} =
-    print(io, "ContinuousMultivariateLogPdf{", D, "}")
+Base.show(io::IO, ::Type{<:ContinuousMultivariateLogPdf{D}}) where {D} = print(io, "ContinuousMultivariateLogPdf{", D, "}")
 
 Distributions.support(dist::ContinuousMultivariateLogPdf) = getdomain(dist) # differs from Univariate implementation, todo if it causes any problems
 
-Base.convert(::Type{<:ContinuousMultivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} =
-    ContinuousMultivariateLogPdf(domain, logpdf)
+Base.convert(::Type{<:ContinuousMultivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} = ContinuousMultivariateLogPdf(domain, logpdf)
 
 convert_eltype(::Type{ContinuousMultivariateLogPdf}, ::Type{T}, dist::ContinuousMultivariateLogPdf) where {T <: Real} =
     convert(ContinuousMultivariateLogPdf, dist.domain, dist.logpdf)
 
-vague(::Type{<:ContinuousMultivariateLogPdf}, dims::Int) =
-    ContinuousMultivariateLogPdf(DomainSets.FullSpace()^dims, (x) -> Float64(dims))
+vague(::Type{<:ContinuousMultivariateLogPdf}, dims::Int) = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^dims, (x) -> Float64(dims))
 
 # We do not check typeof of a different functions because in most of the cases lambdas have different types, but they can still be the same
-function is_typeof_equal(
-    ::ContinuousMultivariateLogPdf{D, F1},
-    ::ContinuousMultivariateLogPdf{D, F2}
-) where {D, F1 <: Function, F2 <: Function}
+function is_typeof_equal(::ContinuousMultivariateLogPdf{D, F1}, ::ContinuousMultivariateLogPdf{D, F2}) where {D, F1 <: Function, F2 <: Function}
     return true
 end
 
@@ -178,11 +184,19 @@ end
 ## We need to implement this auxilary functions, because we define `prod_analytical_rule = ProdAnalyticalRuleAvailable()` for AbstractContinuousGenericLogPdf
 ## By default `GenericLogPdfVectorisedProduct` works only if `prod_analytical_rule = ProdAnalyticalRuleUnknown()`
 
-prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericLogPdf} =
-    GenericLogPdfVectorisedProduct(F[left, right], 2)
+prod(::ProdAnalytical, left::F, right::F) where {F <: AbstractContinuousGenericLogPdf} = GenericLogPdfVectorisedProduct(F[left, right], 2)
 
-prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where {F <: AbstractContinuousGenericLogPdf} =
-    push!(left, right)
+prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where {F <: AbstractContinuousGenericLogPdf} = push!(left, right)
+
+## Symmetric CVI prod method
+
+function prod(approximation::CVI, left, dist::AbstractContinuousGenericLogPdf)
+    return prod(approximation, dist, left) # We swap arguments in case if `AbstractContinuousGenericLogPdf` on the right hand side
+end
+
+function prod(approximation::CVI, left::AbstractContinuousGenericLogPdf, dist::AbstractContinuousGenericLogPdf)
+    error("The `CVI` approximation expects at least on of the arguments to be a distribution")
+end
 
 ## Utility methods for tests 
 
@@ -190,59 +204,30 @@ prod(::ProdAnalytical, left::GenericLogPdfVectorisedProduct{F}, right::F) where 
 # This should not be used though anywhere in the real code, but only in tests
 # Current implementation of `isapprox` method supports only FullSpace and HalfLine domains with limited accuracy
 function Base.isapprox(left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
-    if (getdomain(left) !== getdomain(right)) || (value_support(typeof(left)) !== value_support(typeof(right))) ||
-       (variate_form(typeof(left)) !== variate_form(typeof(right)))
+    if (getdomain(left) !== getdomain(right)) || (value_support(typeof(left)) !== value_support(typeof(right))) || (variate_form(typeof(left)) !== variate_form(typeof(right)))
         return false
     end
     return culogpdf__isapprox(getdomain(left), left, right; kwargs...)
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
-function culogpdf__isapprox(
-    domain::DomainSets.FullSpace,
-    left::AbstractContinuousGenericLogPdf,
-    right::AbstractContinuousGenericLogPdf;
-    kwargs...
-)
-    return isapprox(
-        zero(eltype(domain)),
-        DomainIntegrals.integral(DomainIntegrals.Q_GaussHermite(32), (x) -> exp(x^2) * abs(left(x) - right(x)));
-        kwargs...
-    )
+function culogpdf__isapprox(domain::DomainSets.FullSpace, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(DomainIntegrals.Q_GaussHermite(32), (x) -> exp(x^2) * abs(left(x) - right(x))); kwargs...)
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
-function culogpdf__isapprox(
-    domain::DomainSets.HalfLine,
-    left::AbstractContinuousGenericLogPdf,
-    right::AbstractContinuousGenericLogPdf;
-    kwargs...
-)
-    return isapprox(
-        zero(eltype(domain)),
-        DomainIntegrals.integral(DomainIntegrals.Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x)));
-        kwargs...
-    )
+function culogpdf__isapprox(domain::DomainSets.HalfLine, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(DomainIntegrals.Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x))); kwargs...)
 end
 
-function culogpdf__isapprox(
-    domain::DomainSets.VcatDomain,
-    left::AbstractContinuousGenericLogPdf,
-    right::AbstractContinuousGenericLogPdf;
-    kwargs...
-)
+function culogpdf__isapprox(domain::DomainSets.VcatDomain, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
     a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
     b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
     return isapprox(zero(deep_eltype(domain)), I; kwargs...) && isapprox(zero(deep_eltype(domain)), E; kwargs...)
 end
 
-function culogpdf__isapprox(
-    domain::DomainSets.FixedIntervalProduct,
-    left::AbstractContinuousGenericLogPdf,
-    right::AbstractContinuousGenericLogPdf;
-    kwargs...
-)
+function culogpdf__isapprox(domain::DomainSets.FixedIntervalProduct, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
     a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
     b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
