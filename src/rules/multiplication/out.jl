@@ -61,3 +61,37 @@ end
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta) # symmetric rule
 end
+
+
+## test gp 
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::GaussianProcess, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
+    index = meta[1].index
+    m_gp, cov_gp = mean_cov(m_in.finitemarginal)
+    kernelf = m_in.kernelfunction
+    meanf   = m_in.meanfunction
+    test    = m_in.testinput
+    train   = m_in.traininput
+    cov_strategy = m_in.covariance_strategy
+    x_u = m_in.inducing_input
+    mμ, var_μ = ReactiveMP.predictMVN(cov_strategy, kernelf,meanf,test,[train[index]],m_gp, x_u) #changed here
+    μ_in = mμ[1]
+    var_in = var_μ[1]
+
+    μ_A, var_A = mean_var(m_A)
+    #compute statistics for out 
+    return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,10) + 1e-6))
+    # return NormalMeanVariance(μ_A * μ_in, μ_A^2 * var_in + μ_in^2 * var_A + var_A * var_in)
+end
+
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
+    μ_in, var_in = mean_var(m_in)
+    μ_A, var_A = mean_var(m_A)
+    return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,10) + 1e-6)) 
+    # return NormalMeanVariance(μ_A * μ_in, μ_A^2 * var_in + μ_in^2 * var_A + var_A * var_in)
+end
+
+
+function besselmod(z,mx,vx,my,vy,n)
+    f_n = (y) -> mapreduce(m -> (z^(2y-m)*abs(z)^(m-y)*vx^(m-y-1)*(mx/vx)^m * binomial(2y,m) * (my/vy)^(2y-m)*besselk(m-y,abs(z)/sqrt(vx*vy))) / (pi * factorial(2y) * vy^(m-y+1)), +, 0:2*y)
+    return exp(-0.5 * (mx^2/vx + my^2/vy)) * mapreduce(f_n, +, 0:n)
+end

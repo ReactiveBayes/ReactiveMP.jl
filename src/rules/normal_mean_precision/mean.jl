@@ -22,3 +22,7 @@ end
 @rule NormalMeanPrecision(:μ, Marginalisation) (q_out::PointMass, q_τ::GammaShapeRate, meta::ProcessMeta) = begin 
     return @call_rule NormalMeanPrecision(:μ, Marginalisation) (q_out=q_out,q_τ=q_τ,meta=nothing)
 end
+
+@rule NormalMeanPrecision(:μ, Marginalisation) (q_out::PointMass, m_τ::GammaShapeRate, ) = begin 
+    return @call_rule NormalMeanPrecision(:μ, Marginalisation) (q_out = q_out, q_τ = m_τ)
+end

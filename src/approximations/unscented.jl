@@ -84,7 +84,8 @@ getWc(extra::UnscentedExtra) = extra.Wc
 
 function approximate(method::Unscented, f::F, means::Tuple, covs::Tuple) where {F}
     # `Val(false)` indicates that we do not compute the `C` component
-    (m, V, _) = unscented_statistics(method, Val(false), f, means, covs)
+    # (m, V, _) = unscented_statistics(method, Val(false), f, means, covs)
+    (m, V) = approximate_meancov(ghcubature(121), x -> exp(f(x)), means[1],covs[1])
     return (m, V)
 end
 

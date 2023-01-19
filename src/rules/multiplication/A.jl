@@ -1,3 +1,4 @@
+import ForwardDiff: hessian
 
 @rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) = PointMass(mean(m_in) \ mean(m_out))
 
@@ -51,4 +52,57 @@ end
     W = correction!(meta, dot(tmp, A))
 
     return NormalWeightedMeanPrecision(dot(tmp, μ_out), W)
+end
+
+##### test gp 
+@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::GaussianProcess, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
+    index = meta[1].index
+    m_gp, cov_gp = mean_cov(m_in.finitemarginal)
+    kernelf = m_in.kernelfunction
+    meanf   = m_in.meanfunction
+    test    = m_in.testinput
+    train   = m_in.traininput
+    cov_strategy = m_in.covariance_strategy
+    x_u = m_in.inducing_input
+    mμ, var_μ = ReactiveMP.predictMVN(cov_strategy, kernelf,meanf,test,[train[index]],m_gp, x_u) #this returns negative variance 
+    μ_in = mμ[1]
+    var_in = var_μ[1]
+
+    # get mean and variance from m_out 
+    μ_out, var_out = mean_var(m_out)
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  -1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+    return ContinuousUnivariateLogPdf(backwardpass)
+end
+
+@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
+    μ_in, var_in = mean_var(m_in)
+    μ_out, var_out = mean_var(m_out)
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+
+    return ContinuousUnivariateLogPdf(backwardpass)
+end
+
+@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin 
+    #laplace approximation
+    res = optimize(x -> -logpdf(m_in,x), -50,50)
+    μ_in_approx = res.minimizer
+
+    # hessian(x -> -logpdf(m_in,x), μ_in_approx)    
+    dx = (x) -> ForwardDiff.derivative(y -> -logpdf(m_in,y),x)
+    ddx = (x) -> ForwardDiff.derivative(dx,x)
+
+    var_in_approx = cholinv(ddx(μ_in_approx))
+
+    μ_out, var_out = mean_var(m_out)
+    
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in_approx + var_out / x^2))  - 1/2 * (μ_out / x - μ_in_approx)^2 / (var_in_approx + var_out / x^2)
+    return ContinuousUnivariateLogPdf(backwardpass)
+end
+
+@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
+    μ_in, var_in = mean_var(m_in)
+    μ_out, var_out = mean_var(m_out)
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+
+    return ContinuousUnivariateLogPdf(backwardpass)
 end

@@ -52,3 +52,9 @@ end
 
     return NormalWeightedMeanPrecision(dot(tmp, μ_out), W)
 end
+
+
+### Test for gp 
+@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
+    return @call_rule typeof(*)(:A, Marginalisation) (m_out = m_out, m_in = m_A, meta = meta)
+end

@@ -26,6 +26,9 @@ getmethod(meta::DeltaMeta)          = meta.method
 getinverse(meta::DeltaMeta)         = meta.inverse
 getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
 
+#add 1 method for getinverse function 
+getinverse(meta::Tuple{ProcessMeta,DeltaMeta}) = meta[2].inverse
+
 import Base: map
 
 struct DeltaFn{F} end

@@ -29,3 +29,7 @@ end
 
     return Gamma(α, θ)
 end
+
+@rule NormalMeanPrecision(:τ, Marginalisation) (q_out::PointMass, m_μ::NormalMeanVariance, ) = begin 
+    return @call_rule NormalMeanPrecision(:τ, Marginalisation) (q_out = q_out, q_μ = m_μ)
+end
