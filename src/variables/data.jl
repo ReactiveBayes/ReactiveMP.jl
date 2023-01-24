@@ -171,8 +171,7 @@ function setmessagein!(datavar::DataVariable, ::Int, messagein)
     return nothing
 end
 
-marginal_prod_fn(datavar::DataVariable) =
-    marginal_prod_fn(FoldLeftProdStrategy(), ProdAnalytical(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+marginal_prod_fn(datavar::DataVariable) = marginal_prod_fn(FoldLeftProdStrategy(), ProdAnalytical(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
 
 _getprediction(datavar::DataVariable)              = datavar.prediction
 _setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)
@@ -180,7 +179,6 @@ _makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessa
 
 # options here must implement at least `Rocket.getscheduler`
 function activate!(datavar::DataVariable, options)
-
     _setprediction!(datavar, _makeprediction(datavar))
 
     return nothing
