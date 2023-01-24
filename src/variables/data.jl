@@ -5,6 +5,8 @@ import Base: show
 mutable struct DataVariable{D, S} <: AbstractVariable
     name            :: Symbol
     collection_type :: AbstractVariableCollectionType
+    prediction      :: MarginalObservable
+    input_messages  :: Vector{MessageObservable{AbstractMessage}}
     messageout      :: S
     nconnected      :: Int
 end
@@ -70,7 +72,7 @@ datavar(name::Symbol, ::Type{D}, dims::Tuple) where {D}                         
 datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}) where {D}                                                      = datavar(DataVariableCreationOptions(D), name, D, dims)
 
 datavar(options::DataVariableCreationOptions{S}, name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where {S, D} =
-    DataVariable{D, S}(name, collection_type, options.subject, 0)
+    DataVariable{D, S}(name, collection_type, MarginalObservable(), Vector{MessageObservable{AbstractMessage}}(), options.subject, 0)
 
 function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, length::Int) where {D}
     return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
@@ -165,5 +167,21 @@ setanonymous!(::DataVariable, ::Bool) = nothing
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.nconnected += 1
+    push!(datavar.input_messages, messagein)
+    return nothing
+end
+
+marginal_prod_fn(datavar::DataVariable) =
+    marginal_prod_fn(FoldLeftProdStrategy(), ProdAnalytical(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+
+_getprediction(datavar::DataVariable)              = datavar.prediction
+_setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)
+_makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, marginal_prod_fn(datavar))
+
+# options here must implement at least `Rocket.getscheduler`
+function activate!(datavar::DataVariable, options)
+
+    _setprediction!(datavar, _makeprediction(datavar))
+
     return nothing
 end
