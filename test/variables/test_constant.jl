@@ -10,7 +10,7 @@ import ReactiveMP: israndom, isproxy
 
 @testset "ConstVariable" begin
     @testset "Simple creation" begin
-        for sym in (:x, :y, :z), value in (1.0, 1.0, "asd", [1.0, 1.0], [1.0 0.0; 0.0 1.0])
+        for sym in (:x, :y, :z), value in (1.0, 1.0, "asd", [1.0, 1.0], [1.0 0.0; 0.0 1.0], (x) -> 1)
             v = constvar(sym, value)
 
             @test !israndom(v)
