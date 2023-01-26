@@ -317,7 +317,7 @@ function Base.prod(
     n                = length(left)
     v_inv, v_logdet  = cholinv_logdet(v)
     m                = m_left - m_right
-    return -(v_logdet + n * log2π) / 2 - dot(m, v_inv, m) / 2
+    return -(v_logdet + n * log2π) / 2 - xT_A_y(m, v_inv, m) / 2
 end
 
 ## Friendly functions
