@@ -55,7 +55,7 @@ function Distributions.sqmahal!(r, dist::MvNormalMeanCovariance, x::AbstractVect
     for i in 1:length(r)
         @inbounds r[i] = μ[i] - x[i]
     end
-    return dot(r, invcov(dist), r) # x' * A * x
+    return xT_A_y(r, invcov(dist), r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanCovariance{T}) where {T} = T

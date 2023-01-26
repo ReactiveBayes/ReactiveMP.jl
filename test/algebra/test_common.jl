@@ -84,6 +84,19 @@ using LinearAlgebra
             @test ReactiveMP.mul_trace(a, b) ≈ a * b
         end
     end
+
+    @testset "xT_A_y" begin 
+        import ReactiveMP: xT_A_y
+
+        rng = MersenneTwister(1234)
+        for size in 2:5, T1 in (Float32, Float64), T2 in (Float32, Float64), T3 in (Float32, Float64)
+            x = rand(T1, size)
+            A = rand(T2, size, size)
+            y = rand(T3, size)
+            @test dot(x, A, y) ≈ xT_A_y(x, A, y)
+        end
+
+    end
 end
 
 end

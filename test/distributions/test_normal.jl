@@ -5,28 +5,40 @@ using ReactiveMP
 using Random
 using LinearAlgebra
 using Distributions
+using ForwardDiff
 
 import ReactiveMP: convert_eltype
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
-        check_basic_statistics = (left, right) -> begin
+        check_basic_statistics = (left, right; include_extended_methods = true) -> begin
             @test mean(left) ≈ mean(right)
             @test median(left) ≈ median(right)
             @test mode(left) ≈ mode(right)
-            @test weightedmean(left) ≈ weightedmean(right)
             @test var(left) ≈ var(right)
             @test std(left) ≈ std(right)
-            @test cov(left) ≈ cov(right)
-            @test invcov(left) ≈ invcov(right)
-            @test precision(left) ≈ precision(right)
             @test entropy(left) ≈ entropy(right)
-            @test pdf(left, 1.0) ≈ pdf(right, 1.0)
-            @test pdf(left, -1.0) ≈ pdf(right, -1.0)
-            @test pdf(left, 0.0) ≈ pdf(right, 0.0)
-            @test logpdf(left, 1.0) ≈ logpdf(right, 1.0)
-            @test logpdf(left, -1.0) ≈ logpdf(right, -1.0)
-            @test logpdf(left, 0.0) ≈ logpdf(right, 0.0)
+
+            for value in (1.0, -1.0, 0.0, mean(left), mean(right), rand())
+                @test pdf(left, value) ≈ pdf(right, value)
+                @test logpdf(left, value) ≈ logpdf(right, value)
+                @test all(ForwardDiff.gradient((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.gradient((x) -> logpdf(right, x[1]), [value]))
+                @test all(ForwardDiff.hessian((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.hessian((x) -> logpdf(right, x[1]), [value]))
+            end
+            
+            # These methods are not defined for distributions from `Distributions.jl
+            if include_extended_methods
+                @test cov(left) ≈ cov(right)
+                @test invcov(left) ≈ invcov(right)
+                @test weightedmean(left) ≈ weightedmean(right)
+                @test precision(left) ≈ precision(right)
+                @test all(mean_cov(left) .≈ mean_cov(right))
+                @test all(mean_invcov(left) .≈ mean_invcov(right))
+                @test all(mean_precision(left) .≈ mean_precision(right))
+                @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+            end
         end
 
         types  = ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})
@@ -36,6 +48,7 @@ import ReactiveMP: convert_eltype
 
         for type in types
             left = convert(type, rand(rng, Float64), rand(rng, Float64))
+            check_basic_statistics(left, convert(Normal, left); include_extended_methods = false)
             for type in [types..., etypes...]
                 right = convert(type, left)
                 check_basic_statistics(left, right)
@@ -56,31 +69,36 @@ import ReactiveMP: convert_eltype
     end
 
     @testset "Multivariate conversions" begin
-        check_basic_statistics = (left, right, dims) -> begin
+        check_basic_statistics = (left, right, dims; include_extended_methods = true) -> begin
             @test mean(left) ≈ mean(right)
             @test mode(left) ≈ mode(right)
-            @test weightedmean(left) ≈ weightedmean(right)
             @test var(left) ≈ var(right)
             @test cov(left) ≈ cov(right)
-            @test invcov(left) ≈ invcov(right)
             @test logdetcov(left) ≈ logdetcov(right)
-            @test precision(left) ≈ precision(right)
             @test length(left) === length(right)
-            @test ndims(left) === ndims(right)
             @test size(left) === size(right)
             @test entropy(left) ≈ entropy(right)
-            @test all(mean_cov(left) .≈ mean_cov(right))
-            @test all(mean_invcov(left) .≈ mean_invcov(right))
-            @test all(mean_precision(left) .≈ mean_precision(right))
-            @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
-            @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
-            @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
-            @test pdf(left, fill(1.0, dims)) ≈ pdf(right, fill(1.0, dims))
-            @test pdf(left, fill(-1.0, dims)) ≈ pdf(right, fill(-1.0, dims))
-            @test pdf(left, fill(0.0, dims)) ≈ pdf(right, fill(0.0, dims))
-            @test logpdf(left, fill(1.0, dims)) ≈ logpdf(right, fill(1.0, dims))
-            @test logpdf(left, fill(-1.0, dims)) ≈ logpdf(right, fill(-1.0, dims))
-            @test logpdf(left, fill(0.0, dims)) ≈ logpdf(right, fill(0.0, dims))
+
+            for value in (fill(1.0, dims), fill(-1.0, dims), fill(0.0, dims), mean(left), mean(right), rand(dims))
+                @test pdf(left, value) ≈ pdf(right, value)
+                @test logpdf(left, value) ≈ logpdf(right, value)
+                @test all(isapprox.(ForwardDiff.gradient((x) -> logpdf(left, x), value), ForwardDiff.gradient((x) -> logpdf(right, x), value), atol = 1e-14))
+                @test all(isapprox.(ForwardDiff.hessian((x) -> logpdf(left, x), value), ForwardDiff.hessian((x) -> logpdf(right, x), value), atol = 1e-14))
+            end
+
+            # These methods are not defined for distributions from `Distributions.jl
+            if include_extended_methods
+                @test ndims(left) === ndims(right)
+                @test invcov(left) ≈ invcov(right)
+                @test weightedmean(left) ≈ weightedmean(right)
+                @test precision(left) ≈ precision(right)
+                @test all(mean_cov(left) .≈ mean_cov(right))
+                @test all(mean_invcov(left) .≈ mean_invcov(right))
+                @test all(mean_precision(left) .≈ mean_precision(right))
+                @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+            end
         end
 
         types  = ReactiveMP.union_types(MultivariateNormalDistributionsFamily{Float64})
@@ -92,6 +110,7 @@ import ReactiveMP: convert_eltype
         for dim in dims
             for type in types
                 left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(rand(rng, Float64, dim))))
+                check_basic_statistics(left, convert(MvNormal, left), dim; include_extended_methods = false)
                 for type in [types..., etypes...]
                     right = convert(type, left)
                     check_basic_statistics(left, right, dim)
