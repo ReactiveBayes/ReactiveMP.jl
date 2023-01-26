@@ -11,35 +11,36 @@ import ReactiveMP: convert_eltype
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
-        check_basic_statistics = (left, right; include_extended_methods = true) -> begin
-            @test mean(left) ≈ mean(right)
-            @test median(left) ≈ median(right)
-            @test mode(left) ≈ mode(right)
-            @test var(left) ≈ var(right)
-            @test std(left) ≈ std(right)
-            @test entropy(left) ≈ entropy(right)
+        check_basic_statistics =
+            (left, right; include_extended_methods = true) -> begin
+                @test mean(left) ≈ mean(right)
+                @test median(left) ≈ median(right)
+                @test mode(left) ≈ mode(right)
+                @test var(left) ≈ var(right)
+                @test std(left) ≈ std(right)
+                @test entropy(left) ≈ entropy(right)
 
-            for value in (1.0, -1.0, 0.0, mean(left), mean(right), rand())
-                @test pdf(left, value) ≈ pdf(right, value)
-                @test logpdf(left, value) ≈ logpdf(right, value)
-                @test all(ForwardDiff.gradient((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.gradient((x) -> logpdf(right, x[1]), [value]))
-                @test all(ForwardDiff.hessian((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.hessian((x) -> logpdf(right, x[1]), [value]))
+                for value in (1.0, -1.0, 0.0, mean(left), mean(right), rand())
+                    @test pdf(left, value) ≈ pdf(right, value)
+                    @test logpdf(left, value) ≈ logpdf(right, value)
+                    @test all(ForwardDiff.gradient((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.gradient((x) -> logpdf(right, x[1]), [value]))
+                    @test all(ForwardDiff.hessian((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.hessian((x) -> logpdf(right, x[1]), [value]))
+                end
+
+                # These methods are not defined for distributions from `Distributions.jl
+                if include_extended_methods
+                    @test cov(left) ≈ cov(right)
+                    @test invcov(left) ≈ invcov(right)
+                    @test weightedmean(left) ≈ weightedmean(right)
+                    @test precision(left) ≈ precision(right)
+                    @test all(mean_cov(left) .≈ mean_cov(right))
+                    @test all(mean_invcov(left) .≈ mean_invcov(right))
+                    @test all(mean_precision(left) .≈ mean_precision(right))
+                    @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                    @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                    @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+                end
             end
-            
-            # These methods are not defined for distributions from `Distributions.jl
-            if include_extended_methods
-                @test cov(left) ≈ cov(right)
-                @test invcov(left) ≈ invcov(right)
-                @test weightedmean(left) ≈ weightedmean(right)
-                @test precision(left) ≈ precision(right)
-                @test all(mean_cov(left) .≈ mean_cov(right))
-                @test all(mean_invcov(left) .≈ mean_invcov(right))
-                @test all(mean_precision(left) .≈ mean_precision(right))
-                @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
-                @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
-                @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
-            end
-        end
 
         types  = ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})
         etypes = ReactiveMP.union_types(UnivariateNormalDistributionsFamily)
@@ -69,37 +70,38 @@ import ReactiveMP: convert_eltype
     end
 
     @testset "Multivariate conversions" begin
-        check_basic_statistics = (left, right, dims; include_extended_methods = true) -> begin
-            @test mean(left) ≈ mean(right)
-            @test mode(left) ≈ mode(right)
-            @test var(left) ≈ var(right)
-            @test cov(left) ≈ cov(right)
-            @test logdetcov(left) ≈ logdetcov(right)
-            @test length(left) === length(right)
-            @test size(left) === size(right)
-            @test entropy(left) ≈ entropy(right)
+        check_basic_statistics =
+            (left, right, dims; include_extended_methods = true) -> begin
+                @test mean(left) ≈ mean(right)
+                @test mode(left) ≈ mode(right)
+                @test var(left) ≈ var(right)
+                @test cov(left) ≈ cov(right)
+                @test logdetcov(left) ≈ logdetcov(right)
+                @test length(left) === length(right)
+                @test size(left) === size(right)
+                @test entropy(left) ≈ entropy(right)
 
-            for value in (fill(1.0, dims), fill(-1.0, dims), fill(0.0, dims), mean(left), mean(right), rand(dims))
-                @test pdf(left, value) ≈ pdf(right, value)
-                @test logpdf(left, value) ≈ logpdf(right, value)
-                @test all(isapprox.(ForwardDiff.gradient((x) -> logpdf(left, x), value), ForwardDiff.gradient((x) -> logpdf(right, x), value), atol = 1e-14))
-                @test all(isapprox.(ForwardDiff.hessian((x) -> logpdf(left, x), value), ForwardDiff.hessian((x) -> logpdf(right, x), value), atol = 1e-14))
-            end
+                for value in (fill(1.0, dims), fill(-1.0, dims), fill(0.0, dims), mean(left), mean(right), rand(dims))
+                    @test pdf(left, value) ≈ pdf(right, value)
+                    @test logpdf(left, value) ≈ logpdf(right, value)
+                    @test all(isapprox.(ForwardDiff.gradient((x) -> logpdf(left, x), value), ForwardDiff.gradient((x) -> logpdf(right, x), value), atol = 1e-14))
+                    @test all(isapprox.(ForwardDiff.hessian((x) -> logpdf(left, x), value), ForwardDiff.hessian((x) -> logpdf(right, x), value), atol = 1e-14))
+                end
 
-            # These methods are not defined for distributions from `Distributions.jl
-            if include_extended_methods
-                @test ndims(left) === ndims(right)
-                @test invcov(left) ≈ invcov(right)
-                @test weightedmean(left) ≈ weightedmean(right)
-                @test precision(left) ≈ precision(right)
-                @test all(mean_cov(left) .≈ mean_cov(right))
-                @test all(mean_invcov(left) .≈ mean_invcov(right))
-                @test all(mean_precision(left) .≈ mean_precision(right))
-                @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
-                @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
-                @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+                # These methods are not defined for distributions from `Distributions.jl
+                if include_extended_methods
+                    @test ndims(left) === ndims(right)
+                    @test invcov(left) ≈ invcov(right)
+                    @test weightedmean(left) ≈ weightedmean(right)
+                    @test precision(left) ≈ precision(right)
+                    @test all(mean_cov(left) .≈ mean_cov(right))
+                    @test all(mean_invcov(left) .≈ mean_invcov(right))
+                    @test all(mean_precision(left) .≈ mean_precision(right))
+                    @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                    @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                    @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+                end
             end
-        end
 
         types  = ReactiveMP.union_types(MultivariateNormalDistributionsFamily{Float64})
         etypes = ReactiveMP.union_types(MultivariateNormalDistributionsFamily)

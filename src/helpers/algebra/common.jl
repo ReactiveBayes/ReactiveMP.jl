@@ -180,15 +180,14 @@ function xT_A_y(x::AbstractVector, A::AbstractMatrix, y::AbstractVector)
     x₁ = first(x)
     @inbounds for j in eachindex(y)
         yj = y[j]
-        temp = zero(adjoint(A[i₁,j]) * x₁)
+        temp = zero(adjoint(A[i₁, j]) * x₁)
         @simd for i in eachindex(x)
-            temp += adjoint(A[i,j]) * x[i]
+            temp += adjoint(A[i, j]) * x[i]
         end
         s += dot(temp, yj)
     end
     return s
 end
-
 
 """
     mvbeta(x)

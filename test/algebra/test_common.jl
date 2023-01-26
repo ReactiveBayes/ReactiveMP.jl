@@ -85,7 +85,7 @@ using LinearAlgebra
         end
     end
 
-    @testset "xT_A_y" begin 
+    @testset "xT_A_y" begin
         import ReactiveMP: xT_A_y
 
         rng = MersenneTwister(1234)
@@ -95,7 +95,6 @@ using LinearAlgebra
             y = rand(T3, size)
             @test dot(x, A, y) ≈ xT_A_y(x, A, y)
         end
-
     end
 end
 

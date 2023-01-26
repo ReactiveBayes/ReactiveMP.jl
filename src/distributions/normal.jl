@@ -193,8 +193,8 @@ promote_variate_type(::Type{Multivariate}, ::Type{<:NormalWeightedMeanPrecision}
 
 # Conversion to gaussian distributions from `Distributions.jl`
 
-Base.convert(::Type{ Normal }, dist::UnivariateNormalDistributionsFamily)     = Normal(mean_std(dist)...)
-Base.convert(::Type{ MvNormal }, dist::MultivariateNormalDistributionsFamily) = MvNormal(mean_cov(dist)...)
+Base.convert(::Type{Normal}, dist::UnivariateNormalDistributionsFamily)     = Normal(mean_std(dist)...)
+Base.convert(::Type{MvNormal}, dist::MultivariateNormalDistributionsFamily) = MvNormal(mean_cov(dist)...)
 
 # Conversion to mean - variance parametrisation
 
