@@ -338,7 +338,7 @@ end
 
 function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}) where {T}
     μ, σ = mean_std(dist)
-    return μ + σ * randn(rng, float(T))
+    return μ + σ * randn(rng, T)
 end
 
 function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}, size::Int64) where {T}
@@ -359,7 +359,7 @@ end
 
 function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}) where {T}
     μ, L = mean_std(dist)
-    return μ + L * randn(rng, length(μ))
+    return μ + L * randn(rng, T, length(μ))
 end
 
 function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}, size::Int64) where {T}

@@ -3,6 +3,7 @@ export GammaShapeRate
 import Distributions: Gamma, shape, rate, logpdf
 import SpecialFunctions: loggamma, digamma, gamma
 import StatsFuns: log2π
+import Random: rand
 
 import Base
 
@@ -64,3 +65,15 @@ end
 
 Distributions.pdf(dist::GammaShapeRate, x::Real)    = (rate(dist)^shape(dist)) / gamma(shape(dist)) * x^(shape(dist) - 1) * exp(-rate(dist) * x)
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
+
+function Random.rand(rng::AbstractRNG, dist::GammaShapeRate)
+    return convert(eltype(dist), rand(rng, convert(GammaShapeScale, dist)))
+end
+
+function Random.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Integer)
+    return convert(AbstractArray{eltype(dist)}, rand(rng, convert(GammaShapeScale, dist), n))
+end
+
+function Random.rand!(rng::AbstractRNG, dist::GammaShapeRate, container::AbstractVector)
+    return rand!(rng, convert(GammaShapeScale, dist), container)
+end

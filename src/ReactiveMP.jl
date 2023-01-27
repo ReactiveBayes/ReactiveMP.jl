@@ -120,8 +120,6 @@ include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
 
-include("distributions/sampletype.jl")
-
 include("node.jl")
 include("rule.jl")
 
