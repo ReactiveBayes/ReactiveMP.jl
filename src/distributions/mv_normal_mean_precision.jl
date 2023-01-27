@@ -45,7 +45,7 @@ function Distributions.sqmahal!(r, dist::MvNormalMeanPrecision, x::AbstractVecto
     for i in 1:length(r)
         @inbounds r[i] = μ[i] - x[i]
     end
-    return xT_A_y(r, invcov(dist), r) # x' * A * x
+    return dot(r, invcov(dist), r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanPrecision{T}) where {T} = T

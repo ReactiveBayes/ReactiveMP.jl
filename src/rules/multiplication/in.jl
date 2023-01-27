@@ -18,7 +18,7 @@ end
 @rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
-    W = correction!(meta, xT_A_y(A, W_out, A))
+    W = correction!(meta, dot(A, W_out, A))
     return NormalWeightedMeanPrecision(dot(A, ξ_out), W)
 end
 

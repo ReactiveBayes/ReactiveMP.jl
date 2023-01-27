@@ -165,31 +165,6 @@ function v_a_vT(v1, a, v2)
 end
 
 """
-    xT_A_y(x, A, y)
-
-Computes `dot(x, A, y)`. The built-in Julia 3-arg `dot` is not compatible with the auto-differentiation packages, 
-such as `ForwardDiff`. We use our own implementation in some cases but ultimately fallback to the `dot`.
-"""
-xT_A_y(x, A, y) = dot(x, A, y)
-
-function xT_A_y(x::AbstractVector, A::AbstractMatrix, y::AbstractVector)
-    (axes(x)..., axes(y)...) == axes(A) || throw(DimensionMismatch())
-    T = typeof(dot(first(x), first(A), first(y)))
-    s = zero(T)
-    i₁ = first(eachindex(x))
-    x₁ = first(x)
-    @inbounds for j in eachindex(y)
-        yj = y[j]
-        temp = zero(adjoint(A[i₁, j]) * x₁)
-        @simd for i in eachindex(x)
-            temp += adjoint(A[i, j]) * x[i]
-        end
-        s += dot(temp, yj)
-    end
-    return s
-end
-
-"""
     mvbeta(x)
 
 Computes the multivariate beta distribution over the vector x.
