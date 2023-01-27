@@ -34,7 +34,8 @@ end
     m_out, v_out   = mean_cov(q_out)
     df_Λ, S_Λ      = params(q_Λ)  # prevent allocation of mean matrix
 
-    result = zero(promote_samplefloattype(q_out, q_μ, q_Λ))
+    T = promote_samplefloattype(q_out, q_μ, q_Λ)
+    result = zero(T)
 
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)

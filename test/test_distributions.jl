@@ -22,21 +22,24 @@ import ReactiveMP: FactorizedJoint
             push!(distributions, NormalWeightedMeanPrecision(rand(rng, T), rand(rng, T)))
             push!(distributions, GammaShapeRate(rand(rng, T), rand(rng, T)))
             push!(distributions, GammaShapeScale(rand(rng, T), rand(rng, T)))
+            push!(distributions, SampleList([rand(rng, T)]))
         end
 
         # Add `Multivariate` distributions
-        for T in Types, n in 2:4
+        for T in Types, n in (2, 3)
             push!(distributions, PointMass(rand(rng, T, n)))
             push!(distributions, MvNormalMeanPrecision(rand(rng, T, n)))
             push!(distributions, MvNormalMeanCovariance(rand(rng, T, n)))
             push!(distributions, MvNormalWeightedMeanPrecision(rand(rng, T, n)))
             push!(distributions, MvNormal(rand(rng, T, n)))
+            push!(distributions, SampleList([rand(rng, T, n)]))
         end
 
         # Add `Matrixvariate` distributions
-        for T in Types, n in 2:4
+        for T in Types, n in (2, 3)
             push!(distributions, PointMass(rand(rng, T, n, n)))
             push!(distributions, Wishart(one(T), diageye(T, n)))
+            push!(distributions, SampleList([rand(rng, T, n, n)]))
         end
 
         return filter((dist) -> variate_form(dist) <: V, distributions)

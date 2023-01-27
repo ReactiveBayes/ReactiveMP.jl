@@ -3,6 +3,7 @@ export SampleList, SampleListMeta
 import Base: show, ndims, length, size, precision, getindex, broadcasted, map
 import Distributions: mean, var, cov, std
 import StatsBase: Weights
+import Random: rand
 
 using StaticArrays
 using LoopVectorization
@@ -217,6 +218,19 @@ vague(::Type{SampleList}; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)        
 vague(::Type{SampleList}, dims::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)             = sample_list_vague(Multivariate, dims, nsamples)
 vague(::Type{SampleList}, dims::Tuple{Int, Int}; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES) = sample_list_vague(Matrixvariate, dims, nsamples)
 vague(::Type{SampleList}, dim1::Int, dim2::Int; nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)  = sample_list_vague(Matrixvariate, (dim1, dim2), nsamples)
+
+##
+
+rand(samplelist::SampleList) = rand(Random.GLOBAL_RNG, samplelist)
+rand(samplelist::SampleList, n::Integer) = rand(Random.GLOBAL_RNG, samplelist, n)
+
+function rand(rng::AbstractRNG, samplelist::SampleList)
+    return rand(rng, get_samples(samplelist))
+end
+
+function rand(rng::AbstractRNG, samplelist::SampleList, n::Integer)
+    return rand(rng, get_samples(samplelist), n)
+end
 
 ##
 
