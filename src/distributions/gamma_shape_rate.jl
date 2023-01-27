@@ -59,7 +59,7 @@ vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
 prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeRate}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
-    T = promote_type(eltype(left), eltype(right))
+    T = promote_samplefloattype(left, right)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 

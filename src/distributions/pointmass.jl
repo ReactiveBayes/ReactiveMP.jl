@@ -13,9 +13,10 @@ end
 variate_form(::PointMass{T}) where {T <: Real}                 = Univariate
 variate_form(::PointMass{V}) where {T, V <: AbstractVector{T}} = Multivariate
 variate_form(::PointMass{M}) where {T, M <: AbstractMatrix{T}} = Matrixvariate
-sampletype(pointmass::PointMass)                               = variate_form2type(variate_form(pointmass), eltype(pointmass))
 
 ##
+
+sampletype(distribution::PointMass{T}) where {T} = T 
 
 getpointmass(distribution::PointMass) = distribution.point
 

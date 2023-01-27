@@ -16,6 +16,7 @@ import ReactiveMP: FactorizedJoint
 
         # Add `Univariate` distributions
         for T in Types
+            push!(distributions, PointMass(rand(rng, T)))
             push!(distributions, NormalMeanPrecision(rand(rng, T), rand(rng, T)))
             push!(distributions, NormalMeanVariance(rand(rng, T), rand(rng, T)))
             push!(distributions, NormalWeightedMeanPrecision(rand(rng, T), rand(rng, T)))
@@ -25,6 +26,7 @@ import ReactiveMP: FactorizedJoint
 
         # Add `Multivariate` distributions
         for T in Types, n in 2:4
+            push!(distributions, PointMass(rand(rng, T, n)))
             push!(distributions, MvNormalMeanPrecision(rand(rng, T, n)))
             push!(distributions, MvNormalMeanCovariance(rand(rng, T, n)))
             push!(distributions, MvNormalWeightedMeanPrecision(rand(rng, T, n)))
@@ -33,6 +35,7 @@ import ReactiveMP: FactorizedJoint
 
         # Add `Matrixvariate` distributions
         for T in Types, n in 2:4
+            push!(distributions, PointMass(rand(rng, T, n, n)))
             push!(distributions, Wishart(one(T), diageye(T, n)))
         end
 
@@ -48,7 +51,7 @@ import ReactiveMP: FactorizedJoint
     end
 
     @testset "sampletype" begin
-        for distribution in fixture_various_distributions(Multivariate)
+        for distribution in fixture_various_distributions()
             sample = rand(distribution)
             @test @inferred(sampletype(distribution)) === typeof(sample)
         end
@@ -58,10 +61,10 @@ import ReactiveMP: FactorizedJoint
         combinations = [
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Univariate)),
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Multivariate)),
-            Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate)),
+            Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate))
         ]
         for combination in combinations
-            for distributions in combination 
+            for distributions in combination
                 samples = rand.(distributions)
                 @test @inferred(promote_sampletype(distributions...)) === promote_type(typeof.(samples)...)
             end
@@ -78,11 +81,14 @@ import ReactiveMP: FactorizedJoint
     @testset "promote_samplefloattype" begin
         combinations = [
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Univariate)),
+            Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate)),
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Multivariate)),
+            Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Matrixvariate)),
             Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate)),
+            Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate)),
         ]
         for combination in combinations
-            for distributions in combination 
+            for distributions in combination
                 samples = rand.(distributions)
                 @test @inferred(promote_samplefloattype(distributions...)) === promote_type(deep_eltype.(typeof.(samples))...)
             end
