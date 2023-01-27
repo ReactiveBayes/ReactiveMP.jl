@@ -69,7 +69,7 @@ import ReactiveMP: FactorizedJoint
         for combination in combinations
             for distributions in combination
                 samples = rand.(distributions)
-                @const if VERSION >= v"1.8"
+                @static if VERSION >= v"1.8"
                     @test @inferred(promote_sampletype(distributions...)) === promote_type(typeof.(samples)...)
                 else
                     @test promote_sampletype(distributions...) === promote_type(typeof.(samples)...)
@@ -97,7 +97,7 @@ import ReactiveMP: FactorizedJoint
         for combination in combinations
             for distributions in combination
                 samples = rand.(distributions)
-                @const if VERSION >= v"1.8"
+                @static if VERSION >= v"1.8"
                     @test @inferred(promote_samplefloattype(distributions...)) === promote_type(deep_eltype.(typeof.(samples))...)
                 else
                     @test promote_samplefloattype(distributions...) === promote_type(deep_eltype.(typeof.(samples))...)
