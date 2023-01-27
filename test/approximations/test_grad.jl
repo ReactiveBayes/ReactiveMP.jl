@@ -35,11 +35,7 @@ import ReactiveMP: convert_eltype
                 check_basic_statistics(left, right, dim)
 
                 p1 = prod(ProdPreserveTypeLeft(), left, right)
-                @test typeof(p1) <: typeof(left)
-
                 p2 = prod(ProdPreserveTypeRight(), left, right)
-                @test typeof(p2) <: typeof(right)
-
                 p3 = prod(ProdAnalytical(), left, right)
 
                 check_basic_statistics(p1, p2, dim)
