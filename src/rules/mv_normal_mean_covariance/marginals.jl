@@ -16,7 +16,7 @@ end
 
     xi = [xi_out; xi_m]
 
-    T = promote_type(eltype(W_bar), eltype(W_out), eltype(W_m))
+    T = promote_samplefloattype(m_out, m_μ, m_Σ)
     d = length(xi_out)
     W = Matrix{T}(undef, (2 * d, 2 * d))
     @inbounds for k2 in 1:d
@@ -47,7 +47,7 @@ end
 
     xi = [xi_out; xi_m]
 
-    T = promote_type(eltype(W_bar), eltype(W_out), eltype(W_m))
+    T = promote_samplefloattype(m_out, m_μ, q_Σ)
     d = length(xi_out)
     W = Matrix{T}(undef, (2 * d, 2 * d))
     @inbounds for k2 in 1:d

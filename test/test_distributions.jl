@@ -85,7 +85,7 @@ import ReactiveMP: FactorizedJoint
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Multivariate)),
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Matrixvariate)),
             Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate)),
-            Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate)),
+            Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate))
         ]
         for combination in combinations
             for distributions in combination
