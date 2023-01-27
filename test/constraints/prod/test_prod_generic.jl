@@ -67,8 +67,7 @@ import ReactiveMP: getdist, prod
         d3 = DummyDistribution23()
 
         @test d1 × d2 === DistProduct(DummyDistribution21(), DummyDistribution22())
-        @test (d1 × d2) × d3 ===
-              DistProduct(DistProduct(DummyDistribution21(), DummyDistribution22()), DummyDistribution23())
+        @test (d1 × d2) × d3 === DistProduct(DistProduct(DummyDistribution21(), DummyDistribution22()), DummyDistribution23())
     end
 
     @testset "ProdGeneric should create a linearised product tree if closed form product is not available, but objects are of the same type" begin
@@ -82,12 +81,8 @@ import ReactiveMP: getdist, prod
         d2 = DummyDistribution32()
 
         @test d1 × d2 === DistProduct(DummyDistribution31(), DummyDistribution32())
-        @test d1 × d2 × d2 × d2 isa
-              DistProduct{DummyDistribution31, GenericLogPdfVectorisedProduct{DummyDistribution32}}
-        @test (d1 × d2 × d2 × d2) × d1 × d1 isa DistProduct{
-            GenericLogPdfVectorisedProduct{DummyDistribution31},
-            GenericLogPdfVectorisedProduct{DummyDistribution32}
-        }
+        @test d1 × d2 × d2 × d2 isa DistProduct{DummyDistribution31, GenericLogPdfVectorisedProduct{DummyDistribution32}}
+        @test (d1 × d2 × d2 × d2) × d1 × d1 isa DistProduct{GenericLogPdfVectorisedProduct{DummyDistribution31}, GenericLogPdfVectorisedProduct{DummyDistribution32}}
     end
 end
 

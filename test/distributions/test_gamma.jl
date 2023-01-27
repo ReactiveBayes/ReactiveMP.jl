@@ -3,6 +3,7 @@ module GammaTest
 using Test
 using ReactiveMP
 using Random
+using Distributions
 
 import SpecialFunctions: loggamma
 import ReactiveMP: xtlog
@@ -113,6 +114,21 @@ import ReactiveMP: xtlog
         @test entropy(dist3) ≈ 0.8840684843415857
         @test pdf(dist3, 1.0) ≈ 0.5413411329464508
         @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
+    end
+
+    @testset "GammaShapeRateNaturalParameters" begin
+        for i in 2:10
+            @test convert(Distribution, GammaNaturalParameters(i, -i)) ≈ GammaShapeRate(i + 1, i)
+            @test Distributions.logpdf(GammaNaturalParameters(i, -i), 10) ≈ Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
+            @test isproper(GammaNaturalParameters(i, -i)) === true
+            @test isproper(GammaNaturalParameters(-i, i)) === false
+
+            @test convert(GammaNaturalParameters, i, -i) == GammaNaturalParameters(i, -i)
+            @test convert(GammaNaturalParameters{Float64}, i, -i) == GammaNaturalParameters(i, -i)
+
+            @test as_naturalparams(GammaNaturalParameters, i, -i) == GammaNaturalParameters(i, -i)
+            @test as_naturalparams(GammaNaturalParameters{Float64}, i, -i) == GammaNaturalParameters(i, -i)
+        end
     end
 
     @testset "Base methods" begin

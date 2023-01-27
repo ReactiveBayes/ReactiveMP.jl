@@ -7,7 +7,8 @@ import ReactiveMP: @test_rules
 
 @testset "rules:BIFM:in" begin
     @testset "Belief Propagation: (m_out::MultivariateNormalDistributionsFamily, m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta)" begin
-        meta = BIFMMeta([2 0; 0 1], # A
+        meta = BIFMMeta(
+            [2 0; 0 1], # A
             [3 0; 0 2], # B
             [4 0; 0 3], # C
             [5 0; 0 4], # H
@@ -20,10 +21,7 @@ import ReactiveMP: @test_rules
             [9 0; 0 8]  # Σu
         )
 
-        @test_rules [with_float_conversions = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(
-            :in,
-            Marginalisation
-        ) [
+        @test_rules [with_float_conversions = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(:in, Marginalisation) [
             (
                 input = (
                     m_out = MvNormalMeanPrecision([1, 2], [2 0; 0 1]),
@@ -31,7 +29,8 @@ import ReactiveMP: @test_rules
                     m_znext = MvNormalMeanPrecision([1, 2], [1 0; 0 2]),
                     meta = meta
                 ),
-                output = ProdFinal(MvNormalMeanCovariance([-375, -172], [180801 0.0; 0.0 4487.999999999998]))),
+                output = ProdFinal(MvNormalMeanCovariance([-375, -172], [180801 0.0; 0.0 4487.999999999998]))
+            ),
             (
                 input = (
                     m_out = MvNormalMeanPrecision([3, 4], [6 0; 0 1]),
@@ -39,9 +38,8 @@ import ReactiveMP: @test_rules
                     m_znext = MvNormalMeanPrecision([8, 2], [2 0; 0 2]),
                     meta = meta
                 ),
-                output = ProdFinal(
-                    MvNormalMeanCovariance([-375, -620], [87488.99999999997 0.0; 0.0 4487.999999999998])
-                )),
+                output = ProdFinal(MvNormalMeanCovariance([-375, -620], [87488.99999999997 0.0; 0.0 4487.999999999998]))
+            ),
             (
                 input = (
                     m_out = MvNormalMeanPrecision([5, 6], [2 0; 0 5]),
@@ -49,7 +47,8 @@ import ReactiveMP: @test_rules
                     m_znext = MvNormalMeanPrecision([1, 9], [1 0; 0 1]),
                     meta = meta
                 ),
-                output = ProdFinal(MvNormalMeanCovariance([-2535, -172], [180801 0.0; 0.0 10760.0])))
+                output = ProdFinal(MvNormalMeanCovariance([-2535, -172], [180801 0.0; 0.0 10760.0]))
+            )
         ]
     end
 end

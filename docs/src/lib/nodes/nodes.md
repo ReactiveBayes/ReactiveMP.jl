@@ -87,10 +87,10 @@ Here we see that in the standard setting for the belief-propagation message out 
 We see that in this setting, we do not need messages $\mu(y)$ and $\mu(z)$, but only the marginals $q(y)$ and $q(z)$. The purpose of a __functional dependencies pipeline__ is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in pipelines is presented below:
 
 ```@docs
-DefaultFunctionalDependencies
-RequireMessageFunctionalDependencies
-RequireMarginalFunctionalDependencies
-RequireEverythingFunctionalDependencies
+ReactiveMP.DefaultFunctionalDependencies
+ReactiveMP.RequireMessageFunctionalDependencies
+ReactiveMP.RequireMarginalFunctionalDependencies
+ReactiveMP.RequireEverythingFunctionalDependencies
 ```
 
 ## [Node traits](@id lib-node-traits)
@@ -101,7 +101,7 @@ Each factor node has to define the [`as_node_functional_form`](@ref) trait funct
     [`@node`](@ref) macro does that automatically
 
 ```@docs
-ValidNodeFunctionalForm
-UndefinedNodeFunctionalForm
-as_node_functional_form
+ReactiveMP.ValidNodeFunctionalForm
+ReactiveMP.UndefinedNodeFunctionalForm
+ReactiveMP.as_node_functional_form
 ```

@@ -4,10 +4,6 @@ using Test
 using ReactiveMP
 using ReactiveMP: getL, getα, getβ, getκ, getλ
 
-include("../../test_helpers.jl")
-
-using .ReactiveMPTestingHelpers
-
 @testset "FlowNode" begin
 
     # test for basics in the flow.jl file
@@ -42,7 +38,7 @@ using .ReactiveMPTestingHelpers
                 @test typeof(getmodel(meta)) <: ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
-                @test getapproximation(meta) == Linearization()
+                @test getapproximation(meta) isa Linearization
             end
 
             @testset "Linearization" begin
@@ -57,7 +53,7 @@ using .ReactiveMPTestingHelpers
                 @test typeof(getmodel(meta)) <: ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
-                @test typeof(getapproximation(meta)) == Linearization
+                @test getapproximation(meta) isa Linearization
             end
 
             @testset "Unscented" begin
@@ -72,7 +68,7 @@ using .ReactiveMPTestingHelpers
                 @test typeof(getmodel(meta)) <: ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
-                @test typeof(getapproximation(meta)) == Unscented
+                @test getapproximation(meta) isa Unscented
                 @test getL(getapproximation(meta)) == 3
                 @test getα(getapproximation(meta)) == 1e-3
                 @test getβ(getapproximation(meta)) == 2.0

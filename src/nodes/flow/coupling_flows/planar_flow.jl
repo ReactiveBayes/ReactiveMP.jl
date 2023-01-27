@@ -41,7 +41,7 @@ end
 compile(f::PlanarFlowEmpty{1})         = PlanarFlow(randn(), randn(), randn())
 compile(f::PlanarFlowEmpty)            = PlanarFlow(randn(getdim(f)), randn(getdim(f)), randn())
 compile(f::PlanarFlowEmpty{1}, params) = PlanarFlow(params[1], params[2], params[3])
-compile(f::PlanarFlowEmpty, params)    = PlanarFlow(params[1:getdim(f)], params[1+getdim(f):2*getdim(f)], params[2*getdim(f)+1])
+compile(f::PlanarFlowEmpty, params)    = PlanarFlow(params[1:getdim(f)], params[(1 + getdim(f)):(2 * getdim(f))], params[2 * getdim(f) + 1])
 
 @doc raw"""
 The `PlanarFlow(dim::Int64)` function creates a mutable `PlanarFlow` structure with parameters corresponding to input of dimensions `dim`. The parameters are each random sampled from a standard (multivariate) normal distribution.
@@ -109,8 +109,7 @@ function _forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
     return result
 end
 forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} =
-    broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(_forward, Ref(f), input)
 
 # forward pass through the PlanarFlow function (univariate input)
 function _forward(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real}
@@ -127,11 +126,7 @@ function _forward(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Rea
     return result
 end
 forward(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _forward(f, input)
-Broadcast.broadcasted(
-    ::typeof(forward),
-    f::PlanarFlow{T1, T2},
-    input::AbstractVector{<:Real}
-) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
 
 function _forward(f::PlanarFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     # function when the input is an array with 1 element
@@ -139,8 +134,7 @@ function _forward(f::PlanarFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     return forward(f, input[1])
 end
 forward(f::PlanarFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real} = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} =
-    broadcast(_forward, Ref(f), input)
+Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
 
 # inplace forward pass through the PlanarFlow function (multivariate input)
 function forward!(output::T1, f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
@@ -174,8 +168,7 @@ function _jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
     return result
 end
 jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} =
-    broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
 
 # jacobian of the PlanarFlow function (univariate input)
 function _jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real}
@@ -190,11 +183,7 @@ function _jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Re
     return result
 end
 jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _jacobian(f, input)
-Broadcast.broadcasted(
-    ::typeof(jacobian),
-    f::PlanarFlow{T1, T2},
-    input::AbstractVector{<:Real}
-) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
 
 function _jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3}
     # function when the input is an array with 1 element
@@ -202,8 +191,7 @@ function _jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Re
     return jacobian(f, input[1])
 end
 jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3} = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} =
-    broadcast(_jacobian, Ref(f), input)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
 
 # inplace jacobian of the PlanarFlow function (multivariate input)
 function jacobian!(output::AbstractMatrix{T2}, f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}

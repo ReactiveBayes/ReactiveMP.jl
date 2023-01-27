@@ -7,10 +7,7 @@ import ReactiveMP: @test_rules
 
 @testset "BIFMNode" begin
     @testset "Creation" begin
-        node = make_node(
-            BIFM,
-            FactorNodeCreationOptions(nothing, BIFMMeta(ones(2, 2), 2 * ones(2, 2), 3 * ones(2, 2)), nothing)
-        )
+        node = make_node(BIFM, FactorNodeCreationOptions(nothing, BIFMMeta(ones(2, 2), 2 * ones(2, 2), 3 * ones(2, 2)), nothing))
 
         @test functionalform(node) === BIFM
         @test sdtype(node) === Deterministic()

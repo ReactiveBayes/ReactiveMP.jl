@@ -136,8 +136,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         layer = compile(ReactiveMP._prepare(2, layer), params)
         @test jacobian(layer, [3.0, 1.5]) == [1.0 0.0; 1.0197320743308804 1.0]
         @test jacobian(layer, [2.5, 5.0]) == [1.0 0.0; 1.1413016497063289 1.0]
-        @test jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) ==
-              [[1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]]
+        @test jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]]
 
         # check jacobian function
         params = [1.0, 2.0, -3.0]
@@ -146,8 +145,7 @@ using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jaco
         layer = compile(ReactiveMP._prepare(2, layer), params)
         @test inv_jacobian(layer, [3.0, 1.5]) == [1.0 0.0; -1.0197320743308804 1.0]
         @test inv_jacobian(layer, [2.5, 5.0]) == [1.0 0.0; -1.1413016497063289 1.0]
-        @test inv_jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) ==
-              [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]
+        @test inv_jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]
 
         # check for invertibility 
         layer = AdditiveCouplingLayer(PlanarFlow(); permute = false)
