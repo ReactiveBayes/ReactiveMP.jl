@@ -34,7 +34,7 @@
 
     # Actual return type depends on meta object as well, so we explicitly cast the result here
     # Should be noop if type matches
-    T = promote_type(eltype(m_in), eltype(m_zprev), eltype(m_znext))
+    T = promote_samplefloattype(m_in, m_zprev, m_znext)
 
     # return outgoing marginal
     return ProdFinal(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_out, Σ_out)))

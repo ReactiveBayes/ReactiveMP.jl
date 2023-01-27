@@ -56,7 +56,7 @@ end
     xi_in1, W_in1 = weightedmean_precision(m_in1)
     xi_in2, W_in2 = weightedmean_precision(m_in2)
 
-    T = promote_type(eltype(W_out), eltype(W_in1), eltype(W_in2))
+    T = promote_samplefloattype(m_out, m_in1, m_in2)
     d = length(xi_out)
     Λ = Matrix{T}(undef, (2 * d, 2 * d))
     @inbounds for k2 in 1:d
