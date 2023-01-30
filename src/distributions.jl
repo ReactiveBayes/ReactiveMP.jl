@@ -108,6 +108,48 @@ convert_eltype(::Type{E}, container::AbstractArray) where {E} = convert(Abstract
 convert_eltype(::Type{E}, number::Number) where {E} = convert(E, number)
 
 """
+    sampletype(distribution)
+
+Returns a type of the distribution. By default fallbacks to the `eltype`.
+
+See also: [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promotesamplefloatype`](@ref)
+"""
+sampletype(distribution) = eltype(distribution)
+
+sampletype(distribution::Distribution) = sampletype(variate_form(distribution), distribution)
+sampletype(::Type{Univariate}, distribution) = eltype(distribution)
+sampletype(::Type{Multivariate}, distribution) = Vector{eltype(distribution)}
+sampletype(::Type{Matrixvariate}, distribution) = Matrix{eltype(distribution)}
+
+"""
+    samplefloattype(distribution)
+
+Returns a type of the distribution or the underlying float type in case if sample is `Multivariate` or `Matrixvariate`. 
+By default fallbacks to the `deep_eltype(sampletype(distribution))`.
+
+See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloatype`](@ref)
+"""
+samplefloattype(distribution) = deep_eltype(sampletype(distribution))
+
+"""
+    promote_sampletype(distributions...)
+
+Promotes `sampletype` of the `distributions` to a single type. See also `promote_type`.
+
+See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
+"""
+promote_sampletype(distributions...) = promote_type(sampletype.(distributions)...)
+
+"""
+    promote_samplefloattype(distributions...)
+
+Promotes `samplefloattype` of the `distributions` to a single type. See also `promote_type`.
+
+See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref)
+"""
+promote_samplefloattype(distributions...) = promote_type(samplefloattype.(distributions)...)
+
+"""
     logpdf_sample_friendly(distribution) 
     
 `logpdf_sample_friendly` function takes as an input a `distribution` and returns corresponding optimized two versions 

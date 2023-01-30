@@ -18,7 +18,7 @@ end
     m_out, v_out   = mean_cov(q_out)
     m_Λ            = mean(q_γ) * diageye(dim)
 
-    result = zero(promote_type(eltype(m_mean), eltype(m_out), eltype(m_Λ)))
+    result = zero(promote_samplefloattype(q_out, q_μ, q_γ))
     result += dim * log2π
     result -= dim * mean(log, q_γ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
@@ -37,7 +37,7 @@ end
     m, V = mean_cov(q_out_μ)
     m_Λ  = mean(q_γ) * diageye(dim)
 
-    result = zero(promote_type(eltype(m), eltype(m_Λ)))
+    result = zero(promote_samplefloattype(q_out_μ, q_γ))
     result += dim * log2π
     result -= dim * mean(log, q_γ)
     @inbounds for k1 in 1:dim, k2 in 1:dim
