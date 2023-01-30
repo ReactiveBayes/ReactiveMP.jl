@@ -229,14 +229,16 @@ end
 function compute_ep_message(l_pdf, m_in, var_in )
 
     meta = ghcubature(121)
-    m_,v_ = ReactiveMP.approximate_meancov(meta, z -> exp(l_pdf(z)), m_in, var_in)
+    
+    m_,v_ = ReactiveMP.approximate_meancov(meta, z -> exp(l_pdf(z)), m_in  , var_in)
     if isnan(m_) == true || isnan(v_) == true
-        m_ = m_in
+        res = optimize(x->-l_pdf(x),-20,20)
+        m_  = res.minimizer[1]
+
         v_ = var_in
     end
     ksi = m_/v_ - m_in/var_in
-    precision = clamp(1/v_ - 1/var_in,0.00001,100.0)
-    
+    precision = clamp(1/v_ - 1/var_in,tiny,huge)
     return NormalWeightedMeanPrecision(ksi,precision)
 end
 
@@ -251,8 +253,7 @@ function marginal_prod_fn(randomprocess::RandomProcess)
         process_message = getdata(message_vector[1])
         meanf = process_message.meanfunction
         kernelf = process_message.kernelfunction
-        @show name(randomprocess)
-        @show likelihood_messages = message_vector[2:end]
+        likelihood_messages = message_vector[2:end]
         evaluated_mean = meanf.(train)
         evaluated_cov  = kernelmatrix(kernelf, train,train)
         likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
@@ -261,13 +262,14 @@ function marginal_prod_fn(randomprocess::RandomProcess)
             likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
         end
 
-
         m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
         
         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
         m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
         extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
-        return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false)
+        addons = AddonMemory(message_vector)
+
+        return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false, addons)
     end
 end
 
@@ -309,14 +311,16 @@ function setmessagein!(randomprocess::RandomProcess, index::Int, messagein)
     end
 end
 
-function activate!(randomprocess::RandomProcess, scheduler = AsapScheduler())
+function activate!(randomprocess::RandomProcess, options)
+    scheduler = getscheduler(options)
+    
     if randomprocess.output_initialised === true     
         error("Broken random variable ", randomprocess, ". Unreachable reached.")
     end
 
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
-    if degree(randomprocess) > 1000
+    if degree(randomprocess) > 100000
         chain_pipeline = schedule_on(scheduler)
         chain_prod_fn = messages_prod_fn(randomprocess)
         randomprocess.base.output_cache = EqualityChain(randomprocess.input_messages, chain_pipeline, chain_prod_fn) 

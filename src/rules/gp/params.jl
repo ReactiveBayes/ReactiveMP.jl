@@ -3,7 +3,7 @@ import KernelFunctions: kernelmatrix, Kernel
 import LinearAlgebra: det, logdet 
 # Univariate case 
 
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, 
         q_params::UnivariateGaussianDistributionsFamily, meta::CVI) = begin 
     #collect entities in meta
     n_iter = meta.n_iterations; 
@@ -12,8 +12,8 @@ import LinearAlgebra: det, logdet
     RNG = meta.rng 
     #collect information from gaussian process q_out 
     test = q_out.testinput 
-    meanf = q_meanfunc.point
-    kernelfunc = q_kernelfunc.point  # this is already a function k(θ)
+    meanf = q_meanfunc
+    kernelfunc = q_kernelfunc  # this is already a function k(θ)
     #get information from observations 
     y, Σ = mean_cov(q_out.finitemarginal) 
     #new thing
@@ -28,14 +28,14 @@ import LinearAlgebra: det, logdet
     return result
 end
 
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, 
         m_params::UnivariateGaussianDistributionsFamily, meta::CVI) = begin 
     return @call_rule GaussianProcess(:params, Marginalisation) (q_out = q_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
 end
 
 # Multivariate case 
 
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, 
         q_params::MultivariateGaussianDistributionsFamily, meta::CVI) = begin 
     #collect entities in meta
     n_iter = meta.n_iterations; 
@@ -44,8 +44,8 @@ end
     RNG = meta.rng 
     #collect information from gaussian process q_out 
     test = q_out.testinput 
-    meanf = q_meanfunc.point
-    kernelfunc = q_kernelfunc.point  # this is already a function k(θ)
+    meanf = q_meanfunc
+    kernelfunc = q_kernelfunc  # this is already a function k(θ)
     #get information from observations 
     y, Σ = mean_cov(q_out.finitemarginal) 
     #new thing
@@ -61,7 +61,7 @@ end
     return result
 end
 
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, m_params::MultivariateGaussianDistributionsFamily, meta::CVI) = begin
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, m_params::MultivariateGaussianDistributionsFamily, meta::CVI) = begin
     return @call_rule GaussianProcess(:params, Marginalisation) (q_out=q_out, q_meanfunc=q_meanfunc, q_kernelfunc=q_kernelfunc, q_params=m_params, meta=meta)
 end
 
@@ -100,12 +100,12 @@ end
 
 #-------------------Unscented Transform------------------------#
 ###### Univariate case ###########
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, q_params::UnivariateGaussianDistributionsFamily, meta::Unscented) = begin 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily, meta::Unscented) = begin 
     #collect entities in meta
     #collect information from gaussian process q_out 
     test = q_out.testinput 
-    meanf = q_meanfunc.point
-    kernelfunc = q_kernelfunc.point  # this is already a function k(θ)
+    meanf = q_meanfunc
+    kernelfunc = q_kernelfunc  # this is already a function k(θ)
 
     y, Σ = mean_cov(q_out.finitemarginal) 
 
@@ -136,7 +136,7 @@ end
     return NormalWeightedMeanPrecision(ζx_tilde, Wx_tilde)
 end
 
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, m_params::NormalMeanVariance, meta::Unscented{Int64, Float64, Int64, Nothing}) = begin 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, m_params::NormalMeanVariance, meta::Unscented{Int64, Float64, Int64, Nothing}) = begin 
     return @call_rule GaussianProcess(:params, Marginalisation) (q_out = q_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
 end
 # function prod(meta::Unscented, left::ContinuousUnivariateLogPdf, right::UnivariateGaussianDistributionsFamily)
@@ -148,12 +148,12 @@ end
 # end
 
 ### Multivariate Case #####
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, q_params::MultivariateGaussianDistributionsFamily, meta::Unscented) = begin 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::MultivariateGaussianDistributionsFamily, meta::Unscented) = begin 
     #collect entities in meta
     #collect information from gaussian process q_out 
     test = q_out.testinput 
-    meanf = q_meanfunc.point
-    kernelfunc = q_kernelfunc.point  # this is already a function k(θ)
+    meanf = q_meanfunc
+    kernelfunc = q_kernelfunc  # this is already a function k(θ)
     #get information from observations 
     y, Σ = mean_cov(q_out.finitemarginal) 
     #new thing
@@ -184,7 +184,7 @@ end
     return MvNormalWeightedMeanPrecision(ζx_tilde, Wx_tilde)
 end
 
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, m_params::MvNormalMeanCovariance, meta::Unscented{Int64, Float64, Int64, Nothing}) = begin 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, m_params::MvNormalMeanCovariance, meta::Unscented{Int64, Float64, Int64, Nothing}) = begin 
     return @call_rule GaussianProcess(:params, Marginalisation) (q_out = q_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
 end
 
@@ -198,12 +198,12 @@ end
 
 #------------ GaussHermiteCubature ----------------#
 ###### Univariate case ###########
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, q_params::UnivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
     #collect entities in meta
     #collect information from gaussian process q_out 
     test = q_out.testinput 
-    meanf = q_meanfunc.point
-    kernelfunc = q_kernelfunc.point  # this is already a function k(θ)
+    meanf = q_meanfunc
+    kernelfunc = q_kernelfunc  # this is already a function k(θ)
     #get information from observations 
     y, Σ = mean_cov(q_out.finitemarginal) 
     #new thing
@@ -225,12 +225,12 @@ function prod(meta::GaussHermiteCubature, left::ContinuousUnivariateLogPdf, righ
 end
 
 ### Multivariate Case #####
-@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, q_params::MultivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::MultivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
     #collect entities in meta
     #collect information from gaussian process q_out 
     test = q_out.testinput 
-    meanf = q_meanfunc.point
-    kernelfunc = q_kernelfunc.point  # this is already a function k(θ)
+    meanf = q_meanfunc
+    kernelfunc = q_kernelfunc  # this is already a function k(θ)
     #get information from observations 
     y, Σ = mean_cov(q_out.finitemarginal) 
     #new thing

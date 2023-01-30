@@ -84,18 +84,45 @@ end
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin 
     #laplace approximation
-    res = optimize(x -> -logpdf(m_in,x), -50,50)
-    μ_in_approx = res.minimizer
+    # res = optimize(x -> -logpdf(m_in,x), -50,50)
+    # μ_in_approx = res.minimizer
 
-    # hessian(x -> -logpdf(m_in,x), μ_in_approx)    
-    dx = (x) -> ForwardDiff.derivative(y -> -logpdf(m_in,y),x)
-    ddx = (x) -> ForwardDiff.derivative(dx,x)
+    # # hessian(x -> -logpdf(m_in,x), μ_in_approx)    
+    # dx = (x) -> ForwardDiff.derivative(y -> -logpdf(m_in,y),x)
+    # ddx = (x) -> ForwardDiff.derivative(dx,x)
 
-    var_in_approx = cholinv(ddx(μ_in_approx))
-
+    # var_in_approx = cholinv(ddx(μ_in_approx))
+    # @show μ_in_approx, var_in_approx
+    μ_in_approx = mean(m_in)
+    var_in_approx = var(m_in)
     μ_out, var_out = mean_var(m_out)
     
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in_approx + var_out / x^2))  - 1/2 * (μ_out / x - μ_in_approx)^2 / (var_in_approx + var_out / x^2)
+    backwardpass_unsafe = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in_approx + var_out / x^2))  - 1/2 * (μ_out / x - μ_in_approx)^2 / (var_in_approx + var_out / x^2)
+    # function backwardpass(x)
+    #     tmp = backwardpass_unsafe(x)
+    #     if isnan(tmp) == true
+    #         lrange = range(x - 0.2, x, length = 100)
+    #         rrange = range(x, x + 0.2, length = 100)
+    #         levals = backwardpass_unsafe.(lrange)
+    #         revals = backwardpass_unsafe.(rrange)
+
+    #         x1 = findlast(!isnan, levals)
+    #         x2 = findfirst(!isnan, revals)
+
+    #         y1 = backwardpass_unsafe(lrange[x1])
+    #         y2 = backwardpass_unsafe(rrange[x2])
+
+    #         h = (y2 - y1)
+    #         dx = (x2 - x1)
+    #         a = h / dx
+    #         b = y1 - a * x1
+            
+    #         return a * x + b
+    #     end
+    #     return tmp
+    # end
+    backwardpass = backwardpass_unsafe
+
     return ContinuousUnivariateLogPdf(backwardpass)
 end
 
