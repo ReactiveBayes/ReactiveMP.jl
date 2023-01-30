@@ -3,6 +3,7 @@ export diageye
 using StatsFuns: logistic
 using StatsFuns: softmax, softmax!
 using LoopVectorization
+using SpecialFunctions: gamma, loggamma
 
 import LinearAlgebra
 import Base: show, maximum
@@ -161,4 +162,22 @@ function v_a_vT(v1, a, v2)
     result = v1 * v2'
     result *= a
     return result
+end
+
+"""
+    mvbeta(x)
+
+Computes the multivariate beta distribution over the vector x.
+"""
+function mvbeta(x::Vector)
+    return prod(gamma, x) / gamma(sum(x))
+end
+
+"""
+    logmvbeta(x)
+
+Computes the numerically stable logarithm of the multivariate beta distribution over the vector x.
+"""
+function logmvbeta(x::Vector)
+    return sum(loggamma, x) - loggamma(sum(x))
 end

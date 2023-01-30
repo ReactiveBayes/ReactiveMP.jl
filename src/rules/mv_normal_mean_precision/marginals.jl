@@ -14,7 +14,7 @@ end
 
     W_bar = mean(m_Λ)
 
-    T = promote_type(eltype(W_bar), eltype(W_y), eltype(W_m))
+    T = promote_samplefloattype(m_out, m_μ, m_Λ)
     d = length(xi_y)
     Λ = Matrix{T}(undef, (2 * d, 2 * d))
     @inbounds for k2 in 1:d
@@ -45,7 +45,7 @@ end
 
     W_bar = mean(q_Λ)
 
-    T = promote_type(eltype(W_bar), eltype(W_y), eltype(W_m))
+    T = promote_samplefloattype(m_out, m_μ, q_Λ)
     d = length(xi_y)
     Λ = Matrix{T}(undef, (2 * d, 2 * d))
     @inbounds for k2 in 1:d

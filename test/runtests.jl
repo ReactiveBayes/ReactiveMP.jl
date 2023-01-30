@@ -182,8 +182,8 @@ using Aqua
 
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
-    # `project_toml_formatting` is broken on CI, revise at some point
-    Aqua.test_all(ReactiveMP; ambiguities = false, project_toml_formatting = false)
+    # `piracy` is broken on CI, see https://github.com/JuliaTesting/Aqua.jl/issues/95, revise at some point
+    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
     # doctest(ReactiveMP)
 else
     println("Running specific tests:")
@@ -208,6 +208,8 @@ end
     addtests(testrunner, "helpers/test_helpers.jl")
 
     addtests(testrunner, "score/test_counting.jl")
+
+    addtests(testrunner, "test_addons.jl")
 
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
@@ -241,6 +243,7 @@ end
     addtests(testrunner, "distributions/test_wishart.jl")
     addtests(testrunner, "distributions/test_wishart_inverse.jl")
     addtests(testrunner, "distributions/test_sample_list.jl")
+    addtests(testrunner, "distributions/test_mixture_model.jl")
 
     addtests(testrunner, "test_message.jl")
 

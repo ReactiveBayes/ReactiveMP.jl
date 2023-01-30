@@ -27,7 +27,7 @@ See also: [`Message`](@ref)
 function materialize! end
 
 """
-    Message{D} <: AbstractMessage
+    Message{D, A} <: AbstractMessage
 
 `Message` structure encodes a **Belief Propagation** message, which holds some `data` that usually a probability distribution, but can also be an arbitrary object.
 Message acts as a proxy structure to `data` object and proxies most of the statistical functions, e.g. `mean`, `mode`, `cov` etc.
@@ -36,6 +36,7 @@ Message acts as a proxy structure to `data` object and proxies most of the stati
 - `data::D`: message always holds some data object associated with it
 - `is_clamped::Bool`, specifies if this message is clamped
 - `is_initial::Bool`, specifies if this message is initial
+- `addons::A`, specifies the addons of the message
 
 # Example 
 
@@ -43,7 +44,7 @@ Message acts as a proxy structure to `data` object and proxies most of the stati
 julia> distribution = Gamma(10.0, 2.0)
 Gamma{Float64}(α=10.0, θ=2.0)
 
-julia> message = Message(distribution, false, true)
+julia> message = Message(distribution, false, true, nothing)
 Message(Gamma{Float64}(α=10.0, θ=2.0))
 
 julia> mean(message) 
@@ -62,10 +63,11 @@ true
 
 See also: [`AbstractMessage`](@ref), [`materialize!`](@ref)
 """
-struct Message{D} <: AbstractMessage
+struct Message{D, A} <: AbstractMessage
     data       :: D
     is_clamped :: Bool
     is_initial :: Bool
+    addons     :: A
 end
 
 """
@@ -92,6 +94,7 @@ Checks if `message` is initial or not.
 See also: [`is_clamped`](@ref)
 """
 is_initial(message::Message) = message.is_initial
+getaddons(message::Message) = message.addons
 
 typeofdata(message::Message) = typeof(getdata(message))
 
@@ -100,14 +103,20 @@ getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
 
 materialize!(message::Message) = message
 
-Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ")"))
+# Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
+function show(io::IO, message::Message)
+    print(io, string("Message(", getdata(message), ")"))
+    if !isnothing(getaddons(message))
+        print(io, ") with ", string(getaddons(message)))
+    end
+end
 
 Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
 
 # We need this dummy method as Julia is not smart enough to 
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
-    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data
+    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
 end
 
 function multiply_messages(prod_constraint, left::Message, right::Message)
@@ -116,10 +125,23 @@ function multiply_messages(prod_constraint, left::Message, right::Message)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
     is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
 
-    return Message(prod(prod_constraint, getdata(left), getdata(right)), is_prod_clamped, is_prod_initial)
+    # process distributions
+    left_dist  = getdata(left)
+    right_dist = getdata(right)
+    new_dist   = prod(prod_constraint, left_dist, right_dist)
+
+    # process addons
+    left_addons  = getaddons(left)
+    right_addons = getaddons(right)
+
+    # process addons
+    new_addons = multiply_addons(left_addons, right_addons, new_dist, left_dist, right_dist)
+
+    return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
 
-constrain_form_as_message(message::Message, form_constraint) = Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message))
+constrain_form_as_message(message::Message, form_constraint) =
+    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
@@ -235,7 +257,7 @@ function connect!(message::MessageObservable, source)
 end
 
 function setmessage!(message::MessageObservable, value)
-    next!(message.subject, Message(value, false, true))
+    next!(message.subject, Message(value, false, true, nothing))
     return nothing
 end
 
@@ -245,24 +267,48 @@ end
 ## We create a lambda-like callable structure to improve type inference and make it more stable
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 
-struct MessageMapping{F, T, C, N, M, A, R}
+struct MessageMapping{F, T, C, N, M, A, X, R}
     vtag            :: T
     vconstraint     :: C
     msgs_names      :: N
     marginals_names :: M
     meta            :: A
+    addons          :: X
     factornode      :: R
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
-function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F, T, C, N, M, A, R}
-    return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+# Some addons add post rule execution logic
+function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons)
+    return message_mapping_addons(mapping, mapping.addons, messages, marginals, result, addons)
 end
 
-function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F <: Function, T, C, N, M, A, R}
-    return MessageMapping{F, T, C, N, M, A, R}(vtag, vconstraint, msgs_names, marginals_names, meta, factornode)
+# `enabled_addons` are always type-stable, whether `addons` are not, so we check based on the `enabled_addons` and ignore the `addons`
+# As a consequence if any message update rule returns non-empty `addons`, but `enabled_addons` is empty, then the resulting value 
+# of the `addons` will be simply ignored
+message_mapping_addons(mapping::MessageMapping, enabled_addons::Nothing, messages, marginals, result, addons) = enabled_addons
+message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple{}, messages, marginals, result, addons) = enabled_addons
+
+# The main logic here is that some addons may add extra computation AFTER the rule has been computed
+# The benefit of that is that we have an access to the `MessageMapping` structure and is mostly useful for debug addons
+function message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple, messages, marginals, result, addons)
+    return map(addons) do addon
+        return message_mapping_addon(addon, mapping, messages, marginals, result)
+    end
+end
+
+# By default `message_mapping_addon` does nothing and simply returns the addon itself
+# Other addons may override this behaviour (if necessary, see e.g. AddonMemory)
+message_mapping_addon(addon, mapping, messages, marginals, result) = addon
+
+function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F, T, C, N, M, A, X, R}
+    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
+end
+
+function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F <: Function, T, C, N, M, A, X, R}
+    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
 end
 
 function materialize!(mapping::MessageMapping, dependencies)
@@ -275,9 +321,21 @@ function materialize!(mapping::MessageMapping, dependencies)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    message = rule(
-        message_mapping_fform(mapping), mapping.vtag, mapping.vconstraint, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode
+    result, addons = rule(
+        message_mapping_fform(mapping),
+        mapping.vtag,
+        mapping.vconstraint,
+        mapping.msgs_names,
+        messages,
+        mapping.marginals_names,
+        marginals,
+        mapping.meta,
+        mapping.addons,
+        mapping.factornode
     )
 
-    return Message(message, is_message_clamped, is_message_initial)
+    # Inject extra addons after the rule has been executed
+    addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)
+
+    return Message(result, is_message_clamped, is_message_initial, addons)
 end

@@ -27,6 +27,6 @@ mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(di
 prod_analytical_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::MatrixDirichlet, right::MatrixDirichlet)
-    T = promote_type(eltype(left), eltype(right))
+    T = promote_samplefloattype(left, right)
     return MatrixDirichlet(left.a + right.a .- one(T))
 end

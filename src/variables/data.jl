@@ -112,11 +112,11 @@ getlastindex(::DataVariable) = 1
 messageout(datavar::DataVariable, ::Int) = datavar.messageout
 messagein(datavar::DataVariable, ::Int)  = error("It is not possible to get a reference for inbound message for datavar")
 
-update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 1), Message(missing, false, false))
+update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
 update!(datavar::DataVariable, data::Number)        = update!(eltype(datavar), datavar, data)
 update!(datavar::DataVariable, data::AbstractArray) = update!(eltype(datavar), datavar, data)
 
-update!(::Type{D}, datavar, data::D) where {D}        = next!(messageout(datavar, 1), Message(data, false, false))
+update!(::Type{D}, datavar, data::D) where {D}        = next!(messageout(datavar, 1), Message(data, false, false, nothing))
 update!(::Type{D1}, datavar, data::D2) where {D1, D2} = __update_wrong_type_error(D1, D2, collection_type(datavar), datavar)
 
 __datavar_drop_pointmass(::Type{D}) where {D}            = D
@@ -137,7 +137,7 @@ __update_wrong_type_error(::Type{D1}, ::Type{D2}, ctype::Union{VariableVector, V
     """
 )
 
-update!(::Type{PointMass{D}}, datavar, data::D) where {D} = next!(messageout(datavar, 1), Message(PointMass(data), false, false))
+update!(::Type{PointMass{D}}, datavar, data::D) where {D} = next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
 
 resend!(datavar::DataVariable) = update!(datavar, Rocket.getrecent(messageout(datavar, 1)))
 

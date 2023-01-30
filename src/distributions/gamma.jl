@@ -29,7 +29,7 @@ vague(::Type{<:GammaShapeScale}) = GammaShapeScale(1.0, huge)
 prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)
-    T = promote_type(eltype(left), eltype(right))
+    T = promote_samplefloattype(left, right)
     return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
@@ -59,13 +59,20 @@ prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = Prod
 prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeScale)
-    T = promote_type(eltype(left), eltype(right))
+    T = promote_samplefloattype(left, right)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeRate)
-    T = promote_type(eltype(left), eltype(right))
+    T = promote_samplefloattype(left, right)
     return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
+end
+
+function prod(::AddonProdLogScale, new_dist::GammaDistributionsFamily, left_dist::GammaDistributionsFamily, right_dist::GammaDistributionsFamily)
+    ay, by = shape(new_dist), rate(new_dist)
+    ax, bx = shape(left_dist), rate(left_dist)
+    az, bz = shape(right_dist), rate(right_dist)
+    return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
 end
 
 ## Friendly functions

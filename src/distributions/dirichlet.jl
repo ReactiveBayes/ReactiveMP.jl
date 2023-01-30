@@ -26,3 +26,7 @@ promote_variate_type(::Type{Matrixvariate}, ::Type{<:Dirichlet}) = MatrixDirichl
 
 promote_variate_type(::Type{Multivariate}, ::Type{<:MatrixDirichlet})  = Dirichlet
 promote_variate_type(::Type{Matrixvariate}, ::Type{<:MatrixDirichlet}) = MatrixDirichlet
+
+function prod(::AddonProdLogScale, new_dist::Dirichlet, left_dist::Dirichlet, right_dist::Dirichlet)
+    return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
+end
