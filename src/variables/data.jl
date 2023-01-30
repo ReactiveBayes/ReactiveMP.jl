@@ -9,7 +9,6 @@ mutable struct DataVariable{D, S} <: AbstractVariable
     input_messages  :: Vector{MessageObservable{AbstractMessage}}
     messageout      :: S
     nconnected      :: Int
-    # allow_missing   :: Bool
 end
 
 Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
@@ -17,11 +16,6 @@ Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_na
 struct DataVariableCreationOptions{S}
     subject::S
 end
-
-allows_missing(datavar::DataVariable) = allows_missing(datavar, eltype(datavar.messageout))
-
-allows_missing(datavar::DataVariable, ::Type) = true
-allows_missing(datavar::DataVariable, ::Type{<:Message}) = false
 
 Base.similar(options::DataVariableCreationOptions) = DataVariableCreationOptions(similar(options.subject))
 
@@ -84,6 +78,10 @@ function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, 
     return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
 end
 
+function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, dim1::Int, extra_dims::Vararg{Int}) where {D}
+    return datavar(options, name, D, (dim1, extra_dims...))
+end
+
 function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, dims::Tuple) where {D}
     indices = CartesianIndices(dims)
     size    = axes(indices)
@@ -108,6 +106,11 @@ isdata(::DataVariable)                    = true
 isdata(::AbstractArray{<:DataVariable})   = true
 isconst(::DataVariable)                   = false
 isconst(::AbstractArray{<:DataVariable})  = false
+
+allows_missings(datavar::DataVariable) = allows_missings(datavar, eltype(datavar.messageout))
+
+allows_missings(datavar::DataVariable, ::Type{ Message{D} }) where {D} = false
+allows_missings(datavar::DataVariable, ::Type{ Union{Message{Missing}, Message{D}}}) where {D} = true
 
 function Base.getindex(datavar::DataVariable, i...)
     error("Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed.")
