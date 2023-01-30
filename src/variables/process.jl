@@ -222,9 +222,23 @@ isconst(::AbstractArray{<:RandomProcess})  = false
 # this function returns means and covariances of messages 
 function make_multivariate_message(messages) ## function for concatinating messages
     m = mean.(messages) 
-    v = Diagonal(var.(messages))
+    v = Diagonal(var.(messages)) + 1e-8diageye(length(messages))
     return m,v
 end 
+
+function compute_ep_message(l_pdf, m_in, var_in )
+
+    meta = ghcubature(121)
+    m_,v_ = ReactiveMP.approximate_meancov(meta, z -> exp(l_pdf(z)), m_in, var_in)
+    if isnan(m_) == true || isnan(v_) == true
+        m_ = m_in
+        v_ = var_in
+    end
+    ksi = m_/v_ - m_in/var_in
+    precision = clamp(1/v_ - 1/var_in,0.00001,100.0)
+    
+    return NormalWeightedMeanPrecision(ksi,precision)
+end
 
 
 function marginal_prod_fn(randomprocess::RandomProcess)
@@ -237,11 +251,21 @@ function marginal_prod_fn(randomprocess::RandomProcess)
         process_message = getdata(message_vector[1])
         meanf = process_message.meanfunction
         kernelf = process_message.kernelfunction
-        likelihood_messages = message_vector[2:end]
-        m_right,cov_right = make_multivariate_message(likelihood_messages)
+        @show name(randomprocess)
+        @show likelihood_messages = message_vector[2:end]
+        evaluated_mean = meanf.(train)
+        evaluated_cov  = kernelmatrix(kernelf, train,train)
+        likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
+        @inbounds for i=1:length(likelihood_messages)
+            tmp = getdata(likelihood_messages[i])
+            likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
+        end
+
+
+        m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
         
         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
-        m, K= predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
+        m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
         extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false)
     end
