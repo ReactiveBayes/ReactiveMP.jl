@@ -9,6 +9,7 @@ mutable struct DataVariable{D, S} <: AbstractVariable
     input_messages  :: Vector{MessageObservable{AbstractMessage}}
     messageout      :: S
     nconnected      :: Int
+    # allow_missing   :: Bool
 end
 
 Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
@@ -16,6 +17,11 @@ Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_na
 struct DataVariableCreationOptions{S}
     subject::S
 end
+
+allows_missing(datavar::DataVariable) = allows_missing(datavar, eltype(datavar.messageout))
+
+allows_missing(datavar::DataVariable, ::Type) = true
+allows_missing(datavar::DataVariable, ::Type{<:Message}) = false
 
 Base.similar(options::DataVariableCreationOptions) = DataVariableCreationOptions(similar(options.subject))
 
