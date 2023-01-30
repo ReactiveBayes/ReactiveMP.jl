@@ -14,7 +14,7 @@ end
 end
 
 # if A is a vector, then the result is univariate
-# this rule links to the special case (AbstractVector * Univariate) for forward (:out) rule 
+# this rule links to the special case (AbstractVector * Univariate) for forward (:out) rule
 @rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}) = begin
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
@@ -55,7 +55,38 @@ end
 end
 
 
-### Test for gp 
-@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
+### Test for gp
+@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin
     return @call_rule typeof(*)(:A, Marginalisation) (m_out = m_out, m_in = m_A, meta = meta)
+end
+
+@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin
+    μ_in, var_in = mean_var(m_A)
+    μ_out, var_out = mean_var(m_out)
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+
+
+    return ContinuousUnivariateLogPdf(backwardpass)
+end
+
+
+
+
+@rule typeof(*)(:in, Marginalisation) (m_out::NormalMeanPrecision, m_A::GaussianProcess, meta::ProcessMeta) = begin
+
+    index = meta.index
+    m_gp, cov_gp = mean_cov(m_A.finitemarginal)
+    kernelf = m_A.kernelfunction
+    meanf   = m_A.meanfunction
+    test    = m_A.testinput
+    train   = m_A.traininput
+    cov_strategy = m_A.covariance_strategy
+    x_u = m_A.inducing_input
+    mμ, var_μ = ReactiveMP.predictMVN(cov_strategy, kernelf,meanf,test,[train[index]],m_gp, x_u) #this returns negative variance
+    μ_in = mμ[1]
+    var_μ[1] < 0. ? var_in = 1.0 : var_in = var_μ[1]
+    d_A = NormalMeanVariance(μ_in, var_in)
+
+
+    return @call_rule typeof(*)(:in, Marginalisation) (m_out=m_out,m_A=d_A,meta=TinyCorrection())
 end
