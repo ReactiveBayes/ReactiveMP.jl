@@ -187,19 +187,56 @@ resolve_factorisation(::UnspecifiedConstraints, any, allvariables, fform, variab
 # Preoptimised dispatch rule for unspecified constraints and a deterministic node with any number of inputs
 resolve_factorisation(::UnspecifiedConstraints, ::Deterministic, allvariables, fform, variables) = FullFactorisation()
 
-# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 2 inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: RandomVariable}                         = ((1, 2),)
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable} = ((1,), (2,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,))
+# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 2 inputs, random variable & constant variable
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: RandomVariable} = ((1, 2),)
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: ConstVariable, V2 <: RandomVariable} = ((1,), (2,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: ConstVariable} = ((1,), (2,))
 
-# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 3 inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: RandomVariable}                                                 = ((1, 2, 3),)
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable, V3 <: RandomVariable}                         = ((1,), (2, 3))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: RandomVariable}                         = ((1, 3), (2,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: Union{<:ConstVariable, <:DataVariable}}                         = ((1, 2), (3,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,), (3,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: RandomVariable, V3 <: Union{<:ConstVariable, <:DataVariable}} = ((1,), (2,), (3,))
-resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: Union{<:ConstVariable, <:DataVariable}, V2 <: Union{<:ConstVariable, <:DataVariable}, V3 <: RandomVariable} = ((1,), (2,), (3,))
+# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 2 inputs, random variable & data variable
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2}) where {V1 <: DataVariable, V2 <: RandomVariable} =
+    allows_missings(variables[1]) ? ((1, 2),) : ((1,), (2,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: DataVariable} =
+    allows_missings(variables[2]) ? ((1, 2),) : ((1,), (2,))
+
+# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 3 inputs, random variable & constant variables
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: RandomVariable} = ((1, 2, 3),)
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: ConstVariable, V2 <: RandomVariable, V3 <: RandomVariable}  = ((1,), (2, 3))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: ConstVariable, V3 <: RandomVariable}  = ((1, 3), (2,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: ConstVariable}  = ((1, 2), (3,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: RandomVariable, V2 <: ConstVariable, V3 <: ConstVariable}   = ((1,), (2,), (3,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: ConstVariable, V2 <: RandomVariable, V3 <: ConstVariable}   = ((1,), (2,), (3,))
+resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2, V3}) where {V1 <: ConstVariable, V2 <: ConstVariable, V3 <: RandomVariable}   = ((1,), (2,), (3,))
+
+# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 3 inputs, random variable & data variable
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: DataVariable, V2 <: RandomVariable, V3 <: RandomVariable} = allows_missings(variables[1]) ? ((1, 2, 3),) : ((1,), (2, 3))
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: RandomVariable, V2 <: DataVariable, V3 <: RandomVariable} = allows_missings(variables[2]) ? ((1, 2, 3),) : ((1, 3), (2,))
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: RandomVariable, V2 <: RandomVariable, V3 <: DataVariable} = allows_missings(variables[3]) ? ((1, 2, 3),) : ((1, 2), (3,))
+
+# Preoptimised dispatch rules for unspecified constraints and a stochastic node with 3 inputs, random variable & data variable & const variable
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: DataVariable, V2 <: ConstVariable, V3 <: RandomVariable} = allows_missings(variables[1]) ? ((1, 3), (2,)) : ((1,), (2,), (3,))
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: DataVariable, V2 <: RandomVariable, V3 <: ConstVariable} = allows_missings(variables[1]) ? ((1, 2), (3,)) : ((1,), (2,), (3,))
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: ConstVariable, V2 <: DataVariable, V3 <: RandomVariable} = allows_missings(variables[2]) ? ((1,), (2, 3)) : ((1,), (3,), (2,))
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: RandomVariable, V2 <: DataVariable, V3 <: ConstVariable} = allows_missings(variables[2]) ? ((1, 2), (3,)) : ((1,), (2,), (3,))
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: ConstVariable, V2 <: RandomVariable, V3 <: DataVariable} = allows_missings(variables[3]) ? ((1,), (2, 3)) : ((1,), (2,), (3,))
+resolve_factorisation(
+    ::UnspecifiedConstraints, ::Stochastic, allvariables, fform, variables::Tuple{V1, V2, V3}
+) where {V1 <: RandomVariable, V2 <: ConstVariable, V3 <: DataVariable} = allows_missings(variables[3]) ? ((1, 3), (2,)) : ((1,), (2,), (3,))
 
 """
     resolve_factorisation(constraints, allvariables, fform, variables) 
@@ -419,8 +456,11 @@ function resolve_factorisation(::Stochastic, constraints, allvariables, fform, _
     index::Int = 1
     shift::Int = 0
     for varref in var_refs
-        if israndom(varref[3])
+        if israndom(varref[3]) || (isdata(varref[3]) && allows_missings(varref[3]))
             # We process everything as usual if varref is a random variable
+            # or if the variable is data variable and it allows missing 
+            # We probably should change the logic from "allows missings" to "used as prediction"
+            # For now we assume that if data variable allows missing input it is indeed "used as prediction"
             __process_factorisation_entry!(varref[1], varref[2], shift)
         else
             # We filter out varref from all clusters if it is not random

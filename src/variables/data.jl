@@ -108,9 +108,10 @@ isconst(::DataVariable)                   = false
 isconst(::AbstractArray{<:DataVariable})  = false
 
 allows_missings(datavar::DataVariable) = allows_missings(datavar, eltype(datavar.messageout))
+
 allows_missings(datavars::AbstractArray{<:DataVariable}) = all(allows_missings, datavars)
 allows_missings(datavar::DataVariable, ::Type{Message{D}}) where {D} = false
-allows_missings(datavar::DataVariable, ::Type{Union{Message{Missing}, Message{D}}}) where {D} = true
+allows_missings(datavar::DataVariable, ::Type{Union{Message{Missing}, Message{D}}} where {D}) = true
 
 function Base.getindex(datavar::DataVariable, i...)
     error("Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed.")
