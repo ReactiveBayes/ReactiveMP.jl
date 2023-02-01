@@ -11,14 +11,14 @@ import ReactiveMP: israndom, isproxy, allows_missings
 
 @testset "DataVariable" begin
     @testset "Simple creation" begin
-        randomize_update(::Type{Missing}, size) = fill(missing, size)
+        randomize_update(::Type{Missing}, size)                            = fill(missing, size)
         randomize_update(::Type{T}, size) where {T <: Union{Int, Float64}} = rand(T, size)
         randomize_update(::Type{V}, size) where {V <: AbstractVector}      = map(_ -> rand(eltype(V), 1), CartesianIndices(size))
 
         function test_updates(vs, type, size)
             nupdates     = 3
             updates      = []
-            subscription = subscribe!(getmarginals(vs), (update) -> begin 
+            subscription = subscribe!(getmarginals(vs), (update) -> begin
                 update_data = ReactiveMP.getdata.(update)
                 if all(element -> element isa type, update_data)
                     push!(updates, update_data)
@@ -47,7 +47,7 @@ import ReactiveMP: israndom, isproxy, allows_missings
             @test collection_type(variable) isa VariableIndividual
             @test proxy_variables(variable) === nothing
             @test !isproxy(variable)
-            @test allows_missings(variable)  === allow_missings
+            @test allows_missings(variable) === allow_missings
         end
 
         for sym in (:x, :y, :z), T in (Float64, Int64, Vector{Float64}), n in (10, 20), allow_missings in (true, false)
@@ -68,7 +68,7 @@ import ReactiveMP: israndom, isproxy, allows_missings
 
             @test all(v -> allows_missings(v) === allow_missings, variables)
             if allow_missings
-                test_updates(variables, Missing, (n, ))
+                test_updates(variables, Missing, (n,))
             end
         end
 
