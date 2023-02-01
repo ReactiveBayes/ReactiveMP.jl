@@ -69,6 +69,12 @@ In addition tests can be evaluated by running following command in the ReactiveM
 make test
 ```
 
+### Fixes to external libraries 
+
+If a bug has been discovered in an external dependencies of the `ReactiveMP.jl` it is the best to open an issue 
+directly in the dependency's github repository. You use can use the `fixes.jl` file for hot-fixes before 
+a new release of the broken dependecy is available.
+
 ### Makefile
 
 `ReactiveMP.jl` uses `Makefile` for most common operations:

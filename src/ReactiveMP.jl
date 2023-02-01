@@ -7,6 +7,7 @@ using TinyHugeNumbers
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
 
+include("fixes.jl")
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
 

@@ -35,7 +35,7 @@
 
     # Actual return type depends on meta object as well, so we explicitly cast the result here
     # Should be noop if type matches
-    T = promote_type(eltype(m_out), eltype(m_in), eltype(m_znext))
+    T = promote_samplefloattype(m_out, m_in, m_znext)
 
     # return message
     return convert(MvNormalWeightedMeanPrecision{T}, MvNormalWeightedMeanPrecision(ξ_zprev, Λ_zprev))
