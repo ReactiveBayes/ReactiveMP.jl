@@ -5,6 +5,8 @@ import Base: show
 mutable struct DataVariable{D, S} <: AbstractVariable
     name            :: Symbol
     collection_type :: AbstractVariableCollectionType
+    prediction      :: MarginalObservable
+    input_messages  :: Vector{MessageObservable{AbstractMessage}}
     messageout      :: S
     nconnected      :: Int
 end
@@ -70,10 +72,14 @@ datavar(name::Symbol, ::Type{D}, dims::Tuple) where {D}                         
 datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}) where {D}                                                      = datavar(DataVariableCreationOptions(D), name, D, dims)
 
 datavar(options::DataVariableCreationOptions{S}, name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where {S, D} =
-    DataVariable{D, S}(name, collection_type, options.subject, 0)
+    DataVariable{D, S}(name, collection_type, MarginalObservable(), Vector{MessageObservable{AbstractMessage}}(), options.subject, 0)
 
 function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, length::Int) where {D}
     return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
+end
+
+function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, dim1::Int, extra_dims::Vararg{Int}) where {D}
+    return datavar(options, name, D, (dim1, extra_dims...))
 end
 
 function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, dims::Tuple) where {D}
@@ -100,6 +106,12 @@ isdata(::DataVariable)                    = true
 isdata(::AbstractArray{<:DataVariable})   = true
 isconst(::DataVariable)                   = false
 isconst(::AbstractArray{<:DataVariable})  = false
+
+allows_missings(datavar::DataVariable) = allows_missings(datavar, eltype(datavar.messageout))
+
+allows_missings(datavars::AbstractArray{<:DataVariable}) = all(allows_missings, datavars)
+allows_missings(datavar::DataVariable, ::Type{Message{D}}) where {D} = false
+allows_missings(datavar::DataVariable, ::Type{Union{Message{Missing}, Message{D}}} where {D}) = true
 
 function Base.getindex(datavar::DataVariable, i...)
     error("Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed.")
@@ -165,5 +177,19 @@ setanonymous!(::DataVariable, ::Bool) = nothing
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.nconnected += 1
+    push!(datavar.input_messages, messagein)
+    return nothing
+end
+
+marginal_prod_fn(datavar::DataVariable) = marginal_prod_fn(FoldLeftProdStrategy(), ProdAnalytical(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+
+_getprediction(datavar::DataVariable)              = datavar.prediction
+_setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)
+_makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, marginal_prod_fn(datavar))
+
+# options here must implement at least `Rocket.getscheduler`
+function activate!(datavar::DataVariable, options)
+    _setprediction!(datavar, _makeprediction(datavar))
+
     return nothing
 end
