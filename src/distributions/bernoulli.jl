@@ -23,8 +23,22 @@ end
 prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
-    @assert length(probvec(right)) === 2 "Improper Bernoulli x Categorical product"
-    return prod(ProdPreserveType(Bernoulli), left, Bernoulli(first(probvec(right))))
+
+    # get probability vectors
+    p_left = probvec(left)
+    p_right = probvec(right)
+
+    # find length of new vector and compute entries
+    if length(p_left) >= length(p_right)
+        p_new = vcat(p_right..., zeros(length(p_left) - length(p_right)))
+        p_new .*= p_left
+    else
+        p_new = vcat(p_left..., zeros(length(p_right) - length(p_left)))
+        p_new .*= p_right
+    end
+
+    # return categorical with normalized probability vector
+    return Categorical(normalize!(p_new, 1))
 end
 
 function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
@@ -34,12 +48,23 @@ function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, ri
     return log(a)
 end
 
-function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Categorical)
-    @assert length(probvec(right_dist)) === 2 "Improper Bernoulli x Categorical product"
-    left_p = succprob(left_dist)
-    right_p = first(probvec(right_dist))
-    a = left_p * right_p + (one(left_p) - left_p) * (one(right_p) - right_p)
-    return log(a)
+function prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Bernoulli, right_dist::Categorical)
+
+    # get probability vectors
+    p_left = probvec(left)
+    p_right = probvec(right)
+
+    # find length of new vector and compute entries
+    if length(p_left) >= length(p_right)
+        p_new = vcat(p_right..., zeros(length(p_left) - length(p_right)))
+        Z = dot(p_left, p_new)
+    else
+        p_new = vcat(p_left..., zeros(length(p_right) - length(p_left)))
+        Z = dot(p_right, p_new)
+    end
+
+    # return log normalization constant
+    return log(Z)
 end
 
 struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
