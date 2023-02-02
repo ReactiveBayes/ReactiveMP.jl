@@ -37,7 +37,7 @@ import ReactiveMP: @test_rules
         @test_rules [with_float_conversions = true] NormalMixture{2}(:out, Marginalisation) [
             (
                 input = (
-                    q_switch = Bernoulli(0.2),
+                    q_switch = Bernoulli(0.8),
                     q_m = ManyOf(NormalMeanVariance(5.0, 2.0), NormalMeanVariance(10.0, 3.0)),
                     q_p = ManyOf(GammaShapeRate(1.0, 2.0), GammaShapeRate(2.0, 1.0))
                 ),

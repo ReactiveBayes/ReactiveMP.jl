@@ -27,8 +27,8 @@ using Random
 
     @testset "probvec" begin
         @test probvec(Bernoulli(0.5)) === (0.5, 0.5)
-        @test probvec(Bernoulli(0.3)) === (0.3, 0.7)
-        @test probvec(Bernoulli(0.6)) === (0.6, 0.4)
+        @test probvec(Bernoulli(0.3)) === (0.7, 0.3)
+        @test probvec(Bernoulli(0.6)) === (0.4, 0.6)
     end
 
     @testset "BernoulliNaturalParameters" begin
