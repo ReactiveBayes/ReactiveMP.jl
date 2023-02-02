@@ -1144,7 +1144,7 @@ macro node(fformtype, sdtype, interfaces_list)
             missingclustererr = "Cannot find the cluster for the variable connected to the `$(name)` interface around the `$fformtype` node."
             quote
                 # If a variable `$name` is a constvar or a datavar
-                if ReactiveMP.isconst($(name)) || ReactiveMP.isdata($(name))
+                if ReactiveMP.isconst($(name)) || (ReactiveMP.isdata($(name)) && !ReactiveMP.allows_missings($(name)))
                     local __factorisation = ReactiveMP.factorisation(node)
                     # Find the factorization cluster associated with the constvar `$name`
                     local __index  = ReactiveMP.interface_get_index(Val{$(QuoteNode(fbottomtype))}, Val{$(QuoteNode(name))})
