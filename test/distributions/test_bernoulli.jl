@@ -19,7 +19,7 @@ using Random
         @test failprob(d) === 0.5
     end
 
-    @testset "prod" begin
+    @testset "prod Bernoulli-Bernoulli" begin
         @test prod(ProdAnalytical(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
         @test prod(ProdAnalytical(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
         @test prod(ProdAnalytical(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
