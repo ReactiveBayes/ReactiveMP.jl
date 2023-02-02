@@ -13,6 +13,6 @@ end
 end
 
 @rule Bernoulli(:p, Marginalisation) (q_out::Bernoulli,) = begin
-    r = first(probvec(q_out))
+    r = succprob(q_out)
     return Beta(one(r) + r, 2one(r) - r)
 end
