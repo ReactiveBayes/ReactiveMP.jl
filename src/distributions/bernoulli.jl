@@ -6,7 +6,7 @@ import StatsFuns: logistic
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
-probvec(dist::Bernoulli) = (succprob(dist), failprob(dist))
+probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
 
 prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ProdAnalyticalRuleAvailable()
 
