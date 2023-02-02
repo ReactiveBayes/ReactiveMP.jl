@@ -227,19 +227,20 @@ function make_multivariate_message(messages) ## function for concatinating messa
 end 
 
 function compute_ep_message(l_pdf, m_in, var_in )
+
     meta = ghcubature(121)
     m_,v_ = ReactiveMP.approximate_meancov(meta, z -> exp(l_pdf(z)), m_in  , var_in)
+
     if isnan(m_) == true || isnan(v_) == true
-        res = optimize(x->-l_pdf(x),-50,50)
-        m_  = res.minimizer[1] 
-        
-        v_ = var_in
+        res = optimize(x->-l_pdf(x),-20,20)
+        m_  = res.minimizer[1]
+
+        v_ = var_in/10
     end
     ksi = m_/v_ - m_in/var_in
     precision = clamp(1/v_ - 1/var_in,tiny,huge)
     return NormalWeightedMeanPrecision(ksi,precision)
 end
-
 
 function marginal_prod_fn(randomprocess::RandomProcess)
     test           = randomprocess.test_input
@@ -247,35 +248,78 @@ function marginal_prod_fn(randomprocess::RandomProcess)
     cov_strategy   = randomprocess.covariance_strategy
     inducing       = randomprocess.inducing_input 
     return messages -> begin 
-        gp_marginal = getmarginal(randomprocess).proxied_source.subject.recent.data.finitemarginal
         message_vector = map(ReactiveMP.as_message, messages)
-        process_message = getdata(message_vector[1])
-        meanf = process_message.meanfunction
-        kernelf = process_message.kernelfunction
-        likelihood_messages = message_vector[2:end]
-        # evaluated_mean = meanf.(train)
-        # evaluated_cov  = kernelmatrix(kernelf, train,train)
-        isnothing(gp_marginal) ? (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train)) : (evaluated_mean, evaluated_cov) = mean_cov(gp_marginal)
-        if typeof(getdata(likelihood_messages[1])) <: GaussianDistributionsFamily
-            m_right,cov_right = make_multivariate_message(likelihood_messages)
-        else
-            likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
-            @inbounds for i=1:length(likelihood_messages)
-                tmp = getdata(likelihood_messages[i])
-                likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
-            end
-        end
+         process_message = getdata(message_vector[1])
+         meanf = process_message.meanfunction
+         kernelf = process_message.kernelfunction
+         likelihood_messages = message_vector[2:end]
 
-        m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
+        # if isnothing(getmarginal(randomprocess).proxied_source.subject.recent) 
+        #     (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train))
+        # else
+        #     gp_marginal = getmarginal(randomprocess).proxied_source.subject.recent.data.finitemarginal
+        #     (evaluated_mean, evaluated_cov) = mean_cov(gp_marginal)
+        # end
+        evaluated_mean = meanf.(train)
+        evaluated_cov  = kernelmatrix(kernelf, train,train)
+        likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
+        @inbounds for i=1:length(likelihood_messages)
+            tmp = getdata(likelihood_messages[i])
+             likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
+         end
+
+         m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
+         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
+         m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
+         extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
+         addons = AddonMemory(message_vector)
+
+         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false, addons)
+     end
+ end
+
+# function marginal_prod_fn(randomprocess::RandomProcess)
+#     test           = randomprocess.test_input
+#     train          = randomprocess.train_input
+#     cov_strategy   = randomprocess.covariance_strategy
+#     inducing       = randomprocess.inducing_input 
+#     return messages -> begin 
+#         message_vector = map(ReactiveMP.as_message, messages)
+#         process_message = getdata(message_vector[1])
+#         meanf = process_message.meanfunction
+#         kernelf = process_message.kernelfunction
+#         likelihood_messages = message_vector[2:end]
+
+#         # if isnothing(getmarginal(randomprocess).proxied_source.subject.recent) 
+#         #     (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train))
+#         # else
+#         #     @show isnothing(getmarginal(randomprocess).proxied_source.subject.recent)
+#         #     @show gp_marginal = getmarginal(randomprocess).proxied_source.subject.recent.data.finitemarginal
+#         #     (evaluated_mean, evaluated_cov) = mean_cov(gp_marginal)
+#         # end
+#         evaluated_mean = meanf.(train)
+#         evaluated_cov  = kernelmatrix(kernelf, train,train)
+#         # isnothing(gp_marginal) ? (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train)) : (evaluated_mean, evaluated_cov) = mean_cov(gp_marginal)
+#         # if typeof(getdata(likelihood_messages[1])) <: GaussianDistributionsFamily
+#             # m_right,cov_right = make_multivariate_message(likelihood_messages)
+#         # else
+#         likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
+#         @inbounds for i=1:length(likelihood_messages)
+#             tmp = getdata(likelihood_messages[i])
+#             likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
+#             end
+#         # end
+
+#         m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
         
-        extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
-        m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
-        extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
-        addons = AddonMemory(message_vector)
+#         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
+#         m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
+#         extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
+#         addons = AddonMemory(message_vector)
 
-        return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false, addons)
-    end
-end
+#         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false, addons)
+#     end
+# end
 
 function messages_prod_fn(randomprocess::RandomProcess)
     error("No message for process node")

@@ -123,15 +123,16 @@ function fullcov(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy},
     cache = gpstrategy.strategy.cache 
     Kfy                = kernelmatrix!(cache, :Kfy, kernelfunc,xtest,xtrain) #K*f
     Kff                = kernelmatrix!(cache, :Kff, kernelfunc,xtest,xtest)  #K**
-    invKtrain          = length(gpstrategy.strategy.invKff)>1 ? gpstrategy.strategy.invKff : cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) + 1e-6*I)  
+    invKtrain          = length(gpstrategy.strategy.invKff)>1 ? gpstrategy.strategy.invKff : cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) .+ 1e-6)  
     # invKtrain          = gpstrategy.strategy.invKff
     xtest_transformed = getcache(cache, (:xtest,length(xtest)))
     xtrain_transformed = getcache(cache, (:xtrain, length(xtrain)))
     map!(meanfunc,xtest_transformed, xtest)
-    map!((y,x) -> y - meanfunc(x), xtrain_transformed, y, xtrain)
+    map!((z,x) -> z - meanfunc(x), xtrain_transformed, y, xtrain)
 
     result1 = getcache(cache, (:result1, size(invKtrain,1)))
     result2 = getcache(cache, (:result2, size(Kfy, 1)))
+
     mul!(result1, invKtrain, xtrain_transformed)
     mul!(result2, Kfy, result1)
 
