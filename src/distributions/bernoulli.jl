@@ -51,8 +51,8 @@ end
 function prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Bernoulli, right_dist::Categorical)
 
     # get probability vectors
-    p_left = probvec(left)
-    p_right = probvec(right)
+    p_left = probvec(left_dist)
+    p_right = probvec(right_dist)
 
     # find length of new vector and compute entries
     if length(p_left) >= length(p_right)
