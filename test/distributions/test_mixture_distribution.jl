@@ -25,6 +25,20 @@ using ReactiveMP: mvbeta, logmvbeta
         @test_throws AssertionError MixtureDistribution([component1, component2], [-0.5, 1.5])
     end
 
+    # resolves issue #253
+    @testset "creation with Pointmass" begin
+        component1 = PointMass(0.1)
+        component2 = PointMass(2)
+        w = [0.7, 0.3]
+
+        dist = MixtureDistribution([component1, component2], w)
+
+        @test weights(dist) == w
+        @test components(dist) == [component1, component2]
+        @test component(dist, 2) == component2
+        
+    end
+
     @testset "moments with 2 components" begin
         component1 = Normal(0.1, 0.3)
         component2 = Normal(2, 2.6)
