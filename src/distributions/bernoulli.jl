@@ -28,17 +28,23 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     p_left = probvec(left)
     p_right = probvec(right)
 
-    # find length of new vector and compute entries
-    if length(p_left) >= length(p_right)
-        p_new = vcat(p_right..., zeros(length(p_left) - length(p_right)))
-        p_new .*= p_left
-    else
-        p_new = vcat(p_left..., zeros(length(p_right) - length(p_left)))
-        p_new .*= p_right
+    # find the maximum length of both arguments
+    max_length = max(length(p_left), length(p_right))
+
+    # preallocate the result
+    p_new = zeros(ReactiveMP.promote_samplefloattype(p_left, p_right), max_length)
+
+    # Create extended versions of the left and the right prob vectors
+    # Do so by appending `0` with the Iterators.repeated, branch and allocation free
+    e_left  = Iterators.flatten((p_left, Iterators.repeated(0, max(0, length(p_right) - length(p_left)))))
+    e_right = Iterators.flatten((p_right, Iterators.repeated(0, max(0, length(p_left) - length(p_right)))))
+
+    for (i, l, r) in zip(eachindex(p_new), e_left, e_right)
+        @inbounds p_new[i] = l * r
     end
 
     # return categorical with normalized probability vector
-    return Categorical(normalize!(p_new, 1))
+    return Categorical(ReactiveMP.normalize!(p_new, 1))
 end
 
 function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
