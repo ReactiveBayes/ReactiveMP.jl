@@ -9,7 +9,6 @@ using ReactiveMP: mvbeta, logmvbeta
 
 # test this testset with $ make test testset='distributions:mixture_distribution'
 @testset "Mixture Distribution" begin
-
     @testset "creation" begin
         component1 = Normal(0.1, 0.3)
         component2 = Normal(2, 2.6)
@@ -19,7 +18,7 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test weights(dist) == w
         @test components(dist) == [component1, component2]
-        @test component(dist,2) == component2
+        @test component(dist, 2) == component2
 
         @test_throws ErrorException MixtureDistribution([component1, component2], [0.4, 0.4, 0.2])
         @test_throws AssertionError MixtureDistribution([component1, component2], [0.4, 0.4])
@@ -74,7 +73,7 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test component(new_dist, 1) == convert(NormalWeightedMeanPrecision, NormalMeanVariance(3, 1 / 2))
         @test component(new_dist, 2) == NormalWeightedMeanPrecision(3 + 2 / 4, 1 / 4 + 1)
-        @test weights(new_dist) ≈ [p, 1-p]
+        @test weights(new_dist) ≈ [p, 1 - p]
     end
 
     @testset "prod normal (symmetry)" begin
@@ -91,7 +90,7 @@ using ReactiveMP: mvbeta, logmvbeta
 
         @test component(new_dist, 1) == convert(NormalWeightedMeanPrecision, NormalMeanVariance(3, 1 / 2))
         @test component(new_dist, 2) == NormalWeightedMeanPrecision(3 + 2 / 4, 1 / 4 + 1)
-        @test weights(new_dist) ≈ [p, 1-p]
+        @test weights(new_dist) ≈ [p, 1 - p]
     end
 
     @testset "prod beta" begin

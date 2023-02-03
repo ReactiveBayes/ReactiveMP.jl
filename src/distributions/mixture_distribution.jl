@@ -16,19 +16,17 @@ export components, component, weights
     * [ReactiveMP.jl Issue 253](https://github.com/biaslab/ReactiveMP.jl/issues/253)
 
 """
-struct MixtureDistribution{C,CT<:Real}
+struct MixtureDistribution{C, CT <: Real}
     components::Vector{C}
     weights::Vector{CT}
 
-    function MixtureDistribution(cs::Vector{C}, w::Vector{CT}) where {C,CT}
-        length(cs) == length(w) ||
-            error("The number of components does not match the length of prior.")
+    function MixtureDistribution(cs::Vector{C}, w::Vector{CT}) where {C, CT}
+        length(cs) == length(w) || error("The number of components does not match the length of prior.")
         @assert all(>=(0), w) "weight vector contains negative entries."
         @assert sum(w) == 1 "weight vector is not normalized."
-        new{C,CT}(cs, w)
+        new{C, CT}(cs, w)
     end
 end
-
 
 """
     components(dist::MixtureDistribution)
@@ -37,14 +35,12 @@ Returns the components of the mixture distribution `dist`.
 """
 components(dist::MixtureDistribution) = dist.components
 
-
 """
     component(dist::MixtureDistribution, k::Int)
 
 Returns the `k`'th component of the mixture distribution `dist`.
 """
 component(dist::MixtureDistribution, k::Int) = dist.components[k]
-
 
 """
     weights(dist::MixtureDistribution)
@@ -53,14 +49,12 @@ Returns the weights of the mixture distribution `dist`.
 """
 weights(dist::MixtureDistribution) = dist.weights
 
-
 """
     mean(dist::MixtureDistribution)
 
 Returns the mean of the mixture distribution `dist`.
 """
 mean(dist::MixtureDistribution) = dot(weights(dist), mean.(components(dist)))
-
 
 """
     var(dist::MixtureDistribution)
@@ -76,7 +70,6 @@ function var(dist::MixtureDistribution)
     end
     return result - mean(dist)^2
 end
-
 
 """
     prod(::ProdAnalytical, left::MixtureDistribution, right::Any)
@@ -100,9 +93,7 @@ function prod(::ProdAnalytical, left::MixtureDistribution, right::Any)
 
     # return mixture distribution
     return MixtureDistribution(dists_new, softmax(logscales_new))
-
 end
-
 
 """
     prod(::ProdAnalytical, left::Any, right::MixtureDistribution)
@@ -110,8 +101,6 @@ end
 Computes the analytical product between a `MixtureDistribution` and something else.
 """
 prod(::ProdAnalytical, left::Any, right::MixtureDistribution) = prod(ProdAnalytical(), right, left)
-
-
 
 function prod(::AddonProdLogScale, new_dist::MixtureDistribution, left_dist::MixtureDistribution, right_dist::Any)
 
@@ -129,7 +118,6 @@ function prod(::AddonProdLogScale, new_dist::MixtureDistribution, left_dist::Mix
     logscales_new = log.(w) + logscales
 
     return logsumexp(logscales_new)
-    
 end
 
 prod(::AddonProdLogScale, new_dist::MixtureDistribution, left_dist::Any, right_dist::MixtureDistribution) = prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
