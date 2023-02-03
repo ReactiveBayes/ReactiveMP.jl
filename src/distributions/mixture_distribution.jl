@@ -23,7 +23,7 @@ struct MixtureDistribution{C, CT <: Real}
     function MixtureDistribution(cs::Vector{C}, w::Vector{CT}) where {C, CT}
         length(cs) == length(w) || error("The number of components does not match the length of prior.")
         @assert all(>=(0), w) "weight vector contains negative entries."
-        @assert sum(w) == 1 "weight vector is not normalized."
+        @assert sum(w) ≈ 1 "weight vector is not normalized."
         new{C, CT}(cs, w)
     end
 end
