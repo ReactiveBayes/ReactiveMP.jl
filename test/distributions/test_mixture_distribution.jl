@@ -36,7 +36,6 @@ using ReactiveMP: mvbeta, logmvbeta
         @test weights(dist) == w
         @test components(dist) == [component1, component2]
         @test component(dist, 2) == component2
-        
     end
 
     @testset "moments with 2 components" begin
