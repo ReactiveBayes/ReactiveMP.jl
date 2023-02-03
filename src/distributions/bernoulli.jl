@@ -67,6 +67,8 @@ function prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Bernoulli, 
     return log(Z)
 end
 
+prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) = prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
+
 struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
     η::T
 end
