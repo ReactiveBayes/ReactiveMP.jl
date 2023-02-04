@@ -4,7 +4,7 @@ using Test
 using ReactiveMP
 using Distributions
 using Random
-using ReactiveMP: AddonProdLogScale
+using ReactiveMP: compute_logscale
 
 @testset "Bernoulli" begin
 
@@ -33,12 +33,12 @@ using ReactiveMP: AddonProdLogScale
     end
 
     @testset "prod logscale Bernoulli-Bernoulli/Categorical" begin
-        @test prod(AddonProdLogScale(), Bernoulli(0.5), Bernoulli(0.5), Bernoulli(0.5)) ≈ log(0.5)
-        @test prod(AddonProdLogScale(), Bernoulli(1), Bernoulli(0.5), Bernoulli(1)) ≈ log(0.5)
-        @test prod(AddonProdLogScale(), Categorical([0.5, 0.5]), Bernoulli(0.5), Categorical([0.5, 0.5])) ≈ log(0.5)
-        @test prod(AddonProdLogScale(), Categorical([0.5, 0.5]), Categorical([0.5, 0.5]), Bernoulli(0.5)) ≈ log(0.5)
-        @test prod(AddonProdLogScale(), Categorical([1.0, 0.0]), Bernoulli(0.5), Categorical([1])) ≈ log(0.5)
-        @test prod(AddonProdLogScale(), Categorical([1.0, 0.0, 0.0]), Bernoulli(0.5), Categorical([1.0, 0, 0])) ≈ log(0.5)
+        @test compute_logscale(Bernoulli(0.5), Bernoulli(0.5), Bernoulli(0.5)) ≈ log(0.5)
+        @test compute_logscale(Bernoulli(1), Bernoulli(0.5), Bernoulli(1)) ≈ log(0.5)
+        @test compute_logscale(Categorical([0.5, 0.5]), Bernoulli(0.5), Categorical([0.5, 0.5])) ≈ log(0.5)
+        @test compute_logscale(Categorical([0.5, 0.5]), Categorical([0.5, 0.5]), Bernoulli(0.5)) ≈ log(0.5)
+        @test compute_logscale(Categorical([1.0, 0.0]), Bernoulli(0.5), Categorical([1])) ≈ log(0.5)
+        @test compute_logscale(Categorical([1.0, 0.0, 0.0]), Bernoulli(0.5), Categorical([1.0, 0, 0])) ≈ log(0.5)
     end
 
     @testset "BernoulliNaturalParameters" begin

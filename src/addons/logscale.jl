@@ -2,18 +2,31 @@ export AddonLogScale, getlogscale
 
 using Distributions
 
-import Base: prod, string
+import Base: string
 
+"""
+    AddonLogScale(logscale)
+
+Specifies the logscale addon structure. This structure carries the logscaling of a message/marginal.
+"""
 struct AddonLogScale{T} <: AbstractAddon
     logscale::T
 end
 
 AddonLogScale() = AddonLogScale(nothing)
 
-struct AddonProdLogScale <: AbstractAddonProd end
+"""
+    getlogscale(addon::AddonLogScale)
 
+Gets the logscale from the logscale addon.
+"""
 getlogscale(addon::AddonLogScale) = addon.logscale
 
+"""
+    getlogscale(addons::Tuple{<:AbstractAddon})
+
+Gets the logscale from a tuple of addons.
+"""
 function getlogscale(addons::NTuple{N, AbstractAddon}) where {N}
     logscales = filter(addon -> addon isa AddonLogScale, addons)
     if length(logscales) === 0
@@ -61,7 +74,7 @@ function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, 
     right_logscale = getlogscale(right_addon)
 
     # compute new logscale
-    new_logscale = prod(AddonProdLogScale(), new_dist, left_dist, right_dist)
+    new_logscale = compute_logscale(new_dist, left_dist, right_dist)
 
     # return updated logscale addon
     return AddonLogScale(left_logscale + right_logscale + new_logscale)
