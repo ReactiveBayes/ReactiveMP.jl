@@ -8,6 +8,7 @@ using LinearAlgebra
 using StableRNGs
 
 import ReactiveMP: InverseWishartMessage
+import Distributions: pdf!
 
 @testset "InverseWishartMessage" begin
     @testset "common" begin
@@ -115,6 +116,35 @@ import ReactiveMP: InverseWishartMessage
         d2 = InverseWishartMessage(-2.0, diageye(3))
 
         @test prod(ProdAnalytical(), d1, d2) ≈ InverseWishartMessage(6.0, 2 * diageye(3))
+    end
+
+    @testset "rand!" begin
+        for d in (2, 3, 4, 5)
+            v = rand() + d
+            L = rand(d, d)
+            S = L' * L + d * diageye(d)
+            container1 = [zeros(d, d) for _ in 1:100]
+            container2 = [zeros(d, d) for _ in 1:100]
+
+            @test rand!(StableRNG(321), InverseWishart(v, S), container1) ≈ rand!(StableRNG(321), InverseWishartMessage(v, S), container2)
+        end
+    end
+
+    @testset "pdf!" begin
+        for d in (2, 3, 4, 5), n in (10, 20)
+            v = rand() + d
+            L = rand(d, d)
+            S = L' * L + d * diageye(d)
+
+            samples = map(1:n) do _
+                L_sample = rand(d, d)
+                return L_sample' * L_sample + d * diageye(d)
+            end
+
+            result = zeros(n)
+
+            @test all(pdf(InverseWishart(v, S), samples) .≈ pdf!(result, InverseWishartMessage(v, S), samples))
+        end
     end
 end
 
