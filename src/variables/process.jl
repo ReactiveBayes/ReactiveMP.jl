@@ -1,6 +1,7 @@
 export RandomProcess, RandomProcessCreationOptions, randomprocess
 
 import Base: show
+using Roots 
 ## Random variable implementation
 mutable struct RandomProcess <: AbstractVariable
     name               :: Symbol
@@ -228,17 +229,22 @@ end
 
 function compute_ep_message(l_pdf, m_in, var_in )
 
-    meta = ghcubature(121)
+    meta = ghcubature(21)
     m_,v_ = ReactiveMP.approximate_meancov(meta, z -> exp(l_pdf(z)), m_in  , var_in)
+    if isnan(m_) || isnan(v_) || v_ < 1e-3
+        dlpdf = (x) -> ForwardDiff.derivative(l_pdf,x)
+        res   = find_zero(dlpdf, -10, 10)
+        # res = optimize(x->-l_pdf(x),-50.,50.)
+        # m_  = res.minimizer[1] + 1e-3
 
-    if isnan(m_) == true || isnan(v_) == true
-        res = optimize(x->-l_pdf(x),-20,20)
-        m_  = res.minimizer[1]
-
-        v_ = var_in/10
+        # v_ = var_in/10
+        m_ = res[1]
+        v_ = 1.0
     end
     ksi = m_/v_ - m_in/var_in
-    precision = clamp(1/v_ - 1/var_in,tiny,huge)
+    precision = clamp(1/v_ - 1/var_in,1e-3,huge)
+    # dist = NormalWeightedMeanPrecision(ksi,precision)
+    # @show var(dist)
     return NormalWeightedMeanPrecision(ksi,precision)
 end
 
@@ -254,21 +260,34 @@ function marginal_prod_fn(randomprocess::RandomProcess)
          kernelf = process_message.kernelfunction
          likelihood_messages = message_vector[2:end]
 
-        # if isnothing(getmarginal(randomprocess).proxied_source.subject.recent) 
-        #     (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train))
-        # else
-        #     gp_marginal = getmarginal(randomprocess).proxied_source.subject.recent.data.finitemarginal
-        #     (evaluated_mean, evaluated_cov) = mean_cov(gp_marginal)
-        # end
-        evaluated_mean = meanf.(train)
-        evaluated_cov  = kernelmatrix(kernelf, train,train)
-        likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
-        @inbounds for i=1:length(likelihood_messages)
-            tmp = getdata(likelihood_messages[i])
-             likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
-         end
+        if isnothing(getmarginal(randomprocess).proxied_source.subject.recent) 
+            (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train))
+        else
+            gp_marginal = getmarginal(randomprocess).proxied_source.subject.recent.data.finitemarginal
+            isnan(mean(gp_marginal)[1]) ? gp_marginal = GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy) : gp_marginal = gp_marginal
+            (evaluated_mean, evaluated_cov) = mean_cov(gp_marginal)
+        end
+        # evaluated_mean = meanf.(train)
+        # evaluated_cov  = kernelmatrix(kernelf, train,train)
 
-         m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
+        if typeof(getdata(likelihood_messages[1])) <: GaussianDistributionsFamily
+            m_right,cov_right = make_multivariate_message(likelihood_messages)
+        else
+            likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
+            @inbounds for i=1:length(likelihood_messages)
+                tmp = getdata(likelihood_messages[i])
+                likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
+            end
+            m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
+        end
+
+        # likelihood_messages_ep  = Array{Distribution}(undef,length(likelihood_messages))
+        # @inbounds for i=1:length(likelihood_messages)
+        #     tmp = getdata(likelihood_messages[i])
+        #      likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i] .+ 1e-6, evaluated_cov[i,i] .+ 1e-6)
+        #  end
+
+         
          extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
          m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
          extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)

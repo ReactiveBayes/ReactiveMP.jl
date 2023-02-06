@@ -38,7 +38,7 @@ function getweights(gh::GaussHermiteCubature, mean::AbstractVector{T}, covarianc
 end
 
 function getpoints(gh::GaussHermiteCubature, mean::T, variance::T) where {T <: Real}
-    sqrt2V = sqrt(2 * variance)
+    sqrt2V = sqrt(2 * variance + 1e-4)
     return Base.Generator(gh.piter) do point
         return mean + sqrt2V * point
     end

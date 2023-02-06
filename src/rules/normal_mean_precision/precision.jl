@@ -1,6 +1,6 @@
 
 @rule NormalMeanPrecision(:τ, Marginalisation) (q_out::Any, q_μ::Any) = begin
-    θ = 2 / (var(q_out) + var(q_μ) + abs2(mean(q_out) - mean(q_μ)))
+    θ = 2 / (var(q_out) + var(q_μ) + abs2(mean(q_out) - mean(q_μ))) + 1e-4
     α = convert(typeof(θ), 1.5)
     return Gamma(α, θ)
 end
