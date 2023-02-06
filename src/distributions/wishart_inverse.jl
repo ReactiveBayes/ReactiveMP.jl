@@ -1,9 +1,9 @@
 export InverseWishart
 
-import Distributions: InverseWishart, Wishart
+import Distributions: InverseWishart, Wishart, pdf!
 import Base: ndims, size, convert
 import LinearAlgebra
-import StatsFuns: logπ
+import StatsFuns: logπ, logmvgamma
 import SpecialFunctions: digamma, loggamma
 
 """
@@ -65,6 +65,75 @@ end
 function Distributions.mean(::typeof(cholinv), dist::InverseWishartDistributionsFamily)
     ν, S = params(dist)
     return mean(Wishart(ν, cholinv(S)))
+end
+
+function Distributions.rand!(rng::AbstractRNG, sampleable::ReactiveMP.InverseWishartMessage, x::AbstractVector{<:AbstractMatrix})
+    (df, S⁻¹) = Distributions.params(sampleable)
+    S = cholinv(S⁻¹)
+    L = Distributions.PDMats.chol_lower(ReactiveMP.fastcholesky(S))
+
+    # check 
+    p = size(S, 1)
+    singular = df <= p - 1
+    if singular
+        isinteger(df) || throw(ArgumentError("df of a singular Wishart distribution must be an integer (got $df)"))
+    end
+
+    A     = similar(S)
+    l     = length(S)
+    axes2 = axes(A, 2)
+
+    for C in x
+
+        # Wishart sample
+        if singular
+            r = rank(S)
+            randn!(rng, view(A, :, axes2[1:r]))
+            fill!(view(A, :, axes2[(r + 1):end]), zero(eltype(A)))
+        else
+            Distributions._wishart_genA!(rng, A, df)
+        end
+        # Distributions.unwhiten!(S, A)
+        lmul!(L, A)
+
+        M = Cholesky(A, 'L', convert(LinearAlgebra.BlasInt, 0))
+        LinearAlgebra.inv!(M)
+
+        copyto!(C, 1, M.L.data, 1, l)
+    end
+
+    return x
+end
+
+function Distributions.pdf!(out::AbstractArray{<:Real}, distribution::ReactiveMP.InverseWishartMessage, samples::AbstractArray{<:AbstractMatrix{<:Real}, O}) where {O}
+    @assert length(out) === length(samples) "Invalid dimensions in pdf!"
+
+    p = size(distribution, 1)
+    (df, Ψ) = Distributions.params(distribution)
+
+    T = copy(Ψ)
+    R = similar(T)
+    l = length(T)
+
+    M = ReactiveMP.fastcholesky!(T)
+
+    # logc0 evaluation
+    h_df = df / 2
+    Ψld = logdet(M)
+    logc0 = -h_df * (p * convert(typeof(df), Distributions.logtwo) - Ψld) - logmvgamma(p, h_df)
+
+    # logkernel evaluation 
+    @inbounds for i in 1:length(out)
+        copyto!(T, 1, samples[i], 1, l)
+        C = ReactiveMP.fastcholesky!(T)
+        ld = logdet(C)
+        LinearAlgebra.inv!(C)
+        mul!(R, Ψ, C.factors)
+        r = tr(R)
+        out[i] = exp(-0.5 * ((df + p + 1) * ld + r) + logc0)
+    end
+
+    return out
 end
 
 vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .* diageye(dims))

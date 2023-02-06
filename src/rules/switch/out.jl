@@ -12,10 +12,10 @@
     @logscale logsumexp(logscales)
 
     # compute weights
-    w = Categorical(softmax(collect(logscales)))
+    w = softmax(collect(logscales))
 
     # return mixture 
-    return MixtureModel(collect(m_inputs), w)
+    return MixtureDistribution(collect(m_inputs), w)
 end
 
 @rule Switch(:out, Marginalisation) (m_inputs::ManyOf{N, Any}, q_switch::PointMass) where {N} = begin
