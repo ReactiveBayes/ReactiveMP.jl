@@ -72,6 +72,21 @@ function var(dist::MixtureDistribution)
 end
 
 """
+    pdf(dist::MixtureDistribution, x)
+
+Returns the probability density function of `dist` evaluated at `x`.
+"""
+function pdf(dist::MixtureDistribution, x)
+    w = weights(dist)
+    dists = components(dist)
+    result = 0.0
+    for k in 1:length(w)
+        result += w[k] * pdf(dists[k], x)
+    end
+    return result
+end
+
+"""
     prod(::ProdAnalytical, left::MixtureDistribution, right::Any)
 
 Computes the analytical product between a `MixtureDistribution` and something else.

@@ -72,6 +72,18 @@ using ReactiveMP: mvbeta, logmvbeta
         @test var(dist) ≈ 0.3 * ((0.1 * 0.3) / ((0.1 + 0.3)^2 * (0.1 + 0.3 + 1)) + (0.1 / (0.1 + 0.3))^2) + 0.7 * (2.6^2 + 2^2) - mean(dist)^2
     end
 
+    @testset "pdf" begin
+        component1 = Beta(0.1, 0.3)
+        component2 = Normal(2, 2.6)
+        w = [0.3, 0.7]
+
+        dist = MixtureDistribution([component1, component2], w)
+        @test pdf(dist, 0.5) ≈ 0.3*pdf(component1, 0.5) + 0.7*pdf(component2, 0.5)
+        @test pdf(dist, 0) ≈ 0.3*pdf(component1, 0) + 0.7*pdf(component2, 0)
+        @test pdf(dist, 5) ≈ 0.3*pdf(component1, 5) + 0.7*pdf(component2, 5)
+        
+    end
+
     @testset "prod normal" begin
         component1 = NormalMeanVariance(3, 1)
         component2 = NormalMeanVariance(2, 4)
