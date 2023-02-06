@@ -22,7 +22,7 @@
     # calculate outgoing message of zprev
     ξ_zprev_message = A' * ξ_ztilde
     Λ_zprev_message = A' * Λ_ztilde * A
-    
+
     # Actual return type depends on meta object as well, so we explicitly cast the result here
     # Should be noop if type matches
     T = promote_samplefloattype(m_out, m_in, m_zprev, m_znext)
@@ -42,7 +42,6 @@
     # # create a joint message of the input messages
     ξ4 = convert(AbstractVector{T}, vcat(ξ_in, (ξ_zprev_marginal - ξ_zprev_message)))
     Λ4 = convert(AbstractMatrix{T}, cat(Λ_in, (Λ_zprev_marginal - Λ_zprev_message); dims = (1, 2)))
-
 
     # # return joint marginal
     left = MvNormalWeightedMeanPrecision(ξ3, Λ3)
