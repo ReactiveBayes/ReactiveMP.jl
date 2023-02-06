@@ -24,8 +24,8 @@ import ReactiveMP: WishartMessage, ManyOf
             )
 
             ref_val =
-                0.2 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
-                0.8 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
+                0.8 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
+                0.2 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
             @test score(AverageEnergy(), NormalMixture, Val{(:out, :switch, :m, :p)}, marginals, nothing) ≈ ref_val
         end
 
@@ -43,8 +43,8 @@ import ReactiveMP: WishartMessage, ManyOf
             )
 
             ref_val =
-                0.4 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
-                0.6 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
+                0.6 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
+                0.4 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
             @test score(AverageEnergy(), NormalMixture, Val{(:out, :switch, :m, :p)}, marginals, nothing) ≈ ref_val
         end
 
