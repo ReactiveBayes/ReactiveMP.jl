@@ -78,10 +78,9 @@ using ReactiveMP: mvbeta, logmvbeta
         w = [0.3, 0.7]
 
         dist = MixtureDistribution([component1, component2], w)
-        @test pdf(dist, 0.5) ≈ 0.3*pdf(component1, 0.5) + 0.7*pdf(component2, 0.5)
-        @test pdf(dist, 0) ≈ 0.3*pdf(component1, 0) + 0.7*pdf(component2, 0)
-        @test pdf(dist, 5) ≈ 0.3*pdf(component1, 5) + 0.7*pdf(component2, 5)
-        
+        @test pdf(dist, 0.5) ≈ 0.3 * pdf(component1, 0.5) + 0.7 * pdf(component2, 0.5)
+        @test pdf(dist, 0) ≈ 0.3 * pdf(component1, 0) + 0.7 * pdf(component2, 0)
+        @test pdf(dist, 5) ≈ 0.3 * pdf(component1, 5) + 0.7 * pdf(component2, 5)
     end
 
     @testset "prod normal" begin
