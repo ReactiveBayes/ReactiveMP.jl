@@ -55,18 +55,15 @@ function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, ri
 end
 
 function prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Bernoulli, right_dist::Categorical)
-
     # get probability vectors
     p_left = probvec(left_dist)
     p_right = probvec(right_dist)
 
     # find length of new vector and compute entries
-    if length(p_left) >= length(p_right)
-        p_new = vcat(p_right..., zeros(length(p_left) - length(p_right)))
-        Z = dot(p_left, p_new)
+    Z = if length(p_left) >= length(p_right)
+        dot(p_left, vcat(p_right..., zeros(length(p_left) - length(p_right))))
     else
-        p_new = vcat(p_left..., zeros(length(p_right) - length(p_left)))
-        Z = dot(p_right, p_new)
+        dot(p_right, vcat(p_left..., zeros(length(p_right) - length(p_left))))
     end
 
     # return log normalization constant
