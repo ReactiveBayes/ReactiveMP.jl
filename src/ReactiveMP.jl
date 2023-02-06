@@ -108,7 +108,7 @@ include("distributions/wishart_inverse.jl")
 include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
-include("distributions/mixture_model.jl")
+include("distributions/mixture_distribution.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
