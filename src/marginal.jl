@@ -197,7 +197,7 @@ function (mapping::MarginalMapping)(dependencies)
     else
         marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
     end
-    
+
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial, nothing)
 end
 
