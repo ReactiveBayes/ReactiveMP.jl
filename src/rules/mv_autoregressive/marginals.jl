@@ -1,29 +1,20 @@
 
 @marginalrule MAR(:y_x) (
-    m_y::MultivariateNormalDistributionsFamily,
-    m_x::MultivariateNormalDistributionsFamily,
-    q_a::MultivariateNormalDistributionsFamily,
-    q_Λ::Any,
-    meta::MARMeta
+    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta
 ) = begin
     return ar_y_x_marginal(m_y, m_x, q_a, q_Λ, meta)
 end
 
 function ar_y_x_marginal(
-    m_y::MultivariateNormalDistributionsFamily,
-    m_x::MultivariateNormalDistributionsFamily,
-    q_a::MultivariateNormalDistributionsFamily,
-    q_Λ::Any,
-    meta::MARMeta)
-
+    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta
+)
     order, ds = getorder(meta), getdimensionality(meta)
     F = Multivariate
-    dim = order*ds
-
+    dim = order * ds
 
     ma, Va = mean_cov(q_a)
     mΛ = mean(q_Λ)
-    
+
     mA = mar_companion_matrix(order, ds, ma)
     mW = mar_transition(getorder(meta), mΛ)
 
@@ -37,7 +28,7 @@ function ar_y_x_marginal(
     es = [uvector(dim, i) for i in 1:ds]
     Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
-    Ξ = inv_f_Vx + sum(sum(es[j]'*mW*es[i]*Fs[j]*Va*Fs[i]' for i in 1:ds) for j in 1:ds)
+    Ξ = inv_f_Vx + sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)
 
     W_11 = inv_b_Vy + mW
 
