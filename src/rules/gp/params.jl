@@ -65,6 +65,9 @@ end
     return @call_rule GaussianProcess(:params, Marginalisation) (q_out=q_out, q_meanfunc=q_meanfunc, q_kernelfunc=q_kernelfunc, q_params=m_params, meta=meta)
 end
 
+@rule GaussianProcess(:params, Marginalisation) (m_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, meta::CVI) = begin 
+    return NormalMeanVariance(0., 1.)
+end
 #---------------------------------------------------------------------------#
 ### function for estimating the covariance matrix w.r.t. chosen gp strategy 
 function inv_cov_mat(::CovarianceMatrixStrategy{<:FullCovarianceStrategy}, kernfunc, input, Σ, θ, inducing)

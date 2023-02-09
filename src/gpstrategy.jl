@@ -123,8 +123,10 @@ function fullcov(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy},
     cache = gpstrategy.strategy.cache 
     Kfy                = kernelmatrix!(cache, :Kfy, kernelfunc,xtest,xtrain) #K*f
     Kff                = kernelmatrix!(cache, :Kff, kernelfunc,xtest,xtest)  #K**
-    invKtrain          = length(gpstrategy.strategy.invKff)>1 ? gpstrategy.strategy.invKff : cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) .+ 1e-6)  
+    invKtrain          = length(gpstrategy.strategy.invKff)>1 ? gpstrategy.strategy.invKff : cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) + 1e-6*I)  
     # invKtrain          = gpstrategy.strategy.invKff
+    # invKtrain = cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) + 1e-5*I)   #temporary computation
+
     xtest_transformed = getcache(cache, (:xtest,length(xtest)))
     xtrain_transformed = getcache(cache, (:xtrain, length(xtrain)))
     map!(meanfunc,xtest_transformed, xtest)
@@ -137,7 +139,7 @@ function fullcov(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy},
     mul!(result2, Kfy, result1)
 
     μ                  = xtest_transformed + result2 
-    Σ                  = Kff - mul_A_B_At!(cache, Kfy, invKtrain)
+    Σ                  = Kff - mul_A_B_At!(cache, Kfy, invKtrain) 
     return μ, Σ
 end
 
@@ -280,7 +282,10 @@ function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStr
 end
 
 function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc) 
-    return extractmatrix!(gpstrategy, kernel, x_train, Σ_noise, x_induc)
+    Kff = kernelmatrix(kernel,x_train,x_train)
+    gpstrategy.strategy.invKff = cholinv(Kff + Diagonal(Σ_noise))
+
+    return gpstrategy
 end
 #--------------- SoR strategy -------------------------#
 function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditional}, kernel, x_train, Σ_noise, x_induc)

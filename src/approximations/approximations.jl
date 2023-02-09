@@ -19,7 +19,7 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
     mean = 0.0
 
     for (index, (weight, point)) in enumerate(zip(weights, points))
-        gv = g(point)
+        gv = g(point) 
         cv = weight * gv
 
         mean += point * cv
