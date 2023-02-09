@@ -211,6 +211,8 @@ end
 
     addtests(testrunner, "test_addons.jl")
 
+    addtests(testrunner, "test_gpstrategy.jl")
+
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
     addtests(testrunner, "approximations/test_linearization.jl")
@@ -383,6 +385,7 @@ end
     addtests(testrunner, "rules/implication/test_in1.jl")
     addtests(testrunner, "rules/implication/test_in2.jl")
     addtests(testrunner, "rules/implication/test_marginals.jl")
+
 
     run(testrunner)
 end
