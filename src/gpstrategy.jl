@@ -124,8 +124,6 @@ function fullcov(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy},
     Kfy                = kernelmatrix!(cache, :Kfy, kernelfunc,xtest,xtrain) #K*f
     Kff                = kernelmatrix!(cache, :Kff, kernelfunc,xtest,xtest)  #K**
     invKtrain          = length(gpstrategy.strategy.invKff)>1 ? gpstrategy.strategy.invKff : cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) + 1e-6*I)  
-    # invKtrain          = gpstrategy.strategy.invKff
-    # invKtrain = cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) + 1e-5*I)   #temporary computation
 
     xtest_transformed = getcache(cache, (:xtest,length(xtest)))
     xtrain_transformed = getcache(cache, (:xtrain, length(xtrain)))
@@ -172,34 +170,6 @@ function sor(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditi
 
     return μ_SOR, Σ_SOR
 end
-# function sor(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditional}, kernelfunc, meanfunc, xtrain, xtest, y, x_u)
-#     cache = gpstrategy.strategy.cache 
-#     Kfu = kernelmatrix!(cache, :Kfu, kernelfunc,xtest,x_u) # cross covariance K_*u between test and inducing points 
-#     Σ = get!(cache.cache_matrices,(:Σ, (length(x_u),length(x_u))), 0)
-#     Kutrain = get!(cache.cache_matrices,(:Kuf, (length(x_u),length(xtrain))), 0) 
-#     invΛ = get!(cache.cache_matrices,(:invΛ, (length(xtrain),length(xtrain))),0)
-
-#     xtrain_transformed = getcache(cache, (:xtrain, length(xtrain)))
-#     xtest_transformed = getcache(cache, (:xtest, length(xtest)))
-
-#     map!(meanfunc, xtest_transformed, xtest) # xtest = meanfunc.(xtest)
-#     map!((y,x) -> y - meanfunc(x), xtrain_transformed, y, xtrain) # xtrain_transformed = y .- meanfunc(xtrain)
-
-#     result1 = getcache(cache, (:result1, size(invΛ,1)))
-#     result2 = getcache(cache, (:result2, size(Kutrain,1)))
-#     result3 = getcache(cache, (:result3, size(Σ,1)))
-#     result4 = getcache(cache, (:result4, size(Kfu,1)))
-
-#     mul!(result1, invΛ, xtrain_transformed)
-#     mul!(result2, Kutrain, result1)
-#     mul!(result3, Σ, result2)
-#     mul!(result4, Kfu, result3)
-
-#     μ_SOR = xtest_transformed + result4
-#     Σ_SOR = mul_A_B_At!(cache, Kfu, Σ)
-
-#     return μ_SOR, Σ_SOR
-# end
 
 #### DTC strategy 
 function dtc(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditional},kernelfunc, meanfunc, xtrain, xtest, y, x_u)
@@ -282,10 +252,7 @@ function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStr
 end
 
 function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc) 
-    Kff = kernelmatrix(kernel,x_train,x_train)
-    gpstrategy.strategy.invKff = cholinv(Kff + Diagonal(Σ_noise))
-
-    return gpstrategy
+    return extractmatrix!(gpstrategy,kernel, x_train, Σ_noise,x_induc)
 end
 #--------------- SoR strategy -------------------------#
 function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditional}, kernel, x_train, Σ_noise, x_induc)
@@ -317,33 +284,6 @@ function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:Determinis
     gpstrategy.strategy.invΛ = invΛ
     return gpstrategy
 end
-# function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditional}, kernel, x_train, Σ_noise, x_induc)
-#     gpcache = gpstrategy.strategy.cache
-
-#     Kuu = kernelmatrix!(gpcache, :Kuu, kernel, x_induc, x_induc)
-#     Kuf = kernelmatrix!(gpcache, :Kuf, kernel, x_induc, x_train)
-
-#     invΛ = cholinv(Diagonal(Σ_noise))
-#     gpcache.cache_matrices[(:invΛ, (size(Σ_noise,1),size(Σ_noise,1)))] = invΛ
-#     Σ = Kuu + mul_A_B_At!(gpcache, Kuf, invΛ)
-#     Σ = cholinv(Σ)
-#     gpcache.cache_matrices[(:Σ, (length(x_induc),length(x_induc)))] = Σ
-#     return gpstrategy
-# end 
-
-# function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditional}, kernel, x_train, Σ_noise, x_induc)
-#     gpcache = gpstrategy.strategy.cache
-#     Kuu = get!(gpcache.cache_matrices,(:Kuu, (length(x_induc),length(x_induc))), 0)
-#     Kuf = kernelmatrix!(gpcache, :Kuf, kernel, x_induc, x_train)
-#     gpcache.cache_matrices[(:invΛ, (size(Σ_noise,1),size(Σ_noise,1)))] = cholinv(Diagonal(Σ_noise))
-
-#     invΛ = cholinv(Diagonal(Σ_noise))
-#     gpcache.cache_matrices[(:invΛ, (size(Σ_noise,1),size(Σ_noise,1)))] = invΛ
-#     Σ = Kuu + mul_A_B_At!(gpcache, Kuf, invΛ)
-#     Σ = cholinv(Σ)
-#     gpcache.cache_matrices[(:Σ, (length(x_induc),length(x_induc)))] = Σ
-#     return gpstrategy
-# end
 #--------------- DTC strategy -------------------------#
 function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditional}, kernel, x_train, Σ_noise, x_induc)
     gpcache = gpstrategy.strategy.cache 
@@ -389,7 +329,7 @@ function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:FullyIndependentT
     invΛ = cholinv(Λ)
 
     Σ = Kuu + mul_A_B_At!(gpcache,Kuf, invΛ)
-    Σ = cholinv(Kuu + Σ)
+    Σ = cholinv(Σ)
 
     gpstrategy.strategy.Kuu = Kuu 
     gpstrategy.strategy.Kuf =  Kuf 
@@ -411,7 +351,7 @@ function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:FullyIndep
     invΛ = cholinv(Λ)
 
     Σ = Kuu + mul_A_B_At!(gpcache,Kuf, invΛ)
-    Σ = cholinv(Kuu + Σ)
+    Σ = cholinv(Σ)
 
     gpstrategy.strategy.Kuf =  Kuf 
     gpstrategy.strategy.Σ = Σ
