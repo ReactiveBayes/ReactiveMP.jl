@@ -58,49 +58,53 @@ end
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::GaussianProcess, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
     index = meta[1].index
     m_gp, cov_gp = mean_cov(m_in.finitemarginal)
-    kernelf = m_in.kernelfunction
-    meanf   = m_in.meanfunction
-    test    = m_in.testinput
-    train   = m_in.traininput
-    cov_strategy = m_in.covariance_strategy
-    x_u = m_in.inducing_input
-    mμ, var_μ = ReactiveMP.predictMVN(cov_strategy, kernelf,meanf,test,[train[index]],m_gp, x_u) #this returns negative variance 
-    μ_in = mμ[1]
-    var_in = var_μ[1]
-
-    # get mean and variance from m_out 
+    μ_in = m_gp[index]
+    var_in = cov_gp[index,index]
     μ_out, var_out = mean_var(m_out)
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out  - x*μ_in)^2 / (var_in*x^2 + var_out)
     return ContinuousUnivariateLogPdf(backwardpass)
 end
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
     μ_in, var_in = mean_var(m_in)
     μ_out, var_out = mean_var(m_out)
-
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out  - x*μ_in)^2 / (var_in*x^2 + var_out)
     return ContinuousUnivariateLogPdf(backwardpass)
 end
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
-    μ_in = mode(m_in)
-    dx = (x) -> ForwardDiff.derivative(y -> -logpdf(m_in,y), x)
-    ddx = (x) -> ForwardDiff.derivative(dx,x)
-    var_in = cholinv(ddx(μ_in))
-    μ_out, var_out = mean_var(m_out)
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+    nsamples    = 20
+    samples_in  = rand(m_in,nsamples)
+    samples_out = rand(m_out,nsamples)
+    samples_division = samples_out ./ samples_in
+    p = (z) -> sum(abs.(samples_in) .* pdf.(m_out,z*samples_in))/nsamples
 
-    return ContinuousUnivariateLogPdf(backwardpass)
+    weights = softmax(p.(samples_division))
+    m = sum(weights .* samples_division)
+    v = sum(weights .* (samples_division .- m).^2)
+    return NormalMeanVariance(m,v)
+
 end
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin
     μ_in, var_in = mean_var(m_in)
     μ_out, var_out = mean_var(m_out)
 
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
-    return ContinuousUnivariateLogPdf(backward)    
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out  - x*μ_in)^2 / (var_in*x^2 + var_out)
+
+    return ContinuousUnivariateLogPdf(backwardpass)    
 end
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::ProcessMeta) = begin
     return @call_rule typeof(*)(:A, Marginalisation) (m_out=m_out,m_in=m_in,meta=TinyCorrection())
 end
+
+@rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::LogNormal, meta::ProcessMeta) = begin 
+    m_out_proxy = GaussianMeanVariance(mean(m_out),0.0001)
+    return @call_rule typeof(*)(:A,Marginalisation) (m_out=m_out_proxy, m_in=m_in,meta=meta)
+end
+
+
+
+

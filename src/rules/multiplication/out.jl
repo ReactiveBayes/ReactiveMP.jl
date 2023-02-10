@@ -69,19 +69,11 @@ end
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::GaussianProcess, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
     index = meta[1].index
     m_gp, cov_gp = mean_cov(m_in.finitemarginal)
-    kernelf = m_in.kernelfunction
-    meanf   = m_in.meanfunction
-    test    = m_in.testinput
-    train   = m_in.traininput
-    cov_strategy = m_in.covariance_strategy
-    x_u = m_in.inducing_input
-    mμ, var_μ = ReactiveMP.predictMVN(cov_strategy, kernelf,meanf,test,[train[index]],m_gp, x_u) #changed here
-    μ_in = mμ[1]
-    var_in = var_μ[1]
-
+    μ_in = m_gp[index]
+    var_in = cov_gp[index,index]
     μ_A, var_A = mean_var(m_A)
     #compute statistics for out 
-    return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,10) + 1e-6))
+    return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,0.0) ))
     # return NormalMeanVariance(μ_A * μ_in, μ_A^2 * var_in + μ_in^2 * var_A + var_A * var_in)
 end
 
@@ -93,25 +85,22 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
-    res = optimize(x -> -logpdf(m_A,x),-100,100)
-    μ_A = res.minimizer
-    dx = (x) -> ForwardDiff.derivative(y -> -logpdf(m_A,y),x)
-    ddx = (x) -> ForwardDiff.derivative(dx,x)
-    var_A = cholinv(ddx(μ_A)) 
-    μ_in, var_in = mean_var(m_in)
-    return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,10) + 1e-6)) 
+    nsamples    = 20
+    samples_A  = rand(m_A,nsamples)
+    samples_in = rand(m_in,nsamples)
+    samples_prod =  samples_A .* samples_in
+    p = (z) -> log(sum( (1 ./ abs.(samples_A)).* pdf.(m_in,z/samples_A))/nsamples)
+
+    weights = softmax(p.(samples_prod))
+    m = sum(weights .* samples_prod)
+    v = sum(weights .* (samples_prod .- m).^2)
+    return NormalMeanVariance(m,v)
 end
-
-# function besselmod(z,mx,vx,my,vy,n)
-#     f_n = (y) -> mapreduce(m -> (z^(2y-m)*abs(z)^(m-y)*vx^(m-y-1)*(mx/vx)^m * binomial(2y,m) * (my/vy)^(2y-m)*besselk(m-y,abs(z)/sqrt(vx*vy))) / (pi * factorial(2y) * vy^(m-y+1)), +, 0:2*y)
-#     return exp(-0.5 * (mx^2/vx + my^2/vy)) * mapreduce(f_n, +, 0:n)
-# end
-
 
 
 using SpecialFunctions: besselk
 
-function besselmod(mx, vx, my, vy, rho; truncation=10, jitter=1e-8)
+function besselmod(mx, vx, my, vy, rho; truncation=15, jitter=1e-8)
 
     # construct logpdf function
     logpdf = function (x)

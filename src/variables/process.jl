@@ -228,22 +228,47 @@ function make_multivariate_message(messages) ## function for concatinating messa
     return m,v
 end 
 
-function compute_ep_message(l_pdf, m_in, var_in )
+function compute_ep_message(l_pdf, m_in, var_in;nsamples = 1000, ncubature = 131)
     dist = NormalMeanVariance(m_in, var_in)    
-    log_pdf = x -> l_pdf(x) + logpdf(dist,x)
-    res = optimize(x -> -log_pdf(x), m_in-10,m_in+10)
-    mproxy = res.minimizer[1]
-    dx  = x -> ForwardDiff.derivative(y -> -log_pdf(y),x)
-    ddx = x -> ForwardDiff.derivative(dx, x)
+    pdf = x -> exp(l_pdf(x)-logpdf(dist,x)+1e-7)
+    m,v = approximate_meancov(ghcubature(ncubature),pdf,dist)
 
-    vproxy = cholinv(ddx(mproxy))
-    m_ = mproxy 
-    v_ = vproxy
+    if isnan(v) || isnan(m)
+        log_pdf = x -> l_pdf(x) + logpdf(dist,x[1])  + 1e-7
+        res = optimize(x -> -log_pdf(x), [m_in])
+        mproxy = res.minimizer[1]
+        dx  = x -> ForwardDiff.derivative(y -> -log_pdf(y),x)
+        ddx = x -> ForwardDiff.derivative(dx, x)
+
+        vproxy = cholinv(ddx(mproxy+tiny))
+        m_ = mproxy 
+        v_ = vproxy + 1e-6
+
+        ksi = m_/v_ - m_in/var_in
+        precision = clamp(1/v_ - 1/var_in, tiny,huge)
+        
+        if isnan(ksi) || isnan(precision)
+            samples = rand(dist,nsamples)
+            weights = exp.(l_pdf.(samples)) / sum(exp.(l_pdf.(samples)) )
+            if any(isnan.(weights)) 
+                m_ = sum(samples)/nsamples
+                v_ = sum((samples .- m_).^2) /nsamples 
+            else
+                m_ = sum(weights .* samples)
+                v_ = sum(weights .* (samples .- m_).^2)    
+            end
+            ksi = m_/v_ - m_in/var_in
+            precision = clamp(1/v_ - 1/var_in, tiny,huge)
+            
+            return NormalWeightedMeanPrecision(ksi,precision)
+        else
+            return  NormalWeightedMeanPrecision(ksi,precision)
+        end
+    else
     
-    ksi = m_/v_ - m_in/var_in
-    precision = clamp(1/v_ - 1/var_in, 1e-3,1e4)
-
-    return  NormalWeightedMeanPrecision(ksi,precision)
+        return  NormalMeanVariance(m,v)
+    end
+    
 end
 
 function marginal_prod_fn(randomprocess::RandomProcess)
