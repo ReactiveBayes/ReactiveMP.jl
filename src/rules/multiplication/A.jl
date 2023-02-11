@@ -73,17 +73,28 @@ end
     return ContinuousUnivariateLogPdf(backwardpass)
 end
 
-@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
-    nsamples    = 20
-    samples_in  = rand(m_in,nsamples)
-    samples_out = rand(m_out,nsamples)
-    samples_division = samples_out ./ samples_in
-    p = (z) -> sum(abs.(samples_in) .* pdf.(m_out,z*samples_in))/nsamples
 
-    weights = softmax(p.(samples_division))
-    m = sum(weights .* samples_division)
-    v = sum(weights .* (samples_division .- m).^2)
-    return NormalMeanVariance(m,v)
+function make_productdist_message(samples_in,d_out)
+    return let samples_in=samples_in,d_out=d_out
+        (x) -> begin
+            result = mapreduce(+, zip(samples_in,)) do (samplein,)
+                return abs(samplein) * pdf(d_out,x*samplein)
+            end
+            return log(result)
+        end
+    end
+end
+
+
+@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
+    nsamples    = 100
+    samples_in1 = rand(m_in,nsamples)
+    samples_in2 = rand(m_in,nsamples)
+    samples_out = rand(m_out,nsamples)
+    samples_division = samples_out ./ samples_in1
+    p = make_productdist_message(samples_in2,m_out)
+    return ContinuousUnivariateLogPdf(p)
+
 
 end
 
@@ -106,5 +117,7 @@ end
 end
 
 
-
+@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::ProcessMeta) = begin 
+    return @call_rule typeof(*)(:A, Marginalisation) (m_out=m_out,m_in=m_in,meta=TinyCorrection())
+end
 

@@ -228,7 +228,7 @@ function make_multivariate_message(messages) ## function for concatinating messa
     return m,v
 end 
 
-function compute_ep_message(l_pdf, m_in, var_in;nsamples = 1000, ncubature = 131)
+function compute_ep_message(l_pdf, m_in, var_in;nsamples = 1000, ncubature = 171)
     dist = NormalMeanVariance(m_in, var_in)    
     pdf = x -> exp(l_pdf(x)-logpdf(dist,x)+1e-7)
     m,v = approximate_meancov(ghcubature(ncubature),pdf,dist)

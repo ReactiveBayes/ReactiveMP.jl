@@ -72,31 +72,57 @@ end
     μ_in = m_gp[index]
     var_in = cov_gp[index,index]
     μ_A, var_A = mean_var(m_A)
-    #compute statistics for out 
     return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,0.0) ))
-    # return NormalMeanVariance(μ_A * μ_in, μ_A^2 * var_in + μ_in^2 * var_A + var_A * var_in)
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin
     μ_in, var_in = mean_var(m_in)
     μ_A, var_A = mean_var(m_A)
     return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,0.0)))
-    # return NormalMeanVariance(μ_A * μ_in, μ_A^2 * var_in + μ_in^2 * var_A + var_A * var_in)
 end
+
+
+@rule typeof(*)(:out, Marginalisation) (m_A::GaussianProcess, m_in::LogNormal, meta::ProcessMeta) = begin 
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A=m_in,m_in=m_A,meta=meta)
+end
+
+function make_productdist_message(samples_A,d_in)
+    return let samples_A=samples_A,d_in=d_in
+        (x) -> begin
+            result = mapreduce(+, zip(samples_A,)) do (sampleA,)
+                return 1/abs(sampleA) * pdf(d_in,x/sampleA)
+            end
+            return log(result)
+        end
+    end
+end
+
+@rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::GaussianProcess, meta::ProcessMeta) = begin 
+    index = meta.index
+    m_gp, cov_gp = mean_cov(m_in.finitemarginal)
+    d_in = NormalMeanVariance(m_gp[index], cov_gp[index,index])
+    nsamples = 100
+    samples_A1  = rand(m_A,nsamples)
+    samples_A2  = rand(m_A,nsamples)
+    samples_in = rand(d_in,nsamples)
+    samples_prod =  samples_A1 .* samples_in
+    p = make_productdist_message(samples_A2,d_in)
+
+    return ContinuousUnivariateLogPdf(p)
+end
+
 
 @rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
-    nsamples    = 20
-    samples_A  = rand(m_A,nsamples)
-    samples_in = rand(m_in,nsamples)
-    samples_prod =  samples_A .* samples_in
-    p = (z) -> log(sum( (1 ./ abs.(samples_A)).* pdf.(m_in,z/samples_A))/nsamples)
+    nsamples    = 100
+    samples_A1  = rand(m_A,nsamples)
+    samples_A2  = rand(m_A,nsamples)
+    samples_in = rand(d_in,nsamples)
+    samples_prod =  samples_A1 .* samples_in
+    p = make_productdist_message(samples_A2,d_in)
 
-    weights = softmax(p.(samples_prod))
-    m = sum(weights .* samples_prod)
-    v = sum(weights .* (samples_prod .- m).^2)
-    return NormalMeanVariance(m,v)
+    return ContinuousUnivariateLogPdf(p)
+
 end
-
 
 using SpecialFunctions: besselk
 

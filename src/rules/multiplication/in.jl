@@ -83,13 +83,13 @@ end
     μ_in, var_in = mean_var(m_A)
     μ_out, var_out = mean_var(m_out)
     
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
+    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * abs(var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
     return ContinuousUnivariateLogPdf(backwardpass)
 end
 
 
 
-@rule typeof(*)(:in, Marginalisation) (m_out::NormalMeanPrecision, m_A::GaussianProcess, meta::ProcessMeta) = begin 
+@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::GaussianProcess, meta::ProcessMeta) = begin 
     
     index = meta.index
     m_gp, cov_gp = mean_cov(m_A.finitemarginal)
