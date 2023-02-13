@@ -16,17 +16,12 @@ ProbitMeta(; p = 32) = ProbitMeta(p)
 
 default_meta(::Type{Probit}) = ProbitMeta(32)
 
-default_functional_dependencies_pipeline(::Type{<:Probit}) =
-    RequireMessageFunctionalDependencies((2,), (vague(NormalMeanPrecision),))
+default_functional_dependencies_pipeline(::Type{<:Probit}) = RequireMessageFunctionalDependencies((2,), (vague(NormalMeanPrecision),))
 
 default_interface_local_constraint(::Type{<:Probit}, edge::Val{:in})  = MomentMatching()
 default_interface_local_constraint(::Type{<:Probit}, edge::Val{:out}) = Marginalisation()
 
-@average_energy Probit (
-    q_out::Union{PointMass, Bernoulli},
-    q_in::UnivariateNormalDistributionsFamily,
-    meta::ProbitMeta
-) = begin
+@average_energy Probit (q_out::Union{PointMass, Bernoulli}, q_in::UnivariateNormalDistributionsFamily, meta::ProbitMeta) = begin
 
     # extract parameters
     p = mean(q_out)

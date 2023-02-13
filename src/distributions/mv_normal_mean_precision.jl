@@ -18,8 +18,8 @@ function MvNormalMeanPrecision(μ::AbstractVector{<:Integer}, Λ::AbstractMatrix
     return MvNormalMeanPrecision(float.(μ), float.(Λ))
 end
 
-function MvNormalMeanPrecision(μ::AbstractVector, λ::AbstractVector)
-    return MvNormalMeanPrecision(μ, matrix_from_diagonal(promote_type(eltype(μ), eltype(λ)), λ))
+function MvNormalMeanPrecision(μ::AbstractVector{L}, λ::AbstractVector{R}) where {L, R}
+    return MvNormalMeanPrecision(μ, convert(Matrix{promote_type(L, R)}, Diagonal(λ)))
 end
 
 function MvNormalMeanPrecision(μ::AbstractVector{T}) where {T}
@@ -45,7 +45,7 @@ function Distributions.sqmahal!(r, dist::MvNormalMeanPrecision, x::AbstractVecto
     for i in 1:length(r)
         @inbounds r[i] = μ[i] - x[i]
     end
-    return dot(r, invcov(dist), r)
+    return dot(r, invcov(dist), r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanPrecision{T}) where {T} = T
@@ -60,7 +60,7 @@ function Base.convert(::Type{<:MvNormalMeanPrecision{T}}, μ::AbstractVector, Λ
     MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{<:MvNormalMeanPrecision}, dims::Int) = MvNormalMeanPrecision(zeros(dims), fill(tiny, dims))
+vague(::Type{<:MvNormalMeanPrecision}, dims::Int) = MvNormalMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
 prod_analytical_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ProdAnalyticalRuleAvailable()
 
@@ -70,11 +70,7 @@ function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNor
     return MvNormalMeanPrecision(μ, Λ)
 end
 
-function Base.prod(
-    ::ProdPreserveType,
-    left::MvNormalMeanPrecision{T1},
-    right::MvNormalMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     Λ = precision(left) + precision(right)
 
     # fast & efficient implementation of precision(right)*mean(right) + precision(left)*mean(left)
@@ -96,11 +92,7 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNorma
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
-function Base.prod(
-    ::ProdAnalytical,
-    left::MvNormalMeanPrecision{T1},
-    right::MvNormalMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
     # fast & efficient implementation of xi = precision(right)*mean(right) + precision(left)*mean(left)

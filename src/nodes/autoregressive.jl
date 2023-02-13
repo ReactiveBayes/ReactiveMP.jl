@@ -1,6 +1,7 @@
 export AR, Autoregressive, ARsafe, ARunsafe, ARMeta
 
 import LazyArrays
+import Distributions: VariateForm
 import StatsFuns: log2π
 
 struct AR end
@@ -16,8 +17,7 @@ struct ARMeta{F <: VariateForm, S}
 end
 
 function ARMeta(::Type{Univariate}, order, stype::S) where {S}
-    order === 1 ||
-        @warn "ARMeta{Univariate} has been created with order equals to $(order). Order has been forced to be equal to 1."
+    order === 1 || @warn "ARMeta{Univariate} has been created with order equals to $(order). Order has been forced to be equal to 1."
     return ARMeta{Univariate, S}(1, stype)
 end
 
@@ -39,36 +39,24 @@ is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 
 default_meta(::Type{AR}) = error("Autoregressive node requires meta flag explicitly specified")
 
-@average_energy AR (
-    q_y_x::MultivariateNormalDistributionsFamily,
-    q_θ::NormalDistributionsFamily,
-    q_γ::GammaShapeRate,
-    meta::ARMeta
-) = begin
+@average_energy AR (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
     mθ, Vθ   = mean_cov(q_θ)
     myx, Vyx = mean_cov(q_y_x)
     mγ       = mean(q_γ)
 
     order = getorder(meta)
 
-    mx, Vx   = ar_slice(getvform(meta), myx, (order+1):2order), ar_slice(getvform(meta), Vyx, (order+1):2order, (order+1):2order)
+    mx, Vx   = ar_slice(getvform(meta), myx, (order + 1):(2order)), ar_slice(getvform(meta), Vyx, (order + 1):(2order), (order + 1):(2order))
     my1, Vy1 = first(myx), first(Vyx)
-    Vy1x     = ar_slice(getvform(meta), Vyx, 1, order+1:2order)
+    Vy1x     = ar_slice(getvform(meta), Vyx, 1, (order + 1):(2order))
 
-    # Euivalento to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
-    AE =
-        (
-            -mean(log, q_γ) + log2π +
-            mγ * (
-                Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) +
-                abs2(dot(mθ, mx))
-            )
-        ) / 2
+    # Equivalent to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
+    AE = (-mean(log, q_γ) + log2π + mγ * (Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))) / 2
 
     # correction
     if is_multivariate(meta)
         AE += entropy(q_y_x)
-        idc = LazyArrays.Vcat(1, (order+1):2order)
+        idc = LazyArrays.Vcat(1, (order + 1):(2order))
         myx_n = view(myx, idc)
         Vyx_n = view(Vyx, idc, idc)
         q_y_x = MvNormalMeanCovariance(myx_n, Vyx_n)
@@ -78,13 +66,7 @@ default_meta(::Type{AR}) = error("Autoregressive node requires meta flag explici
     return AE
 end
 
-@average_energy AR (
-    q_y::NormalDistributionsFamily,
-    q_x::NormalDistributionsFamily,
-    q_θ::NormalDistributionsFamily,
-    q_γ::GammaShapeRate,
-    meta::ARMeta
-) = begin
+@average_energy AR (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
     mθ, Vθ = mean_cov(q_θ)
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)
@@ -94,10 +76,7 @@ end
 
     my1, Vy1 = first(my), first(Vy)
 
-    AE =
-        -0.5mean(log, q_γ) + 0.5log2π +
-        0.5 * mγ *
-        (Vy1 + my1^2 - 2 * mθ' * mx * my1 + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))
+    AE = -0.5mean(log, q_γ) + 0.5log2π + 0.5 * mγ * (Vy1 + my1^2 - 2 * mθ' * mx * my1 + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))
 
     # correction
     if is_multivariate(meta)
@@ -149,8 +128,7 @@ struct ARPrecisionMatrix{T} <: AbstractMatrix{T}
 end
 
 Base.size(precision::ARPrecisionMatrix) = (precision.order, precision.order)
-Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) =
-    (i === 1 && j === 1) ? precision.γ : ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
+Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? precision.γ : ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
 
 Base.eltype(::Type{<:ARPrecisionMatrix{T}}) where {T} = T
 Base.eltype(::ARPrecisionMatrix{T}) where {T}         = T
@@ -184,8 +162,7 @@ struct ARTransitionMatrix{T} <: AbstractMatrix{T}
 end
 
 Base.size(transition::ARTransitionMatrix) = (transition.order, transition.order)
-Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) =
-    (i === 1 && j === 1) ? transition.inv_γ : zero(eltype(transition))
+Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? transition.inv_γ : zero(eltype(transition))
 
 Base.eltype(::Type{<:ARTransitionMatrix{T}}) where {T} = T
 Base.eltype(::ARTransitionMatrix{T}) where {T}         = T

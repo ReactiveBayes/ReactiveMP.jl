@@ -1,17 +1,11 @@
 # distributions
-@rule typeof(+)(:in1, Marginalisation) (
-    m_out::UnivariateNormalDistributionsFamily,
-    m_in2::UnivariateNormalDistributionsFamily
-) = begin
+@rule typeof(+)(:in1, Marginalisation) (m_out::UnivariateNormalDistributionsFamily, m_in2::UnivariateNormalDistributionsFamily) = begin
     min2, vin2 = mean_var(m_in2)
     mout, vout = mean_var(m_out)
     return NormalMeanVariance(mout - min2, vout + vin2)
 end
 
-@rule typeof(+)(:in1, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_in2::MultivariateNormalDistributionsFamily
-) = begin
+@rule typeof(+)(:in1, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_in2::MultivariateNormalDistributionsFamily) = begin
     min2, vin2 = mean_cov(m_in2)
     mout, vout = mean_cov(m_out)
     return MvNormalMeanCovariance(mout - min2, vout + vin2)
@@ -62,8 +56,7 @@ end
 
 # specialized
 @rule typeof(+)(:in1, Marginalisation) (
-    m_out::MvNormalWeightedMeanPrecision{T1},
-    m_in2::MvNormalWeightedMeanPrecision{T2}
+    m_out::MvNormalWeightedMeanPrecision{T1}, m_in2::MvNormalWeightedMeanPrecision{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat} = begin
     min2, vin2 = mean_cov(m_in2)
     vout = cov(m_out)
@@ -77,7 +70,7 @@ end
     ξout, wout = weightedmean_precision(m_out)
     ξin1 = wout * mean(m_in2)
     ξin1 .-= ξout
-    T = promote_type(T1, eltype(m_in2))
+    T = promote_type(T1, samplefloattype(m_in2))
     ξin1 .*= -one(T)
     return MvNormalWeightedMeanPrecision(ξin1, wout)
 end

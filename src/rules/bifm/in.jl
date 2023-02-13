@@ -1,9 +1,6 @@
 
 @rule BIFM(:in, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily,
-    m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily},
-    m_znext::MultivariateNormalDistributionsFamily,
-    meta::BIFMMeta
+    m_out::MultivariateNormalDistributionsFamily, m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta
 ) = begin
 
     # fetch information of meta data
@@ -29,7 +26,7 @@
 
     # Actual return type depends on meta object as well, so we explicitly cast the result here
     # Should be noop if type matches
-    T = promote_type(eltype(m_out), eltype(m_zprev), eltype(m_znext))
+    T = promote_samplefloattype(m_out, m_zprev, m_znext)
 
     # return input marginal
     return ProdFinal(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_in, Σ_in)))

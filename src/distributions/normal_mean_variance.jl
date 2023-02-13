@@ -40,8 +40,7 @@ Base.precision(dist::NormalMeanVariance{T}) where {T} = invcov(dist)
 Base.eltype(::NormalMeanVariance{T}) where {T}        = T
 
 Base.convert(::Type{NormalMeanVariance}, μ::Real, v::Real) = NormalMeanVariance(μ, v)
-Base.convert(::Type{NormalMeanVariance{T}}, μ::Real, v::Real) where {T <: Real} =
-    NormalMeanVariance(convert(T, μ), convert(T, v))
+Base.convert(::Type{NormalMeanVariance{T}}, μ::Real, v::Real) where {T <: Real} = NormalMeanVariance(convert(T, μ), convert(T, v))
 
 vague(::Type{<:NormalMeanVariance}) = NormalMeanVariance(0.0, huge)
 

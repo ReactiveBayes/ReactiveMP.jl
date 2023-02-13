@@ -20,7 +20,7 @@ We welcome new feature proposals. However, before submitting a feature request, 
 We suggest that you use the `dev` command from the new Julia package manager to
 install ReactiveMP.jl for development purposes. To work on your fork of ReactiveMP.jl, use your fork's URL address in the `dev` command, for example:
 
-```jl
+```
 ] dev git@github.com:your_username/ReactiveMP.jl.git
 ```
 
@@ -59,7 +59,7 @@ See [Julia's documentation](https://docs.julialang.org/en/v1/manual/documentatio
 
 The tests can be evaluated by running following command in the Julia REPL:
 
-```julia
+```
 ] test ReactiveMP
 ```
 
@@ -68,6 +68,12 @@ In addition tests can be evaluated by running following command in the ReactiveM
 ```bash
 make test
 ```
+
+### Fixes to external libraries 
+
+If a bug has been discovered in an external dependencies of the `ReactiveMP.jl` it is the best to open an issue 
+directly in the dependency's github repository. You use can use the `fixes.jl` file for hot-fixes before 
+a new release of the broken dependecy is available.
 
 ### Makefile
 

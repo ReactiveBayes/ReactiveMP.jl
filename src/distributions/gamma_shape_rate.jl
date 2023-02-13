@@ -1,8 +1,11 @@
 export GammaShapeRate
 
-import Distributions: Gamma, shape, rate
+import Distributions: Gamma, shape, rate, logpdf
 import SpecialFunctions: loggamma, digamma, gamma
 import StatsFuns: log2π
+import Random: rand
+
+import Base
 
 struct GammaShapeRate{T <: Real} <: ContinuousUnivariateDistribution
     a::T
@@ -25,9 +28,7 @@ Distributions.mean(dist::GammaShapeRate)   = shape(dist) / rate(dist)
 Distributions.var(dist::GammaShapeRate)    = shape(dist) / abs2(rate(dist))
 Distributions.params(dist::GammaShapeRate) = (shape(dist), rate(dist))
 
-Distributions.mode(d::GammaShapeRate) =
-    shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) :
-    throw(error("Gamma has no mode when shape < 1"))
+Distributions.mode(d::GammaShapeRate) = shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) : throw(error("Gamma has no mode when shape < 1"))
 
 function Distributions.entropy(dist::GammaShapeRate)
     a, b = params(dist)
@@ -51,15 +52,14 @@ end
 
 Base.eltype(::GammaShapeRate{T}) where {T} = T
 
-Base.convert(::Type{GammaShapeRate{T}}, a::Real, b::Real) where {T <: Real} =
-    GammaShapeRate(convert(T, a), convert(T, b))
+Base.convert(::Type{GammaShapeRate{T}}, a::Real, b::Real) where {T <: Real} = GammaShapeRate(convert(T, a), convert(T, b))
 
 vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
 
 prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeRate}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
-    T = promote_type(eltype(left), eltype(right))
+    T = promote_samplefloattype(left, right)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
@@ -67,5 +67,13 @@ Distributions.pdf(dist::GammaShapeRate, x::Real)    = (rate(dist)^shape(dist)) /
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
 
 function Random.rand(rng::AbstractRNG, dist::GammaShapeRate)
-    return rand(rng, convert(GammaShapeScale, dist))
+    return convert(eltype(dist), rand(rng, convert(GammaShapeScale, dist)))
+end
+
+function Random.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Integer)
+    return convert(AbstractArray{eltype(dist)}, rand(rng, convert(GammaShapeScale, dist), n))
+end
+
+function Random.rand!(rng::AbstractRNG, dist::GammaShapeRate, container::AbstractVector)
+    return rand!(rng, convert(GammaShapeScale, dist), container)
 end

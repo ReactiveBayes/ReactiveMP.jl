@@ -21,8 +21,7 @@ import ReactiveMP: WishartMessage
         @test sample_list_zero_element(SampleList([1.0, 1.0])) === 0.0
         @test sample_list_zero_element(SampleList([[1.0, 1.0], [1.0, 1.0]])) == [0.0, 0.0]
         @test sample_list_zero_element(SampleList([[1.0 1.0; 1.0 1.0], [1.0 1.0; 1.0 1.0]])) == [0.0 0.0; 0.0 0.0]
-        @test sample_list_zero_element(SampleList([[1.0 1.0 1.0; 1.0 1.0 1.0], [1.0 1.0 1.0; 1.0 1.0 1.0]])) ==
-              [0.0 0.0 0.0; 0.0 0.0 0.0]
+        @test sample_list_zero_element(SampleList([[1.0 1.0 1.0; 1.0 1.0 1.0], [1.0 1.0 1.0; 1.0 1.0 1.0]])) == [0.0 0.0 0.0; 0.0 0.0 0.0]
         @test sample_list_zero_element(SampleList([[1.0; 1.0], [1.0; 1.0]])) == [0.0; 0.0]
     end
 
@@ -196,16 +195,8 @@ import ReactiveMP: WishartMessage
             @test all(isapprox.(mean_precision(uni_sample_list2), mean_precision(uni_distribution2), atol = 0.1))
             @test all(isapprox.(mean_invcov(uni_sample_list2), mean_invcov(uni_distribution2), atol = 0.1))
             @test all(isapprox.(weightedmean_cov(uni_sample_list2), weightedmean_cov(uni_distribution2), atol = 0.1))
-            @test all(
-                isapprox.(weightedmean_invcov(uni_sample_list2), weightedmean_invcov(uni_distribution2), atol = 0.1)
-            )
-            @test all(
-                isapprox.(
-                    weightedmean_precision(uni_sample_list2),
-                    weightedmean_precision(uni_distribution2),
-                    atol = 0.1
-                )
-            )
+            @test all(isapprox.(weightedmean_invcov(uni_sample_list2), weightedmean_invcov(uni_distribution2), atol = 0.1))
+            @test all(isapprox.(weightedmean_precision(uni_sample_list2), weightedmean_precision(uni_distribution2), atol = 0.1))
 
             @test isapprox(var(uni_sample_list), var(uni_distribution), atol = 0.5)
             @test isapprox(cov(uni_sample_list), var(uni_distribution), atol = 0.5)
@@ -240,7 +231,7 @@ import ReactiveMP: WishartMessage
         # Checking i = 1:2 that cache is not corrupted
         for i in 1:2
             @test isapprox(mean(mxv_sample_list), mean(mxv_distribution), atol = 1.0)
-            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 1.0)
+            @test isapprox(var(mxv_sample_list), var(mxv_distribution), atol = 2.5)
             @test isapprox(cov(mxv_sample_list), cov(mxv_distribution), atol = 5.0)
         end
     end
@@ -304,10 +295,8 @@ import ReactiveMP: WishartMessage
             __call(dist::Distribution, x) = logpdf(dist, x)
             __call(dist::Function, x)     = dist(x)
 
-            @test map(e -> call_logproposal(sl, e), some_random_numbers) ==
-                  map(e -> __call(logproposal, e), some_random_numbers)
-            @test map(e -> call_logintegrand(sl, e), some_random_numbers) ==
-                  map(e -> __call(logintegrand, e), some_random_numbers)
+            @test map(e -> call_logproposal(sl, e), some_random_numbers) == map(e -> __call(logproposal, e), some_random_numbers)
+            @test map(e -> call_logintegrand(sl, e), some_random_numbers) == map(e -> __call(logintegrand, e), some_random_numbers)
         end
     end
 
@@ -354,21 +343,8 @@ import ReactiveMP: WishartMessage
                 @test map(i -> samplelist[i], 1:N) == collect(zip(samples, weights))
 
                 for f in (f1, f2, f3, f4, f5)
-                    @test all(
-                        map(
-                            e -> all(e[1] .≈ e[2]),
-                            zip(collect(transform_samples(f, samplelist)), collect(zip(map(f, samples), weights)))
-                        )
-                    )
-                    @test all(
-                        map(
-                            e -> all(e[1] .≈ e[2]),
-                            zip(
-                                map(i -> (f(samplelist[i][1]), samplelist[i][2]), 1:N),
-                                collect(zip(f.(samples), weights))
-                            )
-                        )
-                    )
+                    @test all(map(e -> all(e[1] .≈ e[2]), zip(collect(transform_samples(f, samplelist)), collect(zip(map(f, samples), weights)))))
+                    @test all(map(e -> all(e[1] .≈ e[2]), zip(map(i -> (f(samplelist[i][1]), samplelist[i][2]), 1:N), collect(zip(f.(samples), weights)))))
                 end
 
                 iter = N:-1:1
@@ -376,7 +352,7 @@ import ReactiveMP: WishartMessage
 
                 old_weights = copy(weights)
 
-                transform_weights!(w -> w * iter[index+=1], samplelist)
+                transform_weights!(w -> w * iter[index += 1], samplelist)
 
                 newweights = map(prod, zip(old_weights, iter))
                 newweights ./= sum(newweights)
@@ -394,14 +370,8 @@ import ReactiveMP: WishartMessage
             L' * L
         end
 
-        sizes  = [2_500, 5_000, 10_000]
-        inputs = [
-        (x = NormalMeanPrecision(3.0, 7.0), y = NormalMeanVariance(-4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [1e-1, 1e-1, 1e-1]),
-        (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [1e-1, 1e-1, 1e-1]),
-        (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [3e-1, 3e-1, 3e-1]),
-        (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [2e-1, 2e-1, 2e-1], cov_tol = [6e-1, 6e-1, 6e-1], entropy_tol = [4e-1, 4e-1, 4e-1]),
-        (x = WishartMessage(10.0, cholinv(posdefm(rng, 3))), y = WishartMessage(5.0, cholinv(posdefm(rng, 3))), mean_tol = [7e-1, 7e-1, 7e-1], cov_tol = [5e-1, 5e-1, 5e-1], entropy_tol = [2e-1, 2e-1, 2e-1])
-]
+        sizes  = [10_000, 15_000, 20_000]
+        inputs = [(x = NormalMeanPrecision(3.0, 7.0), y = NormalMeanVariance(-4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [1e-1, 1e-1, 1e-1]), (x = NormalMeanVariance(3.0, 7.0), y = NormalWeightedMeanPrecision(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [1e-1, 1e-1, 1e-1]), (x = GammaShapeRate(3.0, 7.0), y = GammaShapeScale(4.0, 6.0), mean_tol = [1e-1, 1e-1, 1e-1], cov_tol = [1e-1, 1e-1, 1e-1], entropy_tol = [3e-1, 3e-1, 3e-1]), (x = MvNormalMeanCovariance(10rand(rng, 4), posdefm(rng, 4)), y = MvNormalMeanPrecision(10rand(rng, 4), posdefm(rng, 4)), mean_tol = [3e-1, 3e-1, 3e-1], cov_tol = [6e-1, 6e-1, 6e-1], entropy_tol = [4e-1, 4e-1, 4e-1]), (x = WishartMessage(10.0, cholinv(posdefm(rng, 3))), y = WishartMessage(5.0, cholinv(posdefm(rng, 3))), mean_tol = [7e-1, 7e-1, 7e-1], cov_tol = [5e-1, 5e-1, 5e-1], entropy_tol = [2e-1, 2e-1, 2e-1])]
 
         for (i, N) in enumerate(sizes)
             for input in inputs

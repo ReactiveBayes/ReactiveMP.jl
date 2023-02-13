@@ -5,27 +5,42 @@ using ReactiveMP
 using Random
 using LinearAlgebra
 using Distributions
+using ForwardDiff
+
+import ReactiveMP: convert_eltype
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
-        check_basic_statistics = (left, right) -> begin
-            @test mean(left) ≈ mean(right)
-            @test median(left) ≈ median(right)
-            @test mode(left) ≈ mode(right)
-            @test weightedmean(left) ≈ weightedmean(right)
-            @test var(left) ≈ var(right)
-            @test std(left) ≈ std(right)
-            @test cov(left) ≈ cov(right)
-            @test invcov(left) ≈ invcov(right)
-            @test precision(left) ≈ precision(right)
-            @test entropy(left) ≈ entropy(right)
-            @test pdf(left, 1.0) ≈ pdf(right, 1.0)
-            @test pdf(left, -1.0) ≈ pdf(right, -1.0)
-            @test pdf(left, 0.0) ≈ pdf(right, 0.0)
-            @test logpdf(left, 1.0) ≈ logpdf(right, 1.0)
-            @test logpdf(left, -1.0) ≈ logpdf(right, -1.0)
-            @test logpdf(left, 0.0) ≈ logpdf(right, 0.0)
-        end
+        check_basic_statistics =
+            (left, right; include_extended_methods = true) -> begin
+                @test mean(left) ≈ mean(right)
+                @test median(left) ≈ median(right)
+                @test mode(left) ≈ mode(right)
+                @test var(left) ≈ var(right)
+                @test std(left) ≈ std(right)
+                @test entropy(left) ≈ entropy(right)
+
+                for value in (1.0, -1.0, 0.0, mean(left), mean(right), rand())
+                    @test pdf(left, value) ≈ pdf(right, value)
+                    @test logpdf(left, value) ≈ logpdf(right, value)
+                    @test all(ForwardDiff.gradient((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.gradient((x) -> logpdf(right, x[1]), [value]))
+                    @test all(ForwardDiff.hessian((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.hessian((x) -> logpdf(right, x[1]), [value]))
+                end
+
+                # These methods are not defined for distributions from `Distributions.jl
+                if include_extended_methods
+                    @test cov(left) ≈ cov(right)
+                    @test invcov(left) ≈ invcov(right)
+                    @test weightedmean(left) ≈ weightedmean(right)
+                    @test precision(left) ≈ precision(right)
+                    @test all(mean_cov(left) .≈ mean_cov(right))
+                    @test all(mean_invcov(left) .≈ mean_invcov(right))
+                    @test all(mean_precision(left) .≈ mean_precision(right))
+                    @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                    @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                    @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+                end
+            end
 
         types  = ReactiveMP.union_types(UnivariateNormalDistributionsFamily{Float64})
         etypes = ReactiveMP.union_types(UnivariateNormalDistributionsFamily)
@@ -34,6 +49,7 @@ using Distributions
 
         for type in types
             left = convert(type, rand(rng, Float64), rand(rng, Float64))
+            check_basic_statistics(left, convert(Normal, left); include_extended_methods = false)
             for type in [types..., etypes...]
                 right = convert(type, left)
                 check_basic_statistics(left, right)
@@ -55,31 +71,36 @@ using Distributions
 
     @testset "Multivariate conversions" begin
         check_basic_statistics =
-            (left, right, dims) -> begin
+            (left, right, dims; include_extended_methods = true) -> begin
                 @test mean(left) ≈ mean(right)
                 @test mode(left) ≈ mode(right)
-                @test weightedmean(left) ≈ weightedmean(right)
                 @test var(left) ≈ var(right)
                 @test cov(left) ≈ cov(right)
-                @test invcov(left) ≈ invcov(right)
                 @test logdetcov(left) ≈ logdetcov(right)
-                @test precision(left) ≈ precision(right)
                 @test length(left) === length(right)
-                @test ndims(left) === ndims(right)
                 @test size(left) === size(right)
                 @test entropy(left) ≈ entropy(right)
-                @test all(mean_cov(left) .≈ mean_cov(right))
-                @test all(mean_invcov(left) .≈ mean_invcov(right))
-                @test all(mean_precision(left) .≈ mean_precision(right))
-                @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
-                @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
-                @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
-                @test pdf(left, fill(1.0, dims)) ≈ pdf(right, fill(1.0, dims))
-                @test pdf(left, fill(-1.0, dims)) ≈ pdf(right, fill(-1.0, dims))
-                @test pdf(left, fill(0.0, dims)) ≈ pdf(right, fill(0.0, dims))
-                @test logpdf(left, fill(1.0, dims)) ≈ logpdf(right, fill(1.0, dims))
-                @test logpdf(left, fill(-1.0, dims)) ≈ logpdf(right, fill(-1.0, dims))
-                @test logpdf(left, fill(0.0, dims)) ≈ logpdf(right, fill(0.0, dims))
+
+                for value in (fill(1.0, dims), fill(-1.0, dims), fill(0.0, dims), mean(left), mean(right), rand(dims))
+                    @test pdf(left, value) ≈ pdf(right, value)
+                    @test logpdf(left, value) ≈ logpdf(right, value)
+                    @test all(isapprox.(ForwardDiff.gradient((x) -> logpdf(left, x), value), ForwardDiff.gradient((x) -> logpdf(right, x), value), atol = 1e-14))
+                    @test all(isapprox.(ForwardDiff.hessian((x) -> logpdf(left, x), value), ForwardDiff.hessian((x) -> logpdf(right, x), value), atol = 1e-14))
+                end
+
+                # These methods are not defined for distributions from `Distributions.jl
+                if include_extended_methods
+                    @test ndims(left) === ndims(right)
+                    @test invcov(left) ≈ invcov(right)
+                    @test weightedmean(left) ≈ weightedmean(right)
+                    @test precision(left) ≈ precision(right)
+                    @test all(mean_cov(left) .≈ mean_cov(right))
+                    @test all(mean_invcov(left) .≈ mean_invcov(right))
+                    @test all(mean_precision(left) .≈ mean_precision(right))
+                    @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                    @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                    @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+                end
             end
 
         types  = ReactiveMP.union_types(MultivariateNormalDistributionsFamily{Float64})
@@ -91,6 +112,7 @@ using Distributions
         for dim in dims
             for type in types
                 left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(rand(rng, Float64, dim))))
+                check_basic_statistics(left, convert(MvNormal, left), dim; include_extended_methods = false)
                 for type in [types..., etypes...]
                     right = convert(type, left)
                     check_basic_statistics(left, right, dim)
@@ -109,6 +131,58 @@ using Distributions
                 end
             end
         end
+    end
+
+    @testset "JointNormal" begin
+
+        # `@inferred` for type-stability check
+        @test @inferred(mean_cov(convert(JointNormal, (1.0,), (1.0,))) == (1.0, 1.0))
+        @test @inferred(mean_cov(convert(JointNormal, (1.0,), (2.0,))) == (1.0, 2.0))
+        @test @inferred(ndims(convert(JointNormal, (1.0,), (2.0,)))) === 1
+
+        @test getmarginal(convert(JointNormal, (1.0,), (1.0,)), 1) == NormalMeanVariance(1.0, 1.0)
+        @test getmarginal(convert(JointNormal, (1.0,), (2.0,)), 1) == NormalMeanVariance(1.0, 2.0)
+
+        @test @inferred(mean_cov(convert(JointNormal, ([1.0, 1.0],), ([1.0 0.0; 0.0 1.0],)))) == ([1.0, 1.0], [1.0 0.0; 0.0 1.0])
+        @test @inferred(ndims(convert(JointNormal, ([1.0, 1.0],), ([1.0 0.0; 0.0 1.0],)))) === 2
+        @test getmarginal(convert(JointNormal, ([1.0, 1.0],), ([1.0 0.0; 0.0 1.0],)), 1) == MvNormalMeanCovariance([1.0, 1.0], [1.0 0.0; 0.0 1.0])
+
+        @test @inferred(mean_cov(convert(JointNormal, (1.0, -1.0), (1.0, 2.0)))) == ([1.0, -1.0], [1.0 0.0; 0.0 2.0])
+        @test @inferred(mean_cov(convert(JointNormal, (3.0, 4.0), (2.0, 1.0)))) == ([3.0, 4.0], [2.0 0.0; 0.0 1.0])
+        @test @inferred(ndims(convert(JointNormal, (3.0, 4.0), (2.0, 1.0)))) === 2
+
+        @test getmarginal(convert(JointNormal, (1.0, -1.0), (1.0, 2.0)), 1) == NormalMeanVariance(1.0, 1.0)
+        @test getmarginal(convert(JointNormal, (1.0, -1.0), (1.0, 2.0)), 2) == NormalMeanVariance(-1.0, 2.0)
+
+        @test getmarginal(convert(JointNormal, (3.0, 4.0), (2.0, 1.0)), 1) == NormalMeanVariance(3.0, 2.0)
+        @test getmarginal(convert(JointNormal, (3.0, 4.0), (2.0, 1.0)), 2) == NormalMeanVariance(4.0, 1.0)
+
+        @test @inferred(mean_cov(convert(JointNormal, (1.0, [1.0, -1.0]), (1.0, [2.0 -1.0; -1.0 3.0])))) == ([1.0, 1.0, -1.0], [1.0 0.0 0.0; 0.0 2.0 -1.0; 0.0 -1.0 3.0])
+        @test @inferred(mean_cov(convert(JointNormal, ([1.0, -1.0], [2.0, -2.0]), ([2.0 -1.0; -1.0 3.0], [3.0 -1.0; -1.0 2.0])))) ==
+            ([1.0, -1.0, 2.0, -2.0], [2.0 -1.0 0.0 0.0; -1.0 3.0 0.0 0.0; 0.0 0.0 3.0 -1.0; 0.0 0.0 -1.0 2.0])
+
+        @test @inferred(ndims(convert(JointNormal, ([1.0, -1.0], [2.0, -2.0]), ([2.0 -1.0; -1.0 3.0], [3.0 -1.0; -1.0 2.0])))) === 4
+
+        @test getmarginal(convert(JointNormal, (1.0, [1.0, -1.0]), (1.0, [2.0 -1.0; -1.0 3.0])), 1) == NormalMeanVariance(1.0, 1.0)
+        @test getmarginal(convert(JointNormal, (1.0, [1.0, -1.0]), (1.0, [2.0 -1.0; -1.0 3.0])), 2) == MvNormalMeanCovariance([1.0, -1.0], [2.0 -1.0; -1.0 3.0])
+
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([0.0], [2.0]), ((),)))) == (0.0, 2.0)
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((2,),)))) == ([0.0, 1.0], [2.0 -0.5; -0.5 1.0])
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((1,), (1,))))) == ([0.0, 1.0], [2.0 -0.5; -0.5 1.0])
+        @test @inferred(mean_cov(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((), ())))) == ([0.0, 1.0], [2.0 -0.5; -0.5 1.0])
+
+        @test @inferred(ndims(convert(JointNormal, MvNormalMeanCovariance([0.0], [2.0]), ((),)))) === 1
+        @test @inferred(ndims(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((2,),)))) === 2
+        @test @inferred(ndims(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((1,), (1,))))) === 2
+        @test @inferred(ndims(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((), ())))) === 2
+
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0], [2.0]), ((),)), 1) == NormalMeanVariance(0.0, 2.0)
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((2,),)), 1) == MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0])
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((1,), (1,))), 1) == MvNormalMeanCovariance([0.0], [2.0;;])
+        @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((), ())), 1) == NormalMeanVariance(0.0, 2.0)
+
+        @test @inferred(mean_cov(convert_eltype(JointNormal, Float32, JointNormal(NormalMeanVariance(0.0, 1.0), ((),))))) === (0.0f0, 1.0f0)
+        @test @inferred(mean_cov(convert_eltype(JointNormal, Float32, JointNormal(MvNormalMeanCovariance([0.0], [1.0;;]), ((),))))) === (0.0f0, 1.0f0)
     end
 
     @testset "Variate forms promotions" begin
@@ -218,6 +292,74 @@ using Distributions
 
                 @test isapprox(mean(samples), mean(d), atol = n * 0.5)
                 @test isapprox(cov(samples), cov(d), atol = n * 0.5)
+            end
+        end
+    end
+
+    @testset "UnivariateNormalNaturalParameters" begin
+        @testset "Constructor" begin
+            for i in 1:10
+                @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) == NormalWeightedMeanPrecision(i, 2 * i)
+
+                @test convert(UnivariateNormalNaturalParameters, i, -i) == UnivariateNormalNaturalParameters(i, -i)
+                @test convert(UnivariateNormalNaturalParameters, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
+                @test convert(UnivariateNormalNaturalParameters{Float64}, i, -i) == UnivariateNormalNaturalParameters(i, -i)
+                @test convert(UnivariateNormalNaturalParameters{Float64}, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
+            end
+        end
+
+        @testset "lognormalizer" begin
+            @test lognormalizer(UnivariateNormalNaturalParameters(1, -2)) ≈ -(log(2) - 1 / 8)
+        end
+
+        @testset "logpdf" begin
+            for i in 1:10
+                @test logpdf(UnivariateNormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
+            end
+        end
+
+        @testset "isproper" begin
+            for i in 1:10
+                @test isproper(UnivariateNormalNaturalParameters(i, -i)) === true
+                @test isproper(UnivariateNormalNaturalParameters(i, i)) === false
+            end
+        end
+    end
+
+    @testset "MultivariateNormalNaturalParameters" begin
+        @testset "Constructor" begin
+            for i in 1:10
+                @test convert(Distribution, MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈ MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
+
+                @test convert(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+
+                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+            end
+        end
+
+        @testset "logpdf" begin
+            for i in 1:10
+                mv_np = MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                distribution = MvGaussianWeightedMeanPrecision([i, 0.0], [2*i -0.0; -0.0 2*i])
+                @test logpdf(distribution, [0.0, 0.0]) ≈ logpdf(mv_np, [0.0, 0.0])
+                @test logpdf(distribution, [1.0, 0.0]) ≈ logpdf(mv_np, [1.0, 0.0])
+                @test logpdf(distribution, [1.0, 1.0]) ≈ logpdf(mv_np, [1.0, 1.0])
+            end
+        end
+
+        @testset "lognormalizer" begin
+            mt = zeros(Float64, 1, 1) .- 2.0
+            @test lognormalizer(MultivariateNormalNaturalParameters([1], mt)) ≈ -(log(2) - 1 / 8)
+        end
+
+        @testset "isproper" begin
+            for i in 1:10
+                @test isproper(MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) === true
+                @test isproper(MultivariateNormalNaturalParameters([i, 0], [i 0; 0 i])) === false
             end
         end
     end

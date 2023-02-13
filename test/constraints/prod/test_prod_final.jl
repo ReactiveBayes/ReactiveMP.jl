@@ -8,20 +8,11 @@ using LinearAlgebra
 import ReactiveMP: getdist
 
 @testset "ProdFinal" begin
-    uni_distributions = [
-        Gamma(1.0, 2.0),
-        NormalMeanVariance(-10.0, 3.0)
-    ]
+    uni_distributions = [Gamma(1.0, 2.0), NormalMeanVariance(-10.0, 3.0)]
 
-    mv_distributions = [
-        MvNormalMeanCovariance(ones(3)),
-        MvNormalMeanPrecision(3ones(3))
-    ]
+    mv_distributions = [MvNormalMeanCovariance(ones(3)), MvNormalMeanPrecision(3ones(3))]
 
-    mxv_distributions = [
-        Wishart(3, Matrix(Diagonal(ones(3)))),
-        Wishart(4, Matrix(Diagonal(ones(4))))
-    ]
+    mxv_distributions = [Wishart(3, Matrix(Diagonal(ones(3)))), Wishart(4, Matrix(Diagonal(ones(4))))]
 
     sets = (uni_distributions, mv_distributions, mxv_distributions)
 

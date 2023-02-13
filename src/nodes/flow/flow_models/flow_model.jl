@@ -35,13 +35,8 @@ function FlowModel(layers::T) where {T <: NTuple{N, Union{AbstractLayer, Abstrac
 end
 
 # prepare function for setting correct sizes in the layers (without assigning the parameters yet!)
-prepare(dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} =
-    _prepare(dim, layers)
-Broadcast.broadcasted(
-    ::typeof(prepare),
-    dim::Int,
-    layers::T
-) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} =
+prepare(dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} = _prepare(dim, layers)
+Broadcast.broadcasted(::typeof(prepare), dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} =
     broadcast(_prepare, Ref(dim), layers)
 
 @doc raw"""
@@ -93,7 +88,7 @@ function compile(x::Tuple, params::Vector)
 
     if params_in_layer > 0
         # if layer has parameters, compile that layer and the other layers with parameters
-        return (compile(first(x), params[1:params_in_layer]), compile(Base.tail(x), params[params_in_layer+1:end])...)
+        return (compile(first(x), params[1:params_in_layer]), compile(Base.tail(x), params[(params_in_layer + 1):end])...)
     else
         # if layer has no parameters, compile that layer on its own and the other layers with parameters
         return (compile(first(x)), compile(Base.tail(x), params)...)
@@ -123,8 +118,7 @@ length(model::CompiledFlowModel) = length(model.layers)
 # fetch number of parameters of model
 nr_params(model::FlowModel) = nr_params(getlayers(model))
 nr_params(model::CompiledFlowModel) = nr_params(getlayers(model))
-nr_params(layers::T) where {T <: NTuple{N, AbstractLayer} where {N}} =
-    nr_params(first(layers)) + nr_params(Base.tail(layers))
+nr_params(layers::T) where {T <: NTuple{N, AbstractLayer} where {N}} = nr_params(first(layers)) + nr_params(Base.tail(layers))
 nr_params(layers::Tuple{}) = return 0
 
 # forward pass through the Flow model
@@ -147,8 +141,7 @@ end
 forward(model::CompiledFlowModel, input::AbstractVector{<:Real}) = _forward(model, input)
 
 # for broadcasting over forward, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(forward), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) =
-    broadcast(_forward, Ref(model), input)
+Broadcast.broadcasted(::typeof(forward), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_forward, Ref(model), input)
 
 # inplace forward pass through the Flow model
 function forward!(output::AbstractVector{<:Real}, model::CompiledFlowModel, input::AbstractVector{T}) where {T <: Real}
@@ -168,11 +161,7 @@ function forward!(output::AbstractVector{<:Real}, model::CompiledFlowModel, inpu
 end
 
 # inplace forward pass through a tuple of layers
-function forward!(
-    output::AbstractVector{<:Real},
-    layers::T,
-    input::AbstractVector{<:Real}
-) where {T <: NTuple{N, AbstractLayer} where {N}}
+function forward!(output::AbstractVector{<:Real}, layers::T, input::AbstractVector{<:Real}) where {T <: NTuple{N, AbstractLayer} where {N}}
 
     # perform pass over first layer
     forward!(output, first(layers), input)
@@ -185,7 +174,7 @@ function forward!(
 end
 
 # when no layers are left, stop the inplace recursion
-forward!(output::AbstractVector{<:Real}, layers::Tuple{}, input::AbstractVector{<:Real}) = return
+forward!(output::AbstractVector{<:Real}, layers::Tuple{}, input::AbstractVector{<:Real}) = return nothing
 
 # backward pass through the Flow model
 function _backward(model::CompiledFlowModel, output::AbstractVector{T}) where {T <: Real}
@@ -207,8 +196,7 @@ end
 backward(model::CompiledFlowModel, output::AbstractVector{<:Real}) = _backward(model, output)
 
 # for broadcasting over backward, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(backward), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) =
-    broadcast(_backward, Ref(model), output)
+Broadcast.broadcasted(::typeof(backward), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_backward, Ref(model), output)
 
 # inplace backward pass through the Flow model
 function backward!(input::AbstractVector{<:Real}, model::CompiledFlowModel, output::AbstractVector{T}) where {T <: Real}
@@ -228,11 +216,7 @@ function backward!(input::AbstractVector{<:Real}, model::CompiledFlowModel, outp
 end
 
 # inplace backward pass through a tuple of layers
-function backward!(
-    input::AbstractVector{<:Real},
-    layers::T,
-    output::AbstractVector{<:Real}
-) where {T <: NTuple{N, AbstractLayer} where {N}}
+function backward!(input::AbstractVector{<:Real}, layers::T, output::AbstractVector{<:Real}) where {T <: NTuple{N, AbstractLayer} where {N}}
 
     # perform pass over last layer
     backward!(input, last(layers), output)
@@ -245,7 +229,7 @@ function backward!(
 end
 
 # when no layers are left, stop the inplace recursion
-backward!(input::AbstractVector{<:Real}, layers::Tuple{}, output::AbstractVector{<:Real}) = return
+backward!(input::AbstractVector{<:Real}, layers::Tuple{}, output::AbstractVector{<:Real}) = return nothing
 
 # joint forward-jacobian of the Flow model
 function _forward_jacobian(model::CompiledFlowModel, input::AbstractVector{T}) where {T <: Real}
@@ -274,19 +258,10 @@ end
 forward_jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) = _forward_jacobian(model, input)
 
 # for broadcasting over forward_jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(
-    ::typeof(forward_jacobian),
-    model::CompiledFlowModel,
-    input::AbstractVector{<:AbstractVector{<:Real}}
-) = broadcast(_jacobian, Ref(model), input)
+Broadcast.broadcasted(::typeof(forward_jacobian), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_jacobian, Ref(model), input)
 
 # inplace forward_jacobian of the Flow model
-function forward_jacobian!(
-    output::AbstractVector{<:Real},
-    J::AbstractMatrix{T},
-    model::CompiledFlowModel,
-    input::AbstractVector{<:Real}
-) where {T <: Real}
+function forward_jacobian!(output::AbstractVector{<:Real}, J::AbstractMatrix{T}, model::CompiledFlowModel, input::AbstractVector{<:Real}) where {T <: Real}
 
     # fetch layers
     layers = getlayers(model)
@@ -310,12 +285,7 @@ end
 
 # inplace forward_jacobian calculation for a tuple of layers
 function forward_jacobian!(
-    J::AbstractMatrix{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    J_old::AbstractMatrix{<:Real},
-    output::AbstractVector{<:Real},
-    input_new::AbstractVector{<:Real},
-    layers::T
+    J::AbstractMatrix{<:Real}, J_new::AbstractMatrix{<:Real}, J_old::AbstractMatrix{<:Real}, output::AbstractVector{<:Real}, input_new::AbstractVector{<:Real}, layers::T
 ) where {T <: NTuple{N, AbstractLayer} where {N}}
 
     # perform pass through first layers
@@ -353,12 +323,7 @@ end
 
 # standard method
 function forward_jacobian!(
-    J::AbstractMatrix{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    J_old::AbstractMatrix{<:Real},
-    output::AbstractVector{<:Real},
-    input_new::AbstractVector{<:Real},
-    layer::AbstractLayer
+    J::AbstractMatrix{<:Real}, J_new::AbstractMatrix{<:Real}, J_old::AbstractMatrix{<:Real}, output::AbstractVector{<:Real}, input_new::AbstractVector{<:Real}, layer::AbstractLayer
 )
     # calculate new jacobian
     forward_jacobian!(output, J_new, layer, input_new)
@@ -369,13 +334,8 @@ end
 
 # when no layers are left, stop the inplace recursion
 forward_jacobian!(
-    J::AbstractMatrix{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    J_old::AbstractMatrix{<:Real},
-    output::AbstractVector{<:Real},
-    input_new::AbstractVector{<:Real},
-    layers::Tuple{}
-) = return
+    J::AbstractMatrix{<:Real}, J_new::AbstractMatrix{<:Real}, J_old::AbstractMatrix{<:Real}, output::AbstractVector{<:Real}, input_new::AbstractVector{<:Real}, layers::Tuple{}
+) = return nothing
 
 # joing backward inverse jacobian of the Flow model
 function _backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{T}) where {T <: Real}
@@ -404,19 +364,11 @@ end
 backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) = _backward_inv_jacobian(model, output)
 
 # for broadcasting over backward inverse jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(
-    ::typeof(backward_inv_jacobian),
-    model::CompiledFlowModel,
-    output::AbstractVector{<:AbstractVector{<:Real}}
-) = broadcast(_backward_inv_jacobian, Ref(model), output)
+Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) =
+    broadcast(_backward_inv_jacobian, Ref(model), output)
 
 # inplace inverse backward jacobian of the Flow model
-function backward_inv_jacobian!(
-    input::AbstractVector{<:Real},
-    J::AbstractMatrix{T},
-    model::CompiledFlowModel,
-    output::AbstractVector{<:Real}
-) where {T <: Real}
+function backward_inv_jacobian!(input::AbstractVector{<:Real}, J::AbstractMatrix{T}, model::CompiledFlowModel, output::AbstractVector{<:Real}) where {T <: Real}
 
     # fetch layers
     layers = getlayers(model)
@@ -440,12 +392,7 @@ end
 
 # inplace backward inverse jacobian calculation for a tuple of layers
 function backward_inv_jacobian!(
-    J::AbstractMatrix{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    J_old::AbstractMatrix{<:Real},
-    input::AbstractVector{<:Real},
-    output_new::AbstractVector{<:Real},
-    layers::T
+    J::AbstractMatrix{<:Real}, J_new::AbstractMatrix{<:Real}, J_old::AbstractMatrix{<:Real}, input::AbstractVector{<:Real}, output_new::AbstractVector{<:Real}, layers::T
 ) where {T <: NTuple{N, AbstractLayer} where {N}}
 
     # perform backward pass through layers
@@ -483,12 +430,7 @@ end
 
 # standard method
 function backward_inv_jacobian!(
-    J::AbstractMatrix{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    J_old::AbstractMatrix{<:Real},
-    input::AbstractVector{<:Real},
-    output_new::AbstractVector{<:Real},
-    layer::AbstractLayer
+    J::AbstractMatrix{<:Real}, J_new::AbstractMatrix{<:Real}, J_old::AbstractMatrix{<:Real}, input::AbstractVector{<:Real}, output_new::AbstractVector{<:Real}, layer::AbstractLayer
 )
     # perform forward pass over last layer
     backward_inv_jacobian!(input, J_new, layer, output_new)
@@ -499,31 +441,17 @@ end
 
 # when no layers are left, stop the inplace recursion
 backward_inv_jacobian!(
-    J::AbstractMatrix{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    J_old::AbstractMatrix{<:Real},
-    input::AbstractVector{<:Real},
-    output_new::AbstractVector{<:Real},
-    layers::Tuple{}
-) = return
+    J::AbstractMatrix{<:Real}, J_new::AbstractMatrix{<:Real}, J_old::AbstractMatrix{<:Real}, input::AbstractVector{<:Real}, output_new::AbstractVector{<:Real}, layers::Tuple{}
+) = return nothing
 
 # specify jacobian and inv_jacobian functions based on joint functions
 _jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) = forward_jacobian(model, input)[2]
 jacobian(model::CompiledFlowModel, input::AbstractVector{<:Real}) = _jacobian(model, input)
-Broadcast.broadcasted(::typeof(jacobian), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) =
-    broadcast(_jacobian, Ref(model), input)
+Broadcast.broadcasted(::typeof(jacobian), model::CompiledFlowModel, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_jacobian, Ref(model), input)
 _inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) = backward_inv_jacobian(model, output)[2]
 inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) = _inv_jacobian(model, output)
-Broadcast.broadcasted(
-    ::typeof(inv_jacobian),
-    model::CompiledFlowModel,
-    output::AbstractVector{<:AbstractVector{<:Real}}
-) = broadcast(_inv_jacobian, Ref(model), output)
-function jacobian!(
-    J::AbstractMatrix{T1},
-    model::CompiledFlowModel,
-    input::AbstractVector{T2}
-) where {T1 <: Real, T2 <: Real}
+Broadcast.broadcasted(::typeof(inv_jacobian), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_inv_jacobian, Ref(model), output)
+function jacobian!(J::AbstractMatrix{T1}, model::CompiledFlowModel, input::AbstractVector{T2}) where {T1 <: Real, T2 <: Real}
 
     # fetch dimension
     dim = getdim(model)
@@ -541,11 +469,7 @@ function jacobian!(
     # calculate jacobian
     forward_jacobian!(output, J, model, input)
 end
-function inv_jacobian!(
-    J::AbstractMatrix{T1},
-    model::CompiledFlowModel,
-    output::AbstractVector{T2}
-) where {T1 <: Real, T2 <: Real}
+function inv_jacobian!(J::AbstractMatrix{T1}, model::CompiledFlowModel, output::AbstractVector{T2}) where {T1 <: Real, T2 <: Real}
 
     # fetch dimension
     dim = getdim(model)
@@ -565,21 +489,11 @@ function inv_jacobian!(
 end
 
 # fallback joint functions over layers
-function forward_jacobian!(
-    output::AbstractVector{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    layer::AbstractLayer,
-    input::AbstractVector{<:Real}
-)
+function forward_jacobian!(output::AbstractVector{<:Real}, J_new::AbstractMatrix{<:Real}, layer::AbstractLayer, input::AbstractVector{<:Real})
     forward!(output, layer, input)
     jacobian!(J_new, layer, input)
 end
-function backward_inv_jacobian!(
-    input::AbstractVector{<:Real},
-    J_new::AbstractMatrix{<:Real},
-    layer::AbstractLayer,
-    output::AbstractVector{<:Real}
-)
+function backward_inv_jacobian!(input::AbstractVector{<:Real}, J_new::AbstractMatrix{<:Real}, layer::AbstractLayer, output::AbstractVector{<:Real})
     backward!(input, layer, output)
     inv_jacobian!(J_new, layer, output)
 end
