@@ -92,7 +92,7 @@ collection_type(datavar::DataVariable) = datavar.collection_type
 isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)      = datavar.nconnected
 
-isproxy(::DataVariable) = false
+isproxy(datavar::DataVariable) = Base.hasfield(typeof(datavar.messageout), :proxy)
 
 israndom(::DataVariable)                  = false
 israndom(::AbstractArray{<:DataVariable}) = false
