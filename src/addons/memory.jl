@@ -8,8 +8,6 @@ end
 
 AddonMemory() = AddonMemory(nothing)
 
-struct AddonProdMemory <: AbstractAddonProd end
-
 getmemoryaddon(addons::NTuple{N, AbstractAddon}) where {N} = first(filter(x -> typeof(x) <: AddonMemory, addons))
 getmemory(addon::AddonMemory) = addon.memory
 getmemory(addons::NTuple{N, AbstractAddon}) where {N} = getmemoryaddon(addons).memory
@@ -30,24 +28,24 @@ function message_mapping_addon(::AddonMemory{Nothing}, mapping, messages, margin
 end
 
 function multiply_addons(left_addon::AddonMemory, right_addon::AddonMemory, new_dist, left_dist, right_dist)
-    return AddonMemory(prod(AddonProdMemory(), getmemory(left_addon), getmemory(right_addon)))
+    return AddonMemory(construct_memory(getmemory(left_addon), getmemory(right_addon)))
 end
 
-function prod(::AddonProdMemory, left::AddonMemoryMessageMapping, right::AddonMemoryMessageMapping)
+function construct_memory(left::AddonMemoryMessageMapping, right::AddonMemoryMessageMapping)
     return AddonMemoryProd(Any[left, right])
 end
 
-function prod(::AddonProdMemory, left::AddonMemoryMessageMapping, right::AddonMemoryProd)
+function construct_memory(left::AddonMemoryMessageMapping, right::AddonMemoryProd)
     pushfirst!(right.mappings, left)
     return right
 end
 
-function prod(::AddonProdMemory, left::AddonMemoryProd, right::AddonMemoryMessageMapping)
+function construct_memory(left::AddonMemoryProd, right::AddonMemoryMessageMapping)
     push!(left.mappings, right)
     return left
 end
 
-function prod(::AddonProdMemory, left::AddonMemoryProd, right::AddonMemoryProd)
+function construct_memory(left::AddonMemoryProd, right::AddonMemoryProd)
     append!(left.mappings, right.mappings)
     return left
 end
