@@ -109,6 +109,11 @@ struct SkipInitial <: MarginalSkipStrategy end
 struct SkipClampedAndInitial <: MarginalSkipStrategy end
 struct IncludeAll <: MarginalSkipStrategy end
 
+Base.broadcastable(::SkipClamped) = Ref(SkipClamped())
+Base.broadcastable(::SkipInitial) = Ref(SkipClamped())
+Base.broadcastable(::SkipClampedAndInitial) = Ref(SkipClampedAndInitial())
+Base.broadcastable(::IncludeAll) = Ref(IncludeAll())
+
 apply_skip_filter(observable, ::SkipClamped)           = observable |> filter(v -> !is_clamped(v))
 apply_skip_filter(observable, ::SkipInitial)           = observable |> filter(v -> !is_initial(v))
 apply_skip_filter(observable, ::SkipClampedAndInitial) = observable |> filter(v -> !is_initial(v) && !is_clamped(v))
