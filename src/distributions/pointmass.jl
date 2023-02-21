@@ -19,7 +19,7 @@ variate_form(::PointMass{M}) where {T, M <: AbstractMatrix{T}} = Matrixvariate
 sampletype(distribution::PointMass{T}) where {T} = T
 
 getpointmass(distribution::PointMass) = distribution.point
-getpointmass(point::Float64) = point
+getpointmass(point::Any) = point
 
 ##
 
