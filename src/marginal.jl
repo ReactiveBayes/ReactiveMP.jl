@@ -110,7 +110,7 @@ struct SkipClampedAndInitial <: MarginalSkipStrategy end
 struct IncludeAll <: MarginalSkipStrategy end
 
 Base.broadcastable(::SkipClamped) = Ref(SkipClamped())
-Base.broadcastable(::SkipInitial) = Ref(SkipClamped())
+Base.broadcastable(::SkipInitial) = Ref(SkipInitial())
 Base.broadcastable(::SkipClampedAndInitial) = Ref(SkipClampedAndInitial())
 Base.broadcastable(::IncludeAll) = Ref(IncludeAll())
 
