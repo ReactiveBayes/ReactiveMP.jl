@@ -20,6 +20,13 @@ using ReactiveMP
         @test NormalMeanPrecision(1.0f0, 2) == NormalMeanPrecision{Float32}(1.0f0, 2.0f0)
         @test NormalMeanPrecision(1.0f0, 2.0) == NormalMeanPrecision{Float64}(1.0, 2.0)
 
+        # uniformscaling
+        @test NormalMeanPrecision(2, I) == NormalMeanPrecision(2, 1)
+        @test NormalMeanPrecision(2, 6*I) == NormalMeanPrecision(2, 6)
+        @test NormalMeanPrecision(2.0, I) == NormalMeanPrecision(2.0, 1.0)
+        @test NormalMeanPrecision(2.0, 6*I) == NormalMeanPrecision(2.0, 6.0)
+        @test NormalMeanPrecision(2, 6.0*I) == NormalMeanPrecision(2.0, 6.0)
+
         @test eltype(NormalMeanPrecision()) === Float64
         @test eltype(NormalMeanPrecision(0.0)) === Float64
         @test eltype(NormalMeanPrecision(0.0, 1.0)) === Float64

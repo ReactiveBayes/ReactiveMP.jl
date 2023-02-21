@@ -14,6 +14,13 @@ using Distributions
         @test MvNormalWeightedMeanPrecision([1, 2]) == MvNormalWeightedMeanPrecision([1.0, 2.0], [1.0, 1.0])
         @test MvNormalWeightedMeanPrecision([1.0f0, 2.0f0]) == MvNormalWeightedMeanPrecision([1.0f0, 2.0f0], [1.0f0, 1.0f0])
 
+        # uniformscaling
+        @test MvNormalWeightedMeanPrecision([1, 2], I) == MvNormalWeightedMeanPrecision([1, 2], Diagonal([1, 1]))
+        @test MvNormalWeightedMeanPrecision([1, 2], 6*I) == MvNormalWeightedMeanPrecision([1, 2], Diagonal([6, 6]))
+        @test MvNormalWeightedMeanPrecision([1.0, 2.0], I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([1.0, 1.0]))
+        @test MvNormalWeightedMeanPrecision([1.0, 2.0], 6*I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([6.0 6.0]))
+        @test MvNormalWeightedMeanPrecision([1, 2], 6.0*I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([6.0, 6.0]))
+
         @test eltype(MvNormalWeightedMeanPrecision([1.0, 1.0])) === Float64
         @test eltype(MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0, 1.0])) === Float64
         @test eltype(MvNormalWeightedMeanPrecision([1, 1])) === Float64

@@ -14,6 +14,13 @@ using Distributions
         @test MvNormalMeanCovariance([1, 2]) == MvNormalMeanCovariance([1.0, 2.0], [1.0, 1.0])
         @test MvNormalMeanCovariance([1.0f0, 2.0f0]) == MvNormalMeanCovariance([1.0f0, 2.0f0], [1.0f0, 1.0f0])
 
+        # uniformscaling
+        @test MvNormalMeanCovariance([1, 2], I) == MvNormalMeanCovariance([1, 2], Diagonal([1, 1]))
+        @test MvNormalMeanCovariance([1, 2], 6*I) == MvNormalMeanCovariance([1, 2], Diagonal([6, 6]))
+        @test MvNormalMeanCovariance([1.0, 2.0], I) == MvNormalMeanCovariance([1.0, 2.0], Diagonal([1.0, 1.0]))
+        @test MvNormalMeanCovariance([1.0, 2.0], 6*I) == MvNormalMeanCovariance([1.0, 2.0], Diagonal([6.0 6.0]))
+        @test MvNormalMeanCovariance([1, 2], 6.0*I) == MvNormalMeanCovariance([1.0, 2.0], Diagonal([6.0, 6.0]))
+
         @test eltype(MvNormalMeanCovariance([1.0, 1.0])) === Float64
         @test eltype(MvNormalMeanCovariance([1.0, 1.0], [1.0, 1.0])) === Float64
         @test eltype(MvNormalMeanCovariance([1, 1])) === Float64
