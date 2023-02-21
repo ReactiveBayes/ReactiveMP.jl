@@ -18,7 +18,7 @@ using Distributions
         @test MvNormalMeanPrecision([1, 2], I) == MvNormalMeanPrecision([1, 2], Diagonal([1, 1]))
         @test MvNormalMeanPrecision([1, 2], 6*I) == MvNormalMeanPrecision([1, 2], Diagonal([6, 6]))
         @test MvNormalMeanPrecision([1.0, 2.0], I) == MvNormalMeanPrecision([1.0, 2.0], Diagonal([1.0, 1.0]))
-        @test MvNormalMeanPrecision([1.0, 2.0], 6*I) == MvNormalMeanPrecision([1.0, 2.0], Diagonal([6.0 6.0]))
+        @test MvNormalMeanPrecision([1.0, 2.0], 6*I) == MvNormalMeanPrecision([1.0, 2.0], Diagonal([6.0, 6.0]))
         @test MvNormalMeanPrecision([1, 2], 6.0*I) == MvNormalMeanPrecision([1.0, 2.0], Diagonal([6.0, 6.0]))
 
         @test eltype(MvNormalMeanPrecision([1.0, 1.0])) === Float64

@@ -3,6 +3,8 @@ module NormalMeanVarianceTest
 using Test
 using ReactiveMP
 
+using LinearAlgebra: I
+
 @testset "NormalMeanVariance" begin
     @testset "Constructor" begin
         @test NormalMeanVariance <: NormalDistributionsFamily

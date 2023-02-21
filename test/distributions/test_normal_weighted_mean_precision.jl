@@ -3,6 +3,8 @@ module NormalWeightedMeanPrecisionTest
 using Test
 using ReactiveMP
 
+using LinearAlgebra: I
+
 @testset "NormalWeightedMeanPrecision" begin
     @testset "Constructor" begin
         @test NormalWeightedMeanPrecision <: NormalDistributionsFamily
