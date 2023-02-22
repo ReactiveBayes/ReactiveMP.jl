@@ -47,7 +47,9 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     return Categorical(ReactiveMP.normalize!(p_new, 1))
 end
 
-prod(::ProdAnalytical, left::Categorical, right::Bernoulli) = prod(ProdAnalytical(),right, left)
+prod_analytical_rule(::Type{<:Categorical}, ::Type{<:Bernoulli}) = ProdAnalyticalRuleAvailable()
+
+prod(::ProdAnalytical, left::Categorical, right::Bernoulli) = prod(ProdAnalytical(), right, left)
 
 function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
     left_p = succprob(left_dist)
