@@ -99,7 +99,7 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNorma
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
-function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision{T1,<:Vector,<:Matrix}, right::MvNormalMeanPrecision{T2,<:Vector,<:Matrix}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
     # fast & efficient implementation of xi = precision(right)*mean(right) + precision(left)*mean(left)
