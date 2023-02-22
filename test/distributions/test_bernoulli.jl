@@ -29,13 +29,13 @@ using ReactiveMP: compute_logscale
     @testset "prod Bernoulli-Categorical" begin
         @test prod(ProdAnalytical(), Bernoulli(0.5), Categorical([1.0])) == Categorical([1.0, 0.0])
         @test prod(ProdAnalytical(), Bernoulli(0.6), Categorical([0.7, 0.3])) == Categorical([0.6086956521739131, 0.391304347826087])
-        @test prod(ProdAnalytical(), Bernoulli(0.8), Categorical([0.1, 0.5, 0.4])) ≈ Categorical([0.04761904761904762, 0.9523809523809523, 0.0])
+        @test prod(ProdAnalytical(), Bernoulli(0.8), Categorical([0.2, 0.4, 0.4])) == Categorical([0.11111111111111108, 0.8888888888888888, 0.0])
     end
 
     @testset "prod Categorical-Bernoulli" begin
         @test prod(ProdAnalytical(), Categorical([1.0]), Bernoulli(0.5)) == Categorical([1.0, 0.0])
         @test prod(ProdAnalytical(), Categorical([0.7, 0.3]), Bernoulli(0.6)) == Categorical([0.6086956521739131, 0.391304347826087])
-        @test prod(ProdAnalytical(), Categorical([0.1, 0.5, 0.4]), Bernoulli(0.8)) ≈ Categorical([0.04761904761904762, 0.9523809523809523, 0.0])
+        @test prod(ProdAnalytical(), Categorical([0.2, 0.4, 0.4]), Bernoulli(0.8)) == Categorical([0.11111111111111108, 0.8888888888888888, 0.0])
     end
 
     @testset "probvec" begin
