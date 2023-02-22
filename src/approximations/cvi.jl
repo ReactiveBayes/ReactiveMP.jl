@@ -29,7 +29,7 @@ Arguments
  - `grad`: optional, defaults to `ForwardDiffGrad()`, structure to select how the gradient and the hessian will be computed
  - `n_gradpoints`: optional, defaults to 1, number of points to estimate gradient of the likelihood (dist*logp)
  - `enforce_proper_messages`: optional, defaults to true, ensures that a message, computed towards the inbound edges, is a proper distribution, must be of type `Val(true)/Val(false)`
- - `warn`: optional, defaults to false, enables or disables warnings related to the optimization steps
+ - `warn`: optional, defaults to true, enables or disables warnings related to the optimization steps
 
 !!! note 
     `n_gradpoints` option is ignored in the Gaussian case
@@ -50,13 +50,13 @@ struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     warn::Bool
 
     function ProdCVI(
-        rng::R, n_samples::Int, n_iterations::Int, opt::O, grad::G = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val{B} = Val(true), warn::Bool = false
+        rng::R, n_samples::Int, n_iterations::Int, opt::O, grad::G = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val{B} = Val(true), warn::Bool = true
     ) where {R, O, G, B}
         return new{R, O, G, B}(rng, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
     end
 end
 
-function ProdCVI(n_samples::Int, n_iterations::Int, opt, grad = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val = Val(true), warn::Bool = false)
+function ProdCVI(n_samples::Int, n_iterations::Int, opt, grad = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val = Val(true), warn::Bool = true)
     return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
 end
 
@@ -85,61 +85,61 @@ enforce_proper_message(::Val{true}, λ::NaturalParameters, η::NaturalParameters
 enforce_proper_message(::Val{false}, λ::NaturalParameters, η::NaturalParameters) = true
 
 function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVector) where {T <: NaturalParameters}
+    neg_lognormalizer = (x) -> -lognormalizer(as_naturalparams(T, x))
 
-    # specify lognormalizer function
-    lognormalizer_function = (x) -> -lognormalizer(as_naturalparams(T, x))
-
-    #  compute Fisher matrix
-    F = -compute_hessian(approximation.grad, lognormalizer_function, vec)
-
-    #  return Fisher matrix
-    return F
+    return -compute_hessian(approximation.grad, neg_lognormalizer, vec)
 end
 
-function prod(approximation::CVI, left, dist)
-    rng = something(approximation.rng, Random.GLOBAL_RNG)
-
-    logp = (x) -> logpdf(left, x)
+function prod(approximation::CVI, outbound, inbound)
+    rng = something(approximation.rng, Random.default_rng())
 
     # Natural parameters of incoming distribution message
-    η = naturalparams(dist)
+    η_inbound = naturalparams(inbound)
 
     # Natural parameter type of incoming distribution
-    T = typeof(η)
+    T = typeof(η_inbound)
 
     # Initial parameters of projected distribution
-    λ = naturalparams(dist)
+    λ_current = naturalparams(inbound)
 
-    # Initialize update flag
     hasupdated = false
 
     for _ in 1:(approximation.n_iterations)
 
-        # create distribution to sample from and sample from it
+        # Some distributions implement "sampling" efficient versions
+        # returns the same distribution by default
+        _, q_friendly = logpdf_sample_friendly(convert(Distribution, λ_current))
 
-        q = convert(Distribution, λ)
-        _, q_friendly = logpdf_sample_friendly(q)
-        z_s = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
+        samples = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
 
         # compute gradient of log-likelihood
-        logq = (x) -> mean((z) -> logp(z) * logpdf(as_naturalparams(T, x), z), z_s)
-        ∇logq = compute_gradient(approximation.grad, logq, vec(λ))
+        # the multiplication between two logpdfs is correct
+        # we take the derivative with respect to `η`
+        # logp(z) does not depend on `η` and is just a simple scalar constant
+        # see the method papers for more details
+        # - https://arxiv.org/pdf/1401.0118.pdf
+        # - https://doi.org/10.1016/j.ijar.2022.06.006
+        logq = let samples = samples, outbound = outbound, T = T
+            (η) -> mean((sample) -> logpdf(outbound, sample) * logpdf(as_naturalparams(T, η), sample), samples)
+        end
 
-        # compute Fisher matrix and Cholesky decomposition
-        Fisher = compute_fisher_matrix(approximation, T, vec(λ))
+        ∇logq = compute_gradient(approximation.grad, logq, vec(λ_current))
+
+        # compute Fisher matrix 
+        Fisher = compute_fisher_matrix(approximation, T, vec(λ_current))
 
         # compute natural gradient
         ∇f = Fisher \ ∇logq
 
         # compute gradient on natural parameters
-        ∇ = λ - η - as_naturalparams(T, ∇f)
+        ∇ = λ_current - η_inbound - as_naturalparams(T, ∇f)
 
         # perform gradient descent step
-        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ_current, ∇))
 
         # check whether updated natural parameters are proper
-        if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)
-            λ = λ_new
+        if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η_inbound)
+            λ_current = λ_new
             hasupdated = true
         end
     end
@@ -148,5 +148,5 @@ function prod(approximation::CVI, left, dist)
         @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
     end
 
-    return convert(Distribution, λ)
+    return convert(Distribution, λ_current)
 end
