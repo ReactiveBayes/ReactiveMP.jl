@@ -108,11 +108,11 @@ function Base.:-(left::BernoulliNaturalParameters, right::BernoulliNaturalParame
 end
 
 function lognormalizer(params::BernoulliNaturalParameters)
-    return log(logistic(-params.η))
+    return -log(logistic(-params.η))
 end
 
 function Distributions.logpdf(params::BernoulliNaturalParameters, x)
-    return x * params.η + lognormalizer(params)
+    return x * params.η - lognormalizer(params)
 end
 
 function convert(::Type{<:Distribution}, params::BernoulliNaturalParameters)
