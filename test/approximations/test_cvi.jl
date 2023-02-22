@@ -8,6 +8,7 @@ using Distributions
 using Zygote
 using Flux
 using DiffResults
+import StatsFuns: logistic
 
 import ReactiveMP: naturalparams, NaturalParameters, AbstractContinuousGenericLogPdf
 
@@ -118,6 +119,12 @@ end
                     @test prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2) ≈ mn_analytical atol = test[:tol]
                 end
             end
+
+            b1 = Bernoulli(logistic(randn(rng)))
+            b2 = Bernoulli(logistic(randn(rng)))
+            b_analitical = prod(ProdAnalytical(), b1, b2)
+            b_cvi = prod(test[:method], b1, b1)
+            @test isapprox(mean(b_analitical), mean(b_cvi), atol = test[:tol])
         end
     end
 
