@@ -101,7 +101,7 @@ function prod(::ProdAnalytical, left::MixtureDistribution, right::Any)
     dists_new = map(dist -> prod(ProdAnalytical(), dist, right), dists)
 
     # get scales
-    logscales = map((dist, dist_new) -> prod(AddonProdLogScale(), dist_new, dist, right), dists, dists_new)
+    logscales = map((dist, dist_new) -> compute_logscale(dist_new, dist, right), dists, dists_new)
 
     # compute updated weights
     logscales_new = log.(w) + logscales
@@ -117,7 +117,7 @@ Computes the analytical product between a `MixtureDistribution` and something el
 """
 prod(::ProdAnalytical, left::Any, right::MixtureDistribution) = prod(ProdAnalytical(), right, left)
 
-function prod(::AddonProdLogScale, new_dist::MixtureDistribution, left_dist::MixtureDistribution, right_dist::Any)
+function compute_logscale(new_dist::MixtureDistribution, left_dist::MixtureDistribution, right_dist::Any)
 
     # get prior weights and components
     w = left_dist.weights
@@ -127,7 +127,7 @@ function prod(::AddonProdLogScale, new_dist::MixtureDistribution, left_dist::Mix
     dists_new = map(dist -> prod(ProdAnalytical(), dist, right_dist), dists)
 
     # get scales
-    logscales = map((dist, dist_new) -> prod(AddonProdLogScale(), dist_new, dist, right_dist), dists, dists_new)
+    logscales = map((dist, dist_new) -> compute_logscale(dist_new, dist, right_dist), dists, dists_new)
 
     # compute updated weights
     logscales_new = log.(w) + logscales
@@ -135,4 +135,4 @@ function prod(::AddonProdLogScale, new_dist::MixtureDistribution, left_dist::Mix
     return logsumexp(logscales_new)
 end
 
-prod(::AddonProdLogScale, new_dist::MixtureDistribution, left_dist::Any, right_dist::MixtureDistribution) = prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
+compute_logscale(new_dist::MixtureDistribution, left_dist::Any, right_dist::MixtureDistribution) = compute_logscale(new_dist, right_dist, left_dist)
