@@ -42,7 +42,7 @@ import SpecialFunctions: loggamma
     @testset "BetaNaturalParameters" begin
         @testset "Constructor" begin
             for i in 0:10, j in 0:10
-                @test convert(Distribution, BetaNaturalParameters(i, j)) == Beta(i+1, j+1)
+                @test convert(Distribution, BetaNaturalParameters(i, j)) == Beta(i + 1, j + 1)
 
                 @test convert(BetaNaturalParameters, i, j) == BetaNaturalParameters(i, j)
                 @test convert(BetaNaturalParameters, [i, j]) == BetaNaturalParameters(i, j)
@@ -56,8 +56,8 @@ import SpecialFunctions: loggamma
 
         @testset "logpdf" begin
             for i in 0:10, j in 0:10
-                @test logpdf(BetaNaturalParameters(i, j), 0) ≈ logpdf(Beta(i+1, j+1), 0)
-                @test logpdf(BetaNaturalParameters(i, j), 0.5) ≈ logpdf(Beta(i+1, j+1), 0.5)
+                @test logpdf(BetaNaturalParameters(i, j), 0) ≈ logpdf(Beta(i + 1, j + 1), 0)
+                @test logpdf(BetaNaturalParameters(i, j), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
             end
         end
 
