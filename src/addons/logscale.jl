@@ -10,8 +10,6 @@ end
 
 AddonLogScale() = AddonLogScale(nothing)
 
-struct AddonProdLogScale <: AbstractAddonProd end
-
 getlogscale(addon::AddonLogScale) = addon.logscale
 
 function getlogscale(addons::NTuple{N, AbstractAddon}) where {N}
@@ -61,7 +59,7 @@ function multiply_addons(left_addon::AddonLogScale, right_addon::AddonLogScale, 
     right_logscale = getlogscale(right_addon)
 
     # compute new logscale
-    new_logscale = prod(AddonProdLogScale(), new_dist, left_dist, right_dist)
+    new_logscale = compute_logscale(new_dist, left_dist, right_dist)
 
     # return updated logscale addon
     return AddonLogScale(left_logscale + right_logscale + new_logscale)
