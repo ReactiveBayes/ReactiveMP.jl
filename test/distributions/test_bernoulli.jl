@@ -43,7 +43,7 @@ using ReactiveMP: AddonProdLogScale
 
     @testset "BernoulliNaturalParameters" begin
         @test naturalparams(Bernoulli(0.5)) == BernoulliNaturalParameters(0.0)
-        @test lognormalizer(naturalparams(Bernoulli(0.5))) ≈ -log(2)
+        @test lognormalizer(naturalparams(Bernoulli(0.5))) ≈ log(2)
         for i in 1:9
             bnp = naturalparams(Bernoulli(i / 10.0))
             @test convert(Distribution, bnp) ≈ Bernoulli(i / 10.0)
