@@ -176,12 +176,12 @@ import ReactiveMP: xtlog, mirrorlog
             @test dist[3, 3] === matrix[3, 3]
 
             @test pdf(dist, matrix) == one(T)
-            @test pdf(dist, matrix + convert(T, tiny)*I) == zero(T)
-            @test pdf(dist, matrix - convert(T, tiny)*I) == zero(T)
+            @test pdf(dist, matrix + convert(T, tiny) * I) == zero(T)
+            @test pdf(dist, matrix - convert(T, tiny) * I) == zero(T)
 
             @test logpdf(dist, matrix) == zero(T)
-            @test logpdf(dist, matrix + convert(T, tiny)*I) == convert(T, -Inf)
-            @test logpdf(dist, matrix - convert(T, tiny)*I) == convert(T, -Inf)
+            @test logpdf(dist, matrix + convert(T, tiny) * I) == convert(T, -Inf)
+            @test logpdf(dist, matrix - convert(T, tiny) * I) == convert(T, -Inf)
 
             @test_throws MethodError insupport(dist, one(T))
             @test_throws MethodError insupport(dist, ones(T, 2))
@@ -194,8 +194,8 @@ import ReactiveMP: xtlog, mirrorlog
 
             @test mean(dist) == matrix
             @test mode(dist) == matrix
-            @test var(dist) == zero(T)*I
-            @test std(dist) == zero(T)*I
+            @test var(dist) == zero(T) * I
+            @test std(dist) == zero(T) * I
 
             @test_throws ErrorException cov(dist)
             @test_throws ErrorException precision(dist)

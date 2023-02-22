@@ -122,14 +122,14 @@ Distributions.logpdf(distribution::PointMass{M}, x::UniformScaling) where {T <: 
 
 Distributions.mean(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = getpointmass(distribution)
 Distributions.mode(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = mean(distribution)
-Distributions.var(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = zero(T)*I
-Distributions.std(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = zero(T)*I
+Distributions.var(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = zero(T) * I
+Distributions.std(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = zero(T) * I
 Distributions.cov(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = error("Distributions.cov(::PointMass{ <: UniformScaling }) is not defined")
 
 probvec(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = error("probvec(::PointMass{ <: UniformScaling }) is not defined")
 
-mean(::typeof(inv), distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}       = inv(mean(distribution))
-mean(::typeof(cholinv), distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}   = inv(mean(distribution))
+mean(::typeof(inv), distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}     = inv(mean(distribution))
+mean(::typeof(cholinv), distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = inv(mean(distribution))
 
 Base.precision(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}     = size(mean(distribution))
@@ -138,7 +138,6 @@ convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {
 convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: AbstractMatrix, R <: UniformScaling} = PointMass(convert(T, getpointmass(distribution)))
 
 Base.eltype(::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = T
-
 
 Base.isapprox(left::PointMass, right::PointMass; kwargs...) = Base.isapprox(getpointmass(left), getpointmass(right); kwargs...)
 Base.isapprox(left::PointMass, right; kwargs...) = false

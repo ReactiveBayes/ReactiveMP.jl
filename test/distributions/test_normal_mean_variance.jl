@@ -24,10 +24,10 @@ using LinearAlgebra: I
 
         # uniformscaling
         @test NormalMeanVariance(2, I) == NormalMeanVariance(2, 1)
-        @test NormalMeanVariance(2, 6*I) == NormalMeanVariance(2, 6)
+        @test NormalMeanVariance(2, 6 * I) == NormalMeanVariance(2, 6)
         @test NormalMeanVariance(2.0, I) == NormalMeanVariance(2.0, 1.0)
-        @test NormalMeanVariance(2.0, 6*I) == NormalMeanVariance(2.0, 6.0)
-        @test NormalMeanVariance(2, 6.0*I) == NormalMeanVariance(2.0, 6.0)
+        @test NormalMeanVariance(2.0, 6 * I) == NormalMeanVariance(2.0, 6.0)
+        @test NormalMeanVariance(2, 6.0 * I) == NormalMeanVariance(2.0, 6.0)
 
         @test eltype(NormalMeanVariance()) === Float64
         @test eltype(NormalMeanVariance(0.0)) === Float64

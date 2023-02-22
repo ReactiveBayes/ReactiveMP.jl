@@ -11,7 +11,7 @@ NormalMeanVariance(μ::Real, v::Real)       = NormalMeanVariance(promote(μ, v).
 NormalMeanVariance(μ::Integer, v::Integer) = NormalMeanVariance(float(μ), float(v))
 NormalMeanVariance(μ::T) where {T <: Real} = NormalMeanVariance(μ, one(T))
 NormalMeanVariance()                       = NormalMeanVariance(0.0, 1.0)
-function NormalMeanVariance(μ::T1, v::UniformScaling{T2}) where { T1 <: Real, T2 }
+function NormalMeanVariance(μ::T1, v::UniformScaling{T2}) where {T1 <: Real, T2}
     T = promote_type(T1, T2)
     μ_new = convert(T, μ)
     v_new = convert(T, v.λ)

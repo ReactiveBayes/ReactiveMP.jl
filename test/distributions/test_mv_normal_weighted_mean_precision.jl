@@ -16,10 +16,10 @@ using Distributions
 
         # uniformscaling
         @test MvNormalWeightedMeanPrecision([1, 2], I) == MvNormalWeightedMeanPrecision([1, 2], Diagonal([1, 1]))
-        @test MvNormalWeightedMeanPrecision([1, 2], 6*I) == MvNormalWeightedMeanPrecision([1, 2], Diagonal([6, 6]))
+        @test MvNormalWeightedMeanPrecision([1, 2], 6 * I) == MvNormalWeightedMeanPrecision([1, 2], Diagonal([6, 6]))
         @test MvNormalWeightedMeanPrecision([1.0, 2.0], I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([1.0, 1.0]))
-        @test MvNormalWeightedMeanPrecision([1.0, 2.0], 6*I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([6.0, 6.0]))
-        @test MvNormalWeightedMeanPrecision([1, 2], 6.0*I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([6.0, 6.0]))
+        @test MvNormalWeightedMeanPrecision([1.0, 2.0], 6 * I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([6.0, 6.0]))
+        @test MvNormalWeightedMeanPrecision([1, 2], 6.0 * I) == MvNormalWeightedMeanPrecision([1.0, 2.0], Diagonal([6.0, 6.0]))
 
         @test eltype(MvNormalWeightedMeanPrecision([1.0, 1.0])) === Float64
         @test eltype(MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0, 1.0])) === Float64
@@ -100,10 +100,12 @@ using Distributions
         @test prod(ProdAnalytical(), dist, dist) ≈ MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
 
         # diagonal covariance matrix/uniformscaling
-        @test prod(ProdAnalytical(), MvNormalWeightedMeanPrecision([-1, -1], [2 0; 0 2]), MvNormalWeightedMeanPrecision([1, 1], Diagonal([2,4]))) ≈ MvNormalWeightedMeanPrecision([0, 0], [4, 6])
-        @test prod(ProdAnalytical(), MvNormalWeightedMeanPrecision([-1, -1], [2, 2]), MvNormalWeightedMeanPrecision([1, 1], Diagonal([2,4]))) ≈ MvNormalWeightedMeanPrecision([0, 0], [4, 6])
-        @test prod(ProdAnalytical(), MvNormalWeightedMeanPrecision([-1, -1], 2*I), MvNormalWeightedMeanPrecision([1, 1], Diagonal([2,4]))) ≈ MvNormalWeightedMeanPrecision([0, 0], [4, 6])
-
+        @test prod(ProdAnalytical(), MvNormalWeightedMeanPrecision([-1, -1], [2 0; 0 2]), MvNormalWeightedMeanPrecision([1, 1], Diagonal([2, 4]))) ≈
+            MvNormalWeightedMeanPrecision([0, 0], [4, 6])
+        @test prod(ProdAnalytical(), MvNormalWeightedMeanPrecision([-1, -1], [2, 2]), MvNormalWeightedMeanPrecision([1, 1], Diagonal([2, 4]))) ≈
+            MvNormalWeightedMeanPrecision([0, 0], [4, 6])
+        @test prod(ProdAnalytical(), MvNormalWeightedMeanPrecision([-1, -1], 2 * I), MvNormalWeightedMeanPrecision([1, 1], Diagonal([2, 4]))) ≈
+            MvNormalWeightedMeanPrecision([0, 0], [4, 6])
     end
 
     @testset "Primitive types conversion" begin
