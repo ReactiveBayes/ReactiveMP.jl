@@ -14,9 +14,9 @@ end
 Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
 
 struct DataVariableCreationOptions{S}
-    subject ::S
-    isproxy ::Bool
-    isused  ::Bool
+    subject :: S
+    isproxy :: Bool
+    isused  :: Bool
 end
 
 Base.similar(options::DataVariableCreationOptions) = DataVariableCreationOptions(similar(options.subject), options.isproxy, options.isused)
