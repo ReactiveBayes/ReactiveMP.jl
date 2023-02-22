@@ -158,11 +158,6 @@ _getmarginal(datavar::DataVariable)              = datavar.messageout |> map(Mar
 _setmarginal!(datavar::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
 _makemarginal(datavar::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
-# Extension for _getmarginal
-function Rocket.getrecent(proxy::ProxyObservable{<:Marginal, S, M}) where {S, D, M <: Rocket.MapProxy{D, typeof(as_marginal)}}
-    return as_marginal(Rocket.getrecent(proxy.proxied_source))
-end
-
 setanonymous!(::DataVariable, ::Bool) = nothing
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
