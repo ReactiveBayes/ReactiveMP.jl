@@ -51,12 +51,12 @@ import SpecialFunctions: loggamma
 
         @testset "lognormalizer" begin
             @test lognormalizer(BetaNaturalParameters(0, 0)) ≈ 0
-            @test lognormalizer(BetaNaturalParameters(1, 1)) ≈ -loggamma(4)
+            @test lognormalizer(BetaNaturalParameters(1, 1)) ≈ loggamma(4)
         end
 
         @testset "logpdf" begin
             for i in 0:10, j in 0:10
-                @test logpdf(BetaNaturalParameters(i, j), 0) ≈ logpdf(Beta(i + 1, j + 1), 0)
+                @test logpdf(BetaNaturalParameters(i, j), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
                 @test logpdf(BetaNaturalParameters(i, j), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
             end
         end

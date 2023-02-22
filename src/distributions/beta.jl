@@ -3,6 +3,7 @@ export BetaNaturalParameters
 
 import Distributions: Beta, params
 import SpecialFunctions: digamma, logbeta, loggamma
+import StatsFuns: betalogpdf
 
 vague(::Type{<:Beta}) = Beta(1.0, 1.0)
 
@@ -70,8 +71,8 @@ Base.convert(::Type{BetaNaturalParameters}, vector::AbstractVector) = convert(Be
 
 Base.convert(::Type{BetaNaturalParameters{T}}, vector::AbstractVector) where {T} = BetaNaturalParameters(convert(AbstractVector{T}, vector))
 
-lognormalizer(params::BetaNaturalParameters) = loggamma(params.αm1 + 1) + loggamma(params.βm1 + 1) - loggamma(params.αm1 + params.βm1 + 2)
-logpdf(params::BetaNaturalParameters, x) = x * (params.αm1) + (1 - x) * (params.βm1) - lognormalizer(params)
+lognormalizer(params::BetaNaturalParameters) = logbeta(params.αm1+1, params.βm1+1)
+logpdf(params::BetaNaturalParameters, x) = betalogpdf(params.αm1+1, params.βm1+1, x)
 
 function Base.:-(left::BetaNaturalParameters, right::BetaNaturalParameters)
     return BetaNaturalParameters(left.αm1 - right.αm1, left.βm1 - right.βm1)

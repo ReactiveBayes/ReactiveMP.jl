@@ -80,8 +80,8 @@ end
         rng = StableRNG(42)
 
         tests = (
-            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ForwardDiffGrad(), 1, Val(true), false), tol = 5e-1),
-            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ZygoteGrad(), 1, Val(true), false), tol = 5e-1)
+            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ForwardDiffGrad(), 10, Val(true), false), tol = 5e-1),
+            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ZygoteGrad(), 10, Val(true), false), tol = 5e-1)
         )
 
         # Check several prods against their analytical solutions
