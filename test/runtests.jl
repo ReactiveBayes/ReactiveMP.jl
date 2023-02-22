@@ -328,6 +328,9 @@ end
     addtests(testrunner, "rules/delta/cvi/test_marginals.jl")
     addtests(testrunner, "rules/delta/cvi/test_out.jl")
 
+    addtests(testrunner, "rules/dirichlet/test_marginals.jl")
+    addtests(testrunner, "rules/dirichlet/test_out.jl")
+    
     addtests(testrunner, "rules/dot_product/test_out.jl")
     addtests(testrunner, "rules/dot_product/test_in1.jl")
     addtests(testrunner, "rules/dot_product/test_in2.jl")
