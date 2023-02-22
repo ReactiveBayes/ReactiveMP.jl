@@ -34,6 +34,17 @@ struct BetaNaturalParameters{T <: Real} <: NaturalParameters
     βm1::T
 end
 
+BetaNaturalParameters(αm1::Real, βm1::Real)       = BetaNaturalParameters(promote(αm1, βm1)...)
+BetaNaturalParameters(αm1::Integer, βm1::Integer) = BetaNaturalParameters(float(αm1), float(βm1))
+
+Base.convert(::Type{BetaNaturalParameters}, a::Real, b::Real) = convert(BetaNaturalParameters{promote_type(typeof(a), typeof(b))}, a, b)
+
+Base.convert(::Type{BetaNaturalParameters{T}}, a::Real, b::Real) where {T} = BetaNaturalParameters(convert(T, a), convert(T, b))
+
+Base.convert(::Type{BetaNaturalParameters}, vec::AbstractVector) = convert(BetaNaturalParameters{eltype(vec)}, vec)
+
+Base.convert(::Type{BetaNaturalParameters{T}}, vec::AbstractVector) where {T} = BetaNaturalParameters(convert(AbstractVector{T}, vec))
+
 function isproper(params::BetaNaturalParameters)
     return ((params.αm1 + 1) > 0) && ((params.βm1 + 1) > 0)
 end

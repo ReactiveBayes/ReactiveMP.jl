@@ -6,6 +6,7 @@ using Distributions
 using Random
 
 import ReactiveMP: mirrorlog
+import SpecialFunctions: loggamma
 
 @testset "Beta" begin
 
@@ -39,26 +40,26 @@ import ReactiveMP: mirrorlog
     end
 
     @testset "BetaNaturalParameters" begin
-        # @testset "Constructor" begin
-        #     for i in 1:10
-        #         @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) == NormalWeightedMeanPrecision(i, 2 * i)
+        @testset "Constructor" begin
+            for i in 0:10, j in 0:10
+                @test convert(Distribution, BetaNaturalParameters(i, j)) == Beta(i+1, j+1)
 
-        #         @test convert(UnivariateNormalNaturalParameters, i, -i) == UnivariateNormalNaturalParameters(i, -i)
-        #         @test convert(UnivariateNormalNaturalParameters, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
-        #         @test convert(UnivariateNormalNaturalParameters{Float64}, i, -i) == UnivariateNormalNaturalParameters(i, -i)
-        #         @test convert(UnivariateNormalNaturalParameters{Float64}, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
-        #     end
-        # end
+                @test convert(BetaNaturalParameters, i, j) == BetaNaturalParameters(i, j)
+                @test convert(BetaNaturalParameters, [i, j]) == BetaNaturalParameters(i, j)
+            end
+        end
 
-        # @testset "lognormalizer" begin
-        #     @test lognormalizer(UnivariateNormalNaturalParameters(1, -2)) ≈ -(log(2) - 1 / 8)
-        # end
+        @testset "lognormalizer" begin
+            @test lognormalizer(BetaNaturalParameters(0, 0)) ≈ 0
+            @test lognormalizer(BetaNaturalParameters(1, 1)) ≈ -loggamma(4)
+        end
 
-        # @testset "logpdf" begin
-        #     for i in 1:10
-        #         @test logpdf(UnivariateNormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
-        #     end
-        # end
+        @testset "logpdf" begin
+            for i in 0:10, j in 0:10
+                @test logpdf(BetaNaturalParameters(i, j), 0) ≈ logpdf(Beta(i+1, j+1), 0)
+                @test logpdf(BetaNaturalParameters(i, j), 0.5) ≈ logpdf(Beta(i+1, j+1), 0.5)
+            end
+        end
 
         @testset "isproper" begin
             for i in 0:10
