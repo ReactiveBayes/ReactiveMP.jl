@@ -43,9 +43,11 @@ using ReactiveMP: AddonProdLogScale
 
     @testset "BernoulliNaturalParameters" begin
         @test naturalparams(Bernoulli(0.5)) == BernoulliNaturalParameters(0.0)
-        @test lognormalizer(naturalparams(Bernoulli(0.5))) ≈ -log(2)
+        @test lognormalizer(naturalparams(Bernoulli(0.5))) ≈ log(2)
+        b_99 = Bernoulli(0.99)
         for i in 1:9
-            bnp = naturalparams(Bernoulli(i / 10.0))
+            b = Bernoulli(i / 10.0)
+            bnp = naturalparams(b)
             @test convert(Distribution, bnp) ≈ Bernoulli(i / 10.0)
             @test logpdf(bnp, 1) ≈ logpdf(Bernoulli(i / 10.0), 1)
             @test logpdf(bnp, 0) ≈ logpdf(Bernoulli(i / 10.0), 0)
@@ -55,6 +57,7 @@ using ReactiveMP: AddonProdLogScale
 
             @test as_naturalparams(BernoulliNaturalParameters, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
             @test as_naturalparams(BernoulliNaturalParameters{Float64}, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+            @test prod(ProdAnalytical(), convert(Distribution, naturalparams(b_99) - bnp), b) ≈ b_99
         end
         @test isproper(BernoulliNaturalParameters(10)) === true
     end
