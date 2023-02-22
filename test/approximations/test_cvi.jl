@@ -126,8 +126,9 @@ end
             b_cvi = prod(test[:method], b1, b1)
             @test isapprox(mean(b_analytical), mean(b_cvi), atol = test[:tol])
 
-            beta_1 = Beta(abs(randn(rng)), abs(randn(rng)))
-            beta_2 = Beta(abs(randn(rng)), abs(randn(rng)))
+            beta_1 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
+            beta_2 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
+
             beta_analytical = prod(ProdAnalytical(), beta_1, beta_2)
             beta_cvi = prod(test[:method], beta_1, beta_2)
             @test isapprox(mean(beta_analytical), mean(beta_cvi), atol = test[:tol])
