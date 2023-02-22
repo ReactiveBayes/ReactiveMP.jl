@@ -96,7 +96,7 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance, right::MvNorm
 end
 
 function Base.prod(
-    ::ProdAnalytical, left::MvNormalMeanCovariance{T1, <:AbstractVector, <:Matrix}, right::MvNormalMeanCovariance{T2, <:Vector, <:Matrix}
+    ::ProdAnalytical, left::MvNormalMeanCovariance{T1, <:AbstractVector, <:Matrix}, right::MvNormalMeanCovariance{T2, <:AbstractVector, <:Matrix}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
 
     # start with parameters of left

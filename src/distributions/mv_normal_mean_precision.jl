@@ -100,7 +100,7 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNorma
 end
 
 function Base.prod(
-    ::ProdAnalytical, left::MvNormalMeanPrecision{T1, <:Vector, <:Matrix}, right::MvNormalMeanPrecision{T2, <:Vector, <:Matrix}
+    ::ProdAnalytical, left::MvNormalMeanPrecision{T1, <:AbstractVector, <:Matrix}, right::MvNormalMeanPrecision{T2, <:AbstractVector, <:Matrix}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
