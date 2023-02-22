@@ -115,7 +115,7 @@ function prod(approximation::CVI, outbound, inbound)
         # compute gradient of log-likelihood
         # the multiplication between two logpdfs is correct
         # we take the derivative with respect to `η`
-        # logp(z) does not depend on `η` and is just a simple scalar constant
+        # `logpdf(outbound, sample)` does not depend on `η` and is just a simple scalar constant
         # see the method papers for more details
         # - https://arxiv.org/pdf/1401.0118.pdf
         # - https://doi.org/10.1016/j.ijar.2022.06.006
