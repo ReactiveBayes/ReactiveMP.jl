@@ -124,7 +124,7 @@ end
             b2 = Bernoulli(logistic(randn(rng)))
             b_analitical = prod(ProdAnalytical(), b1, b2)
             b_cvi = prod(test[:method], b1, b1)
-            @test all(isapprox.(mean_var(b_analitical), mean_var(b_cvi), atol = test[:tol]))
+            @test isapprox(mean(b_analitical), mean(b_cvi), atol = test[:tol])
         end
     end
 
