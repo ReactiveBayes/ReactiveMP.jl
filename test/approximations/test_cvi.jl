@@ -122,9 +122,15 @@ end
 
             b1 = Bernoulli(logistic(randn(rng)))
             b2 = Bernoulli(logistic(randn(rng)))
-            b_analitical = prod(ProdAnalytical(), b1, b2)
+            b_analytical = prod(ProdAnalytical(), b1, b2)
             b_cvi = prod(test[:method], b1, b1)
-            @test isapprox(mean(b_analitical), mean(b_cvi), atol = test[:tol])
+            @test isapprox(mean(b_analytical), mean(b_cvi), atol = test[:tol])
+
+            beta_1 = Beta(abs(randn(rng)), abs(randn(rng)))
+            beta_2 = Beta(abs(randn(rng)), abs(randn(rng)))
+            beta_analytical = prod(ProdAnalytical(), beta_1, beta_2)
+            beta_cvi = prod(test[:method], beta_1, beta_2)
+            @test isapprox(mean(beta_analytical), mean(beta_cvi), atol = test[:tol])
         end
     end
 

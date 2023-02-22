@@ -37,6 +37,38 @@ import ReactiveMP: mirrorlog
         @test mean(mirrorlog, Beta(0.1, 0.3)) ≈ -0.9411396776150167
         @test mean(mirrorlog, Beta(4.5, 0.3)) ≈ -4.963371962929249
     end
+
+    @testset "BetaNaturalParameters" begin
+        # @testset "Constructor" begin
+        #     for i in 1:10
+        #         @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) == NormalWeightedMeanPrecision(i, 2 * i)
+
+        #         @test convert(UnivariateNormalNaturalParameters, i, -i) == UnivariateNormalNaturalParameters(i, -i)
+        #         @test convert(UnivariateNormalNaturalParameters, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
+        #         @test convert(UnivariateNormalNaturalParameters{Float64}, i, -i) == UnivariateNormalNaturalParameters(i, -i)
+        #         @test convert(UnivariateNormalNaturalParameters{Float64}, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
+        #     end
+        # end
+
+        # @testset "lognormalizer" begin
+        #     @test lognormalizer(UnivariateNormalNaturalParameters(1, -2)) ≈ -(log(2) - 1 / 8)
+        # end
+
+        # @testset "logpdf" begin
+        #     for i in 1:10
+        #         @test logpdf(UnivariateNormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
+        #     end
+        # end
+
+        @testset "isproper" begin
+            for i in 0:10
+                @test isproper(BetaNaturalParameters(i, i)) === true
+            end
+            for i in 1:10
+                @test isproper(BetaNaturalParameters(-i, -i)) === false
+            end
+        end
+    end
 end
 
 end
