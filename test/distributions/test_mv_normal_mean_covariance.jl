@@ -98,6 +98,12 @@ using Distributions
         dist = MvNormalMeanCovariance(μ, Σ)
 
         @test prod(ProdAnalytical(), dist, dist) ≈ MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+
+        # diagonal covariance matrix/uniformscaling
+        @test prod(ProdAnalytical(), MvNormalMeanCovariance([-1, -1], [2 0; 0 2]), MvNormalMeanCovariance([1, 1], Diagonal([2,4]))) ≈ MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
+        @test prod(ProdAnalytical(), MvNormalMeanCovariance([-1, -1], [2, 2]), MvNormalMeanCovariance([1, 1], Diagonal([2,4]))) ≈ MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
+        @test prod(ProdAnalytical(), MvNormalMeanCovariance([-1, -1], 2*I), MvNormalMeanCovariance([1, 1], Diagonal([2,4]))) ≈ MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
+        
     end
 
     @testset "Primitive types conversion" begin
