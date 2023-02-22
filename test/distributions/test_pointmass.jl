@@ -5,6 +5,7 @@ using ReactiveMP
 using Distributions
 using Random
 using SpecialFunctions
+using LinearAlgebra: UniformScaling, I
 
 import ReactiveMP: CountingReal, tiny, huge
 import ReactiveMP.MacroHelpers: @test_inferred
@@ -161,6 +162,47 @@ import ReactiveMP: xtlog, mirrorlog
             @test @test_inferred(AbstractMatrix{T}, mean(cholinv, dist)) ≈ cholinv(matrix)
             @test_throws ErrorException mean(mirrorlog, dist)
             @test @test_inferred(AbstractMatrix{T}, mean(loggamma, dist)) == loggamma.(matrix)
+        end
+    end
+
+    @testset "UniformScaling-based PointMass" begin
+        for T in (Float16, Float32, Float64, BigFloat)
+            matrix = convert(T, 5) * I
+            dist   = PointMass(matrix)
+
+            @test variate_form(dist) === Matrixvariate
+            @test dist[2, 1] == zero(T)
+            @test dist[3, 1] == zero(T)
+            @test dist[3, 3] === matrix[3, 3]
+
+            @test pdf(dist, matrix) == one(T)
+            @test pdf(dist, matrix + convert(T, tiny)*I) == zero(T)
+            @test pdf(dist, matrix - convert(T, tiny)*I) == zero(T)
+
+            @test logpdf(dist, matrix) == zero(T)
+            @test logpdf(dist, matrix + convert(T, tiny)*I) == convert(T, -Inf)
+            @test logpdf(dist, matrix - convert(T, tiny)*I) == convert(T, -Inf)
+
+            @test_throws MethodError insupport(dist, one(T))
+            @test_throws MethodError insupport(dist, ones(T, 2))
+            @test_throws MethodError pdf(dist, one(T))
+            @test_throws MethodError pdf(dist, ones(T, 2))
+            @test_throws MethodError logpdf(dist, one(T))
+            @test_throws MethodError logpdf(dist, ones(T, 2))
+
+            @test (@inferred entropy(dist)) == CountingReal(eltype(dist), -1)
+
+            @test mean(dist) == matrix
+            @test mode(dist) == matrix
+            @test var(dist) == zero(T)*I
+            @test std(dist) == zero(T)*I
+
+            @test_throws ErrorException cov(dist)
+            @test_throws ErrorException precision(dist)
+
+            @test_throws ErrorException probvec(dist)
+            @test mean(inv, dist) ≈ inv(matrix)
+            @test mean(cholinv, dist) ≈ inv(matrix)
         end
     end
 end

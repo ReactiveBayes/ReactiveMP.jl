@@ -1,5 +1,7 @@
 export PointMass, getpointmass
 
+using LinearAlgebra: UniformScaling, I
+
 import Distributions: mean, var, cov, std, insupport, pdf, logpdf, entropy
 import Base: ndims, precision, getindex, size, convert, isapprox, eltype
 import SpecialFunctions: loggamma, logbeta
@@ -13,6 +15,7 @@ end
 variate_form(::PointMass{T}) where {T <: Real}                 = Univariate
 variate_form(::PointMass{V}) where {T, V <: AbstractVector{T}} = Multivariate
 variate_form(::PointMass{M}) where {T, M <: AbstractMatrix{T}} = Matrixvariate
+variate_form(::PointMass{U}) where {T, U <: UniformScaling{T}} = Matrixvariate
 
 ##
 
@@ -110,6 +113,32 @@ convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {
 convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: AbstractMatrix, R <: AbstractMatrix} = PointMass(convert(T, getpointmass(distribution)))
 
 Base.eltype(::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = T
+
+# UniformScaling-based matrixvariate point mass
+
+Distributions.insupport(distribution::PointMass{M}, x::UniformScaling) where {T <: Real, M <: UniformScaling{T}} = x == getpointmass(distribution)
+Distributions.pdf(distribution::PointMass{M}, x::UniformScaling) where {T <: Real, M <: UniformScaling{T}}       = Distributions.insupport(distribution, x) ? one(T) : zero(T)
+Distributions.logpdf(distribution::PointMass{M}, x::UniformScaling) where {T <: Real, M <: UniformScaling{T}}    = Distributions.insupport(distribution, x) ? zero(T) : convert(T, -Inf)
+
+Distributions.mean(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = getpointmass(distribution)
+Distributions.mode(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = mean(distribution)
+Distributions.var(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = zero(T)*I
+Distributions.std(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = zero(T)*I
+Distributions.cov(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}  = error("Distributions.cov(::PointMass{ <: UniformScaling }) is not defined")
+
+probvec(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = error("probvec(::PointMass{ <: UniformScaling }) is not defined")
+
+mean(::typeof(inv), distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}       = inv(mean(distribution))
+mean(::typeof(cholinv), distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}   = inv(mean(distribution))
+
+Base.precision(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = one(T) ./ cov(distribution)
+Base.ndims(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}     = size(mean(distribution))
+
+convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: Real, R <: UniformScaling}           = PointMass(convert(AbstractMatrix{T}, getpointmass(distribution)))
+convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: AbstractMatrix, R <: UniformScaling} = PointMass(convert(T, getpointmass(distribution)))
+
+Base.eltype(::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = T
+
 
 Base.isapprox(left::PointMass, right::PointMass; kwargs...) = Base.isapprox(getpointmass(left), getpointmass(right); kwargs...)
 Base.isapprox(left::PointMass, right; kwargs...) = false
