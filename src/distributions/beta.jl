@@ -71,8 +71,8 @@ Base.convert(::Type{BetaNaturalParameters}, vector::AbstractVector) = convert(Be
 
 Base.convert(::Type{BetaNaturalParameters{T}}, vector::AbstractVector) where {T} = BetaNaturalParameters(convert(AbstractVector{T}, vector))
 
-lognormalizer(params::BetaNaturalParameters) = logbeta(params.αm1+1, params.βm1+1)
-logpdf(params::BetaNaturalParameters, x) = betalogpdf(params.αm1+1, params.βm1+1, x)
+lognormalizer(params::BetaNaturalParameters) = logbeta(params.αm1 + 1, params.βm1 + 1)
+logpdf(params::BetaNaturalParameters, x) = betalogpdf(params.αm1 + 1, params.βm1 + 1, x)
 
 function Base.:-(left::BetaNaturalParameters, right::BetaNaturalParameters)
     return BetaNaturalParameters(left.αm1 - right.αm1, left.βm1 - right.βm1)
