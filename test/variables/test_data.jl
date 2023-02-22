@@ -6,7 +6,7 @@ using Rocket
 
 import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
 import ReactiveMP: getconst, proxy_variables
-import ReactiveMP: israndom, isproxy
+import ReactiveMP: israndom, isproxy, isused
 
 @testset "DataVariable" begin
     @testset "Simple creation" begin
@@ -54,6 +54,7 @@ import ReactiveMP: israndom, isproxy
             @test all(v -> eltype(v) === type, vs)
             @test !isproxy(vs)
             @test all(v -> !isproxy(v), vs)
+            @test all(v -> !isused(v), vs)
             @test test_updates(vs, type, (n,))
         end
 
@@ -70,6 +71,7 @@ import ReactiveMP: israndom, isproxy
                 @test all(v -> eltype(v) === type, vs)
                 @test !isproxy(vs)
                 @test all(v -> !isproxy(v), vs)
+                @test all(v -> !isused(v), vs)
                 @test test_updates(vs, type, (l, r))
             end
         end
