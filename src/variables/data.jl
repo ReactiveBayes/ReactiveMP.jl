@@ -165,5 +165,6 @@ setanonymous!(::DataVariable, ::Bool) = nothing
 
 function setmessagein!(datavar::DataVariable, ::Int, messagein)
     datavar.nconnected += 1
+    datavar.isused = true
     return nothing
 end

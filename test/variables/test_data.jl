@@ -6,7 +6,7 @@ using Rocket
 
 import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
 import ReactiveMP: getconst, proxy_variables
-import ReactiveMP: israndom, isproxy, isused
+import ReactiveMP: israndom, isproxy, isused, isconnected, setmessagein!
 
 @testset "DataVariable" begin
     @testset "Simple creation" begin
@@ -39,6 +39,13 @@ import ReactiveMP: israndom, isproxy, isused
             @test collection_type(v) isa VariableIndividual
             @test proxy_variables(v) === nothing
             @test !isproxy(v)
+            @test !isused(v)
+            @test !isconnected(v)
+
+            setmessagein!(v, 1, of(nothing))
+
+            @test isused(v)
+            @test isconnected(v)
         end
 
         for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64}), n in (10, 20)
@@ -55,7 +62,13 @@ import ReactiveMP: israndom, isproxy, isused
             @test !isproxy(vs)
             @test all(v -> !isproxy(v), vs)
             @test all(v -> !isused(v), vs)
+            @test all(v -> !isconnected(v), vs)
             @test test_updates(vs, type, (n,))
+
+            foreach(v -> setmessagein!(v, 1, of(nothing)), vs)
+
+            @test all(v -> isused(v), vs)
+            @test all(v -> isconnected(v), vs)
         end
 
         for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64}), l in (10, 20), r in (10, 20)
@@ -73,6 +86,11 @@ import ReactiveMP: israndom, isproxy, isused
                 @test all(v -> !isproxy(v), vs)
                 @test all(v -> !isused(v), vs)
                 @test test_updates(vs, type, (l, r))
+
+                foreach(v -> setmessagein!(v, 1, of(nothing)), vs)
+
+                @test all(v -> isused(v), vs)
+                @test all(v -> isconnected(v), vs)
             end
         end
     end
