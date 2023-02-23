@@ -4,13 +4,15 @@ using Test
 using ReactiveMP
 using Rocket
 
+using LinearAlgebra: I
+
 import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
 import ReactiveMP: getconst, proxy_variables
 import ReactiveMP: israndom, isproxy
 
 @testset "ConstVariable" begin
     @testset "Simple creation" begin
-        for sym in (:x, :y, :z), value in (1.0, 1.0, "asd", [1.0, 1.0], [1.0 0.0; 0.0 1.0], (x) -> 1)
+        for sym in (:x, :y, :z), value in (1.0, 1.0, "asd", I, 0.3 * I, [1.0, 1.0], [1.0 0.0; 0.0 1.0], (x) -> 1)
             v = constvar(sym, value)
 
             @test !israndom(v)

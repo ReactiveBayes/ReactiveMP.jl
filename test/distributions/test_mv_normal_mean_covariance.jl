@@ -14,6 +14,13 @@ using Distributions
         @test MvNormalMeanCovariance([1, 2]) == MvNormalMeanCovariance([1.0, 2.0], [1.0, 1.0])
         @test MvNormalMeanCovariance([1.0f0, 2.0f0]) == MvNormalMeanCovariance([1.0f0, 2.0f0], [1.0f0, 1.0f0])
 
+        # uniformscaling
+        @test MvNormalMeanCovariance([1, 2], I) == MvNormalMeanCovariance([1, 2], Diagonal([1, 1]))
+        @test MvNormalMeanCovariance([1, 2], 6 * I) == MvNormalMeanCovariance([1, 2], Diagonal([6, 6]))
+        @test MvNormalMeanCovariance([1.0, 2.0], I) == MvNormalMeanCovariance([1.0, 2.0], Diagonal([1.0, 1.0]))
+        @test MvNormalMeanCovariance([1.0, 2.0], 6 * I) == MvNormalMeanCovariance([1.0, 2.0], Diagonal([6.0, 6.0]))
+        @test MvNormalMeanCovariance([1, 2], 6.0 * I) == MvNormalMeanCovariance([1.0, 2.0], Diagonal([6.0, 6.0]))
+
         @test eltype(MvNormalMeanCovariance([1.0, 1.0])) === Float64
         @test eltype(MvNormalMeanCovariance([1.0, 1.0], [1.0, 1.0])) === Float64
         @test eltype(MvNormalMeanCovariance([1, 1])) === Float64
@@ -91,6 +98,14 @@ using Distributions
         dist = MvNormalMeanCovariance(μ, Σ)
 
         @test prod(ProdAnalytical(), dist, dist) ≈ MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+
+        # diagonal covariance matrix/uniformscaling
+        @test prod(ProdAnalytical(), MvNormalMeanCovariance([-1, -1], [2 0; 0 2]), MvNormalMeanCovariance([1, 1], Diagonal([2, 4]))) ≈
+            MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
+        @test prod(ProdAnalytical(), MvNormalMeanCovariance([-1, -1], [2, 2]), MvNormalMeanCovariance([1, 1], Diagonal([2, 4]))) ≈
+            MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
+        @test prod(ProdAnalytical(), MvNormalMeanCovariance([-1, -1], 2 * I), MvNormalMeanCovariance([1, 1], Diagonal([2, 4]))) ≈
+            MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
     end
 
     @testset "Primitive types conversion" begin

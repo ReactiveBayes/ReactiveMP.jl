@@ -11,6 +11,12 @@ NormalWeightedMeanPrecision(xi::Real, w::Real)       = NormalWeightedMeanPrecisi
 NormalWeightedMeanPrecision(xi::Integer, w::Integer) = NormalWeightedMeanPrecision(float(xi), float(w))
 NormalWeightedMeanPrecision(xi::Real)                = NormalWeightedMeanPrecision(xi, one(xi))
 NormalWeightedMeanPrecision()                        = NormalWeightedMeanPrecision(0.0, 1.0)
+function NormalWeightedMeanPrecision(xi::T1, w::UniformScaling{T2}) where {T1 <: Real, T2}
+    T = promote_type(T1, T2)
+    xi_new = convert(T, xi)
+    w_new = convert(T, w.λ)
+    return NormalWeightedMeanPrecision(xi_new, w_new)
+end
 
 Distributions.@distr_support NormalWeightedMeanPrecision -Inf Inf
 

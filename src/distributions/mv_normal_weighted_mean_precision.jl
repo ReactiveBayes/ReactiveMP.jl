@@ -26,6 +26,13 @@ function MvNormalWeightedMeanPrecision(xi::AbstractVector{T}) where {T}
     return MvNormalWeightedMeanPrecision(xi, convert(AbstractArray{T}, ones(length(xi))))
 end
 
+function MvNormalWeightedMeanPrecision(xi::AbstractVector{T1}, Λ::UniformScaling{T2}) where {T1, T2}
+    T = promote_type(T1, T2)
+    xi_new = convert(AbstractArray{T}, xi)
+    Λ_new = convert(UniformScaling{T}, Λ)(length(xi))
+    return MvNormalWeightedMeanPrecision(xi_new, Λ_new)
+end
+
 Distributions.distrname(::MvNormalWeightedMeanPrecision) = "MvNormalWeightedMeanPrecision"
 
 weightedmean(dist::MvNormalWeightedMeanPrecision) = dist.xi

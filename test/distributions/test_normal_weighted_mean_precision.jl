@@ -3,6 +3,8 @@ module NormalWeightedMeanPrecisionTest
 using Test
 using ReactiveMP
 
+using LinearAlgebra: I
+
 @testset "NormalWeightedMeanPrecision" begin
     @testset "Constructor" begin
         @test NormalWeightedMeanPrecision <: NormalDistributionsFamily
@@ -18,6 +20,13 @@ using ReactiveMP
         @test NormalWeightedMeanPrecision(1.0f0) == NormalWeightedMeanPrecision{Float32}(1.0f0, 1.0f0)
         @test NormalWeightedMeanPrecision(1.0f0, 2.0f0) == NormalWeightedMeanPrecision{Float32}(1.0f0, 2.0f0)
         @test NormalWeightedMeanPrecision(1.0f0, 2.0) == NormalWeightedMeanPrecision{Float64}(1.0, 2.0)
+
+        # uniformscaling
+        @test NormalWeightedMeanPrecision(2, I) == NormalWeightedMeanPrecision(2, 1)
+        @test NormalWeightedMeanPrecision(2, 6 * I) == NormalWeightedMeanPrecision(2, 6)
+        @test NormalWeightedMeanPrecision(2.0, I) == NormalWeightedMeanPrecision(2.0, 1.0)
+        @test NormalWeightedMeanPrecision(2.0, 6 * I) == NormalWeightedMeanPrecision(2.0, 6.0)
+        @test NormalWeightedMeanPrecision(2, 6.0 * I) == NormalWeightedMeanPrecision(2.0, 6.0)
 
         @test eltype(NormalWeightedMeanPrecision()) === Float64
         @test eltype(NormalWeightedMeanPrecision(0.0)) === Float64
