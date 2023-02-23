@@ -17,7 +17,7 @@ import ReactiveMP: @test_marginalrules
     @testset "out_p: (m_out::Categorical, m_p::PointMass)" begin
         @test_marginalrules [with_float_conversions = false] Categorical(:out_p) [
             (
-                input = (m_out = Categorical([0.2, 0.8]; check_args = false), m_p = PointMass([0.0, 1.0])),
+                input = (m_out = Categorical([0.2, 0.8]), m_p = PointMass([0.0, 1.0])),
                 output = (out = Categorical(normalize([tiny, 0.8], 1)), p = PointMass([0.0, 1.0]))
             ),
             (
