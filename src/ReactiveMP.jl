@@ -170,7 +170,7 @@ include("nodes/and.jl")
 include("nodes/or.jl")
 include("nodes/not.jl")
 include("nodes/implication.jl")
-include("nodes/switch.jl")
+include("nodes/mixture.jl")
 
 include("rules/prototypes.jl")
 
