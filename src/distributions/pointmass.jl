@@ -22,6 +22,7 @@ variate_form(::PointMass{U}) where {T, U <: UniformScaling{T}} = Matrixvariate
 sampletype(distribution::PointMass{T}) where {T} = T
 
 getpointmass(distribution::PointMass) = distribution.point
+getpointmass(point::Union{Real, AbstractArray}) = point
 
 ##
 
