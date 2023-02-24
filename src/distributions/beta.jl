@@ -67,10 +67,6 @@ function BetaNaturalParameters(v::AbstractVector{T}) where {T <: Real}
     return BetaNaturalParameters(v[1], v[2])
 end
 
-Base.convert(::Type{BetaNaturalParameters}, vector::AbstractVector) = convert(BetaNaturalParameters{eltype(vector)}, vector)
-
-Base.convert(::Type{BetaNaturalParameters{T}}, vector::AbstractVector) where {T} = BetaNaturalParameters(convert(AbstractVector{T}, vector))
-
 lognormalizer(params::BetaNaturalParameters) = logbeta(params.αm1 + 1, params.βm1 + 1)
 logpdf(params::BetaNaturalParameters, x) = betalogpdf(params.αm1 + 1, params.βm1 + 1, x)
 
