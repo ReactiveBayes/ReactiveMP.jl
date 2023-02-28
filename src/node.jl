@@ -866,7 +866,7 @@ function activate!(factornode::AbstractFactorNode, options)
             vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, nothing)
                 (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
             end
 
@@ -1180,6 +1180,8 @@ macro node(fformtype, sdtype, interfaces_list)
         $doctype : $docsdtype : $docedges
     """
 
+    rulefnname = Symbol(:rule_for_, fuppertype, :_node)
+
     res = quote
         ReactiveMP.as_node_functional_form(::$fuppertype)       = ReactiveMP.ValidNodeFunctionalForm()
         ReactiveMP.as_node_functional_form(::Type{$fuppertype}) = ReactiveMP.ValidNodeFunctionalForm()
@@ -1197,6 +1199,7 @@ macro node(fformtype, sdtype, interfaces_list)
                 ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options))
             )
         end
+
 
         function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions, $(interface_args...))
             node = ReactiveMP.make_node($fbottomtype, options)

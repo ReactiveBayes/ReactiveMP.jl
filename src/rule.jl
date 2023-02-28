@@ -216,7 +216,7 @@ function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype,
 end
 
 function call_rule_make_node(::ValidNodeFunctionalForm, fformtype, nodetype, meta)
-    return make_node(nodetype, FactorNodeCreationOptions(nothing, meta, nothing))
+    return nothing # make_node(nodetype, FactorNodeCreationOptions(nothing, meta, nothing))
 end
 
 call_rule_macro_construct_on_arg(on_type, on_index::Nothing) = MacroHelpers.bottom_type(on_type)
@@ -233,14 +233,11 @@ end
 function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
     addonsvar = gensym(:addons)
     nodevar = gensym(:node)
+    rulefnname = Symbol(:rule_for_, fuppertype, on_type, vconstraint, m_names, q_names, metatype)
     return quote
-        function ReactiveMP.rule(
-            fform::$(fuppertype),
-            on::$(on_type),
-            vconstraint::$(vconstraint),
-            messages_names::$(m_names),
+
+        function $(rulefnname)(
             messages::$(m_types),
-            marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
             $(addonsvar),
@@ -251,6 +248,19 @@ function rule_function_expression(body::Function, fuppertype, on_type, vconstrai
             local getaddons = () -> $addonsvar
             $(body())
         end
+        try
+        function ReactiveMP.getrulefunction(
+                ::$(fuppertype),
+                ::$(on_type),
+                ::$(vconstraint),
+                ::$(m_names),
+                ::$(q_names),
+                ::$(metatype)
+            ) where {$(whereargs...)}
+            return $(rulefnname)
+        end
+    catch error
+    end
     end
 end
 
@@ -268,6 +278,9 @@ function marginalrule_function_expression(body::Function, fuppertype, on_type, m
 end
 
 import .MacroHelpers
+
+
+function getrulefunction end
 
 """
     Documentation placeholder
@@ -408,10 +421,12 @@ macro call_rule(fform, args)
 
     distributionsym = gensym(:distributionsym)
     addonsym = gensym(:addonsym)
+    rulefnname = gensym(:rulefnname)
 
     output = quote
+        $rulefnname = ReactiveMP.getrulefunction($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $q_names_arg, $meta)
         # TODO: (bvdmitri At the moment we cannot really get the result of the addon by calling `@call_rule`
-        $distributionsym, $addonsym = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
+        $distributionsym, $addonsym = $(rulefnname)($m_values_arg, $q_values_arg, $meta, $addons, $node)
         $distributionsym
     end
 

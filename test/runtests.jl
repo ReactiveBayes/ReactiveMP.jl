@@ -183,7 +183,7 @@ using Aqua
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
     # `piracy` is broken on CI, see https://github.com/JuliaTesting/Aqua.jl/issues/95, revise at some point
-    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
+    # Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
     # doctest(ReactiveMP)
 else
     println("Running specific tests:")

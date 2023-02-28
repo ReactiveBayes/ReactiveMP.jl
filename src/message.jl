@@ -269,14 +269,15 @@ end
 ## We create a lambda-like callable structure to improve type inference and make it more stable
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 
-struct MessageMapping{F, T, C, N, M, A, X, R}
-    vtag            :: T
-    vconstraint     :: C
-    msgs_names      :: N
-    marginals_names :: M
+struct MessageMapping{F, A, X, R}
+    rule            :: F
     meta            :: A
     addons          :: X
     factornode      :: R
+    function MessageMapping(fform, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {T, C, N, M, A, X, R}
+        rulefn = getrulefunction(fform, vtag, vconstraint, msgs_names, marginals_names, meta)
+        return new{typeof(rulefn), A, X, R}(rulefn, meta, addons, factornode)
+    end
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -305,13 +306,6 @@ end
 # Other addons may override this behaviour (if necessary, see e.g. AddonMemory)
 message_mapping_addon(addon, mapping, messages, marginals, result) = addon
 
-function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
-end
-
-function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F <: Function, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
-end
 
 function materialize!(mapping::MessageMapping, dependencies)
     messages  = dependencies[1]
@@ -323,13 +317,8 @@ function materialize!(mapping::MessageMapping, dependencies)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    result, addons = rule(
-        message_mapping_fform(mapping),
-        mapping.vtag,
-        mapping.vconstraint,
-        mapping.msgs_names,
+    result, addons = mapping.rule(
         messages,
-        mapping.marginals_names,
         marginals,
         mapping.meta,
         mapping.addons,
