@@ -52,11 +52,6 @@ include("gcv/w.jl")
 include("gcv/marginals.jl")
 include("gcv/gaussian_extension.jl")
 
-include("kernel_gcv/x.jl")
-include("kernel_gcv/y.jl")
-include("kernel_gcv/z.jl")
-include("kernel_gcv/marginals.jl")
-
 include("mv_normal_mean_covariance/out.jl")
 include("mv_normal_mean_covariance/mean.jl")
 include("mv_normal_mean_covariance/covariance.jl")
