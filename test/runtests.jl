@@ -391,5 +391,7 @@ end
     addtests(testrunner, "rules/implication/test_in2.jl")
     addtests(testrunner, "rules/implication/test_marginals.jl")
 
+    addtests(testrunner, "rules/transition/test_out.jl")
+
     run(testrunner)
 end
