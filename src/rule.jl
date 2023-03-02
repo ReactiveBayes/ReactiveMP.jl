@@ -1021,16 +1021,3 @@ function print_rule_rows(m::Method)
     return txt
 end
 
-"""
-    Prints table of rules
-"""
-function print_rules_table()
-    Markdown.parse(
-        """
-        RxInfer supports $(length(methods(rule))) analytical message passing update rules! Below you can find an overview of these rules:
-        
-        | Node | Output | Inputs |
-        |:-----|:-------|:-------|
-        """*mapreduce(print_rule_rows, *, methods(rule))
-    )
-end
