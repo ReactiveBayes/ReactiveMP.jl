@@ -278,13 +278,17 @@ function marginal_prod_fn(randomprocess::RandomProcess)
     inducing       = randomprocess.inducing_input 
     return messages -> begin 
         message_vector = map(ReactiveMP.as_message, messages)
-         process_message = getdata(message_vector[1])
-         meanf = process_message.meanfunction
-         kernelf = process_message.kernelfunction
-         likelihood_messages = message_vector[2:end]
-
+        process_message = getdata(message_vector[1])
+        meanf = process_message.meanfunction
+        kernelf = process_message.kernelfunction
+        likelihood_messages = message_vector[2:end]
         if isnothing(getmarginal(randomprocess).proxied_source.subject.recent) 
-            (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train))
+            if typeof(cov_strategy.strategy) <: CirculantFullCovarianceStrategy 
+                evaluated_mean = meanf.(train)
+                evaluated_cov = kernelf[1]*diageye(length(train))
+            else 
+                (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train))
+            end
         else
             gp_marginal = getmarginal(randomprocess).proxied_source.subject.recent.data.finitemarginal
             (evaluated_mean, evaluated_cov) = mean_cov(gp_marginal)
@@ -299,14 +303,13 @@ function marginal_prod_fn(randomprocess::RandomProcess)
                 likelihood_messages_ep[i] = compute_ep_message(x -> logpdf(tmp,x), evaluated_mean[i], evaluated_cov[i,i])
             end
             m_right,cov_right = make_multivariate_message(likelihood_messages_ep)
-        end
-         
-         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
-         m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
-         extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
-         addons = AddonMemory(message_vector)
+        end 
+        extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
+        m, K = predictMVN(cov_strategy,kernelf,meanf,train,test,m_right,inducing)
+        extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
+        addons = AddonMemory(message_vector)
 
-         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false, addons)
+        return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false, addons)
      end
  end
 

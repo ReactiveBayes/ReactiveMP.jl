@@ -61,7 +61,6 @@ end
     μ_in = m_gp[index]
     var_in = cov_gp[index,index]
     μ_out, var_out = mean_var(m_out)
-
     backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out  - x*μ_in)^2 / (var_in*x^2 + var_out)
     return ContinuousUnivariateLogPdf(backwardpass)
 end

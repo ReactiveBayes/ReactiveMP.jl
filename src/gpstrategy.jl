@@ -1,13 +1,15 @@
 export AbstractCovarianceStrategyType
 export CovarianceMatrixStrategy
 export FullCovarianceStrategy
+export CirculantFullCovarianceStrategy
 export DeterministicInducingConditional, DIC, SoR, SubsetOfRegressors
 export DeterministicTrainingConditional, DTC
 export FullyIndependentTrainingConditional, FITC
 
 import KernelFunctions: kernelmatrix, kernelmatrix!,Kernel 
+import ToeplitzMatrices: Circulant
+import FFTW: plan_rfft, plan_irfft 
 abstract type AbstractCovarianceStrategyType end 
-
 
 #------- Cache  ------- #
 #use this cache to store and modify matrices 
@@ -56,6 +58,21 @@ mutable struct FullCovarianceStrategy{N,R}
     cache :: GPCache
 end
 FullCovarianceStrategy() = FullCovarianceStrategy(Int[],nothing,Float64[1;;], GPCache()) 
+
+#----- Circulant Full convariance matrix --------#
+#we only use this strategy in case train and test input are identical
+mutable struct CirculantFullCovarianceStrategy{N,R}
+    n_inducing      :: N 
+    rng             :: R 
+    Afftmatrix 
+    Ainvfftmatrix 
+    afft            :: AbstractArray 
+    bfft            :: AbstractArray
+    cfft            :: AbstractArray
+    vector_noise    :: AbstractArray
+    seedVector      :: AbstractArray
+end
+CirculantFullCovarianceStrategy() = CirculantFullCovarianceStrategy(Int[],nothing,nothing,nothing,[],[],[],Float64[],Float64[]) 
 
 #------------- SoR ---------------#
 mutable struct DeterministicInducingConditional{R}
@@ -117,6 +134,8 @@ predictMVN(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy}, kerne
 predictMVN(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditional}, kernelfunc, meanfunc, xtrain, xtest, y, inducing)       = sor(gpstrategy,kernelfunc, meanfunc, xtrain, xtest, y, inducing)
 predictMVN(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingConditional}, kernelfunc, meanfunc, xtrain, xtest, y, inducing)       = dtc(gpstrategy,kernelfunc, meanfunc, xtrain, xtest, y, inducing)
 predictMVN(gpstrategy::CovarianceMatrixStrategy{<:FullyIndependentTrainingConditional}, kernelfunc, meanfunc, xtrain, xtest, y, inducing)    = fitc(gpstrategy,kernelfunc, meanfunc, xtrain, xtest, y, inducing)
+
+predictMVN(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCovarianceStrategy}, kernelfunc, meanfunc, xtrain, xtest, y, inducing)        = cirfullcov(gpstrategy,kernelfunc, meanfunc, xtrain, xtest, y) #new strategy 
 
 #### Full covariance strategy 
 function fullcov(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy},kernelfunc, meanfunc,xtrain,xtest,y)  
@@ -240,9 +259,39 @@ function fitc(gpstrategy::CovarianceMatrixStrategy{<:FullyIndependentTrainingCon
     return μ_FITC, Σ_FITC  
 end
 
-### function for extracting the matrices for strategies 
+## Circulant full covariance 
+function cirfullcov(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCovarianceStrategy},kernelfunc, meanfunc, xtrain, xtest, y)
+    N = length(xtest) #actual data length 
+
+    circularVectorNoise = gpstrategy.strategy.vector_noise
+    Afftmatrix = gpstrategy.strategy.Afftmatrix
+    Ainvfftmatrix = gpstrategy.strategy.Ainvfftmatrix
+    afft = gpstrategy.strategy.afft 
+    bfft = gpstrategy.strategy.bfft 
+    cfft = gpstrategy.strategy.cfft 
+    seedVector_Ktest = gpstrategy.strategy.seedVector #already circularized 
+    #make xtest and y circulant 
+    circular_xtest = circularize(xtest)
+    circular_y = circularize(y)
+    #make Ktest circulant
+    Circulant_Ktest = Circulant(seedVector_Ktest)
+    mean_difference = circular_y - meanfunc.(circular_xtest)
+    #compute predictive mean and variance 
+    μ_test = Vector{Float64}(undef,N)
+    for index = 1:N
+        Circulant_Ktest_noise = Circulant_Ktest + circularVectorNoise[index] * I 
+        v1 = fastinversemultiply(Circulant_Ktest_noise[:,1],mean_difference,Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
+        temp = meanfunc.(circular_xtest) + fastmultiply(Circulant_Ktest[:,1],v1, Afftmatrix, Ainvfftmatrix, afft, bfft, cfft)
+        μ_test[index] = temp[index]
+    end
+    # μ_test_gt = meanfunc.(circular_xtest) + Circulant_Ktest * inv(Circulant_Ktest + Diagonal(circularVectorNoise)) * (circular_y - meanfunc.(circular_xtest))
+    return  μ_test, Circulant_Ktest[1:N, 1:N]
+end
+
+#------------------------------------- function for extracting the matrices for strategies  ------------------------------------# 
 function extracmatrix! end 
 function extractmatrix_change! end 
+
 #--------------- full covariance strategy --------------------#
 function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc) 
     Kff = kernelmatrix(kernel,x_train,x_train)
@@ -254,6 +303,36 @@ end
 function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc) 
     return extractmatrix!(gpstrategy,kernel, x_train, Σ_noise,x_induc)
 end
+
+#--------------- Circulant Full Covariance Strategy -----------------#
+function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc)
+    """
+    kernel now is a stationary vector (not circularized yet)
+    """
+    #get the first column of the circulant covariance matrix. In this case, Ktrain = Ktest  
+    cir_vector_K = circularize(kernel)
+
+    #get fft structure 
+    Afftmatrix,Ainvfftmatrix, afft, bfft, cfft  = returnFFTstructures(cir_vector_K)
+    
+    #vector noise 
+    diag_Σ_noise = diag(Σ_noise)
+    circular_diag_Σ_noise = circularize(diag_Σ_noise)
+
+    gpstrategy.strategy.vector_noise = circular_diag_Σ_noise 
+    gpstrategy.strategy.Afftmatrix = Afftmatrix
+    gpstrategy.strategy.Ainvfftmatrix = Ainvfftmatrix
+    gpstrategy.strategy.afft = afft 
+    gpstrategy.strategy.bfft = bfft 
+    gpstrategy.strategy.cfft = cfft 
+    gpstrategy.strategy.seedVector = cir_vector_K
+    return gpstrategy
+end
+
+function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc)
+    return gpstrategy 
+end
+
 #--------------- SoR strategy -------------------------#
 function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:DeterministicInducingConditional}, kernel, x_train, Σ_noise, x_induc)
     gpcache = gpstrategy.strategy.cache 
@@ -358,3 +437,63 @@ function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:FullyIndep
     gpstrategy.strategy.invΛ = invΛ
 return gpstrategy
 end
+
+# ------- helper functions for circulant covariance matrices --------- #
+function circularize(arr)
+    arrlength      = length(arr)
+    circularlength = 2*(arrlength-1)
+    
+    circulararr    = Array{eltype(arr)}(undef,circularlength)
+    
+    @views circulararr[1:arrlength] .= view(arr,:,1)
+    @inbounds [circulararr[i] = arr[arrlength - i%arrlength] for i=arrlength+1:circularlength]
+    
+    return circulararr
+end
+
+
+function returnFFTstructures(circularvector)
+    N                   = length(circularvector)
+    n                   = Int(N/2 + 1)
+    Afftmatrix          = plan_rfft(circularvector)
+    afft                = Vector{ComplexF64}(undef, n)
+    bfft                = Vector{ComplexF64}(undef, n)
+    cfft                = Vector{Float64}(undef, N)
+    Ainvfftmatrix       = plan_irfft(afft, N)
+    
+    return Afftmatrix,Ainvfftmatrix,afft,bfft,cfft 
+end
+
+
+function fastmultiply(a, b , Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
+    mul!(afft, Afftmatrix, a)
+    mul!(bfft, Afftmatrix, b)
+    
+    afft .*= bfft
+    return mul!(cfft, Ainvfftmatrix, afft)
+end
+
+function fastinversemultiply(a, b , Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
+   
+    mul!(afft, Afftmatrix, a)
+    mul!(bfft, Afftmatrix, b)
+    
+    bfft ./= afft
+    return mul!(cfft, Ainvfftmatrix, bfft)
+end
+
+
+
+function fastmahalanobis(a, b , Afftmatrix,afft,bfft)
+    mul!(afft, Afftmatrix, a)
+    mul!(bfft, Afftmatrix, b)
+    return real((2*sum(afft .* abs.(bfft).^2) - (afft[1] * abs(bfft[1])^2 + afft[length(afft)] * abs(bfft[length(afft)])^2))/length(a))
+end
+
+
+# function fastinvmahalanobis(a, b , Afftmatrix,afft,bfft)
+#     mul!(afft, Afftmatrix, a)
+#     mul!(bfft, Afftmatrix, b)
+    
+#     return real((2*sum(abs.(bfft).^2 ./ afft) - (abs(bfft[1])^2/afft[1] + abs(bfft[length(afft)])^2/afft[length(afft)]))/length(a))
+# end

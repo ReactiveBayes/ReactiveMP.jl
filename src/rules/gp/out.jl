@@ -13,7 +13,7 @@ end
     return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params)
 end
 
-# when we have CVI meta 
+# when we have metas 
 @rule GaussianProcess(:out, Marginalisation) (q_meanfunc::Any, q_kernelfunc::Any, 
                                     q_params::Any, meta::CVI) = begin 
     return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = q_params)
@@ -29,8 +29,12 @@ end
     return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = q_params)
 end
 
-@rule GaussianProcess(:out, Marginalisation) (q_meanfunc::Any, q_kernelfunc::Any, q_params::NormalMeanVariance, meta::GaussHermiteCubature) = begin 
+@rule GaussianProcess(:out, Marginalisation) (q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
     return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = q_params)
+end
+
+@rule GaussianProcess(:out, Marginalisation) (q_meanfunc::Any, q_kernelfunc::Any, m_params::UnivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
+    return @call_rule GaussianProcess(:out, Marginalisation) (q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params)
 end
 
 @rule GaussianProcess(:out, Marginalisation) (q_meanfunc::Any, q_kernelfunc::Any, q_params::NormalWeightedMeanPrecision, meta::GaussHermiteCubature{Vector{Float64}, Vector{Float64}}) = begin 

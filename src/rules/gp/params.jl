@@ -1,6 +1,8 @@
 ## here we use CVI to estimate the marginal of `params` edge
 import KernelFunctions: kernelmatrix, Kernel 
 import LinearAlgebra: det, logdet 
+import ToeplitzMatrices: Circulant
+#----------- CVI ----------#
 # Univariate case 
 
 @rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, 
@@ -32,6 +34,7 @@ end
         m_params::UnivariateGaussianDistributionsFamily, meta::CVI) = begin 
     return @call_rule GaussianProcess(:params, Marginalisation) (q_out = q_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
 end
+
 
 # Multivariate case 
 
@@ -102,6 +105,7 @@ function inv_cov_mat(::CovarianceMatrixStrategy{<:FullyIndependentTrainingCondit
 end
 
 #-------------------Unscented Transform------------------------#
+### (incorrect update)
 ###### Univariate case ###########
 @rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily, meta::Unscented) = begin 
     #collect entities in meta
@@ -204,15 +208,15 @@ end
 @rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
     #collect entities in meta
     #collect information from gaussian process q_out 
+    #new thing
+    cov_strategy = q_out.covariance_strategy
     test = q_out.testinput 
     meanf = q_meanfunc
     kernelfunc = q_kernelfunc  # this is already a function k(θ)
     #get information from observations 
     y, Σ = mean_cov(q_out.finitemarginal) 
-    #new thing
-    cov_strategy = q_out.covariance_strategy
     inducing = q_out.inducing_input
-    # do CVI 
+    # do GaussHermiteCubature 
     msg_in = q_params
     #use "inv" instead of "cholinv"
     g = (x) -> inv_cov_mat(cov_strategy, kernelfunc, test, Σ, x, inducing)
@@ -221,6 +225,13 @@ end
     return result
 end
 
+@rule GaussianProcess(:params, Marginalisation) (m_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, m_params::UnivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
+    return @call_rule GaussianProcess(:params, Marginalisation) (q_out = m_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
+end
+
+@rule GaussianProcess(:params, Marginalisation) (m_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily, meta::GaussHermiteCubature) = begin 
+    return @call_rule GaussianProcess(:params, Marginalisation) (q_out = m_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = q_params, meta = meta)
+end
 
 function prod(meta::GaussHermiteCubature, left::ContinuousUnivariateLogPdf, right::UnivariateGaussianDistributionsFamily)
     m,v = approximate_meancov(meta, z -> exp(left.logpdf(z)), mean(right), var(right))
@@ -249,8 +260,114 @@ end
     return result
 end
 
-
 function prod(meta::GaussHermiteCubature, left::ContinuousMultivariateLogPdf, right::MultivariateGaussianDistributionsFamily)
     m,v = approximate_meancov(meta, z -> exp(left.logpdf(z)), mean(right), cov(right))
     return MvNormalMeanCovariance(m,v)
+end
+
+### PAD 
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily) = begin 
+    mean_in, var_in = mean_var(q_params)
+    y, _= mean_cov(q_out.finitemarginal)
+    circular_y = circularize(y)
+    test = q_out.testinput
+    circular_test = circularize(test)
+    #kernelfunc(θ) is the first column of the circulant covariance matrix 
+    mean_difference = circular_y - q_meanfunc.(circular_test)
+
+    logp_llh = (θ) -> - 1/2 * fastinvmahalanobis_modified(q_kernelfunc(θ),mean_difference)  - 1/2 * logdet(Circulant(q_kernelfunc(θ))) - 0.5*length(circular_test) * log(2π)
+
+    nsamples = 1000
+    samples = rand(q_params,nsamples)
+    weights = exp.(logp_llh.(samples)) / sum(exp.(logp_llh.(samples)) )
+    weights[1:5]
+    if any(isnan.(weights)) 
+        m_ = sum(samples)/nsamples
+        v_ = sum((samples .- m_).^2) /nsamples 
+    else
+        m_ = sum(weights .* samples)
+        v_ = sum(weights .* (samples .- m_).^2)    
+    end
+    ksi = m_/v_ - mean_in/var_in
+    precision = clamp(1/v_ - 1/var_in, tiny,huge)
+            
+    return NormalWeightedMeanPrecision(ksi,precision)
+end
+
+@rule GaussianProcess(:params, Marginalisation) (m_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, m_params::UnivariateGaussianDistributionsFamily) = begin 
+    return @call_rule GaussianProcess(:params, Marginalisation) (q_out = m_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params)
+end
+
+@rule GaussianProcess(:params, Marginalisation) (m_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily) = begin 
+    return @call_rule GaussianProcess(:params, Marginalisation) (q_out = m_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = q_params)
+end
+#------------- compute ep message -----------#
+# function ep_message end 
+
+# function ep_message(meta::GaussHermiteCubature, m_in::UnivariateGaussianDistributionsFamily, GP::GaussianProcess , meanfunc, kernelfunc; nsamples = 1000)
+#     #write the pdf of gaussian w.r.t. params 
+#     mean_in, var_in = mean_var(m_in)
+#     y, _= mean_cov(GP.finitemarginal)
+#     circular_y = circularize(y)
+#     test = GP.testinput
+#     circular_test = circularize(test)
+
+#     #kernelfunc(θ) is the first column of the circulant covariance matrix 
+#     mean_difference = circular_y - meanfunc.(circular_test)
+
+#     logp_llh = (θ) -> - 1/2 * fastinvmahalanobis_Hoang(kernelfunc(θ),mean_difference)  - 1/2 * log(det(Circulant(kernelfunc(θ)))) - 0.5*length(test) * log(2π)
+
+
+#     samples = rand(m_in,nsamples)
+#     weights = exp.(logp_llh.(samples)) / sum(exp.(logp_llh.(samples)) )
+#     if any(isnan.(weights)) 
+#         m_ = sum(samples)/nsamples
+#         v_ = sum((samples .- m_).^2) /nsamples 
+#     else
+#         m_ = sum(weights .* samples)
+#         v_ = sum(weights .* (samples .- m_).^2)    
+#     end
+#     ksi = m_/v_ - mean_in/var_in
+#     precision = clamp(1/v_ - 1/var_in, tiny,huge)
+            
+#     return NormalWeightedMeanPrecision(ksi,precision)
+# end
+
+
+
+#-------helper function--------#
+function circularize(arr)
+    arrlength      = length(arr)
+    circularlength = 2*(arrlength-1)
+    
+    circulararr    = Array{eltype(arr)}(undef,circularlength)
+    
+    @views circulararr[1:arrlength] .= view(arr,:,1)
+    @inbounds [circulararr[i] = arr[arrlength - i%arrlength] for i=arrlength+1:circularlength]
+    
+    return circulararr
+end
+
+function fastinvmahalanobis(a, b , Afftmatrix,afft,bfft)
+    mul!(afft, Afftmatrix, a)
+    mul!(bfft, Afftmatrix, b)
+
+    return real((2*sum(abs.(bfft).^2 ./ afft) - (abs(bfft[1])^2/afft[1] + abs(bfft[length(afft)])^2/afft[length(afft)]))/length(a))
+end
+function returnFFTstructures(circularvector)
+    N                   = length(circularvector)
+    n                   = Int(N/2 + 1)
+    Afftmatrix          = plan_rfft(circularvector)
+    afft                = Vector{ComplexF64}(undef, n)
+    bfft                = Vector{ComplexF64}(undef, n)
+    cfft                = Vector{Float64}(undef, N)
+    Ainvfftmatrix       = plan_irfft(afft, N)
+    
+    return Afftmatrix,Ainvfftmatrix,afft,bfft,cfft 
+end
+
+function fastinvmahalanobis_modified(a,b)
+    circular_a = circularize(a)
+    Afftmatrix,_,afft,bfft,_ = returnFFTstructures(circular_a)
+    return fastinvmahalanobis(circular_a,b,Afftmatrix,afft,bfft)
 end
