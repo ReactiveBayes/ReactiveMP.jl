@@ -274,7 +274,7 @@ function rule_function_expression(body::Function, fformtype, fuppertype, on_type
         @static if !isdefined(@__MODULE__(), $(QuoteNode(update_rule_fn)))
             error($override_err_msg)
         end
-       
+
         # Keep for backward compatibility
         function ReactiveMP.rule(
             fform::$(fuppertype),
@@ -288,17 +288,7 @@ function rule_function_expression(body::Function, fformtype, fuppertype, on_type
             $(addonsvar),
             $(nodevar)
         ) where {$(whereargs...)}
-            return node_rule_function(fform)(
-                on, 
-                vconstraint, 
-                messages_names, 
-                messages, 
-                marginals_names, 
-                marginals, 
-                meta, 
-                $(addonsvar), 
-                $(nodevar)
-            )
+            return node_rule_function(fform)(on, vconstraint, messages_names, messages, marginals_names, marginals, meta, $(addonsvar), $(nodevar))
         end
 
         # Dispatch efficient version

@@ -140,7 +140,7 @@ end
 
 function rule_for_NormalMixture end
 
-node_rule_function(::Type{ NormalMixture }) = rule_for_NormalMixture
+node_rule_function(::Type{<:NormalMixture}) = rule_for_NormalMixture
 
 # FreeEnergy related functions
 

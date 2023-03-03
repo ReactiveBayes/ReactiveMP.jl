@@ -136,7 +136,7 @@ end
 
 function rule_for_GammaMixture end
 
-node_rule_function(::Type{GammaMixture}) = rule_for_GammaMixture
+node_rule_function(::Type{<:GammaMixture}) = rule_for_GammaMixture
 
 # FreeEnergy related functions
 

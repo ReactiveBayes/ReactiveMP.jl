@@ -314,15 +314,7 @@ function materialize!(mapping::MessageMapping, dependencies)
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
     result, addons = mapping.rulefn(
-        mapping.vtag,
-        mapping.vconstraint,
-        mapping.msgs_names,
-        messages,
-        mapping.marginals_names,
-        marginals,
-        mapping.meta,
-        mapping.addons,
-        mapping.factornode
+        mapping.vtag, mapping.vconstraint, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.addons, mapping.factornode
     )
 
     # Inject extra addons after the rule has been executed

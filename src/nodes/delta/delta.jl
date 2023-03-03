@@ -93,7 +93,7 @@ end
 # `DeltaFn` is defined by hand, hence, requires ``
 function rule_for_DeltaFn end
 
-node_rule_function(::Type{ <:DeltaFn }) = rule_for_DeltaFn
+node_rule_function(::Type{<:DeltaFn}) = rule_for_DeltaFn
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
     # Julia's constant propagation should compile-out this if-else branch

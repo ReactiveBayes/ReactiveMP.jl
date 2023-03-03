@@ -5,6 +5,25 @@ using ReactiveMP
 using Rocket
 using Distributions
 
+# Node specifications should be at top-level
+struct CustomStochasticNode end
+
+@node CustomStochasticNode Stochastic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
+
+struct CustomDeterministicNode end
+
+CustomDeterministicNode(x, y, z) = x + y + z
+
+@node CustomDeterministicNode Deterministic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
+
+struct DummyNodeCheckUniqueness end
+
+@node DummyNodeCheckUniqueness Stochastic [a, b, c]
+
+struct DummyNodeCheckFactorisationWarning end
+
+@node DummyNodeCheckFactorisationWarning Stochastic [a, b, c]
+
 @testset "FactorNode" begin
     @testset "Common" begin
         @test ReactiveMP.as_node_functional_form(() -> nothing) === ReactiveMP.UndefinedNodeFunctionalForm()
@@ -26,11 +45,6 @@ using Distributions
     @testset "@node macro" begin
 
         # Testing Stochastic node specification
-
-        struct CustomStochasticNode end
-
-        @node CustomStochasticNode Stochastic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
-
         @test ReactiveMP.interface_get_index(Val{:CustomStochasticNode}, Val{:out}) === 1
         @test ReactiveMP.interface_get_index(Val{:CustomStochasticNode}, Val{:x}) === 2
         @test ReactiveMP.interface_get_index(Val{:CustomStochasticNode}, Val{:y}) === 3
@@ -62,12 +76,6 @@ using Distributions
 
         # Testing Deterministic node specification
 
-        struct CustomDeterministicNode end
-
-        CustomDeterministicNode(x, y, z) = x + y + z
-
-        @node CustomDeterministicNode Deterministic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
-
         @test ReactiveMP.interface_get_index(Val{:CustomDeterministicNode}, Val{:out}) === 1
         @test ReactiveMP.interface_get_index(Val{:CustomDeterministicNode}, Val{:x}) === 2
         @test ReactiveMP.interface_get_index(Val{:CustomDeterministicNode}, Val{:y}) === 3
@@ -98,11 +106,6 @@ using Distributions
         @test sdtype(CustomDeterministicNode) === Deterministic()
 
         # Check that same variables are not allowed
-
-        struct DummyNodeCheckUniqueness end
-
-        @node DummyNodeCheckUniqueness Stochastic [a, b, c]
-
         sx = randomvar(:rx)
         sd = datavar(:rd, Float64)
         sc = constvar(:sc, 1.0)
@@ -117,10 +120,6 @@ using Distributions
         end
 
         # `make_node` must show a warning in case if factorisation include the `PointMass` distributed variables jointly with other variables
-        struct DummyNodeCheckFactorisationWarning end
-
-        @node DummyNodeCheckFactorisationWarning Stochastic [a, b, c]
-
         for a in (datavar(:a, Float64), constvar(:a, 1.0)), b in (randomvar(:b),), c in (randomvar(:c),)
             @test_logs (:warn, r".*replace `q\(a, b, c\)` with `q\(a\)q\(\.\.\.\)`.*") make_node(
                 DummyNodeCheckFactorisationWarning, FactorNodeCreationOptions(FullFactorisation(), nothing, nothing), a, b, c

@@ -66,11 +66,10 @@ function strip_type_parameters(type)
         return :(typeof($(ensure_symbol(T))))
     elseif @capture(type, T_{R_})
         return strip_type_parameters(T)
-    else 
+    else
         return ensure_symbol(type)
     end
 end
-
 
 """
     proxy_type(proxy, type)
