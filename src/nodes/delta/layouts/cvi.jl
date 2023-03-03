@@ -39,14 +39,14 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
         marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]),), PushNew())
 
         fform       = functionalform(factornode)
+        rulefn      = node_rule_function(fform)
         vtag        = tag(interface)
         vconstraint = local_constraint(interface)
         meta        = metadata(factornode)
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        # TODO add addons
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
+        mapping = let messagemap = MessageMapping(rulefn, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
 
