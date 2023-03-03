@@ -82,8 +82,11 @@ end
 # For missing rules error msg
 rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
 
+# `DeltaFn` requires an access to the node function, hence, node reference is required
+call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()
+
 # For `@call_rule` and `@call_marginalrule`
-function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
+function call_rule_make_node(::CallRuleNodeRequired, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
     # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
     # Doing so will most likely throw an error
     return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn{F}, meta))
