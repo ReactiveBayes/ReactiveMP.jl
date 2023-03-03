@@ -34,12 +34,10 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Variational Bayes: (q_in::Categorical, q_a::Any)" begin
-        @test_rules [with_float_conversions = false] Transition(:out, Marginalisation) [
-            (
-                input = (q_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-                output = Categorical([0.2994385327821292, 0.3260399327754116, 0.37452153444245917])
-            )
-        ]
+        @test_rules [with_float_conversions = false] Transition(:out, Marginalisation) [(
+            input = (q_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
+            output = Categorical([0.2994385327821292, 0.3260399327754116, 0.37452153444245917])
+        )]
     end
 
     @testset "Variational Bayes: (m_in::Categorical, q_a::MatrixDirichlet)" begin

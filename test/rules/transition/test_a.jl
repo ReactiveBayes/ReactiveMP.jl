@@ -17,9 +17,9 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Variational Bayes: (q_out_in::Contingency)" begin
-        @test_rules [with_float_conversions = false] Transition(:a, Marginalisation) [
-            (input = (q_out_in = Contingency(diageye(3)),), output = MatrixDirichlet([1.333333333333333 1 1; 1 1.3333333333333 1; 1 1 1.33333333333333333]))
-        ]
+        @test_rules [with_float_conversions = false] Transition(:a, Marginalisation) [(
+            input = (q_out_in = Contingency(diageye(3)),), output = MatrixDirichlet([1.333333333333333 1 1; 1 1.3333333333333 1; 1 1 1.33333333333333333])
+        )]
     end
 end
 
