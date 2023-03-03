@@ -34,11 +34,12 @@ end
 """
     upper_type(type)
 
+This function returns `typeof(T)` expression for the `typeof(T)` input expression.
 This function returns `Type{ <: T }` expression for the following input expressions:
-1. typeof(T)
-2. Type{ <: T }
-3. Type{ T }
-4. T
+1. Type{ <: T }
+2. Type{ T }
+3. T
+
 
 # Arguments
 - `type`: Type expression to be extended
@@ -54,6 +55,22 @@ function upper_type(type)
         return :(Type{<:$(bottom_type(type))})
     end
 end
+
+"""
+    strip_type_parameters(type)
+
+This function strips all type parameters from the type expression (if any).
+"""
+function strip_type_parameters(type)
+    if @capture(type, typeof(T_))
+        return :(typeof($(ensure_symbol(T))))
+    elseif @capture(type, T_{R_})
+        return strip_type_parameters(T)
+    else 
+        return ensure_symbol(type)
+    end
+end
+
 
 """
     proxy_type(proxy, type)

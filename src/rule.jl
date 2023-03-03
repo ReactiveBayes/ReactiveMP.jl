@@ -257,12 +257,41 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Int)
     end
 end
 
-function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
+function rule_function_expression(body::Function, fformtype, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
     addonsvar = gensym(:addons)
     nodevar = gensym(:node)
+    update_rule_fn = Symbol(:rule_for_, MacroHelpers.strip_type_parameters(fformtype))
     return quote
+       
+        # Keep for backward compatibility
         function ReactiveMP.rule(
             fform::$(fuppertype),
+            on::$(on_type),
+            vconstraint::$(vconstraint),
+            messages_names::$(m_names),
+            messages::$(m_types),
+            marginals_names::$(q_names),
+            marginals::$(q_types),
+            meta::$(metatype),
+            $(addonsvar),
+            $(nodevar)
+        ) where {$(whereargs...)}
+            return node_rule_function(fform)(
+                on, 
+                vconstraint, 
+                messages_names, 
+                messages, 
+                marginals_names, 
+                marginals, 
+                meta, 
+                $(addonsvar), 
+                $(nodevar)
+            )
+        end
+
+        # Dispatch efficient version
+        # Could be even more efficient, but requires careful `rule` macro redesigning
+        function $(update_rule_fn)(
             on::$(on_type),
             vconstraint::$(vconstraint),
             messages_names::$(m_names),
@@ -281,7 +310,7 @@ function rule_function_expression(body::Function, fuppertype, on_type, vconstrai
     end
 end
 
-function marginalrule_function_expression(body::Function, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs)
+function marginalrule_function_expression(body::Function, fformtype, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs)
     nodevar = gensym(:node)
     return quote
         function ReactiveMP.marginalrule(
@@ -327,7 +356,7 @@ macro rule(fform, lambda)
 
     output = quote
         $(
-            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
+            rule_function_expression(fformtype, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
                     local _addons = getaddons()
                     # This trick allows us to use arbitrary control-flow logic
@@ -352,61 +381,6 @@ macro rule(fform, lambda)
                 end
             end
         )
-    end
-
-    foreach(options) do option
-
-        # Symmetrical option
-        if first(option) === :symmetrical
-            @capture(last(option), [names__]) || error("Invalid symmetrical names specification. Name should be a symbol.")
-
-            @assert length(names) > 1 "Invalid symmetrical names specification. Length of names should be greater than 1."
-
-            names = map(names) do name
-                @capture(name, :s_) || error("Invalid symmetrical name specification. Name should be a symbol.")
-                return s
-            end
-
-            indices = map(names) do name
-                return findfirst(input -> isequal(string("m_", name), string(first(input))) || isequal(string("q_", name), string(first(input))), inputs)
-            end
-
-            foreach(enumerate(indices)) do (i, index)
-                @assert index !== nothing "Name $(names[i]) does not exist in arguments list"
-            end
-
-            prefixes = map(index -> string(first(inputs[index]))[1:2], indices)
-
-            @assert length(Set(prefixes)) === 1 "It is not possible to mix symmetric arguments from messages and marginals"
-
-            prefix = first(prefixes)
-            swaps  = Iterators.flatten(map(i -> map(j -> (indices[i], indices[j]), (i + 1):length(indices)), 1:length(indices)))
-
-            is_messages  = isequal(prefix, "m_")
-            is_marginals = isequal(prefix, "q_")
-
-            foreach(swaps) do swap
-                messages  = is_messages ? MacroHelpers.rearranged_tuple(:messages, length(m_init_block), swap) : :(messages)
-                marginals = is_marginals ? MacroHelpers.rearranged_tuple(:marginals, length(m_init_block), swap) : :(marginals)
-
-                swapped_m_types = is_messages ? :(Tuple{$(swapped(m_types.args[2:end], first(swap), last(swap))...)}) : m_types
-                swapped_q_types = is_marginals ? :(Tuple{$(swapped(q_types.args[2:end], first(swap), last(swap))...)}) : q_types
-
-                @assert !is_messages || swapped_m_types != m_types "Message types are the same after arguments swap for indices = $(swap)"
-                @assert !is_marginals || swapped_q_types != q_types "Marginal types are the same after arguments swap for indices = $(swap)"
-
-                output = quote
-                    $output
-                    $(
-                        rule_function_expression(fuppertype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
-                            return :(ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginals_names, $(marginals), meta, __node))
-                        end
-                    )
-                end
-            end
-        else
-            error("Unknown option: $(first(option)) in rule specification")
-        end
     end
 
     return esc(output)
@@ -601,7 +575,7 @@ macro marginalrule(fform, lambda)
 
     output = quote
         $(
-            marginalrule_function_expression(fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs) do
+            marginalrule_function_expression(fformtype, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)

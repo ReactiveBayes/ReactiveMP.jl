@@ -206,6 +206,7 @@ end
     addtests(testrunner, "algebra/test_standard_basis_vector.jl")
 
     addtests(testrunner, "helpers/test_helpers.jl")
+    addtests(testrunner, "helpers/test_macrohelpers.jl")
 
     addtests(testrunner, "score/test_counting.jl")
 

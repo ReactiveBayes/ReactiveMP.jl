@@ -963,6 +963,11 @@ See also: [`@node`](@ref)
 """
 function make_node end
 
+# This function returns specific rule functions given a functional form
+# This can be more efficient for message update rules as it significantly reduces the time & allocation profile
+# needed to dispatch on rules for built-in nodes
+function node_rule_function end
+
 function interface_get_index end
 function interface_get_name end
 
@@ -1112,6 +1117,14 @@ macro node(fformtype, sdtype, interfaces_list)
         end
     end
 
+    # ReactiveMP creates specific message update rules for a node for faster dispatch
+    update_rule_fn_name = Symbol(:rule_for_, fformtype)
+    message_update_rules = quote 
+        function $(update_rule_fn_name) end 
+        
+        ReactiveMP.node_rule_function(::$fuppertype) = $update_rule_fn_name
+    end
+
     # By default every argument passed to a factorisation option of the node is transformed by
     # `collect_factorisation` function to have a tuple like structure.
     # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects
@@ -1213,6 +1226,7 @@ macro node(fformtype, sdtype, interfaces_list)
         end
 
         $(interface_name_getters...)
+        $(message_update_rules)
 
         $factorisation_collectors
     end
