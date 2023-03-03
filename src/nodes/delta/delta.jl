@@ -1,4 +1,5 @@
 export DeltaFn, DeltaFnNode, DeltaMeta
+export rule_for_DeltaFn
 
 """
     DeltaMeta(method = ..., [ inverse = ... ])
@@ -88,6 +89,11 @@ function call_rule_make_node(::CallRuleNodeRequired, fformtype::Type{<:DeltaFn},
     # Doing so will most likely throw an error
     return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn{F}, meta))
 end
+
+# `DeltaFn` is defined by hand, hence, requires ``
+function rule_for_DeltaFn end
+
+node_rule_function(::Type{ <:DeltaFn }) = rule_for_DeltaFn
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
     # Julia's constant propagation should compile-out this if-else branch

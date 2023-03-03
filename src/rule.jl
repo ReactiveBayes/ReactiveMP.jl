@@ -260,8 +260,20 @@ end
 function rule_function_expression(body::Function, fformtype, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
     addonsvar = gensym(:addons)
     nodevar = gensym(:node)
-    update_rule_fn = Symbol(:rule_for_, MacroHelpers.strip_type_parameters(fformtype))
+    nodeform = MacroHelpers.strip_type_parameters(fformtype)
+    update_rule_fn = Symbol(:rule_for_, nodeform)
+    override_err_msg = """
+    Trying to override a message update rule `$(update_rule_fn)` outside of the module it has been defined. 
+    Try to use `import ReactiveMP: $(update_rule_fn)` to supress this error.
+    If error does not disappear, replace the `import ReactiveMP` with `import XXX`, where `XXX` is the module where `$(nodeform)` has been defined.
+    """
     return quote
+
+        # This check if someone tries to override a built-in rule outside of the module without 
+        # explicitly importing the rule
+        @static if !isdefined(@__MODULE__(), $(QuoteNode(update_rule_fn)))
+            error($override_err_msg)
+        end
        
         # Keep for backward compatibility
         function ReactiveMP.rule(

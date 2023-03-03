@@ -848,6 +848,7 @@ function activate!(factornode::AbstractFactorNode, options)
     scheduler                  = getscheduler(options)
     addons                     = getaddons(options)
     fform                      = functionalform(factornode)
+    rulefn                     = node_rule_function(fform)
     meta                       = metadata(factornode)
     node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
@@ -866,7 +867,7 @@ function activate!(factornode::AbstractFactorNode, options)
             vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
+            mapping = let messagemap = MessageMapping(rulefn, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
                 (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
             end
 
@@ -1119,9 +1120,11 @@ macro node(fformtype, sdtype, interfaces_list)
 
     # ReactiveMP creates specific message update rules for a node for faster dispatch
     update_rule_fn_name = Symbol(:rule_for_, fformtype)
-    message_update_rules = quote 
-        function $(update_rule_fn_name) end 
-        
+    message_update_rules = quote
+        export $(update_rule_fn_name)
+
+        function $(update_rule_fn_name) end
+
         ReactiveMP.node_rule_function(::$fuppertype) = $update_rule_fn_name
     end
 

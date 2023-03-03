@@ -1,4 +1,5 @@
 export Mixture, MixtureNode
+export rule_for_Mixture
 
 # Mixture Functional Form
 struct Mixture{N} end
@@ -179,6 +180,12 @@ function get_marginals_observable(factornode::MixtureNode{N, F}, marginal_depend
 end
 
 as_node_functional_form(::Type{<:Mixture}) = ValidNodeFunctionalForm()
+
+# Manual dispatch rule specification 
+
+function rule_for_Mixture end
+
+node_rule_function(::Type{<:Mixture}) = rule_for_Mixture
 
 # Node creation related functions
 

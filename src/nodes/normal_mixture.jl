@@ -1,5 +1,6 @@
 export NormalMixture, NormalMixtureNode
 export GaussianMixture, GaussianMixtureNode
+export rule_for_NormalMixture
 
 # Normal Mixture Functional Form
 struct NormalMixture{N} end
@@ -134,6 +135,12 @@ function get_marginals_observable(factornode::NormalMixtureNode{N, F}, marginal_
 
     return marginal_names, marginals_observable
 end
+
+# Manual dispatch rule specification 
+
+function rule_for_NormalMixture end
+
+node_rule_function(::Type{ NormalMixture }) = rule_for_NormalMixture
 
 # FreeEnergy related functions
 

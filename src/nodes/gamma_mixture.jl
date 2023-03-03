@@ -1,4 +1,5 @@
 export GammaMixture, GammaMixtureNode
+export rule_for_GammaMixture
 
 # Gamma Mixture Functional Form
 struct GammaMixture{N} end
@@ -130,6 +131,12 @@ function get_marginals_observable(factornode::GammaMixtureNode{N, F}, marginal_d
 
     return marginal_names, marginals_observable
 end
+
+# Manual dispatch rule specification 
+
+function rule_for_GammaMixture end
+
+node_rule_function(::Type{GammaMixture}) = rule_for_GammaMixture
 
 # FreeEnergy related functions
 
