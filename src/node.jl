@@ -866,7 +866,7 @@ function activate!(factornode::AbstractFactorNode, options)
             vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
                 (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
             end
 
@@ -939,11 +939,11 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         vtag  = Val{name(localmarginal)}
         meta  = metadata(factornode)
 
-        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
+        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, factornode))
         # TODO: discontinue operator is needed for loopy belief propagation? Check
         marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
-        connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
+        connect!(cmarginal, marginalout)
 
         return apply_skip_filter(cmarginal, skip_strategy)
     end

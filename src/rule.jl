@@ -202,21 +202,48 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     return names_arg, values_arg
 end
 
+# This trait indicates that a node reference is required for a proper rule execution 
+# Most of the message passing update rules do not require a node reference
+# An example of a rule that requires a node is the `delta`, that needs the node function
+struct CallRuleNodeRequired end
+
+# This trait indicates that a node reference is not required for a proper rule execution 
+# This is used by default
+struct CallRuleNodeNotRequired end
+
+"""
+    call_rule_is_node_required(fformtype)
+
+Returns either `CallRuleNodeRequired()` or `CallRuleNodeNotRequired()` depending on if a specific 
+`fformtype` requires an access to the corresponding node in order to compute a message update rule.
+Returns `CallRuleNodeNotRequired()` for all known functional forms by default and `CallRuleNodeRequired()` for all unknown functional forms.
+"""
+call_rule_is_node_required(fformtype) = call_rule_is_node_required(as_node_functional_form(fformtype), fformtype)
+
+call_rule_is_node_required(::ValidNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
+call_rule_is_node_required(::UndefinedNodeFunctionalForm, fformtype) = CallRuleNodeRequired()
+
+# Returns the `node` if it is required for a rule, otherwise returns `nothing`
+node_if_required(fformtype, node) = node_if_required(call_rule_is_node_required(fformtype), node)
+
+node_if_required(::CallRuleNodeRequired, node) = node
+node_if_required(::CallRuleNodeNotRequired, node) = nothing
+
 """
     call_rule_create_node(::Type{ NodeType }, fformtype)
 
-Creates a node object that will be used inside `@call_rule` macro. The node object always creates with the default options for factorisation. 
+Creates a node object that will be used inside `@call_rule` macro. 
 """
 function call_rule_make_node(fformtype, nodetype, meta)
-    return call_rule_make_node(ReactiveMP.as_node_functional_form(nodetype), fformtype, nodetype, meta)
+    return call_rule_make_node(call_rule_is_node_required(nodetype), fformtype, nodetype, meta)
 end
 
-function call_rule_make_node(::UndefinedNodeFunctionalForm, fformtype, nodetype, meta)
-    return error("Cannot create a node of type `$nodetype` for the call rule routine.")
+function call_rule_make_node(::CallRuleNodeRequired, fformtype, nodetype, meta)
+    return error("Missing implementation for the `call_rule_make_node`. Cannot create a node of type `$nodetype` for the call rule routine.")
 end
 
-function call_rule_make_node(::ValidNodeFunctionalForm, fformtype, nodetype, meta)
-    return make_node(nodetype, FactorNodeCreationOptions(nothing, meta, nothing))
+function call_rule_make_node(::CallRuleNodeNotRequired, fformtype, nodetype, meta)
+    return nothing
 end
 
 call_rule_macro_construct_on_arg(on_type, on_index::Nothing) = MacroHelpers.bottom_type(on_type)
