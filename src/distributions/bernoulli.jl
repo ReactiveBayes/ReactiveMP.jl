@@ -47,14 +47,18 @@ function prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
     return Categorical(ReactiveMP.normalize!(p_new, 1))
 end
 
-function prod(::AddonProdLogScale, new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
+prod_analytical_rule(::Type{<:Categorical}, ::Type{<:Bernoulli}) = ProdAnalyticalRuleAvailable()
+
+prod(::ProdAnalytical, left::Categorical, right::Bernoulli) = prod(ProdAnalytical(), right, left)
+
+function compute_logscale(new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
     left_p = succprob(left_dist)
     right_p = succprob(right_dist)
     a = left_p * right_p + (one(left_p) - left_p) * (one(right_p) - right_p)
     return log(a)
 end
 
-function prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Bernoulli, right_dist::Categorical)
+function compute_logscale(new_dist::Categorical, left_dist::Bernoulli, right_dist::Categorical)
     # get probability vectors
     p_left = probvec(left_dist)
     p_right = probvec(right_dist)
@@ -70,7 +74,7 @@ function prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Bernoulli, 
     return log(Z)
 end
 
-prod(::AddonProdLogScale, new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) = prod(AddonProdLogScale(), new_dist, right_dist, left_dist)
+compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) = compute_logscale(new_dist, right_dist, left_dist)
 
 struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
     η::T
@@ -108,11 +112,11 @@ function Base.:-(left::BernoulliNaturalParameters, right::BernoulliNaturalParame
 end
 
 function lognormalizer(params::BernoulliNaturalParameters)
-    return log(logistic(-params.η))
+    return -log(logistic(-params.η))
 end
 
 function Distributions.logpdf(params::BernoulliNaturalParameters, x)
-    return x * params.η + lognormalizer(params)
+    return x * params.η - lognormalizer(params)
 end
 
 function convert(::Type{<:Distribution}, params::BernoulliNaturalParameters)

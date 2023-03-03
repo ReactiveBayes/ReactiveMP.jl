@@ -3,7 +3,6 @@ import Base: string, show, +
 import TupleTools
 
 abstract type AbstractAddon end
-abstract type AbstractAddonProd end
 
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Any, ::Any) = nothing
 multiply_addons(::Nothing, addon::Any, ::Any, ::Missing, ::Any) = addon

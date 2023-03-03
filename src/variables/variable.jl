@@ -154,7 +154,7 @@ track of `proxy_variables`. During the first call of `get_factorisation_referenc
 2. if yes we pass it futher to the `unchecked` version of the function 
    2.1 `unchecked` version return immediatelly if there is only one proxy var (see bullet 1)
    2.2 in case of multiple proxy vars we filter only `RandomVariable` and call `checked` version of the function 
-3. `checked` version of the function return immediatelly if there is only one proxy random variable left, if there are multuple proxy random vars we throw an error as this case is ambigous for factorisation constrains specification
+3. `checked` version of the function return immediatelly if there is only one proxy random variable left, if there are multiple proxy random vars we throw an error as this case is ambigous for factorisation constraints specification
 
 This function is a part of private API and should not be used explicitly.
 """

@@ -955,7 +955,7 @@ end
     make_node(node)
     make_node(node, options)
 
-Creates a factor node of a given type and options. See the list of avaialble factor nodes below.
+Creates a factor node of a given type and options. See the list of available factor nodes below.
 
 See also: [`@node`](@ref)
 
