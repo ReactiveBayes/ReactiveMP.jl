@@ -264,7 +264,7 @@ function rule_function_expression(body::Function, fformtype, fuppertype, on_type
     update_rule_fn = Symbol(:rule_for_, nodeform)
     override_err_msg = """
     Trying to override a message update rule `$(update_rule_fn)` outside of the module it has been defined. 
-    Try to use `import ReactiveMP: $(update_rule_fn)` to supress this error.
+    Try to use `import ReactiveMP: $(update_rule_fn)` or `import ReactiveMP: var"$(update_rule_fn)"`to supress this error.
     If error does not disappear, replace the `import ReactiveMP` with `import XXX`, where `XXX` is the module where `$(nodeform)` has been defined.
     """
     return quote
