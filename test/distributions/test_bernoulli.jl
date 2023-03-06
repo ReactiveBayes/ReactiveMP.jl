@@ -39,9 +39,9 @@ using ReactiveMP: compute_logscale
     end
 
     @testset "probvec" begin
-        @test probvec(Bernoulli(0.5)) === (0.5, 0.5)
-        @test probvec(Bernoulli(0.3)) === (0.7, 0.3)
-        @test probvec(Bernoulli(0.6)) === (0.4, 0.6)
+        @test all(probvec(Bernoulli(0.5)) .== (0.5, 0.5))
+        @test all(probvec(Bernoulli(0.3)) .== (0.7, 0.3))
+        @test all(probvec(Bernoulli(0.6)) .== (0.4, 0.6))
     end
 
     @testset "prod logscale Bernoulli-Bernoulli/Categorical" begin
