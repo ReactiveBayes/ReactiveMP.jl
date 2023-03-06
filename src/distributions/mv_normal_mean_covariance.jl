@@ -26,6 +26,13 @@ function MvNormalMeanCovariance(μ::AbstractVector{T}) where {T}
     return MvNormalMeanCovariance(μ, convert(AbstractArray{T}, ones(length(μ))))
 end
 
+function MvNormalMeanCovariance(μ::AbstractVector{T1}, Σ::UniformScaling{T2}) where {T1, T2}
+    T = promote_type(T1, T2)
+    μ_new = convert(AbstractArray{T}, μ)
+    Σ_new = convert(UniformScaling{T}, Σ)(length(μ))
+    return MvNormalMeanCovariance(μ_new, Σ_new)
+end
+
 Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
 
 function weightedmean(dist::MvNormalMeanCovariance)
@@ -88,7 +95,9 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance, right::MvNorm
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
 end
 
-function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance{T1}, right::MvNormalMeanCovariance{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(
+    ::ProdAnalytical, left::MvNormalMeanCovariance{T1, <:AbstractVector, <:Matrix}, right::MvNormalMeanCovariance{T2, <:AbstractVector, <:Matrix}
+) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
 
     # start with parameters of left
     xi, W = weightedmean_precision(left)

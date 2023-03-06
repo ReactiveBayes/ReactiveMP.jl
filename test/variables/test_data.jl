@@ -7,7 +7,7 @@ using Rocket
 import ReactiveMP: DataVariableCreationOptions
 import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
 import ReactiveMP: getconst, proxy_variables
-import ReactiveMP: israndom, isproxy, allows_missings
+import ReactiveMP: israndom, isproxy, isused, isconnected, setmessagein!, allows_missings
 
 @testset "DataVariable" begin
     @testset "Simple creation" begin
@@ -48,50 +48,65 @@ import ReactiveMP: israndom, isproxy, allows_missings
             @test proxy_variables(variable) === nothing
             @test !isproxy(variable)
             @test allows_missings(variable) === allow_missings
+            @test !israndom(v)
+            @test eltype(v) === type
+            @test name(v) === sym
+            @test collection_type(v) isa VariableIndividual
+            @test proxy_variables(v) === nothing
+            @test !isproxy(v)
+            @test !isused(v)
+            @test !isconnected(v)
+
+            setmessagein!(v, 1, of(nothing))
+
+            @test isused(v)
+            @test isconnected(v)
         end
 
         for sym in (:x, :y, :z), T in (Float64, Int64, Vector{Float64}), n in (10, 20), allow_missings in (true, false)
             options = DataVariableCreationOptions(T, nothing, Val(allow_missings))
             variables = datavar(options, sym, T, n)
 
-            @test !israndom(variables)
-            @test length(variables) === n
-            @test variables isa Vector
-            @test all(v -> !israndom(v), variables)
-            @test all(v -> name(v) === sym, variables)
-            @test all(v -> collection_type(v) isa VariableVector, variables)
-            @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(variables))
-            @test all(v -> eltype(v) === T, variables)
-            @test !isproxy(variables)
-            @test all(v -> !isproxy(v), variables)
-            @test test_updates(variables, T, (n,))
+            @test !israndom(vs)
+            @test length(vs) === n
+            @test vs isa Vector
+            @test all(v -> !israndom(v), vs)
+            @test all(v -> name(v) === sym, vs)
+            @test all(v -> collection_type(v) isa VariableVector, vs)
+            @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(vs))
+            @test all(v -> eltype(v) === type, vs)
+            @test !isproxy(vs)
+            @test all(v -> !isproxy(v), vs)
+            @test all(v -> !isused(v), vs)
+            @test all(v -> !isconnected(v), vs)
+            @test test_updates(vs, type, (n,))
 
-            @test all(v -> allows_missings(v) === allow_missings, variables)
-            if allow_missings
-                test_updates(variables, Missing, (n,))
-            end
+            foreach(v -> setmessagein!(v, 1, of(nothing)), vs)
+
+            @test all(v -> isused(v), vs)
+            @test all(v -> isconnected(v), vs)
         end
 
-        for sym in (:x, :y, :z), T in (Float64, Int64, Vector{Float64}), l in (10, 20), r in (10, 20), allow_missings in (true, false)
-            options = DataVariableCreationOptions(T, nothing, Val(allow_missings))
-            for variables in (datavar(options, sym, T, l, r), datavar(options, sym, T, (l, r)))
-                @test !israndom(variables)
-                @test size(variables) === (l, r)
-                @test length(variables) === l * r
-                @test variables isa Matrix
-                @test all(v -> !israndom(v), variables)
-                @test all(v -> name(v) === sym, variables)
-                @test all(v -> collection_type(v) isa VariableArray, variables)
-                @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(variables))
-                @test all(v -> eltype(v) === T, variables)
-                @test !isproxy(variables)
-                @test all(v -> !isproxy(v), variables)
-                @test test_updates(variables, T, (l, r))
+        for sym in (:x, :y, :z), type in (Float64, Int64, Vector{Float64}), l in (10, 20), r in (10, 20)
+            for vs in (datavar(sym, type, l, r), datavar(sym, type, (l, r)))
+                @test !israndom(vs)
+                @test size(vs) === (l, r)
+                @test length(vs) === l * r
+                @test vs isa Matrix
+                @test all(v -> !israndom(v), vs)
+                @test all(v -> name(v) === sym, vs)
+                @test all(v -> collection_type(v) isa VariableArray, vs)
+                @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(vs))
+                @test all(v -> eltype(v) === type, vs)
+                @test !isproxy(vs)
+                @test all(v -> !isproxy(v), vs)
+                @test all(v -> !isused(v), vs)
+                @test test_updates(vs, type, (l, r))
 
-                @test all(v -> allows_missings(v) === allow_missings, variables)
-                if allow_missings
-                    test_updates(variables, Missing, (l, r))
-                end
+                foreach(v -> setmessagein!(v, 1, of(nothing)), vs)
+
+                @test all(v -> isused(v), vs)
+                @test all(v -> isconnected(v), vs)
             end
         end
     end

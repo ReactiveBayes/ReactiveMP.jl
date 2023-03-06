@@ -172,7 +172,7 @@ function is_point_mass_form_constraint(composite::CompositeFormConstraint)
     is_point_mass = map(is_point_mass_form_constraint, composite.constraints)
     pmindex       = findnext(is_point_mass, 1)
     if pmindex !== nothing && pmindex !== length(is_point_mass)
-        error("Composite form constraint supports point mass constraint only at the end of the form constrains specification.")
+        error("Composite form constraint supports point mass constraint only at the end of the form constraints specification.")
     end
     return last(is_point_mass)
 end

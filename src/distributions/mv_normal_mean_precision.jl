@@ -26,6 +26,13 @@ function MvNormalMeanPrecision(μ::AbstractVector{T}) where {T}
     return MvNormalMeanPrecision(μ, convert(AbstractArray{T}, ones(length(μ))))
 end
 
+function MvNormalMeanPrecision(μ::AbstractVector{T1}, Λ::UniformScaling{T2}) where {T1, T2}
+    T = promote_type(T1, T2)
+    μ_new = convert(AbstractArray{T}, μ)
+    Λ_new = convert(UniformScaling{T}, Λ)(length(μ))
+    return MvNormalMeanPrecision(μ_new, Λ_new)
+end
+
 Distributions.distrname(::MvNormalMeanPrecision) = "MvNormalMeanPrecision"
 
 weightedmean(dist::MvNormalMeanPrecision) = precision(dist) * mean(dist)
@@ -92,7 +99,9 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNorma
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
-function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision{T1}, right::MvNormalMeanPrecision{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(
+    ::ProdAnalytical, left::MvNormalMeanPrecision{T1, <:AbstractVector, <:Matrix}, right::MvNormalMeanPrecision{T2, <:AbstractVector, <:Matrix}
+) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
     # fast & efficient implementation of xi = precision(right)*mean(right) + precision(left)*mean(left)
