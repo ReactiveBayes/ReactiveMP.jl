@@ -76,7 +76,7 @@ datavar(name::Symbol, ::Type{D}, dims::Tuple) where {D}                         
 datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}) where {D}                                                      = datavar(DataVariableCreationOptions(D), name, D, dims)
 
 datavar(options::DataVariableCreationOptions{S}, name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where {S, D} =
-    DataVariable{D, S}(name, collection_type, MarginalObservable(), Vector{MessageObservable{AbstractMessage}}(), options.subject, 0)
+    DataVariable{D, S}(name, collection_type, MarginalObservable(), Vector{MessageObservable{AbstractMessage}}(), options.subject, 0, options.isproxy, options.isused)
 
 function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, length::Int) where {D}
     return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
@@ -122,7 +122,7 @@ function Base.getindex(datavar::DataVariable, i...)
     error("Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed.")
 end
 
-getlastindex(::DataVariable) = 1
+getlastindex(datavar::DataVariable) = degree(datavar) + 1
 
 messageout(datavar::DataVariable, ::Int) = datavar.messageout
 messagein(datavar::DataVariable, ::Int)  = error("It is not possible to get a reference for inbound message for datavar")
@@ -175,10 +175,16 @@ _makemarginal(datavar::DataVariable)             = error("It is not possible to 
 
 setanonymous!(::DataVariable, ::Bool) = nothing
 
-function setmessagein!(datavar::DataVariable, ::Int, messagein)
-    datavar.nconnected += 1
-    datavar.isused = true
-    push!(datavar.input_messages, messagein)
+function setmessagein!(datavar::DataVariable, index::Int, messagein)
+    if index === (degree(datavar) + 1)
+        push!(datavar.input_messages, messagein)
+        datavar.nconnected += 1
+        datavar.isused = true
+    else
+        error(
+            "Inconsistent state in setmessagein! function for data variable $(datavar). `index` should be equal to `degree(datavar) + 1 = $(degree(datavar) + 1)`, $(index) is given instead"
+        )
+    end
     return nothing
 end
 
