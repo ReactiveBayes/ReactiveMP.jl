@@ -54,6 +54,14 @@ import ReactiveMP: @test_rules
             (input = (m_μ = NormalWeightedMeanPrecision(2.0, 0.5), q_τ = GammaShapeScale(10.0, 0.1)), output = NormalMeanPrecision(4.0, 1.0 / 3.0))
         ]
     end
+    
+    @testset "Variational: (m_μ::PointMass, q_τ::Any)" begin
+        @test_rules [with_float_conversions = true] NormalMeanPrecision(:out, Marginalisation) [
+            (input = (m_μ = PointMass(-1.0), q_τ = GammaShapeRate(1.0, 1.0)), output = NormalMeanPrecision(-1.0, 1.0)),
+            (input = (m_μ = PointMass(1.0), q_τ = GammaShapeScale(1.0, 1.0)), output = NormalMeanPrecision(1.0, 1.0)),
+            (input = (m_μ = PointMass(2.0), q_τ = PointMass(1.0)), output = NormalMeanPrecision(2.0, 1.0))
+        ]
+    end
 
     @testset "Variational: (q_μ::Any, q_τ::Any)" begin
         @test_rules [with_float_conversions = true] NormalMeanPrecision(:out, Marginalisation) [
