@@ -3,10 +3,11 @@ export Bernoulli, BernoulliNaturalParameters
 import Distributions: Bernoulli, Distribution, succprob, failprob, logpdf
 import Base
 import StatsFuns: logistic
+using StaticArrays
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
-probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
+probvec(dist::Bernoulli) = @SArray [failprob(dist), succprob(dist)]
 
 prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ProdAnalyticalRuleAvailable()
 

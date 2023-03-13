@@ -15,6 +15,8 @@ end
 
 @rule NormalMeanVariance(:out, Marginalisation) (q_μ::Any, q_v::Any) = NormalMeanVariance(mean(q_μ), mean(q_v))
 
+@rule NormalMeanVariance(:out, Marginalisation) (m_μ::PointMass, q_v::Any) = NormalMeanVariance(mean(m_μ), mean(q_v))
+
 @rule NormalMeanVariance(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, q_v::Any) = begin
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return NormalMeanVariance(m_μ_mean, m_μ_cov + mean(q_v))
