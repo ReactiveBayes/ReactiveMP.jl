@@ -5,8 +5,6 @@
 end
 
 @rule Mixture((:inputs, k), Marginalisation) (m_out::Any, q_switch::PointMass) = begin
-
     @logscale 0
     return m_out
-
 end
