@@ -224,7 +224,7 @@ isconst(::AbstractArray{<:RandomProcess})  = false
 # this function returns means and covariances of messages 
 function make_multivariate_message(messages) ## function for concatinating messages
     m = mean.(messages) 
-    v = Diagonal(var.(messages)) + 1e-8diageye(length(messages))
+    v = Diagonal(var.(messages)) + 1e-8diageye(length(messages)) 
     return m,v
 end 
 
@@ -246,7 +246,7 @@ function compute_ep_message(l_pdf, m_in, var_in;nsamples = 1000, ncubature = 171
 
         ksi = m_/v_ - m_in/var_in
         precision = clamp(1/v_ - 1/var_in, tiny,huge)
-        
+
         if isnan(ksi) || isnan(precision)
             samples = rand(dist,nsamples)
             weights = exp.(l_pdf.(samples)) / sum(exp.(l_pdf.(samples)) )
@@ -265,7 +265,6 @@ function compute_ep_message(l_pdf, m_in, var_in;nsamples = 1000, ncubature = 171
             return  NormalWeightedMeanPrecision(ksi,precision)
         end
     else
-    
         return  NormalMeanVariance(m,v)
     end
     

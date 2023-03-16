@@ -5,8 +5,9 @@ export CirculantFullCovarianceStrategy
 export DeterministicInducingConditional, DIC, SoR, SubsetOfRegressors
 export DeterministicTrainingConditional, DTC
 export FullyIndependentTrainingConditional, FITC
+export RandomFourierFeature, RFF
 
-import KernelFunctions: kernelmatrix, kernelmatrix!,Kernel 
+import KernelFunctions: kernelmatrix, kernelmatrix!,Kernel, ScaledKernel, TransformedKernel, SqExponentialKernel, Transform 
 import ToeplitzMatrices: Circulant
 import FFTW: plan_rfft, plan_irfft 
 abstract type AbstractCovarianceStrategyType end 
@@ -42,7 +43,16 @@ function mul_A_B_At!(cache::GPCache, A, B)
 
     return ABAt
 end
+
+mutable struct GPComplexCache
+    cache_FloatVectors::Dict{Symbol, Vector{Float64}}
+    cache_vectors::Dict{Symbol, Vector{ComplexF64}}
+end
+GPComplexCache() = GPComplexCache(Dict{Symbol,Vector{Float64}}(),Dict{Symbol,Vector{ComplexF64}}())
+
 #------- Cache  ------- #
+
+#------- Strategy ------- #
 
 struct CovarianceMatrixStrategy{S} <: AbstractCovarianceStrategyType
     strategy :: S
@@ -60,19 +70,15 @@ end
 FullCovarianceStrategy() = FullCovarianceStrategy(Int[],nothing,Float64[1;;], GPCache()) 
 
 #----- Circulant Full convariance matrix --------#
-#we only use this strategy in case train and test input are identical
+# only use this strategy in case train and test input are identical
 mutable struct CirculantFullCovarianceStrategy{N,R}
     n_inducing      :: N 
     rng             :: R 
     Afftmatrix 
     Ainvfftmatrix 
-    afft            :: AbstractArray 
-    bfft            :: AbstractArray
-    cfft            :: AbstractArray
-    vector_noise    :: AbstractArray
-    seedVector      :: AbstractArray
+    cache           :: GPComplexCache 
 end
-CirculantFullCovarianceStrategy() = CirculantFullCovarianceStrategy(Int[],nothing,nothing,nothing,[],[],[],Float64[],Float64[]) 
+CirculantFullCovarianceStrategy() = CirculantFullCovarianceStrategy(Int[],nothing,nothing,nothing,GPComplexCache()) 
 
 #------------- SoR ---------------#
 mutable struct DeterministicInducingConditional{R}
@@ -127,6 +133,18 @@ const FITC = FullyIndependentTrainingConditional
 
 FullyIndependentTrainingConditional(n_inducing) = FullyIndependentTrainingConditional(n_inducing, MersenneTwister(1),Float64[1;;],Float64[1;;],Float64[1;;],Float64[1;;],Float64[1;;],GPCache())
 
+# --------------- RFF ----------------- #
+mutable struct RandomFourierFeature{N, R}
+    n_inducing          :: N  
+    rng                 :: R 
+    n_samples           :: Int 
+    ω                   :: AbstractArray 
+    InverseKtrainNoise  :: AbstractArray
+    Z_xtrain            :: AbstractArray
+end
+const RFF = RandomFourierFeature
+
+RandomFourierFeature(n_samples) = RandomFourierFeature(Int[], nothing, n_samples, Int[], Float64[1;;], Float64[1;;]) 
 #--------------- GP prediction ------------------#
 function predictMVN end 
 
@@ -136,6 +154,7 @@ predictMVN(gpstrategy::CovarianceMatrixStrategy{<:DeterministicTrainingCondition
 predictMVN(gpstrategy::CovarianceMatrixStrategy{<:FullyIndependentTrainingConditional}, kernelfunc, meanfunc, xtrain, xtest, y, inducing)    = fitc(gpstrategy,kernelfunc, meanfunc, xtrain, xtest, y, inducing)
 
 predictMVN(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCovarianceStrategy}, kernelfunc, meanfunc, xtrain, xtest, y, inducing)        = cirfullcov(gpstrategy,kernelfunc, meanfunc, xtrain, xtest, y) #new strategy 
+predictMVN(gpstrategy::CovarianceMatrixStrategy{<:RandomFourierFeature}, kernelfunc, meanfunc, xtrain, xtest, y, inducing)                   = rff(gpstrategy, kernelfunc, meanfunc, xtrain, xtest, y) # random fourier feature strategy 
 
 #### Full covariance strategy 
 function fullcov(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy},kernelfunc, meanfunc,xtrain,xtest,y)  
@@ -262,34 +281,72 @@ end
 ## Circulant full covariance 
 function cirfullcov(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCovarianceStrategy},kernelfunc, meanfunc, xtrain, xtest, y)
     N = length(xtest) #actual data length 
+    N_cir = Int(2*(N-1))
+    cache = gpstrategy.strategy.cache 
 
-    circularVectorNoise = gpstrategy.strategy.vector_noise
+    circularVectorNoise = get!(cache.cache_FloatVectors, :CirVectorNoise, Vector{Float64}(undef, N_cir))
     Afftmatrix = gpstrategy.strategy.Afftmatrix
     Ainvfftmatrix = gpstrategy.strategy.Ainvfftmatrix
-    afft = gpstrategy.strategy.afft 
-    bfft = gpstrategy.strategy.bfft 
-    cfft = gpstrategy.strategy.cfft 
-    seedVector_Ktest = gpstrategy.strategy.seedVector #already circularized 
-    #make xtest and y circulant 
-    circular_xtest = circularize(xtest)
-    circular_y = circularize(y)
+    afft = get!(cache.cache_vectors, :afft, Vector{ComplexF64}(undef, N))
+    bfft = get!(cache.cache_vectors, :bfft, Vector{ComplexF64}(undef, N))
+    cfft = get!(cache.cache_FloatVectors, :cfft,Vector{Float64}(undef, N_cir))
+    seedVector_Ktest = get!(cache.cache_FloatVectors, :seedVector, Vector{Float64}(undef, N_cir)) #already circularized 
+
     #make Ktest circulant
+    # mean_noise = mean(circularVectorNoise)
     Circulant_Ktest = Circulant(seedVector_Ktest)
-    mean_difference = circular_y - meanfunc.(circular_xtest)
+    # noisy_Ktest = Circulant_Ktest + mean_noise*I
+
+    mean_difference = y - meanfunc.(xtest)
+    mean_xtest = meanfunc.(xtest)
+    unit_vec = [1]
+    append!(mean_difference,zeros(N-2))
+    append!(mean_xtest,zeros(N-2))
+    append!(unit_vec,zeros(2*N-3))
     #compute predictive mean and variance 
-    μ_test = Vector{Float64}(undef,N)
+    μ_test = get!(cache.cache_FloatVectors, :predict_mean, Vector{Float64}(undef, N))
+    Σ_marginal = Diagonal(ones(N))
+    # μ_test = Vector{Float64}(undef,N)
     for index = 1:N
-        Circulant_Ktest_noise = Circulant_Ktest + circularVectorNoise[index] * I 
-        v1 = fastinversemultiply(Circulant_Ktest_noise[:,1],mean_difference,Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
-        temp = meanfunc.(circular_xtest) + fastmultiply(Circulant_Ktest[:,1],v1, Afftmatrix, Ainvfftmatrix, afft, bfft, cfft)
-        μ_test[index] = temp[index]
+        Vector_Ktest_addednoise = seedVector_Ktest + circularVectorNoise[index] * unit_vec
+        v1 = fastinversemultiply(Vector_Ktest_addednoise,mean_difference,Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
+        v1[N+1:end] = zeros(N-2)
+        μ_test[index] = mean_xtest[index] + dot(Circulant_Ktest[:,index], v1)
+        
+        # Σ_marginal[index,index] = max(kernelfunc[1] - fastinvmahalanobis(Vector_Ktest_addednoise,Circulant_Ktest[:,index],Afftmatrix,afft,bfft), 0.1)
     end
     # μ_test_gt = meanfunc.(circular_xtest) + Circulant_Ktest * inv(Circulant_Ktest + Diagonal(circularVectorNoise)) * (circular_y - meanfunc.(circular_xtest))
+    # v1 = fastinversemultiply(noisy_Ktest[:,1],mean_difference,Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
+    # v1[N+1:end] = zeros(N-2)
+    # @show v1
+    # μ_test = mean_xtest + fastmultiply(seedVector_Ktest,v1, Afftmatrix, Ainvfftmatrix, afft, bfft, cfft)
+    # for index = 1:N
+    #     Σ_marginal[index,index] = max(kernelfunc[1] - fastinvmahalanobis(noisy_Ktest[:,1],Circulant_Ktest[:,index],Afftmatrix,afft,bfft),0.01)
+    # end
     return  μ_test, Circulant_Ktest[1:N, 1:N]
+    # return μ_test[1:N], Σ_marginal 
 end
 
+
+## Random fourier feature strategy 
+function rff(gpstrategy::CovarianceMatrixStrategy{<:RandomFourierFeature}, kernelfunc, meanfunc, xtrain, xtest, y)
+    InverseKtrainNoise = gpstrategy.strategy.InverseKtrainNoise
+    Z_xtrain = gpstrategy.strategy.Z_xtrain 
+    ω = gpstrategy.strategy.ω
+
+    Z_test = featuremap(xtest, ω)
+
+    Ktest = Z_test' * Z_xtrain
+    Ktest_test = Z_test' * Z_test 
+    μ_RFF = meanfunc.(xtest) + Ktest * InverseKtrainNoise * (y - meanfunc.(xtrain))
+    Σ_RFF = Ktest_test - Ktest * InverseKtrainNoise * Ktest' 
+    if xtrain == xtest 
+        Σ_RFF = Ktest_test * 0.8
+    end
+    return μ_RFF, Σ_RFF   
+end
 #------------------------------------- function for extracting the matrices for strategies  ------------------------------------# 
-function extracmatrix! end 
+function extractmatrix! end 
 function extractmatrix_change! end 
 
 #--------------- full covariance strategy --------------------#
@@ -304,6 +361,26 @@ function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:FullCovari
     return extractmatrix!(gpstrategy,kernel, x_train, Σ_noise,x_induc)
 end
 
+#-------------- RFF strategy --------------#
+function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:RandomFourierFeature}, kernel, x_train, Σ_noise, x_induc)
+    n_samples = gpstrategy.strategy.n_samples
+    p_ω = FourierTransformKernel(kernel)
+
+    ω = rand(p_ω, n_samples)
+    Z_xtrain = featuremap(x_train, ω)
+    gpstrategy.strategy.InverseKtrainNoise = inv(Σ_noise) - inv(Σ_noise) * Z_xtrain'* inv(I + Z_xtrain * inv(Σ_noise) * Z_xtrain') * Z_xtrain * inv(Σ_noise)
+    gpstrategy.strategy.Z_xtrain = Z_xtrain
+    gpstrategy.strategy.ω = ω
+    return gpstrategy
+end
+
+function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:RandomFourierFeature},kernel, x_train, Σ_noise, x_induc)
+    ω = gpstrategy.strategy.ω
+    Z_xtrain = featuremap(x_train, ω)
+    gpstrategy.strategy.InverseKtrainNoise = inv(Σ_noise) - inv(Σ_noise) * Z_xtrain'* inv(I + Z_xtrain * inv(Σ_noise) * Z_xtrain') * Z_xtrain * inv(Σ_noise)
+    return gpstrategy
+end
+
 #--------------- Circulant Full Covariance Strategy -----------------#
 function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc)
     """
@@ -311,21 +388,23 @@ function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:CirculantFullCova
     """
     #get the first column of the circulant covariance matrix. In this case, Ktrain = Ktest  
     cir_vector_K = circularize(kernel)
+    cache = gpstrategy.strategy.cache
 
     #get fft structure 
-    Afftmatrix,Ainvfftmatrix, afft, bfft, cfft  = returnFFTstructures(cir_vector_K)
-    
+    if isnothing(gpstrategy.strategy.Afftmatrix) 
+        Afftmatrix,Ainvfftmatrix, afft, bfft, cfft  = returnFFTstructures(cir_vector_K)
+        gpstrategy.strategy.Afftmatrix = Afftmatrix
+        gpstrategy.strategy.Ainvfftmatrix = Ainvfftmatrix
+        cache.cache_vectors = Dict(:afft => afft, :bfft => bfft)
+        cache.cache_FloatVectors = Dict(:cfft => cfft)
+    end
     #vector noise 
-    diag_Σ_noise = diag(Σ_noise)
-    circular_diag_Σ_noise = circularize(diag_Σ_noise)
+    diag_Σ_noise = diag(Σ_noise) 
+    cir_diag_Σ_noise = circularize(diag_Σ_noise)
 
-    gpstrategy.strategy.vector_noise = circular_diag_Σ_noise 
-    gpstrategy.strategy.Afftmatrix = Afftmatrix
-    gpstrategy.strategy.Ainvfftmatrix = Ainvfftmatrix
-    gpstrategy.strategy.afft = afft 
-    gpstrategy.strategy.bfft = bfft 
-    gpstrategy.strategy.cfft = cfft 
-    gpstrategy.strategy.seedVector = cir_vector_K
+    cache.cache_FloatVectors[:CirVectorNoise] = cir_diag_Σ_noise 
+
+    cache.cache_FloatVectors[:seedVector] = cir_vector_K
     return gpstrategy
 end
 
@@ -474,7 +553,6 @@ function fastmultiply(a, b , Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
 end
 
 function fastinversemultiply(a, b , Afftmatrix, Ainvfftmatrix,afft,bfft,cfft)
-   
     mul!(afft, Afftmatrix, a)
     mul!(bfft, Afftmatrix, b)
     
@@ -491,9 +569,62 @@ function fastmahalanobis(a, b , Afftmatrix,afft,bfft)
 end
 
 
-# function fastinvmahalanobis(a, b , Afftmatrix,afft,bfft)
-#     mul!(afft, Afftmatrix, a)
-#     mul!(bfft, Afftmatrix, b)
+function fastinvmahalanobis(a, b , Afftmatrix,afft,bfft)
+    mul!(afft, Afftmatrix, a)
+    mul!(bfft, Afftmatrix, b)
     
-#     return real((2*sum(abs.(bfft).^2 ./ afft) - (abs(bfft[1])^2/afft[1] + abs(bfft[length(afft)])^2/afft[length(afft)]))/length(a))
-# end
+    return real((2*sum(abs.(bfft).^2 ./ afft) - (abs(bfft[1])^2/afft[1] + abs(bfft[length(afft)])^2/afft[length(afft)]))/length(a))
+end
+
+function getDFTmatrix(c)
+    """
+    The DFT matrix stores eigenvectors of circulant matrices. 
+    This function finds the DFT matrix of a vector c, which is the first column vector of the corresponding circulant matrix. 
+    """
+    n = length(c)
+    ω = exp(2π*im/n)
+    base_vector = Vector{ComplexF64}(undef, n)
+    for i=1:n
+       base_vector[i] = ω^(i-1)
+    end
+    W = Matrix{ComplexF64}(undef,n,n)
+    for i=1:n
+       W[:,i] = base_vector.^(i-1)
+    end
+    return W 
+ end
+
+ function featuremap(X, ω)
+    """
+    X here can be a vector (size N) of input 
+    ω has size D (D is the number of samples)
+
+    return matrix feature map Z_x size 2DxN
+    """
+    D = length(ω)
+    N = length(X)
+    Z_x = Matrix{Float64}(undef, 2D, N)
+    vector_z = Vector{Float64}(undef, 2D)
+    for i=1:N
+        vector_z[1:D] = [cos(ωi * X[i]) for ωi in ω]
+        vector_z[D+1 : end] = [sin(ωi * X[i]) for ωi in ω] 
+        Z_x[:,i] = vector_z
+    end
+    return Z_x / sqrt(D) 
+end 
+
+function FourierTransformKernel(kernel :: Union{<:SqExponentialKernel,<:TransformedKernel{<:SqExponentialKernel, <:Transform}, <:ScaledKernel{<:TransformedKernel{<:SqExponentialKernel,<:Transform}}})
+    """
+    This function takes FT of SE kernel and returns a distribution.
+    Here only 1-D case is taken into account.
+    """
+    if typeof(kernel) <: SqExponentialKernel
+        l = 1.
+    elseif typeof(kernel) <: TransformedKernel 
+        l = 1/first(kernel.transform.s) 
+    else
+        l = 1/first(kernel.kernel.transform.s)
+    end 
+    std = 1 / l 
+    return Normal(0., std)
+end

@@ -77,7 +77,7 @@ function make_productdist_message(samples_in,d_out)
     return let samples_in=samples_in,d_out=d_out
         (x) -> begin
             result = mapreduce(+, zip(samples_in,)) do (samplein,)
-                return abs(samplein) * pdf(d_out,x*samplein)
+                return samplein * pdf(d_out,x*samplein) #Ismail code: abs(samplein * pdf(d_out, x*samplein))
             end
             return log(result)
         end
@@ -86,15 +86,14 @@ end
 
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
-    nsamples    = 100
-    samples_in1 = rand(m_in,nsamples)
-    samples_in2 = rand(m_in,nsamples)
+    nsamples    = 1000
+    samples_in = rand(m_in,nsamples)
+    # samples_in2 = rand(m_in,nsamples)
     samples_out = rand(m_out,nsamples)
-    samples_division = samples_out ./ samples_in1
-    p = make_productdist_message(samples_in2,m_out)
+    # samples_division = samples_out ./ samples_in1
+    #this rule is used 
+    p = make_productdist_message(samples_in,m_out)
     return ContinuousUnivariateLogPdf(p)
-
-
 end
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin

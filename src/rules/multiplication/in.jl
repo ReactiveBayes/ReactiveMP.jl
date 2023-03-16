@@ -82,7 +82,7 @@ end
 @rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
     μ_in, var_in = mean_var(m_A)
     μ_out, var_out = mean_var(m_out)
-    
+    #this rule is used 
     backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * abs(var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
     return ContinuousUnivariateLogPdf(backwardpass)
 end

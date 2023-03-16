@@ -267,20 +267,25 @@ end
 
 ### PAD 
 @rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily) = begin 
-    mean_in, var_in = mean_var(q_params)
+    mean_params, var_params = mean_var(q_params)
     y, _= mean_cov(q_out.finitemarginal)
-    circular_y = circularize(y)
+    N = length(y)
+    strategy = q_out.covariance_strategy.strategy
+    Afftmatrix = strategy.Afftmatrix
+    afft = get!(strategy.cache.cache_vectors, :afft, Vector{ComplexF64}(undef, N)) 
+    bfft =  get!(strategy.cache.cache_vectors, :bfft, Vector{ComplexF64}(undef, N)) 
     test = q_out.testinput
+
+    circular_y = circularize(y)
     circular_test = circularize(test)
     #kernelfunc(θ) is the first column of the circulant covariance matrix 
-    mean_difference = circular_y - q_meanfunc.(circular_test)
+    cir_mean_difference = circular_y - q_meanfunc.(circular_test)
 
-    logp_llh = (θ) -> - 1/2 * fastinvmahalanobis_modified(q_kernelfunc(θ),mean_difference)  - 1/2 * logdet(Circulant(q_kernelfunc(θ))) - 0.5*length(circular_test) * log(2π)
+    logp_llh = (θ) -> - 1/2 * fastinvmahalanobis(circularize(q_kernelfunc(θ)),cir_mean_difference, Afftmatrix,afft,bfft)  - 1/2 * logdet_Circulant(circularize(q_kernelfunc(θ)),Afftmatrix,afft) - 0.5*length(circular_test) * log(2π)
 
     nsamples = 1000
     samples = rand(q_params,nsamples)
     weights = exp.(logp_llh.(samples)) / sum(exp.(logp_llh.(samples)) )
-    weights[1:5]
     if any(isnan.(weights)) 
         m_ = sum(samples)/nsamples
         v_ = sum((samples .- m_).^2) /nsamples 
@@ -288,8 +293,8 @@ end
         m_ = sum(weights .* samples)
         v_ = sum(weights .* (samples .- m_).^2)    
     end
-    ksi = m_/v_ - mean_in/var_in
-    precision = clamp(1/v_ - 1/var_in, tiny,huge)
+    ksi = m_/v_ - mean_params/var_params
+    precision = clamp(1/v_ - 1/var_params, tiny,huge)
             
     return NormalWeightedMeanPrecision(ksi,precision)
 end
@@ -366,8 +371,13 @@ function returnFFTstructures(circularvector)
     return Afftmatrix,Ainvfftmatrix,afft,bfft,cfft 
 end
 
-function fastinvmahalanobis_modified(a,b)
-    circular_a = circularize(a)
-    Afftmatrix,_,afft,bfft,_ = returnFFTstructures(circular_a)
-    return fastinvmahalanobis(circular_a,b,Afftmatrix,afft,bfft)
+# function fastinvmahalanobis_modified(a,b)
+#     circular_a = circularize(a)
+#     Afftmatrix,_,afft,bfft,_ = returnFFTstructures(circular_a)
+#     return fastinvmahalanobis(circular_a,b,Afftmatrix,afft,bfft)
+# end
+
+function logdet_Circulant(a, Afftmatrix, afft)
+    mul!(afft,Afftmatrix,a)
+    return log(prod(abs2.(afft)) / (abs(afft[1]) * abs(afft[length(afft)])))
 end
