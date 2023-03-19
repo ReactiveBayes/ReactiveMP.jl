@@ -5,7 +5,7 @@
     dim       = order * ds
 
     m, V = mean_cov(q_y_x)
-    
+
     F = Multivariate
 
     my, Vy = ar_slice(F, m, 1:dim), ar_slice(F, V, 1:dim, 1:dim)

@@ -30,7 +30,6 @@ end
 
     order, ds = getorder(meta), getdimensionality(meta)
     Fs, es    = getmasks(meta), getunits(meta)
-    dim       = order * ds
 
     mA = mar_companion_matrix(order, ds, ma)
     mW = mar_transition(getorder(meta), mΛ)
