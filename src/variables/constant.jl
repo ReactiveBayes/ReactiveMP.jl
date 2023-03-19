@@ -50,8 +50,8 @@ function constvar end
 
 constvar(name::Symbol, constval, collection_type::AbstractVariableCollectionType = VariableIndividual())                 = ConstVariable(name, collection_type, constval, of(Message(constval, true, false, nothing)), 0)
 constvar(name::Symbol, constval::Real, collection_type::AbstractVariableCollectionType = VariableIndividual())           = constvar(name, PointMass(constval), collection_type)
-constvar(name::Symbol, constval::AbstractVector, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
-constvar(name::Symbol, constval::AbstractMatrix, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
+constvar(name::Symbol, constval::AbstractArray, collection_type::AbstractVariableCollectionType = VariableIndividual())  = constvar(name, PointMass(constval), collection_type)
+constvar(name::Symbol, constval::UniformScaling, collection_type::AbstractVariableCollectionType = VariableIndividual()) = constvar(name, PointMass(constval), collection_type)
 
 function constvar(name::Symbol, fn::Function, length::Int)
     return map(i -> constvar(name, fn(i), VariableVector(i)), 1:length)

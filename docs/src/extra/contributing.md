@@ -81,8 +81,8 @@ a new release of the broken dependecy is available.
 
 - `make help`: Shows help snippet
 - `make test`: Run tests, supports extra arguments
-  - `make test testset="distributions:normal_mean_variance"` would run tests only from `distributions/test_normal_mean_variance.jl`
-  - `make test testset="distributions:normal_mean_variance models:lgssm"` would run tests both from `distributions/test_normal_mean_variance.jl` and `models/test_lgssm.jl`
+  - `make test test_args="distributions:normal_mean_variance"` would run tests only from `distributions/test_normal_mean_variance.jl`
+  - `make test test_args="distributions:normal_mean_variance models:lgssm"` would run tests both from `distributions/test_normal_mean_variance.jl` and `models/test_lgssm.jl`
 - `make docs`: Compile documentation
 - `make benchmark`: Run simple benchmark
 - `make lint`: Check codestyle

@@ -80,8 +80,8 @@ end
         rng = StableRNG(42)
 
         tests = (
-            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ForwardDiffGrad(), 1, Val(true), false), tol = 5e-1),
-            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ZygoteGrad(), 1, Val(true), false), tol = 5e-1)
+            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ForwardDiffGrad(), 10, Val(true), false), tol = 5e-1),
+            (method = CVI(StableRNG(42), 1, 1000, Descent(0.01), ZygoteGrad(), 10, Val(true), false), tol = 5e-1)
         )
 
         # Check several prods against their analytical solutions
@@ -122,9 +122,16 @@ end
 
             b1 = Bernoulli(logistic(randn(rng)))
             b2 = Bernoulli(logistic(randn(rng)))
-            b_analitical = prod(ProdAnalytical(), b1, b2)
+            b_analytical = prod(ProdAnalytical(), b1, b2)
             b_cvi = prod(test[:method], b1, b1)
-            @test isapprox(mean(b_analitical), mean(b_cvi), atol = test[:tol])
+            @test isapprox(mean(b_analytical), mean(b_cvi), atol = test[:tol])
+
+            beta_1 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
+            beta_2 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
+
+            beta_analytical = prod(ProdAnalytical(), beta_1, beta_2)
+            beta_cvi = prod(test[:method], beta_1, beta_2)
+            @test isapprox(mean(beta_analytical), mean(beta_cvi), atol = test[:tol])
         end
     end
 

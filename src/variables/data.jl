@@ -9,15 +9,19 @@ mutable struct DataVariable{D, S} <: AbstractVariable
     input_messages  :: Vector{MessageObservable{AbstractMessage}}
     messageout      :: S
     nconnected      :: Int
+    isproxy         :: Bool
+    isused          :: Bool
 end
 
 Base.show(io::IO, datavar::DataVariable) = print(io, "DataVariable(", indexed_name(datavar), ")")
 
 struct DataVariableCreationOptions{S}
-    subject::S
+    subject :: S
+    isproxy :: Bool
+    isused  :: Bool
 end
 
-Base.similar(options::DataVariableCreationOptions) = DataVariableCreationOptions(similar(options.subject))
+Base.similar(options::DataVariableCreationOptions) = DataVariableCreationOptions(similar(options.subject), options.isproxy, options.isused)
 
 DataVariableCreationOptions(::Type{D}) where {D}          = DataVariableCreationOptions(D, nothing)
 DataVariableCreationOptions(::Type{D}, subject) where {D} = DataVariableCreationOptions(D, subject, Val(false))
@@ -26,7 +30,7 @@ DataVariableCreationOptions(::Type{D}, subject::Nothing, allow_missing::Val{true
 DataVariableCreationOptions(::Type{D}, subject::Nothing, allow_missing::Val{false}) where {D} = DataVariableCreationOptions(D, RecentSubject(Union{Message{D}}), Val(false))
 
 DataVariableCreationOptions(::Type{D}, subject::S, ::Val{true}) where {D, S}  = error("Error in datavar options. Custom `subject` was specified and `allow_missing` was set to true, which is disallowed. Provide a custom subject that accept missing values by itself and do no use `allow_missing` option.")
-DataVariableCreationOptions(::Type{D}, subject::S, ::Val{false}) where {D, S} = DataVariableCreationOptions{S}(subject)
+DataVariableCreationOptions(::Type{D}, subject::S, ::Val{false}) where {D, S} = DataVariableCreationOptions{S}(subject, false, false)
 
 """ 
     datavar(::Type, [ dims... ])
@@ -72,7 +76,7 @@ datavar(name::Symbol, ::Type{D}, dims::Tuple) where {D}                         
 datavar(name::Symbol, ::Type{D}, dims::Vararg{Int}) where {D}                                                      = datavar(DataVariableCreationOptions(D), name, D, dims)
 
 datavar(options::DataVariableCreationOptions{S}, name::Symbol, ::Type{D}, collection_type::AbstractVariableCollectionType = VariableIndividual()) where {S, D} =
-    DataVariable{D, S}(name, collection_type, MarginalObservable(), Vector{MessageObservable{AbstractMessage}}(), options.subject, 0)
+    DataVariable{D, S}(name, collection_type, MarginalObservable(), Vector{MessageObservable{AbstractMessage}}(), options.subject, 0, options.isproxy, options.isused)
 
 function datavar(options::DataVariableCreationOptions, name::Symbol, ::Type{D}, length::Int) where {D}
     return map(i -> datavar(similar(options), name, D, VariableVector(i)), 1:length)
@@ -93,12 +97,13 @@ Base.eltype(::DataVariable{D}) where {D}         = D
 
 degree(datavar::DataVariable)          = nconnected(datavar)
 name(datavar::DataVariable)            = datavar.name
-proxy_variables(datavar::DataVariable) = nothing
+proxy_variables(datavar::DataVariable) = nothing    # not related to isproxy
 collection_type(datavar::DataVariable) = datavar.collection_type
 isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)      = datavar.nconnected
 
-isproxy(::DataVariable) = false
+isproxy(datavar::DataVariable) = datavar.isproxy
+isused(datavar::DataVariable) = datavar.isused
 
 israndom(::DataVariable)                  = false
 israndom(::AbstractArray{<:DataVariable}) = false
@@ -117,7 +122,7 @@ function Base.getindex(datavar::DataVariable, i...)
     error("Variable $(indexed_name(datavar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `data` variables is not allowed.")
 end
 
-getlastindex(::DataVariable) = 1
+getlastindex(datavar::DataVariable) = degree(datavar) + 1
 
 messageout(datavar::DataVariable, ::Int) = datavar.messageout
 messagein(datavar::DataVariable, ::Int)  = error("It is not possible to get a reference for inbound message for datavar")
@@ -168,16 +173,18 @@ _getmarginal(datavar::DataVariable)              = datavar.messageout |> map(Mar
 _setmarginal!(datavar::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
 _makemarginal(datavar::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
-# Extension for _getmarginal
-function Rocket.getrecent(proxy::ProxyObservable{<:Marginal, S, M}) where {S <: Rocket.RecentSubjectInstance, D, M <: Rocket.MapProxy{D, typeof(as_marginal)}}
-    return as_marginal(Rocket.getrecent(proxy.proxied_source))
-end
-
 setanonymous!(::DataVariable, ::Bool) = nothing
 
-function setmessagein!(datavar::DataVariable, ::Int, messagein)
-    datavar.nconnected += 1
-    push!(datavar.input_messages, messagein)
+function setmessagein!(datavar::DataVariable, index::Int, messagein)
+    if index === (degree(datavar) + 1)
+        push!(datavar.input_messages, messagein)
+        datavar.nconnected += 1
+        datavar.isused = true
+    else
+        error(
+            "Inconsistent state in setmessagein! function for data variable $(datavar). `index` should be equal to `degree(datavar) + 1 = $(degree(datavar) + 1)`, $(index) is given instead"
+        )
+    end
     return nothing
 end
 

@@ -312,6 +312,10 @@ end
     addtests(testrunner, "rules/beta/test_out.jl")
     addtests(testrunner, "rules/beta/test_marginals.jl")
 
+    addtests(testrunner, "rules/categorical/test_out.jl")
+    addtests(testrunner, "rules/categorical/test_p.jl")
+    addtests(testrunner, "rules/categorical/test_marginals.jl")
+
     addtests(testrunner, "rules/delta/unscented/test_out.jl")
     addtests(testrunner, "rules/delta/unscented/test_in.jl")
     addtests(testrunner, "rules/delta/unscented/test_marginals.jl")
@@ -323,6 +327,9 @@ end
     addtests(testrunner, "rules/delta/cvi/test_in.jl")
     addtests(testrunner, "rules/delta/cvi/test_marginals.jl")
     addtests(testrunner, "rules/delta/cvi/test_out.jl")
+
+    addtests(testrunner, "rules/dirichlet/test_marginals.jl")
+    addtests(testrunner, "rules/dirichlet/test_out.jl")
 
     addtests(testrunner, "rules/dot_product/test_out.jl")
     addtests(testrunner, "rules/dot_product/test_in1.jl")
