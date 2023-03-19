@@ -9,7 +9,7 @@
     Fs, es    = getmasks(meta), getunits(meta)
     dim       = order * ds
 
-    mA = mar_companion_matrix(order, ds, ma)
+    mA = mar_companion_matrix(ma, meta)
     mW = mar_transition(getorder(meta), mΛ)
 
     Λ = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)
@@ -31,7 +31,7 @@ end
     order, ds = getorder(meta), getdimensionality(meta)
     Fs, es    = getmasks(meta), getunits(meta)
 
-    mA = mar_companion_matrix(order, ds, ma)
+    mA = mar_companion_matrix(ma, meta)
     mW = mar_transition(getorder(meta), mΛ)
 
     Λ = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)

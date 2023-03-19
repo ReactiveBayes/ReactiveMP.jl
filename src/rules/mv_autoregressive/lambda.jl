@@ -7,14 +7,13 @@
 
     ma, Va = mean_cov(q_a)
 
-    mA = mar_companion_matrix(order, ds, ma)
+    mA = mar_companion_matrix(ma, meta)
 
     m, V   = mean_cov(q_y_x)
     my, Vy = ar_slice(F, m, 1:dim), ar_slice(F, V, 1:dim, 1:dim)
     mx, Vx = ar_slice(F, m, (dim + 1):(2dim)), ar_slice(F, V, (dim + 1):(2dim), (dim + 1):(2dim))
     Vyx    = ar_slice(F, V, 1:dim, (dim + 1):(2dim))
 
-    S = mar_shift(order, ds)
     G₁ = (my * my' + Vy)[1:ds, 1:ds]
     G₂ = ((my * mx' + Vyx) * mA')[1:ds, 1:ds]
     G₃ = transpose(G₂)
@@ -36,11 +35,8 @@ end
         mx, Vx = mean_cov(q_x)
         ma, Va = mean_cov(q_a)
 
-        mA = mar_companion_matrix(order, ds, ma)
+        mA = mar_companion_matrix(ma, meta)
 
-        es = [uvector(dim, i) for i in 1:ds]
-        Fs = [mask_mar(order, ds, i) for i in 1:ds]
-        S = mar_shift(order, ds)
         G₁ = (my * my' + Vy)[1:ds, 1:ds]
         G₂ = (my * mx' * mA')[1:ds, 1:ds]
         G₃ = transpose(G₂)

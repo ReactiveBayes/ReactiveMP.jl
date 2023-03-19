@@ -7,7 +7,7 @@
     order, ds = getorder(meta), getdimensionality(meta)
     Fs, es    = getmasks(meta), getunits(meta)
 
-    mA = mar_companion_matrix(order, ds, ma)
+    mA = mar_companion_matrix(ma, meta)
     mW = mar_transition(getorder(meta), mΛ)
 
     Λ = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)
@@ -24,7 +24,7 @@ end
 @rule MAR(:y, Marginalisation) (q_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta) = begin
     order, ds = getorder(meta), getdimensionality(meta)
 
-    mA = mar_companion_matrix(order, ds, mean(q_a))
+    mA = mar_companion_matrix(mean(q_a), meta)
     mW = mar_transition(getorder(meta), mean(q_Λ))
 
     return MvNormalMeanPrecision(mA * mean(q_x), mW)

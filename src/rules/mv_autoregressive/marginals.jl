@@ -14,7 +14,7 @@ function ar_y_x_marginal(
     ma, Va = mean_cov(q_a)
     mΛ = mean(q_Λ)
 
-    mA = mar_companion_matrix(order, ds, ma)
+    mA = mar_companion_matrix(ma, meta)
     mW = mar_transition(getorder(meta), mΛ)
 
     b_my, b_Vy = mean_cov(m_y)

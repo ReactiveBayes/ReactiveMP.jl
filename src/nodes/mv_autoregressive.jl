@@ -36,23 +36,19 @@ default_meta(::Type{MAR}) = error("MvAutoregressive node requires meta flag expl
     mΛ       = mean(q_Λ)
 
     order, ds = getorder(meta), getdimensionality(meta)
-    F = Multivariate
+    Fs, es    = getmasks(meta), getunits(meta)
+
     dim = order * ds
+    F = Multivariate
+
     n = div(ndims(q_y_x), 2)
 
     ma, Va = mean_cov(q_a)
-    mA = mar_companion_matrix(order, ds, ma)[1:ds, 1:dim]
+    mA = mar_companion_matrix(ma, meta)[1:ds, 1:dim]
 
     mx, Vx   = ar_slice(F, myx, (dim + 1):(2dim)), ar_slice(F, Vyx, (dim + 1):(2dim), (dim + 1):(2dim))
     my1, Vy1 = myx[1:ds], Vyx[1:ds, 1:ds]
     Vy1x     = ar_slice(F, Vyx, 1:ds, (dim + 1):(2dim))
-
-    # @show Vyx
-    # @show Vy1x
-
-    # this should be inside MARMeta
-    es = [uvector(ds, i) for i in 1:ds]
-    Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
     g₁ = my1' * mΛ * my1 + tr(Vy1 * mΛ)
     g₂ = mx' * mA' * mΛ * my1 + tr(Vy1x * mA' * mΛ)
@@ -82,12 +78,13 @@ end
     mΛ     = mean(q_Λ)
 
     order, ds = getorder(meta), getdimensionality(meta)
-    F = Multivariate
+    Fs, es    = getmasks(meta), getunits(meta)
+
     dim = order * ds
-    n = dim
+    F = Multivariate
 
     ma, Va = mean_cov(q_a)
-    mA = mar_companion_matrix(order, ds, ma)[1:ds, 1:dim]
+    mA = mar_companion_matrix(ma, meta)[1:ds, 1:dim]
 
     my1, Vy1 = my[1:ds], Vy[1:ds, 1:ds]
 
@@ -100,7 +97,7 @@ end
     g₃ = -g₂
     G = sum(sum(es[i]' * mΛ * es[j] * Fs[i] * (ma * ma' + Va) * Fs[j]' for i in 1:ds) for j in 1:ds)
     g₄ = mx' * G * mx + tr(Vx * G)
-    AE = n / 2 * log2π - 0.5 * mean(logdet, q_Λ) + 0.5 * (g₁ + g₂ + g₃ + g₄)
+    AE = dim / 2 * log2π - 0.5 * mean(logdet, q_Λ) + 0.5 * (g₁ + g₂ + g₃ + g₄)
 
     if order > 1
         AE += entropy(q_y)
@@ -137,10 +134,8 @@ end
 function mar_shift(order, ds)
     dim = order * ds
     S = diageye(dim)
-    for i in dim:-1:(ds + 1)
-        S[i, :] = S[i - ds, :]
-    end
-    S[1:ds, :] = zeros(ds, dim)
+    S = circshift(S, ds)
+    S[:, (end - ds + 1):end] = zeros(dim, ds)
     return S
 end
 
@@ -150,11 +145,12 @@ function uvector(dim, pos = 1)
     return dim == 1 ? u[pos] : u
 end
 
-function mar_companion_matrix(order, ds, a)
-    dim = order * ds
+function mar_companion_matrix(a, meta::MARMeta)
+    order, ds = getorder(meta), getdimensionality(meta)
+    Fs, es    = getmasks(meta), getunits(meta)
+    dim       = order * ds
+
     S = mar_shift(order, ds)
-    es = [uvector(dim, i) for i in 1:ds]
-    Fs = [mask_mar(order, ds, i) for i in 1:ds]
     L = S .+ sum(es[i] * a' * Fs[i]' for i in 1:ds)
     return L
 end
