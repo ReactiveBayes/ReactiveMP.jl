@@ -44,7 +44,7 @@ macro average_energy(fformtype, lambda)
 
     fuppertype = MacroHelpers.upper_type(fformtype)
     whereargs  = whereargs === nothing ? [] : whereargs
-    metatype   = metatype === nothing ? :Any : metatype
+    metatype   = metatype === nothing ? :Nothing : metatype
 
     inputs = map(inputs) do input
         @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
