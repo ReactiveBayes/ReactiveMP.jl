@@ -10,17 +10,22 @@ const MvAutoregressive = MAR
 struct MARMeta
     order :: Int # order (lag) of MAR
     ds    :: Int # dimensionality of MAR process, i.e., the number of correlated AR processes
+    Fs    :: Vector{<:AbstractMatrix} # masks
+    es    :: Vector{<:AbstractVector} # unit vectors
 
     function MARMeta(order, ds = 2)
-        if ds < 2
-            @error "ds parameter should be > 1. Use AR node if ds = 1"
-        end
-        return new(order, ds)
+        @assert ds >= 2 "ds parameter should be > 1. Use AR node if ds = 1"
+        Fs = [mask_mar(order, ds, i) for i in 1:ds]
+        es = [uvector(ds, i) for i in 1:ds]
+        return new(order, ds, Fs, es)
     end
 end
 
 getorder(meta::MARMeta)          = meta.order
 getdimensionality(meta::MARMeta) = meta.ds
+getmasks(meta::MARMeta)          = meta.Fs
+getunits(meta::MARMeta)          = meta.es
+
 
 @node MAR Stochastic [y, x, a, Λ]
 

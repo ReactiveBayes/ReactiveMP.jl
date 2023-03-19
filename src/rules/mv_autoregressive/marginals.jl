@@ -9,8 +9,7 @@ function ar_y_x_marginal(
     m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta
 )
     order, ds = getorder(meta), getdimensionality(meta)
-    F = Multivariate
-    dim = order * ds
+    Fs, es    = getmasks(meta), getunits(meta)
 
     ma, Va = mean_cov(q_a)
     mΛ = mean(q_Λ)
@@ -23,10 +22,6 @@ function ar_y_x_marginal(
 
     inv_b_Vy = cholinv(b_Vy)
     inv_f_Vx = cholinv(f_Vx)
-
-    # this should be inside MARMeta
-    es = [uvector(dim, i) for i in 1:ds]
-    Fs = [mask_mar(order, ds, i) for i in 1:ds]
 
     Ξ = inv_f_Vx + sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)
 

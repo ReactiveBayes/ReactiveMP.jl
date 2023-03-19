@@ -5,13 +5,12 @@
     mΛ = mean(q_Λ)
 
     order, ds = getorder(meta), getdimensionality(meta)
+    Fs, es    = getmasks(meta), getunits(meta)
+    dim       = order * ds
 
     mA = mar_companion_matrix(order, ds, ma)
     mW = mar_transition(getorder(meta), mΛ)
-    dim = order * ds
-    # this should be inside MARMeta
-    es = [uvector(dim, i) for i in 1:ds]
-    Fs = [mask_mar(order, ds, i) for i in 1:ds]
+
 
     Λ = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)
 

@@ -1,11 +1,12 @@
 
 @rule MAR(:a, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta) = begin
     order, ds = getorder(meta), getdimensionality(meta)
-    F = Multivariate
-
-    dim = order * ds
+    Fs, es    = getmasks(meta), getunits(meta)
+    dim       = order * ds
 
     m, V = mean_cov(q_y_x)
+    
+    F = Multivariate
 
     my, Vy = ar_slice(F, m, 1:dim), ar_slice(F, V, 1:dim, 1:dim)
     mx, Vx = ar_slice(F, m, (dim + 1):(2dim)), ar_slice(F, V, (dim + 1):(2dim), (dim + 1):(2dim))
