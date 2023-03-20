@@ -15,8 +15,8 @@
     Ξ = Λ + Wx
     z = Wx * mx
 
-    Vy = mA * inv(Ξ) * mA' + inv(mW)
-    my = mA * inv(Ξ) * z
+    Vy = mA * (Ξ \ mA') + (mW \ I)
+    my = mA * (Ξ \ z)
 
     return MvNormalMeanCovariance(my, Vy)
 end

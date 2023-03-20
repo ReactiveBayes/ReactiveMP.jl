@@ -1,3 +1,4 @@
+using LinearAlgebra
 
 @rule MAR(:x, Marginalisation) (m_y::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta) = begin
     ma, Va = mean_cov(q_a)
@@ -15,7 +16,6 @@
     Λ = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)
 
     Σ₁ = Hermitian(pinv(mA) * (Vy) * pinv(mA') + pinv(mA' * mW * mA))
-
     Ξ = (pinv(Σ₁) + Λ)
     z = pinv(Σ₁) * pinv(mA) * my
 
@@ -38,7 +38,7 @@ end
     Λ₀ = Hermitian(mA' * mW * mA)
 
     Ξ = Λ₀ + Λ
-    z = Λ₀ * pinv(mA) * my
+    z = Λ₀ * (mA' \ my)
 
     return MvNormalWeightedMeanPrecision(z, Ξ)
 end
