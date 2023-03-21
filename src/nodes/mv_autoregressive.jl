@@ -88,10 +88,6 @@ end
 
     my1, Vy1 = my[1:ds], Vy[1:ds, 1:ds]
 
-    # this should be inside MARMeta
-    es = [uvector(ds, i) for i in 1:ds]
-    Fs = [mask_mar(order, ds, i) for i in 1:ds]
-
     g₁ = my1' * mΛ * my1 + tr(Vy1 * mΛ)
     g₂ = -mx' * mA' * mΛ * my1
     g₃ = -g₂
@@ -111,22 +107,21 @@ end
 # Helpers for AR rules
 function mask_mar(order, dimension, index)
     F = zeros(dimension * order, dimension * dimension * order)
-    rows = repeat([dimension], order)
-    cols = repeat([dimension], dimension * order)
-    FB = BlockArrays.BlockArray(F, rows, cols)
-    for k in 1:order
-        for j in 1:(dimension * order)
-            if j == index + (k - 1) * dimension
-                view(FB, BlockArrays.Block(k, j)) .= diageye(dimension)
-            end
-        end
+
+    @inbounds for k in 1:order
+        start_col = (k - 1) * dimension^2 + (index - 1) * dimension + 1
+        end_col = start_col + dimension - 1
+        start_row = (k - 1) * dimension + 1
+        end_row = start_row + dimension - 1
+        F[start_row:end_row, start_col:end_col] = I(dimension)
     end
-    return Matrix(FB)
+
+    return F
 end
 
 function mar_transition(order, Λ)
     dim = size(Λ, 1)
-    W = 1.0 * diageye(dim * order)
+    W = diageye(dim * order)
     W[1:dim, 1:dim] = Λ
     return W
 end
@@ -135,7 +130,7 @@ function mar_shift(order, ds)
     dim = order * ds
     S = diageye(dim)
     S = circshift(S, ds)
-    S[:, (end - ds + 1):end] = zeros(dim, ds)
+    S[:, (end - ds + 1):end] .= 0
     return S
 end
 
@@ -148,9 +143,7 @@ end
 function mar_companion_matrix(a, meta::MARMeta)
     order, ds = getorder(meta), getdimensionality(meta)
     Fs, es    = getmasks(meta), getunits(meta)
-    dim       = order * ds
 
-    S = mar_shift(order, ds)
-    L = S .+ sum(es[i] * a' * Fs[i]' for i in 1:ds)
+    L = mar_shift(order, ds) .+ sum(es[i] * a' * Fs[i]' for i in 1:ds)
     return L
 end
