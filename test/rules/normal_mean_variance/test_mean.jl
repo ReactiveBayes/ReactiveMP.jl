@@ -56,6 +56,14 @@ import ReactiveMP: @test_rules
         ]
     end
 
+    @testset "Variational: (m_out::PointMass, q_v::Any)" begin
+        @test_rules [with_float_conversions = true] NormalMeanVariance(:μ, Marginalisation) [
+            (input = (m_out = PointMass(-1.0), q_v = GammaShapeRate(1.0, 1.0)), output = NormalMeanVariance(-1.0, 1.0)),
+            (input = (m_out = PointMass(1.0), q_v = GammaShapeScale(1.0, 1.0)), output = NormalMeanVariance(1.0, 1.0)),
+            (input = (m_out = PointMass(2.0), q_v = PointMass(1.0)), output = NormalMeanVariance(2.0, 1.0))
+        ]
+    end
+
     @testset "Variational: (q_out::Any, q_v::Any)" begin
         @test_rules [with_float_conversions = true] NormalMeanVariance(:μ, Marginalisation) [
             (input = (q_out = PointMass(-1.0), q_v = PointMass(2.0)), output = NormalMeanVariance(-1.0, 2.0)),
