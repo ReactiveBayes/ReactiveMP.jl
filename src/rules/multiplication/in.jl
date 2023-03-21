@@ -53,3 +53,31 @@ end
 
     return NormalWeightedMeanPrecision(dot(tmp, μ_out), W)
 end
+
+# m_in, m_out are Univariate Gaussian 
+@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
+    μ_A, var_A = mean_var(m_A)
+    μ_out, var_out = mean_var(m_out)
+    log_backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_A + var_out / x^2))  - 1/2 * (μ_out  - x*μ_A)^2 / (var_A*x^2 + var_out)
+    return ContinuousUnivariateLogPdf(log_backwardpass)
+end
+
+# m_in and m_out are any (they should be in univariate distribution family)
+@rule typeof(*)(:in, Marginalisation) (m_out::Any, m_A::Any, meta::Union{<:AbstractCorrection, Nothing}) = begin
+    nsamples    = 3000
+    samples_A = rand(m_A,nsamples)
+    samples_out = rand(m_out,nsamples)
+    p = make_inversedist_message(samples_in,m_out)
+    return ContinuousUnivariateLogPdf(p)
+end
+
+function make_inversedist_message(samples_in,d_out)
+    return let samples_in=samples_in,d_out=d_out
+        (x) -> begin
+            result = mapreduce(+, zip(samples_in,)) do (samplein,)
+                return abs(samplein) * pdf(d_out,x*samplein) 
+            end
+            return log(result)
+        end
+    end
+end
