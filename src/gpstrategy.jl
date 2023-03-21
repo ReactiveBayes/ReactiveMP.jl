@@ -10,11 +10,13 @@ export RandomFourierFeature, RFF
 import KernelFunctions: kernelmatrix, kernelmatrix!,Kernel, ScaledKernel, TransformedKernel, SqExponentialKernel, Transform 
 import ToeplitzMatrices: Circulant
 import FFTW: plan_rfft, plan_irfft 
+import StableRNGs: StableRNG
+
 abstract type AbstractCovarianceStrategyType end 
 
 #------- Cache  ------- #
 #use this cache to store and modify matrices 
-struct GPCache
+mutable struct GPCache
     cache_matrices::Dict{Tuple{Symbol, Tuple{Int, Int}}, Matrix{Float64}}
     cache_vectors::Dict{Tuple{Symbol, Int}, Vector{Float64}}
 end
@@ -138,13 +140,11 @@ mutable struct RandomFourierFeature{N, R}
     n_inducing          :: N  
     rng                 :: R 
     n_samples           :: Int 
-    ω                   :: AbstractArray 
-    InverseKtrainNoise  :: AbstractArray
-    Z_xtrain            :: AbstractArray
+    cache               :: GPCache
 end
 const RFF = RandomFourierFeature
 
-RandomFourierFeature(n_samples) = RandomFourierFeature(Int[], nothing, n_samples, Int[], Float64[1;;], Float64[1;;]) 
+RandomFourierFeature(n_samples) = RandomFourierFeature(Int[], nothing, n_samples, GPCache()) 
 #--------------- GP prediction ------------------#
 function predictMVN end 
 
@@ -175,7 +175,7 @@ function fullcov(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy},
     mul!(result2, Kfy, result1)
 
     μ                  = xtest_transformed + result2 
-    Σ                  = Kff - mul_A_B_At!(cache, Kfy, invKtrain) 
+    xtest==xtrain ? Σ = Kff : Σ = Kff - mul_A_B_At!(cache, Kfy, invKtrain) 
     return μ, Σ
 end
 
@@ -330,19 +330,31 @@ end
 
 ## Random fourier feature strategy 
 function rff(gpstrategy::CovarianceMatrixStrategy{<:RandomFourierFeature}, kernelfunc, meanfunc, xtrain, xtest, y)
-    InverseKtrainNoise = gpstrategy.strategy.InverseKtrainNoise
-    Z_xtrain = gpstrategy.strategy.Z_xtrain 
-    ω = gpstrategy.strategy.ω
-
+    cache = gpstrategy.strategy.cache
+    n_samples = gpstrategy.strategy.n_samples
+    InverseKtrainNoise = getcache(cache, (:InverseKtrainNoise,(length(xtrain),length(xtrain))))
+    Z_xtrain = getcache(cache, (:Z_xtrain,(2n_samples,length(xtrain))))
+    ω = getcache(cache, (:ω,2n_samples))
+    Ktest = getcache(cache, (:Ktest,(length(xtest),length(xtrain))))
+    Ktest_test = getcache(cache, (:Ktest, (length(xtest),length(xtest))))
+    xtrain_transformed = getcache(cache, (:xtrain_transformed,length(xtrain)))
+    μ_RFF = getcache(cache, (:μ_RFF,length(xtest)))
+    result1 = getcache(cache, (:result1, size(InverseKtrainNoise,1)))
+    result2 = getcache(cache, (:result2, size(Ktest,1)))
     Z_test = featuremap(xtest, ω)
 
-    Ktest = Z_test' * Z_xtrain
-    Ktest_test = Z_test' * Z_test 
-    μ_RFF = meanfunc.(xtest) + Ktest * InverseKtrainNoise * (y - meanfunc.(xtrain))
-    Σ_RFF = Ktest_test - Ktest * InverseKtrainNoise * Ktest' 
-    if xtrain == xtest 
-        Σ_RFF = Ktest_test * 0.8
-    end
+    mul!(Ktest,Z_test',Z_xtrain) 
+    mul!(Ktest_test, Z_test', Z_test)
+    map!(meanfunc, μ_RFF, xtest) 
+    map!((x,z) -> x - meanfunc(z), xtrain_transformed, y, xtrain) 
+
+    mul!(result1, InverseKtrainNoise, xtrain_transformed)
+    mul!(result2, Ktest, result1) 
+
+    map!(+, μ_RFF, μ_RFF, result2)
+
+    xtrain == xtest ? Σ_RFF = Ktest_test : Σ_RFF = Ktest_test - mul_A_B_At!(cache,Ktest,InverseKtrainNoise) 
+
     return μ_RFF, Σ_RFF   
 end
 #------------------------------------- function for extracting the matrices for strategies  ------------------------------------# 
@@ -363,21 +375,29 @@ end
 
 #-------------- RFF strategy --------------#
 function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:RandomFourierFeature}, kernel, x_train, Σ_noise, x_induc)
+    cache = gpstrategy.strategy.cache
     n_samples = gpstrategy.strategy.n_samples
     p_ω = FourierTransformKernel(kernel)
+    invΣnoise = inv(Σ_noise)
 
-    ω = rand(p_ω, n_samples)
+    ω = rand(StableRNG(7), p_ω, n_samples)
     Z_xtrain = featuremap(x_train, ω)
-    gpstrategy.strategy.InverseKtrainNoise = inv(Σ_noise) - inv(Σ_noise) * Z_xtrain'* inv(I + Z_xtrain * inv(Σ_noise) * Z_xtrain') * Z_xtrain * inv(Σ_noise)
-    gpstrategy.strategy.Z_xtrain = Z_xtrain
-    gpstrategy.strategy.ω = ω
+    InverseKtrainNoise = invΣnoise  - invΣnoise  * Z_xtrain'* cholinv(I + Z_xtrain * invΣnoise  * Z_xtrain') * Z_xtrain * invΣnoise 
+    cache.cache_matrices = Dict((:InverseKtrainNoise,(length(x_train),length(x_train))) => InverseKtrainNoise, (:Z_xtrain, (2n_samples,length(x_train))) => Z_xtrain)
+    cache.cache_vectors = Dict((:ω,2n_samples) => ω)
     return gpstrategy
 end
 
 function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:RandomFourierFeature},kernel, x_train, Σ_noise, x_induc)
-    ω = gpstrategy.strategy.ω
+    cache = gpstrategy.strategy.cache
+    n_samples = gpstrategy.strategy.n_samples
+
+    ω = getcache(cache, (:ω,2n_samples))
     Z_xtrain = featuremap(x_train, ω)
-    gpstrategy.strategy.InverseKtrainNoise = inv(Σ_noise) - inv(Σ_noise) * Z_xtrain'* inv(I + Z_xtrain * inv(Σ_noise) * Z_xtrain') * Z_xtrain * inv(Σ_noise)
+    invΣnoise = inv(Σ_noise)
+    InverseKtrainNoise = invΣnoise  - invΣnoise  * Z_xtrain'* cholinv(I + Z_xtrain * invΣnoise  * Z_xtrain') * Z_xtrain * invΣnoise 
+    cache.cache_matrices[(:InverseKtrainNoise,(length(x_train),length(x_train)))] = InverseKtrainNoise
+    cache.cache_matrices[(:Z_xtrain,(2n_samples,length(x_train)))] = Z_xtrain
     return gpstrategy
 end
 

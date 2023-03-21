@@ -1,5 +1,5 @@
 import ForwardDiff: hessian
-
+import StableRNGs: StableRNG
 @rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrection, Nothing}) = PointMass(mean(m_in) \ mean(m_out))
 
 @rule typeof(*)(:A, Marginalisation) (m_out::GammaDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) = begin
@@ -86,11 +86,9 @@ end
 
 
 @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
-    nsamples    = 1000
+    nsamples    = 3000
     samples_in = rand(m_in,nsamples)
-    # samples_in2 = rand(m_in,nsamples)
     samples_out = rand(m_out,nsamples)
-    # samples_division = samples_out ./ samples_in1
     #this rule is used 
     p = make_productdist_message(samples_in,m_out)
     return ContinuousUnivariateLogPdf(p)
