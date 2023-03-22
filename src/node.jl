@@ -191,6 +191,7 @@ is_marginalisation(::Marginalisation)                  = true
 is_moment_matching(::AbstractInterfaceLocalConstraint) = false
 is_moment_matching(::MomentMatching)                   = true
 
+# TODO: (branch) rename and change the logic to avoid extra Val creation
 default_interface_local_constraint(factornode, edge) = Marginalisation()
 
 """
@@ -240,6 +241,8 @@ The major difference between tag and name is that it is possible to dispath on i
 See also: [`NodeInterface`](@ref), [`name`](@ref)
 """
 tag(interface::NodeInterface) = Val{name(interface)}
+# TODO: (branch) return an actual Val object instead of its type equivalent
+# Maybe introduce a new structure like EdgeTag?
 
 """
     messageout(interface)
@@ -320,6 +323,7 @@ name(interface::IndexedNodeInterface)             = name(interface.interface)
 local_constraint(interface::IndexedNodeInterface) = local_constraint(interface.interface)
 index(interface::IndexedNodeInterface)            = interface.index
 tag(interface::IndexedNodeInterface)              = (Val{name(interface)}(), index(interface))
+# TODO: (branch) change to call to `tag` to the underlying interface
 
 messageout(interface::IndexedNodeInterface) = messageout(interface.interface)
 messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)
@@ -455,6 +459,7 @@ function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmargin
 end
 
 function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, pipeline) where {N}
+    # TODO: (branch) Replace val and put it inside, its not used in most of the cases
     interfaces     = map(varname -> NodeInterface(varname, default_interface_local_constraint(fform, Val(varname))), varnames)
     localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
     return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
@@ -488,6 +493,7 @@ function nodefunction(factornode::FactorNode)
     end
 end
 
+# TODO: (branch) replace with a `EdgeCluster`? or ActualVal object? or make it lazy!
 clustername(cluster) = mapreduce(v -> name(v), (a, b) -> Symbol(a, :_, b), cluster)
 
 # Cluster is reffered to a tuple of node interfaces
@@ -824,6 +830,8 @@ end
 function get_messages_observable(factornode, messages)
     if !isempty(messages)
         msgs_names      = Val{map(name, messages)}
+        # TODO: (branch) return an actual val object
+        # or EdgeTag?
         msgs_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
         return msgs_names, msgs_observable
     else
@@ -834,6 +842,8 @@ end
 function get_marginals_observable(factornode, marginals)
     if !isempty(marginals)
         marginal_names       = Val{map(name, marginals)}
+        # TODO: (branch) return an actual val object
+        # or EdgeTag?
         marginals_streams    = map(marginal -> getmarginal!(factornode, marginal, IncludeAll()), marginals)
         marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
         return marginal_names, marginals_observable
@@ -853,6 +863,7 @@ function activate!(factornode::AbstractFactorNode, options)
     node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
+    # TODO: (branch) replace with the auto-generated for loop to improve type inference
     for (iindex, interface) in enumerate(interfaces(factornode))
         cvariable = connectedvar(interface)
         if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
@@ -867,6 +878,7 @@ function activate!(factornode::AbstractFactorNode, options)
             vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
             vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
 
+            # TODO: (branch) replace with the custom rule dispatcher
             mapping = let messagemap = MessageMapping(rulefn, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
                 (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
             end
@@ -938,6 +950,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
 
         fform = functionalform(factornode)
         vtag  = Val{name(localmarginal)}
+        # TODO: (branch) replace with actual Val object or EdgeCluster?
         meta  = metadata(factornode)
 
         mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, factornode))
