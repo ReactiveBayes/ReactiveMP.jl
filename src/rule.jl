@@ -49,26 +49,6 @@ See also: [`rule`](@ref), [`@rule`](@ref) [`@marginalrule`](@ref)
 """
 function marginalrule end
 
-# Rule dispatcher
-
-"""
-    RuleDispatcher{F, T, C, M, Q}()
-
-This structure allows to dispatch many times on the same `rule` more efficiently by fixing some of the
-fields in the type parameters:
-- `F`: corresponds to the `fform`
-- `T`: corresponds to the `on`
-- `C`: corresponds to the `vconstraint`
-- `M`: corresponds to the `mnames`
-- `Q`: corresponds to the `qnames`
-
-See also: [`rule`](@ref)
-"""
-struct RuleDispatcher{F, T, C, M, Q} end
-
-RuleDispatcher(::Type{F}, ::Val{T}, ::C, ::Val{M}, ::Val{Q}) where {F, T, C, M, Q} = RuleDispatcher{F, T, C, M, Q}()
-RuleDispatcher(::F, ::Val{T}, ::C, ::Val{M}, ::Val{Q}) where {F, T, C, M, Q} = RuleDispatcher{F, T, C, M, Q}()
-
 # Macro code
 
 """
@@ -104,7 +84,7 @@ function rule_macro_parse_on_tag(on)
     if @capture(on, :name_)
         # First we check on just quoted symbol expression
         # If captures index expression and index initialisation expression are `nothing`
-        return :(Type{Val{$(QuoteNode(name))}}), nothing, nothing
+        return :(Val{$(QuoteNode(name))}), nothing, nothing
     elseif @capture(on, (:name_, index_Symbol))
         return :(Tuple{Val{$(QuoteNode(name))}, Int}), index, :($index = on[2])
     elseif @capture(on, (:name_, k_ = index_Int))
@@ -161,7 +141,7 @@ function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     out_names = if isempty(names)
         :Nothing
     else
-        :(Type{Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))}})
+        :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))})
     end
     out_types = isempty(types) ? :Nothing : :(Tuple{$(map((t) -> MacroHelpers.proxy_type(proxy, t), types)...)})
 
@@ -216,7 +196,7 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
         return :($(proxy)($any, false, false, nothing))
     end
 
-    names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))})
+    names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))}())
     values_arg = isempty(names) ? :nothing : :($(map(v -> apply_proxy(v, proxy), values)...),)
 
     return names_arg, values_arg
@@ -266,7 +246,14 @@ function call_rule_make_node(::CallRuleNodeNotRequired, fformtype, nodetype, met
     return nothing
 end
 
-call_rule_macro_construct_on_arg(on_type, on_index::Nothing) = MacroHelpers.bottom_type(on_type)
+function call_rule_macro_construct_on_arg(on_type, on_index::Nothing) 
+    bottomtype = MacroHelpers.bottom_type(on_type)
+    if @capture(bottomtype, Val{R_})
+        return :(Val($R))
+    else
+        error("Internal indexed call rule error: Invalid `on_type` in the `call_rule_macro_construct_on_arg` function.")
+    end
+end
 
 function call_rule_macro_construct_on_arg(on_type, on_index::Int)
     bottomtype = MacroHelpers.bottom_type(on_type)
@@ -372,61 +359,6 @@ macro rule(fform, lambda)
                 end
             end
         )
-    end
-
-    foreach(options) do option
-
-        # Symmetrical option
-        if first(option) === :symmetrical
-            @capture(last(option), [names__]) || error("Invalid symmetrical names specification. Name should be a symbol.")
-
-            @assert length(names) > 1 "Invalid symmetrical names specification. Length of names should be greater than 1."
-
-            names = map(names) do name
-                @capture(name, :s_) || error("Invalid symmetrical name specification. Name should be a symbol.")
-                return s
-            end
-
-            indices = map(names) do name
-                return findfirst(input -> isequal(string("m_", name), string(first(input))) || isequal(string("q_", name), string(first(input))), inputs)
-            end
-
-            foreach(enumerate(indices)) do (i, index)
-                @assert index !== nothing "Name $(names[i]) does not exist in arguments list"
-            end
-
-            prefixes = map(index -> string(first(inputs[index]))[1:2], indices)
-
-            @assert length(Set(prefixes)) === 1 "It is not possible to mix symmetric arguments from messages and marginals"
-
-            prefix = first(prefixes)
-            swaps  = Iterators.flatten(map(i -> map(j -> (indices[i], indices[j]), (i + 1):length(indices)), 1:length(indices)))
-
-            is_messages  = isequal(prefix, "m_")
-            is_marginals = isequal(prefix, "q_")
-
-            foreach(swaps) do swap
-                messages  = is_messages ? MacroHelpers.rearranged_tuple(:messages, length(m_init_block), swap) : :(messages)
-                marginals = is_marginals ? MacroHelpers.rearranged_tuple(:marginals, length(m_init_block), swap) : :(marginals)
-
-                swapped_m_types = is_messages ? :(Tuple{$(swapped(m_types.args[2:end], first(swap), last(swap))...)}) : m_types
-                swapped_q_types = is_marginals ? :(Tuple{$(swapped(q_types.args[2:end], first(swap), last(swap))...)}) : q_types
-
-                @assert !is_messages || swapped_m_types != m_types "Message types are the same after arguments swap for indices = $(swap)"
-                @assert !is_marginals || swapped_q_types != q_types "Marginal types are the same after arguments swap for indices = $(swap)"
-
-                output = quote
-                    $output
-                    $(
-                        rule_function_expression(fuppertype, on_type, vconstraint, m_names, swapped_m_types, q_names, swapped_q_types, metatype, whereargs) do
-                            return :(ReactiveMP.rule(fform, on, vconstraint, messages_names, $(messages), marginals_names, $(marginals), meta, __node))
-                        end
-                    )
-                end
-            end
-        else
-            error("Unknown option: $(first(option)) in rule specification")
-        end
     end
 
     return esc(output)
@@ -815,16 +747,14 @@ end
 rule_method_error_extract_fform(f::Function) = string("typeof(", f, ")")
 rule_method_error_extract_fform(f)           = string(f)
 
-rule_method_error_extract_on(::Type{Val{T}}) where {T}              = string(":", T)
-rule_method_error_extract_on(::Type{Tuple{Val{T}, Int}}) where {T}  = string("(", rule_method_error_extract_on(Val{T}), ", k)")
-rule_method_error_extract_on(::Type{Tuple{Val{T}, N}}) where {T, N} = string("(", rule_method_error_extract_on(Val{T}), ", ", convert(Int, N), ")")
-rule_method_error_extract_on(::Tuple{Val{T}, Int}) where {T}        = string("(", rule_method_error_extract_on(Val{T}), ", k)")
-rule_method_error_extract_on(::Tuple{Val{T}, N}) where {T, N}       = string("(", rule_method_error_extract_on(Val{T}), ", ", convert(Int, N), ")")
+rule_method_error_extract_on(::Val{T}) where {T}              = string(":", T)
+rule_method_error_extract_on(::Tuple{Val{T}, Int}) where {T}  = string("(", rule_method_error_extract_on(Val{T}()), ", k)")
+rule_method_error_extract_on(::Tuple{Val{T}, N}) where {T, N} = string("(", rule_method_error_extract_on(Val{T}()), ", ", convert(Int, N), ")")
 
 rule_method_error_extract_vconstraint(something) = typeof(something)
 
-rule_method_error_extract_names(::Type{Val{T}}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT})), T)
-rule_method_error_extract_names(::Nothing)                = ()
+rule_method_error_extract_names(::Val{T}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT}())), T)
+rule_method_error_extract_names(::Nothing)          = ()
 
 rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeofdata(e)), t)
 rule_method_error_extract_types(t::Nothing) = ()

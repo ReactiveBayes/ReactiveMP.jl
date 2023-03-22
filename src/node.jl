@@ -191,7 +191,7 @@ is_marginalisation(::Marginalisation)                  = true
 is_moment_matching(::AbstractInterfaceLocalConstraint) = false
 is_moment_matching(::MomentMatching)                   = true
 
-default_interface_local_constraint(factornode, edge) = Marginalisation()
+interface_default_local_constraint(fform, edge) = Marginalisation()
 
 """
     NodeInterface
@@ -239,7 +239,7 @@ The major difference between tag and name is that it is possible to dispath on i
 
 See also: [`NodeInterface`](@ref), [`name`](@ref)
 """
-tag(interface::NodeInterface) = Val{name(interface)}
+tag(interface::NodeInterface) = Val{name(interface)}()
 
 """
     messageout(interface)
@@ -392,6 +392,7 @@ Base.first(localmarginal::FactorNodeLocalMarginal) = localmarginal.first
 
 index(localmarginal::FactorNodeLocalMarginal) = localmarginal.index
 name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
+tag(localmarginal::FactorNodeLocalMarginal) = Val{name(localmarginal)}()
 
 getstream(localmarginal::FactorNodeLocalMarginal)              = localmarginal.stream
 setstream!(localmarginal::FactorNodeLocalMarginal, observable) = localmarginal.stream = observable
@@ -455,7 +456,7 @@ function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmargin
 end
 
 function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, pipeline) where {N}
-    interfaces     = map(varname -> NodeInterface(varname, default_interface_local_constraint(fform, Val(varname))), varnames)
+    interfaces     = map(varname -> NodeInterface(varname, interface_default_local_constraint(fform, varname)), varnames)
     localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
     return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
 end
@@ -823,7 +824,7 @@ end
 
 function get_messages_observable(factornode, messages)
     if !isempty(messages)
-        msgs_names      = Val{map(name, messages)}
+        msgs_names      = Val{map(name, messages)}()
         msgs_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
         return msgs_names, msgs_observable
     else
@@ -833,7 +834,7 @@ end
 
 function get_marginals_observable(factornode, marginals)
     if !isempty(marginals)
-        marginal_names       = Val{map(name, marginals)}
+        marginal_names       = Val{map(name, marginals)}()
         marginals_streams    = map(marginal -> getmarginal!(factornode, marginal, IncludeAll()), marginals)
         marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
         return marginal_names, marginals_observable
@@ -936,7 +937,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
         marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
 
         fform = functionalform(factornode)
-        vtag  = Val{name(localmarginal)}
+        vtag  = tag(localmarginal)
         meta  = metadata(factornode)
 
         mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, factornode))

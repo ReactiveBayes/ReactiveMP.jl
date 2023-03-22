@@ -78,13 +78,13 @@ union_types(x::Type)  = (x,)
 
 # Symbol helpers
 
-__extract_val_type(::Type{Type{Val{S}}}) where {S} = S
-__extract_val_type(::Type{Val{S}}) where {S}       = S
+__extract_val_type(::Type{Val{S}}) where {S} = S
+__extract_val_type(::Val{S}) where {S} = S
 
 @generated function split_underscored_symbol(symbol_val)
     S = __extract_val_type(symbol_val)
     R = tuple(map(Symbol, split(string(S), "_"))...)
-    return :(Val{$R})
+    return :(Val{$R}())
 end
 
 # NamedTuple helpers

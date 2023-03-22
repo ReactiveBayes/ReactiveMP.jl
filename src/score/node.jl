@@ -17,8 +17,9 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
 
     stream = combineLatest(map(fnstream, interfaces(node)), PushNew())
 
-    vtag       = Val{inboundclustername(node)}
-    msgs_names = Val{map(name, interfaces(node))}
+    # TODO: (branch) replace with a function call
+    vtag       = Val{inboundclustername(node)}()
+    msgs_names = Val{map(name, interfaces(node))}()
 
     mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
         (messages) -> begin
@@ -40,7 +41,8 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractF
 
     stream = combineLatest(map(fnstream, localmarginals(node)), PushNew())
 
-    mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{localmarginalnames(node)}
+    # TODO: (branch) replace with a function call
+    mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{localmarginalnames(node)}()
         (marginals) -> begin
             average_energy   = score(AverageEnergy(), fform, marginal_names, marginals, meta)
             clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)
