@@ -25,7 +25,7 @@ This function is used to compute an outbound message for a given node
 - `meta`: Extra meta information
 - `__node`: Node reference
 
-See also: [`@rule`](@ref), [`RuleDispatcher`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
+See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
 """
 function rule end
 
