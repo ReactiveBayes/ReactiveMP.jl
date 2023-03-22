@@ -27,7 +27,11 @@ using Random
         node = make_node(Probit)
 
         @test score(
-            AverageEnergy(), Probit, Val{(:out, :in)}(), (Marginal(Bernoulli(1), false, false, nothing), Marginal(NormalMeanVariance(0.0, 1.0), false, false, nothing)), ProbitMeta()
+            AverageEnergy(),
+            Probit,
+            Val{(:out, :in)}(),
+            (Marginal(Bernoulli(1), false, false, nothing), Marginal(NormalMeanVariance(0.0, 1.0), false, false, nothing)),
+            ProbitMeta()
         ) ≈ 1.0
 
         @test score(

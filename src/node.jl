@@ -392,7 +392,7 @@ Base.first(localmarginal::FactorNodeLocalMarginal) = localmarginal.first
 
 index(localmarginal::FactorNodeLocalMarginal) = localmarginal.index
 name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
-tag(localmarginal::FactorNodeLocalMarginal) = Val{name(localmarginal)}()
+tag(localmarginal::FactorNodeLocalMarginal)   = Val{name(localmarginal)}()
 
 getstream(localmarginal::FactorNodeLocalMarginal)              = localmarginal.stream
 setstream!(localmarginal::FactorNodeLocalMarginal, observable) = localmarginal.stream = observable

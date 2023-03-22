@@ -223,14 +223,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision,
-                Val{:μ}(),
-                Val{(:out,)}(),
-                (as_vague_msg(NormalMeanVariance),),
-                Val{(:τ,)}(),
-                (as_vague_mrg(Gamma),),
-                nothing,
-                make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), Val{(:out,)}(), (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}(), (as_vague_mrg(Gamma),), nothing, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -245,14 +238,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision,
-                Val{:μ}(),
-                Val{(:out,)}(),
-                (as_vague_msg(NormalMeanVariance),),
-                Val{(:τ,)}(),
-                (as_vague_mrg(Gamma),),
-                1.0,
-                make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), Val{(:out,)}(), (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}(), (as_vague_mrg(Gamma),), 1.0, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -268,14 +254,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision,
-                Val{:μ}(),
-                Val{(:out, :τ)}(),
-                (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)),
-                nothing,
-                nothing,
-                1.0,
-                make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), Val{(:out, :τ)}(), (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)), nothing, nothing, 1.0, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -291,14 +270,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision,
-                Val{:μ}(),
-                nothing,
-                nothing,
-                Val{(:out, :τ)}(),
-                (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)),
-                1.0,
-                make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), nothing, nothing, Val{(:out, :τ)}(), (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)), 1.0, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -359,7 +331,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         struct DummyNode end
         struct DummyNodeMeta end
 
-        @node DummyNode Stochastic [ out, x, y ]
+        @node DummyNode Stochastic [out, x, y]
 
         @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision) = 1
         @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision, meta::Int) = meta

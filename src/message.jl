@@ -313,7 +313,7 @@ function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_n
     return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
 end
 
-function materialize!(mapping::MessageMapping, dependencies) 
+function materialize!(mapping::MessageMapping, dependencies)
     return materialize!(mapping, dependencies[1], dependencies[2])
 end
 

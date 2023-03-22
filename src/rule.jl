@@ -246,7 +246,7 @@ function call_rule_make_node(::CallRuleNodeNotRequired, fformtype, nodetype, met
     return nothing
 end
 
-function call_rule_macro_construct_on_arg(on_type, on_index::Nothing) 
+function call_rule_macro_construct_on_arg(on_type, on_index::Nothing)
     bottomtype = MacroHelpers.bottom_type(on_type)
     if @capture(bottomtype, Val{R_})
         return :(Val($R))
