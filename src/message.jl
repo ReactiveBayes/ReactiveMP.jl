@@ -313,10 +313,11 @@ function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_n
     return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
 end
 
-function materialize!(mapping::MessageMapping, dependencies)
-    messages  = dependencies[1]
-    marginals = dependencies[2]
+function materialize!(mapping::MessageMapping, dependencies) 
+    return materialize!(mapping, dependencies[1], dependencies[2])
+end
 
+function materialize!(mapping::MessageMapping, messages, marginals)
     # Message is clamped if all of the inputs are clamped
     is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
