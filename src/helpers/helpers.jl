@@ -1,4 +1,4 @@
-export skipindex, @symmetrical
+export skipindex
 
 using SpecialFunctions
 using Rocket

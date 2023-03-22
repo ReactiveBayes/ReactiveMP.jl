@@ -319,7 +319,7 @@ Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedIn
 name(interface::IndexedNodeInterface)             = name(interface.interface)
 local_constraint(interface::IndexedNodeInterface) = local_constraint(interface.interface)
 index(interface::IndexedNodeInterface)            = interface.index
-tag(interface::IndexedNodeInterface)              = (Val{name(interface)}(), index(interface))
+tag(interface::IndexedNodeInterface)              = (tag(interface.interface), index(interface))
 
 messageout(interface::IndexedNodeInterface) = messageout(interface.interface)
 messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)
