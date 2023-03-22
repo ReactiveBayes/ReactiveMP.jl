@@ -58,7 +58,7 @@ end
 @rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
     μ_A, var_A = mean_var(m_A)
     μ_out, var_out = mean_var(m_out)
-    log_backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_A + var_out / x^2))  - 1/2 * (μ_out  - x*μ_A)^2 / (var_A*x^2 + var_out)
+    log_backwardpass = (x) -> -log(abs(x)) - 0.5 * log(2π * (var_A + var_out / x^2)) - 1 / 2 * (μ_out - x * μ_A)^2 / (var_A * x^2 + var_out)
     return ContinuousUnivariateLogPdf(log_backwardpass)
 end
 
