@@ -25,7 +25,7 @@ This function is used to compute an outbound message for a given node
 - `meta`: Extra meta information
 - `__node`: Node reference
 
-See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
+See also: [`@rule`](@ref), [`RuleDispatcher`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
 """
 function rule end
 
@@ -48,6 +48,26 @@ This function is used to compute a local joint marginal for a given node
 See also: [`rule`](@ref), [`@rule`](@ref) [`@marginalrule`](@ref)
 """
 function marginalrule end
+
+# Rule dispatcher
+
+"""
+    RuleDispatcher{F, T, C, M, Q}()
+
+This structure allows to dispatch many times on the same `rule` more efficiently by fixing some of the
+fields in the type parameters:
+- `F`: corresponds to the `fform`
+- `T`: corresponds to the `on`
+- `C`: corresponds to the `vconstraint`
+- `M`: corresponds to the `mnames`
+- `Q`: corresponds to the `qnames`
+
+See also: [`rule`](@ref)
+"""
+struct RuleDispatcher{F, T, C, M, Q} end
+
+RuleDispatcher(::Type{F}, ::Val{T}, ::C, ::Val{M}, ::Val{Q}) where {F, T, C, M, Q} = RuleDispatcher{F, T, C, M, Q}()
+RuleDispatcher(::F, ::Val{T}, ::C, ::Val{M}, ::Val{Q}) where {F, T, C, M, Q} = RuleDispatcher{F, T, C, M, Q}()
 
 # Macro code
 
