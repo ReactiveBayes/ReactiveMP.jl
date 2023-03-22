@@ -16,11 +16,11 @@ This function is used to compute an outbound message for a given node
 # Arguments
 
 - `fform`: Functional form of the node in form of a type of the node, e.g. `::Type{ <: NormalMeanVariance }` or `::typeof(+)`
-- `on`: Outbound interface's tag for which a message has to be computed, e.g. `::Type{ Val{:out} }` or `::Type{ Val{:μ} }`
+- `on`: Outbound interface's tag for which a message has to be computed, e.g. `::Val{:out}` or `::Val{:μ}`
 - `vconstraint`: Variable constraints for an outbound interface, e.g. `Marginalisation` or `MomentMatching`
-- `mnames`: Ordered messages names in form of the Val type, eg. `::Type{ Val{ (:mean, :precision) } }`
+- `mnames`: Ordered messages names in form of the Val type, eg. `::Val{ (:mean, :precision) }`
 - `messages`: Tuple of message of the same length as `mnames` used to compute an outbound message
-- `qnames`: Ordered marginal names in form of the Val type, eg. `::Type{ Val{ (:mean, :precision) } }`
+- `qnames`: Ordered marginal names in form of the Val type, eg. `::Val{ (:mean, :precision) }`
 - `marginals`: Tuple of marginals of the same length as `qnames` used to compute an outbound message
 - `meta`: Extra meta information
 - `__node`: Node reference
@@ -37,10 +37,10 @@ This function is used to compute a local joint marginal for a given node
 # Arguments
 
 - `fform`: Functional form of the node in form of a type of the node, e.g. `::Type{ <: NormalMeanVariance }` or `::typeof(+)`
-- `on`: Local joint marginal tag , e.g. `::Type{ Val{ :mean_precision } }` or `::Type{ Val{ :out_mean_precision } }`
-- `mnames`: Ordered messages names in form of the Val type, eg. `::Type{ Val{ (:mean, :precision) } }`
+- `on`: Local joint marginal tag , e.g. `::Val{ :mean_precision }` or `::Val{ :out_mean_precision }`
+- `mnames`: Ordered messages names in form of the Val type, eg. `::Val{ (:mean, :precision) }`
 - `messages`: Tuple of message of the same length as `mnames` used to compute an outbound message
-- `qnames`: Ordered marginal names in form of the Val type, eg. `::Type{ Val{ (:mean, :precision) } }`
+- `qnames`: Ordered marginal names in form of the Val type, eg. `::Val{ (:mean, :precision) }`
 - `marginals`: Tuple of marginals of the same length as `qnames` used to compute an outbound message
 - `meta`: Extra meta information
 - `__node`: Node reference
