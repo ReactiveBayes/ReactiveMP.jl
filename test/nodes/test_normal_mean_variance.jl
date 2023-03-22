@@ -44,7 +44,7 @@ import ReactiveMP: make_node
 
             for N in (NormalMeanPrecision, NormalMeanVariance, NormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_τ), false, false, nothing))
-                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, marginals, nothing) ≈ 1.8879401707928936
+                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), marginals, nothing) ≈ 1.8879401707928936
             end
         end
 
@@ -55,7 +55,7 @@ import ReactiveMP: make_node
 
             for N in (NormalMeanPrecision, NormalMeanVariance, NormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_v), false, false, nothing))
-                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, marginals, nothing) ≈ 2.86416186172411
+                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), marginals, nothing) ≈ 2.86416186172411
             end
         end
 
@@ -65,7 +65,7 @@ import ReactiveMP: make_node
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(convert(G, q_v), false, false, nothing))
-                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out_μ, :τ)}, marginals, nothing) ≈ 1.6231194045861121
+                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out_μ, :τ)}(), marginals, nothing) ≈ 1.6231194045861121
             end
         end
 
@@ -75,7 +75,7 @@ import ReactiveMP: make_node
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(convert(G, q_v), false, false, nothing))
-                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out_μ, :τ)}, marginals, nothing) ≈ 1.969539193740776
+                @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out_μ, :τ)}(), marginals, nothing) ≈ 1.969539193740776
             end
         end
     end
