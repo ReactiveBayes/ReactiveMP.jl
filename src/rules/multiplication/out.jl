@@ -72,8 +72,16 @@ end
     μ_A, var_A = mean_var(m_A) 
     μ_in, var_in = mean_var(m_in)
 
-    #the besselmod already returns a logpdf 
     return ContinuousUnivariateLogPdf(besselmod(μ_in,var_in,μ_A,var_A,0.0))
+end
+
+# General rule for Univariate Distributions 
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateDistribution, m_in::UnivariateDistribution, meta::Union{<:AbstractCorrection, Nothing}) = begin
+    nsamples    = 3000
+    samples_A  = rand(m_A,nsamples)
+    p = make_productdist_message(samples_A,m_in)
+
+    return ContinuousUnivariateLogPdf(p)
 end
 
 #modified-bessel function 
@@ -105,17 +113,6 @@ function besselmod(mx, vx, my, vy, rho; truncation=10, jitter=1e-8)
     # return logpdf
     return logpdf
 end 
-
-# General rule 
-@rule typeof(*)(:out, Marginalisation) (m_A::Any, m_in::Any, meta::Union{<:AbstractCorrection, Nothing}) = begin
-    nsamples    = 3000
-    samples_A  = rand(m_A,nsamples)
-    samples_in = rand(m_in,nsamples)
-
-    p = make_productdist_message(samples_A,m_in)
-
-    return ContinuousUnivariateLogPdf(p)
-end
 
 function make_productdist_message(samples_A,d_in)
     return let samples_A=samples_A,d_in=d_in
