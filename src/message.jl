@@ -61,7 +61,7 @@ true
 
 ```
 
-See also: [`AbstractMessage`](@ref), [`materialize!`](@ref)
+See also: [`AbstractMessage`](@ref), [`ReactiveMP.materialize!`](@ref)
 """
 struct Message{D, A} <: AbstractMessage
     data       :: D

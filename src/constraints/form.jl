@@ -31,7 +31,7 @@ This form constraint check strategy checks functional form of the messages produ
 Usually if a variable has been connected to multiple nodes we want to perform multiple `prod` to obtain a posterior marginal.
 With this form check strategy `constrain_form` function will be executed after each subsequent `prod` function.
 
-See also: [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`constrain_form`](@ref), [`multiply_messages`](@ref)
+See also: [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`constrain_form`](@ref)
 """
 struct FormConstraintCheckEach end
 
@@ -42,7 +42,7 @@ This form constraint check strategy checks functional form of the last messages 
 Usually if a variable has been connected to multiple nodes we want to perform multiple `prod` to obtain a posterior marginal.
 With this form check strategy `constrain_form` function will be executed only once after all subsequenct `prod` functions have been executed.
 
-See also: [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`constrain_form`](@ref), [`multiply_messages`](@ref)
+See also: [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`constrain_form`](@ref)
 """
 struct FormConstraintCheckLast end
 

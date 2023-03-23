@@ -23,6 +23,7 @@ This function is used to compute an outbound message for a given node
 - `qnames`: Ordered marginal names in form of the Val type, eg. `::Val{ (:mean, :precision) }`
 - `marginals`: Tuple of marginals of the same length as `qnames` used to compute an outbound message
 - `meta`: Extra meta information
+- `addons`: Extra addons information
 - `__node`: Node reference
 
 See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
@@ -304,7 +305,54 @@ end
 import .MacroHelpers
 
 """
-    Documentation placeholder
+    @rule NodeType(:Edge, Constraint) (Arguments..., [ meta::MetaType ]) = begin
+        # rule body
+        return ...
+    end
+
+The `@rule` macro help to define new methods for the `rule` function. It works particularly well in combination with the `@node` macro.
+It has a specific structure, which must specify:
+
+- `NodeType`: must be a valid Julia type. If some attempt to define a rule for a Julia function (for example `+`), use `typeof(+)`
+- `Edge`: edge label, usually edge labels are defined with the `@node` macro
+- `Constrain`: DEPRECATED, please just use the `Marginalisation` label
+- `Arguments`: defines a list of the input arguments for the rule
+    - `m_*` prefix indicates that the argument is of type `Message` from the edge `*`
+    - `q_*` prefix indicates that the argument is of type `Marginal` on the edge `*`
+- `Meta::MetaType` - optionally, a user can specify a `Meta` object of type `MetaType`. 
+  This can be useful is some attempts to try different rules with different approximation methods or if the rule itself requires some temporary storage or cache. 
+  The default meta is `nothing`.
+
+
+Here are various examples of the `@rule` macro usage:
+
+1. Belief-Propagation (or Sum-Product) message update rule for the `NormalMeanVariance` node  toward the `:μ` edge with the `Marginalisation` constraint.
+   Input arguments are `m_out` and `m_v`, which are the messages from the corresponding edges `out` and `v` and have the type `PointMass`.
+
+```julia
+@rule NormalMeanVariance(:μ, Marginalisation) (m_out::PointMass, m_v::PointMass) = NormalMeanVariance(mean(m_out), mean(m_v))
+```
+
+2. Mean-field message update rule for the `NormalMeanVariance` node towards the `:μ` edge with the `Marginalisation` constraint.
+   Input arguments are `q_out` and `q_v`, which are the marginals on the corresponding edges `out` and `v` of type `Any`.
+
+```julia
+@rule NormalMeanVariance(:μ, Marginalisation) (q_out::Any, q_v::Any) = NormalMeanVariance(mean(q_out), mean(q_v))
+```
+
+
+3. Structured Variational message update rule for the `NormalMeanVariance` node towards the `:out` edge with the `Marginalisation` constraint.
+   Input arguments are `m_μ`, which is a message from the `μ` edge of type `UnivariateNormalDistributionsFamily`, and `q_v`, which is a marginal on the `v` edge of type `Any`.
+
+```julia
+@rule NormalMeanVariance(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, q_v::Any) = begin
+    m_μ_mean, m_μ_cov = mean_cov(m_μ)
+    return NormalMeanVariance(m_μ_mean, m_μ_cov + mean(q_v))
+end
+```
+
+
+See also: [`rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`], [`@call_rule`](@ref)
 """
 macro rule(fform, lambda)
     @capture(fform, fformtype_(on_, vconstraint_, options__)) ||
@@ -364,6 +412,14 @@ macro rule(fform, lambda)
     return esc(output)
 end
 
+"""
+    @call_rule NodeType(:edge, Constraint) (argument1 = value1, argument2 = value2, ..., [ meta = ... ])
+
+The `@call_rule` macro helps to call the `rule` method with an easier syntax. 
+The structure of the macro is almost the same as in the `@rule` macro, but there is no `begin ... end` block, but instead each argument must have a specified value with the `=` operator.
+
+See also: [`@rule`](@ref), [`rule`](@ref), [`@call_marginalrule`](@ref)
+"""
 macro call_rule(fform, args)
     @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
 
@@ -529,7 +585,55 @@ macro test_rules(on, test_sequence)
 end
 
 """
-    Documentation placeholder
+    @marginalrule NodeType(:Cluster) (Arguments..., [ meta::MetaType ]) = begin
+        # rule body
+        return ...
+    end
+
+The `@marginalrule` macro help to define new methods for the `marginalrule` function. It works particularly well in combination with the `@node` macro.
+It has a specific structure, which must specify:
+
+- `NodeType`: must be a valid Julia type. If some attempt to define a rule for a Julia function (for example `+`), use `typeof(+)`
+- `Cluster`: edge cluster that contains joined edge labels with the `_` symbol. Usually edge labels are defined with the `@node` macro
+- `Arguments`: defines a list of the input arguments for the rule
+    - `m_*` prefix indicates that the argument is of type `Message` from the edge `*`
+    - `q_*` prefix indicates that the argument is of type `Marginal` on the edge `*`
+- `Meta::MetaType` - optionally, a user can specify a `Meta` object of type `MetaType`. 
+  This can be useful is some attempts to try different rules with different approximation methods or if the rule itself requires some temporary storage or cache. 
+  The default meta is `nothing`.
+
+The `@marginalrule` can return a `NamedTuple` in the `return` statement. This would indicate some variables in the joint marginal 
+for the `Cluster` are independent and the joint itself is factorised. For example if some attempts to compute a marginal for the `q(x, y)` it is possible to return
+`(x = ..., y = ...)` as the result of the computation to indicate that `q(x, y) = q(x)q(y)`.
+
+Here are various examples of the `@marginalrule` macro usage:
+
+1. Marginal computation rule around the `NormalMeanPrecision` node for the `q(out, μ)`. The rule accepts arguments `m_out` and `m_μ`, which are the messages 
+from the `out` and `μ` edges respectively, and `q_τ` which is the marginal on the edge `τ`.
+
+```julia
+@marginalrule NormalMeanPrecision(:out_μ) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, q_τ::Any) = begin
+    xi_out, W_out = weightedmean_precision(m_out)
+    xi_μ, W_μ     = weightedmean_precision(m_μ)
+
+    W_bar = mean(q_τ)
+
+    W  = [W_out+W_bar -W_bar; -W_bar W_μ+W_bar]
+    xi = [xi_out; xi_μ]
+
+    return MvNormalWeightedMeanPrecision(xi, W)
+end
+```
+
+2. Marginal computation rule around the `NormalMeanPrecision` node for the `q(out, μ)`. The rule accepts arguments `m_out` and `m_μ`, which are the messages from the 
+`out` and `μ` edges respectively, and `q_τ` which is the marginal on the edge `τ`. In this example the result of the computation is a `NamedTuple`
+
+```julia
+@marginalrule NormalMeanPrecision(:out_μ) (m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, q_τ::Any) = begin
+    return (out = m_out, μ = prod(ProdAnalytical(), NormalMeanPrecision(mean(m_out), mean(q_τ)), m_μ))
+end
+```
+
 """
 macro marginalrule(fform, lambda)
     @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
@@ -567,6 +671,15 @@ macro marginalrule(fform, lambda)
     return esc(output)
 end
 
+"""
+    @call_marginalrule NodeType(:edge) (argument1 = value1, argument2 = value2, ..., [ meta = ... ])
+
+The `@call_marginalrule` macro helps to call the `marginalrule` method with an easier syntax. 
+The structure of the macro is almost the same as in the `@marginalrule` macro, but there is no `begin ... end` block, 
+but instead each argument must have a specified value with the `=` operator.
+
+See also: [`@marginalrule`](@ref), [`marginalrule`](@ref), [`@call_rule`](@ref)
+"""
 macro call_marginalrule(fform, args)
     @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
 

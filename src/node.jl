@@ -21,7 +21,7 @@ import Base: getindex, setindex!, firstindex, lastindex
 
 Trait specification for an object that can be used in model specification as a factor node.
 
-See also: [`as_node_functional_form`](@ref), [`UndefinedNodeFunctionalForm`](@ref)
+See also: [`ReactiveMP.as_node_functional_form`](@ref), [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref)
 """
 struct ValidNodeFunctionalForm end
 
@@ -30,7 +30,7 @@ struct ValidNodeFunctionalForm end
 
 Trait specification for an object that can **not** be used in model specification as a factor node.
 
-See also: [`as_node_functional_form`](@ref), [`ValidNodeFunctionalForm`](@ref)
+See also: [`ReactiveMP.as_node_functional_form`](@ref), [`ReactiveMP.ValidNodeFunctionalForm`](@ref)
 """
 struct UndefinedNodeFunctionalForm end
 
@@ -40,7 +40,7 @@ struct UndefinedNodeFunctionalForm end
 Determines `object` node functional form trait specification.
 Returns either `ValidNodeFunctionalForm()` or `UndefinedNodeFunctionalForm()`.
 
-See also: [`ValidNodeFunctionalForm`](@ref), [`UndefinedNodeFunctionalForm`](@ref)
+See also: [`ReactiveMP.ValidNodeFunctionalForm`](@ref), [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref)
 """
 function as_node_functional_form end
 
