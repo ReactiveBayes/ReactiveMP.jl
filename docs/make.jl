@@ -23,6 +23,9 @@ makedocs(
                 "Overview" => "lib/nodes/nodes.md",
                 "Flow"     => "lib/nodes/flow.md"
             ],
+            "Message update rules" => [
+                "Overview" => "lib/rules/rules.md",
+            ],
             "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
             "Algebra utils"       => [

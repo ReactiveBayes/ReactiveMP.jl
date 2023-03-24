@@ -14,6 +14,7 @@ q(x) = f\left(\frac{\overrightarrow{\mu}(x)\overleftarrow{\mu}(x)}{\int \overrig
 
 ```@docs 
 AbstractFormConstraint
+CompositeFormConstraint
 ```
  
 ### Form check strategy

@@ -102,7 +102,7 @@ function get_marginals_observable(
     asinterfaces = marginal_dependencies[2]
     bsinterfaces = marginal_dependencies[3]
 
-    marginal_names = Val{(name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1]))}
+    marginal_names = Val{(name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1]))}()
     marginals_observable =
         combineLatest(
             (
@@ -125,7 +125,7 @@ function get_marginals_observable(factornode::GammaMixtureNode{N, F}, marginal_d
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
 
-    marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}
+    marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
     marginals_observable = combineLatestUpdates((getmarginal(connectedvar(outinterface), IncludeAll()), getmarginal(connectedvar(switchinterface), IncludeAll()), getmarginal(connectedvar(varinterface), IncludeAll())), PushNew())
 
     return marginal_names, marginals_observable
@@ -136,7 +136,7 @@ end
 @average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::ManyOf{N, Any}, q_b::ManyOf{N, GammaShapeRate}) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
-        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[i], q_b[i])), nothing)
+        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[i], q_b[i])), nothing)
     end
 end
 
@@ -153,7 +153,7 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixt
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin
-            average_energy = score(AverageEnergy(), fform, Val{(:out, :switch, :a, :b)}, marginals, meta)
+            average_energy = score(AverageEnergy(), fform, Val{(:out, :switch, :a, :b)}(), marginals, meta)
 
             out_entropy    = score(DifferentialEntropy(), marginals[1])
             switch_entropy = score(DifferentialEntropy(), marginals[2])
