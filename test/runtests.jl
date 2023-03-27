@@ -253,6 +253,8 @@ end
     addtests(testrunner, "variables/test_data.jl")
     addtests(testrunner, "variables/test_random.jl")
 
+    addtests(testrunner, "pipeline/test_logger.jl")
+
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
     addtests(testrunner, "nodes/test_addition.jl")
