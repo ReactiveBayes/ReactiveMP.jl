@@ -1,4 +1,8 @@
-export softdot
+export softdot, SoftDot
+
+
+struct SoftDot end
+const softdot = SoftDot
 
 @node softdot Stochastic [out, (θ, aliases = [theta]), x, (γ, aliases = [gamma])]
 
