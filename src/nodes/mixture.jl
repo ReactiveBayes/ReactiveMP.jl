@@ -120,7 +120,7 @@ function get_messages_observable(
     output_or_switch_interface = messages[1]
     inputsinterfaces = messages[2]
 
-    msgs_names = Val{(name(output_or_switch_interface), name(inputsinterfaces[1]))}
+    msgs_names = Val{(name(output_or_switch_interface), name(inputsinterfaces[1]))}()
     msgs_observable =
         combineLatest((messagein(output_or_switch_interface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
         map_to((messagein(output_or_switch_interface), ManyOf(map((input) -> messagein(input), inputsinterfaces))))
@@ -134,7 +134,7 @@ function get_messages_observable(
     switchinterface  = messages[1]
     inputsinterfaces = messages[2]
 
-    msgs_names = Val{(name(switchinterface), name(inputsinterfaces[1]))}
+    msgs_names = Val{(name(switchinterface), name(inputsinterfaces[1]))}()
     msgs_observable =
         combineLatest((messagein(switchinterface), combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew())), PushNew()) |>
         map_to((messagein(switchinterface), ManyOf(map((input) -> messagein(input), inputsinterfaces))))
@@ -147,7 +147,7 @@ function get_messages_observable(
 ) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     inputsinterfaces = messages[1]
 
-    msgs_names = Val{(name(inputsinterfaces[1]),)}
+    msgs_names = Val{(name(inputsinterfaces[1]),)}()
     msgs_observable = combineLatest(map((input) -> messagein(input), inputsinterfaces), PushNew()) |> map_to((ManyOf(map((input) -> messagein(input), inputsinterfaces)),))
     return msgs_names, msgs_observable
 end
@@ -158,7 +158,7 @@ function get_messages_observable(
 ) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     outputinterface = messages[1]
 
-    msgs_names = Val{(name(outputinterface),)}
+    msgs_names = Val{(name(outputinterface),)}()
     msgs_observable = combineLatestUpdates((messagein(outputinterface),), PushNew())
     return msgs_names, msgs_observable
 end
@@ -168,7 +168,7 @@ function get_marginals_observable(
 ) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     switchinterface = marginals[1]
 
-    marginal_names       = Val{(name(switchinterface),)}
+    marginal_names       = Val{(name(switchinterface),)}()
     marginals_observable = combineLatestUpdates((getmarginal(connectedvar(switchinterface), IncludeAll()),), PushNew())
 
     return marginal_names, marginals_observable
