@@ -209,6 +209,7 @@ end
 
     addtests(testrunner, "score/test_counting.jl")
 
+    addtests(testrunner, "test_rule.jl")
     addtests(testrunner, "test_addons.jl")
 
     addtests(testrunner, "test_gpstrategy.jl")
@@ -253,6 +254,8 @@ end
     addtests(testrunner, "variables/test_constant.jl")
     addtests(testrunner, "variables/test_data.jl")
     addtests(testrunner, "variables/test_random.jl")
+
+    addtests(testrunner, "pipeline/test_logger.jl")
 
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
@@ -393,6 +396,9 @@ end
     addtests(testrunner, "rules/implication/test_in2.jl")
     addtests(testrunner, "rules/implication/test_marginals.jl")
 
+    addtests(testrunner, "rules/transition/test_out.jl")
+    addtests(testrunner, "rules/transition/test_a.jl")
+    addtests(testrunner, "rules/transition/test_in.jl")
 
     run(testrunner)
 end

@@ -1,8 +1,10 @@
 
 # [Messages implementation](@id lib-message)
 
-In message passing framework one of the most important concepts is (wow!) messages. Messages flow on edges of a factor graph and usually hold some information in a form of probability distribution.
-In ReactiveMP.jl we distinguish two major types of messages: Belief Propagation and Variational.  
+In our message passing framework one of the most important concepts is the message (wow!).
+Messages flow along edges of a factor graph and hold information about the part of the graph that it originates from.
+Usually this information is in a form of a probability distribution.
+Two common messages are belief propagation messages and variational messages, with are computed differently as shown below.
 
 ## Abstract message type
 
@@ -14,16 +16,27 @@ AbstractMessage
 
 ## [Belief-Propagation (or Sum-Product) message](@id lib-belief-propagation-message)
 
-Belief propagation messages are encoded with type `Message`. 
-
 ![message](../assets/img/bp-message.svg)
 *Belief propagation message*
 
+## [Variational message](@id lib-variational-message)
+
+![message](../assets/img/vmp-message.svg)
+*Variational message with structured factorisation q(x, y)q(z) assumption*
+
+## Message type
+
+All messages are encoded with the type `Message`. 
+
 ```@docs
 Message
+ReactiveMP.materialize!
 ```
 
-From implementation point a view `Message` structure does nothing but holds some `data` object and redirects most of the statistical related functions to that `data` object. However it used extensively in Julia's multiple dispatch. Implementation also uses extra `is_initial` and `is_clamped` fields to determine if product of two messages results in `is_initial` or `is_clamped` posterior marginal.
+From an implementation point a view the `Message` structure does nothing but hold some `data` object and redirects most of the statistical related functions to that `data` object. 
+However, this object is used extensively in Julia's multiple dispatch. 
+Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if product of two messages results in `is_initial` or `is_clamped` posterior marginal.
+The final field contains the addons. These contain additional information on top of the functional form of the distribution, such as its scaling or computation history.
 
 ```@setup bp-message
 using ReactiveMP
@@ -47,11 +60,4 @@ is_clamped(message), is_initial(message)
 ```
 
 The user should not really interact with `Message` structure while working with `ReactiveMP` unless doing some advanced inference procedures that involve prediction.
-
-## [Variational message](@id lib-variational-message)
-
-Variational messages are encoded with type `VariationalMessage`.
-
-![message](../assets/img/vmp-message.svg)
-*Variational message with structured factorisation q(x, y)q(z) assumption*
 

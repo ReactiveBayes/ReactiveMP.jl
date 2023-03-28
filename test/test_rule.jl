@@ -8,8 +8,8 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
 @testset "rule" begin
     @testset "rule_macro_parse_on_tag(expression)" begin
-        @test rule_macro_parse_on_tag(:(:out)) == (:(Type{Val{:out}}), nothing, nothing)
-        @test rule_macro_parse_on_tag(:(:mean)) == (:(Type{Val{:mean}}), nothing, nothing)
+        @test rule_macro_parse_on_tag(:(:out)) == (:(Val{:out}), nothing, nothing)
+        @test rule_macro_parse_on_tag(:(:mean)) == (:(Val{:mean}), nothing, nothing)
         @test rule_macro_parse_on_tag(:(:mean, k)) == (:(Tuple{Val{:mean}, Int}), :k, :(k = on[2]))
         @test rule_macro_parse_on_tag(:(:precision, r)) == (:(Tuple{Val{:precision}, Int}), :r, :(r = on[2]))
 
@@ -22,7 +22,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
     @testset "rule_macro_parse_fn_args(inputs; specname, prefix, proxy)" begin
         names, types, init = rule_macro_parse_fn_args([(:m_out, :PointMass), (:m_mean, :NormalMeanPrecision)]; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
 
-        @test names == :(Type{Val{(:out, :mean)}})
+        @test names == :(Val{(:out, :mean)})
         @test types == :(Tuple{ReactiveMP.Message{<:PointMass}, ReactiveMP.Message{<:NormalMeanPrecision}})
         @test init == Expr[:(m_out = getdata(messages[1])), :(m_mean = getdata(messages[2]))]
 
@@ -34,7 +34,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         names, types, init = rule_macro_parse_fn_args([(:m_out, :PointMass), (:q_mean, :NormalMeanPrecision)]; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
-        @test names == :(Type{Val{(:mean,)}})
+        @test names == :(Val{(:mean,)})
         @test types == :(Tuple{ReactiveMP.Marginal{<:NormalMeanPrecision}})
         @test init == Expr[:(q_mean = getdata(marginals[1]))]
     end
@@ -44,8 +44,8 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             [(:m_out, :(PointMass(1.0))), (:m_mean, :(NormalMeanPrecision(0.0, 1.0)))]; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message)
         )
 
-        @test names == :(Val{(:out, :mean)})
-        @test values == :(ReactiveMP.Message(PointMass(1.0), false, false), ReactiveMP.Message(NormalMeanPrecision(0.0, 1.0), false, false))
+        @test names == :(Val{(:out, :mean)}())
+        @test values == :(ReactiveMP.Message(PointMass(1.0), false, false, nothing), ReactiveMP.Message(NormalMeanPrecision(0.0, 1.0), false, false, nothing))
 
         names, values = call_rule_macro_parse_fn_args(
             [(:m_out, :(PointMass(1.0))), (:m_mean, :(NormalMeanPrecision(0.0, 1.0)))]; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal)
@@ -58,23 +58,24 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
             [(:m_out, :(PointMass(1.0))), (:q_mean, :(NormalMeanPrecision(0.0, 1.0)))]; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal)
         )
 
-        @test names == :(Val{(:mean,)})
-        @test values == :((ReactiveMP.Marginal(NormalMeanPrecision(0.0, 1.0), false, false),))
+        @test names == :(Val{(:mean,)}())
+        @test values == :((ReactiveMP.Marginal(NormalMeanPrecision(0.0, 1.0), false, false, nothing),))
     end
 
     @testset "rule_method_error" begin
-        as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false)
-        as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false)
+        as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false, nothing)
+        as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false, nothing)
 
         let
             err = ReactiveMP.RuleMethodError(
                 NormalMeanPrecision,
-                Val{:μ},
+                Val{:μ}(),
                 Marginalisation(),
-                Val{(:out,)},
+                Val{(:out,)}(),
                 (as_vague_msg(NormalMeanVariance),),
-                Val{(:τ,)},
+                Val{(:τ,)}(),
                 (as_vague_mrg(Gamma),),
+                nothing,
                 nothing,
                 make_node(NormalMeanPrecision)
             )
@@ -93,13 +94,14 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         let
             err = ReactiveMP.RuleMethodError(
                 NormalMeanPrecision,
-                Val{:μ},
+                Val{:μ}(),
                 Marginalisation(),
-                Val{(:out,)},
+                Val{(:out,)}(),
                 (as_vague_msg(NormalMeanVariance),),
-                Val{(:τ,)},
+                Val{(:τ,)}(),
                 (as_vague_mrg(Gamma),),
                 1.0,
+                nothing,
                 make_node(NormalMeanPrecision)
             )
 
@@ -118,13 +120,14 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         let
             err = ReactiveMP.RuleMethodError(
                 NormalMeanPrecision,
-                Val{:μ},
+                Val{:μ}(),
                 Marginalisation(),
-                Val{(:out, :τ)},
+                Val{(:out, :τ)}(),
                 (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)),
                 nothing,
                 nothing,
                 1.0,
+                nothing,
                 make_node(NormalMeanPrecision)
             )
 
@@ -143,13 +146,14 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         let
             err = ReactiveMP.RuleMethodError(
                 NormalMeanPrecision,
-                Val{:μ},
+                Val{:μ}(),
                 Marginalisation(),
                 nothing,
                 nothing,
-                Val{(:out, :τ)},
+                Val{(:out, :τ)}(),
                 (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)),
                 1.0,
+                nothing,
                 make_node(NormalMeanPrecision)
             )
 
@@ -168,13 +172,14 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         let
             err = ReactiveMP.RuleMethodError(
                 NormalMeanPrecision,
-                Val{:τ},
+                Val{:τ}(),
                 Marginalisation(),
                 nothing,
                 nothing,
-                Val{(:out_μ,)},
-                (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
+                Val{(:out_μ,)}(),
+                (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
                 1.0,
+                nothing,
                 make_node(NormalMeanPrecision)
             )
 
@@ -192,13 +197,14 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         let
             err = ReactiveMP.RuleMethodError(
                 NormalMeanPrecision,
-                Val{:τ},
+                Val{:τ}(),
                 Marginalisation(),
-                Val{(:out, :μ)},
+                Val{(:out, :μ)}(),
                 (as_vague_msg(NormalMeanVariance), as_vague_msg(NormalMeanVariance)),
-                Val{(:out_μ,)},
-                (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
+                Val{(:out_μ,)}(),
+                (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
                 1.0,
+                nothing,
                 make_node(NormalMeanPrecision)
             )
 
@@ -212,12 +218,12 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
     end
 
     @testset "marginalrule_method_error" begin
-        as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false)
-        as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false)
+        as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false, nothing)
+        as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false, nothing)
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, Val{(:out,)}, (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}, (as_vague_mrg(Gamma),), nothing, make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), Val{(:out,)}(), (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}(), (as_vague_mrg(Gamma),), nothing, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -232,7 +238,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, Val{(:out,)}, (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}, (as_vague_mrg(Gamma),), 1.0, make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), Val{(:out,)}(), (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}(), (as_vague_mrg(Gamma),), 1.0, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -248,7 +254,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, Val{(:out, :τ)}, (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)), nothing, nothing, 1.0, make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), Val{(:out, :τ)}(), (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)), nothing, nothing, 1.0, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -264,7 +270,7 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:μ}, nothing, nothing, Val{(:out, :τ)}, (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)), 1.0, make_node(NormalMeanPrecision)
+                NormalMeanPrecision, Val{:μ}(), nothing, nothing, Val{(:out, :τ)}(), (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)), 1.0, make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -280,7 +286,14 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
 
         let
             err = ReactiveMP.MarginalRuleMethodError(
-                NormalMeanPrecision, Val{:τ}, nothing, nothing, Val{(:out_μ,)}, (Marginal(vague(MvNormalMeanPrecision, 2), false, false),), 1.0, make_node(NormalMeanPrecision)
+                NormalMeanPrecision,
+                Val{:τ}(),
+                nothing,
+                nothing,
+                Val{(:out_μ,)}(),
+                (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
+                1.0,
+                make_node(NormalMeanPrecision)
             )
 
             io = IOBuffer()
@@ -296,11 +309,11 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
         let
             err = ReactiveMP.MarginalRuleMethodError(
                 NormalMeanPrecision,
-                Val{:τ},
-                Val{(:out, :μ)},
+                Val{:τ}(),
+                Val{(:out, :μ)}(),
                 (as_vague_msg(NormalMeanVariance), as_vague_msg(NormalMeanVariance)),
-                Val{(:out_μ,)},
-                (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
+                Val{(:out_μ,)}(),
+                (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
                 1.0,
                 make_node(NormalMeanPrecision)
             )
@@ -317,6 +330,8 @@ import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_
     @testset "Check that default meta is `nothing`" begin
         struct DummyNode end
         struct DummyNodeMeta end
+
+        @node DummyNode Stochastic [out, x, y]
 
         @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision) = 1
         @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision, meta::Int) = meta
