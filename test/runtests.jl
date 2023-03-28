@@ -398,5 +398,11 @@ end
     addtests(testrunner, "rules/transition/test_a.jl")
     addtests(testrunner, "rules/transition/test_in.jl")
 
+    addtests(testrunner, "rules/autoregressive/test_y.jl")
+    addtests(testrunner, "rules/autoregressive/test_x.jl")
+    addtests(testrunner, "rules/autoregressive/test_γ.jl")
+    addtests(testrunner, "rules/autoregressive/test_θ.jl")
+    addtests(testrunner, "rules/autoregressive/test_marginals.jl")
+
     run(testrunner)
 end
