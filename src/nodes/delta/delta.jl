@@ -77,7 +77,7 @@ function marginalrule(::F, on, mnames, messages, qnames, marginals, meta::DeltaM
 end
 
 # For missing rules error msg
-rule_method_error_extract_fform(f::Type{<:DeltaFn}) = "DeltaFn{f}"
+rule_method_error_extract_fform(::Type{<:DeltaFn}) = "DeltaFn"
 
 # `DeltaFn` requires an access to the node function, hence, node reference is required
 call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()
