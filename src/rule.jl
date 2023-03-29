@@ -604,6 +604,7 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
         return test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
     end
 
+    # Extra tests for type promotion, could be turned off if `check_type_promotion = false`
     type_promotion_T = gensym(:T)
     type_promotion_tests = Expr(:block)
     type_promotion_tests.args = map(test_rules_convert_eltype_for_test_entries(test_entries, type_promotion_T)) do (inputs, output)
