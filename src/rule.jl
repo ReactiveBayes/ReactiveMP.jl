@@ -581,6 +581,9 @@ end
 const CallRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_rule")))
 const CallMarginalRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_marginalrule")))
 
+macro test_rules end
+macro test_marginalrule end
+
 macro test_rules(rule_specification, tests)
     return ReactiveMP.test_rules_generate(CallRuleMacroFnExpr, :([]), rule_specification, tests)
 end
@@ -589,8 +592,12 @@ macro test_rules(options, rule_specification, tests)
     return ReactiveMP.test_rules_generate(CallRuleMacroFnExpr, options, rule_specification, tests)
 end
 
-macro test_marginalrules(on, test_sequence)
-    return :(@test_marginalrules [] $on $test_sequence)
+macro test_marginalrules(rule_specification, tests)
+    return ReactiveMP.test_rules_generate(CallMarginalRuleMacroFnExpr, :([]), rule_specification, tests)
+end
+
+macro test_marginalrules(options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(CallMarginalRuleMacroFnExpr, options, rule_specification, tests)
 end
 
 function test_rules_generate(call_macro_fn, options, rule_specification, tests)
@@ -619,6 +626,8 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
             # Insert generated tests
             local $(esc(testsblock)) = $default_tests
 
+            # Check if the `check_type_promotion` is true and
+            # perform extra test set if required
             if ReactiveMP.check_type_promotion($(esc(configuration)))
                 for $(esc(type_promotion_T)) in ReactiveMP.extra_float_types($(esc(configuration)))
                     $type_promotion_tests
@@ -630,93 +639,6 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
     end
 
     return output
-
-    # block      = Expr(:block)
-    # block.args = map(test_sequence_entries) do test_entry
-    #     @capture(test_entry, (input = input_, output = output_)) || error("Invalid test entry specification: $(test_entry). Test entry should be in the form of a named tuple (input = ..., output = ...).")
-
-    #     test_rule      = Expr(:block)
-    #     test_output_s  = gensym()
-    #     test_rule.args = [quote
-    #         begin
-    #             local $test_output_s = ReactiveMP.@call_rule($rule_specification, $input)
-    #             @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol)
-    #             @test ReactiveMP.is_typeof_equal($test_output_s, $output)
-    #         end
-    #     end]
-
-    #     if configuration.with_float_conversions
-    #         @capture(input, (input_entries__,)) || error("Invalid input entries. Input entries should be in the form of a named tuple. ")
-
-    #         # We filter out indices only for inputs that start with 'm_' or 'q_'
-    #         # + we ignore `m_\q_* = nothing`
-    #         inputs = map(first, filter(collect(enumerate(input_entries))) do i
-    #             @capture(i[2], (key_ = value_))
-    #             if key !== nothing && value !== :nothing
-    #                 skey = string(key)
-    #                 return startswith(skey, "m_") || startswith(skey, "q_")
-    #             end
-    #             return false
-    #         end)
-
-    #         function powerset(x::Vector{T}) where {T}
-    #             result = Vector{T}[[]]
-    #             for elem in x, j in eachindex(result)
-    #                 push!(result, [result[j]; elem])
-    #             end
-    #             result
-    #         end
-
-    #         # Here we create all subsets of a input set, to modify their eltype
-    #         indices_power_set = filter(!isempty, powerset(inputs))
-
-    #         # We create a modified testset for Float32 inputs
-    #         modified_f32_inputs = map(indices_power_set) do set
-    #             cinput = deepcopy(input)
-    #             for index in set
-    #                 cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(Float32, cinput.args[index].args[2])
-    #             end
-    #             return (cinput, length(set) === length(inputs))
-    #         end
-
-    #         for m_f32_input in modified_f32_inputs
-    #             m_f32_output = m_f32_input[2] ? MacroHelpers.expression_convert_eltype(Float32, output) : output
-    #             output_s = gensym()
-    #             push!(test_rule.args, quote
-    #                 begin
-    #                     local $output_s = ReactiveMP.@call_rule($rule_specification, $(m_f32_input[1]))
-    #                     @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)
-    #                     @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
-    #                 end
-    #             end)
-    #         end
-
-    #         # We create a modified testset for BigFloat inputs
-    #         modified_bigf_inputs = map(indices_power_set) do set
-    #             cinput = deepcopy(input)
-    #             for index in set
-    #                 cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(BigFloat, cinput.args[index].args[2])
-    #             end
-    #             return (cinput, true)
-    #         end
-
-    #         for m_bigf_input in modified_bigf_inputs
-    #             m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
-    #             output_dist = gensym()
-    #             push!(test_rule.args, quote
-    #                 begin
-    #                     local $output_dist = ReactiveMP.@call_rule($rule_specification, $(m_bigf_input[1]))
-    #                     @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
-    #                     @test ReactiveMP.is_typeof_equal($output_dist, $m_bigf_output)
-    #                 end
-    #             end)
-    #         end
-    #     end
-
-    #     return test_rule
-    # end
-
-    # return esc(block)
 end
 
 Base.@kwdef mutable struct TestRulesConfiguration
@@ -784,6 +706,10 @@ function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, 
     return esc(generated)
 end
 
+# This function takes a `tests` parameter which is expected to be an expression with array of test entries. 
+# Each test entry should be a expression of named tuple with an `input` and an `output` field.
+# The function returns an array of tuples, with each tuple containing the `input` and `output` expressions
+# extracted from each test entry in the original `tests` parameter.
 function test_rules_parse_test_entries(tests)
     @capture(tests, [test_entries__]) || error("Invalid tests specification. Test sequence should be in the form of an array.")
     return map(test_entries) do test_entry
@@ -793,25 +719,29 @@ function test_rules_parse_test_entries(tests)
     end
 end
 
+# `test_entries` is expected to be an array of tuples, 
+# with each tuple containing an `input` and an `output` expressions
+# see `test_rules_convert_eltype_for_test_entry`
 function test_rules_convert_eltype_for_test_entries(test_entries, eltype)
-    # TODO: (branch) write tests?
     return Iterators.flatten(map(((input, output),) -> test_rules_convert_eltype_for_test_entry(input, output, eltype), test_entries))
 end
 
+# This function creates a set of type promotion tests for rules
+# First it creates a set of all possible subsets of input `key = value` pairs
+# Then for each subset it convert the `key = value` pair to a specific float type (e.g. Float32)
+# The resulting float type of the rule is expected to be the same as the promoted type of 
+# the all `key = value` pairs after conversion
 function test_rules_convert_eltype_for_test_entry(input, output, eltype)
     @capture(input, (arguments__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
 
     combinations = powerset(1:length(arguments))
-    # TODO: (branch) write tests?
+
     return map(combinations) do combination
         carguments = deepcopy(arguments)
         for index in combination
             carguments[index] = test_rules_convert_eltype(carguments[index], eltype)
         end
-        cvalues = map(carguments) do arg
-            @capture(arg, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
-            return value
-        end
+        cvalues = test_rules_parse_input_values_from_test_entry(carguments)
         coutput_eltype = :(ReactiveMP.promote_samplefloattype($(cvalues...)))
         cinput = :(($(carguments...),))
         coutput = test_rules_convert_eltype(output, coutput_eltype)
@@ -819,6 +749,24 @@ function test_rules_convert_eltype_for_test_entry(input, output, eltype)
     end
 end
 
+# This function parses expressions of the form
+# (key1 = value1, key2 = value2, ...) 
+# and returns an array of `[ value1, value2 ]`
+function test_rules_parse_input_values_from_test_entry(input::Expr)
+    @capture(input, (arguments__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
+    return test_rules_parse_input_values_from_test_entry(arguments)
+end
+
+# Same as the previous one but takes an array of `key_ = value_` pairs as its argument
+function test_rules_parse_input_values_from_test_entry(arguments::AbstractArray)
+    return map(arguments) do arg
+        @capture(arg, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
+        return value
+    end
+end
+
+# This function converts `key = value` pair to `key = convert_eltype(eltype, value)`
+# Calls recursively for tuples
 function test_rules_convert_eltype(expression, eltype)
     if @capture(expression, (entries__,))
         return :(($(map(entry -> ReactiveMP.test_rules_convert_eltype(entry, eltype), entries)...),))

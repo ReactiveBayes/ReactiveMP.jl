@@ -122,6 +122,39 @@ import MacroTools: inexpr
             end
         end
 
+        @testset "test_rules_convert_eltype_for_test_entries" begin
+            import ReactiveMP: test_rules_convert_eltype_for_test_entries
+
+            for m in (1, :(Normal(0.0, 1.0))), v in (2, Gamma(2.0, 3.0)), output in (3, :(Normal(2.0, 3.0))), eltype in (:Float32, Float64)
+                let test_entries = [(:((m = $m, v = $v)), output)]
+                    modified_inputs = collect(test_rules_convert_eltype_for_test_entries(test_entries, eltype))
+
+                    modified_m = :(ReactiveMP.convert_eltype($eltype, $m))
+                    modified_v = :(ReactiveMP.convert_eltype($eltype, $v))
+
+                    @test any(modified_inputs) do (input, output)
+                        inexpr(input, modified_m)
+                    end
+
+                    @test any(modified_inputs) do (input, output)
+                        inexpr(input, modified_v)
+                    end
+
+                    @test any(modified_inputs) do (input, output)
+                        inexpr(input, modified_m)
+                        inexpr(input, modified_v)
+                    end
+                end
+            end
+        end
+
+        @testset "test_rules_parse_input_values_test_entries" begin
+            import ReactiveMP: test_rules_parse_input_values_from_test_entry
+
+            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 3, key3 = 2))) == [1, 3, 2]
+            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3))) == [1, 2, 3]
+        end
+
         @testset "test_rules_convert_eltype" begin
             import ReactiveMP: test_rules_convert_eltype
 
