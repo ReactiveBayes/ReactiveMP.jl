@@ -76,22 +76,50 @@ import MacroTools: inexpr
 
         @testset "test_rules_generate_testset" begin
             import ReactiveMP: test_rules_generate_testset
+            import ReactiveMP: CallRuleMacroFnExpr, CallMarginalRuleMacroFnExpr
 
-            fns = (:(ReactiveMP.@test_rules), :(ReactiveMP.@test_marginal_rules))
+            fns = (CallRuleMacroFnExpr, CallMarginalRuleMacroFnExpr)
             specs = (:(NormalMeanVariance(:out, Marginalisation)), :(Gamma(:out, MomentMatching)))
-            inputs = (:((m_mean = NormalMeanVariance(0.0, 1.0), q_var = InverseGamma(1.0, 1.0))), )
-            outputs = (:(NormalMeanVariance(0.0, .0)), :(Gamma(2.0, 3.0)))
-            tols = (:1e-6, :1e-12)
+            inputs = (:((m_mean = NormalMeanVariance(0.0, 1.0), q_var = InverseGamma(1.0, 1.0))),)
+            outputs = (:(NormalMeanVariance(0.0, 0.0)), :(Gamma(2.0, 3.0)))
 
-            for f in fns, spec in specs, input in inputs, output in outputs, tol in tols
-                expression = test_rules_generate_testset(f, spec, input, output, tol)
-                @test inexpr(expression, :($f($spec, $input)))
+            for f in fns, spec in specs, input in inputs, output in outputs
+                expression = test_rules_generate_testset(f, spec, input, output, :configuration)
                 @test inexpr(expression, output)
-                @test inexpr(expression, tol)
+                @test inexpr(expression, :(ReactiveMP.float_tolerance))
                 @test inexpr(expression, :(ReactiveMP.custom_isapprox))
                 @test inexpr(expression, :(ReactiveMP.is_typeof_equal))
             end
+        end
 
+        @testset "test_rules_parse_test_entries" begin
+            import ReactiveMP: test_rules_parse_test_entries
+
+            @test_throws ErrorException test_rules_parse_test_entries(:(1))
+            @test_throws ErrorException test_rules_parse_test_entries(:([1]))
+            @test_throws ErrorException test_rules_parse_test_entries(:([input, output]))
+            @test_throws ErrorException test_rules_parse_test_entries(:([input = 2, output]))
+            @test_throws ErrorException test_rules_parse_test_entries(:([input = 2, output]))
+
+            let entries = test_rules_parse_test_entries(:([(input = 1, output = 2)]))
+                @test length(entries) === 1
+                @test inexpr(entries[1][1], 1)
+                @test inexpr(entries[1][2], 2)
+            end
+
+            let entries = test_rules_parse_test_entries(
+                    :([
+                        (input = (m_x = Normal(1.0, 2.0), q_y = PointMass(3)), output = Gamma(1.0, 2.0)),
+                        (input = (q_x = Normal(1.0, 2.0), m_y = PointMass(3)), output = Gamma(1.0, 2.0))
+                    ])
+                )
+                @test length(entries) === 2
+                for entry in entries
+                    @test inexpr(entry[1], :(Normal(1.0, 2.0)))
+                    @test inexpr(entry[1], :(PointMass(3)))
+                    @test inexpr(entry[2], :(Gamma(1.0, 2.0)))
+                end
+            end
         end
 
         @testset "test_rules_convert_eltype" begin

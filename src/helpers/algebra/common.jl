@@ -181,3 +181,17 @@ Computes the numerically stable logarithm of the multivariate beta distribution 
 function logmvbeta(x::Vector)
     return sum(loggamma, x) - loggamma(sum(x))
 end
+
+"""
+    powerset(iterator)
+
+Computes the set of all possible sets of the `iterator`.
+"""
+function powerset(iterator)
+    # TODO: (branch) write tests
+    result = Vector{eltype(iterator)}[[]]
+    for element in iterator, index in eachindex(result)
+        push!(result, vcat(result[index], element))
+    end
+    return filter(!isempty, result)
+end

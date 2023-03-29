@@ -2,7 +2,6 @@ export rule, marginalrule
 export @rule, @marginalrule
 export @call_rule, @call_marginalrule
 export @logscale
-using Optim: abs_tol
 
 using MacroTools
 using .MacroHelpers
@@ -579,235 +578,144 @@ end
 
 ## Testing utilities
 
-"""
-    Documentation placeholder
-"""
+const CallRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_rule")))
+const CallMarginalRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_marginalrule")))
+
+macro test_rules(rule_specification, tests)
+    return ReactiveMP.test_rules_generate(CallRuleMacroFnExpr, :([]), rule_specification, tests)
+end
+
 macro test_rules(options, rule_specification, tests)
-    
-    @capture(tests, [test_entries__]) || error("Invalid tests specification. Test sequence should be in the form of an array.")
-
-    generated_tests = []
-
-    block      = Expr(:block)
-    block.args = map(test_sequence_entries) do test_entry
-        @capture(test_entry, (input = input_, output = output_)) || error("Invalid test entry specification: $(test_entry). Test entry should be in the form of a named tuple (input = ..., output = ...).")
-
-        test_rule      = Expr(:block)
-        test_output_s  = gensym()
-        test_rule.args = [quote
-            begin
-                local $test_output_s = ReactiveMP.@call_rule($rule_specification, $input)
-                @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol)
-                @test ReactiveMP.is_typeof_equal($test_output_s, $output)
-            end
-        end]
-
-        if configuration.with_float_conversions
-            @capture(input, (input_entries__,)) || error("Invalid input entries. Input entries should be in the form of a named tuple. ")
-
-            # We filter out indices only for inputs that start with 'm_' or 'q_'
-            # + we ignore `m_\q_* = nothing`
-            inputs = map(first, filter(collect(enumerate(input_entries))) do i
-                @capture(i[2], (key_ = value_))
-                if key !== nothing && value !== :nothing
-                    skey = string(key)
-                    return startswith(skey, "m_") || startswith(skey, "q_")
-                end
-                return false
-            end)
-
-            function powerset(x::Vector{T}) where {T}
-                result = Vector{T}[[]]
-                for elem in x, j in eachindex(result)
-                    push!(result, [result[j]; elem])
-                end
-                result
-            end
-
-            # Here we create all subsets of a input set, to modify their eltype
-            indices_power_set = filter(!isempty, powerset(inputs))
-
-            # We create a modified testset for Float32 inputs
-            modified_f32_inputs = map(indices_power_set) do set
-                cinput = deepcopy(input)
-                for index in set
-                    cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(Float32, cinput.args[index].args[2])
-                end
-                return (cinput, length(set) === length(inputs))
-            end
-
-            for m_f32_input in modified_f32_inputs
-                m_f32_output = m_f32_input[2] ? MacroHelpers.expression_convert_eltype(Float32, output) : output
-                output_s = gensym()
-                push!(test_rule.args, quote
-                    begin
-                        local $output_s = ReactiveMP.@call_rule($rule_specification, $(m_f32_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)
-                        @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
-                    end
-                end)
-            end
-
-            # We create a modified testset for BigFloat inputs
-            modified_bigf_inputs = map(indices_power_set) do set
-                cinput = deepcopy(input)
-                for index in set
-                    cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(BigFloat, cinput.args[index].args[2])
-                end
-                return (cinput, true)
-            end
-
-            for m_bigf_input in modified_bigf_inputs
-                m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
-                output_dist = gensym()
-                push!(test_rule.args, quote
-                    begin
-                        local $output_dist = ReactiveMP.@call_rule($rule_specification, $(m_bigf_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
-                        @test ReactiveMP.is_typeof_equal($output_dist, $m_bigf_output)
-                    end
-                end)
-            end
-        end
-
-        return test_rule
-    end
-
-    return esc(block)
-end
-
-macro test_rules(on, test_sequence)
-    return :(@test_rules [] $on $test_sequence)
-end
-
-"""
-    Documentation placeholder
-"""
-macro test_marginalrules(options, on, test_sequence)
-    @capture(options, [option_entries__]) || error("Invalid options specification. Options should be in the form on an array.")
-
-    with_float_conversions = false
-
-    float64_atol  = 1e-12
-    float32_atol  = 1e-6
-    bigfloat_atol = 1e-12
-
-    foreach(option_entries) do option_entry
-        @capture(option_entry, (key_ = value_)) || error("Invalid option entry specification: $(option_entry). Option entry should be in the form of a 'key = value' pair.")
-        if key === :with_float_conversions
-            if value === :true
-                with_float_conversions = true
-            elseif value === :false
-                with_float_conversions = false
-            else
-                error("Unknown value $(value) for option $(key). Can be either true or false.")
-            end
-        elseif key === :atol
-            float64_atol  = float(value)
-            float32_atol  = float(value)
-            bigfloat_atol = float(value)
-        elseif key === :float64_atol
-            float64_atol = float(value)
-        elseif key === :float32_atol
-            float32_atol = float(value)
-        elseif key === :bigfloat_atol
-            bigfloat_atol = float(value)
-        else
-            error("Unknown option $(key)")
-        end
-    end
-
-    @capture(test_sequence, [test_sequence_entries__]) || error("Invalid test sequence specification. Test sequence should be in the form of an array.")
-
-    block      = Expr(:block)
-    block.args = map(test_sequence_entries) do test_entry
-        @capture(test_entry, (input = input_, output = output_)) || error("Invalid test entry specification: $(test_entry). Test entry should be in the form of a named tuple (input = ..., output = ...).")
-
-        test_rule      = Expr(:block)
-        test_output_s  = gensym()
-        test_rule.args = [quote
-            begin
-                local $test_output_s = ReactiveMP.@call_marginalrule($on, $input)
-                @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol)
-                @test ReactiveMP.is_typeof_equal($test_output_s, $output)
-            end
-        end]
-
-        if with_float_conversions
-            @capture(input, (input_entries__,)) || error("Invalid input entries. Input entries should be in the form of a named tuple. ")
-
-            # We filter out indices only for inputs that start with 'm_' or 'q_'
-            inputs = map(first, filter(collect(enumerate(input_entries))) do i
-                @capture(i[2], (key_ = value_))
-                if key !== nothing
-                    skey = string(key)
-                    return startswith(skey, "m_") || startswith(skey, "q_")
-                end
-                return false
-            end)
-
-            function powerset(x::Vector{T}) where {T}
-                result = Vector{T}[[]]
-                for elem in x, j in eachindex(result)
-                    push!(result, [result[j]; elem])
-                end
-                result
-            end
-
-            # Here we create all subsets of a input set, to modify their eltype
-            indices_power_set = filter(!isempty, powerset(inputs))
-
-            # We create a modified testset for Float32 inputs
-            modified_f32_inputs = map(indices_power_set) do set
-                cinput = deepcopy(input)
-                for index in set
-                    cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(Float32, cinput.args[index].args[2])
-                end
-                return (cinput, length(set) === length(inputs))
-            end
-
-            for m_f32_input in modified_f32_inputs
-                m_f32_output = m_f32_input[2] ? MacroHelpers.expression_convert_eltype(Float32, output) : output
-                output_dist = gensym()
-                push!(test_rule.args, quote
-                    begin
-                        local $output_dist = ReactiveMP.@call_marginalrule($on, $(m_f32_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_dist, $m_f32_output; atol = $float32_atol)
-                        # @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output) # broken
-                    end
-                end)
-            end
-
-            # We create a modified testset for BigFloat inputs
-            modified_bigf_inputs = map(indices_power_set) do set
-                cinput = deepcopy(input)
-                for index in set
-                    cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(BigFloat, cinput.args[index].args[2])
-                end
-                return (cinput, true)
-            end
-
-            for m_bigf_input in modified_bigf_inputs
-                m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
-                output_dist = gensym()
-                push!(test_rule.args, quote
-                    begin
-                        local $output_dist = ReactiveMP.@call_marginalrule($on, $(m_bigf_input[1]))
-                        @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
-                        # @test ReactiveMP.is_typeof_equal($output_s, $m_bigf_output) # broken
-                    end
-                end)
-            end
-        end
-
-        return test_rule
-    end
-
-    return esc(block)
+    return ReactiveMP.test_rules_generate(CallRuleMacroFnExpr, options, rule_specification, tests)
 end
 
 macro test_marginalrules(on, test_sequence)
     return :(@test_marginalrules [] $on $test_sequence)
+end
+
+function test_rules_generate(call_macro_fn, options, rule_specification, tests)
+    testsblock = gensym(:tests)
+    configuration = gensym(:configuration)
+    configuration_opts = test_rules_parse_configuration(configuration, options)
+    test_entries = test_rules_parse_test_entries(tests)
+
+    default_tests = Expr(:block)
+    default_tests.args = map(test_entries) do (inputs, output)
+        return test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
+    end
+
+    type_promotion_T = gensym(:T)
+    type_promotion_tests = Expr(:block)
+    type_promotion_tests.args = map(test_rules_convert_eltype_for_test_entries(test_entries, type_promotion_T)) do (inputs, output)
+        return test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
+    end
+
+    output = quote
+        let
+            local $(esc(configuration)) = ReactiveMP.TestRulesConfiguration()
+            # Insert configuration options
+            $configuration_opts
+            # Insert generated tests
+            local $(esc(testsblock)) = $default_tests
+
+            if ReactiveMP.check_type_promotion($(esc(configuration)))
+                for $(esc(type_promotion_T)) in ReactiveMP.extra_float_types($(esc(configuration)))
+                    $type_promotion_tests
+                end
+            end
+
+            $(esc(testsblock))
+        end
+    end
+
+    return output
+
+    # block      = Expr(:block)
+    # block.args = map(test_sequence_entries) do test_entry
+    #     @capture(test_entry, (input = input_, output = output_)) || error("Invalid test entry specification: $(test_entry). Test entry should be in the form of a named tuple (input = ..., output = ...).")
+
+    #     test_rule      = Expr(:block)
+    #     test_output_s  = gensym()
+    #     test_rule.args = [quote
+    #         begin
+    #             local $test_output_s = ReactiveMP.@call_rule($rule_specification, $input)
+    #             @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol)
+    #             @test ReactiveMP.is_typeof_equal($test_output_s, $output)
+    #         end
+    #     end]
+
+    #     if configuration.with_float_conversions
+    #         @capture(input, (input_entries__,)) || error("Invalid input entries. Input entries should be in the form of a named tuple. ")
+
+    #         # We filter out indices only for inputs that start with 'm_' or 'q_'
+    #         # + we ignore `m_\q_* = nothing`
+    #         inputs = map(first, filter(collect(enumerate(input_entries))) do i
+    #             @capture(i[2], (key_ = value_))
+    #             if key !== nothing && value !== :nothing
+    #                 skey = string(key)
+    #                 return startswith(skey, "m_") || startswith(skey, "q_")
+    #             end
+    #             return false
+    #         end)
+
+    #         function powerset(x::Vector{T}) where {T}
+    #             result = Vector{T}[[]]
+    #             for elem in x, j in eachindex(result)
+    #                 push!(result, [result[j]; elem])
+    #             end
+    #             result
+    #         end
+
+    #         # Here we create all subsets of a input set, to modify their eltype
+    #         indices_power_set = filter(!isempty, powerset(inputs))
+
+    #         # We create a modified testset for Float32 inputs
+    #         modified_f32_inputs = map(indices_power_set) do set
+    #             cinput = deepcopy(input)
+    #             for index in set
+    #                 cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(Float32, cinput.args[index].args[2])
+    #             end
+    #             return (cinput, length(set) === length(inputs))
+    #         end
+
+    #         for m_f32_input in modified_f32_inputs
+    #             m_f32_output = m_f32_input[2] ? MacroHelpers.expression_convert_eltype(Float32, output) : output
+    #             output_s = gensym()
+    #             push!(test_rule.args, quote
+    #                 begin
+    #                     local $output_s = ReactiveMP.@call_rule($rule_specification, $(m_f32_input[1]))
+    #                     @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)
+    #                     @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
+    #                 end
+    #             end)
+    #         end
+
+    #         # We create a modified testset for BigFloat inputs
+    #         modified_bigf_inputs = map(indices_power_set) do set
+    #             cinput = deepcopy(input)
+    #             for index in set
+    #                 cinput.args[index].args[2] = MacroHelpers.expression_convert_eltype(BigFloat, cinput.args[index].args[2])
+    #             end
+    #             return (cinput, true)
+    #         end
+
+    #         for m_bigf_input in modified_bigf_inputs
+    #             m_bigf_output = m_bigf_input[2] ? MacroHelpers.expression_convert_eltype(BigFloat, output) : output
+    #             output_dist = gensym()
+    #             push!(test_rule.args, quote
+    #                 begin
+    #                     local $output_dist = ReactiveMP.@call_rule($rule_specification, $(m_bigf_input[1]))
+    #                     @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
+    #                     @test ReactiveMP.is_typeof_equal($output_dist, $m_bigf_output)
+    #                 end
+    #             end)
+    #         end
+    #     end
+
+    #     return test_rule
+    # end
+
+    # return esc(block)
 end
 
 Base.@kwdef mutable struct TestRulesConfiguration
@@ -850,13 +758,17 @@ function test_rules_parse_configuration(configuration::Symbol, options::Expr)
         end
     end
 
-    return block
+    return esc(block)
 end
 
-function test_rules_generate_testset(test_macro, rule_specification::Expr, inputs, output, tolerance)
-    return quote
-        let desired_output = $output, actual_output = $test_macro($rule_specification, $inputs)
-            local _isapprox = ReactiveMP.custom_isapprox(actual_output, desired_output; atol = $tolerance)
+function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
+    # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
+    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, inputs)
+    generated = quote
+        let desired_output = $output, actual_output = $actual_output
+            local _T = ReactiveMP.promote_samplefloattype(actual_output, desired_output)
+            local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
+            local _isapprox = ReactiveMP.custom_isapprox(actual_output, desired_output; atol = _tolerance)
             local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, desired_output)
 
             if !_isapprox || !_is_typeof_equal
@@ -867,6 +779,42 @@ function test_rules_generate_testset(test_macro, rule_specification::Expr, input
 
             @test _isapprox && _is_typeof_equal
         end
+    end
+    return esc(generated)
+end
+
+function test_rules_parse_test_entries(tests)
+    @capture(tests, [test_entries__]) || error("Invalid tests specification. Test sequence should be in the form of an array.")
+    return map(test_entries) do test_entry
+        @capture(test_entry, (input = input_, output = output_)) ||
+            error("Invalid test entry specification. Test entry should be in the form of a named tuple `(input = ..., output = ...)`.")
+        return (input, output)
+    end
+end
+
+function test_rules_convert_eltype_for_test_entries(test_entries, eltype)
+    # TODO: (branch) write tests?
+    return Iterators.flatten(map(((input, output),) -> test_rules_convert_eltype_for_test_entry(input, output, eltype), test_entries))
+end
+
+function test_rules_convert_eltype_for_test_entry(input, output, eltype)
+    @capture(input, (arguments__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
+
+    combinations = powerset(1:length(arguments))
+    # TODO: (branch) write tests?
+    return map(combinations) do combination
+        carguments = deepcopy(arguments)
+        for index in combination
+            carguments[index] = test_rules_convert_eltype(carguments[index], eltype)
+        end
+        cvalues = map(carguments) do arg
+            @capture(arg, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
+            return value
+        end
+        coutput_eltype = :(ReactiveMP.promote_samplefloattype($(cvalues...)))
+        cinput = :(($(carguments...),))
+        coutput = test_rules_convert_eltype(output, coutput_eltype)
+        return (cinput, coutput)
     end
 end
 
