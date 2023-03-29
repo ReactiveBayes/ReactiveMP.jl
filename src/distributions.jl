@@ -2,7 +2,7 @@ export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, isproper
-export variate_form, value_support, promote_variate_type, convert_eltype
+export variate_form, value_support, promote_variate_type
 export naturalparams, as_naturalparams, lognormalizer, NaturalParameters
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
@@ -115,7 +115,7 @@ promote_paramfloattype(distributions...) = promote_type(paramfloattype.(distribu
 
 Converts (if possible) the params float type of the `distribution` to be of type `T`.
 """
-convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} = convert(typeof(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution))...)
+convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} = convert(distribution_typename(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution))...)
 
 """
     convert_eltype(::Type{T}, container)
@@ -242,3 +242,10 @@ function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
 end
 
 Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))
+
+## Utils
+
+# Returns a wrapper distribution for a `<:Distribution` type
+@generated function distribution_typename(distribution)
+    return Base.typename(distribution).wrapper
+end

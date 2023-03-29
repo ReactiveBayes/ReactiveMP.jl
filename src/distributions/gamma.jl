@@ -26,6 +26,9 @@ end
 
 vague(::Type{<:GammaShapeScale}) = GammaShapeScale(1.0, huge)
 
+convert_paramfloattype(::Type{T}, distribution::GammaShapeScale) where {T} = GammaShapeScale(convert.(T, params(distribution))...; check_args = false)
+convert_paramfloattype(::Type{T}, distribution::GammaShapeRate) where {T} = GammaShapeRate(convert.(T, params(distribution))...)
+
 prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)

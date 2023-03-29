@@ -121,15 +121,7 @@ Same as `log` but clamps the input argument `x` to be in the range `tiny <= x <=
 clamplog(x) = log(clamp(x, tiny, typemax(x)))
 
 # We override this function for some specific types
-function is_typeof_equal(left, right)
-    _isequal = typeof(left) === typeof(right)
-    if !_isequal
-        @warn "typeof($left) !== typeof($right)"
-        @warn "typeof($left) = $(typeof(left))"
-        @warn "typeof($right) = $(typeof(right))"
-    end
-    return _isequal
-end
+is_typeof_equal(left, right) = typeof(left) === typeof(right)
 
 custom_isapprox(left, right; kwargs...) = isapprox(left, right; kwargs...)
 custom_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false

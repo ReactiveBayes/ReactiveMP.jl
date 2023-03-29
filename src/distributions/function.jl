@@ -47,6 +47,8 @@ Base.precision(dist::AbstractContinuousGenericLogPdf) = __error_not_defined(dist
 
 Base.eltype(dist::AbstractContinuousGenericLogPdf) = eltype(getdomain(dist))
 
+paramfloattype(dist::AbstractContinuousGenericLogPdf) = eltype(dist)
+
 (dist::AbstractContinuousGenericLogPdf)(x::Real)                   = logpdf(dist, x)
 (dist::AbstractContinuousGenericLogPdf)(x::AbstractVector{<:Real}) = logpdf(dist, x)
 
@@ -118,7 +120,7 @@ end
 
 Base.convert(::Type{<:ContinuousUnivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} = ContinuousUnivariateLogPdf(domain, logpdf)
 
-convert_eltype(::Type{ContinuousUnivariateLogPdf}, ::Type{T}, dist::ContinuousUnivariateLogPdf) where {T <: Real} = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
+convert_paramfloattype(::Type{T}, dist::ContinuousUnivariateLogPdf) where {T <: Real} = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
 
 vague(::Type{<:ContinuousUnivariateLogPdf}) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
 
@@ -170,8 +172,7 @@ Distributions.support(dist::ContinuousMultivariateLogPdf) = getdomain(dist) # di
 
 Base.convert(::Type{<:ContinuousMultivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} = ContinuousMultivariateLogPdf(domain, logpdf)
 
-convert_eltype(::Type{ContinuousMultivariateLogPdf}, ::Type{T}, dist::ContinuousMultivariateLogPdf) where {T <: Real} =
-    convert(ContinuousMultivariateLogPdf, dist.domain, dist.logpdf)
+convert_paramfloattype(::Type{T}, dist::ContinuousMultivariateLogPdf) where {T <: Real} = convert(ContinuousMultivariateLogPdf, dist.domain, dist.logpdf)
 
 vague(::Type{<:ContinuousMultivariateLogPdf}, dims::Int) = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^dims, (x) -> Float64(dims))
 
