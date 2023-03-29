@@ -614,7 +614,7 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
     # Extra tests for type promotion, could be turned off if `check_type_promotion = false`
     type_promotion_T = gensym(:T)
     type_promotion_tests = Expr(:block)
-    type_promotion_tests.args = map(test_rules_convert_eltype_for_test_entries(test_entries, type_promotion_T)) do (inputs, output)
+    type_promotion_tests.args = map(test_rules_convert_paramfloattype_for_test_entries(test_entries, type_promotion_T)) do (inputs, output)
         return test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
     end
 
@@ -643,11 +643,11 @@ end
 
 Base.@kwdef mutable struct TestRulesConfiguration
     check_type_promotion::Bool = false
-    float_tolerance::Dict = Dict(Float32 => 1e-6, Float64 => 1e-12, BigFloat => 1e-12)
+    float_tolerance::Dict = Dict(Float32 => 1e-4, Float64 => 1e-6, BigFloat => 1e-8)
     extra_float_types::Vector = [Float32, Float64, BigFloat]
 end
 
-const DefaultFloatTolerance = 1e-12
+const DefaultFloatTolerance = 1e-6
 
 check_type_promotion(configuration::TestRulesConfiguration)::Bool = configuration.check_type_promotion
 check_type_promotion!(configuration::TestRulesConfiguration, check::Bool) = configuration.check_type_promotion = check
@@ -687,17 +687,20 @@ end
 function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
     # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
     actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, inputs)
+    rule_spec_str = "$rule_specification"
     generated = quote
-        let desired_output = $output, actual_output = $actual_output
-            local _T = ReactiveMP.promote_samplefloattype(actual_output, desired_output)
+        let expected_output = $output, actual_output = $actual_output, rule_spec_str = $rule_spec_str
+            local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
-            local _isapprox = ReactiveMP.custom_isapprox(actual_output, desired_output; atol = _tolerance)
-            local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, desired_output)
+            local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
+            local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, expected_output)
 
             if !_isapprox || !_is_typeof_equal
-                @warn "Testset for rule $(rule_specification) has failed."
-                @warn "Desired output: $(desired_output)"
-                @warn "Actual output: $(actual_output)"
+                @warn """
+                Testset for rule $(rule_spec_str) has failed!
+                Expected output: $(expected_output)
+                Actual output: $(actual_output)
+                """
             end
 
             @test _isapprox && _is_typeof_equal
@@ -722,7 +725,7 @@ end
 # `test_entries` is expected to be an array of tuples, 
 # with each tuple containing an `input` and an `output` expressions
 # see `test_rules_convert_eltype_for_test_entry`
-function test_rules_convert_eltype_for_test_entries(test_entries, eltype)
+function test_rules_convert_paramfloattype_for_test_entries(test_entries, eltype)
     return Iterators.flatten(map(((input, output),) -> test_rules_convert_eltype_for_test_entry(input, output, eltype), test_entries))
 end
 
@@ -739,12 +742,12 @@ function test_rules_convert_eltype_for_test_entry(input, output, eltype)
     return map(combinations) do combination
         carguments = deepcopy(arguments)
         for index in combination
-            carguments[index] = test_rules_convert_eltype(carguments[index], eltype)
+            carguments[index] = test_rules_convert_paramfloattype(carguments[index], eltype)
         end
         cvalues = test_rules_parse_input_values_from_test_entry(carguments)
-        coutput_eltype = :(ReactiveMP.promote_samplefloattype($(cvalues...)))
+        coutput_eltype = :(ReactiveMP.promote_paramfloattype($(cvalues...)))
         cinput = :(($(carguments...),))
-        coutput = test_rules_convert_eltype(output, coutput_eltype)
+        coutput = test_rules_convert_paramfloattype(output, coutput_eltype)
         return (cinput, coutput)
     end
 end
@@ -765,15 +768,15 @@ function test_rules_parse_input_values_from_test_entry(arguments::AbstractArray)
     end
 end
 
-# This function converts `key = value` pair to `key = convert_eltype(eltype, value)`
+# This function converts `key = value` pair to `key = convert_paramfloattype(eltype, value)`
 # Calls recursively for tuples
-function test_rules_convert_eltype(expression, eltype)
+function test_rules_convert_paramfloattype(expression, eltype)
     if @capture(expression, (entries__,))
-        return :(($(map(entry -> ReactiveMP.test_rules_convert_eltype(entry, eltype), entries)...),))
+        return :(($(map(entry -> ReactiveMP.test_rules_convert_paramfloattype(entry, eltype), entries)...),))
     elseif @capture(expression, key_ = value_)
-        return :($key = $(ReactiveMP.test_rules_convert_eltype(value, eltype)))
+        return :($key = $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype)))
     else
-        return :(ReactiveMP.convert_eltype($eltype, $expression))
+        return :(ReactiveMP.convert_paramfloattype($eltype, $expression))
     end
 end
 

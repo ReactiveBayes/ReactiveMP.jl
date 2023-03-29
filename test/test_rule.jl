@@ -122,15 +122,15 @@ import MacroTools: inexpr
             end
         end
 
-        @testset "test_rules_convert_eltype_for_test_entries" begin
-            import ReactiveMP: test_rules_convert_eltype_for_test_entries
+        @testset "test_rules_convert_paramfloattype_for_test_entries" begin
+            import ReactiveMP: test_rules_convert_paramfloattype_for_test_entries
 
             for m in (1, :(Normal(0.0, 1.0))), v in (2, Gamma(2.0, 3.0)), output in (3, :(Normal(2.0, 3.0))), eltype in (:Float32, Float64)
                 let test_entries = [(:((m = $m, v = $v)), output)]
-                    modified_inputs = collect(test_rules_convert_eltype_for_test_entries(test_entries, eltype))
+                    modified_inputs = collect(test_rules_convert_paramfloattype_for_test_entries(test_entries, eltype))
 
-                    modified_m = :(ReactiveMP.convert_eltype($eltype, $m))
-                    modified_v = :(ReactiveMP.convert_eltype($eltype, $v))
+                    modified_m = :(ReactiveMP.convert_paramfloattype($eltype, $m))
+                    modified_v = :(ReactiveMP.convert_paramfloattype($eltype, $v))
 
                     @test any(modified_inputs) do (input, output)
                         inexpr(input, modified_m)
@@ -148,25 +148,25 @@ import MacroTools: inexpr
             end
         end
 
-        @testset "test_rules_parse_input_values_test_entries" begin
+        @testset "test_rules_parse_input_values_from_test_entry" begin
             import ReactiveMP: test_rules_parse_input_values_from_test_entry
 
             @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 3, key3 = 2))) == [1, 3, 2]
             @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3))) == [1, 2, 3]
         end
 
-        @testset "test_rules_convert_eltype" begin
-            import ReactiveMP: test_rules_convert_eltype
+        @testset "test_rules_convert_paramfloattype" begin
+            import ReactiveMP: test_rules_convert_paramfloattype
 
             for eltype in (:Float32, :Float64)
-                @test inexpr(test_rules_convert_eltype(:(NormalMeanVariance(1.0, 2.0)), eltype), :(ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0))))
-                @test inexpr(test_rules_convert_eltype(:(m_in = NormalMeanVariance(1.0, 2.0)), eltype), :(m_in = ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0))))
+                @test inexpr(test_rules_convert_paramfloattype(:(NormalMeanVariance(1.0, 2.0)), eltype), :(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0))))
+                @test inexpr(test_rules_convert_paramfloattype(:(m_in = NormalMeanVariance(1.0, 2.0)), eltype), :(m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0))))
                 @test inexpr(
-                    test_rules_convert_eltype(:((m_in = NormalMeanVariance(1.0, 2.0),)), eltype), :((m_in = ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0)),))
+                    test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0),)), eltype), :((m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)),))
                 )
                 @test inexpr(
-                    test_rules_convert_eltype(:((m_in = NormalMeanVariance(1.0, 2.0), q_out = Gamma(1.0, 2.0))), eltype),
-                    :((m_in = ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0)), q_out = ReactiveMP.convert_eltype($eltype, Gamma(1.0, 2.0))))
+                    test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0), q_out = Gamma(1.0, 2.0))), eltype),
+                    :((m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)), q_out = ReactiveMP.convert_paramfloattype($eltype, Gamma(1.0, 2.0))))
                 )
             end
         end

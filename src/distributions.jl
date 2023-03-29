@@ -93,19 +93,37 @@ promote_variate_type(::D, T) where {D <: Distribution}       = promote_variate_t
 promote_variate_type(::Type{D}, T) where {D <: Distribution} = promote_variate_type(variate_form(D), T)
 
 """
-    convert_eltype(::Type{D}, ::Type{E}, distribution)
+    paramfloattype(distribution)
 
-Converts (if possible) the `distribution` to be of type `D{E}`.
+Returns the underlying float type of distribution's parameters.
+
+See also: [`ReactiveMP.promote_paramfloattype`](@ref)
 """
-convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} = convert(D{E}, distribution)
+paramfloattype(distribution::Distribution) = promote_type(deep_eltype.(params(distribution))...)
 
 """
-    convert_eltype(::Type{E}, container)
+    promote_paramfloattype(distributions...)
 
-Converts (if possible) the elements of the `container` to be of type `E`.
+Promotes `paramfloattype` of the `distributions` to a single type. See also `promote_type`.
+
+See also: [`ReactiveMP.paramfloattype`](@ref)
 """
-convert_eltype(::Type{E}, container::AbstractArray) where {E} = convert(AbstractArray{E}, container)
-convert_eltype(::Type{E}, number::Number) where {E} = convert(E, number)
+promote_paramfloattype(distributions...) = promote_type(paramfloattype.(distributions)...)
+
+"""
+    convert_paramtype(::Type{T}, distribution)
+
+Converts (if possible) the params float type of the `distribution` to be of type `T`.
+"""
+convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} = convert(typeof(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution))...)
+
+"""
+    convert_eltype(::Type{T}, container)
+
+Converts (if possible) the elements of the `container` to be of type `T`.
+"""
+convert_paramfloattype(::Type{T}, container::AbstractArray) where {T} = convert(AbstractArray{T}, container)
+convert_paramfloattype(::Type{T}, number::Number) where {T} = convert(T, number)
 
 """
     sampletype(distribution)
