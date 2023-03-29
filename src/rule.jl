@@ -2,6 +2,7 @@ export rule, marginalrule
 export @rule, @marginalrule
 export @call_rule, @call_marginalrule
 export @logscale
+using Optim: abs_tol
 
 using MacroTools
 using .MacroHelpers
@@ -581,11 +582,11 @@ end
 """
     Documentation placeholder
 """
-macro test_rules(options, on, test_sequence)
+macro test_rules(options, rule_specification, tests)
+    
+    @capture(tests, [test_entries__]) || error("Invalid tests specification. Test sequence should be in the form of an array.")
 
-    configuration = TestRulesConfiguration(options)
-
-    @capture(test_sequence, [test_sequence_entries__]) || error("Invalid test sequence specification. Test sequence should be in the form of an array.")
+    generated_tests = []
 
     block      = Expr(:block)
     block.args = map(test_sequence_entries) do test_entry
@@ -595,7 +596,7 @@ macro test_rules(options, on, test_sequence)
         test_output_s  = gensym()
         test_rule.args = [quote
             begin
-                local $test_output_s = ReactiveMP.@call_rule($on, $input)
+                local $test_output_s = ReactiveMP.@call_rule($rule_specification, $input)
                 @test ReactiveMP.custom_isapprox($test_output_s, $output; atol = $float64_atol)
                 @test ReactiveMP.is_typeof_equal($test_output_s, $output)
             end
@@ -640,7 +641,7 @@ macro test_rules(options, on, test_sequence)
                 output_s = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_s = ReactiveMP.@call_rule($on, $(m_f32_input[1]))
+                        local $output_s = ReactiveMP.@call_rule($rule_specification, $(m_f32_input[1]))
                         @test ReactiveMP.custom_isapprox($output_s, $m_f32_output; atol = $float32_atol)
                         @test ReactiveMP.is_typeof_equal($output_s, $m_f32_output)
                     end
@@ -661,7 +662,7 @@ macro test_rules(options, on, test_sequence)
                 output_dist = gensym()
                 push!(test_rule.args, quote
                     begin
-                        local $output_dist = ReactiveMP.@call_rule($on, $(m_bigf_input[1]))
+                        local $output_dist = ReactiveMP.@call_rule($rule_specification, $(m_bigf_input[1]))
                         @test ReactiveMP.custom_isapprox($output_dist, $m_bigf_output; atol = $bigfloat_atol)
                         @test ReactiveMP.is_typeof_equal($output_dist, $m_bigf_output)
                     end
@@ -810,37 +811,73 @@ macro test_marginalrules(on, test_sequence)
 end
 
 Base.@kwdef mutable struct TestRulesConfiguration
-    with_float_conversions::Bool = false
-    float_types::Vector = [ Float32, Float64, BigFloat ]
+    check_type_promotion::Bool = false
     float_tolerance::Dict = Dict(Float32 => 1e-6, Float64 => 1e-12, BigFloat => 1e-12)
+    extra_float_types::Vector = [Float32, Float64, BigFloat]
 end
 
-# macro passes the `options` as an `Expr`
-function TestRulesConfiguration(options::Expr)
-    @capture(options, [ option_entries__ ]) || error("Cannot parse the test configuration. The options must be an array of `key = value` pairs.")
+const DefaultFloatTolerance = 1e-12
 
-    configuration = TestRulesConfiguration()
+check_type_promotion(configuration::TestRulesConfiguration)::Bool = configuration.check_type_promotion
+check_type_promotion!(configuration::TestRulesConfiguration, check::Bool) = configuration.check_type_promotion = check
 
-    for entry in option_entries 
+float_tolerance(configuration::TestRulesConfiguration) = configuration.float_tolerance
+float_tolerance(configuration::TestRulesConfiguration, ::Type{T}) where {T} = get(() -> DefaultFloatTolerance, float_tolerance(configuration), T)
+
+float_tolerance!(configuration::TestRulesConfiguration, ::Type{T}, atol::Number) where {T} = configuration.float_tolerance[T] = atol
+float_tolerance!(configuration::TestRulesConfiguration, atol::Number) = foreach(((key, _),) -> float_tolerance!(configuration, key, atol), float_tolerance(configuration))
+float_tolerance!(configuration::TestRulesConfiguration, atol::AbstractArray) = foreach(((key, value),) -> float_tolerance!(configuration, key, value), atol)
+
+extra_float_types(configuration::TestRulesConfiguration) = configuration.extra_float_types
+extra_float_types!(configuration::TestRulesConfiguration, types) = configuration.extra_float_types = types
+
+# used in the `@test_rules/@test_marginalrules`
+function test_rules_parse_configuration(configuration::Symbol, options::Expr)
+    @capture(options, [option_entries__]) || error("Cannot parse the test configuration. The options must be an array of `key = value` pairs.")
+
+    block = Expr(:block)
+    block.args = map(option_entries) do entry
         @capture(entry, key_ = value_) || error("Cannot parse the test configuration. The options must be an array of `key = value` pairs.")
 
-        if key === :with_float_conversions
-            configuration.with_float_conversions = convert(Bool, value)
+        if key === :check_type_promotion
+            return :(ReactiveMP.check_type_promotion!($configuration, convert(Bool, $value)))
         elseif key === :atol
-            configuration.float_tolerance = Dict(key => float(value) for key in keys(configuration.float_tolerance))
-        elseif key === :float64_atol
-            configuration.float_tolerance[Float64] = float(value)
-        elseif key === :float32_atol
-            configuration.float_tolerance[Float32] = float(value)
-        elseif key === :bigfloat_atol
-            configuration.float_tolerance[BigFloat] = float(value)
+            return :(ReactiveMP.float_tolerance!($configuration, $value))
+        elseif key === :extra_float_types
+            return :(ReactiveMP.extra_float_types!($configuration, $value))
         else
             error("Unknown option for the test configuration $(key)")
         end
-
     end
 
-    return configuration
+    return block
+end
+
+function test_rules_generate_testset(test_macro, rule_specification::Expr, inputs, output, tolerance)
+    return quote
+        let desired_output = $output, actual_output = $test_macro($rule_specification, $inputs)
+            local _isapprox = ReactiveMP.custom_isapprox(actual_output, desired_output; atol = $tolerance)
+            local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, desired_output)
+
+            if !_isapprox || !_is_typeof_equal
+                @warn "Testset for rule $(rule_specification) has failed."
+                @warn "Desired output: $(desired_output)"
+                @warn "Actual output: $(actual_output)"
+            end
+
+            @test _isapprox && _is_typeof_equal
+        end
+    end
+end
+
+function test_rules_convert_eltype(expression, eltype)
+    if @capture(expression, (entries__,))
+        return :(($(map(entry -> ReactiveMP.test_rules_convert_eltype(entry, eltype), entries)...),))
+    elseif @capture(expression, key_ = value_)
+        return :($key = $(ReactiveMP.test_rules_convert_eltype(value, eltype)))
+    else
+        return :(ReactiveMP.convert_eltype($eltype, $expression))
+    end
 end
 
 # Error utilities

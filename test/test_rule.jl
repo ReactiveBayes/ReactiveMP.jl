@@ -4,33 +4,116 @@ using Test
 using ReactiveMP
 using MacroTools
 
-import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_macro_parse_fn_args
+import MacroTools: inexpr
 
 @testset "rule" begin
     @testset "Testing utilities" begin
         import ReactiveMP: TestRulesConfiguration
+        import ReactiveMP: check_type_promotion, check_type_promotion!
+        import ReactiveMP: float_tolerance, float_tolerance!
+        import ReactiveMP: extra_float_types, extra_float_types!
+        import ReactiveMP: test_rules_parse_configuration
 
         @testset "TestRulesConfiguration" begin
-            @test_throws ErrorException TestRulesConfiguration(:([1]))
-            @test_throws ErrorException TestRulesConfiguration(:([options = value = broken]))
 
-            # Check that `float_conversions` is set properly
-            for conversions in (true, false)
-                @test TestRulesConfiguration(:([ with_float_conversions = $conversions ])).with_float_conversions === conversions
+            # check_type_promotion setter test
+            let configuration = TestRulesConfiguration()
+                for check in (true, false)
+                    check_type_promotion!(configuration, check)
+                    @test check_type_promotion(configuration) === check
+                end
             end
 
-            # Check that `tolerance` is set properly
-            for atol in (1e-3, 1e-4)
-                @test all(value -> value === atol, TestRulesConfiguration(:([atol = $atol])).float_tolerance |> values |> collect)
+            # check atol can be set as a single number
+            let configuration = TestRulesConfiguration()
+                for atol in (1e-6, 1e-12)
+                    float_tolerance!(configuration, atol)
+                    @test all(tolerance -> isequal(tolerance, atol), values(float_tolerance(configuration)))
+                end
+            end
 
-                @test TestRulesConfiguration(:([float32_atol = $atol])).float_tolerance[Float32] === atol
-                @test TestRulesConfiguration(:([float64_atol = $atol])).float_tolerance[Float64] === atol
-                @test TestRulesConfiguration(:([bigfloat_atol = $atol])).float_tolerance[BigFloat] === atol
+            # check atol can be set as an array of pairs
+            let configuration = TestRulesConfiguration()
+                for atol in [[Float32 => 1e-5, Float64 => 1e-11], [Float32 => 1e-4, Float64 => 1e-10]]
+                    float_tolerance!(configuration, atol)
+                    for (key, value) in atol
+                        @test isequal(float_tolerance(configuration, key), value)
+                    end
+                end
+            end
+
+            # check atol can be set individually
+            let configuration = TestRulesConfiguration()
+                for T in [Float32, Float16, BigFloat, Int], atol in (1e-6, 1e-12)
+                    float_tolerance!(configuration, T, atol)
+                    @test isequal(float_tolerance(configuration, T), atol)
+                end
+            end
+
+            # extra_float_types setter test
+            let configuration = TestRulesConfiguration()
+                for extra_types in ([Float64, Float32], [Int, BigFloat])
+                    extra_float_types!(configuration, extra_types)
+                    @test isequal(extra_float_types(configuration), extra_types)
+                end
+            end
+
+            @test_throws ErrorException test_rules_parse_configuration(:configuration, :([1]))
+            @test_throws ErrorException test_rules_parse_configuration(:configuration, :([options = value = broken]))
+
+            for name in (:configuration, :blabla),
+                check in (true, false),
+                atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
+                extra_types in (:([Float64]), :([Float32, BigFloat]))
+
+                expression = test_rules_parse_configuration(name, :([check_type_promotion = $check, atol = $atol, extra_float_types = $extra_types]))
+
+                @test inexpr(expression, :(ReactiveMP.check_type_promotion!($name, convert(Bool, $check))))
+                @test inexpr(expression, :(ReactiveMP.float_tolerance!($name, $atol)))
+                @test inexpr(expression, :(ReactiveMP.extra_float_types!($name, $extra_types)))
+            end
+        end
+
+        @testset "test_rules_generate_testset" begin
+            import ReactiveMP: test_rules_generate_testset
+
+            fns = (:(ReactiveMP.@test_rules), :(ReactiveMP.@test_marginal_rules))
+            specs = (:(NormalMeanVariance(:out, Marginalisation)), :(Gamma(:out, MomentMatching)))
+            inputs = (:((m_mean = NormalMeanVariance(0.0, 1.0), q_var = InverseGamma(1.0, 1.0))), )
+            outputs = (:(NormalMeanVariance(0.0, .0)), :(Gamma(2.0, 3.0)))
+            tols = (:1e-6, :1e-12)
+
+            for f in fns, spec in specs, input in inputs, output in outputs, tol in tols
+                expression = test_rules_generate_testset(f, spec, input, output, tol)
+                @test inexpr(expression, :($f($spec, $input)))
+                @test inexpr(expression, output)
+                @test inexpr(expression, tol)
+                @test inexpr(expression, :(ReactiveMP.custom_isapprox))
+                @test inexpr(expression, :(ReactiveMP.is_typeof_equal))
+            end
+
+        end
+
+        @testset "test_rules_convert_eltype" begin
+            import ReactiveMP: test_rules_convert_eltype
+
+            for eltype in (:Float32, :Float64)
+                @test inexpr(test_rules_convert_eltype(:(NormalMeanVariance(1.0, 2.0)), eltype), :(ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0))))
+                @test inexpr(test_rules_convert_eltype(:(m_in = NormalMeanVariance(1.0, 2.0)), eltype), :(m_in = ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0))))
+                @test inexpr(
+                    test_rules_convert_eltype(:((m_in = NormalMeanVariance(1.0, 2.0),)), eltype), :((m_in = ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0)),))
+                )
+                @test inexpr(
+                    test_rules_convert_eltype(:((m_in = NormalMeanVariance(1.0, 2.0), q_out = Gamma(1.0, 2.0))), eltype),
+                    :((m_in = ReactiveMP.convert_eltype($eltype, NormalMeanVariance(1.0, 2.0)), q_out = ReactiveMP.convert_eltype($eltype, Gamma(1.0, 2.0))))
+                )
             end
         end
     end
 
     @testset "Macro utilities" begin
+        import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_macro_parse_fn_args
+
         @testset "rule_macro_parse_on_tag(expression)" begin
             @test rule_macro_parse_on_tag(:(:out)) == (:(Val{:out}), nothing, nothing)
             @test rule_macro_parse_on_tag(:(:mean)) == (:(Val{:mean}), nothing, nothing)
