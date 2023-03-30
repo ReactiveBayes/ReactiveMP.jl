@@ -886,8 +886,10 @@ rule_method_error_extract_vconstraint(something) = typeof(something)
 rule_method_error_extract_names(::Val{T}) where {T} = map(sT -> __extract_val_type(split_underscored_symbol(Val{sT}())), T)
 rule_method_error_extract_names(::Nothing)          = ()
 
-rule_method_error_extract_types(t::Tuple)   = map(e -> nameof(typeofdata(e)), t)
+rule_method_error_extract_types(t::Tuple)   = map(e -> rule_method_error_type_nameof(typeofdata(e)), t)
 rule_method_error_extract_types(t::Nothing) = ()
+
+rule_method_error_type_nameof(something) = nameof(something)
 
 rule_method_error_extract_meta(something) = string("meta::", typeof(something))
 rule_method_error_extract_meta(::Nothing) = ""
