@@ -747,8 +747,9 @@ function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, 
     # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
     actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, inputs)
     rule_spec_str = "$rule_specification"
+    rule_inputs_str = "$inputs"
     generated = quote
-        let expected_output = $output, actual_output = $actual_output, rule_spec_str = $rule_spec_str
+        let expected_output = $output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
             local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
             local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
@@ -757,6 +758,7 @@ function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, 
             if !_isapprox || !_is_typeof_equal
                 @warn """
                 Testset for rule $(rule_spec_str) has failed!
+                Inputs: $(rule_inputs_str)
                 Expected output: $(expected_output)
                 Actual output: $(actual_output)
                 """

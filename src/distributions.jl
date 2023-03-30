@@ -100,6 +100,7 @@ Returns the underlying float type of distribution's parameters.
 See also: [`ReactiveMP.promote_paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
 paramfloattype(distribution::Distribution) = promote_type(deep_eltype.(params(distribution))...)
+paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt)...)
 
 """
     promote_paramfloattype(distributions...)
@@ -118,6 +119,8 @@ Converts (if possible) the params float type of the `distribution` to be of type
 See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.promote_paramfloattype`](@ref)
 """
 convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} = convert(distribution_typename(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution))...)
+convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(e -> convert_paramfloattype(T, e), collection)
+convert_paramfloattype(collection::NamedTuple) = convert_paramfloattype(paramfloattype(collection), collection)
 
 """
     convert_paramfloattype(::Type{T}, container)
@@ -132,7 +135,7 @@ convert_paramfloattype(::Type{T}, number::Number) where {T} = convert(T, number)
 
 Returns a type of the distribution. By default fallbacks to the `eltype`.
 
-See also: [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promotesamplefloatype`](@ref)
+See also: [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
 """
 sampletype(distribution) = eltype(distribution)
 
@@ -147,7 +150,7 @@ sampletype(::Type{Matrixvariate}, distribution) = Matrix{eltype(distribution)}
 Returns a type of the distribution or the underlying float type in case if sample is `Multivariate` or `Matrixvariate`. 
 By default fallbacks to the `deep_eltype(sampletype(distribution))`.
 
-See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloatype`](@ref)
+See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
 """
 samplefloattype(distribution) = deep_eltype(sampletype(distribution))
 
