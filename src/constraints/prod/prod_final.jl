@@ -63,7 +63,7 @@ custom_isapprox(dist1::ProdFinal, dist2::ProdFinal; kwargs...) = custom_isapprox
 custom_isapprox(dist1::Any, dist2::ProdFinal; kwargs...)       = custom_isapprox(dist1, getdist(dist2); kwargs...)
 custom_isapprox(dist1::ProdFinal, dist2::Any; kwargs...)       = custom_isapprox(getdist(dist1), dist2; kwargs...)
 
-# This function is unsafe and uses internal fields of Julia types, but should be used only in tests
+paramfloattype(prod::ProdFinal) = paramfloattype(getdist(prod))
 convert_paramfloattype(::Type{T}, prod::ProdFinal{D}) where {T, D} = ProdFinal(convert_paramfloattype(T, getdist(prod)))
 
 prod_analytical_rule(::Type{<:ProdFinal}, ::Type) = ProdAnalyticalRuleAvailable()

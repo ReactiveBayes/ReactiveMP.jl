@@ -126,11 +126,21 @@ import MacroTools: inexpr
             import ReactiveMP: test_rules_convert_paramfloattype_for_test_entries
 
             for m in (1, :(Normal(0.0, 1.0))), v in (2, Gamma(2.0, 3.0)), output in (3, :(Normal(2.0, 3.0))), eltype in (:Float32, Float64)
-                let test_entries = [(:((m = $m, v = $v)), output)]
+                let test_entries = [(:((m = $m, v = $v, meta = "hello")), output)]
                     modified_inputs = collect(test_rules_convert_paramfloattype_for_test_entries(test_entries, eltype))
 
                     modified_m = :(ReactiveMP.convert_paramfloattype($eltype, $m))
                     modified_v = :(ReactiveMP.convert_paramfloattype($eltype, $v))
+                    original_meta = :(meta = "hello")
+                    modified_meta = :(ReactiveMP.convert_paramfloattype($eltype, "hello"))
+
+                    @test all(modified_inputs) do (input, output)
+                        !inexpr(input, modified_meta)
+                    end
+
+                    @test any(modified_inputs) do (input, output)
+                        inexpr(input, original_meta)
+                    end
 
                     @test any(modified_inputs) do (input, output)
                         inexpr(input, modified_m)
@@ -153,6 +163,7 @@ import MacroTools: inexpr
 
             @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 3, key3 = 2))) == [1, 3, 2]
             @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3))) == [1, 2, 3]
+            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3, meta = "hello"))) == [1, 2, 3]
         end
 
         @testset "test_rules_convert_paramfloattype" begin

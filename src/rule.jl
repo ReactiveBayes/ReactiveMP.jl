@@ -796,7 +796,7 @@ end
 # The resulting float type of the rule is expected to be the same as the promoted type of 
 # the all `key = value` pairs after conversion
 function test_rules_convert_paramfloattype_for_test_entry(input, output, eltype)
-    @capture(input, (arguments__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
+    @capture(input, (arguments__, meta = meta_) | ((arguments__,))) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
 
     combinations = powerset(1:length(arguments))
 
@@ -804,6 +804,9 @@ function test_rules_convert_paramfloattype_for_test_entry(input, output, eltype)
         carguments = deepcopy(arguments)
         for index in combination
             carguments[index] = test_rules_convert_paramfloattype(carguments[index], eltype)
+        end
+        if !isnothing(meta)
+            push!(carguments, :(meta = $meta))
         end
         cvalues = test_rules_parse_input_values_from_test_entry(carguments)
         coutput_eltype = :(ReactiveMP.promote_paramfloattype($(cvalues...)))
@@ -823,10 +826,14 @@ end
 
 # Same as the previous one but takes an array of `key_ = value_` pairs as its argument
 function test_rules_parse_input_values_from_test_entry(arguments::AbstractArray)
-    return map(arguments) do arg
-        @capture(arg, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
-        return value
+    values = []
+    for argument in arguments
+        @capture(argument, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
+        if key !== :meta # Reserved for the `meta` specification
+            push!(values, value)
+        end
     end
+    return values
 end
 
 # This function converts `key = value` pair to `key = convert_paramfloattype(eltype, value)`
