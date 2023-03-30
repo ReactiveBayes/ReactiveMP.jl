@@ -99,7 +99,7 @@ Returns the underlying float type of distribution's parameters.
 
 See also: [`ReactiveMP.promote_paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
-paramfloattype(distribution::Distribution) = promote_type(deep_eltype.(params(distribution))...)
+paramfloattype(distribution::Distribution) = promote_type(map(deep_eltype, params(distribution))...)
 paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt))
 paramfloattype(t::Tuple) = promote_paramfloattype(t...)
 
@@ -113,7 +113,7 @@ Promotes `paramfloattype` of the `distributions` to a single type. See also `pro
 
 See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
-promote_paramfloattype(distributions...) = promote_type(paramfloattype.(distributions)...)
+promote_paramfloattype(distributions...) = promote_type(map(paramfloattype, distributions)...)
 
 """
     convert_paramfloattype(::Type{T}, distribution)
@@ -123,9 +123,10 @@ Converts (if possible) the params float type of the `distribution` to be of type
 See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.promote_paramfloattype`](@ref)
 """
 convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} =
-    automatic_convert_paramfloattype(distribution_typename(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution)))
-convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(e -> convert_paramfloattype(T, e), collection)
+    automatic_convert_paramfloattype(distribution_typename(distribution), map(convert_paramfloattype(T), params(distribution)))
+convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(convert_paramfloattype(T), collection)
 convert_paramfloattype(collection::NamedTuple) = convert_paramfloattype(paramfloattype(collection), collection)
+convert_paramfloattype(::Type{T}) where {T} = TypeConverter(T, convert_paramfloattype)
 
 # We attempt to automatically construct a new distribution with a desired paramfloattype
 # This function assumes that the constructor `D(...)` accepts the same order of parameters as 
@@ -173,7 +174,7 @@ Promotes `sampletype` of the `distributions` to a single type. See also `promote
 
 See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
 """
-promote_sampletype(distributions...) = promote_type(sampletype.(distributions)...)
+promote_sampletype(distributions...) = promote_type(map(sampletype, distributions)...)
 
 """
     promote_samplefloattype(distributions...)
@@ -182,7 +183,7 @@ Promotes `samplefloattype` of the `distributions` to a single type. See also `pr
 
 See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref)
 """
-promote_samplefloattype(distributions...) = promote_type(samplefloattype.(distributions)...)
+promote_samplefloattype(distributions...) = promote_type(map(samplefloattype, distributions)...)
 
 """
     logpdf_sample_friendly(distribution) 

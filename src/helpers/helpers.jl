@@ -208,3 +208,19 @@ function Base.show(io::IO, index::FunctionalIndex{R, F}) where {R, F}
     __functional_index_print(io, index.f)
     print(io, ")")
 end
+
+## 
+
+# Julia does not really like expressions of the form
+# map((e) -> convert(T, e), collection)
+# because type `T` is inside lambda function
+# https://github.com/JuliaLang/julia/issues/15276
+# https://github.com/JuliaLang/julia/issues/47760
+struct TypeConverter{T, C}
+    convert::C
+end
+
+TypeConverter(::Type{T}, convert::C) where {T, C} = TypeConverter{T, C}(convert)
+
+(converter::TypeConverter{T})(something) where {T} = converter.convert(T, something)
+(converter::TypeConverter{T})(something::AbstractArray) where {T} = map(converter, something)
