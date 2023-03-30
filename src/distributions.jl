@@ -103,6 +103,9 @@ paramfloattype(distribution::Distribution) = promote_type(deep_eltype.(params(di
 paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt))
 paramfloattype(t::Tuple) = promote_paramfloattype(t...)
 
+# `Bool` is the smallest possible type, should not play any role in the promotion
+paramfloattype(::Nothing) = Bool 
+
 """
     promote_paramfloattype(distributions...)
 
@@ -119,14 +122,15 @@ Converts (if possible) the params float type of the `distribution` to be of type
 
 See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.promote_paramfloattype`](@ref)
 """
-convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} = automatic_convert_paramfloattype(distribution_typename(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution)))
+convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} =
+    automatic_convert_paramfloattype(distribution_typename(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution)))
 convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(e -> convert_paramfloattype(T, e), collection)
 convert_paramfloattype(collection::NamedTuple) = convert_paramfloattype(paramfloattype(collection), collection)
 
 # We attempt to auotmatically construct a new distribution with a desired paramfloattype
 # This function assumes that the constructor `D(...)` accepts the same order of parameters as 
 # returned from the `params` function. It is the case for distributions from `Distributions.jl`
-automatic_convert_paramfloattype(::Type{D}, params) where { D <: Distribution } = D(params...)
+automatic_convert_paramfloattype(::Type{D}, params) where {D <: Distribution} = D(params...)
 automatic_convert_paramfloattype(::Type{D}, params) where {D} = error("Cannot automatically construct a distribution of type `$D` with params = $(params)")
 
 """
@@ -136,6 +140,7 @@ Converts (if possible) the elements of the `container` to be of type `T`.
 """
 convert_paramfloattype(::Type{T}, container::AbstractArray) where {T} = convert(AbstractArray{T}, container)
 convert_paramfloattype(::Type{T}, number::Number) where {T} = convert(T, number)
+convert_paramfloattype(::Type, ::Nothing) = nothing
 
 """
     sampletype(distribution)
@@ -254,6 +259,9 @@ function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
 end
 
 Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))
+
+paramfloattype(joint::FactorizedJoint) = paramfloattype(getmultipliers(joint))
+convert_paramfloattype(::Type{T}, joint::FactorizedJoint) where {T} = FactorizedJoint(map(e -> convert_paramfloattype(T, joint), getmultipliers(joint)))
 
 ## Utils
 

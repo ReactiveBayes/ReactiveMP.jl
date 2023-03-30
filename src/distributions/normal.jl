@@ -96,7 +96,12 @@ Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
 Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
 Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
 
+paramfloattype(joint::JointNormal) = paramfloattype(joint, joint.dist)
 convert_paramfloattype(::Type{T}, joint::JointNormal) where {T} = convert_paramfloattype(T, joint, joint.dist)
+
+function paramfloattype(joint::JointNormal, dist::NormalDistributionsFamily)
+    return paramfloattype(dist)
+end
 
 function convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
     μ, Σ  = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
