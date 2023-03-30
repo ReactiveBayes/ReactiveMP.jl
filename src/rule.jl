@@ -578,11 +578,70 @@ end
 
 ## Testing utilities
 
+# (bvdmitri) These are cryptic manually constructed expressions are needed to call a `macro` within another `macro`, 
+# but these must be prefixed with the `ReactiveMP` module. There might be a more elegant way to do the same, 
+# but I couldn't find one
 const CallRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_rule")))
 const CallMarginalRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_marginalrule")))
 
+"""
+    @test_rules [options] rule [ test_entries... ]
+
+The `@test_rules` macro generates test cases for message update rules for probabilistic programming models that follow the "message passing" paradigm. It takes a rule specification as input and generates a set of tests based on that specification. This macro is provided by `ReactiveMP`.
+
+Note: The `Test` module must be imported explicitly. The `@test_rules` macro tries to use the `@test` macro, which must be defined globally.
+
+## Arguments
+
+The macro takes three arguments:
+
+- `options`: An optional argument that specifies the options for the test generation process. See below for details.
+- `rule`: A rule specification in the same format as the `@rule` macro, e.g. `Beta(:out, Marginalisation)` or `NormalMeanVariance(:μ, Marginalisation)`.
+- `test_entries`: An array of named tuples `(input = ..., output = ...)`. The `input` entry has the same format as the input for the `@rule` macro. The `output` entry specifies the expected output.
+
+## Options
+
+The following options are available:
+
+- `check_type_promotion`: By default, this option is set to `false`. If set to `true`, the macro generates an extensive list of extra tests that aim to check the correct type promotion within the tests. For example, if all inputs are of type `Float32`, then the expected output should also be of type `Float32`. See the `paramfloattype` and `convert_paramfloattype` functions for details.
+- `atol`: Sets the desired accuracy for the tests. The tests use the `custom_isapprox` function from `ReactiveMP` to check if outputs are approximately the same. This argument can be either a single number or an array of `key => value` pairs.
+- `extra_float_types`: A set of extra float types to be used in the `check_type_promotion` tests. This argument has no effect if `check_type_promotion` is set to `false`.
+
+The default values for the `atol` option are:
+
+- `Float32`: `1e-4`
+- `Float64`: `1e-6`
+- `BigFloat`: `1e-8`
+
+## Examples
+
+```julia
+
+@test_rules [check_type_promotion = true] Beta(:out, Marginalisation) [
+    (input = (m_a = PointMass(1.0), m_b = PointMass(2.0)), output = Beta(1.0, 2.0)),
+    (input = (m_a = PointMass(2.0), m_b = PointMass(2.0)), output = Beta(2.0, 2.0)),
+    (input = (m_a = PointMass(3.0), m_b = PointMass(3.0)), output = Beta(3.0, 3.0))
+]
+
+@test_rules [check_type_promotion = true] Beta(:out, Marginalisation) [
+    (input = (q_a = PointMass(1.0), q_b = PointMass(2.0)), output = Beta(1.0, 2.0)),
+    (input = (q_a = PointMass(2.0), q_b = PointMass(2.0)), output = Beta(2.0, 2.0)),
+    (input = (q_a = PointMass(3.0), q_b = PointMass(3.0)), output = Beta(3.0, 3.0))
+]
+```
+
+See also: [`ReactiveMP.@test_marginalrules`](@ref)
+"""
 macro test_rules end
-macro test_marginalrule end
+
+"""
+    @test_marginalrules [options] rule [ test_entries... ]
+
+Effectively the same as `@test_rules`, but for marginal computation rules. See the documentation for `@test_rules` for more info.
+
+See also: [`ReactiveMP.@test_rules`](@ref)
+"""
+macro test_marginalrules end
 
 macro test_rules(rule_specification, tests)
     return ReactiveMP.test_rules_generate(CallRuleMacroFnExpr, :([]), rule_specification, tests)
