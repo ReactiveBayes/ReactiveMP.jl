@@ -13,7 +13,7 @@ g(x) = x
 struct EmptyOptimizer end
 
 @testset "rules:Delta:cvi:in" begin
-    @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
+    @test_rules [check_type_promotion = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
         (
             input = (q_ins = FactorizedJoint((NormalMeanVariance(),)), m_in = NormalMeanVariance(1, 2), meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer()))),
             output = NormalWeightedMeanPrecision(-0.5, 0.5)
@@ -24,7 +24,7 @@ struct EmptyOptimizer end
         )
     ]
 
-    @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 2), Marginalisation) [
+    @test_rules [check_type_promotion = false] DeltaFn{g}((:in, k = 2), Marginalisation) [
         (
             input = (
                 q_ins = FactorizedJoint((GammaShapeRate(2, 2), NormalMeanVariance())), m_in = NormalMeanVariance(1, 2), meta = DeltaMeta(method = CVI(1, 1, EmptyOptimizer()))

@@ -20,7 +20,7 @@ import ReactiveMP: @test_marginalrules
             [9.0 0; 0 8]  # Σu
         )
 
-        @test_marginalrules [with_float_conversions = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(:in_zprev_znext) [
+        @test_marginalrules [check_type_promotion = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(:in_zprev_znext) [
             (
                 input  = (m_out = MvNormalMeanPrecision([1, 2], [2 0; 0 1]), m_in = MvNormalMeanPrecision([1, 2], [1 0; 0 2]), m_zprev = ProdFinal(MvNormalMeanPrecision([1, 2], [1 0; 0 2])), m_znext = MvNormalMeanPrecision([1, 2], [1 0; 0 3]), meta = meta),
                 output = MvNormalWeightedMeanPrecision([28.0, 28.0, 15.0, 13.0], [298.0 0.0 198.0 0.0; 0.0 50.0 0.0 24.0; 198.0 0.0 101.0 0.0; 0.0 24.0 0.0 7.0])

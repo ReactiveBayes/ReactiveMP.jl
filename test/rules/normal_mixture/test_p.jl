@@ -10,14 +10,14 @@ import ReactiveMP: WishartMessage
 
 @testset "rules:NormalMixture:p" begin
     @testset "Variational : (m_out::UnivariateNormalDistributionsFamily..., m_μ::UnivariateNormalDistributionsFamily...) k=1" begin
-        @test_rules [with_float_conversions = true] NormalMixture{2}((:p, k = 1), Marginalisation) [
+        @test_rules [check_type_promotion = true] NormalMixture{2}((:p, k = 1), Marginalisation) [
             (input = (q_out = NormalMeanVariance(8.5, 0.5), q_switch = Bernoulli(0.8), q_m = NormalMeanVariance(5.0, 2.0)), output = GammaShapeRate(1.1, 1.475)),
             (input = (q_out = NormalMeanVariance(-3, 2.0), q_switch = Bernoulli(0.5), q_m = NormalMeanVariance(5.0, 2.0)), output = GammaShapeRate(1.25, 17.0))
         ]
     end
 
     @testset "Variational : (m_out::MultivariateNormalDistributionsFamily..., m_μ::MultivariateNormalDistributionsFamily...) k=1" begin
-        @test_rules [with_float_conversions = true, atol = 1e-4] NormalMixture{2}((:p, k = 1), Marginalisation) [
+        @test_rules [check_type_promotion = true, atol = 1e-4] NormalMixture{2}((:p, k = 1), Marginalisation) [
             (
                 input = (q_out = MvNormalMeanPrecision([8.5], [0.5]), q_switch = Bernoulli(0.8), q_m = MvNormalMeanPrecision([3.0], [0.1])),
                 output = WishartMessage(2.2, fill(8.45, 1, 1))

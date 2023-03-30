@@ -21,7 +21,7 @@ import ReactiveMP: @test_rules
             [9.0 0; 0 8]  # Σu
         )
 
-        @test_rules [with_float_conversions = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(:zprev, Marginalisation) [
+        @test_rules [check_type_promotion = true, float32_atol = 1e-2, bigfloat_atol = 1e-8] BIFM(:zprev, Marginalisation) [
             (
                 input = (
                     m_out = MvNormalMeanPrecision([1, 2], [2 0; 0 1]),
