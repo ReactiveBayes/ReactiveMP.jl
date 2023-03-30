@@ -89,6 +89,11 @@ function Base.convert(::Type{WishartMessage}, dist::Wishart)
     return WishartMessage(ν, cholinv(S))
 end
 
+## Utility functions
+
+convert_paramfloattype(::Type{T}, dist::Wishart) where {T} = Wishart(convert_paramfloattype.(T, params(dist))...)
+convert_paramfloattype(::Type{T}, dist::WishartMessage) where {T} = WishartMessage(convert_paramfloattype(T, dist.ν), convert_paramfloattype(T, dist.invS))
+
 ## Friendly functions
 
 function logpdf_sample_friendly(dist::WishartMessage)

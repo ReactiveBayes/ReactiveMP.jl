@@ -97,7 +97,7 @@ promote_variate_type(::Type{D}, T) where {D <: Distribution} = promote_variate_t
 
 Returns the underlying float type of distribution's parameters.
 
-See also: [`ReactiveMP.promote_paramfloattype`](@ref)
+See also: [`ReactiveMP.promote_paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
 paramfloattype(distribution::Distribution) = promote_type(deep_eltype.(params(distribution))...)
 
@@ -106,19 +106,21 @@ paramfloattype(distribution::Distribution) = promote_type(deep_eltype.(params(di
 
 Promotes `paramfloattype` of the `distributions` to a single type. See also `promote_type`.
 
-See also: [`ReactiveMP.paramfloattype`](@ref)
+See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
 promote_paramfloattype(distributions...) = promote_type(paramfloattype.(distributions)...)
 
 """
-    convert_paramtype(::Type{T}, distribution)
+    convert_paramfloattype(::Type{T}, distribution)
 
 Converts (if possible) the params float type of the `distribution` to be of type `T`.
+
+See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.promote_paramfloattype`](@ref)
 """
 convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} = convert(distribution_typename(distribution), map((param) -> convert_paramfloattype(T, param), params(distribution))...)
 
 """
-    convert_eltype(::Type{T}, container)
+    convert_paramfloattype(::Type{T}, container)
 
 Converts (if possible) the elements of the `container` to be of type `T`.
 """
@@ -247,5 +249,5 @@ Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipl
 
 # Returns a wrapper distribution for a `<:Distribution` type
 @generated function distribution_typename(distribution)
-    return Base.typename(distribution).wrapper
+    return Base.typename(distribution).name
 end

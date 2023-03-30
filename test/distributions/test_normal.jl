@@ -7,7 +7,7 @@ using LinearAlgebra
 using Distributions
 using ForwardDiff
 
-import ReactiveMP: convert_eltype
+import ReactiveMP: convert_paramfloattype
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
@@ -181,8 +181,8 @@ import ReactiveMP: convert_eltype
         @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((1,), (1,))), 1) == MvNormalMeanCovariance([0.0], [2.0;;])
         @test getmarginal(convert(JointNormal, MvNormalMeanCovariance([0.0, 1.0], [2.0 -0.5; -0.5 1.0]), ((), ())), 1) == NormalMeanVariance(0.0, 2.0)
 
-        @test @inferred(mean_cov(convert_eltype(JointNormal, Float32, JointNormal(NormalMeanVariance(0.0, 1.0), ((),))))) === (0.0f0, 1.0f0)
-        @test @inferred(mean_cov(convert_eltype(JointNormal, Float32, JointNormal(MvNormalMeanCovariance([0.0], [1.0;;]), ((),))))) === (0.0f0, 1.0f0)
+        @test @inferred(mean_cov(convert_paramfloattype(Float32, JointNormal(NormalMeanVariance(0.0, 1.0), ((),))))) === (0.0f0, 1.0f0)
+        @test @inferred(mean_cov(convert_paramfloattype(Float32, JointNormal(MvNormalMeanCovariance([0.0], [1.0;;]), ((),))))) === (0.0f0, 1.0f0)
     end
 
     @testset "Variate forms promotions" begin

@@ -783,9 +783,9 @@ end
 
 # `test_entries` is expected to be an array of tuples, 
 # with each tuple containing an `input` and an `output` expressions
-# see `test_rules_convert_eltype_for_test_entry`
+# see `test_rules_convert_paramfloattype_for_test_entry`
 function test_rules_convert_paramfloattype_for_test_entries(test_entries, eltype)
-    return Iterators.flatten(map(((input, output),) -> test_rules_convert_eltype_for_test_entry(input, output, eltype), test_entries))
+    return Iterators.flatten(map(((input, output),) -> test_rules_convert_paramfloattype_for_test_entry(input, output, eltype), test_entries))
 end
 
 # This function creates a set of type promotion tests for rules
@@ -793,7 +793,7 @@ end
 # Then for each subset it convert the `key = value` pair to a specific float type (e.g. Float32)
 # The resulting float type of the rule is expected to be the same as the promoted type of 
 # the all `key = value` pairs after conversion
-function test_rules_convert_eltype_for_test_entry(input, output, eltype)
+function test_rules_convert_paramfloattype_for_test_entry(input, output, eltype)
     @capture(input, (arguments__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
 
     combinations = powerset(1:length(arguments))
