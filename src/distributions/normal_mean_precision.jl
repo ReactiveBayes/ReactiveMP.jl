@@ -25,7 +25,7 @@ Distributions.support(dist::NormalMeanPrecision) = Distributions.RealInterval(mi
 
 weightedmean(dist::NormalMeanPrecision) = precision(dist) * mean(dist)
 
-Distributions.params(dist::NormalMeanPrecision) = (dist.μ, dist.w)
+Distributions.params(dist::NormalMeanPrecision)  = (dist.μ, dist.w)
 Distributions.mean(dist::NormalMeanPrecision)    = dist.μ
 Distributions.median(dist::NormalMeanPrecision)  = mean(dist)
 Distributions.mode(dist::NormalMeanPrecision)    = mean(dist)

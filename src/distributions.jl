@@ -104,7 +104,7 @@ paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt))
 paramfloattype(t::Tuple) = promote_paramfloattype(t...)
 
 # `Bool` is the smallest possible type, should not play any role in the promotion
-paramfloattype(::Nothing) = Bool 
+paramfloattype(::Nothing) = Bool
 
 """
     promote_paramfloattype(distributions...)

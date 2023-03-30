@@ -20,4 +20,3 @@ probvec(dist::Categorical) = probs(dist)
 function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Categorical)
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
-

@@ -31,7 +31,7 @@ function weightedmean_invcov(dist::NormalMeanVariance)
     return (xi, w)
 end
 
-Distributions.params(dist::NormalMeanVariance) = (dist.μ, dist.v)
+Distributions.params(dist::NormalMeanVariance)  = (dist.μ, dist.v)
 Distributions.mean(dist::NormalMeanVariance)    = dist.μ
 Distributions.median(dist::NormalMeanVariance)  = mean(dist)
 Distributions.mode(dist::NormalMeanVariance)    = mean(dist)

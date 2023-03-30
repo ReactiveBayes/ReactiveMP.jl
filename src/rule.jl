@@ -831,7 +831,7 @@ function test_rules_parse_input_values_from_test_entry(arguments::AbstractArray)
         @capture(argument, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
         if key !== :meta # Reserved for the `meta` specification
             if @capture(value, ManyOf(entries__))
-                push!(values, :(ReactiveMP.ManyOf(($(entries...), ))))
+                push!(values, :(ReactiveMP.ManyOf(($(entries...),))))
             else
                 push!(values, value)
             end

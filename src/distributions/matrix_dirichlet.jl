@@ -8,7 +8,7 @@ struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDis
 end
 
 Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a; dims = 1)
-Distributions.params(dist::MatrixDirichlet) = (dist.a, )
+Distributions.params(dist::MatrixDirichlet) = (dist.a,)
 
 Base.eltype(::MatrixDirichlet{T}) where {T} = T
 
