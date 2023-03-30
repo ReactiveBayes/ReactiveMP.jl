@@ -158,7 +158,6 @@ Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWisha
 
 ## Utility functions
 
-convert_paramfloattype(::Type{T}, dist::InverseWishart) where {T} = InverseWishart(convert_paramfloattype.(T, params(dist))...)
 convert_paramfloattype(::Type{T}, dist::InverseWishartMessage) where {T} = InverseWishartMessage(convert_paramfloattype(T, dist.ν), convert_paramfloattype(T, dist.S))
 
 ## Friendly functions

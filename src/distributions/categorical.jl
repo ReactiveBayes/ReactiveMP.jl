@@ -4,8 +4,6 @@ import Distributions: Categorical, probs
 
 vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
-convert_paramfloattype(::Type{T}, distribution::Categorical) where {T <: Real} = Categorical(convert_paramfloattype(T, probs(distribution)))
-
 prod_analytical_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Categorical, right::Categorical)

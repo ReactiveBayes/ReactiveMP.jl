@@ -7,8 +7,6 @@ using StaticArrays
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
-convert_paramfloattype(::Type{T}, dist::Bernoulli) where {T} = Bernoulli(convert_paramfloattype.(T, params(d))...)
-
 probvec(dist::Bernoulli) = @SArray [failprob(dist), succprob(dist)]
 
 prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ProdAnalyticalRuleAvailable()

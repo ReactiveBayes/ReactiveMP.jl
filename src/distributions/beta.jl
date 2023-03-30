@@ -7,8 +7,6 @@ import StatsFuns: betalogpdf
 
 vague(::Type{<:Beta}) = Beta(1.0, 1.0)
 
-convert_paramfloattype(::Type{T}, dist::Beta) where {T} = Beta(convert.(T, params(dist))...)
-
 prod_analytical_rule(::Type{<:Beta}, ::Type{<:Beta}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Beta, right::Beta)
