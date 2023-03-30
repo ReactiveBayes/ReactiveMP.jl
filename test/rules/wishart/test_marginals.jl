@@ -9,7 +9,7 @@ import ReactiveMP: WishartMessage, @test_marginalrules
 
 @testset "marginalrules:Wishart" begin
     @testset ":out_ν_S (m_out::Wishart, m_ν::PointMass, m_S::PointMass)" begin
-        @test_marginalrules [check_type_promotion = true, float32_atol = 1e-5] Wishart(:out_ν_S) [
+        @test_marginalrules [check_type_promotion = true] Wishart(:out_ν_S) [
             (
                 input = (m_out = WishartMessage(3.0, cholinv([3.0 -1.0; -1.0 4.0])), m_ν = PointMass(2.0), m_S = PointMass([1.0 0.0; 0.0 1.0])),
                 output = (out = Wishart(2.0, [14/19 -1/19; -1/19 15/19]), ν = PointMass(2.0), S = PointMass([1.0 0.0; 0.0 1.0]))
