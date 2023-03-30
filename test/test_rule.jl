@@ -164,16 +164,27 @@ import MacroTools: inexpr
             @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 3, key3 = 2))) == [1, 3, 2]
             @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3))) == [1, 2, 3]
             @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3, meta = "hello"))) == [1, 2, 3]
+            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = ManyOf(1, 2), key3 = 3, meta = "hello"))) == [1, :(ReactiveMP.ManyOf((1, 2))), 3]
         end
 
         @testset "test_rules_convert_paramfloattype" begin
             import ReactiveMP: test_rules_convert_paramfloattype
 
             for eltype in (:Float32, :Float64)
-                @test inexpr(test_rules_convert_paramfloattype(:(NormalMeanVariance(1.0, 2.0)), eltype), :(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0))))
-                @test inexpr(test_rules_convert_paramfloattype(:(m_in = NormalMeanVariance(1.0, 2.0)), eltype), :(m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0))))
                 @test inexpr(
-                    test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0),)), eltype), :((m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)),))
+                    test_rules_convert_paramfloattype(:(NormalMeanVariance(1.0, 2.0)), eltype), :(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
+                )
+                @test inexpr(
+                    test_rules_convert_paramfloattype(:(m_in = NormalMeanVariance(1.0, 2.0)), eltype),
+                    :(m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
+                )
+                @test inexpr(
+                    test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0),)), eltype),
+                    :((m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)),))
+                )
+                @test inexpr(
+                    test_rules_convert_paramfloattype(:((m_in = ManyOf(NormalMeanVariance(1.0, 2.0)),)), eltype),
+                    :((m_in = ManyOf(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0))),))
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0), q_out = Gamma(1.0, 2.0))), eltype),

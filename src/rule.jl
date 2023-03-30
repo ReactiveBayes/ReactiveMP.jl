@@ -830,17 +830,23 @@ function test_rules_parse_input_values_from_test_entry(arguments::AbstractArray)
     for argument in arguments
         @capture(argument, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
         if key !== :meta # Reserved for the `meta` specification
-            push!(values, value)
+            if @capture(value, ManyOf(entries__))
+                push!(values, :(ReactiveMP.ManyOf(($(entries...), ))))
+            else
+                push!(values, value)
+            end
         end
     end
     return values
 end
 
 # This function converts `key = value` pair to `key = convert_paramfloattype(eltype, value)`
-# Calls recursively for tuples
+# Calls recursively for tuples and for `ManyOf` structures, which are tuple-like but for rules
 function test_rules_convert_paramfloattype(expression, eltype)
     if @capture(expression, (entries__,))
         return :(($(map(entry -> ReactiveMP.test_rules_convert_paramfloattype(entry, eltype), entries)...),))
+    elseif @capture(expression, ManyOf(entries__))
+        return :(ManyOf($(map(entry -> ReactiveMP.test_rules_convert_paramfloattype(entry, eltype), entries)...)))
     elseif @capture(expression, key_ = value_)
         return :($key = $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype)))
     else

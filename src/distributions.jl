@@ -100,7 +100,8 @@ Returns the underlying float type of distribution's parameters.
 See also: [`ReactiveMP.promote_paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
 paramfloattype(distribution::Distribution) = promote_type(deep_eltype.(params(distribution))...)
-paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt)...)
+paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt))
+paramfloattype(t::Tuple) = promote_paramfloattype(t...)
 
 """
     promote_paramfloattype(distributions...)
