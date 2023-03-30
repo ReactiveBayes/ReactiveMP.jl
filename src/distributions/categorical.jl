@@ -4,6 +4,8 @@ import Distributions: Categorical, probs
 
 vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
+convert_paramfloattype(::Type{T}, dist::Categorical) where {T} = Categorical(convert_paramfloattype(T, probs(dist)))
+
 prod_analytical_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::Categorical, right::Categorical)
@@ -18,3 +20,4 @@ probvec(dist::Categorical) = probs(dist)
 function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Categorical)
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
+
