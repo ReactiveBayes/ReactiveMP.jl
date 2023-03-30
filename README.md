@@ -2,7 +2,7 @@
 
 | **Documentation**                                                         | **Build Status**                 | **Coverage**                       | **Zenodo DOI**                   | **Pkg Eval**   |
 |:-------------------------------------------------------------------------:|:--------------------------------:|:----------------------------------:|:--------------------------------:|:--------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![DOI][ci-img]][ci-url]         | [![DOI][codecov-img]][codecov-url] | [![DOI][zenodo-img]][zenodo-url] | [![PkgEval][pkgeval-img]][pkgeval-url] |
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI][ci-img]][ci-url]         | [![Codecov][codecov-img]][codecov-url] | [![DOI][zenodo-img]][zenodo-url] | [![PkgEval][pkgeval-img]][pkgeval-url] |
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://biaslab.github.io/ReactiveMP.jl/dev

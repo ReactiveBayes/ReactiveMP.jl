@@ -209,6 +209,7 @@ end
 
     addtests(testrunner, "score/test_counting.jl")
 
+    addtests(testrunner, "test_rule.jl")
     addtests(testrunner, "test_addons.jl")
 
     addtests(testrunner, "approximations/test_shared.jl")
@@ -251,6 +252,8 @@ end
     addtests(testrunner, "variables/test_constant.jl")
     addtests(testrunner, "variables/test_data.jl")
     addtests(testrunner, "variables/test_random.jl")
+
+    addtests(testrunner, "pipeline/test_logger.jl")
 
     addtests(testrunner, "test_node.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
