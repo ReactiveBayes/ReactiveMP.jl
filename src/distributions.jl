@@ -127,7 +127,7 @@ convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} =
 convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(e -> convert_paramfloattype(T, e), collection)
 convert_paramfloattype(collection::NamedTuple) = convert_paramfloattype(paramfloattype(collection), collection)
 
-# We attempt to auotmatically construct a new distribution with a desired paramfloattype
+# We attempt to automatically construct a new distribution with a desired paramfloattype
 # This function assumes that the constructor `D(...)` accepts the same order of parameters as 
 # returned from the `params` function. It is the case for distributions from `Distributions.jl`
 automatic_convert_paramfloattype(::Type{D}, params) where {D <: Distribution} = D(params...)
