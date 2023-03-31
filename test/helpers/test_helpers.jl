@@ -76,8 +76,6 @@ import ReactiveMP: FunctionalIndex
             converter = TypeConverter(target_T, convert)
 
             @test typeof(@inferred(converter(rand(original_T)))) === target_T
-            @test @inferred(eltype(converter(rand(original_T, n)))) === target_T
-            @test @inferred(eltype(converter(rand(original_T, n, n)))) === target_T
         end
     end
 end

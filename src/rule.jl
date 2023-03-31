@@ -761,6 +761,8 @@ function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, 
                 Inputs: $(rule_inputs_str)
                 Expected output: $(expected_output)
                 Actual output: $(actual_output)
+                Expected type: $(typeof(expected_output))
+                Actual type: $(typeof(actual_output))
                 """
             end
 

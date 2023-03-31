@@ -223,4 +223,3 @@ end
 TypeConverter(::Type{T}, convert::C) where {T, C} = TypeConverter{T, C}(convert)
 
 (converter::TypeConverter{T})(something) where {T} = converter.convert(T, something)
-(converter::TypeConverter{T})(something::AbstractArray) where {T} = map(converter, something)
