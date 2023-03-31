@@ -12,10 +12,10 @@ struct TMeta
     Fs :: Vector{<:AbstractMatrix} # masks
     es :: Vector{<:AbstractVector} # unit vectors
 
-    function TMeta(ds::Tuple)
+    function TMeta(ds::Tuple{T, T}) where {T}
         dim1, dim2 = ds
         Fs = [tmask(dim1, dim2, i) for i in 1:dim2]
-        es = [StandardBasisVector(dim1, i, one(T)) for i in 1:dim2]
+        es = [StandardBasisVector(dim2, i, one(T)) for i in 1:dim2]
         return new(ds, Fs, es)
     end
 end
