@@ -111,9 +111,6 @@ ar_unit(::Type{V}, order) where {V <: VariateForm} = ar_unit(Float64, V, order)
 
 function ar_unit(::Type{T}, ::Type{Multivariate}, order) where {T <: Real}
     return StandardBasisVector(order, 1, one(T))
-    # c    = zeros(T, order)
-    # c[1] = one(T)
-    # return c
 end
 
 function ar_unit(::Type{T}, ::Type{Univariate}, order) where {T <: Real}
