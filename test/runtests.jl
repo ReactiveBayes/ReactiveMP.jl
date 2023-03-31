@@ -45,7 +45,7 @@ end
 
 # Makes it hard to use your computer if Julia occupies all cpus, so we max at 4
 # GitHub actions has 2 cores in most of the cases 
-addprocs(max(Sys.CPU_THREADS, 4))
+addprocs(min(Sys.CPU_THREADS, 4))
 
 @everywhere using Test, Documenter, ReactiveMP, Distributions
 @everywhere using TestSetExtensions
@@ -182,7 +182,7 @@ using Aqua
 
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
-    # `piracy` is broken on CI, see https://github.com/JuliaTesting/Aqua.jl/issues/95, revise at some point
+    # We `pirate` `mean` methods for distributions in `Distributions.jl`
     Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
     # doctest(ReactiveMP)
 else

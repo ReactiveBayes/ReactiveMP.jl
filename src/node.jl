@@ -344,8 +344,8 @@ is_clamped(many::ManyOf) = is_clamped(many.collection)
 is_initial(many::ManyOf) = is_initial(many.collection)
 typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
 
-Base.nameof(::Type{T}) where {N, R, V <: NTuple{N, <:R}, T <: ManyOf{V}}           = string("ManyOf{", N, ", ", nameof(dropproxytype(R)), "}")
-Base.nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V}} = string("ManyOf{", N, ", Union{", join(map(r -> nameof(dropproxytype(r)), fieldtypes(V)), ","), "}}")
+rule_method_error_type_nameof(::Type{T}) where {N, R, V <: NTuple{N, <:R}, T <: ManyOf{V}}           = string("ManyOf{", N, ", ", rule_method_error_type_nameof(dropproxytype(R)), "}")
+rule_method_error_type_nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V}} = string("ManyOf{", N, ", Union{", join(map(r -> rule_method_error_type_nameof(dropproxytype(r)), fieldtypes(V)), ","), "}}")
 
 Base.iterate(many::ManyOf)        = iterate(many.collection)
 Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
