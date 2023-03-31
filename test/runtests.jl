@@ -400,8 +400,8 @@ end
 
     addtests(testrunner, "rules/autoregressive/test_y.jl")
     addtests(testrunner, "rules/autoregressive/test_x.jl")
-    addtests(testrunner, "rules/autoregressive/test_γ.jl")
-    addtests(testrunner, "rules/autoregressive/test_θ.jl")
+    addtests(testrunner, "rules/autoregressive/test_gamma.jl")
+    addtests(testrunner, "rules/autoregressive/test_theta.jl")
     addtests(testrunner, "rules/autoregressive/test_marginals.jl")
 
     run(testrunner)
