@@ -100,7 +100,7 @@ include("dot_product/out.jl")
 include("dot_product/in1.jl")
 include("dot_product/in2.jl")
 
-include("softdot/out.jl")
+include("softdot/y.jl")
 include("softdot/x.jl")
 include("softdot/theta.jl")
 include("softdot/gamma.jl")
