@@ -1,7 +1,7 @@
 # Belief propagation: does not exist for softdot
 
 # Variational MP
-@rule softdot(:γ, Marginalisation) (q_y::Any, q_x::Any, q_θ::Any) = begin
+@rule softdot(:γ, Marginalisation) (q_y::Any, q_θ::Any, q_x::Any) = begin
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)
     mθ, Vθ = mean_cov(q_θ)
