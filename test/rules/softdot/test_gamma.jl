@@ -10,6 +10,11 @@ import ReactiveMP: @test_rules
 0: PointMass
 1: UnivariateNormalDistributionsFamily (NormalMeanVariance)
 2: MultivariateNormalDistributionsFamily (MvNormalMeanCovariance)
+3: GammaDistributionsFamily
+y ∈ {0, 1}
+x ∈ {0, 1, 2}
+θ ∈ {0, 1, 2}
+γ ∈ {0, 3}
 =#
 @testset "rules:SoftDot:γ" begin
     #=
