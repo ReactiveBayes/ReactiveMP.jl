@@ -5,7 +5,7 @@
     my = mean(q_y)
     mθ, Vθ = mean_cov(q_θ)
     mγ = mean(q_γ)
-    Dx = mγ*(Vθ + mθ*mθ')
-    zx = mγ*mθ*my'
+    Dx = mγ * (Vθ + mθ * mθ')
+    zx = mγ * mθ * my'
     return convert(promote_variate_type(variate_form(q_θ), NormalWeightedMeanPrecision), zx, Dx)
 end

@@ -16,7 +16,7 @@ const softdot = SoftDot
     AE = 0
     AE -= mean(log, q_γ)
     AE += log2π
-    AE += m_γ * (V_y + m_y^2 - 2m_γ*m_y*m_θ'm_x + mul_trace(V_θ,V_x) + m_x'V_θ*m_x + m_θ'*(V_x + m_x*m_x')*m_θ)
+    AE += m_γ * (V_y + m_y^2 - 2m_γ * m_y * m_θ'm_x + mul_trace(V_θ, V_x) + m_x'V_θ * m_x + m_θ' * (V_x + m_x * m_x') * m_θ)
     AE /= 2
     return AE
 end

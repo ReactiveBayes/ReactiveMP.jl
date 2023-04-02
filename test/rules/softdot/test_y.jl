@@ -26,7 +26,7 @@ x ∈ {0, 1, 2}
         # 000
         @testset "(q_θ::PointMass, q_x::PointMass, q_γ::PointMass" begin
             @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [
-                (input = (q_θ = PointMass(3.0), q_x = PointMass(11.0), q_γ = PointMass(7.0)), output = NormalMeanPrecision(33.0, 7.0)),
+                (input = (q_θ = PointMass(3.0), q_x = PointMass(11.0), q_γ = PointMass(7.0)), output = NormalMeanPrecision(33.0, 7.0))
             ]
         end
 
@@ -41,7 +41,7 @@ x ∈ {0, 1, 2}
         # 110
         @testset "(q_θ::NormalMeanVariance, q_x::NormalMeanVariance, q_γ::{<:GammaDistributionsFamily})" begin
             @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [
-                (input = (q_θ = NormalMeanVariance(3.0, 17.0), q_x = NormalMeanVariance(7.0, 11.0), q_γ = PointMass(13.0)), output = NormalMeanPrecision(21.0, 13.0)),
+                (input = (q_θ = NormalMeanVariance(3.0, 17.0), q_x = NormalMeanVariance(7.0, 11.0), q_γ = PointMass(13.0)), output = NormalMeanPrecision(21.0, 13.0))
             ]
         end
 
@@ -56,15 +56,24 @@ x ∈ {0, 1, 2}
         # 220
         @testset "(q_θ::MvNormalMeanCovariance, q_x::MvNormalMeanCovariance, q_γ::{<:GammaDistributionsFamily})" begin
             @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [
-                (input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = PointMass(31.0)), output = NormalMeanPrecision(184.0, 31.0)),
+                (
+                    input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = PointMass(31.0)),
+                    output = NormalMeanPrecision(184.0, 31.0)
+                )
             ]
         end
 
         # 223
         @testset "(q_θ::MvNormalMeanCovariance, q_x::MvNormalMeanCovariance, q_γ::{<:GammaDistributionsFamily})" begin
             @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [
-                (input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = GammaShapeRate(31.0, 5.0)), output = NormalMeanPrecision(184.0, 6.2)),
-                (input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = GammaShapeScale(31.0, 5.0)), output = NormalMeanPrecision(184.0, 155.0))
+                (
+                    input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = GammaShapeRate(31.0, 5.0)),
+                    output = NormalMeanPrecision(184.0, 6.2)
+                ),
+                (
+                    input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = GammaShapeScale(31.0, 5.0)),
+                    output = NormalMeanPrecision(184.0, 155.0)
+                )
             ]
         end
     end # testset: mean-field
@@ -74,27 +83,21 @@ x ∈ {0, 1, 2}
         # 02*: INCORRECT (θ and x have to be of the same dimension)
         @testset "(q_θ::PointMass, q_x::MvNormalMeanCovariance, q_γ::CORRECT)" begin
             @test_throws MethodError @call_rule SoftDot(:y, Marginalisation) (
-                q_θ = PointMass(7.0),
-                q_x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]),
-                q_γ = GammaShapeRate(13.0, 5.0)
+                q_θ = PointMass(7.0), q_x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_γ = GammaShapeRate(13.0, 5.0)
             )
         end
 
         # 12*: INCORRECT (θ and x have to be of the same dimension)
         @testset "(q_θ::NormalMeanVariance, q_x::MvNormalMeanCovariance, q_γ::CORRECT)" begin
             @test_throws MethodError @call_rule SoftDot(:y, Marginalisation) (
-                q_θ = NormalMeanVariance(7.0, 11.0),
-                q_x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]),
-                q_γ = GammaShapeRate(13.0, 5.0)
+                q_θ = NormalMeanVariance(7.0, 11.0), q_x = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_γ = GammaShapeRate(13.0, 5.0)
             )
         end
 
         # 21*: INCORRECT (θ and x have to be of the same dimension)
         @testset "(q_θ::MvNormalMeanCovariance, q_x::NormalMeanVariance, q_γ::CORRECT)" begin
             @test_throws MethodError @call_rule SoftDot(:y, Marginalisation) (
-                q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]),
-                q_x = NormalMeanVariance(7.0, 11.0),
-                q_γ = GammaShapeRate(13.0, 5.0)
+                q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = NormalMeanVariance(7.0, 11.0), q_γ = GammaShapeRate(13.0, 5.0)
             )
         end
     end
