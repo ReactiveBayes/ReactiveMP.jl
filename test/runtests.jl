@@ -277,6 +277,7 @@ end
     addtests(testrunner, "nodes/test_implication.jl")
     addtests(testrunner, "nodes/test_uniform.jl")
     addtests(testrunner, "nodes/test_normal_mixture.jl")
+    addtests(testrunner, "nodes/test_softdot.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
