@@ -664,9 +664,13 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
     configuration_opts = test_rules_parse_configuration(configuration, options)
     test_entries = convert(Vector{TestRuleEntry}, tests)
 
+    # We guard the `@test` macro within the callback function, such that it 
+    # does not generate a lot of garbage in the macro (makes it more efficient)
+    test_fn = :__test_fn
+
     default_tests = Expr(:block)
     default_tests.args = map(test_entries) do test_entry
-        return test_rules_generate_testset(test_entry, call_macro_fn, rule_specification, configuration)
+        return test_rules_generate_testset(test_entry, test_fn, call_macro_fn, rule_specification, configuration)
     end
 
     # Extra tests for type promotion, could be turned off if `check_type_promotion = false`
@@ -674,29 +678,33 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
     type_promotion_tests = map(test_entry -> test_rules_convert_paramfloattype_for_test_entry(test_entry, type_promotion_T), test_entries)
     type_promotion_block = Expr(:block)
     type_promotion_block.args = map(Iterators.flatten(type_promotion_tests)) do promoted_test_entry
-        return test_rules_generate_testset(promoted_test_entry, call_macro_fn, rule_specification, configuration)
+        return test_rules_generate_testset(promoted_test_entry, test_fn, call_macro_fn, rule_specification, configuration)
     end
 
     output = quote
-        let $(esc(configuration)) = ReactiveMP.TestRulesConfiguration()
+        let $configuration = ReactiveMP.TestRulesConfiguration()
             # Insert configuration options
             $configuration_opts
-            # Insert generated tests
-            local $(esc(testsblock)) = $default_tests
+            # Insert test callback 
+            local $test_fn = (condition) -> begin 
+                @test condition
+            end
+            # Insert generated tests, these tests are returned by default
+            local $(testsblock) = $default_tests
 
             # Check if the `check_type_promotion` is true and
             # perform extra test set if required
-            if ReactiveMP.check_type_promotion($(esc(configuration)))
-                for $(esc(type_promotion_T)) in ReactiveMP.extra_float_types($(esc(configuration)))
+            if ReactiveMP.check_type_promotion($configuration)
+                for $(type_promotion_T) in ReactiveMP.extra_float_types($(configuration))
                     $type_promotion_block
                 end
             end
 
-            $(esc(testsblock))
+            $(testsblock)
         end
     end
 
-    return output
+    return esc(output)
 end
 
 Base.@kwdef mutable struct TestRulesConfiguration
@@ -739,10 +747,10 @@ function test_rules_parse_configuration(configuration::Symbol, options::Expr)
         end
     end
 
-    return esc(block)
+    return block
 end
 
-function test_rules_generate_testset(test_entry::TestRuleEntry, call_macro_fn, rule_specification, configuration)
+function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, call_macro_fn, rule_specification, configuration)
     # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
     actual_inputs = convert(Expr, test_entry.input)
     actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, convert(Expr, actual_inputs))
@@ -750,27 +758,34 @@ function test_rules_generate_testset(test_entry::TestRuleEntry, call_macro_fn, r
     rule_spec_str = "$rule_specification"
     rule_inputs_str = "$actual_inputs"
     generated = quote
-        let expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
+        let invoke_test_fn = $invoke_test_fn, expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
             local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
             local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
             local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, expected_output)
 
             if !_isapprox || !_is_typeof_equal
-                @warn """
-                Testset for rule $(rule_spec_str) has failed!
-                Inputs: $(rule_inputs_str)
-                Expected output: $(expected_output)
-                Actual output: $(actual_output)
-                Expected type: $(typeof(expected_output))
-                Actual type: $(typeof(actual_output))
-                """
+                ReactiveMP.test_rules_failed_warning(rule_spec_str, rule_inputs_str, expected_output, actual_output)
             end
 
-            @test _isapprox && _is_typeof_equal
+            # We should not put `@test` within the aut-generated macro, because it allocates a lot of garbage
+            invoke_test_fn(_isapprox && _is_typeof_equal)
         end
     end
-    return esc(generated)
+    return generated
+end
+
+# We should not put `@warn` withtin the auto-generated macro, because it allocates
+# a lot of garbage code
+function test_rules_failed_warning(rule_specification, rule_inputs, expected_output, actual_output)
+    @warn """
+        Testset for rule $(rule_specification) has failed!
+        Inputs: $(rule_inputs)
+        Expected output: $(expected_output)
+        Actual output: $(actual_output)
+        Expected type: $(typeof(expected_output))
+        Actual type: $(typeof(actual_output))
+    """
 end
 
 # Represents a specification for test rules `input = (...)` keyword argument

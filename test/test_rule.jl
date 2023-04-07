@@ -79,14 +79,16 @@ import MacroTools: inexpr
             import ReactiveMP: CallRuleMacroFnExpr, CallMarginalRuleMacroFnExpr
 
             fns = (CallRuleMacroFnExpr, CallMarginalRuleMacroFnExpr)
+            tfns = (:f, :test)
             specs = (:(NormalMeanVariance(:out, Marginalisation)), :(Gamma(:out, MomentMatching)))
             inputs = (:((m_mean = NormalMeanVariance(0.0, 1.0), q_var = InverseGamma(1.0, 1.0))),)
             outputs = (:(NormalMeanVariance(0.0, 0.0)), :(Gamma(2.0, 3.0)))
 
-            for f in fns, spec in specs, input in inputs, output in outputs
+            for f in fns, test_f in tfns, spec in specs, input in inputs, output in outputs
                 test_entry = convert(TestRuleEntry, :((input = $input, output = $output)))
-                expression = test_rules_generate_testset(test_entry, f, spec, :configuration)
+                expression = test_rules_generate_testset(test_entry, test_f, f, spec, :configuration)
                 @test inexpr(expression, output)
+                @test inexpr(expression, test_f)
                 @test inexpr(expression, :(ReactiveMP.float_tolerance))
                 @test inexpr(expression, :(ReactiveMP.custom_isapprox))
                 @test inexpr(expression, :(ReactiveMP.is_typeof_equal))
