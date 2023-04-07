@@ -441,13 +441,12 @@ macro call_rule(fform, args)
 
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
-    distributionsym = gensym(:distributionsym)
-    addonsym = gensym(:addonsym)
-
     output = quote
-        # TODO: (bvdmitri At the moment we cannot really get the result of the addon by calling `@call_rule`
-        $distributionsym, $addonsym = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
-        $distributionsym
+        let
+            # TODO: (bvdmitri At the moment we cannot really get the result of the addon by calling `@call_rule`
+            local __distribution_sym, _ = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
+            __distribution_sym
+        end
     end
 
     return esc(output)
@@ -660,26 +659,26 @@ macro test_marginalrules(options, rule_specification, tests)
 end
 
 function test_rules_generate(call_macro_fn, options, rule_specification, tests)
-    testsblock = gensym(:tests)
-    configuration = gensym(:configuration)
+    testsblock = :__tests_block
+    configuration = :__configuration
     configuration_opts = test_rules_parse_configuration(configuration, options)
-    test_entries = test_rules_parse_test_entries(tests)
+    test_entries = convert(Vector{TestRuleEntry}, tests)
 
     default_tests = Expr(:block)
-    default_tests.args = map(test_entries) do (inputs, output)
-        return test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
+    default_tests.args = map(test_entries) do test_entry
+        return test_rules_generate_testset(test_entry, call_macro_fn, rule_specification, configuration)
     end
 
     # Extra tests for type promotion, could be turned off if `check_type_promotion = false`
-    type_promotion_T = gensym(:T)
-    type_promotion_tests = Expr(:block)
-    type_promotion_tests.args = map(test_rules_convert_paramfloattype_for_test_entries(test_entries, type_promotion_T)) do (inputs, output)
-        return test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
+    type_promotion_T = :__promoted_T
+    type_promotion_tests = map(test_entry -> test_rules_convert_paramfloattype_for_test_entry(test_entry, type_promotion_T), test_entries)
+    type_promotion_block = Expr(:block)
+    type_promotion_block.args = map(Iterators.flatten(type_promotion_tests)) do promoted_test_entry
+        return test_rules_generate_testset(promoted_test_entry, call_macro_fn, rule_specification, configuration)
     end
 
     output = quote
-        let
-            local $(esc(configuration)) = ReactiveMP.TestRulesConfiguration()
+        let $(esc(configuration)) = ReactiveMP.TestRulesConfiguration()
             # Insert configuration options
             $configuration_opts
             # Insert generated tests
@@ -689,7 +688,7 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
             # perform extra test set if required
             if ReactiveMP.check_type_promotion($(esc(configuration)))
                 for $(esc(type_promotion_T)) in ReactiveMP.extra_float_types($(esc(configuration)))
-                    $type_promotion_tests
+                    $type_promotion_block
                 end
             end
 
@@ -743,13 +742,15 @@ function test_rules_parse_configuration(configuration::Symbol, options::Expr)
     return esc(block)
 end
 
-function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, output, configuration)
+function test_rules_generate_testset(test_entry::TestRuleEntry, call_macro_fn, rule_specification, configuration)
     # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
-    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, inputs)
+    actual_inputs = convert(Expr, test_entry.input)
+    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, convert(Expr, actual_inputs))
+    expected_output = test_entry.output
     rule_spec_str = "$rule_specification"
-    rule_inputs_str = "$inputs"
+    rule_inputs_str = "$actual_inputs"
     generated = quote
-        let expected_output = $output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
+        let expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
             local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
             local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
@@ -772,24 +773,75 @@ function test_rules_generate_testset(call_macro_fn, rule_specification, inputs, 
     return esc(generated)
 end
 
-# This function takes a `tests` parameter which is expected to be an expression with array of test entries. 
-# Each test entry should be a expression of named tuple with an `input` and an `output` field.
-# The function returns an array of tuples, with each tuple containing the `input` and `output` expressions
-# extracted from each test entry in the original `tests` parameter.
-function test_rules_parse_test_entries(tests)
-    @capture(tests, [test_entries__]) || error("Invalid tests specification. Test sequence should be in the form of an array.")
-    return map(test_entries) do test_entry
-        @capture(test_entry, (input = input_, output = output_)) ||
-            error("Invalid test entry specification. Test entry should be in the form of a named tuple `(input = ..., output = ...)`.")
-        return (input, output)
-    end
+# Represents a specification for test rules `input = (...)` keyword argument
+# Store arguments as vector of key-value pairs and the meta specification
+struct TestRuleEntryInputSpecification
+    arguments::Vector{Pair{Symbol, Any}}
+    meta::Any
 end
 
-# `test_entries` is expected to be an array of tuples, 
-# with each tuple containing an `input` and an `output` expressions
-# see `test_rules_convert_paramfloattype_for_test_entry`
-function test_rules_convert_paramfloattype_for_test_entries(test_entries, eltype)
-    return Iterators.flatten(map(((input, output),) -> test_rules_convert_paramfloattype_for_test_entry(input, output, eltype), test_entries))
+Base.:(==)(left::TestRuleEntryInputSpecification, right::TestRuleEntryInputSpecification) = (left.arguments == right.arguments) && (left.meta == right.meta)
+
+Base.copy(entry::TestRuleEntryInputSpecification) = TestRuleEntryInputSpecification(copy(entry.arguments), entry.meta) # no need to copy `meta`
+Base.values(entry::TestRuleEntryInputSpecification) = Base.Generator((arg) -> arg.second, entry.arguments)
+
+# Convert the `TestRuleEntryInputSpecification` back into the `Expr` form, e.g `(m_x = ..., q_y = ..., meta = ...)`
+function Base.convert(::Type{Expr}, test_entry::TestRuleEntryInputSpecification)
+    tuple = Expr(:tuple)
+    tuple.args = map((arg) -> Expr(:(=), arg.first, arg.second), test_entry.arguments)
+    if !isnothing(test_entry.meta)
+        push!(tuple.args, Expr(:(=), :meta, test_entry.meta))
+    end
+    return tuple
+end
+
+# This function parses expressions of the form
+# (key1 = value1, key2 = value2, ..., [ meta = ... ]) 
+# and returns `TestRuleEntryInputSpecification`
+function Base.convert(::Type{TestRuleEntryInputSpecification}, input::Expr)
+    @capture(input, (pairs__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
+
+    arguments = Pair{Symbol, Any}[]
+    meta = nothing
+
+    for pair in pairs
+        @capture(pair, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(pair). Should be in a form of the `key = value` expression.")
+        if key === :meta # Reserved for the `meta` specification
+            meta = value
+        else
+            push!(arguments, key => value)
+        end
+    end
+
+    return TestRuleEntryInputSpecification(arguments, meta)
+end
+
+struct TestRuleEntry
+    input::TestRuleEntryInputSpecification
+    output::Any
+end
+
+# Convert the `TestRuleEntry` back into the `Expr` form, e.g `(input = ..., output = ...)`
+function Base.convert(::Type{Expr}, test_entry::TestRuleEntry)
+    return Expr(:tuple, Expr(:(=), :input, convert(Expr, test_entry.input)), Expr(:(=), :output, test_entry.output))
+end
+
+# This function takes a `test` parameter which is expected to be an expression of single test entry.
+# The test entry should be an expression of named tuple with an `input` and an `output` field.
+# The function returns an instance of the `TestRuleEntry` structure
+function Base.convert(::Type{TestRuleEntry}, test::Expr)
+    @capture(test, (input = input_, output = output_)) ||
+        error("Invalid test entry specification. Test entry should be in the form of a named tuple `(input = ..., output = ...)`.")
+    p_input = convert(TestRuleEntryInputSpecification, input)
+    p_output = output
+    return TestRuleEntry(p_input, p_output)
+end
+
+function Base.convert(::Type{Vector{TestRuleEntry}}, tests::Expr)
+    @capture(tests, [test_entries__]) || error("Invalid tests specification. Test sequence should be in the form of an array.")
+    return map(test_entries) do test_entry
+        return convert(TestRuleEntry, test_entry)
+    end
 end
 
 # This function creates a set of type promotion tests for rules
@@ -797,49 +849,23 @@ end
 # Then for each subset it convert the `key = value` pair to a specific float type (e.g. Float32)
 # The resulting float type of the rule is expected to be the same as the promoted type of 
 # the all `key = value` pairs after conversion
-function test_rules_convert_paramfloattype_for_test_entry(input, output, eltype)
-    @capture(input, (arguments__, meta = meta_) | ((arguments__,))) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
+function test_rules_convert_paramfloattype_for_test_entry(test_entry::TestRuleEntry, eltype)
+    input = test_entry.input
+    output = test_entry.output
 
-    combinations = powerset(1:length(arguments))
+    # See the mathematical definition of powerset
+    combinations = powerset(1:length(input.arguments))
 
-    return map(combinations) do combination
-        carguments = deepcopy(arguments)
+    return Base.Generator(combinations) do combination
+        cinput = copy(input) # `meta` is not copied
         for index in combination
-            carguments[index] = test_rules_convert_paramfloattype(carguments[index], eltype)
+            cinput.arguments[index] = (cinput.arguments[index].first => test_rules_convert_paramfloattype(cinput.arguments[index].second, eltype))
         end
-        if !isnothing(meta)
-            push!(carguments, :(meta = $meta))
-        end
-        cvalues = test_rules_parse_input_values_from_test_entry(carguments)
+        cvalues = values(cinput)
         coutput_eltype = :(ReactiveMP.promote_paramfloattype($(cvalues...)))
-        cinput = :(($(carguments...),))
         coutput = test_rules_convert_paramfloattype(output, coutput_eltype)
-        return (cinput, coutput)
+        return TestRuleEntry(cinput, coutput)
     end
-end
-
-# This function parses expressions of the form
-# (key1 = value1, key2 = value2, ...) 
-# and returns an array of `[ value1, value2 ]`
-function test_rules_parse_input_values_from_test_entry(input::Expr)
-    @capture(input, (arguments__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
-    return test_rules_parse_input_values_from_test_entry(arguments)
-end
-
-# Same as the previous one but takes an array of `key_ = value_` pairs as its argument
-function test_rules_parse_input_values_from_test_entry(arguments::AbstractArray)
-    values = []
-    for argument in arguments
-        @capture(argument, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(arg). Should be in a form of the `key = value` expression.")
-        if key !== :meta # Reserved for the `meta` specification
-            if @capture(value, ManyOf(entries__))
-                push!(values, :(ReactiveMP.ManyOf(($(entries...),))))
-            else
-                push!(values, value)
-            end
-        end
-    end
-    return values
 end
 
 # This function converts `key = value` pair to `key = convert_paramfloattype(eltype, value)`

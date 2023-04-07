@@ -75,7 +75,7 @@ import MacroTools: inexpr
         end
 
         @testset "test_rules_generate_testset" begin
-            import ReactiveMP: test_rules_generate_testset
+            import ReactiveMP: test_rules_generate_testset, TestRuleEntry, TestRuleEntryInputSpecification
             import ReactiveMP: CallRuleMacroFnExpr, CallMarginalRuleMacroFnExpr
 
             fns = (CallRuleMacroFnExpr, CallMarginalRuleMacroFnExpr)
@@ -84,7 +84,8 @@ import MacroTools: inexpr
             outputs = (:(NormalMeanVariance(0.0, 0.0)), :(Gamma(2.0, 3.0)))
 
             for f in fns, spec in specs, input in inputs, output in outputs
-                expression = test_rules_generate_testset(f, spec, input, output, :configuration)
+                test_entry = convert(TestRuleEntry, :((input = $input, output = $output)))
+                expression = test_rules_generate_testset(test_entry, f, spec, :configuration)
                 @test inexpr(expression, output)
                 @test inexpr(expression, :(ReactiveMP.float_tolerance))
                 @test inexpr(expression, :(ReactiveMP.custom_isapprox))
@@ -92,79 +93,120 @@ import MacroTools: inexpr
             end
         end
 
-        @testset "test_rules_parse_test_entries" begin
-            import ReactiveMP: test_rules_parse_test_entries
+        @testset "TestRuleEntryInputSpecification" begin
+            import ReactiveMP: TestRuleEntryInputSpecification
 
-            @test_throws ErrorException test_rules_parse_test_entries(:(1))
-            @test_throws ErrorException test_rules_parse_test_entries(:([1]))
-            @test_throws ErrorException test_rules_parse_test_entries(:([input, output]))
-            @test_throws ErrorException test_rules_parse_test_entries(:([input = 2, output]))
-            @test_throws ErrorException test_rules_parse_test_entries(:([input = 2, output]))
-
-            let entries = test_rules_parse_test_entries(:([(input = 1, output = 2)]))
-                @test length(entries) === 1
-                @test inexpr(entries[1][1], 1)
-                @test inexpr(entries[1][2], 2)
+            let spec = TestRuleEntryInputSpecification([:m_x => 1], nothing)
+                @test convert(Expr, spec) == :((m_x = 1,))
             end
 
-            let entries = test_rules_parse_test_entries(
+            let spec = TestRuleEntryInputSpecification([:q_x => 1, :m_y => :(Normal(1.0, 1.0))], :(Meta(2)))
+                @test convert(Expr, spec) == :((q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)))
+            end
+        end
+
+        @testset "convert(TestRuleEntryInputSpecification, expression)" begin
+            import ReactiveMP: TestRuleEntryInputSpecification
+
+            @test convert(TestRuleEntryInputSpecification, :((key1 = 1, key2 = 3, key3 = 2))) == TestRuleEntryInputSpecification([:key1 => 1, :key2 => 3, :key3 => 2], nothing)
+            @test convert(TestRuleEntryInputSpecification, :((key1 = 1, key2 = 2, key3 = 3))) == TestRuleEntryInputSpecification([:key1 => 1, :key2 => 2, :key3 => 3], nothing)
+            @test convert(TestRuleEntryInputSpecification, :((key1 = Gamma(1.0, 1.0), key2 = NormalMeanVariance(0.0, 1.0), key3 = 3))) ==
+                TestRuleEntryInputSpecification([:key1 => :(Gamma(1.0, 1.0)), :key2 => :(NormalMeanVariance(0.0, 1.0)), :key3 => 3], nothing)
+            @test convert(TestRuleEntryInputSpecification, :((key1 = 1, key2 = 2, key3 = 3, meta = "hello"))) ==
+                TestRuleEntryInputSpecification([:key1 => 1, :key2 => 2, :key3 => 3], :("hello"))
+            @test convert(TestRuleEntryInputSpecification, :((key1 = 1, key2 = ManyOf(1, 2), key3 = 3, meta = "hello"))) ==
+                TestRuleEntryInputSpecification([:key1 => 1, :key2 => :(ManyOf(1, 2)), :key3 => 3], :("hello"))
+        end
+
+        @testset "TestRuleEntry" begin
+            import ReactiveMP: TestRuleEntry
+
+            let spec = TestRuleEntry(TestRuleEntryInputSpecification([:m_x => 1], nothing), :(Normal(0.0, 3.0)))
+                @test convert(Expr, spec) == :((input = (m_x = 1,), output = Normal(0.0, 3.0)))
+            end
+
+            let spec = TestRuleEntry(TestRuleEntryInputSpecification([:q_x => 1, :m_y => :(Normal(1.0, 1.0))], :(Meta(2))), :(Gamma(2.0, 3.0)))
+                @test convert(Expr, spec) == :((input = (q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)), output = Gamma(2.0, 3.0)))
+            end
+        end
+
+        @testset "convert(TestRuleEntry, expression)" begin
+            import ReactiveMP: TestRuleEntry
+
+            @test_throws MethodError convert(TestRuleEntry, :(1))
+            @test_throws ErrorException convert(TestRuleEntry, :([1]))
+            @test_throws ErrorException convert(TestRuleEntry, :([input, output]))
+            @test_throws ErrorException convert(TestRuleEntry, :([input = 2, output]))
+            @test_throws ErrorException convert(TestRuleEntry, :([input = 2, output]))
+
+            let entry = convert(TestRuleEntry, :(input = (m_x = Normal(3.0, 3.0),), output = 3))
+                @test length(entry.input.arguments) === 1
+                @test inexpr(entry.input.arguments[1][1], :m_x)
+                @test inexpr(entry.input.arguments[1][2], :(Normal(3.0, 3.0)))
+                @test inexpr(entry.output, :(3))
+            end
+
+            let entries = convert(
+                    Vector{TestRuleEntry},
                     :([
                         (input = (m_x = Normal(1.0, 2.0), q_y = PointMass(3)), output = Gamma(1.0, 2.0)),
-                        (input = (q_x = Normal(1.0, 2.0), m_y = PointMass(3)), output = Gamma(1.0, 2.0))
+                        (input = (q_x = Normal(2.0, 3.0), m_y = PointMass(4), meta = Meta("hello")), output = Gamma(2.0, 3.0))
                     ])
                 )
                 @test length(entries) === 2
-                for entry in entries
-                    @test inexpr(entry[1], :(Normal(1.0, 2.0)))
-                    @test inexpr(entry[1], :(PointMass(3)))
-                    @test inexpr(entry[2], :(Gamma(1.0, 2.0)))
-                end
+
+                @test length(entries[1].input.arguments) === 2
+                @test inexpr(entries[1].input.arguments[1][1], :m_x)
+                @test inexpr(entries[1].input.arguments[1][2], :(Normal(1.0, 2.0)))
+                @test inexpr(entries[1].input.arguments[2][1], :q_y)
+                @test inexpr(entries[1].input.arguments[2][2], :(PointMass(3)))
+                @test isnothing(entries[1].input.meta)
+                @test inexpr(entries[1].output, :(Gamma(1.0, 2.0)))
+
+                @test length(entries[2].input.arguments) === 2
+                @test inexpr(entries[2].input.arguments[1][1], :q_x)
+                @test inexpr(entries[2].input.arguments[1][2], :(Normal(2.0, 3.0)))
+                @test inexpr(entries[2].input.arguments[2][1], :m_y)
+                @test inexpr(entries[2].input.arguments[2][2], :(PointMass(4)))
+                @test inexpr(entries[2].input.meta, :(Meta("hello")))
+                @test inexpr(entries[2].output, :(Gamma(2.0, 3.0)))
             end
         end
 
-        @testset "test_rules_convert_paramfloattype_for_test_entries" begin
-            import ReactiveMP: test_rules_convert_paramfloattype_for_test_entries
+        @testset "test_rules_convert_paramfloattype_for_test_entry" begin
+            import ReactiveMP: TestRuleEntry, TestRuleEntryInputSpecification, test_rules_convert_paramfloattype_for_test_entry
 
             for m in (1, :(Normal(0.0, 1.0))), v in (2, Gamma(2.0, 3.0)), output in (3, :(Normal(2.0, 3.0))), eltype in (:Float32, Float64)
-                let test_entries = [(:((m = $m, v = $v, meta = "hello")), output)]
-                    modified_inputs = collect(test_rules_convert_paramfloattype_for_test_entries(test_entries, eltype))
+                let test_entry = TestRuleEntry(TestRuleEntryInputSpecification([:m => m, :v => v], :(Meta(1))), output)
+                    modified_inputs = map(e -> convert(Expr, e), test_rules_convert_paramfloattype_for_test_entry(test_entry, eltype))
 
                     modified_m = :(ReactiveMP.convert_paramfloattype($eltype, $m))
                     modified_v = :(ReactiveMP.convert_paramfloattype($eltype, $v))
-                    original_meta = :(meta = "hello")
-                    modified_meta = :(ReactiveMP.convert_paramfloattype($eltype, "hello"))
+                    original_meta = :(meta = Meta(1))
+                    modified_meta = :(ReactiveMP.convert_paramfloattype($eltype, Meta(1)))
 
-                    @test all(modified_inputs) do (input, output)
-                        !inexpr(input, modified_meta)
+                    @test all(modified_inputs) do expression
+                        !inexpr(expression, modified_meta)
                     end
 
-                    @test any(modified_inputs) do (input, output)
-                        inexpr(input, original_meta)
+                    @test any(modified_inputs) do expression
+                        inexpr(expression, original_meta)
                     end
 
-                    @test any(modified_inputs) do (input, output)
-                        inexpr(input, modified_m)
+                    @test any(modified_inputs) do expression
+                        inexpr(expression, modified_m)
                     end
 
-                    @test any(modified_inputs) do (input, output)
-                        inexpr(input, modified_v)
+                    @test any(modified_inputs) do expression
+                        inexpr(expression, modified_v)
                     end
 
-                    @test any(modified_inputs) do (input, output)
-                        inexpr(input, modified_m)
-                        inexpr(input, modified_v)
+                    @test any(modified_inputs) do expression
+                        inexpr(expression, modified_m)
+                        inexpr(expression, modified_v)
                     end
                 end
             end
-        end
-
-        @testset "test_rules_parse_input_values_from_test_entry" begin
-            import ReactiveMP: test_rules_parse_input_values_from_test_entry
-
-            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 3, key3 = 2))) == [1, 3, 2]
-            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3))) == [1, 2, 3]
-            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = 2, key3 = 3, meta = "hello"))) == [1, 2, 3]
-            @test test_rules_parse_input_values_from_test_entry(:((key1 = 1, key2 = ManyOf(1, 2), key3 = 3, meta = "hello"))) == [1, :(ReactiveMP.ManyOf((1, 2))), 3]
         end
 
         @testset "test_rules_convert_paramfloattype" begin
