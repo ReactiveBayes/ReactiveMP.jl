@@ -686,7 +686,7 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
             # Insert configuration options
             $configuration_opts
             # Insert test callback 
-            local $test_fn = (condition) -> begin 
+            local $test_fn = (condition) -> begin
                 @test condition
             end
             # Insert generated tests, these tests are returned by default
