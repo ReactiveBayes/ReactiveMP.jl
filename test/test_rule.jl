@@ -3,6 +3,7 @@ module ReactiveMPRuleTest
 using Test
 using ReactiveMP
 using MacroTools
+using Logging
 
 import MacroTools: inexpr
 
@@ -228,13 +229,61 @@ import MacroTools: inexpr
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:((m_in = ManyOf(NormalMeanVariance(1.0, 2.0)),)), eltype),
-                    :((m_in = ManyOf(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0))),))
+                    :((m_in = ManyOf(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))))
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0), q_out = Gamma(1.0, 2.0))), eltype),
                     :((m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)), q_out = ReactiveMP.convert_paramfloattype($eltype, Gamma(1.0, 2.0))))
                 )
             end
+        end
+
+        @testset "basic `test_rule` macro invokation" begin
+            struct TestNodeForTestRuleMacro end
+
+            @node TestNodeForTestRuleMacro Stochastic [out, x, y]
+
+            @rule TestNodeForTestRuleMacro(:out, Marginalisation) (m_x::PointMass, q_y::PointMass) = PointMass(mean(m_x) + mean(q_y))
+            @rule TestNodeForTestRuleMacro(:out, Marginalisation) (m_x::ManyOf{N, Any}, q_y::PointMass) where {N} = PointMass(sum(mean, m_x) + mean(q_y))
+            @rule TestNodeForTestRuleMacro(:out, Marginalisation) (m_x::PointMass, q_y::PointMass, meta::typeof(-)) = PointMass(mean(m_x) - mean(q_y))
+
+            ReactiveMP.@test_rules [check_type_promotion = true] TestNodeForTestRuleMacro(:out, Marginalisation) [
+                (input = (m_x = PointMass(1), q_y = PointMass(2)), output = PointMass(3)),
+                (input = (m_x = PointMass(1), q_y = PointMass(2)), output = PointMass(3)),
+                (input = (m_x = ManyOf(PointMass(1), PointMass(1)), q_y = PointMass(2)), output = PointMass(4)),
+                (input = (m_x = ManyOf(PointMass(1), PointMass(2)), q_y = PointMass(2)), output = PointMass(5)),
+                (input = (m_x = PointMass(1), q_y = PointMass(2), meta = -), output = PointMass(-1)),
+                (input = (m_x = PointMass(3), q_y = PointMass(2), meta = -), output = PointMass(1))
+            ]
+
+            struct TestMetaForFailingRule end
+
+            # This rule violates type_promotion and must fail
+            @rule TestNodeForTestRuleMacro(:out, Marginalisation) (m_x::PointMass, q_y::PointMass, meta::TestMetaForFailingRule) = PointMass(1.0)
+
+            ReactiveMP.@test_rules [check_type_promotion = false] TestNodeForTestRuleMacro(:out, Marginalisation) [(
+                input = (m_x = PointMass(1), q_y = PointMass(2), meta = TestMetaForFailingRule()), output = PointMass(1.0)
+            )]
+
+            io = IOBuffer()
+            logger = SimpleLogger(io)
+
+            tests_status = []
+
+            with_logger(logger) do
+                ReactiveMP.@test_rules (status) -> push!(tests_status, status) [check_type_promotion = true] TestNodeForTestRuleMacro(:out, Marginalisation) [(
+                    input = (m_x = PointMass(1), q_y = PointMass(2), meta = TestMetaForFailingRule()), output = PointMass(1.0)
+                )]
+            end
+
+            # Here assume that `2:end` tests are promotion tests
+            @test tests_status[1] === true
+            @test tests_status[end] === false # Assume that the last test is the `BigFloat` promotion test
+            @test sum(tests_status[2:end]) < length(tests_status[2:end])
+
+            test_output = String(take!(io))
+
+            @test occursin("Testset for rule TestNodeForTestRuleMacro(:out, Marginalisation) has failed", test_output)
         end
     end
 

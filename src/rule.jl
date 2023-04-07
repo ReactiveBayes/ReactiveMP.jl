@@ -582,6 +582,9 @@ end
 # but I couldn't find one
 const CallRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_rule")))
 const CallMarginalRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_marginalrule")))
+const TestRulesDefaultTestCallback = quote
+    (expression) -> @test expression
+end
 
 """
     @test_rules [options] rule [ test_entries... ]
@@ -643,22 +646,30 @@ See also: [`ReactiveMP.@test_rules`](@ref)
 macro test_marginalrules end
 
 macro test_rules(rule_specification, tests)
-    return ReactiveMP.test_rules_generate(CallRuleMacroFnExpr, :([]), rule_specification, tests)
+    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallRuleMacroFnExpr, :([]), rule_specification, tests)
 end
 
 macro test_rules(options, rule_specification, tests)
-    return ReactiveMP.test_rules_generate(CallRuleMacroFnExpr, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallRuleMacroFnExpr, options, rule_specification, tests)
+end
+
+macro test_rules(call_test_fn, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(call_test_fn, CallRuleMacroFnExpr, options, rule_specification, tests)
 end
 
 macro test_marginalrules(rule_specification, tests)
-    return ReactiveMP.test_rules_generate(CallMarginalRuleMacroFnExpr, :([]), rule_specification, tests)
+    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallMarginalRuleMacroFnExpr, :([]), rule_specification, tests)
 end
 
 macro test_marginalrules(options, rule_specification, tests)
-    return ReactiveMP.test_rules_generate(CallMarginalRuleMacroFnExpr, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallMarginalRuleMacroFnExpr, options, rule_specification, tests)
 end
 
-function test_rules_generate(call_macro_fn, options, rule_specification, tests)
+macro test_marginalrules(call_test_fn, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(call_test_fn, CallMarginalRuleMacroFnExpr, options, rule_specification, tests)
+end
+
+function test_rules_generate(call_test_fn, call_macro_fn, options, rule_specification, tests)
     testsblock = :__tests_block
     configuration = :__configuration
     configuration_opts = test_rules_parse_configuration(configuration, options)
@@ -686,9 +697,7 @@ function test_rules_generate(call_macro_fn, options, rule_specification, tests)
             # Insert configuration options
             $configuration_opts
             # Insert test callback 
-            local $test_fn = (condition) -> begin
-                @test condition
-            end
+            local $test_fn = $call_test_fn
             # Insert generated tests, these tests are returned by default
             local $(testsblock) = $default_tests
 
@@ -839,7 +848,7 @@ function test_rules_convert_paramfloattype_for_test_entry(test_entry::TestRuleEn
             cinput.arguments[index] = (cinput.arguments[index].first => test_rules_convert_paramfloattype(cinput.arguments[index].second, eltype))
         end
         cvalues = values(cinput)
-        coutput_eltype = :(ReactiveMP.promote_paramfloattype($(cvalues...)))
+        coutput_eltype = test_rules_promote_paramfloattype(cvalues)
         coutput = test_rules_convert_paramfloattype(output, coutput_eltype)
         return TestRuleEntry(cinput, coutput)
     end
@@ -888,13 +897,26 @@ end
 function test_rules_convert_paramfloattype(expression, eltype)
     if @capture(expression, (entries__,))
         return :(($(map(entry -> ReactiveMP.test_rules_convert_paramfloattype(entry, eltype), entries)...),))
-    elseif @capture(expression, ManyOf(entries__))
+    elseif @capture(expression, (ManyOf(entries__)) | (ReactiveMP.ManyOf(entries__)))
         return :(ManyOf($(map(entry -> ReactiveMP.test_rules_convert_paramfloattype(entry, eltype), entries)...)))
     elseif @capture(expression, key_ = value_)
         return :($key = $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype)))
     else
         return :(ReactiveMP.convert_paramfloattype($eltype, $expression))
     end
+end
+
+# This functiona takes an an array of `values` and generates an expression
+# that returns a promoted paramfloattype of those `values`
+function test_rules_promote_paramfloattype(values)
+    cvalues = map(values) do value
+        if @capture(value, (ManyOf(entries__) | (ReactiveMP.ManyOf(entries__))))
+            return :(($(entries...),))
+        else
+            return value
+        end
+    end
+    return :(ReactiveMP.promote_paramfloattype($(cvalues...)))
 end
 
 # Error utilities

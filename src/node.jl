@@ -337,6 +337,8 @@ struct ManyOf{T}
     collection::T
 end
 
+Base.show(io::IO, manyof::ManyOf) = print(io, "ManyOf(", join(manyof.collection, ",", ""), ")")
+
 Rocket.getrecent(many::ManyOf) = ManyOf(getrecent(many.collection))
 
 getdata(many::ManyOf)    = getdata(many.collection)
