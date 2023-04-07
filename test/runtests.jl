@@ -277,6 +277,7 @@ end
     addtests(testrunner, "nodes/test_implication.jl")
     addtests(testrunner, "nodes/test_uniform.jl")
     addtests(testrunner, "nodes/test_normal_mixture.jl")
+    addtests(testrunner, "nodes/test_softdot.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
@@ -338,6 +339,11 @@ end
     addtests(testrunner, "rules/dot_product/test_in1.jl")
     addtests(testrunner, "rules/dot_product/test_in2.jl")
     addtests(testrunner, "rules/dot_product/test_marginals.jl")
+
+    addtests(testrunner, "rules/softdot/test_y.jl")
+    addtests(testrunner, "rules/softdot/test_theta.jl")
+    addtests(testrunner, "rules/softdot/test_x.jl")
+    addtests(testrunner, "rules/softdot/test_gamma.jl")
 
     addtests(testrunner, "rules/gamma_inverse/test_marginals.jl")
     addtests(testrunner, "rules/gamma_inverse/test_out.jl")
