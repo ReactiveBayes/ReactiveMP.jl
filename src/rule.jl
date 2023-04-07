@@ -750,44 +750,6 @@ function test_rules_parse_configuration(configuration::Symbol, options::Expr)
     return block
 end
 
-function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, call_macro_fn, rule_specification, configuration)
-    # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
-    actual_inputs = convert(Expr, test_entry.input)
-    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, convert(Expr, actual_inputs))
-    expected_output = test_entry.output
-    rule_spec_str = "$rule_specification"
-    rule_inputs_str = "$actual_inputs"
-    generated = quote
-        let invoke_test_fn = $invoke_test_fn, expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
-            local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
-            local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
-            local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
-            local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, expected_output)
-
-            if !_isapprox || !_is_typeof_equal
-                ReactiveMP.test_rules_failed_warning(rule_spec_str, rule_inputs_str, expected_output, actual_output)
-            end
-
-            # We should not put `@test` within the aut-generated macro, because it allocates a lot of garbage
-            invoke_test_fn(_isapprox && _is_typeof_equal)
-        end
-    end
-    return generated
-end
-
-# We should not put `@warn` withtin the auto-generated macro, because it allocates
-# a lot of garbage code
-function test_rules_failed_warning(rule_specification, rule_inputs, expected_output, actual_output)
-    @warn """
-        Testset for rule $(rule_specification) has failed!
-        Inputs: $(rule_inputs)
-        Expected output: $(expected_output)
-        Actual output: $(actual_output)
-        Expected type: $(typeof(expected_output))
-        Actual type: $(typeof(actual_output))
-    """
-end
-
 # Represents a specification for test rules `input = (...)` keyword argument
 # Store arguments as vector of key-value pairs and the meta specification
 struct TestRuleEntryInputSpecification
@@ -881,6 +843,44 @@ function test_rules_convert_paramfloattype_for_test_entry(test_entry::TestRuleEn
         coutput = test_rules_convert_paramfloattype(output, coutput_eltype)
         return TestRuleEntry(cinput, coutput)
     end
+end
+
+function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, call_macro_fn, rule_specification, configuration)
+    # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
+    actual_inputs = convert(Expr, test_entry.input)
+    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, convert(Expr, actual_inputs))
+    expected_output = test_entry.output
+    rule_spec_str = "$rule_specification"
+    rule_inputs_str = "$actual_inputs"
+    generated = quote
+        let invoke_test_fn = $invoke_test_fn, expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
+            local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
+            local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
+            local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
+            local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, expected_output)
+
+            if !_isapprox || !_is_typeof_equal
+                ReactiveMP.test_rules_failed_warning(rule_spec_str, rule_inputs_str, expected_output, actual_output)
+            end
+
+            # We should not put `@test` within the aut-generated macro, because it allocates a lot of garbage
+            invoke_test_fn(_isapprox && _is_typeof_equal)
+        end
+    end
+    return generated
+end
+
+# We should not put `@warn` withtin the auto-generated macro, because it allocates
+# a lot of garbage code
+function test_rules_failed_warning(rule_specification, rule_inputs, expected_output, actual_output)
+    @warn """
+        Testset for rule $(rule_specification) has failed!
+        Inputs: $(rule_inputs)
+        Expected output: $(expected_output)
+        Actual output: $(actual_output)
+        Expected type: $(typeof(expected_output))
+        Actual type: $(typeof(actual_output))
+    """
 end
 
 # This function converts `key = value` pair to `key = convert_paramfloattype(eltype, value)`
