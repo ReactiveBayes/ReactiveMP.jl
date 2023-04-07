@@ -1,4 +1,4 @@
-module RulesNormalAutoregressiveTest
+module RulesAutoregressiveTest
 
 using Test
 using ReactiveMP
