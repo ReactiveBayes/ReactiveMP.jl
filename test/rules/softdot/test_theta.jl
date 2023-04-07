@@ -33,35 +33,35 @@ x ∈ {0, 1, 2}
     @testset "VMP: Mean-field" begin
         # 000
         @testset "(q_y::PointMass, q_x::PointMass, q_γ::PointMass)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = PointMass(3.0), q_x = PointMass(5.0), q_γ = PointMass(2.0)), output = NormalWeightedMeanPrecision(30.0, 50.0)
             )]
         end
 
         # 003
         @testset "(q_y::PointMass, q_x::PointMass, q_γ::GammaShapeScale)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = PointMass(3.0), q_x = PointMass(5.0), q_γ = GammaShapeScale(2.0, 7.0)), output = NormalWeightedMeanPrecision(210.0, 350.0)
             )]
         end
 
         # 010
         @testset "(q_y::PointMass, q_x::NormalMeanVariance, q_γ::PointMass)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = PointMass(3.0), q_x = NormalMeanVariance(2.0, 7.0), q_γ = PointMass(2.0)), output = NormalWeightedMeanPrecision(12.0, 22.0)
             )]
         end
 
         # 013
         @testset "(q_y::PointMass, q_x::NormalMeanVariance, q_γ::GammaShapeScale)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = PointMass(3.0), q_x = NormalMeanVariance(2.0, 7.0), q_γ = GammaShapeScale(5.0, 11.0)), output = NormalWeightedMeanPrecision(330.0, 605.0)
             )]
         end
 
         # 020
         @testset "(q_y::PointMass, q_x::MvNormalMeanCovariance, q_γ::PointMass)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = PointMass(3.0), q_x = MvNormalMeanCovariance([5.0, 9.0], [11.0 13.0; 17.0 19.0]), q_γ = PointMass(2.0)),
                 output = MvNormalWeightedMeanPrecision([30.0, 54.0], [72.0 116.0; 124.0 200.0])
             )]
@@ -69,7 +69,7 @@ x ∈ {0, 1, 2}
 
         # 023
         @testset "(q_y::PointMass, q_x::MvNormalMeanCovariance, q_γ::GammaShapeScale)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = PointMass(3.0), q_x = MvNormalMeanCovariance([5.0, 9.0], [11.0 13.0; 17.0 19.0]), q_γ = GammaShapeScale(7.0, 23.0)),
                 output = MvNormalWeightedMeanPrecision([2415.0, 4347.0], [5796.0 9338.0; 9982.0 16100.0])
             )]
@@ -77,28 +77,28 @@ x ∈ {0, 1, 2}
 
         # 100
         @testset "(q_y::NormalMeanVariance, q_x::PointMass, q_γ::PointMass)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = NormalMeanVariance(3.0, 7.0), q_x = PointMass(5.0), q_γ = PointMass(2.0)), output = NormalWeightedMeanPrecision(30.0, 50.0)
             )]
         end
 
         # 103
         @testset "(q_y::NormalMeanVariance, q_x::PointMass, q_γ::GammaShapeScale)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = NormalMeanVariance(3.0, 7.0), q_x = PointMass(5.0), q_γ = GammaShapeScale(2.0, 7.0)), output = NormalWeightedMeanPrecision(210.0, 350.0)
             )]
         end
 
         # 110
         @testset "(q_y::NormalMeanVariance, q_x::NormalMeanVariance, q_γ::PointMass)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = NormalMeanVariance(3.0, 7.0), q_x = NormalMeanVariance(2.0, 7.0), q_γ = PointMass(2.0)), output = NormalWeightedMeanPrecision(12.0, 22.0)
             )]
         end
 
         # 113
         @testset "(q_y::NormalMeanVariance, q_x::NormalMeanVariance, q_γ::GammaShapeScale)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = NormalMeanVariance(3.0, 7.0), q_x = NormalMeanVariance(2.0, 7.0), q_γ = GammaShapeScale(5.0, 11.0)),
                 output = NormalWeightedMeanPrecision(330.0, 605.0)
             )]
@@ -106,7 +106,7 @@ x ∈ {0, 1, 2}
 
         # 120
         @testset "(q_y::NormalMeanVariance, q_x::MvNormalMeanCovariance, q_γ::PointMass)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = NormalMeanVariance(3.0, 7.0), q_x = MvNormalMeanCovariance([5.0, 9.0], [11.0 13.0; 17.0 19.0]), q_γ = PointMass(2.0)),
                 output = MvNormalWeightedMeanPrecision([30.0, 54.0], [72.0 116.0; 124.0 200.0])
             )]
@@ -114,7 +114,7 @@ x ∈ {0, 1, 2}
 
         # 123
         @testset "(q_y::NormalMeanVariance, q_x::MvNormalMeanCovariance, q_γ::GammaShapeScale)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:θ, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [(
                 input = (q_y = NormalMeanVariance(3.0, 7.0), q_x = MvNormalMeanCovariance([5.0, 9.0], [11.0 13.0; 17.0 19.0]), q_γ = GammaShapeScale(7.0, 23.0)),
                 output = MvNormalWeightedMeanPrecision([2415.0, 4347.0], [5796.0 9338.0; 9982.0 16100.0])
             )]

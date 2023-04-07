@@ -25,14 +25,14 @@ x ∈ {0, 1, 2}
     @testset "VMP: Mean-field" begin
         # 000
         @testset "(q_θ::PointMass, q_x::PointMass, q_γ::PointMass" begin
-            @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [(
                 input = (q_θ = PointMass(3.0), q_x = PointMass(11.0), q_γ = PointMass(7.0)), output = NormalMeanPrecision(33.0, 7.0)
             )]
         end
 
         # 003
         @testset "(q_θ::PointMass, q_x::PointMass, q_γ::{<:GammaDistributionsFamily)" begin
-            @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [
                 (input = (q_θ = PointMass(3.0), q_x = PointMass(11.0), q_γ = GammaShapeRate(7.0, 5.0)), output = NormalMeanPrecision(33.0, 1.4)),
                 (input = (q_θ = PointMass(3.0), q_x = PointMass(11.0), q_γ = GammaShapeScale(7.0, 5.0)), output = NormalMeanPrecision(33.0, 35.0))
             ]
@@ -40,14 +40,14 @@ x ∈ {0, 1, 2}
 
         # 110
         @testset "(q_θ::NormalMeanVariance, q_x::NormalMeanVariance, q_γ::{<:GammaDistributionsFamily})" begin
-            @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [(
                 input = (q_θ = NormalMeanVariance(3.0, 17.0), q_x = NormalMeanVariance(7.0, 11.0), q_γ = PointMass(13.0)), output = NormalMeanPrecision(21.0, 13.0)
             )]
         end
 
         # 113
         @testset "(q_θ::NormalMeanVariance, q_x::NormalMeanVariance, q_γ::{<:GammaDistributionsFamily})" begin
-            @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [
                 (input = (q_θ = NormalMeanVariance(3.0, 17.0), q_x = NormalMeanVariance(7.0, 11.0), q_γ = GammaShapeRate(13.0, 5.0)), output = NormalMeanPrecision(21.0, 2.6)),
                 (input = (q_θ = NormalMeanVariance(3.0, 17.0), q_x = NormalMeanVariance(7.0, 11.0), q_γ = GammaShapeScale(13.0, 5.0)), output = NormalMeanPrecision(21.0, 65.0))
             ]
@@ -55,7 +55,7 @@ x ∈ {0, 1, 2}
 
         # 220
         @testset "(q_θ::MvNormalMeanCovariance, q_x::MvNormalMeanCovariance, q_γ::{<:GammaDistributionsFamily})" begin
-            @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [(
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [(
                 input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = PointMass(31.0)),
                 output = NormalMeanPrecision(184.0, 31.0)
             )]
@@ -63,7 +63,7 @@ x ∈ {0, 1, 2}
 
         # 223
         @testset "(q_θ::MvNormalMeanCovariance, q_x::MvNormalMeanCovariance, q_γ::{<:GammaDistributionsFamily})" begin
-            @test_rules [with_float_conversions = true] SoftDot(:y, Marginalisation) [
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [
                 (
                     input = (q_θ = MvNormalMeanCovariance([3.0, 7.0], [11.0, 13.0]), q_x = MvNormalMeanCovariance([17.0, 19.0], [23.0, 29.0]), q_γ = GammaShapeRate(31.0, 5.0)),
                     output = NormalMeanPrecision(184.0, 6.2)
