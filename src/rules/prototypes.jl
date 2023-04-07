@@ -105,6 +105,12 @@ include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")
 
+include("transfominator/y.jl")
+include("transfominator/x.jl")
+include("transfominator/h.jl")
+include("transfominator/lambda.jl")
+include("transfominator/marginals.jl")
+
 include("autoregressive/y.jl")
 include("autoregressive/x.jl")
 include("autoregressive/theta.jl")
