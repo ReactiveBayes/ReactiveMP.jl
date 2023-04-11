@@ -1,30 +1,21 @@
-module ReactiveMPAddonsMemoryTest 
+module ReactiveMPAddonsMemoryTest
 
 using Test
 using ReactiveMP
 
-@testset "Memory addon" begin 
+@testset "Memory addon" begin
     import ReactiveMP: AddonMemory
-  
-    @testset "Creation" begin 
+
+    @testset "Creation" begin
         addon = AddonMemory()
 
         @test occursin("memory", string(addon))
     end
 
-    @testset "Simple application and printing" begin 
+    @testset "Simple application and printing" begin
         import ReactiveMP: MessageMapping, message_mapping_addon
 
-        mapping = MessageMapping(
-            NormalMeanVariance,
-            Val(:out),
-            Marginalisation(),
-            Val((:x, :y)),
-            Val((:z, :k)),
-            "meta",
-            AddonMemory(),
-            nothing
-        )  
+        mapping = MessageMapping(NormalMeanVariance, Val(:out), Marginalisation(), Val((:x, :y)), Val((:z, :k)), "meta", AddonMemory(), nothing)
 
         messages = (Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))
         marginals = (PointMass(1.0), NormalMeanPrecision(0.0, 1.0))
@@ -44,7 +35,6 @@ using ReactiveMP
         @test occursin(r"meta: meta", displayed)
         @test occursin("result: $(repr(result))", displayed)
     end
-
 end
 
 end
