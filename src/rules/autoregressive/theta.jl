@@ -14,7 +14,8 @@
     W = rank1update(Vx, mx)
     W = mul_inplace!(mγ, W)
 
-    c = ar_unit(getvform(meta), order)
+    T = promote_paramfloattype(q_y_x, q_γ)
+    c = ar_unit(T, getvform(meta), order)
 
     # Equivalent to ξ = (Vyx + mx * my') * c * mγ
     ξ = rank1update(Vyx, mx, my) * c
@@ -31,7 +32,8 @@ end
     my, mγ = mean(q_y), mean(q_γ)
 
     mV = ar_transition(getvform(meta), getorder(meta), mγ)
-    c = ar_unit(getvform(meta), order)
+    T = promote_paramfloattype(q_y, q_x, q_γ)
+    c = ar_unit(T, getvform(meta), order)
 
     ξ = mx * c' * pinv(mV) * my
     W = mγ * (Vx + mx * mx')
