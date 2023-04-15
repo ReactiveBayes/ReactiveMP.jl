@@ -347,6 +347,10 @@ end
     addtests(testrunner, "rules/normal_mean_precision/test_mean.jl")
     addtests(testrunner, "rules/normal_mean_precision/test_precision.jl")
 
+    addtests(testrunner, "rules/multiplication/test_out.jl")
+    addtests(testrunner, "rules/multiplication/test_A.jl")
+    addtests(testrunner, "rules/multiplication/test_in.jl")
+
     addtests(testrunner, "rules/mv_normal_mean_covariance/test_out.jl")
     addtests(testrunner, "rules/mv_normal_mean_covariance/test_mean.jl")
     addtests(testrunner, "rules/mv_normal_mean_covariance/test_covariance.jl")

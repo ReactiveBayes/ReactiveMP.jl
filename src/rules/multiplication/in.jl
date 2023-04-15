@@ -54,7 +54,6 @@ end
     return NormalWeightedMeanPrecision(dot(tmp, μ_out), W)
 end
 
-#---- Univariate Distribution ----# 
 @rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
     μ_A, var_A = mean_var(m_A)
     μ_out, var_out = mean_var(m_out)

@@ -74,8 +74,7 @@ end
 
     return ContinuousUnivariateLogPdf(besselmod(μ_in, var_in, μ_A, var_A, 0.0))
 end
-
-# General rule for Univariate Distributions 
+ 
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateDistribution, m_in::UnivariateDistribution, meta::Union{<:AbstractCorrection, Nothing}) = begin
     nsamples = 3000
     samples_A = rand(m_A, nsamples)
@@ -84,14 +83,14 @@ end
     return ContinuousUnivariateLogPdf(p)
 end
 
-#modified-bessel function 
+"""
+Modified-bessel function of second kind
+
+mx, vx : mean and variance of the random variable x 
+my, vy : mean and variance of the random variable y 
+rho    : correlation coefficient
+"""
 function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
-    """
-    mx, vx : mean and variance of the random variable x 
-    my, vy : mean and variance of the random variable y 
-    rho    : correlation coefficient
-    """
-    # construct logpdf function
     logpdf = function (x)
         x += jitter
         term1 = -1 / (2 * (1 - rho^2)) * (mx^2 / vx + my^2 / vy - 2 * rho * (x + mx * my) / sqrt(vx * vy))
@@ -107,17 +106,15 @@ function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
                     besselk(m - n, abs(x) / ((1 - rho^2) * sqrt(vx * vy)))
             end
         end
-        # return logpdf
         return term1 + log(term2)
     end
-    # return logpdf
     return logpdf
 end
 
 function make_productdist_message(samples_A, d_in)
     return let samples_A = samples_A, d_in = d_in
         (x) -> begin
-            result = mapreduce(+, zip(samples_A)) do (sampleA,)
+            result = mapreduce(+, samples_A) do sampleA
                 return 1 / abs(sampleA) * pdf(d_in, x / sampleA)
             end
             return log(result)
