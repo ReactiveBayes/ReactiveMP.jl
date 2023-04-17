@@ -74,7 +74,7 @@ end
 
     return ContinuousUnivariateLogPdf(besselmod(μ_in, var_in, μ_A, var_A, 0.0))
 end
- 
+
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateDistribution, m_in::UnivariateDistribution, meta::Union{<:AbstractCorrection, Nothing}) = begin
     nsamples = 3000
     samples_A = rand(m_A, nsamples)
