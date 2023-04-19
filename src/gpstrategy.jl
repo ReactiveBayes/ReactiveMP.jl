@@ -357,8 +357,8 @@ function extractmatrix!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStr
 end
 
 function extractmatrix_change!(gpstrategy::CovarianceMatrixStrategy{<:FullCovarianceStrategy}, kernel, x_train, Σ_noise, x_induc) 
-    # return extractmatrix!(gpstrategy,kernel, x_train, Σ_noise,x_induc)
-    return gpstrategy
+    return extractmatrix!(gpstrategy,kernel, x_train, Σ_noise,x_induc)
+    # return gpstrategy
 end
 
 #-------------- RFF strategy --------------#

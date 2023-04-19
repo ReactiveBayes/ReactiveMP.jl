@@ -20,22 +20,37 @@ end
 @node GaussianProcess Stochastic [out, meanfunc, kernelfunc, params]
 
 ### compute free energy here 
-@average_energy GaussianProcess (q_out::GaussianProcess, q_meanfunc::PointMass, q_kernelfunc::PointMass, q_params::Any) = begin
+@average_energy GaussianProcess (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::Any) = begin
     θ = mean(q_params)
     y, Σ = mean_cov(q_out.finitemarginal)
     xtest = q_out.testinput
-    kernel = q_kernelfunc.point
-    meanfunc = q_meanfunc.point 
+    kernel = q_kernelfunc
+    meanfunc = q_meanfunc 
     xu = q_out.inducing_input
     strategy = q_out.covariance_strategy
     return gp_avg_energy(strategy,meanfunc,kernel,Σ,y,xtest,θ,xu)
 end
 
-function Distributions.entropy(pm::PointMass{F}) where {F <: Function}
-    return ReactiveMP.CountingReal(Float64,-1)
+@average_energy GaussianProcess (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::Any, meta::ProdCVI) = begin
+    θ = mean(q_params)
+    y, Σ = mean_cov(q_out.finitemarginal)
+    xtest = q_out.testinput
+    kernel = q_kernelfunc
+    meanfunc = q_meanfunc 
+    xu = q_out.inducing_input
+    strategy = q_out.covariance_strategy
+    return gp_avg_energy(strategy,meanfunc,kernel,Σ,y,xtest,θ,xu)
 end
 
-function Distributions.entropy(pm::PointMass{F}) where {F <: Kernel}
+# function Distributions.entropy(pm::PointMass{F}) where {F <: Function}
+#     return ReactiveMP.CountingReal(Float64,-1)
+# end
+
+# function Distributions.entropy(pm::PointMass{F}) where {F <: Kernel}
+#     return ReactiveMP.CountingReal(Float64,-1)
+# end
+
+function Distributions.entropy(pm::Any)
     return ReactiveMP.CountingReal(Float64,-1)
 end
 

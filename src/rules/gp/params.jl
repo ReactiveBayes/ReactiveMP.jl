@@ -2,11 +2,23 @@
 import KernelFunctions: kernelmatrix, Kernel 
 import LinearAlgebra: det, logdet 
 import ToeplitzMatrices: Circulant
+
+#----------- EM -----------#
+@rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any) = begin
+    test = q_out.testinput 
+    meanf = q_meanfunc
+    kernfunc = q_kernelfunc
+    y, Σ = mean_cov(q_out.finitemarginal)
+    log_llh = (x) -> -1/2 * (y - meanf.(test))' * cholinv(kernelmatrix(kernfunc(exp.(x)),test,test) + Diagonal(Σ) + 1e-3*diageye(length(test))) * (y- meanf.(test)) - 1/2 * logdet(kernelmatrix(kernfunc(exp.(x)),test,test) + Diagonal(Σ) + 1e-3*diageye(length(test)))
+
+    return ContinuousUnivariateLogPdf(log_llh)
+end
+
 #----------- CVI ----------#
 # Univariate case 
 
 @rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, 
-        q_params::UnivariateGaussianDistributionsFamily, meta::CVI) = begin 
+        q_params::UnivariateGaussianDistributionsFamily, meta::ProdCVI) = begin 
     #collect entities in meta
     n_iter = meta.n_iterations; 
     num_sample = meta.n_samples ;
@@ -31,10 +43,13 @@ import ToeplitzMatrices: Circulant
 end
 
 @rule GaussianProcess(:params, Marginalisation) (q_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, 
-        m_params::UnivariateGaussianDistributionsFamily, meta::CVI) = begin 
+        m_params::UnivariateGaussianDistributionsFamily, meta::ProdCVI) = begin 
     return @call_rule GaussianProcess(:params, Marginalisation) (q_out = q_out, q_meanfunc = q_meanfunc, q_kernelfunc = q_kernelfunc, q_params = m_params, meta = meta)
 end
 
+@rule GaussianProcess(:params, Marginalisation) (m_out::GaussianProcess, q_meanfunc::Any, q_kernelfunc::Any, q_params::UnivariateGaussianDistributionsFamily, meta::ProdCVI) = begin 
+    return @call_rule GaussianProcess(:params, Marginalisation) (q_out=m_out, q_meanfunc=q_meanfunc,q_kernelfunc=q_kernelfunc,q_params=q_params,meta=meta)
+end
 
 # Multivariate case 
 

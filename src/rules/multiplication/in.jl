@@ -65,7 +65,7 @@ end
 end 
 
 @rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
-    return @call_rule typeof(*)(:in, Marginalisation) (m_out=m_A,m_A=m_out,meta=meta)
+    return @call_rule typeof(*)(:A, Marginalisation) (m_out=m_out,m_in=m_A,meta=meta)
 end
 
 

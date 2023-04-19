@@ -67,6 +67,7 @@ end
 
 ## test gp 
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::GaussianProcess, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
+    @logscale 0
     index = meta[1].index
     m_gp, cov_gp = mean_cov(m_in.finitemarginal)
     μ_in = m_gp[index]
@@ -76,6 +77,7 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin
+    @logscale 0
     μ_in, var_in = mean_var(m_in)
     μ_A, var_A = mean_var(m_A)
     return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,0.0)))
@@ -83,6 +85,7 @@ end
 
 
 @rule typeof(*)(:out, Marginalisation) (m_A::GaussianProcess, m_in::LogNormal, meta::ProcessMeta) = begin 
+    @logscale 0
     return @call_rule typeof(*)(:out, Marginalisation) (m_A=m_in,m_in=m_A,meta=meta)
 end
 
@@ -98,6 +101,7 @@ function make_productdist_message(samples_A,d_in)
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::GaussianProcess, meta::ProcessMeta) = begin 
+    @logscale 0
     index = meta.index
     m_gp, cov_gp = mean_cov(m_in.finitemarginal)
     d_in = NormalMeanVariance(m_gp[index], cov_gp[index,index])
@@ -113,15 +117,19 @@ end
 
 
 @rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
+    @logscale 0
     nsamples    = 100
-    samples_A1  = rand(m_A,nsamples)
+    # samples_A1  = rand(m_A,nsamples)
     samples_A2  = rand(m_A,nsamples)
-    samples_in = rand(d_in,nsamples)
-    samples_prod =  samples_A1 .* samples_in
-    p = make_productdist_message(samples_A2,d_in)
-
+    # samples_in = rand(d_in,nsamples)
+    # samples_prod =  samples_A1 .* samples_in
+    p = make_productdist_message(samples_A2,m_in)
     return ContinuousUnivariateLogPdf(p)
+end
 
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin 
+    @logscale 0
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A=m_in, m_in=m_A, meta=meta)
 end
 
 using SpecialFunctions: besselk
