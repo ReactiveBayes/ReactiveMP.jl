@@ -15,13 +15,21 @@ end
 # GP meta #
 @rule NormalMeanPrecision(:τ, Marginalisation) (q_out::Any, q_μ::GaussianProcess,meta::ProcessMeta) = begin
     m_right, cov_right = mean_cov(q_μ.finitemarginal)
-    mμ, vμ = m_right[meta.index],cov_right[meta.index]
+    traininput = q_μ.traininput[meta.index]
+    testinput = q_μ.testinput
+    strategy = q_μ.covariance_strategy 
+    kernel = q_μ.kernelfunction 
+    meanf = q_μ.meanfunction 
+    inducing = q_μ.inducing_input 
+    # mμ, vμ = m_right[meta.index],cov_right[meta.index]
+    mμ, vμ = predictMVN(strategy,kernel,meanf,testinput,[traininput],m_right,inducing)
     vμ = clamp(vμ[1],1e-8,huge)
     θ = 2 / (var(q_out) + vμ[1] + abs2(mean(q_out) - mμ[1]))
     α = convert(typeof(θ), 1.5)
 
     return Gamma(α, θ)
 end
+
 
 @rule NormalMeanPrecision(:τ, Marginalisation) (q_out::PointMass, m_μ::NormalMeanVariance, ) = begin 
     return @call_rule NormalMeanPrecision(:τ, Marginalisation) (q_out = q_out, q_μ = m_μ)

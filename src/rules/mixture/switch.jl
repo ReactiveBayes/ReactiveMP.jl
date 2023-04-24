@@ -4,6 +4,8 @@ import StaticArrays: SVector
 
     #  compute logscales of different products
     # `messages` are available from the `@rule` macro itself
+    @show messages[1]
+    @show getlogscale(messages[1])
     logscales = map(input -> getlogscale(messages[1] * input), messages[2])
 
     @logscale logsumexp(logscales)
