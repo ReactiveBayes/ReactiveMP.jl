@@ -76,6 +76,17 @@ import ReactiveMP: xtlog
         @test scale(dist3) === 2.0
         @test rate(dist3) === inv(2.0)
         @test entropy(dist3) ≈ 2.2703628454614764
+
+        dist4 = GammaShapeScale(257.37489915581654, 1/3.0)
+
+        @test mean(dist4) ≈ 257.37489915581654/3.0
+        @test var(dist4) ≈ 257.37489915581654/9.0
+        @test shape(dist4) ≈ 257.37489915581654
+        @test scale(dist4) ≈ inv(3.0)
+        @test rate(dist4) ≈ 3.0
+        @test entropy(dist4) ≈ 3.0942967450433203
+        @test pdf(dist4, 86.2027941354432) ≈ 0.07400338986722949
+        @test logpdf(dist4, 86.2027941354432) ≈ -2.6036443778105536    
     end
 
     @testset "Stats methods for GammaShapeRate" begin
@@ -114,6 +125,17 @@ import ReactiveMP: xtlog
         @test entropy(dist3) ≈ 0.8840684843415857
         @test pdf(dist3, 1.0) ≈ 0.5413411329464508
         @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
+
+        dist4 = GammaShapeRate(257.37489915581654, 3.0)
+
+        @test mean(dist4) ≈ 257.37489915581654/3.0
+        @test var(dist4) ≈ 257.37489915581654/9.0
+        @test shape(dist4) ≈ 257.37489915581654
+        @test scale(dist4) ≈ inv(3.0)
+        @test rate(dist4) ≈ 3.0
+        @test entropy(dist4) ≈ 3.0942967450433203
+        @test pdf(dist4, 86.2027941354432) ≈ 0.07400338986722949
+        @test logpdf(dist4, 86.2027941354432) ≈ -2.6036443778105536        
     end
 
     @testset "GammaShapeRateNaturalParameters" begin
