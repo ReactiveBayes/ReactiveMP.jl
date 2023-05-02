@@ -9,7 +9,7 @@ const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
 
 Distributions.cov(dist::GammaDistributionsFamily) = var(dist)
 
-Distributions.pdf(dist::GammaShapeRate, x::Real)  = exp(logpdf(dist,x))
+Distributions.pdf(dist::GammaShapeRate, x::Real) = exp(logpdf(dist, x))
 
 function mean(::typeof(log), dist::GammaShapeScale)
     k, θ = params(dist)
