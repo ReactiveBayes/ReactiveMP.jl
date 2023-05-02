@@ -309,8 +309,63 @@ function marginal_prod_fn(randomprocess::RandomProcess)
         addons = AddonMemory(message_vector)
 
         return Marginal(GaussianProcess(meanf,kernelf,MvNormalMeanCovariance(m,K),test,train, inducing, cov_strategy),false,false, addons)
-     end
- end
+    end
+end
+
+
+
+# function marginal_prod_fn(randomprocess::RandomProcess)
+#     test           = randomprocess.test_input
+#     train          = randomprocess.train_input
+#     cov_strategy   = randomprocess.covariance_strategy
+#     inducing       = randomprocess.inducing_input 
+#     return messages -> begin 
+#         message_vector = map(ReactiveMP.as_message, messages)
+#         process_message = getdata(message_vector[1])
+#         meanf = process_message.meanfunction
+#         kernelf = process_message.kernelfunction
+#         likelihood_messages = message_vector[2:end]
+#         degree = process_message.degree 
+#         if isnothing(getmarginal(randomprocess).proxied_source.subject.recent) 
+#             (evaluated_mean, evaluated_cov) = (meanf.(train), kernelmatrix(kernelf, train,train))
+#         else
+#             tp_marginal = getmarginal(randomprocess).proxied_source.subject.recent.data.finitemarginal
+#             (evaluated_mean, evaluated_cov) = mean_cov(tp_marginal)
+#         end
+
+#         m_right,cov_right = make_multivariate_message(likelihood_messages)
+#         extractmatrix!(cov_strategy, kernelf, train, cov_right, inducing)
+#         m, K = predictMVT(cov_strategy,kernelf,meanf,train,test,m_right,degree)
+#         extractmatrix_change!(cov_strategy, kernelf, test, K, inducing)
+#         addons = AddonMemory(message_vector)
+
+#         return Marginal(GeneralizedTProcess(meanf,kernelf,degree + length(likelihood_messages),MvGeneralizedTDistribution(degree + length(train),m,K),test,train, inducing, cov_strategy),false,false, addons)
+#     end
+# end
+
+function predictMVT(tpstrategy, kernelfunc, meanfunc,xtrain,xtest,y,degree)
+    cache = tpstrategy.strategy.cache 
+    Kfy                = kernelmatrix!(cache, :Kfy, kernelfunc,xtest,xtrain) #K*f
+    Kff                = kernelmatrix!(cache, :Kff, kernelfunc,xtest,xtest)  #K**
+    invKtrain          = length(tpstrategy.strategy.invKff)>1 ? tpstrategy.strategy.invKff : cholinv(kernelmatrix(kernelfunc,xtrain,xtrain) + 1e-6*I)  
+
+    xtest_transformed = getcache(cache, (:xtest,length(xtest)))
+    xtrain_transformed = getcache(cache, (:xtrain, length(xtrain)))
+    map!(meanfunc,xtest_transformed, xtest)
+    map!((z,x) -> z - meanfunc(x), xtrain_transformed, y, xtrain)
+
+    result1 = getcache(cache, (:result1, size(invKtrain,1)))
+    result2 = getcache(cache, (:result2, size(Kfy, 1)))
+
+    mul!(result1, invKtrain, xtrain_transformed)
+    mul!(result2, Kfy, result1)
+
+    μ                  = xtest_transformed + result2 
+    xtest==xtrain ? Σ = Matrix(Diagonal(Kff)) : Σ = Kff - mul_A_B_At!(cache, Kfy, invKtrain) 
+
+    scale = (degree + y'*invKtrain*y)/(degree+ length(xtrain_transformed))
+    return μ, scale*Σ
+end
 
 function messages_prod_fn(randomprocess::RandomProcess)
     error("No message for process node")

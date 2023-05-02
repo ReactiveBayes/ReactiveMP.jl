@@ -171,3 +171,8 @@ include("delta/cvi/marginals.jl")
 include("gp/marginals.jl")
 include("gp/out.jl")
 include("gp/params.jl")
+
+include("tp/degree.jl")
+include("tp/marginals.jl")
+include("tp/out.jl")
+include("tp/params.jl")

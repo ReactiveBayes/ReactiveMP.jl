@@ -109,6 +109,7 @@ include("distributions/contingency.jl")
 include("distributions/function.jl")
 include("distributions/sample_list.jl")
 include("distributions/mixture_distribution.jl")
+include("distributions/mvgeneralizedt.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
@@ -135,6 +136,7 @@ include("score/node.jl")
 # Stochastic nodes
 #add gp node
 include("nodes/gp.jl")
+include("nodes/tp.jl")
 include("nodes/uninformative.jl")
 include("nodes/uniform.jl")
 include("nodes/normal_mean_variance.jl")
