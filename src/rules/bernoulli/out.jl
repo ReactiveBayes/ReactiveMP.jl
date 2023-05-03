@@ -1,9 +1,13 @@
 export rule
 
-@rule Bernoulli(:out, Marginalisation) (m_p::Any,) = begin
+@rule Bernoulli(:out, Marginalisation) (m_p::Beta,) = begin
     @logscale 0
     return Bernoulli(mean(m_p))
 end
+
+@rule Bernoulli(:out, Marginalisation) (m_p::PointMass,) = Bernoulli(mean(m_p))
+
+@rule Bernoulli(:out, Marginalisation) (q_p::PointMass,) = Bernoulli(mean(q_p))
 
 @rule Bernoulli(:out, Marginalisation) (q_p::Any,) = begin
     rho_1 = mean(log, q_p)          # E[ln(x)]
@@ -13,5 +17,3 @@ end
     p = clamp(tmp / (tmp + exp(rho_2 - m)), tiny, one(m))
     return Bernoulli(p)
 end
-
-@rule Bernoulli(:out, Marginalisation) (q_p::PointMass,) = Bernoulli(mean(q_p))
