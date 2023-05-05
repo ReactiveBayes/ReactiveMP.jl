@@ -3,6 +3,20 @@ export transfominator, Transfominator, TMeta
 import LazyArrays, BlockArrays
 import StatsFuns: log2π
 
+@doc raw"""
+The Transfominator node is a node that transforms a n-dimensional vector x into m-dimensional vector y.
+The transformation is achieved by casting n*m-dimensional vector h into a m×n H matrix.
+
+```julia
+y ~ Transfominator(x, h, Λ)
+```
+
+Interfaces:
+1. y - latent output of the Transfominator node
+2. x - latent input of the Transfominator node
+3. h - latent vector that casts into the matrix H
+4. Λ - latent precision matrix (could be fixed)
+"""
 struct Transfominator end
 
 const transfominator = Transfominator
@@ -54,7 +68,7 @@ getdimensionality(meta::TMeta) = meta.ds
 getmasks(meta::TMeta)          = meta.Fs
 getunits(meta::TMeta)          = meta.es
 
-@node Transfominator Stochastic [y, x, w, Λ]
+@node Transfominator Stochastic [y, x, h, Λ]
 
 default_meta(::Type{TMeta}) = error("Transfominator node requires meta flag explicitly specified")
 
