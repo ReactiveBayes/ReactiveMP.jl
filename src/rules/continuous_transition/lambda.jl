@@ -23,5 +23,5 @@ end
     Δ = compute_delta(my, Vy, mx, Vx, Vyx, mH, Vh, mh, Fs, es)
 
     # NOTE: WishartMessage stores inverse of scale matrix
-    return WishartMessage(dy+2, Δ)
+    return WishartMessage(dy + 2, Δ)
 end

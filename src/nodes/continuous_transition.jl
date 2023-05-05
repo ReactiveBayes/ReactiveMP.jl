@@ -4,18 +4,22 @@ import LazyArrays, BlockArrays
 import StatsFuns: log2π
 
 @doc raw"""
-The ContinuousTransition node is a node that transforms a n-dimensional vector x into m-dimensional vector y.
-The transformation is achieved by casting n*m-dimensional vector h into a m×n H matrix.
+The ContinuousTransition node transforms an m-dimensional (dx) vector x into an n-dimensional (dy) vector y via a linear transformation with a n×m-dimensional matrix H that is constructed from a n*m-dimensional vector h.
+
+To construct the matrix H, the elements of h are filled into H starting with the first row, one element at a time.
+
+The transformation is performed with the following syntax:
 
 ```julia
 y ~ ContinuousTransition(x, h, Λ)
 ```
-
 Interfaces:
-1. y - latent output of the ContinuousTransition node
-2. x - latent input of the ContinuousTransition node
-3. h - latent vector that casts into the matrix H
-4. Λ - latent precision matrix (could be fixed)
+1. y - n-dimensional output of the ContinuousTransition node.
+2. x - m-dimensional input of the ContinuousTransition node.
+3. h - nm-dimensional vector that casts into the matrix H.
+4. Λ - n×n-dimensional precision matrix used to soften the transition and perform variational message passing, as belief-propagation is not feasible for y = Hx.
+
+Note that you can set Λ to a fixed value or put a prior on it to control the amount of jitter.
 """
 struct ContinuousTransition end
 
