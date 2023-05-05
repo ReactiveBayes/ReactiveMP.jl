@@ -1,20 +1,19 @@
 
-@marginalrule Transfominator(:y_x) (
-    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::TMeta
+@marginalrule ContinuousTransition(:y_x) (
+    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::CTMeta
 ) = begin
-    return transfominator_marginal(m_y, m_x, q_h, q_Λ, meta)
+    return continuous_tranition_marginal(m_y, m_x, q_h, q_Λ, meta)
 end
 
-function transfominator_marginal(
-    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::TMeta
+function continuous_tranition_marginal(
+    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::CTMeta
 )
-    dx, dy = getdimensionality(meta)
     Fs, es = getmasks(meta), getunits(meta)
 
     mh, Vh = mean_cov(q_h)
     mΛ = mean(q_Λ)
 
-    mH = tcompanion_matrix(mh, meta)
+    mH = ctcompanion_matrix(mh, meta)
 
     b_my, b_Vy = mean_cov(m_y)
     f_mx, f_Vx = mean_cov(m_x)

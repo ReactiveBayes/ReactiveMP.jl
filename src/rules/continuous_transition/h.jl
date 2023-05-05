@@ -1,4 +1,4 @@
-@rule Transfominator(:h, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::TMeta) = begin
+@rule ContinuousTransition(:h, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::CTMeta) = begin
     dy, dx = getdimensionality(meta)
     Fs, es = getmasks(meta), getunits(meta)
 

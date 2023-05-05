@@ -8,12 +8,12 @@ function compute_delta(my, Vy, mx, Vx, Vyx, mH, Vh, mh, Fs, es)
     return G₁ - G₂ - G₃ + G₅ + G₆
 end
 
-@rule Transfominator(:Λ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, meta::TMeta) = begin
+@rule ContinuousTransition(:Λ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, meta::CTMeta) = begin
     dy, dx = getdimensionality(meta)
     Fs, es = getmasks(meta), getunits(meta)
 
     mh, Vh = mean_cov(q_h)
-    mH = tcompanion_matrix(mh, meta)
+    mH = ctcompanion_matrix(mh, meta)
     myx, Vyx = mean_cov(q_y_x)
 
     mx, Vx = myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
@@ -22,5 +22,6 @@ end
 
     Δ = compute_delta(my, Vy, mx, Vx, Vyx, mH, Vh, mh, Fs, es)
 
+    # NOTE: WishartMessage stores inverse of scale matrix
     return WishartMessage(dy+2, Δ)
 end

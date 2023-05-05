@@ -1,4 +1,4 @@
-@rule Transfominator(:y, Marginalisation) (m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::TMeta) = begin
+@rule ContinuousTransition(:y, Marginalisation) (m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::CTMeta) = begin
     mh, Vh = mean_cov(q_h)
     mx, Wx = mean_invcov(m_x)
 
@@ -7,7 +7,7 @@
     dy, dx = getdimensionality(meta)
     Fs, es = getmasks(meta), getunits(meta)
 
-    mH = tcompanion_matrix(mh, meta)
+    mH = ctcompanion_matrix(mh, meta)
 
     Λ = sum(sum(es[j]' * mΛ * es[i] * Fs[j] * Vh * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
 
