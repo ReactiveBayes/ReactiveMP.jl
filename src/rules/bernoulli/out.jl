@@ -9,6 +9,7 @@ end
 
 @rule Bernoulli(:out, Marginalisation) (q_p::PointMass,) = Bernoulli(mean(q_p))
 
+# q_p::Any s.t. domain = [0, 1]
 @rule Bernoulli(:out, Marginalisation) (q_p::Any,) = begin
     rho_1 = mean(log, q_p)          # E[ln(x)]
     rho_2 = mean(mirrorlog, q_p)    # E[log(1-x)]
