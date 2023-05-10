@@ -183,8 +183,8 @@ using Aqua
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
     # We `pirate` `mean` methods for distributions in `Distributions.jl`
-    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
-    # doctest(ReactiveMP)
+    # `project_toml_formatting` is broken with Extensions
+    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false, project_toml_formatting = false)
 else
     println("Running specific tests:")
     foreach(testrunner.enabled_tests) do test

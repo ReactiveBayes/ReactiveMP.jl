@@ -2,7 +2,6 @@
 module ReactiveMP
 
 # List global dependencies here
-using Base: get_extension
 using TinyHugeNumbers
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
