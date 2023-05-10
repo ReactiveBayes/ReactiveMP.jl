@@ -1,4 +1,5 @@
-export CVI, ProdCVI, ForwardDiffGrad
+export CVI, ProdCVI
+export ZygoteGrad, ForwardDiffGrad
 
 using Random
 using LinearAlgebra
@@ -76,6 +77,22 @@ const CVI = ProdCVI
 # CVI implementations
 #---------------------------
 
+"""
+The auto-differentiation backend for the CVI procedure.
+Uses the `Zygote` library to compute gradients/derivatives.
+
+!!! note
+    The `Zygote.jl` must be added to the current Julia environment.
+"""
+struct ZygoteGrad end
+
+"""
+The auto-differentiation backend for the CVI procedure.
+Uses the `ForwardDiff` library to compute gradients/derivatives.
+
+!!! note
+    The `ForwardDiff.jl` must be added to the current Julia environment.
+"""
 struct ForwardDiffGrad end
 
 compute_derivative(::ForwardDiffGrad, f::F, value::Real) where {F}       = ForwardDiff.derivative(f, value)

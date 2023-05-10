@@ -188,16 +188,7 @@ function __init__()
     # For Julia > 1.9 this will be loaded automatically without need in `Requires.jl`
     @static if !isdefined(Base, :get_extension)
         @require Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2" include("../ext/ReactiveMPOptimisersExt/ReactiveMPOptimisersExt.jl")
-    end
-
-    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
-        export ZygoteGrad
-
-        struct ZygoteGrad end
-
-        compute_gradient(::ZygoteGrad, f::F, vec::AbstractVector) where {F} = Zygote.gradient(f, vec)[1]
-        compute_hessian(::ZygoteGrad, f::F, vec::AbstractVector) where {F}  = Zygote.hessian(f, vec)
-        compute_derivative(::ZygoteGrad, f::F, value::Real) where {F}       = Zygote.gradient(f, value)[1]
+        @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/ReactiveMPZygoteExt/ReactiveMPZygoteExt.jl")
     end
 
     @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
