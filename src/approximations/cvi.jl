@@ -46,8 +46,8 @@ Arguments
 
 !!! note 
     Adding the `Optimisers.jl` in your Julia environment enables additional optimizers from the `Optimisers.jl` for the CVI approximation method.
-    Run `using Zygote` in your Julia session to enable the `ZygoteGrad()` option support for the CVI `grad` parameter.
-    Run `using DiffResults` in your Julia session to enable faster gradient computations in case if all inputs are of the `Gaussian` type.
+    Adding the `Zygote` in your Julia environment enables the `ZygoteGrad()` option for the CVI `grad` parameter.
+    Adding the `DiffResults` in your Julia environment enables faster gradient computations in case if all inputs are of the `Gaussian` type.
 """
 struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     rng::R

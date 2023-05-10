@@ -12,7 +12,7 @@ The optimizers defined in the `Optimziers.jl` are compatible with the CVI approx
 The [`Zygote.jl`](https://github.com/FluxML/Zygote.jl) package provides source-to-source automatic differentiation (AD) in Julia.
 If loaded in the current Julia session, the `ZygoteGrad` option becomes available with the CVI approximation method.
 
-## DiffResults.jl
+## DiffResults.jl (loaded automatically with the `ForwardDiff.jl`)
 
 The [`DiffResults.jl`](https://github.com/JuliaDiff/DiffResults.jl) provides the `DiffResult` type, which can be passed to in-place differentiation methods instead of an output buffer.
 If loaded in the current Julia session enables faster derivatives with the `ForwardDiffGrad` option in the CVI approximation method (in the `Gaussian` case).

@@ -180,7 +180,7 @@ include("constraints/specifications/factorisation.jl")
 include("constraints/specifications/meta.jl")
 
 # This symbol is only defined on Julia versions that support extensions
-if !isdefined(Base, :get_extension)
+@static if !isdefined(Base, :get_extension)
     using Requires
 end
 
@@ -191,7 +191,6 @@ function __init__()
     @static if !isdefined(Base, :get_extension)
         @require Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2" include("../ext/ReactiveMPOptimisersExt/ReactiveMPOptimisersExt.jl")
         @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/ReactiveMPZygoteExt/ReactiveMPZygoteExt.jl")
-        @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" include("../ext/ReactiveMPDiffResultsExt/ReactiveMPDiffResultsExt.jl")
     end
 end
 

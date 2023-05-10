@@ -25,6 +25,7 @@ import Random: rand!
 import Distributions: logpdf
 import StatsFuns: invsqrt2π
 
+using ForwardDiff
 using LoopVectorization
 using StatsFuns: log2π
 using LinearAlgebra
@@ -582,6 +583,12 @@ function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {
     df_m = compute_gradient(approximation.grad, logp, z_s)
     df_v = compute_hessian(approximation.grad, logp, z_s)
     return df_m, df_v ./ 2
+end
+
+function ReactiveMP.compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
+    result = DiffResults.HessianResult(vec)
+    result = ForwardDiff.hessian!(result, logp, vec)
+    return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
 end
 
 function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
