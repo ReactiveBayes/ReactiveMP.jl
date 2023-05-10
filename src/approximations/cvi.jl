@@ -4,13 +4,22 @@ using Random
 using LinearAlgebra
 
 """
+    cvi_setup!(opt, λ)
+
+Initialises the given optimiser for the CVI procedure given the structure of λ.
+"""
+function cvi_setup! end
+
+"""
     cvi_update!(opt, λ, ∇)
+
+Uses the optimiser and the gradient ∇ to change the trainable parameters in the λ.
 """
 function cvi_update! end
 
-function cvi_update!(callback::F, λ, ∇) where {F <: Function}
-    return callback(λ, ∇)
-end
+# Specialized method for callback functions, a user can provide an arbitrary callback with the optimization procedure
+cvi_setup(callback::F, λ) where {F <: Function} = callback
+cvi_update!(callback::F, λ, ∇) where {F <: Function} = callback(λ, ∇)
 
 cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
@@ -35,7 +44,7 @@ Arguments
     `n_gradpoints` option is ignored in the Gaussian case
 
 !!! note 
-    Run `using Flux` in your Julia session to enable the `Flux` optimizers support for the CVI approximation method.
+    Adding the `Optimisers.jl` in your Julia environment enables additional optimizers from the `Optimisers.jl` for the CVI approximation method.
     Run `using Zygote` in your Julia session to enable the `ZygoteGrad()` option support for the CVI `grad` parameter.
     Run `using DiffResults` in your Julia session to enable faster gradient computations in case if all inputs are of the `Gaussian` type.
 """
@@ -96,6 +105,9 @@ function prod(approximation::CVI, outbound, inbound)
     # Natural parameters of incoming distribution message
     η_inbound = naturalparams(inbound)
 
+    # Optimizer procedure may depend on the type of the inbound natural parameters
+    optimizer = cvi_setup(approximation.opt, η_inbound)
+
     # Natural parameter type of incoming distribution
     T = typeof(η_inbound)
 
@@ -135,7 +147,7 @@ function prod(approximation::CVI, outbound, inbound)
         ∇ = λ_current - η_inbound - as_naturalparams(T, ∇f)
 
         # perform gradient descent step
-        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ_current, ∇))
+        λ_new = as_naturalparams(T, cvi_update!(optimizer, λ_current, ∇))
 
         # check whether updated natural parameters are proper
         if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η_inbound)

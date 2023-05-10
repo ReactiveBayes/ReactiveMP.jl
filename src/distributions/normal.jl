@@ -596,6 +596,9 @@ function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
     # Initial parameters of projected distribution
     λ = naturalparams(dist)
 
+    # Optimizer may depend on the type of natural parameters
+    optimizer = cvi_setup(approximation.opt, λ)
+
     # Initialize update flag
     hasupdated = false
 
@@ -616,7 +619,7 @@ function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
         ∇ = λ - η - ∇f
 
         # perform gradient descent step
-        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+        λ_new = as_naturalparams(T, cvi_update!(optimizer, λ, ∇))
 
         # check whether updated natural parameters are proper
         if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)

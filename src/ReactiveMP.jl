@@ -2,6 +2,7 @@
 module ReactiveMP
 
 # List global dependencies here
+using Base: get_extension
 using TinyHugeNumbers
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
@@ -182,10 +183,11 @@ include("constraints/specifications/meta.jl")
 using Requires
 
 function __init__()
-    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::NaturalParameters, ∇::NaturalParameters)
-            return Flux.Optimise.update!(opt, vec(λ), vec(∇))
-        end
+
+    # A backward-compatible solution for older versions of Julia
+    # For Julia > 1.9 this will be loaded automatically without need in `Requires.jl`
+    @static if !isdefined(Base, :get_extension)
+        @require Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2" include("../ext/ReactiveMPOptimisersExt/ReactiveMPOptimisersExt.jl")
     end
 
     @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
