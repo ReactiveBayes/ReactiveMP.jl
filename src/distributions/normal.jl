@@ -25,6 +25,7 @@ import Random: rand!
 import Distributions: logpdf
 import StatsFuns: invsqrt2π
 
+using ForwardDiff
 using LoopVectorization
 using StatsFuns: log2π
 using LinearAlgebra
@@ -584,6 +585,12 @@ function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {
     return df_m, df_v ./ 2
 end
 
+function ReactiveMP.compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
+    result = DiffResults.HessianResult(vec)
+    result = ForwardDiff.hessian!(result, logp, vec)
+    return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
+end
+
 function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
     rng = something(approximation.rng, Random.GLOBAL_RNG)
 
@@ -595,6 +602,9 @@ function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
 
     # Initial parameters of projected distribution
     λ = naturalparams(dist)
+
+    # Optimizer may depend on the type of natural parameters
+    optimizer = cvi_setup(approximation.opt, λ)
 
     # Initialize update flag
     hasupdated = false
@@ -616,7 +626,7 @@ function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
         ∇ = λ - η - ∇f
 
         # perform gradient descent step
-        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+        λ_new = as_naturalparams(T, cvi_update!(optimizer, λ, ∇))
 
         # check whether updated natural parameters are proper
         if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)
