@@ -398,7 +398,7 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta, ), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
 
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
@@ -459,7 +459,7 @@ macro call_rule(fform, args)
         return (iname, ivalue)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta, ), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
 
     m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
@@ -545,7 +545,7 @@ macro marginalrule(fform, lambda)
         return (iname, itype)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta, ), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
 
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
@@ -590,7 +590,7 @@ macro call_marginalrule(fform, args)
         return (iname, ivalue)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta, ), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
 
     m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
