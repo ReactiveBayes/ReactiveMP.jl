@@ -5,9 +5,10 @@ using PositiveFactorizations
 
 import LinearAlgebra: BlasInt
 
-cholinv(x)           = inv(fastcholesky(x))
+cholinv(x) = inv(fastcholesky(x))
+cholinv(x::UniformScaling) = inv(x.λ) * I
 cholinv(x::Diagonal) = Diagonal(inv.(diag(x)))
-cholinv(x::Real)     = inv(x)
+cholinv(x::Real) = inv(x)
 
 function cholinv(x::AbstractMatrix{T}) where {T <: LinearAlgebra.BlasFloat}
     y = fastcholesky(x)
@@ -15,13 +16,15 @@ function cholinv(x::AbstractMatrix{T}) where {T <: LinearAlgebra.BlasFloat}
     return y.factors
 end
 
-cholsqrt(x)           = Matrix(fastcholesky(x).L)
+cholsqrt(x) = Matrix(fastcholesky(x).L)
+cholsqrt(x::UniformScaling) = sqrt(x.λ) * I
 cholsqrt(x::Diagonal) = Diagonal(sqrt.(diag(x)))
-cholsqrt(x::Real)     = sqrt(x)
+cholsqrt(x::Real) = sqrt(x)
 
-chollogdet(x)           = logdet(fastcholesky(x))
+chollogdet(x) = logdet(fastcholesky(x))
+chollogdet(x::UniformScaling) = error("logdet is not defined for `UniformScaling`")
 chollogdet(x::Diagonal) = logdet(x)
-chollogdet(x::Real)     = logdet(x)
+chollogdet(x::Real) = logdet(x)
 
 function cholinv_logdet(x)
     # calculate cholesky decomposition
@@ -30,6 +33,7 @@ function cholinv_logdet(x)
     # return inverse and log-determinant
     return inv(y), logdet(y)
 end
+
 function cholinv_logdet(x::AbstractMatrix{T}) where {T <: LinearAlgebra.BlasFloat}
     # calculate cholesky decomposition
     y = fastcholesky(x)
@@ -43,8 +47,12 @@ function cholinv_logdet(x::AbstractMatrix{T}) where {T <: LinearAlgebra.BlasFloa
     # return inverse and log-determinant
     return y.factors, ly
 end
+
 cholinv_logdet(x::Diagonal) = Diagonal(inv.(diag(x))), mapreduce(z -> log(z), +, diag(x))
 cholinv_logdet(x::Real)     = inv(x), log(abs(x))
+
+fastcholesky(x::UniformScaling) = error("`fastcholesky` is not defined for `UniformScaling`. The shape is not determined.")
+fastcholesky!(x::UniformScaling) = error("`fastcholesky!` is not defined for `UniformScaling`. The shape is not determined.")
 
 function fastcholesky(mat::AbstractMatrix)
     A = copy(mat)

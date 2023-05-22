@@ -10,6 +10,15 @@ using LinearAlgebra
     @testset "cholesky related" begin
         rng = MersenneTwister(1234)
 
+        for scalar in (1, 1.0, 2.0, 2, 0.1, 10.0)
+            A = scalar * I
+
+            @test A isa UniformScaling
+            @test ReactiveMP.cholinv(A) ≈ inv(scalar) * I
+            @test ReactiveMP.cholsqrt(A) ≈ sqrt(scalar) * I
+            @test_throws ErrorException ReactiveMP.chollogdet(A)
+        end
+
         for size in (2, 3, 4, 5, 10, 100, 1000)
             L = rand(rng, size, size)
             A = L * L'
