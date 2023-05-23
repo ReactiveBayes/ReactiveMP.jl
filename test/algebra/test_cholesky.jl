@@ -16,7 +16,13 @@ using LinearAlgebra
             @test A isa UniformScaling
             @test ReactiveMP.cholinv(A) ≈ inv(scalar) * I
             @test ReactiveMP.cholsqrt(A) ≈ sqrt(scalar) * I
-            @test_throws ErrorException ReactiveMP.chollogdet(A)
+
+            # By default `logdet` is defined only for `λ = 0 or 1`
+            if isone(scalar) || iszero(scalar)
+                @test ReactiveMP.chollogdet(A) ≈ logdet(A)
+            else
+                @test_throws ArgumentError ReactiveMP.chollogdet(A)
+            end
         end
 
         for size in (2, 3, 4, 5, 10, 100, 1000)

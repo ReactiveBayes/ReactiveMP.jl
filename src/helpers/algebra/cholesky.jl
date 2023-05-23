@@ -22,7 +22,7 @@ cholsqrt(x::Diagonal) = Diagonal(sqrt.(diag(x)))
 cholsqrt(x::Real) = sqrt(x)
 
 chollogdet(x) = logdet(fastcholesky(x))
-chollogdet(x::UniformScaling) = error("logdet is not defined for `UniformScaling`")
+chollogdet(x::UniformScaling) = logdet(x)
 chollogdet(x::Diagonal) = logdet(x)
 chollogdet(x::Real) = logdet(x)
 
