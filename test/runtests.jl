@@ -212,6 +212,9 @@ end
     addtests(testrunner, "test_rule.jl")
     addtests(testrunner, "test_addons.jl")
 
+    addtests(testrunner, "addons/test_debug.jl")
+    addtests(testrunner, "addons/test_memory.jl")
+
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
     addtests(testrunner, "approximations/test_linearization.jl")
