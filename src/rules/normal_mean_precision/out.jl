@@ -2,11 +2,19 @@
 # Belief Propagation                #
 # --------------------------------- #
 @rule NormalMeanPrecision(:out, Marginalisation) (m_μ::PointMass, m_τ::PointMass) = begin
-    @logscale 0
+    if isnothing(messages[1].addons)
+        @logscale 0
+    else 
+        @logscale getlogscale(messages[1])
+    end
     return NormalMeanPrecision(mean(m_μ), mean(m_τ))
 end
 @rule NormalMeanPrecision(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass) = begin
-    @logscale 0
+    if isnothing(messages[1].addons)
+        @logscale 0
+    else 
+        @logscale getlogscale(messages[1])
+    end
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return NormalMeanPrecision(m_μ_mean, inv(m_μ_cov + inv(mean(m_τ))))
 end
@@ -20,6 +28,11 @@ end
 @rule NormalMeanPrecision(:out, Marginalisation) (m_μ::PointMass, q_τ::Any) = NormalMeanPrecision(mean(m_μ), mean(q_τ))
 
 @rule NormalMeanPrecision(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, q_τ::Any) = begin
+    if isnothing(messages[1].addons)
+        @logscale 0
+    else 
+        @logscale getlogscale(messages[1])
+    end
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return NormalMeanPrecision(m_μ_mean, cholinv(m_μ_cov + cholinv(mean(q_τ))))
 end

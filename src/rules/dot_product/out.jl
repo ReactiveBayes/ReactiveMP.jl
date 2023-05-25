@@ -4,6 +4,8 @@
 end
 
 @rule typeof(dot)(:out, Marginalisation) (m_in1::PointMass, m_in2::NormalDistributionsFamily, meta::AbstractCorrection) = begin
+    @logscale getlogscale(messages[2]) #correct
+
     A = mean(m_in1)
     in2_mean, in2_cov = mean_cov(m_in2)
     return NormalMeanVariance(dot(A, in2_mean), dot(A, in2_cov, A))

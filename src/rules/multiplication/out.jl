@@ -10,7 +10,7 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractMatrix}, m_in::F, meta::Union{<:AbstractCorrection, Nothing}) where {F <: NormalDistributionsFamily} = begin
-    @logscale 0
+    @logscale getlogscale(messages[2])
     A = mean(m_A)
     μ_in, Σ_in = mean_cov(m_in)
     return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
@@ -67,7 +67,6 @@ end
 
 ## test gp 
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::GaussianProcess, meta::Tuple{ProcessMeta, TinyCorrection}) = begin 
-    @logscale 0
     index = meta[1].index
     m_gp, cov_gp = mean_cov(m_in.finitemarginal)
     μ_in = m_gp[index]
@@ -77,7 +76,15 @@ end
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin
-    @logscale 0
+    if isnothing(messages[1].addons) && isnothing(messages[2].addons)==false
+        @logscale getlogscale(messages[2])
+    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)==false
+        @logscale getlogscale(messages[1])
+    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)
+        @logscale 0
+    else
+        @logscale getlogscale(messages[1]) + getlogscale(messages[2]) #correct
+    end
     μ_in, var_in = mean_var(m_in)
     μ_A, var_A = mean_var(m_A)
     return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,0.0)))
@@ -85,7 +92,6 @@ end
 
 
 @rule typeof(*)(:out, Marginalisation) (m_A::GaussianProcess, m_in::LogNormal, meta::ProcessMeta) = begin 
-    @logscale 0
     return @call_rule typeof(*)(:out, Marginalisation) (m_A=m_in,m_in=m_A,meta=meta)
 end
 
@@ -101,7 +107,6 @@ function make_productdist_message(samples_A,d_in)
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::GaussianProcess, meta::ProcessMeta) = begin 
-    @logscale 0
     index = meta.index
     m_gp, cov_gp = mean_cov(m_in.finitemarginal)
     d_in = NormalMeanVariance(m_gp[index], cov_gp[index,index])
@@ -115,21 +120,38 @@ end
     return ContinuousUnivariateLogPdf(p)
 end
 
-
 @rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
-    @logscale 0
-    nsamples    = 100
-    # samples_A1  = rand(m_A,nsamples)
-    samples_A2  = rand(m_A,nsamples)
-    # samples_in = rand(d_in,nsamples)
-    # samples_prod =  samples_A1 .* samples_in
-    p = make_productdist_message(samples_A2,m_in)
-    return ContinuousUnivariateLogPdf(p)
+    if isnothing(messages[1].addons) && isnothing(messages[2].addons)==false
+        @logscale getlogscale(messages[2])
+    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)==false
+        @logscale getlogscale(messages[1])
+    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)
+        @logscale 0
+    else
+        @logscale getlogscale(messages[1]) + getlogscale(messages[2]) #correct
+    end
+    μ_A,v_A = mean_var(m_A)
+    μ_in,v_in = mean_var(m_in)
+    m = μ_A * μ_in
+    v = v_A*v_in + v_A*μ_in^2 + v_in*μ_A^2
+    return NormalMeanVariance(m,v)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin 
-    @logscale 0
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A=m_in, m_in=m_A, meta=meta)
+@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
+    if isnothing(messages[1].addons) && isnothing(messages[2].addons)==false
+        @logscale getlogscale(messages[2])
+    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)==false
+        @logscale getlogscale(messages[1])
+    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)
+        @logscale 0
+    else
+        @logscale getlogscale(messages[1]) + getlogscale(messages[2]) #correct
+    end
+    μ_A,v_A = mean_var(m_A)
+    μ_in,v_in = mean_var(m_in)
+    m = μ_A * μ_in
+    v = v_A*v_in + v_A*μ_in^2 + v_in*μ_A^2
+    return NormalMeanVariance(m,v)
 end
 
 using SpecialFunctions: besselk
