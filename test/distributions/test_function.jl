@@ -219,7 +219,6 @@ import DomainSets
                 @test pdf(pr1, point) ≈ pdf(d3, point)
                 @test logpdf(pr1, point) ≈ logpdf(d3, point)
             end
-
         end
 
         @testset "convert" begin
@@ -378,7 +377,7 @@ import DomainSets
             @test support(pr1) === support(d1)
             @test support(pr1) === support(d2)
 
-            for point in [ rand(Float64, 2) for _ in 1:10 ]
+            for point in [rand(Float64, 2) for _ in 1:10]
                 @test pdf(pr1, point) ≈ pdf(d3, point)
                 @test logpdf(pr1, point) ≈ logpdf(d3, point)
             end
