@@ -305,10 +305,8 @@ import DomainSets
                 d2 = ContinuousMultivariateLogPdf(DomainSets.HalfLine()^dim, (x) -> -x'x)
 
                 # This also throws a warning in stdout
-                @test_warn r".*incompatible combination.*" begin
-                    @test_throws AssertionError logpdf(d1, ones(dim + 1))
-                    @test_throws AssertionError logpdf(d2, ones(dim + 1))
-                end
+                @test_logs (:warn, r".*incompatible combination.*") @test_throws AssertionError logpdf(d1, ones(dim + 1))
+                @test_logs (:warn, r".*incompatible combination.*") @test_throws AssertionError logpdf(d2, ones(dim + 1))
             end
         end
 
