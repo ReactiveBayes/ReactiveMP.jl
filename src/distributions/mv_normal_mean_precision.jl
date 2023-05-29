@@ -37,6 +37,7 @@ Distributions.distrname(::MvNormalMeanPrecision) = "MvNormalMeanPrecision"
 
 weightedmean(dist::MvNormalMeanPrecision) = precision(dist) * mean(dist)
 
+Distributions.params(dist::MvNormalMeanPrecision)    = (dist.μ, dist.Λ)
 Distributions.mean(dist::MvNormalMeanPrecision)      = dist.μ
 Distributions.mode(dist::MvNormalMeanPrecision)      = mean(dist)
 Distributions.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))

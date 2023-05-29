@@ -21,14 +21,13 @@ Distributions.@distr_support GammaShapeRate 0 Inf
 
 Distributions.support(dist::GammaShapeRate) = Distributions.RealInterval(minimum(dist), maximum(dist))
 
-Distributions.shape(dist::GammaShapeRate)  = dist.a
-Distributions.rate(dist::GammaShapeRate)   = dist.b
-Distributions.scale(dist::GammaShapeRate)  = inv(dist.b)
-Distributions.mean(dist::GammaShapeRate)   = shape(dist) / rate(dist)
-Distributions.var(dist::GammaShapeRate)    = shape(dist) / abs2(rate(dist))
-Distributions.params(dist::GammaShapeRate) = (shape(dist), rate(dist))
-
+Distributions.params(dist::GammaShapeRate) = (dist.a, dist.b)
+Distributions.shape(dist::GammaShapeRate) = dist.a
+Distributions.rate(dist::GammaShapeRate) = dist.b
+Distributions.scale(dist::GammaShapeRate) = inv(dist.b)
+Distributions.mean(dist::GammaShapeRate) = shape(dist) / rate(dist)
 Distributions.mode(d::GammaShapeRate) = shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) : throw(error("Gamma has no mode when shape < 1"))
+Distributions.var(dist::GammaShapeRate) = shape(dist) / abs2(rate(dist))
 
 function Distributions.entropy(dist::GammaShapeRate)
     a, b = params(dist)
@@ -52,6 +51,7 @@ end
 
 Base.eltype(::GammaShapeRate{T}) where {T} = T
 
+Base.convert(::Type{GammaShapeRate}, a::Real, b::Real) = GammaShapeRate(a, b)
 Base.convert(::Type{GammaShapeRate{T}}, a::Real, b::Real) where {T <: Real} = GammaShapeRate(convert(T, a), convert(T, b))
 
 vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
@@ -63,7 +63,7 @@ function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
-Distributions.pdf(dist::GammaShapeRate, x::Real)    = (rate(dist)^shape(dist)) / gamma(shape(dist)) * x^(shape(dist) - 1) * exp(-rate(dist) * x)
+Distributions.pdf(dist::GammaShapeRate, x::Real) = exp(logpdf(dist, x))
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
 
 function Random.rand(rng::AbstractRNG, dist::GammaShapeRate)

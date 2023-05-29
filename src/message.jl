@@ -6,7 +6,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, *, +, ndims, precision, length, size, show, nameof
+import Base: ==, *, +, ndims, precision, length, size, show
 
 """
     AbstractMessage

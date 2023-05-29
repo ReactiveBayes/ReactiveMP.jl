@@ -14,9 +14,9 @@ using ReactiveMP: multiply_addons
             addon2 = AddonLogScale(2)
             addon3 = AddonLogScale(3.0)
 
-            @test addon1.logscale == nothing
-            @test addon2.logscale == 2
-            @test addon3.logscale == 3.0
+            @test addon1.logscale === nothing
+            @test addon2.logscale === 2
+            @test addon3.logscale === 3.0
         end
 
         @testset "getlogscale" begin
@@ -38,8 +38,8 @@ using ReactiveMP: multiply_addons
             @test multiply_addons(AddonLogScale(5), AddonLogScale(6.0), new_dist, left_dist, right_dist) == AddonLogScale(11.0 - log(2))
             @test multiply_addons(AddonLogScale(5), nothing, new_dist, left_dist, missing) == AddonLogScale(5)
             @test multiply_addons(nothing, AddonLogScale(6.0), new_dist, missing, right_dist) == AddonLogScale(6.0)
-            @test multiply_addons(nothing, nothing, new_dist, left_dist, missing) == nothing
-            @test multiply_addons(nothing, nothing, new_dist, missing, right_dist) == nothing
+            @test multiply_addons(nothing, nothing, new_dist, left_dist, missing) === nothing
+            @test multiply_addons(nothing, nothing, new_dist, missing, right_dist) === nothing
         end
     end
 end

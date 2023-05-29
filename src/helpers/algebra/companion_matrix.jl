@@ -67,28 +67,29 @@ LinearAlgebra.adjoint(cmatrix::CompanionMatrixTransposed) = CompanionMatrix(cmat
 
 LinearAlgebra.inv(t::Union{CompanionMatrix, CompanionMatrixTransposed}) = inv(as_matrix(t))
 
-function as_matrix(cmatrix::CompanionMatrix)
+function as_matrix(cmatrix::CompanionMatrix{R}) where {R}
     dim     = first(size(cmatrix))
-    S       = zeros(dim, dim)
+    S       = zeros(R, dim, dim)
     S[1, :] = cmatrix.θ
     for i in 2:dim
-        S[i, i - 1] = one(eltype(cmatrix))
+        S[i, i - 1] = one(R)
     end
     S
 end
 
-function as_matrix(cmatrix::CompanionMatrixTransposed)
+function as_matrix(cmatrix::CompanionMatrixTransposed{R}) where {R}
     dim     = first(size(cmatrix))
-    S       = zeros(dim, dim)
+    S       = zeros(R, dim, dim)
     S[:, 1] = cmatrix.θ
     for i in 2:dim
-        S[i - 1, i] = one(eltype(cmatrix))
+        S[i - 1, i] = one(R)
     end
     S
 end
 
 function Base.:*(tm::CompanionMatrix, v::AbstractVector)
-    r = similar(v)
+    T = promote_type(eltype(tm), eltype(v))
+    r = similar(v, T)
     r[1] = tm.θ' * v
     for i in 1:(length(v) - 1)
         r[i + 1] = v[i]
@@ -97,8 +98,9 @@ function Base.:*(tm::CompanionMatrix, v::AbstractVector)
 end
 
 function Base.:*(tm::CompanionMatrix, m::AbstractMatrix)
+    T = promote_type(eltype(tm), eltype(m))
     l = length(tm.θ)
-    r = similar(m)
+    r = similar(m, T)
 
     for (index, col) in enumerate(eachcol(m))
         r[1, index] = tm.θ' * col

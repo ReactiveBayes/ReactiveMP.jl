@@ -5,7 +5,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, ndims, precision, length, size, nameof, iterate
+import Base: ==, ndims, precision, length, size, iterate
 
 struct Marginal{D, A}
     data       :: D

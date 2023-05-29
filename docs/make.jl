@@ -23,14 +23,10 @@ makedocs(
                 "Overview" => "lib/nodes/nodes.md",
                 "Flow"     => "lib/nodes/flow.md"
             ],
-            "Message update rules" => [
-                "Overview" => "lib/rules/rules.md",
-            ],
+            "Message update rules" => "lib/rules/rules.md",
             "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
-            "Algebra utils"       => [
-                "Common" => "lib/algebra/common.md"
-            ],
+            "Algebra utils"       => "lib/algebra/common.md",
             "Exported methods"    => "lib/methods.md"
         ],
         "Contributing" => "extra/contributing.md",
