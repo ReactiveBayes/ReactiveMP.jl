@@ -1,6 +1,5 @@
 export AddonDebug
 
-
 """
     AddonDebug(f :: Function)
 
@@ -20,7 +19,7 @@ This addon calls the function `f` over the output of the message mapping and pro
 ```
 """
 struct AddonDebug <: AbstractAddon
-    f :: Function
+    f::Function
 end
 
 AddonDebug() = AddonDebug(nothing)
@@ -31,11 +30,11 @@ getdebugaddon(addons::NTuple{N, AbstractAddon}) where {N} = first(filter(x -> ty
 
 function message_mapping_addon(addon::AddonDebug, mapping, messages, marginals, result)
     if addon(result)
-        
+
         #  create error message
         msg = "Debug addon triggered:\n"
         msg *= "Mapping:\n"
-        msg *= "At the node: " * string(message_mapping_fform(mapping)) *"\n"
+        msg *= "At the node: " * string(message_mapping_fform(mapping)) * "\n"
         msg *= "Towards interface: " * string(mapping.vtag) * "\n"
         msg *= "With local constraint: " * string(mapping.vconstraint) * "\n"
         if !isnothing(mapping.meta)
@@ -61,7 +60,6 @@ function message_mapping_addon(addon::AddonDebug, mapping, messages, marginals, 
 
         #  throw error
         return error(msg)
-        
     end
     return addon
 end

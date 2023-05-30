@@ -127,7 +127,7 @@ end
 
 name(variable::AbstractVariable)        = variable.name
 isanonymous(variable::AbstractVariable) = false
-isanonymous(variables::AbstractArray)  = all(isanonymous, variables)
+isanonymous(variables::AbstractArray)   = all(isanonymous, variables)
 
 ##
 
