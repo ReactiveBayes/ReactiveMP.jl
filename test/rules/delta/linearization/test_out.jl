@@ -50,7 +50,8 @@ h(x, y) = x .^ 2 .- y
 
     @testset "Belief Propagation: f(x) (m_ins::MvNormalMeanCovariance, *)" begin
         @test_rules [check_type_promotion = true] DeltaFn{g3}(:out, Marginalisation) [(
-            input = (m_ins = ManyOf(MvNormalMeanCovariance(ones(2), diageye(2))), meta = DeltaMeta(; method = Linearization(), inverse = nothing)), output = NormalMeanVariance(2.0, 2.0)
+            input = (m_ins = ManyOf(MvNormalMeanCovariance(ones(2), diageye(2))), meta = DeltaMeta(; method = Linearization(), inverse = nothing)),
+            output = NormalMeanVariance(2.0, 2.0)
         )]
     end
 
