@@ -106,6 +106,10 @@ const DEFAULT_SAMPLE_LIST_N_SAMPLES = 5000
 
 ## Utility functions
 
+paramfloattype(sl::SampleList) = promote_type(eltype(sl.samples), eltype(sl.weights))
+
+convert_paramfloattype(::Type{T}, sl::SampleList{D}) where {T, D} = SampleList(Val(D), convert_paramfloattype(T, sl.samples), convert_paramfloattype(T, sl.weights), sl.meta)
+
 Base.eltype(::Type{<:SampleList{D, S, W}}) where {D, S, W} = Tuple{sample_list_eltype(SampleList, D, S), eltype(W)}
 
 sampletype(::SampleList{D, S}) where {D, S} = sample_list_eltype(SampleList, D, S)

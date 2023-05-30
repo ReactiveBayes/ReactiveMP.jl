@@ -45,7 +45,7 @@ end
 
 # Makes it hard to use your computer if Julia occupies all cpus, so we max at 4
 # GitHub actions has 2 cores in most of the cases 
-addprocs(max(Sys.CPU_THREADS, 4))
+addprocs(min(Sys.CPU_THREADS, 4))
 
 @everywhere using Test, Documenter, ReactiveMP, Distributions
 @everywhere using TestSetExtensions
@@ -182,9 +182,9 @@ using Aqua
 
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
-    # `piracy` is broken on CI, see https://github.com/JuliaTesting/Aqua.jl/issues/95, revise at some point
-    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
-    # doctest(ReactiveMP)
+    # We `pirate` `mean` methods for distributions in `Distributions.jl`
+    # `project_toml_formatting` is broken with Extensions
+    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false, project_toml_formatting = false)
 else
     println("Running specific tests:")
     foreach(testrunner.enabled_tests) do test
@@ -279,6 +279,7 @@ end
     addtests(testrunner, "nodes/test_implication.jl")
     addtests(testrunner, "nodes/test_uniform.jl")
     addtests(testrunner, "nodes/test_normal_mixture.jl")
+    addtests(testrunner, "nodes/test_softdot.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
@@ -341,6 +342,11 @@ end
     addtests(testrunner, "rules/dot_product/test_in2.jl")
     addtests(testrunner, "rules/dot_product/test_marginals.jl")
 
+    addtests(testrunner, "rules/softdot/test_y.jl")
+    addtests(testrunner, "rules/softdot/test_theta.jl")
+    addtests(testrunner, "rules/softdot/test_x.jl")
+    addtests(testrunner, "rules/softdot/test_gamma.jl")
+
     addtests(testrunner, "rules/gamma_inverse/test_marginals.jl")
     addtests(testrunner, "rules/gamma_inverse/test_out.jl")
 
@@ -351,6 +357,10 @@ end
     addtests(testrunner, "rules/normal_mean_precision/test_out.jl")
     addtests(testrunner, "rules/normal_mean_precision/test_mean.jl")
     addtests(testrunner, "rules/normal_mean_precision/test_precision.jl")
+
+    addtests(testrunner, "rules/multiplication/test_out.jl")
+    addtests(testrunner, "rules/multiplication/test_A.jl")
+    addtests(testrunner, "rules/multiplication/test_in.jl")
 
     addtests(testrunner, "rules/mv_normal_mean_covariance/test_out.jl")
     addtests(testrunner, "rules/mv_normal_mean_covariance/test_mean.jl")
@@ -399,6 +409,12 @@ end
     addtests(testrunner, "rules/transition/test_out.jl")
     addtests(testrunner, "rules/transition/test_a.jl")
     addtests(testrunner, "rules/transition/test_in.jl")
+
+    addtests(testrunner, "rules/autoregressive/test_y.jl")
+    addtests(testrunner, "rules/autoregressive/test_x.jl")
+    addtests(testrunner, "rules/autoregressive/test_gamma.jl")
+    addtests(testrunner, "rules/autoregressive/test_theta.jl")
+    addtests(testrunner, "rules/autoregressive/test_marginals.jl")
 
     run(testrunner)
 end

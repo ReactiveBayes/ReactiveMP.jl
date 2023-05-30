@@ -48,6 +48,7 @@ end
 
 weightedmean_precision(dist::MvNormalMeanCovariance) = weightedmean_invcov(dist)
 
+Distributions.params(dist::MvNormalMeanCovariance)    = (dist.μ, dist.Σ)
 Distributions.mean(dist::MvNormalMeanCovariance)      = dist.μ
 Distributions.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ

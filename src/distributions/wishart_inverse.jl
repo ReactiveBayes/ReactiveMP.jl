@@ -67,7 +67,16 @@ function Distributions.mean(::typeof(cholinv), dist::InverseWishartDistributions
     return mean(Wishart(ν, cholinv(S)))
 end
 
-function Distributions.rand!(rng::AbstractRNG, sampleable::ReactiveMP.InverseWishartMessage, x::AbstractVector{<:AbstractMatrix})
+samplefloattype(sampleable::InverseWishartMessage) = promote_type(typeof(sampleable.ν), eltype(sampleable.S))
+sampletype(sampleable::InverseWishartMessage) = Matrix{samplefloattype(sampleable)}
+
+function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartMessage)
+    container = [zeros(samplefloattype(sampleable), size(sampleable))]
+    rand!(rng, sampleable, container)
+    return first(container)
+end
+
+function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage, x::AbstractVector{<:AbstractMatrix})
     (df, S⁻¹) = Distributions.params(sampleable)
     S = cholinv(S⁻¹)
     L = Distributions.PDMats.chol_lower(ReactiveMP.fastcholesky(S))
@@ -147,11 +156,14 @@ end
 
 Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWishartMessage(params(dist)...)
 
+## Utility functions
+
+convert_paramfloattype(::Type{T}, dist::InverseWishartMessage) where {T} = InverseWishartMessage(convert_paramfloattype(T, dist.ν), convert_paramfloattype(T, dist.S))
+
 ## Friendly functions
 
 function logpdf_sample_friendly(dist::InverseWishartMessage)
-    friendly = convert(InverseWishart, dist)
-    return (friendly, friendly)
+    return (dist, dist)
 end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason

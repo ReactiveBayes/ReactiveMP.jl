@@ -12,14 +12,14 @@ h(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:marginals" begin
     @testset "Single univariate input" begin
-        @test_marginalrules [with_float_conversions = false, atol = 1e-10] DeltaFn{g}(:ins) [(
+        @test_marginalrules [check_type_promotion = false, atol = 1e-10] DeltaFn{g}(:ins) [(
             input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaMeta(; method = Unscented(), inverse = nothing)),
             output = JointNormal(NormalMeanVariance(2.3809523807887425, 0.23809523822182999), ((),))
         )]
     end
 
     @testset "Single multivariate input" begin
-        @test_marginalrules [with_float_conversions = false] DeltaFn{g}(:ins) [(
+        @test_marginalrules [check_type_promotion = false] DeltaFn{g}(:ins) [(
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]), m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0;;])), meta = DeltaMeta(; method = Unscented(), inverse = nothing)
             ),
@@ -29,7 +29,7 @@ h(x, y) = x .^ 2 .- y
 
     @testset "Multiple univairate input" begin
         # ForneyLab:test_delta_unscented:MDeltaUTInGX 1
-        @test_marginalrules [with_float_conversions = false, atol = 1e-4] DeltaFn{h}(:ins) [(
+        @test_marginalrules [check_type_promotion = false, atol = 1e-4] DeltaFn{h}(:ins) [(
             input = (
                 m_out = NormalMeanVariance(2.0, 3.0),
                 m_ins = ManyOf(NormalMeanVariance(2.0, 1.0), NormalMeanVariance(5.0, 1.0)),
@@ -42,7 +42,7 @@ h(x, y) = x .^ 2 .- y
     end
 
     @testset "Multiple multivariate input" begin
-        @test_marginalrules [with_float_conversions = false] DeltaFn{h}(:ins) [(
+        @test_marginalrules [check_type_promotion = false] DeltaFn{h}(:ins) [(
             input = (
                 m_out = MvNormalMeanCovariance([2.0], [3.0]),
                 m_ins = ManyOf(MvNormalMeanCovariance([2.0], [1.0]), MvNormalMeanCovariance([5.0], [1.0])),

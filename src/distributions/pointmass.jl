@@ -12,6 +12,9 @@ struct PointMass{P}
     point::P
 end
 
+getpointmass(distribution::PointMass) = distribution.point
+getpointmass(point::Union{Real, AbstractArray}) = point
+
 variate_form(::PointMass{T}) where {T <: Real}                 = Univariate
 variate_form(::PointMass{V}) where {T, V <: AbstractVector{T}} = Multivariate
 variate_form(::PointMass{M}) where {T, M <: AbstractMatrix{T}} = Matrixvariate
@@ -21,8 +24,9 @@ variate_form(::PointMass{U}) where {T, U <: UniformScaling{T}} = Matrixvariate
 
 sampletype(distribution::PointMass{T}) where {T} = T
 
-getpointmass(distribution::PointMass) = distribution.point
-getpointmass(point::Union{Real, AbstractArray}) = point
+paramfloattype(distribution::PointMass) = deep_eltype(getpointmass(distribution))
+
+convert_paramfloattype(::Type{T}, distribution::PointMass) where {T} = PointMass(convert_paramfloattype(T, getpointmass(distribution)))
 
 ##
 
@@ -50,10 +54,7 @@ mean(fn::F, distribution::PointMass{T}) where {T <: Real, F <: Function} = fn(me
 
 Base.precision(::PointMass{T}) where {T <: Real} = convert(T, Inf)
 Base.ndims(::PointMass{T}) where {T <: Real}     = 1
-
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: Real, R <: Real} = PointMass(convert(T, getpointmass(distribution)))
-
-Base.eltype(::PointMass{T}) where {T <: Real} = T
+Base.eltype(::PointMass{T}) where {T <: Real}    = T
 
 # AbstractVector-based multivariate point mass
 
@@ -79,11 +80,7 @@ mean(::typeof(logdet), distribution::PointMass{V}) where {T <: Real, V <: Abstra
 
 Base.precision(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}} = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}     = length(mean(distribution))
-
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: Real, R <: AbstractVector}           = PointMass(convert(AbstractVector{T}, getpointmass(distribution)))
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: AbstractVector, R <: AbstractVector} = PointMass(convert(T, getpointmass(distribution)))
-
-Base.eltype(::PointMass{V}) where {T <: Real, V <: AbstractVector{T}} = T
+Base.eltype(::PointMass{V}) where {T <: Real, V <: AbstractVector{T}}                = T
 
 # AbstractMatrix-based matrixvariate point mass
 
@@ -109,11 +106,7 @@ mean(::typeof(logdet), distribution::PointMass{M}) where {T <: Real, M <: Abstra
 
 Base.precision(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}     = size(mean(distribution))
-
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: Real, R <: AbstractMatrix}           = PointMass(convert(AbstractMatrix{T}, getpointmass(distribution)))
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: AbstractMatrix, R <: AbstractMatrix} = PointMass(convert(T, getpointmass(distribution)))
-
-Base.eltype(::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}} = T
+Base.eltype(::PointMass{M}) where {T <: Real, M <: AbstractMatrix{T}}                = T
 
 # UniformScaling-based matrixvariate point mass
 
@@ -134,11 +127,7 @@ mean(::typeof(cholinv), distribution::PointMass{M}) where {T <: Real, M <: Unifo
 
 Base.precision(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = one(T) ./ cov(distribution)
 Base.ndims(distribution::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}     = size(mean(distribution))
-
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: Real, R <: UniformScaling}           = PointMass(convert(AbstractMatrix{T}, getpointmass(distribution)))
-convert_eltype(::Type{PointMass}, ::Type{T}, distribution::PointMass{R}) where {T <: AbstractMatrix, R <: UniformScaling} = PointMass(convert(T, getpointmass(distribution)))
-
-Base.eltype(::PointMass{M}) where {T <: Real, M <: UniformScaling{T}} = T
+Base.eltype(::PointMass{M}) where {T <: Real, M <: UniformScaling{T}}                = T
 
 Base.isapprox(left::PointMass, right::PointMass; kwargs...) = Base.isapprox(getpointmass(left), getpointmass(right); kwargs...)
 Base.isapprox(left::PointMass, right; kwargs...) = false
