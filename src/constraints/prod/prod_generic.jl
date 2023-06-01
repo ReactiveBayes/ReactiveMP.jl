@@ -149,6 +149,14 @@ function Base.push!(product::GenericLogPdfVectorisedProduct{F}, item::F) where {
     return GenericLogPdfVectorisedProduct(push!(vector, item), vlength + 1)
 end
 
+getdomain(product::GenericLogPdfVectorisedProduct) = getdomain(first(product.vector))
+getlogpdf(product::GenericLogPdfVectorisedProduct) = getlogpdf(first(product.vector))
+
+Base.eltype(product::GenericLogPdfVectorisedProduct) = eltype(first(product.vector))
+
+paramfloattype(product::GenericLogPdfVectorisedProduct) = paramfloattype(first(product.vector))
+samplefloattype(product::GenericLogPdfVectorisedProduct) = samplefloattype(first(product.vector))
+
 variate_form(::Type{<:GenericLogPdfVectorisedProduct{F}}) where {F} = variate_form(F)
 variate_form(::GenericLogPdfVectorisedProduct{F}) where {F}         = variate_form(F)
 
