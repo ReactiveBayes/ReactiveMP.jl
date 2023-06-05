@@ -30,7 +30,7 @@ import ReactiveMP: @test_rules, besselmod, make_productdist_message
         end
     end
     @testset "messages of type Any" begin
-        rng = StableRNG(42)
+        rng         = StableRNG(42)
         d1          = NormalMeanVariance(0.0, 1.0)
         d2          = LogNormal(0.0, 1.0)
         num_samples = 3000

@@ -30,7 +30,7 @@ import ReactiveMP: make_inversedist_message
         end
     end
     @testset "messages of type Any" begin
-        rng = StableRNG(42)
+        rng         = StableRNG(42)
         d1          = LogNormal(1.5, 1)
         d2          = NormalMeanVariance(0.0, 1.0)
         num_samples = 3000
