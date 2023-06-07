@@ -6,7 +6,7 @@ using Random
 using StableRNGs
 using Distributions
 using Zygote
-using Flux
+using Optimisers
 using DiffResults
 import StatsFuns: logistic
 
@@ -14,12 +14,20 @@ import ReactiveMP: naturalparams, NaturalParameters, AbstractContinuousGenericLo
 
 struct EmptyOptimizer end
 
+function ReactiveMP.cvi_setup(::EmptyOptimizer, λ)
+    return EmptyOptimizer()
+end
+
 function ReactiveMP.cvi_update!(::EmptyOptimizer, λ, ∇)
     return vec(λ)
 end
 
 mutable struct CountingOptimizer
     num_its::Int
+end
+
+function ReactiveMP.cvi_setup(opt::CountingOptimizer, λ)
+    return opt
 end
 
 function ReactiveMP.cvi_update!(opt::CountingOptimizer, λ, ∇)
@@ -80,8 +88,8 @@ end
         rng = StableRNG(42)
 
         tests = (
-            (method = CVI(StableRNG(42), 1, 1000, Descent(0.007), ForwardDiffGrad(), 10, Val(true), true), tol = 3e-1),
-            (method = CVI(StableRNG(42), 1, 1000, Descent(0.007), ZygoteGrad(), 10, Val(true), true), tol = 3e-1)
+            (method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ForwardDiffGrad(), 10, Val(true), true), tol = 3e-1),
+            (method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ZygoteGrad(), 10, Val(true), true), tol = 3e-1)
         )
 
         # Check several prods against their analytical solutions
@@ -139,8 +147,8 @@ end
         rng = StableRNG(42)
 
         tests = (
-            (method = CVI(StableRNG(42), 1, 600, Descent(0.01), ForwardDiffGrad(), 60, Val(true), true), tol = 2e-1),
-            (method = CVI(StableRNG(42), 1, 600, Descent(0.01), ZygoteGrad(), 60, Val(true), true), tol = 2e-1)
+            (method = CVI(StableRNG(42), 1, 600, Optimisers.Descent(0.01), ForwardDiffGrad(), 60, Val(true), true), tol = 2e-1),
+            (method = CVI(StableRNG(42), 1, 600, Optimisers.Descent(0.01), ZygoteGrad(), 60, Val(true), true), tol = 2e-1)
         )
 
         # Check several prods against their analytical solutions
@@ -162,7 +170,7 @@ end
     @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
         seed = 123
         rng = StableRNG(seed)
-        optimizer = Descent(0.01)
+        optimizer = Optimisers.Descent(0.01)
         meta = CVI(rng, 1, 1000, optimizer, ForwardDiffGrad(), 1, Val(false), true)
 
         for i in 1:10
@@ -176,7 +184,7 @@ end
         @testset "Normal x Normal (Fisher preconditioner prod)" begin
             seed = 123
             rng = StableRNG(seed)
-            optimizer = Descent(0.001)
+            optimizer = Optimisers.Descent(0.001)
             meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 1, Val(false), true)
 
             for i in 1:3
@@ -191,7 +199,7 @@ end
         @testset "MvNormal x MvNormal 1D (Fisher preconditioner prod)" begin
             seed = 123
             rng = StableRNG(seed)
-            optimizer = Descent(0.001)
+            optimizer = Optimisers.Descent(0.001)
             meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 1, Val(false), true)
 
             for i in 1:3
@@ -206,7 +214,7 @@ end
         @testset "MvNormal x MvNormal 2D (Fisher preconditioner prod)" begin
             seed = 123
             rng = StableRNG(seed)
-            optimizer = Descent(0.001)
+            optimizer = Optimisers.Descent(0.001)
             meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 10, Val(false), true)
             for i in 1:3
                 m_out, m_in = MvGaussianMeanCovariance(fill(i, 2)), MvGaussianMeanCovariance(zeros(2))

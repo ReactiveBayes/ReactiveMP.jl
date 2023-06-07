@@ -12,7 +12,7 @@ prod_analytical_rule(::Type{<:Beta}, ::Type{<:Beta}) = ProdAnalyticalRuleAvailab
 function prod(::ProdAnalytical, left::Beta, right::Beta)
     left_a, left_b   = params(left)
     right_a, right_b = params(right)
-    T                = promote_samplefloattype(left, right)
+    T                = promote_paramfloattype(left, right)
     return Beta(left_a + right_a - one(T), left_b + right_b - one(T))
 end
 

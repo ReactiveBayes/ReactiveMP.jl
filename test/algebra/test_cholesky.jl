@@ -10,6 +10,21 @@ using LinearAlgebra
     @testset "cholesky related" begin
         rng = MersenneTwister(1234)
 
+        for scalar in (1, 1.0, 2.0, 2, 0.1, 10.0)
+            A = scalar * I
+
+            @test A isa UniformScaling
+            @test ReactiveMP.cholinv(A) ≈ inv(scalar) * I
+            @test ReactiveMP.cholsqrt(A) ≈ sqrt(scalar) * I
+
+            # By default `logdet` is defined only for `λ = 0 or 1`
+            if isone(scalar) || iszero(scalar)
+                @test ReactiveMP.chollogdet(A) ≈ logdet(A)
+            else
+                @test_throws ArgumentError ReactiveMP.chollogdet(A)
+            end
+        end
+
         for size in (2, 3, 4, 5, 10, 100, 1000)
             L = rand(rng, size, size)
             A = L * L'

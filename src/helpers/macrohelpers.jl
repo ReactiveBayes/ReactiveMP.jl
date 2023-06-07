@@ -80,16 +80,6 @@ function proxy_type(proxy, type::Expr)
 end
 
 """
-    rearranged_tuple(name::Symbol, length::Int, swap::Tuple{Int, Int})
-"""
-function rearranged_tuple(name::Symbol, length::Int, swap::Tuple{Int, Int})
-    args = map(i -> :($(name)[$i]), 1:length)
-    i, j = first(swap), last(swap)
-    args[i], args[j] = args[j], args[i]
-    return Expr(:tuple, args...)
-end
-
-"""
     @proxy_methods(proxy_type, proxy_getter, proxy_methods)
 
 Generates proxy methods for a specified `proxy_type` using `proxy_getter`. For example:
@@ -113,33 +103,6 @@ macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
     output.args = map(method -> :(($method)(proxy::$(proxy_type)) = ($method)($(proxy_getter)(proxy))), methods)
 
     return esc(output)
-end
-
-function expression_convert_eltype(eltype::Type{T}, symbol::Symbol) where {T}
-    return :(ReactiveMP.convert_eltype($T, $symbol))
-end
-
-function expression_convert_eltype(eltype::Type{T}, expr::Expr) where {T}
-    if @capture(expr, ManyOf(inputs__))
-        return :(ReactiveMP.ManyOf(($(map(input -> expression_convert_eltype(eltype, input), inputs)...),)))
-    elseif @capture(expr, f_(inputs__))
-        return :(ReactiveMP.convert_eltype($f, $T, $expr))
-    elseif @capture(expr, (elems__,))
-        if @capture(first(elems), (name_ = value_))
-            entries = map(elems) do elem
-                @capture(elem, (name_ = value_)) || error(
-                    "Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements."
-                )
-                return (name, value)
-            end
-            return Expr(:tuple, map((entry) -> :($(first(entry)) = $(expression_convert_eltype(eltype, last(entry)))), entries)...)
-        else
-            return Expr(:tuple, map(elem -> :($(expression_convert_eltype(eltype, elem))), elems)...)
-        end
-    end
-    error(
-        "Invalid expression specification in expression_convert_eltype() function: $expr. Expression should be in the form of a constructor call or tuple of (name = value) elements."
-    )
 end
 
 __test_inferred_typeof(x)                   = typeof(x)
