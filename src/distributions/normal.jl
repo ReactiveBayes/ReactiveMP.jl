@@ -615,12 +615,12 @@ function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
         z = cvilinearize(rand(rng, q, approximation.n_gradpoints))
 
         # compute gradient on mean parameter
-        ∇f = sum((z_s) -> begin 
-                df_m, df_v = compute_df_mv(approximation, logp, z_s)
-                df_μ1 = df_m - 2 * df_v * mean(q)
-                df_μ2 = df_v
-                as_naturalparams(T, df_μ1 ./ length(z), df_μ2 ./ length(z))
-            end, z)
+        ∇f = sum((z_s) -> begin
+            df_m, df_v = compute_df_mv(approximation, logp, z_s)
+            df_μ1 = df_m - 2 * df_v * mean(q)
+            df_μ2 = df_v
+            as_naturalparams(T, df_μ1 ./ length(z), df_μ2 ./ length(z))
+        end, z)
 
         # compute gradient on natural parameters
         ∇ = λ - η - ∇f
