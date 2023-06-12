@@ -45,3 +45,13 @@ end
 function Base.:(==)(left::CategoricalNaturalParameters, right::CategoricalNaturalParameters)
     return left.η == right.η
 end
+
+function isproper(::CategoricalNaturalParameters)
+    return true
+end
+
+function lognormalizer(params::CategoricalNaturalParameters)
+    return log(sum(exp.(params.η)))
+end
+
+logpdf(params::CategoricalNaturalParameters, x) = params.η[x] - lognormalizer(params)

@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using Distributions
 using Random
+using StatsFuns
 
 @testset "Categorical" begin
 
@@ -43,16 +44,31 @@ using Random
                 @test convert(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
                 @test convert(CategoricalNaturalParameters{Float64}, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
                 @test as_naturalparams(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
+                @test convert(CategoricalNaturalParameters, Categorical([1 / i for _ in 1:i])) == CategoricalNaturalParameters([0 for _ in 1:i])
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                cat_np = CategoricalNaturalParameters([0 for _ in 1:i])
-                distribution = Categorical([1 / i for _ in 1:i])
+                distribution = Categorical(softmax([rand() for _ in 1:i]))
+                cat_np = convert(CategoricalNaturalParameters, distribution)
                 for j in 1:i
                     @test logpdf(distribution, j) ≈ logpdf(cat_np, j)
                 end
+            end
+        end
+
+        @testset "lognormalizer" begin
+            for i in 1:10
+                distribution = Categorical(softmax([rand() for _ in 1:i]))
+                cat_np = convert(CategoricalNaturalParameters, distribution)
+                @test lognormalizer(cat_np) ≈ log(sum(exp.(cat_np.η)))
+            end
+        end
+
+        @testset "isproper" begin
+            for i in 1:10
+                @test isproper(CategoricalNaturalParameters([rand() for _ in 1:i])) === true
             end
         end
     end
