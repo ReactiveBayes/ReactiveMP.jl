@@ -35,6 +35,27 @@ using Random
         @test probvec(Categorical([1 / 3, 1 / 3, 1 / 3])) == [1 / 3, 1 / 3, 1 / 3]
         @test probvec(Categorical([0.8, 0.1, 0.1])) == [0.8, 0.1, 0.1]
     end
+
+    @testset "CategoricalNaturalParameters" begin
+        @testset "Constructor" begin
+            for i in 1:10
+                @test convert(Distribution, CategoricalNaturalParameters([0 for _ in 1:i])) ≈ Categorical([1 / i for _ in 1:i])
+                @test convert(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
+                @test convert(CategoricalNaturalParameters{Float64}, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
+                @test as_naturalparams(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
+            end
+        end
+
+        @testset "logpdf" begin
+            for i in 1:10
+                cat_np = CategoricalNaturalParameters([0 for _ in 1:i])
+                distribution = Categorical([1 / i for _ in 1:i])
+                for j in 1:i
+                    @test logpdf(distribution, j) ≈ logpdf(cat_np, j)
+                end
+            end
+        end
+    end
 end
 
 end
