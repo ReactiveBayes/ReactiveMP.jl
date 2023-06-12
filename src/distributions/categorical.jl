@@ -26,12 +26,6 @@ struct CategoricalNaturalParameters{T <: Real, M <: AbstractArray{T}} <: Natural
     η::M
 end
 
-function Base.convert(::Type{CategoricalNaturalParameters}, dist::Categorical)
-    p = probvec(dist)
-    η = log.(p / p[end])
-    return CategoricalNaturalParameters(η)
-end
-
 Base.convert(::Type{CategoricalNaturalParameters}, vec::AbstractVector) = convert(CategoricalNaturalParameters{eltype(vec)}, vec)
 
 Base.convert(::Type{CategoricalNaturalParameters{T}}, vec::AbstractVector) where {T} = CategoricalNaturalParameters(convert(AbstractVector{T}, vec))
@@ -39,10 +33,15 @@ Base.convert(::Type{CategoricalNaturalParameters{T}}, vec::AbstractVector) where
 as_naturalparams(::Type{T}, args...) where {T <: CategoricalNaturalParameters} = convert(CategoricalNaturalParameters, args...)
 
 function Base.convert(::Type{Distribution}, params::CategoricalNaturalParameters)
-    return Categorical(softmax(params.η))
+    params = [params.η..., 0]
+    return Categorical(softmax(params))
 end
 
-naturalparams(dist::Categorical) = CategoricalNaturalParameters(log.(probvec(dist)))
+function naturalparams(dist::Categorical)
+    p = probvec(dist)
+    η = log.(p / p[end])[1:end-1]
+    return CategoricalNaturalParameters(η)
+end
 
 function Base.vec(params::CategoricalNaturalParameters)
     return params.η
@@ -57,23 +56,11 @@ function isproper(::CategoricalNaturalParameters)
 end
 
 function lognormalizer(params::CategoricalNaturalParameters)
-    return log(sum(exp.(params.η)))
+    return log(sum(exp.(params.η)) + 1)
 end
 
-logpdf(params::CategoricalNaturalParameters, x) = params.η[x] - lognormalizer(params)
+logpdf(params::CategoricalNaturalParameters, x) = logpdf(convert(Distribution, params), x)
 
 function Base.:-(left::CategoricalNaturalParameters, right::CategoricalNaturalParameters)
     return CategoricalNaturalParameters(left.η - right.η)
-end
-
-function compute_fisher_matrix(_::CVI, ::Type{T}, η::AbstractVector) where {T <: CategoricalNaturalParameters}
-    I = Matrix{Float64}(undef, length(η), length(η))
-    @inbounds for i in 1:length(η)
-        I[i, i] = exp(η[i]) * (sum(exp.(η)) - exp(η[i])) / (sum(exp.(η)))^2
-        for j in 1:i-1
-            I[i, j] = -exp(η[i]) * exp(η[j]) / (sum(exp.(η)))^2
-            I[j, i] = I[i, j]
-        end
-    end
-    return I
 end

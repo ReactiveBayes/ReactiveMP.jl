@@ -157,8 +157,6 @@ function prod(approximation::CVI, outbound, inbound)
         # compute Fisher matrix 
         Fisher = compute_fisher_matrix(approximation, T, vec(λ_current))
 
-        @info Fisher
-
         # compute natural gradient
         ∇f = Fisher \ ∇logq
 
