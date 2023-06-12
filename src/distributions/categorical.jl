@@ -39,7 +39,7 @@ end
 
 function naturalparams(dist::Categorical)
     p = probvec(dist)
-    η = log.(p / p[end])[1:end-1]
+    η = log.(p / p[end])[1:(end - 1)]
     return CategoricalNaturalParameters(η)
 end
 

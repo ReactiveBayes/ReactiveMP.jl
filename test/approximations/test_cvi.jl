@@ -147,17 +147,14 @@ end
         rng = StableRNG(42)
 
         method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ForwardDiffGrad(), 10, Val(true), true)
-        
+
         c1 = Categorical(softmax(rand(rng, 3)))
         c2 = Categorical(softmax(rand(rng, 3)))
 
         c_analytical = prod(ProdAnalytical(), c1, c2)
-        
-        @info c_analytical
-
         c_cvi = prod(method, c1, c2)
 
-        @info c_cvi
+        @test probvec(c_analytical) ≈ probvec(c_cvi) atol = 1e-1
     end
 
     @testset "cvi `prod` tests (n_gradpoints = 60)" begin

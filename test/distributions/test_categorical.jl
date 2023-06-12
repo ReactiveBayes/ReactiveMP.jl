@@ -40,11 +40,11 @@ using StatsFuns
     @testset "CategoricalNaturalParameters" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, CategoricalNaturalParameters([0 for _ in 1:i-1])) ≈ Categorical([1 / i for _ in 1:i])
+                @test convert(Distribution, CategoricalNaturalParameters([0 for _ in 1:(i - 1)])) ≈ Categorical([1 / i for _ in 1:i])
                 @test convert(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
                 @test convert(CategoricalNaturalParameters{Float64}, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
                 @test as_naturalparams(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
-                @test convert(CategoricalNaturalParameters, Categorical([1 / i for _ in 1:i])) == CategoricalNaturalParameters([0 for _ in 1:i-1])
+                @test convert(CategoricalNaturalParameters, Categorical([1 / i for _ in 1:i])) == CategoricalNaturalParameters([0 for _ in 1:(i - 1)])
             end
         end
 
