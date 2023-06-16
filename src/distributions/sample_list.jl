@@ -200,9 +200,16 @@ end
 
 weightedmean(sl::SampleList) = first(weightedmean_precision(sl))
 
-mean(::typeof(log), sl::SampleList)       = sample_list_logmean(variate_form(sl), sl)
-mean(::typeof(xtlog), sl::SampleList)     = sample_list_meanlogmean(variate_form(sl), sl)
+mean(::typeof(log), sl::SampleList) = sample_list_logmean(variate_form(sl), sl)
+mean(::typeof(xtlog), sl::SampleList) = sample_list_meanlogmean(variate_form(sl), sl)
 mean(::typeof(mirrorlog), sl::SampleList) = sample_list_mirroredlogmean(variate_form(sl), sl)
+
+# Generic version of the mean function for arbitrary `f` 
+function mean(f::F, sl::SampleList) where {F}
+    return mapreduce(+, zip(get_weights(sl), get_samples(sl))) do (weight, sample)
+        return weight * f(sample)
+    end
+end
 
 ##
 
@@ -252,12 +259,12 @@ end
 # `x` is proposal distribution
 # `y` is integrand distribution
 function approximate_prod_with_sample_list(rng::AbstractRNG, ::BootstrapImportanceSampling, x::Any, y::Any, nsamples::Int = DEFAULT_SAMPLE_LIST_N_SAMPLES)
-    @assert nsamples >= 1 "Number of samples should be non-positive"
+    @assert nsamples >= 1 "Number of samples should be greater than 1"
 
     xlogpdf, xsample = logpdf_sample_friendly(x)
     ylogpdf, ysample = logpdf_sample_friendly(y)
 
-    T            = promote_type(eltype(x), eltype(y))
+    T            = promote_samplefloattype(x, y)
     U            = variate_form(x)
     xsize        = size(x)
     preallocated = preallocate_samples(T, xsize, nsamples)

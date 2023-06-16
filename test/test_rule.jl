@@ -238,6 +238,20 @@ import MacroTools: inexpr
             end
         end
 
+        @testset "`@rule` invalid input arguments" begin
+            struct MyNode end
+
+            @eval @rule MyNode(:out, Marginalisation) (m_a::PointMass, q_b::PointMass, meta::Int) = begin end
+            @test_throws LoadError @eval @rule MyNode(:out, Marginalisation) (a::PointMass, b::PointMass) = begin end
+        end
+
+        @testset "`@marginalrule` invalid input arguments" begin
+            struct MyNode end
+
+            @eval @marginalrule MyNode(:a_b) (m_a::PointMass, m_b::PointMass, q_c::PointMass, meta::Int) = begin end
+            @test_throws LoadError @eval @marginalrule MyNode(:out) (a::PointMass, b::PointMass, c::PointMass, meta::Int) = begin end
+        end
+
         @testset "basic `test_rule` macro invokation" begin
             struct TestNodeForTestRuleMacro end
 
@@ -288,7 +302,7 @@ import MacroTools: inexpr
     end
 
     @testset "Macro utilities" begin
-        import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_macro_parse_fn_args
+        import ReactiveMP: rule_macro_parse_on_tag, rule_macro_parse_fn_args, call_rule_macro_parse_fn_args, rule_macro_check_fn_args
 
         @testset "rule_macro_parse_on_tag(expression)" begin
             @test rule_macro_parse_on_tag(:(:out)) == (:(Val{:out}), nothing, nothing)
@@ -300,6 +314,16 @@ import MacroTools: inexpr
             @test_throws ErrorException rule_macro_parse_on_tag(:(123))
             @test_throws ErrorException rule_macro_parse_on_tag(:(:mean, 1))
             @test_throws ErrorException rule_macro_parse_on_tag(:(precision, r))
+        end
+
+        @testset "rule_macro_check_fn_args(inputs; allowed_inputs, allowed_prefixes)" begin
+            @test rule_macro_check_fn_args([(:m_a, 1), (:m_b, 2)]; allowed_inputs = (), allowed_prefixes = (:m_,))
+            @test rule_macro_check_fn_args([(:q_a, 1), (:m_b, 2)]; allowed_inputs = (), allowed_prefixes = (:m_, :q_))
+            @test rule_macro_check_fn_args([(:meta, 3)]; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+            @test rule_macro_check_fn_args([(:q_a, 1), (:m_b, 2), (:meta, 3)]; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+
+            @test_throws ErrorException rule_macro_check_fn_args([(:a, 1), (:b, 2)]; allowed_inputs = (), allowed_prefixes = (:m_, :q_))
+            @test_throws ErrorException rule_macro_check_fn_args([(:meta, 3)]; allowed_inputs = (), allowed_prefixes = (:m_, :q_))
         end
 
         @testset "rule_macro_parse_fn_args(inputs; specname, prefix, proxy)" begin

@@ -35,6 +35,7 @@ include("marginal.jl")
 include("distributions.jl")
 include("addons.jl")
 
+include("addons/debug.jl")
 include("addons/logscale.jl")
 include("addons/memory.jl")
 
