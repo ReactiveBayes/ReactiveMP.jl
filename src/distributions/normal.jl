@@ -25,6 +25,7 @@ import Random: rand!
 import Distributions: logpdf
 import StatsFuns: invsqrt2π
 
+using ForwardDiff
 using LoopVectorization
 using StatsFuns: log2π
 using LinearAlgebra
@@ -96,10 +97,15 @@ Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
 Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
 Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
 
-convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal) where {T} = convert_eltype(JointNormal, T, joint, joint.dist)
+paramfloattype(joint::JointNormal) = paramfloattype(joint, joint.dist)
+convert_paramfloattype(::Type{T}, joint::JointNormal) where {T} = convert_paramfloattype(T, joint, joint.dist)
 
-function convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
-    μ, Σ  = map(e -> convert_eltype(T, e), mean_cov(dist))
+function paramfloattype(joint::JointNormal, dist::NormalDistributionsFamily)
+    return paramfloattype(dist)
+end
+
+function convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
+    μ, Σ  = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
     cdist = convert(promote_variate_type(variate_form(μ), NormalMeanVariance), μ, Σ)
     return JointNormal(cdist, joint.ds)
 end
@@ -579,6 +585,12 @@ function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {
     return df_m, df_v ./ 2
 end
 
+function ReactiveMP.compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
+    result = DiffResults.HessianResult(vec)
+    result = ForwardDiff.hessian!(result, logp, vec)
+    return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
+end
+
 function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
     rng = something(approximation.rng, Random.GLOBAL_RNG)
 
@@ -591,27 +603,30 @@ function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
     # Initial parameters of projected distribution
     λ = naturalparams(dist)
 
+    # Optimizer may depend on the type of natural parameters
+    optimizer = cvi_setup(approximation.opt, λ)
+
     # Initialize update flag
     hasupdated = false
 
     for _ in 1:(approximation.n_iterations)
         # create distribution to sample from and sample from it
         q = convert(Distribution, λ)
-        z_s = rand(rng, q)
+        z = cvilinearize(rand(rng, q, approximation.n_gradpoints))
 
-        # compute gradient on mean parameters
-        df_m, df_v = compute_df_mv(approximation, logp, z_s)
-
-        # convert mean parameter gradient into natural gradient
-        df_μ1 = df_m - 2 * df_v * mean(q)
-        df_μ2 = df_v
-        ∇f = as_naturalparams(T, df_μ1, df_μ2)
+        # compute gradient on mean parameter
+        ∇f = sum((z_s) -> begin
+            df_m, df_v = compute_df_mv(approximation, logp, z_s)
+            df_μ1 = df_m - 2 * df_v * mean(q)
+            df_μ2 = df_v
+            as_naturalparams(T, df_μ1 ./ length(z), df_μ2 ./ length(z))
+        end, z)
 
         # compute gradient on natural parameters
         ∇ = λ - η - ∇f
 
         # perform gradient descent step
-        λ_new = as_naturalparams(T, cvi_update!(approximation.opt, λ, ∇))
+        λ_new = as_naturalparams(T, cvi_update!(optimizer, λ, ∇))
 
         # check whether updated natural parameters are proper
         if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)

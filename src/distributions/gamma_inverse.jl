@@ -7,6 +7,8 @@ const GammaInverse = InverseGamma
 # uninformative prior
 vague(::Type{<:GammaInverse}) = InverseGamma(2.0, huge)
 
+convert_paramfloattype(::Type{T}, distribution::GammaInverse) where {T} = GammaInverse(convert.(T, params(distribution))...; check_args = false)
+
 prod_analytical_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaInverse, right::InverseGamma)

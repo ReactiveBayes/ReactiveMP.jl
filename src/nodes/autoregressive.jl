@@ -111,9 +111,6 @@ ar_unit(::Type{V}, order) where {V <: VariateForm} = ar_unit(Float64, V, order)
 
 function ar_unit(::Type{T}, ::Type{Multivariate}, order) where {T <: Real}
     return StandardBasisVector(order, 1, one(T))
-    # c    = zeros(T, order)
-    # c[1] = one(T)
-    # return c
 end
 
 function ar_unit(::Type{T}, ::Type{Univariate}, order) where {T <: Real}
@@ -132,6 +129,9 @@ Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 
 
 Base.eltype(::Type{<:ARPrecisionMatrix{T}}) where {T} = T
 Base.eltype(::ARPrecisionMatrix{T}) where {T}         = T
+
+Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{R}) where {T, R} = ARPrecisionMatrix(matrix.order, convert(T, matrix.γ))
+Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{T}) where {T} = matrix
 
 add_precision(matrix::AbstractMatrix, precision::ARPrecisionMatrix) = broadcast(+, matrix, precision)
 add_precision(value::Real, precision::Real)                         = value + precision
@@ -155,10 +155,10 @@ ar_precision(::Type{Univariate}, order, γ)   = γ
 struct ARTransitionMatrix{T} <: AbstractMatrix{T}
     order::Int
     inv_γ::T
+end
 
-    function ARTransitionMatrix(order::Int, γ::T) where {T <: Real}
-        return new{T}(order, inv(γ))
-    end
+function ARTransitionMatrix(order::Int, γ::T) where {T <: Real}
+    return ARTransitionMatrix{T}(order, inv(γ))
 end
 
 Base.size(transition::ARTransitionMatrix) = (transition.order, transition.order)
@@ -166,6 +166,9 @@ Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) = (i === 1 && j ==
 
 Base.eltype(::Type{<:ARTransitionMatrix{T}}) where {T} = T
 Base.eltype(::ARTransitionMatrix{T}) where {T}         = T
+
+Base.convert(::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{R}) where {T, R} = ARTransitionMatrix{T}(matrix.order, convert(T, matrix.inv_γ))
+Base.convert(::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{T}) where {T} = matrix
 
 add_transition(matrix::AbstractMatrix, transition::ARTransitionMatrix) = broadcast(+, matrix, transition)
 add_transition(value::Real, transition::Real)                          = value + transition

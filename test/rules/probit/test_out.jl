@@ -10,7 +10,7 @@ import ReactiveMP: @test_rules
 
 @testset "rules:Probit:out" begin
     @testset "Belief Propagation: (m_in::UnivariateNormalDistribution, )" begin
-        @test_rules [with_float_conversions = true] Probit(:out, Marginalisation) [
+        @test_rules [check_type_promotion = true] Probit(:out, Marginalisation) [
             (input = (m_in = NormalMeanVariance(1, 0.5),), output = Bernoulli(normcdf(1 / sqrt(1 + 0.5)))),
             (input = (m_in = NormalMeanPrecision(1, 2),), output = Bernoulli(normcdf(1 / sqrt(1 + 0.5)))),
             (input = (m_in = NormalWeightedMeanPrecision(2, 2),), output = Bernoulli(normcdf(1 / sqrt(1 + 0.5)))),
@@ -21,7 +21,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Belief Propagation: (m_in::PointMass, )" begin
-        @test_rules [with_float_conversions = true] Probit(:out, Marginalisation) [
+        @test_rules [check_type_promotion = true] Probit(:out, Marginalisation) [
             (input = (m_in = PointMass(1),), output = Bernoulli(normcdf(1))),
             (input = (m_in = PointMass(2),), output = Bernoulli(normcdf(2))),
             (input = (m_in = PointMass(3),), output = Bernoulli(normcdf(3)))

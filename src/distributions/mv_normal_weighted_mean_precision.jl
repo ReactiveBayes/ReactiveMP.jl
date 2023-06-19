@@ -47,6 +47,8 @@ function Distributions.mean(dist::MvNormalWeightedMeanPrecision)
     z = fastcholesky(precision(dist))
     return z \ weightedmean(dist)
 end
+
+Distributions.params(dist::MvNormalWeightedMeanPrecision)    = (dist.xi, dist.Λ)
 Distributions.mode(dist::MvNormalWeightedMeanPrecision)      = mean(dist)
 Distributions.var(dist::MvNormalWeightedMeanPrecision)       = diag(cov(dist))
 Distributions.cov(dist::MvNormalWeightedMeanPrecision)       = cholinv(dist.Λ)

@@ -10,6 +10,7 @@
 end
 
 @rule Transition(:out, Marginalisation) (q_in::PointMass, q_a::PointMass) = begin
+    @logscale 0
     p = mean(q_a) * mean(q_in)
     normalize!(p, 1)
     return Categorical(p)
@@ -29,5 +30,6 @@ end
 end
 
 @rule Transition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
-    return @call_rule Transition(:out, Marginalisation) (m_in = m_in, m_a = q_a, meta = meta)
+    @logscale 0
+    return @call_rule Transition(:out, Marginalisation) (m_in = m_in, m_a = q_a, meta = meta, addons = getaddons())
 end

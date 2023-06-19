@@ -125,6 +125,7 @@ import ReactiveMP: WishartMessage
             scalar_weights = rand(rng, N)
             scalar_weights ./= sum(scalar_weights)
             scalar_samplelist = SampleList(scalar_samples, scalar_weights)
+            arbitrary_f = (x) -> x .+ 1
 
             # Checking i = 1:2 that cache is not corrupted
             for i in 1:2
@@ -132,6 +133,7 @@ import ReactiveMP: WishartMessage
                 @test mean(log, scalar_samplelist) ≈ sum(scalar_weights .* log.(scalar_samples))
                 @test mean(xtlog, scalar_samplelist) ≈ sum(scalar_weights .* scalar_samples .* log.(scalar_samples))
                 @test mean(mirrorlog, scalar_samplelist) ≈ sum(scalar_weights .* log.(1.0 .- scalar_samples))
+                @test mean(arbitrary_f, scalar_samplelist) ≈ sum(scalar_weights .* arbitrary_f.(scalar_samples))
             end
 
             vector_samples = [rand(rng, 2) for _ in 1:N]
@@ -144,6 +146,7 @@ import ReactiveMP: WishartMessage
                 @test mean(vector_samplelist) ≈ sum(vector_weights .* vector_samples)
                 @test mean(log, vector_samplelist) ≈ sum(vector_weights .* map(e -> log.(e), (vector_samples)))
                 @test mean(xtlog, vector_samplelist) ≈ sum(vector_weights .* map(e -> e .* log.(e), (vector_samples)))
+                @test mean(arbitrary_f, vector_samplelist) ≈ sum(vector_weights .* map(arbitrary_f, (vector_samples)))
             end
 
             matrix_samples = [rand(rng, 2, 2) for _ in 1:N]
@@ -156,6 +159,7 @@ import ReactiveMP: WishartMessage
                 @test mean(matrix_samplelist) ≈ sum(matrix_weights .* matrix_samples)
                 @test mean(log, matrix_samplelist) ≈ sum(matrix_weights .* map(e -> log.(e), matrix_samples))
                 @test mean(xtlog, matrix_samplelist) ≈ sum(matrix_weights .* map(e -> e .* log.(e), matrix_samples))
+                @test mean(arbitrary_f, matrix_samplelist) ≈ sum(matrix_weights .* map(arbitrary_f, matrix_samples))
             end
         end
 

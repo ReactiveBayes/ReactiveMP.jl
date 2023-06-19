@@ -1,4 +1,4 @@
-export skipindex, @symmetrical
+export skipindex
 
 using SpecialFunctions
 using Rocket
@@ -78,13 +78,13 @@ union_types(x::Type)  = (x,)
 
 # Symbol helpers
 
-__extract_val_type(::Type{Type{Val{S}}}) where {S} = S
-__extract_val_type(::Type{Val{S}}) where {S}       = S
+__extract_val_type(::Type{Val{S}}) where {S} = S
+__extract_val_type(::Val{S}) where {S} = S
 
 @generated function split_underscored_symbol(symbol_val)
     S = __extract_val_type(symbol_val)
     R = tuple(map(Symbol, split(string(S), "_"))...)
-    return :(Val{$R})
+    return :(Val{$R}())
 end
 
 # NamedTuple helpers
@@ -113,52 +113,6 @@ __check_all(fn::Function, ::Nothing)    = true
 
 is_clamped_or_initial(something) = is_clamped(something) || is_initial(something)
 
-## Meta utils
-
-"""
-    @symmetrical `function_definition`
-Duplicate a method definition with the order of the first two arguments swapped.
-This macro is used to duplicate methods that are symmetrical in their first two input arguments,
-but require explicit definitions for the different argument orders.
-Example:
-    @symmetrical function prod!(x, y, z)
-        ...
-    end
-"""
-macro symmetrical(fn::Expr)
-    # Check if macro is applied to a function definition
-    # Valid function definitions include:
-    # 1. foo([ args... ]) [ where ... [ where ... [ ... ] ] ] = :block
-    # 2. function foo([ args... ]) [ where ... [ where ... [ ... ] ] ]
-    #        :block
-    #    end
-    if (fn.head === :(=) || fn.head === :function) && (fn.args[1] isa Expr && fn.args[2] isa Expr) && (fn.args[2].head === :block)
-        return esc(
-            quote
-                $fn
-                $(swap_arguments(fn))
-            end
-        )
-    else
-        error("@symmetrical macro can be applied only to function definitions")
-    end
-end
-
-function swap_arguments(fn::Expr)
-    swapped = copy(fn)
-
-    if swapped.args[1].head === :where
-        swapped.args[1] = swap_arguments(swapped.args[1])
-    elseif swapped.args[1].head === :call && length(fn.args[1].args) >= 3 # Note: >= 3, because the first argument is a function name
-        swapped.args[1].args[2] = fn.args[1].args[3]
-        swapped.args[1].args[3] = fn.args[1].args[2]
-    else
-        error("Function method passed for @symmetrical macro must have more than 2 arguments")
-    end
-
-    return swapped
-end
-
 ## Other helpers 
 
 """
@@ -167,33 +121,15 @@ Same as `log` but clamps the input argument `x` to be in the range `tiny <= x <=
 clamplog(x) = log(clamp(x, tiny, typemax(x)))
 
 # We override this function for some specific types
-function is_typeof_equal(left, right)
-    _isequal = typeof(left) === typeof(right)
-    if !_isequal
-        @warn "typeof($left) !== typeof($right)"
-        @warn "typeof($left) = $(typeof(left))"
-        @warn "typeof($right) = $(typeof(right))"
-    end
-    return _isequal
-end
+is_typeof_equal(left, right) = typeof(left) === typeof(right)
 
-function custom_isapprox(left, right; kwargs...)
-    _isapprox = isapprox(left, right; kwargs...)
-    if !_isapprox
-        @warn "$left !≈ $right"
-    end
-    return _isapprox
-end
-
+custom_isapprox(left, right; kwargs...) = isapprox(left, right; kwargs...)
 custom_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false
 
 function custom_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) where {K}
     _isapprox = true
     for key in keys(left)
         _isapprox = _isapprox && custom_isapprox(left[key], right[key]; kwargs...)
-    end
-    if !_isapprox
-        @warn "$left !≈ $right"
     end
     return _isapprox
 end
@@ -272,3 +208,18 @@ function Base.show(io::IO, index::FunctionalIndex{R, F}) where {R, F}
     __functional_index_print(io, index.f)
     print(io, ")")
 end
+
+## 
+
+# Julia does not really like expressions of the form
+# map((e) -> convert(T, e), collection)
+# because type `T` is inside lambda function
+# https://github.com/JuliaLang/julia/issues/15276
+# https://github.com/JuliaLang/julia/issues/47760
+struct TypeConverter{T, C}
+    convert::C
+end
+
+TypeConverter(::Type{T}, convert::C) where {T, C} = TypeConverter{T, C}(convert)
+
+(converter::TypeConverter{T})(something) where {T} = converter.convert(T, something)
