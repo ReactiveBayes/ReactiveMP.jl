@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using Distributions
 using Random
+using StatsFuns
 
 @testset "Categorical" begin
 
@@ -34,6 +35,42 @@ using Random
         @test probvec(Categorical([0.1, 0.4, 0.5])) == [0.1, 0.4, 0.5]
         @test probvec(Categorical([1 / 3, 1 / 3, 1 / 3])) == [1 / 3, 1 / 3, 1 / 3]
         @test probvec(Categorical([0.8, 0.1, 0.1])) == [0.8, 0.1, 0.1]
+    end
+
+    @testset "CategoricalNaturalParameters" begin
+        @testset "Constructor" begin
+            for i in 1:10
+                @test convert(Distribution, CategoricalNaturalParameters([0 for _ in 1:(i - 1)])) ≈ Categorical([1 / i for _ in 1:i])
+                @test convert(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
+                @test convert(CategoricalNaturalParameters{Float64}, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
+                @test as_naturalparams(CategoricalNaturalParameters, [0 for _ in 1:i]) == CategoricalNaturalParameters([0 for _ in 1:i])
+                @test naturalparams(Categorical([1 / i for _ in 1:i])) == CategoricalNaturalParameters([0 for _ in 1:(i - 1)])
+            end
+        end
+
+        @testset "logpdf" begin
+            for i in 1:10
+                distribution = Categorical(softmax([rand() for _ in 1:i]))
+                cat_np = naturalparams(distribution)
+                for j in 1:i
+                    @test logpdf(distribution, j) ≈ logpdf(cat_np, j)
+                end
+            end
+        end
+
+        @testset "lognormalizer" begin
+            for i in 1:10
+                distribution = Categorical(softmax([rand() for _ in 1:i]))
+                cat_np = naturalparams(distribution)
+                @test lognormalizer(cat_np) ≈ log(sum(exp.(cat_np.η)) + 1)
+            end
+        end
+
+        @testset "isproper" begin
+            for i in 1:10
+                @test isproper(CategoricalNaturalParameters([rand() for _ in 1:i])) === true
+            end
+        end
     end
 end
 
