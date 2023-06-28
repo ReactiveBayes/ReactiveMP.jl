@@ -1,7 +1,11 @@
 export rule
 
 @rule Categorical(:out, Marginalisation) (m_p::Dirichlet,) = begin
-    @logscale 0
+    if isnothing(messages[1].addons)
+        @logscale 0
+    else 
+        @logscale getlogscale(messages[1])
+    end
     return Categorical(mean(m_p))
 end
 

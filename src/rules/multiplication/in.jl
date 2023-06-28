@@ -67,10 +67,12 @@ end
 
 @rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
     backward_in = (x) -> -log(abs(x)) + logpdf(m_A,mean(m_out)/x)
-
     scalefactor = (x) -> exp(backward_in(x))/exp(-x^2)
     points, w = ReactiveMP.gausshermite(9)
     Z = dot(w,scalefactor.(points))
+    # nsamples = 3000
+    # samples = rand(StableRNG(1),m_A,nsamples)
+    # Z = sum(1 ./ abs.(samples)) / nsamples
     if isnothing(messages[2].addons)
         @logscale log(Z)
     else
@@ -106,13 +108,13 @@ end
 
 
 
-@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
-    μ_A, var_A = mean_var(m_A)
-    μ_out, var_out = mean_var(m_out)
-    log_backwardpass = (x) -> -log(abs(x)) - 0.5 * log(2π * (var_A + var_out / x^2)) - 1 / 2 * (μ_out - x * μ_A)^2 / (var_A * x^2 + var_out)
-    return ContinuousUnivariateLogPdf(log_backwardpass)
-end
+# @rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
+#     μ_A, var_A = mean_var(m_A)
+#     μ_out, var_out = mean_var(m_out)
+#     log_backwardpass = (x) -> -log(abs(x)) - 0.5 * log(2π * (var_A + var_out / x^2)) - 1 / 2 * (μ_out - x * μ_A)^2 / (var_A * x^2 + var_out)
+#     return ContinuousUnivariateLogPdf(log_backwardpass)
+# end
 
-@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateDistribution, m_A::UnivariateDistribution, meta::Union{<:AbstractCorrection, Nothing}) = begin
-    return @call_rule typeof(*)(:A, Marginalisation) (m_out = m_out, m_in = m_A, meta = meta)
-end
+# @rule typeof(*)(:in, Marginalisation) (m_out::UnivariateDistribution, m_A::UnivariateDistribution, meta::Union{<:AbstractCorrection, Nothing}) = begin
+#     return @call_rule typeof(*)(:A, Marginalisation) (m_out = m_out, m_in = m_A, meta = meta)
+# end

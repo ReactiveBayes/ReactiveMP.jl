@@ -11,8 +11,12 @@ import StaticArrays: SVector
 end
 
 @rule Mixture(:switch, Marginalisation) (m_out::PointMass, m_inputs::ManyOf{N, Any}) where {N} = begin
-    logscales = map(input -> getlogscale(input), messages[2])
-    @logscale logsumexp(logscales)
+    out = mean(m_out)
+    eval_logpdf = map(input -> logpdf(input,out), m_inputs)
 
-    return Categorical(softmax(collect(logscales)))
+    logscales = map(input -> getlogscale(input), messages[2])
+    newlogscale = logscales .+ eval_logpdf
+    @logscale logsumexp(eval_logpdf)
+    
+    return Categorical(softmax(collect(newlogscale)))
 end

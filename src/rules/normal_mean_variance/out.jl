@@ -4,7 +4,11 @@
 @rule NormalMeanVariance(:out, Marginalisation) (m_μ::PointMass, m_v::PointMass) = NormalMeanVariance(mean(m_μ), mean(m_v))
 
 @rule NormalMeanVariance(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, m_v::PointMass) = begin
-    @logscale 0
+    if isnothing(messages[1].addons)
+        @logscale 0
+    else
+        @logscale getlogscale(messages[1])
+    end
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return NormalMeanVariance(m_μ_mean, m_μ_cov + mean(m_v))
 end
@@ -23,7 +27,11 @@ end
 end
 
 @rule NormalMeanVariance(:out, Marginalisation) (m_μ::UnivariateNormalDistributionsFamily, q_v::PointMass) = begin
-    @logscale 0
+    if isnothing(messages[1].addons)
+        @logscale 0
+    else
+        @logscale getlogscale(messages[1].addons)
+    end
     m_μ_mean, m_μ_cov = mean_cov(m_μ)
     return NormalMeanVariance(m_μ_mean, m_μ_cov + mean(q_v))
 end
