@@ -214,6 +214,9 @@ end
 
     addtests(testrunner, "test_gpstrategy.jl")
 
+    addtests(testrunner, "addons/test_debug.jl")
+    addtests(testrunner, "addons/test_memory.jl")
+
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
     addtests(testrunner, "approximations/test_linearization.jl")
@@ -246,6 +249,7 @@ end
     addtests(testrunner, "distributions/test_wishart.jl")
     addtests(testrunner, "distributions/test_wishart_inverse.jl")
     addtests(testrunner, "distributions/test_sample_list.jl")
+    addtests(testrunner, "distributions/test_function.jl")
     addtests(testrunner, "distributions/test_mixture_distribution.jl")
 
     addtests(testrunner, "test_message.jl")

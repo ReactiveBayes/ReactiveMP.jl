@@ -4,8 +4,10 @@ using Test
 using ReactiveMP
 using Distributions
 using Random
+using StableRNGs
 
-import ReactiveMP: getdomain, AbstractContinuousGenericLogPdf
+import ReactiveMP: getdomain, AbstractContinuousGenericLogPdf, GenericLogPdfVectorisedProduct
+import ReactiveMP: paramfloattype, samplefloattype
 
 import DomainIntegrals
 import DomainSets
@@ -21,6 +23,10 @@ import DomainSets
             @test d1 ≈ d2
             @test eltype(d1) === Float64
             @test eltype(d2) === Float64
+            @test paramfloattype(d1) === Float64
+            @test samplefloattype(d1) === Float64
+            @test paramfloattype(d2) === Float64
+            @test samplefloattype(d2) === Float64
 
             @test_throws AssertionError ContinuousUnivariateLogPdf(DomainSets.FullSpace()^2, f)
         end
@@ -199,7 +205,7 @@ import DomainSets
 
             pr1 = prod(ProdAnalytical(), d1, d2)
 
-            @test pr1 isa ContinuousGenericLogPdfVectorisedProduct
+            @test pr1 isa GenericLogPdfVectorisedProduct
             @test getdomain(pr1) === getdomain(d1)
             @test getdomain(pr1) === getdomain(d2)
             @test variate_form(typeof(pr1)) === variate_form(typeof(d1))
@@ -208,7 +214,11 @@ import DomainSets
             @test value_support(typeof(pr1)) === value_support(typeof(d2))
             @test support(pr1) === support(d1)
             @test support(pr1) === support(d2)
-            @test isapprox(pr1, d3, atol = 1e-12)
+
+            for point in rand(StableRNG(42), Float64, 10)
+                @test pdf(pr1, point) ≈ pdf(d3, point)
+                @test logpdf(pr1, point) ≈ logpdf(d3, point)
+            end
         end
 
         @testset "convert" begin
@@ -233,6 +243,10 @@ import DomainSets
 
             @test typeof(d1) === typeof(d2)
             @test d1 ≈ d2
+            @test paramfloattype(d1) === Float64
+            @test samplefloattype(d1) === Float64
+            @test paramfloattype(d2) === Float64
+            @test samplefloattype(d2) === Float64
 
             @test_throws AssertionError ContinuousMultivariateLogPdf(DomainSets.FullSpace(), f)
             @test_throws MethodError ContinuousMultivariateLogPdf(f)
@@ -291,8 +305,8 @@ import DomainSets
                 d2 = ContinuousMultivariateLogPdf(DomainSets.HalfLine()^dim, (x) -> -x'x)
 
                 # This also throws a warning in stdout
-                @test_throws AssertionError logpdf(d1, ones(dim + 1))
-                @test_throws AssertionError logpdf(d2, ones(dim + 1))
+                @test_logs (:warn, r".*incompatible combination.*") @test_throws AssertionError logpdf(d1, ones(dim + 1))
+                @test_logs (:warn, r".*incompatible combination.*") @test_throws AssertionError logpdf(d2, ones(dim + 1))
             end
         end
 
@@ -351,7 +365,7 @@ import DomainSets
 
             pr1 = prod(ProdAnalytical(), d1, d2)
 
-            @test pr1 isa ContinuousGenericLogPdfVectorisedProduct
+            @test pr1 isa GenericLogPdfVectorisedProduct
             @test getdomain(pr1) === getdomain(d1)
             @test getdomain(pr1) === getdomain(d2)
             @test variate_form(typeof(pr1)) === variate_form(typeof(d1))
@@ -360,7 +374,11 @@ import DomainSets
             @test value_support(typeof(pr1)) === value_support(typeof(d2))
             @test support(pr1) === support(d1)
             @test support(pr1) === support(d2)
-            @test isapprox(pr1, d3, atol = 1e-12)
+
+            for point in [rand(Float64, 2) for _ in 1:10]
+                @test pdf(pr1, point) ≈ pdf(d3, point)
+                @test logpdf(pr1, point) ≈ logpdf(d3, point)
+            end
         end
 
         @testset "convert" begin

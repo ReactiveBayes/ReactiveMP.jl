@@ -100,6 +100,27 @@ function rule_macro_parse_on_tag(on)
 end
 
 """
+    rule_macro_check_fn_args(inputs; allowed_inputs, allowed_prefixes)
+
+This function checks if all `inputs` are either in the `allowed_inputs` or have prefixes in the `allowed_prefixes`.
+
+See also: [`@rule`](@ref)
+"""
+function rule_macro_check_fn_args(inputs; allowed_inputs, allowed_prefixes)
+    str_allowed_inputs = map(string, allowed_inputs)
+    str_allowed_prefixes = map(string, allowed_prefixes)
+    foreach(inputs) do input
+        str_input = string(first(input))
+        if !(str_input ∈ str_allowed_inputs) && !(any(str_prefix -> startswith(str_input, str_prefix), str_allowed_prefixes))
+            error(
+                "Found a bad input $(input) in the macro arguments specification. It must be either in `$(str_allowed_inputs)` or start with a prefix in `$(str_allowed_prefixes)`"
+            )
+        end
+    end
+    return true
+end
+
+"""
     rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
 
 Do not use this function directly. This function is private and does not belong to the public API.
@@ -377,6 +398,8 @@ macro rule(fform, lambda)
         return (iname, itype)
     end
 
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
@@ -435,6 +458,8 @@ macro call_rule(fform, args)
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
         return (iname, ivalue)
     end
+
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
 
     m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
@@ -520,6 +545,8 @@ macro marginalrule(fform, lambda)
         return (iname, itype)
     end
 
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
@@ -562,6 +589,8 @@ macro call_marginalrule(fform, args)
         @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
         return (iname, ivalue)
     end
+
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
 
     m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
