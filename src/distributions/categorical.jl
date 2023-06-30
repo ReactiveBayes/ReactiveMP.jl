@@ -1,4 +1,5 @@
 export Categorical
+export CategoricalNaturalParameters
 
 import Distributions: Categorical, probs
 
@@ -19,4 +20,47 @@ probvec(dist::Categorical) = probs(dist)
 
 function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Categorical)
     return log(dot(probvec(left_dist), probvec(right_dist)))
+end
+
+struct CategoricalNaturalParameters{T <: Real, M <: AbstractArray{T}} <: NaturalParameters
+    η::M
+end
+
+Base.convert(::Type{CategoricalNaturalParameters}, vec::AbstractVector) = convert(CategoricalNaturalParameters{eltype(vec)}, vec)
+
+Base.convert(::Type{CategoricalNaturalParameters{T}}, vec::AbstractVector) where {T} = CategoricalNaturalParameters(convert(AbstractVector{T}, vec))
+
+as_naturalparams(::Type{T}, args...) where {T <: CategoricalNaturalParameters} = convert(CategoricalNaturalParameters, args...)
+
+function Base.convert(::Type{Distribution}, params::CategoricalNaturalParameters)
+    params = [params.η..., 0]
+    return Categorical(softmax(params))
+end
+
+function naturalparams(dist::Categorical)
+    p = probvec(dist)
+    η = log.(p / p[end])[1:(end - 1)]
+    return CategoricalNaturalParameters(η)
+end
+
+function Base.vec(params::CategoricalNaturalParameters)
+    return params.η
+end
+
+function Base.:(==)(left::CategoricalNaturalParameters, right::CategoricalNaturalParameters)
+    return left.η == right.η
+end
+
+function isproper(::CategoricalNaturalParameters)
+    return true
+end
+
+function lognormalizer(params::CategoricalNaturalParameters)
+    return log(sum(exp.(params.η)) + 1)
+end
+
+logpdf(params::CategoricalNaturalParameters, x) = logpdf(convert(Distribution, params), x)
+
+function Base.:-(left::CategoricalNaturalParameters, right::CategoricalNaturalParameters)
+    return CategoricalNaturalParameters(left.η - right.η)
 end
