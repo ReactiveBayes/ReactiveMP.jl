@@ -5,8 +5,10 @@ using ReactiveMP
 using Distributions
 using StaticArrays
 using StableRNGs
+using LinearAlgebra
 
-import ReactiveMP: convert_eltype, deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype
+import ReactiveMP: WishartMessage, InverseWishartMessage
+import ReactiveMP: deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype, paramfloattype, convert_paramfloattype
 import ReactiveMP: FactorizedJoint
 
 @testset "Distributions" begin
@@ -31,25 +33,28 @@ import ReactiveMP: FactorizedJoint
             push!(distributions, MvNormalMeanPrecision(rand(rng, T, n)))
             push!(distributions, MvNormalMeanCovariance(rand(rng, T, n)))
             push!(distributions, MvNormalWeightedMeanPrecision(rand(rng, T, n)))
-            push!(distributions, MvNormal(rand(rng, T, n)))
             push!(distributions, SampleList([rand(rng, T, n)]))
         end
 
         # Add `Matrixvariate` distributions
         for T in Types, n in (2, 3)
             push!(distributions, PointMass(rand(rng, T, n, n)))
-            push!(distributions, Wishart(one(T), diageye(T, n)))
+            push!(distributions, InverseWishartMessage(5one(T), diageye(T, n)))
             push!(distributions, SampleList([rand(rng, T, n, n)]))
         end
 
         return filter((dist) -> variate_form(dist) <: V, distributions)
     end
 
-    @testset "convert_eltype" begin
+    @testset "convert_paramfloattype" begin
         for T in (Float32, Float64, BigFloat)
-            @test @inferred(eltype(convert_eltype(T, [1.0, 1.0]))) === T
-            @test @inferred(eltype(convert_eltype(T, [1.0 1.0; 1.0 1.0]))) === T
-            @test @inferred(eltype(convert_eltype(T, 1.0))) === T
+            @test @inferred(eltype(convert_paramfloattype(T, [1.0, 1.0]))) === T
+            @test @inferred(eltype(convert_paramfloattype(T, [1.0 1.0; 1.0 1.0]))) === T
+            @test @inferred(eltype(convert_paramfloattype(T, 1.0))) === T
+
+            for distribution in fixture_various_distributions()
+                @test @inferred(paramfloattype(convert_paramfloattype(T, distribution))) === T
+            end
         end
     end
 

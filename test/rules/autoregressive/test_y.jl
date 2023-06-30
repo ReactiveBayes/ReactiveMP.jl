@@ -10,7 +10,7 @@ import ReactiveMP: @test_rules, ARTransitionMatrix
 @testset "rules:Autoregressive:y" begin
     @testset "Mean-field: (q_x::Any, q_θ::Any, q_γ::Any)" begin
         armeta = ARMeta(Univariate, 1, ARsafe())
-        @test_rules [with_float_conversions = true] Autoregressive(:y, Marginalisation) [
+        @test_rules [check_type_promotion = true] Autoregressive(:y, Marginalisation) [
             (
                 input = (q_x = NormalMeanVariance(1.0, 1.0), q_θ = NormalMeanVariance(1.0, 1.0), q_γ = GammaShapeRate(1.0, 1.0), meta = armeta),
                 output = NormalMeanVariance(1.0, 1.0)
@@ -24,7 +24,7 @@ import ReactiveMP: @test_rules, ARTransitionMatrix
     @testset "Mean-field: (q_x::Any, q_θ::Any, q_γ::Any)" begin
         order = 2
         armeta = ARMeta(Multivariate, order, ARsafe())
-        @test_rules [with_float_conversions = false] Autoregressive(:y, Marginalisation) [
+        @test_rules [check_type_promotion = true] Autoregressive(:y, Marginalisation) [
             (
                 input = (
                     q_x = MvNormalMeanCovariance(zeros(order), diageye(order)),
@@ -54,7 +54,7 @@ import ReactiveMP: @test_rules, ARTransitionMatrix
 
     @testset "Structured: (m_x::UnivariateNormalDistributionsFamily, q_θ::UnivariateNormalDistributionsFamily, q_γ::Any)" begin
         armeta = ARMeta(Univariate, 1, ARsafe())
-        @test_rules [with_float_conversions = true] Autoregressive(:y, Marginalisation) [
+        @test_rules [check_type_promotion = true] Autoregressive(:y, Marginalisation) [
             (
                 input = (m_x = NormalMeanVariance(1.0, 1.0), q_θ = NormalMeanVariance(1.0, 1.0), q_γ = GammaShapeRate(1.0, 1.0), meta = armeta),
                 output = NormalMeanVariance(0.5, 1.5)
@@ -78,7 +78,7 @@ import ReactiveMP: @test_rules, ARTransitionMatrix
     @testset "Structured : (m_x::MultivariateNormalDistributionsFamily, q_θ::MultivariateNormalDistributionsFamily, q_γ::Any)" begin
         order = 2
         armeta = ARMeta(Multivariate, order, ARsafe())
-        @test_rules [with_float_conversions = true] Autoregressive(:y, Marginalisation) [
+        @test_rules [check_type_promotion = true] Autoregressive(:y, Marginalisation) [
             (
                 input = (
                     m_x = MvNormalMeanCovariance(zeros(order), diageye(order)),

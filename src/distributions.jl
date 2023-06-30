@@ -2,7 +2,7 @@ export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, isproper
-export variate_form, value_support, promote_variate_type, convert_eltype
+export variate_form, value_support, promote_variate_type
 export naturalparams, as_naturalparams, lognormalizer, NaturalParameters
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
@@ -93,26 +93,62 @@ promote_variate_type(::D, T) where {D <: Distribution}       = promote_variate_t
 promote_variate_type(::Type{D}, T) where {D <: Distribution} = promote_variate_type(variate_form(D), T)
 
 """
-    convert_eltype(::Type{D}, ::Type{E}, distribution)
+    paramfloattype(distribution)
 
-Converts (if possible) the `distribution` to be of type `D{E}`.
+Returns the underlying float type of distribution's parameters.
+
+See also: [`ReactiveMP.promote_paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
-convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} = convert(D{E}, distribution)
+paramfloattype(distribution::Distribution) = promote_type(map(deep_eltype, params(distribution))...)
+paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt))
+paramfloattype(t::Tuple) = promote_paramfloattype(t...)
+
+# `Bool` is the smallest possible type, should not play any role in the promotion
+paramfloattype(::Nothing) = Bool
 
 """
-    convert_eltype(::Type{E}, container)
+    promote_paramfloattype(distributions...)
 
-Converts (if possible) the elements of the `container` to be of type `E`.
+Promotes `paramfloattype` of the `distributions` to a single type. See also `promote_type`.
+
+See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.convert_paramfloattype`](@ref)
 """
-convert_eltype(::Type{E}, container::AbstractArray) where {E} = convert(AbstractArray{E}, container)
-convert_eltype(::Type{E}, number::Number) where {E} = convert(E, number)
+promote_paramfloattype(distributions...) = promote_type(map(paramfloattype, distributions)...)
+
+"""
+    convert_paramfloattype(::Type{T}, distribution)
+
+Converts (if possible) the params float type of the `distribution` to be of type `T`.
+
+See also: [`ReactiveMP.paramfloattype`](@ref), [`ReactiveMP.promote_paramfloattype`](@ref)
+"""
+convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} =
+    automatic_convert_paramfloattype(distribution_typename(distribution), map(convert_paramfloattype(T), params(distribution)))
+convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(convert_paramfloattype(T), collection)
+convert_paramfloattype(collection::NamedTuple) = convert_paramfloattype(paramfloattype(collection), collection)
+convert_paramfloattype(::Type{T}) where {T} = TypeConverter(T, convert_paramfloattype)
+
+# We attempt to automatically construct a new distribution with a desired paramfloattype
+# This function assumes that the constructor `D(...)` accepts the same order of parameters as 
+# returned from the `params` function. It is the case for distributions from `Distributions.jl`
+automatic_convert_paramfloattype(::Type{D}, params) where {D <: Distribution} = D(params...)
+automatic_convert_paramfloattype(::Type{D}, params) where {D} = error("Cannot automatically construct a distribution of type `$D` with params = $(params)")
+
+"""
+    convert_paramfloattype(::Type{T}, container)
+
+Converts (if possible) the elements of the `container` to be of type `T`.
+"""
+convert_paramfloattype(::Type{T}, container::AbstractArray) where {T} = convert(AbstractArray{T}, container)
+convert_paramfloattype(::Type{T}, number::Number) where {T} = convert(T, number)
+convert_paramfloattype(::Type, ::Nothing) = nothing
 
 """
     sampletype(distribution)
 
 Returns a type of the distribution. By default fallbacks to the `eltype`.
 
-See also: [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promotesamplefloatype`](@ref)
+See also: [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
 """
 sampletype(distribution) = eltype(distribution)
 
@@ -127,7 +163,7 @@ sampletype(::Type{Matrixvariate}, distribution) = Matrix{eltype(distribution)}
 Returns a type of the distribution or the underlying float type in case if sample is `Multivariate` or `Matrixvariate`. 
 By default fallbacks to the `deep_eltype(sampletype(distribution))`.
 
-See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloatype`](@ref)
+See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
 """
 samplefloattype(distribution) = deep_eltype(sampletype(distribution))
 
@@ -138,7 +174,7 @@ Promotes `sampletype` of the `distributions` to a single type. See also `promote
 
 See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
 """
-promote_sampletype(distributions...) = promote_type(sampletype.(distributions)...)
+promote_sampletype(distributions...) = promote_type(map(sampletype, distributions)...)
 
 """
     promote_samplefloattype(distributions...)
@@ -147,7 +183,7 @@ Promotes `samplefloattype` of the `distributions` to a single type. See also `pr
 
 See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref)
 """
-promote_samplefloattype(distributions...) = promote_type(samplefloattype.(distributions)...)
+promote_samplefloattype(distributions...) = promote_type(map(samplefloattype, distributions)...)
 
 """
     logpdf_sample_friendly(distribution) 
@@ -224,3 +260,13 @@ function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
 end
 
 Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))
+
+paramfloattype(joint::FactorizedJoint) = paramfloattype(getmultipliers(joint))
+convert_paramfloattype(::Type{T}, joint::FactorizedJoint) where {T} = FactorizedJoint(map(e -> convert_paramfloattype(T, joint), getmultipliers(joint)))
+
+## Utils
+
+# Returns a wrapper distribution for a `<:Distribution` type
+@generated function distribution_typename(distribution)
+    return Base.typename(distribution).name
+end

@@ -51,6 +51,8 @@ macro average_energy(fformtype, lambda)
         return (iname, itype)
     end
 
+    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:q_,))
+
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :Marginal)
 
     result = quote

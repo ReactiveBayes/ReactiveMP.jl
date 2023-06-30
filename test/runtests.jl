@@ -183,8 +183,8 @@ using Aqua
 if isempty(testrunner.enabled_tests)
     println("Running all tests...")
     # We `pirate` `mean` methods for distributions in `Distributions.jl`
-    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false)
-    # doctest(ReactiveMP)
+    # `project_toml_formatting` is broken with Extensions
+    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false, project_toml_formatting = false)
 else
     println("Running specific tests:")
     foreach(testrunner.enabled_tests) do test
@@ -211,6 +211,9 @@ end
 
     addtests(testrunner, "test_rule.jl")
     addtests(testrunner, "test_addons.jl")
+
+    addtests(testrunner, "addons/test_debug.jl")
+    addtests(testrunner, "addons/test_memory.jl")
 
     addtests(testrunner, "approximations/test_shared.jl")
     addtests(testrunner, "approximations/test_unscented.jl")
@@ -244,6 +247,7 @@ end
     addtests(testrunner, "distributions/test_wishart.jl")
     addtests(testrunner, "distributions/test_wishart_inverse.jl")
     addtests(testrunner, "distributions/test_sample_list.jl")
+    addtests(testrunner, "distributions/test_function.jl")
     addtests(testrunner, "distributions/test_mixture_distribution.jl")
 
     addtests(testrunner, "test_message.jl")
@@ -277,6 +281,7 @@ end
     addtests(testrunner, "nodes/test_implication.jl")
     addtests(testrunner, "nodes/test_uniform.jl")
     addtests(testrunner, "nodes/test_normal_mixture.jl")
+    addtests(testrunner, "nodes/test_softdot.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
@@ -339,6 +344,11 @@ end
     addtests(testrunner, "rules/dot_product/test_in2.jl")
     addtests(testrunner, "rules/dot_product/test_marginals.jl")
 
+    addtests(testrunner, "rules/softdot/test_y.jl")
+    addtests(testrunner, "rules/softdot/test_theta.jl")
+    addtests(testrunner, "rules/softdot/test_x.jl")
+    addtests(testrunner, "rules/softdot/test_gamma.jl")
+
     addtests(testrunner, "rules/gamma_inverse/test_marginals.jl")
     addtests(testrunner, "rules/gamma_inverse/test_out.jl")
 
@@ -349,6 +359,10 @@ end
     addtests(testrunner, "rules/normal_mean_precision/test_out.jl")
     addtests(testrunner, "rules/normal_mean_precision/test_mean.jl")
     addtests(testrunner, "rules/normal_mean_precision/test_precision.jl")
+
+    addtests(testrunner, "rules/multiplication/test_out.jl")
+    addtests(testrunner, "rules/multiplication/test_A.jl")
+    addtests(testrunner, "rules/multiplication/test_in.jl")
 
     addtests(testrunner, "rules/mv_normal_mean_covariance/test_out.jl")
     addtests(testrunner, "rules/mv_normal_mean_covariance/test_mean.jl")

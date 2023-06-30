@@ -59,7 +59,7 @@ show(io::IO, addon::AddonMemory) = print(io, string("AddonMemory(", addon.memory
 function show(io::IO, addon::AddonMemoryMessageMapping)
     indent = get(io, :indent, 0)
     println(io, ' ', "Message mapping memory:")
-    println(io, ' '^indent, "At the node: ", functionalform(addon.mapping.factornode))
+    println(io, ' '^indent, "At the node: ", message_mapping_fform(addon.mapping))
     println(io, ' '^indent, "Towards interface: ", addon.mapping.vtag)
     println(io, ' '^indent, "With local constraint: ", addon.mapping.vconstraint)
     if !isnothing(addon.mapping.meta)

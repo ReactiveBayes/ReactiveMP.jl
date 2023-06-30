@@ -11,6 +11,10 @@ import ReactiveMP: naturalparams, NaturalParameters, AbstractContinuousGenericLo
 
 struct EmptyOptimizer end
 
+function ReactiveMP.cvi_setup(::EmptyOptimizer, λ)
+    return EmptyOptimizer()
+end
+
 function ReactiveMP.cvi_update!(::EmptyOptimizer, λ, ∇)
     return vec(λ)
 end

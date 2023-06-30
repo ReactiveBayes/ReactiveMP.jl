@@ -1,4 +1,4 @@
-module RulesNormalAutoregressiveTest
+module RulesAutoregressiveTest
 
 using Test
 using ReactiveMP
@@ -10,7 +10,7 @@ import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:Autoregressive" begin
     @testset "y_x: (m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::Any)" begin
-        @test_marginalrules [with_float_conversions = true] Autoregressive(:y_x) [(
+        @test_marginalrules [check_type_promotion = true] Autoregressive(:y_x) [(
             input = (
                 m_y = NormalMeanPrecision(0.0, 1.0),
                 m_x = NormalMeanPrecision(0.0, 1.0),

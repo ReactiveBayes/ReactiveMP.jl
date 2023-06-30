@@ -32,6 +32,13 @@ function local_linearization end
 local_linearization(g::G, x_hat::Tuple{T}) where {G, T} = local_linearization(g(first(x_hat)), g, x_hat)
 
 """Return local linearization of g around expansion point x_hat for Delta node with single input interface and univariate output"""
+function local_linearization(result::R, g::G, x_hat::Tuple{AbstractVector{T}}) where {R <: Real, G, T <: Real}
+    a = ForwardDiff.gradient(g, first(x_hat))'
+    b = result - a * first(x_hat)
+    return (a, b)
+end
+
+"""Return local linearization of g around expansion point x_hat for Delta node with single input interface and univariate output"""
 function local_linearization(result::R, g::G, x_hat::Tuple{T}) where {R <: Real, G, T}
     a = ForwardDiff.derivative(g, first(x_hat))
     b = result - a * first(x_hat)

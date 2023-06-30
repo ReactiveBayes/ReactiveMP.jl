@@ -16,3 +16,10 @@ marginalrule
 @marginalrule
 @call_marginalrule
 ```
+
+## [Testing utilities for the update rules](@id lib-rules-tests)
+
+```@docs
+ReactiveMP.@test_rules
+ReactiveMP.@test_marginalrules
+```

@@ -7,8 +7,6 @@ using LinearAlgebra
 using Distributions
 using ForwardDiff
 
-import ReactiveMP: convert_eltype
-
 @testset "ForwardDiffGrad" begin
     grad = ForwardDiffGrad()
 

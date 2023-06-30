@@ -36,7 +36,9 @@ contingency_matrix(distribution::Contingency) = distribution.p
 
 vague(::Type{<:Contingency}, dims::Int) = Contingency(ones(dims, dims) ./ abs2(dims))
 
-convert_eltype(::Type{Contingency}, ::Type{T}, distribution::Contingency{R}) where {T <: Real, R <: Real} = Contingency(convert(AbstractArray{T}, contingency_matrix(distribution)))
+paramfloattype(distribution::Contingency) = deep_eltype(contingency_matrix(distribution))
+
+convert_paramfloattype(::Type{T}, distribution::Contingency) where {T <: Real} = Contingency(convert_paramfloattype(T, contingency_matrix(distribution)))
 
 function entropy(distribution::Contingency)
     P = contingency_matrix(distribution)

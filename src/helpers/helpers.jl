@@ -121,33 +121,15 @@ Same as `log` but clamps the input argument `x` to be in the range `tiny <= x <=
 clamplog(x) = log(clamp(x, tiny, typemax(x)))
 
 # We override this function for some specific types
-function is_typeof_equal(left, right)
-    _isequal = typeof(left) === typeof(right)
-    if !_isequal
-        @warn "typeof($left) !== typeof($right)"
-        @warn "typeof($left) = $(typeof(left))"
-        @warn "typeof($right) = $(typeof(right))"
-    end
-    return _isequal
-end
+is_typeof_equal(left, right) = typeof(left) === typeof(right)
 
-function custom_isapprox(left, right; kwargs...)
-    _isapprox = isapprox(left, right; kwargs...)
-    if !_isapprox
-        @warn "$left !≈ $right"
-    end
-    return _isapprox
-end
-
+custom_isapprox(left, right; kwargs...) = isapprox(left, right; kwargs...)
 custom_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false
 
 function custom_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) where {K}
     _isapprox = true
     for key in keys(left)
         _isapprox = _isapprox && custom_isapprox(left[key], right[key]; kwargs...)
-    end
-    if !_isapprox
-        @warn "$left !≈ $right"
     end
     return _isapprox
 end
@@ -226,3 +208,18 @@ function Base.show(io::IO, index::FunctionalIndex{R, F}) where {R, F}
     __functional_index_print(io, index.f)
     print(io, ")")
 end
+
+## 
+
+# Julia does not really like expressions of the form
+# map((e) -> convert(T, e), collection)
+# because type `T` is inside lambda function
+# https://github.com/JuliaLang/julia/issues/15276
+# https://github.com/JuliaLang/julia/issues/47760
+struct TypeConverter{T, C}
+    convert::C
+end
+
+TypeConverter(::Type{T}, convert::C) where {T, C} = TypeConverter{T, C}(convert)
+
+(converter::TypeConverter{T})(something) where {T} = converter.convert(T, something)
