@@ -13,10 +13,10 @@ end
 @rule Mixture(:switch, Marginalisation) (m_out::PointMass, m_inputs::ManyOf{N, Any}) where {N} = begin
     out = mean(m_out)
     eval_logpdf = map(input -> logpdf(input,out), m_inputs)
-
+     
     logscales = map(input -> getlogscale(input), messages[2])
     newlogscale = logscales .+ eval_logpdf
-    @logscale logsumexp(eval_logpdf)
+    @logscale logsumexp(newlogscale)
     
     return Categorical(softmax(collect(newlogscale)))
 end

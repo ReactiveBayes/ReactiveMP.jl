@@ -25,3 +25,19 @@ end
     normalize!(p, 1)
     return Categorical(p)
 end
+
+### PAD experiment
+@rule Transition(:in, Marginalisation) (m_out::DiscreteNonParametric, q_out::PointMass, q_a::MatrixDirichlet, ) = begin 
+    #### scalefactor
+    # if isnothing(messages[1].addons)
+    #     @logscale 0
+    # else
+    #     A = mean(q_a)
+    #     y = mean(q_out)
+    #     @logscale log(sum(A'*y)) + getlogscale(messages[1]) #might be incorrect 
+    # end
+    ####
+    @logscale 0 #might be incorrect 
+    a = clamp.(exp.(mean(log, q_a)' * probvec(q_out)), tiny, Inf)
+    return Categorical(a ./ sum(a))
+end

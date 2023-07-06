@@ -25,6 +25,14 @@ end
 end
 
 @rule Transition(:out, Marginalisation) (m_in::Categorical, q_a::ContinuousMatrixDistribution) = begin
+    ### scalefactor 
+    # if isnothing(messages[1].addons)
+    #     @logscale 0
+    # else
+    #     @logscale getlogscale(messages[1])#correct 
+    # end
+    #####
+    @logscale 0
     a = clamp.(exp.(mean(log, q_a)) * probvec(m_in), tiny, Inf)
     return Categorical(a ./ sum(a))
 end
