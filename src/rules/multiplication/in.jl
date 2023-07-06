@@ -67,8 +67,8 @@ end
 
 @rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
     backward_in = (x) -> -log(abs(x)) + logpdf(m_A,mean(m_out)/x)
-    scalefactor = (x) -> exp(backward_in(x))/exp(-x^2)
-    points, w = ReactiveMP.gausshermite(9)
+    scalefactor = (x) -> exp(backward_in(x))*exp(x^2)
+    points, w = ReactiveMP.gausshermite(120)
     Z = dot(w,scalefactor.(points))
     # nsamples = 3000
     # samples = rand(StableRNG(1),m_A,nsamples)
