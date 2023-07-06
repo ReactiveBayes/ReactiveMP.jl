@@ -63,8 +63,8 @@ function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
-function prod(::ProdAnalytical, left::Truncated{<:Normal}, right::GammaDistributionsFamily)
-    @assert (left.lower ≈ zero(left.lower) && isinf(left.upper)) "Truncated{Normal} * GammaDistributionsFamily only implemented for Truncated{Normal}(0, Inf)"
+function prod(::ProdAnalytical, left::Truncated{<:Normal}, right::GammaShapeRate)
+    @assert (left.lower ≈ zero(left.lower) && isinf(left.upper)) "Truncated{Normal} * GammaShapeRate only implemented for Truncated{Normal}(0, Inf)"
     return vague(GammaShapeRate)
 end
 
