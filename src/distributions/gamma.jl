@@ -88,7 +88,7 @@ function prod(::ProdAnalytical, left::Truncated{<:Normal}, right::GammaDistribut
 
     samples = rand(MersenneTwister(123), left, 1000)
     zeronum = zero(eltype(samples))
-    
+
     sx, xlogx, tw = mapreduce(.+, samples; init = (zeronum, zeronum, zeronum)) do sample
         w = pdf(right, sample)
         return (w * sample, w * log(sample), w)
