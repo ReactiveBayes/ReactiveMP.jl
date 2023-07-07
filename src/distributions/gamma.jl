@@ -78,6 +78,28 @@ function compute_logscale(new_dist::GammaDistributionsFamily, left_dist::GammaDi
     return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
 end
 
+prod_analytical_rule(::Type{<:Truncated{<:Normal}}, ::Type{<:GammaDistributionsFamily}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:GammaDistributionsFamily}, ::Type{<:Truncated{<:Normal}}) = ProdAnalyticalRuleAvailable()
+
+prod(::ProdAnalytical, left::GammaDistributionsFamily, right::Truncated{<:Normal}) = prod(ProdAnalytical(), right, left)
+
+function prod(::ProdAnalytical, left::Truncated{<:Normal}, right::GammaDistributionsFamily)
+    @assert (left.lower ≈ zero(left.lower) && isinf(left.upper)) "Truncated{Normal} * Gamma only implemented for Truncated{Normal}(0, Inf)"
+
+    samples = rand(MersenneTwister(123), left, 1000)
+    zeronum = zero(eltype(samples))
+    
+    sx, xlogx, tw = mapreduce(.+, samples; init = (zeronum, zeronum, zeronum)) do sample
+        w = pdf(right, sample)
+        return (w * sample, w * log(sample), w)
+    end
+
+    statistics = Distributions.GammaStats(sx, xlogx, tw)
+    fit = Distributions.fit_mle(Gamma, statistics, alpha0 = shape(right))
+
+    return convert(typeof(right), fit)
+end
+
 ## Friendly functions
 
 function logpdf_sample_friendly(dist::GammaDistributionsFamily)

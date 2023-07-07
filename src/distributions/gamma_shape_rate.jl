@@ -63,11 +63,6 @@ function prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
-function prod(::ProdAnalytical, left::Truncated{<:Normal}, right::GammaShapeRate)
-    @assert (left.lower ≈ zero(left.lower) && isinf(left.upper)) "Truncated{Normal} * GammaShapeRate only implemented for Truncated{Normal}(0, Inf)"
-    return vague(GammaShapeRate)
-end
-
 Distributions.pdf(dist::GammaShapeRate, x::Real) = exp(logpdf(dist, x))
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
 
