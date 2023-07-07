@@ -16,7 +16,7 @@ import ReactiveMP: make_node
         @test localmarginalnames(node) === (:out_α_θ,)
         @test metadata(node) === nothing
 
-        node = make_node(InverseGamma, FactorNodeCreationOptions(nothing, 1, nothing))
+        node = make_node(GammaInverse, FactorNodeCreationOptions(nothing, 1, nothing))
         @test metadata(node) === 1
     end
 
