@@ -1,3 +1,4 @@
 @rule HalfNormal(:out, Marginalisation) (q_v::PointMass,) = begin
-    return Truncated(Normal(0.0, sqrt(mean(q_v))), 0.0, Inf)
+    mean_v = mean(q_v)
+    return Truncated(Normal(zero(eltype(q_v)), sqrt(mean_v)), zero(eltype(q_v)), typemax(float(mean_v)))
 end
