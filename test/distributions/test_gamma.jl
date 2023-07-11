@@ -227,6 +227,17 @@ import ReactiveMP: xtlog
         @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeScale(1, 2)) == GammaShapeRate(1, 5 / 2)
         @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(1, 2)) == GammaShapeRate(2, 5 / 2)
         @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5 / 2)
+
+        @test_throws AssertionError prod(ProdAnalytical(), GammaShapeRate(1, 1), Truncated(Normal(0.0, 1.0), -1.0, 1.0))
+        @test_throws AssertionError prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), -1.0, 1.0), GammaShapeRate(1, 1))
+        @test_throws AssertionError prod(ProdAnalytical(), GammaShapeScale(1, 1), Truncated(Normal(0.0, 1.0), -1.0, 1.0))
+        @test_throws AssertionError prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), -1.0, 1.0), GammaShapeScale(1, 1))
+
+        # TODO: these tests should check also check the actual result
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 1), Truncated(Normal(0.0, 1.0), 0.0, Inf)) isa GammaShapeRate
+        @test prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), 0.0, Inf), GammaShapeRate(1, 1)) isa GammaShapeRate
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 1), Truncated(Normal(0.0, 1.0), 0.0, Inf)) isa GammaShapeScale
+        @test prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), 0.0, Inf), GammaShapeScale(1, 1)) isa GammaShapeScale
     end
 end
 
