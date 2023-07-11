@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using Random
 using Distributions
+using StableRNGs
 
 import SpecialFunctions: loggamma
 import ReactiveMP: xtlog
@@ -39,6 +40,17 @@ import ReactiveMP: xtlog
 
         @test eltype(GammaShapeRate(1.0, 2.0)) === Float64
         @test eltype(GammaShapeRate(1.0f0, 2.0f0)) === Float32
+    end
+
+    @testset "rand" begin 
+        rng = StableRNG(42)
+        for shape in (1, 2), scale in (1, 2)
+            for dist in (GammaShapeScale(shape, scale), GammaShapeRate(shape, inv(scale)))
+                @test rand(rng, dist) > 0.0
+                @test all(>(0.0), rand(rng, dist, 10))
+                @test all(>(0.0), rand!(rng, dist, Vector{Float64}(undef, 10)))
+            end
+        end
     end
 
     @testset "vague" begin
