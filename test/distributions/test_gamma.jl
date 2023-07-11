@@ -42,7 +42,7 @@ import ReactiveMP: xtlog
         @test eltype(GammaShapeRate(1.0f0, 2.0f0)) === Float32
     end
 
-    @testset "rand" begin 
+    @testset "rand" begin
         for shape in (1, 2), scale in (1, 2)
             rng = StableRNG(42)
             dist1 = GammaShapeScale(shape, scale)
