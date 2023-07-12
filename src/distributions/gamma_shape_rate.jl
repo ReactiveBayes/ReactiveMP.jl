@@ -70,6 +70,12 @@ function Random.rand(rng::AbstractRNG, dist::GammaShapeRate)
     return convert(eltype(dist), rand(rng, convert(GammaShapeScale, dist)))
 end
 
+# This method is identical to the next one, but we need it
+# See issue https://github.com/biaslab/ReactiveMP.jl/issues/337
+function Random.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Int64)
+    return convert(AbstractArray{eltype(dist)}, rand(rng, convert(GammaShapeScale, dist), n))
+end
+
 function Random.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Integer)
     return convert(AbstractArray{eltype(dist)}, rand(rng, convert(GammaShapeScale, dist), n))
 end
