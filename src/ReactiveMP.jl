@@ -35,6 +35,7 @@ include("marginal.jl")
 include("distributions.jl")
 include("addons.jl")
 
+include("addons/debug.jl")
 include("addons/logscale.jl")
 include("addons/memory.jl")
 
@@ -159,6 +160,7 @@ include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/poisson.jl")
+include("nodes/half_normal.jl")
 
 include("nodes/flow/flow.jl")
 include("nodes/delta/delta.jl")

@@ -2,11 +2,12 @@ module RulesMultiplicationOutTest
 
 using Test
 using ReactiveMP
-using Random, Distributions
+using Random, Distributions, StableRNGs
 import ReactiveMP: @test_rules, besselmod, make_productdist_message
 
 @testset "rule:typeof(*):out" begin
     @testset "Univariate Gaussian messages" begin
+        rng = StableRNG(42)
         d1 = NormalMeanVariance(0.0, 1.0)
         d2 = NormalMeanVariance(0.5, 1.5)
         d3 = NormalMeanVariance(2.0, 0.5)
@@ -21,7 +22,7 @@ import ReactiveMP: @test_rules, besselmod, make_productdist_message
         @test typeof(OutMessage_2) <: ContinuousUnivariateLogPdf
         @test typeof(OutMessage_3) <: ContinuousUnivariateLogPdf
 
-        samples = rand(Uniform(0.5, 4), 10)
+        samples = rand(rng, Uniform(0.5, 4), 10)
         for i in samples
             @test OutMessage_1(i) ≈ groundtruthOutMessage_1(i)
             @test OutMessage_2(i) ≈ groundtruthOutMessage_2(i)
@@ -29,10 +30,11 @@ import ReactiveMP: @test_rules, besselmod, make_productdist_message
         end
     end
     @testset "messages of type Any" begin
+        rng         = StableRNG(42)
         d1          = NormalMeanVariance(0.0, 1.0)
         d2          = LogNormal(0.0, 1.0)
         num_samples = 3000
-        samples_d1  = rand(d1, num_samples)
+        samples_d1  = rand(rng, d1, num_samples)
 
         OutMessage = @call_rule typeof(*)(:out, Marginalisation) (m_A = d1, m_in = d2, meta = TinyCorrection())
 

@@ -14,6 +14,9 @@ t = 2
 v = 5
 g2(x) = x .^ t .- v
 
+# g3: single multivariate input, single univariate output
+g3(x) = dot(x, ones(eltype(x), length(x)))
+
 # h: multiple input, single output
 h(x, y) = x .^ 2 .- y
 
@@ -42,6 +45,13 @@ h(x, y) = x .^ 2 .- y
     @testset "Belief Propagation: f(x): (m_ins::MvNormalMeanCovariance, *)" begin
         @test_rules [check_type_promotion = true] DeltaFn{g2}(:out, Marginalisation) [(
             input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Linearization())), output = MvNormalMeanCovariance([-1.0], [48.0])
+        )]
+    end
+
+    @testset "Belief Propagation: f(x) (m_ins::MvNormalMeanCovariance, *)" begin
+        @test_rules [check_type_promotion = true] DeltaFn{g3}(:out, Marginalisation) [(
+            input = (m_ins = ManyOf(MvNormalMeanCovariance(ones(2), diageye(2))), meta = DeltaMeta(; method = Linearization(), inverse = nothing)),
+            output = NormalMeanVariance(2.0, 2.0)
         )]
     end
 
