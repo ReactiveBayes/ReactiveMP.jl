@@ -116,6 +116,12 @@ include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
 
+include("mv_autoregressive/y.jl")
+include("mv_autoregressive/x.jl")
+include("mv_autoregressive/a.jl")
+include("mv_autoregressive/lambda.jl")
+include("mv_autoregressive/marginals.jl")
+
 include("probit/marginals.jl")
 include("probit/in.jl")
 include("probit/out.jl")
@@ -171,3 +177,5 @@ include("delta/unscented/marginals.jl")
 include("delta/cvi/in.jl")
 include("delta/cvi/out.jl")
 include("delta/cvi/marginals.jl")
+
+include("half_normal/out.jl")
