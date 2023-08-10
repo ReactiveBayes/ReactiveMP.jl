@@ -181,3 +181,5 @@ include("tp/degree.jl")
 include("tp/marginals.jl")
 include("tp/out.jl")
 include("tp/params.jl")
+
+include("half_normal/out.jl")

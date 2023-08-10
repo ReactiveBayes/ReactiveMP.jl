@@ -167,6 +167,7 @@ include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/poisson.jl")
+include("nodes/half_normal.jl")
 
 include("nodes/flow/flow.jl")
 include("nodes/delta/delta.jl")

@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using Random
 using Distributions
+using StableRNGs
 
 import SpecialFunctions: loggamma
 import ReactiveMP: xtlog
@@ -39,6 +40,26 @@ import ReactiveMP: xtlog
 
         @test eltype(GammaShapeRate(1.0, 2.0)) === Float64
         @test eltype(GammaShapeRate(1.0f0, 2.0f0)) === Float32
+    end
+
+    @testset "rand" begin
+        for shape in (1, 2), scale in (1, 2)
+            rng = StableRNG(42)
+            dist1 = GammaShapeScale(shape, scale)
+            dist2 = GammaShapeRate(shape, inv(scale))
+
+            # Check that the result makes sense
+            for dist in (dist1, dist2)
+                @test rand(rng, dist) > 0.0
+                @test all(>(0.0), rand(rng, dist, 10))
+                @test all(>(0.0), rand!(rng, dist, Vector{Float64}(undef, 10)))
+            end
+
+            # Check that the result is almost identical and does not depend on the parametrisation
+            @test rand(StableRNG(42), dist1) ≈ rand(StableRNG(42), dist2)
+            @test all(rand(StableRNG(42), dist1, 10) .≈ rand(StableRNG(42), dist2, 10))
+            @test all(rand!(StableRNG(42), dist1, Vector{Float64}(undef, 10)) .≈ rand!(StableRNG(42), dist2, Vector{Float64}(undef, 10)))
+        end
     end
 
     @testset "vague" begin
@@ -227,6 +248,17 @@ import ReactiveMP: xtlog
         @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeScale(1, 2)) == GammaShapeRate(1, 5 / 2)
         @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(1, 2)) == GammaShapeRate(2, 5 / 2)
         @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5 / 2)
+
+        @test_throws AssertionError prod(ProdAnalytical(), GammaShapeRate(1, 1), Truncated(Normal(0.0, 1.0), -1.0, 1.0))
+        @test_throws AssertionError prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), -1.0, 1.0), GammaShapeRate(1, 1))
+        @test_throws AssertionError prod(ProdAnalytical(), GammaShapeScale(1, 1), Truncated(Normal(0.0, 1.0), -1.0, 1.0))
+        @test_throws AssertionError prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), -1.0, 1.0), GammaShapeScale(1, 1))
+
+        # TODO: these tests should check also check the actual result
+        @test prod(ProdAnalytical(), GammaShapeRate(1, 1), Truncated(Normal(0.0, 1.0), 0.0, Inf)) isa GammaShapeRate
+        @test prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), 0.0, Inf), GammaShapeRate(1, 1)) isa GammaShapeRate
+        @test prod(ProdAnalytical(), GammaShapeScale(1, 1), Truncated(Normal(0.0, 1.0), 0.0, Inf)) isa GammaShapeScale
+        @test prod(ProdAnalytical(), Truncated(Normal(0.0, 1.0), 0.0, Inf), GammaShapeScale(1, 1)) isa GammaShapeScale
     end
 end
 
