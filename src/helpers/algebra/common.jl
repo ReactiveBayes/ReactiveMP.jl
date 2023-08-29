@@ -133,36 +133,14 @@ end
 
 Computes v*a*v^T with a single allocation.
 """
-function v_a_vT(v::AbstractVector, a::Real)
-    T      = promote_type(eltype(v), typeof(a))
-    result = zeros(T, length(v), length(v))
-    mul!(result, v, v', a, one(T))
-    return result
-end
-
-function v_a_vT(v, a)
-    result = v * v'
-    result *= a
-    return result
-end
+v_a_vT(v::AbstractVector, a::Real) = v * v' * a
 
 """
     v_a_vT(v1, a, v2)
 
 Computes v1*a*v2^T with a single allocation.
 """
-function v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector)
-    T      = promote_type(eltype(v1), typeof(a), eltype(v2))
-    result = zeros(T, length(v1), length(v2))
-    mul!(result, v1, v2', a, one(T))
-    return result
-end
-
-function v_a_vT(v1, a, v2)
-    result = v1 * v2'
-    result *= a
-    return result
-end
+v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector) = v1 * v2' * a
 
 """
     mvbeta(x)
