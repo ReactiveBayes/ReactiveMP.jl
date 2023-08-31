@@ -68,16 +68,18 @@ end
 
 @rule typeof(+)(:in1, Marginalisation) (m_out::MvNormalWeightedMeanPrecision{T1}, m_in2::PointMass) where {T1} = begin
     ξout, wout = weightedmean_precision(m_out)
-    ξin1 = wout * mean(m_in2)
-    ξin1 .-= ξout
-    T = promote_type(T1, samplefloattype(m_in2))
-    ξin1 .*= -one(T)
+    ξin1 = ξout - wout * mean(m_in2)
+    # ξin1 = wout * mean(m_in2)
+    # ξin1 .-= ξout
+    # T = promote_type(T1, samplefloattype(m_in2))
+    # ξin1 .*= -one(T)
     return MvNormalWeightedMeanPrecision(ξin1, wout)
 end
 
 @rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in2::MvNormalWeightedMeanPrecision) = begin
     ξin2, win2 = weightedmean_precision(m_in2)
-    ξin1 = win2 * mean(m_out)
-    ξin1 .-= ξin2
+    ξin1 = (win2 * mean(m_out)) - ξin2
+    # ξin1 = win2 * mean(m_out)
+    # ξin1 .-= ξin2
     return MvNormalWeightedMeanPrecision(ξin1, win2)
 end

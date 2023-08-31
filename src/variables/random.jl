@@ -196,6 +196,11 @@ function Base.getindex(randomvar::RandomVariable, i...)
     error("Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed.")
 end
 
+function constrain_message_fn(randomvar::RandomVariable)
+    form_constraint = messages_form_constraint(randomvar)
+    return (message) -> constrain_form_as_message(as_message(message), form_constraint)
+end
+
 messages_prod_fn(randomvar::RandomVariable) =
     messages_prod_fn(prod_strategy(randomvar), prod_constraint(randomvar), messages_form_constraint(randomvar), messages_form_check_strategy(randomvar))
 marginal_prod_fn(randomvar::RandomVariable) =
@@ -252,7 +257,32 @@ function activate!(randomvar::RandomVariable, options)
     return nothing
 end
 
-initialize_output_messages!(randomvar::RandomVariable) = initialize_output_messages!(randomvar.output_cache, randomvar)
+function initialize_output_messages!(randomvar::RandomVariable)
+    # This is special cased because point mass form constraints must also replace output messages
+    if is_point_mass_form_constraint(marginal_form_constraint(randomvar))
+        initialize_output_messages_as_marginal!(randomvar)
+    else
+        initialize_output_messages!(randomvar.output_cache, randomvar)
+    end
+end
+
+# Fallback method for variables, where messages are redirected as the actual marginal 
+# Used for point mass form constrains, but might be useful in other situations as well
+function initialize_output_messages_as_marginal!(randomvar::RandomVariable)
+    d          = degree(randomvar)
+    outputmsgs = randomvar.output_messages
+
+    resize!(outputmsgs, d)
+
+    outputmsg = getmarginal(randomvar, IncludeAll()) |> map(Message, as_message)
+
+    @inbounds for i in 1:d
+        outputmsgs[i] = MessageObservable(Message)
+        connect!(outputmsgs[i], outputmsg)
+    end
+
+    randomvar.output_initialised = true
+end
 
 # Generic fallback for variables with small number of connected nodes, somewhere <= 5
 # We do not create equality chain in this cases, but simply do eager product
@@ -264,11 +294,30 @@ function initialize_output_messages!(::Nothing, randomvar::RandomVariable)
 
     resize!(outputmsgs, d)
 
-    @inbounds for i in 1:d
-        outputmsgs[i] = MessageObservable(Message)
-        outputmsg     = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
-        connect!(outputmsgs[i], outputmsg)
+    if d === 2
+        # Fast path for edge variables (with degree = 2)
+        prod_fn2 = constrain_message_fn(randomvar)
+        @inbounds begin
+            outputmsgs[1] = MessageObservable(Message)
+            outputmsgs[2] = MessageObservable(Message)
+            connect!(outputmsgs[1], inputmsgs[2] |> map(Message, prod_fn2))
+            connect!(outputmsgs[2], inputmsgs[1] |> map(Message, prod_fn2))
+        end
+    else
+        tinputmsgs = Tuple(inputmsgs)
+        @inbounds for i in 1:d
+            outputmsgs[i] = MessageObservable(Message)
+            outputmsg = combineLatest(TupleTools.deleteat(tinputmsgs, i), PushNew()) |> map(Message, prod_fn)
+            connect!(outputmsgs[i], outputmsg)
+        end
     end
+
+    # This is an "old" implementation, which uses the `collectLatest`. It allocates less, but is slower sometimes
+    # @inbounds for i in 1:d
+    #     outputmsgs[i] = MessageObservable(Message)
+    #     outputmsg = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
+    #     connect!(outputmsgs[i], outputmsg)
+    # end
 
     randomvar.output_initialised = true
 
