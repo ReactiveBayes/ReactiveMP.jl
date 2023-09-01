@@ -227,9 +227,8 @@ function v_a_vT(e::StandardBasisVector{T1}, a::T2) where {T1 <: Real, T2 <: Real
     N = length(e)
     I = getind(e)
     T = promote_type(T1, T2)
-    Y = zeros(T, N, N)
-    Y[I, I] = e.scale * a * e.scale
-
+    Y = zeros(T, N)
+    Y[I] = e.scale * a * e.scale
     # return output 
-    return Y
+    return Diagonal(Y)
 end

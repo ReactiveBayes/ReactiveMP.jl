@@ -131,15 +131,13 @@ end
 """
     v_a_vT(v, a)
 
-Computes v*a*v^T with a single allocation.
+Computes v*a*v^T efficiently.
 """
+v_a_vT(v, a) = v * a * v'
+v_a_vT(v1, a, v2) = v1 * a * v2'
+
+# More efficient if `a` is a `Real`
 v_a_vT(v::AbstractVector, a::Real) = v * v' * a
-
-"""
-    v_a_vT(v1, a, v2)
-
-Computes v1*a*v2^T with a single allocation.
-"""
 v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector) = v1 * v2' * a
 
 """
