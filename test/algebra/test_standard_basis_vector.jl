@@ -113,7 +113,7 @@ using LinearAlgebra
         end
     end
 
-    @testset begin 
+    @testset begin
         import ReactiveMP: v_a_vT
 
         for i in 2:5, j in 1:i, scale in (1.0, 2.0), a in rand(5)
@@ -122,8 +122,8 @@ using LinearAlgebra
             @test v_a_vT(e1, a) ≈ v_a_vT(v1, a)
 
             e2 = StandardBasisVector(i, i - j + 1, scale)
-            v2 = collect(e2)    
-            
+            v2 = collect(e2)
+
             @test v_a_vT(e1, a, e2) ≈ v_a_vT(v1, a, v2)
             @test v_a_vT(e1, a, v2) ≈ v_a_vT(v1, a, v2)
             @test v_a_vT(v1, a, e2) ≈ v_a_vT(v1, a, v2)
