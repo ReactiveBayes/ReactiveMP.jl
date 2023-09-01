@@ -691,9 +691,9 @@ import MacroTools: inexpr
         @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNode(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 3))
     end
 
-    @testset "Check the `return_addons` option" begin 
+    @testset "Check the `return_addons` option" begin
         # Enable LogScale addon
-        dist_and_addons = @call_rule [ return_addons = true ] Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2), addons = (AddonLogScale(), ))
+        dist_and_addons = @call_rule [return_addons = true] Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2), addons = (AddonLogScale(),))
 
         @test dist_and_addons isa Tuple
         @test length(dist_and_addons) === 2
@@ -701,7 +701,7 @@ import MacroTools: inexpr
         @test dist_and_addons[2] isa Tuple{AddonLogScale}
 
         # Without addons but with the option
-        dist_and_nothing = @call_rule [ return_addons = true ] Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2), )
+        dist_and_nothing = @call_rule [return_addons = true] Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2),)
 
         @test dist_and_nothing isa Tuple
         @test length(dist_and_nothing) === 2
