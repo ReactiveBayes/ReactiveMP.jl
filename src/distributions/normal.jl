@@ -184,6 +184,11 @@ Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.
 """An alias for the [`JointNormal`](@ref)."""
 const JointGaussian = JointNormal
 
+# Half-Normal related
+function convert_paramfloattype(::Type{T}, distribution::Truncated{<:Normal}) where {T}
+    return Truncated(convert_paramfloattype(T, distribution.untruncated), convert(T, distribution.lower), convert(T, distribution.upper))
+end
+
 # Variate forms promotion
 
 promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F

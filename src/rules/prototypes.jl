@@ -179,3 +179,5 @@ include("delta/unscented/marginals.jl")
 include("delta/cvi/in.jl")
 include("delta/cvi/out.jl")
 include("delta/cvi/marginals.jl")
+
+include("half_normal/out.jl")
