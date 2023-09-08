@@ -38,7 +38,7 @@ function message_mapping_addon(addon::AddonDebug, mapping, messages, marginals, 
         msg *= "Towards interface: " * string(mapping.vtag) * "\n"
         msg *= "With local constraint: " * string(mapping.vconstraint) * "\n"
         if !isnothing(mapping.meta)
-            msg *= "With meta: ", string(mapping.meta) * "\n"
+            msg *= "With meta: " * string(mapping.meta) * "\n"
         end
         if !isnothing(mapping.addons)
             msg *= "With addons: " * string(mapping.addons) * "\n"
