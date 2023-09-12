@@ -1,4 +1,4 @@
-export AR, Autoregressive, ARsafe, ARunsafe, ARMeta, ar_unit, ar_slice
+export AR, Autoregressive, ARsafe, ARunsafe, ARMeta
 
 import LazyArrays
 import Distributions: VariateForm
