@@ -11,7 +11,7 @@ end
 @node MvNormalMeanScalePrecision Stochastic [out, (μ, aliases = [mean]), (γ, aliases = [precision])]
 
 # default method for mean-field assumption
-@average_energy MvNormalMeanScalePrecision (q_out::Any, q_μ::Any, q_γ::Gamma) = begin
+@average_energy MvNormalMeanScalePrecision (q_out::Any, q_μ::Any, q_γ::GammaDistributionsFamily) = begin
     dim = ndims(q_out)
 
     m_mean, v_mean = mean_cov(q_μ)
