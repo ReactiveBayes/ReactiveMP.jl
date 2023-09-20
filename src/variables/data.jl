@@ -194,7 +194,6 @@ _getprediction(datavar::DataVariable)              = datavar.prediction
 _setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)
 _makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, marginal_prod_fn(datavar))
 
-# options here must implement at least `Rocket.getscheduler`
 function activate!(datavar::DataVariable, options)
     _setprediction!(datavar, _makeprediction(datavar))
 

@@ -26,10 +26,13 @@ end
 
 vague(::Type{<:GammaShapeScale}) = GammaShapeScale(1.0, huge)
 
+convert_paramfloattype(::Type{T}, distribution::GammaShapeScale) where {T} = GammaShapeScale(convert.(T, params(distribution))...; check_args = false)
+convert_paramfloattype(::Type{T}, distribution::GammaShapeRate) where {T} = GammaShapeRate(convert.(T, params(distribution))...) # our implementation does not check_args anyway
+
 prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
 
 function prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)
-    T = promote_samplefloattype(left, right)
+    T = promote_paramfloattype(left, right)
     return GammaShapeScale(shape(left) + shape(right) - one(T), (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
@@ -73,6 +76,28 @@ function compute_logscale(new_dist::GammaDistributionsFamily, left_dist::GammaDi
     ax, bx = shape(left_dist), rate(left_dist)
     az, bz = shape(right_dist), rate(right_dist)
     return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
+end
+
+prod_analytical_rule(::Type{<:Truncated{<:Normal}}, ::Type{<:GammaDistributionsFamily}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:GammaDistributionsFamily}, ::Type{<:Truncated{<:Normal}}) = ProdAnalyticalRuleAvailable()
+
+prod(::ProdAnalytical, left::GammaDistributionsFamily, right::Truncated{<:Normal}) = prod(ProdAnalytical(), right, left)
+
+function prod(::ProdAnalytical, left::Truncated{<:Normal}, right::GammaDistributionsFamily)
+    @assert (left.lower ≈ zero(left.lower) && isinf(left.upper)) "Truncated{Normal} * Gamma only implemented for Truncated{Normal}(0, Inf)"
+
+    samples = rand(MersenneTwister(123), left, 1000)
+    zeronum = zero(eltype(samples))
+
+    sx, xlogx, tw = mapreduce(.+, samples; init = (zeronum, zeronum, zeronum)) do sample
+        w = pdf(right, sample)
+        return (w * sample, w * log(sample), w)
+    end
+
+    statistics = Distributions.GammaStats(sx, xlogx, tw)
+    fit = Distributions.fit_mle(Gamma, statistics, alpha0 = shape(right))
+
+    return convert(typeof(right), fit)
 end
 
 ## Friendly functions

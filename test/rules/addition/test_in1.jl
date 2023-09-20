@@ -7,7 +7,7 @@ import ReactiveMP: @test_rules
 
 @testset "rules:typeof(+):in1" begin
     @testset "Belief Propagation: (m_out::PointMass, m_in2::PointMass)" begin
-        @test_rules [with_float_conversions = true] typeof(+)(:in1, Marginalisation) [
+        @test_rules [check_type_promotion = true] typeof(+)(:in1, Marginalisation) [
             (input = (m_out = PointMass(1.0), m_in2 = PointMass(-1.0)), output = PointMass(2.0)),
             (input = (m_out = PointMass([1.0]), m_in2 = PointMass([-2.0])), output = PointMass([3.0])),
             (input = (m_out = PointMass([1.0 2.0; 3.0 4.0]), m_in2 = PointMass([-2.0 -1.0; -4.0 -1.0])), output = PointMass([3.0 3.0; 7.0 5.0]))
@@ -15,7 +15,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Belief Propagation: (m_out::UnivariateNormalDistributionsFamily, m_in2::PointMass)" begin
-        @test_rules [with_float_conversions = true] typeof(+)(:in1, Marginalisation) [
+        @test_rules [check_type_promotion = true] typeof(+)(:in1, Marginalisation) [
             (input = (m_out = NormalMeanVariance(1.0, 2.0), m_in2 = PointMass(2.0)), output = NormalMeanVariance(-1.0, 2.0)),
             (input = (m_out = NormalMeanVariance(-1.0, 3.0), m_in2 = PointMass(-3.0)), output = NormalMeanVariance(2.0, 3.0)),
             (input = (m_out = NormalMeanPrecision(4.0, 7.0), m_in2 = PointMass(1.0)), output = NormalMeanPrecision(3.0, 7.0)),
@@ -26,7 +26,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Belief Propagation: (m_out::PointMass, m_in2::UnivariateNormalDistributionsFamily)" begin
-        @test_rules [with_float_conversions = true] typeof(+)(:in1, Marginalisation) [
+        @test_rules [check_type_promotion = true] typeof(+)(:in1, Marginalisation) [
             (input = (m_out = PointMass(1.0), m_in2 = NormalMeanVariance(1.0, 2.0)), output = NormalMeanVariance(0.0, 2.0)),
             (input = (m_out = PointMass(-3.0), m_in2 = NormalMeanVariance(-1.0, 3.0)), output = NormalMeanVariance(-2.0, 3.0)),
             (input = (m_out = PointMass(1.0), m_in2 = NormalMeanPrecision(4.0, 7.0)), output = NormalMeanPrecision(-3.0, 7.0)),
@@ -37,7 +37,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Belief Propagation: (m_out::MultivariateNormalDistributionsFamily, m_in2::PointMass)" begin
-        @test_rules [with_float_conversions = true] typeof(+)(:in1, Marginalisation) [
+        @test_rules [check_type_promotion = true] typeof(+)(:in1, Marginalisation) [
             (
                 input = (m_out = MvNormalMeanCovariance([1.0, 3.0], [3.0 2.0; 2.0 4.0]), m_in2 = PointMass([1.0, 1.0])),
                 output = MvNormalMeanCovariance([0.0, 2.0], [3.0 2.0; 2.0 4.0])
@@ -66,7 +66,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Belief Propagation: (m_out::PointMass, m_in2::MultivariateNormalDistributionsFamily)" begin
-        @test_rules [with_float_conversions = true] typeof(+)(:in1, Marginalisation) [
+        @test_rules [check_type_promotion = true] typeof(+)(:in1, Marginalisation) [
             (
                 input = (m_out = PointMass([1.0, 1.0]), m_in2 = MvNormalMeanCovariance([1.0, 3.0], [3.0 2.0; 2.0 4.0])),
                 output = MvNormalMeanCovariance([0.0, -2.0], [3.0 2.0; 2.0 4.0])
@@ -95,7 +95,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Belief Propagation: (m_out::UnivariateNormalDistributionsFamily, m_in2::UnivariateNormalDistributionsFamily)" begin
-        @test_rules [with_float_conversions = true] typeof(+)(:in1, Marginalisation) [
+        @test_rules [check_type_promotion = true] typeof(+)(:in1, Marginalisation) [
             (input = (m_out = NormalMeanVariance(1.0, 2.0), m_in2 = NormalMeanVariance(3.0, 4.0)), output = NormalMeanVariance(-2.0, 6.0)),
             (input = (m_out = NormalMeanVariance(-1.0, 2.0), m_in2 = NormalMeanVariance(-2.0, 3.0)), output = NormalMeanVariance(1.0, 5.0)),
             (input = (m_out = NormalMeanPrecision(2.0, 2.0), m_in2 = NormalMeanPrecision(-1.0, 3.0)), output = NormalMeanVariance(3.0, (2.0 + 3.0) / (2.0 * 3.0))),
@@ -107,7 +107,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Belief Propagation: (m_out::MultivariateNormalDistributionsFamily, m_in2::MultivariateNormalDistributionsFamily)" begin
-        @test_rules [with_float_conversions = true] typeof(+)(:in1, Marginalisation) [
+        @test_rules [check_type_promotion = true] typeof(+)(:in1, Marginalisation) [
             (
                 input = (m_out = MvNormalMeanCovariance([1.0, 3.0], [3.0 2.0; 2.0 4.0]), m_in2 = MvNormalMeanCovariance([1.0, 3.0], [3.0 2.0; 2.0 4.0])),
                 output = MvNormalMeanCovariance([0.0, 0.0], [6.0 4.0; 4.0 8.0])

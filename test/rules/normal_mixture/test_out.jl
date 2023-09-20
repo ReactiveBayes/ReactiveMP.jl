@@ -9,7 +9,7 @@ import ReactiveMP: @test_rules
 
 @testset "rules:NormalMixture:out" begin
     @testset "Variational : (m_μ::PointMass{ <: Real }..., m_p::PointMass{ <: Real }...)" begin
-        @test_rules [with_float_conversions = true] NormalMixture{2}(:out, Marginalisation) [
+        @test_rules [check_type_promotion = true] NormalMixture{2}(:out, Marginalisation) [
             (
                 input = (q_switch = Categorical([0.5, 0.5]), q_m = ManyOf(PointMass(1.0), PointMass(1.0)), q_p = ManyOf(PointMass(1.0), PointMass(1.0))),
                 output = NormalWeightedMeanPrecision(1.0, 1.0)
@@ -34,7 +34,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Variational : (m_μ::UnivariateNormalDistributionsFamily..., m_p::GammaDistributionsFamily...)" begin
-        @test_rules [with_float_conversions = true] NormalMixture{2}(:out, Marginalisation) [
+        @test_rules [check_type_promotion = true] NormalMixture{2}(:out, Marginalisation) [
             (
                 input = (
                     q_switch = Bernoulli(0.8),
@@ -71,7 +71,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Variational : (m_μ::PointMass{ <: Vector }..., m_p::PointMass{ <: Matrix }...)" begin
-        @test_rules [with_float_conversions = true] NormalMixture{2}(:out, Marginalisation) [
+        @test_rules [check_type_promotion = true] NormalMixture{2}(:out, Marginalisation) [
             (
                 input = (
                     q_switch = Categorical([0.5, 0.5]),
@@ -100,7 +100,7 @@ import ReactiveMP: @test_rules
     end
 
     @testset "Variational : (m_μ::MultivariateNormalDistributionsFamily..., m_p::Wishart...)" begin
-        @test_rules [with_float_conversions = true] NormalMixture{2}(:out, Marginalisation) [
+        @test_rules [check_type_promotion = true] NormalMixture{2}(:out, Marginalisation) [
             (
                 input = (
                     q_switch = Categorical([0.5, 0.5]),

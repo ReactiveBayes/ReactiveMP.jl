@@ -84,6 +84,28 @@ using LinearAlgebra
             @test ReactiveMP.mul_trace(a, b) ≈ a * b
         end
     end
+
+    @testset "v_a_vT" begin
+        import ReactiveMP: v_a_vT
+
+        for n in (1, 2, 3), v1 in [rand(n) for _ in 1:5], a in rand(5)
+            @test v_a_vT(v1, a) ≈ v1 * a * v1'
+            @test v_a_vT(v1, a) ≈ v1 * v1' * a
+        end
+
+        for n in (1, 2, 3), v1 in [rand(n) for _ in 1:5], v2 in [rand(n) for _ in 1:5], a in rand(5)
+            @test v_a_vT(v1, a, v2) ≈ v1 * a * v2'
+            @test v_a_vT(v1, a, v2) ≈ v1 * v2' * a
+        end
+
+        for n in (1, 2, 3), v in [rand(1, n) for _ in 1:5], a in [rand(n, n) for _ in 1:5]
+            @test v_a_vT(v, a) ≈ v * a * v'
+        end
+
+        for n in (1, 2, 3), v1 in [rand(1, n) for _ in 1:5], v2 in [rand(1, n) for _ in 1:5], a in [rand(n, n) for _ in 1:5]
+            @test v_a_vT(v1, a, v2) ≈ v1 * a * v2'
+        end
+    end
 end
 
 end

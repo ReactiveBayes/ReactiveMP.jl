@@ -131,38 +131,14 @@ end
 """
     v_a_vT(v, a)
 
-Computes v*a*v^T with a single allocation.
+Computes v*a*v^T efficiently.
 """
-function v_a_vT(v::AbstractVector, a::Real)
-    T      = promote_type(eltype(v), typeof(a))
-    result = zeros(T, length(v), length(v))
-    mul!(result, v, v', a, one(T))
-    return result
-end
+v_a_vT(v, a) = v * a * v'
+v_a_vT(v1, a, v2) = v1 * a * v2'
 
-function v_a_vT(v, a)
-    result = v * v'
-    result *= a
-    return result
-end
-
-"""
-    v_a_vT(v1, a, v2)
-
-Computes v1*a*v2^T with a single allocation.
-"""
-function v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector)
-    T      = promote_type(eltype(v1), typeof(a), eltype(v2))
-    result = zeros(T, length(v1), length(v2))
-    mul!(result, v1, v2', a, one(T))
-    return result
-end
-
-function v_a_vT(v1, a, v2)
-    result = v1 * v2'
-    result *= a
-    return result
-end
+# More efficient if `a` is a `Real`
+v_a_vT(v::AbstractVector, a::Real) = v * v' * a
+v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector) = v1 * v2' * a
 
 """
     mvbeta(x)
@@ -180,4 +156,18 @@ Computes the numerically stable logarithm of the multivariate beta distribution 
 """
 function logmvbeta(x::Vector)
     return sum(loggamma, x) - loggamma(sum(x))
+end
+
+"""
+    powerset(iterator)
+
+Computes the set of all possible sets of the `iterator`.
+"""
+function powerset(iterator)
+    # TODO: (branch) write tests
+    result = Vector{eltype(iterator)}[[]]
+    for element in iterator, index in eachindex(result)
+        push!(result, vcat(result[index], element))
+    end
+    return filter(!isempty, result)
 end

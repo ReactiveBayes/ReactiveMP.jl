@@ -47,6 +47,9 @@ Base.precision(dist::AbstractContinuousGenericLogPdf) = __error_not_defined(dist
 
 Base.eltype(dist::AbstractContinuousGenericLogPdf) = eltype(getdomain(dist))
 
+paramfloattype(dist::AbstractContinuousGenericLogPdf) = deep_eltype(eltype(dist))
+samplefloattype(dist::AbstractContinuousGenericLogPdf) = paramfloattype(dist)
+
 (dist::AbstractContinuousGenericLogPdf)(x::Real)                   = logpdf(dist, x)
 (dist::AbstractContinuousGenericLogPdf)(x::AbstractVector{<:Real}) = logpdf(dist, x)
 
@@ -118,7 +121,7 @@ end
 
 Base.convert(::Type{<:ContinuousUnivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} = ContinuousUnivariateLogPdf(domain, logpdf)
 
-convert_eltype(::Type{ContinuousUnivariateLogPdf}, ::Type{T}, dist::ContinuousUnivariateLogPdf) where {T <: Real} = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
+convert_paramfloattype(::Type{T}, dist::ContinuousUnivariateLogPdf) where {T <: Real} = convert(ContinuousUnivariateLogPdf, dist.domain, dist.logpdf)
 
 vague(::Type{<:ContinuousUnivariateLogPdf}) = ContinuousUnivariateLogPdf(DomainSets.FullSpace(), (x) -> 1.0)
 
@@ -170,8 +173,7 @@ Distributions.support(dist::ContinuousMultivariateLogPdf) = getdomain(dist) # di
 
 Base.convert(::Type{<:ContinuousMultivariateLogPdf}, domain::D, logpdf::F) where {D <: DomainSets.Domain, F} = ContinuousMultivariateLogPdf(domain, logpdf)
 
-convert_eltype(::Type{ContinuousMultivariateLogPdf}, ::Type{T}, dist::ContinuousMultivariateLogPdf) where {T <: Real} =
-    convert(ContinuousMultivariateLogPdf, dist.domain, dist.logpdf)
+convert_paramfloattype(::Type{T}, dist::ContinuousMultivariateLogPdf) where {T <: Real} = convert(ContinuousMultivariateLogPdf, dist.domain, dist.logpdf)
 
 vague(::Type{<:ContinuousMultivariateLogPdf}, dims::Int) = ContinuousMultivariateLogPdf(DomainSets.FullSpace()^dims, (x) -> Float64(dims))
 
@@ -224,12 +226,12 @@ function culogpdf__isapprox(domain::DomainSets.VcatDomain, left::AbstractContinu
     a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
     b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
-    return isapprox(zero(deep_eltype(domain)), I; kwargs...) && isapprox(zero(deep_eltype(domain)), E; kwargs...)
+    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) && isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
 end
 
 function culogpdf__isapprox(domain::DomainSets.FixedIntervalProduct, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
     a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
     b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
-    return isapprox(zero(deep_eltype(domain)), I; kwargs...) && isapprox(zero(deep_eltype(domain)), E; kwargs...)
+    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) && isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
 end

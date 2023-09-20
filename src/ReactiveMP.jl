@@ -35,6 +35,7 @@ include("marginal.jl")
 include("distributions.jl")
 include("addons.jl")
 
+include("addons/debug.jl")
 include("addons/logscale.jl")
 include("addons/memory.jl")
 
@@ -151,13 +152,14 @@ include("nodes/wishart_inverse.jl")
 include("nodes/normal_mixture.jl")
 include("nodes/gamma_mixture.jl")
 include("nodes/dot_product.jl")
+include("nodes/softdot.jl")
 include("nodes/transition.jl")
 include("nodes/autoregressive.jl")
-include("nodes/mv_autoregressive.jl")
 include("nodes/bifm.jl")
 include("nodes/bifm_helper.jl")
 include("nodes/probit.jl")
 include("nodes/poisson.jl")
+include("nodes/half_normal.jl")
 
 include("nodes/flow/flow.jl")
 include("nodes/delta/delta.jl")
@@ -179,31 +181,18 @@ include("constraints/specifications/form.jl")
 include("constraints/specifications/factorisation.jl")
 include("constraints/specifications/meta.jl")
 
-using Requires
+# This symbol is only defined on Julia versions that support extensions
+@static if !isdefined(Base, :get_extension)
+    using Requires
+end
 
 function __init__()
-    @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-        function cvi_update!(opt::Flux.Optimise.AbstractOptimiser, λ::NaturalParameters, ∇::NaturalParameters)
-            return Flux.Optimise.update!(opt, vec(λ), vec(∇))
-        end
-    end
 
-    @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" begin
-        export ZygoteGrad
-
-        struct ZygoteGrad end
-
-        compute_gradient(::ZygoteGrad, f::F, vec::AbstractVector) where {F} = Zygote.gradient(f, vec)[1]
-        compute_hessian(::ZygoteGrad, f::F, vec::AbstractVector) where {F}  = Zygote.hessian(f, vec)
-        compute_derivative(::ZygoteGrad, f::F, value::Real) where {F}       = Zygote.gradient(f, value)[1]
-    end
-
-    @require DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5" begin
-        function compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
-            result = DiffResults.HessianResult(vec)
-            result = ForwardDiff.hessian!(result, logp, vec)
-            return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
-        end
+    # A backward-compatible solution for older versions of Julia
+    # For Julia > 1.9 this will be loaded automatically without need in `Requires.jl`
+    @static if !isdefined(Base, :get_extension)
+        @require Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2" include("../ext/ReactiveMPOptimisersExt/ReactiveMPOptimisersExt.jl")
+        @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/ReactiveMPZygoteExt/ReactiveMPZygoteExt.jl")
     end
 end
 

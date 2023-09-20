@@ -32,7 +32,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
         setstream!(localmarginal, cmarginal)
 
         # By default to compute `q_ins` we need messages both from `:out` and `:ins`
-        msgs_names      = Val{(:out, :ins)}
+        msgs_names      = Val{(:out, :ins)}()
         msgs_observable = combineLatestUpdates((messagein(out), combineLatestMessagesInUpdates(ins)), PushNew())
 
         # By default, we should not need any local marginals
@@ -40,7 +40,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
         marginals_observable = of(nothing)
 
         fform = functionalform(factornode)
-        vtag  = Val{:ins}
+        vtag  = Val{:ins}()
         meta  = metadata(factornode)
 
         mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
@@ -54,7 +54,7 @@ end
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     let out = factornode.out, ins = factornode.ins
         # By default we simply request all inbound messages from `ins` edges
-        msgs_names      = Val{(:ins,)}
+        msgs_names      = Val{(:ins,)}()
         msgs_observable = combineLatestUpdates((combineLatestMessagesInUpdates(ins),), PushNew())
 
         # By default we don't need any marginals
@@ -62,7 +62,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
         marginals_observable = of(nothing)
 
         fform       = functionalform(factornode)
-        vtag        = tag(out)
+        vtag        = Val{:out}()
         vconstraint = local_constraint(out)
         meta        = metadata(factornode)
 
@@ -84,10 +84,10 @@ end
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
-        msgs_names      = Val{(:in,)}
+        msgs_names      = Val{(:in,)}()
         msgs_observable = combineLatestUpdates((messagein(interface),), PushNew())
 
-        marginal_names       = Val{(:ins,)}
+        marginal_names       = Val{(:ins,)}()
         marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]),), PushNew())
 
         fform       = functionalform(factornode)
@@ -152,7 +152,7 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_i
             combineLatestMessagesInUpdates(TupleTools.deleteat(factornode.ins, index))
         end
 
-        msgs_names      = Val{(:out, :ins)}
+        msgs_names      = Val{(:out, :ins)}()
         msgs_observable = combineLatestUpdates((messagein(factornode.out), msgs_ins_stream), PushNew())
 
         marginal_names       = nothing

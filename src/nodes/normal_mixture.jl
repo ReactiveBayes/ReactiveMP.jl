@@ -106,7 +106,7 @@ function get_marginals_observable(
     meansinterfaces = marginal_dependencies[2]
     precsinterfaces = marginal_dependencies[3]
 
-    marginal_names = Val{(name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1]))}
+    marginal_names = Val{(name(varinterface), name(meansinterfaces[1]), name(precsinterfaces[1]))}()
     marginals_observable =
         combineLatest(
             (
@@ -129,7 +129,7 @@ function get_marginals_observable(factornode::NormalMixtureNode{N, F}, marginal_
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
 
-    marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}
+    marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
     marginals_observable = combineLatestUpdates((getmarginal(connectedvar(outinterface), IncludeAll()), getmarginal(connectedvar(switchinterface), IncludeAll()), getmarginal(connectedvar(varinterface), IncludeAll())), PushNew())
 
     return marginal_names, marginals_observable
@@ -145,11 +145,11 @@ end
 end
 
 function avg_energy_nm(::Type{Univariate}, q_out, q_m, q_p, z_bar, i)
-    return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
+    return z_bar[i] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
 end
 
 function avg_energy_nm(::Type{Multivariate}, q_out, q_m, q_p, z_bar, i)
-    return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}, map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
+    return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: CountingReal, N}
@@ -165,7 +165,7 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMix
 
     mapping = let fform = functionalform(node), meta = metadata(node)
         (marginals) -> begin
-            average_energy = score(AverageEnergy(), fform, Val{(:out, :switch, :m, :p)}, marginals, meta)
+            average_energy = score(AverageEnergy(), fform, Val{(:out, :switch, :m, :p)}(), marginals, meta)
 
             out_entropy     = score(DifferentialEntropy(), marginals[1])
             switch_entropy  = score(DifferentialEntropy(), marginals[2])
