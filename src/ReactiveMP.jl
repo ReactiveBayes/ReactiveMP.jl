@@ -2,8 +2,9 @@
 module ReactiveMP
 
 # List global dependencies here
-using TinyHugeNumbers
-using MatrixCorrectionTools: AbstractCorrectionStrategy, correction!
+using TinyHugeNumbers, MatrixCorrectionTools
+
+import MatrixCorrectionTools: AbstractCorrectionStrategy, correction!
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
