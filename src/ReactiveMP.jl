@@ -2,7 +2,9 @@
 module ReactiveMP
 
 # List global dependencies here
-using TinyHugeNumbers
+using TinyHugeNumbers, MatrixCorrectionTools
+
+import MatrixCorrectionTools: AbstractCorrectionStrategy, correction!
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
@@ -16,7 +18,6 @@ include("score/counting.jl")
 
 include("helpers/algebra/cholesky.jl")
 include("helpers/algebra/companion_matrix.jl")
-include("helpers/algebra/correction.jl")
 include("helpers/algebra/common.jl")
 include("helpers/algebra/permutation_matrix.jl")
 include("helpers/algebra/standard_basis_vector.jl")
