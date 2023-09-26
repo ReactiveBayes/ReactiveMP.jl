@@ -53,7 +53,9 @@ end
     return NormalWeightedMeanPrecision(dot(tmp, μ_out), W)
 end
 
-@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:A, Marginalisation) (
+    m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     μ_in, var_in = mean_var(m_in)
     μ_out, var_out = mean_var(m_out)
     log_backwardpass = (x) -> -log(abs(x)) - 0.5 * log(2π * (var_in + var_out / x^2)) - 1 / 2 * (μ_out - x * μ_in)^2 / (var_in * x^2 + var_out)

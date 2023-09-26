@@ -10,16 +10,18 @@ end
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractMatrix}, m_in::F, meta::Union{<:AbstractCorrectionStrategy, Nothing}) where {F <: NormalDistributionsFamily} = begin
-    @logscale 0
-    A = mean(m_A)
-    μ_in, Σ_in = mean_cov(m_in)
-    return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
-end
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractMatrix}, m_in::F, meta::Union{<:AbstractCorrectionStrategy, Nothing}) where {F <: NormalDistributionsFamily} =
+    begin
+        @logscale 0
+        A = mean(m_A)
+        μ_in, Σ_in = mean_cov(m_in)
+        return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
+    end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::F, m_in::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) where {F <: NormalDistributionsFamily} = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
-end
+@rule typeof(*)(:out, Marginalisation) (m_A::F, m_in::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) where {F <: NormalDistributionsFamily} =
+    begin
+        return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
+    end
 
 #------------------------
 # AbstractVector * UnivariateNormalDistributions
@@ -68,7 +70,9 @@ end
 #-----------------------
 # Univariate Normal * Univariate Normal 
 #----------------------
-@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     μ_A, var_A = mean_var(m_A)
     μ_in, var_in = mean_var(m_in)
 

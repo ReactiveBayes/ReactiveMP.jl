@@ -9,7 +9,6 @@ import LinearAlgebra: dot
 import MatrixCorrectionTools: NoCorrection, AddToDiagonalEntries, ReplaceZeroDiagonalEntries
 
 @testset "rules:typeof(dot):in1" begin
-
     @testset "Belief Propagation: (m_out::UnivariateNormalDistributionsFamily, m_in2::PointMass)" begin
         @test_rules [check_type_promotion = true] typeof(dot)(:in1, Marginalisation) [
             (input = (m_out = NormalMeanVariance(2.0, 2.0), m_in2 = PointMass(-1.0), meta = NoCorrection()), output = NormalWeightedMeanPrecision(-1.0, 0.5)),
@@ -20,7 +19,10 @@ import MatrixCorrectionTools: NoCorrection, AddToDiagonalEntries, ReplaceZeroDia
         @test_rules [check_type_promotion = true] typeof(dot)(:in1, Marginalisation) [
             (input = (m_out = NormalMeanVariance(2.0, 2.0), m_in2 = PointMass(-1.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(-1.0, 0.5)),
             (input = (m_out = NormalMeanPrecision(1.0, 1.0), m_in2 = PointMass(-2.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(-2.0, 4.0)),
-            (input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in2 = PointMass(-1.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(-2.0, 1.0))
+            (
+                input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in2 = PointMass(-1.0), meta = ReplaceZeroDiagonalEntries(tiny)),
+                output = NormalWeightedMeanPrecision(-2.0, 1.0)
+            )
         ]
 
         @test_rules [check_type_promotion = true] typeof(dot)(:in1, Marginalisation) [
@@ -32,7 +34,10 @@ import MatrixCorrectionTools: NoCorrection, AddToDiagonalEntries, ReplaceZeroDia
         @test_rules [check_type_promotion = true] typeof(dot)(:in1, Marginalisation) [
             (input = (m_out = NormalMeanVariance(2.0, 2.0), m_in2 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(0.0, tiny)),
             (input = (m_out = NormalMeanPrecision(1.0, 1.0), m_in2 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(0.0, tiny)),
-            (input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in2 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(0.0, tiny))
+            (
+                input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in2 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)),
+                output = NormalWeightedMeanPrecision(0.0, tiny)
+            )
         ]
     end
 

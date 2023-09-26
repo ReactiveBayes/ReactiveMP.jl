@@ -129,7 +129,9 @@ import MatrixCorrectionTools: NoCorrection, ReplaceZeroDiagonalEntries
                 output = (in1 = NormalWeightedMeanPrecision(6.5, 4.5), in2 = PointMass(2.0))
             ),
             (
-                input = (m_out = NormalMeanVariance(4.0, 1.0), m_in1 = NormalWeightedMeanPrecision(1.0 / 3.0, 1.0 / 3.0), m_in2 = PointMass(2.0), meta = ReplaceZeroDiagonalEntries(tiny)),
+                input = (
+                    m_out = NormalMeanVariance(4.0, 1.0), m_in1 = NormalWeightedMeanPrecision(1.0 / 3.0, 1.0 / 3.0), m_in2 = PointMass(2.0), meta = ReplaceZeroDiagonalEntries(tiny)
+                ),
                 output = (in1 = NormalWeightedMeanPrecision(25 / 3, 13 / 3), in2 = PointMass(2.0))
             )
         ]
@@ -193,7 +195,9 @@ import MatrixCorrectionTools: NoCorrection, ReplaceZeroDiagonalEntries
                 output = (in1 = PointMass(2.0), in2 = NormalWeightedMeanPrecision(6.5, 4.5))
             ),
             (
-                input = (m_out = NormalMeanVariance(4.0, 1.0), m_in1 = PointMass(2.0), m_in2 = NormalWeightedMeanPrecision(1.0 / 3.0, 1.0 / 3.0), meta = ReplaceZeroDiagonalEntries(tiny)),
+                input = (
+                    m_out = NormalMeanVariance(4.0, 1.0), m_in1 = PointMass(2.0), m_in2 = NormalWeightedMeanPrecision(1.0 / 3.0, 1.0 / 3.0), meta = ReplaceZeroDiagonalEntries(tiny)
+                ),
                 output = (in1 = PointMass(2.0), in2 = NormalWeightedMeanPrecision(25 / 3, 13 / 3))
             )
         ]

@@ -18,7 +18,10 @@ import MatrixCorrectionTools: NoCorrection, AddToDiagonalEntries, ReplaceZeroDia
         @test_rules [check_type_promotion = true] typeof(dot)(:in2, Marginalisation) [
             (input = (m_out = NormalMeanVariance(2.0, 2.0), m_in1 = PointMass(-1.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(-1.0, 0.5)),
             (input = (m_out = NormalMeanPrecision(1.0, 1.0), m_in1 = PointMass(-2.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(-2.0, 4.0)),
-            (input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in1 = PointMass(-1.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(-2.0, 1.0))
+            (
+                input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in1 = PointMass(-1.0), meta = ReplaceZeroDiagonalEntries(tiny)),
+                output = NormalWeightedMeanPrecision(-2.0, 1.0)
+            )
         ]
 
         @test_rules [check_type_promotion = true] typeof(dot)(:in2, Marginalisation) [
@@ -30,7 +33,10 @@ import MatrixCorrectionTools: NoCorrection, AddToDiagonalEntries, ReplaceZeroDia
         @test_rules [check_type_promotion = true] typeof(dot)(:in2, Marginalisation) [
             (input = (m_out = NormalMeanVariance(2.0, 2.0), m_in1 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(0.0, tiny)),
             (input = (m_out = NormalMeanPrecision(1.0, 1.0), m_in1 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(0.0, tiny)),
-            (input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in1 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)), output = NormalWeightedMeanPrecision(0.0, tiny))
+            (
+                input = (m_out = NormalWeightedMeanPrecision(2.0, 1.0), m_in1 = PointMass(0.0), meta = ReplaceZeroDiagonalEntries(tiny)),
+                output = NormalWeightedMeanPrecision(0.0, tiny)
+            )
         ]
     end
 
