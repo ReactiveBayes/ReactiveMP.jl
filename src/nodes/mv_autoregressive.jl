@@ -1,6 +1,6 @@
 export MAR, MvAutoregressive, MARMeta, mar_transition, mar_shift
 
-import LazyArrays, BlockArrays
+import LazyArrays
 import StatsFuns: log2π
 
 struct MAR end

@@ -15,10 +15,11 @@
     Ξ = Λ + Wx
     z = Wx * mx
 
-    Vy = mA * (Ξ \ mA') + (mW \ I)
-    my = mA * (Ξ \ z)
+    Vy = mA * inv(mW) * mA' + inv(mW)
+    my = mA * inv(Ξ) * z
 
     return MvNormalMeanCovariance(my, Vy)
+
 end
 
 @rule MAR(:y, Marginalisation) (q_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta) = begin

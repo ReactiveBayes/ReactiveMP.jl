@@ -1,6 +1,6 @@
-function compute_z_and_D(my, Vy, mx, Vx, mW, order, ds, Fs, es)
+function compute_z_and_D(my, mx, Vx, Vyx, mW, order, ds, Fs, es)
     D = sum(sum(es[j]' * mW * es[i] * Fs[i]' * (mx * mx' + Vx) * Fs[j] for i in 1:ds) for j in 1:ds)
-    z = sum(Fs[i]' * ((mx * mx' + Vx') * mar_shift(order, ds)' + mx * my') * mW * es[i] for i in 1:ds)
+    z = sum(Fs[i]' * (mx * my' + Vyx + (mx * mx' + Vx') * mar_shift(order, ds)') * mW * es[i] for i in 1:ds)
 
     return z, D
 end
@@ -15,11 +15,13 @@ end
 
     my, Vy = ar_slice(F, m, 1:dim), ar_slice(F, V, 1:dim, 1:dim)
     mx, Vx = ar_slice(F, m, (dim + 1):(2dim)), ar_slice(F, V, (dim + 1):(2dim), (dim + 1):(2dim))
+    Vyx    = ar_slice(F, V, 1:(dim), (dim + 1):(2dim))
 
     mΛ = mean(q_Λ)
     mW = mar_transition(order, mΛ)
 
-    z, D = compute_z_and_D(my, Vy, mx, Vx, mW, order, ds, Fs, es)
+    z, D = compute_z_and_D(my, mx, Vx, Vyx, mW, order, ds, Fs, es)
+
     return MvNormalWeightedMeanPrecision(z, D)
 end
 
@@ -35,6 +37,6 @@ end
 
     mW = mar_transition(order, mΛ)
 
-    z, D = compute_z_and_D(my, Vy, mx, Vx, mW, order, ds, getmasks(meta), getunits(meta))
+    z, D = compute_z_and_D(my, mx, Vx, mW, order, ds, getmasks(meta), getunits(meta))
     return MvNormalWeightedMeanPrecision(z, D)
 end

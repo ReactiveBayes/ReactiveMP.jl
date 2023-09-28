@@ -74,10 +74,10 @@ include("mv_normal_mean_scale_precision/marginals.jl")
 
 include("mv_normal_weightedmean_precision/marginals.jl")
 
-include("mv_autoregressive/a.jl")
-include("mv_autoregressive/lambda.jl")
 include("mv_autoregressive/x.jl")
 include("mv_autoregressive/y.jl")
+include("mv_autoregressive/a.jl")
+include("mv_autoregressive/lambda.jl")
 include("mv_autoregressive/marginals.jl")
 
 include("normal_mean_precision/out.jl")

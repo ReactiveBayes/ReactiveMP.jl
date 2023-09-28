@@ -2,6 +2,7 @@
 @marginalrule MAR(:y_x) (
     m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::MARMeta
 ) = begin
+
     return ar_y_x_marginal(m_y, m_x, q_a, q_Λ, meta)
 end
 
@@ -15,13 +16,13 @@ function ar_y_x_marginal(
     mΛ = mean(q_Λ)
 
     mA = mar_companion_matrix(ma, meta)
-    mW = mar_transition(getorder(meta), mΛ)
+    mW = mar_transition(order, mΛ)
 
     b_my, b_Vy = mean_cov(m_y)
     f_mx, f_Vx = mean_cov(m_x)
 
-    inv_b_Vy = cholinv(b_Vy)
-    inv_f_Vx = cholinv(f_Vx)
+    inv_b_Vy = inv(b_Vy)
+    inv_f_Vx = inv(f_Vx)
 
     Ξ = inv_f_Vx + sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:ds) for j in 1:ds)
 
