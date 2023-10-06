@@ -54,7 +54,7 @@ end
 end
 
 #------------------------
-# Real * UnivariateNormalDistributions
+# Real * NormalDistributions
 #------------------------
 @rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     @logscale 0
@@ -63,8 +63,36 @@ end
     return NormalMeanVariance(a * μ_in, a^2 * v_in)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::MvNormalMeanCovariance, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    @logscale 0
+    a = mean(m_A)
+    μ_in, v_in = mean_cov(m_in)
+    return MvNormalMeanCovariance(a * μ_in, a^2 * v_in)
+end
+
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::MvNormalMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    @logscale 0
+    a = mean(m_A)
+    μ_in, w_in = mean_precision(m_in)
+    return MvNormalMeanPrecision(a * μ_in, w_in / a^2)
+end
+
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::MvNormalWeightedMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    @logscale 0
+    a = mean(m_A)
+    ξ_in, w_in = weightedmean_precision(m_in)
+    return MvNormalWeightedMeanPrecision(ξ_in, w_in / a^2)
+end
+
+@rule typeof(*)(:out, Marginalisation) (m_A::NormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
+end
+
+#------------------------
+# UniformScaling * NormalDistributions
+#------------------------
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:UniformScaling}, m_in::NormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (m_A = PointMass(mean(m_A).λ), m_in = m_in, meta = meta, addons = getaddons()) # dispatch to real * normal
 end
 
 #-----------------------
