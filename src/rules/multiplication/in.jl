@@ -95,7 +95,7 @@ end
     @logscale 0
     a = mean(m_A)
     ξ_out, w_out = weightedmean_precision(m_out)
-    return MvNormalWeightedMeanPrecision(a * ξ_out, w_out / a^2)
+    return MvNormalWeightedMeanPrecision(a * ξ_out, a^2 * w_out)
 end
 
 @rule typeof(*)(:in, Marginalisation) (m_A::NormalDistributionsFamily, m_out::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
