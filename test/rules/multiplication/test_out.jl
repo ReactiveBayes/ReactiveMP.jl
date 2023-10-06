@@ -10,14 +10,14 @@ import ReactiveMP: @test_rules, besselmod, make_productdist_message
         @test_rules [check_type_promotion = true] (*)(:out, Marginalisation) [
             (input = (m_A = PointMass(2), m_in = MvNormalMeanCovariance([1, 2], [3 2; 2 6])), output = MvNormalMeanCovariance([2, 4], [12 8; 8 24])),
             (input = (m_A = PointMass(0.5), m_in = MvNormalMeanPrecision([2, 4], [3 2; 2 6])), output = MvNormalMeanPrecision([1, 2], [12 8; 8 24])),
-            (input = (m_A = PointMass(0.5), m_in = MvNormalWeightedMeanPrecision([1, 2], [3 2; 2 6])), output = MvNormalWeightedMeanPrecision([2, 4], [12 8; 8 24])),
+            (input = (m_A = PointMass(0.5), m_in = MvNormalWeightedMeanPrecision([1, 2], [3 2; 2 6])), output = MvNormalWeightedMeanPrecision([2, 4], [12 8; 8 24]))
         ]
     end
     @testset "Belief Propagation: (m_A::PointMass{<:UniformScaling}, m_in::MultivariateNormalDistributionsFamily)" begin
         @test_rules [check_type_promotion = true] (*)(:out, Marginalisation) [
             (input = (m_A = PointMass(2I), m_in = MvNormalMeanCovariance([1, 2], [3 2; 2 6])), output = MvNormalMeanCovariance([2, 4], [12 8; 8 24])),
             (input = (m_A = PointMass(0.5I), m_in = MvNormalMeanPrecision([2, 4], [3 2; 2 6])), output = MvNormalMeanPrecision([1, 2], [12 8; 8 24])),
-            (input = (m_A = PointMass(0.5I), m_in = MvNormalWeightedMeanPrecision([1, 2], [3 2; 2 6])), output = MvNormalWeightedMeanPrecision([2, 4], [12 8; 8 24])),
+            (input = (m_A = PointMass(0.5I), m_in = MvNormalWeightedMeanPrecision([1, 2], [3 2; 2 6])), output = MvNormalWeightedMeanPrecision([2, 4], [12 8; 8 24]))
         ]
     end
     @testset "Univariate Gaussian messages" begin
