@@ -81,21 +81,21 @@ end
     @logscale 0
     a = mean(m_A)
     μ_out, v_out = mean_cov(m_out)
-    return MvNormalMeanCovariance(1 / a * μ_out, 1 / a^2 * v_out)
+    return MvNormalMeanCovariance(μ_out / a, v_out / a^2)
 end
 
 @rule typeof(*)(:in, Marginalisation) (m_A::PointMass{<:Real}, m_out::MvNormalMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     @logscale 0
     a = mean(m_A)
     μ_out, w_out = mean_precision(m_out)
-    return MvNormalMeanPrecision(1 / a * μ_out, a^2 * w_out)
+    return MvNormalMeanPrecision(μ_out / a, a^2 * w_out)
 end
 
 @rule typeof(*)(:in, Marginalisation) (m_A::PointMass{<:Real}, m_out::MvNormalWeightedMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     @logscale 0
     a = mean(m_A)
     ξ_out, w_out = weightedmean_precision(m_out)
-    return MvNormalWeightedMeanPrecision(ξ_out, 1 / a^2 * w_out)
+    return MvNormalWeightedMeanPrecision(a * ξ_out, w_out / a^2)
 end
 
 @rule typeof(*)(:in, Marginalisation) (m_A::NormalDistributionsFamily, m_out::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
