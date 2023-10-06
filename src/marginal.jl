@@ -5,7 +5,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, ndims, precision, length, size, nameof, iterate
+import Base: ==, ndims, precision, length, size, iterate
 
 struct Marginal{D, A}
     data       :: D
@@ -195,7 +195,13 @@ function (mapping::MarginalMapping)(dependencies)
     # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
     is_marginal_initial = !is_marginal_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    marginal = marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
+    marginal = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
+        missing
+    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
+        missing
+    else
+        marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
+    end
 
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial, nothing)
 end

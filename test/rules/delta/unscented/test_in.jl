@@ -4,7 +4,7 @@ using Test
 using ReactiveMP
 import ReactiveMP: @test_rules
 
-# TODO: with_float_conversions = true breaks
+# TODO: check_type_promotion = true breaks
 
 # g: single input, single output
 g(x) = x .^ 2 .- 5.0
@@ -17,7 +17,7 @@ h_inv_z(x, y) = x .^ 2 .- y
 
 @testset "rules:Delta:unscented:in" begin
     @testset "Single input with known inverse" begin
-        @test_rules [with_float_conversions = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
+        @test_rules [check_type_promotion = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
             (
                 input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = nothing, meta = DeltaMeta(; method = Unscented(), inverse = g_inv)),
                 output = NormalMeanVariance(2.6255032138433307, 0.10796282966583703)
@@ -30,7 +30,7 @@ h_inv_z(x, y) = x .^ 2 .- y
     end
 
     @testset "Multiple input with known inverse" begin
-        @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 1), Marginalisation) [
+        @test_rules [check_type_promotion = false] DeltaFn{h}((:in, k = 1), Marginalisation) [
             (
                 input = (
                     m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(5.0, 1.0)), meta = DeltaMeta(; method = Unscented(), inverse = (h_inv_x, h_inv_z))
@@ -47,7 +47,7 @@ h_inv_z(x, y) = x .^ 2 .- y
             )
         ]
 
-        @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 2), Marginalisation) [
+        @test_rules [check_type_promotion = false] DeltaFn{h}((:in, k = 2), Marginalisation) [
             (
                 input = (
                     m_out = NormalMeanVariance(2.0, 1.0), m_ins = ManyOf(NormalMeanVariance(3.0, 1.0)), meta = DeltaMeta(; method = Unscented(), inverse = (h_inv_x, h_inv_z))
@@ -66,7 +66,7 @@ h_inv_z(x, y) = x .^ 2 .- y
     end
 
     @testset "Single input with unknown inverse" begin
-        @test_rules [with_float_conversions = false, atol = 1e-3] DeltaFn{h}((:in, k = 1), Marginalisation) [
+        @test_rules [check_type_promotion = false, atol = 1e-3] DeltaFn{h}((:in, k = 1), Marginalisation) [
             (
                 input = (
                     q_ins = JointNormal(MvNormalMeanCovariance(ones(2), [1.0 0.1; 0.1 1.0]), ((), ())),
@@ -87,7 +87,7 @@ h_inv_z(x, y) = x .^ 2 .- y
     end
 
     @testset "Multiple input with unknown inverse" begin
-        @test_rules [with_float_conversions = false] DeltaFn{h}((:in, k = 2), Marginalisation) [
+        @test_rules [check_type_promotion = false] DeltaFn{h}((:in, k = 2), Marginalisation) [
             (
                 input = (
                     q_ins = JointNormal(MvNormalMeanCovariance(ones(3), diageye(3)), ((), (), ())), m_in = NormalMeanVariance(0.0, 10.0), meta = DeltaMeta(; method = Unscented())

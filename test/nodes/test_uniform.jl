@@ -29,7 +29,7 @@ import ReactiveMP: make_node
         @test score(
             AverageEnergy(),
             Uniform,
-            Val{(:out, :a, :b)},
+            Val{(:out, :a, :b)}(),
             (Marginal(Beta(α, β), false, false, nothing), Marginal(PointMass(a), false, false, nothing), Marginal(PointMass(b), false, false, nothing)),
             nothing
         ) == 0.0

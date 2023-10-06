@@ -1,7 +1,7 @@
 export AbstractVariable, degree
 export is_clamped, is_marginalisation, is_moment_matching
 export FoldLeftProdStrategy, FoldRightProdStrategy, CustomProdStrategy
-export getmarginal, getmarginals, setmarginal!, setmarginals!, name, as_variable
+export getprediction, getpredictions, getmarginal, getmarginals, setmarginal!, setmarginals!, name, as_variable
 export setmessage!, setmessages!
 
 using Rocket
@@ -80,6 +80,9 @@ add_pipeline_stage!(variable::AbstractVariable, stage) = error("Its not possible
 # Helper functions
 # Getters
 
+getprediction(variable::AbstractVariable)                    = _getprediction(variable)
+getpredictions(variables::AbstractArray{<:AbstractVariable}) = collectLatest(map(v -> getprediction(v), variables))
+
 getmarginal(variable::AbstractVariable)                                      = getmarginal(variable, SkipInitial())
 getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(_getmarginal(variable), skip_strategy)
 
@@ -127,7 +130,7 @@ end
 
 name(variable::AbstractVariable)        = variable.name
 isanonymous(variable::AbstractVariable) = false
-isanonymous(variables::AbstractVector)  = all(isanonymous, variables)
+isanonymous(variables::AbstractArray)   = all(isanonymous, variables)
 
 ##
 

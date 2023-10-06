@@ -30,6 +30,7 @@ function mean_cov(dist::NormalWeightedMeanPrecision)
     return (μ, v)
 end
 
+Distributions.params(dist::NormalWeightedMeanPrecision)  = (dist.xi, dist.w)
 Distributions.mean(dist::NormalWeightedMeanPrecision)    = var(dist) * weightedmean(dist)
 Distributions.median(dist::NormalWeightedMeanPrecision)  = mean(dist)
 Distributions.mode(dist::NormalWeightedMeanPrecision)    = mean(dist)

@@ -35,7 +35,7 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
         msgs_observable = of(nothing)
 
         # CVI requires `q_ins`
-        marginal_names       = Val{(:ins,)}
+        marginal_names       = Val{(:ins,)}()
         marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]),), PushNew())
 
         fform       = functionalform(factornode)

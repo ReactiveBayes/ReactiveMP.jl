@@ -8,7 +8,7 @@ DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions
 
 makedocs(
     modules  = [ ReactiveMP ],
-    strict   = [ :doctest, :eval_block, :example_block, :meta_block, :parse_error, :setup_block ],
+    warnonly = Documenter.except(:doctest, :eval_block, :example_block, :meta_block, :parse_error, :setup_block),
     clean    = true,
     sitename = "ReactiveMP.jl",
     pages    = [
@@ -23,11 +23,10 @@ makedocs(
                 "Overview" => "lib/nodes/nodes.md",
                 "Flow"     => "lib/nodes/flow.md"
             ],
+            "Message update rules" => "lib/rules/rules.md",
             "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
-            "Algebra utils"       => [
-                "Common" => "lib/algebra/common.md"
-            ],
+            "Algebra utils"       => "lib/algebra/common.md",
             "Exported methods"    => "lib/methods.md"
         ],
         "Contributing" => "extra/contributing.md",

@@ -95,10 +95,12 @@ ReactiveMP.RequireEverythingFunctionalDependencies
 
 ## [Node traits](@id lib-node-traits)
 
-Each factor node has to define the [`as_node_functional_form`](@ref) trait function and to specify a [`ValidNodeFunctionalForm`](@ref) singleton as a return object. By default [`as_node_functional_form`](@ref) returns [`UndefinedNodeFunctionalForm`](@ref). Objects that do not specify this property correctly cannot be used in model specification.
+Each factor node has to define the [`ReactiveMP.as_node_functional_form`](@ref) trait function and to specify a [`ReactiveMP.ValidNodeFunctionalForm`](@ref) 
+singleton as a return object. By default [`ReactiveMP.as_node_functional_form`](@ref) returns [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref). 
+Objects that do not specify this property correctly cannot be used in model specification.
 
 !!! note
-    [`@node`](@ref) macro does that automatically
+    `@node` macro does that automatically
 
 ```@docs
 ReactiveMP.ValidNodeFunctionalForm

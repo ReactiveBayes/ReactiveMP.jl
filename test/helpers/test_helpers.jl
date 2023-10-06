@@ -68,6 +68,16 @@ import ReactiveMP: FunctionalIndex
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) + 1 + 1)))
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) - 1 + 1)))
     end
+
+    @testset "TypeConverter" begin
+        import ReactiveMP: TypeConverter
+
+        for original_T in (Float16, Float32, Float64), target_T in (Float16, Float32, Float64), n in (1, 2, 3)
+            converter = TypeConverter(target_T, convert)
+
+            @test typeof(@inferred(converter(rand(original_T)))) === target_T
+        end
+    end
 end
 
 end

@@ -111,10 +111,15 @@ function LinearAlgebra.dot(e1::StandardBasisVector{T1}, e2::StandardBasisVector{
     return ifelse(getind(e1) === getind(e2), convert(T, e1.scale * e2.scale), zero(T))::T
 end
 
-function LinearAlgebra.dot(e1::StandardBasisVector, A::AbstractMatrix, e2::StandardBasisVector)
+@inline function __dot3_basis_vector_mat(e1, A, e2)
     @assert size(A) == (length(e1), length(e2))
     return e1.scale * A[getind(e1), getind(e2)] * e2.scale
 end
+
+# Julia does not understand union here and throws an ambiguity error
+LinearAlgebra.dot(e1::StandardBasisVector, A::AbstractMatrix, e2::StandardBasisVector) = __dot3_basis_vector_mat(e1, A, e2)
+LinearAlgebra.dot(e1::StandardBasisVector, A::Diagonal, e2::StandardBasisVector) = __dot3_basis_vector_mat(e1, A, e2)
+LinearAlgebra.dot(e1::StandardBasisVector, A::Adjoint{T, <:AbstractMatrix{T}}, e2::StandardBasisVector) where {T} = __dot3_basis_vector_mat(e1, A, e2)
 
 # vector - vector
 function Base.:*(v::AbstractVector{T1}, a::Adjoint{T2, StandardBasisVector{T2}}) where {T1 <: Real, T2 <: Real}
@@ -163,27 +168,26 @@ function Base.:*(v::Adjoint{T1, <:AbstractVector{T1}}, e::StandardBasisVector{T2
 end
 
 # vector matrix
-function Base.:*(A::AbstractMatrix, e::StandardBasisVector)
+
+@inline function __mul_mat_basis_vector(A, e)
     @assert size(A, 2) === length(e)
     v = A[:, getind(e)]
     v = mul_inplace!(e.scale, v)
     return v
 end
 
-function Base.:*(A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector) where {T <: Real}
-    @assert size(A, 2) === length(e)
-    v = A[:, getind(e)]
-    v = mul_inplace!(e.scale, v)
-    return v
-end
+# Julia does not understand `Union` here and throws an ambiguity error
+Base.:*(A::AbstractMatrix, e::StandardBasisVector) = __mul_mat_basis_vector(A, e)
+Base.:*(A::Diagonal, e::StandardBasisVector) = __mul_mat_basis_vector(A, e)
+Base.:*(A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector) where {T <: Real} = __mul_mat_basis_vector(A, e)
 
-function Base.:*(A::AbstractMatrix{T1}, a::Adjoint{T2, StandardBasisVector{T2}}) where {T2 <: Real, T1 <: Real}
+@inline function __mul_mat_adjoint_basis_vector(A, e)
     sA = size(A)
     @assert sA[2] === 1
-    p      = a'
+    p      = e'
     N      = length(p)
     I      = getind(p)
-    T      = promote_type(T1, T2)
+    T      = promote_type(eltype(A), eltype(e))
     s      = p.scale
     result = zeros(T, sA[1], N)
     @inbounds @simd for k in 1:sA[1]
@@ -192,12 +196,15 @@ function Base.:*(A::AbstractMatrix{T1}, a::Adjoint{T2, StandardBasisVector{T2}})
     return result
 end
 
-function Base.:*(e::StandardBasisVector{T1}, A::AbstractMatrix{T2}) where {T1 <: Real, T2 <: Real}
+Base.:*(A::AbstractMatrix, e::Adjoint{T2, StandardBasisVector{T2}}) where {T2} = __mul_mat_adjoint_basis_vector(A, e)
+Base.:*(A::Diagonal, e::Adjoint{T2, StandardBasisVector{T2}}) where {T2} = __mul_mat_adjoint_basis_vector(A, e)
+
+@inline function __mul_basis_vector_mat(e, A)
     sA = size(A)
     @assert sA[1] === 1
     N      = length(e)
     I      = getind(e)
-    T      = promote_type(T1, T2)
+    T      = promote_type(eltype(e), eltype(A))
     s      = e.scale
     result = zeros(T, N, sA[2])
     @inbounds @simd for k in 1:sA[2]
@@ -205,6 +212,9 @@ function Base.:*(e::StandardBasisVector{T1}, A::AbstractMatrix{T2}) where {T1 <:
     end
     return result
 end
+
+Base.:*(e::StandardBasisVector, A::AbstractMatrix) = __mul_basis_vector_mat(e, A)
+Base.:*(e::StandardBasisVector, A::Diagonal) = __mul_basis_vector_mat(e, A)
 
 function Base.:*(e::StandardBasisVector, A::Adjoint{T, <:AbstractMatrix{T}}) where {T <: Real}
     @assert size(A, 2) === length(e)
@@ -227,9 +237,8 @@ function v_a_vT(e::StandardBasisVector{T1}, a::T2) where {T1 <: Real, T2 <: Real
     N = length(e)
     I = getind(e)
     T = promote_type(T1, T2)
-    Y = zeros(T, N, N)
-    Y[I, I] = e.scale * a * e.scale
-
+    Y = zeros(T, N)
+    Y[I] = e.scale * a * e.scale
     # return output 
-    return Y
+    return Diagonal(Y)
 end

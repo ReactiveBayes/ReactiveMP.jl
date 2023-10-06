@@ -44,33 +44,35 @@ using LinearAlgebra
                     @test e * m == e_c * m
                     @test e' * m == e_c' * m
 
-                    @test (A * e) == (A * e_c)
-                    @test (A' * e) == (A' * e_c)
-                    @test (e * e') == (e_c * e_c')
-                    @test (e' * e) == (e_c' * e_c)
-                    @test (v' * e) == (v' * e_c)
-                    @test (e' * v) == (e_c' * v)
-                    @test (e' * v) == (e_c' * v)
-                    @test (a' * e) == (a' * e_c)
-                    @test (a * e') == (a * e_c')
+                    for A in (A, Diagonal(diag(A)), A')
+                        @test (A * e) == (A * e_c)
+                        @test (A' * e) == (A' * e_c)
+                        @test (e * e') == (e_c * e_c')
+                        @test (e' * e) == (e_c' * e_c)
+                        @test (v' * e) == (v' * e_c)
+                        @test (e' * v) == (e_c' * v)
+                        @test (e' * v) == (e_c' * v)
+                        @test (a' * e) == (a' * e_c)
+                        @test (a * e') == (a * e_c')
 
-                    t = rand(rng, T)
+                        t = rand(rng, T)
 
-                    @test ReactiveMP.v_a_vT(e, t) ≈ ReactiveMP.v_a_vT(e_c, t)
-                    @test ReactiveMP.v_a_vT(e, t, e) ≈ ReactiveMP.v_a_vT(e_c, t, e_c)
+                        @test ReactiveMP.v_a_vT(e, t) ≈ ReactiveMP.v_a_vT(e_c, t)
+                        @test ReactiveMP.v_a_vT(e, t, e) ≈ ReactiveMP.v_a_vT(e_c, t, e_c)
 
-                    @test dot(e, A, e) === dot(e_c, A, e_c)
-                    @test dot(e, e) === dot(e_c, e_c)
-                    @test dot(e, e_c) === dot(e_c, e_c)
-                    @test dot(e_c, e) === dot(e_c, e_c)
-                    @test dot(v, e) === dot(v, e_c)
-                    @test dot(e, v) === dot(e_c, v)
-                    @test dot(v, e') === dot(v, e_c')
-                    @test dot(e', v) === dot(e_c', v)
-                    @test dot(v', e) === dot(v', e_c)
-                    @test dot(e, v') === dot(e_c, v')
-                    @test dot(v', e') === dot(v', e_c')
-                    @test dot(e', v') === dot(e_c', v')
+                        @test dot(e, A, e) === dot(e_c, A, e_c)
+                        @test dot(e, e) === dot(e_c, e_c)
+                        @test dot(e, e_c) === dot(e_c, e_c)
+                        @test dot(e_c, e) === dot(e_c, e_c)
+                        @test dot(v, e) === dot(v, e_c)
+                        @test dot(e, v) === dot(e_c, v)
+                        @test dot(v, e') === dot(v, e_c')
+                        @test dot(e', v) === dot(e_c', v)
+                        @test dot(v', e) === dot(v', e_c)
+                        @test dot(e, v') === dot(e_c, v')
+                        @test dot(v', e') === dot(v', e_c')
+                        @test dot(e', v') === dot(e_c', v')
+                    end
                 end
             end
         end
@@ -110,6 +112,23 @@ using LinearAlgebra
                     end
                 end
             end
+        end
+    end
+
+    @testset begin
+        import ReactiveMP: v_a_vT
+
+        for i in 2:5, j in 1:i, scale in (1.0, 2.0), a in rand(5)
+            e1 = StandardBasisVector(i, j, scale)
+            v1 = collect(e1)
+            @test v_a_vT(e1, a) ≈ v_a_vT(v1, a)
+
+            e2 = StandardBasisVector(i, i - j + 1, scale)
+            v2 = collect(e2)
+
+            @test v_a_vT(e1, a, e2) ≈ v_a_vT(v1, a, v2)
+            @test v_a_vT(e1, a, v2) ≈ v_a_vT(v1, a, v2)
+            @test v_a_vT(v1, a, e2) ≈ v_a_vT(v1, a, v2)
         end
     end
 end

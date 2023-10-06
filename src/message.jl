@@ -6,7 +6,7 @@ using Distributions
 using Rocket
 
 import Rocket: getrecent
-import Base: ==, *, +, ndims, precision, length, size, show, nameof
+import Base: ==, *, +, ndims, precision, length, size, show
 
 """
     AbstractMessage
@@ -61,7 +61,7 @@ true
 
 ```
 
-See also: [`AbstractMessage`](@ref), [`materialize!`](@ref)
+See also: [`AbstractMessage`](@ref), [`ReactiveMP.materialize!`](@ref)
 """
 struct Message{D, A} <: AbstractMessage
     data       :: D
@@ -314,27 +314,34 @@ function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_n
 end
 
 function materialize!(mapping::MessageMapping, dependencies)
-    messages  = dependencies[1]
-    marginals = dependencies[2]
+    return materialize!(mapping, dependencies[1], dependencies[2])
+end
 
+function materialize!(mapping::MessageMapping, messages, marginals)
     # Message is clamped if all of the inputs are clamped
     is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    result, addons = rule(
-        message_mapping_fform(mapping),
-        mapping.vtag,
-        mapping.vconstraint,
-        mapping.msgs_names,
-        messages,
-        mapping.marginals_names,
-        marginals,
-        mapping.meta,
-        mapping.addons,
-        mapping.factornode
-    )
+    result, addons = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
+        missing, mapping.addons
+    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
+        missing, mapping.addons
+    else
+        rule(
+            message_mapping_fform(mapping),
+            mapping.vtag,
+            mapping.vconstraint,
+            mapping.msgs_names,
+            messages,
+            mapping.marginals_names,
+            marginals,
+            mapping.meta,
+            mapping.addons,
+            mapping.factornode
+        )
+    end
 
     # Inject extra addons after the rule has been executed
     addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)
