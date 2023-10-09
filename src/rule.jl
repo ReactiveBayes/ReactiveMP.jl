@@ -5,7 +5,6 @@ export @logscale
 
 using MacroTools
 using .MacroHelpers
-using Markdown
 
 import Base: showerror
 
@@ -27,7 +26,7 @@ This function is used to compute an outbound message for a given node
 - `addons`: Extra addons information
 - `__node`: Node reference
 
-For all available rules, call `ReactiveMP.print_rules_table()`.
+For all available rules, see [`ReactiveMP.print_rules_table()`](@ref).
 
 See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
 """
@@ -1276,11 +1275,13 @@ end
 
 """
     Prints a table of all message passing update rules in ReactiveMP.
+    
+    Use `Markdown.parse` on the output of this function to get a prettified table.
 """
 function print_rules_table()
     mtds = methods(ReactiveMP.rule)
-    Markdown.parse("""
+    """
                    | Node | Output | Inputs | Meta |
                    |:-----|:-------|:-------|:-----|
-                   """ * mapreduce(ReactiveMP.print_rule_rows, *, mtds))
+                   """ * mapreduce(ReactiveMP.print_rule_rows, *, mtds)
 end

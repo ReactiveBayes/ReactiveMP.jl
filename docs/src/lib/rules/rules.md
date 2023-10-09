@@ -27,6 +27,6 @@ ReactiveMP.@test_marginalrules
 ## [Table of available update rules](@id lib-rules-table)
 
 ```@example tables
-using ReactiveMP
-ReactiveMP.print_rules_table()
+using ReactiveMP, Markdown
+Markdown.parse(ReactiveMP.print_rules_table())
 ```
