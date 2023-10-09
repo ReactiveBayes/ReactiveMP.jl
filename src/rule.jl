@@ -1223,8 +1223,9 @@ function get_messages_from_rule_method(m::Method)
     tmp2 = strip.(strip.(split(tmp1, "Message")[2:end]), ',')
     tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
     tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{"*x[4:end]*", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:end-3] : x, tmp4)
     interfaces = "μ(" .* split(replace(decls[5][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .*")"
-    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:end-1], tmp4))
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:end-1], tmp5))
     return interfaces .* " :: " .* types
 end
 
@@ -1237,8 +1238,9 @@ function get_marginals_from_rule_method(m::Method)
     tmp2 = strip.(strip.(split(tmp1, "Marginal")[2:end]), ',')
     tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
     tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{"*x[4:end]*", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:end-3] : x, tmp4)
     interfaces = "q(" .* split(replace(decls[7][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .* ")"
-    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:end-1], tmp4))
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:end-1], tmp5))
     return interfaces .* " :: " .* types
 end
 
@@ -1247,7 +1249,7 @@ end
 """
 function get_meta_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
-    return decls[9][2]#replace(decls[9][2], r"Type|Val|{|}|:|\(|\)|\,|Tuple|Int64" => "")
+    return decls[9][2]
 end
 
 """
