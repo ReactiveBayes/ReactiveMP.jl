@@ -7,6 +7,7 @@ using Distributions
 using LinearAlgebra
 using StaticArrays
 using StableRNGs
+using FastCholesky
 
 import ReactiveMP: deep_eltype, get_samples, get_weights, sample_list_zero_element
 import ReactiveMP: get_meta, is_meta_present, get_unnormalised_weights, get_entropy, get_logproposal, get_logintegrand

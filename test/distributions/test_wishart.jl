@@ -5,6 +5,7 @@ using ReactiveMP
 using Distributions
 using Random
 using LinearAlgebra
+using FastCholesky
 
 import ReactiveMP: WishartMessage
 

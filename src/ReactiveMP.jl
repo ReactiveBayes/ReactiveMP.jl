@@ -2,7 +2,7 @@
 module ReactiveMP
 
 # List global dependencies here
-using TinyHugeNumbers, MatrixCorrectionTools
+using TinyHugeNumbers, MatrixCorrectionTools, FastCholesky, LinearAlgebra
 
 import MatrixCorrectionTools: AbstractCorrectionStrategy, correction!
 
@@ -16,7 +16,6 @@ include("helpers/helpers.jl")
 # This should be included before `distributions/*.jl`
 include("score/counting.jl")
 
-include("helpers/algebra/cholesky.jl")
 include("helpers/algebra/companion_matrix.jl")
 include("helpers/algebra/common.jl")
 include("helpers/algebra/permutation_matrix.jl")

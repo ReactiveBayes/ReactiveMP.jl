@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using LinearAlgebra
 using Distributions
+using FastCholesky
 
 @testset "MvNormalMeanCovariance" begin
     @testset "Constructor" begin

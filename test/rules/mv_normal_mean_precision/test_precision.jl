@@ -3,6 +3,7 @@ module RulesMvNormalMeanPrecisionPrecisionTest
 using Test
 using ReactiveMP
 using Random
+using FastCholesky
 
 import ReactiveMP: WishartMessage, @test_rules
 
