@@ -1181,9 +1181,6 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
     end
 end
 
-
-
-
 """
     Convert method into a markdown row
 """
@@ -1191,10 +1188,9 @@ function convert_to_markdown(m::Method)
     node = get_node(m)
     inputs = get_inputs(m)
     output = ""
-    for k = 1:length(inputs)
+    for k in 1:length(inputs)
         output *= "| "
-        k == 1 ? output *= node :
-        output *= " | "
+        k == 1 ? output *= node : output *= " | "
         output *= " $(inputs)[k]"
         output *= " |\n --- \n"
     end
@@ -1206,7 +1202,7 @@ end
 """
 function get_node_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
-    return decls[2][2][8:end-1]
+    return decls[2][2][8:(end - 1)]
 end
 
 """
@@ -1222,13 +1218,13 @@ end
 """
 function get_messages_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
-    tmp1 = replace(replace(decls[6][2][7:end-1], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp1 = replace(replace(decls[6][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
     tmp2 = strip.(strip.(split(tmp1, "Message")[2:end]), ',')
     tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
-    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{"*x[4:end]*", N}}}}" : x, tmp3)
-    tmp5 = map(x -> occursin("xyz", x) ? x[1:end-3] : x, tmp4)
-    interfaces = "μ(" .* split(replace(decls[5][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .*")"
-    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:end-1], tmp5))
+    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
+    interfaces = "μ(" .* split(replace(decls[5][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .* ")"
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
     return interfaces .* " :: " .* types
 end
 
@@ -1237,13 +1233,13 @@ end
 """
 function get_marginals_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
-    tmp1 = replace(replace(decls[8][2][7:end-1], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp1 = replace(replace(decls[8][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
     tmp2 = strip.(strip.(split(tmp1, "Marginal")[2:end]), ',')
     tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
-    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{"*x[4:end]*", N}}}}" : x, tmp3)
-    tmp5 = map(x -> occursin("xyz", x) ? x[1:end-3] : x, tmp4)
+    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
     interfaces = "q(" .* split(replace(decls[7][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .* ")"
-    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:end-1], tmp5))
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
     return interfaces .* " :: " .* types
 end
 
@@ -1264,7 +1260,7 @@ function print_rule_rows(m::Method)
     inputs = vcat(get_messages_from_rule_method(m), get_marginals_from_rule_method(m))
     meta = get_meta_from_rule_method(m)
     txt = ""
-    for k = 1:length(inputs)
+    for k in 1:length(inputs)
         txt *= "| "
         k == 1 ? txt *= node : nothing
         txt *= " | "
@@ -1283,11 +1279,8 @@ end
 """
 function print_rules_table()
     mtds = methods(ReactiveMP.rule)
-    Markdown.parse(
-        """
-        | Node | Output | Inputs | Meta |
-        |:-----|:-------|:-------|:-----|
-        """*mapreduce(ReactiveMP.print_rule_rows, *, mtds)
-    )
+    Markdown.parse("""
+                   | Node | Output | Inputs | Meta |
+                   |:-----|:-------|:-------|:-----|
+                   """ * mapreduce(ReactiveMP.print_rule_rows, *, mtds))
 end
-
