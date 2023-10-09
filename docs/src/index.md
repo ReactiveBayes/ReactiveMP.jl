@@ -18,8 +18,8 @@ function print_rules_table()
         """
         RxInfer supports $(length(mtds)) analytical message passing update rules! Below you can find an overview of these rules:
         
-        | Node | Output | Inputs |
-        |:-----|:-------|:-------|
+        | Node | Output | Inputs | Meta |
+        |:-----|:-------|:-------|:-----|
         """*mapreduce(ReactiveMP.print_rule_rows, *, mtds)
     )
 end
