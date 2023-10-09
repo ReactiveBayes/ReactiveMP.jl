@@ -79,7 +79,7 @@ end
 function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage, x::AbstractVector{<:AbstractMatrix})
     (df, S⁻¹) = Distributions.params(sampleable)
     S = cholinv(S⁻¹)
-    L = Distributions.PDMats.chol_lower(ReactiveMP.fastcholesky(S))
+    L = Distributions.PDMats.chol_lower(fastcholesky(S))
 
     # check 
     p = size(S, 1)
@@ -124,7 +124,7 @@ function Distributions.pdf!(out::AbstractArray{<:Real}, distribution::ReactiveMP
     R = similar(T)
     l = length(T)
 
-    M = ReactiveMP.fastcholesky!(T)
+    M = fastcholesky!(T)
 
     # logc0 evaluation
     h_df = df / 2
@@ -134,7 +134,7 @@ function Distributions.pdf!(out::AbstractArray{<:Real}, distribution::ReactiveMP
     # logkernel evaluation 
     @inbounds for i in 1:length(out)
         copyto!(T, 1, samples[i], 1, l)
-        C = ReactiveMP.fastcholesky!(T)
+        C = fastcholesky!(T)
         ld = logdet(C)
         LinearAlgebra.inv!(C)
         mul!(R, Ψ, C.factors)
