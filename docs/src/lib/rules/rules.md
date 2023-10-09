@@ -23,3 +23,10 @@ marginalrule
 ReactiveMP.@test_rules
 ReactiveMP.@test_marginalrules
 ```
+
+## [Table of available update rules](@id lib-rules-table)
+
+```@example tables
+using ReactiveMP
+ReactiveMP.print_rules_table()
+```
