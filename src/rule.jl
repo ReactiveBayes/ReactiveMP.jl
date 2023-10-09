@@ -1243,12 +1243,21 @@ function get_marginals_from_rule_method(m::Method)
 end
 
 """
+    Extracts meta from rule method
+"""
+function get_meta_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    return decls[9][2]#replace(decls[9][2], r"Type|Val|{|}|:|\(|\)|\,|Tuple|Int64" => "")
+end
+
+"""
     Prints the rows corresponding to a single rule method in a table
 """
 function print_rule_rows(m::Method)
     node = get_node_from_rule_method(m)
     output = get_output_from_rule_method(m)
     inputs = vcat(get_messages_from_rule_method(m), get_marginals_from_rule_method(m))
+    meta = get_meta_from_rule_method(m)
     txt = ""
     for k = 1:length(inputs)
         txt *= "| "
@@ -1257,6 +1266,8 @@ function print_rule_rows(m::Method)
         k == 1 ? txt *= output : nothing
         txt *= " | "
         txt *= inputs[k]
+        txt *= " | "
+        k == 1 ? txt *= meta : nothing
         txt *= " |\n"
     end
     return txt
