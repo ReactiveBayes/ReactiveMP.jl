@@ -11,9 +11,9 @@ import ReactiveMP: make_inversedist_message
         d1 = NormalMeanVariance(0.0, 1.0)
         d2 = NormalMeanVariance(0.5, 1.5)
         d3 = NormalMeanVariance(2.0, 0.5)
-        OutMessage_1 = @call_rule typeof(*)(:A, Marginalisation) (m_out = d1, m_in = d2, meta = TinyCorrection())
-        OutMessage_2 = @call_rule typeof(*)(:A, Marginalisation) (m_out = d1, m_in = d3, meta = TinyCorrection())
-        OutMessage_3 = @call_rule typeof(*)(:A, Marginalisation) (m_out = d2, m_in = d3, meta = TinyCorrection())
+        OutMessage_1 = @call_rule typeof(*)(:A, Marginalisation) (m_out = d1, m_in = d2)
+        OutMessage_2 = @call_rule typeof(*)(:A, Marginalisation) (m_out = d1, m_in = d3)
+        OutMessage_3 = @call_rule typeof(*)(:A, Marginalisation) (m_out = d2, m_in = d3)
         groundtruthOutMessage_1 = (x) -> -log(abs(x)) - 0.5 * log(2π * (var(d2) + var(d1) / x^2)) - 1 / 2 * (mean(d1) - x * mean(d2))^2 / (var(d2) * x^2 + var(d1))
         groundtruthOutMessage_2 = (x) -> -log(abs(x)) - 0.5 * log(2π * (var(d3) + var(d1) / x^2)) - 1 / 2 * (mean(d1) - x * mean(d3))^2 / (var(d3) * x^2 + var(d1))
         groundtruthOutMessage_3 = (x) -> -log(abs(x)) - 0.5 * log(2π * (var(d3) + var(d2) / x^2)) - 1 / 2 * (mean(d2) - x * mean(d3))^2 / (var(d3) * x^2 + var(d2))
@@ -36,7 +36,7 @@ import ReactiveMP: make_inversedist_message
         num_samples = 3000
         samples_d2  = rand(rng, d2, num_samples)
 
-        OutMessage = @call_rule typeof(*)(:A, Marginalisation) (m_out = d1, m_in = d2, meta = TinyCorrection())
+        OutMessage = @call_rule typeof(*)(:A, Marginalisation) (m_out = d1, m_in = d2)
 
         @test typeof(OutMessage) <: ContinuousUnivariateLogPdf
 
