@@ -7,7 +7,7 @@ on:
     types: [submitted,edited]
   push:
     branches:
-      - 'master'
+      - 'main'
     tags: '*'
   check_run:
     types: [rerequested]
