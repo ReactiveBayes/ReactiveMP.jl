@@ -7,6 +7,7 @@ export naturalparams, as_naturalparams, lognormalizer, NaturalParameters
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 import Distributions: VariateForm, ValueSupport, Distribution
+import LinearAlgebra: UniformScaling
 
 import Base: prod, convert
 
@@ -140,6 +141,7 @@ automatic_convert_paramfloattype(::Type{D}, params) where {D} = error("Cannot au
 Converts (if possible) the elements of the `container` to be of type `T`.
 """
 convert_paramfloattype(::Type{T}, container::AbstractArray) where {T} = convert(AbstractArray{T}, container)
+convert_paramfloattype(::Type{T}, container::UniformScaling) where {T} = convert(UniformScaling{T}, container)
 convert_paramfloattype(::Type{T}, number::Number) where {T} = convert(T, number)
 convert_paramfloattype(::Type, ::Nothing) = nothing
 

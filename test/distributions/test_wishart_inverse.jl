@@ -6,6 +6,7 @@ using Distributions
 using Random
 using LinearAlgebra
 using StableRNGs
+using FastCholesky
 
 import ReactiveMP: InverseWishartMessage
 import Distributions: pdf!

@@ -4,6 +4,7 @@ using Test
 using ReactiveMP
 using Random
 using Distributions
+using FastCholesky
 
 import ReactiveMP: WishartMessage, @test_rules
 

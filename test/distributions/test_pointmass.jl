@@ -6,6 +6,7 @@ using Distributions
 using Random
 using SpecialFunctions
 using LinearAlgebra: UniformScaling, I
+using FastCholesky
 
 import ReactiveMP: CountingReal, tiny, huge
 import ReactiveMP.MacroHelpers: @test_inferred

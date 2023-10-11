@@ -9,6 +9,8 @@ import Base: IteratorEltype, HasEltype
 import Base: eltype, length, size, sum
 import Base: IndexStyle, IndexLinear, getindex
 
+import LinearAlgebra: UniformScaling
+
 import Rocket: similar_typeof
 
 """
@@ -151,9 +153,10 @@ Float64
 """
 function deep_eltype end
 
-deep_eltype(::Type{T}) where {T}                  = T
-deep_eltype(::Type{T}) where {T <: AbstractArray} = deep_eltype(eltype(T))
-deep_eltype(any)                                  = deep_eltype(typeof(any))
+deep_eltype(::Type{T}) where {T}                   = T
+deep_eltype(::Type{T}) where {T <: AbstractArray}  = deep_eltype(eltype(T))
+deep_eltype(::Type{T}) where {T <: UniformScaling} = deep_eltype(eltype(T))
+deep_eltype(any)                                   = deep_eltype(typeof(any))
 
 ##
 

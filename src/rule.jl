@@ -26,6 +26,8 @@ This function is used to compute an outbound message for a given node
 - `addons`: Extra addons information
 - `__node`: Node reference
 
+For all available rules, see [`ReactiveMP.print_rules_table()`](@ref).
+
 See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
 """
 function rule end
@@ -1176,4 +1178,110 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
     end
+end
+
+"""
+    Convert method into a markdown row
+"""
+function convert_to_markdown(m::Method)
+    node = get_node(m)
+    inputs = get_inputs(m)
+    output = ""
+    for k in 1:length(inputs)
+        output *= "| "
+        k == 1 ? output *= node : output *= " | "
+        output *= " $(inputs)[k]"
+        output *= " |\n --- \n"
+    end
+    return output
+end
+
+"""
+    Extracts node from rule Method
+"""
+function get_node_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    return decls[2][2][8:(end - 1)]
+end
+
+"""
+    Extracts output from rule Method
+"""
+function get_output_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    return replace(decls[3][2], r"Type|Val|{|}|:|\(|\)|\,|Tuple|Int64" => "")
+end
+
+"""
+    Extracts messages from rule Method
+"""
+function get_messages_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    tmp1 = replace(replace(decls[6][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp2 = strip.(strip.(split(tmp1, "Message")[2:end]), ',')
+    tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
+    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
+    interfaces = "μ(" .* split(replace(decls[5][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .* ")"
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
+    return interfaces .* " :: " .* types
+end
+
+"""
+    Extracts marginals from rule method
+"""
+function get_marginals_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    tmp1 = replace(replace(decls[8][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp2 = strip.(strip.(split(tmp1, "Marginal")[2:end]), ',')
+    tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
+    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
+    interfaces = "q(" .* split(replace(decls[7][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .* ")"
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
+    return interfaces .* " :: " .* types
+end
+
+"""
+    Extracts meta from rule method
+"""
+function get_meta_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    return decls[9][2]
+end
+
+"""
+    Prints the rows corresponding to a single rule method in a table
+"""
+function print_rule_rows(m::Method)
+    node = get_node_from_rule_method(m)
+    output = get_output_from_rule_method(m)
+    inputs = vcat(get_messages_from_rule_method(m), get_marginals_from_rule_method(m))
+    meta = get_meta_from_rule_method(m)
+    txt = ""
+    for k in 1:length(inputs)
+        txt *= "| "
+        k == 1 ? txt *= node : nothing
+        txt *= " | "
+        k == 1 ? txt *= output : nothing
+        txt *= " | "
+        txt *= inputs[k]
+        txt *= " | "
+        k == 1 ? txt *= meta : nothing
+        txt *= " |\n"
+    end
+    return txt
+end
+
+"""
+    Prints a table of all message passing update rules in ReactiveMP.
+    
+    Use `Markdown.parse` on the output of this function to get a prettified table.
+"""
+function print_rules_table()
+    mtds = methods(ReactiveMP.rule)
+    """
+                   | Node | Output | Inputs | Meta |
+                   |:-----|:-------|:-------|:-----|
+                   """ * mapreduce(ReactiveMP.print_rule_rows, *, mtds)
 end
