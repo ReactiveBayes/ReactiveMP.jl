@@ -111,8 +111,6 @@ function show(io::IO, message::Message)
     end
 end
 
-Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
-
 # We need this dummy method as Julia is not smart enough to 
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
@@ -164,34 +162,34 @@ Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), 
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 
 MacroHelpers.@proxy_methods Message getdata [
-    BayesBase.mean,
-    BayesBase.median,
-    BayesBase.mode,
-    BayesBase.shape,
-    BayesBase.scale,
-    BayesBase.rate,
-    BayesBase.var,
-    BayesBase.std,
-    BayesBase.cov,
-    BayesBase.invcov,
-    BayesBase.logdetcov,
-    BayesBase.entropy,
-    BayesBase.params,
-    BayesBase.mean_cov,
-    BayesBase.mean_var,
-    BayesBase.mean_invcov,
-    BayesBase.mean_precision,
-    BayesBase.weightedmean_cov,
-    BayesBase.weightedmean_var,
-    BayesBase.weightedmean_invcov,
-    BayesBase.weightedmean_precision,
-    BayesBase.probvec,
-    BayesBase.weightedmean,
+    Distributions.mean,
+    Distributions.median,
+    Distributions.mode,
+    Distributions.shape,
+    Distributions.scale,
+    Distributions.rate,
+    Distributions.var,
+    Distributions.std,
+    Distributions.cov,
+    Distributions.invcov,
+    Distributions.logdetcov,
+    Distributions.entropy,
+    Distributions.params,
     Base.precision,
     Base.length,
     Base.ndims,
     Base.size,
-    Base.eltype
+    Base.eltype,
+    mean_cov,
+    mean_var,
+    mean_invcov,
+    mean_precision,
+    weightedmean_cov,
+    weightedmean_var,
+    weightedmean_invcov,
+    weightedmean_precision,
+    probvec,
+    weightedmean
 ]
 
 Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))

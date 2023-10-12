@@ -1,10 +1,10 @@
 
 @marginalrule NormalMeanVariance(:out_μ_v) (m_out::NormalDistributionsFamily, m_μ::PointMass, m_v::PointMass) = begin
-    return (out = prod(ProdAnalytical(), NormalMeanVariance(mean(m_μ), mean(m_v)), m_out), μ = m_μ, v = m_v)
+    return (out = prod(ClosedProd(), NormalMeanVariance(mean(m_μ), mean(m_v)), m_out), μ = m_μ, v = m_v)
 end
 
 @marginalrule NormalMeanVariance(:out_μ_v) (m_out::PointMass, m_μ::NormalDistributionsFamily, m_v::PointMass) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), m_μ, NormalMeanVariance(mean(m_out), mean(m_v))), v = m_v)
+    return (out = m_out, μ = prod(ClosedProd(), m_μ, NormalMeanVariance(mean(m_out), mean(m_v))), v = m_v)
 end
 
 @marginalrule NormalMeanVariance(:out_μ_v) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, m_v::PointMass) = begin
@@ -32,9 +32,9 @@ end
 end
 
 @marginalrule NormalMeanVariance(:out_μ) (m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, q_v::Any) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), NormalMeanVariance(mean(m_out), mean(q_v)), m_μ))
+    return (out = m_out, μ = prod(ClosedProd(), NormalMeanVariance(mean(m_out), mean(q_v)), m_μ))
 end
 
 @marginalrule NormalMeanVariance(:out_μ) (m_out::UnivariateNormalDistributionsFamily, m_μ::PointMass, q_v::Any) = begin
-    return (out = prod(ProdAnalytical(), NormalMeanVariance(mean(m_μ), mean(q_v)), m_out), μ = m_μ)
+    return (out = prod(ClosedProd(), NormalMeanVariance(mean(m_μ), mean(q_v)), m_out), μ = m_μ)
 end

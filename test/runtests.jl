@@ -206,8 +206,6 @@ end
 
     addtests(testrunner, "helpers/test_helpers.jl")
 
-    addtests(testrunner, "score/test_counting.jl")
-
     addtests(testrunner, "test_rule.jl")
     addtests(testrunner, "test_addons.jl")
 

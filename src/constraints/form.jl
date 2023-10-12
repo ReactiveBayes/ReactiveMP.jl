@@ -68,8 +68,6 @@ function default_form_check_strategy end
     default_prod_constraint(form_constraint)
 
 Returns a default prod constraint needed to apply a given `form_constraint`. For most form constraints this function returns `ProdGeneric`.
-
-See also: [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
 """
 function default_prod_constraint end
 

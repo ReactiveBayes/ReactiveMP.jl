@@ -49,7 +49,7 @@ function RandomVariableCreationOptions()
     return RandomVariableCreationOptions(
         EmptyPipelineStage(),             # pipeline
         nothing,                          # proxy_variables
-        ProdAnalytical(),                 # prod_constraint
+        GenericProd(),                    # prod_constraint
         FoldLeftProdStrategy(),           # prod_strategy
         UnspecifiedFormConstraint(),      # marginal_form_constraint
         FormConstraintCheckPickDefault(), # marginal_form_check_strategy
@@ -143,7 +143,7 @@ function randomvar(options::RandomVariableCreationOptions, name::Symbol, collect
         MarginalObservable(),
         something(options.pipeline, EmptyPipelineStage()),      # `something(args..)` returns the first `notnothing` object
         options.proxy_variables,                                # here we do allow `nothing`, so no need for `something(...)`
-        something(options.prod_constraint, ProdAnalytical()),
+        something(options.prod_constraint, GenericProd()),
         something(options.prod_strategy, FoldLeftProdStrategy()),
         something(options.marginal_form_constraint, UnspecifiedFormConstraint()),
         something(options.marginal_form_check_strategy, FormConstraintCheckPickDefault()),

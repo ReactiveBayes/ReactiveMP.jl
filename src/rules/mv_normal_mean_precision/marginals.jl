@@ -1,11 +1,11 @@
 export marginalrule
 
 @marginalrule MvNormalMeanPrecision(:out_μ_Λ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_Λ::PointMass) = begin
-    return (out = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)), m_out), μ = m_μ, Λ = m_Λ)
+    return (out = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_μ), mean(m_Λ)), m_out), μ = m_μ, Λ = m_Λ)
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ_Λ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_Λ::PointMass) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_Λ))), Λ = m_Λ)
+    return (out = m_out, μ = prod(ClosedProd(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_Λ))), Λ = m_Λ)
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ_Λ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_Λ::PointMass) = begin
@@ -71,11 +71,11 @@ end
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_Λ::Any) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_out), mean(q_Λ)), m_μ))
+    return (out = m_out, μ = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_out), mean(q_Λ)), m_μ))
 end
 
 @marginalrule MvNormalMeanPrecision(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_Λ::Any) = begin
-    return (out = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_μ), mean(q_Λ)), m_out), μ = m_μ)
+    return (out = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_μ), mean(q_Λ)), m_out), μ = m_μ)
 end
 
 ## TerminalProdArgument / BIFM related

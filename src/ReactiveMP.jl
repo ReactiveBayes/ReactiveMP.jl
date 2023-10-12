@@ -14,9 +14,6 @@ include("fixes.jl")
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
 
-# This should be included before `distributions/*.jl`
-include("score/counting.jl")
-
 include("helpers/algebra/companion_matrix.jl")
 include("helpers/algebra/common.jl")
 include("helpers/algebra/permutation_matrix.jl")
