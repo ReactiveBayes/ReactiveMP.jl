@@ -7,6 +7,8 @@ import ExponentialFamily: InverseWishartFast
 
 @node InverseWishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
 
+to_marginal(dist::InverseWishartFast) = convert(InverseWishart, dist)
+
 @average_energy InverseWishart (q_out::Any, q_ν::PointMass, q_S::Any) = begin
     d = size(q_out, 1)
 

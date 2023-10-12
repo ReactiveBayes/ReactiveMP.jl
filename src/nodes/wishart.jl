@@ -6,6 +6,8 @@ import ExponentialFamily: WishartFast
 
 @node Wishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
 
+to_marginal(dist::WishartFast) = convert(Wishart, dist)
+
 @average_energy Wishart (q_out::Any, q_ν::PointMass, q_S::Any) = begin
     d = size(q_out, 1)
 
