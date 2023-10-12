@@ -105,12 +105,12 @@ function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
 end
 
 # We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
-enforce_proper_message(::Val{true}, λ::NaturalParameters, η::NaturalParameters) = isproper(λ - η)
+enforce_proper_message(::Val{true}, λ, η) = isproper(λ - η)
 
 # We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
-enforce_proper_message(::Val{false}, λ::NaturalParameters, η::NaturalParameters) = true
+enforce_proper_message(::Val{false}, λ, η) = true
 
-function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVector) where {T <: NaturalParameters}
+function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVector) where {T} # where {T <: NaturalParameters}
     neg_lognormalizer = (x) -> -lognormalizer(as_naturalparams(T, x))
 
     return -compute_hessian(approximation.grad, neg_lognormalizer, vec)

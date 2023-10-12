@@ -33,7 +33,6 @@ include("constraints/form.jl")
 
 include("message.jl")
 include("marginal.jl")
-include("distributions.jl")
 include("addons.jl")
 
 include("addons/debug.jl")
