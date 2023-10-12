@@ -13,5 +13,5 @@ function rule_nm_p_k(::Type{Univariate}, m_mean_k, v_mean_k, m_out, v_out, z_bar
 end
 
 function rule_nm_p_k(::Type{Multivariate}, m_mean_k, v_mean_k, m_out, v_out, z_bar, k)
-    return WishartMessage(one(eltype(z_bar)) + z_bar[k] + length(m_mean_k), z_bar[k] * (v_out + v_mean_k + (m_out - m_mean_k) * (m_out - m_mean_k)'))
+    return WishartFast(one(eltype(z_bar)) + z_bar[k] + length(m_mean_k), z_bar[k] * (v_out + v_mean_k + (m_out - m_mean_k) * (m_out - m_mean_k)'))
 end

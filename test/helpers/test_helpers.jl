@@ -4,7 +4,6 @@ using Test
 using ReactiveMP
 
 import ReactiveMP: SkipIndexIterator, skipindex
-import ReactiveMP: clamplog, deep_eltype
 import ReactiveMP: CountingReal
 import ReactiveMP: FunctionalIndex
 
@@ -14,32 +13,6 @@ import ReactiveMP: FunctionalIndex
         @test typeof(s) <: SkipIndexIterator
         @test collect(s) == [1, 3]
         @test collect(skipindex(s, 1)) == [3]
-    end
-
-    @testset "clamplog" begin
-        @test !isnan(clamplog(0.0)) && !isinf(clamplog(0.0))
-        @test clamplog(tiny + 1.0) === log(tiny + 1.0)
-    end
-
-    @testset "deep_eltype" begin
-        for type in [Float32, Float64, Complex{Float64}, BigFloat]
-            @test deep_eltype(type) === type
-            @test deep_eltype(zero(type)) === type
-
-            vector             = zeros(type, 10)
-            matrix             = zeros(type, 10, 10)
-            vector_of_vectors  = [vector, vector]
-            vector_of_matrices = [matrix, matrix]
-            matrix_of_vector   = [vector vector; vector vector]
-            matrix_of_matrices = [matrix matrix; matrix matrix]
-
-            @test deep_eltype(vector) === type
-            @test deep_eltype(matrix) === type
-            @test deep_eltype(vector_of_vectors) === type
-            @test deep_eltype(vector_of_matrices) === type
-            @test deep_eltype(matrix_of_vector) === type
-            @test deep_eltype(matrix_of_matrices) === type
-        end
     end
 
     @testset "FunctionalIndex" begin
@@ -69,15 +42,6 @@ import ReactiveMP: FunctionalIndex
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) - 1 + 1)))
     end
 
-    @testset "TypeConverter" begin
-        import ReactiveMP: TypeConverter
-
-        for original_T in (Float16, Float32, Float64), target_T in (Float16, Float32, Float64), n in (1, 2, 3)
-            converter = TypeConverter(target_T, convert)
-
-            @test typeof(@inferred(converter(rand(original_T)))) === target_T
-        end
-    end
 end
 
 end

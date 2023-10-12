@@ -9,7 +9,7 @@ struct Transition end
 end
 
 @average_energy Transition (q_out_in::Contingency, q_a::MatrixDirichlet) = begin
-    return -tr(contingency_matrix(q_out_in)' * mean(log, q_a))
+    return -tr(components(q_out_in)' * mean(log, q_a))
 end
 
 @average_energy Transition (q_out_in::Contingency, q_a::PointMass) = begin
@@ -17,7 +17,7 @@ end
     # The reason is that we don't want to take log of zeros in the matrix `q_a` (if there are any)
     # The trick here is that if RHS matrix has zero inputs, than the corresponding entries of the `contingency_matrix` matrix 
     # should also be zeros (see corresponding @marginalrule), so at the end `log(tiny) * 0` should not influence the result.
-    return -ReactiveMP.mul_trace(ReactiveMP.contingency_matrix(q_out_in)', mean(clamplog, q_a))
+    return -ReactiveMP.mul_trace(components(q_out_in)', mean(clamplog, q_a))
 end
 
 @average_energy Transition (q_out::Any, q_in::Any, q_a::PointMass) = begin

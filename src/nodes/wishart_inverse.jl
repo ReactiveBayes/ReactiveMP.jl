@@ -3,6 +3,7 @@ export InverseWishart
 import StatsFuns: logπ
 import SpecialFunctions: loggamma
 import Distributions: InverseWishart
+import ExponentialFamily: InverseWishartFast
 
 @node InverseWishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
 

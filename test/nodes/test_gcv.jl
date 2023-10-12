@@ -1,4 +1,4 @@
-module ExponentialLinearQuadraticTest
+module GCVNodeTest
 
 using Test
 using ReactiveMP

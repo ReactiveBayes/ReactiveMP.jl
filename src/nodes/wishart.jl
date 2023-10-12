@@ -2,6 +2,7 @@
 import StatsFuns: logπ
 import SpecialFunctions: loggamma
 import Distributions: Wishart
+import ExponentialFamily: WishartFast
 
 @node Wishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
 

@@ -7,7 +7,7 @@ using StaticArrays
 using StableRNGs
 using LinearAlgebra
 
-import ReactiveMP: WishartMessage, InverseWishartMessage
+import ExponentialFamily: WishartFast, InverseWishartFast
 import ReactiveMP: deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype, paramfloattype, convert_paramfloattype
 import ReactiveMP: FactorizedJoint
 
@@ -39,7 +39,7 @@ import ReactiveMP: FactorizedJoint
         # Add `Matrixvariate` distributions
         for T in Types, n in (2, 3)
             push!(distributions, PointMass(rand(rng, T, n, n)))
-            push!(distributions, InverseWishartMessage(5one(T), diageye(T, n)))
+            push!(distributions, InverseWishartFast(5one(T), diageye(T, n)))
             push!(distributions, SampleList([rand(rng, T, n, n)]))
         end
 

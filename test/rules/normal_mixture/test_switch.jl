@@ -6,7 +6,7 @@ using Random
 using Distributions
 
 import ReactiveMP: @test_rules
-import ReactiveMP: WishartMessage
+import ExponentialFamily: WishartFast
 
 @testset "rules:NormalMixture:switch" begin
     @testset "Variational : (m_out::UnivariateNormalDistributionsFamily..., m_μ::UnivariateNormalDistributionsFamily...) k=1" begin

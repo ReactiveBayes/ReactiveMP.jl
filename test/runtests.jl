@@ -267,6 +267,7 @@ end
     addtests(testrunner, "nodes/test_subtraction.jl")
     addtests(testrunner, "nodes/test_probit.jl")
     addtests(testrunner, "nodes/test_autoregressive.jl")
+    addtests(testrunner, "nodes/test_gcv.jl")
     addtests(testrunner, "nodes/test_normal_mean_precision.jl")
     addtests(testrunner, "nodes/test_normal_mean_variance.jl")
     addtests(testrunner, "nodes/test_mv_normal_mean_precision.jl")
