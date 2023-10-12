@@ -53,9 +53,9 @@ BayesBase.cov(dist::ExponentialLinearQuadratic)             = var(dist)
 BayesBase.invcov(dist::ExponentialLinearQuadratic)       = mean_invcov(dist)[2]
 BayesBase.weightedmean(dist::ExponentialLinearQuadratic) = weightedmean_invcov(dist)[1]
 
-BayesBase.default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:ExponentialLinearQuadratic}) = ProdPreserveType(NormalMeanVariance)
+BayesBase.default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:ExponentialLinearQuadratic}) = PreserveTypeProd(NormalMeanVariance)
 
-function prod(::ProdPreserveType{NormalMeanVariance}, left::UnivariateNormalDistributionsFamily, right::ExponentialLinearQuadratic)
+function prod(::PreserveTypeProd{NormalMeanVariance}, left::UnivariateNormalDistributionsFamily, right::ExponentialLinearQuadratic)
     mean, variance = approximate_meancov(right.approximation, (z) -> pdf(right, z), left)
     return NormalMeanVariance(mean, variance)
 end

@@ -92,7 +92,7 @@ import MacroTools: inexpr
                 @test inexpr(expression, test_f)
                 @test inexpr(expression, :(ReactiveMP.float_tolerance))
                 @test inexpr(expression, :(ReactiveMP.custom_isapprox))
-                @test inexpr(expression, :(ReactiveMP.is_typeof_equal))
+                @test inexpr(expression, :(BayesBase.isequal_typeof))
             end
         end
 

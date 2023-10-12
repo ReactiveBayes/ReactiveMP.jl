@@ -932,17 +932,17 @@ function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, 
     rule_inputs_str = "$actual_inputs"
     generated = quote
         let invoke_test_fn = $invoke_test_fn, expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
-            local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
+            local _T = BayesBase.promote_paramfloattype(actual_output, expected_output)
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
             local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
-            local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, expected_output)
+            local _isequal_typeof = BayesBase.isequal_typeof(actual_output, expected_output)
 
-            if !_isapprox || !_is_typeof_equal
+            if !_isapprox || !_isequal_typeof
                 ReactiveMP.test_rules_failed_warning(rule_spec_str, rule_inputs_str, expected_output, actual_output)
             end
 
             # We should not put `@test` within the aut-generated macro, because it allocates a lot of garbage
-            invoke_test_fn(_isapprox && _is_typeof_equal)
+            invoke_test_fn(_isapprox && _isequal_typeof)
         end
     end
     return generated
@@ -971,7 +971,7 @@ function test_rules_convert_paramfloattype(expression, eltype)
     elseif @capture(expression, key_ = value_)
         return :($key = $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype)))
     else
-        return :(ReactiveMP.convert_paramfloattype($eltype, $expression))
+        return :(BayesBase.convert_paramfloattype($eltype, $expression))
     end
 end
 
@@ -985,7 +985,7 @@ function test_rules_promote_paramfloattype(values)
             return value
         end
     end
-    return :(ReactiveMP.promote_paramfloattype($(cvalues...)))
+    return :(BayesBase.promote_paramfloattype($(cvalues...)))
 end
 
 # Error utilities

@@ -122,10 +122,10 @@ However it does not allow `DistProduct` to be a valid functional form in the inf
 # Traits 
 - `is_point_mass_form_constraint` = `false`
 - `default_form_check_strategy`   = `FormConstraintCheckLast()`
-- `default_prod_constraint`       = `ProdAnalytical()`
+- `default_prod_constraint`       = `GenericProd()`
 - `make_form_constraint`          = `Nothing` (for use in `@constraints` macro)
 
-See also: [`constrain_form`](@ref), [`DistProduct`](@ref)
+See also: [`constrain_form`](@ref)
 """
 struct UnspecifiedFormConstraint <: AbstractFormConstraint end
 
@@ -133,12 +133,13 @@ is_point_mass_form_constraint(::UnspecifiedFormConstraint) = false
 
 default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLast()
 
-default_prod_constraint(::UnspecifiedFormConstraint) = ProdAnalytical()
+default_prod_constraint(::UnspecifiedFormConstraint) = GenericProd()
 
 make_form_constraint(::Type{<:Nothing}) = UnspecifiedFormConstraint()
 
-constrain_form(::UnspecifiedFormConstraint, something)              = something
-constrain_form(::UnspecifiedFormConstraint, something::DistProduct) = error("`DistProduct` object cannot be used as a functional form in inference backend. Use form constraints to restrict the functional form of marginal posteriors.")
+constrain_form(::UnspecifiedFormConstraint, something) = something
+constrain_form(::UnspecifiedFormConstraint, something::Union{ProductOf, LinearizedProductOf}) =
+    error("`ProductOf` object cannot be used as a functional form in inference backend. Use form constraints to restrict the functional form of marginal posteriors.")
 
 """
     CompositeFormConstraint

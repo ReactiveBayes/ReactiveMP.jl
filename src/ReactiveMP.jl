@@ -22,13 +22,6 @@ include("helpers/algebra/common.jl")
 include("helpers/algebra/permutation_matrix.jl")
 include("helpers/algebra/standard_basis_vector.jl")
 
-include("constraints/prod/prod.jl")
-include("constraints/prod/prod_analytical.jl")
-include("constraints/prod/prod_generic.jl")
-include("constraints/prod/prod_preserve_type.jl")
-include("constraints/prod/prod_final.jl")
-include("constraints/prod/prod_resolve.jl")
-
 include("constraints/form.jl")
 
 include("message.jl")

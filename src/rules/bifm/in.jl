@@ -1,6 +1,6 @@
 
 @rule BIFM(:in, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily, m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta
+    m_out::MultivariateNormalDistributionsFamily, m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta
 ) = begin
 
     # fetch information of meta data
@@ -12,7 +12,7 @@
     Λztilde = getΛztilde(meta)
 
     # fetch statistics from messages
-    μ_zprev, Σ_zprev = mean_cov(m_zprev)
+    μ_zprev, Σ_zprev = mean_cov(m_zprev.argument)
 
     # calculate intermediate variables (with dual parameterization)
     # see Wadehn 2016 - On sparsity by NUV-EM ...
@@ -26,8 +26,8 @@
 
     # Actual return type depends on meta object as well, so we explicitly cast the result here
     # Should be noop if type matches
-    T = promote_samplefloattype(m_out, m_zprev, m_znext)
+    T = promote_samplefloattype(m_out, m_zprev.argument, m_znext)
 
     # return input marginal
-    return ProdFinal(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_in, Σ_in)))
+    return TerminalProdArgument(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_in, Σ_in)))
 end

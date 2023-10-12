@@ -1,8 +1,7 @@
 module BIFMNodeTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, Random
+
 import ReactiveMP: @test_rules
 
 @testset "BIFMNode" begin

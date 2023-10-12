@@ -219,9 +219,6 @@ end
     addtests(testrunner, "approximations/test_linearization.jl")
     addtests(testrunner, "approximations/test_cvi.jl")
 
-    addtests(testrunner, "constraints/prod/test_prod_analytical.jl")
-    addtests(testrunner, "constraints/prod/test_prod_final.jl")
-    addtests(testrunner, "constraints/prod/test_prod_generic.jl")
     addtests(testrunner, "constraints/test_factorisation.jl")
 
     addtests(testrunner, "test_distributions.jl")
