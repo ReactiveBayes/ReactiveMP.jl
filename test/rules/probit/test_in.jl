@@ -1,9 +1,6 @@
 module RulesProbitInTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
 
 import ReactiveMP: @test_rules

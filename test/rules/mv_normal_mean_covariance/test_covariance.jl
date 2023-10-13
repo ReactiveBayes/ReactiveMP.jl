@@ -1,8 +1,6 @@
 module RulesMvNormalMeanCovarianceCovarianceTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ExponentialFamily: InverseWishartFast, @test_rules
 

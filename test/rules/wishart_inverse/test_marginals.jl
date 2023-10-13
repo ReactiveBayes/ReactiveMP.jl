@@ -1,11 +1,9 @@
 module RulesInvWishartMarginalsTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
-import ExponentialFamily: InverseWishartFast, @test_marginalrules
+import ExponentialFamily: InverseWishartFast
+import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:InverseWishart" begin
     @testset ":out_ν_S (m_out::InverseWishart, m_ν::PointMass, m_S::PointMass)" begin

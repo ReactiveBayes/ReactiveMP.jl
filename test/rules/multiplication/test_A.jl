@@ -1,8 +1,7 @@
 module RulesMultiplicationATest
 
-using Test
-using ReactiveMP
-using Random, Distributions, StableRNGs
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs
+
 import ReactiveMP: make_inversedist_message
 
 @testset "rule:typeof(*):A" begin

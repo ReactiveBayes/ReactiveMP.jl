@@ -1,11 +1,9 @@
 module RulesInverseWishartOutTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
-import ExponentialFamily: InverseWishartFast, @test_rules
+import ExponentialFamily: InverseWishartFast
+import ReactiveMP: @test_rules
 
 @testset "rules:InverseWishart:out" begin
     @testset "Belief Propagation: (m_ν::PointMass, m_S::PointMass)" begin

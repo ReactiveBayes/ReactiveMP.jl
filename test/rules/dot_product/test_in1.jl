@@ -1,8 +1,6 @@
 module RulesDotProductIn1Test
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 import LinearAlgebra: dot

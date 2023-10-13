@@ -1,8 +1,6 @@
 module RulesNormalMeanVarianceVarTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import DomainSets
 import ReactiveMP: @test_rules

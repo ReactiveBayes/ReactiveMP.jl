@@ -1,9 +1,7 @@
 module RulesCategoricalMarginalsTest
 
-using Test
-using ReactiveMP
-using Random
-using LinearAlgebra
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+
 import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:Categorical" begin

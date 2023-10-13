@@ -1,8 +1,7 @@
 module RulesDirichletMarginalsTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+
 import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:Dirichlet" begin
