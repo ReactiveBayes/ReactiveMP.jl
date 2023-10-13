@@ -1,7 +1,6 @@
 module RulesDeltaUTMarginalsTest
 
-using Test
-using ReactiveMP
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 import ReactiveMP: @test_marginalrules
 
 # g: single input, single output

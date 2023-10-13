@@ -1,7 +1,6 @@
 module RulesDeltaUTOutTest
 
-using Test
-using ReactiveMP
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 import ReactiveMP: @test_rules
 
 # TODO: check_type_promotion = true breaks

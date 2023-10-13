@@ -80,3 +80,26 @@ function local_linearization(r, splitg::S, g::G, fA::F, x_hat) where {S, G, F}
     b = r - A * lx_hat
     return (A, b)
 end
+
+# Approximation methods extensions for Normal distributions family
+
+# This function extends the `Linearization` approximation method in case if all inputs are from the `NormalDistributionsFamily`
+function approximate(method::Linearization, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
+
+    # Collect statistics for the inputs of the function `f`
+    statistics = mean_cov.(distributions)
+    means      = first.(statistics)
+    covs       = last.(statistics)
+
+    # Compute the local approximation for the function `f`
+    (A, b) = approximate(method, f, means)
+
+    # Execute the 'joint' message in the linearized version of `f`
+    joint       = convert(JointNormal, means, covs)
+    jmean, jcov = mean_cov(joint)
+
+    m = A * jmean + b
+    V = A * jcov * A'
+
+    return convert(promote_variate_type(typeof(m), NormalMeanVariance), m, V)
+end
