@@ -1,12 +1,9 @@
 module NodesNormalMixtureTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
 
-import ReactiveMP: @test_rules
-import ExponentialFamily: WishartFast, ManyOf
+import ReactiveMP: ManyOf
+import ExponentialFamily: WishartFast
 
 @testset "NormalMixtureNode" begin
     @testset "AverageEnergy" begin

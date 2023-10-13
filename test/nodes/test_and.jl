@@ -1,9 +1,6 @@
 module AndNodeTest
 
-using Test
-using ReactiveMP
-using Random
-import ReactiveMP: @test_rules
+using Test, ReactiveMP, Random
 
 @testset "AndNode" begin
     @testset "Creation" begin
