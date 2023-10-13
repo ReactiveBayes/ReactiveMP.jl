@@ -104,11 +104,18 @@ function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
     return compute_derivative(grad, first_derivative, z_s)
 end
 
+function compute_fisher_matrix(approximation::CVI, ::Type{T}, η, conditioner) where {T}
+    neg_lognormalizer = let lognorm = getlogpartition(NaturalParametersSpace(), T, conditioner)
+        (x) -> -lognorm(x)
+    end
+    return -compute_hessian(approximation.grad, neg_lognormalizer, η)
+end
+
 # We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
-enforce_proper_message(::Val{true}, ::Type{T}, λ, η) where {T} = isproper(NaturalParametersSpace(), T, λ - η)
+enforce_proper_message(::Val{true}, ::Type{T}, λ, η, conditioner) where {T} = isproper(NaturalParametersSpace(), T, λ - η, conditioner)
 
 # We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
-enforce_proper_message(::Val{false}, ::Type{T}, λ, η) where {T} = true
+enforce_proper_message(::Val{false}, ::Type{T}, λ, η, conditioner) where {T} = true
 
 function prod(approximation::CVI, outbound, inbound)
     rng = something(approximation.rng, Random.default_rng())
@@ -152,16 +159,11 @@ function prod(approximation::CVI, outbound, inbound)
         ∇logq = compute_gradient(approximation.grad, logq, current_λ)
 
         # compute Fisher matrix 
+        # Fisher = compute_fisher_matrix(approximation, T, current_λ, inbound_c)
         Fisher = fisherinformation(current_ef)
 
         # compute natural gradient
-        ∇f = nothing
-        try
-            ∇f = Fisher \ ∇logq
-        catch e
-            @show Fisher
-            rethrow(e)
-        end
+        ∇f = Fisher \ ∇logq
 
         # compute gradient on natural parameters
         ∇ = current_λ - inbound_η - ∇f
@@ -170,7 +172,7 @@ function prod(approximation::CVI, outbound, inbound)
         new_λ = cvi_update!(optimizer, current_λ, ∇)
 
         # check whether updated natural parameters are proper
-        if isproper(NaturalParametersSpace(), T, new_λ) && enforce_proper_message(approximation.enforce_proper_messages, T, new_λ, inbound_η)
+        if isproper(NaturalParametersSpace(), T, new_λ, inbound_c) && enforce_proper_message(approximation.enforce_proper_messages, T, new_λ, inbound_η, inbound_c)
             copyto!(current_λ, new_λ)
             hasupdated = true
         end
