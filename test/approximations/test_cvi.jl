@@ -1,16 +1,10 @@
 module ReactiveMPRenderCVITest
 
-using Test
-using ReactiveMP
-using Random
-using StableRNGs
-using Distributions
-using Zygote
-using Optimisers
-using DiffResults
-import StatsFuns: logistic, softmax
+using Test, ReactiveMP, Random, StableRNGs, BayesBase, Distributions, ExponentialFamily, Zygote, Optimisers, DiffResults
 
-import ReactiveMP: naturalparams, NaturalParameters, AbstractContinuousGenericLogPdf
+import BayesBase: AbstractContinuousGenericLogPdf
+import StatsFuns: logistic, softmax
+import SpecialFunctions: polygamma
 
 struct EmptyOptimizer end
 
@@ -35,7 +29,33 @@ function ReactiveMP.cvi_update!(opt::CountingOptimizer, λ, ∇)
     return vec(λ)
 end
 
+function gammafisher(dist::GammaShapeRate)
+    return [polygamma(1, shape(dist)) -1/rate(dist); -1/rate(dist) shape(dist)/rate(dist)^2]
+end
+
 @testset "cvi:prod" begin
+
+    # These are tested in the `ExponentialFamily`, test a simple case just to be sure
+    @testset "cvi:informationmatrix" begin
+        @testset "GammaShapeRate" begin
+            for i in 1:10, j in 1:10
+                distribution = GammaShapeRate(i, j)
+                expform = convert(ExponentialFamilyDistribution, distribution)
+                F = fisherinformation(expform)
+                @test [1 0; 0 -1]' * F * [1 0; 0 -1] ≈ gammafisher(distribution)
+            end
+        end
+    end
+
+    @testset "ForwardDiffGrad" begin
+        grad = ForwardDiffGrad()
+    
+        for i in 1:100
+            @test ReactiveMP.compute_gradient(grad, (x) -> sum(x)^2, [i]) ≈ [2 * i]
+            @test ReactiveMP.compute_hessian(grad, (x) -> sum(x)^2, [i]) ≈ [2;;]
+        end
+    end
+
     @testset "empty optimizer" begin
         for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
             opt = EmptyOptimizer()
@@ -57,7 +77,6 @@ end
 
     @testset "counting lambda optimizer" begin
         for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
-            η = naturalparams(m_in)
             num_its = 0
             opt = (λ, ∇) -> begin
                 num_its += 1
@@ -99,7 +118,7 @@ end
             n1 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
             n2 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
 
-            n_analytical = prod(ProdAnalytical(), n1, n2)
+            n_analytical = prod(GenericProd(), n1, n2)
 
             @test prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(n1, x)), n2) ≈ n_analytical atol = test[:tol]
             @test prod(test[:method], n1, n2) ≈ n_analytical atol = test[:tol]
@@ -108,7 +127,7 @@ end
             g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
             g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
 
-            g_analytical = prod(ProdAnalytical(), g1, g2)
+            g_analytical = prod(GenericProd(), g1, g2)
             g_cvi1 = prod(test[:method], g1, g2)
             g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
 
@@ -121,7 +140,7 @@ end
                     mn1 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
                     mn2 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
 
-                    mn_analytical = prod(ProdAnalytical(), mn1, mn2)
+                    mn_analytical = prod(GenericProd(), mn1, mn2)
 
                     @test prod(test[:method], mn1, mn2) ≈ mn_analytical atol = test[:tol]
                     @test prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2) ≈ mn_analytical atol = test[:tol]
@@ -130,14 +149,14 @@ end
 
             b1 = Bernoulli(logistic(randn(rng)))
             b2 = Bernoulli(logistic(randn(rng)))
-            b_analytical = prod(ProdAnalytical(), b1, b2)
+            b_analytical = prod(GenericProd(), b1, b2)
             b_cvi = prod(test[:method], b1, b2)
             @test isapprox(mean(b_analytical), mean(b_cvi), atol = test[:tol])
 
             beta_1 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
             beta_2 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
 
-            beta_analytical = prod(ProdAnalytical(), beta_1, beta_2)
+            beta_analytical = prod(GenericProd(), beta_1, beta_2)
             beta_cvi = prod(test[:method], beta_1, beta_2)
             @test all(isapprox.(mean_var(beta_cvi), mean_var(beta_analytical), atol = test[:tol]))
         end
@@ -151,7 +170,7 @@ end
         c1 = Categorical(softmax(rand(rng, 3)))
         c2 = Categorical(softmax(rand(rng, 3)))
 
-        c_analytical = prod(ProdAnalytical(), c1, c2)
+        c_analytical = prod(GenericProd(), c1, c2)
         c_cvi = prod(method, c1, c2)
 
         @test probvec(c_analytical) ≈ probvec(c_cvi) atol = 1e-1
@@ -172,7 +191,7 @@ end
             g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
             g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
 
-            g_analytical = prod(ProdAnalytical(), g1, g2)
+            g_analytical = prod(GenericProd(), g1, g2)
             g_cvi1 = prod(test[:method], g1, g2)
             g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
 

@@ -105,31 +105,28 @@ function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
 end
 
 # We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
-enforce_proper_message(::Val{true}, λ, η) = isproper(λ - η)
+enforce_proper_message(::Val{true}, ::Type{T}, λ, η) where {T} = isproper(NaturalParametersSpace(), T, λ - η)
 
 # We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
-enforce_proper_message(::Val{false}, λ, η) = true
-
-function compute_fisher_matrix(approximation::CVI, ::Type{T}, vec::AbstractVector) where {T} # where {T <: NaturalParameters}
-    neg_lognormalizer = (x) -> -lognormalizer(as_naturalparams(T, x))
-
-    return -compute_hessian(approximation.grad, neg_lognormalizer, vec)
-end
+enforce_proper_message(::Val{false}, ::Type{T}, λ, η) where {T} = true
 
 function prod(approximation::CVI, outbound, inbound)
     rng = something(approximation.rng, Random.default_rng())
 
     # Natural parameters of incoming distribution message
-    η_inbound = naturalparams(inbound)
+    inbound_ef = convert(ExponentialFamilyDistribution, inbound)
+    inbound_η = getnaturalparameters(inbound_ef)
+    inbound_c = getconditioner(inbound_ef)
 
     # Optimizer procedure may depend on the type of the inbound natural parameters
-    optimizer = cvi_setup(approximation.opt, η_inbound)
+    optimizer = cvi_setup(approximation.opt, inbound_η)
 
     # Natural parameter type of incoming distribution
-    T = typeof(η_inbound)
+    T = ExponentialFamily.exponential_family_typetag(inbound_ef)
 
     # Initial parameters of projected distribution
-    λ_current = naturalparams(inbound)
+    current_ef = convert(ExponentialFamilyDistribution, inbound)
+    current_λ  = getnaturalparameters(current_ef)
 
     hasupdated = false
 
@@ -137,7 +134,7 @@ function prod(approximation::CVI, outbound, inbound)
 
         # Some distributions implement "sampling" efficient versions
         # returns the same distribution by default
-        _, q_friendly = logpdf_sample_friendly(convert(Distribution, λ_current))
+        _, q_friendly = logpdf_sampling_optimized(convert(Distribution, current_ef))
 
         samples = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
 
@@ -149,26 +146,32 @@ function prod(approximation::CVI, outbound, inbound)
         # - https://arxiv.org/pdf/1401.0118.pdf
         # - https://doi.org/10.1016/j.ijar.2022.06.006
         logq = let samples = samples, outbound = outbound, T = T
-            (η) -> mean((sample) -> logpdf(outbound, sample) * logpdf(as_naturalparams(T, η), sample), samples)
+            (η) -> mean((sample) -> logpdf(outbound, sample) * logpdf(convert(Distribution, ExponentialFamilyDistribution(T, η, inbound_c, nothing)), sample), samples)
         end
 
-        ∇logq = compute_gradient(approximation.grad, logq, vec(λ_current))
+        ∇logq = compute_gradient(approximation.grad, logq, current_λ)
 
         # compute Fisher matrix 
-        Fisher = compute_fisher_matrix(approximation, T, vec(λ_current))
+        Fisher = fisherinformation(current_ef)
 
         # compute natural gradient
-        ∇f = Fisher \ ∇logq
+        ∇f = nothing
+        try
+            ∇f = Fisher \ ∇logq
+        catch e
+            @show Fisher
+            rethrow(e)
+        end
 
         # compute gradient on natural parameters
-        ∇ = λ_current - η_inbound - as_naturalparams(T, ∇f)
+        ∇ = current_λ - inbound_η - ∇f
 
         # perform gradient descent step
-        λ_new = as_naturalparams(T, cvi_update!(optimizer, λ_current, ∇))
+        new_λ = cvi_update!(optimizer, current_λ, ∇)
 
         # check whether updated natural parameters are proper
-        if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η_inbound)
-            λ_current = λ_new
+        if isproper(NaturalParametersSpace(), T, new_λ) && enforce_proper_message(approximation.enforce_proper_messages, T, new_λ, inbound_η)
+            copyto!(current_λ, new_λ)
             hasupdated = true
         end
     end
@@ -177,5 +180,76 @@ function prod(approximation::CVI, outbound, inbound)
         @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
     end
 
-    return convert(Distribution, λ_current)
+    return convert(Distribution, current_ef)
 end
+
+# Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
+
+# function compute_df_mv(approximation::CVI, logp::F, z_s::Real) where {F}
+#     df_m = compute_derivative(approximation.grad, logp, z_s)
+#     df_v = compute_second_derivative(approximation.grad, logp, z_s)
+#     return df_m, df_v / 2
+# end
+
+# function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {F}
+#     df_m = compute_gradient(approximation.grad, logp, z_s)
+#     df_v = compute_hessian(approximation.grad, logp, z_s)
+#     return df_m, df_v ./ 2
+# end
+
+# function ReactiveMP.compute_df_mv(::CVI{R, O, ForwardDiffGrad}, logp::F, vec::AbstractVector) where {R, O, F}
+#     result = DiffResults.HessianResult(vec)
+#     result = ForwardDiff.hessian!(result, logp, vec)
+#     return DiffResults.gradient(result), DiffResults.hessian(result) ./ 2
+# end
+
+# function prod(approximation::CVI, left, dist::GaussianDistributionsFamily)
+#     rng = something(approximation.rng, Random.GLOBAL_RNG)
+
+#     logp = (x) -> logpdf(left, x)
+
+#     # Natural parameters of incoming distribution message
+#     η = naturalparams(dist)
+#     T = typeof(η)
+
+#     # Initial parameters of projected distribution
+#     λ = naturalparams(dist)
+
+#     # Optimizer may depend on the type of natural parameters
+#     optimizer = cvi_setup(approximation.opt, λ)
+
+#     # Initialize update flag
+#     hasupdated = false
+
+#     for _ in 1:(approximation.n_iterations)
+#         # create distribution to sample from and sample from it
+#         q = convert(Distribution, λ)
+#         z = cvilinearize(rand(rng, q, approximation.n_gradpoints))
+
+#         # compute gradient on mean parameter
+#         ∇f = sum((z_s) -> begin
+#             df_m, df_v = compute_df_mv(approximation, logp, z_s)
+#             df_μ1 = df_m - 2 * df_v * mean(q)
+#             df_μ2 = df_v
+#             as_naturalparams(T, df_μ1 ./ length(z), df_μ2 ./ length(z))
+#         end, z)
+
+#         # compute gradient on natural parameters
+#         ∇ = λ - η - ∇f
+
+#         # perform gradient descent step
+#         λ_new = as_naturalparams(T, cvi_update!(optimizer, λ, ∇))
+
+#         # check whether updated natural parameters are proper
+#         if isproper(λ_new) && enforce_proper_message(approximation.enforce_proper_messages, λ_new, η)
+#             λ = λ_new
+#             hasupdated = true
+#         end
+#     end
+
+#     if !hasupdated && approximation.warn
+#         @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
+#     end
+
+#     return convert(Distribution, λ)
+# end
