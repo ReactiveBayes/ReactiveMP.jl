@@ -1,16 +1,12 @@
 module ReactiveMPMessageTest
 
-using Test
-using ReactiveMP
-using Distributions
-using Random
+using Test, Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
 import InteractiveUtils: methodswith
 import Base: methods
 import Base.Iterators: repeated, product
-import ReactiveMP: getaddons
-import ReactiveMP: materialize!
-import ReactiveMP: mirrorlog, xtlog
+import BayesBase: xtlog, mirrorlog
+import ReactiveMP: getaddons, multiply_messages, materialize!
 import SpecialFunctions: loggamma
 
 @testset "Message" begin
@@ -41,38 +37,40 @@ import SpecialFunctions: loggamma
     end
 
     @testset "multiply_messages" begin
+        × = (x, y) -> multiply_messages(GenericProd(), x, y)
+
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
 
-        @test getdata(Message(dist1, false, false, nothing) * Message(dist2, false, false, nothing)) == prod(ProdAnalytical(), dist1, dist2)
-        @test getdata(Message(dist2, false, false, nothing) * Message(dist1, false, false, nothing)) == prod(ProdAnalytical(), dist2, dist1)
+        @test getdata(Message(dist1, false, false, nothing) × Message(dist2, false, false, nothing)) == prod(GenericProd(), dist1, dist2)
+        @test getdata(Message(dist2, false, false, nothing) × Message(dist1, false, false, nothing)) == prod(GenericProd(), dist2, dist1)
 
         for (left_is_initial, right_is_initial) in product(repeated([true, false], 2)...)
-            @test is_clamped(Message(dist1, true, left_is_initial, nothing) * Message(dist2, false, right_is_initial, nothing)) == false
-            @test is_clamped(Message(dist1, false, left_is_initial, nothing) * Message(dist2, true, right_is_initial, nothing)) == false
-            @test is_clamped(Message(dist1, true, left_is_initial, nothing) * Message(dist2, true, right_is_initial, nothing)) == true
-            @test is_clamped(Message(dist2, true, left_is_initial, nothing) * Message(dist1, false, right_is_initial, nothing)) == false
-            @test is_clamped(Message(dist2, false, left_is_initial, nothing) * Message(dist1, true, right_is_initial, nothing)) == false
-            @test is_clamped(Message(dist2, true, left_is_initial, nothing) * Message(dist1, true, right_is_initial, nothing)) == true
+            @test is_clamped(Message(dist1, true, left_is_initial, nothing) × Message(dist2, false, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist1, false, left_is_initial, nothing) × Message(dist2, true, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist1, true, left_is_initial, nothing) × Message(dist2, true, right_is_initial, nothing)) == true
+            @test is_clamped(Message(dist2, true, left_is_initial, nothing) × Message(dist1, false, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist2, false, left_is_initial, nothing) × Message(dist1, true, right_is_initial, nothing)) == false
+            @test is_clamped(Message(dist2, true, left_is_initial, nothing) × Message(dist1, true, right_is_initial, nothing)) == true
         end
 
         for (left_is_clamped, right_is_clamped) in product(repeated([true, false], 2)...)
-            @test is_initial(Message(dist1, left_is_clamped, true, nothing) * Message(dist2, right_is_clamped, true, nothing)) == !(left_is_clamped && right_is_clamped)
-            @test is_initial(Message(dist2, left_is_clamped, true, nothing) * Message(dist1, right_is_clamped, true, nothing)) == !(left_is_clamped && right_is_clamped)
-            @test is_initial(Message(dist1, left_is_clamped, false, nothing) * Message(dist2, right_is_clamped, false, nothing)) == false
-            @test is_initial(Message(dist2, left_is_clamped, false, nothing) * Message(dist1, right_is_clamped, false, nothing)) == false
+            @test is_initial(Message(dist1, left_is_clamped, true, nothing) × Message(dist2, right_is_clamped, true, nothing)) == !(left_is_clamped && right_is_clamped)
+            @test is_initial(Message(dist2, left_is_clamped, true, nothing) × Message(dist1, right_is_clamped, true, nothing)) == !(left_is_clamped && right_is_clamped)
+            @test is_initial(Message(dist1, left_is_clamped, false, nothing) × Message(dist2, right_is_clamped, false, nothing)) == false
+            @test is_initial(Message(dist2, left_is_clamped, false, nothing) × Message(dist1, right_is_clamped, false, nothing)) == false
         end
 
-        @test is_initial(Message(dist1, true, true, nothing) * Message(dist2, true, true, nothing)) == false
-        @test is_initial(Message(dist1, true, true, nothing) * Message(dist2, true, false, nothing)) == false
-        @test is_initial(Message(dist1, true, false, nothing) * Message(dist2, true, true, nothing)) == false
-        @test is_initial(Message(dist1, false, true, nothing) * Message(dist2, true, false, nothing)) == true
-        @test is_initial(Message(dist1, true, false, nothing) * Message(dist2, false, true, nothing)) == true
-        @test is_initial(Message(dist2, true, true, nothing) * Message(dist1, true, true, nothing)) == false
-        @test is_initial(Message(dist2, true, true, nothing) * Message(dist1, true, false, nothing)) == false
-        @test is_initial(Message(dist2, true, false, nothing) * Message(dist1, true, true, nothing)) == false
-        @test is_initial(Message(dist2, false, true, nothing) * Message(dist1, true, false, nothing)) == true
-        @test is_initial(Message(dist2, true, false, nothing) * Message(dist1, false, true, nothing)) == true
+        @test is_initial(Message(dist1, true, true, nothing) × Message(dist2, true, true, nothing)) == false
+        @test is_initial(Message(dist1, true, true, nothing) × Message(dist2, true, false, nothing)) == false
+        @test is_initial(Message(dist1, true, false, nothing) × Message(dist2, true, true, nothing)) == false
+        @test is_initial(Message(dist1, false, true, nothing) × Message(dist2, true, false, nothing)) == true
+        @test is_initial(Message(dist1, true, false, nothing) × Message(dist2, false, true, nothing)) == true
+        @test is_initial(Message(dist2, true, true, nothing) × Message(dist1, true, true, nothing)) == false
+        @test is_initial(Message(dist2, true, true, nothing) × Message(dist1, true, false, nothing)) == false
+        @test is_initial(Message(dist2, true, false, nothing) × Message(dist1, true, true, nothing)) == false
+        @test is_initial(Message(dist2, false, true, nothing) × Message(dist1, true, false, nothing)) == true
+        @test is_initial(Message(dist2, true, false, nothing) × Message(dist1, false, true, nothing)) == true
     end
 
     @testset "Statistics" begin
@@ -143,7 +141,7 @@ import SpecialFunctions: loggamma
             end
         end
 
-        _getpoint(rng, distritubution) = _getpoint(rng, variate_form(distritubution), distritubution)
+        _getpoint(rng, distribution) = _getpoint(rng, variate_form(typeof(distribution)), distribution)
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
         _getpoint(rng, ::Type{<:Multivariate}, distribution) = 10 .* rand(rng, 2)
 

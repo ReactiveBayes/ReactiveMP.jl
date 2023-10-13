@@ -24,7 +24,6 @@ makedocs(
                 "Flow"     => "lib/nodes/flow.md"
             ],
             "Message update rules" => "lib/rules/rules.md",
-            "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
             "Algebra utils"       => "lib/algebra/common.md",
             "Exported methods"    => "lib/methods.md"

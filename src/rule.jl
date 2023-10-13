@@ -932,10 +932,10 @@ function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, 
     rule_inputs_str = "$actual_inputs"
     generated = quote
         let invoke_test_fn = $invoke_test_fn, expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
-            local _T = BayesBase.promote_paramfloattype(actual_output, expected_output)
+            local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
             local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
-            local _isequal_typeof = BayesBase.isequal_typeof(actual_output, expected_output)
+            local _isequal_typeof = ReactiveMP.BayesBase.isequal_typeof(actual_output, expected_output)
 
             if !_isapprox || !_isequal_typeof
                 ReactiveMP.test_rules_failed_warning(rule_spec_str, rule_inputs_str, expected_output, actual_output)
@@ -971,7 +971,7 @@ function test_rules_convert_paramfloattype(expression, eltype)
     elseif @capture(expression, key_ = value_)
         return :($key = $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype)))
     else
-        return :(BayesBase.convert_paramfloattype($eltype, $expression))
+        return :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, $expression))
     end
 end
 
@@ -985,7 +985,7 @@ function test_rules_promote_paramfloattype(values)
             return value
         end
     end
-    return :(BayesBase.promote_paramfloattype($(cvalues...)))
+    return :(ReactiveMP.BayesBase.promote_paramfloattype($(cvalues...)))
 end
 
 # Error utilities
