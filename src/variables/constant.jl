@@ -86,7 +86,7 @@ Base.getindex(constvar::ConstVariable, index) = Base.getindex(getconstant(constv
 isconnected(constvar::ConstVariable) = constvar.nconnected !== 0
 nconnected(constvar::ConstVariable)  = constvar.nconnected
 
-getconst(constvar::ConstVariable{<:PointMass}) = getpointmass(constvar.constant)
+getconst(constvar::ConstVariable{<:PointMass}) = BayesBase.getpointmass(constvar.constant)
 getconst(constvar::ConstVariable)              = constvar.constant
 
 getlastindex(::ConstVariable) = 1
