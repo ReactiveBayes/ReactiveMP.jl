@@ -6,13 +6,15 @@ using ReactiveMP, Optimisers
 
 function ReactiveMP.cvi_setup(opt::Optimisers.AbstractRule, λ)
     # We rely on the `deepcopy` here, because some optimizers from the `Optimizers.jl` may change their state
-    return Optimisers.setup(deepcopy(opt), vec(λ))
+    copt = deepcopy(opt)
+    init = Optimisers.init(copt, vec(λ))
+    return (copt, init)
 end
 
-function ReactiveMP.cvi_update!(opt::Optimisers.Leaf, λ, ∇)
-    # I'm not sure we can ignore the updated tree?
-    _, result = Optimisers.update!(opt, vec(λ), vec(∇))
-    return result
+function ReactiveMP.cvi_update!(opt_and_state::Tuple{Optimisers.AbstractRule, Any}, λ, ∇)
+    opt, state = opt_and_state
+    new_state, new_∇ = Optimisers.apply!(opt, state, vec(λ), vec(∇))
+    return (opt, new_state), new_∇
 end
 
 end

@@ -95,9 +95,17 @@ Uses the `ForwardDiff` library to compute gradients/derivatives.
 """
 struct ForwardDiffGrad end
 
-compute_derivative(::ForwardDiffGrad, f::F, value::Real) where {F}       = ForwardDiff.derivative(f, value)
-compute_gradient(::ForwardDiffGrad, f::F, vec::AbstractVector) where {F} = ForwardDiff.gradient(f, vec)
-compute_hessian(::ForwardDiffGrad, f::F, vec::AbstractVector) where {F}  = ForwardDiff.hessian(f, vec)
+function compute_derivative(::ForwardDiffGrad, f::F, value::T)::T where {F, T}
+    return ForwardDiff.derivative(f, value)
+end
+
+function compute_gradient(::ForwardDiffGrad, f::F, vec::Vector{T})::Vector{T} where {F, T}
+    return ForwardDiff.gradient(f, vec)
+end
+
+function compute_hessian(::ForwardDiffGrad, f::F, vec::Vector{T})::Matrix{T} where {F, T}
+    return ForwardDiff.hessian(f, vec)
+end
 
 function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
     first_derivative = (x) -> compute_derivative(grad, logp, x)
@@ -112,10 +120,35 @@ function compute_fisher_matrix(approximation::CVI, ::Type{T}, η, conditioner) w
 end
 
 # We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
-enforce_proper_message(::Val{true}, ::Type{T}, λ, η, conditioner) where {T} = isproper(NaturalParametersSpace(), T, λ - η, conditioner)
+enforce_proper_message(::Val{true}, ::Type{T}, λ, η, conditioner) where {T} = isproper(NaturalParametersSpace(), T, λ .- η, conditioner)
 
 # We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
 enforce_proper_message(::Val{false}, ::Type{T}, λ, η, conditioner) where {T} = true
+
+# We need this structure to aboid performance issues with type parameter `T` in lambda functions
+# Otherwise the invokation of such function would be about 10x slower
+struct LogGradientInvoker{T, S, O, C}
+    samples::S
+    outbound::O
+    conditioner::C
+
+    function LogGradientInvoker(::Type{T}, samples::S, outbound::O, conditioner::C) where {T, S, O, C}
+        return new{T, S, O, C}(samples, outbound, conditioner)
+    end
+end
+
+# compute gradient of log-likelihood
+# the multiplication between two logpdfs is correct
+# we take the derivative with respect to `η`
+# `logpdf(outbound, sample)` does not depend on `η` and is just a simple scalar constant
+# see the method papers for more details
+# - https://arxiv.org/pdf/1401.0118.pdf
+# - https://doi.org/10.1016/j.ijar.2022.06.006
+function (invoker::LogGradientInvoker{T})(η) where {T}
+    return mean(invoker.samples) do sample 
+        return logpdf(invoker.outbound, sample) * logpdf(ExponentialFamilyDistribution(T, η, invoker.conditioner, nothing), sample)
+    end
+end
 
 function prod(approximation::CVI, outbound, inbound)
     rng = something(approximation.rng, Random.default_rng())
@@ -145,31 +178,24 @@ function prod(approximation::CVI, outbound, inbound)
 
         samples = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
 
-        # compute gradient of log-likelihood
-        # the multiplication between two logpdfs is correct
-        # we take the derivative with respect to `η`
-        # `logpdf(outbound, sample)` does not depend on `η` and is just a simple scalar constant
-        # see the method papers for more details
-        # - https://arxiv.org/pdf/1401.0118.pdf
-        # - https://doi.org/10.1016/j.ijar.2022.06.006
-        logq = let samples = samples, outbound = outbound, T = T
-            (η) -> mean((sample) -> logpdf(outbound, sample) * logpdf(convert(Distribution, ExponentialFamilyDistribution(T, η, inbound_c, nothing)), sample), samples)
-        end
+        logq = LogGradientInvoker(T, samples, outbound, inbound_c)
 
         ∇logq = compute_gradient(approximation.grad, logq, current_λ)
 
         # compute Fisher matrix 
-        # Fisher = compute_fisher_matrix(approximation, T, current_λ, inbound_c)
         Fisher = fisherinformation(current_ef)
 
         # compute natural gradient
         ∇f = Fisher \ ∇logq
 
         # compute gradient on natural parameters
-        ∇ = current_λ - inbound_η - ∇f
+        ∇ = current_λ .- inbound_η .- ∇f
+
+        # adjust gradient descent step
+        optimizer, new_∇ = cvi_update!(optimizer, current_λ, ∇)
 
         # perform gradient descent step
-        new_λ = cvi_update!(optimizer, current_λ, ∇)
+        new_λ = current_λ .- new_∇
 
         # check whether updated natural parameters are proper
         if isproper(NaturalParametersSpace(), T, new_λ, inbound_c) && enforce_proper_message(approximation.enforce_proper_messages, T, new_λ, inbound_η, inbound_c)
