@@ -16,8 +16,8 @@
 [codecov-img]: https://codecov.io/gh/biaslab/ReactiveMP.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/biaslab/ReactiveMP.jl?branch=master
 
-[zenodo-img]: https://zenodo.org/badge/229773785.svg
-[zenodo-url]: https://zenodo.org/badge/latestdoi/229773785
+[zenodo-img]: https://zenodo.org/badge/DOI/10.5281/zenodo.8381133.svg
+[zenodo-url]: https://zenodo.org/doi/10.5281/zenodo.5913616
 
 [pkgeval-img]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/R/ReactiveMP.svg
 [pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/R/ReactiveMP.html
