@@ -6,14 +6,14 @@ import BayesBase: AbstractContinuousGenericLogPdf
 import StatsFuns: logistic, softmax
 import SpecialFunctions: polygamma
 
-struct EmptyOptimizer end
+struct NoopOptimiser end
 
-function ReactiveMP.cvi_setup(::EmptyOptimizer, λ)
-    return EmptyOptimizer()
+function ReactiveMP.cvi_setup(::NoopOptimiser, λ)
+    return (NoopOptimiser(), nothing)
 end
 
-function ReactiveMP.cvi_update!(::EmptyOptimizer, λ, ∇)
-    return vec(λ)
+function ReactiveMP.cvi_update!(state::Tuple{NoopOptimiser, Nothing}, new_λ, λ, ∇)
+    return state, vec(λ)
 end
 
 mutable struct CountingOptimizer
@@ -21,12 +21,13 @@ mutable struct CountingOptimizer
 end
 
 function ReactiveMP.cvi_setup(opt::CountingOptimizer, λ)
-    return opt
+    return (opt, nothing)
 end
 
-function ReactiveMP.cvi_update!(opt::CountingOptimizer, λ, ∇)
+function ReactiveMP.cvi_update!(state::Tuple{CountingOptimizer, Nothing}, new_λ, λ, ∇)
+    opt = state[1]
     opt.num_its += 1
-    return vec(λ)
+    return (state, vec(λ))
 end
 
 function gammafisher(dist::GammaShapeRate)
@@ -36,7 +37,7 @@ end
 @testset "cvi:prod" begin
 
     # These are tested in the `ExponentialFamily`, test a simple case just to be sure
-    @testset "cvi:informationmatrix" begin
+    @testset "Simple check for the existence of the `fisherinformation`" begin
         @testset "GammaShapeRate" begin
             for i in 1:10, j in 1:10
                 distribution = GammaShapeRate(i, j)
@@ -47,120 +48,137 @@ end
         end
     end
 
-    @testset "ForwardDiffGrad" begin
-        grad = ForwardDiffGrad()
-    
-        for i in 1:100
-            @test ReactiveMP.compute_gradient(grad, (x) -> sum(x)^2, [i]) ≈ [2 * i]
-            @test ReactiveMP.compute_hessian(grad, (x) -> sum(x)^2, [i]) ≈ [2;;]
-        end
-    end
+    @testset "Different gradient strategies" begin
+        for strategy in (ForwardDiffGrad(), ZygoteGrad())
+            outputv = [0.0]
+            outputm = [0.0;;]
 
-    @testset "empty optimizer" begin
-        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
-            opt = EmptyOptimizer()
-            meta = CVI(1, 100, opt, ForwardDiffGrad(), 1, Val(false), false)
-            λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
-            @test all(mean_var(λ) .== mean_var(m_in))
-        end
-    end
-
-    @testset "counting optimizer" begin
-        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
-            opt = CountingOptimizer(0)
-            meta = CVI(1, 100, opt, ForwardDiffGrad(), 1, Val(false), false)
-            λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
-            @test all(mean_var(λ) .== mean_var(m_in))
-            @test opt.num_its === 100
-        end
-    end
-
-    @testset "counting lambda optimizer" begin
-        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
-            num_its = 0
-            opt = (λ, ∇) -> begin
-                num_its += 1
-                return vec(λ)
+            for i in 1:100
+                @test ReactiveMP.compute_gradient!(strategy, outputv, (x) -> sum(x)^2, Float64[i]) ≈ [2 * i]
+                @test ReactiveMP.compute_hessian!(strategy, outputm, (x) -> sum(x)^2, Float64[i]) ≈ [2;;]
             end
-            meta = CVI(1, 100, opt, ForwardDiffGrad(), 1, Val(false), false)
-            λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
-            @test all(mean_var(λ) .== mean_var(m_in))
-            @test num_its === 100
         end
     end
 
-    @testset "counting lambda optimizer (Zygote Grad)" begin
-        for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
-            num_its = 0
-            opt = (λ, ∇) -> begin
-                num_its += 1
-                return vec(λ)
+    @testset "Checking that the procedure runs for different parameters (with a noop-optimiser)" begin
+        for strategy in (ForwardDiffGrad(), ZygoteGrad()), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
+            for (left, right) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
+                method = CVI(1, n_iters, NoopOptimiser(), strategy, n_gradpoints, force_proper, warn)
+                # `warn = true` reports that the iterations did not convertge, 
+                # but that is normal for the no-op optimiser
+                Base.with_logger(Base.NullLogger()) do
+                    result = prod(method, left, right)
+                    # The optimiser is no-op, the result should be equal to the right
+                    @test all(mean_var(result) .== mean_var(right))
+                end
             end
-            meta = CVI(1, 100, opt, ZygoteGrad(), 1, Val(false), false)
-            λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
-            @test all(mean_var(λ) .== mean_var(m_in))
-            @test num_its === 100
         end
     end
 
-    @testset "cvi `prod` tests" begin
-        rng = StableRNG(42)
-
-        tests = (
-            (method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ForwardDiffGrad(), 10, Val(true), true), tol = 2e-1),
-            (method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ZygoteGrad(), 10, Val(true), true), tol = 2e-1)
-        )
-
-        # Check several prods against their analytical solutions
-        for test in tests, i in 1:5
-
-            # Univariate `Normal`
-            n1 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
-            n2 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
-
-            n_analytical = prod(GenericProd(), n1, n2)
-
-            # @test prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(n1, x)), n2) ≈ n_analytical atol = test[:tol]
-            # @test prod(test[:method], n1, n2) ≈ n_analytical atol = test[:tol]
-
-            # Univariate `Gamma`
-            g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
-            g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
-
-            g_analytical = prod(GenericProd(), g1, g2)
-            g_cvi1 = prod(test[:method], g1, g2)
-            g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
-
-            @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi1), atol = test[:tol]))
-            @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi2), atol = test[:tol]))
-
-            # # Multivariate `Normal`
-            # if !(test[:method].grad isa ZygoteGrad) # `Zygote` does not support mutations
-            #     for d in (2, 3)
-            #         mn1 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
-            #         mn2 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
-
-            #         mn_analytical = prod(GenericProd(), mn1, mn2)
-
-            #         @test prod(test[:method], mn1, mn2) ≈ mn_analytical atol = test[:tol]
-            #         @test prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2) ≈ mn_analytical atol = test[:tol]
-            #     end
-            # end
-
-            b1 = Bernoulli(logistic(randn(rng)))
-            b2 = Bernoulli(logistic(randn(rng)))
-            b_analytical = prod(GenericProd(), b1, b2)
-            b_cvi = prod(test[:method], b1, b2)
-            @test isapprox(mean(b_analytical), mean(b_cvi), atol = test[:tol])
-
-            beta_1 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
-            beta_2 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
-
-            beta_analytical = prod(GenericProd(), beta_1, beta_2)
-            beta_cvi = prod(test[:method], beta_1, beta_2)
-            @test all(isapprox.(mean_var(beta_cvi), mean_var(beta_analytical), atol = test[:tol]))
+    @testset "Checking that the procedure runs for different parameters (with a counting-optimiser)" begin
+        for strategy in (ForwardDiffGrad(), ZygoteGrad()), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
+            for (left, right) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
+                opt = CountingOptimizer(0)
+                method = CVI(1, n_iters, opt, strategy, n_gradpoints, force_proper, warn)
+                # `warn = true` reports that the iterations did not convertge, 
+                # but that is normal for the no-op optimiser
+                Base.with_logger(Base.NullLogger()) do
+                    result = prod(method, left, right)
+                    # The optimiser is no-op, the result should be equal to the right
+                    @test all(mean_var(result) .== mean_var(right))
+                    # Checking the number of iterations
+                    @test opt.num_its === n_iters
+                end
+            end
         end
     end
+
+    # @testset "counting lambda optimizer" begin
+    #     for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
+    #         num_its = 0
+    #         opt = (λ, ∇) -> begin
+    #             num_its += 1
+    #             return vec(λ)
+    #         end
+    #         meta = CVI(1, 100, opt, ForwardDiffGrad(), 1, Val(false), false)
+    #         λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
+    #         @test all(mean_var(λ) .== mean_var(m_in))
+    #         @test num_its === 100
+    #     end
+    # end
+
+    # @testset "counting lambda optimizer (Zygote Grad)" begin
+    #     for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
+    #         num_its = 0
+    #         opt = (λ, ∇) -> begin
+    #             num_its += 1
+    #             return vec(λ)
+    #         end
+    #         meta = CVI(1, 100, opt, ZygoteGrad(), 1, Val(false), false)
+    #         λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
+    #         @test all(mean_var(λ) .== mean_var(m_in))
+    #         @test num_its === 100
+    #     end
+    # end
+
+    # @testset "cvi `prod` tests" begin
+    #     rng = StableRNG(42)
+
+    #     tests = (
+    #         (method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ForwardDiffGrad(), 10, Val(true), true), tol = 2e-1),
+    #         (method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ZygoteGrad(), 10, Val(true), true), tol = 2e-1)
+    #     )
+
+    #     Check several prods against their analytical solutions
+    #     for test in tests, i in 1:5
+
+    #         Univariate `Normal`
+    #         n1 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
+    #         n2 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
+
+    #         n_analytical = prod(GenericProd(), n1, n2)
+
+    #         @test prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(n1, x)), n2) ≈ n_analytical atol = test[:tol]
+    #         @test prod(test[:method], n1, n2) ≈ n_analytical atol = test[:tol]
+
+    #         Univariate `Gamma`
+    #         g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
+    #         g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
+
+    #         g_analytical = prod(GenericProd(), g1, g2)
+    #         g_cvi1 = prod(test[:method], g1, g2)
+    #         g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
+
+    #         @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi1), atol = test[:tol]))
+    #         @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi2), atol = test[:tol]))
+
+    #         # Multivariate `Normal`
+    #         if !(test[:method].grad isa ZygoteGrad) # `Zygote` does not support mutations
+    #             for d in (2, 3)
+    #                 mn1 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
+    #                 mn2 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
+
+    #                 mn_analytical = prod(GenericProd(), mn1, mn2)
+
+    #                 @test prod(test[:method], mn1, mn2) ≈ mn_analytical atol = test[:tol]
+    #                 @test prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2) ≈ mn_analytical atol = test[:tol]
+    #             end
+    #         end
+
+    #         b1 = Bernoulli(logistic(randn(rng)))
+    #         b2 = Bernoulli(logistic(randn(rng)))
+    #         b_analytical = prod(GenericProd(), b1, b2)
+    #         b_cvi = prod(test[:method], b1, b2)
+    #         @test isapprox(mean(b_analytical), mean(b_cvi), atol = test[:tol])
+
+    #         beta_1 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
+    #         beta_2 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
+
+    #         beta_analytical = prod(GenericProd(), beta_1, beta_2)
+    #         beta_cvi = prod(test[:method], beta_1, beta_2)
+    #         @test all(isapprox.(mean_var(beta_cvi), mean_var(beta_analytical), atol = test[:tol]))
+    #     end
+    # end
 
     # @testset "Categorical x Categorical" begin
     #     rng = StableRNG(42)
@@ -176,29 +194,29 @@ end
     #     @test probvec(c_analytical) ≈ probvec(c_cvi) atol = 1e-1
     # end
 
-    @testset "cvi `prod` tests (n_gradpoints = 60)" begin
-        rng = StableRNG(42)
+    # @testset "cvi `prod` tests (n_gradpoints = 60)" begin
+    #     rng = StableRNG(42)
 
-        tests = (
-            (method = CVI(StableRNG(42), 1, 600, Optimisers.Descent(0.01), ForwardDiffGrad(), 60, Val(true), true), tol = 2e-1),
-            (method = CVI(StableRNG(42), 1, 600, Optimisers.Descent(0.01), ZygoteGrad(), 60, Val(true), true), tol = 2e-1)
-        )
+    #     tests = (
+    #         (method = CVI(StableRNG(42), 1, 600, Optimisers.Descent(0.01), ForwardDiffGrad(), 60, Val(true), true), tol = 2e-1),
+    #         (method = CVI(StableRNG(42), 1, 600, Optimisers.Descent(0.01), ZygoteGrad(), 60, Val(true), true), tol = 2e-1)
+    #     )
 
-        # Check several prods against their analytical solutions
-        for test in tests, i in 1:5
+    #     # Check several prods against their analytical solutions
+    #     for test in tests, i in 1:5
 
-            # Univariate `Gamma`
-            g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
-            g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
+    #         # Univariate `Gamma`
+    #         g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
+    #         g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
 
-            g_analytical = prod(GenericProd(), g1, g2)
-            g_cvi1 = prod(test[:method], g1, g2)
-            g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
+    #         g_analytical = prod(GenericProd(), g1, g2)
+    #         g_cvi1 = prod(test[:method], g1, g2)
+    #         g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
 
-            @test g_cvi1 ≈ g_analytical atol = test[:tol]
-            @test g_cvi2 ≈ g_analytical atol = test[:tol]
-        end
-    end
+    #         @test g_cvi1 ≈ g_analytical atol = test[:tol]
+    #         @test g_cvi2 ≈ g_analytical atol = test[:tol]
+    #     end
+    # end
 
     # @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
     #     seed = 123

@@ -8,19 +8,21 @@ using LinearAlgebra
     cvi_setup!(opt, λ)
 
 Initialises the given optimiser for the CVI procedure given the structure of λ.
+Returns a tuple of the optimiser and the optimiser state.
 """
 function cvi_setup! end
 
 """
-    cvi_update!(opt, λ, ∇)
+    cvi_update!(tuple_of_opt_and_state, new_λ, λ, ∇)
 
-Uses the optimiser and the gradient ∇ to change the trainable parameters in the λ.
+Uses the optimiser, its state and the gradient ∇ to change the trainable parameters in the λ.
+Modifies the optimiser state and and store the output in the new_λ. Returns a tuple of the optimiser and the new_λ.
 """
 function cvi_update! end
 
 # Specialized method for callback functions, a user can provide an arbitrary callback with the optimization procedure
-cvi_setup(callback::F, λ) where {F <: Function} = callback
-cvi_update!(callback::F, λ, ∇) where {F <: Function} = callback(λ, ∇)
+cvi_setup(callback::F, λ) where {F <: Function} = (callback, nothing)
+cvi_update!(tuple::Tuple{F, Nothing}, new_λ, λ, ∇) where {F <: Function} = (tuple, tuple[1](new_λ, λ, ∇))
 
 cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
@@ -99,12 +101,12 @@ function compute_derivative(::ForwardDiffGrad, f::F, value::T)::T where {F, T}
     return ForwardDiff.derivative(f, value)
 end
 
-function compute_gradient(::ForwardDiffGrad, f::F, vec::Vector{T})::Vector{T} where {F, T}
-    return ForwardDiff.gradient(f, vec)
+function compute_gradient!(::ForwardDiffGrad, output::Vector{T}, f::F, vec::Vector{T})::Vector{T} where {F, T}
+    return ForwardDiff.gradient!(output, f, vec)
 end
 
-function compute_hessian(::ForwardDiffGrad, f::F, vec::Vector{T})::Matrix{T} where {F, T}
-    return ForwardDiff.hessian(f, vec)
+function compute_hessian!(::ForwardDiffGrad, output::Matrix{T}, f::F, vec::Vector{T})::Matrix{T} where {F, T}
+    return ForwardDiff.hessian!(output, f, vec)
 end
 
 function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
@@ -112,18 +114,17 @@ function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
     return compute_derivative(grad, first_derivative, z_s)
 end
 
-function compute_fisher_matrix(approximation::CVI, ::Type{T}, η, conditioner) where {T}
-    neg_lognormalizer = let lognorm = getlogpartition(NaturalParametersSpace(), T, conditioner)
-        (x) -> -lognorm(x)
+# We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
+function enforce_proper_message(::Val{true}, ::Type{T}, cache, λ, η, conditioner) where {T} 
+    # cache = λ .- η
+    @inbounds for (i, λᵢ, ηᵢ) in zip(eachindex(cache), λ, η)
+        cache[i] = λᵢ - ηᵢ
     end
-    return -compute_hessian(approximation.grad, neg_lognormalizer, η)
+    return isproper(NaturalParametersSpace(), T, cache, conditioner)
 end
 
-# We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
-enforce_proper_message(::Val{true}, ::Type{T}, λ, η, conditioner) where {T} = isproper(NaturalParametersSpace(), T, λ .- η, conditioner)
-
 # We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
-enforce_proper_message(::Val{false}, ::Type{T}, λ, η, conditioner) where {T} = true
+enforce_proper_message(::Val{false}, ::Type{T}, cache, λ, η, conditioner) where {T} = true
 
 # We need this structure to aboid performance issues with type parameter `T` in lambda functions
 # Otherwise the invokation of such function would be about 10x slower
@@ -165,11 +166,13 @@ function prod(approximation::CVI, outbound, inbound)
     T = ExponentialFamily.exponential_family_typetag(inbound_ef)
 
     # Initial parameters of projected distribution
-    current_ef = convert(ExponentialFamilyDistribution, inbound)
-    current_λ  = getnaturalparameters(current_ef)
-    scontainer = rand(rng, sampling_optimized(inbound), approximation.n_gradpoints)
-    current_∇  = similar(current_λ)
-    new_λ      = similar(current_λ)
+    current_ef = convert(ExponentialFamilyDistribution, inbound) # current EF distribution
+    current_λ  = getnaturalparameters(current_ef) # current natural parameters
+    scontainer = rand(rng, sampling_optimized(inbound), approximation.n_gradpoints) # sampling container
+    current_∇  = similar(current_λ) # current gradient
+    new_λ      = similar(current_λ) # new natural parameters
+    ∇logq      = similar(current_λ) # gradient of log-likelihood
+    cache      = similar(current_λ) # just intermediate buffer
 
     hasupdated = false
 
@@ -179,9 +182,12 @@ function prod(approximation::CVI, outbound, inbound)
         # returns the same distribution by default
         samples = cvilinearize(rand!(rng, sampling_optimized(convert(Distribution, current_ef)), scontainer))
 
+        # We avoid use of lambda functions, because they cannot capture `T`
+        # which leads to performance issues
         logq = LogGradientInvoker(T, samples, outbound, inbound_c)
 
-        ∇logq = compute_gradient(approximation.grad, logq, current_λ)
+        # compute gradient of log-likelihood
+        ∇logq = compute_gradient!(approximation.grad, ∇logq, logq, current_λ)
 
         # compute Fisher matrix 
         Fisher = fisherinformation(current_ef)
@@ -189,23 +195,16 @@ function prod(approximation::CVI, outbound, inbound)
         # compute natural gradient
         ∇f = cholinv(Fisher) * ∇logq
 
-        # compute gradient on natural parameters
-        # current_∇ = current_λ .- inbound_η .- ∇f
+        # compute gradient on natural parameters (current_∇ = current_λ .- inbound_η .- ∇f)
         @inbounds for (i, λᵢ, ηᵢ, Δfᵢ) in zip(eachindex(current_∇), current_λ, inbound_η, ∇f)
             current_∇[i] = λᵢ - ηᵢ - Δfᵢ
         end
 
-        # adjust gradient descent step
-        optimizer, current_∇ = cvi_update!(optimizer, current_λ, current_∇)
-
         # perform gradient descent step
-        # new_λ = current_λ .- current_∇
-        @inbounds for (i, λᵢ, Δᵢ) in zip(eachindex(new_λ), current_λ, current_∇)
-            new_λ[i] = λᵢ - Δᵢ
-        end
+        optimizer, new_λ = cvi_update!(optimizer, new_λ, current_λ, current_∇)
 
         # check whether updated natural parameters are proper
-        if isproper(NaturalParametersSpace(), T, new_λ, inbound_c) && enforce_proper_message(approximation.enforce_proper_messages, T, new_λ, inbound_η, inbound_c)
+        if isproper(NaturalParametersSpace(), T, new_λ, inbound_c) && enforce_proper_message(approximation.enforce_proper_messages, T, cache, new_λ, inbound_η, inbound_c)
             copyto!(current_λ, new_λ)
             hasupdated = true
         end
