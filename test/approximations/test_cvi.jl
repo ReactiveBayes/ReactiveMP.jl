@@ -116,7 +116,7 @@ end
         end
     end
 
-    @testset "cvi `prod` tests" begin
+    @testset "Simple products compared to their analytical solutions" begin
         rng = StableRNG(42)
 
         for i in 1:5
@@ -133,6 +133,7 @@ end
                 (left = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1), right = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1), tol = 1e-2),
                 (left = GammaShapeRate(rand(rng) + 1, rand(rng) + 1), right = GammaShapeRate(rand(rng) + 1, rand(rng) + 1), tol = 8e-2),
                 (left = GammaShapeScale(rand(rng) + 1, rand(rng) + 1), right = GammaShapeScale(rand(rng) + 1, rand(rng) + 1), tol = 1e-1)
+                # (left = Categorical(softmax(rand(rng, 3))), Categorical(softmax(rand(rng, 3)))) # Categorical is broken, needs fix!
             )
             # This list is not exhaustive in any way
             for candidate in candidates
@@ -164,86 +165,43 @@ end
                 end
             end
         end
-
-        # Check several prods against their analytical solutions
-        # for test in tests, i in 1:5
-
-        # Univariate `Normal`
-        # n1 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
-        # n2 = NormalMeanVariance(10 * randn(rng), 10 * rand(rng))
-
-        # n_analytical = prod(GenericProd(), n1, n2)
-
-        # @test prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(n1, x)), n2) ≈ n_analytical atol = test[:tol]
-        # @test prod(test[:method], n1, n2) ≈ n_analytical atol = test[:tol]
-
-        # Univariate `Gamma`
-        # g1 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
-        # g2 = GammaShapeRate(rand(rng) + 1, rand(rng) + 1)
-
-        # g_analytical = prod(GenericProd(), g1, g2)
-        # g_cvi1 = prod(test[:method], g1, g2)
-        # g_cvi2 = prod(test[:method], ContinuousUnivariateLogPdf((x) -> logpdf(g1, x)), g2)
-
-        # @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi1), atol = test[:tol]))
-        # @test all(isapprox.(mean_var(g_analytical), mean_var(g_cvi2), atol = test[:tol]))
-
-        # Multivariate `Normal`
-        # if !(test[:method].grad isa ZygoteGrad) # `Zygote` does not support mutations
-        #     for d in (2, 3)
-        #         mn1 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
-        #         mn2 = MvNormalMeanCovariance(10 * randn(rng, d), 10 * rand(rng, d))
-
-        #         mn_analytical = prod(GenericProd(), mn1, mn2)
-
-        #         @test prod(test[:method], mn1, mn2) ≈ mn_analytical atol = test[:tol]
-        #         @test prod(test[:method], ContinuousMultivariateLogPdf(d, (x) -> logpdf(mn1, x)), mn2) ≈ mn_analytical atol = test[:tol]
-        #     end
-        # end
-
-        # b1 = Bernoulli(logistic(randn(rng)))
-        # b2 = Bernoulli(logistic(randn(rng)))
-        # b_analytical = prod(GenericProd(), b1, b2)
-        # b_cvi = prod(test[:method], b1, b2)
-        # @test isapprox(mean(b_analytical), mean(b_cvi), atol = test[:tol])
-
-        # beta_1 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
-        # beta_2 = Beta(abs(randn(rng)) + 1, abs(randn(rng)) + 1)
-
-        # beta_analytical = prod(GenericProd(), beta_1, beta_2)
-        # beta_cvi = prod(test[:method], beta_1, beta_2)
-        # @test all(isapprox.(mean_var(beta_cvi), mean_var(beta_analytical), atol = test[:tol]))
-        #     end
     end
 
-    # @testset "Categorical x Categorical" begin
-    #     rng = StableRNG(42)
+    @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
+        seed = 123
+        rng = StableRNG(seed)
+        optimizer = Optimisers.Descent(0.007)
+        meta = CVI(rng, 1, 1000, optimizer, ForwardDiffGrad(), 20, Val(false), true)
 
-    #     method = CVI(StableRNG(42), 1, 1000, Optimisers.Descent(0.007), ForwardDiffGrad(), 10, Val(true), true)
+        for i in 1:5, j in 1:5
+            left = NormalMeanVariance(randn(rng), 1 + j + rand(rng))
+            right = NormalMeanVariance(-i, 1 + j^2)
+            numerical = prod(meta, left, right)
+            closed = prod(ClosedProd(), left, right)
+            @test isapprox(mean(numerical), mean(closed), atol = 5e-2)
+            @test isapprox(var(numerical), var(closed), atol = 5e-2)
+        end
+    end
 
-    #     c1 = Categorical(softmax(rand(rng, 3)))
-    #     c2 = Categorical(softmax(rand(rng, 3)))
+    @testset "MvNormal x MvNormal (Log-likelihood preconditioner prod)" begin
+        seed = 123
+        rng = StableRNG(seed)
+        optimizer = Optimisers.Descent(0.007)
+        meta = CVI(rng, 1, 1000, optimizer, ForwardDiffGrad(), 20, Val(false), true)
 
-    #     c_analytical = prod(GenericProd(), c1, c2)
-    #     c_cvi = prod(method, c1, c2)
+        for n in 1:10, i in 1:5, j in 1:5
+            L = LowerTriangular(rand(rng, n, n)) + n * I
+            Σ = L * L'
+            left = MvNormalMeanCovariance(rand(rng, n), Σ)
+            right = MvNormalMeanCovariance(fill(-i, n), fill(1 + j^2, n))
+            numerical = prod(meta, left, right)
+            closed = prod(ClosedProd(), left, right)
+            @test isapprox(mean(numerical), mean(closed), atol = n * 5e-2, rtol = 5e-2)
+            @test isapprox(cov(numerical), cov(closed), atol = n * 5e-2, rtol = 5e-2)
+        end
+    end
 
-    #     @test probvec(c_analytical) ≈ probvec(c_cvi) atol = 1e-1
-    # end
-
-    # @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
-    #     seed = 123
-    #     rng = StableRNG(seed)
-    #     optimizer = Optimisers.Descent(0.01)
-    #     meta = CVI(rng, 1, 1000, optimizer, ForwardDiffGrad(), 1, Val(false), true)
-
-    #     for i in 1:10
-    #         m_out, m_in = NormalMeanVariance(i, 1), NormalMeanVariance(0, 1)
-    #         λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
-    #         @test isapprox(convert(Distribution, λ), NormalWeightedMeanPrecision(i, 2), atol = 0.1)
-    #     end
-    # end
-
-    # Extra tests for non-generic Gaussians
+    # Extra tests for Gaussians using the generic version
     @static if VERSION ≥ v"1.7" # Base.@invoke is available only in Julia >= 1.7
         @testset "Normal x Normal (Fisher preconditioner prod)" begin
             seed = 123
@@ -252,9 +210,10 @@ end
             meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 10, Val(false), true)
 
             for i in 1:3, j in 1:3
-                m_out, m_in = NormalMeanVariance(i, 1 + j), NormalMeanVariance(-i, 1 + j^2)
-                closed = prod(ClosedProd(), m_out, m_in)
-                numerical = Base.@invoke prod(meta::CVI, m_out::Any, m_in::Any)
+                left = NormalMeanVariance(i, 1 + j)
+                right = NormalMeanVariance(-i, 1 + j^2)
+                closed = prod(ClosedProd(), left, right)
+                numerical = Base.@invoke prod(meta::CVI, left::Any, right::Any)
                 @test isapprox(mean(numerical), mean(closed), atol = 7e-2)
                 @test isapprox(var(numerical), var(closed), atol = 7e-1)
             end
@@ -269,9 +228,10 @@ end
             meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 10, Val(false), true)
 
             for i in 1:3, j in 1:3
-                m_out, m_in = MvNormalMeanCovariance([i], [1 + j]), MvNormalMeanCovariance([-i], [1 + j^2])
-                closed = prod(ClosedProd(), m_out, m_in)
-                numerical = Base.@invoke prod(meta::CVI, m_out::Any, m_in::Any)
+                left = MvNormalMeanCovariance([i], [1 + j])
+                right = MvNormalMeanCovariance([-i], [1 + j^2])
+                closed = prod(ClosedProd(), left, right)
+                numerical = Base.@invoke prod(meta::CVI, left::Any, right::Any)
                 @test isapprox(mean(numerical), mean(closed), atol = 7e-2)
                 @test isapprox(cov(numerical), cov(closed), atol = 7e-1)
             end
