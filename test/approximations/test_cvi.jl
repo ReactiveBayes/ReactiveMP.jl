@@ -246,10 +246,8 @@ end
                 m_out, m_in = MvGaussianMeanCovariance(fill(i, 2), Matrix(Diagonal(fill(1 + j, 2)))), MvGaussianMeanCovariance(fill(-i, 2), Matrix(Diagonal(fill(1 + j^2, 2))))
                 closed = prod(ClosedProd(), m_out, m_in)
                 numerical = Base.@invoke prod(meta::CVI, m_out::Any, m_in::Any)
-                # These tests are broken because of the unconstrained optimization
-                # When fixed, set `warn = true` in the `CVI` constructor
-                @test_broken isapprox(mean(numerical), mean(closed), atol = 7e-2)
-                @test_broken isapprox(cov(numerical), cov(closed), atol = 7e-1)
+                @test isapprox(mean(numerical), mean(closed), atol = 7e-2)
+                @test isapprox(cov(numerical), cov(closed), atol = 7e-1)
             end
         end
     end

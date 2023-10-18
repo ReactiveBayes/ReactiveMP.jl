@@ -128,15 +128,20 @@ enforce_proper_message(::Val{false}, ::Type{T}, cache, λ, η, conditioner) wher
 
 # We need this structure to aboid performance issues with type parameter `T` in lambda functions
 # Otherwise the invokation of such function would be about 10x slower
-struct LogGradientInvoker{T, S, O, C}
+struct LogGradientInvoker{T, S, O, C, H}
     samples::S
     outbound::O
     conditioner::C
+    cache::H
 
-    function LogGradientInvoker(::Type{T}, samples::S, outbound::O, conditioner::C) where {T, S, O, C}
-        return new{T, S, O, C}(samples, outbound, conditioner)
+    function LogGradientInvoker(::Type{T}, samples::S, outbound::O, conditioner::C, cache::H) where {T, S, O, C, H}
+        return new{T, S, O, C, H}(samples, outbound, conditioner, cache)
     end
 end
+
+# Some methods for some distributions require extra cache to be preallocated
+# Look for the the optimized versions in the bottom of this file
+prepare_log_gradient_invoker_cache(::Type{T}, η) where {T} = (similar(η), similar(η))
 
 # compute gradient of log-likelihood
 # the multiplication between two logpdfs is correct
@@ -149,6 +154,20 @@ function (invoker::LogGradientInvoker{T})(η) where {T}
     return mean(invoker.samples) do sample
         return logpdf(invoker.outbound, sample) * logpdf(ExponentialFamilyDistribution(T, η, invoker.conditioner, nothing), sample)
     end
+end
+
+# Look for the the optimized versions in the bottom of this file
+function estimate_natural_gradient!(invoker::LogGradientInvoker, grad, current)
+    (∇logq, ∇f) = invoker.cache
+
+    ∇logq = compute_gradient!(grad, ∇logq, invoker, getnaturalparameters(current))
+
+    # compute Fisher matrix 
+    Fisher = fisherinformation(current)
+
+    # compute natural gradient
+    # cholinv(Fisher) * ∇logq
+    return mul!(∇f, cholinv(Fisher), ∇logq)::typeof(∇f)
 end
 
 function prod(approximation::CVI, outbound, inbound)
@@ -171,8 +190,8 @@ function prod(approximation::CVI, outbound, inbound)
     scontainer = rand(rng, sampling_optimized(inbound), approximation.n_gradpoints) # sampling container
     current_∇  = similar(current_λ) # current gradient
     new_λ      = similar(current_λ) # new natural parameters
-    ∇logq      = similar(current_λ) # gradient of log-likelihood
     cache      = similar(current_λ) # just intermediate buffer
+    logqcache  = prepare_log_gradient_invoker_cache(T, current_λ)
 
     hasupdated = false
 
@@ -183,17 +202,12 @@ function prod(approximation::CVI, outbound, inbound)
         samples = cvilinearize(rand!(rng, sampling_optimized(convert(Distribution, current_ef)), scontainer))
 
         # We avoid use of lambda functions, because they cannot capture `T`
-        # which leads to performance issues
-        logq = LogGradientInvoker(T, samples, outbound, inbound_c)
+        # which leads to performance issues 
+        # + some types `T` implement a more accure and efficient estimater
+        invoker = LogGradientInvoker(T, samples, outbound, inbound_c, logqcache)
 
         # compute gradient of log-likelihood
-        ∇logq = compute_gradient!(approximation.grad, ∇logq, logq, current_λ)
-
-        # compute Fisher matrix 
-        Fisher = fisherinformation(current_ef)
-
-        # compute natural gradient
-        ∇f = cholinv(Fisher) * ∇logq
+        ∇f = estimate_natural_gradient!(invoker, approximation.grad, current_ef)
 
         # compute gradient on natural parameters (current_∇ = current_λ .- inbound_η .- ∇f)
         @inbounds for (i, λᵢ, ηᵢ, ∇fᵢ) in zip(eachindex(current_∇), current_λ, inbound_η, ∇f)
@@ -219,75 +233,33 @@ end
 
 # Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
 
-function compute_df_mv(approximation::CVI, logp::F, z_s::Real) where {F}
-    df_m = compute_derivative(approximation.grad, logp, z_s)
-    df_v = compute_second_derivative(approximation.grad, logp, z_s)
+function compute_df_mv(grad, _, logp::F, z_s::Real) where {F}
+    df_m = compute_derivative(grad, logp, z_s)
+    df_v = compute_second_derivative(grad, logp, z_s)
     return df_m, df_v / 2
 end
 
-function compute_df_mv(approximation::CVI, logp::F, z_s::AbstractVector) where {F}
-    n = length(z_s)
-    df_m = zeros(eltype(z_s), n)
-    df_v = zeros(eltype(z_s), n, n)
-    df_m = compute_gradient!(approximation.grad, df_m, logp, z_s)
-    df_v = compute_hessian!(approximation.grad, df_v, logp, z_s)
+function compute_df_mv(grad, cache, logp::F, z_s::AbstractVector) where {F}
+    df_m, df_v = cache
+    df_m = compute_gradient!(grad, df_m, logp, z_s)
+    df_v = compute_hessian!(grad, df_v, logp, z_s)
     return df_m, df_v ./ 2
 end
 
-function prod(approximation::CVI, outbound, inbound::GaussianDistributionsFamily)
-    rng = something(approximation.rng, Random.GLOBAL_RNG)
+# Specialized version for the Gaussians distribution
 
-    logp = (x) -> logpdf(outbound, x)
+function prepare_log_gradient_invoker_cache(::Type{T}, η) where {T <: NormalDistributionsFamily}
+    n = convert(Int, (-1 + sqrt(4 * length(η) + 1)) / 2)
+    return (similar(η, n), similar(η, (n, n)))
+end
 
-    # Natural parameters of incoming distribution message
-    inbound_ef = convert(ExponentialFamilyDistribution, inbound)
-    inbound_η = getnaturalparameters(inbound_ef)
-    inbound_c = getconditioner(inbound_ef)
-
-    # Optimizer procedure may depend on the type of the inbound natural parameters
-    optimizer_and_state = cvi_setup(approximation.opt, inbound_η)
-
-    # Natural parameter type of incoming distribution
-    T = ExponentialFamily.exponential_family_typetag(inbound_ef)
-
-    # Initial parameters of projected distribution
-    current_ef = convert(ExponentialFamilyDistribution, inbound) # current EF distribution
-    current_λ  = getnaturalparameters(current_ef) # current natural parameters
-    new_λ      = similar(current_λ)
-    cache      = similar(current_λ)
-
-    # Initialize update flag
-    hasupdated = false
-
-    for _ in 1:(approximation.n_iterations)
-        # create distribution to sample from and sample from it
-        q = convert(Distribution, current_ef)
-        z = cvilinearize(rand(rng, q, approximation.n_gradpoints))
-
-        # compute gradient on mean parameter
-        ∇f = sum((z_s) -> begin
-            df_m, df_v = compute_df_mv(approximation, logp, z_s)
-            df_μ1 = df_m - 2 * df_v * mean(q)
-            df_μ2 = df_v
-            ExponentialFamily.pack_parameters(T, (df_μ1 ./ length(z), df_μ2 ./ length(z)))
-        end, z)
-
-        # compute gradient on natural parameters
-        current_∇ = current_λ - inbound_η - ∇f
-
-        # perform gradient descent step
-        optimizer_and_state, new_λ = cvi_update!(optimizer_and_state, new_λ, current_λ, current_∇)
-
-        # check whether updated natural parameters are proper
-        if isproper(NaturalParametersSpace(), T, new_λ, inbound_c) && enforce_proper_message(approximation.enforce_proper_messages, T, cache, new_λ, inbound_η, inbound_c)
-            copyto!(current_λ, new_λ)
-            hasupdated = true
-        end
-    end
-
-    if !hasupdated && approximation.warn
-        @warn "CVI approximation has not updated the initial state. The method did not converge. Set `warn = false` to supress this warning."
-    end
-
-    return convert(Distribution, current_ef)
+function estimate_natural_gradient!(invoker::LogGradientInvoker{T}, grad, current) where {T <: NormalDistributionsFamily}
+    μ = mean(current)
+    K = length(invoker.samples)
+    return sum((z_s) -> begin
+        df_m, df_v = compute_df_mv(grad, invoker.cache, (x) -> logpdf(invoker.outbound, x), z_s)
+        df_μ1 = df_m - 2 * df_v * μ
+        df_μ2 = df_v
+        ExponentialFamily.pack_parameters(T, (df_μ1 ./ K, df_μ2 ./ K))
+    end, invoker.samples)
 end
