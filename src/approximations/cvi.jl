@@ -240,7 +240,7 @@ function compute_df_mv(grad, _, logp::F, z_s::Real) where {F}
 end
 
 function compute_df_mv(grad, cache, logp::F, z_s::AbstractVector) where {F}
-    df_m, df_v = cache
+    _, _, df_m, df_v = cache
     df_m = compute_gradient!(grad, df_m, logp, z_s)
     df_v = compute_hessian!(grad, df_v, logp, z_s)
     return df_m, df_v ./ 2
@@ -250,16 +250,41 @@ end
 
 function prepare_log_gradient_invoker_cache(::Type{T}, η) where {T <: NormalDistributionsFamily}
     n = convert(Int, (-1 + sqrt(4 * length(η) + 1)) / 2)
-    return (similar(η, n), similar(η, (n, n)))
+    return (similar(η), similar(η, n), similar(η, n), similar(η, (n, n)))
 end
 
 function estimate_natural_gradient!(invoker::LogGradientInvoker{T}, grad, current) where {T <: NormalDistributionsFamily}
     μ = mean(current)
     K = length(invoker.samples)
+    f = (x) -> logpdf(invoker.outbound, x)
+    ∇f, tmp, _, _ = invoker.cache
+
+    fill!(∇f, zero(eltype(μ)))
+
+    # Below is a hand-written and optimized version of the following code:
     return sum((z_s) -> begin
-        df_m, df_v = compute_df_mv(grad, invoker.cache, (x) -> logpdf(invoker.outbound, x), z_s)
+        df_m, df_v = compute_df_mv(grad, invoker.cache, f, z_s)
         df_μ1 = df_m - 2 * df_v * μ
         df_μ2 = df_v
         ExponentialFamily.pack_parameters(T, (df_μ1 ./ K, df_μ2 ./ K))
     end, invoker.samples)
+
+    # for sample in invoker.samples
+    #     df_m, df_v = compute_df_mv(grad, invoker.cache, f, sample)
+
+    #     mul!(tmp, df_v, μ)
+
+    #     k = firstindex(∇f)
+    #     @inbounds for (df_mᵢ, tmpᵢ) in zip(df_m, tmp)
+    #         ∇f[k] += (df_mᵢ - 2 * tmpᵢ) / K
+    #         k = k + 1
+    #     end
+
+    #     @inbounds for df_vᵢ in df_v
+    #         ∇f[k] += df_vᵢ / K
+    #         k = k + 1
+    #     end
+    # end
+
+    # return ∇f
 end
