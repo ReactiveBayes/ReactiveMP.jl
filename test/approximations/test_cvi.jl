@@ -93,33 +93,29 @@ end
         end
     end
 
-    # @testset "counting lambda optimizer" begin
-    #     for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
-    #         num_its = 0
-    #         opt = (λ, ∇) -> begin
-    #             num_its += 1
-    #             return vec(λ)
-    #         end
-    #         meta = CVI(1, 100, opt, ForwardDiffGrad(), 1, Val(false), false)
-    #         λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
-    #         @test all(mean_var(λ) .== mean_var(m_in))
-    #         @test num_its === 100
-    #     end
-    # end
+    @testset "Checking that the procedure runs for different parameters (with a lambda based counting-optimiser)" begin
+        for strategy in (ForwardDiffGrad(), ZygoteGrad()), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
+            for (left, right) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
+                
+                counting = 0
+                callback = (new_λ, λ, _) -> begin
+                    counting += 1
+                    return λ
+                end
 
-    # @testset "counting lambda optimizer (Zygote Grad)" begin
-    #     for (m_in, m_out) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
-    #         num_its = 0
-    #         opt = (λ, ∇) -> begin
-    #             num_its += 1
-    #             return vec(λ)
-    #         end
-    #         meta = CVI(1, 100, opt, ZygoteGrad(), 1, Val(false), false)
-    #         λ = prod(meta, ContinuousUnivariateLogPdf((z) -> logpdf(m_out, z)), m_in)
-    #         @test all(mean_var(λ) .== mean_var(m_in))
-    #         @test num_its === 100
-    #     end
-    # end
+                method = CVI(1, n_iters, callback, strategy, n_gradpoints, force_proper, warn)
+                # `warn = true` reports that the iterations did not convertge, 
+                # but that is normal for the no-op optimiser
+                Base.with_logger(Base.NullLogger()) do
+                    result = prod(method, left, right)
+                    # The optimiser is no-op, the result should be equal to the right
+                    @test all(mean_var(result) .== mean_var(right))
+                    # Checking the number of iterations
+                    @test counting === n_iters
+                end
+            end
+        end
+    end
 
     # @testset "cvi `prod` tests" begin
     #     rng = StableRNG(42)
