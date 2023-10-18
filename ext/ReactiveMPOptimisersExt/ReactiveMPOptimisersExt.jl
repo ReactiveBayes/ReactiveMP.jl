@@ -14,7 +14,8 @@ end
 function ReactiveMP.cvi_update!(opt_and_state::Tuple{Optimisers.AbstractRule, Any}, λ, ∇)
     opt, state = opt_and_state
     new_state, new_∇ = Optimisers.apply!(opt, state, vec(λ), vec(∇))
-    return (opt, new_state), new_∇
+    copyto!(∇, new_∇)
+    return (opt, new_state), ∇
 end
 
 end

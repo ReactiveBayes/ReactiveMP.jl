@@ -145,7 +145,7 @@ end
 # - https://arxiv.org/pdf/1401.0118.pdf
 # - https://doi.org/10.1016/j.ijar.2022.06.006
 function (invoker::LogGradientInvoker{T})(η) where {T}
-    return mean(invoker.samples) do sample 
+    return mean(invoker.samples) do sample
         return logpdf(invoker.outbound, sample) * logpdf(ExponentialFamilyDistribution(T, η, invoker.conditioner, nothing), sample)
     end
 end
@@ -167,6 +167,9 @@ function prod(approximation::CVI, outbound, inbound)
     # Initial parameters of projected distribution
     current_ef = convert(ExponentialFamilyDistribution, inbound)
     current_λ  = getnaturalparameters(current_ef)
+    scontainer = rand(rng, sampling_optimized(inbound), approximation.n_gradpoints)
+    current_∇  = similar(current_λ)
+    new_λ      = similar(current_λ)
 
     hasupdated = false
 
@@ -174,9 +177,7 @@ function prod(approximation::CVI, outbound, inbound)
 
         # Some distributions implement "sampling" efficient versions
         # returns the same distribution by default
-        _, q_friendly = logpdf_sampling_optimized(convert(Distribution, current_ef))
-
-        samples = cvilinearize(rand(rng, q_friendly, approximation.n_gradpoints))
+        samples = cvilinearize(rand!(rng, sampling_optimized(convert(Distribution, current_ef)), scontainer))
 
         logq = LogGradientInvoker(T, samples, outbound, inbound_c)
 
@@ -186,16 +187,22 @@ function prod(approximation::CVI, outbound, inbound)
         Fisher = fisherinformation(current_ef)
 
         # compute natural gradient
-        ∇f = Fisher \ ∇logq
+        ∇f = cholinv(Fisher) * ∇logq
 
         # compute gradient on natural parameters
-        ∇ = current_λ .- inbound_η .- ∇f
+        # current_∇ = current_λ .- inbound_η .- ∇f
+        @inbounds for (i, λᵢ, ηᵢ, Δfᵢ) in zip(eachindex(current_∇), current_λ, inbound_η, ∇f)
+            current_∇[i] = λᵢ - ηᵢ - Δfᵢ
+        end
 
         # adjust gradient descent step
-        optimizer, new_∇ = cvi_update!(optimizer, current_λ, ∇)
+        optimizer, current_∇ = cvi_update!(optimizer, current_λ, current_∇)
 
         # perform gradient descent step
-        new_λ = current_λ .- new_∇
+        # new_λ = current_λ .- current_∇
+        @inbounds for (i, λᵢ, Δᵢ) in zip(eachindex(new_λ), current_λ, current_∇)
+            new_λ[i] = λᵢ - Δᵢ
+        end
 
         # check whether updated natural parameters are proper
         if isproper(NaturalParametersSpace(), T, new_λ, inbound_c) && enforce_proper_message(approximation.enforce_proper_messages, T, new_λ, inbound_η, inbound_c)
