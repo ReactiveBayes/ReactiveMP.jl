@@ -275,12 +275,12 @@ function prepare_log_gradient_invoker_cache(::Type{T}, grad::ForwardDiffGrad, η
     return (ad_cache, ad_cfgs, f, ∇f, tmp)
 end
 
-function __gausian_ad_cache(grad::ForwardDiffGrad, sample::Number, f)
+function __gaussian_ad_cache(grad::ForwardDiffGrad, sample::Number, f)
     # We do not implement any cache for the univariate Gaussian case
     return nothing, nothing
 end
 
-function __gausian_ad_cache(grad::ForwardDiffGrad, sample::AbstractArray, f)
+function __gaussian_ad_cache(grad::ForwardDiffGrad, sample::AbstractArray, f)
     # We prepare a different `DiffResult` container specialized for `f` specifically
     R = eltype(sample)
     k = length(sample)
