@@ -6,6 +6,7 @@ version = "3.11.0"
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainIntegrals = "cc6bae93-f070-4015-88fd-838f9505a86c"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"

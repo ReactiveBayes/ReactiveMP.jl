@@ -3,6 +3,7 @@ export ZygoteGrad, ForwardDiffGrad
 
 using Random
 using LinearAlgebra
+using DiffResults
 
 """
     cvi_setup!(opt, λ)
@@ -80,38 +81,42 @@ const CVI = ProdCVI
 #---------------------------
 
 """
-The auto-differentiation backend for the CVI procedure.
-Uses the `Zygote` library to compute gradients/derivatives.
+    ForwardDiffGrad(chunk_size::Int)
 
-!!! note
-    The `Zygote.jl` must be added to the current Julia environment.
-"""
-struct ZygoteGrad end
-
-"""
 The auto-differentiation backend for the CVI procedure.
 Uses the `ForwardDiff` library to compute gradients/derivatives.
+If `chunk_size` is not specified then uses the heuristic from `ForwardDiff`, which is type-unstable.
 
 !!! note
     The `ForwardDiff.jl` must be added to the current Julia environment.
 """
-struct ForwardDiffGrad end
+struct ForwardDiffGrad{N} end
 
-function compute_derivative(::ForwardDiffGrad, f::F, value::T)::T where {F, T}
-    return ForwardDiff.derivative(f, value)
-end
+ForwardDiffGrad() = ForwardDiffGrad{0}()
+ForwardDiffGrad(N::Int) = ForwardDiffGrad{N}()
+
+# Chunks may improve the performance, but should be specified carefully basis by basis
+getchunk(::ForwardDiffGrad{0}, η::AbstractVector) = ForwardDiff.Chunk(η)
+getchunk(::ForwardDiffGrad{0}, η::Number) = ForwardDiff.Chunk{1}()
+getchunk(::ForwardDiffGrad{N}, _) where {N} = ForwardDiff.Chunk{N}()
 
 function compute_second_derivative(grad::G, logp::F, z_s::Real) where {G, F}
     first_derivative = (x) -> compute_derivative(grad, logp, x)
     return compute_derivative(grad, first_derivative, z_s)
 end
 
-function compute_gradient!(::ForwardDiffGrad, output::Vector{T}, f::F, vec::AbstractVector{T})::Vector{T} where {F, T}
-    return ForwardDiff.gradient!(output, f, vec)
+function compute_derivative(::ForwardDiffGrad, f::F, value::T)::T where {F, T}
+    return ForwardDiff.derivative(f, value)
 end
 
-function compute_hessian!(::ForwardDiffGrad, output::Matrix{T}, f::F, vec::AbstractVector{T})::Matrix{T} where {F, T}
-    return ForwardDiff.hessian!(output, f, vec)
+function compute_gradient!(::ForwardDiffGrad, result, cfg, f::F, vec::AbstractVector{T})::Vector{T} where {F, T}
+    ForwardDiff.gradient!(result, f, vec, cfg)
+    return DiffResults.gradient(result)
+end
+
+function compute_hessian!(::ForwardDiffGrad, result, cfg, f::F, vec::AbstractVector{T})::Matrix{T} where {F, T}
+    ForwardDiff.hessian!(result, f, vec, cfg)
+    return DiffResults.hessian(result)
 end
 
 # We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
@@ -128,20 +133,26 @@ enforce_proper_message(::Val{false}, ::Type{T}, cache, λ, η, conditioner) wher
 
 # We need this structure to aboid performance issues with type parameter `T` in lambda functions
 # Otherwise the invokation of such function would be about 10x slower
-struct LogGradientInvoker{T, S, O, C, H}
+struct LogGradientInvoker{T, S, O, C}
     samples::S
     outbound::O
     conditioner::C
-    cache::H
 
-    function LogGradientInvoker(::Type{T}, samples::S, outbound::O, conditioner::C, cache::H) where {T, S, O, C, H}
-        return new{T, S, O, C, H}(samples, outbound, conditioner, cache)
+    function LogGradientInvoker(::Type{T}, samples::S, outbound::O, conditioner::C) where {T, S, O, C}
+        return new{T, S, O, C}(samples, outbound, conditioner)
     end
 end
 
 # Some methods for some distributions require extra cache to be preallocated
 # Look for the the optimized versions in the bottom of this file
-prepare_log_gradient_invoker_cache(::Type{T}, η) where {T} = (similar(η), similar(η))
+function prepare_log_gradient_invoker_cache(::Type{T}, grad::ForwardDiffGrad, η, f) where {T}
+    ad_cache = DiffResults.DiffResult(first(η), similar(η), similar(η, length(η), length(η)))
+    chunk = getchunk(grad, η)
+    ad_cfgs = (ForwardDiff.GradientConfig(f, η, chunk), ForwardDiff.HessianConfig(f, ad_cache, η, chunk))
+    ∇logq = similar(η)
+    ∇f = similar(η)
+    return (ad_cache, ad_cfgs, ∇logq, ∇f)
+end
 
 # compute gradient of log-likelihood
 # the multiplication between two logpdfs is correct
@@ -157,10 +168,11 @@ function (invoker::LogGradientInvoker{T})(η) where {T}
 end
 
 # Look for the the optimized versions in the bottom of this file
-function estimate_natural_gradient!(invoker::LogGradientInvoker, grad, current)
-    (∇logq, ∇f) = invoker.cache
+function estimate_natural_gradient!(grad::ForwardDiffGrad, cache, invoker::LogGradientInvoker, current)
+    (ad_cache, ad_cfgs, ∇logq, ∇f) = cache
 
-    ∇logq = compute_gradient!(grad, ∇logq, invoker, getnaturalparameters(current))
+    point = getnaturalparameters(current)
+    ∇logq = compute_gradient!(grad, ad_cache, ad_cfgs[1], invoker, point)
 
     # compute Fisher matrix 
     Fisher = fisherinformation(current)
@@ -180,6 +192,7 @@ function prod(approximation::CVI, outbound, inbound)
 
     # Optimizer procedure may depend on the type of the inbound natural parameters
     optimizer_and_state = cvi_setup(approximation.opt, inbound_η)
+    gradmethod = approximation.grad
 
     # Natural parameter type of incoming distribution
     T = ExponentialFamily.exponential_family_typetag(inbound_ef)
@@ -191,7 +204,12 @@ function prod(approximation::CVI, outbound, inbound)
     current_∇  = similar(current_λ) # current gradient
     new_λ      = similar(current_λ) # new natural parameters
     cache      = similar(current_λ) # just intermediate buffer
-    logqcache  = prepare_log_gradient_invoker_cache(T, current_λ)
+
+    # We avoid use of lambda functions, because they cannot capture `T`
+    # which leads to performance issues 
+    # + some types `T` implement a more accure and efficient estimater
+    invoker = LogGradientInvoker(T, cvilinearize(scontainer), outbound, inbound_c)
+    logqcache = prepare_log_gradient_invoker_cache(T, gradmethod, current_λ, invoker)
 
     hasupdated = false
 
@@ -201,13 +219,8 @@ function prod(approximation::CVI, outbound, inbound)
         # returns the same distribution by default
         samples = cvilinearize(rand!(rng, sampling_optimized(convert(Distribution, current_ef)), scontainer))
 
-        # We avoid use of lambda functions, because they cannot capture `T`
-        # which leads to performance issues 
-        # + some types `T` implement a more accure and efficient estimater
-        invoker = LogGradientInvoker(T, samples, outbound, inbound_c, logqcache)
-
         # compute gradient of log-likelihood
-        ∇f = estimate_natural_gradient!(invoker, approximation.grad, current_ef)
+        ∇f = estimate_natural_gradient!(gradmethod, logqcache, invoker, current_ef)
 
         # compute gradient on natural parameters (current_∇ = current_λ .- inbound_η .- ∇f)
         @inbounds for (i, λᵢ, ηᵢ, ∇fᵢ) in zip(eachindex(current_∇), current_λ, inbound_η, ∇f)
@@ -233,58 +246,89 @@ end
 
 # Thes functions extends the `CVI` approximation method in case if input is from the `NormalDistributionsFamily`
 
-function compute_df_mv(grad, _, logp::F, z_s::Real) where {F}
+function compute_df_mv(grad::ForwardDiffGrad, _, logp::F, z_s::Real) where {F}
     df_m = compute_derivative(grad, logp, z_s)
     df_v = compute_second_derivative(grad, logp, z_s)
     return df_m, df_v / 2
 end
 
-function compute_df_mv(grad, cache, logp::F, z_s::AbstractVector) where {F}
-    _, _, df_m, df_v = cache
-    df_m = compute_gradient!(grad, df_m, logp, z_s)
-    df_v = compute_hessian!(grad, df_v, logp, z_s)
-    return df_m, df_v ./ 2
+function compute_df_mv(grad::ForwardDiffGrad, cache, logp::F, z_s::AbstractVector) where {F}
+    # Extract cache and configs for the ForwardDiff
+    ad_cache, ad_cfgs, _, _ = cache
+    # Compute the hessian in-place
+    compute_hessian!(grad, ad_cache, ad_cfgs[2], logp, z_s)
+    # Extract the gradient and the hessian from the resulting `ad_cache`
+    df_m = DiffResults.gradient(ad_cache)
+    df_v = DiffResults.hessian(ad_cache)
+    # inplace df_v ./ 2
+    map!(Base.Fix2(/, 2), df_v, df_v)
+    return df_m, df_v
 end
 
-# Specialized version for the Gaussians distribution
-
-function prepare_log_gradient_invoker_cache(::Type{T}, η) where {T <: NormalDistributionsFamily}
+function prepare_log_gradient_invoker_cache(::Type{T}, grad::ForwardDiffGrad, η, invoker) where {T <: NormalDistributionsFamily}
+    # Specialized version for gaussians takes gradients and hessians with respect to a different function `f`
+    f = (x) -> logpdf(invoker.outbound, x)
+    ad_cache, ad_cfgs = __gausian_ad_cache(grad, first(invoker.samples), f)
     n = convert(Int, (-1 + sqrt(4 * length(η) + 1)) / 2)
-    return (similar(η), similar(η, n), similar(η, n), similar(η, (n, n)))
+    ∇f = similar(η)     # Stores the actual estimated natural gradient
+    tmp = similar(η, n) # Intermediate storage for buffer calculations
+    return (ad_cache, ad_cfgs, f, ∇f, tmp)
 end
 
-function estimate_natural_gradient!(invoker::LogGradientInvoker{T}, grad, current) where {T <: NormalDistributionsFamily}
+function __gausian_ad_cache(grad::ForwardDiffGrad, sample::Number, f)
+    # We do not implement any cache for the univariate Gaussian case
+    return nothing, nothing
+end
+
+function __gausian_ad_cache(grad::ForwardDiffGrad, sample::AbstractArray, f)
+    # We prepare a different `DiffResult` container specialized for `f` specifically
+    R = eltype(sample)
+    k = length(sample)
+    chunk = getchunk(grad, sample)
+    # The hessians and gradients will be store in the `ad_cache` later on
+    ad_cache = DiffResults.DiffResult(first(sample), Vector{R}(undef, k), Matrix{R}(undef, k, k))
+    # ForwardDiff configs are specialized for `f`
+    ad_cfgs = (ForwardDiff.GradientConfig(f, sample, chunk), ForwardDiff.HessianConfig(f, ad_cache, sample, chunk))
+    return ad_cache, ad_cfgs
+end
+
+# This procedure does not call the `invoker`, 
+# but instead has a different target function saved in the `prepare_log_gradient_invoker_cache`
+function estimate_natural_gradient!(grad::ForwardDiffGrad, cache, invoker::LogGradientInvoker{T}, current) where {T <: NormalDistributionsFamily}
     μ = mean(current)
     K = length(invoker.samples)
-    f = (x) -> logpdf(invoker.outbound, x)
-    ∇f, tmp, _, _ = invoker.cache
+    _, _, f, ∇f, tmp = cache
 
     fill!(∇f, zero(eltype(μ)))
 
     # Below is a hand-written and optimized version of the following code:
-    return sum((z_s) -> begin
-        df_m, df_v = compute_df_mv(grad, invoker.cache, f, z_s)
-        df_μ1 = df_m - 2 * df_v * μ
-        df_μ2 = df_v
-        ExponentialFamily.pack_parameters(T, (df_μ1 ./ K, df_μ2 ./ K))
-    end, invoker.samples)
+    # return sum((z_s) -> begin
+    #     df_m, df_v = compute_df_mv(grad, (cache, df_m, df_v), f, z_s)
+    #     df_μ1 = df_m - 2 * df_v * μ
+    #     df_μ2 = df_v
+    #     ExponentialFamily.pack_parameters(T, (df_μ1 ./ K, df_μ2 ./ K))
+    # end, invoker.samples)
 
-    # for sample in invoker.samples
-    #     df_m, df_v = compute_df_mv(grad, invoker.cache, f, sample)
+    for sample in invoker.samples
+        df_m, df_v = compute_df_mv(grad, cache, f, sample)
 
-    #     mul!(tmp, df_v, μ)
+        if df_m isa Number 
+            tmp = df_v * μ
+        else
+            mul!(tmp, df_v, μ)
+        end
 
-    #     k = firstindex(∇f)
-    #     @inbounds for (df_mᵢ, tmpᵢ) in zip(df_m, tmp)
-    #         ∇f[k] += (df_mᵢ - 2 * tmpᵢ) / K
-    #         k = k + 1
-    #     end
+        k = firstindex(∇f)
+        @inbounds for (df_mᵢ, tmpᵢ) in zip(df_m, tmp)
+            ∇f[k] += (df_mᵢ - 2 * tmpᵢ) / K
+            k = k + 1
+        end
 
-    #     @inbounds for df_vᵢ in df_v
-    #         ∇f[k] += df_vᵢ / K
-    #         k = k + 1
-    #     end
-    # end
+        @inbounds for df_vᵢ in df_v
+            ∇f[k] += df_vᵢ / K
+            k = k + 1
+        end
+    end
 
-    # return ∇f
+    return ∇f
 end

@@ -48,20 +48,8 @@ end
         end
     end
 
-    @testset "Different gradient strategies" begin
-        for strategy in (ForwardDiffGrad(), ZygoteGrad())
-            outputv = [0.0]
-            outputm = [0.0;;]
-
-            for i in 1:100
-                @test ReactiveMP.compute_gradient!(strategy, outputv, (x) -> sum(x)^2, Float64[i]) ≈ [2 * i]
-                @test ReactiveMP.compute_hessian!(strategy, outputm, (x) -> sum(x)^2, Float64[i]) ≈ [2;;]
-            end
-        end
-    end
-
     @testset "Checking that the procedure runs for different parameters (with a noop-optimiser)" begin
-        for strategy in (ForwardDiffGrad(), ZygoteGrad()), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
+        for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
             for (left, right) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
                 method = CVI(1, n_iters, NoopOptimiser(), strategy, n_gradpoints, force_proper, warn)
                 # `warn = true` reports that the iterations did not convertge, 
@@ -76,7 +64,7 @@ end
     end
 
     @testset "Checking that the procedure runs for different parameters (with a counting-optimiser)" begin
-        for strategy in (ForwardDiffGrad(), ZygoteGrad()), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
+        for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
             for (left, right) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
                 opt = CountingOptimizer(0)
                 method = CVI(1, n_iters, opt, strategy, n_gradpoints, force_proper, warn)
@@ -94,7 +82,7 @@ end
     end
 
     @testset "Checking that the procedure runs for different parameters (with a lambda based counting-optimiser)" begin
-        for strategy in (ForwardDiffGrad(), ZygoteGrad()), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
+        for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)), force_proper in (Val(true), Val(false)), warn in (true, false), n_iters in 1:3, n_gradpoints in 1:3
             for (left, right) in ((NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)), (GammaShapeRate(2, 2), GammaShapeRate(2, 2)), (Bernoulli(0.5), Bernoulli(0.5)))
                 counting = 0
                 callback = (new_λ, λ, _) -> begin
