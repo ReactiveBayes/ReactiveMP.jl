@@ -1,6 +1,6 @@
 module ReactiveMPRenderCVITest
 
-using Test, ReactiveMP, Random, StableRNGs, BayesBase, Distributions, ExponentialFamily, Zygote, Optimisers, DiffResults, LinearAlgebra
+using Test, ReactiveMP, Random, StableRNGs, BayesBase, Distributions, ExponentialFamily, Optimisers, DiffResults, LinearAlgebra
 
 import BayesBase: AbstractContinuousGenericLogPdf
 import StatsFuns: logistic, softmax
@@ -123,7 +123,7 @@ end
                 (left = GammaShapeScale(rand(rng) + 1, rand(rng) + 1), right = GammaShapeScale(rand(rng) + 1, rand(rng) + 1), tol = 1e-1)
                 # (left = Categorical(softmax(rand(rng, 3))), Categorical(softmax(rand(rng, 3)))) # Categorical is broken, needs fix!
             )
-            # This list is not exhaustive in any way
+            # This list is not exhaustive in any way, e.g. Gaussians are tested below
             for candidate in candidates
                 grads = get(candidate, :grads, (ForwardDiffGrad(),))
                 optimisers = get(candidate, :optimisers, (Optimisers.Descent(0.007),))
@@ -138,6 +138,8 @@ end
                 for grad in grads, optimiser in optimisers, n in n_iters, k in n_gradpoints
                     method = CVI(StableRNG(42), 1, n, optimiser, grad, k, Val(true), true)
                     numerical_1 = prod(method, left, right)
+                    # TODO: This would require `ContinuousMultivariateLogPdf(UnspecifiedDomain(), (x) -> logpdf(left, x))`
+                    # for multivariate inputs
                     numerical_2 = prod(method, ContinuousUnivariateLogPdf((x) -> logpdf(left, x)), right)
                     for numerical in (numerical_1, numerical_2)
                         @test all(isapprox(mean(numerical), mean(closed), atol = tol))
@@ -145,7 +147,7 @@ end
                         if variate_form(typeof(left)) === Univariate && variate_form(typeof(right)) === Univariate
                             @test all(isapprox(var(numerical), var(closed), atol = tol))
                         end
-                        # For the univariate case additionaly check the covariance
+                        # For the multivariate case additionaly check the covariance
                         if variate_form(typeof(left)) === Multivariate && variate_form(typeof(right)) === Multivariate
                             @test all(isapprox(cov(numerical), cov(closed), atol = tol))
                         end
@@ -164,10 +166,13 @@ end
         for i in 1:5, j in 1:5
             left = NormalMeanVariance(randn(rng), 1 + j + rand(rng))
             right = NormalMeanVariance(-i, 1 + j^2)
-            numerical = prod(meta, left, right)
             closed = prod(ClosedProd(), left, right)
-            @test isapprox(mean(numerical), mean(closed), atol = 5e-2)
-            @test isapprox(var(numerical), var(closed), atol = 5e-2)
+            numerical_1 = prod(meta, left, right)
+            numerical_2 = prod(meta, ContinuousUnivariateLogPdf((x) -> logpdf(left, x)), right)
+            for numerical in (numerical_1, numerical_2)
+                @test isapprox(mean(numerical), mean(closed), atol = 5e-2)
+                @test isapprox(var(numerical), var(closed), atol = 5e-2)
+            end
         end
     end
 
@@ -180,64 +185,17 @@ end
         for n in 1:10, i in 1:5, j in 1:5
             L = LowerTriangular(rand(rng, n, n)) + n * I
             Σ = L * L'
-            left = MvNormalMeanCovariance(rand(rng, n), Σ)
+            left = MvNormalMeanPrecision(rand(rng, n), Σ)
             right = MvNormalMeanCovariance(fill(-i, n), fill(1 + j^2, n))
-            numerical = prod(meta, left, right)
             closed = prod(ClosedProd(), left, right)
-            @test isapprox(mean(numerical), mean(closed), atol = n * 5e-2, rtol = 5e-2)
-            @test isapprox(cov(numerical), cov(closed), atol = n * 5e-2, rtol = 5e-2)
-        end
-    end
-
-    # Extra tests for Gaussians using the generic version
-    @static if VERSION ≥ v"1.7" # Base.@invoke is available only in Julia >= 1.7
-        @testset "Normal x Normal (Fisher preconditioner prod)" begin
-            seed = 123
-            rng = StableRNG(seed)
-            optimizer = Optimisers.Descent(0.001)
-            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 10, Val(false), true)
-
-            for i in 1:3, j in 1:3
-                left = NormalMeanVariance(i, 1 + j)
-                right = NormalMeanVariance(-i, 1 + j^2)
-                closed = prod(ClosedProd(), left, right)
-                numerical = Base.@invoke prod(meta::CVI, left::Any, right::Any)
-                @test isapprox(mean(numerical), mean(closed), atol = 7e-2)
-                @test isapprox(var(numerical), var(closed), atol = 7e-1)
+            numerical_1 = prod(meta, left, right)
+            numerical_2 = prod(meta, ContinuousMultivariateLogPdf(UnspecifiedDomain(), (x) -> logpdf(left, x)), right)
+            for numerical in (numerical_1, numerical_2)
+                @test isapprox(mean(numerical), mean(closed), atol = n * 5e-2, rtol = 5e-2)
+                @test isapprox(cov(numerical), cov(closed), atol = n * 5e-2, rtol = 5e-2)
             end
         end
     end
 
-    @static if VERSION ≥ v"1.7" # Base.@invoke is available only in Julia >= 1.7
-        @testset "MvNormal x MvNormal 1D (Fisher preconditioner prod)" begin
-            seed = 123
-            rng = StableRNG(seed)
-            optimizer = Optimisers.Descent(0.001)
-            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 10, Val(false), true)
-
-            for i in 1:3, j in 1:3
-                left = MvNormalMeanCovariance([i], [1 + j])
-                right = MvNormalMeanCovariance([-i], [1 + j^2])
-                closed = prod(ClosedProd(), left, right)
-                numerical = Base.@invoke prod(meta::CVI, left::Any, right::Any)
-                @test isapprox(mean(numerical), mean(closed), atol = 7e-2)
-                @test isapprox(cov(numerical), cov(closed), atol = 7e-1)
-            end
-        end
-
-        @testset "MvNormal x MvNormal 2D (Fisher preconditioner prod)" begin
-            seed = 123
-            rng = StableRNG(seed)
-            optimizer = Optimisers.Descent(0.001)
-            meta = CVI(rng, 1, 5000, optimizer, ForwardDiffGrad(), 10, Val(false), false)
-            for i in 1:3, j in 1:3
-                m_out, m_in = MvGaussianMeanCovariance(fill(i, 2), Matrix(Diagonal(fill(1 + j, 2)))), MvGaussianMeanCovariance(fill(-i, 2), Matrix(Diagonal(fill(1 + j^2, 2))))
-                closed = prod(ClosedProd(), m_out, m_in)
-                numerical = Base.@invoke prod(meta::CVI, m_out::Any, m_in::Any)
-                @test isapprox(mean(numerical), mean(closed), atol = 7e-2)
-                @test isapprox(cov(numerical), cov(closed), atol = 7e-1)
-            end
-        end
-    end
 end
 end

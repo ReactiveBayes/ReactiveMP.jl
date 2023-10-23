@@ -139,7 +139,7 @@ struct LogGradientInvoker{T, S, O, C}
     conditioner::C
 
     function LogGradientInvoker(::Type{T}, samples::S, outbound::O, conditioner::C) where {T, S, O, C}
-        return new{T, S, O, C}(samples, outbound, conditioner)
+        return new{T, S, O, C}(samples, logpdf_optimized(outbound), conditioner)
     end
 end
 
@@ -268,7 +268,7 @@ end
 function prepare_log_gradient_invoker_cache(::Type{T}, grad::ForwardDiffGrad, η, invoker) where {T <: NormalDistributionsFamily}
     # Specialized version for gaussians takes gradients and hessians with respect to a different function `f`
     f = (x) -> logpdf(invoker.outbound, x)
-    ad_cache, ad_cfgs = __gausian_ad_cache(grad, first(invoker.samples), f)
+    ad_cache, ad_cfgs = __gaussian_ad_cache(grad, first(invoker.samples), f)
     n = convert(Int, (-1 + sqrt(4 * length(η) + 1)) / 2)
     ∇f = similar(η)     # Stores the actual estimated natural gradient
     tmp = similar(η, n) # Intermediate storage for buffer calculations
