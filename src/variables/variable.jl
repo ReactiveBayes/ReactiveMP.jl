@@ -114,7 +114,7 @@ end
 setmessage!(variable::AbstractVariable, index::Int, message) = setmessage!(messageout(variable, index), message)
 setmessage!(variable::AbstractVariable, message)             = foreach(i -> setmessage!(variable, i, message), 1:degree(variable))
 
-setmessages!(variables::AbstractArray{<:AbstractVariable}, message::PointMass) = _setmessages!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
+setmessages!(variables::AbstractArray{<:AbstractVariable}, message::PointMass)    = _setmessages!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
 setmessages!(variables::AbstractArray{<:AbstractVariable}, message::Distribution) = _setmessages!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
 setmessages!(variables::AbstractArray{<:AbstractVariable}, messages)              = _setmessages!(Base.IteratorSize(messages), variables, messages)
 
