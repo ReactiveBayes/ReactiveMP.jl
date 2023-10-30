@@ -200,9 +200,9 @@ end
         @test filename_to_key(key_to_filename("message")) == "message"
     end
 
-    addtests(testrunner, "algebra/test_common.jl")
-    addtests(testrunner, "algebra/test_permutation_matrix.jl")
-    addtests(testrunner, "algebra/test_standard_basis_vector.jl")
+    addtests(testrunner, "helpers/algebra/test_common.jl")
+    addtests(testrunner, "helpers/algebra/test_permutation_matrix.jl")
+    addtests(testrunner, "helpers/algebra/test_standard_basis_vector.jl")
 
     addtests(testrunner, "helpers/test_helpers.jl")
 
