@@ -1,12 +1,7 @@
 module RulesDeltaCVIOutTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
-using StableRNGs
-
-import ReactiveMP: FactorizedJoint
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+import ReactiveMP: @test_rules
 
 id(x) = x
 first_argument(x::Real, y::Real) = x
