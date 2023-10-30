@@ -3,7 +3,8 @@ module RulesMvNormalMeanPrecisionPrecisionTest
 using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 using FastCholesky
 
-import ExponentialFamily: WishartFast, @test_rules
+import ExponentialFamily: WishartFast
+import ReactiveMP: @test_rules
 
 @testset "rules:MvNormalMeanPrecision:precision" begin
     @testset "Variational: (q_out::PointMass, q_μ::MultivariateNormalDistributionsFamily)" begin

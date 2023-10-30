@@ -5,7 +5,7 @@
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)
     mθ, Vθ = mean_cov(q_θ)
-    T = promote_samplefloattype(q_y, q_x, q_θ)
+    T = promote_paramfloattype(q_y, q_x, q_θ)
     α = convert(T, 3 / 2)
     β = (Vy + my * my') / 2
     β -= my * mθ' * mx
