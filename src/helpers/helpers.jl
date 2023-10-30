@@ -110,17 +110,6 @@ __check_all(fn::Function, ::Nothing)    = true
 
 is_clamped_or_initial(something) = is_clamped(something) || is_initial(something)
 
-custom_isapprox(left, right; kwargs...) = isapprox(left, right; kwargs...)
-custom_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false
-
-function custom_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) where {K}
-    _isapprox = true
-    for key in keys(left)
-        _isapprox = _isapprox && custom_isapprox(left[key], right[key]; kwargs...)
-    end
-    return _isapprox
-end
-
 # See: https://github.com/JuliaLang/julia/issues/42795
 function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x)
     B = V.parent
