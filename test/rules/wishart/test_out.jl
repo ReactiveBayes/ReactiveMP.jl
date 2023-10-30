@@ -3,7 +3,8 @@ module RulesWishartOutTest
 using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 using FastCholesky
 
-import ExponentialFamily: WishartFast, @test_rules
+import ExponentialFamily: WishartFast
+import ReactiveMP: @test_rules
 
 @testset "rules:Wishart:out" begin
     @testset "Belief Propagation: (m_ν::PointMass, m_S::PointMass)" begin
