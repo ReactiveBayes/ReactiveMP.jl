@@ -26,7 +26,7 @@ using Test, ReactiveMP, Distributions, BayesBase, ExponentialFamily
 
         @test occursin(r"node: ExponentialFamily.NormalMeanVariance", displayed)
         @test occursin(r"interface: .*:out.*", displayed)
-        @test occursin(r"local constraint: ReactiveMP.Marginalisation()", displayed)
+        @test occursin(r"local constraint:.*Marginalisation()", displayed)
         @test occursin(r"messages on.*(:x, :y).*edges", displayed)
         @test occursin(repr(messages), displayed)
         @test occursin(r"marginals on.*(:z, :k).*edges", displayed)
