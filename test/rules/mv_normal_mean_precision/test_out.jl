@@ -1,8 +1,6 @@
 module RulesMvNormalMeanPrecisionOutTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 

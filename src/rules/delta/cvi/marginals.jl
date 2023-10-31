@@ -1,11 +1,13 @@
 using TupleTools
+
 import Distributions: Distribution
+import BayesBase: AbstractContinuousGenericLogPdf
 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVI} = begin
     g = getnodefn(Val(:out))
 
     # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
-    F = promote_variate_type(variate_form(first(m_ins)), AbstractContinuousGenericLogPdf)
+    F = promote_variate_type(variate_form(typeof(first(m_ins))), AbstractContinuousGenericLogPdf)
     f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
     q = prod(getmethod(meta), f, first(m_ins))
 
@@ -32,7 +34,7 @@ end
             df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
                 (z) -> logp_nc_drop_index(z, i, pre_samples)
             end
-            logp = convert(promote_variate_type(variate_form(first(m_ins)), AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
+            logp = convert(promote_variate_type(variate_form(typeof(first(m_ins))), AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
             return prod(method, logp, m_ins[i])
         end
     end

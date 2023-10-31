@@ -23,28 +23,6 @@ An alias for the `Matrix{Float64}(I, n, n)`. Returns a matrix of size `n x n` wi
 """
 diageye(n::Int) = diageye(Float64, n)
 
-function normalize_sum(x::Array{Float64, 1})
-    x ./ sum(x)
-end
-
-const sigmoid = logistic
-
-dtanh(x) = 1 - tanh(x)^2
-
-"""
-    mirrorlog(x)
-
-Returns `log(1 - x)`.
-"""
-mirrorlog(x) = log(1 - x)
-
-"""
-    xtlog(x)
-
-Returns `x * log(x)`.
-"""
-xtlog(x) = x * log(x)
-
 """
     negate_inplace!(A)
 
@@ -139,24 +117,6 @@ v_a_vT(v1, a, v2) = v1 * a * v2'
 # More efficient if `a` is a `Real`
 v_a_vT(v::AbstractVector, a::Real) = v * v' * a
 v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector) = v1 * v2' * a
-
-"""
-    mvbeta(x)
-
-Computes the multivariate beta distribution over the vector x.
-"""
-function mvbeta(x::Vector)
-    return prod(gamma, x) / gamma(sum(x))
-end
-
-"""
-    logmvbeta(x)
-
-Computes the numerically stable logarithm of the multivariate beta distribution over the vector x.
-"""
-function logmvbeta(x::Vector)
-    return sum(loggamma, x) - loggamma(sum(x))
-end
 
 """
     powerset(iterator)

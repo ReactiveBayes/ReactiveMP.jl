@@ -1,10 +1,10 @@
 
 @marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::UnivariateNormalDistributionsFamily, m_μ::PointMass, m_τ::PointMass) = begin
-    return (out = prod(ProdAnalytical(), NormalMeanPrecision(mean(m_μ), mean(m_τ)), m_out), μ = m_μ, τ = m_τ)
+    return (out = prod(ClosedProd(), NormalMeanPrecision(mean(m_μ), mean(m_τ)), m_out), μ = m_μ, τ = m_τ)
 end
 
 @marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), m_μ, NormalMeanPrecision(mean(m_out), mean(m_τ))), τ = m_τ)
+    return (out = m_out, μ = prod(ClosedProd(), m_μ, NormalMeanPrecision(mean(m_out), mean(m_τ))), τ = m_τ)
 end
 
 @marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass) = begin
@@ -32,9 +32,9 @@ end
 end
 
 @marginalrule NormalMeanPrecision(:out_μ) (m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, q_τ::Any) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), NormalMeanPrecision(mean(m_out), mean(q_τ)), m_μ))
+    return (out = m_out, μ = prod(ClosedProd(), NormalMeanPrecision(mean(m_out), mean(q_τ)), m_μ))
 end
 
 @marginalrule NormalMeanPrecision(:out_μ) (m_out::UnivariateNormalDistributionsFamily, m_μ::PointMass, q_τ::Any) = begin
-    return (out = prod(ProdAnalytical(), NormalMeanPrecision(mean(m_μ), mean(q_τ)), m_out), μ = m_μ)
+    return (out = prod(ClosedProd(), NormalMeanPrecision(mean(m_μ), mean(q_τ)), m_out), μ = m_μ)
 end

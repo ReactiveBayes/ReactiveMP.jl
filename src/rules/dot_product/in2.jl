@@ -6,5 +6,5 @@
     ξ = A * out_wmean
     W = correction!(meta, v_a_vT(A, out_prec))
 
-    return convert(promote_variate_type(variate_form(m_in1), NormalWeightedMeanPrecision), ξ, W)
+    return convert(promote_variate_type(variate_form(typeof(m_in1)), NormalWeightedMeanPrecision), ξ, W)
 end

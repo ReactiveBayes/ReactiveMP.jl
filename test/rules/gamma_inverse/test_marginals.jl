@@ -1,8 +1,6 @@
 module RulesGammaInverseMarginalsTest
 
-using Test
-using ReactiveMP
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_marginalrules
 

@@ -17,7 +17,7 @@
     Σ_in_hat = Ji * Σ_out * Ji'
 
     # return marginal distribution
-    return prod(ProdAnalytical(), m_in, MvNormalMeanCovariance(μ_in_hat, Σ_in_hat))
+    return prod(ClosedProd(), m_in, MvNormalMeanCovariance(μ_in_hat, Σ_in_hat))
 end
 
 @marginalrule Flow(:in) (m_out::MvNormalMeanPrecision, m_in::NormalDistributionsFamily, meta::FlowMeta{M, <:Linearization}) where {M} = begin
@@ -37,7 +37,7 @@ end
     Λ_in_hat = J' * Λ_out * J
 
     # return marginal distribution
-    return prod(ProdAnalytical(), m_in, MvNormalMeanPrecision(μ_in_hat, Λ_in_hat))
+    return prod(ClosedProd(), m_in, MvNormalMeanPrecision(μ_in_hat, Λ_in_hat))
 end
 
 @marginalrule Flow(:in) (m_out::MvNormalWeightedMeanPrecision, m_in::NormalDistributionsFamily, meta::FlowMeta{M, <:Linearization}) where {M} = begin
@@ -57,7 +57,7 @@ end
     Λ_in_hat = J' * Λ_out * J
 
     # return marginal distribution
-    return prod(ProdAnalytical(), m_in, MvNormalMeanPrecision(μ_in_hat, Λ_in_hat))
+    return prod(ClosedProd(), m_in, MvNormalMeanPrecision(μ_in_hat, Λ_in_hat))
 end
 
 @marginalrule Flow(:in) (m_out::NormalDistributionsFamily, m_in::NormalDistributionsFamily, meta::FlowMeta{M, <:Unscented}) where {M} = begin
@@ -101,5 +101,5 @@ end
     end
 
     # return distribution
-    return prod(ProdAnalytical(), MvNormalMeanCovariance(μ_in, collect(Hermitian(Σ_in))), m_in)
+    return prod(ClosedProd(), MvNormalMeanCovariance(μ_in, collect(Hermitian(Σ_in))), m_in)
 end

@@ -8,7 +8,7 @@
     df   = ndims(q_μ) + 2
     invS = v_mean + v_out + (m_mean - m_out) * (m_mean - m_out)'
 
-    return WishartMessage(df, invS)
+    return WishartFast(df, invS)
 end
 
 @rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out_μ::Any,) = begin
@@ -20,5 +20,5 @@ end
     vdiff = @views v_out_μ[1:d, 1:d] - v_out_μ[1:d, (d + 1):end] - v_out_μ[(d + 1):end, 1:d] + v_out_μ[(d + 1):end, (d + 1):end]
     invS  = vdiff + mdiff * mdiff'
 
-    return WishartMessage(d + 2, invS)
+    return WishartFast(d + 2, invS)
 end

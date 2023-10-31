@@ -1,10 +1,7 @@
 module RulesDeltaETMarginalsTest
 
-using Test
-using ReactiveMP
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 import ReactiveMP: @test_marginalrules
-
-# TODO: check_type_promotion = true breaks
 
 # g: single input, single output
 g(x) = x .^ 2 .- 5
@@ -12,7 +9,7 @@ g(x) = x .^ 2 .- 5
 # h: multiple input, single output
 h(x, y) = x .^ 2 .- y
 
-@testset "rules:Delta:extended:marginals" begin
+@testset "rules:Delta:linearization:marginals" begin
     @testset "Single univariate input" begin
         @test_marginalrules [check_type_promotion = true] DeltaFn{g}(:ins) [(
             input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaMeta(; method = Linearization(), inverse = nothing)),

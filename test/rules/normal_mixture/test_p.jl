@@ -1,12 +1,9 @@
 module RulesNormalMixturePTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
-import ReactiveMP: WishartMessage
+import ExponentialFamily: WishartFast
 
 @testset "rules:NormalMixture:p" begin
     @testset "Variational : (m_out::UnivariateNormalDistributionsFamily..., m_μ::UnivariateNormalDistributionsFamily...) k=1" begin
@@ -20,21 +17,21 @@ import ReactiveMP: WishartMessage
         @test_rules [check_type_promotion = true, atol = 1e-4] NormalMixture{2}((:p, k = 1), Marginalisation) [
             (
                 input = (q_out = MvNormalMeanPrecision([8.5], [0.5]), q_switch = Bernoulli(0.8), q_m = MvNormalMeanPrecision([3.0], [0.1])),
-                output = WishartMessage(2.2, fill(8.45, 1, 1))
+                output = WishartFast(2.2, fill(8.45, 1, 1))
             ),
             (
                 input = (q_out = MvNormalMeanPrecision([8.5, 5.1], [0.5 0.1; 0.1 4]), q_switch = Bernoulli(0.8), q_m = MvNormalMeanPrecision([3.0, 10], [0.1 0.2; 0.2 -0.3])),
-                output = WishartMessage(3.2, [9.59487 -5.97148; -5.97148 5.13797])
+                output = WishartFast(3.2, [9.59487 -5.97148; -5.97148 5.13797])
             ),
             (
                 input = (
                     q_out = MvNormalMeanPrecision([5.0, 8.0], [3 0.5; 0.5 -6]), q_switch = Categorical([0.25, 0.75]), q_m = MvNormalMeanPrecision([2.0, -3.0], [2.1 -1.0; -1.0 3.0])
                 ),
-                output = WishartMessage(3.25, [2.47598 8.29032; 8.29032 30.3902])
+                output = WishartFast(3.25, [2.47598 8.29032; 8.29032 30.3902])
             ),
             (
                 input = (q_out = MvNormalMeanCovariance([-3], [2.0]), q_switch = Bernoulli(0.5), q_m = MvNormalMeanCovariance([5.0], [2.0])),
-                output = WishartMessage(2.5, fill(34.0, 1, 1))
+                output = WishartFast(2.5, fill(34.0, 1, 1))
             )
         ]
     end

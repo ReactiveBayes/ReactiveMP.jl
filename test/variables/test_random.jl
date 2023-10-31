@@ -1,8 +1,6 @@
 module ReactiveMPRandomVariableTest
 
-using Test
-using ReactiveMP
-using Rocket
+using Test, ReactiveMP, Rocket, BayesBase
 
 import ReactiveMP: UnspecifiedFormConstraint
 import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
@@ -22,7 +20,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
             @test marginal_form_constraint(v) isa UnspecifiedFormConstraint
             @test messages_form_constraint(v) isa UnspecifiedFormConstraint
             @test proxy_variables(v) === nothing
-            @test prod_constraint(v) isa ProdAnalytical
+            @test prod_constraint(v) isa GenericProd
             @test prod_strategy(v) isa FoldLeftProdStrategy
             @test !isproxy(v)
         end
@@ -40,7 +38,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
             @test all(v -> marginal_form_constraint(v) isa UnspecifiedFormConstraint, vs)
             @test all(v -> messages_form_constraint(v) isa UnspecifiedFormConstraint, vs)
             @test all(v -> proxy_variables(v) === nothing, vs)
-            @test all(v -> prod_constraint(v) isa ProdAnalytical, vs)
+            @test all(v -> prod_constraint(v) isa GenericProd, vs)
             @test all(v -> prod_strategy(v) isa FoldLeftProdStrategy, vs)
             @test !isproxy(vs)
             @test all(v -> !isproxy(v), vs)
@@ -59,7 +57,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
                 @test all(v -> marginal_form_constraint(v) isa UnspecifiedFormConstraint, vs)
                 @test all(v -> messages_form_constraint(v) isa UnspecifiedFormConstraint, vs)
                 @test all(v -> proxy_variables(v) === nothing, vs)
-                @test all(v -> prod_constraint(v) isa ProdAnalytical, vs)
+                @test all(v -> prod_constraint(v) isa GenericProd, vs)
                 @test all(v -> prod_strategy(v) isa FoldLeftProdStrategy, vs)
                 @test !isproxy(vs)
                 @test all(v -> !isproxy(v), vs)
@@ -72,7 +70,7 @@ import ReactiveMP: messages_form_constraint, messages_form_check_strategy
         struct CustomFunctionalFormConstraint2 <: ReactiveMP.AbstractFormConstraint end
 
         test_var     = randomvar(:tmp)
-        test_options = RandomVariableCreationOptions(LoggerPipelineStage(), (test_var,), ProdGeneric(), FoldRightProdStrategy(), CustomFunctionalFormConstraint1(), FormConstraintCheckEach(), CustomFunctionalFormConstraint2(), FormConstraintCheckLast())
+        test_options = RandomVariableCreationOptions(LoggerPipelineStage(), (test_var,), ClosedProd(), FoldRightProdStrategy(), CustomFunctionalFormConstraint1(), FormConstraintCheckEach(), CustomFunctionalFormConstraint2(), FormConstraintCheckLast())
 
         for sym in (:x, :y, :z)
             v = randomvar(test_options, sym)

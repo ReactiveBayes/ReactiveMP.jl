@@ -134,7 +134,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, ms::Tuple, Vs::
     joint = convert(JointNormal, ms, Vs)
 
     (m, V) = mean_cov(joint)
-    ds     = dimensionalities(joint)
+    ds     = ExponentialFamily.dimensionalities(joint)
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
@@ -202,4 +202,15 @@ function sigma_points_weights(method::Unscented, m::AbstractVector, V::AbstractM
     @inbounds weights_c[2:end] .= 1 / (2 * (d + lambda))
 
     return (sigma_points, weights_m, weights_c)
+end
+
+# This function extends the `Unscented` approximation method in case if all inputs are from the `NormalDistributionsFamily`
+function approximate(method::Unscented, f::F, distributions::NTuple{N, NormalDistributionsFamily}) where {F, N}
+    statistics = mean_cov.(distributions)
+    means      = first.(statistics)
+    covs       = last.(statistics)
+
+    μ_tilde, Σ_tilde = approximate(method, f, means, covs)
+
+    return convert(promote_variate_type(typeof(μ_tilde), NormalMeanVariance), μ_tilde, Σ_tilde)
 end

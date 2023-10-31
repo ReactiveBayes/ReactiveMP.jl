@@ -1,10 +1,7 @@
 module RulesDeltaETOutTest
 
-using Test
-using ReactiveMP
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 import ReactiveMP: @test_rules
-
-# TODO: check_type_promotion = true breaks
 
 # g: single input, single output
 g(x) = x .^ 2 .- 5
@@ -20,7 +17,7 @@ g3(x) = dot(x, ones(eltype(x), length(x)))
 # h: multiple input, single output
 h(x, y) = x .^ 2 .- y
 
-@testset "rules:Delta:extended:out" begin
+@testset "rules:Delta:linearization:out" begin
     # ForneyLab:test_delta_extended:SPDeltaEOutNG 1
     @testset "Belief Propagation: f(x) (m_ins::NormalMeanVariance, *)" begin
         @test_rules [check_type_promotion = true] DeltaFn{g}(:out, Marginalisation) [(

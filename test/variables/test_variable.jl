@@ -1,8 +1,6 @@
 module ReactiveMPVariableTest
 
-using Test
-using ReactiveMP
-using Rocket
+using Test, ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
 
 @testset "Variable" begin
     import ReactiveMP: activate!

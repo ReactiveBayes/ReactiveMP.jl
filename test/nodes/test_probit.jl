@@ -1,8 +1,6 @@
 module ProbitNodeTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
 
 @testset "ProbitNode" begin
     @testset "Creation" begin

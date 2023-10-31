@@ -1,6 +1,5 @@
 export AbstractMessage, Message, VariationalMessage
 export getdata, is_clamped, is_initial, as_message
-export multiply_messages
 
 using Distributions
 using Rocket
@@ -42,16 +41,16 @@ Message acts as a proxy structure to `data` object and proxies most of the stati
 
 ```jldoctest
 julia> distribution = Gamma(10.0, 2.0)
-Gamma{Float64}(α=10.0, θ=2.0)
+Distributions.Gamma{Float64}(α=10.0, θ=2.0)
 
 julia> message = Message(distribution, false, true, nothing)
-Message(Gamma{Float64}(α=10.0, θ=2.0))
+Message(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
 
 julia> mean(message) 
 20.0
 
 julia> getdata(message)
-Gamma{Float64}(α=10.0, θ=2.0)
+Distributions.Gamma{Float64}(α=10.0, θ=2.0)
 
 julia> is_clamped(message)
 false
@@ -111,15 +110,13 @@ function show(io::IO, message::Message)
     end
 end
 
-Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
-
 # We need this dummy method as Julia is not smart enough to 
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
     return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
 end
 
-function multiply_messages(prod_constraint, left::Message, right::Message)
+function multiply_messages(prod_strategy, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
@@ -128,7 +125,7 @@ function multiply_messages(prod_constraint, left::Message, right::Message)
     # process distributions
     left_dist  = getdata(left)
     right_dist = getdata(right)
-    new_dist   = prod(prod_constraint, left_dist, right_dist)
+    new_dist   = prod(prod_strategy, left_dist, right_dist)
 
     # process addons
     left_addons  = getaddons(left)
@@ -164,34 +161,34 @@ Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), 
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 
 MacroHelpers.@proxy_methods Message getdata [
-    Distributions.mean,
-    Distributions.median,
-    Distributions.mode,
-    Distributions.shape,
-    Distributions.scale,
-    Distributions.rate,
-    Distributions.var,
-    Distributions.std,
-    Distributions.cov,
-    Distributions.invcov,
-    Distributions.logdetcov,
-    Distributions.entropy,
-    Distributions.params,
+    BayesBase.mean,
+    BayesBase.median,
+    BayesBase.mode,
+    BayesBase.shape,
+    BayesBase.scale,
+    BayesBase.rate,
+    BayesBase.var,
+    BayesBase.std,
+    BayesBase.cov,
+    BayesBase.invcov,
+    BayesBase.logdetcov,
+    BayesBase.entropy,
+    BayesBase.params,
+    BayesBase.mean_cov,
+    BayesBase.mean_var,
+    BayesBase.mean_invcov,
+    BayesBase.mean_precision,
+    BayesBase.weightedmean_cov,
+    BayesBase.weightedmean_var,
+    BayesBase.weightedmean_invcov,
+    BayesBase.weightedmean_precision,
+    BayesBase.probvec,
+    BayesBase.weightedmean,
     Base.precision,
     Base.length,
     Base.ndims,
     Base.size,
-    Base.eltype,
-    mean_cov,
-    mean_var,
-    mean_invcov,
-    mean_precision,
-    weightedmean_cov,
-    weightedmean_var,
-    weightedmean_invcov,
-    weightedmean_precision,
-    probvec,
-    weightedmean
+    Base.eltype
 ]
 
 Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))

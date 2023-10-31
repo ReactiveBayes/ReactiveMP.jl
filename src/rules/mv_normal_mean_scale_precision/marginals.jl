@@ -1,11 +1,11 @@
 export marginalrule
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_γ::PointMass) = begin
-    return (out = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * diageye(eltype(m_out), ndims(m_out))), m_out), μ = m_μ, γ = m_γ)
+    return (out = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * diageye(eltype(m_out), ndims(m_out))), m_out), μ = m_μ, γ = m_γ)
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_γ) * diageye(eltype(m_out), ndims(m_out)))), γ = m_γ)
+    return (out = m_out, μ = prod(ClosedProd(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_γ) * diageye(eltype(m_out), ndims(m_out)))), γ = m_γ)
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ_γ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass) = begin
@@ -63,9 +63,9 @@ end
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_out), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))), m_μ))
+    return (out = m_out, μ = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_out), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))), m_μ))
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_γ::Any) = begin
-    return (out = prod(ProdAnalytical(), MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))), m_out), μ = m_μ)
+    return (out = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * diageye(eltype(m_out), ndims(m_out))), m_out), μ = m_μ)
 end

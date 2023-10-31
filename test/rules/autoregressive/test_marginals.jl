@@ -1,10 +1,6 @@
 module RulesAutoregressiveTest
 
-using Test
-using ReactiveMP
-using Random
-using LinearAlgebra
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_marginalrules
 

@@ -1,8 +1,7 @@
 module RulesBIFMZprevTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, Random, ExponentialFamily, BayesBase
+
 import ReactiveMP: @test_rules
 
 @testset "rules:BIFM:zprev" begin

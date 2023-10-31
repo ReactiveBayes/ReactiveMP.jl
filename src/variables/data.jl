@@ -188,7 +188,7 @@ function setmessagein!(datavar::DataVariable, index::Int, messagein)
     return nothing
 end
 
-marginal_prod_fn(datavar::DataVariable) = marginal_prod_fn(FoldLeftProdStrategy(), ProdAnalytical(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+marginal_prod_fn(datavar::DataVariable) = marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
 
 _getprediction(datavar::DataVariable)              = datavar.prediction
 _setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)

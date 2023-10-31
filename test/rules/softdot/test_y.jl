@@ -1,7 +1,6 @@
 module RulesSoftDotOutTest
 
-using Test
-using ReactiveMP
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 

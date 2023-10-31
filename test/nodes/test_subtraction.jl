@@ -1,9 +1,6 @@
 module SubtractionNodeTest
 
-using Test
-using ReactiveMP
-using Random
-import ReactiveMP: @test_rules
+using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
 
 @testset "SubtractionNode" begin
     @testset "Creation" begin
