@@ -11,7 +11,9 @@
         T = ExponentialFamily.exponential_family_typetag(q_ins_k)
         η = getnaturalparameters(q_ins_k_ef) - getnaturalparameters(m_in_ef)
         c = getconditioner(q_ins_k_ef)
-        result = ExponentialFamilyDistribution(T, η, c)
+        # TODO: `nothing` here bypasses validity check for the natural parameters `η`
+        # This is not ideal, we should investigate that further and maybe throw an error if the resulting natural parameter are not valid
+        result = ExponentialFamilyDistribution(T, η, c, nothing)
         return convert(Distribution, result)
     end
 end
