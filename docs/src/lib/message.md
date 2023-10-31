@@ -39,7 +39,7 @@ Our implementation also uses extra `is_initial` and `is_clamped` fields to deter
 The final field contains the addons. These contain additional information on top of the functional form of the distribution, such as its scaling or computation history.
 
 ```@setup bp-message
-using ReactiveMP
+using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 ```
 
 ```@example bp-message

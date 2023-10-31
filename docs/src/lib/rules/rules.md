@@ -6,6 +6,7 @@
 rule
 @rule
 @call_rule
+ReactiveMP.print_rules_table
 ```
 
 ## [Marginal update rules](@id lib-marginal-rules)
