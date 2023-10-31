@@ -5,6 +5,7 @@ export UnspecifiedFormConstraint, CompositeFormConstraint
 
 using TupleTools
 
+import BayesBase: resolve_prod_strategy
 import Base: +
 
 # Form constraints are preserved during execution of the `prod` function
@@ -156,7 +157,7 @@ function constrain_form(composite::CompositeFormConstraint, something)
 end
 
 function default_prod_constraint(constraint::CompositeFormConstraint)
-    return mapfoldl(default_prod_constraint, resolve_prod_constraint, constraint.constraints)
+    return mapfoldl(default_prod_constraint, resolve_prod_strategy, constraint.constraints)
 end
 
 function default_form_check_strategy(composite::CompositeFormConstraint)
