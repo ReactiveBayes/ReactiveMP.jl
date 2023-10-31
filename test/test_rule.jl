@@ -214,7 +214,8 @@ import MacroTools: inexpr
 
             for eltype in (:Float32, :Float64)
                 @test inexpr(
-                    test_rules_convert_paramfloattype(:(NormalMeanVariance(1.0, 2.0)), eltype), :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
+                    test_rules_convert_paramfloattype(:(NormalMeanVariance(1.0, 2.0)), eltype),
+                    :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:(m_in = NormalMeanVariance(1.0, 2.0)), eltype),
@@ -230,7 +231,10 @@ import MacroTools: inexpr
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0), q_out = Gamma(1.0, 2.0))), eltype),
-                    :((m_in = ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)), q_out = ReactiveMP.BayesBase.convert_paramfloattype($eltype, Gamma(1.0, 2.0))))
+                    :((
+                        m_in = ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)),
+                        q_out = ReactiveMP.BayesBase.convert_paramfloattype($eltype, Gamma(1.0, 2.0))
+                    ))
                 )
             end
         end

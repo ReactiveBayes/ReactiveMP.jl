@@ -1011,7 +1011,9 @@ import BayesBase: AbstractContinuousGenericLogPdf
 # This should not be used though anywhere in the real code, but only in tests
 # Current implementation of `isapprox` method supports only FullSpace and HalfLine domains with limited accuracy
 function custom_rule_isapprox(left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
-    if (BayesBase.getdomain(left) !== BayesBase.getdomain(right)) || (value_support(typeof(left)) !== value_support(typeof(right))) || (variate_form(typeof(left)) !== variate_form(typeof(right)))
+    if (BayesBase.getdomain(left) !== BayesBase.getdomain(right)) ||
+        (value_support(typeof(left)) !== value_support(typeof(right))) ||
+        (variate_form(typeof(left)) !== variate_form(typeof(right)))
         return false
     end
     return culogpdf__isapprox(BayesBase.getdomain(left), left, right; kwargs...)

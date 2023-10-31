@@ -72,7 +72,6 @@ import ReactiveMP: @test_rules
     # f(m_o, v_o, m_w, v_w) = 0.5*(m_o^2 + v_o - 2*m_o*m_w + m_w^2 + v_w)
     # `check_type_promotion = false` because of the inproper messages
     @testset "Variational: (q_out::Any, q_μ::Any)" begin
-
         @test_rules [check_type_promotion = false] NormalMeanVariance(:v, Marginalisation) [
             (input = (q_out = PointMass(-1.0), q_μ = PointMass(2.0)), output = GammaInverse(-0.5, 4.5; check_args = false)),
             (input = (q_out = PointMass(1.0), q_μ = PointMass(2.0)), output = GammaInverse(-0.5, 0.5; check_args = false)),

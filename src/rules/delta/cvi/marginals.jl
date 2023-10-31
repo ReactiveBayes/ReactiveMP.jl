@@ -3,7 +3,6 @@ using TupleTools
 import Distributions: Distribution
 import BayesBase: AbstractContinuousGenericLogPdf
 
-
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVI} = begin
     g = getnodefn(Val(:out))
 

@@ -6,7 +6,6 @@ using Random
 using LinearAlgebra
 
 @testset "Common" begin
-
     @testset "negate_inplace!" begin
         rng = MersenneTwister(1234)
 

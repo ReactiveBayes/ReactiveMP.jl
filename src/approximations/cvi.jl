@@ -310,7 +310,7 @@ function estimate_natural_gradient!(grad::ForwardDiffGrad, cache, invoker::LogGr
     for sample in invoker.samples
         df_m, df_v = compute_df_mv(grad, cache, f, sample)
 
-        if df_m isa Number 
+        if df_m isa Number
             tmp = df_v * μ
         else
             mul!(tmp, df_v, μ)

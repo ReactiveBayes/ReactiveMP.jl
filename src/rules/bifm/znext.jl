@@ -1,6 +1,9 @@
 
 @rule BIFM(:znext, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, meta::BIFMMeta
+    m_out::MultivariateNormalDistributionsFamily,
+    m_in::MultivariateNormalDistributionsFamily,
+    m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily},
+    meta::BIFMMeta
 ) = begin
 
     # fetch information from meta data

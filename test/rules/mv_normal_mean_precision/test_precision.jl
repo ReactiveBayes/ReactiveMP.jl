@@ -30,14 +30,8 @@ import ReactiveMP: @test_rules
             )
         ]
         @test_rules [check_type_promotion = true] MvNormalMeanPrecision(:Λ, Marginalisation) [
-            (
-                input = (q_out = PointMass([1.0, 2.0]), q_μ = MvNormalMeanCovariance([3.0, 5.0], [3.0 2.0; 2.0 4.0])),
-                output = WishartFast(4.0, cholinv([13/27 -8/27; -8/27 7/27]))
-            ),
-            (
-                input = (q_out = MvNormalMeanCovariance([1.0; 2.0], [3.0 2.0; 2.0 4.0]), q_μ = PointMass([3.0; 5.0])),
-                output = WishartFast(4.0, cholinv([13/27 -8/27; -8/27 7/27]))
-            ),
+            (input = (q_out = PointMass([1.0, 2.0]), q_μ = MvNormalMeanCovariance([3.0, 5.0], [3.0 2.0; 2.0 4.0])), output = WishartFast(4.0, cholinv([13/27 -8/27; -8/27 7/27]))),
+            (input = (q_out = MvNormalMeanCovariance([1.0; 2.0], [3.0 2.0; 2.0 4.0]), q_μ = PointMass([3.0; 5.0])), output = WishartFast(4.0, cholinv([13/27 -8/27; -8/27 7/27]))),
             (
                 input = (q_out = MvNormalMeanCovariance([1.0; 2.0], [3.0 2.0; 2.0 4.0]), q_μ = MvNormalMeanCovariance([3.0; 5.0], [3.0 2.0; 2.0 4.0])),
                 output = WishartFast(4.0, cholinv([17/70 -1/7; -1/7 1/7]))

@@ -41,7 +41,6 @@ import ReactiveMP: FunctionalIndex
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) + 1 + 1)))
         @test isbitstype(typeof((FunctionalIndex{:begin}(firstindex) - 1 + 1)))
     end
-
 end
 
 end
