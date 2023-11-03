@@ -1,6 +1,6 @@
 export transfominator, CTransition, ContinuousTransition, CTMeta
 
-import LazyArrays, BlockArrays
+import LazyArrays
 import StatsFuns: log2π
 
 @doc raw"""
