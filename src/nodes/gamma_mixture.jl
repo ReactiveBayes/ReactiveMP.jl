@@ -236,3 +236,22 @@ function ReactiveMP.make_node(
 
     return node
 end
+
+## Extra distribution for the Gamma Mixture
+
+"""
+    ν(x) ∝ exp(p*β*x - p*logГ(x)) ≡ exp(γ*x - p*logГ(x))
+"""
+struct GammaShapeLikelihood{T <: Real} <: ContinuousUnivariateDistribution
+    p::T
+    γ::T # p * β
+end
+
+BayesBase.support(dist::GammaShapeLikelihood) = Distributions.RealInterval(0.0, Inf)
+BayesBase.logpdf(distribution::GammaShapeLikelihood, x::Real) = distribution.γ * x - distribution.p * loggamma(x)
+
+BayesBase.default_prod_rule(::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}) = PreserveTypeProd(Distribution)
+
+function prod(::PreserveTypeProd{Distribution}, left::GammaShapeLikelihood, right::GammaShapeLikelihood)
+    return GammaShapeLikelihood(left.p + right.p, left.γ + right.γ)
+end

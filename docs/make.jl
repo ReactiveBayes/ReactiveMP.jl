@@ -4,7 +4,7 @@ using Documenter, ReactiveMP
 ## https://gr-framework.org/workstations.html#no-output
 ENV["GKSwstype"] = "100"
 
-DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
+DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive=true)
 
 makedocs(
     modules  = [ ReactiveMP ],
@@ -24,7 +24,6 @@ makedocs(
                 "Flow"     => "lib/nodes/flow.md"
             ],
             "Message update rules" => "lib/rules/rules.md",
-            "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
             "Algebra utils"       => "lib/algebra/common.md",
             "Exported methods"    => "lib/methods.md"

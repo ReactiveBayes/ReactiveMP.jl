@@ -1,9 +1,6 @@
 module NotNodeTest
 
-using Test
-using ReactiveMP
-using Random
-import ReactiveMP: @test_rules
+using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
 
 @testset "NotNode" begin
     @testset "Creation" begin

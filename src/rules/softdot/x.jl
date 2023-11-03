@@ -7,5 +7,5 @@
     mγ = mean(q_γ)
     Dx = mγ * (Vθ + mθ * mθ')
     zx = mγ * mθ * my
-    return convert(promote_variate_type(variate_form(q_θ), NormalWeightedMeanPrecision), zx, Dx)
+    return convert(promote_variate_type(variate_form(typeof(q_θ)), NormalWeightedMeanPrecision), zx, Dx)
 end

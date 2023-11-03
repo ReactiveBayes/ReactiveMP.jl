@@ -1,8 +1,7 @@
 module RulesMultiplicationOutTest
 
-using Test
-using ReactiveMP
-using Random, Distributions, StableRNGs, LinearAlgebra
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, LinearAlgebra
+
 import ReactiveMP: @test_rules, besselmod, make_productdist_message
 
 @testset "rule:typeof(*):out" begin

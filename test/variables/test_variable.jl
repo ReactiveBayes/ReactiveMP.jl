@@ -1,8 +1,6 @@
 module ReactiveMPVariableTest
 
-using Test
-using ReactiveMP
-using Rocket
+using Test, ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
 
 @testset "Variable" begin
     import ReactiveMP: activate!
@@ -14,7 +12,7 @@ using Rocket
     Base.broadcastable(::TestOptions) = Ref(TestOptions()) # for broadcasting
 
     @testset "setmarginal! tests for randomvar" begin
-        for dist in (NormalMeanVariance(-2.0, 3.0), NormalMeanPrecision(-2.0, 3.0))
+        for dist in (NormalMeanVariance(-2.0, 3.0), NormalMeanPrecision(-2.0, 3.0), PointMass(2.0))
             T = typeof(dist)
             variable = randomvar(:r)
             flag = false

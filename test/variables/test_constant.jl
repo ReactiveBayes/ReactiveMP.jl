@@ -1,8 +1,6 @@
 module ReactiveMPConstVariableTest
 
-using Test
-using ReactiveMP
-using Rocket
+using Test, ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
 
 using LinearAlgebra: I
 

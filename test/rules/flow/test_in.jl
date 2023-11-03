@@ -1,10 +1,6 @@
 module RulesFlowInTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
-using LinearAlgebra
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
 import ReactiveMP: @test_rules
 using ReactiveMP: jacobian, inv_jacobian

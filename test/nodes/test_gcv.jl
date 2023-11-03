@@ -1,10 +1,8 @@
-module ExponentialLinearQuadraticTest
+module GCVNodeTest
 
-using Test
-using ReactiveMP
-using Distributions
-using Random
-using DomainIntegrals
+using Test, ReactiveMP, Distributions, Random, DomainIntegrals, BayesBase, ExponentialFamily
+
+import ReactiveMP: ExponentialLinearQuadratic
 
 @testset "ExponentialLinearQuadratic" begin
     @testset "Statistics" begin
@@ -56,8 +54,8 @@ using DomainIntegrals
 
             q = NormalMeanVariance(ReactiveMP.approximate_meancov(approximation, (x) -> exp(logpdf(left, x) + logpdf(right, x) + x^2 / 2), NormalMeanVariance(0.0, 1.0))...)
 
-            @test all(isapprox.(mean_var(q), mean_var(prod(ProdAnalytical(), left, right)), atol = 1e-2))
-            @test all(isapprox.(mean_var(q), mean_var(prod(ProdAnalytical(), right, left)), atol = 1e-2))
+            @test all(isapprox.(mean_var(q), mean_var(prod(GenericProd(), left, right)), atol = 1e-2))
+            @test all(isapprox.(mean_var(q), mean_var(prod(GenericProd(), right, left)), atol = 1e-2))
         end
     end
 end

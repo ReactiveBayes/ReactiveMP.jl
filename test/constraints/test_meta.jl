@@ -1,7 +1,6 @@
 module ReactiveMPFactorisationSpecTest
 
-using Test
-using ReactiveMP
+using Test, ReactiveMP, BayesBase, ExponentialFamily
 
 import ReactiveMP: MetaSpecification, MetaSpecificationOptions, MetaSpecificationEntry
 import ReactiveMP: resolve_meta

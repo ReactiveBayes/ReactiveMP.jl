@@ -1,8 +1,7 @@
 module RulesSubtractionIn2Test
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+
 import ReactiveMP: @test_rules
 
 @testset "rules:typeof(-):in2" begin

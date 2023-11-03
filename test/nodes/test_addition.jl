@@ -1,9 +1,6 @@
 module AdditionNodeTest
 
-using Test
-using ReactiveMP
-using Random
-import ReactiveMP: @test_rules
+using Test, ReactiveMP, Random
 
 @testset "AdditionNode" begin
     @testset "Creation" begin

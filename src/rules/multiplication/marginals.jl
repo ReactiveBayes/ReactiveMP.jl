@@ -1,7 +1,7 @@
 
 @marginalrule typeof(*)(:A_in) (m_out::NormalDistributionsFamily, m_A::PointMass, m_in::NormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     b_in = @call_rule typeof(*)(:in, Marginalisation) (m_out = m_out, m_A = m_A, meta = meta)
-    q_in = prod(ProdAnalytical(), b_in, m_in)
+    q_in = prod(ClosedProd(), b_in, m_in)
     return (A = m_A, in = q_in)
 end
 

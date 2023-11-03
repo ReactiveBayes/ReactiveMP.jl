@@ -39,7 +39,7 @@ sdtype
 ```
 
 ```@setup lib-node-types
-using ReactiveMP
+using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 ```
 
 For example the `+` node has the [`Deterministic`](@ref) type:

@@ -1,8 +1,6 @@
 module NormalMeanVarianceNodeTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: make_node
 

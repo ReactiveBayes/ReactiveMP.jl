@@ -1,12 +1,9 @@
 module RulesNormalMixtureSwitchTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
-import ReactiveMP: WishartMessage
+import ExponentialFamily: WishartFast
 
 @testset "rules:NormalMixture:switch" begin
     @testset "Variational : (m_out::UnivariateNormalDistributionsFamily..., m_μ::UnivariateNormalDistributionsFamily...) k=1" begin

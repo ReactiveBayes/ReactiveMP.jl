@@ -1,7 +1,6 @@
 module ReactiveMPAddonsMemoryTest
 
-using Test
-using ReactiveMP
+using Test, ReactiveMP, Distributions, BayesBase, ExponentialFamily
 
 @testset "Memory addon" begin
     import ReactiveMP: AddonMemory
@@ -25,9 +24,9 @@ using ReactiveMP
 
         displayed = repr(addon)
 
-        @test occursin(r"node: NormalMeanVariance", displayed)
+        @test occursin(r"node: ExponentialFamily.NormalMeanVariance", displayed)
         @test occursin(r"interface: .*:out.*", displayed)
-        @test occursin(r"local constraint: Marginalisation()", displayed)
+        @test occursin(r"local constraint:.*Marginalisation()", displayed)
         @test occursin(r"messages on.*(:x, :y).*edges", displayed)
         @test occursin(repr(messages), displayed)
         @test occursin(r"marginals on.*(:z, :k).*edges", displayed)

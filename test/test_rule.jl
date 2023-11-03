@@ -1,9 +1,6 @@
 module ReactiveMPRuleTest
 
-using Test
-using ReactiveMP
-using MacroTools
-using Logging
+using Test, ReactiveMP, MacroTools, Logging, BayesBase, Distributions, ExponentialFamily
 
 import MacroTools: inexpr
 
@@ -91,8 +88,8 @@ import MacroTools: inexpr
                 @test inexpr(expression, output)
                 @test inexpr(expression, test_f)
                 @test inexpr(expression, :(ReactiveMP.float_tolerance))
-                @test inexpr(expression, :(ReactiveMP.custom_isapprox))
-                @test inexpr(expression, :(ReactiveMP.is_typeof_equal))
+                @test inexpr(expression, :(ReactiveMP.custom_rule_isapprox))
+                @test inexpr(expression, :(ReactiveMP.BayesBase.isequal_typeof))
             end
         end
 
@@ -183,10 +180,10 @@ import MacroTools: inexpr
                 let test_entry = TestRuleEntry(TestRuleEntryInputSpecification([:m => m, :v => v], :(Meta(1))), output)
                     modified_inputs = map(e -> convert(Expr, e), test_rules_convert_paramfloattype_for_test_entry(test_entry, eltype))
 
-                    modified_m = :(ReactiveMP.convert_paramfloattype($eltype, $m))
-                    modified_v = :(ReactiveMP.convert_paramfloattype($eltype, $v))
+                    modified_m = :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, $m))
+                    modified_v = :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, $v))
                     original_meta = :(meta = Meta(1))
-                    modified_meta = :(ReactiveMP.convert_paramfloattype($eltype, Meta(1)))
+                    modified_meta = :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, Meta(1)))
 
                     @test all(modified_inputs) do expression
                         !inexpr(expression, modified_meta)
@@ -217,23 +214,27 @@ import MacroTools: inexpr
 
             for eltype in (:Float32, :Float64)
                 @test inexpr(
-                    test_rules_convert_paramfloattype(:(NormalMeanVariance(1.0, 2.0)), eltype), :(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
+                    test_rules_convert_paramfloattype(:(NormalMeanVariance(1.0, 2.0)), eltype),
+                    :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:(m_in = NormalMeanVariance(1.0, 2.0)), eltype),
-                    :(m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
+                    :(m_in = ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0),)), eltype),
-                    :((m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)),))
+                    :((m_in = ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)),))
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:((m_in = ManyOf(NormalMeanVariance(1.0, 2.0)),)), eltype),
-                    :((m_in = ManyOf(ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))))
+                    :((m_in = ManyOf(ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)))))
                 )
                 @test inexpr(
                     test_rules_convert_paramfloattype(:((m_in = NormalMeanVariance(1.0, 2.0), q_out = Gamma(1.0, 2.0))), eltype),
-                    :((m_in = ReactiveMP.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)), q_out = ReactiveMP.convert_paramfloattype($eltype, Gamma(1.0, 2.0))))
+                    :((
+                        m_in = ReactiveMP.BayesBase.convert_paramfloattype($eltype, NormalMeanVariance(1.0, 2.0)),
+                        q_out = ReactiveMP.BayesBase.convert_paramfloattype($eltype, Gamma(1.0, 2.0))
+                    ))
                 )
             end
         end

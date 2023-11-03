@@ -1,9 +1,6 @@
 module ReactiveMPNodeTest
 
-using Test
-using ReactiveMP
-using Rocket
-using Distributions
+using Test, ReactiveMP, Rocket, BayesBase, Distributions
 
 @testset "FactorNode" begin
     @testset "Common" begin

@@ -1,9 +1,7 @@
 
 module ReactiveMPAddonsTest
 
-using Test
-using ReactiveMP
-using Distributions
+using Test, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
 using ReactiveMP: multiply_addons
 
