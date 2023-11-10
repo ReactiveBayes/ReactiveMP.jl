@@ -1,21 +1,21 @@
-@rule ContinuousTransition(:y, Marginalisation) (m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::CTMeta) = begin
-    mh, Vh = mean_cov(q_h)
+@rule ContinuousTransition(:y, Marginalisation) (m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta) = begin
+    ma, Va = mean_cov(q_a)
     mx, Wx = mean_invcov(m_x)
 
-    mΛ = mean(q_Λ)
+    mW = mean(q_W)
 
     dy, dx = getdimensionality(meta)
-    Fs, es = getmasks(meta), getunits(meta)
+    Fs, es = getmasks(meta, ma), getunits(meta)
 
-    mH = ctcompanion_matrix(mh, meta)
+    mA = ctcompanion_matrix(ma, meta)
 
-    Λ = sum(sum(es[j]' * mΛ * es[i] * Fs[j] * Vh * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
+    W = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
 
-    Ξ = Λ + Wx
+    Ξ = W + Wx
     z = Wx * mx
 
-    Vy = mH * inv(Ξ) * mH' + inv(mΛ)
-    my = mH * inv(Ξ) * z
+    Vy = mA * inv(Ξ) * mA' + inv(mW)
+    my = mA * inv(Ξ) * z
 
     return MvNormalMeanCovariance(my, Vy)
 end

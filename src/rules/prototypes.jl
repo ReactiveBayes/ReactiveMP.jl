@@ -114,8 +114,8 @@ include("transition/a.jl")
 
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")
-include("continuous_transition/h.jl")
-include("continuous_transition/lambda.jl")
+include("continuous_transition/a.jl")
+include("continuous_transition/W.jl")
 include("continuous_transition/marginals.jl")
 
 include("autoregressive/y.jl")

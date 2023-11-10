@@ -1,19 +1,21 @@
 
 @marginalrule ContinuousTransition(:y_x) (
-    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::CTMeta
+    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta
 ) = begin
-    return continuous_tranition_marginal(m_y, m_x, q_h, q_Λ, meta)
+    return continuous_tranition_marginal(m_y, m_x, q_a, q_W, meta)
 end
 
 function continuous_tranition_marginal(
-    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_h::MultivariateNormalDistributionsFamily, q_Λ::Any, meta::CTMeta
+    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta
 )
-    Fs, es = getmasks(meta), getunits(meta)
 
-    mh, Vh = mean_cov(q_h)
-    mΛ = mean(q_Λ)
+    ma, Va = mean_cov(q_a)
 
-    mH = ctcompanion_matrix(mh, meta)
+    Fs, es = getmasks(meta, ma), getunits(meta)
+
+    mW = mean(q_W)
+
+    mA = ctcompanion_matrix(ma, meta)
 
     b_my, b_Vy = mean_cov(m_y)
     f_mx, f_Vx = mean_cov(m_x)
@@ -21,16 +23,16 @@ function continuous_tranition_marginal(
     inv_b_Vy = cholinv(b_Vy)
     inv_f_Vx = cholinv(f_Vx)
 
-    Ξ = inv_f_Vx + sum(sum(es[j]' * mΛ * es[i] * Fs[j] * Vh * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
+    Ξ = inv_f_Vx + sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
 
-    W_11 = inv_b_Vy + mΛ
+    W_11 = inv_b_Vy + mW
 
     # negate_inplace!(mW * mH)
-    W_12 = -(mΛ * mH)
+    W_12 = -(mW * mA)
 
-    W_21 = -(mH' * mΛ)
+    W_21 = -(mA' * mW)
 
-    W_22 = Ξ + mH' * mΛ * mH
+    W_22 = Ξ + mA' * mW * mA
 
     W = [W_11 W_12; W_21 W_22]
     ξ = [inv_b_Vy * b_my; inv_f_Vx * f_mx]
