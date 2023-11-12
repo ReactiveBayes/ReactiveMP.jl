@@ -10,10 +10,10 @@
     my, Vy = myx[1:dy], Vyx[1:dy, 1:dy]
     Vyx    = Vyx[1:dy, (dy + 1):end]
 
-    mΛ = mean(q_W)
+    mW = mean(q_W)
 
-    D = sum(sum(es[i]' * mΛ * es[j] * Fs[i]' * (mx * mx' + Vx) * Fs[j] for i in 1:length(Fs)) for j in 1:length(Fs))
-    z = sum(Fs[i]' * (mx * my' + Vyx') * mΛ * es[i] for i in 1:length(Fs))
+    D = sum(sum(es[i]' * mW * es[j] * Fs[i]' * (mx * mx' + Vx) * Fs[j] for i in 1:length(Fs)) for j in 1:length(Fs))
+    z = sum(Fs[i]' * (mx * my' + Vyx') * mW * es[i] for i in 1:length(Fs))
 
     return MvNormalWeightedMeanPrecision(z, D)
 end

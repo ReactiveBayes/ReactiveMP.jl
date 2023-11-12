@@ -50,6 +50,8 @@ struct CTMeta
     Fs::Union{Vector{<:AbstractMatrix}, <:Function} # masks
     es::Vector{<:AbstractVector} # unit vectors
 
+    # NOTE: this meta is not user-friendly, I don't like supplying the length of a vector
+    # perhaps making mutable struct with empty meta first will be better from user perspective
     # meta for linear transformation of a vector to a matrix
     function CTMeta(transformation::Function, len::Integer)
         dy, dx = size(transformation(zeros(len)))
@@ -72,7 +74,9 @@ getdimensionality(meta::CTMeta) = meta.ds
 
 getmasks(ctmeta::CTMeta, a)                 = process_Fs(ctmeta.Fs, a) 
 process_Fs(Fs::Vector{<:AbstractMatrix}, a) = Fs
-process_Fs(Fs::Function, a)                 = [ForwardDiff.jacobian(a -> Fs(a)[i, :], a) for i in 1:size(Fs(a), 1)]
+
+# NOTE: this doesn't seem to be the right way of working with nonlinar approximation
+process_Fs(Fs::Function, a) = [ForwardDiff.jacobian(a -> Fs(a)[i, :], a) for i in 1:size(Fs(a), 1)]
 
 @node ContinuousTransition Stochastic [y, x, a, W]
 
