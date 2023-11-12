@@ -66,13 +66,12 @@ struct CTMeta
         es = [StandardBasisVector(dy, i, 1.0) for i in 1:dy]
         return new((dy, dx), transformation, es)
     end
-
 end
 
 getunits(meta::CTMeta)          = meta.es
 getdimensionality(meta::CTMeta) = meta.ds
 
-getmasks(ctmeta::CTMeta, a)                 = process_Fs(ctmeta.Fs, a) 
+getmasks(ctmeta::CTMeta, a)                 = process_Fs(ctmeta.Fs, a)
 process_Fs(Fs::Vector{<:AbstractMatrix}, a) = Fs
 
 # NOTE: this doesn't seem to be the right way of working with nonlinar approximation
@@ -82,7 +81,7 @@ process_Fs(Fs::Function, a) = [ForwardDiff.jacobian(a -> Fs(a)[i, :], a) for i i
 
 default_meta(::Type{CTMeta}) = error("ContinuousTransition node requires meta flag explicitly specified")
 
-default_functional_dependencies_pipeline(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies((3,), (nothing, ))
+default_functional_dependencies_pipeline(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies((3,), (nothing,))
 
 function ctcompanion_matrix(a, meta::CTMeta)
     Fs, es = getmasks(meta, a), getunits(meta)

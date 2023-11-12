@@ -8,7 +8,6 @@ end
 function continuous_tranition_marginal(
     m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta
 )
-
     ma, Va = mean_cov(q_a)
 
     Fs, es = getmasks(meta, ma), getunits(meta)
