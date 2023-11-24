@@ -19,11 +19,20 @@ struct DeltaFnDefaultRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 
 import FixedArguments
 
-function with_statics(factornode::DeltaFnNode, stream::T) where {T}
+function with_statics(factornode::DeltaFnNode, stream)
+    return with_statics(factornode, factornode.statics, stream)
+end
+
+function with_statics(factornode::DeltaFnNode, statics::Tuple, stream::T) where {T}
     # We wait for the statics to be available, but ignore their actual values 
     # They are being injected indirectly with the `fix` function upon node creation
     statics = map(static -> messageout(static, 1), FixedArguments.value.(factornode.statics))
     return combineLatest((stream, combineLatest(statics, PushNew()))) |> map(eltype(T), first)
+end
+
+function with_statics(factornode::DeltaFnNode, statics::Tuple{}, stream::T) where {T}
+    # There is no need to touch the original stream if there are no statics
+    return stream
 end
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
@@ -151,7 +160,8 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_o
 end
 
 # This function declares how to compute `m_in` 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F, N}, pipeline_stages, scheduler, addons) where {F, N}
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, pipeline_stages, scheduler, addons) where {F}
+    N = length(factornode.ins)
     # For each outbound message from `in_k` edge we need an inbound messages from all OTHER! `in_*` edges and inbound message on `m_out`
     foreach(enumerate(factornode.ins)) do (index, interface)
 

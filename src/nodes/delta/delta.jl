@@ -46,7 +46,7 @@ as_node_symbol(::Type{<:DeltaFn{F}}) where {F} = Symbol(replace(string(nameof(F)
 functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{F}
 sdtype(factornode::DeltaFnNode)                           = Deterministic()
 interfaces(factornode::DeltaFnNode)                       = (factornode.out, factornode.ins...)
-factorisation(factornode::DeltaFnNode{F, N}) where {F, N} = ntuple(identity, N + 1)
+factorisation(factornode::DeltaFnNode{F}) where {F}       = ntuple(identity, length(factornode.ins) + 1)
 localmarginals(factornode::DeltaFnNode)                   = factornode.localmarginals.marginals
 localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                         = factornode.metadata
@@ -139,6 +139,10 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
 
     if !isnothing(pipeline)
         @warn "Delta node does not support the `pipeline` option."
+    end
+
+    if !isnothing(getinverse(meta)) && !isempty(statics)
+        error("The inverse function specification is not supported for the Delta node, which is connected to datavar/constvar edges.")
     end
 
     return DeltaFnNode(fn, proxy, out_interface, ins_interface, statics, localmarginals, meta)
