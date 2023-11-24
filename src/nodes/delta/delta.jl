@@ -35,7 +35,7 @@ struct DeltaFnNode{F, P, N, S, L, M} <: AbstractFactorNode
     proxy::P
     out::NodeInterface
     ins::NTuple{N, IndexedNodeInterface}
-    
+
     statics        :: S
     localmarginals :: L
     metadata       :: M
@@ -61,7 +61,7 @@ collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta
 function nodefunction(factornode::DeltaFnNode)
     # `DeltaFnNode` `nodefunction` is `δ(y - f(ins...))`
     return let f = nodefunction(factornode, Val(:out))
-        (y, ins...) -> (iszero(y - f(ins...))) ? 1 : 0
+        (y, ins...) -> (y - f(ins...) ≈ 0) ? 1 : 0
     end
 end
 
@@ -126,7 +126,7 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
         setmessagein!(in_var, in_index, messageout(in_interface))
     end
 
-    foreach(statics) do static 
+    foreach(statics) do static
         setused!(FixedArguments.value(static))
     end
 
