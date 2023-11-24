@@ -101,6 +101,7 @@ proxy_variables(datavar::DataVariable) = nothing    # not related to isproxy
 collection_type(datavar::DataVariable) = datavar.collection_type
 isconnected(datavar::DataVariable)     = datavar.nconnected !== 0
 nconnected(datavar::DataVariable)      = datavar.nconnected
+setused!(datavar::DataVariable)        = datavar.isused = true
 
 isproxy(datavar::DataVariable) = datavar.isproxy
 isused(datavar::DataVariable) = datavar.isused

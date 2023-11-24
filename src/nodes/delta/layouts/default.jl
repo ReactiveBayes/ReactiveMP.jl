@@ -17,6 +17,15 @@ See also: [`ReactiveMP.DeltaFnDefaultKnownInverseRuleLayout`](@ref)
 """
 struct DeltaFnDefaultRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 
+import FixedArguments
+
+function with_statics(factornode::DeltaFnNode, stream::T) where {T}
+    # We wait for the statics to be available, but ignore their actual values 
+    # They are being injected indirectly with the `fix` function upon node creation
+    statics = map(static -> messageout(static, 1), FixedArguments.value.(factornode.statics))
+    return combineLatest((stream, combineLatest(statics, PushNew()))) |> map(eltype(T), first)
+end
+
 # This function declares how to compute `q_out` locally around `DeltaFn`
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     let out = factornode.out, localmarginal = factornode.localmarginals.marginals[1]
@@ -44,7 +53,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
         meta  = metadata(factornode)
 
         mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
-        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
+        marginalout = with_statics(factornode, combineLatest((msgs_observable, marginals_observable), PushNew())) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
     end
@@ -72,6 +81,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
 
+        vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
@@ -101,6 +111,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
 
+        vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
@@ -170,6 +181,7 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_i
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
 
+        vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
