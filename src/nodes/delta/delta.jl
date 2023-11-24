@@ -148,7 +148,9 @@ end
 # groups: the first group is of type `RandomVariable` and the second group is of type `ConstVariable/DataVariable`
 __split_static_inputs(ins::Tuple) = __split_static_inputs(Val(1), (), (), ins)
 
+# Stop if the `remaining` tuple is empty
 __split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple{}) where {N} = (randoms, statics)
+# Split the `remaining` tuple into head (current) and tail (remaining)
 __split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple) where {N} = __split_static_inputs(Val(N), randoms, statics, first(remaining), Base.tail(remaining))
 
 # If the current input is a random variable, we add it to the `randoms` tuple
