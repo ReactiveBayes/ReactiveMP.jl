@@ -148,17 +148,22 @@ end
 # groups: the first group is of type `RandomVariable` and the second group is of type `ConstVariable/DataVariable`
 __split_static_inputs(ins::Tuple) = __split_static_inputs(Val(1), (), (), ins)
 
-__split_static_inputs(::Val{N}, randoms, statics, ins::Tuple{}) where {N} = (randoms, statics)
-__split_static_inputs(::Val{N}, randoms, statics, ins::Tuple) where {N} = __split_static_inputs(Val(N), randoms, statics, first(ins), Base.tail(ins))
+__split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple{}) where {N} = (randoms, statics)
+__split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple) where {N} = __split_static_inputs(Val(N), randoms, statics, first(remaining), Base.tail(remaining))
 
+# If the current input is a random variable, we add it to the `randoms` tuple
 function __split_static_inputs(::Val{N}, randoms, statics, current::RandomVariable, remaining::Tuple) where {N}
     return __split_static_inputs(Val(N + 1), (randoms..., current), statics, remaining)
 end
 
+# If the current input is a const/data variable, we add it to the `statics` tuple with its respective position
 function __split_static_inputs(::Val{N}, randoms, statics, current::Union{ConstVariable, DataVariable}, remaining::Tuple) where {N}
     return __split_static_inputs(Val(N + 1), randoms, (statics..., FixedArgument(FixedPosition(N), current)), remaining)
 end
 
+# This function is used to unpack the latest value of the static variables
+# For constvar we just return the value
+# For datavar we get the latest value from the data stream
 __unpack_latest_static(_, constvar::ConstVariable) = getconst(constvar)
 __unpack_latest_static(_, datavar::DataVariable) = BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(datavar, 1))))
 
