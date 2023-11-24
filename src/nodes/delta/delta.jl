@@ -43,13 +43,13 @@ end
 
 as_node_symbol(::Type{<:DeltaFn{F}}) where {F} = Symbol(replace(string(nameof(F)), "#" => ""))
 
-functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{F}
-sdtype(factornode::DeltaFnNode)                           = Deterministic()
-interfaces(factornode::DeltaFnNode)                       = (factornode.out, factornode.ins...)
-factorisation(factornode::DeltaFnNode{F}) where {F}       = ntuple(identity, length(factornode.ins) + 1)
-localmarginals(factornode::DeltaFnNode)                   = factornode.localmarginals.marginals
-localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
-metadata(factornode::DeltaFnNode)                         = factornode.metadata
+functionalform(factornode::DeltaFnNode{F}) where {F} = DeltaFn{F}
+sdtype(factornode::DeltaFnNode)                      = Deterministic()
+interfaces(factornode::DeltaFnNode)                  = (factornode.out, factornode.ins...)
+factorisation(factornode::DeltaFnNode{F}) where {F}  = ntuple(identity, length(factornode.ins) + 1)
+localmarginals(factornode::DeltaFnNode)              = factornode.localmarginals.marginals
+localmarginalnames(factornode::DeltaFnNode)          = map(name, localmarginals(factornode))
+metadata(factornode::DeltaFnNode)                    = factornode.metadata
 
 collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
     "Delta node `$(as_node_symbol(D))` requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
