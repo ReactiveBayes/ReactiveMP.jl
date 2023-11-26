@@ -88,7 +88,7 @@ call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()
 function call_rule_make_node(::CallRuleNodeRequired, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
     # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
     # Doing so will most likely throw an error
-    return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn{F}, meta))
+    return DeltaFnNode(nodetype, nodetype, NodeInterface(:out, Marginalisation()), (), (), nothing, collect_meta(DeltaFn{F}, meta))
 end
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
