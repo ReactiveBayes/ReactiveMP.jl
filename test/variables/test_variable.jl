@@ -39,7 +39,7 @@ using Test, ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
             activate!.(variablesmv, TestOptions())
 
             setmarginals!(variablesmv, dist)
-            @test_throws AssertionError setmarginals!(variablesmv, [dist])
+            @test_throws AssertionError setmarginals!(variablesmv, dist[begin:end-1])
 
             subscriptionmv = subscribe!(getmarginals(variablesmv, IncludeAll()), (marginals) -> begin
                 @test length(marginals) === 2
