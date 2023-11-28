@@ -41,7 +41,7 @@ end
 
 struct TestNodeMetaData end
 
-ReactiveMP.collect_meta(::Type{D}, options::FactorNodeCreationOptions{F, T}) where {D <: DeltaFn,F, T <: TestNodeMetaData} = TestNodeMetaData()
+ReactiveMP.collect_meta(::Type{D}, options::FactorNodeCreationOptions{F, T}) where {D <: DeltaFn, F, T <: TestNodeMetaData} = TestNodeMetaData()
 
 function test_variables_set_methods(variables, dist::T) where {T}
     marginal_subscription_flag = false
@@ -55,9 +55,9 @@ function test_variables_set_methods(variables, dist::T) where {T}
     test_node_index = 1
 
     @test all(degree.(variables) .== 1)
-    
+
     @test_throws AssertionError setmessages!(variables, Iterators.repeated(dist, length(variables) - 1))
-    
+
     setmarginals!(variables, dist)
     setmessages!(variables, dist)
 
@@ -83,7 +83,6 @@ function test_variables_set_methods(variables, dist::T) where {T}
             @test mean(message) === mean(dist)
             @test var(message) === var(dist)
         end
-
     end)
 
     unsubscribe!(subscription)
