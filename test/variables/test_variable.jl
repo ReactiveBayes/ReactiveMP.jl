@@ -15,8 +15,9 @@ function test_variable_set_method(variable, dist::T) where {T}
 
     # messages could be initialized only when the node is created
     test_node = make_node(CustomDeterministicNode, ReactiveMP.FactorNodeCreationOptions(), test_out_var, variable)
+    test_node_index = 1
 
-    setmessage!(variable, 1, dist)
+    setmessage!(variable, test_node_index, dist)
     setmarginal!(variable, dist)
 
     subscription = subscribe!(getmarginal(variable, IncludeAll()), (marginal) -> begin
@@ -26,7 +27,7 @@ function test_variable_set_method(variable, dist::T) where {T}
         flag = true
     end)
 
-    subscription = subscribe!(ReactiveMP.messageout(variable, 1), (message) -> begin
+    subscription = subscribe!(ReactiveMP.messageout(variable, test_node_index), (message) -> begin
         @test typeof(message) <: Message{T}
         @test mean(message) === mean(dist)
         @test var(message) === var(dist)
@@ -40,27 +41,50 @@ end
 
 struct TestNodeMetaData end
 
+ReactiveMP.collect_meta(::Type{D}, options::FactorNodeCreationOptions{F, T}) where {D <: DeltaFn,F, T <: TestNodeMetaData} = TestNodeMetaData()
+
 function test_variables_set_methods(variables, dist::T) where {T}
-    flag = false
+    marginal_subscription_flag = false
 
     activate!.(variables, TestOptions())
 
     @test_throws AssertionError setmarginals!(variables, Iterators.repeated(dist, length(variables) - 1))
 
-    setmarginals!(variables, dist)
+    test_out_var = randomvar(:out)
+    test_node = make_node(identity, ReactiveMP.FactorNodeCreationOptions(ReactiveMP.DeltaFn, TestNodeMetaData(), nothing), test_out_var, variables...)
+    test_node_index = 1
 
-    subscription = subscribe!(getmarginals(variables, IncludeAll()), (marginals) -> begin
+    @test all(degree.(variables) .== 1)
+    
+    @test_throws AssertionError setmessages!(variables, Iterators.repeated(dist, length(variables) - 1))
+    
+    setmarginals!(variables, dist)
+    setmessages!(variables, dist)
+
+    subscription = subscribe!(getmarginals(variables, IncludeAll()) |> take(1), (marginals) -> begin
         @test length(marginals) === length(variables)
         foreach(marginals) do marginal
             @test typeof(marginal) <: Marginal{T}
             @test mean(marginal) === mean(dist)
             @test var(marginal) === var(dist)
         end
-        flag = true
+        marginal_subscription_flag = true
     end)
 
     # Test that subscription happenend
-    @test flag === true
+    @test marginal_subscription_flag === true
+
+    unsubscribe!(subscription)
+
+    subscription = subscribe!(collectLatest(ReactiveMP.messageout.(variables, test_node_index)) |> take(1), (messages) -> begin
+        @test length(messages) === length(variables)
+        foreach(messages) do message
+            @test typeof(message) <: Message{T}
+            @test mean(message) === mean(dist)
+            @test var(message) === var(dist)
+        end
+
+    end)
 
     unsubscribe!(subscription)
 end
