@@ -39,7 +39,7 @@ using Test, ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
             activate!.(variablesmv, TestOptions())
 
             setmarginals!(variablesmv, dist)
-            @test_throws AssertionError setmarginals!(variablesmv, Iterators.repeated(dist, length(variablesmv)-1))
+            @test_throws AssertionError setmarginals!(variablesmv, Iterators.repeated(dist, length(variablesmv) - 1))
 
             subscriptionmv = subscribe!(getmarginals(variablesmv, IncludeAll()), (marginals) -> begin
                 @test length(marginals) === 2
@@ -62,7 +62,7 @@ using Test, ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
             activate!.(variablesmx, TestOptions())
 
             setmarginals!(variablesmx, dist)
-            @test_throws AssertionError setmarginals!(variablesmx, Iterators.repeated(dist, length(variablesmx)-1))
+            @test_throws AssertionError setmarginals!(variablesmx, Iterators.repeated(dist, length(variablesmx) - 1))
 
             subscriptionmx = subscribe!(getmarginals(variablesmx, IncludeAll()), (marginals) -> begin
                 @test length(marginals) === 4
