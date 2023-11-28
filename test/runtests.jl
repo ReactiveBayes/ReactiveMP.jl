@@ -228,6 +228,7 @@ end
     addtests(testrunner, "pipeline/test_logger.jl")
 
     addtests(testrunner, "test_node.jl")
+    addtests(testrunner, "nodes/delta/test_delta.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
