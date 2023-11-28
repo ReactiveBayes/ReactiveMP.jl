@@ -21,7 +21,7 @@ function test_variable_set_method(variable, dist::T, k) where {T}
     for node_index in 1:k
         setmessage!(variable, node_index, dist)
     end
-    
+
     setmarginal!(variable, dist)
 
     subscription = subscribe!(getmarginal(variable, IncludeAll()), (marginal) -> begin
@@ -38,7 +38,6 @@ function test_variable_set_method(variable, dist::T, k) where {T}
             @test var(message) === var(dist)
         end)
     end
-
 
     # Test that subscription happenend
     @test flag === true
@@ -60,7 +59,7 @@ function test_variables_set_methods(variables, dist::T, k::Int) where {T}
     @test_throws AssertionError setmarginals!(variables, Iterators.repeated(dist, length(variables) - 1))
 
     test_out_var = randomvar(:out)
-    
+
     for _ in 1:k
         make_node(identity, ReactiveMP.FactorNodeCreationOptions(ReactiveMP.DeltaFn, TestNodeMetaData(), nothing), test_out_var, variables...)
     end
@@ -91,7 +90,6 @@ function test_variables_set_methods(variables, dist::T, k::Int) where {T}
     unsubscribe!(subscription)
 
     for node_index in 1:k
-
         subscription = subscribe!(collectLatest(ReactiveMP.messageout.(variables, node_index)) |> take(1), (messages) -> begin
             @test length(messages) === length(variables)
             foreach(messages) do message
@@ -102,7 +100,6 @@ function test_variables_set_methods(variables, dist::T, k::Int) where {T}
         end)
 
         unsubscribe!(subscription)
-    
     end
 end
 
