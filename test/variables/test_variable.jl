@@ -42,6 +42,8 @@ end
 struct TestNodeMetaData end
 
 ReactiveMP.collect_meta(::Type{D}, options::FactorNodeCreationOptions{F, T}) where {D <: DeltaFn, F, T <: TestNodeMetaData} = TestNodeMetaData()
+ReactiveMP.getinverse(::TestNodeMetaData) = nothing
+ReactiveMP.getinverse(::TestNodeMetaData, k::Int) = nothing
 
 function test_variables_set_methods(variables, dist::T) where {T}
     marginal_subscription_flag = false
