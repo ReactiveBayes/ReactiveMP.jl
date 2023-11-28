@@ -93,25 +93,10 @@ getmarginals(variables::AbstractArray{<:AbstractVariable}, skip_strategy::Margin
 
 ### Marginals
 
-struct RepeatedValueContainer
-    marginal
-    container
-    _length
-end
-
-Base.length(ri::RepeatedValueContainer) = ri._length
-Base.iterate(ri::RepeatedValueContainer) = iterate(ri.container)
-Base.iterate(ri::RepeatedValueContainer, state) = iterate(ri.container, state)
-
-function RepeatedValueContainer(marginal, _length)
-    container = Iterators.repeated(marginal, _length)
-    return RepeatedValueContainer(marginal, container, _length)
-end
-
 setmarginal!(variable::AbstractVariable, marginal) = setmarginal!(getmarginal(variable, IncludeAll()), marginal)
 
-setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginal::PointMass)    = _setmarginals!(Base.HasLength(), variables, RepeatedValueContainer(marginal, length(variables)))
-setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginal::Distribution) = _setmarginals!(Base.HasLength(), variables, RepeatedValueContainer(marginal, length(variables)))
+setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginal::PointMass)    = _setmarginals!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
+setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginal::Distribution) = _setmarginals!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
 setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginals)              = _setmarginals!(Base.IteratorSize(marginals), variables, marginals)
 
 function _setmarginals!(::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, marginals)
@@ -130,8 +115,8 @@ end
 setmessage!(variable::AbstractVariable, index::Int, message) = setmessage!(messageout(variable, index), message)
 setmessage!(variable::AbstractVariable, message)             = foreach(i -> setmessage!(variable, i, message), 1:degree(variable))
 
-setmessages!(variables::AbstractArray{<:AbstractVariable}, message::PointMass)    = _setmessages!(Base.HasLength(), variables, RepeatedValueContainer(message, length(variables)))
-setmessages!(variables::AbstractArray{<:AbstractVariable}, message::Distribution) = _setmessages!(Base.HasLength(), variables, RepeatedValueContainer(message, length(variables)))
+setmessages!(variables::AbstractArray{<:AbstractVariable}, message::PointMass)    = _setmessages!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
+setmessages!(variables::AbstractArray{<:AbstractVariable}, message::Distribution) = _setmessages!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
 setmessages!(variables::AbstractArray{<:AbstractVariable}, messages)              = _setmessages!(Base.IteratorSize(messages), variables, messages)
 
 function _setmessages!(::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, messages)
