@@ -9,6 +9,8 @@ import Base: IteratorEltype, HasEltype
 import Base: eltype, length, size, sum
 import Base: IndexStyle, IndexLinear, getindex
 
+import LinearAlgebra: UniformScaling
+
 import Rocket: similar_typeof
 
 """
@@ -71,11 +73,6 @@ Rocket.similar_typeof(::SkipIndexIterator, ::Type{L}) where {L} = Vector{L}
 
 import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
 
-# Union helpers
-
-union_types(x::Union) = (x.a, union_types(x.b)...)
-union_types(x::Type)  = (x,)
-
 # Symbol helpers
 
 __extract_val_type(::Type{Val{S}}) where {S} = S
@@ -112,50 +109,6 @@ __check_all(fn::Function, ::Nothing)    = true
 ##
 
 is_clamped_or_initial(something) = is_clamped(something) || is_initial(something)
-
-## Other helpers 
-
-"""
-Same as `log` but clamps the input argument `x` to be in the range `tiny <= x <= typemax(x)` such that `log(0)` does not explode.
-"""
-clamplog(x) = log(clamp(x, tiny, typemax(x)))
-
-# We override this function for some specific types
-is_typeof_equal(left, right) = typeof(left) === typeof(right)
-
-custom_isapprox(left, right; kwargs...) = isapprox(left, right; kwargs...)
-custom_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false
-
-function custom_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) where {K}
-    _isapprox = true
-    for key in keys(left)
-        _isapprox = _isapprox && custom_isapprox(left[key], right[key]; kwargs...)
-    end
-    return _isapprox
-end
-
-## 
-
-"""
-    deep_eltype
-
-Returns the `eltype` of the first container in the nested hierarchy.
-
-```jldoctest
-julia> ReactiveMP.deep_eltype([ [1, 2], [2, 3] ])
-Int64
-
-julia> ReactiveMP.deep_eltype([[[ 1.0, 2.0 ], [ 3.0, 4.0 ]], [[ 5.0, 6.0 ], [ 7.0, 8.0 ]]])
-Float64
-```
-"""
-function deep_eltype end
-
-deep_eltype(::Type{T}) where {T}                  = T
-deep_eltype(::Type{T}) where {T <: AbstractArray} = deep_eltype(eltype(T))
-deep_eltype(any)                                  = deep_eltype(typeof(any))
-
-##
 
 # See: https://github.com/JuliaLang/julia/issues/42795
 function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x)
@@ -208,18 +161,3 @@ function Base.show(io::IO, index::FunctionalIndex{R, F}) where {R, F}
     __functional_index_print(io, index.f)
     print(io, ")")
 end
-
-## 
-
-# Julia does not really like expressions of the form
-# map((e) -> convert(T, e), collection)
-# because type `T` is inside lambda function
-# https://github.com/JuliaLang/julia/issues/15276
-# https://github.com/JuliaLang/julia/issues/47760
-struct TypeConverter{T, C}
-    convert::C
-end
-
-TypeConverter(::Type{T}, convert::C) where {T, C} = TypeConverter{T, C}(convert)
-
-(converter::TypeConverter{T})(something) where {T} = converter.convert(T, something)

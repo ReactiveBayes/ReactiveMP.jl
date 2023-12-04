@@ -140,7 +140,7 @@ end
 @average_energy NormalMixture (q_out::Any, q_switch::Any, q_m::ManyOf{N, Any}, q_p::ManyOf{N, Any}) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
-        return avg_energy_nm(variate_form(q_out), q_out, q_m, q_p, z_bar, i)
+        return avg_energy_nm(variate_form(typeof(q_out)), q_out, q_m, q_p, z_bar, i)
     end
 end
 

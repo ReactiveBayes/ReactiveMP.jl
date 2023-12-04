@@ -104,7 +104,10 @@ function activate!(constraints::ConstraintsSpecification, nodes::FactorNodesColl
     foreach(constraints.factorisation) do spec
         specnames = getnames(spec)
         foreach(specnames) do specname
-            if warn && (hasdatavar(variables, specname) || hasconstvar(variables, specname))
+            if hasdatavar(variables, specname) && allows_missings(variables[specname])
+                # skip, because it is fine to have a datavar in the factorization constraint, which allows missings
+                nothing
+            elseif warn && (hasdatavar(variables, specname) || hasconstvar(variables, specname))
                 @warn "Constraints specification has factorisation constraint for `q($(join(specnames, ", ")))`, but `$(specname)` is not a random variable. Data variables and constants in the model are forced to be factorized by default such that `q($(join(specnames, ", "))) = q($(specname))q(...)` . Use `warn = false` option during constraints specification to suppress this warning."
             elseif warn && !hasrandomvar(variables, specname) && !hasprocess(variables, specname)
                 @warn "Constraints specification has factorisation constraint for `q($(join(specnames, ", ")))`, but variables collection has no random variable named `$(specname)`. Use `warn = false` option during constraints specification to suppress this warning."

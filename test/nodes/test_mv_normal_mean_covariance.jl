@@ -1,10 +1,6 @@
 module MvNormalMeanCovarianceNodeTest
 
-using Test
-using ReactiveMP
-using Random
-
-import ReactiveMP: make_node
+using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
 
 @testset "MvNormalMeanCovarianceNode" begin
     @testset "Creation" begin

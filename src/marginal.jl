@@ -64,34 +64,34 @@ Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal
 Distributions.logpdf(marginal::Marginal, x) = Distributions.logpdf(getdata(marginal), x)
 
 MacroHelpers.@proxy_methods Marginal getdata [
-    Distributions.mean,
-    Distributions.median,
-    Distributions.mode,
-    Distributions.shape,
-    Distributions.scale,
-    Distributions.rate,
-    Distributions.var,
-    Distributions.std,
-    Distributions.cov,
-    Distributions.invcov,
-    Distributions.logdetcov,
-    Distributions.entropy,
-    Distributions.params,
+    BayesBase.mean,
+    BayesBase.median,
+    BayesBase.mode,
+    BayesBase.shape,
+    BayesBase.scale,
+    BayesBase.rate,
+    BayesBase.var,
+    BayesBase.std,
+    BayesBase.cov,
+    BayesBase.invcov,
+    BayesBase.logdetcov,
+    BayesBase.entropy,
+    BayesBase.params,
+    BayesBase.mean_cov,
+    BayesBase.mean_var,
+    BayesBase.mean_invcov,
+    BayesBase.mean_precision,
+    BayesBase.weightedmean_cov,
+    BayesBase.weightedmean_var,
+    BayesBase.weightedmean_invcov,
+    BayesBase.weightedmean_precision,
+    BayesBase.probvec,
+    BayesBase.weightedmean,
     Base.precision,
     Base.length,
     Base.ndims,
     Base.size,
-    Base.eltype,
-    mean_cov,
-    mean_var,
-    mean_invcov,
-    mean_precision,
-    weightedmean_cov,
-    weightedmean_var,
-    weightedmean_invcov,
-    weightedmean_precision,
-    probvec,
-    weightedmean
+    Base.eltype
 ]
 
 Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal))
@@ -195,7 +195,13 @@ function (mapping::MarginalMapping)(dependencies)
     # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
     is_marginal_initial = !is_marginal_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    marginal = marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
+    marginal = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
+        missing
+    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
+        missing
+    else
+        marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
+    end
 
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial, nothing)
 end

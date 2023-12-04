@@ -1,4 +1,4 @@
-export rule
+import Base.Broadcast: BroadcastFunction
 
 @rule Categorical(:out, Marginalisation) (m_p::Dirichlet,) = begin
     if isnothing(messages[1].addons)
@@ -10,7 +10,7 @@ export rule
 end
 
 @rule Categorical(:out, Marginalisation) (q_p::Dirichlet,) = begin
-    rho = clamp.(exp.(mean(log, q_p)), tiny, Inf) # Softens the parameter
+    rho = clamp.(exp.(mean(BroadcastFunction(log), q_p)), tiny, Inf) # Softens the parameter
     return Categorical(rho ./ sum(rho))
 end
 

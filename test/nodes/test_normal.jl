@@ -1,9 +1,6 @@
 module NodesNormalTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
 
 import ReactiveMP: make_node, FactorNodeCreationOptions
 

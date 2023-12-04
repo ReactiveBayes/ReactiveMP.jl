@@ -184,7 +184,7 @@ if isempty(testrunner.enabled_tests)
     println("Running all tests...")
     # We `pirate` `mean` methods for distributions in `Distributions.jl`
     # `project_toml_formatting` is broken with Extensions
-    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false, project_toml_formatting = false)
+    Aqua.test_all(ReactiveMP; ambiguities = false, piracies = false, deps_compat = (; check_extras = false, check_weakdeps = true))
 else
     println("Running specific tests:")
     foreach(testrunner.enabled_tests) do test
@@ -200,14 +200,11 @@ end
         @test filename_to_key(key_to_filename("message")) == "message"
     end
 
-    addtests(testrunner, "algebra/test_correction.jl")
-    addtests(testrunner, "algebra/test_common.jl")
-    addtests(testrunner, "algebra/test_permutation_matrix.jl")
-    addtests(testrunner, "algebra/test_standard_basis_vector.jl")
+    addtests(testrunner, "helpers/algebra/test_common.jl")
+    addtests(testrunner, "helpers/algebra/test_permutation_matrix.jl")
+    addtests(testrunner, "helpers/algebra/test_standard_basis_vector.jl")
 
     addtests(testrunner, "helpers/test_helpers.jl")
-
-    addtests(testrunner, "score/test_counting.jl")
 
     addtests(testrunner, "test_rule.jl")
     addtests(testrunner, "test_addons.jl")
@@ -222,36 +219,7 @@ end
     addtests(testrunner, "approximations/test_linearization.jl")
     addtests(testrunner, "approximations/test_cvi.jl")
 
-    addtests(testrunner, "constraints/prod/test_prod_analytical.jl")
-    addtests(testrunner, "constraints/prod/test_prod_final.jl")
-    addtests(testrunner, "constraints/prod/test_prod_generic.jl")
     addtests(testrunner, "constraints/test_factorisation.jl")
-
-    addtests(testrunner, "test_distributions.jl")
-    addtests(testrunner, "distributions/test_common.jl")
-    addtests(testrunner, "distributions/test_bernoulli.jl")
-    addtests(testrunner, "distributions/test_beta.jl")
-    addtests(testrunner, "distributions/test_categorical.jl")
-    addtests(testrunner, "distributions/test_contingency.jl")
-    addtests(testrunner, "distributions/test_exp_linear_quadratic.jl")
-    addtests(testrunner, "distributions/test_dirichlet_matrix.jl")
-    addtests(testrunner, "distributions/test_dirichlet.jl")
-    addtests(testrunner, "distributions/test_gamma.jl")
-    addtests(testrunner, "distributions/test_gamma_inverse.jl")
-    addtests(testrunner, "distributions/test_mv_normal_mean_covariance.jl")
-    addtests(testrunner, "distributions/test_mv_normal_mean_precision.jl")
-    addtests(testrunner, "distributions/test_mv_normal_weighted_mean_precision.jl")
-    addtests(testrunner, "distributions/test_normal_mean_variance.jl")
-    addtests(testrunner, "distributions/test_normal_mean_precision.jl")
-    addtests(testrunner, "distributions/test_normal_weighted_mean_precision.jl")
-    addtests(testrunner, "distributions/test_normal.jl")
-    addtests(testrunner, "distributions/test_pointmass.jl")
-    addtests(testrunner, "distributions/test_wishart.jl")
-    addtests(testrunner, "distributions/test_wishart_inverse.jl")
-    addtests(testrunner, "distributions/test_sample_list.jl")
-    addtests(testrunner, "distributions/test_function.jl")
-    addtests(testrunner, "distributions/test_mixture_distribution.jl")
-
     addtests(testrunner, "test_message.jl")
 
     addtests(testrunner, "variables/test_variable.jl")
@@ -262,6 +230,7 @@ end
     addtests(testrunner, "pipeline/test_logger.jl")
 
     addtests(testrunner, "test_node.jl")
+    addtests(testrunner, "nodes/delta/test_delta.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
@@ -270,6 +239,7 @@ end
     addtests(testrunner, "nodes/test_subtraction.jl")
     addtests(testrunner, "nodes/test_probit.jl")
     addtests(testrunner, "nodes/test_autoregressive.jl")
+    addtests(testrunner, "nodes/test_gcv.jl")
     addtests(testrunner, "nodes/test_normal_mean_precision.jl")
     addtests(testrunner, "nodes/test_normal_mean_variance.jl")
     addtests(testrunner, "nodes/test_mv_normal_mean_precision.jl")

@@ -1,12 +1,12 @@
 
-@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass, meta::Union{<:AbstractCorrection, Nothing}) = PointMass(mean(m_A) \ mean(m_out))
+@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::PointMass, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = PointMass(mean(m_A) \ mean(m_out))
 
-@rule typeof(*)(:in, Marginalisation) (m_out::GammaDistributionsFamily, m_A::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::GammaDistributionsFamily, m_A::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     return GammaShapeRate(shape(m_out), rate(m_out) * mean(m_A))
 end
 
 # if A is a matrix, then the result is multivariate
-@rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
     W = correction!(meta, A' * W_out * A)
@@ -14,8 +14,8 @@ end
 end
 
 # if A is a vector, then the result is univariate
-# this rule links to the special case (AbstractVector * Univariate) for forward (:out) rule
-@rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+# this rule links to the special case (AbstractVector * Univariate) for forward (:out) rule 
+@rule typeof(*)(:in, Marginalisation) (m_out::MultivariateNormalDistributionsFamily, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     A = mean(m_A)
     ξ_out, W_out = weightedmean_precision(m_out)
     W = correction!(meta, dot(A, W_out, A))
@@ -23,7 +23,7 @@ end
 end
 
 # if A is a scalar, then the input is either univariate or multivariate
-@rule typeof(*)(:in, Marginalisation) (m_out::F, m_A::PointMass{<:Real}, meta::Union{<:AbstractCorrection, Nothing}) where {F <: NormalDistributionsFamily} = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::F, m_A::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) where {F <: NormalDistributionsFamily} = begin
     A = mean(m_A)
     @logscale -logdet(A)
     ξ_out, W_out = weightedmean_precision(m_out)
@@ -32,7 +32,7 @@ end
 end
 
 # specialized versions for mean-covariance parameterization
-@rule typeof(*)(:in, Marginalisation) (m_out::MvNormalMeanCovariance, m_A::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::MvNormalMeanCovariance, m_A::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     A = mean(m_A)
     μ_out, Σ_out = mean_cov(m_out)
 
@@ -44,7 +44,7 @@ end
     return MvNormalWeightedMeanPrecision(tmp * μ_out, W)
 end
 
-@rule typeof(*)(:in, Marginalisation) (m_out::MvNormalMeanCovariance, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrection, Nothing}) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::MvNormalMeanCovariance, m_A::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     A = mean(m_A)
     μ_out, Σ_out = mean_cov(m_out)
 
@@ -55,66 +55,57 @@ end
     return NormalWeightedMeanPrecision(dot(tmp, μ_out), W)
 end
 
+@rule typeof(*)(:in, Marginalisation) (
+    m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
+    μ_A, var_A = mean_var(m_A)
+    μ_out, var_out = mean_var(m_out)
+    log_backwardpass = (x) -> -log(abs(x)) - 0.5 * log(2π * (var_A + var_out / x^2)) - 1 / 2 * (μ_out - x * μ_A)^2 / (var_A * x^2 + var_out)
+    return ContinuousUnivariateLogPdf(log_backwardpass)
+end
 
-### Test for gp
-@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Tuple{ProcessMeta, TinyCorrection}) = begin
+@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateDistribution, m_A::UnivariateDistribution, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     return @call_rule typeof(*)(:A, Marginalisation) (m_out = m_out, m_in = m_A, meta = meta)
 end
 
-@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::LogNormal, meta::Tuple{ProcessMeta, TinyCorrection}) = begin
-    return @call_rule typeof(*)(:A, Marginalisation) (m_out = m_out, m_in = m_A, meta = TinyCorrection())
-end 
-
-@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
-    backward_in = (x) -> -log(abs(x)) + logpdf(m_A,mean(m_out)/x)
-    scalefactor = (x) -> exp(backward_in(x))*exp(x^2)
-    points, w = ReactiveMP.gausshermite(120)
-    Z = dot(w,scalefactor.(points))
-    # nsamples = 3000
-    # samples = rand(StableRNG(1),m_A,nsamples)
-    # Z = sum(1 ./ abs.(samples)) / nsamples
-    if isnothing(messages[2].addons)
-        @logscale log(Z)
-    else
-        @logscale log(Z) + getlogscale(messages[2]) #correct 
-    end
-    return ContinuousUnivariateLogPdf(backward_in)
+#------------------------
+# Real * NormalDistributions
+#------------------------
+@rule typeof(*)(:in, Marginalisation) (m_A::PointMass{<:Real}, m_out::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    @logscale 0
+    a = mean(m_A)
+    μ_out, v_out = mean_var(m_out)
+    return NormalMeanVariance(μ_out / a, v_out / a^2)
 end
 
-
-@rule typeof(*)(:in, Marginalisation) (m_out::PointMass, m_A::GaussianProcess, meta::ProcessMeta) = begin 
-    index = meta.index
-    m_gp, cov_gp = mean_cov(m_A.finitemarginal)
-    μ_in = m_gp[index]
-    var_in = cov_gp[index,index]
-    return @call_rule typeof(*)(:in, Marginalisation) (m_out=m_out,m_A=NormalMeanVariance(μ_in,var_in),meta=TinyCorrection())
+@rule typeof(*)(:in, Marginalisation) (m_A::PointMass{<:Real}, m_out::MvNormalMeanCovariance, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    @logscale 0
+    a = mean(m_A)
+    μ_out, v_out = mean_cov(m_out)
+    return MvNormalMeanCovariance(μ_out / a, v_out / a^2)
 end
 
-@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
-    μ_in, var_in = mean_var(m_A)
-    μ_out, var_out = mean_var(m_out)
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * abs(var_in + var_out / x^2))  - 1/2 * (μ_out / x - μ_in)^2 / (var_in + var_out / x^2)
-    return ContinuousUnivariateLogPdf(backwardpass)
+@rule typeof(*)(:in, Marginalisation) (m_A::PointMass{<:Real}, m_out::MvNormalMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    @logscale 0
+    a = mean(m_A)
+    μ_out, w_out = mean_precision(m_out)
+    return MvNormalMeanPrecision(μ_out / a, a^2 * w_out)
 end
 
-
-
-@rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::GaussianProcess, meta::ProcessMeta) = begin 
-    index = meta.index
-    m_gp, cov_gp = mean_cov(m_A.finitemarginal)
-    d_A = NormalMeanVariance(m_gp[index], cov_gp[index,index])
-    return @call_rule typeof(*)(:in, Marginalisation) (m_out=m_out,m_A=d_A,meta=TinyCorrection())
+@rule typeof(*)(:in, Marginalisation) (m_A::PointMass{<:Real}, m_out::MvNormalWeightedMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    @logscale 0
+    a = mean(m_A)
+    ξ_out, w_out = weightedmean_precision(m_out)
+    return MvNormalWeightedMeanPrecision(a * ξ_out, a^2 * w_out)
 end
 
+@rule typeof(*)(:in, Marginalisation) (m_A::NormalDistributionsFamily, m_out::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    return @call_rule typeof(*)(:in, Marginalisation) (m_A = m_out, m_out = m_A, meta = meta, addons = getaddons()) # symmetric rule
+end
 
-
-# @rule typeof(*)(:in, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_A::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin
-#     μ_A, var_A = mean_var(m_A)
-#     μ_out, var_out = mean_var(m_out)
-#     log_backwardpass = (x) -> -log(abs(x)) - 0.5 * log(2π * (var_A + var_out / x^2)) - 1 / 2 * (μ_out - x * μ_A)^2 / (var_A * x^2 + var_out)
-#     return ContinuousUnivariateLogPdf(log_backwardpass)
-# end
-
-# @rule typeof(*)(:in, Marginalisation) (m_out::UnivariateDistribution, m_A::UnivariateDistribution, meta::Union{<:AbstractCorrection, Nothing}) = begin
-#     return @call_rule typeof(*)(:A, Marginalisation) (m_out = m_out, m_in = m_A, meta = meta)
-# end
+#------------------------
+# UniformScaling * NormalDistributions
+#------------------------
+@rule typeof(*)(:in, Marginalisation) (m_A::PointMass{<:UniformScaling}, m_out::NormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+    return @call_rule typeof(*)(:in, Marginalisation) (m_A = PointMass(mean(m_A).λ), m_out = m_out, meta = meta, addons = getaddons()) # dispatch to real * normal
+end

@@ -23,28 +23,6 @@ An alias for the `Matrix{Float64}(I, n, n)`. Returns a matrix of size `n x n` wi
 """
 diageye(n::Int) = diageye(Float64, n)
 
-function normalize_sum(x::Array{Float64, 1})
-    x ./ sum(x)
-end
-
-const sigmoid = logistic
-
-dtanh(x) = 1 - tanh(x)^2
-
-"""
-    mirrorlog(x)
-
-Returns `log(1 - x)`.
-"""
-mirrorlog(x) = log(1 - x)
-
-"""
-    xtlog(x)
-
-Returns `x * log(x)`.
-"""
-xtlog(x) = x * log(x)
-
 """
     negate_inplace!(A)
 
@@ -131,56 +109,14 @@ end
 """
     v_a_vT(v, a)
 
-Computes v*a*v^T with a single allocation.
+Computes v*a*v^T efficiently.
 """
-function v_a_vT(v::AbstractVector, a::Real)
-    T      = promote_type(eltype(v), typeof(a))
-    result = zeros(T, length(v), length(v))
-    mul!(result, v, v', a, one(T))
-    return result
-end
+v_a_vT(v, a) = v * a * v'
+v_a_vT(v1, a, v2) = v1 * a * v2'
 
-function v_a_vT(v, a)
-    result = v * v'
-    result *= a
-    return result
-end
-
-"""
-    v_a_vT(v1, a, v2)
-
-Computes v1*a*v2^T with a single allocation.
-"""
-function v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector)
-    T      = promote_type(eltype(v1), typeof(a), eltype(v2))
-    result = zeros(T, length(v1), length(v2))
-    mul!(result, v1, v2', a, one(T))
-    return result
-end
-
-function v_a_vT(v1, a, v2)
-    result = v1 * v2'
-    result *= a
-    return result
-end
-
-"""
-    mvbeta(x)
-
-Computes the multivariate beta distribution over the vector x.
-"""
-function mvbeta(x::Vector)
-    return prod(gamma, x) / gamma(sum(x))
-end
-
-"""
-    logmvbeta(x)
-
-Computes the numerically stable logarithm of the multivariate beta distribution over the vector x.
-"""
-function logmvbeta(x::Vector)
-    return sum(loggamma, x) - loggamma(sum(x))
-end
+# More efficient if `a` is a `Real`
+v_a_vT(v::AbstractVector, a::Real) = v * v' * a
+v_a_vT(v1::AbstractVector, a::Real, v2::AbstractVector) = v1 * v2' * a
 
 """
     powerset(iterator)

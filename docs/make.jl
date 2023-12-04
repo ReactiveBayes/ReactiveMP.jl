@@ -4,11 +4,11 @@ using Documenter, ReactiveMP
 ## https://gr-framework.org/workstations.html#no-output
 ENV["GKSwstype"] = "100"
 
-DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
+DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive=true)
 
 makedocs(
     modules  = [ ReactiveMP ],
-    strict   = [ :doctest, :eval_block, :example_block, :meta_block, :parse_error, :setup_block ],
+    warnonly = Documenter.except(:doctest, :eval_block, :example_block, :meta_block, :parse_error, :setup_block),
     clean    = true,
     sitename = "ReactiveMP.jl",
     pages    = [
@@ -24,7 +24,6 @@ makedocs(
                 "Flow"     => "lib/nodes/flow.md"
             ],
             "Message update rules" => "lib/rules/rules.md",
-            "Prod implementation" => "lib/prod.md",
             "Helper utils"        => "lib/helpers.md",
             "Algebra utils"       => "lib/algebra/common.md",
             "Exported methods"    => "lib/methods.md"

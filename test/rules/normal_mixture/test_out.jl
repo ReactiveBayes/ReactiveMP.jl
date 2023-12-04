@@ -1,9 +1,6 @@
 module RulesNormalMixtureOutTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 

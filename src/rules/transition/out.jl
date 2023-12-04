@@ -1,3 +1,4 @@
+import Base.Broadcast: BroadcastFunction
 
 # Belief Propagation                #
 # --------------------------------- #
@@ -20,20 +21,12 @@ end
 # --------------------------------- #
 
 @rule Transition(:out, Marginalisation) (q_in::Categorical, q_a::Any) = begin
-    a = clamp.(exp.(mean(log, q_a) * probvec(q_in)), tiny, Inf)
+    a = clamp.(exp.(mean(BroadcastFunction(log), q_a) * probvec(q_in)), tiny, Inf)
     return Categorical(a ./ sum(a))
 end
 
 @rule Transition(:out, Marginalisation) (m_in::Categorical, q_a::ContinuousMatrixDistribution) = begin
-    ### scalefactor 
-    # if isnothing(messages[1].addons)
-    #     @logscale 0
-    # else
-    #     @logscale getlogscale(messages[1])#correct 
-    # end
-    #####
-    @logscale 0
-    a = clamp.(exp.(mean(log, q_a)) * probvec(m_in), tiny, Inf)
+    a = clamp.(exp.(mean(BroadcastFunction(log), q_a)) * probvec(m_in), tiny, Inf)
     return Categorical(a ./ sum(a))
 end
 

@@ -1,8 +1,7 @@
 module RulesORMarginalsTest
 
-using Test
-using ReactiveMP
-using Random
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+
 import ReactiveMP: @test_rules, @test_marginalrules
 
 @testset "rules:OR:marginals" begin

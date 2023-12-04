@@ -1,20 +1,17 @@
 module RulesProbitInTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
 
 import ReactiveMP: @test_rules
 
 @testset "rules:Probit:in" begin
     @testset "Belief Propagation: (m_out::PointMass, )" begin
-        @test_rules [check_type_promotion = true] Probit(:in, Marginalisation) [
+        @test_rules [check_type_promotion = true, atol = [Float64 => 1e-5]] Probit(:in, Marginalisation) [
             (input = (m_out = PointMass(1.0),), output = ContinuousUnivariateLogPdf((z) -> log(normcdf(z)))),
-            (input = (m_out = PointMass(0.8),), output = ContinuousUnivariateLogPdf((z) -> log(0.2 + 0.6 * normcdf(z)))),
+            (input = (m_out = PointMass(0.8),), output = ContinuousUnivariateLogPdf((z) -> log(0.2 + 0.6 * normcdf(Float64(z))))),
             (input = (m_out = PointMass(0.5),), output = ContinuousUnivariateLogPdf((z) -> log(0.5))),
-            (input = (m_out = PointMass(0.0),), output = ContinuousUnivariateLogPdf((z) -> log(1 - normcdf(z))))
+            (input = (m_out = PointMass(0.0),), output = ContinuousUnivariateLogPdf((z) -> log(1 - normcdf(Float64(z)))))
         ]
     end
 

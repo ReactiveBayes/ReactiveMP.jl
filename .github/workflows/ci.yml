@@ -3,11 +3,9 @@ on:
   workflow_dispatch:
   pull_request:
     types: [review_requested,reopened,synchronize]
-  pull_request_review:
-    types: [submitted,edited]
   push:
     branches:
-      - 'master'
+      - 'main'
     tags: '*'
   check_run:
     types: [rerequested]
@@ -32,7 +30,6 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.6'
           - '1.9'
         os:
           - ubuntu-latest

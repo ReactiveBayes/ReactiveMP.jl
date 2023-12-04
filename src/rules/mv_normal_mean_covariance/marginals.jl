@@ -1,11 +1,11 @@
 export marginalrule
 
 @marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_Σ::PointMass) = begin
-    return (out = prod(ProdAnalytical(), MvNormalMeanCovariance(mean(m_μ), mean(m_Σ)), m_out), μ = m_μ, Σ = m_Σ)
+    return (out = prod(ClosedProd(), MvNormalMeanCovariance(mean(m_μ), mean(m_Σ)), m_out), μ = m_μ, Σ = m_Σ)
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_Σ::PointMass) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), m_μ, MvNormalMeanCovariance(mean(m_out), mean(m_Σ))), Σ = m_Σ)
+    return (out = m_out, μ = prod(ClosedProd(), m_μ, MvNormalMeanCovariance(mean(m_out), mean(m_Σ))), Σ = m_Σ)
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ_Σ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_Σ::PointMass) = begin
@@ -71,9 +71,9 @@ end
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_Σ::Any) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), MvNormalMeanCovariance(mean(m_out), mean(q_Σ)), m_μ))
+    return (out = m_out, μ = prod(ClosedProd(), MvNormalMeanCovariance(mean(m_out), mean(q_Σ)), m_μ))
 end
 
 @marginalrule MvNormalMeanCovariance(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_Σ::Any) = begin
-    return (out = prod(ProdAnalytical(), MvNormalMeanCovariance(mean(m_μ), mean(q_Σ)), m_out), μ = m_μ)
+    return (out = prod(ClosedProd(), MvNormalMeanCovariance(mean(m_μ), mean(q_Σ)), m_out), μ = m_μ)
 end

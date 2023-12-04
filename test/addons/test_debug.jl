@@ -1,8 +1,6 @@
 module ReactiveMPAddonsDebugTest
 
-using Test
-using ReactiveMP
-using Distributions
+using Test, ReactiveMP, Distributions, BayesBase, ExponentialFamily
 
 @testset "Debug addon" begin
     import ReactiveMP: AddonDebug

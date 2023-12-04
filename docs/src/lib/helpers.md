@@ -10,12 +10,6 @@ ReactiveMP.SkipIndexIterator
 ReactiveMP.skipindex
 ```
 
-## [deep_eltype](@id lib-helpers-deep-eltype)
-
-```@docs
-ReactiveMP.deep_eltype
-```
-
 ## [FunctionalIndex](@id lib-helpers-functional-index)
 
 ```@docs

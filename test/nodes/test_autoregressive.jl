@@ -1,11 +1,8 @@
 module AutoregressiveNodeTest
 
-using Test
-using ReactiveMP
-using Random
-using Distributions
+using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
-import ReactiveMP: @test_rules, getvform, getorder, getstype
+import ReactiveMP: getvform, getorder, getstype
 
 @testset "AutoregressiveNode" begin
     @testset "Creation" begin

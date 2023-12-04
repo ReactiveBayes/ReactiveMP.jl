@@ -32,25 +32,27 @@ getinverse(meta::Tuple{ProcessMeta,DeltaMeta}) = meta[2].inverse
 import Base: map
 
 struct DeltaFn{F} end
-struct DeltaFnNode{F, N, L, M} <: AbstractFactorNode
+struct DeltaFnNode{F, P, N, S, L, M} <: AbstractFactorNode
     fn::F
 
+    proxy::P
     out::NodeInterface
     ins::NTuple{N, IndexedNodeInterface}
 
+    statics        :: S
     localmarginals :: L
     metadata       :: M
 end
 
 as_node_symbol(::Type{<:DeltaFn{F}}) where {F} = Symbol(replace(string(nameof(F)), "#" => ""))
 
-functionalform(factornode::DeltaFnNode{F}) where {F}      = DeltaFn{F}
-sdtype(factornode::DeltaFnNode)                           = Deterministic()
-interfaces(factornode::DeltaFnNode)                       = (factornode.out, factornode.ins...)
-factorisation(factornode::DeltaFnNode{F, N}) where {F, N} = ntuple(identity, N + 1)
-localmarginals(factornode::DeltaFnNode)                   = factornode.localmarginals.marginals
-localmarginalnames(factornode::DeltaFnNode)               = map(name, localmarginals(factornode))
-metadata(factornode::DeltaFnNode)                         = factornode.metadata
+functionalform(factornode::DeltaFnNode{F}) where {F} = DeltaFn{F}
+sdtype(factornode::DeltaFnNode)                      = Deterministic()
+interfaces(factornode::DeltaFnNode)                  = (factornode.out, factornode.ins...)
+factorisation(factornode::DeltaFnNode{F}) where {F}  = ntuple(identity, length(factornode.ins) + 1)
+localmarginals(factornode::DeltaFnNode)              = factornode.localmarginals.marginals
+localmarginalnames(factornode::DeltaFnNode)          = map(name, localmarginals(factornode))
+metadata(factornode::DeltaFnNode)                    = factornode.metadata
 
 collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
     "Delta node `$(as_node_symbol(D))` requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
@@ -66,7 +68,7 @@ function nodefunction(factornode::DeltaFnNode)
     end
 end
 
-nodefunction(factornode::DeltaFnNode, ::Val{:out})            = factornode.fn
+nodefunction(factornode::DeltaFnNode, ::Val{:out})            = factornode.proxy
 nodefunction(factornode::DeltaFnNode, ::Val{:in})             = getinverse(metadata(factornode))
 nodefunction(factornode::DeltaFnNode, ::Val{:in}, k::Integer) = getinverse(metadata(factornode), k)
 
@@ -89,7 +91,7 @@ call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()
 function call_rule_make_node(::CallRuleNodeRequired, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
     # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
     # Doing so will most likely throw an error
-    return DeltaFnNode(nodetype, NodeInterface(:out, Marginalisation()), (), nothing, collect_meta(DeltaFn{F}, meta))
+    return DeltaFnNode(nodetype, nodetype, NodeInterface(:out, Marginalisation()), (), (), nothing, collect_meta(DeltaFn{F}, meta))
 end
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
@@ -103,20 +105,37 @@ function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
     end
 end
 
-function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::AbstractVariable, ins::NTuple{N, <:AbstractVariable}) where {F <: Function, N}
+import FixedArguments
+import FixedArguments: FixedArgument, FixedPosition
+
+function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::AbstractVariable, ins::Tuple) where {F <: Function}
     out_interface = NodeInterface(:out, Marginalisation())
-    ins_interface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(:in, Marginalisation())), N)
+
+    # The inputs for the deterministic function are being splitted into two groups:
+    # 1. Random variables and 2. Const/Data variables (static inputs)
+    randoms, statics = __split_static_inputs(ins)
+
+    # We create interfaces only for random variables 
+    # The static variables are being passed to the `FixedArguments.fix` function
+    ins_interface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(:in, Marginalisation())), length(randoms))
 
     out_index = getlastindex(out)
     connectvariable!(out_interface, out, out_index)
     setmessagein!(out, out_index, messageout(out_interface))
 
-    foreach(zip(ins_interface, ins)) do (in_interface, in_var)
+    foreach(zip(ins_interface, randoms)) do (in_interface, in_var)
         in_index = getlastindex(in_var)
         connectvariable!(in_interface, in_var, in_index)
         setmessagein!(in_var, in_index, messageout(in_interface))
     end
 
+    foreach(statics) do static
+        setused!(FixedArguments.value(static))
+    end
+
+    # The proxy is the actual node function, but with the static inputs already fixed at their respective position
+    # We use the `__unpack_latest_static` function to get the latest value of the static variables
+    proxy          = FixedArguments.fix(fn, __unpack_latest_static, statics)
     localmarginals = FactorNodeLocalMarginals((FactorNodeLocalMarginal(1, 1, :out), FactorNodeLocalMarginal(2, 2, :ins)))
     meta           = collect_meta(DeltaFn{F}, metadata(options))
     pipeline       = getpipeline(options)
@@ -125,8 +144,39 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
         @warn "Delta node does not support the `pipeline` option."
     end
 
-    return DeltaFnNode(fn, out_interface, ins_interface, localmarginals, meta)
+    if !isnothing(getinverse(meta)) && !isempty(statics)
+        error("The inverse function specification is not supported for the Delta node, which is connected to datavar/constvar edges.")
+    end
+
+    return DeltaFnNode(fn, proxy, out_interface, ins_interface, statics, localmarginals, meta)
 end
+
+# This function takes the inputs of the deterministic nodes and sorts them into two 
+# groups: the first group is of type `RandomVariable` and the second group is of type `ConstVariable/DataVariable`
+__split_static_inputs(ins::Tuple) = __split_static_inputs(Val(1), (), (), ins)
+
+# Stop if the `remaining` tuple is empty
+__split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple{}) where {N} = (randoms, statics)
+# Split the `remaining` tuple into head (current) and tail (remaining)
+__split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple) where {N} = __split_static_inputs(Val(N), randoms, statics, first(remaining), Base.tail(remaining))
+
+# If the current input is a random variable, we add it to the `randoms` tuple
+function __split_static_inputs(::Val{N}, randoms, statics, current::RandomVariable, remaining::Tuple) where {N}
+    return __split_static_inputs(Val(N + 1), (randoms..., current), statics, remaining)
+end
+
+# If the current input is a const/data variable, we add it to the `statics` tuple with its respective position
+function __split_static_inputs(::Val{N}, randoms, statics, current::Union{ConstVariable, DataVariable}, remaining::Tuple) where {N}
+    return __split_static_inputs(Val(N + 1), randoms, (statics..., FixedArgument(FixedPosition(N), current)), remaining)
+end
+
+# This function is used to unpack the latest value of the static variables
+# For constvar we just return the value
+# For datavar we get the latest value from the data stream
+__unpack_latest_static(_, constvar::ConstVariable) = getconst(constvar)
+__unpack_latest_static(_, datavar::DataVariable) = BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(datavar, 1))))
+
+##
 
 function make_node(fform::F, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable}) where {F <: Function}
     return __make_delta_fn_node(fform, options, args[1], args[2:end])
