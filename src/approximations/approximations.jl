@@ -62,7 +62,6 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
 
         @inbounds cs[index] = cv
     end
-
     broadcast!(/, mean, mean, norm)
 
     cov = zeros(T, ndims, ndims)
@@ -86,7 +85,8 @@ function approximate_kernel_expectation(method::AbstractApproximationMethod, g::
     weights = getweights(method, m, P)
     points  = getpoints(method, m, P)
 
-    gbar = zeros(ndims, ndims)
+    # gbar = zeros(ndims, ndims) #old code 
+    gbar = g(m) - g(m)
     foreach(zip(weights, points)) do (weight, point)
         axpy!(weight, g(point), gbar) # gbar = gbar + weight * g(point)
     end
