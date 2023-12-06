@@ -100,6 +100,7 @@ setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginal::Distributi
 setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginals)              = _setmarginals!(Base.IteratorSize(marginals), variables, marginals)
 
 function _setmarginals!(::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, marginals)
+    @assert length(variables) == length(marginals) "Variables $(variables) and marginals $(marginals) should have the same length"
     foreach(zip(variables, marginals)) do (variable, marginal)
         setmarginal!(variable, marginal)
     end
@@ -119,6 +120,7 @@ setmessages!(variables::AbstractArray{<:AbstractVariable}, message::Distribution
 setmessages!(variables::AbstractArray{<:AbstractVariable}, messages)              = _setmessages!(Base.IteratorSize(messages), variables, messages)
 
 function _setmessages!(::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, messages)
+    @assert length(variables) == length(messages) "Variables $(variables) and messages $(messages) should have the same length"
     foreach(zip(variables, messages)) do (variable, message)
         setmessage!(variable, message)
     end

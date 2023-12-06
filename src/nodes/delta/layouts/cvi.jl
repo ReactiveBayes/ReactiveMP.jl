@@ -50,6 +50,7 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
 
+        vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)

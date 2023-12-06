@@ -184,7 +184,7 @@ if isempty(testrunner.enabled_tests)
     println("Running all tests...")
     # We `pirate` `mean` methods for distributions in `Distributions.jl`
     # `project_toml_formatting` is broken with Extensions
-    Aqua.test_all(ReactiveMP; ambiguities = false, piracy = false, project_toml_formatting = false)
+    Aqua.test_all(ReactiveMP; ambiguities = false, piracies = false, deps_compat = (; check_extras = false, check_weakdeps = true))
 else
     println("Running specific tests:")
     foreach(testrunner.enabled_tests) do test
@@ -228,6 +228,7 @@ end
     addtests(testrunner, "pipeline/test_logger.jl")
 
     addtests(testrunner, "test_node.jl")
+    addtests(testrunner, "nodes/delta/test_delta.jl")
     addtests(testrunner, "nodes/flow/test_flow.jl")
     addtests(testrunner, "nodes/test_addition.jl")
     addtests(testrunner, "nodes/test_bifm.jl")
