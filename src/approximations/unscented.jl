@@ -97,15 +97,13 @@ end
 function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {C, G}
     m = first(means)
     V = first(covs)
-
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     g_sigma = g.(sigma_points)
     m_tilde = sum(weights_m .* g_sigma)
-    V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
-
+    V_tilde = sum(weights_c .* map(d -> (d - m_tilde)*(d-m_tilde)', g_sigma))
     # Compute `C_tilde` only if `C === true`
-    C_tilde = C ? sum(weights_c .* (sigma_points .- m) .* (g_sigma .- m_tilde)) : nothing
+    C_tilde = C ? sum(weights_c .* map(d -> (d[1] - m)*(d[2] - m_tilde)', zip(sigma_points,g_sigma)), ) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
 end
