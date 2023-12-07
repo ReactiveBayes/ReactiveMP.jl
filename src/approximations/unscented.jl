@@ -101,9 +101,9 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Re
 
     g_sigma = g.(sigma_points)
     m_tilde = sum(weights_m .* g_sigma)
-    V_tilde = sum(weights_c .* map(d -> (d - m_tilde)*(d-m_tilde)', g_sigma))
+    V_tilde = sum(weights_c .* map(d -> kron(d - m_tilde,(d-m_tilde)'), g_sigma))
     # Compute `C_tilde` only if `C === true`
-    C_tilde = C ? sum(weights_c .* map(d -> (d[1] - m)*(d[2] - m_tilde)', zip(sigma_points,g_sigma)), ) : nothing
+    C_tilde = C ? sum(weights_c .* map(d -> kron(d[1] - m, (d[2] - m_tilde)'), zip(sigma_points,g_sigma)), ) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
 end
