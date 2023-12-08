@@ -1,4 +1,4 @@
-export transfominator, CTransition, ContinuousTransition, CTMeta
+export CTransition, ContinuousTransition, CTMeta
 
 import LazyArrays
 import StatsFuns: log2π
