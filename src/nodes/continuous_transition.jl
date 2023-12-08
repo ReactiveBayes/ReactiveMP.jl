@@ -30,17 +30,14 @@ const CTransition = ContinuousTransition
 @doc raw"""
 `CTMeta` is used as a metadata flag in `ContinuousTransition` to define the transformation function for constructing the matrix `A` from vector `a`.
 
-There are two scenarios for specifying the transformation:
-1. **Linear Transformation**: In this case, `CTMeta` requires a transformation function and the length of vector `a`. 
-2. **Nonlinear Transformation**: For nonlinear transformations, `CTMeta` expects a transformation function and a vector `â`, which acts as an expansion point for approximating the transformation linearly.
+`CTMeta` requires a transformation function and the length of vector `a`, which acts as an expansion point for approximating the transformation linearly. If transformation appears to be linear, then no approximation is performed.
 
 Constructors:
-- `CTMeta(transformation::Function, len::Integer)`: Used for linear transformations.
-- `CTMeta(transformation::Function, â::Vector{<:Real})`: Used for nonlinear transformations.
+- `CTMeta(transformation::Function, â::Vector{<:Real})`: Constructs a `CTMeta` struct with the transformation function and allocated basis vectors.
 
 Fields:
 - `ds`: A tuple indicating the dimensionality of the ContinuousTransition (dy, dx).
-- `Fs`: Represents the masks, which can be either a Vector of AbstractMatrices or a Function, depending on the transformation type.
+- `f`:  Represents the transformation function that transforms vector `a` into matrix `A`
 - `es`: A Vector of unit vectors used in the transformation process.
 
 The `CTMeta` struct plays a pivotal role in defining how the vector `a` is transformed into the matrix `A`, thus influencing the behavior of the `ContinuousTransition` node.
