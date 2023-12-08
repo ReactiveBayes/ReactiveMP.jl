@@ -31,13 +31,15 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits, Wish
             for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
                 dydx = dy * dx
                 transformation = (a) -> reshape(a, dy, dx)
-                a0 = rand(dydx)
+                mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
+
+                a0 = vec(mA)
+
                 metal = CTMeta(transformation, a0)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μx, Σx = rand(rng, dx), Lx * Lx'
                 μy, Σy = rand(rng, dy), Ly * Ly'
         
-                mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
                 qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
                 qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
