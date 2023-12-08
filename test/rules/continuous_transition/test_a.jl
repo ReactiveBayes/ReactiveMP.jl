@@ -57,7 +57,7 @@ import ReactiveMP: @test_rules, getjacobians, getunits
             dy, dx = 2, 2
             dydx = dy * dy
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
-            a0 = zeros(1)
+            a0 = zeros(Int, 1)
             metanl = CTMeta(transformation, a0)
             μx, Σx = ones(dx),  diageye(dx)
             μy, Σy = ones(dy), diageye(dy)
