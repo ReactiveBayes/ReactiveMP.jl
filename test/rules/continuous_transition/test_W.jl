@@ -33,7 +33,7 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits, Wish
                 transformation = (a) -> reshape(a, dy, dx)
                 mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
-                a0 = vec(mA)
+                a0 = Float32.(vec(mA))
 
                 metal = CTMeta(transformation, a0)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)

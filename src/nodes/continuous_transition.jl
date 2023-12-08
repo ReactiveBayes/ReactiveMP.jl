@@ -67,8 +67,6 @@ gettransformation(meta::CTMeta) = meta.f
 getjacobians(ctmeta::CTMeta, a) = process_Fs(gettransformation(ctmeta), a)
 process_Fs(f::Function, a) = [ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 1:size(f(a), 1)]
 
-@node ContinuousTransition Stochastic [y, x, a, W]
-
 default_meta(::Type{CTMeta}) = error("ContinuousTransition node requires meta flag explicitly specified")
 
 default_functional_dependencies_pipeline(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies((3,), (nothing,))

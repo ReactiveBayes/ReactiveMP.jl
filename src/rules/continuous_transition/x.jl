@@ -11,10 +11,8 @@
 
     W = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
 
-    Σ₁ = Hermitian(pinv(mA) * (Vy) * pinv(mA') + pinv(mA' * mW * mA))
-
-    Ξ = (pinv(Σ₁) + W)
-    z = pinv(Σ₁) * pinv(mA) * my
+    z = mA'* inv(Vy + inv(mW)) * my
+    Ξ = mA'* inv(Vy + inv(mW)) * mA + W
 
     return MvNormalWeightedMeanPrecision(z, Ξ)
 end

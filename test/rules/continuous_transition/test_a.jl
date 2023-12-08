@@ -28,7 +28,7 @@ import ReactiveMP: @test_rules, getjacobians, getunits
             for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
                 dydx = dy * dx
                 transformation = (a) -> reshape(a, dy, dx)
-                a0 = rand(dydx)
+                a0 = rand(Float32, dydx)
                 metal = CTMeta(transformation, a0)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μx, Σx = rand(rng, dx), Lx * Lx'
