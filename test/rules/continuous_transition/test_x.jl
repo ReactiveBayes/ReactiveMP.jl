@@ -5,7 +5,6 @@ using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, Lin
 import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
 
 @testset "rules:ContinuousTransition:x" begin
-
     rng = MersenneTwister(42)
 
     @testset "Linear transformation" begin
@@ -16,8 +15,8 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
 
             mW = mean(q_W)
 
-            Λ = tr(mW*ΣA)*UA + mA'*inv(Vy + inv(mW))*mA
-            ξ = mA'*inv(Vy + inv(mW))*my
+            Λ = tr(mW * ΣA) * UA + mA' * inv(Vy + inv(mW)) * mA
+            ξ = mA' * inv(Vy + inv(mW)) * my
             return MvNormalWeightedMeanPrecision(ξ, Λ)
         end
 
@@ -32,25 +31,23 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
                 metal = CTMeta(transformation, a0)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μy, Σy = rand(rng, dy), Ly * Ly'
-                
+
                 qy = MvNormalMeanCovariance(μy, Σy)
                 qa = MvNormalMeanCovariance(a0, diageye(dydx))
-                qW = Wishart(dy+1, diageye(dy))
-    
+                qW = Wishart(dy + 1, diageye(dy))
+
                 @test_rules [check_type_promotion = false] ContinuousTransition(:x, Marginalisation) [(
-                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metal),
-                    output = benchmark_rule(qy, qW, mA, ΣA, UA)
+                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule(qy, qW, mA, ΣA, UA)
                 )
                 # Additional test cases with different distributions and metadata settings
                 # Each case should represent a realistic scenario for your application
-                ]
+]
             end
         end
     end
 
     @testset "Nonlinear transformation" begin
-        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)" begin
-
+        @testset "Structured: (m_y::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)" begin
             dy, dx = 2, 2
             dydx = dy * dy
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
@@ -59,17 +56,14 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
             μy, Σy = zeros(dy), diageye(dy)
 
             qy = MvNormalMeanCovariance(μy, Σy)
-            qa = MvNormalMeanCovariance(a0, tiny*diageye(1))
-            qW = Wishart(dy+1, diageye(dy))
+            qa = MvNormalMeanCovariance(a0, tiny * diageye(1))
+            qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = false] ContinuousTransition(:x, Marginalisation) [(
-                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metanl),
-                    output = MvGaussianWeightedMeanPrecision(zeros(dx), 3/4*diageye(dx))
-                )
-            ]
+            @test_rules [check_type_promotion = true] ContinuousTransition(:x, Marginalisation) [(
+                input = (m_y = qy, q_a = qa, q_W = qW, meta = metanl), output = MvGaussianWeightedMeanPrecision(zeros(dx), 3 / 4 * diageye(dx))
+            )]
         end
     end
-
 end
 
 end

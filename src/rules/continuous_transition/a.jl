@@ -1,5 +1,4 @@
 @rule ContinuousTransition(:a, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta) = begin
-
     ma = mean(q_a)
     mW = mean(q_W)
     myx, Vyx = mean_cov(q_y_x)

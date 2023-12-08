@@ -11,8 +11,8 @@
 
     W = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
 
-    z = mA'* inv(Vy + inv(mW)) * my
-    Ξ = mA'* inv(Vy + inv(mW)) * mA + W
+    z = mA' * inv(Vy + inv(mW)) * my
+    Ξ = mA' * inv(Vy + inv(mW)) * mA + W
 
     return MvNormalWeightedMeanPrecision(z, Ξ)
 end
