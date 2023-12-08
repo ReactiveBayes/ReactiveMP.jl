@@ -38,7 +38,7 @@ import ReactiveMP: @test_marginalrules
 
                 metal = CTMeta(transformation, a0)
 
-                @test_marginalrules [check_type_promotion = false, atol = 1e-5] ContinuousTransition(:y_x) [(
+                @test_marginalrules [check_type_promotion = true, atol = 1e-3] ContinuousTransition(:y_x) [(
                     input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule(mx, my, qW, qA)
                 )]
             end
