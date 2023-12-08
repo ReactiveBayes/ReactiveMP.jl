@@ -62,7 +62,6 @@ include("normal_mean_variance/mean.jl")
 include("normal_mean_variance/var.jl")
 include("normal_mean_variance/marginals.jl")
 
-include("matrix_normal/out.jl")
 
 include("mv_normal_mean_precision/out.jl")
 include("mv_normal_mean_precision/mean.jl")
