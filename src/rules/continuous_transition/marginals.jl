@@ -1,20 +1,16 @@
 
-@marginalrule ContinuousTransition(:y_x) (
-    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta
-) = begin
+@marginalrule ContinuousTransition(:y_x) (m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta) = begin
     return continuous_tranition_marginal(m_y, m_x, q_a, q_W, meta)
 end
 
-function continuous_tranition_marginal(
-    m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta
-)
+function continuous_tranition_marginal(m_y::MultivariateNormalDistributionsFamily, m_x::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)
     ma, Va = mean_cov(q_a)
 
-    Fs, es = getmasks(meta, ma), getunits(meta)
+    Fs, es = getjacobians(meta, ma), getunits(meta)
 
     mW = mean(q_W)
 
-    mA = ctcompanion_matrix(ma, meta)
+    mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
 
     b_my, b_Vy = mean_cov(m_y)
     f_mx, f_Vx = mean_cov(m_x)

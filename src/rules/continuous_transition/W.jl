@@ -12,17 +12,16 @@ end
     dy, dx = getdimensionality(meta)
 
     ma, Va = mean_cov(q_a)
-    Fs, es = getmasks(meta, ma), getunits(meta)
+    Fs, es = getjacobians(meta, ma), getunits(meta)
 
-    mA = ctcompanion_matrix(ma, meta)
+    mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
     myx, Vyx = mean_cov(q_y_x)
 
-    mx, Vx = myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
-    my, Vy = myx[1:dy], Vyx[1:dy, 1:dy]
-    Vyx    = Vyx[1:dy, (dy + 1):end]
+    mx, Vx = @views myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
+    my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
+    Vyx    = @views Vyx[1:dy, (dy + 1):end]
 
     Δ = compute_delta(my, Vy, mx, Vx, Vyx, mA, Va, ma, Fs, es)
 
-    # NOTE: WishartFast stores inverse of scale matrix
     return WishartFast(dy + 2, Δ)
 end

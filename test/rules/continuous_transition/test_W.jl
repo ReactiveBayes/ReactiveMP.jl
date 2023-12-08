@@ -1,25 +1,83 @@
 module RulesContinuousTransitionTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
-import ReactiveMP: @test_rules, ctcompanion_matrix, getmasks, getunits, WishartFast
+import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits, WishartFast
 
 @testset "rules:ContinuousTransition:W" begin
-    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, meta::CTMeta)" begin
-        # Example transformation function and vector length for CTMeta
-        meta = CTMeta((a) -> reshape(a, 2, 3), 6)
+    rng = MersenneTwister(42)
 
-        @test_rules [check_type_promotion = true] ContinuousTransition(:W, Marginalisation) [(
-            input = (
-                q_y_x = MvNormalMeanCovariance(zeros(5), diageye(5)),  # Adjust dimensions as needed
-                q_a = MvNormalMeanCovariance(zeros(6), diageye(6)),
-                meta = meta
-            ), output = WishartFast(4, 4 * diageye(2))
-        )
-        # Additional test cases with different distributions and metadata settings
-]
+    @testset "Linear transformation" begin
+        # the following rule is used for testing purposes only
+        # It is derived separately by Thijs van de Laar
+        function benchmark_rule(q_y_x, mA, ΣA, UA)
+            myx, Vyx = mean_cov(q_y_x)
+
+            dy  = size(mA, 1)
+            Vx  = Vyx[(dy + 1):end, (dy + 1):end]
+            Vy  =  Vyx[1:dy, 1:dy]
+            mx  = myx[(dy + 1):end]
+            my  = myx[1:dy]
+            Vyx = Vyx[1:dy, (dy + 1):end]
+
+            G   = tr(Vx*UA)*ΣA + mA*Vx*mA' - mA*Vyx' - Vyx*mA' + Vy + ΣA*mx'*UA*mx + (mA*mx-my)*(mA*mx-my)'
+
+            return WishartFast(dy + 2, G)
+        end
+
+
+        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, meta::CTMeta)" begin
+
+            for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
+                dydx = dy * dx
+                transformation = (a) -> reshape(a, dy, dx)
+                a0 = rand(dydx)
+                metal = CTMeta(transformation, a0)
+                Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
+                μx, Σx = rand(rng, dx), Lx * Lx'
+                μy, Σy = rand(rng, dy), Ly * Ly'
+        
+                mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
+
+                qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+                qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
+
+                @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:W, Marginalisation) [(
+                    input = (
+                        q_y_x = qyx, 
+                        q_a = qa,
+                        meta = metal
+                    ), output = benchmark_rule(qyx, mA, ΣA, UA)
+                )
+        ]
+            end
+        end
     end
-    # Additional tests for edge cases, errors, or specific behaviors of the rule can be added here
+
+    @testset "Nonlinear transformation" begin
+        @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::Any, q_W::Any, meta::CTMeta)" begin
+
+            dy, dx = 2, 2
+            dydx = dy * dy
+            transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
+            a0 = zeros(1)
+            metanl = CTMeta(transformation, a0)
+            μx, Σx = zeros(dx),  diageye(dx)
+            μy, Σy = zeros(dy), diageye(dy)
+
+            qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+            qa = MvNormalMeanCovariance(a0, diageye(1))
+            @test_rules [check_type_promotion = true] ContinuousTransition(:W, Marginalisation) [(
+                input = (
+                    q_y_x = qyx,
+                    q_a = qa,
+                    meta = metanl
+                ),
+                output = WishartFast(dy+2, dy*diageye(dy))
+            )]
+        end
+    end
+
 end
 
 end

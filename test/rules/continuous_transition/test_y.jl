@@ -2,7 +2,7 @@ module RulesContinuousTransitionTest
 
 using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
-import ReactiveMP: @test_rules, ctcompanion_matrix, getmasks, getunits
+import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
 
 @testset "rules:ContinuousTransition:y" begin
     @testset "Structured: (m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta)" begin

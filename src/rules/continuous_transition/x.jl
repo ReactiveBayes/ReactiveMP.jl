@@ -5,9 +5,9 @@
     mW = mean(q_W)
 
     dy, dx = getdimensionality(meta)
-    Fs, es = getmasks(meta, ma), getunits(meta)
+    Fs, es = getjacobians(meta, ma), getunits(meta)
 
-    mA = ctcompanion_matrix(ma, meta)
+    mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
 
     W = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
 
