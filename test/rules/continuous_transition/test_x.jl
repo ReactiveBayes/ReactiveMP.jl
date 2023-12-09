@@ -36,12 +36,9 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
                 qa = MvNormalMeanCovariance(a0, diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                @test_rules [check_type_promotion = false] ContinuousTransition(:x, Marginalisation) [(
+                @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(:x, Marginalisation) [(
                     input = (m_y = qy, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule(qy, qW, mA, ΣA, UA)
-                )
-                # Additional test cases with different distributions and metadata settings
-                # Each case should represent a realistic scenario for your application
-]
+                )]
             end
         end
     end

@@ -56,8 +56,6 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
             )]
         end
     end
-
-    # Additional tests for edge cases, errors, or specific behaviors of the rule can be added here
 end
 
 end
