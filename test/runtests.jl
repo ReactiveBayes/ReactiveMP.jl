@@ -389,5 +389,11 @@ end
     addtests(testrunner, "rules/autoregressive/test_theta.jl")
     addtests(testrunner, "rules/autoregressive/test_marginals.jl")
 
+    addtests(testrunner, "rules/continuous_transition/test_a.jl")
+    addtests(testrunner, "rules/continuous_transition/test_W.jl")
+    addtests(testrunner, "rules/continuous_transition/test_x.jl")
+    addtests(testrunner, "rules/continuous_transition/test_y.jl")
+    addtests(testrunner, "rules/continuous_transition/test_marginals.jl")
+
     run(testrunner)
 end
