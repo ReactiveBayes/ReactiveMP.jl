@@ -4,10 +4,8 @@
 
     mW = mean(q_W)
 
-    dy, dx = getdimensionality(meta)
-    Fs, es = getjacobians(meta, ma), getunits(meta)
-
-    mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
+    epsilon = sqrt.(var(q_a))
+    mA = ctcompanion_matrix(ma, epsilon, meta)
 
     Vy = mA * Vx * mA' + cholinv(mW)
     my = mA * mx

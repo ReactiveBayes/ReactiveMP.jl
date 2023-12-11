@@ -1,4 +1,4 @@
-export CTransition, ContinuousTransition, CTMeta
+export CTransition, ContinuousTransition, CTMeta, ContinuousTransitionMeta
 
 import LazyArrays
 import StatsFuns: log2π
@@ -6,12 +6,12 @@ import StatsFuns: log2π
 @doc raw"""
 The ContinuousTransition node transforms an m-dimensional (dx) vector x into an n-dimensional (dy) vector y via a linear (or nonlinear) transformation with a `n×m`-dimensional matrix `A` that is constructed from a vector `a`.
 
-To construct the matrix `A`, the elements of `a` are reshaped into `A` according to the transformation function provided in the meta. `a` must be of `MultivariateNormalDistributionsFamily` type. If you intend to use univariate Gaussian distributions, use it as a vector of length `1``, e.g. `a ~ MvNormalMeanCovariance([0.0], [1.;])`.
+To construct the matrix `A`, the elements of `a` are reshaped into `A` according to the transformation function provided in the meta. If you intend to use univariate Gaussian distributions, use it as a vector of length `1``, e.g. `a ~ MvNormalMeanCovariance([0.0], [1.;])`.
 
-Check CTMeta for more details on how to specify the transformation function that **must** return a matrix.
+Check ContinuousTransitionMeta for more details on how to specify the transformation function that **must** return a matrix.
 
 ```julia
-y ~ ContinuousTransition(x, a, W) where {meta = CTMeta(transformation, â)}
+y ~ ContinuousTransition(x, a, W) where {meta = ContinuousTransitionMeta(transformation)}
 ```
 Interfaces:
 1. y - n-dimensional output of the ContinuousTransition node.
@@ -28,38 +28,30 @@ const CTransition = ContinuousTransition
 @node ContinuousTransition Stochastic [y, x, a, W]
 
 @doc raw"""
-`CTMeta` is used as a metadata flag in `ContinuousTransition` to define the transformation function for constructing the matrix `A` from vector `a`.
+`ContinuousTransitionMeta` is used as a metadata flag in `ContinuousTransition` to define the transformation function for constructing the matrix `A` from vector `a`.
 
-`CTMeta` requires a transformation function and the length of vector `a`, which acts as an expansion point for approximating the transformation linearly. If transformation appears to be linear, then no approximation is performed.
+`ContinuousTransitionMeta` requires a transformation function and the length of vector `a`, which acts as an expansion point for approximating the transformation linearly. If transformation appears to be linear, then no approximation is performed.
 
 Constructors:
-- `CTMeta(transformation::Function, â::Vector{<:Real})`: Constructs a `CTMeta` struct with the transformation function and allocated basis vectors.
+- `ContinuousTransitionMeta(transformation::Function, â::Vector{<:Real})`: Constructs a `ContinuousTransitionMeta` struct with the transformation function and allocated basis vectors.
 
 Fields:
-- `ds`: A tuple indicating the dimensionality of the ContinuousTransition (dy, dx).
 - `f`:  Represents the transformation function that transforms vector `a` into matrix `A`
-- `es`: A Vector of unit vectors used in the transformation process.
 
-The `CTMeta` struct plays a pivotal role in defining how the vector `a` is transformed into the matrix `A`, thus influencing the behavior of the `ContinuousTransition` node.
+The `ContinuousTransitionMeta` struct plays a pivotal role in defining how the vector `a` is transformed into the matrix `A`, thus influencing the behavior of the `ContinuousTransition` node.
 """
-struct CTMeta{T <: Tuple, F <: Function, V <: Vector{<:AbstractVector}}
-    ds::T # dimensionality of ContinuousTransition (dy, dx)
-    f::F# transformation function
-    es::V # unit vectors
+struct ContinuousTransitionMeta{F <: Function}
+    f::F  # transformation function
 
-    # NOTE: this meta is not user-friendly, I don't like a vector
-    # perhaps making mutable struct with empty meta first will be better from user perspective
-    # meta for transformation of a vector to a matrix
-    function CTMeta(transformation::Function, â::Vector{<:Real})
-        dy, dx = size(transformation(â))
-        es = [StandardBasisVector(dy, i, one(eltype(first(â)))) for i in 1:dy]
-        return new((dy, dx), transformation, es)
+    function ContinuousTransitionMeta(transformation::F) where {F}
+        return new{F}(transformation)
     end
 end
 
-getunits(meta::CTMeta)          = meta.es
-getdimensionality(meta::CTMeta) = meta.ds
+const CTMeta = ContinuousTransitionMeta
+
 gettransformation(meta::CTMeta) = meta.f
+# getctoutputdim(meta::CTMeta, J) = div(size(J, 2), size(J, 1)) # returns dy where J ∈ ℝ^{dx × dydx}
 
 getjacobians(ctmeta::CTMeta, a) = process_Fs(gettransformation(ctmeta), a)
 process_Fs(f::Function, a) = [ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 1:size(f(a), 1)]
@@ -72,12 +64,12 @@ default_functional_dependencies_pipeline(::Type{<:ContinuousTransition}) = Requi
     `ctcompanion_matrix` casts a vector `a` into a matrix `A` by means of linearization of the transformation function `f` around the expansion point `a0`.
 """
 function ctcompanion_matrix(a, epsilon, meta::CTMeta)
-    a0 = a .+ epsilon # expansion point
-    Js, es = getjacobians(meta, a0), getunits(meta)
-    f = gettransformation(meta)
-    dy, _ = getdimensionality(meta)
+    a0 = a + epsilon # expansion point
+    Js = getjacobians(meta, a0)
+    f  = gettransformation(meta)
+    dy = length(Js)
     # we approximate each row of A by a linear function and create a matrix A composed of the approximated rows
-    A = sum(es[i] * (f(a0)[i, :] + Js[i] * (a - a0))' for i in 1:dy)
+    A = sum(StandardBasisVector(dy, i) * (f(a0)[i, :] + Js[i] * (a - a0))' for i in 1:dy)
     return A
 end
 
@@ -86,20 +78,23 @@ end
     myx, Vyx = mean_cov(q_y_x)
     mW       = mean(q_W)
 
-    dy, dx = getdimensionality(meta)
-    Fs, es = getjacobians(meta, ma), getunits(meta)
-    n      = div(ndims(q_y_x), 2)
-    mA     = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
+    Fs = getjacobians(meta, ma) # dx × dydx
+    dy = length(Fs)
+
+    n  = div(ndims(q_y_x), 2)
+    mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
 
     mx, Vx = @views myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
     my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
     Vyx    = @view Vyx[1:dy, (dy + 1):end]
-    g₁     = my' * mW * my + tr(Vy * mW)
-    g₂     = mx' * mA' * mW * my + tr(Vyx * mA' * mW)
-    g₃     = g₂
-    G      = sum(sum(es[i]' * mW * es[j] * Fs[i] * (ma * ma' + Va) * Fs[j]' for i in 1:length(Fs)) for j in 1:length(Fs))
-    g₄     = mx' * G * mx + tr(Vx * G)
-    AE     = n / 2 * log2π - (mean(logdet, q_W) - (g₁ - g₂ - g₃ + g₄)) / 2
+    # we proved (when Va = kron(U, S)):
+    # tr(W(Sx'Ux)) = tr(kron(xx', W)kron(U, S)) = tr(kron(xx', W)Va)
+    # sum(es[i]' * mW * es[j] * Fs[i] * Va * Fs[j]') = tr(WS)U
+    g1 = -mA * Vyx'
+    g2 = g1'
+    trWSU = sum(sum(StandardBasisVector(dy, i)' * mW * StandardBasisVector(dy, j) * Fs[i] * Va * Fs[j]' for i in 1:dy) for j in 1:dy)
+
+    AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + g1 + g2 + Vy + (mA * mx - my) * (mA * mx - my)')) + tr(trWSU) + tr(kron(mx * mx', mW) * Va)) / 2
 
     return AE
 end

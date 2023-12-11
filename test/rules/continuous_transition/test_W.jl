@@ -31,9 +31,7 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits, Wish
                 transformation = (a) -> reshape(a, dy, dx)
                 mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
-                a0 = Float32.(vec(mA))
-
-                metal = CTMeta(transformation, a0)
+                metal = CTMeta(transformation)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μx, Σx = rand(rng, dx), Lx * Lx'
                 μy, Σy = rand(rng, dy), Ly * Ly'
@@ -53,8 +51,8 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits, Wish
             dy, dx = 2, 2
             dydx = dy * dy
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
-            a0 = zeros(Int, 1)
-            metanl = CTMeta(transformation, a0)
+
+            metanl = CTMeta(transformation)
             μx, Σx = zeros(dx), diageye(dx)
             μy, Σy = zeros(dy), diageye(dy)
 

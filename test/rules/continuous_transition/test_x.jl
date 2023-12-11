@@ -27,13 +27,12 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
 
                 mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
 
-                a0 = Float32.(vec(mA))
-                metal = CTMeta(transformation, a0)
+                metal = CTMeta(transformation)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μy, Σy = rand(rng, dy), Ly * Ly'
 
                 qy = MvNormalMeanCovariance(μy, Σy)
-                qa = MvNormalMeanCovariance(a0, diageye(dydx))
+                qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
 
                 @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(:x, Marginalisation) [(
@@ -48,12 +47,12 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
             dy, dx = 2, 2
             dydx = dy * dy
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
-            a0 = zeros(Float32, 1)
-            metanl = CTMeta(transformation, a0)
+
+            metanl = CTMeta(transformation)
             μy, Σy = zeros(dy), diageye(dy)
 
             qy = MvNormalMeanCovariance(μy, Σy)
-            qa = MvNormalMeanCovariance(a0, tiny * diageye(1))
+            qa = MvNormalMeanCovariance(zeros(1), tiny * diageye(1))
             qW = Wishart(dy + 1, diageye(dy))
 
             @test_rules [check_type_promotion = true] ContinuousTransition(:x, Marginalisation) [(

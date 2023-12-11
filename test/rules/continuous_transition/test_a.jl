@@ -28,7 +28,7 @@ import ReactiveMP: @test_rules, getjacobians, getunits
                 dydx = dy * dx
                 transformation = (a) -> reshape(a, dy, dx)
                 a0 = rand(Float32, dydx)
-                metal = CTMeta(transformation, a0)
+                metal = CTMeta(transformation)
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μx, Σx = rand(rng, dx), Lx * Lx'
                 μy, Σy = rand(rng, dy), Ly * Ly'
@@ -49,7 +49,7 @@ import ReactiveMP: @test_rules, getjacobians, getunits
             dydx = dy * dy
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
             a0 = zeros(Int, 1)
-            metanl = CTMeta(transformation, a0)
+            metanl = CTMeta(transformation)
             μx, Σx = ones(dx), diageye(dx)
             μy, Σy = ones(dy), diageye(dy)
 

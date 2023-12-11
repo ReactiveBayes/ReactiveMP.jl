@@ -3,12 +3,13 @@
     my, Wy = mean_precision(m_y)
     mW = mean(q_W)
 
-    dy, dx = getdimensionality(meta)
-    Fs, es = getjacobians(meta, ma), getunits(meta)
+    Fs = getjacobians(meta, ma)
+    dy = length(Fs)
 
-    mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
+    epsilon = sqrt.(var(q_a))
+    mA = ctcompanion_matrix(ma, epsilon, meta)
 
-    W = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
+    W = sum(sum(StandardBasisVector(dy, j)' * mW * StandardBasisVector(dy, i) * Fs[j] * Va * Fs[i]' for i in 1:dy) for j in 1:dy)
     # Woodbury identity
     # inv(inv(Wy) + inv(mW)) = Wy - Wy * inv(Wy + mW) * Wy
     WymW = Wy - Wy * cholinv(Wy + mW) * Wy

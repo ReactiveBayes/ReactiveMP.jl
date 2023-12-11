@@ -25,7 +25,6 @@ import ReactiveMP: @test_marginalrules
 
                 mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
                 qA = MatrixNormal(mA, ΣA, UA)
-                a0 = Float32.(vec(mA))
 
                 Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
                 μx, Σx = rand(rng, dx), Lx * Lx'
@@ -36,7 +35,7 @@ import ReactiveMP: @test_marginalrules
                 qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                metal = CTMeta(transformation, a0)
+                metal = CTMeta(transformation)
 
                 @test_marginalrules [check_type_promotion = true, atol = 1e-3] ContinuousTransition(:y_x) [(
                     input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule(mx, my, qW, qA)
@@ -50,17 +49,15 @@ import ReactiveMP: @test_marginalrules
             dy, dx = 2, 2
             transformation = (a) -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
 
-            a0 = zeros(Int, 1)
-
             μx, Σx = zeros(dx), diageye(dx)
             μy, Σy = zeros(dy), diageye(dy)
 
             my = MvNormalMeanCovariance(μy, Σy)
             mx = MvNormalMeanCovariance(μx, Σx)
-            qa = MvNormalMeanCovariance(a0, tiny * diageye(1))
+            qa = MvNormalMeanCovariance(zeros(1), tiny * diageye(1))
             qW = Wishart(dy, diageye(dy))
 
-            metanl = CTMeta(transformation, a0)
+            metanl = CTMeta(transformation)
 
             @test_marginalrules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:y_x) [(
                 input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metanl),
