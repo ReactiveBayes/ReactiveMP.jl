@@ -42,10 +42,10 @@ Fields:
 
 The `CTMeta` struct plays a pivotal role in defining how the vector `a` is transformed into the matrix `A`, thus influencing the behavior of the `ContinuousTransition` node.
 """
-struct CTMeta
-    ds::Tuple # dimensionality of ContinuousTransition (dy, dx)
-    f::Function # transformation function
-    es::Vector{<:AbstractVector} # unit vectors
+struct CTMeta{T <: Tuple, F <: Function, V <: Vector{<:AbstractVector}}
+    ds::T # dimensionality of ContinuousTransition (dy, dx)
+    f::F# transformation function
+    es::V # unit vectors
 
     # NOTE: this meta is not user-friendly, I don't like a vector
     # perhaps making mutable struct with empty meta first will be better from user perspective
