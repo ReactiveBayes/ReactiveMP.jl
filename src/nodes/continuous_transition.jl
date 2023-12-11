@@ -6,7 +6,7 @@ import StatsFuns: log2π
 @doc raw"""
 The ContinuousTransition node transforms an m-dimensional (dx) vector x into an n-dimensional (dy) vector y via a linear (or nonlinear) transformation with a `n×m`-dimensional matrix `A` that is constructed from a vector `a`.
 
-To construct the matrix A, the elements of `a` are filled into A according to the transformation function provided with meta. `a` must be of MultivariateNormalDistributionsFamily type. If you intend to use univariate Gaussian, use it as a vector of length `1``, e.g. `a ~ MvNormalMeanCovariance([0.0], [1.;])`.
+To construct the matrix `A`, the elements of `a` are reshaped into `A` according to the transformation function provided in the meta. `a` must be of `MultivariateNormalDistributionsFamily` type. If you intend to use univariate Gaussian distributions, use it as a vector of length `1``, e.g. `a ~ MvNormalMeanCovariance([0.0], [1.;])`.
 
 Check CTMeta for more details on how to specify the transformation function that **must** return a matrix.
 
