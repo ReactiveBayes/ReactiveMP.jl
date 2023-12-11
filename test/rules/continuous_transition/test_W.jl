@@ -57,7 +57,7 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits, Wish
             μy, Σy = zeros(dy), diageye(dy)
 
             qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
-            qa = MvNormalMeanCovariance(a0, diageye(1))
+            qa = MvNormalMeanCovariance(zeros(1), diageye(1))
             @test_rules [check_type_promotion = true] ContinuousTransition(:W, Marginalisation) [(
                 input = (q_y_x = qyx, q_a = qa, meta = metanl), output = WishartFast(dy + 2, dy * diageye(dy))
             )]
