@@ -9,7 +9,7 @@
 
     mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
 
-    Vy = mA * Vx * mA' + inv(mW)
+    Vy = mA * Vx * mA' + cholinv(mW)
     my = mA * mx
 
     return MvNormalMeanCovariance(my, Vy)

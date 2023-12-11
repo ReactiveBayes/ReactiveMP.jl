@@ -1,7 +1,6 @@
 @rule ContinuousTransition(:x, Marginalisation) (m_y::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta) = begin
     ma, Va = mean_cov(q_a)
     my, Wy = mean_precision(m_y)
-
     mW = mean(q_W)
 
     dy, dx = getdimensionality(meta)
@@ -12,7 +11,7 @@
     W = sum(sum(es[j]' * mW * es[i] * Fs[j] * Va * Fs[i]' for i in 1:length(Fs)) for j in 1:length(Fs))
     # Woodbury identity
     # inv(inv(Wy) + inv(mW)) = Wy - Wy * inv(Wy + mW) * Wy
-    WymW = Wy - Wy * inv(Wy + mW) * Wy
+    WymW = Wy - Wy * cholinv(Wy + mW) * Wy
     z = mA' * WymW * my
     Ξ = mA' * WymW * mA + W
 
