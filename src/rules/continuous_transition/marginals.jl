@@ -21,10 +21,10 @@ function continuous_tranition_marginal(m_y::MultivariateNormalDistributionsFamil
 
     W_11 = Wy + mW
 
-    # negate_inplace!(mW * mH)
-    W_12 = -(mW * mA)
+    # 
+    W_12 = negate_inplace!(mW * mA)
 
-    W_21 = -(mA' * mW)
+    W_21 = negate_inplace!(mA' * mW)
 
     W_22 = Ξ + mA' * mW * mA
 

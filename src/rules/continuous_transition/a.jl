@@ -12,7 +12,7 @@
 
     # rank1update(Vyx, mx, my) equivalent to ξ = (Vyx + mx * my') 
     D = sum(sum(StandardBasisVector(dy, j)' * mW * StandardBasisVector(dy, i) * Fs[i]' * rank1update(Vx, mx) * Fs[j] for i in 1:dy) for j in 1:dy)
-    z = sum(Fs[i]' * rank1update(Vyx', mx, my) * mW * StandardBasisVector(dy, i) for i in 1:dy)
+    z = mapreduce(i -> Fs[i]' * rank1update(Vyx', mx, my) * mW * StandardBasisVector(dy, i), +, 1:dy)
 
     return MvNormalWeightedMeanPrecision(z, D)
 end

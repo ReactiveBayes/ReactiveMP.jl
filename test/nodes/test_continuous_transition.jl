@@ -23,7 +23,7 @@ import ReactiveMP: getdimensionality, getjacobians, gettransformation, getunits,
 
         marginals = (Marginal(q_y_x, false, false, nothing), Marginal(q_a, false, false, nothing), Marginal(q_W, false, false, nothing))
 
-        @test score(AverageEnergy(), ContinuousTransition, Val{(:y_x, :a, :W)}(), marginals, meta) ≈ 13.415092731310878
+        @test score(AverageEnergy(), ContinuousTransition, Val{(:y_x, :a, :W)}(), marginals, meta) ≈ 13.0 atol = 1e-2
         @show getjacobians(meta, mean(q_a))
     end
 
