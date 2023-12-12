@@ -71,7 +71,7 @@ function ctcompanion_matrix(a, epsilon, meta::CTMeta)
     # we approximate each row of A by a linear function and create a matrix A composed of the approximated rows
     A = f(a0)
     for i in 1:dy
-        A[i,:] .+= Js[i] * (a-a0)
+        A[i, :] .+= Js[i] * (a - a0)
     end
     return A
 end
@@ -90,7 +90,7 @@ end
     mx, Vx = @views myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
     my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
     Vyx    = @view Vyx[1:dy, (dy + 1):end]
-    
+
     g1 = -mA * Vyx'
     g2 = g1'
     trWSU, trkronxxWSU = zero(eltype(ma)), zero(eltype(ma))
