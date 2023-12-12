@@ -10,9 +10,16 @@
     my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
     Vyx    = @view Vyx[1:dy, (dy + 1):end]
 
-    # rank1update(Vyx, mx, my) equivalent to ξ = (Vyx + mx * my') 
-    D = sum(sum(StandardBasisVector(dy, j)' * mW * StandardBasisVector(dy, i) * Fs[i]' * rank1update(Vx, mx) * Fs[j] for i in 1:dy) for j in 1:dy)
-    z = mapreduce(i -> Fs[i]' * rank1update(Vyx', mx, my) * mW * StandardBasisVector(dy, i), +, 1:dy)
+    xi, W  =  zeros(eltype(ma), length(ma)), zeros(eltype(ma), length(ma), length(ma))
 
-    return MvNormalWeightedMeanPrecision(z, D)
+    Vxymxy = rank1update(Vyx', mx, my)
+    Vxmx = rank1update(Vx, mx)
+    for i in 1:dy
+        xi += Fs[i]' * Vxymxy * mW[:,i]
+        for j in 1:dy
+            W += mW[j,i] * Fs[i]'*Vxmx*Fs[j]
+        end
+    end
+    
+    return MvNormalWeightedMeanPrecision(xi, W)
 end
