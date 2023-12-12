@@ -5,7 +5,24 @@ import StatsFuns: log2π
 
 @doc raw"""
 The ContinuousTransition node transforms an m-dimensional (dx) vector x into an n-dimensional (dy) vector y via a linear (or nonlinear) transformation with a `n×m`-dimensional matrix `A` that is constructed from a vector `a`.
+ContinuousTransition node is primarily used in two regimes:
 
+# When no structure on A is specified:
+```julia
+transformation = a -> reshape(a, 2, 2)
+...
+a ~ MvNormalMeanCovariance(zeros(2), Diagonal(ones(2)))
+y ~ ContinuousTransition(x, a, W) where {meta = CTMeta(transformation)}
+...
+```
+# When some structure if A is known:
+```julia
+transformation = a -> [cos(a[1]) -sin(a[1]); sin(a[1]) cos(a[1])]
+...
+a ~ MvNormalMeanCovariance(zeros(1), Diagonal(ones(1)))
+y ~ ContinuousTransition(x, a, W) where {meta = CTMeta(transformation)}
+...
+```
 To construct the matrix `A`, the elements of `a` are reshaped into `A` according to the transformation function provided in the meta. If you intend to use univariate Gaussian distributions, use it as a vector of length `1``, e.g. `a ~ MvNormalMeanCovariance([0.0], [1.;])`.
 
 Check ContinuousTransitionMeta for more details on how to specify the transformation function that **must** return a matrix.
