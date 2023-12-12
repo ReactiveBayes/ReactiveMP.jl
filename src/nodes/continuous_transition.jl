@@ -69,7 +69,10 @@ function ctcompanion_matrix(a, epsilon, meta::CTMeta)
     f  = gettransformation(meta)
     dy = length(Js)
     # we approximate each row of A by a linear function and create a matrix A composed of the approximated rows
-    A = f(a0) + mapreduce(i -> StandardBasisVector(dy, i) * (Js[i] * (a - a0))', +, 1:dy)
+    A = f(a0)
+    for i in 1:dy
+        A[i,:] .+= Js[i] * (a-a0)
+    end
     return A
 end
 
