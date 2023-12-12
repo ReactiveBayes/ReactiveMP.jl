@@ -3,9 +3,15 @@ function compute_delta(my, Vy, mx, Vx, Vyx, mA, Va, ma, Fs)
     G₁ = (my * my' + Vy)
     G₂ = ((my * mx' + Vyx) * mA')
     G₃ = transpose(G₂)
-    Ex_xx = mx * mx' + Vx
-    G₅ = sum(sum(StandardBasisVector(dy, i) * ma' * Fs[i]'Ex_xx * Fs[j] * ma * StandardBasisVector(dy, j)' for i in 1:dy) for j in 1:dy)
-    G₆ = sum(sum(StandardBasisVector(dy, i) * tr(Fs[i]' * Ex_xx * Fs[j] * Va) * StandardBasisVector(dy, j)' for i in 1:dy) for j in 1:dy)
+    Ex_xx = rank1update(Vx, mx)
+    G₅ = zeros(eltype(ma), dy, dy)
+    G₆ = zeros(eltype(ma), dy, dy)
+    mamat = ma * ma'
+    for (i, j) in Iterators.product(1:dy, 1:dy)
+        tmp = Fs[i]' * Ex_xx * Fs[j]
+        G₅[i, j] = tr(tmp * mamat)
+        G₆[i, j] = tr(tmp * Va)
+    end
     return G₁ - G₂ - G₃ + G₅ + G₆
 end
 

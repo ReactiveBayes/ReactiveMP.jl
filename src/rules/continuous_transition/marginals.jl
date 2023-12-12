@@ -17,14 +17,17 @@ function continuous_tranition_marginal(m_y::MultivariateNormalDistributionsFamil
     xiy, Wy = weightedmean_precision(m_y)
     xix, Wx = weightedmean_precision(m_x)
 
-    Ξ = Wx + sum(sum(StandardBasisVector(dy, j)' * mW * StandardBasisVector(dy, i) * Fs[j] * Va * Fs[i]' for i in 1:dy) for j in 1:dy)
-
     W_11 = Wy + mW
 
     # 
     W_12 = negate_inplace!(mW * mA)
 
     W_21 = negate_inplace!(mA' * mW)
+
+    Ξ = Wx 
+    for (i, j) in Iterators.product(1:dy, 1:dy)
+        Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
+    end
 
     W_22 = Ξ + mA' * mW * mA
 

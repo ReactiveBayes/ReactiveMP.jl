@@ -9,12 +9,16 @@
     epsilon = sqrt.(var(q_a))
     mA = ctcompanion_matrix(ma, epsilon, meta)
 
-    W = sum(sum(StandardBasisVector(dy, j)' * mW * StandardBasisVector(dy, i) * Fs[j] * Va * Fs[i]' for i in 1:dy) for j in 1:dy)
     # Woodbury identity
     # inv(inv(Wy) + inv(mW)) = Wy - Wy * inv(Wy + mW) * Wy
     WymW = Wy - Wy * cholinv(Wy + mW) * Wy
+    Ξ = mA' * WymW * mA
+
+    for (i, j) in Iterators.product(1:dy, 1:dy)
+        Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
+    end
+
     z = mA' * WymW * my
-    Ξ = mA' * WymW * mA + W
 
     return MvNormalWeightedMeanPrecision(z, Ξ)
 end

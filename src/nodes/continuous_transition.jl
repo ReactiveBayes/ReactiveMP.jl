@@ -90,14 +90,17 @@ end
     mx, Vx = @views myx[(dy + 1):end], Vyx[(dy + 1):end, (dy + 1):end]
     my, Vy = @views myx[1:dy], Vyx[1:dy, 1:dy]
     Vyx    = @view Vyx[1:dy, (dy + 1):end]
-    # we proved (when Va = kron(U, S)):
-    # sum(es[i]' * mW * es[j] * mx * Fs[i] * Va * Fs[j]' * mx') = tr(kron(xx', W)kron(U, S))
-    # sum(es[i]' * mW * es[j] * Fs[i] * Va * Fs[j]') = tr(WS)U
+    
     g1 = -mA * Vyx'
     g2 = g1'
-    trWSU = sum(sum(StandardBasisVector(dy, i)' * mW * StandardBasisVector(dy, j) * Fs[i] * Va * Fs[j]' for i in 1:dy) for j in 1:dy)
-    kronxxWSU = sum(sum(StandardBasisVector(dy, i)' * mW * StandardBasisVector(dy, j) * mx' * Fs[i] * Va * Fs[j]' * mx for i in 1:dy) for j in 1:dy)
-    AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + g1 + g2 + Vy + (mA * mx - my) * (mA * mx - my)')) + tr(trWSU) + tr(kronxxWSU)) / 2
+    trWSU, trkronxxWSU = zero(eltype(ma)), zero(eltype(ma))
+    xxt = mx * mx'
+    for (i, j) in Iterators.product(1:dy, 1:dy)
+        FjVaFi = Fs[j] * Va * Fs[i]'
+        trWSU += mW[j, i] * tr(FjVaFi)
+        trkronxxWSU += mW[j, i] * tr(xxt * FjVaFi)
+    end
+    AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + g1 + g2 + Vy + (mA * mx - my) * (mA * mx - my)')) + trWSU + trkronxxWSU) / 2
 
     return AE
 end
