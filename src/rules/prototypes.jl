@@ -110,6 +110,12 @@ include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")
 
+include("continuous_transition/y.jl")
+include("continuous_transition/x.jl")
+include("continuous_transition/a.jl")
+include("continuous_transition/W.jl")
+include("continuous_transition/marginals.jl")
+
 include("autoregressive/y.jl")
 include("autoregressive/x.jl")
 include("autoregressive/theta.jl")

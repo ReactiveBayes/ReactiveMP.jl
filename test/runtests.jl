@@ -252,6 +252,7 @@ end
     addtests(testrunner, "nodes/test_uniform.jl")
     addtests(testrunner, "nodes/test_normal_mixture.jl")
     addtests(testrunner, "nodes/test_softdot.jl")
+    addtests(testrunner, "nodes/test_continuous_transition.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
@@ -387,6 +388,12 @@ end
     addtests(testrunner, "rules/autoregressive/test_gamma.jl")
     addtests(testrunner, "rules/autoregressive/test_theta.jl")
     addtests(testrunner, "rules/autoregressive/test_marginals.jl")
+
+    addtests(testrunner, "rules/continuous_transition/test_a.jl")
+    addtests(testrunner, "rules/continuous_transition/test_W.jl")
+    addtests(testrunner, "rules/continuous_transition/test_x.jl")
+    addtests(testrunner, "rules/continuous_transition/test_y.jl")
+    addtests(testrunner, "rules/continuous_transition/test_marginals.jl")
 
     run(testrunner)
 end
