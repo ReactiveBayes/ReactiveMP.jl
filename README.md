@@ -32,4 +32,4 @@ Tutorials and examples are available in the [RxInfer documentation](https://bias
 
 # License
 
-MIT License Copyright (c) 2021-2023 BIASlab
+MIT License Copyright (c) 2021-2024 BIASlab
