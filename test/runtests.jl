@@ -242,6 +242,7 @@ end
     addtests(testrunner, "nodes/test_normal_mean_variance.jl")
     addtests(testrunner, "nodes/test_mv_normal_mean_precision.jl")
     addtests(testrunner, "nodes/test_mv_normal_mean_scale_precision.jl")
+    addtests(testrunner, "nodes/test_mv_normal_weightedmean_precision.jl")
     addtests(testrunner, "nodes/test_mv_normal_mean_covariance.jl")
     addtests(testrunner, "nodes/test_poisson.jl")
     addtests(testrunner, "nodes/test_wishart_inverse.jl")
@@ -346,6 +347,8 @@ end
     addtests(testrunner, "rules/mv_normal_mean_scale_precision/test_out.jl")
     addtests(testrunner, "rules/mv_normal_mean_scale_precision/test_mean.jl")
     addtests(testrunner, "rules/mv_normal_mean_scale_precision/test_precision.jl")
+
+    addtests(testrunner, "rules/mv_normal_weightedmean_precision/test_out.jl")
 
     addtests(testrunner, "rules/probit/test_out.jl")
     addtests(testrunner, "rules/probit/test_in.jl")
