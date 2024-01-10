@@ -2,7 +2,7 @@ module RulesContinuousTransitionTest
 
 using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
-import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, getunits
+import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians
 
 @testset "rules:ContinuousTransition:x" begin
     rng = MersenneTwister(42)
