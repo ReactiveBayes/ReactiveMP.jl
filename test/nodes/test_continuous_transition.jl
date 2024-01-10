@@ -2,7 +2,7 @@ module ContinuousTransitionNodeTest
 
 using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
-import ReactiveMP: getdimensionality, getjacobians, gettransformation, getunits, ctcompanion_matrix
+import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
 
 @testset "ContinuousTransitionNode" begin
     dy, dx = 2, 3
