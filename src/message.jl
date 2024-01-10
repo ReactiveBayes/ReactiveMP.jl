@@ -321,24 +321,18 @@ function materialize!(mapping::MessageMapping, messages, marginals)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    result, addons = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
-        missing, mapping.addons
-    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
-        missing, mapping.addons
-    else
-        rule(
-            message_mapping_fform(mapping),
-            mapping.vtag,
-            mapping.vconstraint,
-            mapping.msgs_names,
-            messages,
-            mapping.marginals_names,
-            marginals,
-            mapping.meta,
-            mapping.addons,
-            mapping.factornode
-        )
-    end
+    result, addons = rule(
+        message_mapping_fform(mapping),
+        mapping.vtag,
+        mapping.vconstraint,
+        mapping.msgs_names,
+        messages,
+        mapping.marginals_names,
+        marginals,
+        mapping.meta,
+        mapping.addons,
+        mapping.factornode
+    )
 
     # Inject extra addons after the rule has been executed
     addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)

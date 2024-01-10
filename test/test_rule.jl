@@ -709,6 +709,35 @@ import MacroTools: inexpr
         @test dist_and_nothing[1] isa Bernoulli
         @test dist_and_nothing[2] isa Nothing
     end
+
+    @testset "Check the generic rules with a missing argument" begin
+        struct DummyNodeMissing end
+
+        @node DummyNodeMissing Stochastic [out, in]
+
+        @test (@call_rule DummyNodeMissing(:out, Marginalisation) (m_in = missing,)) === missing
+        @test (@call_rule DummyNodeMissing(:out, Marginalisation) (q_in = missing,)) === missing
+
+        @test (@call_rule DummyNodeMissing(:in, Marginalisation) (m_out = missing,)) === missing
+        @test (@call_rule DummyNodeMissing(:in, Marginalisation) (q_out = missing,)) === missing
+    end
+
+    @testset "Check that rules with missings can be defined" begin
+        struct DummyNodeRuleWithMissing end
+
+        @node DummyNodeRuleWithMissing Stochastic [out, in]
+
+        @rule DummyNodeRuleWithMissing(:out, Marginalisation) (m_in::Missing,) = 1
+        @rule DummyNodeRuleWithMissing(:out, Marginalisation) (q_in::Missing,) = 2
+        @rule DummyNodeRuleWithMissing(:in, Marginalisation) (m_out::Missing,) = 3
+        @rule DummyNodeRuleWithMissing(:in, Marginalisation) (q_out::Missing,) = 4
+
+        @test (@call_rule DummyNodeRuleWithMissing(:out, Marginalisation) (m_in = missing,)) === 1
+        @test (@call_rule DummyNodeRuleWithMissing(:out, Marginalisation) (q_in = missing,)) === 2
+
+        @test (@call_rule DummyNodeRuleWithMissing(:in, Marginalisation) (m_out = missing,)) === 3
+        @test (@call_rule DummyNodeRuleWithMissing(:in, Marginalisation) (q_out = missing,)) === 4
+    end
 end
 
 end

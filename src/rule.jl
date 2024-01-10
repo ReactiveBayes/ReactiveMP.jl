@@ -1096,8 +1096,17 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) =
-    throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node))
+# Generic rule returns `missing` if any of the inputs is `missing`, otherwise it displays an error 
+# that suggests to define a rule with the given arguments
+function rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+    if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
+        return missing, addons
+    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
+        return missing, addons
+    else
+        throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node))
+    end
+end
 
 function Base.showerror(io::IO, error::RuleMethodError)
     print(io, "RuleMethodError: no method matching rule for the given arguments")
@@ -1175,7 +1184,17 @@ struct MarginalRuleMethodError
     node
 end
 
-marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) = throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
+# Generic rule returns `missing` if any of the inputs is `missing`, otherwise it displays an error 
+# that suggests to define a rule with the given arguments
+function marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node)
+    if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
+        return missing
+    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
+        return missing
+    else
+        throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
+    end
+end
 
 function Base.showerror(io::IO, error::MarginalRuleMethodError)
     print(io, "MarginalRuleMethodError: no method matching rule for the given arguments")
