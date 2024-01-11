@@ -1,6 +1,6 @@
 # [Custom Functional Form Specification](@id custom-functional-form)
 
-In a nutshell, functional form constraints defines a function that approximates the product of colliding messages and computes posterior marginal that can be used later on during the inference procedure. An important part of the functional forms constraint implementation is the `prod` function in the [`BayesBase`](https://biaslab.github.io/BayesBase.jl/stable/) package. For example, if we refer to our `CustomFunctionalForm` as to `f` we can see the whole functional form constraints pipeline as:
+In a nutshell, functional form constraints defines a function that approximates the product of colliding messages and computes posterior marginal that can be used later on during the inference procedure. An important part of the functional forms constraint implementation is the `prod` function in the [`BayesBase`](https://reactivebayes.github.io/BayesBase.jl/stable/) package. For example, if we refer to our `CustomFunctionalForm` as to `f` we can see the whole functional form constraints pipeline as:
 
 ```math
 q(x) = f\left(\frac{\overrightarrow{\mu}(x)\overleftarrow{\mu}(x)}{\int \overrightarrow{\mu}(x)\overleftarrow{\mu}(x) \mathrm{d}x}\right)
@@ -64,7 +64,7 @@ make_form_constraint
 
 ## [Custom Functional Form Example](@id custom-functional-form-example)
 
-In this demo we show how to build a custom functional form constraint that is compatible with the `ReactiveMP.jl` inference backend. An important part of the functional forms constraint implementation is the `prod` function in the [`BayesBase`](https://biaslab.github.io/BayesBase.jl/stable/) package. We show a relatively simple use-case, which might not be very useful in practice, but serves as a simple step-by-step guide. Assume that we want a specific posterior marginal of some random variable in our model to have a specific Gaussian parametrisation, for example mean-precision. We can use built-in `NormalMeanPrecision` distribution, but we still need to define our custom functional form constraint:
+In this demo we show how to build a custom functional form constraint that is compatible with the `ReactiveMP.jl` inference backend. An important part of the functional forms constraint implementation is the `prod` function in the [`BayesBase`](https://reactivebayes.github.io/BayesBase.jl/stable/) package. We show a relatively simple use-case, which might not be very useful in practice, but serves as a simple step-by-step guide. Assume that we want a specific posterior marginal of some random variable in our model to have a specific Gaussian parametrisation, for example mean-precision. We can use built-in `NormalMeanPrecision` distribution, but we still need to define our custom functional form constraint:
 
 ```@example custom-functional-form-example
 using ReactiveMP, BayesBase
