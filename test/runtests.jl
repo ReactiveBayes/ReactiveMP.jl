@@ -254,6 +254,7 @@ end
     addtests(testrunner, "nodes/test_normal_mixture.jl")
     addtests(testrunner, "nodes/test_softdot.jl")
     addtests(testrunner, "nodes/test_continuous_transition.jl")
+    addtests(testrunner, "nodes/test_uninformative.jl")
 
     addtests(testrunner, "rules/uniform/test_out.jl")
 
