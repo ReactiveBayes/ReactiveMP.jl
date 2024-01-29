@@ -1,10 +1,10 @@
 module HalfNormalNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: make_node
 
-@testset "HalfNormalNode" begin
+@testitem "HalfNormalNode" begin
     @testset "Creation" begin
         node = make_node(HalfNormal)
         @test functionalform(node) === HalfNormal

@@ -1,6 +1,6 @@
 module RulesDeltaCVIOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs
 import ReactiveMP: @test_rules
 
 id(x) = x
@@ -22,7 +22,7 @@ function cvi_out_test(func::Function, factor_product::FactorizedJoint, meta, exp
 end
 
 # test this set with $ make test testset='rules:gamma_inverse:out'
-@testset "rules:Delta:cvi:out" begin
+@testitem "rules:Delta:cvi:out" begin
     @testset "Exact value comparison (Pointmass)" begin
         for N in (500, 1000), i in 1:10
             test_meta = DeltaMeta(method = CVI(StableRNG(123), N, 1, EmptyOptimizer()))

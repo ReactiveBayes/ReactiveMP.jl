@@ -1,11 +1,11 @@
 module RulesGammaInverseOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
 # test this set with $ make test testset='rules:gamma_inverse:out'
-@testset "rules:GammaInverse:out" begin
+@testitem "rules:GammaInverse:out" begin
     @testset "Belief Propagation: (m_α::Any, m_θ::Any)" begin
         @test_rules [check_type_promotion = true] GammaInverse(:out, Marginalisation) [
             (input = (m_α = PointMass(1.0), m_θ = PointMass(2.0)), output = GammaInverse(1.0, 2.0)),

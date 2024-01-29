@@ -1,10 +1,10 @@
 module RulesNormalAutoregressiveTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Autoregressive:θ" begin
+@testitem "rules:Autoregressive:θ" begin
     @testset "Mean-field: (q_x::Any, q_y::Any, q_γ::Any)" begin
         armeta = ARMeta(Univariate, 1, ARsafe())
         @test_rules [check_type_promotion = true] Autoregressive(:θ, Marginalisation) [

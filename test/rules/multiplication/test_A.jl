@@ -1,10 +1,10 @@
 module RulesMultiplicationATest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs
 
 import ReactiveMP: make_inversedist_message
 
-@testset "rule:typeof(*):A" begin
+@testitem "rule:typeof(*):A" begin
     @testset "Univariate Gaussian messages" begin
         rng = StableRNG(42)
         d1 = NormalMeanVariance(0.0, 1.0)

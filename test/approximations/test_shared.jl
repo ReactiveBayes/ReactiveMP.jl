@@ -1,9 +1,8 @@
 module ReactiveMPSharedApproximationTest
 
-using Test
 using ReactiveMP
 
-@testset "Shared approximation methods" begin
+@testitem "Shared approximation methods" begin
     @testset "__starts_at tests" begin
         import ReactiveMP: __starts_at
 

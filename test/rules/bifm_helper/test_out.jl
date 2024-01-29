@@ -1,10 +1,10 @@
 module RulesBIFMHelperOutTest
 
-using Test, ReactiveMP, Random, ExponentialFamily, BayesBase
+using ReactiveMP, Random, ExponentialFamily, BayesBase
 
 import ReactiveMP: @test_rules
 
-@testset "rules:BIFMHelper:out" begin
+@testitem "rules:BIFMHelper:out" begin
     @testset "Variational Message Passing: (q_in::Any, )" begin
         @test_rules [check_type_promotion = true] BIFMHelper(:out, Marginalisation) [
             (input = (q_in = MvNormalMeanCovariance([1.0, 2.0], [3.0 0; 0 2.0]),), output = TerminalProdArgument(MvNormalMeanCovariance([1.0, 2.0], [3.0 0; 0 2.0]))),

@@ -1,11 +1,11 @@
 module RulesNormalMeanVarianceVarTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import DomainSets
 import ReactiveMP: @test_rules
 
-@testset "rules:NormalMeanVariance:var" begin
+@testitem "rules:NormalMeanVariance:var" begin
     @testset "Belief Propagation: (m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily)" begin
         @test_rules [check_type_promotion = false] NormalMeanVariance(:v, Marginalisation) [
             (

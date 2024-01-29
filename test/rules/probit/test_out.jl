@@ -1,11 +1,11 @@
 module RulesProbitOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Probit:out" begin
+@testitem "rules:Probit:out" begin
     @testset "Belief Propagation: (m_in::UnivariateNormalDistribution, )" begin
         @test_rules [check_type_promotion = true] Probit(:out, Marginalisation) [
             (input = (m_in = NormalMeanVariance(1, 0.5),), output = Bernoulli(normcdf(1 / sqrt(1 + 0.5)))),

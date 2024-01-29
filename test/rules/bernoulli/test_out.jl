@@ -1,10 +1,10 @@
 module RulesBernoulliOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Bernoulli:out" begin
+@testitem "rules:Bernoulli:out" begin
     @testset "Belief Propagation: (m_p::PointMass)" begin
         @test_rules [check_type_promotion = true] Bernoulli(:out, Marginalisation) [
             (input = (m_p = PointMass(1.0),), output = Bernoulli(1.0)), (input = (m_p = PointMass(0.2),), output = Bernoulli(0.2))

@@ -1,11 +1,11 @@
 module ReactiveMPFactorisationSpecTest
 
-using Test, ReactiveMP, BayesBase, ExponentialFamily
+using ReactiveMP, BayesBase, ExponentialFamily
 
 import ReactiveMP: MetaSpecification, MetaSpecificationOptions, MetaSpecificationEntry
 import ReactiveMP: resolve_meta
 
-@testset "Meta specification" begin
+@testitem "Meta specification" begin
     @testset "resolve_meta #1" begin
         spec = MetaSpecification(
             (

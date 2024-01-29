@@ -1,12 +1,12 @@
 module RulesWishartMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 using FastCholesky
 
 import ExponentialFamily: WishartFast
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:Wishart" begin
+@testitem "marginalrules:Wishart" begin
     @testset ":out_ν_S (m_out::Wishart, m_ν::PointMass, m_S::PointMass)" begin
         @test_marginalrules [check_type_promotion = true] Wishart(:out_ν_S) [
             (

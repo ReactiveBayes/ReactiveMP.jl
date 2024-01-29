@@ -1,6 +1,5 @@
 module ReactiveMPFactorisationSpecTest
 
-using Test
 using ReactiveMP
 
 import ReactiveMP: FunctionalIndex
@@ -10,7 +9,7 @@ import ReactiveMP: resolve_factorisation
 import ReactiveMP: DefaultConstraints, UnspecifiedConstraints
 import ReactiveMP: setanonymous!, activate!
 
-@testset "Factorisation constraints specification" begin
+@testitem "Factorisation constraints specification" begin
     @testset "CombinedRange" begin
         for left in 1:3, right in 10:13
             cr = CombinedRange(left, right)

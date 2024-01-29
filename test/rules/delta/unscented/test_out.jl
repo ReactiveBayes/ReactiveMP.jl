@@ -1,6 +1,6 @@
 module RulesDeltaUTOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 import ReactiveMP: @test_rules
 
 # TODO: check_type_promotion = true breaks
@@ -18,7 +18,7 @@ h(x, y) = x .^ 2 .- y
 
 # g provided in a similar syntax like the N parameter in normal_mixture/test_out.jl
 # normal_mixture is the only example with this syntax (that has a test; gamma_mixture is another candidate but ∄ test)
-@testset "rules:Delta:unscented:out" begin
+@testitem "rules:Delta:unscented:out" begin
     @testset "Single univariate input" begin
         @test_rules [check_type_promotion = false] DeltaFn{g}(:out, Marginalisation) [
             (input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaMeta(; method = Unscented())), output = NormalMeanVariance(2.0000000001164153, 66.00000000093132)),

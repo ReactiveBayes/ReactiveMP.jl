@@ -1,11 +1,11 @@
 module NodesNormalMixtureTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: ManyOf
 import ExponentialFamily: WishartFast
 
-@testset "NormalMixtureNode" begin
+@testitem "NormalMixtureNode" begin
     @testset "AverageEnergy" begin
         begin
             q_out = NormalMeanVariance(0.0, 1.0)

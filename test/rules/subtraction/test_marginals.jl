@@ -1,10 +1,10 @@
 module RulesSubtractionMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:typeof(-)" begin
+@testitem "marginalrules:typeof(-)" begin
     @testset ":in1_in2 (m_out::UnivariateNormalDistributionsFamily, m_in1::UnivariateNormalDistributionsFamily, m_in2::PointMass)" begin
         @test_marginalrules [check_type_promotion = true] typeof(-)(:in1_in2) [
             (

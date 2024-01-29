@@ -1,10 +1,10 @@
 module RulesBIFMMarginalsTest
 
-using Test, ReactiveMP, Random, ExponentialFamily, BayesBase
+using ReactiveMP, Random, ExponentialFamily, BayesBase
 
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:BIFM" begin
+@testitem "marginalrules:BIFM" begin
     @testset ":in_zprev_znext (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily)" begin
         meta = BIFMMeta(
             [2.0 0; 0 1], # A

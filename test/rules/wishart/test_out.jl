@@ -1,12 +1,12 @@
 module RulesWishartOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 using FastCholesky
 
 import ExponentialFamily: WishartFast
 import ReactiveMP: @test_rules
 
-@testset "rules:Wishart:out" begin
+@testitem "rules:Wishart:out" begin
     @testset "Belief Propagation: (m_ν::PointMass, m_S::PointMass)" begin
         @test_rules [check_type_promotion = true] Wishart(:out, Marginalisation) [
             (input = (m_ν = PointMass(2.0), m_S = PointMass([1.0 0.0; 0.0 1.0])), output = WishartFast(2.0, cholinv([1.0 0.0; 0.0 1.0]))),

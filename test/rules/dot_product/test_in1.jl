@@ -1,12 +1,12 @@
 module RulesDotProductIn1Test
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 import LinearAlgebra: dot
 import MatrixCorrectionTools: NoCorrection, AddToDiagonalEntries, ReplaceZeroDiagonalEntries
 
-@testset "rules:typeof(dot):in1" begin
+@testitem "rules:typeof(dot):in1" begin
     @testset "Belief Propagation: (m_out::UnivariateNormalDistributionsFamily, m_in2::PointMass)" begin
         @test_rules [check_type_promotion = true] typeof(dot)(:in1, Marginalisation) [
             (input = (m_out = NormalMeanVariance(2.0, 2.0), m_in2 = PointMass(-1.0), meta = NoCorrection()), output = NormalWeightedMeanPrecision(-1.0, 0.5)),

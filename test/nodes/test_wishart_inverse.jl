@@ -1,10 +1,10 @@
 module InverseWishartNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
+using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
 
 import ReactiveMP: make_node
 
-@testset "InverseWishartNode" begin
+@testitem "InverseWishartNode" begin
     @testset "Creation" begin
         node = make_node(InverseWishart)
 

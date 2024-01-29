@@ -1,11 +1,11 @@
 module RulesNormalMixturePTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 import ExponentialFamily: WishartFast
 
-@testset "rules:NormalMixture:p" begin
+@testitem "rules:NormalMixture:p" begin
     @testset "Variational : (m_out::UnivariateNormalDistributionsFamily..., m_μ::UnivariateNormalDistributionsFamily...) k=1" begin
         @test_rules [check_type_promotion = true] NormalMixture{2}((:p, k = 1), Marginalisation) [
             (input = (q_out = NormalMeanVariance(8.5, 0.5), q_switch = Bernoulli(0.8), q_m = NormalMeanVariance(5.0, 2.0)), output = GammaShapeRate(1.1, 1.475)),

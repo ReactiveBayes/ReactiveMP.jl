@@ -1,10 +1,9 @@
 module FlowNodeTest
 
-using Test
 using ReactiveMP
 using ReactiveMP: getL, getα, getβ, getκ, getλ
 
-@testset "FlowNode" begin
+@testitem "FlowNode" begin
 
     # test for basics in the flow.jl file
     @testset "Basics" begin

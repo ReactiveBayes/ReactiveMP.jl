@@ -1,6 +1,6 @@
 module ReactiveMPRenderCVITest
 
-using Test, ReactiveMP, Random, StableRNGs, BayesBase, Distributions, ExponentialFamily, Optimisers, DiffResults, LinearAlgebra
+using ReactiveMP, Random, StableRNGs, BayesBase, Distributions, ExponentialFamily, Optimisers, DiffResults, LinearAlgebra
 
 import BayesBase: AbstractContinuousGenericLogPdf
 import StatsFuns: logistic, softmax
@@ -34,7 +34,7 @@ function gammafisher(dist::GammaShapeRate)
     return [polygamma(1, shape(dist)) -1/rate(dist); -1/rate(dist) shape(dist)/rate(dist)^2]
 end
 
-@testset "cvi:prod" begin
+@testitem "cvi:prod" begin
 
     # These are tested in the `ExponentialFamily`, test a simple case just to be sure
     @testset "Simple check for the existence of the `fisherinformation`" begin

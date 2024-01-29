@@ -1,8 +1,8 @@
 module AndNodeTest
 
-using Test, ReactiveMP, Random
+using ReactiveMP, Random
 
-@testset "AndNode" begin
+@testitem "AndNode" begin
     @testset "Creation" begin
         node = make_node(AND)
 

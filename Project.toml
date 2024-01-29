@@ -5,6 +5,7 @@ version = "3.13.0"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
+CpuId = "adafc99b-e345-5852-983c-f28acb93d879"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -24,6 +25,7 @@ MatrixCorrectionTools = "41f81499-25de-46de-b591-c3cfc21e9eaf"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 PositiveFactorizations = "85a6dd25-e78a-55b7-8502-1745935b8125"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Rocket = "df971d30-c9d6-4b37-b8ff-e965b2cb3a40"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
@@ -77,6 +79,8 @@ julia = "1.9.0"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+CpuId = "adafc99b-e345-5852-983c-f28acb93d879"
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 BenchmarkCI = "20533458-34a3-403d-a444-e18f38190b5b"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
@@ -94,4 +98,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 
 [targets]
-test = ["Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark", "Aqua", "StableRNGs", "Optimisers", "DiffResults"]
+test = ["Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "Aqua", "ReTestItems"]

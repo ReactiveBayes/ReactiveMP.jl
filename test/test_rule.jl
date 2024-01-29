@@ -1,10 +1,10 @@
 module ReactiveMPRuleTest
 
-using Test, ReactiveMP, MacroTools, Logging, BayesBase, Distributions, ExponentialFamily
+using ReactiveMP, MacroTools, Logging, BayesBase, Distributions, ExponentialFamily
 
 import MacroTools: inexpr
 
-@testset "rule" begin
+@testitem "rule" begin
     @testset "Testing utilities" begin
         import ReactiveMP: TestRulesConfiguration
         import ReactiveMP: check_type_promotion, check_type_promotion!

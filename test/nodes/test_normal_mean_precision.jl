@@ -1,10 +1,10 @@
 module NormalMeanPrecisionNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: make_node
 
-@testset "NormalMeanPrecisionNode" begin
+@testitem "NormalMeanPrecisionNode" begin
     @testset "Creation" begin
         node = make_node(NormalMeanPrecision)
 

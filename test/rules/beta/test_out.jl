@@ -1,10 +1,10 @@
 module RulesBetaOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Beta:out" begin
+@testitem "rules:Beta:out" begin
     @testset "Belief Propagation: (m_a::PointMass, m_b::PointMass)" begin
         @test_rules [check_type_promotion = true] Beta(:out, Marginalisation) [
             (input = (m_a = PointMass(1.0), m_b = PointMass(2.0)), output = Beta(1.0, 2.0)),

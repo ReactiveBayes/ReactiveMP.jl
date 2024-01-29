@@ -1,10 +1,10 @@
 module MvNormalMeanPrecisionNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: make_node
 
-@testset "MvNormalMeanPrecisionNode" begin
+@testitem "MvNormalMeanPrecisionNode" begin
     @testset "Creation" begin
         node = make_node(MvNormalMeanPrecision)
 

@@ -1,8 +1,8 @@
 module ProbitNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-@testset "ProbitNode" begin
+@testitem "ProbitNode" begin
     @testset "Creation" begin
         node = make_node(Probit)
 

@@ -1,12 +1,11 @@
 module FlowNodeModelsFlowModelTest
 
-using Test
 using ReactiveMP
 using ReactiveMP: getforward, getbackward, getjacobian, getinv_jacobian
 using ReactiveMP: forward, forward!, backward, backward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!, forward_jacobian, backward_inv_jacobian
 using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian, detinv_jacobian, absdetinv_jacobian, logabsdetinv_jacobian
 
-@testset "Flow Model" begin
+@testitem "Flow Model" begin
     @testset "Constructor" begin
 
         # check for single layer

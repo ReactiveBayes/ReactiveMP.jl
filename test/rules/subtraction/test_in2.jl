@@ -1,10 +1,10 @@
 module RulesSubtractionIn2Test
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:typeof(-):in2" begin
+@testitem "rules:typeof(-):in2" begin
     @testset "Belief Propagation: (m_out::PointMass, m_in2::PointMass)" begin
         @test_rules [check_type_promotion = true] typeof(-)(:in2, Marginalisation) [
             (input = (m_out = PointMass(1.0), m_in1 = PointMass(-1.0)), output = PointMass(-2.0)),

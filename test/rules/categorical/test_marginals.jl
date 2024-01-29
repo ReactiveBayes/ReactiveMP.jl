@@ -1,10 +1,10 @@
 module RulesCategoricalMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:Categorical" begin
+@testitem "marginalrules:Categorical" begin
     @testset "out_p: (m_out::PointMass, m_p::Dirichlet)" begin
         @test_marginalrules [check_type_promotion = true] Categorical(:out_p) [
             (input = (m_out = PointMass([0.0, 1.0]), m_p = Dirichlet([2.0, 1.0])), output = (out = PointMass([0.0, 1.0]), p = Dirichlet([2.0, 2.0]))),

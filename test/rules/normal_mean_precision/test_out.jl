@@ -1,10 +1,10 @@
 module RulesNormalMeanPrecisionOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:NormalMeanPrecision:out" begin
+@testitem "rules:NormalMeanPrecision:out" begin
     @testset "Belief Propagation: (m_μ::PointMass, m_τ::PointMass)" begin
         @test_rules [check_type_promotion = true] NormalMeanPrecision(:out, Marginalisation) [
             (input = (m_μ = PointMass(-1.0), m_τ = PointMass(2.0)), output = NormalMeanPrecision(-1.0, 2.0)),

@@ -1,10 +1,10 @@
 module RulesBIFMZprevTest
 
-using Test, ReactiveMP, Random, ExponentialFamily, BayesBase
+using ReactiveMP, Random, ExponentialFamily, BayesBase
 
 import ReactiveMP: @test_rules
 
-@testset "rules:BIFM:zprev" begin
+@testitem "rules:BIFM:zprev" begin
     @testset "Belief Propagation: (m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta)" begin
         meta = BIFMMeta(
             [2.0 0; 0 1], # A

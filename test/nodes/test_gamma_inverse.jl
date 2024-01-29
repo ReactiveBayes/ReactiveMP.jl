@@ -1,10 +1,10 @@
 module InverseGammaNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: make_node
 
-@testset "InverseGammaNode" begin
+@testitem "InverseGammaNode" begin
     @testset "Creation" begin
         node = make_node(GammaInverse)
         @test functionalform(node) === GammaInverse

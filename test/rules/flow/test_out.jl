@@ -1,11 +1,11 @@
 module RulesFlowOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
 import ReactiveMP: @test_rules
 using ReactiveMP: jacobian, inv_jacobian
 
-@testset "rules:Flow:out" begin
+@testitem "rules:Flow:out" begin
     params = [1.0, 2.0, 3.0]
     model = FlowModel(2, (AdditiveCouplingLayer(PlanarFlow(); permute = false),))
     compiled_model = compile(model, params)

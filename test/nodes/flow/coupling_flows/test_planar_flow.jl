@@ -1,12 +1,11 @@
 module FlowNodeCouplingFlowsPlanarFlowTest
 
-using Test
 using ReactiveMP
 using ReactiveMP: getdim, getu, getb, getw, getall, setu!, setb!, setw!
 using ReactiveMP: forward, forward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!
 using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logdet_jacobian, logabsdet_jacobian
 
-@testset "Planar Flow" begin
+@testitem "Planar Flow" begin
     @testset "Constructors" begin
 
         # check for unspecified input

@@ -1,8 +1,8 @@
 module DeltaNodeTest
 
-using Test, ReactiveMP, Random
+using ReactiveMP, Random
 
-@testset "DeltaNode" begin
+@testitem "DeltaNode" begin
     @testset "Creation with static inputs (simple case) #1" begin
         import ReactiveMP: nodefunction, FactorNodeCreationOptions
 

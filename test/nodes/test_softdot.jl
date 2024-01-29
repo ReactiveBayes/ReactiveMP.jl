@@ -1,10 +1,10 @@
 module SoftDotNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: make_node
 
-@testset "SoftDotNode" begin
+@testitem "SoftDotNode" begin
     @testset "Creation" begin
         node = make_node(SoftDot)
         @test functionalform(node) === SoftDot

@@ -1,10 +1,10 @@
 module AutoregressiveNodeTest
 
-using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
+using ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
 import ReactiveMP: getvform, getorder, getstype
 
-@testset "AutoregressiveNode" begin
+@testitem "AutoregressiveNode" begin
     @testset "Creation" begin
         node = make_node(AR, FactorNodeCreationOptions(nothing, ARMeta(Multivariate, 2, ARsafe()), nothing))
         @test functionalform(node) === AR

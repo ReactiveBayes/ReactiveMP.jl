@@ -1,10 +1,10 @@
 module RulesMvNormalMeanCovarianceOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:MvNormalMeanCovariance:out" begin
+@testitem "rules:MvNormalMeanCovariance:out" begin
     @testset "Belief Propagation: (m_μ::PointMass, m_Σ::PointMass)" begin
         @test_rules [check_type_promotion = true] MvNormalMeanCovariance(:out, Marginalisation) [
             (input = (m_μ = PointMass([-1.0]), m_Σ = PointMass([2.0])), output = MvNormalMeanCovariance([-1.0], [2.0])),

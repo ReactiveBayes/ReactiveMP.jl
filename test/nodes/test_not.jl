@@ -1,8 +1,8 @@
 module NotNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-@testset "NotNode" begin
+@testitem "NotNode" begin
     @testset "Creation" begin
         node = make_node(NOT)
 

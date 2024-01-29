@@ -1,11 +1,10 @@
 module ReactiveMPUnscentedApproximationTest
 
-using Test
 using ReactiveMP
 
 import ReactiveMP: Unscented, unscented_statistics
 
-@testset "Unscented approximation method" begin
+@testitem "Unscented approximation method" begin
     @testset "Univariate `unscented_statistics`" begin
 
         # Compared against the ForneyLab implementation

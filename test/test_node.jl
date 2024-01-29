@@ -1,8 +1,8 @@
 module ReactiveMPNodeTest
 
-using Test, ReactiveMP, Rocket, BayesBase, Distributions
+using ReactiveMP, Rocket, BayesBase, Distributions
 
-@testset "FactorNode" begin
+@testitem "FactorNode" begin
     @testset "Common" begin
         @test ReactiveMP.as_node_functional_form(() -> nothing) === ReactiveMP.UndefinedNodeFunctionalForm()
         @test ReactiveMP.as_node_functional_form(2) === ReactiveMP.UndefinedNodeFunctionalForm()

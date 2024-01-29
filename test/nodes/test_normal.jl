@@ -1,10 +1,10 @@
 module NodesNormalTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
+using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
 
 import ReactiveMP: make_node, FactorNodeCreationOptions
 
-@testset "NormalNode" begin
+@testitem "NormalNode" begin
     out = randomvar(:out)
     mean = randomvar(:mean)
     std = randomvar(:std)

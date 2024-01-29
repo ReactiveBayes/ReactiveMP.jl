@@ -1,12 +1,11 @@
 module FlowNodeLayersInputLayerTest
 
-using Test
 using ReactiveMP
 using LinearAlgebra
 
 using ReactiveMP: getdim
 
-@testset "Input Layer" begin
+@testitem "Input Layer" begin
     @testset "Constructor" begin
 
         # check for placeholder creation

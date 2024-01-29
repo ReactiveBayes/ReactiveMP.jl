@@ -1,10 +1,10 @@
 module RulesNormalMeanPrecisionPrecisionTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:NormalMeanPrecision:precision" begin
+@testitem "rules:NormalMeanPrecision:precision" begin
     @testset "Variational: (q_out::Any, q_μ::Any)" begin
         @test_rules [check_type_promotion = true] NormalMeanPrecision(:τ, Marginalisation) [
             (input = (q_out = PointMass(-1.0), q_μ = PointMass(2.0)), output = Gamma(1.5, 2.0 / 9.0)),

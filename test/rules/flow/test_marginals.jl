@@ -1,10 +1,10 @@
 module RulesFlowMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:Flow" begin
+@testitem "marginalrules:Flow" begin
     @testset ":in (m_out::NormalDistributionsFamily, m_in::NormalDistributionsFamily) (Linearization)" begin
         params = [1.0, 2.0, 3.0]
         model = FlowModel(2, (AdditiveCouplingLayer(PlanarFlow(); permute = false),))

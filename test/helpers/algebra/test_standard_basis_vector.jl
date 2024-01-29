@@ -1,12 +1,11 @@
 module ReactiveMPStandardBasisVectorTest
 
-using Test
 using ReactiveMP
 using Random
 
 using LinearAlgebra
 
-@testset "StandardBasisVector" begin
+@testitem "StandardBasisVector" begin
     rng = MersenneTwister(1234)
 
     @testset begin

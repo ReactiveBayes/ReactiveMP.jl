@@ -1,10 +1,10 @@
 module RulesNormalMixtureOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:NormalMixture:out" begin
+@testitem "rules:NormalMixture:out" begin
     @testset "Variational : (m_μ::PointMass{ <: Real }..., m_p::PointMass{ <: Real }...)" begin
         @test_rules [check_type_promotion = true] NormalMixture{2}(:out, Marginalisation) [
             (

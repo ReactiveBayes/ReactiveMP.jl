@@ -1,11 +1,11 @@
 module RulesMvNormalMeanCovarianceCovarianceTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ExponentialFamily: InverseWishartFast
 import ReactiveMP: @test_rules
 
-@testset "rules:MvNormalMeanCovariance:covariance" begin
+@testitem "rules:MvNormalMeanCovariance:covariance" begin
     @testset "Variational: (q_out::PointMass, q_μ::MultivariateNormalDistributionsFamily)" begin
         @test_rules [check_type_promotion = true] MvNormalMeanCovariance(:Σ, Marginalisation) [
             (input = (q_out = PointMass([1.0, 2.0]), q_μ = MvNormalMeanCovariance([3.0, 5.0], [3.0 2.0; 2.0 4.0])), output = InverseWishartFast(-2.0, [7.0 8.0; 8.0 13.0])),

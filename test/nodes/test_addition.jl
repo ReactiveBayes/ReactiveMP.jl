@@ -1,8 +1,8 @@
 module AdditionNodeTest
 
-using Test, ReactiveMP, Random
+using ReactiveMP, Random
 
-@testset "AdditionNode" begin
+@testitem "AdditionNode" begin
     @testset "Creation" begin
         node = make_node(+)
 

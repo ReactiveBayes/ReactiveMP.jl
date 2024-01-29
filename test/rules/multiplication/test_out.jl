@@ -1,10 +1,10 @@
 module RulesMultiplicationOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, LinearAlgebra
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, LinearAlgebra
 
 import ReactiveMP: @test_rules, besselmod, make_productdist_message
 
-@testset "rule:typeof(*):out" begin
+@testitem "rule:typeof(*):out" begin
     @testset "Belief Propagation: (m_A::PointMass{<:Real}, m_in::MultivariateNormalDistributionsFamily)" begin
         @test_rules [check_type_promotion = true] (*)(:out, Marginalisation) [
             (input = (m_A = PointMass(2), m_in = MvNormalMeanCovariance([1, 2], [3 2; 2 6])), output = MvNormalMeanCovariance([2, 4], [12 8; 8 24])),

@@ -1,8 +1,8 @@
 module ReactiveMPAddonsMemoryTest
 
-using Test, ReactiveMP, Distributions, BayesBase, ExponentialFamily
+using ReactiveMP, Distributions, BayesBase, ExponentialFamily
 
-@testset "Memory addon" begin
+@testitem "Memory addon" begin
     import ReactiveMP: AddonMemory
 
     @testset "Creation" begin

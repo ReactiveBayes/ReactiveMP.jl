@@ -1,10 +1,10 @@
 module RulesTransitionOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Transition:out" begin
+@testitem "rules:Transition:out" begin
     @testset "Belief Propagation: (q_in::PointMass, q_a::PointMass)" begin
         @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
             (

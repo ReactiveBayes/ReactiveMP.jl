@@ -1,10 +1,10 @@
 module RulesBIFMInTest
 
-using Test, ReactiveMP, Random, ExponentialFamily, BayesBase
+using ReactiveMP, Random, ExponentialFamily, BayesBase
 
 import ReactiveMP: @test_rules
 
-@testset "rules:BIFM:in" begin
+@testitem "rules:BIFM:in" begin
     @testset "Belief Propagation: (m_out::MultivariateNormalDistributionsFamily, m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta)" begin
         meta = BIFMMeta(
             [2 0; 0 1], # A

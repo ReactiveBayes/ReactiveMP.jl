@@ -1,11 +1,10 @@
 module ReactiveMPLinearizationApproximationTest
 
-using Test
 using ReactiveMP
 
 import ReactiveMP: Linearization
 
-@testset "Linearization approximation method" begin
+@testitem "Linearization approximation method" begin
     @testset "linearization `approximate` tests" begin
         import ReactiveMP: approximate, Linearization
 

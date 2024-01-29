@@ -1,6 +1,6 @@
 module RulesCVIMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, Optimisers, LinearAlgebra
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, Optimisers, LinearAlgebra
 import ReactiveMP: @test_rules, @test_marginalrules
 
 add_1 = (x::Real) -> x + 1
@@ -13,7 +13,7 @@ function extract_coordinate(x::Vector)
     return x[1]
 end
 
-@testset "marginalrules:CVI" begin
+@testitems "marginalrules:CVI" begin
     @testset "id, x~Normal, y~Normal" begin
         for enforce in (Val(false), Val(true)), grad in (ForwardDiffGrad(), ForwardDiffGrad(1))
             test_meta = DeltaMeta(method = CVI(StableRNG(123), 1, 1000, Optimisers.Descent(0.007), grad, 20, enforce, true))

@@ -1,13 +1,12 @@
 module ReactiveMPTestingHelpers
 
-using Test
 using ReactiveMP
 
 import ReactiveMP: SkipIndexIterator, skipindex
 import ReactiveMP: CountingReal
 import ReactiveMP: FunctionalIndex
 
-@testset "Helpers" begin
+@testitem "Helpers" begin
     @testset "SkipIndexIterator" begin
         s = skipindex(1:3, 2)
         @test typeof(s) <: SkipIndexIterator

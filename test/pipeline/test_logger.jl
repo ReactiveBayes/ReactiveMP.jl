@@ -1,14 +1,13 @@
 
 module ReactiveMPLoggerPipelineStageTest
 
-using Test
 using ReactiveMP
 using Distributions
 using Rocket
 
 import ReactiveMP: tag
 
-@testset "LoggerPipelineStage" begin
+@testitem "LoggerPipelineStage" begin
     struct DummyNode end
 
     @node DummyNode Stochastic [out, x, y]

@@ -1,13 +1,12 @@
 module ReactiveMPPermutationMatrixTest
 
-using Test
 using ReactiveMP
 using ReactiveMP: getind, PT_X_P
 using Random
 
 using LinearAlgebra
 
-@testset "Permutation Matrix" begin
+@testitem "Permutation Matrix" begin
     @testset "Creation" begin
         ind = shuffle(collect(1:100))
         P = PermutationMatrix(ind)

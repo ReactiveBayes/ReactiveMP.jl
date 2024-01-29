@@ -1,10 +1,10 @@
 module RulesPoissonMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:Poisson" begin
+@testitem "marginalrules:Poisson" begin
     @testset "out_l: (m_out::PointMass, m_l::Gamma)" begin
         @test_marginalrules [check_type_promotion = true] Poisson(:out_l) [
             (input = (m_out = PointMass(1.0), m_l = Gamma(2.0, 1.0)), output = (out = PointMass(1.0), l = Gamma(3.0, 0.5))),

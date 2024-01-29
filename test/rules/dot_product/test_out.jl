@@ -1,12 +1,12 @@
 module RulesDotProductOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 import LinearAlgebra: dot
 import MatrixCorrectionTools: NoCorrection, ReplaceZeroDiagonalEntries
 
-@testset "rules:typeof(dot):out" begin
+@testitem "rules:typeof(dot):out" begin
     @testset "Belief Propagation: (m_in1::PointMass, m_in2::NormalDistributionsFamily)" begin
         @test_rules [check_type_promotion = true] typeof(dot)(:out, Marginalisation) [
             (input = (m_in1 = PointMass(1.0), m_in2 = NormalMeanVariance(2.0, 2.0), meta = NoCorrection()), output = NormalMeanVariance(2.0, 2.0)),

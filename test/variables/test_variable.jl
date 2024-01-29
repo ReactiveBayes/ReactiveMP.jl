@@ -1,8 +1,8 @@
 module ReactiveMPVariableTest
 
-using Test, ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
+using ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
 
-@testset "Variable" begin
+@testitem "Variable" begin
     import ReactiveMP: activate!
     import Rocket: getscheduler
 

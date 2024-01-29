@@ -1,6 +1,6 @@
 module RulesSoftDotThetaTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
@@ -15,7 +15,7 @@ x ∈ {0, 1, 2}
 θ ∈ {0, 1, 2}
 γ ∈ {0, 3}
 =#
-@testset "rules:SoftDot:θ" begin
+@testitem "rules:SoftDot:θ" begin
     #=
     #Copy & paste the functionality below to locally test
     f(q_y, q_x, q_γ) = begin

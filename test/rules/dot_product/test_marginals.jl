@@ -1,12 +1,12 @@
 module RulesDotProductMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_marginalrules
 import LinearAlgebra: dot
 import MatrixCorrectionTools: NoCorrection, ReplaceZeroDiagonalEntries
 
-@testset "marginalrules:DotProduct" begin
+@testitem "marginalrules:DotProduct" begin
     @testset "in1_in2: (m_out::UnivariateNormalDistributionsFamily, m_in1::PointMass, m_in2::UnivariateNormalDistributionsFamily)" begin
         @test_marginalrules [check_type_promotion = true] typeof(dot)(:in1_in2) [
             (

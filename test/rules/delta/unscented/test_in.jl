@@ -1,6 +1,6 @@
 module RulesDeltaUTInTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 import ReactiveMP: @test_rules
 
 # TODO: check_type_promotion = true breaks
@@ -14,7 +14,7 @@ h(x, y) = x .^ 2 .- y
 h_inv_x(z, y) = sqrt.(z .+ y)
 h_inv_z(x, y) = x .^ 2 .- y
 
-@testset "rules:Delta:unscented:in" begin
+@testitem "rules:Delta:unscented:in" begin
     @testset "Single input with known inverse" begin
         @test_rules [check_type_promotion = false] DeltaFn{g}((:in, k = 1), Marginalisation) [
             (

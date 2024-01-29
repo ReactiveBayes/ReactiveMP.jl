@@ -1,8 +1,8 @@
 module ImplicationNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-@testset "ImplicationNode" begin
+@testitem "ImplicationNode" begin
     @testset "Creation" begin
         node = make_node(IMPLY)
 

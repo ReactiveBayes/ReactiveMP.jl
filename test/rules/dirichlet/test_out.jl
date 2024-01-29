@@ -1,10 +1,10 @@
 module RulesDirichletOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Dirichlet:out" begin
+@testitem "rules:Dirichlet:out" begin
     @testset "Belief Propagation: (m_a::PointMass)" begin
         @test_rules [check_type_promotion = true] Dirichlet(:out, Marginalisation) [
             (input = (m_a = PointMass([0.2, 1.0]),), output = Dirichlet([0.2, 1.0])),

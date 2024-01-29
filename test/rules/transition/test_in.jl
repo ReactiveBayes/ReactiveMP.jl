@@ -1,10 +1,10 @@
 module RulesTransitionInTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Transition:in" begin
+@testitem "rules:Transition:in" begin
     @testset "Belief Propagation: (m_out::Categorical, m_a::PointMass)" begin
         @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
             input = (m_out = Categorical([0.1, 0.4, 0.5]), m_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),

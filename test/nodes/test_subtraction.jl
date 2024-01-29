@@ -1,8 +1,8 @@
 module SubtractionNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-@testset "SubtractionNode" begin
+@testitem "SubtractionNode" begin
     @testset "Creation" begin
         node = make_node(-)
 

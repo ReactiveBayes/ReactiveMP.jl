@@ -1,10 +1,10 @@
 module RulesORMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules, @test_marginalrules
 
-@testset "rules:OR:marginals" begin
+@testitem "rules:OR:marginals" begin
     @testset ":in1_in2 (m_out::Bernoulli, m_in1::Bernoulli, m_in2::Bernoulli)" begin
         @test_marginalrules [check_type_promotion = true] OR(:in1_in2) [
             (input = (m_out = Bernoulli(0.5), m_in1 = Bernoulli(0.5), m_in2 = Bernoulli(0.5)), output = (Contingency([0.5^3 0.5^3; 0.5^3 0.5^3]))),

@@ -1,6 +1,6 @@
 module ReactiveMPMessageTest
 
-using Test, Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
+using Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
 import InteractiveUtils: methodswith
 import Base: methods
@@ -9,7 +9,7 @@ import BayesBase: xtlog, mirrorlog
 import ReactiveMP: getaddons, multiply_messages, materialize!
 import SpecialFunctions: loggamma
 
-@testset "Message" begin
+@testitem "Message" begin
     @testset "Default methods" begin
         data = PointMass(1)
 

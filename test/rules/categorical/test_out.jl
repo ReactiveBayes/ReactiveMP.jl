@@ -1,10 +1,10 @@
 module RulesCategoricalOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Categorical:out" begin
+@testitem "rules:Categorical:out" begin
     @testset "Belief Propagation: (m_p::PointMass)" begin
         @test_rules [check_type_promotion = false] Categorical(:out, Marginalisation) [
             (input = (m_p = PointMass([0.0, 1.0]),), output = Categorical([0.0, 1.0])), (input = (m_p = PointMass([0.8, 0.2]),), output = Categorical([0.8, 0.2]))

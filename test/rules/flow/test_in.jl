@@ -5,7 +5,7 @@ using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, Lin
 import ReactiveMP: @test_rules
 using ReactiveMP: jacobian, inv_jacobian
 
-@testset "rules:Flow:in" begin
+@testitem "rules:Flow:in" begin
     params = [1.0, 2.0, 3.0]
     model = FlowModel(2, (AdditiveCouplingLayer(PlanarFlow(); permute = false),))
     compiled_model = compile(model, params)

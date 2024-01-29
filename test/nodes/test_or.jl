@@ -1,8 +1,8 @@
 module OrNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-@testset "OrNode" begin
+@testitem "OrNode" begin
     @testset "Creation" begin
         node = make_node(OR)
 

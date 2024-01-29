@@ -1,6 +1,6 @@
 module RulesSoftDotGammaTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
@@ -15,7 +15,7 @@ x ∈ {0, 1, 2}
 θ ∈ {0, 1, 2}
 γ ∈ {0, 3}
 =#
-@testset "rules:SoftDot:γ" begin
+@testitem "rules:SoftDot:γ" begin
     #=
     #Copy & paste the functionality below to locally test (f returns B in Γ(3/2, B/2))
     f(q_y,q_θ,q_x) = begin

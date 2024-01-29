@@ -1,10 +1,10 @@
 module RulesMvNormalMeanScalePrecisionPrecisionTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: GammaShapeRate, @test_rules
 
-@testset "rules:MvNormalMeanScalePrecision:precision" begin
+@testitem "rules:MvNormalMeanScalePrecision:precision" begin
     @testset "Variational: (q_out::MultivariateNormalDistributionsFamily, q_μ::MultivariateNormalDistributionsFamily)" begin
         @test_rules [check_type_promotion = true] MvNormalMeanScalePrecision(:γ, Marginalisation) [
             (

@@ -5,7 +5,7 @@ using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 import ExponentialFamily: InverseWishartFast
 import ReactiveMP: @test_rules
 
-@testset "rules:InverseWishart:out" begin
+@testitem "rules:InverseWishart:out" begin
     @testset "Belief Propagation: (m_ν::PointMass, m_S::PointMass)" begin
         @test_rules [check_type_promotion = true] InverseWishart(:out, Marginalisation) [
             (input = (m_ν = PointMass(2.0), m_S = PointMass([1.0 0.0; 0.0 1.0])), output = InverseWishartFast(2.0, [1.0 0.0; 0.0 1.0])),

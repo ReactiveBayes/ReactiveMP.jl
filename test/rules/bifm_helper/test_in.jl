@@ -1,10 +1,10 @@
 module RulesBIFMHelperInTest
 
-using Test, ReactiveMP, Random, ExponentialFamily, BayesBase
+using ReactiveMP, Random, ExponentialFamily, BayesBase
 
 import ReactiveMP: @test_rules
 
-@testset "rules:BIFMHelper:in" begin
+@testitem "rules:BIFMHelper:in" begin
     @testset "Belief Propagation: (m_out::Any, )" begin
         @test_rules [check_type_promotion = true] BIFMHelper(:in, Marginalisation) [
             (input = (m_out = PointMass(1.0),), output = PointMass(1.0)),

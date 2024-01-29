@@ -9,7 +9,7 @@ g(x) = x .^ 2 .- 5.0
 # h: multiple input, single output
 h(x, y) = x .^ 2 .- y
 
-@testset "rules:Delta:unscented:marginals" begin
+@testitem "rules:Delta:unscented:marginals" begin
     @testset "Single univariate input" begin
         @test_marginalrules [check_type_promotion = false, atol = 1e-10] DeltaFn{g}(:ins) [(
             input = (m_out = NormalMeanVariance(2.0, 3.0), m_ins = ManyOf(NormalMeanVariance(2.0, 1.0)), meta = DeltaMeta(; method = Unscented(), inverse = nothing)),

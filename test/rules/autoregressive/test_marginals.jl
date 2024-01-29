@@ -1,10 +1,10 @@
 module RulesAutoregressiveTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:Autoregressive" begin
+@testitem "marginalrules:Autoregressive" begin
     @testset "y_x: (m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::Any)" begin
         @test_marginalrules [check_type_promotion = true] Autoregressive(:y_x) [(
             input = (

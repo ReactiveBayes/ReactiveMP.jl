@@ -1,10 +1,10 @@
 module RulesMultiplicationInTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, LinearAlgebra
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, LinearAlgebra
 
 import ReactiveMP: @test_rules, make_inversedist_message
 
-@testset "rule:typeof(*):in" begin
+@testitem "rule:typeof(*):in" begin
     @testset "Belief Propagation: (m_A::PointMass{<:Real}, m_out::MultivariateNormalDistributionsFamily)" begin
         @test_rules [check_type_promotion = true] (*)(:in, Marginalisation) [
             (input = (m_A = PointMass(2), m_out = MvNormalMeanCovariance([2, 4], [12 8; 8 24])), output = MvNormalMeanCovariance([1, 2], [3 2; 2 6])),

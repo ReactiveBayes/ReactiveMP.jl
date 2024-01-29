@@ -1,10 +1,10 @@
 module RulesDirichletMarginalsTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_marginalrules
 
-@testset "marginalrules:Dirichlet" begin
+@testitem "marginalrules:Dirichlet" begin
     @testset "out_a: (m_out::Dirichlet, m_a::PointMass)" begin
         @test_marginalrules [check_type_promotion = true] Dirichlet(:out_a) [
             (input = (m_out = Dirichlet([1.0, 2.0]), m_a = PointMass([0.2, 1.0])), output = (out = Dirichlet([0.2, 2.0]), a = PointMass([0.2, 1.0]))),

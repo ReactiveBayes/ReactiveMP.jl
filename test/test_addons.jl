@@ -1,11 +1,11 @@
 
 module ReactiveMPAddonsTest
 
-using Test, ReactiveMP, BayesBase, Distributions, ExponentialFamily
+using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
 using ReactiveMP: multiply_addons
 
-@testset "Addons" begin
+@testitem "Addons" begin
     @testset "addonlogscale" begin
         @testset "creation" begin
             addon1 = AddonLogScale()

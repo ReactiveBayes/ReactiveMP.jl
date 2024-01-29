@@ -1,6 +1,6 @@
 module ReactiveMPRandomVariableTest
 
-using Test, ReactiveMP, Rocket, BayesBase
+using ReactiveMP, Rocket, BayesBase
 
 import ReactiveMP: UnspecifiedFormConstraint
 import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
@@ -9,7 +9,7 @@ import ReactiveMP: proxy_variables, israndom, isproxy
 import ReactiveMP: marginal_form_constraint, marginal_form_check_strategy
 import ReactiveMP: messages_form_constraint, messages_form_check_strategy
 
-@testset "RandomVariable" begin
+@testitem "RandomVariable" begin
     @testset "Simple creation" begin
         for sym in (:x, :y, :z)
             v = randomvar(sym)

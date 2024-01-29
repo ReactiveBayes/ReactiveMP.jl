@@ -1,10 +1,10 @@
 module RulesHalfNormalOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:HalfNormal:out" begin
+@testitem "rules:HalfNormal:out" begin
     @testset "Variational Message Passing: (q_v::Any)" begin
         @test_rules [check_type_promotion = true] HalfNormal(:out, Marginalisation) [
             (input = (q_v = PointMass(1.0),), output = Truncated(Normal(0.0, 1.0), 0.0, Inf)),

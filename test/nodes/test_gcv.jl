@@ -1,10 +1,10 @@
 module GCVNodeTest
 
-using Test, ReactiveMP, Distributions, Random, DomainIntegrals, BayesBase, ExponentialFamily
+using ReactiveMP, Distributions, Random, DomainIntegrals, BayesBase, ExponentialFamily
 
 import ReactiveMP: ExponentialLinearQuadratic
 
-@testset "ExponentialLinearQuadratic" begin
+@testitem "ExponentialLinearQuadratic" begin
     @testset "Statistics" begin
         approximation = GaussHermiteCubature(11)
         rng = MersenneTwister(123)

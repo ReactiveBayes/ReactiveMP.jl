@@ -1,10 +1,10 @@
 module NormalMeanVarianceNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
+using ReactiveMP, Random, BayesBase, ExponentialFamily
 
 import ReactiveMP: make_node
 
-@testset "NormalMeanVarianceNode" begin
+@testitem "NormalMeanVarianceNode" begin
     @testset "Creation" begin
         node = make_node(NormalMeanVariance)
 

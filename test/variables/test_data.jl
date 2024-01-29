@@ -1,6 +1,5 @@
 module ReactiveMPDataVariableTest
 
-using Test
 using ReactiveMP
 using Rocket
 
@@ -9,7 +8,7 @@ import ReactiveMP: collection_type, VariableIndividual, VariableVector, Variable
 import ReactiveMP: getconst, proxy_variables
 import ReactiveMP: israndom, isproxy, isused, isconnected, setmessagein!, allows_missings
 
-@testset "DataVariable" begin
+@testitem "DataVariable" begin
     @testset "Simple creation" begin
         randomize_update(::Type{Missing}, size)                            = fill(missing, size)
         randomize_update(::Type{T}, size) where {T <: Union{Int, Float64}} = rand(T, size)

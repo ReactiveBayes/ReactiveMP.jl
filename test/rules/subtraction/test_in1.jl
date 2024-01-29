@@ -1,10 +1,10 @@
 module RulesSubtractionIn1Test
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:typeof(-):in1" begin
+@testitem "rules:typeof(-):in1" begin
     @testset "Belief Propagation: (m_out::PointMass, m_in2::PointMass)" begin
         @test_rules [check_type_promotion = true] typeof(-)(:in1, Marginalisation) [
             (input = (m_out = PointMass(1.0), m_in2 = PointMass(-1.0)), output = PointMass(0.0)),

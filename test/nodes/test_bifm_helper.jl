@@ -1,10 +1,10 @@
 module BIFMHelperNodeTest
 
-using Test, ReactiveMP, Random, ExponentialFamily, BayesBase
+using ReactiveMP, Random, ExponentialFamily, BayesBase
 
 import ReactiveMP: @test_rules
 
-@testset "BIFMHelperNode" begin
+@testitem "BIFMHelperNode" begin
     @testset "Creation" begin
         node = make_node(BIFMHelper)
 

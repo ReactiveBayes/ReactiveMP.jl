@@ -1,10 +1,10 @@
 module RulesPoissonOutTest
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
 import ReactiveMP: @test_rules
 
-@testset "rules:Poisson:out" begin
+@testitem "rules:Poisson:out" begin
     @testset "Belief Propagation: (m_l::PointMass)" begin
         @test_rules [check_type_promotion = true] Poisson(:out, Marginalisation) [
             (input = (m_l = PointMass(1.0),), output = Poisson(1.0)), (input = (m_l = PointMass(0.2),), output = Poisson(0.2))
