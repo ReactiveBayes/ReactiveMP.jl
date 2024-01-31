@@ -1,4 +1,5 @@
 @testitem "Debug addon" begin
+    using ExponentialFamily, BayesBase
     import ReactiveMP: AddonDebug
 
     @testset "Creation" begin
