@@ -1,5 +1,5 @@
 
-@testitems "marginalrules:CVI" begin
+@testitem "marginalrules:CVI" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, StableRNGs, Optimisers, LinearAlgebra
     import ReactiveMP: @test_rules, @test_marginalrules
 
