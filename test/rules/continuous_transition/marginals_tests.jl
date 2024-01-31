@@ -1,5 +1,5 @@
 
-@testset "marginalrules:ContinuousTransition" begin
+@testitem "marginalrules:ContinuousTransition" begin
     using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
     import ReactiveMP: @test_marginalrules
 

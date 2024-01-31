@@ -1,5 +1,5 @@
 
-@testset "rules:ContinuousTransition:W" begin
+@testitem "rules:ContinuousTransition:W" begin
     using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
     import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, WishartFast
