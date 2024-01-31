@@ -4,11 +4,11 @@ ReactiveMP.jl
 *Julia package for reactive message passing Bayesian inference engine on a factor graph.*
 
 !!! note
-    This package exports only an inference engine, for the full ecosystem with convenient model and constraints specification we refer user to the [`RxInfer.jl`](https://github.com/biaslab/RxInfer.jl) package and its [documentation](https://biaslab.github.io/RxInfer.jl/stable/).
+    This package exports only an inference engine, for the full ecosystem with convenient model and constraints specification we refer user to the [`RxInfer.jl`](https://github.com/reactivebayes/RxInfer.jl) package and its [documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
 
 ## Examples and tutorials
 
-Tutorials and examples are available in the [RxInfer documentation](https://biaslab.github.io/RxInfer.jl/stable/).
+Tutorials and examples are available in the [RxInfer documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
 
 ## Table of Contents
 

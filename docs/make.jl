@@ -37,6 +37,8 @@ makedocs(
 
 if get(ENV, "CI", nothing) == "true"
     deploydocs(
-        repo = "github.com/biaslab/ReactiveMP.jl.git"
+        repo = "github.com/ReactiveBayes/ReactiveMP.jl.git",
+        devbranch = "main", 
+        forcepush = true
     )
 end

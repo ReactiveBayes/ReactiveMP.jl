@@ -73,6 +73,7 @@ include("mv_normal_mean_scale_precision/precision.jl")
 include("mv_normal_mean_scale_precision/marginals.jl")
 
 include("mv_normal_weightedmean_precision/marginals.jl")
+include("mv_normal_weightedmean_precision/out.jl")
 
 include("normal_mean_precision/out.jl")
 include("normal_mean_precision/mean.jl")
@@ -109,6 +110,12 @@ include("transition/marginals.jl")
 include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")
+
+include("continuous_transition/y.jl")
+include("continuous_transition/x.jl")
+include("continuous_transition/a.jl")
+include("continuous_transition/W.jl")
+include("continuous_transition/marginals.jl")
 
 include("autoregressive/y.jl")
 include("autoregressive/x.jl")
