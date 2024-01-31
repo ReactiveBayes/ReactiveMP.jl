@@ -1,9 +1,8 @@
-module RulesContinuousTransitionTest
-
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
-import ReactiveMP: @test_marginalrules
 
 @testset "marginalrules:ContinuousTransition" begin
+    using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+    import ReactiveMP: @test_marginalrules
+
     rng = MersenneTwister(42)
     @testset "Linear transformation" begin
         # the following rule is used for testing purposes only
@@ -66,5 +65,4 @@ import ReactiveMP: @test_marginalrules
             )]
         end
     end
-end
 end

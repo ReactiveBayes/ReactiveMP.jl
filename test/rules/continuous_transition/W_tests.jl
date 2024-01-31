@@ -1,10 +1,9 @@
-module RulesContinuousTransitionTest
-
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
-
-import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, WishartFast
 
 @testset "rules:ContinuousTransition:W" begin
+    using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+
+    import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, WishartFast
+
     rng = MersenneTwister(42)
 
     @testset "Linear transformation" begin
@@ -63,6 +62,4 @@ import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, WishartFast
             )]
         end
     end
-end
-
 end
