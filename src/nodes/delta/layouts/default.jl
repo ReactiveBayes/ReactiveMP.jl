@@ -71,6 +71,10 @@ end
 # This function declares how to compute `m_out` 
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     let out = factornode.out, ins = factornode.ins
+
+        node_pipeline              = getpipeline(factornode)
+        node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
+
         # By default we simply request all inbound messages from `ins` edges
         msgs_names      = Val{(:ins,)}()
         msgs_observable = combineLatestUpdates((combineLatestMessagesInUpdates(ins),), PushNew())
@@ -93,6 +97,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(out), vmessageout)
@@ -101,6 +106,10 @@ end
 
 # This function declares how to compute `m_in` for each `k` 
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
+
+    node_pipeline              = getpipeline(factornode)
+    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
+
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
         msgs_names      = Val{(:in,)}()
@@ -123,6 +132,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)
@@ -162,6 +172,10 @@ end
 # This function declares how to compute `m_in` 
 function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, pipeline_stages, scheduler, addons) where {F}
     N = length(factornode.ins)
+
+    node_pipeline              = getpipeline(factornode)
+    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
+
     # For each outbound message from `in_k` edge we need an inbound messages from all OTHER! `in_*` edges and inbound message on `m_out`
     foreach(enumerate(factornode.ins)) do (index, interface)
 
@@ -194,6 +208,7 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_i
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)
