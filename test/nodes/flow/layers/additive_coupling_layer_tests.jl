@@ -1,11 +1,8 @@
 
-
-
-
 @testitem "Additive Coupling Layer" begin
     using ReactiveMP
-using ReactiveMP: getf, getflow, getdim, forward, forward!, backward, backward!, jacobian, inv_jacobian
-using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
+    using ReactiveMP: getf, getflow, getdim, forward, forward!, backward, backward!, jacobian, inv_jacobian
+    using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
 
     @testset "Constructor" begin
 

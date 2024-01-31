@@ -6,4 +6,3 @@ nthreads = max(cputhreads(), 1)
 ncores = max(cpucores(), 1)
 
 runtests(ReactiveMP; nworkers = ncores, nworker_threads = Int(nthreads / ncores), memory_threshold = 1.0)
-

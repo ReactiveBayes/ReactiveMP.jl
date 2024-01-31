@@ -1,6 +1,6 @@
 @testitem "Memory addon" begin
     using ExponentialFamily, BayesBase
-    
+
     import ReactiveMP: AddonMemory
 
     @testset "Creation" begin

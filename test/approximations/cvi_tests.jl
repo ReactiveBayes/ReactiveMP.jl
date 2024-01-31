@@ -1,5 +1,4 @@
 
-
 @testitem "cvi:prod" begin
     using ReactiveMP, Random, StableRNGs, BayesBase, Distributions, ExponentialFamily, Optimisers, DiffResults, LinearAlgebra
 

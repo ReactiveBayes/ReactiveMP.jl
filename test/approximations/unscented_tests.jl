@@ -2,8 +2,7 @@
 @testitem "Unscented approximation method" begin
     using ReactiveMP
 
-import ReactiveMP: Unscented, unscented_statistics
-
+    import ReactiveMP: Unscented, unscented_statistics
 
     @testset "Univariate `unscented_statistics`" begin
 

@@ -1,10 +1,8 @@
 
-
 @testitem "rules:Autoregressive:x" begin
+    using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
-using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
-
-import ReactiveMP: @test_rules
+    import ReactiveMP: @test_rules
     @testset "Mean-field: (q_y::Any, q_θ::Any, q_γ::Any)" begin
         armeta = ARMeta(Univariate, 1, ARsafe())
         @test_rules [check_type_promotion = true] Autoregressive(:x, Marginalisation) [

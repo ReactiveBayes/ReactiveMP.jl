@@ -1,5 +1,4 @@
 
-
 @testitem "AndNode" begin
     using ReactiveMP, Random
     @testset "Creation" begin

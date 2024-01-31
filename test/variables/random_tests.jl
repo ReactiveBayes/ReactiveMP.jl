@@ -221,5 +221,3 @@
         @test_throws ErrorException randomvar(:x)[1]
     end
 end
-
-

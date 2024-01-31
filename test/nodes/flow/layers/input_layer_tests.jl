@@ -1,13 +1,9 @@
 
-
-
-
 @testitem "Input Layer" begin
-
     using ReactiveMP
-using LinearAlgebra
+    using LinearAlgebra
 
-using ReactiveMP: getdim
+    using ReactiveMP: getdim
 
     @testset "Constructor" begin
 

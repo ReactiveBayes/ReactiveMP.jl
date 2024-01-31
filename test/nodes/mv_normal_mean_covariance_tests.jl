@@ -1,6 +1,4 @@
 
-
-
 @testitem "MvNormalMeanCovarianceNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
