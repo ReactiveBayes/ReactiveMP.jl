@@ -30,6 +30,10 @@ end
 # This function declares how to compute `m_out` 
 function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     let interface = factornode.out
+
+        node_pipeline              = getpipeline(factornode)
+        node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
+
         # CVI does not need an inbound message 
         msgs_names      = nothing
         msgs_observable = of(nothing)
@@ -53,6 +57,7 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)

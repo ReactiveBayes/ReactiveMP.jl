@@ -29,7 +29,7 @@ getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
 import Base: map
 
 struct DeltaFn{F} end
-struct DeltaFnNode{F, P, N, S, L, M} <: AbstractFactorNode
+struct DeltaFnNode{F, P, N, S, L, M, E} <: AbstractFactorNode
     fn::F
 
     proxy::P
@@ -39,6 +39,7 @@ struct DeltaFnNode{F, P, N, S, L, M} <: AbstractFactorNode
     statics        :: S
     localmarginals :: L
     metadata       :: M
+    pipeline       :: E
 end
 
 as_node_symbol(::Type{<:DeltaFn{F}}) where {F} = Symbol(replace(string(nameof(F)), "#" => ""))
@@ -50,6 +51,7 @@ factorisation(factornode::DeltaFnNode{F}) where {F}  = ntuple(identity, length(f
 localmarginals(factornode::DeltaFnNode)              = factornode.localmarginals.marginals
 localmarginalnames(factornode::DeltaFnNode)          = map(name, localmarginals(factornode))
 metadata(factornode::DeltaFnNode)                    = factornode.metadata
+getpipeline(factornode::DeltaFnNode)                 = factornode.pipeline
 
 collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
     "Delta node `$(as_node_symbol(D))` requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
@@ -57,6 +59,10 @@ collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
 
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
 collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(; method = method, inverse = nothing)
+
+struct DeltaNodeFunctionalDependenciesPipeline <: AbstractNodeFunctionalDependenciesPipeline end
+
+default_functional_dependencies_pipeline(::Type{DeltaFn}) = DeltaNodeFunctionalDependenciesPipeline()
 
 function nodefunction(factornode::DeltaFnNode)
     # `DeltaFnNode` `nodefunction` is `δ(y - f(ins...))`
@@ -88,7 +94,7 @@ call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()
 function call_rule_make_node(::CallRuleNodeRequired, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
     # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
     # Doing so will most likely throw an error
-    return DeltaFnNode(nodetype, nodetype, NodeInterface(:out, Marginalisation()), (), (), nothing, collect_meta(DeltaFn{F}, meta))
+    return DeltaFnNode(nodetype, nodetype, NodeInterface(:out, Marginalisation()), (), (), nothing, collect_meta(DeltaFn{F}, meta), nothing)
 end
 
 function interfaceindex(factornode::DeltaFnNode, iname::Symbol)
@@ -137,15 +143,11 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
     meta           = collect_meta(DeltaFn{F}, metadata(options))
     pipeline       = getpipeline(options)
 
-    if !isnothing(pipeline)
-        @warn "Delta node does not support the `pipeline` option."
-    end
-
     if !isnothing(getinverse(meta)) && !isempty(statics)
         error("The inverse function specification is not supported for the Delta node, which is connected to datavar/constvar edges.")
     end
 
-    return DeltaFnNode(fn, proxy, out_interface, ins_interface, statics, localmarginals, meta)
+    return DeltaFnNode(fn, proxy, out_interface, ins_interface, statics, localmarginals, meta, collect_pipeline(DeltaFn, pipeline))
 end
 
 # This function takes the inputs of the deterministic nodes and sorts them into two 
@@ -208,6 +210,7 @@ end
 
 # DeltaFn is very special, so it has a very special `activate!` function
 function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependenciesLayout, options)
+
     foreach(interfaces(factornode)) do interface
         (connectedvar(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
     end
