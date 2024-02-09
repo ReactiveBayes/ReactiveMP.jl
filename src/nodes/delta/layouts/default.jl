@@ -71,7 +71,6 @@ end
 # This function declares how to compute `m_out` 
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     let out = factornode.out, ins = factornode.ins
-
         node_pipeline              = getpipeline(factornode)
         node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
@@ -106,7 +105,6 @@ end
 
 # This function declares how to compute `m_in` for each `k` 
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
-
     node_pipeline              = getpipeline(factornode)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 

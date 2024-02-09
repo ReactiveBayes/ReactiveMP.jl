@@ -210,7 +210,6 @@ end
 
 # DeltaFn is very special, so it has a very special `activate!` function
 function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependenciesLayout, options)
-
     foreach(interfaces(factornode)) do interface
         (connectedvar(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
     end

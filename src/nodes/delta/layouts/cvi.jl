@@ -30,7 +30,6 @@ end
 # This function declares how to compute `m_out` 
 function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     let interface = factornode.out
-
         node_pipeline              = getpipeline(factornode)
         node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
