@@ -29,6 +29,10 @@ function RandomVariableProperties()
     )
 end
 
+israndom(::RandomVariableProperties) = true
+isdata(::RandomVariableProperties)   = false
+isconst(::RandomVariableProperties)  = false
+
 function setmessagein!(properties::RandomVariableProperties, messagein)
     # The `setmessagein!` function for random variables record the input message and return the updated properties
     # It also returns the index of the input message that has been added
@@ -293,13 +297,6 @@ _messages_form_check_strategy(::FormConstraintCheckPickDefault, randomvar::Rando
 _messages_form_check_strategy(form_check_strategy, randomvar::RandomVariable)              = form_check_strategy
 
 isproxy(randomvar::RandomVariable) = proxy_variables(randomvar) !== nothing
-
-israndom(::RandomVariable)                  = true
-israndom(::AbstractArray{<:RandomVariable}) = true
-isdata(::RandomVariable)                    = false
-isdata(::AbstractArray{<:RandomVariable})   = false
-isconst(::RandomVariable)                   = false
-isconst(::AbstractArray{<:RandomVariable})  = false
 
 function Base.getindex(randomvar::RandomVariable, i...)
     error("Variable $(indexed_name(randomvar)) has been indexed with `[$(join(i, ','))]`. Direct indexing of `random` variables is not allowed.")

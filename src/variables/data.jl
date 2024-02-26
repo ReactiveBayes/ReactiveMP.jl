@@ -12,6 +12,10 @@ function DataVariableProperties()
     return DataVariableProperties(Vector{MessageObservable{AbstractMessage}}(), RecentSubject(Message), MarginalObservable())
 end
 
+israndom(::DataVariableProperties) = false
+isdata(::DataVariableProperties)   = true
+isconst(::DataVariableProperties)  = false
+
 function setmessagein!(properties::DataVariableProperties, messagein)
     push!(properties.input_messages, messagein)
     return properties, length(properties.input_messages)

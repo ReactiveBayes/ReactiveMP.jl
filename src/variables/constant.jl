@@ -14,6 +14,10 @@ function ConstVariableProperties(constant)
     return ConstVariableProperties(messageout, marginal)
 end
 
+israndom(::ConstVariableProperties) = false
+isdata(::ConstVariableProperties)   = false
+isconst(::ConstVariableProperties)  = true
+
 function setmessagein!(properties::ConstVariableProperties, messagein)
     # The `setmessagein!` function for the const variable is a no-op
     # because we do not pass any messages towards constants
