@@ -241,13 +241,13 @@ See also: [`NodeInterface`](@ref), [`messageout`](@ref)
 messagein(interface::NodeInterface) = messageout(interface.properties, interface.message_index)
 
 """
-    getmarginal(interface)
+    getproperties(interface)
 
-Returns a posterior marginal stream from the given interface.
+Returns connected properties of a variable connected to the given interface.
 
 See also: [`NodeInterface`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
-getmarginal(interface::NodeInterface) = getmarginal(interface.properties)
+getproperties(interface::NodeInterface) = interface.properties
 
 """
     get_pipeline_stages(interface)
@@ -256,7 +256,7 @@ Returns an instance of pipeline stages of connected variable for the given inter
 
 See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref), [`add_inbound_pipeline_stage!`](@ref)
 """
-get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(connected_properties(interface))
+get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(getproperties(interface))
 
 """
     IndexedNodeInterface
@@ -327,7 +327,7 @@ function combineLatestMessagesInUpdates(indexed::NTuple{N, <:IndexedNodeInterfac
     return ManyOfObservable(combineLatestUpdates(map((in) -> messagein(in), indexed), PushNew()))
 end
 
-## FactorNodeLocalMarginals
+## FactorNodeLocalMarginal
 
 """
     FactorNodeLocalMarginal
@@ -338,16 +338,42 @@ Local to factor node marginal also can be shared with a corresponding marginal o
 
 See also: [`FactorNodeLocalMarginals`](@ref)
 """
-struct FactorNodeLocalMarginal
-    name   :: Symbol
-    stream
+mutable struct FactorNodeLocalMarginal
+    const name::Symbol
+    stream::MarginalObservable
+
+    FactorNodeLocalMarginal(name::Symbol) = new(name)
 end
 
-name(localmarginal::FactorNodeLocalMarginal)  = localmarginal.name
-tag(localmarginal::FactorNodeLocalMarginal)   = Val{name(localmarginal)}()
+name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
+tag(localmarginal::FactorNodeLocalMarginal)  = Val{name(localmarginal)}()
 
 getstream(localmarginal::FactorNodeLocalMarginal)              = localmarginal.stream
 setstream!(localmarginal::FactorNodeLocalMarginal, observable) = localmarginal.stream = observable
+
+Base.show(io::IO, marginal::FactorNodeLocalMarginal) = print(io, "FactorNodeLocalMarginal(", name(marginal), ")")
+
+## FactorNodeLocalClusters
+
+struct FactorNodeLocalClusters
+    marginals::Vector{FactorNodeLocalMarginal}
+    factorization
+end
+
+getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
+
+getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
+getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
+
+function FactorNodeLocalClusters(interfaces::Vector{NodeInterface}, factorization)
+    marginals = map(i -> FactorNodeLocalMarginal(clustername(factorization[i], interfaces)), 1:length(factorization))
+    return FactorNodeLocalClusters(marginals, factorization)
+end
+
+clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) = clusterindex(clusters, clusters.factorization, vindex)
+clusterindex(::FactorNodeLocalClusters, factorization::Tuple, vindex::Int) = findfirst(cluster -> vindex in cluster, factorization)
+
+clustername(cluster::Tuple, interfaces) = mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
 
 ## AbstractFactorNode
 
@@ -363,18 +389,14 @@ interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) wher
 
 struct FactorNodeProperties <: AbstractFactorNode
     interfaces::Vector{NodeInterface}
-    marginal_clusters::Dict{Symbol, FactorNodeLocalMarginal}
+end
+
+function getinterfaces(properties::FactorNodeProperties)
+    return properties.interfaces
 end
 
 function getinterface(properties::FactorNodeProperties, index)
     return properties.interfaces[index]
-end
-
-function getmarginal(properties::FactorNodeProperties, cluster)
-    return get!(properties.marginal_clusters, cluster) do 
-        name = clustername(cluster, properties.interfaces)
-        return create_marginal_stream(properties, name, cluster)
-    end
 end
 
 function FactorNodeProperties(interfaces::NamedTuple)
@@ -382,11 +404,13 @@ function FactorNodeProperties(interfaces::NamedTuple)
     foreach(enumerate(pairs(interfaces))) do (index, (name, interface))
         ivector[index] = NodeInterface(name, interface)
     end
-    return FactorNodeProperties(ivector, Dict())
+    return FactorNodeProperties(ivector)
 end
 
+## activate!
+
 struct FactorNodeActivationOptions{C}
-    clusters::C
+    factorization::C
 end
 
 function activate!(fform, properties::FactorNodeProperties, options::FactorNodeActivationOptions)
@@ -398,40 +422,73 @@ function activate!(fform, properties::FactorNodeProperties, options::FactorNodeA
     node_pipeline              = collect_pipeline(fform, nothing) # getpipeline(factornode)
     node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
-    clusters                   = options.clusters
+    factorization              = options.factorization
 
-    error("Create marginal streams first for all clusters")
+    clusters = FactorNodeLocalClusters(properties.interfaces, factorization)
 
-    foreach(enumerate(properties.interfaces)) do (iindex, interface)
+    activate!(properties, clusters)
+
+    foreach(enumerate(getinterfaces(properties))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
             message_dependencies, marginal_dependencies = functional_dependencies(node_pipeline_dependencies, properties, clusters, interface, iindex)
 
-            msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-            marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+            msgs_names, msgs_observable          = get_messages_observable(properties, message_dependencies)
+            marginal_names, marginals_observable = get_marginals_observable(properties, marginal_dependencies)
 
             vtag        = tag(interface)
-            vconstraint = local_constraint(interface)
+            vconstraint = Marginalisation()
 
-            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
-            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
+            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), properties, vtag, vmessageout)
 
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, properties))
                 (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
             end
 
             vmessageout = vmessageout |> map(AbstractMessage, mapping)
-            vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
-            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+            vmessageout = apply_pipeline_stage(pipeline_stages, properties, vtag, vmessageout)
+            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, properties, vtag, vmessageout)
             vmessageout = vmessageout |> schedule_on(scheduler)
 
             connect!(messageout(interface), vmessageout)
-        elseif cvariable === nothing
-            error("Empty variable on interface $(interface) of node $(factornode)")
         end
     end
 end
 
-function activate_node_interface!(interface::NodeInterface, index::Int) end
+function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalClusters)
+    foreach(enumerate(getmarginals(clusters))) do (index, marginal)
+        activate!(properties, clusters, marginal, index)
+    end
+end
+
+function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, marginal::FactorNodeLocalMarginal, index::Int)
+    localfactorization = getfactorization(clusters)[index]
+    if length(localfactorization) === 1
+        setstream!(marginal, getmarginal(getproperties(getinterface(properties, first(localfactorization))), IncludeAll()))
+    else
+        @show marginal
+        error("Not implemented yet but very important!!")
+
+        cmarginal = MarginalObservable()
+        setstream!(localmarginal, cmarginal)
+
+        message_dependencies  = tuple(getclusterinterfaces(factornode, clusterindex)...)
+        marginal_dependencies = tuple(TupleTools.deleteat(localmarginals(factornode), clusterindex)...)
+
+        msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
+        marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+
+        fform = functionalform(factornode)
+        vtag  = tag(localmarginal)
+        meta  = metadata(factornode)
+
+        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, factornode))
+        # TODO: discontinue operator is needed for loopy belief propagation? Check
+        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
+
+        connect!(cmarginal, marginalout)
+    end
+end
 
 ## Generic Factor Node new code end
 
@@ -441,13 +498,16 @@ struct FactorNodeCreationOptions{F, M, P}
     pipeline      :: P
 end
 
-FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothing)
+# FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothing)
 
-factorisation(options::FactorNodeCreationOptions) = options.factorisation
-metadata(options::FactorNodeCreationOptions)      = options.metadata
-getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
+# factorisation(options::FactorNodeCreationOptions) = options.factorisation
+# metadata(options::FactorNodeCreationOptions)      = options.metadata
+# getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
 
-Base.broadcastable(options::FactorNodeCreationOptions) = Ref(options)
+# Base.broadcastable(options::FactorNodeCreationOptions) = Ref(options)
+
+# Removed struct
+struct FactorNodesCollection end
 
 struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     fform          :: F
@@ -458,29 +518,26 @@ struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
     pipeline       :: P
 end
 
-function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A, pipeline::P) where {F, I, C, M, A, P}
-    return FactorNode{Type{F}, I, C, M, A, P}(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
-end
+# function FactorNode(fform::Type{F}, interfaces::I, factorisation::C, localmarginals::M, metadata::A, pipeline::P) where {F, I, C, M, A, P}
+#     return FactorNode{Type{F}, I, C, M, A, P}(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
+# end
 
-function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, pipeline) where {N}
-    interfaces     = map(varname -> NodeInterface(varname, interface_default_local_constraint(fform, varname)), varnames)
-    localmarginals = FactorNodeLocalMarginals(varnames, factorisation)
-    return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
-end
+# function FactorNode(fform, varnames::NTuple{N, Symbol}, factorisation, metadata, pipeline) where {N}
+#     interfaces     = map(varname -> NodeInterface(varname, interface_default_local_constraint(fform, varname)), varnames)
+#     localmarginals = FactorNodeLocalClusters(varnames, factorisation)
+#     return FactorNode(fform, interfaces, factorisation, localmarginals, metadata, pipeline)
+# end
 
-function Base.show(io::IO, factornode::FactorNode)
-    println(io, "FactorNode:")
-    println(io, string(" form            : ", functionalform(factornode)))
-    println(io, string(" sdtype          : ", sdtype(factornode)))
-    println(io, string(" interfaces      : ", interfaces(factornode)))
-    println(io, string(" factorisation   : ", factorisation(factornode)))
-    println(io, string(" local marginals : ", localmarginalnames(factornode)))
-    println(io, string(" metadata        : ", metadata(factornode)))
-    println(io, string(" pipeline        : ", getpipeline(factornode)))
-end
-
-clusterindex(clusters::Tuple, vindex::Int) = findfirst(cluster -> vindex in cluster, clusters)
-clustername(cluster::Tuple, interfaces) = mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
+# function Base.show(io::IO, factornode::FactorNode)
+#     println(io, "FactorNode:")
+#     println(io, string(" form            : ", functionalform(factornode)))
+#     println(io, string(" sdtype          : ", sdtype(factornode)))
+#     println(io, string(" interfaces      : ", interfaces(factornode)))
+#     println(io, string(" factorisation   : ", factorisation(factornode)))
+#     println(io, string(" local marginals : ", localmarginalnames(factornode)))
+#     println(io, string(" metadata        : ", metadata(factornode)))
+#     println(io, string(" pipeline        : ", getpipeline(factornode)))
+# end
 
 # functionalform(factornode::FactorNode)     = factornode.fform
 # sdtype(factornode::FactorNode)             = sdtype(functionalform(factornode))
@@ -557,53 +614,6 @@ collect_pipeline(T::Any, stage::AbstractPipelineStage)                    = Fact
 collect_pipeline(T::Any, fdp::AbstractNodeFunctionalDependenciesPipeline) = FactorNodePipeline(fdp, EmptyPipelineStage())
 collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipeline
 
-## Nodes collection
-
-struct FactorNodesCollection
-    nodes    :: Vector{AbstractFactorNode}
-    node_ids :: Set{Symbol}
-
-    FactorNodesCollection() = new(Vector{AbstractFactorNode}(), Set{Symbol}())
-end
-
-function Base.show(io::IO, collection::FactorNodesCollection)
-    print(io, "FactorNodesCollection(nodes: ", length(collection.nodes), ")")
-end
-
-function Base.push!(collection::FactorNodesCollection, node::AbstractFactorNode)
-    push!(collection.nodes, node)
-    push!(collection.node_ids, as_node_symbol(functionalform(node)))
-    return node
-end
-
-function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{AbstractFactorNode})
-    append!(collection.nodes, nodes)
-    union!(collection.node_ids, Set(Base.Generator((node) -> as_node_symbol(functionalform(node)), nodes)))
-    return nodes
-end
-
-function Base.push!(collection::FactorNodesCollection, nodes::AbstractArray{N}) where {N <: AbstractFactorNode}
-    append!(collection.nodes, nodes)
-    push!(collection.node_ids, as_node_symbol(functionalform(first(nodes))))
-    return nodes
-end
-
-getnodes(collection::FactorNodesCollection)    = collection.nodes
-getnode_ids(collection::FactorNodesCollection) = collection.node_ids
-
-hasnodeid(collection::FactorNodesCollection, nodeid::Symbol) = nodeid ∈ getnode_ids(collection)
-
-Base.iterate(collection::FactorNodesCollection)        = iterate(getnodes(collection))
-Base.iterate(collection::FactorNodesCollection, state) = iterate(getnodes(collection), state)
-
-Base.IteratorSize(::Type{FactorNodesCollection})   = Base.HasLength()
-Base.IteratorEltype(::Type{FactorNodesCollection}) = Base.HasEltype()
-
-Base.eltype(::Type{FactorNodesCollection}) = AbstractFactorNode
-
-Base.length(collection::FactorNodesCollection)        = length(getnodes(collection))
-Base.size(collection::FactorNodesCollection, dims...) = size(getnodes(collection), dims...)
-
 ## Functional Dependencies
 
 function message_dependencies end
@@ -624,18 +634,190 @@ See also: [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveM
 """
 struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
 
-function message_dependencies(::DefaultFunctionalDependencies, properties::FactorNodeProperties, clusters, cluster, cindex, interface, iindex)
+function message_dependencies(::DefaultFunctionalDependencies, properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, cluster, cindex, interface, iindex)
     # First we remove current edge index from the list of dependencies
     vdependencies = filter(ci -> ci !== iindex, cluster)
     # Second we map interface indices to the actual interfaces
     return map(inds -> map(i -> getinterface(properties, i), inds), vdependencies)
 end
 
-function marginal_dependencies(::DefaultFunctionalDependencies, properties::FactorNodeProperties, clusters, cluster, cindex, interface, iindex)
-    return map(cluster -> getmarginal(properties, cluster), TupleTools.deleteat(clusters, cindex))
+function marginal_dependencies(::DefaultFunctionalDependencies, properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, cluster, cindex, interface, iindex)
+    return skipindex(getmarginals(clusters), cindex)
 end
 
 ### With inbound messages
+
+###
+
+default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
+
+### Generic `functional_dependencies` for `AbstractFactorNode`
+
+# function functional_dependencies(factornode::AbstractFactorNode, iname::Symbol)
+#     return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iname)
+# end
+
+# function functional_dependencies(factornode::AbstractFactorNode, iindex::Int)
+#     return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iindex)
+# end
+
+### `FactorNode` implementation of `functional_dependencies`
+
+# function functional_dependencies(dependencies, factornode::FactorNode, iname::Symbol)
+#     return functional_dependencies(dependencies, factornode, interfaceindex(factornode, iname))
+# end
+
+# function functional_dependencies(dependencies, factornode::FactorNode, iindex::Int)
+#     cindex = clusterindex(factornode, iindex)
+
+#     nodeinterfaces     = interfaces(factornode)
+#     nodeclusters       = factorisation(factornode)
+#     nodelocalmarginals = localmarginals(factornode)
+
+#     varcluster = @inbounds nodeclusters[cindex]
+
+#     messages  = message_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
+#     marginals = marginal_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
+
+#     return tuple(messages...), tuple(marginals...)
+# end
+
+function functional_dependencies(dependencies::Any, properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, interface::NodeInterface, iindex::Int)
+    cindex = clusterindex(clusters, iindex)
+    cluster = getfactorization(clusters, cindex)
+
+    messages  = message_dependencies(dependencies, properties, clusters, cluster, cindex, interface, iindex)
+    marginals = marginal_dependencies(dependencies, properties, clusters, cluster, cindex, interface, iindex)
+
+    return tuple(messages...), tuple(marginals...)
+end
+
+function get_messages_observable(properties::FactorNodeProperties, messages)
+    if !isempty(messages)
+        msgs_names      = Val{map(name, messages)}()
+        msgs_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
+        return msgs_names, msgs_observable
+    else
+        return nothing, of(nothing)
+    end
+end
+
+function get_marginals_observable(properties::FactorNodeProperties, marginals)
+    if !isempty(marginals)
+        marginal_names       = Val{map(name, marginals)}()
+        marginals_streams    = map(marginal -> getstream(marginal), marginals)
+        marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
+        return marginal_names, marginals_observable
+    else
+        return nothing, of(nothing)
+    end
+end
+
+# options here must implement at least `ReactiveMP.get_pipeline_stages`, `Rocket.getscheduler` and `ReactiveMP.getaddons` functions
+function activate!(factornode::AbstractFactorNode, options)
+    pipeline_stages            = get_pipeline_stages(options)
+    scheduler                  = getscheduler(options)
+    addons                     = getaddons(options)
+    fform                      = functionalform(factornode)
+    meta                       = metadata(factornode)
+    node_pipeline              = getpipeline(factornode)
+    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
+
+    for (iindex, interface) in enumerate(interfaces(factornode))
+        cvariable = connected_properties(interface)
+        if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
+            message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
+
+            msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
+            marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+
+            vtag        = tag(interface)
+            vconstraint = local_constraint(interface)
+
+            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
+            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
+
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
+
+            vmessageout = vmessageout |> map(AbstractMessage, mapping)
+            vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+            vmessageout = vmessageout |> schedule_on(scheduler)
+
+            connect!(messageout(interface), vmessageout)
+        elseif cvariable === nothing
+            error("Empty variable on interface $(interface) of node $(factornode)")
+        end
+    end
+end
+
+# function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
+#     lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
+#     @assert lindex !== nothing "Invalid local marginal id: $cname"
+#     lmarginal = @inbounds localmarginals(factornode)[lindex]
+#     setmarginal!(getstream(lmarginal), marginal)
+# end
+
+# Here for user convenience and to be consistent with variables we don't put '!' at the of the function name
+# However the underlying function may modify `factornode`, see `getmarginal!`
+# In contrast with internal `getmarginal!` function this version uses `SkipInitial` strategy
+# getmarginal(factornode::FactorNode, cname::Symbol) = getmarginal(factornode, cname, SkipInitial())
+
+# function getmarginal(factornode::FactorNode, cname::Symbol, skip_strategy::MarginalSkipStrategy)
+#     lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
+#     @assert lindex !== nothing "Invalid local marginal id: $cname"
+#     lmarginal = @inbounds localmarginals(factornode)[lindex]
+#     return getmarginal!(factornode, lmarginal, skip_strategy)
+# end
+
+# getmarginals(factornodes::AbstractArray{<:AbstractFactorNode}, cname::Symbol)                                      = getmarginals(factornodes, cname, SkipInitial())
+# getmarginals(factornodes::AbstractArray{<:AbstractFactorNode}, cname::Symbol, skip_strategy::MarginalSkipStrategy) = collectLatest(map(n -> getmarginal(n, cname, skip_strategy), factornodes))
+
+## make_node
+
+"""
+    make_node(node)
+    make_node(node, options)
+
+Creates a factor node of a given type and options. See the list of available factor nodes below.
+
+See also: [`@node`](@ref)
+
+# List of available nodes:
+"""
+function make_node end
+
+function interface_get_index end
+function interface_get_name end
+
+function interface_get_index(::Type{Val{Node}}, ::Type{Val{Interface}}) where {Node, Interface}
+    error("Node $Node has no interface named $Interface")
+end
+
+function interface_get_name(::Type{Val{Node}}, ::Type{Val{Interface}}) where {Node, Interface}
+    error("Node $Node has no interface named $Interface")
+end
+
+make_node(fform, args::Vararg{<:AbstractVariable}) = make_node(fform, FactorNodeCreationOptions(), args...)
+
+function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
+    error("""
+          `$(fform)` is not available as a node in the inference engine. Used in `$(name(first(args))) ~ $(fform)(...)` expression.
+          Use `@node` macro to add a custom factor node corresponding to `$(fform)`. See `@node` macro for additional documentation and examples.
+          """)
+end
+
+# This error message should be displayed if a node receives an incompatible number of arguments
+function make_node_incompatible_number_of_arguments_error(fuppertype, fbottomtype, interfaces_list, args)
+    error(
+        "`$(fbottomtype)` expects $(length(interfaces_list) - 1) arguments, but $(length(args) - 1) were given. Double check the `$(indexed_name(args[1])) ~ $(fbottomtype)($(join(map(indexed_name, args[begin+1:end]), ", ")))` expression."
+    )
+end
+# end
+
+## old code that needs to be fixed 
 
 """
     RequireMessageFunctionalDependencies(indices::Tuple, start_with::Tuple)
@@ -785,212 +967,6 @@ function ReactiveMP.marginal_dependencies(::RequireEverythingFunctionalDependenc
     # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
     return nodelocalmarginals
 end
-
-###
-
-default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
-
-### Generic `functional_dependencies` for `AbstractFactorNode`
-
-# function functional_dependencies(factornode::AbstractFactorNode, iname::Symbol)
-#     return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iname)
-# end
-
-# function functional_dependencies(factornode::AbstractFactorNode, iindex::Int)
-#     return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iindex)
-# end
-
-### `FactorNode` implementation of `functional_dependencies`
-
-# function functional_dependencies(dependencies, factornode::FactorNode, iname::Symbol)
-#     return functional_dependencies(dependencies, factornode, interfaceindex(factornode, iname))
-# end
-
-# function functional_dependencies(dependencies, factornode::FactorNode, iindex::Int)
-#     cindex = clusterindex(factornode, iindex)
-
-#     nodeinterfaces     = interfaces(factornode)
-#     nodeclusters       = factorisation(factornode)
-#     nodelocalmarginals = localmarginals(factornode)
-
-#     varcluster = @inbounds nodeclusters[cindex]
-
-#     messages  = message_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-#     marginals = marginal_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-
-#     return tuple(messages...), tuple(marginals...)
-# end
-
-function functional_dependencies(dependencies::Any, properties::FactorNodeProperties, clusters::Tuple, interface::NodeInterface, iindex::Int)
-    cindex = clusterindex(clusters, iindex)
-    cluster = clusters[cindex]
-
-    messages  = message_dependencies(dependencies, properties, clusters, cluster, cindex, interface, iindex)
-    marginals = marginal_dependencies(dependencies, properties, clusters, cluster, cindex, interface, iindex)
-
-    return tuple(messages...), tuple(marginals...)
-end
-
-function get_messages_observable(factornode, messages)
-    if !isempty(messages)
-        msgs_names      = Val{map(name, messages)}()
-        msgs_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
-        return msgs_names, msgs_observable
-    else
-        return nothing, of(nothing)
-    end
-end
-
-function get_marginals_observable(factornode, marginals)
-    if !isempty(marginals)
-        marginal_names       = Val{map(name, marginals)}()
-        marginals_streams    = map(marginal -> getmarginal!(factornode, marginal, IncludeAll()), marginals)
-        marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
-        return marginal_names, marginals_observable
-    else
-        return nothing, of(nothing)
-    end
-end
-
-# options here must implement at least `ReactiveMP.get_pipeline_stages`, `Rocket.getscheduler` and `ReactiveMP.getaddons` functions
-function activate!(factornode::AbstractFactorNode, options)
-    pipeline_stages            = get_pipeline_stages(options)
-    scheduler                  = getscheduler(options)
-    addons                     = getaddons(options)
-    fform                      = functionalform(factornode)
-    meta                       = metadata(factornode)
-    node_pipeline              = getpipeline(factornode)
-    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
-
-    for (iindex, interface) in enumerate(interfaces(factornode))
-        cvariable = connected_properties(interface)
-        if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
-            message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
-
-            msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-            marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
-
-            vtag        = tag(interface)
-            vconstraint = local_constraint(interface)
-
-            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
-            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
-
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
-                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
-            end
-
-            vmessageout = vmessageout |> map(AbstractMessage, mapping)
-            vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
-            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
-            vmessageout = vmessageout |> schedule_on(scheduler)
-
-            connect!(messageout(interface), vmessageout)
-        elseif cvariable === nothing
-            error("Empty variable on interface $(interface) of node $(factornode)")
-        end
-    end
-end
-
-function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
-    lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
-    @assert lindex !== nothing "Invalid local marginal id: $cname"
-    lmarginal = @inbounds localmarginals(factornode)[lindex]
-    setmarginal!(getstream(lmarginal), marginal)
-end
-
-# Here for user convenience and to be consistent with variables we don't put '!' at the of the function name
-# However the underlying function may modify `factornode`, see `getmarginal!`
-# In contrast with internal `getmarginal!` function this version uses `SkipInitial` strategy
-# getmarginal(factornode::FactorNode, cname::Symbol) = getmarginal(factornode, cname, SkipInitial())
-
-# function getmarginal(factornode::FactorNode, cname::Symbol, skip_strategy::MarginalSkipStrategy)
-#     lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
-#     @assert lindex !== nothing "Invalid local marginal id: $cname"
-#     lmarginal = @inbounds localmarginals(factornode)[lindex]
-#     return getmarginal!(factornode, lmarginal, skip_strategy)
-# end
-
-# getmarginals(factornodes::AbstractArray{<:AbstractFactorNode}, cname::Symbol)                                      = getmarginals(factornodes, cname, SkipInitial())
-# getmarginals(factornodes::AbstractArray{<:AbstractFactorNode}, cname::Symbol, skip_strategy::MarginalSkipStrategy) = collectLatest(map(n -> getmarginal(n, cname, skip_strategy), factornodes))
-
-function create_marginal_stream(properties::FactorNode, name, cluster)
-
-    clusterindex = index(localmarginal)
-
-    marginalname = name(localmarginal)
-    marginalsize = @inbounds length(factorisation(factornode)[clusterindex])
-
-    if length(cluster) === 1
-        # Cluster contains only one variable, we can take marginal over this variable
-        vmarginal = getmarginal(getinterface(factornode, marginalname))
-        setstream!(localmarginal, vmarginal)
-        return vmarginal
-    else
-        cmarginal = MarginalObservable()
-        setstream!(localmarginal, cmarginal)
-
-        message_dependencies  = tuple(getclusterinterfaces(factornode, clusterindex)...)
-        marginal_dependencies = tuple(TupleTools.deleteat(localmarginals(factornode), clusterindex)...)
-
-        msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-        marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
-
-        fform = functionalform(factornode)
-        vtag  = tag(localmarginal)
-        meta  = metadata(factornode)
-
-        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, factornode))
-        # TODO: discontinue operator is needed for loopy belief propagation? Check
-        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
-
-        connect!(cmarginal, marginalout)
-
-        return r
-    end
-end
-
-## make_node
-
-"""
-    make_node(node)
-    make_node(node, options)
-
-Creates a factor node of a given type and options. See the list of available factor nodes below.
-
-See also: [`@node`](@ref)
-
-# List of available nodes:
-"""
-function make_node end
-
-function interface_get_index end
-function interface_get_name end
-
-function interface_get_index(::Type{Val{Node}}, ::Type{Val{Interface}}) where {Node, Interface}
-    error("Node $Node has no interface named $Interface")
-end
-
-function interface_get_name(::Type{Val{Node}}, ::Type{Val{Interface}}) where {Node, Interface}
-    error("Node $Node has no interface named $Interface")
-end
-
-make_node(fform, args::Vararg{<:AbstractVariable}) = make_node(fform, FactorNodeCreationOptions(), args...)
-
-function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
-    error("""
-          `$(fform)` is not available as a node in the inference engine. Used in `$(name(first(args))) ~ $(fform)(...)` expression.
-          Use `@node` macro to add a custom factor node corresponding to `$(fform)`. See `@node` macro for additional documentation and examples.
-          """)
-end
-
-# This error message should be displayed if a node receives an incompatible number of arguments
-function make_node_incompatible_number_of_arguments_error(fuppertype, fbottomtype, interfaces_list, args)
-    error(
-        "`$(fbottomtype)` expects $(length(interfaces_list) - 1) arguments, but $(length(args) - 1) were given. Double check the `$(indexed_name(args[1])) ~ $(fbottomtype)($(join(map(indexed_name, args[begin+1:end]), ", ")))` expression."
-    )
-end
-# end
 
 ## macro helpers
 

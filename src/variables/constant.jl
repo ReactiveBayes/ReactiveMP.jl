@@ -4,14 +4,15 @@ import Rocket: SingleObservable, AsapScheduler
 import Base: getindex, show
 
 struct ConstVariableProperties <: VariableProperties
+    marginal::MarginalObservable
     messageout
-    marginal
 end
 
 function ConstVariableProperties(constant)
+    marginal = MarginalObservable()
+    connect!(marginal, of(Marginal(constant, true, false, nothing)))
     messageout = of(Message(constant, true, false, nothing))
-    marginal   = of(Marginal(constant, true, false, nothing))
-    return ConstVariableProperties(messageout, marginal)
+    return ConstVariableProperties(marginal, messageout)
 end
 
 israndom(::ConstVariableProperties) = false
@@ -23,6 +24,12 @@ function setmessagein!(properties::ConstVariableProperties, messagein)
     # because we do not pass any messages towards constants
     return properties, 1
 end
+
+get_pipeline_stages(::ConstVariableProperties) = EmptyPipelineStage()
+
+_getmarginal(properties::ConstVariableProperties)    = properties.marginal
+_setmarginal!(::ConstVariableProperties, observable) = error("It is not possible to set a marginal stream for `ConstVariable`")
+_makemarginal(::ConstVariableProperties)             = error("It is not possible to make marginal stream for `ConstVariable`")
 
 # Old stuff is below
 
@@ -119,10 +126,6 @@ messageout(constvar::ConstVariable, ::Int) = constvar.messageout
 messagein(constvar::ConstVariable, ::Int)  = error("It is not possible to get a reference for inbound message for constvar")
 
 get_pipeline_stages(::ConstVariable) = EmptyPipelineStage()
-
-_getmarginal(constvar::ConstVariable)      = of(Marginal(constvar.constant, true, false, nothing))
-_setmarginal!(::ConstVariable, observable) = error("It is not possible to set a marginal stream for `ConstVariable`")
-_makemarginal(::ConstVariable)             = error("It is not possible to make marginal stream for `ConstVariable`")
 
 setanonymous!(::ConstVariable, ::Bool) = nothing
 

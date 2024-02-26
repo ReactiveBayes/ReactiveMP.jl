@@ -4,12 +4,16 @@ import Base: show
 
 struct DataVariableProperties <: VariableProperties
     input_messages::Vector{MessageObservable{AbstractMessage}}
+    marginal::MarginalObservable
     messageout
     prediction
 end
 
 function DataVariableProperties()
-    return DataVariableProperties(Vector{MessageObservable{AbstractMessage}}(), RecentSubject(Message), MarginalObservable())
+    messageout = RecentSubject(Message)
+    marginal = MarginalObservable()
+    connect!(marginal, messageout |> map(Marginal, as_marginal))
+    return DataVariableProperties(Vector{MessageObservable{AbstractMessage}}(), marginal, messageout, nothing) # MarginalObservable())
 end
 
 israndom(::DataVariableProperties) = false
@@ -31,6 +35,12 @@ function activate!(properties::DataVariableProperties, options::DataVariableActi
     end
     return nothing
 end
+
+get_pipeline_stages(::DataVariableProperties) = EmptyPipelineStage()
+
+_getmarginal(properties::DataVariableProperties)    = properties.marginal
+_setmarginal!(::DataVariableProperties, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
+_makemarginal(::DataVariableProperties)             = error("It is not possible to make marginal stream for `DataVariable`")
 
 ## Old stuff is below
 
@@ -199,12 +209,6 @@ function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
 end
 
 finish!(datavar::DataVariable) = complete!(messageout(datavar, 1))
-
-get_pipeline_stages(::DataVariable) = EmptyPipelineStage()
-
-_getmarginal(datavar::DataVariable)              = datavar.messageout |> map(Marginal, as_marginal)
-_setmarginal!(datavar::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
-_makemarginal(datavar::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
 setanonymous!(::DataVariable, ::Bool) = nothing
 

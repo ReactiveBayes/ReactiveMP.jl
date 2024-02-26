@@ -139,7 +139,7 @@ function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::Ab
     # The proxy is the actual node function, but with the static inputs already fixed at their respective position
     # We use the `__unpack_latest_static` function to get the latest value of the static variables
     proxy          = FixedArguments.fix(fn, __unpack_latest_static, statics)
-    localmarginals = FactorNodeLocalMarginals((FactorNodeLocalMarginal(1, 1, :out), FactorNodeLocalMarginal(2, 2, :ins)))
+    localmarginals = FactorNodeLocalClusters((FactorNodeLocalMarginal(1, 1, :out), FactorNodeLocalMarginal(2, 2, :ins)))
     meta           = collect_meta(DeltaFn{F}, metadata(options))
     pipeline       = getpipeline(options)
 
