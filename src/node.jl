@@ -1,5 +1,5 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
-export MeanField, FullFactorisation, Marginalisation, MomentMatching
+export MeanField, FullFactorisation, FullJoin, Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export FactorNodesCollection, getnodes, getnode_ids
 export make_node, FactorNodeCreationOptions
@@ -141,7 +141,7 @@ struct FullJoin end
 """
     FullFactorisation
 
-Alias for FullJoin. 
+Alias for FullJoin. To depricate FullFactorisation.
 
 See also: [`FullJoin`](@ref)
 """

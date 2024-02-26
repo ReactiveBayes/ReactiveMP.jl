@@ -53,6 +53,7 @@
 
         @test ReactiveMP.collect_factorisation(CustomStochasticNode, MeanField()) === ((1,), (2,), (3,), (4,))
         @test ReactiveMP.collect_factorisation(CustomStochasticNode, FullFactorisation()) === ((1, 2, 3, 4),)
+        @test ReactiveMP.collect_factorisation(CustomStochasticNode, FullJoin()) === ((1, 2, 3, 4),)
 
         @test sdtype(CustomStochasticNode) === Stochastic()
 
@@ -90,6 +91,8 @@
 
         @test ReactiveMP.collect_factorisation(CustomDeterministicNode, MeanField()) === ((1, 2, 3, 4),)
         @test ReactiveMP.collect_factorisation(CustomDeterministicNode, FullFactorisation()) === ((1, 2, 3, 4),)
+        @test ReactiveMP.collect_factorisation(CustomDeterministicNode, FullJoin()) === ((1, 2, 3, 4),)
+
 
         @test sdtype(CustomDeterministicNode) === Deterministic()
 
