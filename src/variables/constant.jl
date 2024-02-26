@@ -3,6 +3,19 @@ export ConstVariable, constvar, getconst, isconnected
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex, show
 
+struct ConstVariableProperties 
+    messageout
+    marginal
+end
+
+function ConstVariableProperties(constant)
+    messageout = of(Message(constant, true, false, nothing))
+    marginal   = of(Marginal(constant, true, false, nothing))
+    return ConstVariableProperties(messageout, marginal)
+end
+
+# Old stuff is below
+
 mutable struct ConstVariable{C, M} <: AbstractVariable
     name            :: Symbol
     collection_type :: AbstractVariableCollectionType

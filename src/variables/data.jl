@@ -2,6 +2,18 @@ export DataVariable, datavar, update!
 
 import Base: show
 
+struct DataVariableProperties
+    input_messages::Vector{MessageObservable{AbstractMessage}}
+    messageout
+    prediction
+end
+
+function DataVariableProperties()
+    return DataVariableProperties(Vector{MessageObservable{AbstractMessage}}(), RecentSubject(Message), MarginalObservable())
+end
+
+## Old stuff is below
+
 mutable struct DataVariable{D, S} <: AbstractVariable
     name            :: Symbol
     collection_type :: AbstractVariableCollectionType

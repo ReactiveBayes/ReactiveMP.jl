@@ -5,6 +5,32 @@ import Rocket: getscheduler
 
 ## Random variable implementation
 
+mutable struct RandomVariableProperties
+    const input_messages  :: Vector{MessageObservable{AbstractMessage}}
+    const output_messages :: Vector{MessageObservable{Message}}
+    output_initialised    :: Bool
+    output_cache          :: Union{Nothing, EqualityChain}
+    const marginal        :: MarginalObservable
+    const message_prod_fn
+    const marginal_prod_fn
+    const pipeline
+end
+
+function RandomVariableProperties()
+    return RandomVariableProperties(
+        Vector{MessageObservable{AbstractMessage}}(),
+        Vector{MessageObservable{Message}}(),
+        false,
+        nothing,
+        MarginalObservable(),
+        messages_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast()),
+        marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast()),
+        EmptyPipelineStage()
+    )
+end
+
+# Old stuff is below
+
 mutable struct RandomVariable <: AbstractVariable
     name               :: Symbol
     anonymous          :: Bool
