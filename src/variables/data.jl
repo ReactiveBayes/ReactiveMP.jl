@@ -42,6 +42,20 @@ _getmarginal(properties::DataVariableProperties)    = properties.marginal
 _setmarginal!(::DataVariableProperties, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
 _makemarginal(::DataVariableProperties)             = error("It is not possible to make marginal stream for `DataVariable`")
 
+messageout(properties::DataVariableProperties, ::Int) = properties.messageout
+messagein(properties::DataVariableProperties, ::Int)  = error("It is not possible to get a reference for inbound message for datavar")
+
+update!(properties::DataVariableProperties, data) = next!(messageout(properties, 1), Message(PointMass(data), false, false, nothing))
+
+function update!(datavars::AbstractArray{<:DataVariableProperties}, data::AbstractArray)
+    @assert size(datavars) === size(data) """
+    Invalid `update!` call: size of datavar array and data must match: `$(name(first(datavars)))` has size $(size(datavars)) and data has size $(size(data)). 
+    """
+    foreach(zip(datavars, data)) do (var, d)
+        update!(var, d)
+    end
+end
+
 ## Old stuff is below
 
 mutable struct DataVariable{D, S} <: AbstractVariable
@@ -166,9 +180,6 @@ function Base.getindex(datavar::DataVariable, i...)
 end
 
 getlastindex(datavar::DataVariable) = degree(datavar) + 1
-
-messageout(datavar::DataVariable, ::Int) = datavar.messageout
-messagein(datavar::DataVariable, ::Int)  = error("It is not possible to get a reference for inbound message for datavar")
 
 update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
 update!(datavar::DataVariable, data::Number)        = update!(eltype(datavar), datavar, data)

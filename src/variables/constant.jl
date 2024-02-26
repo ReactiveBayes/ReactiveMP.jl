@@ -10,8 +10,8 @@ end
 
 function ConstVariableProperties(constant)
     marginal = MarginalObservable()
-    connect!(marginal, of(Marginal(constant, true, false, nothing)))
-    messageout = of(Message(constant, true, false, nothing))
+    connect!(marginal, of(Marginal(PointMass(constant), true, false, nothing)))
+    messageout = of(Message(PointMass(constant), true, false, nothing))
     return ConstVariableProperties(marginal, messageout)
 end
 
