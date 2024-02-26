@@ -7,6 +7,7 @@ export setmessage!, setmessages!
 using Rocket
 
 abstract type AbstractVariable end
+abstract type VariableProperties end
 
 ## Base interface extensions
 

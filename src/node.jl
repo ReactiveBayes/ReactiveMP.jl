@@ -173,25 +173,8 @@ default_meta(any) = nothing
 
 ## NodeInterface
 
-## NodeInterface constraints
-
-"""
-    AbstractInterfaceLocalConstraint
-
-Every edge's interface may have a local "mathematical" constraint, which represent certain properties that the resulting outbound message should obey.
-"""
-abstract type AbstractInterfaceLocalConstraint end
-
-struct Marginalisation <: AbstractInterfaceLocalConstraint end
-struct MomentMatching <: AbstractInterfaceLocalConstraint end
-
-is_marginalisation(::AbstractInterfaceLocalConstraint) = false
-is_marginalisation(::Marginalisation)                  = true
-
-is_moment_matching(::AbstractInterfaceLocalConstraint) = false
-is_moment_matching(::MomentMatching)                   = true
-
-interface_default_local_constraint(fform, edge) = Marginalisation()
+struct Marginalisation end
+struct MomentMatching end
 
 """
     NodeInterface
@@ -200,17 +183,20 @@ interface_default_local_constraint(fform, edge) = Marginalisation()
 
 See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
-mutable struct NodeInterface
-    name               :: Symbol
-    local_constraint   :: AbstractInterfaceLocalConstraint
-    m_out              :: MessageObservable{AbstractMessage}
-    connected_variable :: Union{Nothing, AbstractVariable}
-    connected_index    :: Int
+struct NodeInterface
+    name::Symbol
+    m_out::MessageObservable{AbstractMessage}
+    properties::VariableProperties
+    message_index::Int
 
-    NodeInterface(name::Symbol, local_constraint::AbstractInterfaceLocalConstraint) = new(name, local_constraint, MessageObservable(AbstractMessage), nothing, 0)
+    function NodeInterface(name::Symbol, interface)
+        m_out = MessageObservable(AbstractMessage)
+        properties, message_index = setmessagein!(interface, m_out)
+        return new(name, m_out, properties, message_index)
+    end
 end
 
-Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ", ", local_constraint(interface), ")"))
+Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
 
 """
     name(interface)
@@ -221,15 +207,6 @@ See also: [`NodeInterface`](@ref), [`tag`](@ref)
 """
 name(symbol::Symbol) = symbol
 name(interface::NodeInterface) = name(interface.name)
-
-"""
-    local_constraint(interface)
-
-Returns a local constraint of the interface.
-
-See also: [`AbstractInterfaceLocalConstraint`](@ref), [`Marginalisation`](@ref), [`MomentMatching`](@ref)
-"""
-local_constraint(interface::NodeInterface) = interface.local_constraint
 
 """
     tag(interface)
@@ -257,40 +234,7 @@ Returns an inbound messages stream from the given interface.
 
 See also: [`NodeInterface`](@ref), [`messageout`](@ref)
 """
-messagein(interface::NodeInterface) = messagein(interface, connectedvar(interface), connectedvarindex(interface))
-
-messagein(interface::NodeInterface, variable::AbstractVariable, index::Int) = messageout(variable, index)
-messagein(interface::NodeInterface, variable::Nothing, index::Int)          = error("`messagein` is not defined for interface $(interface). Interface has no connected variable.")
-
-"""
-    connectvariable!(interface, variable, index)
-
-Connects a variable with the interface and given index. Index is used to distinguish this connection from others in case if variable is connected to multiple interfaces.
-
-See also: [`NodeInterface`](@ref), [`connectedvar`](@ref), [`connectedvarindex`](@ref)
-"""
-function connectvariable!(interface::NodeInterface, variable, index)
-    interface.connected_variable = variable
-    interface.connected_index    = index
-end
-
-"""
-    connectedvar(interface)
-
-Returns connected variable for the interface.
-
-See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvarindex`](@ref)
-"""
-connectedvar(interface::NodeInterface) = interface.connected_variable
-
-"""
-    connectedvarindex(interface)
-
-Returns an index of connected variable for the interface.
-
-See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref)
-"""
-connectedvarindex(interface::NodeInterface) = interface.connected_index
+messagein(interface::NodeInterface) = messageout(interface.properties, interface.message_index)
 
 """
     get_pipeline_stages(interface)
@@ -299,7 +243,7 @@ Returns an instance of pipeline stages of connected variable for the given inter
 
 See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref), [`add_inbound_pipeline_stage!`](@ref)
 """
-get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(connectedvar(interface))
+get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(connected_properties(interface))
 
 """
     IndexedNodeInterface
@@ -321,13 +265,13 @@ local_constraint(interface::IndexedNodeInterface) = local_constraint(interface.i
 index(interface::IndexedNodeInterface)            = interface.index
 tag(interface::IndexedNodeInterface)              = (tag(interface.interface), index(interface))
 
-messageout(interface::IndexedNodeInterface) = messageout(interface.interface)
-messagein(interface::IndexedNodeInterface)  = messagein(interface.interface)
+messageout(interface::IndexedNodeInterface) = error("TODO") # messageout(interface.interface)
+messagein(interface::IndexedNodeInterface)  = error("TODO") # messagein(interface.interface)
 
-connectvariable!(interface::IndexedNodeInterface, variable, index) = connectvariable!(interface.interface, variable, index)
-connectedvar(interface::IndexedNodeInterface)                      = connectedvar(interface.interface)
-connectedvarindex(interface::IndexedNodeInterface)                 = connectedvarindex(interface.interface)
-get_pipeline_stages(interface::IndexedNodeInterface)               = get_pipeline_stages(interface.interface)
+connectvariable!(interface::IndexedNodeInterface, properties, index) = error("TODO") # connectvariable!(interface.interface, properties, index)
+connected_properties(interface::IndexedNodeInterface) = error("TODO") # connected_properties(interface.interface)
+connectedvarindex(interface::IndexedNodeInterface) = error("TODO") # connectedvarindex(interface.interface)
+get_pipeline_stages(interface::IndexedNodeInterface) = error("TODO") # get_pipeline_stages(interface.interface)
 
 """
 Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s. `@rule` macro 
@@ -430,6 +374,20 @@ isdeterministic(factornode::AbstractFactorNode) = isdeterministic(sdtype(factorn
 interfaceindices(factornode::AbstractFactorNode, iname::Symbol)                       = interfaceindices(factornode, (iname,))
 interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
+## Generic Factor node new code
+
+struct FactorNodeProperties <: AbstractFactorNode
+    interfaces::Vector{NodeInterface}
+end
+
+function FactorNodeProperties(interfaces::NamedTuple)
+    ivector = Vector{NodeInterface}(undef, length(interfaces))
+    foreach(enumerate(pairs(interfaces))) do (index, (name, interface))
+        ivector[index] = NodeInterface(name, interface)
+    end
+    return FactorNodeProperties(ivector)
+end
+
 ## Generic Factor Node
 
 struct FactorNodeCreationOptions{F, M, P}
@@ -470,7 +428,6 @@ function Base.show(io::IO, factornode::FactorNode)
     println(io, string(" form            : ", functionalform(factornode)))
     println(io, string(" sdtype          : ", sdtype(factornode)))
     println(io, string(" interfaces      : ", interfaces(factornode)))
-    println(io, string(" connectedvars   : ", map(indexed_name, connectedvars(factornode))))
     println(io, string(" factorisation   : ", factorisation(factornode)))
     println(io, string(" local marginals : ", localmarginalnames(factornode)))
     println(io, string(" metadata        : ", metadata(factornode)))
@@ -480,7 +437,7 @@ end
 functionalform(factornode::FactorNode)     = factornode.fform
 sdtype(factornode::FactorNode)             = sdtype(functionalform(factornode))
 interfaces(factornode::FactorNode)         = factornode.interfaces
-connectedvars(factornode::FactorNode)      = map((i) -> connectedvar(i), interfaces(factornode))
+connectedvars(factornode::FactorNode)      = map((i) -> connected_properties(i), interfaces(factornode))
 factorisation(factornode::FactorNode)      = factornode.factorisation
 localmarginals(factornode::FactorNode)     = factornode.localmarginals.marginals
 localmarginalnames(factornode::FactorNode) = map(name, localmarginals(factornode))
@@ -528,16 +485,6 @@ getclusterinterfaces(factornode::FactorNode, cindex::Int) = @inbounds map(i -> i
 
 iscontain(factornode::FactorNode, iname::Symbol) = findfirst(interface -> name(interface) === iname, interfaces(factornode)) !== nothing
 isfactorised(factornode::FactorNode, factor)     = findfirst(f -> f == factor, factorisation(factornode)) !== nothing
-
-function connect!(factornode::FactorNode, iname::Symbol, variable)
-    return connect!(factornode::FactorNode, iname::Symbol, variable, getlastindex(variable))
-end
-
-function connect!(factornode::FactorNode, iname::Symbol, variable, index)
-    vinterface = getinterface(factornode, iname)
-    connectvariable!(vinterface, variable, index)
-    setmessagein!(variable, index, messageout(vinterface))
-end
 
 ## Node pipeline
 
@@ -753,7 +700,7 @@ function marginal_dependencies(dependencies::RequireMarginalFunctionalDependenci
     if depindex !== nothing
         # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
         extra_localmarginal = FactorNodeLocalMarginal(-1, iindex, name(nodeinterfaces[iindex]))
-        vmarginal           = getmarginal(connectedvar(nodeinterfaces[iindex]), IncludeAll())
+        vmarginal           = getmarginal(connected_properties(nodeinterfaces[iindex]), IncludeAll())
         start_with          = dependencies.start_with[depindex]
         # Initialise now, if marginal has not been initialised before and `start_with` element is not empty
         if isnothing(getrecent(vmarginal)) && !isnothing(start_with)
@@ -858,7 +805,7 @@ function activate!(factornode::AbstractFactorNode, options)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
     for (iindex, interface) in enumerate(interfaces(factornode))
-        cvariable = connectedvar(interface)
+        cvariable = connected_properties(interface)
         if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
             message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
 
@@ -927,7 +874,7 @@ function getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarg
 
     if marginalsize === 1
         # Cluster contains only one variable, we can take marginal over this variable
-        vmarginal = getmarginal(connectedvar(getinterface(factornode, marginalname)), IncludeAll())
+        vmarginal = getmarginal(connected_properties(getinterface(factornode, marginalname)), IncludeAll())
         setstream!(localmarginal, vmarginal)
         return apply_skip_filter(vmarginal, skip_strategy)
     else
@@ -1074,7 +1021,7 @@ macro node(fformtype, sdtype, interfaces_list)
     names_indexed          = Expr(:tuple, map(name -> Expr(:call, :(ReactiveMP.indexed_name), name), names)...)
 
     interface_names       = map(name -> :(ReactiveMP.indexed_name($name)), names)
-    interface_args        = map(name -> :($name::AbstractVariable), names)
+    interface_args        = map(name -> :($name), names)
     interface_connections = map(name -> :(ReactiveMP.connect!(node, $(Expr(:quote, name)), $name)), names)
 
     joined_interface_names = :(join((($(interface_names...)),), ", "))
@@ -1140,44 +1087,6 @@ macro node(fformtype, sdtype, interfaces_list)
         error("Unreachable in @node macro.")
     end
 
-    # Here we attempt to double-check that the factorisation provided around a node is 'correct' with respect to the constant values and data values
-    # `constvar`s and `datavar`s should not (even though a user can do that) be included in the factorisation clusters, all constvars should be factorised out
-    # otherwise the user might face BFE computation issues
-    # NOTE: there is no difference between factorized and non-factorized constvars/datavars from mathematical point of view 
-    factorisation_check = if sdtype === :Stochastic
-        map(names) do name
-            missingclustererr = "Cannot find the cluster for the variable connected to the `$(name)` interface around the `$fformtype` node."
-            quote
-                # If a variable `$name` is a constvar or a datavar
-                if ReactiveMP.isconst($(name)) || (ReactiveMP.isdata($(name)) && !ReactiveMP.allows_missings($(name)))
-                    local __factorisation = ReactiveMP.factorisation(node)
-                    # Find the factorization cluster associated with the constvar `$name`
-                    local __index  = ReactiveMP.interface_get_index(Val{$(QuoteNode(fbottomtype))}, Val{$(QuoteNode(name))})
-                    local __cindex = Base.findnext(c -> Base.in(__index, c), __factorisation, 1)
-                    if isnothing(__cindex)
-                        error($missingclustererr)
-                    elseif length(__factorisation[__cindex]) !== 1
-                        # This `lambda` call is needed because of the double-interpolation issues between `quote` expressions and strings
-                        local __warnmsg =
-                            (fformtype, joined_names, joint, var_name, interface_name) ->
-                                "The specified factorization constraint for `$(joint)` around the `$(fformtype)($joined_names)` node includes a variable `$(var_name)` that is constrained to a `PointMass` distribution. Because this variable is constrained to a `PointMass` distribution, it should be excluded from the structured part of the factorization. Instead, specify the posterior over this variable independent from the rest of the variables (e.g. replace `$(joint)` with `q($(interface_name))q(...)`)."
-                        # which includes a `PointMass` distributed variable connected to the `$(interface_name)` interface. Consider factorizing out the `PointMass` distributed variable connected to the `$(interface_name)` interface, otherwise the Bethe Free Energy computation might be broken
-                        local __joint = string(
-                            "q(", join(map((ci) -> ReactiveMP.interface_get_name(Val{$(QuoteNode(fbottomtype))}, Val{ci}), __factorisation[__cindex]), ", "), ")"
-                        )
-                        @warn __warnmsg($fformtype, $joined_interface_names, __joint, ReactiveMP.indexed_name($(name)), $(QuoteNode(name)))
-                    end
-                end
-            end
-        end
-    elseif sdtype === :Deterministic
-        # There is no factorisation check in case of the `Deterministic` node
-        # as the Deterministic nodes ignores the factorisation field in any case
-        (:(nothing),)
-    else
-        error("Unreachable in @node macro.")
-    end
-
     doctype   = rpad(fbottomtype, 30)
     docsdtype = rpad(sdtype, 15)
     docedges  = string(interfaces_list)
@@ -1207,13 +1116,12 @@ macro node(fformtype, sdtype, interfaces_list)
             node = ReactiveMP.make_node($fbottomtype, options)
             $(non_unique_error_msg)
             $(interface_uniqueness...)
-            $(factorisation_check...)
             $(interface_connections...)
             return node
         end
 
         # Fallback method for unsupported number of arguments, e.g. if node expects 2 inputs, but only 1 was given
-        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
+        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions, args...)
             ReactiveMP.make_node_incompatible_number_of_arguments_error($fuppertype, $fbottomtype, $interfaces, args)
         end
 

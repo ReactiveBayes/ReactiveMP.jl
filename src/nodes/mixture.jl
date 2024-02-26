@@ -169,7 +169,7 @@ function get_marginals_observable(
     switchinterface = marginals[1]
 
     marginal_names       = Val{(name(switchinterface),)}()
-    marginals_observable = combineLatestUpdates((getmarginal(connectedvar(switchinterface), IncludeAll()),), PushNew())
+    marginals_observable = combineLatestUpdates((getmarginal(connected_properties(switchinterface), IncludeAll()),), PushNew())
 
     return marginal_names, marginals_observable
 end

@@ -5,7 +5,7 @@ import Rocket: getscheduler
 
 ## Random variable implementation
 
-mutable struct RandomVariableProperties
+mutable struct RandomVariableProperties <: VariableProperties
     const input_messages  :: Vector{MessageObservable{AbstractMessage}}
     const output_messages :: Vector{MessageObservable{Message}}
     output_initialised    :: Bool
@@ -27,6 +27,13 @@ function RandomVariableProperties()
         marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast()),
         EmptyPipelineStage()
     )
+end
+
+function setmessagein!(properties::RandomVariableProperties, messagein)
+    # The `setmessagein!` function for random variables record the input message and return the updated properties
+    # It also returns the index of the input message that has been added
+    push!(properties.input_messages, messagein)
+    return properties, length(properties.input_messages)
 end
 
 # Old stuff is below
@@ -246,16 +253,6 @@ _setmarginal!(randomvar::RandomVariable, observable) = connect!(_getmarginal(ran
 _makemarginal(randomvar::RandomVariable)             = collectLatest(AbstractMessage, Marginal, randomvar.input_messages, marginal_prod_fn(randomvar))
 
 setanonymous!(randomvar::RandomVariable, anonymous::Bool) = randomvar.anonymous = anonymous
-
-function setmessagein!(randomvar::RandomVariable, index::Int, messagein)
-    if index === degree(randomvar) + 1
-        push!(randomvar.input_messages, messagein)
-    else
-        error(
-            "Inconsistent state in setmessagein! function for random variable $(randomvar). `index` should be equal to `degree(randomvar) + 1 = $(degree(randomvar) + 1)`, $(index) is given instead"
-        )
-    end
-end
 
 # options here must implement at least `Rocket.getscheduler`
 function activate!(randomvar::RandomVariable, options)

@@ -39,7 +39,7 @@ end
 function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
     let out = factornode.out, localmarginal = factornode.localmarginals.marginals[1]
         # We simply subscribe on the marginal of the connected variable on `out` edge
-        setstream!(localmarginal, getmarginal(connectedvar(out), IncludeAll()))
+        setstream!(localmarginal, getmarginal(connected_properties(out), IncludeAll()))
     end
 end
 

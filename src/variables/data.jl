@@ -2,7 +2,7 @@ export DataVariable, datavar, update!
 
 import Base: show
 
-struct DataVariableProperties
+struct DataVariableProperties <: VariableProperties
     input_messages::Vector{MessageObservable{AbstractMessage}}
     messageout
     prediction
@@ -10,6 +10,11 @@ end
 
 function DataVariableProperties()
     return DataVariableProperties(Vector{MessageObservable{AbstractMessage}}(), RecentSubject(Message), MarginalObservable())
+end
+
+function setmessagein!(properties::DataVariableProperties, messagein)
+    push!(properties.input_messages, messagein)
+    return properties, length(properties.input_messages)
 end
 
 ## Old stuff is below

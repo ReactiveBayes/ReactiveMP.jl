@@ -110,15 +110,15 @@ function get_marginals_observable(
     marginals_observable =
         combineLatest(
             (
-                getmarginal(connectedvar(varinterface), IncludeAll()),
-                combineLatest(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
-                combineLatest(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
+                getmarginal(connected_properties(varinterface), IncludeAll()),
+                combineLatest(map((prec) -> getmarginal(connected_properties(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
+                combineLatest(map((mean) -> getmarginal(connected_properties(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
             ),
             PushNew()
         ) |> map_to((
-            getmarginal(connectedvar(varinterface), IncludeAll()),
-            ManyOf(map((mean) -> getmarginal(connectedvar(mean), IncludeAll()), meansinterfaces)),
-            ManyOf(map((prec) -> getmarginal(connectedvar(prec), IncludeAll()), precsinterfaces))
+            getmarginal(connected_properties(varinterface), IncludeAll()),
+            ManyOf(map((mean) -> getmarginal(connected_properties(mean), IncludeAll()), meansinterfaces)),
+            ManyOf(map((prec) -> getmarginal(connected_properties(prec), IncludeAll()), precsinterfaces))
         ))
 
     return marginal_names, marginals_observable
@@ -130,7 +130,7 @@ function get_marginals_observable(factornode::NormalMixtureNode{N, F}, marginal_
     varinterface    = marginal_dependencies[3]
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
-    marginals_observable = combineLatestUpdates((getmarginal(connectedvar(outinterface), IncludeAll()), getmarginal(connectedvar(switchinterface), IncludeAll()), getmarginal(connectedvar(varinterface), IncludeAll())), PushNew())
+    marginals_observable = combineLatestUpdates((getmarginal(connected_properties(outinterface), IncludeAll()), getmarginal(connected_properties(switchinterface), IncludeAll()), getmarginal(connected_properties(varinterface), IncludeAll())), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -155,10 +155,10 @@ end
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(connectedvar(node.out), skip_strategy) |> schedule_on(scheduler),
-            getmarginal(connectedvar(node.switch), skip_strategy) |> schedule_on(scheduler),
-            ManyOfObservable(combineLatest(map((mean) -> getmarginal(connectedvar(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew())),
-            ManyOfObservable(combineLatest(map((prec) -> getmarginal(connectedvar(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()))
+            getmarginal(connected_properties(node.out), skip_strategy) |> schedule_on(scheduler),
+            getmarginal(connected_properties(node.switch), skip_strategy) |> schedule_on(scheduler),
+            ManyOfObservable(combineLatest(map((mean) -> getmarginal(connected_properties(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew())),
+            ManyOfObservable(combineLatest(map((prec) -> getmarginal(connected_properties(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()))
         ),
         PushNew()
     )

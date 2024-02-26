@@ -3,7 +3,7 @@ export ConstVariable, constvar, getconst, isconnected
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex, show
 
-struct ConstVariableProperties 
+struct ConstVariableProperties <: VariableProperties
     messageout
     marginal
 end
@@ -12,6 +12,12 @@ function ConstVariableProperties(constant)
     messageout = of(Message(constant, true, false, nothing))
     marginal   = of(Marginal(constant, true, false, nothing))
     return ConstVariableProperties(messageout, marginal)
+end
+
+function setmessagein!(properties::ConstVariableProperties, messagein)
+    # The `setmessagein!` function for the const variable is a no-op
+    # because we do not pass any messages towards constants
+    return properties, 1
 end
 
 # Old stuff is below
