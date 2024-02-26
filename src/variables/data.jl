@@ -17,6 +17,17 @@ function setmessagein!(properties::DataVariableProperties, messagein)
     return properties, length(properties.input_messages)
 end
 
+struct DataVariableActivationOptions
+    prediction::Bool
+end
+
+function activate!(properties::DataVariableProperties, options::DataVariableActivationOptions)
+    if options.prediction
+        _setprediction!(datavar, _makeprediction(datavar))
+    end
+    return nothing
+end
+
 ## Old stuff is below
 
 mutable struct DataVariable{D, S} <: AbstractVariable

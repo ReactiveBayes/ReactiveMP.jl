@@ -374,7 +374,7 @@ isdeterministic(factornode::AbstractFactorNode) = isdeterministic(sdtype(factorn
 interfaceindices(factornode::AbstractFactorNode, iname::Symbol)                       = interfaceindices(factornode, (iname,))
 interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
-## Generic Factor node new code
+## Generic Factor node new code start
 
 struct FactorNodeProperties <: AbstractFactorNode
     interfaces::Vector{NodeInterface}
@@ -388,7 +388,54 @@ function FactorNodeProperties(interfaces::NamedTuple)
     return FactorNodeProperties(ivector)
 end
 
-## Generic Factor Node
+struct FactorNodeActivationOptions end
+
+function activate!(fform, properties::FactorNodeProperties, options::FactorNodeActivationOptions)
+    pipeline_stages            = EmptyPipelineStage() # get_pipeline_stages(options)
+    scheduler                  = AsapScheduler() # getscheduler(options)
+    addons                     = nothing # getaddons(options)
+    # fform                      = functionalform(factornode)
+    meta                       = nothing # metadata(factornode)
+    node_pipeline              = collect_pipeline(fform, nothing) # getpipeline(factornode)
+    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
+
+    error("Not implemented")
+
+    for (iindex, interface) in enumerate(factornode.interfaces)
+        cvariable = connected_properties(interface)
+        if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
+            message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
+
+            msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
+            marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+
+            vtag        = tag(interface)
+            vconstraint = local_constraint(interface)
+
+            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
+            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
+
+            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
+                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+            end
+
+            vmessageout = vmessageout |> map(AbstractMessage, mapping)
+            vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+            vmessageout = vmessageout |> schedule_on(scheduler)
+
+            connect!(messageout(interface), vmessageout)
+        elseif cvariable === nothing
+            error("Empty variable on interface $(interface) of node $(factornode)")
+        end
+    end
+end
+
+function activate_node_interface!(interface::NodeInterface, index::Int, )
+
+end
+
+## Generic Factor Node new code end
 
 struct FactorNodeCreationOptions{F, M, P}
     factorisation :: F
