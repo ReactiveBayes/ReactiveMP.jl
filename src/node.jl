@@ -355,9 +355,9 @@ Base.show(io::IO, marginal::FactorNodeLocalMarginal) = print(io, "FactorNodeLoca
 
 ## FactorNodeLocalClusters
 
-struct FactorNodeLocalClusters
-    marginals::Vector{FactorNodeLocalMarginal}
-    factorization
+struct FactorNodeLocalClusters{M, F}
+    marginals::M
+    factorization::F
 end
 
 getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
@@ -365,8 +365,8 @@ getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
 
-function FactorNodeLocalClusters(interfaces::Vector{NodeInterface}, factorization)
-    marginals = map(i -> FactorNodeLocalMarginal(clustername(factorization[i], interfaces)), 1:length(factorization))
+function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization::NTuple{N, Tuple}) where {N}
+    marginals = ntuple(i -> FactorNodeLocalMarginal(clustername(factorization[i], interfaces)), length(factorization))
     return FactorNodeLocalClusters(marginals, factorization)
 end
 
@@ -387,8 +387,8 @@ interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) wher
 
 ## Generic Factor node new code start
 
-struct FactorNodeProperties <: AbstractFactorNode
-    interfaces::Vector{NodeInterface}
+struct FactorNodeProperties{I} <: AbstractFactorNode
+    interfaces::I
 end
 
 function getinterfaces(properties::FactorNodeProperties)
@@ -400,11 +400,10 @@ function getinterface(properties::FactorNodeProperties, index)
 end
 
 function FactorNodeProperties(interfaces::NamedTuple)
-    ivector = Vector{NodeInterface}(undef, length(interfaces))
-    foreach(enumerate(pairs(interfaces))) do (index, (name, interface))
-        ivector[index] = NodeInterface(name, interface)
+    iinterfaces = map(keys(interfaces)) do key
+        return NodeInterface(key, interfaces[key])
     end
-    return FactorNodeProperties(ivector)
+    return FactorNodeProperties(iinterfaces)
 end
 
 ## activate!
@@ -423,8 +422,7 @@ function activate!(fform, properties::FactorNodeProperties, options::FactorNodeA
     node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
     factorization              = options.factorization
-
-    clusters = FactorNodeLocalClusters(properties.interfaces, factorization)
+    clusters                   = FactorNodeLocalClusters(properties.interfaces, factorization)
 
     activate!(properties, clusters)
 
@@ -462,7 +460,7 @@ function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalCl
 end
 
 function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, marginal::FactorNodeLocalMarginal, index::Int)
-    localfactorization = getfactorization(clusters)[index]
+    localfactorization = getfactorization(clusters, index)
     if length(localfactorization) === 1
         setstream!(marginal, getmarginal(getproperties(getinterface(properties, first(localfactorization))), IncludeAll()))
     else
