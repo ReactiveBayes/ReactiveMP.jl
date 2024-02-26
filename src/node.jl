@@ -125,18 +125,27 @@ as_node_symbol(fn::F) where {F <: Function} = Symbol(fn)
 
 Generic factorisation constraint used to specify a mean-field factorisation for recognition distribution `q`.
 
-See also: [`FullFactorisation`](@ref)
+See also: [`FullJoin`](@ref)
 """
 struct MeanField end
 
 """
-    FullFactorisation
+    FullJoin
 
 Generic factorisation constraint used to specify a full factorisation for recognition distribution `q`.
 
 See also: [`MeanField`](@ref)
 """
-struct FullFactorisation end
+struct FullJoin end
+
+"""
+    FullFactorisation
+
+Alias for FullJoin. 
+
+See also: [`FullJoin`](@ref)
+"""
+const FullFactorisation = FullJoin
 
 """
     collect_factorisation(nodetype, factorisation)
