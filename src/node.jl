@@ -356,14 +356,13 @@ getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
 
-function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization::NTuple{N, Tuple}) where {N}
+function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization::NTuple{M, Tuple}) where {N, M}
     marginals = ntuple(i -> FactorNodeLocalMarginal(clustername(factorization[i], interfaces)), length(factorization))
     return FactorNodeLocalClusters(marginals, factorization)
 end
 
 clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) = clusterindex(clusters, clusters.factorization, vindex)
 clusterindex(::FactorNodeLocalClusters, factorization::Tuple, vindex::Int) = findfirst(cluster -> vindex in cluster, factorization)
-
 clustername(cluster::Tuple, interfaces) = mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
 
 ## AbstractFactorNode
@@ -399,19 +398,21 @@ end
 
 ## activate!
 
-struct FactorNodeActivationOptions{F, C}
+struct FactorNodeActivationOptions{F, C, S}
     factorization::C
+    scheduler::S
 end
 
-FactorNodeActivationOptions(::Type{T}, factorisation::C) where {T, C} = FactorNodeActivationOptions{T, C}(factorisation)
-FactorNodeActivationOptions(::F, factorisation::C) where {F, C} = FactorNodeActivationOptions{F, C}(factorisation)
+FactorNodeActivationOptions(::Type{T}, factorisation::C, scheduler::S) where {T, C, S} = FactorNodeActivationOptions{T, C, S}(factorisation, scheduler)
+FactorNodeActivationOptions(::F, factorisation::C, scheduler::S) where {F, C, S} = FactorNodeActivationOptions{F, C, S}(factorisation, scheduler)
 
 functionalform(::FactorNodeActivationOptions{F}) where {F} = F
 getfactorization(options::FactorNodeActivationOptions) = options.factorization
+getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 
 function activate!(properties::FactorNodeProperties, options::FactorNodeActivationOptions)
     pipeline_stages            = EmptyPipelineStage() # get_pipeline_stages(options)
-    scheduler                  = AsapScheduler() # getscheduler(options)
+    scheduler                  = getscheduler(options)
     addons                     = nothing # getaddons(options)
     fform                      = functionalform(options)
     meta                       = nothing # metadata(factornode)
@@ -460,7 +461,8 @@ function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalCl
     if length(localfactorization) === 1
         setstream!(marginal, getmarginal(getvariable(getinterface(properties, first(localfactorization))), IncludeAll()))
     else
-        @show marginal
+        # return marginal
+        # @show marginal
         error("Not implemented yet but very important!!")
 
         cmarginal = MarginalObservable()
