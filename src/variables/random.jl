@@ -5,15 +5,15 @@ import Rocket: getscheduler
 
 ## Random variable implementation
 
-mutable struct RandomVariableProperties <: VariableProperties
-    const input_messages  :: Vector{MessageObservable{AbstractMessage}}
-    const output_messages :: Vector{MessageObservable{Message}}
-    output_initialised    :: Bool
-    output_cache          :: Union{Nothing, EqualityChain}
-    const marginal        :: MarginalObservable
-    const message_prod_fn
-    const marginal_prod_fn
-    const pipeline
+mutable struct RandomVariableProperties{M, F, P} <: VariableProperties
+    const input_messages   :: Vector{MessageObservable{AbstractMessage}}
+    const output_messages  :: Vector{MessageObservable{Message}}
+    output_initialised     :: Bool
+    output_cache           :: Union{Nothing, EqualityChain}
+    const marginal         :: MarginalObservable
+    const message_prod_fn  :: M
+    const marginal_prod_fn :: F
+    const pipeline         :: P
 end
 
 function RandomVariableProperties()

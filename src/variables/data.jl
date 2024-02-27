@@ -2,11 +2,11 @@ export DataVariable, datavar, update!
 
 import Base: show
 
-struct DataVariableProperties <: VariableProperties
-    input_messages::Vector{MessageObservable{AbstractMessage}}
-    marginal::MarginalObservable
-    messageout
-    prediction
+struct DataVariableProperties{M, P} <: VariableProperties
+    input_messages :: Vector{MessageObservable{AbstractMessage}}
+    marginal       :: MarginalObservable
+    messageout     :: M
+    prediction     :: P
 end
 
 function DataVariableProperties()

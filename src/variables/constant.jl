@@ -3,9 +3,9 @@ export ConstVariable, constvar, getconst, isconnected
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex, show
 
-struct ConstVariableProperties <: VariableProperties
-    marginal::MarginalObservable
-    messageout
+struct ConstVariableProperties{M} <: VariableProperties
+    marginal   :: MarginalObservable
+    messageout :: M
 end
 
 function ConstVariableProperties(constant)

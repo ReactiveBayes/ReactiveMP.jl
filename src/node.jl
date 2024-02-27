@@ -408,20 +408,26 @@ end
 
 ## activate!
 
-struct FactorNodeActivationOptions{C}
+struct FactorNodeActivationOptions{F, C}
     factorization::C
 end
 
-function activate!(fform, properties::FactorNodeProperties, options::FactorNodeActivationOptions)
+FactorNodeActivationOptions(::Type{T}, factorisation::C) where {T, C} = FactorNodeActivationOptions{T, C}(factorisation)
+FactorNodeActivationOptions(::F, factorisation::C) where {F, C} = FactorNodeActivationOptions{F, C}(factorisation)
+
+functionalform(options::FactorNodeActivationOptions{F}) where {F} = F
+getfactorization(options::FactorNodeActivationOptions) = options.factorization
+
+function activate!(properties::FactorNodeProperties, options::FactorNodeActivationOptions) where {T}
     pipeline_stages = EmptyPipelineStage() # get_pipeline_stages(options)
     scheduler       = AsapScheduler() # getscheduler(options)
     addons          = nothing # getaddons(options)
-    # fform                      = functionalform(factornode)
+    fform                      = functionalform(options)
     meta                       = nothing # metadata(factornode)
     node_pipeline              = collect_pipeline(fform, nothing) # getpipeline(factornode)
     node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
-    factorization              = options.factorization
+    factorization              = collect_factorisation(fform, getfactorization(options))
     clusters                   = FactorNodeLocalClusters(properties.interfaces, factorization)
 
     activate!(properties, clusters)
