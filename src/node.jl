@@ -103,6 +103,7 @@ See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@re
 """
 function sdtype end
 
+# TODO: bvdmitri remove this
 # Any `Type` is considered to be a deterministic mapping unless stated otherwise (By convention, any `Distribution` type is not deterministic)
 # E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
 sdtype(::Type{T}) where {T}    = Deterministic()
@@ -732,110 +733,6 @@ function get_marginals_observable(properties::FactorNodeProperties, marginals)
     end
 end
 
-# options here must implement at least `ReactiveMP.get_pipeline_stages`, `Rocket.getscheduler` and `ReactiveMP.getaddons` functions
-function activate!(factornode::AbstractFactorNode, options)
-    pipeline_stages            = get_pipeline_stages(options)
-    scheduler                  = getscheduler(options)
-    addons                     = getaddons(options)
-    fform                      = functionalform(factornode)
-    meta                       = metadata(factornode)
-    node_pipeline              = getpipeline(factornode)
-    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
-
-    for (iindex, interface) in enumerate(interfaces(factornode))
-        cvariable = connected_properties(interface)
-        if cvariable !== nothing && (israndom(cvariable) || isdata(cvariable))
-            message_dependencies, marginal_dependencies = functional_dependencies(factornode, iindex)
-
-            msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-            marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
-
-            vtag        = tag(interface)
-            vconstraint = local_constraint(interface)
-
-            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())  # TODO check PushEach
-            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), factornode, vtag, vmessageout)
-
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
-                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
-            end
-
-            vmessageout = vmessageout |> map(AbstractMessage, mapping)
-            vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
-            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
-            vmessageout = vmessageout |> schedule_on(scheduler)
-
-            connect!(messageout(interface), vmessageout)
-        elseif cvariable === nothing
-            error("Empty variable on interface $(interface) of node $(factornode)")
-        end
-    end
-end
-
-# function setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
-#     lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
-#     @assert lindex !== nothing "Invalid local marginal id: $cname"
-#     lmarginal = @inbounds localmarginals(factornode)[lindex]
-#     setmarginal!(getstream(lmarginal), marginal)
-# end
-
-# Here for user convenience and to be consistent with variables we don't put '!' at the of the function name
-# However the underlying function may modify `factornode`, see `getmarginal!`
-# In contrast with internal `getmarginal!` function this version uses `SkipInitial` strategy
-# getmarginal(factornode::FactorNode, cname::Symbol) = getmarginal(factornode, cname, SkipInitial())
-
-# function getmarginal(factornode::FactorNode, cname::Symbol, skip_strategy::MarginalSkipStrategy)
-#     lindex = findnext(lmarginal -> name(lmarginal) === cname, localmarginals(factornode), 1)
-#     @assert lindex !== nothing "Invalid local marginal id: $cname"
-#     lmarginal = @inbounds localmarginals(factornode)[lindex]
-#     return getmarginal!(factornode, lmarginal, skip_strategy)
-# end
-
-# getmarginals(factornodes::AbstractArray{<:AbstractFactorNode}, cname::Symbol)                                      = getmarginals(factornodes, cname, SkipInitial())
-# getmarginals(factornodes::AbstractArray{<:AbstractFactorNode}, cname::Symbol, skip_strategy::MarginalSkipStrategy) = collectLatest(map(n -> getmarginal(n, cname, skip_strategy), factornodes))
-
-## make_node
-
-"""
-    make_node(node)
-    make_node(node, options)
-
-Creates a factor node of a given type and options. See the list of available factor nodes below.
-
-See also: [`@node`](@ref)
-
-# List of available nodes:
-"""
-function make_node end
-
-function interface_get_index end
-function interface_get_name end
-
-function interface_get_index(::Type{Val{Node}}, ::Type{Val{Interface}}) where {Node, Interface}
-    error("Node $Node has no interface named $Interface")
-end
-
-function interface_get_name(::Type{Val{Node}}, ::Type{Val{Interface}}) where {Node, Interface}
-    error("Node $Node has no interface named $Interface")
-end
-
-make_node(fform, args::Vararg{<:AbstractVariable}) = make_node(fform, FactorNodeCreationOptions(), args...)
-
-function make_node(fform, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable})
-    error("""
-          `$(fform)` is not available as a node in the inference engine. Used in `$(name(first(args))) ~ $(fform)(...)` expression.
-          Use `@node` macro to add a custom factor node corresponding to `$(fform)`. See `@node` macro for additional documentation and examples.
-          """)
-end
-
-# This error message should be displayed if a node receives an incompatible number of arguments
-function make_node_incompatible_number_of_arguments_error(fuppertype, fbottomtype, interfaces_list, args)
-    error(
-        "`$(fbottomtype)` expects $(length(interfaces_list) - 1) arguments, but $(length(args) - 1) were given. Double check the `$(indexed_name(args[1])) ~ $(fbottomtype)($(join(map(indexed_name, args[begin+1:end]), ", ")))` expression."
-    )
-end
-# end
-
 ## old code that needs to be fixed 
 
 """
@@ -990,6 +887,11 @@ end
 ## macro helpers
 
 import .MacroHelpers
+
+# Are still needed for the `@node` macro 
+function make_node end
+function interface_get_index end
+function interface_get_name end
 
 """
     @node(fformtype, sdtype, interfaces_list)

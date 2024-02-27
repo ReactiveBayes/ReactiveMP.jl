@@ -79,7 +79,6 @@ include("variables/variable.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
-include("variables/collection.jl")
 
 include("pipeline/pipeline.jl")
 include("pipeline/async.jl")
@@ -140,11 +139,6 @@ include("nodes/implication.jl")
 include("nodes/mixture.jl")
 
 include("rules/prototypes.jl")
-
-include("constraints/specifications/constraints.jl")
-include("constraints/specifications/form.jl")
-include("constraints/specifications/factorisation.jl")
-include("constraints/specifications/meta.jl")
 
 # This symbol is only defined on Julia versions that support extensions
 @static if !isdefined(Base, :get_extension)
