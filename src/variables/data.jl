@@ -2,7 +2,7 @@ export DataVariable, datavar, update!
 
 import Base: show
 
-struct DataVariableProperties{M, P} <: VariableProperties
+struct DataVariableProperties{M, P} <: AbstractVariable
     input_messages :: Vector{MessageObservable{AbstractMessage}}
     marginal       :: MarginalObservable
     messageout     :: M
@@ -20,9 +20,10 @@ israndom(::DataVariableProperties) = false
 isdata(::DataVariableProperties)   = true
 isconst(::DataVariableProperties)  = false
 
-function setmessagein!(properties::DataVariableProperties, messagein)
+function create_messagein!(properties::DataVariableProperties)
+    messagein = MessageObservable(AbstractMessage)
     push!(properties.input_messages, messagein)
-    return properties, length(properties.input_messages)
+    return messagein, length(properties.input_messages)
 end
 
 struct DataVariableActivationOptions

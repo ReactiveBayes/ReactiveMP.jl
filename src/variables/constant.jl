@@ -3,15 +3,16 @@ export ConstVariable, constvar, getconst, isconnected
 import Rocket: SingleObservable, AsapScheduler
 import Base: getindex, show
 
-struct ConstVariableProperties{M} <: VariableProperties
+struct ConstVariableProperties <: AbstractVariable
     marginal   :: MarginalObservable
-    messageout :: M
+    messageout :: MessageObservable
 end
 
 function ConstVariableProperties(constant)
     marginal = MarginalObservable()
     connect!(marginal, of(Marginal(PointMass(constant), true, false, nothing)))
-    messageout = of(Message(PointMass(constant), true, false, nothing))
+    messageout = MessageObservable(AbstractMessage)
+    connect!(messageout, of(Message(PointMass(constant), true, false, nothing)))
     return ConstVariableProperties(marginal, messageout)
 end
 
@@ -19,10 +20,8 @@ israndom(::ConstVariableProperties) = false
 isdata(::ConstVariableProperties)   = false
 isconst(::ConstVariableProperties)  = true
 
-function setmessagein!(properties::ConstVariableProperties, messagein)
-    # The `setmessagein!` function for the const variable is a no-op
-    # because we do not pass any messages towards constants
-    return properties, 1
+function create_messagein!(properties::ConstVariableProperties)
+    return properties.messageout, 1
 end
 
 get_pipeline_stages(::ConstVariableProperties) = EmptyPipelineStage()

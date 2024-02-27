@@ -7,7 +7,6 @@ export setmessage!, setmessages!
 using Rocket
 
 abstract type AbstractVariable end
-abstract type VariableProperties end
 
 ## Base interface extensions
 
@@ -81,14 +80,14 @@ add_pipeline_stage!(variable::AbstractVariable, stage) = error("Its not possible
 # Helper functions
 # Getters
 
-getprediction(variable::VariableProperties)                    = _getprediction(variable)
-getpredictions(variables::AbstractArray{<:VariableProperties}) = collectLatest(map(v -> getprediction(v), variables))
+getprediction(variable::AbstractVariable)                    = _getprediction(variable)
+getpredictions(variables::AbstractArray{<:AbstractVariable}) = collectLatest(map(v -> getprediction(v), variables))
 
-getmarginal(variable::VariableProperties)                                      = getmarginal(variable, SkipInitial())
-getmarginal(variable::VariableProperties, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(_getmarginal(variable), skip_strategy)
+getmarginal(variable::AbstractVariable)                                      = getmarginal(variable, SkipInitial())
+getmarginal(variable::AbstractVariable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(_getmarginal(variable), skip_strategy)
 
-getmarginals(variables::AbstractArray{<:VariableProperties})                                      = getmarginals(variables, SkipInitial())
-getmarginals(variables::AbstractArray{<:VariableProperties}, skip_strategy::MarginalSkipStrategy) = collectLatest(map(v -> getmarginal(v, skip_strategy), variables))
+getmarginals(variables::AbstractArray{<:AbstractVariable})                                      = getmarginals(variables, SkipInitial())
+getmarginals(variables::AbstractArray{<:AbstractVariable}, skip_strategy::MarginalSkipStrategy) = collectLatest(map(v -> getmarginal(v, skip_strategy), variables))
 
 ## Setters
 

@@ -1,223 +1,81 @@
 
-@testitem "RandomVariable" begin
-    using ReactiveMP, Rocket, BayesBase
+@testitem "RandomVariable: getmessagein!" begin
+    import ReactiveMP: RandomVariable, MessageObservable, create_messagein!, messagein, degree
 
-    import ReactiveMP: UnspecifiedFormConstraint
-    import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
-    import ReactiveMP: prod_constraint, prod_strategy
-    import ReactiveMP: proxy_variables, israndom, isproxy
-    import ReactiveMP: marginal_form_constraint, marginal_form_check_strategy
-    import ReactiveMP: messages_form_constraint, messages_form_check_strategy
-
-    @testset "Simple creation" begin
-        for sym in (:x, :y, :z)
-            v = randomvar(sym)
-
-            @test israndom(v)
-            @test name(v) === sym
-            @test collection_type(v) isa VariableIndividual
-            @test marginal_form_constraint(v) isa UnspecifiedFormConstraint
-            @test messages_form_constraint(v) isa UnspecifiedFormConstraint
-            @test proxy_variables(v) === nothing
-            @test prod_constraint(v) isa GenericProd
-            @test prod_strategy(v) isa FoldLeftProdStrategy
-            @test !isproxy(v)
+    # Test for different degrees `d`
+    @testset for d in 1:5:100
+        @testset let randomvar = RandomVariable()
+            for i in 1:d
+                messagein, index = create_messagein!(randomvar)
+                @test messagein isa MessageObservable
+                @test index === i
+                @test degree(randomvar) === i
+            end
+            @test degree(randomvar) === d
         end
+    end
+end
 
-        for sym in (:x, :y, :z), n in (10, 20)
-            vs = randomvar(sym, n)
+@testitem "RandomVariable: activate!" begin
+    import ReactiveMP: RandomVariable, MessageObservable, create_messagein!, messagein, degree, activate!, connect!, RandomVariableActivationOptions, messageout
 
-            @test israndom(vs)
-            @test length(vs) === n
-            @test vs isa Vector
-            @test all(v -> israndom(v), vs)
-            @test all(v -> name(v) === sym, vs)
-            @test all(v -> collection_type(v) isa VariableVector, vs)
-            @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(vs))
-            @test all(v -> marginal_form_constraint(v) isa UnspecifiedFormConstraint, vs)
-            @test all(v -> messages_form_constraint(v) isa UnspecifiedFormConstraint, vs)
-            @test all(v -> proxy_variables(v) === nothing, vs)
-            @test all(v -> prod_constraint(v) isa GenericProd, vs)
-            @test all(v -> prod_strategy(v) isa FoldLeftProdStrategy, vs)
-            @test !isproxy(vs)
-            @test all(v -> !isproxy(v), vs)
-        end
+    include("../testsutilities.jl")
 
-        for sym in (:x, :y, :z), l in (10, 20), r in (10, 20)
-            for vs in (randomvar(sym, l, r), randomvar(sym, (l, r)))
-                @test israndom(vs)
-                @test size(vs) === (l, r)
-                @test length(vs) === l * r
-                @test vs isa Matrix
-                @test all(v -> israndom(v), vs)
-                @test all(v -> name(v) === sym, vs)
-                @test all(v -> collection_type(v) isa VariableArray, vs)
-                @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(vs))
-                @test all(v -> marginal_form_constraint(v) isa UnspecifiedFormConstraint, vs)
-                @test all(v -> messages_form_constraint(v) isa UnspecifiedFormConstraint, vs)
-                @test all(v -> proxy_variables(v) === nothing, vs)
-                @test all(v -> prod_constraint(v) isa GenericProd, vs)
-                @test all(v -> prod_strategy(v) isa FoldLeftProdStrategy, vs)
-                @test !isproxy(vs)
-                @test all(v -> !isproxy(v), vs)
+    # Should throw if not initialised properly
+    @testset let randomvar = RandomVariable()
+        @test_throws BoundsError messageout(randomvar, 1)
+        @test_throws BoundsError messagein(randomvar, 1)
+    end
+
+    @testset begin
+        # Test marginal computation
+        message_prod_fn = (msgs) -> error("Messages should not be called here")
+        marginal_prod_fn = (msgs) -> mgl(sum(getdata.(msgs)))
+        @testset for d in 1:5:100
+            @testset let randomvar = RandomVariable(message_prod_fn, marginal_prod_fn)
+                messageins = map(1:d) do _
+                    s = Subject(AbstractMessage)
+                    m, i = create_messagein!(randomvar)
+                    connect!(m, s)
+                    return s
+                end
+                activate!(randomvar, RandomVariableActivationOptions())
+
+                @test degree(randomvar) === d
+
+                @test mgl(2.0 * d) == fetch_stream_updated(getmarginal(randomvar)) do
+                    foreach(messageins) do messagein
+                        next!(messagein, msg(2.0))
+                    end
+                end
             end
         end
     end
 
-    @testset "Creation via options" begin
-        struct CustomFunctionalFormConstraint1 <: ReactiveMP.AbstractFormConstraint end
-        struct CustomFunctionalFormConstraint2 <: ReactiveMP.AbstractFormConstraint end
+    @testset begin
+        # Test messages computation
+        message_prod_fn = (msgs) -> msg(sum(filter(!ismissing, getdata.(msgs))))
+        marginal_prod_fn = (msgs) -> error("Marginal should not be called here")
+        @testset for d in 2:5:100 # We start from `2` because `1` is not a valid degree for a random variable
+            @testset let randomvar = RandomVariable(message_prod_fn, marginal_prod_fn)
+                messageins = map(1:d) do _
+                    s = Subject(AbstractMessage)
+                    m, i = create_messagein!(randomvar)
+                    connect!(m, s)
+                    return s
+                end
+                activate!(randomvar, RandomVariableActivationOptions())
 
-        test_var     = randomvar(:tmp)
-        test_options = RandomVariableCreationOptions(LoggerPipelineStage(), (test_var,), ClosedProd(), FoldRightProdStrategy(), CustomFunctionalFormConstraint1(), FormConstraintCheckEach(), CustomFunctionalFormConstraint2(), FormConstraintCheckLast())
+                @test degree(randomvar) === d
 
-        for sym in (:x, :y, :z)
-            v = randomvar(test_options, sym)
-
-            @test israndom(v)
-            @test name(v) === sym
-            @test collection_type(v) isa VariableIndividual
-            @test marginal_form_constraint(v) == test_options.marginal_form_constraint
-            @test marginal_form_check_strategy(v) == test_options.marginal_form_check_strategy
-            @test messages_form_constraint(v) == test_options.messages_form_constraint
-            @test messages_form_check_strategy(v) == test_options.messages_form_check_strategy
-            @test proxy_variables(v) == test_options.proxy_variables
-            @test prod_constraint(v) == test_options.prod_constraint
-            @test prod_strategy(v) == test_options.prod_strategy
-        end
-
-        for sym in (:x, :y, :z), n in (10, 20)
-            vs = randomvar(test_options, sym, n)
-
-            @test israndom(vs)
-            @test length(vs) === n
-            @test vs isa Vector
-            @test all(v -> israndom(v), vs)
-            @test all(v -> name(v) === sym, vs)
-            @test all(v -> collection_type(v) isa VariableVector, vs)
-            @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(vs))
-            @test all(v -> marginal_form_constraint(v) == test_options.marginal_form_constraint, vs)
-            @test all(v -> marginal_form_check_strategy(v) == test_options.marginal_form_check_strategy, vs)
-            @test all(v -> messages_form_constraint(v) == test_options.messages_form_constraint, vs)
-            @test all(v -> messages_form_check_strategy(v) == test_options.messages_form_check_strategy, vs)
-            @test all(v -> proxy_variables(v) == test_options.proxy_variables, vs)
-            @test all(v -> prod_constraint(v) == test_options.prod_constraint, vs)
-            @test all(v -> prod_strategy(v) == test_options.prod_strategy, vs)
-        end
-
-        for sym in (:x, :y, :z), l in (10, 20), r in (10, 20)
-            for vs in (randomvar(test_options, sym, l, r), randomvar(test_options, sym, (l, r)))
-                @test israndom(vs)
-                @test size(vs) === (l, r)
-                @test length(vs) === l * r
-                @test vs isa Matrix
-                @test all(v -> israndom(v), vs)
-                @test all(v -> name(v) === sym, vs)
-                @test all(v -> collection_type(v) isa VariableArray, vs)
-                @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(vs))
-                @test all(v -> marginal_form_constraint(v) == test_options.marginal_form_constraint, vs)
-                @test all(v -> marginal_form_check_strategy(v) == test_options.marginal_form_check_strategy, vs)
-                @test all(v -> messages_form_constraint(v) == test_options.messages_form_constraint, vs)
-                @test all(v -> messages_form_check_strategy(v) == test_options.messages_form_check_strategy, vs)
-                @test all(v -> proxy_variables(v) == test_options.proxy_variables, vs)
-                @test all(v -> prod_constraint(v) == test_options.prod_constraint, vs)
-                @test all(v -> prod_strategy(v) == test_options.prod_strategy, vs)
+                foreach(1:d) do k
+                    @test msg(2.0 * (d - 1)) == fetch_stream_updated(messageout(randomvar, k)) do
+                        foreach(messageins) do messagein
+                            next!(messagein, msg(2.0))
+                        end
+                    end
+                end
             end
         end
-    end
-
-    @testset "Options setters" begin
-        for pipeline in (EmptyPipelineStage(), LoggerPipelineStage(), DiscontinuePipelineStage())
-            @test ReactiveMP.get_pipeline_stages(randomvar(ReactiveMP.randomvar_options_set_pipeline(pipeline), :x)) === pipeline
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.get_pipeline_stages(randomvar(ReactiveMP.randomvar_options_set_pipeline(options, pipeline), :x)) === pipeline
-            end
-        end
-
-        # here and later on we use some dummy values
-        dummy = (1.0, 1, "dummy")
-
-        for proxy_variables in dummy
-            @test ReactiveMP.proxy_variables(randomvar(ReactiveMP.randomvar_options_set_proxy_variables(proxy_variables), :x)) === proxy_variables
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.proxy_variables(randomvar(ReactiveMP.randomvar_options_set_proxy_variables(options, proxy_variables), :x)) === proxy_variables
-            end
-        end
-
-        for prod_constraint in dummy
-            @test ReactiveMP.prod_constraint(randomvar(ReactiveMP.randomvar_options_set_prod_constraint(prod_constraint), :x)) === prod_constraint
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.prod_constraint(randomvar(ReactiveMP.randomvar_options_set_prod_constraint(options, prod_constraint), :x)) === prod_constraint
-            end
-        end
-
-        for prod_strategy in dummy
-            @test ReactiveMP.prod_strategy(randomvar(ReactiveMP.randomvar_options_set_prod_strategy(prod_strategy), :x)) === prod_strategy
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.prod_strategy(randomvar(ReactiveMP.randomvar_options_set_prod_strategy(options, prod_strategy), :x)) === prod_strategy
-            end
-        end
-
-        for marginal_form_constraint in dummy
-            @test ReactiveMP.marginal_form_constraint(randomvar(ReactiveMP.randomvar_options_set_marginal_form_constraint(marginal_form_constraint), :x)) ===
-                marginal_form_constraint
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.marginal_form_constraint(randomvar(ReactiveMP.randomvar_options_set_marginal_form_constraint(options, marginal_form_constraint), :x)) ===
-                    marginal_form_constraint
-            end
-        end
-
-        for marginal_form_check_strategy in dummy
-            @test ReactiveMP.marginal_form_check_strategy(randomvar(ReactiveMP.randomvar_options_set_marginal_form_check_strategy(marginal_form_check_strategy), :x)) ===
-                marginal_form_check_strategy
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.marginal_form_check_strategy(
-                    randomvar(ReactiveMP.randomvar_options_set_marginal_form_check_strategy(options, marginal_form_check_strategy), :x)
-                ) === marginal_form_check_strategy
-            end
-        end
-
-        for messages_form_constraint in dummy
-            @test ReactiveMP.messages_form_constraint(randomvar(ReactiveMP.randomvar_options_set_messages_form_constraint(messages_form_constraint), :x)) ===
-                messages_form_constraint
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.messages_form_constraint(randomvar(ReactiveMP.randomvar_options_set_messages_form_constraint(options, messages_form_constraint), :x)) ===
-                    messages_form_constraint
-            end
-        end
-
-        for messages_form_check_strategy in dummy
-            @test ReactiveMP.messages_form_check_strategy(randomvar(ReactiveMP.randomvar_options_set_messages_form_check_strategy(messages_form_check_strategy), :x)) ===
-                messages_form_check_strategy
-            let options = RandomVariableCreationOptions()
-                @test ReactiveMP.messages_form_check_strategy(
-                    randomvar(ReactiveMP.randomvar_options_set_messages_form_check_strategy(options, messages_form_check_strategy), :x)
-                ) === messages_form_check_strategy
-            end
-        end
-    end
-
-    @testset "Proxy creation" begin
-        proxy_var1 = randomvar(:proxy1)
-        proxy_var2 = randomvar(:proxy2)
-
-        for sym in (:x, :y, :z)
-            v1 = randomvar(ReactiveMP.randomvar_options_set_proxy_variables((proxy_var1,)), sym)
-            @test israndom(v1)
-            @test name(v1) === sym
-            @test proxy_variables(v1) === (proxy_var1,)
-            @test isproxy(v1)
-
-            v2 = randomvar(ReactiveMP.randomvar_options_set_proxy_variables((proxy_var1, proxy_var2)), sym)
-            @test israndom(v2)
-            @test name(v2) === sym
-            @test proxy_variables(v2) === (proxy_var1, proxy_var2)
-            @test isproxy(v2)
-        end
-    end
-
-    @testset "Error indexing" begin
-        # This test may be removed if we implement this feature in the future
-        @test_throws ErrorException randomvar(:x)[1]
     end
 end

@@ -186,21 +186,21 @@ See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@re
 struct NodeInterface
     name::Symbol
     m_out::MessageObservable{AbstractMessage}
-    properties::VariableProperties
+    variable::AbstractVariable
     message_index::Int
 
-    function NodeInterface(name::Symbol, interface)
-        m_out = MessageObservable(AbstractMessage)
-        properties, message_index = setmessagein!(interface, m_out)
-        return new(name, m_out, properties, message_index)
+    function NodeInterface(name::Symbol, variable::AbstractVariable)
+        # `messagein` for variable is `m_out` for the interface
+        m_out, message_index = create_messagein!(variable)
+        return new(name, m_out, variable, message_index)
     end
 end
 
 Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
 
-israndom(interface::NodeInterface) = israndom(interface.properties)
-isdata(interface::NodeInterface)   = isdata(interface.properties)
-isconst(interface::NodeInterface)  = isconst(interface.properties)
+israndom(interface::NodeInterface) = israndom(interface.variable)
+isdata(interface::NodeInterface)   = isdata(interface.variable)
+isconst(interface::NodeInterface)  = isconst(interface.variable)
 
 """
     name(interface)
@@ -238,25 +238,16 @@ Returns an inbound messages stream from the given interface.
 
 See also: [`NodeInterface`](@ref), [`messageout`](@ref)
 """
-messagein(interface::NodeInterface) = messageout(interface.properties, interface.message_index)
+messagein(interface::NodeInterface) = messageout(interface.variable, interface.message_index)
 
 """
-    getproperties(interface)
+    getvariable(interface)
 
-Returns connected properties of a variable connected to the given interface.
+Returns a variable connected to the given interface.
 
 See also: [`NodeInterface`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
-getproperties(interface::NodeInterface) = interface.properties
-
-"""
-    get_pipeline_stages(interface)
-
-Returns an instance of pipeline stages of connected variable for the given interface
-
-See also: [`NodeInterface`](@ref), [`connectvariable!`](@ref), [`connectedvar`](@ref), [`add_inbound_pipeline_stage!`](@ref)
-"""
-get_pipeline_stages(interface::NodeInterface) = get_pipeline_stages(getproperties(interface))
+getvariable(interface::NodeInterface) = interface.variable
 
 """
     IndexedNodeInterface
@@ -401,7 +392,7 @@ end
 
 function FactorNodeProperties(interfaces::NamedTuple)
     iinterfaces = map(keys(interfaces)) do key
-        return NodeInterface(key, interfaces[key])
+        return NodeInterface(key, convert(AbstractVariable, interfaces[key]))
     end
     return FactorNodeProperties(iinterfaces)
 end
@@ -415,13 +406,13 @@ end
 FactorNodeActivationOptions(::Type{T}, factorisation::C) where {T, C} = FactorNodeActivationOptions{T, C}(factorisation)
 FactorNodeActivationOptions(::F, factorisation::C) where {F, C} = FactorNodeActivationOptions{F, C}(factorisation)
 
-functionalform(options::FactorNodeActivationOptions{F}) where {F} = F
+functionalform(::FactorNodeActivationOptions{F}) where {F} = F
 getfactorization(options::FactorNodeActivationOptions) = options.factorization
 
-function activate!(properties::FactorNodeProperties, options::FactorNodeActivationOptions) where {T}
-    pipeline_stages = EmptyPipelineStage() # get_pipeline_stages(options)
-    scheduler       = AsapScheduler() # getscheduler(options)
-    addons          = nothing # getaddons(options)
+function activate!(properties::FactorNodeProperties, options::FactorNodeActivationOptions)
+    pipeline_stages            = EmptyPipelineStage() # get_pipeline_stages(options)
+    scheduler                  = AsapScheduler() # getscheduler(options)
+    addons                     = nothing # getaddons(options)
     fform                      = functionalform(options)
     meta                       = nothing # metadata(factornode)
     node_pipeline              = collect_pipeline(fform, nothing) # getpipeline(factornode)
@@ -443,7 +434,6 @@ function activate!(properties::FactorNodeProperties, options::FactorNodeActivati
             vconstraint = Marginalisation()
 
             vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
-            vmessageout = apply_pipeline_stage(get_pipeline_stages(interface), properties, vtag, vmessageout)
 
             mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, properties))
                 (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
@@ -468,7 +458,7 @@ end
 function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, marginal::FactorNodeLocalMarginal, index::Int)
     localfactorization = getfactorization(clusters, index)
     if length(localfactorization) === 1
-        setstream!(marginal, getmarginal(getproperties(getinterface(properties, first(localfactorization))), IncludeAll()))
+        setstream!(marginal, getmarginal(getvariable(getinterface(properties, first(localfactorization))), IncludeAll()))
     else
         @show marginal
         error("Not implemented yet but very important!!")
