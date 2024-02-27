@@ -1,8 +1,5 @@
 export RandomVariable, RandomVariableActivationOptions
 
-import Base: show
-import Rocket: getscheduler
-
 ## Random variable implementation
 
 """
@@ -37,9 +34,12 @@ end
 
 degree(randomvar::RandomVariable) = length(randomvar.input_messages)
 
-israndom(::RandomVariable) = true
-isdata(::RandomVariable)   = false
-isconst(::RandomVariable)  = false
+israndom(::RandomVariable)                  = true
+israndom(::AbstractArray{<:RandomVariable}) = true
+isdata(::RandomVariable)                    = false
+isdata(::AbstractArray{<:RandomVariable})   = false
+isconst(::RandomVariable)                   = false
+isconst(::AbstractArray{<:RandomVariable})  = false
 
 function create_messagein!(randomvar::RandomVariable)
     messagein = MessageObservable(AbstractMessage)
