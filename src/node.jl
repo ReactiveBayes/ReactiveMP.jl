@@ -352,6 +352,7 @@ struct FactorNodeLocalClusters{M, F}
 end
 
 getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
+getmarginal(clusters::FactorNodeLocalClusters, index) = getindex(getmarginals(clusters), index)
 
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
@@ -377,7 +378,7 @@ interfaceindices(factornode::AbstractFactorNode, inames::NTuple{N, Symbol}) wher
 
 ## Generic Factor node new code start
 
-struct FactorNodeProperties{I} <: AbstractFactorNode
+mutable struct FactorNodeProperties{I} <: AbstractFactorNode
     interfaces::I
 end
 
@@ -398,31 +399,37 @@ end
 
 ## activate!
 
-struct FactorNodeActivationOptions{F, C, S}
+struct FactorNodeActivationOptions{F, C, M, A, S}
     factorization::C
+    metadata::M
+    addons::A
     scheduler::S
 end
 
-FactorNodeActivationOptions(::Type{T}, factorisation::C, scheduler::S) where {T, C, S} = FactorNodeActivationOptions{T, C, S}(factorisation, scheduler)
-FactorNodeActivationOptions(::F, factorisation::C, scheduler::S) where {F, C, S} = FactorNodeActivationOptions{F, C, S}(factorisation, scheduler)
+FactorNodeActivationOptions(::Type{F}, factorisation::C, metadata::M, addons::A, scheduler::S) where {F, C, M, A, S} =
+    FactorNodeActivationOptions{F, C, M, A, S}(factorisation, metadata, addons, scheduler)
+FactorNodeActivationOptions(::F, factorisation::C, metadata::M, addons::A, scheduler::S) where {F, C, M, A, S} =
+    FactorNodeActivationOptions{F, C, M, A, S}(factorisation, metadata, addons, scheduler)
 
 functionalform(::FactorNodeActivationOptions{F}) where {F} = F
 getfactorization(options::FactorNodeActivationOptions) = options.factorization
+getmetadata(options::FactorNodeActivationOptions) = options.metadata
+getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 
 function activate!(properties::FactorNodeProperties, options::FactorNodeActivationOptions)
     pipeline_stages            = EmptyPipelineStage() # get_pipeline_stages(options)
     scheduler                  = getscheduler(options)
-    addons                     = nothing # getaddons(options)
+    addons                     = getaddons(options)
     fform                      = functionalform(options)
-    meta                       = nothing # metadata(factornode)
+    meta                       = collect_meta(fform, getmetadata(options))
     node_pipeline              = collect_pipeline(fform, nothing) # getpipeline(factornode)
     node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
     factorization              = collect_factorisation(fform, getfactorization(options))
     clusters                   = FactorNodeLocalClusters(properties.interfaces, factorization)
 
-    activate!(properties, clusters)
+    activate!(properties, options, clusters)
 
     foreach(enumerate(getinterfaces(properties))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
@@ -450,39 +457,55 @@ function activate!(properties::FactorNodeProperties, options::FactorNodeActivati
     end
 end
 
-function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalClusters)
-    foreach(enumerate(getmarginals(clusters))) do (index, marginal)
-        activate!(properties, clusters, marginal, index)
+function activate!(properties::FactorNodeProperties, options::FactorNodeActivationOptions, clusters::FactorNodeLocalClusters)
+    # We first preinitialize the `MarginalObservable` for those clusters, which length is not equal to `1`
+    # For the clusters which length is equal to one we simple reuse the marginal of the connected variable
+    foreach(enumerate(getfactorization(clusters))) do (index, localfactorization)
+        cmarginal = if isone(length(localfactorization))
+            getmarginal(getvariable(getinterface(properties, first(localfactorization))), IncludeAll())
+        else
+            MarginalObservable()
+        end
+        setstream!(getmarginal(clusters, index), cmarginal)
+    end
+    # After all streams have been initialized we can create streams that are needed to compute them
+    foreach(enumerate(getfactorization(clusters))) do (index, localfactorization)
+        if !isone(length(localfactorization))
+            activate!(properties, options, localfactorization, clusters, getmarginal(clusters, index), index)
+        end
     end
 end
 
-function activate!(properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, marginal::FactorNodeLocalMarginal, index::Int)
-    localfactorization = getfactorization(clusters, index)
-    if length(localfactorization) === 1
-        setstream!(marginal, getmarginal(getvariable(getinterface(properties, first(localfactorization))), IncludeAll()))
-    else
-        # return marginal
-        # @show marginal
-        error("Not implemented yet but very important!!")
+function activate!(
+    properties::FactorNodeProperties,
+    options::FactorNodeActivationOptions,
+    localfactorization::Tuple,
+    clusters::FactorNodeLocalClusters,
+    localmarginal::FactorNodeLocalMarginal,
+    index::Int
+)
+    if !isone(length(localfactorization))
+        cmarginal = getstream(localmarginal)
 
-        cmarginal = MarginalObservable()
-        setstream!(localmarginal, cmarginal)
+        clusterinterfaces = map(i -> getinterface(properties, i), localfactorization)
 
-        message_dependencies  = tuple(getclusterinterfaces(factornode, clusterindex)...)
-        marginal_dependencies = tuple(TupleTools.deleteat(localmarginals(factornode), clusterindex)...)
+        message_dependencies  = tuple(clusterinterfaces...)
+        marginal_dependencies = tuple(TupleTools.deleteat(getmarginals(clusters), index)...)
 
-        msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-        marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+        msgs_names, msgs_observable          = get_messages_observable(properties, message_dependencies)
+        marginal_names, marginals_observable = get_marginals_observable(properties, marginal_dependencies)
 
-        fform = functionalform(factornode)
+        fform = functionalform(options)
         vtag  = tag(localmarginal)
-        meta  = metadata(factornode)
+        meta  = getmetadata(options)
 
-        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, factornode))
+        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, properties))
         # TODO: discontinue operator is needed for loopy belief propagation? Check
         marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout)
+    else
+        @warn "`activate!` should not be called for local cluster of length `1`."
     end
 end
 

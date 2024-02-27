@@ -1,6 +1,6 @@
 export DataVariable, update!
 
-struct DataVariable{M, P} <: AbstractVariable
+mutable struct DataVariable{M, P} <: AbstractVariable
     input_messages :: Vector{MessageObservable{AbstractMessage}}
     marginal       :: MarginalObservable
     messageout     :: M

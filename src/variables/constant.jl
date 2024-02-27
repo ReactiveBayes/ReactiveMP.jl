@@ -1,9 +1,9 @@
 export ConstVariable
 
 mutable struct ConstVariable <: AbstractVariable
-    const marginal   :: MarginalObservable
-    const messageout :: MessageObservable
-    nconnected       :: Int
+    marginal   :: MarginalObservable
+    messageout :: MessageObservable
+    nconnected :: Int
 end
 
 function ConstVariable(constant)

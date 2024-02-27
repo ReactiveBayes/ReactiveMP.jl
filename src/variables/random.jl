@@ -13,7 +13,7 @@ A random variable defines properties that are needed for reactive message passin
 - `messages_prod_fn`: a function that accepts a collection of messages and defines how to compute a product of those. Used in the outbound message computation.
 - `marginal_prod_fn`: a function that accepts a collection of messages and defines how to compute a product of those. Used in the marginal computation.
 """
-struct RandomVariable{M, F} <: AbstractVariable
+mutable struct RandomVariable{M, F} <: AbstractVariable
     input_messages   :: Vector{MessageObservable{AbstractMessage}}
     output_messages  :: Vector{MessageObservable{Message}}
     marginal         :: MarginalObservable
