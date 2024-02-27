@@ -29,7 +29,13 @@ function create_messagein!(datavar::DataVariable)
     return messagein, length(datavar.input_messages)
 end
 
-messageout(datavar::DataVariable, ::Int) = datavar.messageout
+function messagein(datavar::DataVariable, index::Int)
+    return datavar.input_messages[index]
+end
+
+function messageout(datavar::DataVariable, ::Int)
+    return datavar.messageout
+end
 
 struct DataVariableActivationOptions
     prediction::Bool
@@ -52,8 +58,8 @@ allows_missings(datavars::AbstractArray{<:DataVariable}) = all(allows_missings, 
 allows_missings(datavar::DataVariable, ::Type{Message{D}}) where {D} = false
 allows_missings(datavar::DataVariable, ::Type{Union{Message{Missing}, Message{D}}} where {D}) = true
 
-update!(datavar::DataVariable, data)                = next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
-update!(datavar::DataVariable, ::Missing)           = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
+update!(datavar::DataVariable, data)      = next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
+update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
 
 function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
     @assert size(datavars) === size(data) """

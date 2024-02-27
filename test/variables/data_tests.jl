@@ -1,114 +1,71 @@
 
-@testitem "DataVariable" begin
-    using ReactiveMP
-    using Rocket
+@testitem "DataVariable: uninitialized" begin
+    import ReactiveMP: DataVariable, messageout, messagein
 
-    import ReactiveMP: DataVariableCreationOptions, MessageObservable
-    import ReactiveMP: collection_type, VariableIndividual, VariableVector, VariableArray, linear_index
-    import ReactiveMP: getconst, proxy_variables
-    import ReactiveMP: israndom, isproxy, isused, isconnected, setmessagein!, allows_missings
-
-    @testset "Simple creation" begin
-        randomize_update(::Type{Missing}, size)                            = fill(missing, size)
-        randomize_update(::Type{T}, size) where {T <: Union{Int, Float64}} = rand(T, size)
-        randomize_update(::Type{V}, size) where {V <: AbstractVector}      = map(_ -> rand(eltype(V), 1), CartesianIndices(size))
-
-        function test_updates(vs, type, size)
-            nupdates     = 3
-            updates      = []
-            subscription = subscribe!(getmarginals(vs), (update) -> begin
-                update_data = ReactiveMP.getdata.(update)
-                if all(element -> element isa type, update_data)
-                    push!(updates, update_data)
-                end
-            end)
-            for _ in 1:nupdates
-                update = randomize_update(type, size)
-                update!(vs, update)
-                @test all(last(updates) .=== update)
-            end
-            @test length(updates) === nupdates
-            unsubscribe!(subscription)
-            # Check if we do not receive updates after unsubscription
-            update!(vs, randomize_update(type, size))
-            @test length(updates) === nupdates
-            return true
-        end
-
-        for sym in (:x, :y, :z), T in (Float64, Int64, Vector{Float64}), allow_missings in (true, false)
-            options = DataVariableCreationOptions(T, nothing, Val(allow_missings))
-            variable = datavar(options, sym, T)
-
-            @test !israndom(variable)
-            @test eltype(variable) === T
-            @test name(variable) === sym
-            @test allows_missings(variable) === allow_missings
-            @test collection_type(variable) isa VariableIndividual
-            @test proxy_variables(variable) === nothing
-            @test !isproxy(variable)
-            @test !isused(variable)
-            @test !isconnected(variable)
-
-            setmessagein!(variable, 1, MessageObservable())
-
-            @test isused(variable)
-            @test isconnected(variable)
-
-            # `100` could a valid index, but messages should be initialized in order, previous was `1`
-            @test_throws ErrorException setmessagein!(variable, 100, MessageObservable())
-        end
-
-        for sym in (:x, :y, :z), T in (Float64, Int64, Vector{Float64}), n in (10, 20), allow_missings in (true, false)
-            options = DataVariableCreationOptions(T, nothing, Val(allow_missings))
-            variables = datavar(options, sym, T, n)
-
-            @test !israndom(variables)
-            @test length(variables) === n
-            @test variables isa Vector
-            @test all(v -> !israndom(v), variables)
-            @test all(v -> name(v) === sym, variables)
-            @test all(v -> allows_missings(v) === allow_missings, variables)
-            @test all(v -> collection_type(v) isa VariableVector, variables)
-            @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(variables))
-            @test all(v -> eltype(v) === T, variables)
-            @test !isproxy(variables)
-            @test all(v -> !isproxy(v), variables)
-            @test all(v -> !isused(v), variables)
-            @test all(v -> !isconnected(v), variables)
-            @test test_updates(variables, T, (n,))
-
-            foreach(v -> setmessagein!(v, 1, MessageObservable()), variables)
-
-            @test all(v -> isused(v), variables)
-            @test all(v -> isconnected(v), variables)
-        end
-
-        for sym in (:x, :y, :z), T in (Float64, Int64, Vector{Float64}), l in (10, 20), r in (10, 20)
-            for variables in (datavar(sym, T, l, r), datavar(sym, T, (l, r)))
-                @test !israndom(variables)
-                @test size(variables) === (l, r)
-                @test length(variables) === l * r
-                @test variables isa Matrix
-                @test all(v -> !israndom(v), variables)
-                @test all(v -> name(v) === sym, variables)
-                @test all(v -> collection_type(v) isa VariableArray, variables)
-                @test all(t -> linear_index(collection_type(t[2])) === t[1], enumerate(variables))
-                @test all(v -> eltype(v) === T, variables)
-                @test !isproxy(variables)
-                @test all(v -> !isproxy(v), variables)
-                @test all(v -> !isused(v), variables)
-                @test test_updates(variables, T, (l, r))
-
-                foreach(v -> setmessagein!(v, 1, MessageObservable()), variables)
-
-                @test all(v -> isused(v), variables)
-                @test all(v -> isconnected(v), variables)
-            end
+    # Should throw if not initialised properly
+    @testset let datavar = DataVariable()
+        for i in 1:10
+            @test messageout(datavar, 1) === messageout(datavar, i)
+            @test_throws BoundsError messagein(datavar, i)
         end
     end
+end
 
-    @testset "Error indexing" begin
-        # This test may be removed if we implement this feature in the future
-        @test_throws ErrorException datavar(:x, Float64)[1]
+@testitem "DataVariable: getmessagein!" begin
+    import ReactiveMP: DataVariable, MessageObservable, create_messagein!, messagein, degree
+
+    # Test for different degrees `d`
+    @testset for d in 1:5:100
+        @testset let datavar = DataVariable()
+            for i in 1:d
+                messagein, index = create_messagein!(datavar)
+                @test messagein isa MessageObservable
+                @test index === i
+                @test degree(datavar) === i
+            end
+            @test degree(datavar) === d
+        end
+    end
+end
+
+@testitem "DataVariable: getmarginal" begin
+    using BayesBase
+
+    import ReactiveMP: DataVariable, MessageObservable, create_messagein!, messagein, degree, activate!, connect!, DataVariableActivationOptions, messageout
+
+    include("../testutilities.jl")
+
+    @testset begin
+        # Test marginal computation
+        @testset for d in 1:5:100
+            @testset let datavar = DataVariable()
+                messageins = map(1:d) do _
+                    s = Subject(AbstractMessage)
+                    m, i = create_messagein!(datavar)
+                    connect!(m, s)
+                    return s
+                end
+
+                activate!(datavar, DataVariableActivationOptions(false))
+
+                messages = map(msg, rand(d))
+
+                @test check_stream_not_updated(getmarginal(datavar)) do
+                    foreach(zip(messageins, messages)) do (messagein, message)
+                        next!(messagein, message)
+                    end
+                end
+
+                data_point = rand()
+
+                marginal_expected = mgl(PointMass(data_point))
+                marginal_result = check_stream_updated_once(getmarginal(datavar)) do
+                    update!(datavar, data_point)
+                end
+
+                @test getdata(marginal_result) === getdata(marginal_expected)
+                @test getdata(marginal_result) === PointMass(data_point)
+            end
+        end
     end
 end

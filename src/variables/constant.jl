@@ -28,7 +28,13 @@ function create_messagein!(constvar::ConstVariable)
     return constvar.messageout, 1
 end
 
-messageout(constvar::ConstVariable, ::Int) = constvar.messageout
+function messagein(::ConstVariable, ::Int)
+    error("ConstVariable does not save inbound messages.")
+end
+
+function messageout(constvar::ConstVariable, ::Int)
+    return constvar.messageout
+end
 
 _getmarginal(constvar::ConstVariable)      = constvar.marginal
 _setmarginal!(::ConstVariable, observable) = error("It is not possible to set a marginal stream for `ConstVariable`")
