@@ -399,34 +399,35 @@ end
 
 ## activate!
 
-struct FactorNodeActivationOptions{F, C, M, A, S}
+struct FactorNodeActivationOptions{F, C, M, P, A, S}
     factorization::C
     metadata::M
+    pipeline::P
     addons::A
     scheduler::S
 end
 
-FactorNodeActivationOptions(::Type{F}, factorisation::C, metadata::M, addons::A, scheduler::S) where {F, C, M, A, S} =
-    FactorNodeActivationOptions{F, C, M, A, S}(factorisation, metadata, addons, scheduler)
-FactorNodeActivationOptions(::F, factorisation::C, metadata::M, addons::A, scheduler::S) where {F, C, M, A, S} =
-    FactorNodeActivationOptions{F, C, M, A, S}(factorisation, metadata, addons, scheduler)
+FactorNodeActivationOptions(::Type{F}, factorisation::C, metadata::M, pipeline::P, addons::A, scheduler::S) where {F, C, M, P, A, S} =
+    FactorNodeActivationOptions{F, C, M, P, A, S}(factorisation, metadata, pipeline, addons, scheduler)
+FactorNodeActivationOptions(::F, factorisation::C, metadata::M, pipeline::P, addons::A, scheduler::S) where {F, C, M, P, A, S} =
+    FactorNodeActivationOptions{F, C, M, P, A, S}(factorisation, metadata, pipeline, addons, scheduler)
 
 functionalform(::FactorNodeActivationOptions{F}) where {F} = F
-getfactorization(options::FactorNodeActivationOptions) = options.factorization
-getmetadata(options::FactorNodeActivationOptions) = options.metadata
+getfactorization(options::FactorNodeActivationOptions) = collect_factorisation(functionalform(options), options.factorization)
+getmetadata(options::FactorNodeActivationOptions) = collect_meta(functionalform(options), options.metadata)
+getpipeline(options::FactorNodeActivationOptions) = collect_pipeline(functionalform(options), options.pipeline)
 getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 
 function activate!(properties::FactorNodeProperties, options::FactorNodeActivationOptions)
-    pipeline_stages            = EmptyPipelineStage() # get_pipeline_stages(options)
     scheduler                  = getscheduler(options)
     addons                     = getaddons(options)
     fform                      = functionalform(options)
     meta                       = collect_meta(fform, getmetadata(options))
-    node_pipeline              = collect_pipeline(fform, nothing) # getpipeline(factornode)
+    node_pipeline              = getpipeline(options)
     node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
     node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
-    factorization              = collect_factorisation(fform, getfactorization(options))
+    factorization              = getfactorization(options)
     clusters                   = FactorNodeLocalClusters(properties.interfaces, factorization)
 
     activate!(properties, options, clusters)
@@ -448,7 +449,6 @@ function activate!(properties::FactorNodeProperties, options::FactorNodeActivati
             end
 
             vmessageout = vmessageout |> map(AbstractMessage, mapping)
-            vmessageout = apply_pipeline_stage(pipeline_stages, properties, vtag, vmessageout)
             vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, properties, vtag, vmessageout)
             vmessageout = vmessageout |> schedule_on(scheduler)
 
