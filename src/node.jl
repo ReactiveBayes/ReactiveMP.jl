@@ -358,14 +358,21 @@ getmarginal(clusters::FactorNodeLocalClusters, index) = getindex(getmarginals(cl
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
 
-function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization::NTuple{M, Tuple}) where {N, M}
+function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization::NTuple) where {N}
     marginals = ntuple(i -> FactorNodeLocalMarginal(clustername(factorization[i], interfaces)), length(factorization))
     return FactorNodeLocalClusters(marginals, factorization)
 end
 
+function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization) where {N}
+    marginals = map(factor -> FactorNodeLocalMarginal(clustername(factor, interfaces)), factorization)
+    return FactorNodeLocalClusters(marginals, factorization)
+end
+
 clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) = clusterindex(clusters, clusters.factorization, vindex)
-clusterindex(::FactorNodeLocalClusters, factorization::Tuple, vindex::Int) = findfirst(cluster -> vindex in cluster, factorization)
+clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) = findfirst(cluster -> vindex in cluster, factorization)
+
 clustername(cluster::Tuple, interfaces) = mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
+clustername(cluster, interfaces) = reduce((a, b) -> Symbol(a, :_, b), Iterators.map(v -> name(interfaces[v]), cluster))
 
 ## AbstractFactorNode
 
@@ -658,7 +665,7 @@ function message_dependencies(::DefaultFunctionalDependencies, properties::Facto
     # First we remove current edge index from the list of dependencies
     vdependencies = filter(ci -> ci !== iindex, cluster)
     # Second we map interface indices to the actual interfaces
-    return map(inds -> map(i -> getinterface(properties, i), inds), vdependencies)
+    return Iterators.map(inds -> map(i -> getinterface(properties, i), inds), vdependencies)
 end
 
 function marginal_dependencies(::DefaultFunctionalDependencies, properties::FactorNodeProperties, clusters::FactorNodeLocalClusters, cluster, cindex, interface, iindex)
@@ -709,28 +716,42 @@ function functional_dependencies(dependencies::Any, properties::FactorNodeProper
     messages  = message_dependencies(dependencies, properties, clusters, cluster, cindex, interface, iindex)
     marginals = marginal_dependencies(dependencies, properties, clusters, cluster, cindex, interface, iindex)
 
-    return tuple(messages...), tuple(marginals...)
+    return messages, marginals
 end
 
 function get_messages_observable(properties::FactorNodeProperties, messages)
     if !isempty(messages)
-        msgs_names      = Val{map(name, messages)}()
-        msgs_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
-        return msgs_names, msgs_observable
+        return get_messages_observable(properties, Tuple(messages))
     else
         return nothing, of(nothing)
     end
 end
 
+function get_messages_observable(properties::FactorNodeProperties, messages::Tuple)
+    return get_marginals_observable(properties, marginals, Val{map(name, messages)}())
+end
+
+function get_messages_observable(::FactorNodeProperties, messages::Tuple, messages_names::Val)
+    messages_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
+    return messages_names, messages_observable
+end
+
 function get_marginals_observable(properties::FactorNodeProperties, marginals)
     if !isempty(marginals)
-        marginal_names       = Val{map(name, marginals)}()
-        marginals_streams    = map(marginal -> getstream(marginal), marginals)
-        marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
-        return marginal_names, marginals_observable
+        return get_marginals_observable(properties, Tuple(marginals))
     else
         return nothing, of(nothing)
     end
+end
+
+function get_marginals_observable(properties::FactorNodeProperties, marginals::Tuple)
+    return get_marginals_observable(properties, marginals, Val{map(name, marginals)}())
+end
+
+function get_marginals_observable(::FactorNodeProperties, marginals::Tuple, marginal_names::Val)
+    marginals_streams    = map(marginal -> getstream(marginal), marginals)
+    marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
+    return marginal_names, marginals_observable
 end
 
 ## old code that needs to be fixed 
