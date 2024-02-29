@@ -13,7 +13,6 @@ export tiny, huge
 include("fixes.jl")
 include("helpers/macrohelpers.jl")
 include("helpers/helpers.jl")
-include("helpers/manyof.jl")
 
 include("helpers/algebra/companion_matrix.jl")
 include("helpers/algebra/common.jl")

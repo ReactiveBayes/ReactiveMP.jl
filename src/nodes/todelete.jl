@@ -1,7 +1,5 @@
 ## AbstractFactorNode
 
-# abstract type AbstractFactorNode end
-
 # isstochastic(factornode::AbstractFactorNode)    = isstochastic(sdtype(factornode))
 # isdeterministic(factornode::AbstractFactorNode) = isdeterministic(sdtype(factornode))
 

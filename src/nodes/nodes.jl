@@ -180,6 +180,8 @@ struct MomentMatching end
 include("interfaces.jl")
 include("factorization.jl")
 
+abstract type AbstractFactorNode end
+
 ## Generic Factor node new code start
 
 mutable struct FactorNodeProperties{I} <: AbstractFactorNode
