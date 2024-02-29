@@ -1,5 +1,5 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
-export MeanField, FullFactorisation, FullJoin, Marginalisation, MomentMatching
+export MeanField, FullFactorisation, BetheFactorisation, Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export FactorNodesCollection, getnodes, getnode_ids
 export make_node, FactorNodeCreationOptions
@@ -125,27 +125,21 @@ as_node_symbol(fn::F) where {F <: Function} = Symbol(fn)
 
 Generic factorisation constraint used to specify a mean-field factorisation for recognition distribution `q`.
 
-See also: [`FullJoin`](@ref)
+See also: [`BetheFactorisation`](@ref)
 """
 struct MeanField end
 
 """
-    FullJoin
+    BetheFactorisation
 
 Generic factorisation constraint used to specify a full factorisation for recognition distribution `q`.
 
 See also: [`MeanField`](@ref)
 """
-struct FullJoin end
+struct BetheFactorisation end
 
-"""
-    FullFactorisation
-
-Alias for FullJoin. To depricate FullFactorisation.
-
-See also: [`FullJoin`](@ref)
-"""
-const FullFactorisation = FullJoin
+#Alias for `BetheFactorisation` to depricate `FullFactorisation`. 
+Base.@deprecate_binding FullFactorisation BetheFactorisation
 
 """
     collect_factorisation(nodetype, factorisation)
