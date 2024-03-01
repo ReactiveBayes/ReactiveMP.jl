@@ -46,6 +46,8 @@ function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factoriza
     return FactorNodeLocalClusters(marginals, factorization)
 end
 
+## FactorNodeLocalCluster
+
 clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) = clusterindex(clusters, clusters.factorization, vindex)
 clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) = findfirst(cluster -> vindex in cluster, factorization)
 

@@ -22,7 +22,7 @@ struct NodeInterface
     end
 end
 
-Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
+Base.show(io::IO, interface::NodeInterface) = print(io, "Interface(", name(interface), ")")
 
 israndom(interface::NodeInterface) = israndom(interface.variable)
 isdata(interface::NodeInterface)   = isdata(interface.variable)

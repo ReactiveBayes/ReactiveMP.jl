@@ -10,7 +10,7 @@
     ReactiveMP.create_messagein!(variable::AbstractVariableImplemention) = (variable.messageout, 1)
     ReactiveMP.messageout(variable::AbstractVariableImplemention, ::Int) = variable.messageout
 
-    varmessageout = MessageObservable(AbstractMessage)
+    varmessageout = MessageObservable()
     stream = Subject(AbstractMessage)
     connect!(varmessageout, stream)
     variable = AbstractVariableImplemention(varmessageout)

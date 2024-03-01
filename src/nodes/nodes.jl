@@ -178,7 +178,7 @@ struct Marginalisation end
 struct MomentMatching end
 
 include("interfaces.jl")
-include("factorization.jl")
+include("clusters.jl")
 
 abstract type AbstractFactorNode end
 
