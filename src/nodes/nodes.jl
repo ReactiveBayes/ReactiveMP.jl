@@ -197,9 +197,7 @@ function getinterface(properties::FactorNodeProperties, index)
 end
 
 function FactorNodeProperties(interfaces::NamedTuple)
-    iinterfaces = map(keys(interfaces)) do key
-        return NodeInterface(key, convert(AbstractVariable, interfaces[key]))
-    end
+    iinterfaces = map(key -> NodeInterface(key, interfaces[key]), keys(interfaces))
     return FactorNodeProperties(iinterfaces)
 end
 

@@ -16,6 +16,10 @@ struct NodeInterface
         m_out, message_index = create_messagein!(variable)
         return new(name, m_out, variable, message_index)
     end
+
+    function NodeInterface(name::Symbol, variable::Any)
+        return NodeInterface(name, convert(AbstractVariable, variable))
+    end
 end
 
 Base.show(io::IO, interface::NodeInterface) = print(io, string("Interface(", name(interface), ")"))
