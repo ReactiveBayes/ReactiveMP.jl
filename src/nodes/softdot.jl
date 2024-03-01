@@ -7,7 +7,7 @@ const softdot = SoftDot
 
 @node softdot Stochastic [y, (θ, aliases = [theta]), x, (γ, aliases = [gamma])]
 
-@average_energy softdot (q_y::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_γ::GammaDistributionsFamily) = begin
+@average_energy softdot (q_y::Any, q_θ::Any, q_x::Any, q_γ::Any) = begin
     m_y, V_y = mean_cov(q_y)
     m_θ, V_θ = mean_cov(q_θ)
     m_x, V_x = mean_cov(q_x)
