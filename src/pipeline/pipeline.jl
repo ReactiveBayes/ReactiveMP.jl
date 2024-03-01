@@ -60,3 +60,6 @@ Base.:+(left::AbstractPipelineStage, right::AbstractPipelineStage)   = Composite
 Base.:+(left::AbstractPipelineStage, right::CompositePipelineStage)  = CompositePipelineStage((left, right.stages...))
 Base.:+(left::CompositePipelineStage, right::AbstractPipelineStage)  = CompositePipelineStage((left.stages..., right))
 Base.:+(left::CompositePipelineStage, right::CompositePipelineStage) = CompositePipelineStage((left.stages..., right.stages...))
+
+collect_pipeline(any, ::Nothing) = EmptyPipelineStage()
+collect_pipeline(any, something) = something

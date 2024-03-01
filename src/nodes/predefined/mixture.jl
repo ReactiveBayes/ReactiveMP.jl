@@ -59,7 +59,7 @@ interface_get_index(::Type{Val{:Mixture}}, ::Type{Val{:inputs}}) = 3
 setmarginal!(factornode::MixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for MixtureNode")
 getmarginal!(factornode::MixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for MixtureNode")
 
-struct MixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
+struct MixtureNodeFunctionalDependencies end
 
 default_functional_dependencies_pipeline(::Type{<:Mixture}) = MixtureNodeFunctionalDependencies()
 
@@ -115,7 +115,7 @@ end
 
 # create message observable for output or Mixture edge without pipeline constraints (the message towards the inputs are fine by default behaviour, i.e. they depend only on switch and output and no longer on all other inputs)
 function get_messages_observable(
-    factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
+    factornode::MixtureNode{N, F, Nothing, P}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
 ) where {N, F <: FullFactorisation, P <: MixtureNodeFunctionalDependencies}
     output_or_switch_interface = messages[1]
     inputsinterfaces = messages[2]
@@ -129,7 +129,7 @@ end
 
 # create an observable that is used to compute the switch with pipeline constraints
 function get_messages_observable(
-    factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
+    factornode::MixtureNode{N, F, Nothing, P}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
 ) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     switchinterface  = messages[1]
     inputsinterfaces = messages[2]
@@ -143,7 +143,7 @@ end
 
 # create an observable that is used to compute the output with pipeline constraints
 function get_messages_observable(
-    factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NTuple{N, IndexedNodeInterface}}
+    factornode::MixtureNode{N, F, Nothing, P}, messages::Tuple{NTuple{N, IndexedNodeInterface}}
 ) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     inputsinterfaces = messages[1]
 
@@ -154,7 +154,7 @@ end
 
 # create an observable that is used to compute the input with pipeline constraints
 function get_messages_observable(
-    factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface}
+    factornode::MixtureNode{N, F, Nothing, P}, messages::Tuple{NodeInterface}
 ) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     outputinterface = messages[1]
 
@@ -164,7 +164,7 @@ function get_messages_observable(
 end
 
 function get_marginals_observable(
-    factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, marginals::Tuple{NodeInterface}
+    factornode::MixtureNode{N, F, Nothing, P}, marginals::Tuple{NodeInterface}
 ) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
     switchinterface = marginals[1]
 

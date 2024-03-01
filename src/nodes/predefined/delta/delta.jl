@@ -60,7 +60,7 @@ collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
 collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(; method = method, inverse = nothing)
 
-struct DeltaNodeFunctionalDependenciesPipeline <: AbstractNodeFunctionalDependenciesPipeline end
+struct DeltaNodeFunctionalDependenciesPipeline end
 
 default_functional_dependencies_pipeline(::Type{DeltaFn}) = DeltaNodeFunctionalDependenciesPipeline()
 

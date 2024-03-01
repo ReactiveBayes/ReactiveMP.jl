@@ -212,9 +212,10 @@ end
 
 ## activate!
 
-struct FactorNodeActivationOptions{C, M, P, A, S}
+struct FactorNodeActivationOptions{C, M, D, P, A, S}
     factorization::C
     metadata::M
+    dependencies::D
     pipeline::P
     addons::A
     scheduler::S
@@ -222,26 +223,26 @@ end
 
 getfactorization(options::FactorNodeActivationOptions) = options.factorization
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
+getdependecies(options::FactorNodeActivationOptions) = options.dependencies
 getpipeline(options::FactorNodeActivationOptions) = options.pipeline
 getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 
 function activate!(factornode::GenericFactorNode, options::FactorNodeActivationOptions)
-    scheduler                  = getscheduler(options)
-    addons                     = getaddons(options)
-    fform                      = functionalform(factornode)
-    factorization              = collect_factorisation(fform, getfactorization(options))
-    meta                       = collect_meta(fform, getmetadata(options))
-    node_pipeline              = collect_pipeline(fform, getpipeline(options))
-    node_pipeline_dependencies = get_pipeline_dependencies(node_pipeline)
-    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
-    clusters                   = FactorNodeLocalClusters(factornode.interfaces, factorization)
+    scheduler     = getscheduler(options)
+    addons        = getaddons(options)
+    fform         = functionalform(factornode)
+    factorization = collect_factorisation(fform, getfactorization(options))
+    meta          = collect_meta(fform, getmetadata(options))
+    dependencies  = collect_functional_dependencies(fform, getdependecies(options))
+    pipeline      = collect_pipeline(fform, getpipeline(options))
+    clusters      = FactorNodeLocalClusters(factornode.interfaces, factorization)
 
     activate!(factornode, options, clusters)
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
-            message_dependencies, marginal_dependencies = functional_dependencies(node_pipeline_dependencies, factornode, clusters, interface, iindex)
+            message_dependencies, marginal_dependencies = functional_dependencies(dependencies, factornode, clusters, interface, iindex)
 
             msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
             marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
@@ -256,7 +257,7 @@ function activate!(factornode::GenericFactorNode, options::FactorNodeActivationO
             end
 
             vmessageout = vmessageout |> map(AbstractMessage, mapping)
-            vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
+            vmessageout = apply_pipeline_stage(pipeline, factornode, vtag, vmessageout)
             vmessageout = vmessageout |> schedule_on(scheduler)
 
             connect!(messageout(interface), vmessageout)
@@ -419,290 +420,7 @@ end
 
 ## Node pipeline
 
-abstract type AbstractNodeFunctionalDependenciesPipeline end
-
-struct FactorNodePipeline{F <: AbstractNodeFunctionalDependenciesPipeline, S <: AbstractPipelineStage}
-    functional_dependencies :: F
-    extra_stages            :: S
-end
-
-get_pipeline_dependencies(pipeline::FactorNodePipeline) = pipeline.functional_dependencies
-get_pipeline_stages(pipeline::FactorNodePipeline)       = pipeline.extra_stages
-
-function Base.show(io::IO, pipeline::FactorNodePipeline)
-    print(io, "FactorNodePipeline(functional_dependencies = $(pipeline.functional_dependencies), extra_stages = $(pipeline.extra_stages)")
-end
-
-function collect_pipeline end
-
-collect_pipeline(T::Any, ::Nothing)                                       = FactorNodePipeline(default_functional_dependencies_pipeline(T), EmptyPipelineStage())
-collect_pipeline(T::Any, stage::AbstractPipelineStage)                    = FactorNodePipeline(default_functional_dependencies_pipeline(T), stage)
-collect_pipeline(T::Any, fdp::AbstractNodeFunctionalDependenciesPipeline) = FactorNodePipeline(fdp, EmptyPipelineStage())
-collect_pipeline(T::Any, pipeline::FactorNodePipeline)                    = pipeline
-
-## Functional Dependencies
-
-function message_dependencies end
-function marginal_dependencies end
-
-Base.:+(left::AbstractNodeFunctionalDependenciesPipeline, right::AbstractPipelineStage) = FactorNodePipeline(left, right)
-Base.:+(left::FactorNodePipeline, right::AbstractPipelineStage)                         = FactorNodePipeline(left.functional_dependencies, left.extra_stages + right)
-
-### Default
-
-"""
-    DefaultFunctionalDependencies
-
-This pipeline translates directly to enforcing a variational message passing scheme. In order to compute a message out of some edge, this pipeline requires
-messages from edges within the same edge-cluster and marginals over other edge-clusters.
-
-See also: [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
-"""
-struct DefaultFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
-
-function message_dependencies(::DefaultFunctionalDependencies, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, cluster, cindex, interface, iindex)
-    # First we remove current edge index from the list of dependencies
-    vdependencies = filter(ci -> ci !== iindex, cluster)
-    # Second we map interface indices to the actual interfaces
-    return Iterators.map(inds -> map(i -> getinterface(factornode, i), inds), vdependencies)
-end
-
-function marginal_dependencies(::DefaultFunctionalDependencies, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, cluster, cindex, interface, iindex)
-    return skipindex(getmarginals(clusters), cindex)
-end
-
-### With inbound messages
-
-###
-
-default_functional_dependencies_pipeline(_) = DefaultFunctionalDependencies()
-
-### Generic `functional_dependencies` for `AbstractFactorNode`
-
-# function functional_dependencies(factornode::AbstractFactorNode, iname::Symbol)
-#     return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iname)
-# end
-
-# function functional_dependencies(factornode::AbstractFactorNode, iindex::Int)
-#     return functional_dependencies(get_pipeline_dependencies(getpipeline(factornode)), factornode, iindex)
-# end
-
-### `FactorNode` implementation of `functional_dependencies`
-
-# function functional_dependencies(dependencies, factornode::FactorNode, iname::Symbol)
-#     return functional_dependencies(dependencies, factornode, interfaceindex(factornode, iname))
-# end
-
-# function functional_dependencies(dependencies, factornode::FactorNode, iindex::Int)
-#     cindex = clusterindex(factornode, iindex)
-
-#     nodeinterfaces     = interfaces(factornode)
-#     nodeclusters       = factorisation(factornode)
-#     nodelocalmarginals = localmarginals(factornode)
-
-#     varcluster = @inbounds nodeclusters[cindex]
-
-#     messages  = message_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-#     marginals = marginal_dependencies(dependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-
-#     return tuple(messages...), tuple(marginals...)
-# end
-
-function functional_dependencies(dependencies::Any, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, interface::NodeInterface, iindex::Int)
-    cindex = clusterindex(clusters, iindex)
-    cluster = getfactorization(clusters, cindex)
-
-    messages  = message_dependencies(dependencies, factornode, clusters, cluster, cindex, interface, iindex)
-    marginals = marginal_dependencies(dependencies, factornode, clusters, cluster, cindex, interface, iindex)
-
-    return messages, marginals
-end
-
-function get_messages_observable(factornode::GenericFactorNode, messages)
-    if !isempty(messages)
-        return get_messages_observable(factornode, Tuple(messages))
-    else
-        return nothing, of(nothing)
-    end
-end
-
-function get_messages_observable(factornode::GenericFactorNode, messages::Tuple)
-    return get_marginals_observable(factornode, marginals, Val{map(name, messages)}())
-end
-
-function get_messages_observable(::GenericFactorNode, messages::Tuple, messages_names::Val)
-    messages_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
-    return messages_names, messages_observable
-end
-
-function get_marginals_observable(factornode::GenericFactorNode, marginals)
-    if !isempty(marginals)
-        return get_marginals_observable(factornode, Tuple(marginals))
-    else
-        return nothing, of(nothing)
-    end
-end
-
-function get_marginals_observable(factornode::GenericFactorNode, marginals::Tuple)
-    return get_marginals_observable(factornode, marginals, Val{map(name, marginals)}())
-end
-
-function get_marginals_observable(::GenericFactorNode, marginals::Tuple, marginal_names::Val)
-    marginals_streams    = map(marginal -> getstream(marginal), marginals)
-    marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
-    return marginal_names, marginals_observable
-end
-
-## old code that needs to be fixed 
-
-"""
-    RequireMessageFunctionalDependencies(indices::Tuple, start_with::Tuple)
-
-The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
-
-# Arguments
-
-- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages
-- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
-
-Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmessage!` overwrites whatever has been passed in `start_with`.
-
-`@model` macro accepts a simplified construction of this pipeline:
-
-```julia
-@model function some_model()
-    # ...
-    y ~ NormalMeanVariance(x, τ) where {
-        pipeline = RequireMessage(x = vague(NormalMeanPrecision),     τ)
-                                  # ^^^                               ^^^
-                                  # request 'inbound' for 'x'         we may do the same for 'τ',
-                                  # and initialise with `vague(...)`  but here we skip initialisation
-    }
-    # ...
-end
-```
-
-Deprecation warning: `RequireInboundFunctionalDependencies` has been deprecated in favor of `RequireMessageFunctionalDependencies`.
-
-See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
-"""
-struct RequireMessageFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
-    indices    :: I
-    start_with :: S
-end
-
-Base.@deprecate_binding RequireInboundFunctionalDependencies RequireMessageFunctionalDependencies
-
-function message_dependencies(dependencies::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-
-    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
-    depindex = findfirst((i) -> i === iindex, dependencies.indices)
-
-    # If we have `depindex` in our `indices` we include it in our list of functional dependencies. It effectively forces rule to require inbound message
-    if depindex !== nothing
-        # `mapindex` is a lambda function here
-        output     = messagein(nodeinterfaces[iindex])
-        start_with = dependencies.start_with[depindex]
-        # Initialise now, if message has not been initialised before and `start_with` element is not empty
-        if isnothing(getrecent(output)) && !isnothing(start_with)
-            setmessage!(output, start_with)
-        end
-        return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), varcluster)
-    else
-        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    end
-end
-
-function marginal_dependencies(::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-end
-
-### With marginals
-
-"""
-    RequireMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
-
-Similar to `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on that edge.
-
-# Arguments
-
-- `indices`::Tuple, tuple of integers, which indicates what edges should require their own marginals
-- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial marginal for edges in `indices`
-
-Note: `start_with` uses the `setmarginal!` mechanism, hence it can be visible to other listeners on the same edge. Explicit calls to `setmarginal!` overwrites whatever has been passed in `start_with`.
-
-`@model` macro accepts a simplified construction of this pipeline:
-
-```julia
-@model function some_model()
-    # ...
-    y ~ NormalMeanVariance(x, τ) where {
-        pipeline = RequireMarginal(x = vague(NormalMeanPrecision),     τ)
-                                   # ^^^                               ^^^
-                                   # request 'marginal' for 'x'        we may do the same for 'τ',
-                                   # and initialise with `vague(...)`  but here we skip initialisation
-    }
-    # ...
-end
-```
-
-Note: The simplified construction in `@model` macro syntax is only available in `GraphPPL.jl` of version `>2.2.0`.
-
-See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
-"""
-struct RequireMarginalFunctionalDependencies{I, S} <: AbstractNodeFunctionalDependenciesPipeline
-    indices    :: I
-    start_with :: S
-end
-
-function message_dependencies(::RequireMarginalFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-end
-
-function marginal_dependencies(dependencies::RequireMarginalFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
-    depindex = findfirst((i) -> i === iindex, dependencies.indices)
-
-    if depindex !== nothing
-        # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
-        extra_localmarginal = FactorNodeLocalMarginal(-1, iindex, name(nodeinterfaces[iindex]))
-        vmarginal           = getmarginal(connected_properties(nodeinterfaces[iindex]), IncludeAll())
-        start_with          = dependencies.start_with[depindex]
-        # Initialise now, if marginal has not been initialised before and `start_with` element is not empty
-        if isnothing(getrecent(vmarginal)) && !isnothing(start_with)
-            setmarginal!(vmarginal, start_with)
-        end
-        setstream!(extra_localmarginal, vmarginal)
-        default = marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-        # Find insertion position (probably might be implemented more efficiently)
-        insertafter = sum(first(el) < iindex ? 1 : 0 for el in default; init = 0)
-        return TupleTools.insertafter(default, insertafter, (extra_localmarginal,))
-    else
-        return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    end
-end
-
-### Everything
-
-"""
-   RequireEverythingFunctionalDependencies
-
-This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally.
-This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
-
-See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)
-"""
-struct RequireEverythingFunctionalDependencies <: AbstractNodeFunctionalDependenciesPipeline end
-
-function ReactiveMP.message_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    # Return all node interfaces including the edge we are trying to compute a message on
-    return nodeinterfaces
-end
-
-function ReactiveMP.marginal_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
-    return nodelocalmarginals
-end
+include("dependencies.jl")
 
 ## macro helpers
 
