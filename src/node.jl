@@ -138,7 +138,7 @@ See also: [`MeanField`](@ref)
 """
 struct BetheFactorisation end
 
-#Alias for `BetheFactorisation` to depricate `FullFactorisation`. 
+# Alias for `BetheFactorisation` to deprecate `FullFactorisation`. 
 Base.@deprecate_binding FullFactorisation BetheFactorisation
 
 """
