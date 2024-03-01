@@ -1,53 +1,21 @@
 
-function message_dependencies end
-function marginal_dependencies end
+collect_latest_messages(collection) = __collect_latest_updates(messagein, collection)
+collect_latest_marginals(collection) = __collect_latest_updates(getmarginal, collection)
 
-function functional_dependencies(dependencies::Any, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, interface::NodeInterface, iindex::Int)
-    cindex = clusterindex(clusters, iindex)
-    cluster = getfactorization(clusters, cindex)
-
-    messages  = message_dependencies(dependencies, factornode, clusters, cluster, cindex, interface, iindex)
-    marginals = marginal_dependencies(dependencies, factornode, clusters, cluster, cindex, interface, iindex)
-
-    return messages, marginals
+function __collect_latest_updates(f::F, collection) where {F}
+    return __collect_latest_updates(f, Tuple(collection))
 end
 
-function get_messages_observable(factornode::GenericFactorNode, messages)
-    if !isempty(messages)
-        return get_messages_observable(factornode, Tuple(messages))
-    else
-        return nothing, of(nothing)
-    end
+function __collect_latest_updates(f::F, collection::Tuple) where {F}
+    return isempty(collection) ? (nothing, of(nothing)) : (Val{map(name, collection)}(), combineLatestUpdates(map(f, collection), PushNew()))
 end
 
-function get_messages_observable(factornode::GenericFactorNode, messages::Tuple)
-    return get_marginals_observable(factornode, marginals, Val{map(name, messages)}())
+function functional_dependencies end
+
+function with_functional_dependencies(callback::F, strategy, factornode, clusters, interface, iindex) where {F}
+    message_dependencies, marginal_dependencies = functional_dependencies(strategy, factornode, clusters, interface, iindex)
+    return callback(message_dependencies, marginal_dependencies)
 end
-
-function get_messages_observable(::GenericFactorNode, messages::Tuple, messages_names::Val)
-    messages_observable = combineLatestUpdates(map(m -> messagein(m), messages), PushNew())
-    return messages_names, messages_observable
-end
-
-function get_marginals_observable(factornode::GenericFactorNode, marginals)
-    if !isempty(marginals)
-        return get_marginals_observable(factornode, Tuple(marginals))
-    else
-        return nothing, of(nothing)
-    end
-end
-
-function get_marginals_observable(factornode::GenericFactorNode, marginals::Tuple)
-    return get_marginals_observable(factornode, marginals, Val{map(name, marginals)}())
-end
-
-function get_marginals_observable(::GenericFactorNode, marginals::Tuple, marginal_names::Val)
-    marginals_streams    = map(marginal -> getstream(marginal), marginals)
-    marginals_observable = combineLatestUpdates(marginals_streams, PushNew())
-    return marginal_names, marginals_observable
-end
-
-
 
 """
     DefaultFunctionalDependencies
@@ -59,21 +27,24 @@ struct DefaultFunctionalDependencies end
 
 function collect_functional_dependencies end
 
-collect_functional_dependencies(T::Any, ::Nothing) = DefaultFunctionalDependencies()
-collect_functional_dependencies(T::Any, something) = something
+collect_functional_dependencies(::Any, ::Nothing) = DefaultFunctionalDependencies()
+collect_functional_dependencies(::Any, something) = something
 
-### Default
+function functional_dependencies(::DefaultFunctionalDependencies, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, interface::NodeInterface, iindex::Int)
 
-function message_dependencies(::DefaultFunctionalDependencies, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, cluster, cindex, interface, iindex)
-    # First we remove current edge index from the list of dependencies
+    # Find the index of the cluster for the current interface
+    cindex = clusterindex(clusters, iindex)
+    # Fetch the actual cluster
+    cluster = getfactorization(clusters, cindex)
+    # Remove current edge index from the list of dependencies in the given cluster
     vdependencies = filter(ci -> ci !== iindex, cluster)
-    # Second we map interface indices to the actual interfaces
-    return Iterators.map(inds -> map(i -> getinterface(factornode, i), inds), vdependencies)
-end
+    # Map interface indices to the actual interfaces to get the messages dependencies
+    message_dependencies = Iterators.map(inds -> map(i -> getinterface(factornode, i), inds), vdependencies)
 
-function marginal_dependencies(::DefaultFunctionalDependencies, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, cluster, cindex, interface, iindex)
-    # We skip the current cluster index
-    return skipindex(getmarginals(clusters), cindex)
+    # For the marginal dependencies we need to skip the current cluster
+    marginal_dependencies = skipindex(getmarginals(clusters), cindex)
+
+    return message_dependencies, marginal_dependencies
 end
 
 ### With inbound messages

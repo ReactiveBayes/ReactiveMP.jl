@@ -1,18 +1,18 @@
 @testitem "FactorNodeLocalMarginal" begin
-    import ReactiveMP: FactorNodeLocalMarginal, MarginalObservable, getstream, setstream!, tag
+    import ReactiveMP: FactorNodeLocalMarginal, MarginalObservable, getmarginal, setmarginal!, tag
 
     @testset let localmarginal = FactorNodeLocalMarginal(:a)
         @test name(localmarginal) === :a
         @test tag(localmarginal) === Val{:a}()
         @test occursin("a", repr(localmarginal))
         # The stream is not set
-        @test_throws UndefRefError getstream(localmarginal)
+        @test_throws UndefRefError getmarginal(localmarginal)
 
         m = MarginalObservable()
 
-        setstream!(localmarginal, m)
+        setmarginal!(localmarginal, m)
 
-        @test getstream(localmarginal) === m
+        @test getmarginal(localmarginal) === m
     end
 end
 

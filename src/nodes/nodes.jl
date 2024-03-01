@@ -242,25 +242,25 @@ function activate!(factornode::GenericFactorNode, options::FactorNodeActivationO
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
-            message_dependencies, marginal_dependencies = functional_dependencies(dependencies, factornode, clusters, interface, iindex)
+            with_functional_dependencies(dependencies, factornode, clusters, interface, iindex) do message_dependencies, marginal_dependencies
+                messagestag, messages = collect_latest_messages(message_dependencies)
+                marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
 
-            msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-            marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+                vtag        = tag(interface)
+                vconstraint = Marginalisation()
 
-            vtag        = tag(interface)
-            vconstraint = Marginalisation()
+                vmessageout = combineLatest((messages, marginals), PushNew())
 
-            vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+                mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode))
+                    (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+                end
 
-            mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, node_if_required(fform, factornode))
-                (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+                vmessageout = vmessageout |> map(AbstractMessage, mapping)
+                vmessageout = apply_pipeline_stage(pipeline, factornode, vtag, vmessageout)
+                vmessageout = vmessageout |> schedule_on(scheduler)
+
+                connect!(messageout(interface), vmessageout)
             end
-
-            vmessageout = vmessageout |> map(AbstractMessage, mapping)
-            vmessageout = apply_pipeline_stage(pipeline, factornode, vtag, vmessageout)
-            vmessageout = vmessageout |> schedule_on(scheduler)
-
-            connect!(messageout(interface), vmessageout)
         end
     end
 end
@@ -274,7 +274,7 @@ function activate!(factornode::GenericFactorNode, options::FactorNodeActivationO
         else
             MarginalObservable()
         end
-        setstream!(getmarginal(clusters, index), cmarginal)
+        setmarginal!(getmarginal(clusters, index), cmarginal)
     end
     # After all streams have been initialized we can create streams that are needed to compute them
     foreach(enumerate(getfactorization(clusters))) do (index, localfactorization)
@@ -293,23 +293,23 @@ function activate!(
     index::Int
 )
     if !isone(length(localfactorization))
-        cmarginal = getstream(localmarginal)
+        cmarginal = getmarginal(localmarginal)
 
         clusterinterfaces = map(i -> getinterface(factornode, i), localfactorization)
 
         message_dependencies  = tuple(clusterinterfaces...)
         marginal_dependencies = tuple(TupleTools.deleteat(getmarginals(clusters), index)...)
 
-        msgs_names, msgs_observable          = get_messages_observable(factornode, message_dependencies)
-        marginal_names, marginals_observable = get_marginals_observable(factornode, marginal_dependencies)
+        messagestag, messages = collect_latest_messages(message_dependencies)
+        marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
 
         fform = functionalform(factornode)
         vtag  = tag(localmarginal)
         meta  = collect_meta(fform, getmetadata(options))
 
-        mapping = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, node_if_required(fform, factornode))
+        mapping = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
         # TODO: discontinue operator is needed for loopy belief propagation? Check
-        marginalout = combineLatest((msgs_observable, marginals_observable), PushNew()) |> discontinue() |> map(Marginal, mapping)
+        marginalout = combineLatest((messages, marginals), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(cmarginal, marginalout)
     else

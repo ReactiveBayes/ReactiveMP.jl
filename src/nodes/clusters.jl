@@ -10,7 +10,7 @@ See also: [`FactorNodeLocalClusters`](@ref)
 """
 mutable struct FactorNodeLocalMarginal
     const name::Symbol
-    stream::MarginalObservable
+    marginal::MarginalObservable
 
     FactorNodeLocalMarginal(name::Symbol) = new(name)
 end
@@ -18,8 +18,8 @@ end
 name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
 tag(localmarginal::FactorNodeLocalMarginal)  = Val{name(localmarginal)}()
 
-getstream(localmarginal::FactorNodeLocalMarginal)              = localmarginal.stream
-setstream!(localmarginal::FactorNodeLocalMarginal, observable) = localmarginal.stream = observable
+getmarginal(localmarginal::FactorNodeLocalMarginal) = localmarginal.marginal
+setmarginal!(localmarginal::FactorNodeLocalMarginal, marginal) = localmarginal.marginal = marginal
 
 Base.show(io::IO, marginal::FactorNodeLocalMarginal) = print(io, "FactorNodeLocalMarginal(", name(marginal), ")")
 
