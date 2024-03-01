@@ -422,7 +422,7 @@ end
 
 include("dependencies.jl")
 
-## macro helpers
+function make_node end # TODO (wouterwln) remove this, but it breaks precompilation because of node definitions downstream
 
 ## macro helpers
 
@@ -430,37 +430,60 @@ import .MacroHelpers
 
 function correct_interfaces end
 
+alias_group(s::Symbol) = [s]
+function alias_group(e::Expr)
+    if @capture(e, (s_, aliases = aliases_))
+        result = [s, aliases.args...]
+        if length(result) != length(unique(result))
+            error("Aliases should be unique")
+        end
+        return result
+    else
+        return [e]
+    end
+end
+
+check_all_symbol(::AbstractArray{T} where {T <: NTuple{N, Symbol} where {N}}) = nothing
+check_all_symbol(::Any) = error("All interfaces should be symbols")
+
 macro node(node_fform, node_type, node_interfaces, interface_aliases)
     # Assert that the node type is either Stochastic or Deterministic, and that all interfaces are symbols
     @assert node_type ∈ [:Stochastic, :Deterministic]
     @assert length(node_interfaces.args) > 0
-    for interface in node_interfaces.args
-        @assert isa(interface, Symbol)
-    end
+    
+    interface_alias_groups = map(alias_group, node_interfaces.args)
+    all_aliases = vec(collect(Iterators.product(interface_alias_groups...)))
+
+
 
     # Determine whether we should dispatch on `typeof($fform)` or `Type{$node_fform}`
     if @capture(node_fform, typeof(fform_))
         dispatch_type = quote typeof($fform) end
     else
+
         dispatch_type = quote Type{$node_fform} end
     end
-
     # Define the necessary function types
     result = quote
         ReactiveMP.as_node_functional_form(::$dispatch_type)            = ReactiveMP.ValidNodeFunctionalForm()
         ReactiveMP.sdtype(::$dispatch_type)                             = (ReactiveMP.$node_type)()
     end
-
     # If there are any aliases, define the alias correction function
     if @capture(interface_aliases, aliases = aliases_)
-        for alias in aliases.args
-            result = quote
-                $result
-                ReactiveMP.correct_interfaces(::$dispatch_type, nt::NamedTuple{Tuple($(alias.args))}) = NamedTuple{$(Tuple(node_interfaces.args))}(values(nt))
-            end
+        defined_aliases = map(alias_group -> Tuple(alias_group.args), aliases.args)
+        all_aliases = vcat(all_aliases, defined_aliases)
+    end
+
+    check_all_symbol(all_aliases)
+
+    first_interfaces = map(first, interface_alias_groups)
+
+    for alias in all_aliases
+        result = quote
+            $result
+            ReactiveMP.correct_interfaces(::$dispatch_type, nt::NamedTuple{$alias}) = NamedTuple{$(Tuple(first_interfaces))}(values(nt))
         end
     end
-    
     return esc(result)
 end
 
