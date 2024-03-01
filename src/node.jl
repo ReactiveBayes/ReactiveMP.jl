@@ -132,7 +132,7 @@ struct MeanField end
 """
     BetheFactorisation
 
-Generic factorisation constraint used to specify a full factorisation for recognition distribution `q`.
+Generic factorisation constraint used to specify the Bethe factorisation for recognition distribution `q`.
 
 See also: [`MeanField`](@ref)
 """
