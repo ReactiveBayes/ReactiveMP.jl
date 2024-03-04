@@ -106,7 +106,6 @@ See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@re
 """
 function sdtype end
 
-# TODO: bvdmitri remove this
 # Any `Type` is considered to be a deterministic mapping unless stated otherwise (By convention, any `Distribution` type is not deterministic)
 # E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
 sdtype(::Type{T}) where {T}    = Deterministic()
@@ -185,8 +184,6 @@ include("clusters.jl")
 include("dependencies.jl")
 
 abstract type AbstractFactorNode end
-
-## Generic Factor node new code start
 
 """
     GenericFactorNode(functionalform, interfaces)
