@@ -1,4 +1,4 @@
-export datavar, update!, DataVariableActivationOptions
+export datavar, DataVariable, update!, DataVariableActivationOptions
 
 mutable struct DataVariable{M, P} <: AbstractVariable
     input_messages :: Vector{MessageObservable{AbstractMessage}}
