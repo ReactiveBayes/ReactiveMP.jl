@@ -1,4 +1,4 @@
-export DataVariable, update!
+export datavar, update!, DataVariableActivationOptions
 
 mutable struct DataVariable{M, P} <: AbstractVariable
     input_messages :: Vector{MessageObservable{AbstractMessage}}
@@ -13,6 +13,8 @@ function DataVariable()
     connect!(marginal, messageout |> map(Marginal, as_marginal))
     return DataVariable(Vector{MessageObservable{AbstractMessage}}(), marginal, messageout, nothing) # MarginalObservable())
 end
+
+datavar() = DataVariable()
 
 degree(datavar::DataVariable) = length(datavar.input_messages)
 

@@ -1,7 +1,7 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export MeanField, FullFactorisation, Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
-export FactorNode
+export FactorNode, factornode
 export @node
 
 using Rocket
@@ -197,8 +197,8 @@ struct FactorNode{F, I} <: AbstractFactorNode
     end
 end
 
-FactorNode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
-FactorNode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
+factornode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
+factornode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
 
 functionalform(factornode::FactorNode{F}) where {F} = F
 getinterfaces(factornode::FactorNode) = factornode.interfaces

@@ -1,4 +1,4 @@
-export RandomVariable, RandomVariableActivationOptions
+export randomvar, RandomVariableActivationOptions
 
 ## Random variable implementation
 
@@ -24,11 +24,7 @@ end
 const DefaultMessageProdFn = messages_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
 const DefaultMarginalProdFn = marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
 
-function RandomVariable()
-    return RandomVariable(DefaultMessageProdFn, DefaultMarginalProdFn)
-end
-
-function RandomVariable(messages_prod_fn::M, marginal_prod_fn::F) where {M, F}
+function randomvar(messages_prod_fn::M = DefaultMessageProdFn, marginal_prod_fn::F = DefaultMarginalProdFn) where {M, F}
     return RandomVariable{M, F}(Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), MarginalObservable(), messages_prod_fn, marginal_prod_fn)
 end
 

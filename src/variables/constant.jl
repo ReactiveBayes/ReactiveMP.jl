@@ -1,4 +1,4 @@
-export ConstVariable
+export constvar
 
 mutable struct ConstVariable <: AbstractVariable
     marginal   :: MarginalObservable
@@ -13,6 +13,8 @@ function ConstVariable(constant)
     connect!(messageout, of(Message(PointMass(constant), true, false, nothing)))
     return ConstVariable(marginal, messageout, 0)
 end
+
+constvar(constant) = ConstVariable(constant)
 
 degree(constvar::ConstVariable) = constvar.nconnected
 
