@@ -10,9 +10,47 @@ function __collect_latest_updates(f::F, collection::Tuple) where {F}
     return isempty(collection) ? (nothing, of(nothing)) : (Val{map(name, collection)}(), combineLatestUpdates(map(f, collection), PushNew()))
 end
 
+abstract type FunctionalDependencies end
+
+function activate!(dependencies::FunctionalDependencies, factornode, options)
+    scheduler     = getscheduler(options)
+    addons        = getaddons(options)
+    fform         = functionalform(factornode)
+    factorization = collect_factorisation(fform, getfactorization(options))
+    meta          = collect_meta(fform, getmetadata(options))
+    pipeline      = collect_pipeline(fform, getpipeline(options))
+    clusters      = FactorNodeLocalClusters(factornode.interfaces, factorization)
+
+    initialize_clusters!(clusters, factornode, options)
+
+    foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
+        if israndom(interface) || isdata(interface)
+            with_functional_dependencies(dependencies, factornode, clusters, interface, iindex) do message_dependencies, marginal_dependencies
+                messagestag, messages = collect_latest_messages(message_dependencies)
+                marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
+
+                vtag        = tag(interface)
+                vconstraint = Marginalisation()
+
+                vmessageout = combineLatest((messages, marginals), PushNew())
+
+                mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode))
+                    (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
+                end
+
+                vmessageout = vmessageout |> map(AbstractMessage, mapping)
+                vmessageout = apply_pipeline_stage(pipeline, factornode, vtag, vmessageout)
+                vmessageout = vmessageout |> schedule_on(scheduler)
+
+                connect!(messageout(interface), vmessageout)
+            end
+        end
+    end
+end
+
 function functional_dependencies end
 
-function with_functional_dependencies(callback::F, strategy, factornode, clusters, interface, iindex) where {F}
+function with_functional_dependencies(callback::F, strategy::FunctionalDependencies, factornode, clusters, interface, iindex) where {F}
     message_dependencies, marginal_dependencies = functional_dependencies(strategy, factornode, clusters, interface, iindex)
     return callback(message_dependencies, marginal_dependencies)
 end
@@ -23,14 +61,14 @@ end
 This functional dependencies translate directly to a regular variational message passing scheme. 
 In order to compute a message out of some interface, this strategy requires messages from interfaces within the same cluster and marginals over other clusters.
 """
-struct DefaultFunctionalDependencies end
+struct DefaultFunctionalDependencies <: FunctionalDependencies end
 
 function collect_functional_dependencies end
 
 collect_functional_dependencies(::Any, ::Nothing) = DefaultFunctionalDependencies()
 collect_functional_dependencies(::Any, something) = something
 
-function functional_dependencies(::DefaultFunctionalDependencies, factornode::GenericFactorNode, clusters::FactorNodeLocalClusters, interface::NodeInterface, iindex::Int)
+function functional_dependencies(::DefaultFunctionalDependencies, factornode, clusters, interface, iindex)
 
     # Find the index of the cluster for the current interface
     cindex = clusterindex(clusters, iindex)

@@ -32,6 +32,7 @@ end
 
 getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
 getmarginal(clusters::FactorNodeLocalClusters, index) = getindex(getmarginals(clusters), index)
+setmarginal!(clusters::FactorNodeLocalClusters, index, marginal::MarginalObservable) = setmarginal!(getmarginal(clusters, index), marginal)
 
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
@@ -53,3 +54,42 @@ clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) = findfirst(
 
 clustername(cluster::Tuple, interfaces) = mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
 clustername(cluster, interfaces) = reduce((a, b) -> Symbol(a, :_, b), Iterators.map(v -> name(interfaces[v]), cluster))
+
+function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options)
+    for i in 1:length(getmarginals(clusters))
+        initialize_cluster!(clusters, i, factornode, options)
+    end
+end
+
+function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
+    localfactorization = getfactorization(clusters, index)
+    stream_of_cluster_marginals = if !isone(length(localfactorization))
+        # For the clusters which length is not equal to one we should collect the dependencies 
+        # and call the `MarginalMapping` to compute the result
+        stream = MarginalObservable()
+
+        clusterinterfaces = map(i -> getinterface(factornode, i), localfactorization)
+
+        message_dependencies  = tuple(clusterinterfaces...)
+        marginal_dependencies = tuple(TupleTools.deleteat(getmarginals(clusters), index)...)
+
+        messagestag, messages = collect_latest_messages(message_dependencies)
+        marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
+
+        fform = functionalform(factornode)
+        vtag  = tag(localmarginal)
+        meta  = collect_meta(fform, getmetadata(options))
+
+        mapping = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
+        # TODO: discontinue operator is needed for loopy belief propagation? Check
+        marginalout = combineLatest((messages, marginals), PushNew()) |> discontinue() |> map(Marginal, mapping)
+
+        connect!(stream, marginalout)
+
+        stream
+    else
+        # For the clusters which length is equal to one we simple reuse the marginal of the connected variable
+        getmarginal(getvariable(getinterface(factornode, first(localfactorization))), IncludeAll())
+    end
+    setmarginal!(clusters, index, stream_of_cluster_marginals)
+end
