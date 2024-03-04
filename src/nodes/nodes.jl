@@ -1,9 +1,7 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export MeanField, FullFactorisation, Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
-export FactorNodesCollection, getnodes, getnode_ids
-export make_node, FactorNodeCreationOptions
-export GenericFactorNode
+export FactorNode
 export @node
 
 using Rocket
@@ -191,20 +189,20 @@ abstract type AbstractFactorNode end
 
 Generic factor node object that represents a factor node with a given `functionalform` and `interfaces`.
 """
-struct GenericFactorNode{F, I} <: AbstractFactorNode
+struct FactorNode{F, I} <: AbstractFactorNode
     interfaces::I
 
-    function GenericFactorNode(::Type{F}, interfaces::I) where {F, I <: Tuple}
+    function FactorNode(::Type{F}, interfaces::I) where {F, I <: Tuple}
         return new{F, I}(interfaces)
     end
 end
 
-GenericFactorNode(::Type{F}, interfaces::I) where {F, I} = GenericFactorNode(F, __prepare_interfaces_generic(interfaces))
-GenericFactorNode(::F, interfaces::I) where {F <: Function, I} = GenericFactorNode(F, __prepare_interfaces_generic(interfaces))
+FactorNode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
+FactorNode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
 
-functionalform(factornode::GenericFactorNode{F}) where {F} = F
-getinterfaces(factornode::GenericFactorNode) = factornode.interfaces
-getinterface(factornode::GenericFactorNode, index) = factornode.interfaces[index]
+functionalform(factornode::FactorNode{F}) where {F} = F
+getinterfaces(factornode::FactorNode) = factornode.interfaces
+getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
 
 # Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
 function __prepare_interfaces_generic(interfaces::NamedTuple)
@@ -229,37 +227,9 @@ getpipeline(options::FactorNodeActivationOptions) = options.pipeline
 getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 
-function activate!(factornode::GenericFactorNode, options::FactorNodeActivationOptions)
+function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     dependencies = collect_functional_dependencies(functionalform(factornode), getdependecies(options))
     return activate!(dependencies, factornode, options)
-end
-
-## Generic Factor Node new code end
-
-struct FactorNodeCreationOptions{F, M, P}
-    factorisation :: F
-    metadata      :: M
-    pipeline      :: P
-end
-
-# FactorNodeCreationOptions() = FactorNodeCreationOptions(nothing, nothing, nothing)
-
-# factorisation(options::FactorNodeCreationOptions) = options.factorisation
-# metadata(options::FactorNodeCreationOptions)      = options.metadata
-# getpipeline(options::FactorNodeCreationOptions)   = options.pipeline
-
-# Base.broadcastable(options::FactorNodeCreationOptions) = Ref(options)
-
-# Removed struct
-struct FactorNodesCollection end
-
-struct FactorNode{F, I, C, M, A, P} <: AbstractFactorNode
-    fform          :: F
-    interfaces     :: I
-    factorisation  :: C
-    localmarginals :: M
-    metadata       :: A
-    pipeline       :: P
 end
 
 import .MacroHelpers
@@ -423,29 +393,6 @@ macro node(fformtype, sdtype, interfaces_list)
         ReactiveMP.sdtype(::$fuppertype) = (ReactiveMP.$sdtype)()
 
         ReactiveMP.as_node_symbol(::$fuppertype) = $(QuoteNode(fbottomtype))
-
-        @doc $doc function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions)
-            return ReactiveMP.FactorNode(
-                $fbottomtype,
-                $names_quoted_tuple,
-                ReactiveMP.collect_factorisation($fbottomtype, ReactiveMP.factorisation(options)),
-                ReactiveMP.collect_meta($fbottomtype, ReactiveMP.metadata(options)),
-                ReactiveMP.collect_pipeline($fbottomtype, ReactiveMP.getpipeline(options))
-            )
-        end
-
-        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions, $(interface_args...))
-            node = ReactiveMP.make_node($fbottomtype, options)
-            $(non_unique_error_msg)
-            $(interface_uniqueness...)
-            $(interface_connections...)
-            return node
-        end
-
-        # Fallback method for unsupported number of arguments, e.g. if node expects 2 inputs, but only 1 was given
-        function ReactiveMP.make_node(::Union{$fuppertype, Type{$fuppertype}}, options::FactorNodeCreationOptions, args...)
-            ReactiveMP.make_node_incompatible_number_of_arguments_error($fuppertype, $fbottomtype, $interfaces, args)
-        end
 
         $(interface_name_getters...)
 

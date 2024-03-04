@@ -203,7 +203,7 @@ function ReactiveMP.make_node(::Type{<:Mixture{N}}, factorisation::F = FullFacto
     return MixtureNode{N, F, M, P}(factorisation, out, switch, inputs, meta, pipeline)
 end
 
-function ReactiveMP.make_node(::Type{<:Mixture}, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, inputs::NTuple{N, AbstractVariable}) where {N}
+function ReactiveMP.make_node(::Type{<:Mixture}, options, out::AbstractVariable, switch::AbstractVariable, inputs::NTuple{N, AbstractVariable}) where {N}
     node = make_node(
         Mixture{N}, collect_factorisation(Mixture{N}, factorisation(options)), collect_meta(Mixture{N}, metadata(options)), collect_pipeline(Mixture{N}, getpipeline(options))
     )
