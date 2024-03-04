@@ -201,8 +201,8 @@ struct FactorNode{F, I} <: AbstractFactorNode
     end
 end
 
-factornode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
-factornode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(interfaces))
+factornode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(correct_interfaces(F, interfaces)))
+factornode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(correct_interfaces(F, interfaces)))
 
 functionalform(factornode::FactorNode{F}) where {F} = F
 getinterfaces(factornode::FactorNode) = factornode.interfaces
