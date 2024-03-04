@@ -19,6 +19,10 @@ function check_stream_updated_once(f, stream)
     return value[]
 end
 
+function check_stream_updated_once(stream) 
+    return check_stream_updated_once(() -> nothing, stream)
+end
+
 function check_stream_not_updated(f, stream)
     subscription = subscribe!(stream, (new_value) -> begin 
         error("Stream was updated. It should not be updated")
@@ -26,6 +30,10 @@ function check_stream_not_updated(f, stream)
     f()
     unsubscribe!(subscription)
     return true
+end
+
+function check_stream_not_updated(stream)
+    return check_stream_not_updated(() -> nothing, stream)
 end
 
 msg(value) = Message(value, false, false, nothing)

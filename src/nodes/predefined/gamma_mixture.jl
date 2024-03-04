@@ -185,7 +185,7 @@ end
 __gamma_mixture_incompatible_factorisation_error() =
     error("`GammaMixtureNode` supports only following global factorisations: [ $(GammaMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints")
 
-function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options::FactorNodeCreationOptions) where {N}
+function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options) where {N}
     @assert N >= 2 "`GammaMixtureNode` requires at least two mixtures on input"
     out    = NodeInterface(:out, Marginalisation())
     switch = NodeInterface(:switch, Marginalisation())
@@ -206,7 +206,7 @@ function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options::FactorNodeCrea
 end
 
 function ReactiveMP.make_node(
-    ::Type{<:GammaMixture}, options::FactorNodeCreationOptions, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}
+    ::Type{<:GammaMixture}, options, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}
 ) where {N}
     node = make_node(GammaMixture{N}, options)
 

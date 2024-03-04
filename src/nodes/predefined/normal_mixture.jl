@@ -197,7 +197,7 @@ end
 __normal_mixture_incompatible_factorisation_error() =
     error("`NormalMixtureNode` supports only following global factorisations: [ $(NormalMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints")
 
-function ReactiveMP.make_node(::Type{<:NormalMixture{N}}, options::FactorNodeCreationOptions) where {N}
+function ReactiveMP.make_node(::Type{<:NormalMixture{N}}, options) where {N}
     @assert N >= 2 "`NormalMixtureNode` requires at least two mixtures on input"
     out    = NodeInterface(:out, Marginalisation())
     switch = NodeInterface(:switch, Marginalisation())
@@ -219,7 +219,7 @@ end
 
 function ReactiveMP.make_node(
     ::Type{<:NormalMixture},
-    options::FactorNodeCreationOptions,
+    options,
     out::AbstractVariable,
     switch::AbstractVariable,
     means::NTuple{N, AbstractVariable},

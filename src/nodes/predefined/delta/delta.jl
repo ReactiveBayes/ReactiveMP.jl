@@ -111,7 +111,7 @@ end
 import FixedArguments
 import FixedArguments: FixedArgument, FixedPosition
 
-function __make_delta_fn_node(fn::F, options::FactorNodeCreationOptions, out::AbstractVariable, ins::Tuple) where {F <: Function}
+function __make_delta_fn_node(fn::F, options, out::AbstractVariable, ins::Tuple) where {F <: Function}
     out_interface = NodeInterface(:out, Marginalisation())
 
     # The inputs for the deterministic function are being splitted into two groups:
@@ -177,7 +177,7 @@ __unpack_latest_static(_, datavar::DataVariable) = BayesBase.getpointmass(getdat
 
 ##
 
-function make_node(fform::F, options::FactorNodeCreationOptions, args::Vararg{<:AbstractVariable}) where {F <: Function}
+function make_node(fform::F, options, args::Vararg{<:AbstractVariable}) where {F <: Function}
     return __make_delta_fn_node(fform, options, args[1], args[2:end])
 end
 
