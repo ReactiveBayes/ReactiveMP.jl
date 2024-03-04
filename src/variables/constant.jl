@@ -1,4 +1,4 @@
-export constvar
+export constvar, ConstVariable
 
 mutable struct ConstVariable <: AbstractVariable
     marginal   :: MarginalObservable

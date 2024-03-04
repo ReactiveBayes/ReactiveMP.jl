@@ -1,4 +1,4 @@
-export randomvar, RandomVariableActivationOptions
+export randomvar, RandomVariable, RandomVariableActivationOptions
 
 ## Random variable implementation
 
