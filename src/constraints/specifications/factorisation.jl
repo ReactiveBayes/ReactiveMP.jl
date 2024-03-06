@@ -185,7 +185,7 @@ resolve_factorisation(::UnspecifiedConstraints, allvariables, fform, variables) 
 resolve_factorisation(::UnspecifiedConstraints, any, allvariables, fform, variables) = resolve_factorisation(__EmptyConstraints, allvariables, fform, variables)
 
 # Preoptimised dispatch rule for unspecified constraints and a deterministic node with any number of inputs
-resolve_factorisation(::UnspecifiedConstraints, ::Deterministic, allvariables, fform, variables) = FullFactorisation()
+resolve_factorisation(::UnspecifiedConstraints, ::Deterministic, allvariables, fform, variables) = BetheFactorisation()
 
 # Preoptimised dispatch rules for unspecified constraints and a stochastic node with 2 inputs, random variable & constant variable
 resolve_factorisation(::UnspecifiedConstraints, ::Stochastic, allvariables, fform, ::Tuple{V1, V2}) where {V1 <: RandomVariable, V2 <: RandomVariable} = ((1, 2),)
@@ -251,13 +251,13 @@ function resolve_factorisation(constraints, allvariables, fform, variables)
     return resolve_factorisation(sdtype(fform), constraints, allvariables, fform, variables)
 end
 
-# Deterministic nodes always have `FullFactorisation` constraint (by default)
+# Deterministic nodes always have `BetheFactorisation` constraint (by default)
 function resolve_factorisation(::Deterministic, constraints, allvariables, fform, variables)
-    return FullFactorisation()
+    return BetheFactorisation()
 end
 
 # We simply return `constraints` if we get global factorisation constraints
-function resolve_factorisation(::Stochastic, constraints::Union{MeanField, FullFactorisation}, allvariables, fform, variables)
+function resolve_factorisation(::Stochastic, constraints::Union{MeanField, BetheFactorisation}, allvariables, fform, variables)
     return constraints
 end
 

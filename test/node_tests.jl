@@ -121,7 +121,7 @@
 
         for a in (datavar(:a, Float64), constvar(:a, 1.0)), b in (randomvar(:b),), c in (randomvar(:c),)
             @test_logs (:warn, r".*replace `q\(a, b, c\)` with `q\(a\)q\(\.\.\.\)`.*") make_node(
-                DummyNodeCheckFactorisationWarning, FactorNodeCreationOptions(FullFactorisation(), nothing, nothing), a, b, c
+                DummyNodeCheckFactorisationWarning, FactorNodeCreationOptions(BetheFactorisation(), nothing, nothing), a, b, c
             )
             @test_logs (:warn, r".*replace `q\(a, b, c\)` with `q\(a\)q\(\.\.\.\)`.*") make_node(
                 DummyNodeCheckFactorisationWarning, FactorNodeCreationOptions(((1, 2, 3),), nothing, nothing), a, b, c

@@ -17,8 +17,8 @@ function resolve_marginal_messages_form_prod(constraints, name)
 end
 
 # Preoptimised dispatch rule for generic global factorisation constraints
-resolve_marginal_form_prod(::Union{MeanField, FullFactorisation}, name) = (nothing, nothing)
-resolve_messages_form_prod(::Union{MeanField, FullFactorisation}, name) = (nothing, nothing)
+resolve_marginal_form_prod(::Union{MeanField, BetheFactorisation}, name) = (nothing, nothing)
+resolve_messages_form_prod(::Union{MeanField, BetheFactorisation}, name) = (nothing, nothing)
 
 resolve_marginal_form_prod(constraints, name) = resolve_form_prod(constraints, constraints.marginalsform, name)
 resolve_messages_form_prod(constraints, name) = resolve_form_prod(constraints, constraints.messagesform, name)

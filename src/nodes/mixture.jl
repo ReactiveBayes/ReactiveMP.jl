@@ -28,7 +28,7 @@ ReactiveMP.as_node_symbol(::Type{<:Mixture}) = :Mixture
 #
 # Base.show
 
-const MixtureNodeFactorisationSupport = Union{FullFactorisation}
+const MixtureNodeFactorisationSupport = Union{BetheFactorisation}
 
 struct MixtureNode{N, F <: MixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
     factorisation::F
@@ -63,7 +63,7 @@ struct MixtureNodeFunctionalDependencies <: AbstractNodeFunctionalDependenciesPi
 
 default_functional_dependencies_pipeline(::Type{<:Mixture}) = MixtureNodeFunctionalDependencies()
 
-function functional_dependencies(::MixtureNodeFunctionalDependencies, factornode::MixtureNode{N, F}, iindex::Int) where {N, F <: FullFactorisation}
+function functional_dependencies(::MixtureNodeFunctionalDependencies, factornode::MixtureNode{N, F}, iindex::Int) where {N, F <: BetheFactorisation}
     message_dependencies = if iindex === 1
         # output depends on:
         (factornode.switch, factornode.inputs)
@@ -83,7 +83,7 @@ function functional_dependencies(::MixtureNodeFunctionalDependencies, factornode
 end
 
 # function for using hard switching
-function functional_dependencies(::RequireMarginalFunctionalDependencies, factornode::MixtureNode{N, F}, iindex::Int) where {N, F <: FullFactorisation}
+function functional_dependencies(::RequireMarginalFunctionalDependencies, factornode::MixtureNode{N, F}, iindex::Int) where {N, F <: BetheFactorisation}
     message_dependencies = if iindex === 1
         # output depends on:
         (factornode.inputs,)
@@ -116,7 +116,7 @@ end
 # create message observable for output or Mixture edge without pipeline constraints (the message towards the inputs are fine by default behaviour, i.e. they depend only on switch and output and no longer on all other inputs)
 function get_messages_observable(
     factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
-) where {N, F <: FullFactorisation, P <: MixtureNodeFunctionalDependencies}
+) where {N, F <: BetheFactorisation, P <: MixtureNodeFunctionalDependencies}
     output_or_switch_interface = messages[1]
     inputsinterfaces = messages[2]
 
@@ -130,7 +130,7 @@ end
 # create an observable that is used to compute the switch with pipeline constraints
 function get_messages_observable(
     factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}}
-) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+) where {N, F <: BetheFactorisation, P <: RequireMarginalFunctionalDependencies}
     switchinterface  = messages[1]
     inputsinterfaces = messages[2]
 
@@ -144,7 +144,7 @@ end
 # create an observable that is used to compute the output with pipeline constraints
 function get_messages_observable(
     factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NTuple{N, IndexedNodeInterface}}
-) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+) where {N, F <: BetheFactorisation, P <: RequireMarginalFunctionalDependencies}
     inputsinterfaces = messages[1]
 
     msgs_names = Val{(name(inputsinterfaces[1]),)}()
@@ -155,7 +155,7 @@ end
 # create an observable that is used to compute the input with pipeline constraints
 function get_messages_observable(
     factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, messages::Tuple{NodeInterface}
-) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+) where {N, F <: BetheFactorisation, P <: RequireMarginalFunctionalDependencies}
     outputinterface = messages[1]
 
     msgs_names = Val{(name(outputinterface),)}()
@@ -165,7 +165,7 @@ end
 
 function get_marginals_observable(
     factornode::MixtureNode{N, F, Nothing, FactorNodePipeline{P, EmptyPipelineStage}}, marginals::Tuple{NodeInterface}
-) where {N, F <: FullFactorisation, P <: RequireMarginalFunctionalDependencies}
+) where {N, F <: BetheFactorisation, P <: RequireMarginalFunctionalDependencies}
     switchinterface = marginals[1]
 
     marginal_names       = Val{(name(switchinterface),)}()
@@ -184,18 +184,18 @@ as_node_functional_form(::Type{<:Mixture}) = ValidNodeFunctionalForm()
 
 sdtype(::Type{<:Mixture}) = Deterministic()
 
-collect_factorisation(::Type{<:Mixture{N}}, factorisation::FullFactorisation) where {N} = factorisation
+collect_factorisation(::Type{<:Mixture{N}}, factorisation::BetheFactorisation) where {N} = factorisation
 collect_factorisation(::Type{<:Mixture{N}}, factorisation::Any) where {N} = __mixture_incompatible_factorisation_error()
 
 function collect_factorisation(::Type{<:Mixture{N}}, factorisation::NTuple{R, Tuple{<:Integer}}) where {N, R}
-    # inputs + switch + out, equivalent to FullFactorisation 
-    return (R === N + 2) ? FullFactorisation() : __mixture_incompatible_factorisation_error()
+    # inputs + switch + out, equivalent to BetheFactorisation 
+    return (R === N + 2) ? BetheFactorisation() : __mixture_incompatible_factorisation_error()
 end
 
 __mixture_incompatible_factorisation_error() =
     error("`MixtureNode` supports only following global factorisations: [ $(MixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints")
 
-function ReactiveMP.make_node(::Type{<:Mixture{N}}, factorisation::F = FullFactorisation(), meta::M = nothing, pipeline::P = nothing) where {N, F, M, P}
+function ReactiveMP.make_node(::Type{<:Mixture{N}}, factorisation::F = BetheFactorisation(), meta::M = nothing, pipeline::P = nothing) where {N, F, M, P}
     @assert typeof(factorisation) <: MixtureNodeFactorisationSupport "`MixtureNode` supports only following factorisations: [ $(MixtureNodeFactorisationSupport) ]"
     out    = NodeInterface(:out, Marginalisation())
     switch = NodeInterface(:switch, Marginalisation())
