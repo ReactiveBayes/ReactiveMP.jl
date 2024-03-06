@@ -37,12 +37,7 @@ setmarginal!(clusters::FactorNodeLocalClusters, index, marginal::MarginalObserva
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
 getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
 
-function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization::NTuple) where {N}
-    marginals = ntuple(i -> FactorNodeLocalMarginal(clustername(factorization[i], interfaces)), length(factorization))
-    return FactorNodeLocalClusters(marginals, factorization)
-end
-
-function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization) where {N}
+function FactorNodeLocalClusters(interfaces::AbstractArray{NodeInterface}, factorization)
     marginals = map(factor -> FactorNodeLocalMarginal(clustername(factor, interfaces)), factorization)
     return FactorNodeLocalClusters(marginals, factorization)
 end

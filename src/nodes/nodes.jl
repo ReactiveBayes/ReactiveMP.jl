@@ -193,21 +193,24 @@ Generic factor node object that represents a factor node with a given `functiona
 struct FactorNode{F, I} <: AbstractFactorNode
     interfaces::I
 
-    function FactorNode(::Type{F}, interfaces::I) where {F, I <: Tuple}
+    function FactorNode(::Type{F}, interfaces::I) where {F, I}
         return new{F, I}(interfaces)
     end
 end
 
-factornode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(correct_interfaces(F, interfaces)))
-factornode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(correct_interfaces(F, interfaces)))
+factornode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces))
+factornode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces))
 
 functionalform(factornode::FactorNode{F}) where {F} = F
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
+sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
 # Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
-function __prepare_interfaces_generic(interfaces::NamedTuple)
-    return map(key -> NodeInterface(key, interfaces[key]), keys(interfaces))
+function __prepare_interfaces_generic(::Type{F}, interfaces::AbstractVector) where {F}
+    return map(enumerate(interfaces)) do (index, (name, variable))
+        return NodeInterface(alias_interface(F, index, name), variable)
+    end
 end
 
 ## activate!
@@ -235,31 +238,27 @@ end
 
 import .MacroHelpers
 
-function correct_interfaces end
+function alias_interface end
 
-alias_group(s::Symbol) = [s]
-function alias_group(e::Expr)
-    if @capture(e, (s_, aliases = aliases_))
-        result = [s, aliases.args...]
-        if length(result) != length(unique(result))
-            error("Aliases should be unique")
+extract_interface(s::Symbol) = (s, [])
+
+function extract_interface(e::Expr)
+    if @capture(e, (s_, aliases = [ aliases__ ]))
+        if !all(alias -> alias isa Symbol, aliases)
+            error(lazy"Aliases should be pure symbols. Got expression in $(aliases).")
         end
-        return result
+        return (s, aliases)
     else
-        return [e]
+        error(lazy"Unknown interface specification: $(e)")
     end
 end
 
-check_all_symbol(::AbstractArray{T} where {T <: NTuple{N, Symbol} where {N}}) = nothing
-check_all_symbol(::Any) = error("All interfaces should be symbols")
-
-function generate_node_expression(node_fform, node_type, node_interfaces, interface_aliases)
+function generate_node_expression(node_fform, node_type, node_interfaces)
     # Assert that the node type is either Stochastic or Deterministic, and that all interfaces are symbols
     @assert node_type ∈ [:Stochastic, :Deterministic]
     @assert length(node_interfaces.args) > 0
 
-    interface_alias_groups = map(alias_group, node_interfaces.args)
-    all_aliases = vec(collect(Iterators.product(interface_alias_groups...)))
+    interfaces = map(extract_interface, node_interfaces.args)
 
     # Determine whether we should dispatch on `typeof($fform)` or `Type{$node_fform}`
     dispatch_type = if @capture(node_fform, typeof(fform_))
@@ -268,19 +267,14 @@ function generate_node_expression(node_fform, node_type, node_interfaces, interf
         :(Type{$node_fform})
     end
 
-    # If there are any aliases, define the alias correction function
-    if @capture(interface_aliases, aliases = aliases_)
-        defined_aliases = map(alias_group -> Tuple(alias_group.args), aliases.args)
-        all_aliases = vcat(all_aliases, defined_aliases)
-    end
-
-    check_all_symbol(all_aliases)
-
-    first_interfaces = map(first, interface_alias_groups)
-
     alias_corrections = Expr(:block)
-    alias_corrections.args = map(all_aliases) do alias
-        :(ReactiveMP.correct_interfaces(::$dispatch_type, nt::NamedTuple{$alias}) = NamedTuple{$(Tuple(first_interfaces))}(values(nt)))
+    alias_corrections.args = map(enumerate(interfaces)) do (index, (name, aliases))
+        # The `index` and `name` variables are defined further in the `alias_interface` function
+        quote
+            if index === $index && (name === $(QuoteNode(name)) || Base.in(name, ($(map(QuoteNode, aliases)...), )))
+                return $(QuoteNode(name))
+            end
+        end
     end
 
     # Define the necessary function types
@@ -289,16 +283,16 @@ function generate_node_expression(node_fform, node_type, node_interfaces, interf
         ReactiveMP.sdtype(::$dispatch_type)                                      = (ReactiveMP.$node_type)()
         ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = factorisation
 
-        $alias_corrections
+        function ReactiveMP.alias_interface(dispatch_type::$dispatch_type, index, name)
+            $alias_corrections
+            # If we do not return from the `alias_corrections` we throw an error
+            error(lazy"Don't know how to alias interface $(name) in $(index) for $(dispatch_type)")
+        end
     end
 
     return result
 end
 
-macro node(node_fform, node_type, node_interfaces, interface_aliases)
-    return esc(generate_node_expression(node_fform, node_type, node_interfaces, interface_aliases))
-end
-
 macro node(node_fform, node_type, node_interfaces)
-    return esc(generate_node_expression(node_fform, node_type, node_interfaces, nothing))
+    return esc(generate_node_expression(node_fform, node_type, node_interfaces))
 end
