@@ -1,5 +1,5 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
-export MeanField, FullFactorisation, Marginalisation, MomentMatching
+export MeanField, FullFactorisation, BetheFactorisation, Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export FactorNodesCollection, getnodes, getnode_ids
 export make_node, FactorNodeCreationOptions
@@ -125,25 +125,28 @@ as_node_symbol(fn::F) where {F <: Function} = Symbol(fn)
 
 Generic factorisation constraint used to specify a mean-field factorisation for recognition distribution `q`.
 
-See also: [`FullFactorisation`](@ref)
+See also: [`BetheFactorisation`](@ref)
 """
 struct MeanField end
 
 """
-    FullFactorisation
+    BetheFactorisation
 
-Generic factorisation constraint used to specify a full factorisation for recognition distribution `q`.
+Generic factorisation constraint used to specify the Bethe factorisation for recognition distribution `q`.
 
 See also: [`MeanField`](@ref)
 """
-struct FullFactorisation end
+struct BetheFactorisation end
+
+# Alias for `BetheFactorisation` to deprecate `FullFactorisation`. 
+Base.@deprecate_binding FullFactorisation BetheFactorisation
 
 """
     collect_factorisation(nodetype, factorisation)
 
 This function converts given factorisation to a correct internal factorisation representation for a given node.
 
-See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
+See also: [`MeanField`](@ref), [`BetheFactorisation`](@ref)
 """
 function collect_factorisation end
 
@@ -1119,22 +1122,22 @@ macro node(fformtype, sdtype, interfaces_list)
 
     # By default every argument passed to a factorisation option of the node is transformed by
     # `collect_factorisation` function to have a tuple like structure.
-    # The default recipe is simple: for stochastic nodes we convert `FullFactorisation` and `MeanField` objects
-    # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a FullFactorisation equivalent
+    # The default recipe is simple: for stochastic nodes we convert `BetheFactorisation` and `MeanField` objects
+    # to their tuple of indices equivalents. For deterministic nodes any factorisation is replaced by a BetheFactorisation equivalent
     factorisation_collectors = if sdtype === :Stochastic
         quote
-            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                      = ($names_indices,)
-            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = factorisation
-            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices,)
-            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = $names_splitted_indices
+            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                       = ($names_indices,)
+            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)            = factorisation
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.BetheFactorisation) = ($names_indices,)
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)          = $names_splitted_indices
         end
 
     elseif sdtype === :Deterministic
         quote
-            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                      = ($names_indices,)
-            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)           = ($names_indices,)
-            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.FullFactorisation) = ($names_indices,)
-            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)         = ($names_indices,)
+            ReactiveMP.collect_factorisation(::$fuppertype, ::Nothing)                       = ($names_indices,)
+            ReactiveMP.collect_factorisation(::$fuppertype, factorisation::Tuple)            = ($names_indices,)
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.BetheFactorisation) = ($names_indices,)
+            ReactiveMP.collect_factorisation(::$fuppertype, ::ReactiveMP.MeanField)          = ($names_indices,)
         end
     else
         error("Unreachable in @node macro.")

@@ -66,7 +66,7 @@ const __EmptyConstraints = ConstraintsSpecification((), (;), (;), ConstraintsSpe
 
 __reset_preallocated!(specification::ConstraintsSpecification, size::Int) = __reset_preallocated!(specification.preallocated, size)
 
-function activate!(::Union{UnspecifiedConstraints, MeanField, FullFactorisation}, ::FactorNodesCollection, ::VariablesCollection)
+function activate!(::Union{UnspecifiedConstraints, MeanField, BetheFactorisation}, ::FactorNodesCollection, ::VariablesCollection)
     return nothing
 end
 
