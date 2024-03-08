@@ -13,19 +13,15 @@ end
 abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
-    scheduler     = getscheduler(options)
-    addons        = getaddons(options)
-    fform         = functionalform(factornode)
-    factorization = collect_factorisation(fform, getfactorization(options))
-    meta          = collect_meta(fform, getmetadata(options))
-    pipeline      = collect_pipeline(fform, getpipeline(options))
-    clusters      = FactorNodeLocalClusters(factornode.interfaces, factorization)
-
-    initialize_clusters!(clusters, factornode, options)
+    scheduler = getscheduler(options)
+    addons    = getaddons(options)
+    fform     = functionalform(factornode)
+    meta      = collect_meta(fform, getmetadata(options))
+    pipeline  = collect_pipeline(fform, getpipeline(options))
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
-            with_functional_dependencies(dependencies, factornode, clusters, interface, iindex) do message_dependencies, marginal_dependencies
+            with_functional_dependencies(dependencies, factornode, interface, iindex) do message_dependencies, marginal_dependencies
                 messagestag, messages = collect_latest_messages(message_dependencies)
                 marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
 
@@ -50,8 +46,8 @@ end
 
 function functional_dependencies end
 
-function with_functional_dependencies(callback::F, strategy::FunctionalDependencies, factornode, clusters, interface, iindex) where {F}
-    message_dependencies, marginal_dependencies = functional_dependencies(strategy, factornode, clusters, interface, iindex)
+function with_functional_dependencies(callback::F, strategy::FunctionalDependencies, factornode, interface, iindex) where {F}
+    message_dependencies, marginal_dependencies = functional_dependencies(strategy, factornode, interface, iindex)
     return callback(message_dependencies, marginal_dependencies)
 end
 
@@ -68,8 +64,8 @@ function collect_functional_dependencies end
 collect_functional_dependencies(::Any, ::Nothing) = DefaultFunctionalDependencies()
 collect_functional_dependencies(::Any, something) = something
 
-function functional_dependencies(::DefaultFunctionalDependencies, factornode, clusters, interface, iindex)
-
+function functional_dependencies(::DefaultFunctionalDependencies, factornode, interface, iindex)
+    clusters = getlocalclusters(factornode)
     # Find the index of the cluster for the current interface
     cindex = clusterindex(clusters, iindex)
     # Fetch the actual cluster

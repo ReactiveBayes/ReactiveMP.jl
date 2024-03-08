@@ -190,20 +190,24 @@ abstract type AbstractFactorNode end
 
 Generic factor node object that represents a factor node with a given `functionalform` and `interfaces`.
 """
-struct FactorNode{F, I} <: AbstractFactorNode
+struct FactorNode{F, I, C} <: AbstractFactorNode
     interfaces::I
+    localclusters::C
 
-    function FactorNode(::Type{F}, interfaces::I) where {F, I}
-        return new{F, I}(interfaces)
+    function FactorNode(::Type{F}, interfaces::I, factorization) where {F, I}
+        clusters = FactorNodeLocalClusters(interfaces, factorization)
+        C = typeof(clusters)
+        return new{F, I, C}(interfaces, clusters)
     end
 end
 
-factornode(::Type{F}, interfaces::I) where {F, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces))
-factornode(::F, interfaces::I) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces))
+factornode(::Type{F}, interfaces::I, factorization) where {F, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces), factorization)
+factornode(::F, interfaces::I, facatorization) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces), factorization)
 
 functionalform(factornode::FactorNode{F}) where {F} = F
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
+getlocalclusters(factornode::FactorNode) = factornode.localclusters
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
 # Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
@@ -215,8 +219,7 @@ end
 
 ## activate!
 
-struct FactorNodeActivationOptions{C, M, D, P, A, S}
-    factorization::C
+struct FactorNodeActivationOptions{M, D, P, A, S}
     metadata::M
     dependencies::D
     pipeline::P
@@ -224,7 +227,6 @@ struct FactorNodeActivationOptions{C, M, D, P, A, S}
     scheduler::S
 end
 
-getfactorization(options::FactorNodeActivationOptions) = options.factorization
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
 getdependecies(options::FactorNodeActivationOptions) = options.dependencies
 getpipeline(options::FactorNodeActivationOptions) = options.pipeline
@@ -232,6 +234,7 @@ getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
+    initialize_clusters!(getlocalclusters(factornode), factornode, options)
     dependencies = collect_functional_dependencies(functionalform(factornode), getdependecies(options))
     return activate!(dependencies, factornode, options)
 end
@@ -243,7 +246,7 @@ function alias_interface end
 extract_interface(s::Symbol) = (s, [])
 
 function extract_interface(e::Expr)
-    if @capture(e, (s_, aliases = [ aliases__ ]))
+    if @capture(e, (s_, aliases = [aliases__]))
         if !all(alias -> alias isa Symbol, aliases)
             error(lazy"Aliases should be pure symbols. Got expression in $(aliases).")
         end
@@ -271,7 +274,7 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     alias_corrections.args = map(enumerate(interfaces)) do (index, (name, aliases))
         # The `index` and `name` variables are defined further in the `alias_interface` function
         quote
-            if index === $index && (name === $(QuoteNode(name)) || Base.in(name, ($(map(QuoteNode, aliases)...), )))
+            if index === $index && (name === $(QuoteNode(name)) || Base.in(name, ($(map(QuoteNode, aliases)...),)))
                 return $(QuoteNode(name))
             end
         end
