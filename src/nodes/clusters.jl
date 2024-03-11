@@ -49,16 +49,34 @@ clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) = findfirst(
 
 clustername(cluster::Tuple, interfaces) = mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
 clustername(cluster, interfaces) = reduce((a, b) -> Symbol(a, :_, b), Iterators.map(v -> name(interfaces[v]), cluster))
+clustername(interfaces) = reduce((a, b) -> Symbol(a, :_, b), Iterators.map(interface -> name(interface), interfaces))
 
 function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options)
-    for i in 1:length(getmarginals(clusters))
+    # We first need to initialize all the clusters, since the `activate_cluster!` function may use any of the marginals
+    for i in eachindex(getmarginals(clusters))
         initialize_cluster!(clusters, i, factornode, options)
+    end
+    for i in eachindex(getmarginals(clusters))
+        activate_cluster!(clusters, i, factornode, options)
     end
 end
 
 function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
     localfactorization = getfactorization(clusters, index)
-    stream_of_cluster_marginals = if !isone(length(localfactorization))
+    # For the clusters of length `1` there is no need to create a new `MarginalObservable` object
+    # We can simply reuse it from the variable connected to the factor node. Potentially it saves a bit of memory 
+    stream_of_cluster_marginals = if isone(length(localfactorization))
+        getmarginal(getvariable(getinterface(factornode, first(localfactorization))), IncludeAll())
+    else
+        # For the clusters of length `>1` we need to create the new strean, but it will be assigned later
+        MarginalObservable()
+    end
+    setmarginal!(clusters, index, stream_of_cluster_marginals)
+end
+
+function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
+    localfactorization = getfactorization(clusters, index)
+    if !isone(length(localfactorization))
         # For the clusters which length is not equal to one we should collect the dependencies 
         # and call the `MarginalMapping` to compute the result
         stream = MarginalObservable()
@@ -72,7 +90,7 @@ function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, fact
         marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
 
         fform = functionalform(factornode)
-        vtag  = tag(localmarginal)
+        vtag  = tag(getmarginal(clusters, index))
         meta  = collect_meta(fform, getmetadata(options))
 
         mapping = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
@@ -80,11 +98,5 @@ function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, fact
         marginalout = combineLatest((messages, marginals), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
         connect!(stream, marginalout)
-
-        stream
-    else
-        # For the clusters which length is equal to one we simple reuse the marginal of the connected variable
-        getmarginal(getvariable(getinterface(factornode, first(localfactorization))), IncludeAll())
     end
-    setmarginal!(clusters, index, stream_of_cluster_marginals)
 end

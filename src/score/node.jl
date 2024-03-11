@@ -15,10 +15,13 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
         (interface) -> apply_skip_filter(messagein(interface), skip_strategy) |> schedule_on(scheduler)
     end
 
-    stream = combineLatest(map(fnstream, interfaces(node)), PushNew())
+    # TODO: (bvdmitri) this probably can be implemented more efficient
+    tinterfaces = Tuple(getinterfaces(node))
 
-    vtag       = Val{inboundclustername(node)}()
-    msgs_names = Val{map(name, interfaces(node))}()
+    stream = combineLatest(map(fnstream, tinterfaces), PushNew())
+
+    vtag       = Val{clustername(getinboundinterfaces(node))}()
+    msgs_names = Val{map(name, tinterfaces)}()
 
     mapping = let fform = functionalform(node), vtag = vtag, msgs_names = msgs_names, node = node
         (messages) -> begin

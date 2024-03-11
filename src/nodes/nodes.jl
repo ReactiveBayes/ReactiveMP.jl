@@ -201,13 +201,15 @@ end
 
 function factornode(fform::F, interfaces::I, factorization) where {F, I}
     processed_interfaces = __prepare_interfaces_generic(fform, interfaces)
-    localclusters = FactorNodeLocalClusters(processed_interfaces, factorization)
+    localclusters = FactorNodeLocalClusters(processed_interfaces, collect_factorisation(fform, factorization))
     return FactorNode(fform, processed_interfaces, localclusters)
 end
 
 functionalform(factornode::FactorNode) = factornode.fform
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
+# `getinboundinterfaces` skips the first interface, which is assumed to be the output interface
+getinboundinterfaces(factornode::FactorNode) = view(factornode.interfaces, (firstindex(factornode.interfaces)+1):lastindex(factornode.interfaces)) 
 getlocalclusters(factornode::FactorNode) = factornode.localclusters
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
@@ -282,11 +284,18 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         end
     end
 
+    collect_factorisation_fn = if node_type == :Stochastic
+        :(ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = factorisation)
+    else
+        :(ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = ($(ntuple(i -> (i, ), length(interfaces))...),))
+    end
+
     # Define the necessary function types
     result = quote
         ReactiveMP.as_node_functional_form(::$dispatch_type)                     = ReactiveMP.ValidNodeFunctionalForm()
         ReactiveMP.sdtype(::$dispatch_type)                                      = (ReactiveMP.$node_type)()
-        ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = factorisation
+        
+        $collect_factorisation_fn
 
         function ReactiveMP.alias_interface(dispatch_type::$dispatch_type, index, name)
             $alias_corrections
