@@ -287,7 +287,7 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     collect_factorisation_fn = if node_type == :Stochastic
         :(ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = factorisation)
     else
-        :(ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = ($(ntuple(i -> (i, ), length(interfaces))...),))
+        :(ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = ($(ntuple(identity, length(interfaces))),))
     end
 
     # Define the necessary function types
