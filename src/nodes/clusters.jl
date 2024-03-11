@@ -42,6 +42,11 @@ function FactorNodeLocalClusters(interfaces::AbstractArray{NodeInterface}, facto
     return FactorNodeLocalClusters(marginals, factorization)
 end
 
+function FactorNodeLocalClusters(interfaces::NTuple{N, NodeInterface}, factorization) where {N}
+    marginals = map(factor -> FactorNodeLocalMarginal(clustername(factor, interfaces)), factorization)
+    return FactorNodeLocalClusters(marginals, factorization)
+end
+
 ## FactorNodeLocalCluster
 
 clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) = clusterindex(clusters, clusters.factorization, vindex)
