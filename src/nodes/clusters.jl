@@ -76,10 +76,12 @@ end
 
 function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
     localfactorization = getfactorization(clusters, index)
+
     if !isone(length(localfactorization))
         # For the clusters which length is not equal to one we should collect the dependencies 
-        # and call the `MarginalMapping` to compute the result
-        stream = MarginalObservable()
+        # and call the `MarginalMapping` to compute the result. The `MarginalObservable` should have 
+        # been initialized in the `initialize_cluster!` before
+        marginal = getmarginal(clusters, index)
 
         clusterinterfaces = map(i -> getinterface(factornode, i), localfactorization)
 
@@ -97,6 +99,6 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
         # TODO: discontinue operator is needed for loopy belief propagation? Check
         marginalout = combineLatest((messages, marginals), PushNew()) |> discontinue() |> map(Marginal, mapping)
 
-        connect!(stream, marginalout)
+        connect!(getmarginal(marginal), marginalout)
     end
 end
