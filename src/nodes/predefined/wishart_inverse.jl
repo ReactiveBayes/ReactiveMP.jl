@@ -5,7 +5,7 @@ import SpecialFunctions: loggamma
 import Distributions: InverseWishart
 import ExponentialFamily: InverseWishartFast
 
-@node InverseWishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale])]
+@node InverseWishart Stochastic [out, (ν, aliases = [df]), (S, aliases = [scale, Ψ])]
 
 to_marginal(dist::InverseWishartFast) = convert(InverseWishart, dist)
 
