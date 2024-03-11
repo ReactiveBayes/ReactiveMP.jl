@@ -191,29 +191,30 @@ abstract type AbstractFactorNode end
 Generic factor node object that represents a factor node with a given `functionalform` and `interfaces`.
 """
 struct FactorNode{F, I, C} <: AbstractFactorNode
+    fform::F
     interfaces::I
     localclusters::C
 
-    function FactorNode(::Type{F}, interfaces::I, factorization) where {F, I}
-        clusters = FactorNodeLocalClusters(interfaces, factorization)
-        C = typeof(clusters)
-        return new{F, I, C}(interfaces, clusters)
-    end
+    FactorNode(fform::Type{F}, interfaces::I, localclusters::C) where {F, I, C} = new{Type{F}, I, C}(fform, interfaces, localclusters)
+    FactorNode(fform::F, interfaces::I, localclusters::C) where {F <: Function, I, C} = new{F, I, C}(fform, interfaces, localclusters)
 end
 
-factornode(::Type{F}, interfaces::I, factorization) where {F, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces), factorization)
-factornode(::F, interfaces::I, facatorization) where {F <: Function, I} = FactorNode(F, __prepare_interfaces_generic(F, interfaces), factorization)
+function factornode(fform::F, interfaces::I, factorization) where {F, I}
+    processed_interfaces = __prepare_interfaces_generic(fform, interfaces)
+    localclusters = FactorNodeLocalClusters(processed_interfaces, factorization)
+    return FactorNode(fform, processed_interfaces, localclusters)
+end
 
-functionalform(factornode::FactorNode{F}) where {F} = F
+functionalform(factornode::FactorNode) = factornode.fform
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
 getlocalclusters(factornode::FactorNode) = factornode.localclusters
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
 
 # Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
-function __prepare_interfaces_generic(::Type{F}, interfaces::AbstractVector) where {F}
+function __prepare_interfaces_generic(fform::F, interfaces::AbstractVector) where {F}
     return map(enumerate(interfaces)) do (index, (name, variable))
-        return NodeInterface(alias_interface(F, index, name), variable)
+        return NodeInterface(alias_interface(fform, index, name), variable)
     end
 end
 
@@ -274,7 +275,8 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     alias_corrections.args = map(enumerate(interfaces)) do (index, (name, aliases))
         # The `index` and `name` variables are defined further in the `alias_interface` function
         quote
-            if index === $index && (name === $(QuoteNode(name)) || Base.in(name, ($(map(QuoteNode, aliases)...),)))
+            # TODO: (bvdmitri) maybe reserving `in` here is not a good idea, discuss with Wouter
+            if index === $index && (name === :in || name === $(QuoteNode(name)) || Base.in(name, ($(map(QuoteNode, aliases)...),)))
                 return $(QuoteNode(name))
             end
         end

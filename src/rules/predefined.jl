@@ -3,10 +3,10 @@ include("uninformative/out.jl")
 
 include("uniform/out.jl")
 
-include("addition/marginals.jl")
-include("addition/out.jl")
-include("addition/in1.jl")
-include("addition/in2.jl")
+include("sum/marginals.jl")
+include("sum/out.jl")
+include("sum/in1.jl")
+include("sum/in2.jl")
 
 include("subtraction/marginals.jl")
 include("subtraction/out.jl")

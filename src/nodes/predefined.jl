@@ -36,7 +36,7 @@ include("predefined/flow/flow.jl")
 include("predefined/delta/delta.jl")
 
 # Deterministic nodes
-include("predefined/addition.jl")
+include("predefined/sum.jl")
 include("predefined/subtraction.jl")
 include("predefined/multiplication.jl")
 include("predefined/and.jl")
