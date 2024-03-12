@@ -209,9 +209,13 @@ functionalform(factornode::FactorNode) = factornode.fform
 getinterfaces(factornode::FactorNode) = factornode.interfaces
 getinterface(factornode::FactorNode, index) = factornode.interfaces[index]
 # `getinboundinterfaces` skips the first interface, which is assumed to be the output interface
-getinboundinterfaces(factornode::FactorNode) = view(factornode.interfaces, (firstindex(factornode.interfaces)+1):lastindex(factornode.interfaces)) 
+getinboundinterfaces(factornode::FactorNode) = view(factornode.interfaces, (firstindex(factornode.interfaces) + 1):lastindex(factornode.interfaces))
 getlocalclusters(factornode::FactorNode) = factornode.localclusters
 sdtype(factornode::FactorNode) = sdtype(functionalform(factornode))
+
+interfaceindex(factornode::FactorNode, iname::Symbol)                         = findfirst(interface -> name(interface) === iname, getinterfaces(factornode))
+interfaceindices(factornode::FactorNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
+interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 # Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
 function __prepare_interfaces_generic(fform::F, interfaces::AbstractVector) where {F}
@@ -292,9 +296,9 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
 
     # Define the necessary function types
     result = quote
-        ReactiveMP.as_node_functional_form(::$dispatch_type)                     = ReactiveMP.ValidNodeFunctionalForm()
-        ReactiveMP.sdtype(::$dispatch_type)                                      = (ReactiveMP.$node_type)()
-        
+        ReactiveMP.as_node_functional_form(::$dispatch_type) = ReactiveMP.ValidNodeFunctionalForm()
+        ReactiveMP.sdtype(::$dispatch_type)                  = (ReactiveMP.$node_type)()
+
         $collect_factorisation_fn
 
         function ReactiveMP.alias_interface(dispatch_type::$dispatch_type, index, name)

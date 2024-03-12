@@ -1059,7 +1059,7 @@ function interfaceindex(stub::NodeErrorStub, iname::Symbol)
     return stub.counter
 end
 
-function interfaces(stub::NodeErrorStub)
+function getinterfaces(stub::NodeErrorStub)
     return fill(nothing, stub.counter)
 end
 
@@ -1122,7 +1122,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
         spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-        spec = Vector(undef, 4length(interfaces(node)))
+        spec = Vector(undef, 4length(getinterfaces(node)))
 
         fill!(spec, nothing)
 
@@ -1197,7 +1197,7 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
     spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
     spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-    spec = Vector(undef, 4length(interfaces(node)))
+    spec = Vector(undef, 4length(getinterfaces(node)))
 
     if isempty(intersect(Set(m_indices), Set(q_indices)))
         fill!(spec, nothing)
