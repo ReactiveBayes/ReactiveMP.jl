@@ -35,7 +35,7 @@ is_univariate(meta::ARMeta)   = getvform(meta) === Univariate
 is_safe(meta::ARMeta)   = getstype(meta) === ARsafe()
 is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 
-@node AR Stochastic [y, x, θ, γ]
+@node AR Stochastic [(y, aliases = [out]), x, θ, γ]
 
 default_meta(::Type{AR}) = error("Autoregressive node requires meta flag explicitly specified")
 
