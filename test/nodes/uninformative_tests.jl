@@ -18,5 +18,5 @@
         @test prod(GenericProd(), NormalMeanVariance(3, 4), Uninformative()) == NormalMeanVariance(3, 4)
         @test prod(GenericProd(), Uninformative(), Uninformative()) === Uninformative()
     end
-end
+    end
 end

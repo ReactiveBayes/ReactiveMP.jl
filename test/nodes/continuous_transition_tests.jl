@@ -1,7 +1,7 @@
 @testitem "ContinuousTransitionNode" begin
     module ContinuousTransitionNodeTest
 
-        using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
+    using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
     import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
     dy, dx = 2, 3
@@ -33,6 +33,5 @@
         @test size(A) == (dy, dx)
         @test A == gettransformation(meta)(m_a)
     end
-end
-
+    end
 end

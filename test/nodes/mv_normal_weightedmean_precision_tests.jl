@@ -57,5 +57,5 @@
         end
         # NOTE: tests for average energy when interfaces are not PointMass are not implemented
     end
-end
+    end
 end
