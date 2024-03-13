@@ -1,10 +1,9 @@
-module ContinuousTransitionNodeTest
+@testitem "ContinuousTransitionNode" begin
+    module ContinuousTransitionNodeTest
 
-using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
+        using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
-import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
-
-@testset "ContinuousTransitionNode" begin
+    import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
     dy, dx = 2, 3
     meta = CTMeta(a -> reshape(a, dy, dx))
     @testset "Creation" begin
