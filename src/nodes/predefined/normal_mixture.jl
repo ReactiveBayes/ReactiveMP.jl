@@ -29,9 +29,9 @@ ReactiveMP.as_node_symbol(::Type{<:NormalMixture}) = :NormalMixture
 #
 # Base.show
 
-const NormalMixtureNodeFactorisationSupport = Union{MeanField}
+struct NormalMixtureNodeFactorisation end
 
-struct NormalMixtureNode{N, F <: NormalMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
+struct NormalMixtureNode{N, F, M, P} <: AbstractFactorNode
     factorisation::F
 
     # Interfaces
@@ -77,7 +77,7 @@ struct NormalMixtureNodeFunctionalDependencies end
 
 default_functional_dependencies_pipeline(::Type{<:NormalMixture}) = NormalMixtureNodeFunctionalDependencies()
 
-function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, factornode::NormalMixtureNode{N, F}, iindex::Int) where {N, F <: MeanField}
+function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, factornode::NormalMixtureNode{N, F}, iindex::Int) where {N, F <: NormalMixtureNodeFactorisation}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -95,13 +95,13 @@ function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, fact
     return message_dependencies, marginal_dependencies
 end
 
-function get_messages_observable(factornode::NormalMixtureNode{N, F}, message_dependencies::Tuple{}) where {N, F <: MeanField}
+function get_messages_observable(factornode::NormalMixtureNode{N, F}, message_dependencies::Tuple{}) where {N, F <: NormalMixtureNodeFactorisation}
     return nothing, of(nothing)
 end
 
 function get_marginals_observable(
     factornode::NormalMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
-) where {N, F <: MeanField}
+) where {N, F <: NormalMixtureNodeFactorisation}
     varinterface    = marginal_dependencies[1]
     meansinterfaces = marginal_dependencies[2]
     precsinterfaces = marginal_dependencies[3]
@@ -124,7 +124,7 @@ function get_marginals_observable(
     return marginal_names, marginals_observable
 end
 
-function get_marginals_observable(factornode::NormalMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N, F <: MeanField}
+function get_marginals_observable(factornode::NormalMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N, F <: NormalMixtureNodeFactorisation}
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
@@ -152,7 +152,7 @@ function avg_energy_nm(::Type{Multivariate}, q_out, q_m, q_p, z_bar, i)
     return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: CountingReal, N}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, NormalMixtureNodeFactorisation}, skip_strategy, scheduler) where {T <: CountingReal, N}
     stream = combineLatest(
         (
             getmarginal(connected_properties(node.out), skip_strategy) |> schedule_on(scheduler),
@@ -185,17 +185,7 @@ as_node_functional_form(::Type{<:NormalMixture}) = ValidNodeFunctionalForm()
 
 sdtype(::Type{<:NormalMixture}) = Stochastic()
 
-collect_factorisation(::Type{<:NormalMixture}, ::Nothing)                = MeanField()
-collect_factorisation(::Type{<:NormalMixture}, factorisation::MeanField) = factorisation
-collect_factorisation(::Type{<:NormalMixture}, factorisation::Any)       = __normal_mixture_incompatible_factorisation_error()
-
-function collect_factorisation(::Type{<:NormalMixture{N}}, factorisation::NTuple{R, Tuple{<:Integer}}) where {N, R}
-    # 2 * (m, w) + s + out, equivalent to MeanField 
-    return (R === 2 * N + 2) ? MeanField() : __normal_mixture_incompatible_factorisation_error()
-end
-
-__normal_mixture_incompatible_factorisation_error() =
-    error("`NormalMixtureNode` supports only following global factorisations: [ $(NormalMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints")
+collect_factorisation(::Type{<:NormalMixture}, factorization) = NormalMixtureNodeFactorisation()
 
 function ReactiveMP.make_node(::Type{<:NormalMixture{N}}, options) where {N}
     @assert N >= 2 "`NormalMixtureNode` requires at least two mixtures on input"
@@ -207,8 +197,6 @@ function ReactiveMP.make_node(::Type{<:NormalMixture{N}}, options) where {N}
     _factorisation = collect_factorisation(NormalMixture{N}, factorisation(options))
     _meta = collect_meta(NormalMixture{N}, metadata(options))
     _pipeline = collect_pipeline(NormalMixture{N}, getpipeline(options))
-
-    @assert typeof(_factorisation) <: NormalMixtureNodeFactorisationSupport "`NormalMixtureNode` supports only following factorisations: [ $(NormalMixtureNodeFactorisationSupport) ]"
 
     F = typeof(_factorisation)
     M = typeof(_meta)

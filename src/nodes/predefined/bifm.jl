@@ -21,7 +21,7 @@ Interfaces:
 ```julia
 # set priors
 z_prior ~ MvNormalMeanPrecision(zeros(latent_dim), diagm(ones(latent_dim)))
-z_tmp   ~ BIFMHelper(z_prior) where { q = MeanField()}
+z_tmp   ~ BIFMHelper(z_prior)
 
 # update last/previous hidden state
 z_prev = z_tmp

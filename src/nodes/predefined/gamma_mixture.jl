@@ -28,9 +28,9 @@ ReactiveMP.as_node_symbol(::Type{<:GammaMixture}) = :GammaMixture
 #
 # Base.show
 
-const GammaMixtureNodeFactorisationSupport = Union{MeanField}
+struct GammaMixtureNodeFactorisation end
 
-struct GammaMixtureNode{N, F <: GammaMixtureNodeFactorisationSupport, M, P} <: AbstractFactorNode
+struct GammaMixtureNode{N, F, M, P} <: AbstractFactorNode
     factorisation::F
 
     # Interfaces
@@ -73,7 +73,7 @@ struct GammaMixtureNodeFunctionalDependencies end
 
 default_functional_dependencies_pipeline(::Type{<:GammaMixture}) = GammaMixtureNodeFunctionalDependencies()
 
-function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N, F}, iindex::Int) where {N, F <: MeanField}
+function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N, F}, iindex::Int) where {N, F <: GammaMixtureNodeFactorisation}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -91,13 +91,13 @@ function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, facto
     return message_dependencies, marginal_dependencies
 end
 
-function get_messages_observable(factornode::GammaMixtureNode{N, F}, message_dependencies::Tuple{}) where {N, F <: MeanField}
+function get_messages_observable(factornode::GammaMixtureNode{N, F}, message_dependencies::Tuple{}) where {N, F <: GammaMixtureNodeFactorisation}
     return nothing, of(nothing)
 end
 
 function get_marginals_observable(
     factornode::GammaMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
-) where {N, F <: MeanField}
+) where {N, F <: GammaMixtureNodeFactorisation}
     varinterface = marginal_dependencies[1]
     asinterfaces = marginal_dependencies[2]
     bsinterfaces = marginal_dependencies[3]
@@ -120,7 +120,9 @@ function get_marginals_observable(
     return marginal_names, marginals_observable
 end
 
-function get_marginals_observable(factornode::GammaMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N, F <: MeanField}
+function get_marginals_observable(
+    factornode::GammaMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}
+) where {N, F <: GammaMixtureNodeFactorisation}
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
@@ -140,7 +142,7 @@ end
     end
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, MeanField}, skip_strategy, scheduler) where {T <: CountingReal, N}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, GammaMixtureNodeFactorisation}, skip_strategy, scheduler) where {T <: CountingReal, N}
     stream = combineLatest(
         (
             getmarginal(connected_properties(node.out), skip_strategy) |> schedule_on(scheduler),
@@ -173,17 +175,7 @@ as_node_functional_form(::Type{<:GammaMixture}) = ValidNodeFunctionalForm()
 
 sdtype(::Type{<:GammaMixture}) = Stochastic()
 
-collect_factorisation(::Type{<:GammaMixture}, ::Nothing)                = MeanField()
-collect_factorisation(::Type{<:GammaMixture}, factorisation::MeanField) = factorisation
-collect_factorisation(::Type{<:GammaMixture}, factorisation::Any)       = __gamma_mixture_incompatible_factorisation_error()
-
-function collect_factorisation(::Type{<:GammaMixture{N}}, factorisation::NTuple{R, Tuple{<:Integer}}) where {N, R}
-    # 2 * (m, w) + s + out, equivalent to MeanField 
-    return (R === 2 * N + 2) ? MeanField() : __gamma_mixture_incompatible_factorisation_error()
-end
-
-__gamma_mixture_incompatible_factorisation_error() =
-    error("`GammaMixtureNode` supports only following global factorisations: [ $(GammaMixtureNodeFactorisationSupport) ] or manually set to equivalent via constraints")
+collect_factorisation(::Type{<:GammaMixture}, factorization) = GammaMixtureNodeFactorisation()
 
 function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options) where {N}
     @assert N >= 2 "`GammaMixtureNode` requires at least two mixtures on input"
@@ -195,8 +187,6 @@ function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options) where {N}
     _factorisation = collect_factorisation(GammaMixture{N}, factorisation(options))
     _meta = collect_meta(GammaMixture{N}, metadata(options))
     _pipeline = collect_pipeline(GammaMixture{N}, getpipeline(options))
-
-    @assert typeof(_factorisation) <: GammaMixtureNodeFactorisationSupport "`GammaMixtureNode` supports only following factorisations: [ $(GammaMixtureNodeFactorisationSupport) ]"
 
     F = typeof(_factorisation)
     M = typeof(_meta)

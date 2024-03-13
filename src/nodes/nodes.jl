@@ -1,5 +1,5 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
-export MeanField, FullFactorisation, Marginalisation, MomentMatching
+export Marginalisation, MomentMatching
 export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
 export FactorNode, factornode
 export @node
@@ -121,32 +121,10 @@ function as_node_symbol end
 
 as_node_symbol(fn::F) where {F <: Function} = Symbol(fn)
 
-## Generic factorisation constraints
-
-"""
-    MeanField
-
-Generic factorisation constraint used to specify a mean-field factorisation for recognition distribution `q`.
-
-See also: [`FullFactorisation`](@ref)
-"""
-struct MeanField end
-
-"""
-    FullFactorisation
-
-Generic factorisation constraint used to specify a full factorisation for recognition distribution `q`.
-
-See also: [`MeanField`](@ref)
-"""
-struct FullFactorisation end
-
 """
     collect_factorisation(nodetype, factorisation)
 
 This function converts given factorisation to a correct internal factorisation representation for a given node.
-
-See also: [`MeanField`](@ref), [`FullFactorisation`](@ref)
 """
 function collect_factorisation end
 
