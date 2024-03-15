@@ -3,20 +3,20 @@ include("uninformative/out.jl")
 
 include("uniform/out.jl")
 
-include("sum/marginals.jl")
-include("sum/out.jl")
-include("sum/in1.jl")
-include("sum/in2.jl")
+include("addition/marginals.jl")
+include("addition/out.jl")
+include("addition/in1.jl")
+include("addition/in2.jl")
 
 include("subtraction/marginals.jl")
 include("subtraction/out.jl")
 include("subtraction/in1.jl")
 include("subtraction/in2.jl")
 
-include("prod/marginals.jl")
-include("prod/out.jl")
-include("prod/in.jl")
-include("prod/A.jl")
+include("multiplication/marginals.jl")
+include("multiplication/out.jl")
+include("multiplication/in.jl")
+include("multiplication/A.jl")
 
 include("gamma/out.jl")
 include("gamma/marginals.jl")

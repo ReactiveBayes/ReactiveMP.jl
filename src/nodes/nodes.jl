@@ -1,6 +1,6 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export Marginalisation, MomentMatching
-export functionalform, interfaces, factorisation, localmarginals, localmarginalnames, metadata
+export functionalform, getinterfaces, factorisation, localmarginals, localmarginalnames, metadata
 export FactorNode, factornode
 export @node
 
@@ -12,10 +12,6 @@ import Rocket: getscheduler
 
 import Base: show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
 import Base: getindex, setindex!, firstindex, lastindex
-
-## 
-
-function make_node end # TODO (bvdmitri): remove this
 
 ## Node traits
 
@@ -226,11 +222,20 @@ end
 
 import .MacroHelpers
 
+# TODO (bvdmitri): remove
+function make_node end
+# TODO (bvdmitri): documentation
+function interfaces end
+interface(any) = nothing
+# TODO (bvdmitri): documentation
+function inputinterfaces end
+inputinterfaces(any) = nothing
+# TODO (bvdmitri): documentation
 function alias_interface end
 
-extract_interface(s::Symbol) = (s, [])
+node_expression_extract_interface(s::Symbol) = (s, [])
 
-function extract_interface(e::Expr)
+function node_expression_extract_interface(e::Expr)
     if @capture(e, (s_, aliases = [aliases__]))
         if !all(alias -> alias isa Symbol, aliases)
             error(lazy"Aliases should be pure symbols. Got expression in $(aliases).")
@@ -246,7 +251,7 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     @assert node_type ∈ [:Stochastic, :Deterministic]
     @assert length(node_interfaces.args) > 0
 
-    interfaces = map(extract_interface, node_interfaces.args)
+    interfaces = map(node_expression_extract_interface, node_interfaces.args)
 
     # Determine whether we should dispatch on `typeof($fform)` or `Type{$node_fform}`
     dispatch_type = if @capture(node_fform, typeof(fform_))
@@ -276,6 +281,8 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     result = quote
         ReactiveMP.as_node_functional_form(::$dispatch_type) = ReactiveMP.ValidNodeFunctionalForm()
         ReactiveMP.sdtype(::$dispatch_type)                  = (ReactiveMP.$node_type)()
+        ReactiveMP.interfaces(::$dispatch_type)              = Val($(Tuple(map(first, interfaces))))
+        ReactiveMP.inputinterfaces(::$dispatch_type)         = Val($(Tuple(map(first, skipindex(interfaces, 1)))))
 
         $collect_factorisation_fn
 
