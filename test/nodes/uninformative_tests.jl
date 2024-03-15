@@ -1,8 +1,7 @@
-module UninformativeNodeTest
+@testitem "UninformativeNode" begin
+    module UninformativeNodeTest
 
-using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
-
-@testset "UninformativeNode" begin
+    using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
     @testset "Creation" begin
         node = make_node(Uninformative)
 
@@ -19,5 +18,5 @@ using Test, ReactiveMP, Random, BayesBase, ExponentialFamily
         @test prod(GenericProd(), NormalMeanVariance(3, 4), Uninformative()) == NormalMeanVariance(3, 4)
         @test prod(GenericProd(), Uninformative(), Uninformative()) === Uninformative()
     end
-end
+    end
 end
