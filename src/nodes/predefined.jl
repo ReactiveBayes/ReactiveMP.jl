@@ -34,6 +34,7 @@ include("predefined/half_normal.jl")
 
 include("predefined/flow/flow.jl")
 include("predefined/delta/delta.jl")
+include("predefined/distribution/distribution.jl")
 
 # Deterministic nodes
 include("predefined/addition.jl")

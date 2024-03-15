@@ -9,6 +9,8 @@ struct AverageEnergy end
 
 struct DifferentialEntropy end
 
+struct KLDivergence end
+
 ## Average energy function helpers
 
 function score(::AverageEnergy, fform, ::Val, marginals::Tuple{<:Marginal{<:NamedTuple{N}}}, meta) where {N}
@@ -32,6 +34,10 @@ function score(::DifferentialEntropy, marginal::Marginal{<:NamedTuple})
 
     return mapreduce(compute_score, +, values(getdata(marginal)))
 end
+
+## Kl KlDivergence
+
+score(::KLDivergence, marginal::Marginal{<:Distribution}, p::Distribution) = Distributions.kldivergence(getdata(marginal), p)
 
 ## Average enery macro helper
 
