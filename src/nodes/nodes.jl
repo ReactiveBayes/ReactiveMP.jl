@@ -226,7 +226,7 @@ import .MacroHelpers
 function make_node end
 # TODO (bvdmitri): documentation
 function interfaces end
-interface(any) = nothing
+interfaces(any) = nothing
 # TODO (bvdmitri): documentation
 function inputinterfaces end
 inputinterfaces(any) = nothing
