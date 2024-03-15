@@ -257,7 +257,7 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     dispatch_type = if @capture(node_fform, typeof(fform_))
         :(typeof($fform))
     else
-        :(Type{$node_fform})
+        :(Type{<:$node_fform})
     end
 
     alias_corrections = Expr(:block)
