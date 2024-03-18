@@ -6,58 +6,30 @@ struct NormalMixture{N} end
 
 ReactiveMP.as_node_symbol(::Type{<:NormalMixture}) = :NormalMixture
 
-# Special node
-# Generic FactorNode implementation does not work with dynamic number of inputs
-# We need to reimplement the following set of functions
-# functionalform(factornode::FactorNode)          
-# sdtype(factornode::FactorNode)                 
-# interfaces(factornode::FactorNode)              
-# factorisation(factornode::FactorNode)           
-# localmarginals(factornode::FactorNode)          
-# localmarginalnames(factornode::FactorNode)      
-# metadata(factornode::FactorNode)                
-# get_pipeline_stages(factornode::FactorNode)       
-#
-# setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
-# getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal)
-#
-# functional_dependencies(factornode::FactorNode, iindex::Int)
-# get_messages_observable(factornode, message_dependencies)
-# get_marginals_observable(factornode, marginal_dependencies)
-#
-# score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where T
-#
-# Base.show
+interfaces(::Type{<:NormalMixture}) = Val((:out, :switch, :m, :p))
+alias_interface(::Type{ReactiveMP.NormalMixture}, ::Int64, name::Symbol) = name
+as_node_functional_form(::Type{<:NormalMixture}) = ValidNodeFunctionalForm()
+sdtype(::Type{<:NormalMixture}) = Stochastic()
+collect_factorisation(::Type{<:NormalMixture}, factorization) = NormalMixtureNodeFactorisation()
 
 struct NormalMixtureNodeFactorisation end
 
-struct NormalMixtureNode{N, F, M, P} <: AbstractFactorNode
-    factorisation::F
-
-    # Interfaces
+struct NormalMixtureNode{N} <: AbstractFactorNode
     out    :: NodeInterface
     switch :: NodeInterface
     means  :: NTuple{N, IndexedNodeInterface}
     precs  :: NTuple{N, IndexedNodeInterface}
-
-    meta     :: M
-    pipeline :: P
 end
 
 const GaussianMixture     = NormalMixture
 const GaussianMixtureNode = NormalMixtureNode
 
 functionalform(factornode::NormalMixtureNode{N}) where {N} = NormalMixture{N}
-sdtype(factornode::NormalMixtureNode)                      = Stochastic()
-interfaces(factornode::NormalMixtureNode)                  = (factornode.out, factornode.switch, factornode.means..., factornode.precs...)
-factorisation(factornode::NormalMixtureNode)               = factornode.factorisation
-localmarginals(factornode::NormalMixtureNode)              = error("localmarginals() function is not implemented for NormalMixtureNode")
-localmarginalnames(factornode::NormalMixtureNode)          = error("localmarginalnames() function is not implemented for NormalMixtureNode")
-metadata(factornode::NormalMixtureNode)                    = factornode.meta
-getpipeline(factornode::NormalMixtureNode)                 = factornode.pipeline
+getinterfaces(factornode::NormalMixtureNode) = (factornode.out, factornode.switch, factornode.means..., factornode.precs...)
+sdtype(factornode::NormalMixtureNode) = Stochastic()
 
-setmarginal!(factornode::NormalMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")
-getmarginal!(factornode::NormalMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")
+interfaceindices(factornode::NormalMixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
+interfaceindices(factornode::NormalMixtureNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
     if iname === :out
@@ -73,11 +45,39 @@ function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
     end
 end
 
-struct NormalMixtureNodeFunctionalDependencies end
+# TODO (bvdmitri): decide on this later
+# setmarginal!(factornode::NormalMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")
+# getmarginal!(factornode::NormalMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")
 
-default_functional_dependencies_pipeline(::Type{<:NormalMixture}) = NormalMixtureNodeFunctionalDependencies()
+function factornode(::Type{<:NormalMixture}, interfaces, factorization)
+    outinterface = interfaces[findfirst(((name, variable),) -> name == :out, interfaces)]
+    switchinterface = interfaces[findfirst(((name, variable),) -> name == :switch, interfaces)]
+    meansinterfaces = filter(((name, variable),) -> name == :m, interfaces)
+    precsinterfaces = filter(((name, variable),) -> name == :p, interfaces)
 
-function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, factornode::NormalMixtureNode{N, F}, iindex::Int) where {N, F <: NormalMixtureNodeFactorisation}
+    if length(meansinterfaces) < 2 || length(precsinterfaces) < 2
+        error("The number of means and precisions in `NormalMixture` must be at least 2. Got `$(length(meansinterfaces))` means and `$(length(precsinterfaces))` precisions.")
+    elseif length(meansinterfaces) !== length(precsinterfaces)
+        error("The number of means and precisions in `NormalMixture` must be the same. Got `$(length(meansinterfaces))` means and `$(length(precsinterfaces))` precisions.")
+    end
+
+    N = length(meansinterfaces)
+
+    return NormalMixtureNode(
+        NodeInterface(outinterface...),
+        NodeInterface(switchinterface...),
+        ntuple(i -> IndexedNodeInterface(i, NodeInterface(meansinterfaces[i]...)), N),
+        ntuple(i -> IndexedNodeInterface(i, NodeInterface(precsinterfaces[i]...)), N)
+    )
+end
+
+struct NormalMixtureNodeFunctionalDependencies <: FunctionalDependencies end
+
+function activate!(factornode::NormalMixtureNode, options::FactorNodeActivationOptions)
+    return activate!(NormalMixtureNodeFunctionalDependencies(), factornode, options)
+end
+
+function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, factornode::NormalMixtureNode{N}, interface, iindex::Int) where {N}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -95,13 +95,11 @@ function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, fact
     return message_dependencies, marginal_dependencies
 end
 
-function get_messages_observable(factornode::NormalMixtureNode{N, F}, message_dependencies::Tuple{}) where {N, F <: NormalMixtureNodeFactorisation}
+function collect_latest_messages(::NormalMixtureNode, message_dependencies::Tuple{})
     return nothing, of(nothing)
 end
 
-function get_marginals_observable(
-    factornode::NormalMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
-) where {N, F <: NormalMixtureNodeFactorisation}
+function collect_latest_marginals(::NormalMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}) where {N}
     varinterface    = marginal_dependencies[1]
     meansinterfaces = marginal_dependencies[2]
     precsinterfaces = marginal_dependencies[3]
@@ -110,27 +108,27 @@ function get_marginals_observable(
     marginals_observable =
         combineLatest(
             (
-                getmarginal(connected_properties(varinterface), IncludeAll()),
-                combineLatest(map((prec) -> getmarginal(connected_properties(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
-                combineLatest(map((mean) -> getmarginal(connected_properties(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
+                getmarginal(getvariable(varinterface), IncludeAll()),
+                combineLatest(map((prec) -> getmarginal(getvariable(prec), IncludeAll()), reverse(precsinterfaces)), PushNew()),
+                combineLatest(map((mean) -> getmarginal(getvariable(mean), IncludeAll()), reverse(meansinterfaces)), PushNew())
             ),
             PushNew()
         ) |> map_to((
-            getmarginal(connected_properties(varinterface), IncludeAll()),
-            ManyOf(map((mean) -> getmarginal(connected_properties(mean), IncludeAll()), meansinterfaces)),
-            ManyOf(map((prec) -> getmarginal(connected_properties(prec), IncludeAll()), precsinterfaces))
+            getmarginal(getvariable(varinterface), IncludeAll()),
+            ManyOf(map((mean) -> getmarginal(getvariable(mean), IncludeAll()), meansinterfaces)),
+            ManyOf(map((prec) -> getmarginal(getvariable(prec), IncludeAll()), precsinterfaces))
         ))
 
     return marginal_names, marginals_observable
 end
 
-function get_marginals_observable(factornode::NormalMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N, F <: NormalMixtureNodeFactorisation}
+function collect_latest_marginals(::NormalMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N}
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
-    marginals_observable = combineLatestUpdates((getmarginal(connected_properties(outinterface), IncludeAll()), getmarginal(connected_properties(switchinterface), IncludeAll()), getmarginal(connected_properties(varinterface), IncludeAll())), PushNew())
+    marginals_observable = combineLatestUpdates((getmarginal(getvariable(outinterface), IncludeAll()), getmarginal(getvariable(switchinterface), IncludeAll()), getmarginal(getvariable(varinterface), IncludeAll())), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -152,18 +150,18 @@ function avg_energy_nm(::Type{Multivariate}, q_out, q_m, q_p, z_bar, i)
     return z_bar[i] * score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[i], q_p[i])), nothing)
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N, NormalMixtureNodeFactorisation}, skip_strategy, scheduler) where {T <: CountingReal, N}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMixtureNode{N}, meta, skip_strategy, scheduler) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(connected_properties(node.out), skip_strategy) |> schedule_on(scheduler),
-            getmarginal(connected_properties(node.switch), skip_strategy) |> schedule_on(scheduler),
-            ManyOfObservable(combineLatest(map((mean) -> getmarginal(connected_properties(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew())),
-            ManyOfObservable(combineLatest(map((prec) -> getmarginal(connected_properties(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()))
+            getmarginal(getvariable(node.out), skip_strategy) |> schedule_on(scheduler),
+            getmarginal(getvariable(node.switch), skip_strategy) |> schedule_on(scheduler),
+            ManyOfObservable(combineLatest(map((mean) -> getmarginal(getvariable(mean), skip_strategy) |> schedule_on(scheduler), node.means), PushNew())),
+            ManyOfObservable(combineLatest(map((prec) -> getmarginal(getvariable(prec), skip_strategy) |> schedule_on(scheduler), node.precs), PushNew()))
         ),
         PushNew()
     )
 
-    mapping = let fform = functionalform(node), meta = metadata(node)
+    mapping = let fform = functionalform(node), meta = meta
         (marginals) -> begin
             average_energy = score(AverageEnergy(), fform, Val{(:out, :switch, :m, :p)}(), marginals, meta)
 
@@ -177,67 +175,4 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::NormalMix
     end
 
     return stream |> map(T, mapping)
-end
-
-as_node_functional_form(::Type{<:NormalMixture}) = ValidNodeFunctionalForm()
-
-# Node creation related functions
-
-sdtype(::Type{<:NormalMixture}) = Stochastic()
-
-collect_factorisation(::Type{<:NormalMixture}, factorization) = NormalMixtureNodeFactorisation()
-
-function ReactiveMP.make_node(::Type{<:NormalMixture{N}}, options) where {N}
-    @assert N >= 2 "`NormalMixtureNode` requires at least two mixtures on input"
-    out    = NodeInterface(:out, Marginalisation())
-    switch = NodeInterface(:switch, Marginalisation())
-    means  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:m, Marginalisation())), N)
-    precs  = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:p, Marginalisation())), N)
-
-    _factorisation = collect_factorisation(NormalMixture{N}, factorisation(options))
-    _meta = collect_meta(NormalMixture{N}, metadata(options))
-    _pipeline = collect_pipeline(NormalMixture{N}, getpipeline(options))
-
-    F = typeof(_factorisation)
-    M = typeof(_meta)
-    P = typeof(_pipeline)
-
-    return NormalMixtureNode{N, F, M, P}(_factorisation, out, switch, means, precs, _meta, _pipeline)
-end
-
-function ReactiveMP.make_node(
-    ::Type{<:NormalMixture},
-    options,
-    out::AbstractVariable,
-    switch::AbstractVariable,
-    means::NTuple{N, AbstractVariable},
-    precs::NTuple{N, AbstractVariable}
-) where {N}
-    node = make_node(NormalMixture{N}, options)
-
-    # out
-    out_index = getlastindex(out)
-    connectvariable!(node.out, out, out_index)
-    setmessagein!(out, out_index, messageout(node.out))
-
-    # switch
-    switch_index = getlastindex(switch)
-    connectvariable!(node.switch, switch, switch_index)
-    setmessagein!(switch, switch_index, messageout(node.switch))
-
-    # means
-    foreach(zip(node.means, means)) do (minterface, mvar)
-        mean_index = getlastindex(mvar)
-        connectvariable!(minterface, mvar, mean_index)
-        setmessagein!(mvar, mean_index, messageout(minterface))
-    end
-
-    # precs
-    foreach(zip(node.precs, precs)) do (pinterface, pvar)
-        prec_index = getlastindex(pvar)
-        connectvariable!(pinterface, pvar, prec_index)
-        setmessagein!(pvar, prec_index, messageout(pinterface))
-    end
-
-    return node
 end

@@ -88,20 +88,19 @@ struct IndexedNodeInterface
     interface :: NodeInterface
 end
 
-Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", name(interface), ", ", local_constraint(interface), ", ", index(interface), ")"))
+Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", index(interface), ", ", name(interface), ")"))
 
-name(interface::IndexedNodeInterface)             = name(interface.interface)
-local_constraint(interface::IndexedNodeInterface) = local_constraint(interface.interface)
-index(interface::IndexedNodeInterface)            = interface.index
-tag(interface::IndexedNodeInterface)              = (tag(interface.interface), index(interface))
+index(interface::IndexedNodeInterface) = interface.index
+name(interface::IndexedNodeInterface)  = name(interface.interface)
+tag(interface::IndexedNodeInterface)   = (tag(interface.interface), index(interface))
 
-messageout(interface::IndexedNodeInterface) = error("TODO") # messageout(interface.interface)
-messagein(interface::IndexedNodeInterface)  = error("TODO") # messagein(interface.interface)
+messageout(interface::IndexedNodeInterface) = messageout(interface.interface)
+messagein(interface::IndexedNodeInterface) = messagein(interface.interface)
+getvariable(interface::IndexedNodeInterface) = getvariable(interface.interface)
 
-connectvariable!(interface::IndexedNodeInterface, properties, index) = error("TODO") # connectvariable!(interface.interface, properties, index)
-connected_properties(interface::IndexedNodeInterface) = error("TODO") # connected_properties(interface.interface)
-connectedvarindex(interface::IndexedNodeInterface) = error("TODO") # connectedvarindex(interface.interface)
-get_pipeline_stages(interface::IndexedNodeInterface) = error("TODO") # get_pipeline_stages(interface.interface)
+israndom(interface::IndexedNodeInterface) = israndom(interface.interface)
+isdata(interface::IndexedNodeInterface)   = isdata(interface.interface)
+isconst(interface::IndexedNodeInterface)  = isconst(interface.interface)
 
 """
 Some nodes use `IndexedInterface`, `ManyOf` structure reflects a collection of marginals from the collection of `IndexedInterface`s. `@rule` macro 

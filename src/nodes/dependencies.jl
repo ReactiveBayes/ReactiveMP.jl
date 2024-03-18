@@ -1,6 +1,6 @@
 
-collect_latest_messages(collection) = __collect_latest_updates(messagein, collection)
-collect_latest_marginals(collection) = __collect_latest_updates(getmarginal, collection)
+collect_latest_messages(factornode, collection) = __collect_latest_updates(messagein, collection)
+collect_latest_marginals(factornode, collection) = __collect_latest_updates(getmarginal, collection)
 
 function __collect_latest_updates(f::F, collection) where {F}
     return __collect_latest_updates(f, Tuple(collection))
@@ -22,8 +22,8 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
             with_functional_dependencies(dependencies, factornode, interface, iindex) do message_dependencies, marginal_dependencies
-                messagestag, messages = collect_latest_messages(message_dependencies)
-                marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
+                messagestag, messages = collect_latest_messages(factornode, message_dependencies)
+                marginalstag, marginals = collect_latest_marginals(factornode, marginal_dependencies)
 
                 vtag        = tag(interface)
                 vconstraint = Marginalisation()
