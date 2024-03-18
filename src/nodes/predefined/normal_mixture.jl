@@ -59,6 +59,8 @@ function factornode(::Type{<:NormalMixture}, interfaces, factorization)
         error("The number of means and precisions in `NormalMixture` must be at least 2. Got `$(length(meansinterfaces))` means and `$(length(precsinterfaces))` precisions.")
     elseif length(meansinterfaces) !== length(precsinterfaces)
         error("The number of means and precisions in `NormalMixture` must be the same. Got `$(length(meansinterfaces))` means and `$(length(precsinterfaces))` precisions.")
+    elseif any(cluster -> length(cluster) !== 1, factorization)
+        error("The factorization around `NormalMixture` must be the naive mean-field.")
     end
 
     N = length(meansinterfaces)
