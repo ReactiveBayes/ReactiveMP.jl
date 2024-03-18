@@ -50,8 +50,15 @@ end
 
 struct MixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
+collect_functional_dependencies(::MixtureNode, ::Nothing) = MixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::MixtureNode, ::MixtureNodeFunctionalDependencies) = MixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::MixtureNode, ::RequireMarginalFunctionalDependencies) = RequireMarginalFunctionalDependencies()
+collect_functional_dependencies(::MixtureNode, ::Any) =
+    error("The functional dependencies for MixtureNode must be either `Nothing` or `MixtureNodeFunctionalDependencies` or `RequireMarginalFunctionalDependencies`")
+
 function activate!(factornode::MixtureNode, options::FactorNodeActivationOptions)
-    return activate!(MixtureNodeFunctionalDependencies(), factornode, options)
+    dependecies = collect_functional_dependencies(factornode, getdependecies(options))
+    return activate!(dependecies, factornode, options)
 end
 
 function functional_dependencies(::MixtureNodeFunctionalDependencies, factornode::MixtureNode{N}, interface, iindex::Int) where {N}

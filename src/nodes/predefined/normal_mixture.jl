@@ -71,8 +71,14 @@ end
 
 struct NormalMixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
+collect_functional_dependencies(::NormalMixtureNode, ::Nothing) = NormalMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::NormalMixtureNode, ::NormalMixtureNodeFunctionalDependencies) = NormalMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::NormalMixtureNode, ::Any) =
+    error("The functional dependencies for NormalMixtureNode must be either `Nothing` or `NormalMixtureNodeFunctionalDependencies`")
+
 function activate!(factornode::NormalMixtureNode, options::FactorNodeActivationOptions)
-    return activate!(NormalMixtureNodeFunctionalDependencies(), factornode, options)
+    dependecies = collect_functional_dependencies(factornode, getdependecies(options))
+    return activate!(dependecies, factornode, options)
 end
 
 function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, factornode::NormalMixtureNode{N}, interface, iindex::Int) where {N}
