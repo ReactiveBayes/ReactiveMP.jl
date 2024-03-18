@@ -215,8 +215,8 @@ getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
-    initialize_clusters!(getlocalclusters(factornode), factornode, options)
     dependencies = collect_functional_dependencies(functionalform(factornode), getdependecies(options))
+    initialize_clusters!(getlocalclusters(factornode), dependencies, factornode, options)
     return activate!(dependencies, factornode, options)
 end
 

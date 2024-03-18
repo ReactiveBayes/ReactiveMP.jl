@@ -56,17 +56,17 @@ clustername(cluster::Tuple, interfaces) = mapreduce(v -> name(interfaces[v]), (a
 clustername(cluster, interfaces) = reduce((a, b) -> Symbol(a, :_, b), Iterators.map(v -> name(interfaces[v]), cluster))
 clustername(interfaces) = reduce((a, b) -> Symbol(a, :_, b), Iterators.map(interface -> name(interface), interfaces))
 
-function initialize_clusters!(clusters::FactorNodeLocalClusters, factornode, options)
+function initialize_clusters!(clusters::FactorNodeLocalClusters, dependencies, factornode, options)
     # We first need to initialize all the clusters, since the `activate_cluster!` function may use any of the marginals
     for i in eachindex(getmarginals(clusters))
-        initialize_cluster!(clusters, i, factornode, options)
+        initialize_cluster!(clusters, i, dependencies, factornode, options)
     end
     for i in eachindex(getmarginals(clusters))
-        activate_cluster!(clusters, i, factornode, options)
+        activate_cluster!(clusters, i, dependencies, factornode, options)
     end
 end
 
-function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
+function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, dependencies, factornode, options)
     localfactorization = getfactorization(clusters, index)
     # For the clusters of length `1` there is no need to create a new `MarginalObservable` object
     # We can simply reuse it from the variable connected to the factor node. Potentially it saves a bit of memory 
@@ -79,7 +79,7 @@ function initialize_cluster!(clusters::FactorNodeLocalClusters, index::Int, fact
     setmarginal!(clusters, index, stream_of_cluster_marginals)
 end
 
-function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factornode, options)
+function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, dependencies, factornode, options)
     localfactorization = getfactorization(clusters, index)
 
     if !isone(length(localfactorization))
@@ -93,8 +93,8 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, factor
         message_dependencies  = tuple(clusterinterfaces...)
         marginal_dependencies = tuple(TupleTools.deleteat(getmarginals(clusters), index)...)
 
-        messagestag, messages = collect_latest_messages(message_dependencies)
-        marginalstag, marginals = collect_latest_marginals(marginal_dependencies)
+        messagestag, messages = collect_latest_messages(dependencies, factornode, message_dependencies)
+        marginalstag, marginals = collect_latest_marginals(dependencies, factornode, marginal_dependencies)
 
         fform = functionalform(factornode)
         vtag  = tag(getmarginal(clusters, index))

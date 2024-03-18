@@ -7,7 +7,7 @@ struct NormalMixture{N} end
 ReactiveMP.as_node_symbol(::Type{<:NormalMixture}) = :NormalMixture
 
 interfaces(::Type{<:NormalMixture}) = Val((:out, :switch, :m, :p))
-alias_interface(::Type{ReactiveMP.NormalMixture}, ::Int64, name::Symbol) = name
+alias_interface(::Type{<:NormalMixture}, ::Int64, name::Symbol) = name
 as_node_functional_form(::Type{<:NormalMixture}) = ValidNodeFunctionalForm()
 sdtype(::Type{<:NormalMixture}) = Stochastic()
 collect_factorisation(::Type{<:NormalMixture}, factorization) = NormalMixtureNodeFactorisation()
@@ -44,10 +44,6 @@ function interfaceindex(factornode::NormalMixtureNode, iname::Symbol)
         error("Unknown interface ':$(iname)' for the [ $(functionalform(factornode)) ] node")
     end
 end
-
-# TODO (bvdmitri): decide on this later
-# setmarginal!(factornode::NormalMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for NormalMixtureNode")
-# getmarginal!(factornode::NormalMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for NormalMixtureNode")
 
 function factornode(::Type{<:NormalMixture}, interfaces, factorization)
     outinterface = interfaces[findfirst(((name, variable),) -> name == :out, interfaces)]
@@ -97,11 +93,15 @@ function functional_dependencies(::NormalMixtureNodeFunctionalDependencies, fact
     return message_dependencies, marginal_dependencies
 end
 
-function collect_latest_messages(::NormalMixtureNode, message_dependencies::Tuple{})
+function collect_latest_messages(::NormalMixtureNodeFunctionalDependencies, factornode::NormalMixtureNode{N}, message_dependencies::Tuple{}) where {N}
     return nothing, of(nothing)
 end
 
-function collect_latest_marginals(::NormalMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}) where {N}
+function collect_latest_marginals(
+    ::NormalMixtureNodeFunctionalDependencies,
+    factornode::NormalMixtureNode{N},
+    marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
+) where {N}
     varinterface    = marginal_dependencies[1]
     meansinterfaces = marginal_dependencies[2]
     precsinterfaces = marginal_dependencies[3]
@@ -124,7 +124,9 @@ function collect_latest_marginals(::NormalMixtureNode{N}, marginal_dependencies:
     return marginal_names, marginals_observable
 end
 
-function collect_latest_marginals(::NormalMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}) where {N}
+function collect_latest_marginals(
+    ::NormalMixtureNodeFunctionalDependencies, factornode::NormalMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}
+) where {N}
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
