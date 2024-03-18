@@ -32,7 +32,7 @@ end
 # The activation of this node is very simple, it just initializes the clusters and connects the outbound message
 # The outbound message is fixed to the distribution provided during the creation of the node
 function activate!(factornode::StandaloneDistributionNode, options::FactorNodeActivationOptions)
-    initialize_clusters!(getlocalclusters(factornode), factornode, options)
+    initialize_clusters!(getlocalclusters(factornode), DefaultFunctionalDependencies(), factornode, options)
     vmessageout = of(Message(factornode.distribution, true, false, nothing))
     connect!(messageout(getinterface(factornode, 1)), vmessageout)
     return nothing
