@@ -13,6 +13,9 @@ getinterface(factornode::StandaloneDistributionNode, index) = getindex(getinterf
 getinboundinterfaces(factornode::StandaloneDistributionNode) = error("`StandaloneDistributionNode` has no inbound interfaces")
 getlocalclusters(factornode::StandaloneDistributionNode) = factornode.localclusters
 
+# The main feature of this node is that is must be created from `fform::Distribution`
+# In the case it must have only one interface connected to it (the outbound edge)
+# The factorization must be a single tuple with a single element as well
 function factornode(fform::Distribution, interfaces, factorization)
     if !isone(length(interfaces))
         error("A factor node with a distribution object can only have one output interface.")
@@ -26,6 +29,8 @@ function factornode(fform::Distribution, interfaces, factorization)
     return StandaloneDistributionNode(fform, outinterface, localclusters)
 end
 
+# The activation of this node is very simple, it just initializes the clusters and connects the outbound message
+# The outbound message is fixed to the distribution provided during the creation of the node
 function activate!(factornode::StandaloneDistributionNode, options::FactorNodeActivationOptions)
     initialize_clusters!(getlocalclusters(factornode), factornode, options)
     vmessageout = of(Message(factornode.distribution, true, false, nothing))
@@ -33,6 +38,7 @@ function activate!(factornode::StandaloneDistributionNode, options::FactorNodeAc
     return nothing
 end
 
+# The score function for this node is also very simple, it just calculates the KLDivergence between the marginal on the edge and the distribution
 function score(::Type{T}, ::FactorBoundFreeEnergy, node::StandaloneDistributionNode, meta, skip_strategy, scheduler) where {T <: CountingReal}
     fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
         (localmarginal) -> apply_skip_filter(getmarginal(localmarginal), skip_strategy) |> schedule_on(scheduler)
