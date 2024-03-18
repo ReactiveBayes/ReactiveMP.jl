@@ -13,29 +13,24 @@ A random variable defines properties that are needed for reactive message passin
 - `messages_prod_fn`: a function that accepts a collection of messages and defines how to compute a product of those. Used in the outbound message computation.
 - `marginal_prod_fn`: a function that accepts a collection of messages and defines how to compute a product of those. Used in the marginal computation.
 """
-mutable struct RandomVariable{M, F} <: AbstractVariable
-    input_messages   :: Vector{MessageObservable{AbstractMessage}}
-    output_messages  :: Vector{MessageObservable{Message}}
-    marginal         :: MarginalObservable
-    message_prod_fn  :: M
-    marginal_prod_fn :: F
+mutable struct RandomVariable <: AbstractVariable
+    input_messages::Vector{MessageObservable{AbstractMessage}}
+    output_messages::Vector{MessageObservable{Message}}
+    marginal::MarginalObservable
 end
 
-const DefaultMessageProdFn = messages_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
-const DefaultMarginalProdFn = marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
-
-function randomvar(messages_prod_fn::M = DefaultMessageProdFn, marginal_prod_fn::F = DefaultMarginalProdFn) where {M, F}
-    return RandomVariable{M, F}(Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), MarginalObservable(), messages_prod_fn, marginal_prod_fn)
+function randomvar()
+    return RandomVariable(Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), MarginalObservable())
 end
 
 degree(randomvar::RandomVariable) = length(randomvar.input_messages)
 
-israndom(::RandomVariable)                  = true
+israndom(::RandomVariable) = true
 israndom(::AbstractArray{<:RandomVariable}) = true
-isdata(::RandomVariable)                    = false
-isdata(::AbstractArray{<:RandomVariable})   = false
-isconst(::RandomVariable)                   = false
-isconst(::AbstractArray{<:RandomVariable})  = false
+isdata(::RandomVariable) = false
+isdata(::AbstractArray{<:RandomVariable}) = false
+isconst(::RandomVariable) = false
+isconst(::AbstractArray{<:RandomVariable}) = false
 
 function create_messagein!(randomvar::RandomVariable)
     messagein = MessageObservable(AbstractMessage)
@@ -51,11 +46,16 @@ function messageout(randomvar::RandomVariable, index::Int)
     return randomvar.output_messages[index]
 end
 
-struct RandomVariableActivationOptions{S}
+const DefaultMessageProdFn = messages_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+const DefaultMarginalProdFn = marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+
+struct RandomVariableActivationOptions{S,F,M}
     scheduler::S
+    message_prod_fn::F
+    marginal_prod_fn::M
 end
 
-RandomVariableActivationOptions() = RandomVariableActivationOptions(AsapScheduler())
+RandomVariableActivationOptions() = RandomVariableActivationOptions(AsapScheduler(), DefaultMessageProdFn, DefaultMarginalProdFn)
 
 # options here must implement at least `Rocket.getscheduler`
 function activate!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
@@ -63,29 +63,29 @@ function activate!(randomvar::RandomVariable, options::RandomVariableActivationO
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
     if length(randomvar.input_messages) > 5
-        initialize_output_messages!(randomvar, EqualityChain(randomvar.input_messages, schedule_on(options.scheduler), randomvar.message_prod_fn))
+        initialize_output_messages!(randomvar, options, EqualityChain(randomvar.input_messages, schedule_on(options.scheduler), options.message_prod_fn))
     else
-        initialize_output_messages!(randomvar)
+        initialize_output_messages!(randomvar, options)
     end
 
-    _setmarginal!(randomvar, _makemarginal(randomvar))
+    _setmarginal!(randomvar, _makemarginal(randomvar, options))
 
     return nothing
 end
 
 # Generic fallback for variables with small number of connected nodes, somewhere <= 5
 # We do not create equality chain in this cases, but simply do eager product
-function initialize_output_messages!(randomvar::RandomVariable)
-    d          = length(randomvar.input_messages)
+function initialize_output_messages!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
+    d = length(randomvar.input_messages)
     outputmsgs = randomvar.output_messages
-    inputmsgs  = randomvar.input_messages
-    prod_fn    = randomvar.message_prod_fn
+    inputmsgs = randomvar.input_messages
+    prod_fn = options.message_prod_fn
 
     resize!(outputmsgs, d)
 
     @inbounds for i in 1:d
         outputmsgs[i] = MessageObservable(Message)
-        outputmsg     = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
+        outputmsg = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
         connect!(outputmsgs[i], outputmsg)
     end
 
@@ -94,8 +94,8 @@ end
 
 # Equality chain initialisation for variables with large number of connected nodes, somewhere > 5
 # In this cases it is more efficient to create an equality chain structure, but it does allocate way more memory
-function initialize_output_messages!(randomvar::RandomVariable, chain::EqualityChain)
-    d          = length(randomvar.input_messages)
+function initialize_output_messages!(randomvar::RandomVariable, options::RandomVariableActivationOptions, chain::EqualityChain)
+    d = length(randomvar.input_messages)
     outputmsgs = randomvar.output_messages
 
     resize!(outputmsgs, d)
@@ -109,9 +109,9 @@ function initialize_output_messages!(randomvar::RandomVariable, chain::EqualityC
     return nothing
 end
 
-_getmarginal(randomvar::RandomVariable)              = randomvar.marginal
+_getmarginal(randomvar::RandomVariable) = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, observable) = connect!(_getmarginal(randomvar), observable)
-_makemarginal(randomvar::RandomVariable)             = collectLatest(AbstractMessage, Marginal, randomvar.input_messages, randomvar.marginal_prod_fn)
+_makemarginal(randomvar::RandomVariable, options::RandomVariableActivationOptions) = collectLatest(AbstractMessage, Marginal, randomvar.input_messages, options.marginal_prod_fn)
 
 # name(randomvar::RandomVariable)            = randomvar.name
 # isanonymous(randomvar::RandomVariable)     = randomvar.anonymous
