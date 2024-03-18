@@ -5,55 +5,27 @@ struct GammaMixture{N} end
 
 ReactiveMP.as_node_symbol(::Type{<:GammaMixture}) = :GammaMixture
 
-# Special node
-# Generic FactorNode implementation does not work with dynamic number of inputs
-# We need to reimplement the following set of functions
-# functionalform(factornode::FactorNode)
-# sdtype(factornode::FactorNode)
-# interfaces(factornode::FactorNode)
-# factorisation(factornode::FactorNode)
-# localmarginals(factornode::FactorNode)
-# localmarginalnames(factornode::FactorNode)
-# metadata(factornode::FactorNode)
-# get_pipeline_stages(factornode::FactorNode)
-#
-# setmarginal!(factornode::FactorNode, cname::Symbol, marginal)
-# getmarginal!(factornode::FactorNode, localmarginal::FactorNodeLocalMarginal)
-#
-# functional_dependencies(factornode::FactorNode, iindex::Int)
-# get_messages_observable(factornode, message_dependencies)
-# get_marginals_observable(factornode, marginal_dependencies)
-#
-# score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, scheduler) where T
-#
-# Base.show
+interfaces(::Type{<:GammaMixture}) = Val((:out, :switch, :a, :b))
+alias_interface(::Type{<:GammaMixture}, ::Int64, name::Symbol) = name
+as_node_functional_form(::Type{<:GammaMixture}) = ValidNodeFunctionalForm()
+sdtype(::Type{<:GammaMixture}) = Stochastic()
+collect_factorisation(::Type{<:GammaMixture}, factorization) = GammaMixtureNodeFactorisation()
 
 struct GammaMixtureNodeFactorisation end
 
-struct GammaMixtureNode{N, F, M, P} <: AbstractFactorNode
-    factorisation::F
-
-    # Interfaces
+struct GammaMixtureNode{N} <: AbstractFactorNode
     out    :: NodeInterface
     switch :: NodeInterface
     as     :: NTuple{N, IndexedNodeInterface}
     bs     :: NTuple{N, IndexedNodeInterface}
-
-    meta     :: M
-    pipeline :: P
 end
 
 functionalform(factornode::GammaMixtureNode{N}) where {N} = GammaMixture{N}
-sdtype(factornode::GammaMixtureNode)                      = Stochastic()
-interfaces(factornode::GammaMixtureNode)                  = (factornode.out, factornode.switch, factornode.as..., factornode.bs...)
-factorisation(factornode::GammaMixtureNode)               = factornode.factorisation
-localmarginals(factornode::GammaMixtureNode)              = error("localmarginals() function is not implemented for GammaMixtureNode")
-localmarginalnames(factornode::GammaMixtureNode)          = error("localmarginalnames() function is not implemented for GammaMixtureNode")
-metadata(factornode::GammaMixtureNode)                    = factornode.meta
-getpipeline(factornode::GammaMixtureNode)                 = factornode.pipeline
+getinterfaces(factornode::GammaMixtureNode) = (factornode.out, factornode.switch, factornode.as..., factornode.bs...)
+sdtype(factornode::GammaMixtureNode) = Stochastic()
 
-setmarginal!(factornode::GammaMixtureNode, cname::Symbol, marginal)                = error("setmarginal() function is not implemented for GammaMixtureNode")
-getmarginal!(factornode::GammaMixtureNode, localmarginal::FactorNodeLocalMarginal) = error("getmarginal() function is not implemented for GammaMixtureNode")
+interfaceindices(factornode::GammaMixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
+interfaceindices(factornode::GammaMixtureNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
 function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
     if iname === :out
@@ -69,11 +41,43 @@ function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
     end
 end
 
-struct GammaMixtureNodeFunctionalDependencies end
+function factornode(::Type{<:GammaMixture}, interfaces, factorization)
+    outinterface = interfaces[findfirst(((name, variable),) -> name == :out, interfaces)]
+    switchinterface = interfaces[findfirst(((name, variable),) -> name == :switch, interfaces)]
+    asinterfaces = filter(((name, variable),) -> name == :a, interfaces)
+    bsinterfaces = filter(((name, variable),) -> name == :b, interfaces)
 
-default_functional_dependencies_pipeline(::Type{<:GammaMixture}) = GammaMixtureNodeFunctionalDependencies()
+    if length(asinterfaces) < 2 || length(bsinterfaces) < 2
+        error("The number of `a` and `b` in `GammaMixture` must be at least 2. Got `$(length(asinterfaces))` and `$(length(bsinterfaces))`.")
+    elseif length(asinterfaces) !== length(bsinterfaces)
+        error("The number of `a` and `b` in `GammaMixture` must be the same. Got `$(length(asinterfaces))` and `$(length(bsinterfaces))`.")
+    elseif any(cluster -> length(cluster) !== 1, factorization)
+        error("The factorization around `GammaMixture` must be the naive mean-field.")
+    end
 
-function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N, F}, iindex::Int) where {N, F <: GammaMixtureNodeFactorisation}
+    N = length(asinterfaces)
+
+    return GammaMixtureNode(
+        NodeInterface(outinterface...),
+        NodeInterface(switchinterface...),
+        ntuple(i -> IndexedNodeInterface(i, NodeInterface(asinterfaces[i]...)), N),
+        ntuple(i -> IndexedNodeInterface(i, NodeInterface(bsinterfaces[i]...)), N)
+    )
+end
+
+struct GammaMixtureNodeFunctionalDependencies <: FunctionalDependencies end
+
+collect_functional_dependencies(::GammaMixtureNode, ::Nothing) = GammaMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::GammaMixtureNode, ::NormalMixtureNodeFunctionalDependencies) = GammaMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::GammaMixtureNode, ::Any) =
+    error("The functional dependencies for GammaMixtureNode must be either `Nothing` or `GammaMixtureNodeFunctionalDependencies`")
+
+function activate!(factornode::GammaMixtureNode, options::FactorNodeActivationOptions)
+    dependecies = collect_functional_dependencies(factornode, getdependecies(options))
+    return activate!(dependecies, factornode, options)
+end
+
+function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N}, interface, iindex::Int) where {N}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -91,13 +95,13 @@ function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, facto
     return message_dependencies, marginal_dependencies
 end
 
-function get_messages_observable(factornode::GammaMixtureNode{N, F}, message_dependencies::Tuple{}) where {N, F <: GammaMixtureNodeFactorisation}
+function collect_latest_messages(::GammaMixtureNodeFunctionalDependencies, ::GammaMixtureNode{N}, message_dependencies::Tuple{}) where {N}
     return nothing, of(nothing)
 end
 
-function get_marginals_observable(
-    factornode::GammaMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
-) where {N, F <: GammaMixtureNodeFactorisation}
+function collect_latest_marginals(
+    ::GammaMixtureNodeFunctionalDependencies, ::GammaMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
+) where {N}
     varinterface = marginal_dependencies[1]
     asinterfaces = marginal_dependencies[2]
     bsinterfaces = marginal_dependencies[3]
@@ -106,29 +110,29 @@ function get_marginals_observable(
     marginals_observable =
         combineLatest(
             (
-                getmarginal(connected_properties(varinterface), IncludeAll()),
-                combineLatest(map((rate) -> getmarginal(connected_properties(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
-                combineLatest(map((shape) -> getmarginal(connected_properties(shape), IncludeAll()), reverse(asinterfaces)), PushNew())
+                getmarginal(getvariable(varinterface), IncludeAll()),
+                combineLatest(map((rate) -> getmarginal(getvariable(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
+                combineLatest(map((shape) -> getmarginal(getvariable(shape), IncludeAll()), reverse(asinterfaces)), PushNew())
             ),
             PushNew()
         ) |> map_to((
-            getmarginal(connected_properties(varinterface), IncludeAll()),
-            ManyOf(map((shape) -> getmarginal(connected_properties(shape), IncludeAll()), asinterfaces)),
-            ManyOf(map((rate) -> getmarginal(connected_properties(rate), IncludeAll()), bsinterfaces))
+            getmarginal(getvariable(varinterface), IncludeAll()),
+            ManyOf(map((shape) -> getmarginal(getvariable(shape), IncludeAll()), asinterfaces)),
+            ManyOf(map((rate) -> getmarginal(getvariable(rate), IncludeAll()), bsinterfaces))
         ))
 
     return marginal_names, marginals_observable
 end
 
-function get_marginals_observable(
-    factornode::GammaMixtureNode{N, F}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}
-) where {N, F <: GammaMixtureNodeFactorisation}
+function collect_latest_marginals(
+    ::GammaMixtureNodeFunctionalDependencies, ::GammaMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}
+) where {N}
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
     varinterface    = marginal_dependencies[3]
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
-    marginals_observable = combineLatestUpdates((getmarginal(connected_properties(outinterface), IncludeAll()), getmarginal(connected_properties(switchinterface), IncludeAll()), getmarginal(connected_properties(varinterface), IncludeAll())), PushNew())
+    marginals_observable = combineLatestUpdates((getmarginal(getvariable(outinterface), IncludeAll()), getmarginal(getvariable(switchinterface), IncludeAll()), getmarginal(getvariable(varinterface), IncludeAll())), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -142,18 +146,18 @@ end
     end
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N, GammaMixtureNodeFactorisation}, skip_strategy, scheduler) where {T <: CountingReal, N}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N}, meta, skip_strategy, scheduler) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(connected_properties(node.out), skip_strategy) |> schedule_on(scheduler),
-            getmarginal(connected_properties(node.switch), skip_strategy) |> schedule_on(scheduler),
-            ManyOfObservable(combineLatest(map((as) -> getmarginal(connected_properties(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew())),
-            ManyOfObservable(combineLatest(map((bs) -> getmarginal(connected_properties(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew()))
+            getmarginal(getvariable(node.out), skip_strategy) |> schedule_on(scheduler),
+            getmarginal(getvariable(node.switch), skip_strategy) |> schedule_on(scheduler),
+            ManyOfObservable(combineLatest(map((as) -> getmarginal(getvariable(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew())),
+            ManyOfObservable(combineLatest(map((bs) -> getmarginal(getvariable(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew()))
         ),
         PushNew()
     )
 
-    mapping = let fform = functionalform(node), meta = metadata(node)
+    mapping = let fform = functionalform(node), meta = meta
         (marginals) -> begin
             average_energy = score(AverageEnergy(), fform, Val{(:out, :switch, :a, :b)}(), marginals, meta)
 
@@ -167,64 +171,6 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixt
     end
 
     return stream |> map(T, mapping)
-end
-
-as_node_functional_form(::Type{<:GammaMixture}) = ValidNodeFunctionalForm()
-
-# Node creation related functions
-
-sdtype(::Type{<:GammaMixture}) = Stochastic()
-
-collect_factorisation(::Type{<:GammaMixture}, factorization) = GammaMixtureNodeFactorisation()
-
-function ReactiveMP.make_node(::Type{<:GammaMixture{N}}, options) where {N}
-    @assert N >= 2 "`GammaMixtureNode` requires at least two mixtures on input"
-    out    = NodeInterface(:out, Marginalisation())
-    switch = NodeInterface(:switch, Marginalisation())
-    as     = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:a, Marginalisation())), N)
-    bs     = ntuple((index) -> IndexedNodeInterface(index, NodeInterface(:b, Marginalisation())), N)
-
-    _factorisation = collect_factorisation(GammaMixture{N}, factorisation(options))
-    _meta = collect_meta(GammaMixture{N}, metadata(options))
-    _pipeline = collect_pipeline(GammaMixture{N}, getpipeline(options))
-
-    F = typeof(_factorisation)
-    M = typeof(_meta)
-    P = typeof(_pipeline)
-
-    return GammaMixtureNode{N, F, M, P}(_factorisation, out, switch, as, bs, _meta, _pipeline)
-end
-
-function ReactiveMP.make_node(
-    ::Type{<:GammaMixture}, options, out::AbstractVariable, switch::AbstractVariable, as::NTuple{N, AbstractVariable}, bs::NTuple{N, AbstractVariable}
-) where {N}
-    node = make_node(GammaMixture{N}, options)
-
-    # out
-    out_index = getlastindex(out)
-    connectvariable!(node.out, out, out_index)
-    setmessagein!(out, out_index, messageout(node.out))
-
-    # switch
-    switch_index = getlastindex(switch)
-    connectvariable!(node.switch, switch, switch_index)
-    setmessagein!(switch, switch_index, messageout(node.switch))
-
-    # as
-    foreach(zip(node.as, as)) do (ainterface, avar)
-        shape_index = getlastindex(avar)
-        connectvariable!(ainterface, avar, shape_index)
-        setmessagein!(avar, shape_index, messageout(ainterface))
-    end
-
-    # bs
-    foreach(zip(node.bs, bs)) do (binterface, bvar)
-        rate_index = getlastindex(bvar)
-        connectvariable!(binterface, bvar, rate_index)
-        setmessagein!(bvar, rate_index, messageout(binterface))
-    end
-
-    return node
 end
 
 ## Extra distribution for the Gamma Mixture
