@@ -228,15 +228,25 @@ end
 
 import .MacroHelpers
 
-# TODO (bvdmitri): remove
-function make_node end
-# TODO (bvdmitri): documentation
-function interfaces end
-interfaces(any) = nothing
-# TODO (bvdmitri): documentation
-function inputinterfaces end
-inputinterfaces(any) = nothing
-# TODO (bvdmitri): documentation
+"""
+    interfaces(fform)
+
+Returns a `Val` object with a tuple of interface names for a given factor node type.
+"""
+interfaces(fform) = nothing
+
+"""
+    inputinterfaces(fform)
+
+Similar to `interfaces`, but returns a `Val` object with a tuple of **input** interface names for a given factor node type.
+"""
+inputinterfaces(fform) = nothing
+
+"""
+    alias_interface(factor_type, index, name)
+
+Converts the given `name` to a correct interface name for a given factor node type and index.
+"""
 function alias_interface end
 
 node_expression_extract_interface(s::Symbol) = (s, [])
