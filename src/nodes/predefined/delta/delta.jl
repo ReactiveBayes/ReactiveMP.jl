@@ -29,7 +29,7 @@ getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
 import Base: map
 
 struct DeltaFn{F} end
-struct DeltaFnNode{F, P, N, S, L, M, E} <: AbstractFactorNode
+struct DeltaFnNode{F, P, N, S, L} <: AbstractFactorNode
     fn::F
 
     proxy::P
@@ -38,20 +38,16 @@ struct DeltaFnNode{F, P, N, S, L, M, E} <: AbstractFactorNode
 
     statics        :: S
     localmarginals :: L
-    metadata       :: M
-    pipeline       :: E
 end
 
 as_node_symbol(::Type{<:DeltaFn{F}}) where {F} = Symbol(replace(string(nameof(F)), "#" => ""))
 
 functionalform(factornode::DeltaFnNode{F}) where {F} = DeltaFn{F}
 sdtype(factornode::DeltaFnNode)                      = Deterministic()
-interfaces(factornode::DeltaFnNode)                  = (factornode.out, factornode.ins...)
+getinterfaces(factornode::DeltaFnNode)               = (factornode.out, factornode.ins...)
 factorisation(factornode::DeltaFnNode{F}) where {F}  = ntuple(identity, length(factornode.ins) + 1)
 localmarginals(factornode::DeltaFnNode)              = factornode.localmarginals.marginals
 localmarginalnames(factornode::DeltaFnNode)          = map(name, localmarginals(factornode))
-metadata(factornode::DeltaFnNode)                    = factornode.metadata
-getpipeline(factornode::DeltaFnNode)                 = factornode.pipeline
 
 collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
     "Delta node `$(as_node_symbol(D))` requires meta specification with the `where { meta = ... }` in the `@model` macro or with the separate `@meta` specification. See documentation for the `DeltaMeta`."
@@ -60,10 +56,6 @@ collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
 collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(; method = method, inverse = nothing)
 
-struct DeltaNodeFunctionalDependenciesPipeline end
-
-default_functional_dependencies_pipeline(::Type{DeltaFn}) = DeltaNodeFunctionalDependenciesPipeline()
-
 function nodefunction(factornode::DeltaFnNode)
     # `DeltaFnNode` `nodefunction` is `δ(y - f(ins...))`
     return let f = nodefunction(factornode, Val(:out))
@@ -71,9 +63,9 @@ function nodefunction(factornode::DeltaFnNode)
     end
 end
 
-nodefunction(factornode::DeltaFnNode, ::Val{:out})            = factornode.proxy
-nodefunction(factornode::DeltaFnNode, ::Val{:in})             = getinverse(metadata(factornode))
-nodefunction(factornode::DeltaFnNode, ::Val{:in}, k::Integer) = getinverse(metadata(factornode), k)
+nodefunction(factornode::DeltaFnNode, meta::DeltaMeta, ::Val{:out})            = factornode.proxy
+nodefunction(factornode::DeltaFnNode, meta::DeltaMeta, ::Val{:in})             = getinverse(meta)
+nodefunction(factornode::DeltaFnNode, meta::DeltaMeta, ::Val{:in}, k::Integer) = getinverse(meta, k)
 
 # Rules for `::Function` objects, but with the `DeltaFn` related meta and node should redirect to the `DeltaFn` rules
 function rule(::F, on, vconstraint, mnames, messages, qnames, marginals, meta::DeltaMeta, addons::Any, node::DeltaFnNode) where {F <: Function}
@@ -94,6 +86,7 @@ call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()
 function call_rule_make_node(::CallRuleNodeRequired, fformtype::Type{<:DeltaFn}, nodetype::F, meta::DeltaMeta) where {F}
     # This node is not initialized properly, but we do not expect rules to access internal uninitialized fields.
     # Doing so will most likely throw an error
+    error("TODO")
     return DeltaFnNode(nodetype, nodetype, NodeInterface(:out, Marginalisation()), (), (), nothing, collect_meta(DeltaFn{F}, meta), nothing)
 end
 
@@ -111,8 +104,14 @@ end
 import FixedArguments
 import FixedArguments: FixedArgument, FixedPosition
 
-function __make_delta_fn_node(fn::F, options, out::AbstractVariable, ins::Tuple) where {F <: Function}
-    out_interface = NodeInterface(:out, Marginalisation())
+function factornode(::UndefinedNodeFunctionalForm, fn::F, interfaces, factorization) where {F <: Function}
+    return create_generic_delta_node(fn, Tuple(interfaces))
+end
+
+function create_generic_delta_node(fn::F, interfaces::Tuple) where {F <: Function}
+    out, ins = interfaces[1], interfaces[2:end]
+
+    out_interface = NodeInterface(out...)
 
     # The inputs for the deterministic function are being splitted into two groups:
     # 1. Random variables and 2. Const/Data variables (static inputs)
@@ -120,17 +119,7 @@ function __make_delta_fn_node(fn::F, options, out::AbstractVariable, ins::Tuple)
 
     # We create interfaces only for random variables 
     # The static variables are being passed to the `FixedArguments.fix` function
-    ins_interface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(:in, Marginalisation())), length(randoms))
-
-    out_index = getlastindex(out)
-    connectvariable!(out_interface, out, out_index)
-    setmessagein!(out, out_index, messageout(out_interface))
-
-    foreach(zip(ins_interface, randoms)) do (in_interface, in_var)
-        in_index = getlastindex(in_var)
-        connectvariable!(in_interface, in_var, in_index)
-        setmessagein!(in_var, in_index, messageout(in_interface))
-    end
+    ins_interface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(randoms[i]...)), length(randoms))
 
     foreach(statics) do static
         setused!(FixedArguments.value(static))
@@ -139,15 +128,9 @@ function __make_delta_fn_node(fn::F, options, out::AbstractVariable, ins::Tuple)
     # The proxy is the actual node function, but with the static inputs already fixed at their respective position
     # We use the `__unpack_latest_static` function to get the latest value of the static variables
     proxy          = FixedArguments.fix(fn, __unpack_latest_static, statics)
-    localmarginals = FactorNodeLocalClusters((FactorNodeLocalMarginal(1, 1, :out), FactorNodeLocalMarginal(2, 2, :ins)))
-    meta           = collect_meta(DeltaFn{F}, metadata(options))
-    pipeline       = getpipeline(options)
+    localmarginals = FactorNodeLocalClusters((FactorNodeLocalMarginal(:out), FactorNodeLocalMarginal(:ins)), nothing)
 
-    if !isnothing(getinverse(meta)) && !isempty(statics)
-        error("The inverse function specification is not supported for the Delta node, which is connected to datavar/constvar edges.")
-    end
-
-    return DeltaFnNode(fn, proxy, out_interface, ins_interface, statics, localmarginals, meta, collect_pipeline(DeltaFn, pipeline))
+    return DeltaFnNode(fn, proxy, out_interface, ins_interface, statics, localmarginals)
 end
 
 # This function takes the inputs of the deterministic nodes and sorts them into two 
@@ -160,12 +143,12 @@ __split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple{}) where {N} 
 __split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple) where {N} = __split_static_inputs(Val(N), randoms, statics, first(remaining), Base.tail(remaining))
 
 # If the current input is a random variable, we add it to the `randoms` tuple
-function __split_static_inputs(::Val{N}, randoms, statics, current::RandomVariable, remaining::Tuple) where {N}
+function __split_static_inputs(::Val{N}, randoms, statics, current::Tuple{Symbol, RandomVariable}, remaining::Tuple) where {N}
     return __split_static_inputs(Val(N + 1), (randoms..., current), statics, remaining)
 end
 
 # If the current input is a const/data variable, we add it to the `statics` tuple with its respective position
-function __split_static_inputs(::Val{N}, randoms, statics, current::Union{ConstVariable, DataVariable}, remaining::Tuple) where {N}
+function __split_static_inputs(::Val{N}, randoms, statics, current::Union{Tuple{Symbol, ConstVariable}, Tuple{Symbol, DataVariable}}, remaining::Tuple) where {N}
     return __split_static_inputs(Val(N + 1), randoms, (statics..., FixedArgument(FixedPosition(N), current)), remaining)
 end
 
@@ -183,7 +166,6 @@ end
 
 # By default all `meta` objects fallback to the `DeltaFnDefaultRuleLayout`
 # We, however, allow for specific approximation methods to override the default `DeltaFn` rule layout for better efficiency
-deltafn_rule_layout(factornode::DeltaFnNode)                  = deltafn_rule_layout(factornode, metadata(factornode))
 deltafn_rule_layout(factornode::DeltaFnNode, meta::DeltaMeta) = deltafn_rule_layout(factornode, getmethod(meta), getinverse(meta))
 
 abstract type AbstractDeltaNodeDependenciesLayout end
@@ -203,40 +185,43 @@ function deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Any)
 end
 
 function activate!(factornode::DeltaFnNode, options)
-    # `DeltaFn` node may change rule arguments layout depending on the `meta`
-    # This feature is similar to `functional_dependencies` for a regular `FactorNode` implementation
-    return activate!(factornode, deltafn_rule_layout(factornode), options)
-end
+    meta = collect_meta(functionalform(factornode), getmetadata(options))
+    pipeline = collect_pipeline(functionalform(factornode), getpipeline(options))
 
-# DeltaFn is very special, so it has a very special `activate!` function
-function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependenciesLayout, options)
-    foreach(interfaces(factornode)) do interface
-        (connected_properties(interface) !== nothing) || error("Empty variable on interface $(interface) of node $(factornode)")
+    if !isnothing(getinverse(meta)) && !isempty(factornode.statics)
+        error("The inverse function specification is not supported for the Delta node, which is connected to datavar/constvar edges.")
     end
 
-    pipeline_stages = get_pipeline_stages(options)
-    scheduler       = getscheduler(options)
-    addons          = getaddons(options)
-
-    # First we declare local marginal for `out` edge
-    deltafn_apply_layout(layout, Val(:q_out), factornode, pipeline_stages, scheduler, addons)
-
-    # Second we declare how to compute a joint marginal over all inbound edges
-    deltafn_apply_layout(layout, Val(:q_ins), factornode, pipeline_stages, scheduler, addons)
-
-    # Second we declare message passing logic for out interface
-    deltafn_apply_layout(layout, Val(:m_out), factornode, pipeline_stages, scheduler, addons)
-
-    # At last we declare message passing logic for input interfaces
-    deltafn_apply_layout(layout, Val(:m_in), factornode, pipeline_stages, scheduler, addons)
+    # `DeltaFn` node may change rule arguments layout depending on the `meta`
+    # This feature is similar to `functional_dependencies` for a regular `FactorNode` implementation
+    return activate!(factornode, deltafn_rule_layout(factornode, meta), meta, pipeline, options)
 end
 
-# DeltaFn has a bit a non-standard interface layout so it has a specialised `score` function too
+function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependenciesLayout, meta, pipeline, options)
+    foreach(getinterfaces(factornode)) do interface
+        (!isnothing(getvariable(interface))) || error("Empty variable on interface $(interface) of node $(factornode)")
+    end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, skip_strategy, scheduler) where {T <: CountingReal}
+    scheduler = getscheduler(options)
+    addons    = getaddons(options)
+
+    # First we declare local marginal for `out` edge
+    deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons)
+
+    # Second we declare how to compute a joint marginal over all inbound edges
+    deltafn_apply_layout(layout, Val(:q_ins), factornode, meta, pipeline, scheduler, addons)
+
+    # Second we declare message passing logic for out interface
+    deltafn_apply_layout(layout, Val(:m_out), factornode, meta, pipeline, scheduler, addons)
+
+    # At last we declare message passing logic for input interfaces
+    deltafn_apply_layout(layout, Val(:m_in), factornode, meta, pipeline, scheduler, addons)
+end
+
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, meta, skip_strategy, scheduler) where {T <: CountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
-    qinsmarginal = apply_skip_filter(getstream(node.localmarginals.marginals[2]), skip_strategy)
+    qinsmarginal = apply_skip_filter(getmarginal(node.localmarginals.marginals[2]), skip_strategy)
 
     stream  = qinsmarginal |> schedule_on(scheduler)
     mapping = (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))

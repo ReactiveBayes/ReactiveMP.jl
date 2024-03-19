@@ -4,7 +4,7 @@
     q_sample_friendly = sampling_optimized(q_ins[1])
     rng               = something(method.rng, Random.default_rng())
     samples           = map(x -> rand(rng, q_sample_friendly), 1:(method.n_samples))
-    q_out             = map(getnodefn(Val(:out)), samples)
+    q_out             = map(getnodefn(meta, Val(:out)), samples)
     return TerminalProdArgument(SampleList(q_out))
 end
 
@@ -14,7 +14,7 @@ end
     rng = something(method.rng, Random.default_rng())
     q_ins_samples = map(marginal -> rand(rng, marginal, method.n_samples), q_ins_sample_friendly)
     samples_linear = map(cvilinearize, q_ins_samples)
-    g = getnodefn(Val(:out))
+    g = getnodefn(meta, Val(:out))
     samples = map(x -> g(x...), zip(samples_linear...))
     return TerminalProdArgument(SampleList(samples))
 end

@@ -36,18 +36,18 @@ function with_statics(factornode::DeltaFnNode, statics::Tuple{}, stream::T) wher
 end
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons)
     let out = factornode.out, localmarginal = factornode.localmarginals.marginals[1]
         # We simply subscribe on the marginal of the connected variable on `out` edge
-        setstream!(localmarginal, getmarginal(connected_properties(out), IncludeAll()))
+        setmarginal!(localmarginal, getmarginal(getvariable(out), IncludeAll()))
     end
 end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons)
     let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
         cmarginal = MarginalObservable()
-        setstream!(localmarginal, cmarginal)
+        setmarginal!(localmarginal, cmarginal)
 
         # By default to compute `q_ins` we need messages both from `:out` and `:ins`
         msgs_names      = Val{(:out, :ins)}()
@@ -59,7 +59,6 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
 
         fform = functionalform(factornode)
         vtag  = Val{:ins}()
-        meta  = metadata(factornode)
 
         mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
         marginalout = with_statics(factornode, combineLatest((msgs_observable, marginals_observable), PushNew())) |> discontinue() |> map(Marginal, mapping)
@@ -69,10 +68,8 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
 end
 
 # This function declares how to compute `m_out` 
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons)
     let out = factornode.out, ins = factornode.ins
-        node_pipeline              = getpipeline(factornode)
-        node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
         # By default we simply request all inbound messages from `ins` edges
         msgs_names      = Val{(:ins,)}()
@@ -84,8 +81,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
 
         fform       = functionalform(factornode)
         vtag        = Val{:out}()
-        vconstraint = local_constraint(out)
-        meta        = metadata(factornode)
+        vconstraint = Marginalisation()
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
@@ -96,7 +92,6 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
-        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(out), vmessageout)
@@ -104,9 +99,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
 end
 
 # This function declares how to compute `m_in` for each `k` 
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
-    node_pipeline              = getpipeline(factornode)
-    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons)
 
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
@@ -114,12 +107,11 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
         msgs_observable = combineLatestUpdates((messagein(interface),), PushNew())
 
         marginal_names       = Val{(:ins,)}()
-        marginals_observable = combineLatestUpdates((getstream(factornode.localmarginals.marginals[2]),), PushNew())
+        marginals_observable = combineLatestUpdates((getmarginal(factornode.localmarginals.marginals[2]),), PushNew())
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)
-        vconstraint = local_constraint(interface)
-        meta        = metadata(factornode)
+        vconstraint = Marginalisation()
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
@@ -130,7 +122,6 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
-        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)
@@ -155,24 +146,21 @@ See also: [`ReactiveMP.DeltaFnDefaultRuleLayout`](@ref)
 """
 struct DeltaFnDefaultKnownInverseRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, pipeline_stages, scheduler, addons)
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons)
+    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons)
 end
 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), factornode, pipeline_stages, scheduler, addons)
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons)
+    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), factornode, meta, pipeline_stages, scheduler, addons)
 end
 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, pipeline_stages, scheduler, addons)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_out), factornode, pipeline_stages, scheduler, addons)
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons)
+    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_out), factornode, meta, pipeline_stages, scheduler, addons)
 end
 
 # This function declares how to compute `m_in` 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, pipeline_stages, scheduler, addons) where {F}
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, meta, pipeline_stages, scheduler, addons) where {F}
     N = length(factornode.ins)
-
-    node_pipeline              = getpipeline(factornode)
-    node_pipeline_extra_stages = get_pipeline_stages(node_pipeline)
 
     # For each outbound message from `in_k` edge we need an inbound messages from all OTHER! `in_*` edges and inbound message on `m_out`
     foreach(enumerate(factornode.ins)) do (index, interface)
@@ -193,12 +181,10 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_i
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)
-        vconstraint = local_constraint(interface)
-        meta        = metadata(factornode)
+        vconstraint = Marginalisation()
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        # TODO add addons
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode)
             (dependencies) -> VariationalMessage(dependencies[1], dependencies[2], messagemap)
         end
@@ -206,7 +192,6 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_i
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
         vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
-        vmessageout = apply_pipeline_stage(node_pipeline_extra_stages, factornode, vtag, vmessageout)
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)

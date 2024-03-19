@@ -8,7 +8,7 @@
     sizes = size.(m_ins)
 
     # Calculate local linear components
-    (A, b) = approximate(getmethod(meta), getnodefn(Val(:out)), μs_fw_in)
+    (A, b) = approximate(getmethod(meta), getnodefn(meta, Val(:out)), μs_fw_in)
 
     # Invoke the "concatenated" messages in the local linearization
     joint              = convert(JointNormal, μs_fw_in, Σs_fw_in)

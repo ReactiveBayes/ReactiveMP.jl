@@ -13,11 +13,11 @@ end
 
 # known inverse, single input
 @rule DeltaFn((:in, _), Marginalisation) (m_out::NormalDistributionsFamily, m_ins::Nothing, meta::DeltaMeta{M, I}) where {M <: Unscented, I <: Function} = begin
-    return approximate(getmethod(meta), getnodefn(Val(:in)), (m_out,))
+    return approximate(getmethod(meta), getnodefn(meta, Val(:in)), (m_out,))
 end
 
 @rule DeltaFn((:in, k), Marginalisation) (
     m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M, I}
 ) where {N, M <: Unscented, L, I <: NTuple{L, Function}} = begin
-    return approximate(getmethod(meta), getnodefn(Val(:in), k), (m_out, m_ins...))
+    return approximate(getmethod(meta), getnodefn(meta, Val(:in), k), (m_out, m_ins...))
 end
