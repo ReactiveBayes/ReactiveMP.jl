@@ -174,6 +174,12 @@ struct FactorNode{F, I, C} <: AbstractFactorNode
 end
 
 function factornode(fform::F, interfaces::I, factorization) where {F, I}
+    return factornode(as_node_functional_form(fform), fform, interfaces, factorization)
+end
+
+# `ValidNodeFunctionalForm` are generally the nodes that are defined with the `@node` macro
+# The `UndefinedNodeFunctionalForm` nodes can be created as well, but only if the `fform` is a `Function` (see `predefined/delta.jl`)
+function factornode(::ValidNodeFunctionalForm, fform::F, interfaces::I, factorization) where {F, I}
     processed_interfaces = __prepare_interfaces_generic(fform, interfaces)
     localclusters = FactorNodeLocalClusters(processed_interfaces, collect_factorisation(fform, factorization))
     return FactorNode(fform, processed_interfaces, localclusters)
