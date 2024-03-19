@@ -4,7 +4,7 @@ import Distributions: Distribution
 import BayesBase: AbstractContinuousGenericLogPdf
 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVI} = begin
-    g = getnodefn(Val(:out))
+    g = getnodefn(meta, Val(:out))
 
     # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
     F = promote_variate_type(variate_form(typeof(first(m_ins))), AbstractContinuousGenericLogPdf)
