@@ -144,11 +144,7 @@ Returns default meta object for a given node type.
 
 See also: [`collect_meta`](@ref), [`FactorNode`](@ref)
 """
-function default_meta end
-
-default_meta(any) = nothing
-
-## NodeInterface
+default_meta(fform) = nothing
 
 struct Marginalisation end
 struct MomentMatching end
