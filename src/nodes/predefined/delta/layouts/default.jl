@@ -63,7 +63,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
         mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
         marginalout = with_statics(factornode, combineLatest((msgs_observable, marginals_observable), PushNew())) |> discontinue() |> map(Marginal, mapping)
 
-        connect!(cmarginal, marginalout) # MarginalObservable has RecentSubject by default, there is no need to share_recent() here
+        connect!(cmarginal, marginalout)
     end
 end
 
