@@ -58,6 +58,10 @@ getaddons(marginal::Marginal) = marginal.addons
 getdata(marginals::NTuple{N, <:Marginal}) where {N} = map(getdata, marginals)
 getdata(marginals::AbstractArray{<:Marginal})       = map(getdata, marginals)
 
+ispointmass(marginal::Marginal) = ispointmass(marginal, getdata(marginal))
+ispointmass(marginal::Marginal, data::PointMass) = true
+ispointmass(marginal::Marginal, data) = false
+
 ## Statistics 
 
 Distributions.pdf(marginal::Marginal, x)    = Distributions.pdf(getdata(marginal), x)

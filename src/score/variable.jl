@@ -6,10 +6,10 @@ function score(::Type{T}, ::VariableBoundEntropy, variable::RandomVariable, skip
     mapping = let d = degree(variable)
         (marginal) -> begin
             # The entropy of point masses is not finite
-            entropy = convert(T, score(DifferentialEntropy(), marginal))
             # In this case we treat them as clamped variables, such that we should multiply 
             # their influence on `d` instead of `d - 1`
-            scaling = isfinite(entropy) ? (d - 1) : d
+            scaling = !ispointmass(marginal) ? (d - 1) : d
+            entropy = convert(T, score(DifferentialEntropy(), marginal))
             return scaling * entropy
         end
     end
