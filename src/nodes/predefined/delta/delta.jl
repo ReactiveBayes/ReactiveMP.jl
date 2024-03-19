@@ -121,10 +121,6 @@ function create_generic_delta_node(fn::F, interfaces::Tuple) where {F <: Functio
     # The static variables are being passed to the `FixedArguments.fix` function
     ins_interface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(randoms[i]...)), length(randoms))
 
-    foreach(statics) do static
-        setused!(FixedArguments.value(static))
-    end
-
     # The proxy is the actual node function, but with the static inputs already fixed at their respective position
     # We use the `__unpack_latest_static` function to get the latest value of the static variables
     proxy          = FixedArguments.fix(fn, __unpack_latest_static, statics)
@@ -149,7 +145,8 @@ end
 
 # If the current input is a const/data variable, we add it to the `statics` tuple with its respective position
 function __split_static_inputs(::Val{N}, randoms, statics, current::Union{Tuple{Symbol, ConstVariable}, Tuple{Symbol, DataVariable}}, remaining::Tuple) where {N}
-    return __split_static_inputs(Val(N + 1), randoms, (statics..., FixedArgument(FixedPosition(N), current)), remaining)
+    # `current[2]` because we are not interested in the `name` of the variable at a later point, but only in the variable itself
+    return __split_static_inputs(Val(N + 1), randoms, (statics..., FixedArgument(FixedPosition(N), current[2])), remaining)
 end
 
 # This function is used to unpack the latest value of the static variables

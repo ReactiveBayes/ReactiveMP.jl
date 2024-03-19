@@ -3,6 +3,7 @@ export constvar, ConstVariable
 mutable struct ConstVariable <: AbstractVariable
     marginal   :: MarginalObservable
     messageout :: MessageObservable
+    constant   :: Any
     nconnected :: Int
 end
 
@@ -11,12 +12,13 @@ function ConstVariable(constant)
     connect!(marginal, of(Marginal(PointMass(constant), true, false, nothing)))
     messageout = MessageObservable(AbstractMessage)
     connect!(messageout, of(Message(PointMass(constant), true, false, nothing)))
-    return ConstVariable(marginal, messageout, 0)
+    return ConstVariable(marginal, messageout, constant, 0)
 end
 
 constvar(constant) = ConstVariable(constant)
 
 degree(constvar::ConstVariable) = constvar.nconnected
+getconst(constvar::ConstVariable) = constvar.constant
 
 israndom(::ConstVariable)                  = false
 israndom(::AbstractArray{<:ConstVariable}) = false
