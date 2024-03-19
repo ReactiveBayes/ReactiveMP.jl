@@ -58,7 +58,7 @@ collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta
 
 function nodefunction(factornode::DeltaFnNode)
     # `DeltaFnNode` `nodefunction` is `δ(y - f(ins...))`
-    return let f = nodefunction(factornode, Val(:out))
+    return let f = factornode.proxy
         (y, ins...) -> ((y - f(ins...)) ≈ 0) ? 1 : 0
     end
 end
