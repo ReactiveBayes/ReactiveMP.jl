@@ -231,14 +231,14 @@ import .MacroHelpers
 """
     interfaces(fform)
 
-Returns a `Val` object with a tuple of interface names for a given factor node type.
+Returns a `Val` object with a tuple of interface names for a given factor node type. Returns `nothing` for unknown functional form.
 """
 interfaces(fform) = nothing
 
 """
     inputinterfaces(fform)
 
-Similar to `interfaces`, but returns a `Val` object with a tuple of **input** interface names for a given factor node type.
+Similar to `interfaces`, but returns a `Val` object with a tuple of **input** interface names for a given factor node type. Returns `nothing` for unknown functional form.
 """
 inputinterfaces(fform) = nothing
 
