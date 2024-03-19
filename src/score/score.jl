@@ -37,7 +37,7 @@ end
 
 ## Kl KlDivergence
 
-score(::KLDivergence, marginal::Marginal{<:Distribution}, p::Distribution) = Distributions.kldivergence(getdata(marginal), p)
+score(::KLDivergence, marginal::Marginal, p::Distribution) = Distributions.kldivergence(getdata(marginal), p)
 
 ## Average enery macro helper
 
