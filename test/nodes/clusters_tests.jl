@@ -143,7 +143,8 @@ end
         activate!,
         getlocalclusters,
         initialize_clusters!,
-        getdata
+        getdata,
+        default_functional_dependencies
 
     using BayesBase
 
@@ -169,6 +170,8 @@ end
         return PointMass(mean(m_a) + mean(m_b) - mean(q_out))
     end
 
+    dependencies = default_functional_dependencies(ArbitraryNode)
+
     @testset "Structured" begin
         for (vout, va, vb) in [rand(3) for _ in 1:5]
             out = constvar(vout)
@@ -181,7 +184,7 @@ end
 
             @test length(getmarginals(getlocalclusters(node))) === 1
 
-            initialize_clusters!(getlocalclusters(node), node, options)
+            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
 
             @test PointMass(vout + va + vb) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 1))))
         end
@@ -199,7 +202,7 @@ end
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
-            initialize_clusters!(getlocalclusters(node), node, options)
+            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
 
             @test PointMass(vout + va - vb) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 1))))
             @test getmarginal(getmarginal(getlocalclusters(node), 2)) === getmarginal(b, IncludeAll())
@@ -218,7 +221,7 @@ end
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
-            initialize_clusters!(getlocalclusters(node), node, options)
+            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
 
             @test PointMass(vout + vb - va) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 1))))
             @test getmarginal(getmarginal(getlocalclusters(node), 2)) === getmarginal(a, IncludeAll())
@@ -237,7 +240,7 @@ end
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
-            initialize_clusters!(getlocalclusters(node), node, options)
+            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
 
             @test PointMass(va + vb - vout) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 2))))
             @test getmarginal(getmarginal(getlocalclusters(node), 1)) === getmarginal(out, IncludeAll())

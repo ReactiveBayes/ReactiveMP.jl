@@ -3,20 +3,24 @@
 
     struct ArbitraryNodeType end
 
+    @node ArbitraryNodeType Stochastic [a, b, c]
+
     function foo end
 
+    @node typeof(foo) Deterministic [a, b, c]
+
+    a = randomvar()
+    b = datavar()
+    c = constvar(1)
+
     @testset "functionalform" begin
-        @test @inferred(functionalform(factornode(ArbitraryNodeType, (;)))) === ArbitraryNodeType
-        @test @inferred(functionalform(factornode(foo, (;)))) === typeof(foo)
+        @test @inferred(functionalform(factornode(ArbitraryNodeType, [(:a, a), (:b, b), (:c, c)], ((1, 2, 3),)))) === ArbitraryNodeType
+        @test @inferred(functionalform(factornode(foo, [(:a, a), (:b, b), (:c, c)], ((1, 2, 3),)))) === foo
     end
 
     @testset "getinterfaces" for fform in (ArbitraryNodeType, foo)
-        a = randomvar()
-        b = datavar()
-        c = constvar(1)
-
-        let node = factornode(fform, (a = a, b = b, c = c))
-            @test name.(getinterfaces(node)) == (:a, :b, :c)
+        let node = factornode(fform, [(:a, a), (:b, b), (:c, c)], ((1, 2, 3),))
+            @test name.(getinterfaces(node)) == [:a, :b, :c]
             @test name(getinterface(node, 1)) == :a
             @test name(getinterface(node, 2)) == :b
             @test name(getinterface(node, 3)) == :c
@@ -42,55 +46,50 @@ end
 end
 
 @testitem "@node macro" begin
-
-    # Testing Stochastic node specification
+    import ReactiveMP: alias_interface
 
     struct CustomStochasticNode end
 
-    @node CustomStochasticNode Stochastic [out, x, y, z] aliases = [(out, xx, yy, z)]
-
-    @test ReactiveMP.sdtype(CustomStochasticNode) === Stochastic()
-    @test ReactiveMP.correct_interfaces(CustomStochasticNode, (out = 1, xx = 2, yy = 3, z = 4)) === (out = 1, x = 2, y = 3, z = 4)
-
-    # Testing stochastic function node specification
+    @node CustomStochasticNode Stochastic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
 
     function customstochasticnode end
 
-    @node typeof(customstochasticnode) Stochastic [out, x, y, z] aliases = [(out, xx, yy, z)]
-
-    @test ReactiveMP.sdtype(customstochasticnode) === Stochastic()
-    @test ReactiveMP.correct_interfaces(customstochasticnode, (out = 1, xx = 2, yy = 3, z = 4)) === (out = 1, x = 2, y = 3, z = 4)
-
-    # Testing Deterministic node specification
+    @node typeof(customstochasticnode) Stochastic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
 
     struct CustomDeterministicNode end
 
     CustomDeterministicNode(x, y, z) = x + y + z
 
-    @node CustomDeterministicNode Deterministic [out, x, y, z] aliases = [(out, xx, yy, z)]
-
-    @test ReactiveMP.sdtype(CustomDeterministicNode) === Deterministic()
-    @test ReactiveMP.correct_interfaces(CustomDeterministicNode, (out = 1, xx = 2, yy = 3, z = 4)) === (out = 1, x = 2, y = 3, z = 4)
-
-    # Testing deterministic function node specification
+    @node CustomDeterministicNode Deterministic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
 
     function customdeterministicnode end
 
     customdeterministicnode(x, y, z) = x + y + z
 
-    @node typeof(customdeterministicnode) Deterministic [out, x, y, z] aliases = [(out, xx, yy, z)]
+    @node typeof(customdeterministicnode) Deterministic [out, (x, aliases = [xx]), (y, aliases = [yy]), z]
 
+    @test ReactiveMP.sdtype(CustomStochasticNode) === Stochastic()
+    @test ReactiveMP.sdtype(customstochasticnode) === Stochastic()
+    @test ReactiveMP.sdtype(CustomDeterministicNode) === Deterministic()
     @test ReactiveMP.sdtype(customdeterministicnode) === Deterministic()
-    @test ReactiveMP.correct_interfaces(customdeterministicnode, (out = 1, xx = 2, yy = 3, z = 4)) === (out = 1, x = 2, y = 3, z = 4)
 
-    # Testing expected exceptions
+    for node in [CustomStochasticNode, customstochasticnode, CustomDeterministicNode, customdeterministicnode]
+        @test alias_interface(node, 1, :out) === :out
+        @test alias_interface(node, 2, :x) === :x
+        @test alias_interface(node, 2, :xx) === :x
+        @test alias_interface(node, 3, :y) === :y
+        @test alias_interface(node, 3, :yy) === :y
+        @test_throws ErrorException alias_interface(node, 4, :out) === :x
+        @test_throws ErrorException alias_interface(node, 4, :x) === :x
+        @test_throws ErrorException alias_interface(node, 4, :y) === :x
+        @test_throws ErrorException alias_interface(node, 4, :zz)
+    end
 
     struct DummyStruct end
 
     @test_throws Exception eval(:(@node DummyStruct NotStochasticAndNotDeterministic [out, in, x]))
     @test_throws Exception eval(:(@node DummyStruct Stochastic [1, in, x]))
     @test_throws Exception eval(:(@node DummyStruct Stochastic [p, in, x] aliases = [([z], y, x)]))
-    @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [out]), in, x]))
     @test_throws Exception eval(:(@node DummyStruct Stochastic [(out, aliases = [1]), in, x]))
     @test_throws Exception eval(:(@node DummyStruct Stochastic []))
 end

@@ -62,10 +62,10 @@ struct DefaultFunctionalDependencies <: FunctionalDependencies end
 
 function collect_functional_dependencies end
 
-collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies_pipeline(fform)
+collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies(fform)
 collect_functional_dependencies(fform::F, something) where {F} = something
 
-default_functional_dependencies_pipeline(any) = DefaultFunctionalDependencies()
+default_functional_dependencies(any) = DefaultFunctionalDependencies()
 
 function functional_dependencies(::DefaultFunctionalDependencies, factornode, interface, iindex)
     clusters = getlocalclusters(factornode)

@@ -2,33 +2,42 @@
     include("../testutilities.jl")
     using BayesBase
 
-    import ReactiveMP: NodeInterface, collect_latest_messages, getdata, getrecent
+    import ReactiveMP: NodeInterface, collect_latest_messages, getdata, getrecent, default_functional_dependencies
 
-    @testset let (tag, stream) = collect_latest_messages(())
+    struct ArbitraryNode end
+
+    @node ArbitraryNode Stochastic [a, b, c]
+
+    a_v = ConstVariable(1)
+    b_v = ConstVariable(2)
+    c_v = ConstVariable(3)
+
+    node = factornode(ArbitraryNode, [(:a, a_v), (:b, b_v), (:c, c_v)], ((1, 2, 3),))
+    dependencies = default_functional_dependencies(ArbitraryNode)
+
+    a, b, c = getinterfaces(node)
+
+    @testset let (tag, stream) = collect_latest_messages(dependencies, node, ())
         @test tag === nothing
         @test check_stream_updated_once(stream) === nothing
     end
 
-    a = NodeInterface(:a, ConstVariable(1))
-    b = NodeInterface(:b, ConstVariable(2))
-    c = NodeInterface(:c, ConstVariable(3))
-
-    @testset let (tag, stream) = collect_latest_messages((a, b, c))
+    @testset let (tag, stream) = collect_latest_messages(dependencies, node, (a, b, c))
         @test tag === Val((:a, :b, :c))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(1), PointMass(2), PointMass(3))
     end
 
-    @testset let (tag, stream) = collect_latest_messages((a, b))
+    @testset let (tag, stream) = collect_latest_messages(dependencies, node, (a, b))
         @test tag === Val((:a, :b))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(1), PointMass(2))
     end
 
-    @testset let (tag, stream) = collect_latest_messages((b, c))
+    @testset let (tag, stream) = collect_latest_messages(dependencies, node, (b, c))
         @test tag === Val((:b, :c))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(2), PointMass(3))
     end
 
-    @testset let (tag, stream) = collect_latest_messages((a, c))
+    @testset let (tag, stream) = collect_latest_messages(dependencies, node, (a, c))
         @test tag === Val((:a, :c))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(1), PointMass(3))
     end
@@ -38,34 +47,42 @@ end
     include("../testutilities.jl")
     using BayesBase
 
-    import ReactiveMP: NodeInterface, FactorNodeLocalMarginal, getmarginal, collect_latest_marginals, getdata, getrecent
+    import ReactiveMP:
+        NodeInterface, FactorNodeLocalMarginal, getmarginal, collect_latest_marginals, getdata, getrecent, default_functional_dependencies, getlocalclusters, getmarginals
 
     struct ArbitraryNode end
 
-    a = FactorNodeLocalMarginal(:a)
-    b = FactorNodeLocalMarginal(:b)
-    c = FactorNodeLocalMarginal(:c)
+    @node ArbitraryNode Stochastic [a, b, c]
 
-    setmarginal!(a, getmarginal(ConstVariable(1), IncludeAll()))
-    setmarginal!(b, getmarginal(ConstVariable(2), IncludeAll()))
-    setmarginal!(c, getmarginal(ConstVariable(3), IncludeAll()))
+    a_v = ConstVariable(1)
+    b_v = ConstVariable(2)
+    c_v = ConstVariable(3)
 
-    @testset let (tag, stream) = collect_latest_marginals((a, b, c))
+    node = factornode(ArbitraryNode, [(:a, a_v), (:b, b_v), (:c, c_v)], ((1,), (2,), (3,)))
+    dependencies = default_functional_dependencies(ArbitraryNode)
+
+    a, b, c = getmarginals(getlocalclusters(node))
+
+    setmarginal!(a, getmarginal(a_v, IncludeAll()))
+    setmarginal!(b, getmarginal(b_v, IncludeAll()))
+    setmarginal!(c, getmarginal(c_v, IncludeAll()))
+
+    @testset let (tag, stream) = collect_latest_marginals(dependencies, node, (a, b, c))
         @test tag === Val((:a, :b, :c))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(1), PointMass(2), PointMass(3))
     end
 
-    @testset let (tag, stream) = collect_latest_marginals((a, b))
+    @testset let (tag, stream) = collect_latest_marginals(dependencies, node, (a, b))
         @test tag === Val((:a, :b))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(1), PointMass(2))
     end
 
-    @testset let (tag, stream) = collect_latest_marginals((b, c))
+    @testset let (tag, stream) = collect_latest_marginals(dependencies, node, (b, c))
         @test tag === Val((:b, :c))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(2), PointMass(3))
     end
 
-    @testset let (tag, stream) = collect_latest_marginals((a, c))
+    @testset let (tag, stream) = collect_latest_marginals(dependencies, node, (a, c))
         @test tag === Val((:a, :c))
         @test getdata.(getrecent.(check_stream_updated_once(stream))) === (PointMass(1), PointMass(3))
     end
@@ -206,7 +223,6 @@ end
             @test interfaces[2] ∈ msg_dependencies_for_c
             @test interfaces[3] ∉ msg_dependencies_for_c
             @test isempty(marginal_dependencies_for_c)
-
         end
 
         @testset "RequireMessageFunctionalDependencies(b = vague(NormalMeanPrecision))" begin
@@ -237,7 +253,6 @@ end
                 @test interfaces[2] ∈ msg_dependencies_for_c
                 @test interfaces[3] ∉ msg_dependencies_for_c
                 @test isempty(marginal_dependencies_for_c)
-
             end
         end
     end

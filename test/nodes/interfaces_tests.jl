@@ -45,19 +45,19 @@ end
 @testitem "NodeInterface israndom/isdata/isconst" begin
     import ReactiveMP: AbstractVariable, NodeInterface, israndom, isdata, isconst
 
-    let randomvar = RandomVariable()
+    let randomvar = randomvar()
         @test israndom(NodeInterface(:random, randomvar))
         @test !isdata(NodeInterface(:random, randomvar))
         @test !isconst(NodeInterface(:random, randomvar))
     end
 
-    let datavar = DataVariable()
+    let datavar = datavar()
         @test !israndom(NodeInterface(:random, datavar))
         @test isdata(NodeInterface(:random, datavar))
         @test !isconst(NodeInterface(:random, datavar))
     end
 
-    let constvar = ConstVariable(1)
+    let constvar = constvar(1)
         @test !israndom(NodeInterface(:random, constvar))
         @test !isdata(NodeInterface(:random, constvar))
         @test isconst(NodeInterface(:random, constvar))
