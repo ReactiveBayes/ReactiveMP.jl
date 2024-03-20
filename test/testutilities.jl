@@ -25,7 +25,7 @@ end
 
 function check_stream_not_updated(f, stream)
     subscription = subscribe!(stream, (new_value) -> begin 
-        error("Stream was updated. It should not be updated")
+        error("Stream was updated. It should not be updated. The value was `$(new_value)`")
     end)
     f()
     unsubscribe!(subscription)

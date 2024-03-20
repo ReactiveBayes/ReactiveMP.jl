@@ -167,69 +167,68 @@ function functional_dependencies(dependencies::RequireMessageFunctionalDependenc
 end
 
 """
-    RequireMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)
+    RequireMarginalFunctionalDependencies(specifications::NamedTuple)
+    RequireMarginalFunctionalDependencies(; specifications...)
 
-Similar to `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the posterior marginal on that edge.
+The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the marginal on the this edge.
 
-# Arguments
-
-- `indices`::Tuple, tuple of integers, which indicates what edges should require their own marginals
-- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial marginal for edges in `indices`
-
-Note: `start_with` uses the `setmarginal!` mechanism, hence it can be visible to other listeners on the same edge. Explicit calls to `setmarginal!` overwrites whatever has been passed in `start_with`.
-
-`@model` macro accepts a simplified construction of this pipeline:
+The specification parameter is a named tuple that contains the names of the edges and their initial marginals. 
+When a name is present in the named tuple, that indicates that the computation of the outbound message on the same edge must use the marginal on this edge.
+If `nothing` is passed as a value in the named tuple, the initial marginal is not set. Note that the construction allows passing keyword argument to the constructor 
+instead of using `NamedTuple` directly.
 
 ```julia
-@model function some_model()
-    # ...
-    y ~ NormalMeanVariance(x, τ) where {
-        pipeline = RequireMarginal(x = vague(NormalMeanPrecision),     τ)
-                                   # ^^^                               ^^^
-                                   # request 'marginal' for 'x'        we may do the same for 'τ',
-                                   # and initialise with `vague(...)`  but here we skip initialisation
-    }
-    # ...
-end
+RequireMarginalFunctionalDependencies(μ = vague(NormalMeanPrecision),     τ = nothing)
+                                     # ^^^                               ^^^
+                                     # request 'marginal' for 'x'        we may do the same for 'τ',
+                                     # and initialise with `vague(...)`  but here we skip initialisation
 ```
-
-Note: The simplified construction in `@model` macro syntax is only available in `GraphPPL.jl` of version `>2.2.0`.
 
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
-struct RequireMarginalFunctionalDependencies{I, S}
-    indices    :: I
-    start_with :: S
+struct RequireMarginalFunctionalDependencies{S <: NamedTuple}
+    specification::S
 end
 
-function message_dependencies(::RequireMarginalFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-end
+RequireMarginalFunctionalDependencies(; kwargs...) = RequireMarginalFunctionalDependencies((; kwargs...))
 
-function marginal_dependencies(dependencies::RequireMarginalFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
-    depindex = findfirst((i) -> i === iindex, dependencies.indices)
+function functional_dependencies(dependencies::RequireMarginalFunctionalDependencies, factornode, interface, iindex)
+    specification = dependencies.specification
 
-    if depindex !== nothing
+    clusters = getlocalclusters(factornode)
+    # Find the index of the cluster for the current interface
+    cindex = clusterindex(clusters, iindex)
+    # Fetch the actual cluster
+    cluster = getfactorization(clusters, cindex)
+    # Remove current edge index from the list of dependencies in the given cluster
+    vdependencies = filter(ci -> ci !== iindex, cluster)
+    # Map interface indices to the actual interfaces to get the messages dependencies
+    message_dependencies = Iterators.map(inds -> map(i -> getinterface(factornode, i), inds), vdependencies)
+
+    # For the marginal dependencies we need to skip the current cluster
+    marginal_dependencies_default = skipindex(getmarginals(clusters), cindex)
+
+    marginal_dependencies = if name(interface) ∈ keys(specification)
         # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
-        extra_localmarginal = FactorNodeLocalMarginal(-1, iindex, name(nodeinterfaces[iindex]))
-        vmarginal           = getmarginal(connected_properties(nodeinterfaces[iindex]), IncludeAll())
-        start_with          = dependencies.start_with[depindex]
-        # Initialise now, if marginal has not been initialised before and `start_with` element is not empty
-        if isnothing(getrecent(vmarginal)) && !isnothing(start_with)
-            setmarginal!(vmarginal, start_with)
-        end
-        setstream!(extra_localmarginal, vmarginal)
-        default = marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-        # Find insertion position (probably might be implemented more efficiently)
-        insertafter = sum(first(el) < iindex ? 1 : 0 for el in default; init = 0)
-        return TupleTools.insertafter(default, insertafter, (extra_localmarginal,))
-    else
-        return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    end
-end
+        extra_localmarginal = FactorNodeLocalMarginal(name(interface))
+        # Create a stream of marginals and connect it with the streams of marginals of the actual variable
+        extra_stream = MarginalObservable()
+        connect!(extra_stream, getmarginal(getvariable(interface), IncludeAll()))
+        setmarginal!(extra_localmarginal, extra_stream)
 
-### Everything
+        initialmarginals = specification[name(interface)]
+        if !isnothing(initialmarginals)
+            setmarginal!(extra_stream, initialmarginals)
+        end
+
+        insertafter = sum(first(el) < iindex ? 1 : 0 for el in marginal_dependencies_default; init = 0)
+        TupleTools.insertafter(marginal_dependencies_default, insertafter, (extra_localmarginal,))
+    else
+        marginal_dependencies_default
+    end
+
+    return message_dependencies, marginal_dependencies
+end
 
 """
    RequireEverythingFunctionalDependencies
@@ -241,12 +240,15 @@ See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDep
 """
 struct RequireEverythingFunctionalDependencies end
 
-function ReactiveMP.message_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    # Return all node interfaces including the edge we are trying to compute a message on
-    return nodeinterfaces
-end
+function functional_dependencies(::RequireEverythingFunctionalDependencies, factornode, interface, iindex)
+    clusters = getlocalclusters(factornode)
+    # Find the index of the cluster for the current interface
+    cindex = clusterindex(clusters, iindex)
+    # Fetch the actual cluster
+    cluster = getfactorization(clusters, cindex)
 
-function ReactiveMP.marginal_dependencies(::RequireEverythingFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    # Returns only local marginals based on local q factorisation, it does not return all possible combinations of all joint posterior marginals
-    return nodelocalmarginals
+    message_dependencies = Iterators.map(inds -> map(i -> getinterface(factornode, i), inds), cluster)
+    marginal_dependencies = getmarginals(clusters)
+
+    return message_dependencies, marginal_dependencies
 end
