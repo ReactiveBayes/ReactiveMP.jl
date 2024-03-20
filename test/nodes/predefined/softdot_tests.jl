@@ -1,21 +1,7 @@
 
 @testitem "SoftDotNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
-
-    import ReactiveMP: make_node
-
-    @testset "Creation" begin
-        node = make_node(SoftDot)
-        @test functionalform(node) === SoftDot
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:y, :θ, :x, :γ)
-        @test factorisation(node) === ((1, 2, 3, 4),)
-        @test metadata(node) === nothing
-
-        node = make_node(SoftDot, FactorNodeCreationOptions(nothing, 1, nothing))
-        @test metadata(node) === 1
-    end
-
+    
     @testset "AverageEnergy" begin
         begin
             q_y = NormalMeanVariance(3.0, 7.0)

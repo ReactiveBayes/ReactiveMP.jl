@@ -2,25 +2,7 @@
 @testitem "PoissonNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-    import ReactiveMP: make_node
-
-    @testset "Creation" begin
-        node = make_node(Poisson)
-
-        @test functionalform(node) === Poisson
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :l)
-        @test factorisation(node) === ((1, 2),)
-        @test localmarginalnames(node) === (:out_l,)
-        @test metadata(node) === nothing
-
-        node = make_node(Poisson, FactorNodeCreationOptions(nothing, 1, nothing))
-
-        @test metadata(node) === 1
-    end
-
     @testset "Average energy" begin
-        node = ReactiveMP.make_node(Poisson)
 
         for l in 1:20, k in 1:20
             @test isapprox(

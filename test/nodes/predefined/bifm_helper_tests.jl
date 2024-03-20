@@ -2,19 +2,7 @@
 @testitem "BIFMHelperNode" begin
     using ReactiveMP, Random, ExponentialFamily, BayesBase
 
-    import ReactiveMP: @test_rules
-
-    @testset "Creation" begin
-        node = make_node(BIFMHelper)
-
-        @test functionalform(node) === BIFMHelper
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :in)
-        @test factorisation(node) === ((1, 2),)
-    end
-
     @testset "Average energy" begin
-        node = make_node(BIFMHelper)
 
         @test score(
             AverageEnergy(),

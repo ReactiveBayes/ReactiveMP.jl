@@ -2,37 +2,6 @@
 @testitem "NormalMeanPrecisionNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-    import ReactiveMP: make_node
-
-    @testset "Creation" begin
-        node = make_node(NormalMeanPrecision)
-
-        @test functionalform(node) === NormalMeanPrecision
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :τ)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_μ_τ,)
-        @test metadata(node) === nothing
-
-        node = make_node(NormalMeanPrecision, FactorNodeCreationOptions(nothing, 1, nothing))
-
-        @test functionalform(node) === NormalMeanPrecision
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :τ)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_μ_τ,)
-        @test metadata(node) === 1
-
-        node = make_node(NormalMeanPrecision, FactorNodeCreationOptions(((1,), (2, 3)), nothing, nothing))
-
-        @test functionalform(node) === NormalMeanPrecision
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :τ)
-        @test factorisation(node) === ((1,), (2, 3))
-        @test localmarginalnames(node) === (:out, :μ_τ)
-        @test metadata(node) === nothing
-    end
-
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass(1.0)

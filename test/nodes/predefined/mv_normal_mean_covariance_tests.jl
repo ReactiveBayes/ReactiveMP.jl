@@ -2,35 +2,6 @@
 @testitem "MvNormalMeanCovarianceNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-    @testset "Creation" begin
-        node = make_node(MvNormalMeanCovariance)
-
-        @test functionalform(node) === MvNormalMeanCovariance
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :Σ)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_μ_Σ,)
-        @test metadata(node) === nothing
-
-        node = make_node(MvNormalMeanCovariance, FactorNodeCreationOptions(nothing, 1, nothing))
-
-        @test functionalform(node) === MvNormalMeanCovariance
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :Σ)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_μ_Σ,)
-        @test metadata(node) === 1
-
-        node = make_node(MvNormalMeanCovariance, FactorNodeCreationOptions(((1,), (2, 3)), nothing, nothing))
-
-        @test functionalform(node) === MvNormalMeanCovariance
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :Σ)
-        @test factorisation(node) === ((1,), (2, 3))
-        @test localmarginalnames(node) === (:out, :μ_Σ)
-        @test metadata(node) === nothing
-    end
-
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass([1.0, 1.0])

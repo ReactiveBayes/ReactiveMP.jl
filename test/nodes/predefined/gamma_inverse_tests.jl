@@ -2,21 +2,6 @@
 @testitem "InverseGammaNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-    import ReactiveMP: make_node
-
-    @testset "Creation" begin
-        node = make_node(GammaInverse)
-        @test functionalform(node) === GammaInverse
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :α, :θ)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_α_θ,)
-        @test metadata(node) === nothing
-
-        node = make_node(GammaInverse, FactorNodeCreationOptions(nothing, 1, nothing))
-        @test metadata(node) === 1
-    end
-
     # g(a,b,x) = -a * log(b) + loggamma(a) + (a+1) * (log(scale(x)) - digamma(shape(x))) + b/mean(x)
     @testset "AverageEnergy" begin
         begin

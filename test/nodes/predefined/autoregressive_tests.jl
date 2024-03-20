@@ -4,26 +4,6 @@
 
     import ReactiveMP: getvform, getorder, getstype
 
-    @testset "Creation" begin
-        node = make_node(AR, FactorNodeCreationOptions(nothing, ARMeta(Multivariate, 2, ARsafe()), nothing))
-        @test functionalform(node) === AR
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:y, :x, :θ, :γ)
-        @test factorisation(node) === ((1, 2, 3, 4),)
-        @test getvform(metadata(node)) == Multivariate
-        @test getorder(metadata(node)) == 2
-        @test getstype(metadata(node)) == ARsafe()
-
-        node = make_node(AR, FactorNodeCreationOptions(nothing, ARMeta(Univariate, 1, ARunsafe()), nothing))
-        @test functionalform(node) === AR
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:y, :x, :θ, :γ)
-        @test factorisation(node) === ((1, 2, 3, 4),)
-        @test getvform(metadata(node)) == Univariate
-        @test getorder(metadata(node)) == 1
-        @test getstype(metadata(node)) == ARunsafe()
-    end
-
     @testset "AverageEnergy" begin
         q_y = NormalMeanVariance(0.0, 1.0)
         q_x = NormalMeanVariance(0.0, 1.0)

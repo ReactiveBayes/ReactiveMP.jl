@@ -4,19 +4,6 @@
 
     import ReactiveMP: make_node
 
-    @testset "Creation" begin
-        node = make_node(HalfNormal)
-        @test functionalform(node) === HalfNormal
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :v)
-        @test factorisation(node) === ((1, 2),)
-        @test localmarginalnames(node) === (:out_v,)
-        @test metadata(node) === nothing
-
-        node = make_node(HalfNormal, FactorNodeCreationOptions(nothing, 1, nothing))
-        @test metadata(node) === 1
-    end
-
     @testset "AverageEnergy" begin
         begin
             q_out = GammaShapeRate(2.0, 1.0)

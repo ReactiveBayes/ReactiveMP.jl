@@ -1,20 +1,10 @@
-module ContinuousTransitionNodeTest
 
-using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
+@testitem "ContinuousTransitionNode" begin
+    using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
 
-import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
-
-@testset "ContinuousTransitionNode" begin
+    import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
     dy, dx = 2, 3
     meta = CTMeta(a -> reshape(a, dy, dx))
-    @testset "Creation" begin
-        node = make_node(ContinuousTransition, FactorNodeCreationOptions(nothing, meta, nothing))
-
-        @test functionalform(node) === ContinuousTransition
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:y, :x, :a, :W)
-        @test factorisation(node) === ((1, 2, 3, 4),)
-    end
 
     @testset "AverageEnergy" begin
         q_y_x = MvNormalMeanCovariance(zeros(5), diageye(5))
@@ -34,6 +24,4 @@ import ReactiveMP: getjacobians, gettransformation, ctcompanion_matrix
         @test size(A) == (dy, dx)
         @test A == gettransformation(meta)(m_a)
     end
-end
-
 end

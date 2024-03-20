@@ -2,23 +2,6 @@
 @testitem "InverseWishartNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions
 
-    import ReactiveMP: make_node
-
-    @testset "Creation" begin
-        node = make_node(InverseWishart)
-
-        @test functionalform(node) === InverseWishart
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :ν, :S)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_ν_S,)
-        @test metadata(node) === nothing
-
-        node = make_node(InverseWishart, FactorNodeCreationOptions(nothing, 1, nothing))
-
-        @test metadata(node) === 1
-    end
-
     @testset "AverageEnergy" begin
         begin
             q_out = InverseWishart(2.0, [2.0 0.0; 0.0 2.0])

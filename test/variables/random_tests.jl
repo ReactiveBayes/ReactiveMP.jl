@@ -36,7 +36,7 @@ end
     message_prod_fn = (msgs) -> error("Messages should not be called here")
     marginal_prod_fn = (msgs) -> mgl(sum(getdata.(msgs)))
     @testset for d in 1:5:100
-        @testset let var = randomvar(message_prod_fn, marginal_prod_fn)
+        @testset let var = randomvar()
             messageins = map(1:d) do _
                 s = Subject(AbstractMessage)
                 m, i = create_messagein!(var)
@@ -44,7 +44,7 @@ end
                 return s
             end
 
-            activate!(var, RandomVariableActivationOptions())
+            activate!(var, RandomVariableActivationOptions(AsapScheduler(), message_prod_fn, marginal_prod_fn))
 
             messages = map(msg, rand(d))
 
@@ -72,7 +72,7 @@ end
 
     # We start from `2` because `1` is not a valid degree for a random variable
     @testset for d in 2:5:100, k in 1:d
-        @testset let var = randomvar(message_prod_fn, marginal_prod_fn)
+        @testset let var = randomvar()
             messageins = map(1:d) do _
                 s = Subject(AbstractMessage)
                 m, i = create_messagein!(var)
@@ -80,7 +80,7 @@ end
                 return s
             end
 
-            activate!(var, RandomVariableActivationOptions())
+            activate!(var, RandomVariableActivationOptions(AsapScheduler(), message_prod_fn, marginal_prod_fn))
 
             messages = map(msg, rand(d))
 

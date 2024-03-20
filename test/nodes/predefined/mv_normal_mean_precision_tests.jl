@@ -4,35 +4,6 @@
 
     import ReactiveMP: make_node
 
-    @testset "Creation" begin
-        node = make_node(MvNormalMeanPrecision)
-
-        @test functionalform(node) === MvNormalMeanPrecision
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :Λ)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_μ_Λ,)
-        @test metadata(node) === nothing
-
-        node = make_node(MvNormalMeanPrecision, FactorNodeCreationOptions(nothing, 1, nothing))
-
-        @test functionalform(node) === MvNormalMeanPrecision
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :Λ)
-        @test factorisation(node) === ((1, 2, 3),)
-        @test localmarginalnames(node) === (:out_μ_Λ,)
-        @test metadata(node) === 1
-
-        node = make_node(MvNormalMeanPrecision, FactorNodeCreationOptions(((1,), (2, 3)), nothing, nothing))
-
-        @test functionalform(node) === MvNormalMeanPrecision
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :μ, :Λ)
-        @test factorisation(node) === ((1,), (2, 3))
-        @test localmarginalnames(node) === (:out, :μ_Λ)
-        @test metadata(node) === nothing
-    end
-
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass([1.0, 1.0])

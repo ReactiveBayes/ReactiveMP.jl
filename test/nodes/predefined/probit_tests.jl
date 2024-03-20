@@ -2,26 +2,7 @@
 @testitem "ProbitNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-    @testset "Creation" begin
-        node = make_node(Probit)
-
-        @test functionalform(node) === Probit
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :in)
-        @test factorisation(node) === ((1, 2),)
-        @test metadata(node) === ProbitMeta(32)
-
-        node = make_node(Probit, FactorNodeCreationOptions(nothing, 1, nothing))
-
-        @test functionalform(node) === Probit
-        @test sdtype(node) === Stochastic()
-        @test name.(interfaces(node)) === (:out, :in)
-        @test factorisation(node) === ((1, 2),)
-        @test metadata(node) === 1
-    end
-
     @testset "Average energy" begin
-        node = make_node(Probit)
 
         @test score(
             AverageEnergy(),
