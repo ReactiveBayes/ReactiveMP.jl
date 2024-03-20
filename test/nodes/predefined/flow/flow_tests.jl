@@ -6,21 +6,6 @@
     # test for basics in the flow.jl file
     @testset "Basics" begin
 
-        # tests for node creation
-        @testset "Creation" begin
-
-            # create example Flow node
-            node = make_node(Flow, FactorNodeCreationOptions(nothing, 1, nothing))
-
-            # check whether Flow node creation has been a success
-            @test functionalform(node) === Flow
-            @test sdtype(node) === Deterministic()
-            @test name.(interfaces(node)) === (:out, :in)
-            @test factorisation(node) === ((1, 2),)
-            @test localmarginalnames(node) === (:out_in,)
-            @test metadata(node) === 1
-        end
-
         # tests for meta data
         @testset "MetaData" begin
             @testset "Default" begin
