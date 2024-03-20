@@ -134,8 +134,8 @@ See also: [`default_meta`](@ref), [`FactorNode`](@ref)
 """
 function collect_meta end
 
-collect_meta(T::Any, ::Nothing) = default_meta(T)
-collect_meta(T::Any, meta::Any) = meta
+collect_meta(fform::F, ::Nothing) where {F} = default_meta(fform)
+collect_meta(fform::F, meta::Any) where {F} = meta
 
 """
     default_meta(nodetype)

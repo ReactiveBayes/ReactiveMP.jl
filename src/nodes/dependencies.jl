@@ -1,3 +1,4 @@
+export DefaultFunctionalDependencies, RequireMessageFunctionalDependencies, RequireMarginalFunctionalDependencies, RequireEverythingFunctionalDependencies
 
 collect_latest_messages(dependencies, factornode, collection) = __collect_latest_updates(messagein, collection)
 collect_latest_marginals(dependencies, factornode, collection) = __collect_latest_updates(getmarginal, collection)
@@ -61,8 +62,10 @@ struct DefaultFunctionalDependencies <: FunctionalDependencies end
 
 function collect_functional_dependencies end
 
-collect_functional_dependencies(::Any, ::Nothing) = DefaultFunctionalDependencies()
-collect_functional_dependencies(::Any, something) = something
+collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies_pipeline(fform)
+collect_functional_dependencies(fform::F, something) where {F} = something
+
+default_functional_dependencies_pipeline(any) = DefaultFunctionalDependencies()
 
 function functional_dependencies(::DefaultFunctionalDependencies, factornode, interface, iindex)
     clusters = getlocalclusters(factornode)
@@ -81,46 +84,31 @@ function functional_dependencies(::DefaultFunctionalDependencies, factornode, in
     return message_dependencies, marginal_dependencies
 end
 
-### With inbound messages
-## old code that needs to be fixed 
-
 """
-    RequireMessageFunctionalDependencies(indices::Tuple, start_with::Tuple)
+    RequireMessageFunctionalDependencies(specifications::NamedTuple)
+    RequireMessageFunctionalDependencies(; specifications...)
 
 The same as `DefaultFunctionalDependencies`, but in order to compute a message out of some edge also requires the inbound message on the this edge.
 
-# Arguments
-
-- `indices`::Tuple, tuple of integers, which indicates what edges should require inbound messages
-- `start_with::Tuple`, tuple of `nothing` or `<:Distribution`, which specifies the initial inbound messages for edges in `indices`
-
-Note: `start_with` uses `setmessage!` mechanism, hence, it can be visible by other listeners on the same edge. Explicit call to `setmessage!` overwrites whatever has been passed in `start_with`.
-
-`@model` macro accepts a simplified construction of this pipeline:
+The specification parameter is a named tuple that contains the names of the edges and their initial messages. 
+When a name is present in the named tuple, that indicates that the computation of the outbound message on the same edge must use the inbound message.
+If `nothing` is passed as a value in the named tuple, the initial message is not set. Note that the construction allows passing keyword argument to the constructor 
+instead of using `NamedTuple` directly.
 
 ```julia
-@model function some_model()
-    # ...
-    y ~ NormalMeanVariance(x, τ) where {
-        pipeline = RequireMessage(x = vague(NormalMeanPrecision),     τ)
-                                  # ^^^                               ^^^
-                                  # request 'inbound' for 'x'         we may do the same for 'τ',
-                                  # and initialise with `vague(...)`  but here we skip initialisation
-    }
-    # ...
-end
+RequireMessageFunctionalDependencies(μ = vague(NormalMeanPrecision),     τ = nothing)
+                                     # ^^^                               ^^^
+                                     # request 'inbound' for 'x'         we may do the same for 'τ',
+                                     # and initialise with `vague(...)`  but here we skip initialisation
 ```
-
-Deprecation warning: `RequireInboundFunctionalDependencies` has been deprecated in favor of `RequireMessageFunctionalDependencies`.
 
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
-struct RequireMessageFunctionalDependencies{I, S}
-    indices    :: I
-    start_with :: S
+struct RequireMessageFunctionalDependencies{S <: NamedTuple} <: FunctionalDependencies
+    specification::S
 end
 
-Base.@deprecate_binding RequireInboundFunctionalDependencies RequireMessageFunctionalDependencies
+RequireMessageFunctionalDependencies(; kwargs...) = RequireMessageFunctionalDependencies((; kwargs...))
 
 function message_dependencies(dependencies::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 
@@ -146,7 +134,37 @@ function marginal_dependencies(::RequireMessageFunctionalDependencies, nodeinter
     return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
 end
 
-### With marginals
+function functional_dependencies(dependencies::RequireMessageFunctionalDependencies, factornode, interface, iindex)
+    specification = dependencies.specification
+
+    clusters = getlocalclusters(factornode)
+    # Find the index of the cluster for the current interface
+    cindex = clusterindex(clusters, iindex)
+    # Fetch the actual cluster
+    cluster = getfactorization(clusters, cindex)
+    # Remove current edge index from the list of dependencies in the given cluster
+    # only if its not in the specification for `RequireMessageFunctionalDependencies`
+    # otherwise keep it and initialize with a message if the value of the specification is not nothing
+    vdependencies = if name(interface) ∉ keys(specification)
+        filter(ci -> ci !== iindex, cluster)
+    else
+        initialmessage = specification[name(interface)]
+        # Set the initial message if its not `nothing`
+        if !isnothing(initialmessage)
+            setmessage!(messagein(interface), initialmessage)
+        end
+        # And return the cluster as is
+        cluster
+    end
+
+    # Map interface indices to the actual interfaces to get the messages dependencies
+    message_dependencies = Iterators.map(inds -> map(i -> getinterface(factornode, i), inds), vdependencies)
+
+    # For the marginal dependencies we need to skip the current cluster
+    marginal_dependencies = skipindex(getmarginals(clusters), cindex)
+
+    return message_dependencies, marginal_dependencies
+end
 
 """
     RequireMarginalFunctionalDependencies(indices::Tuple, start_with::Tuple)

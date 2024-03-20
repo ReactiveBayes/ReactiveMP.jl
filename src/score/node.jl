@@ -5,7 +5,7 @@ import Base: tail
 struct FactorBoundFreeEnergy end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, meta, skip_strategy, scheduler) where {T <: CountingReal}
-    return score(T, FactorBoundFreeEnergy(), sdtype(node), node, meta, skip_strategy, scheduler)
+    return score(T, FactorBoundFreeEnergy(), sdtype(node), node, collect_meta(functionalform(node), meta), skip_strategy, scheduler)
 end
 
 ## Deterministic mapping
@@ -15,9 +15,7 @@ function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::Abstra
         (interface) -> apply_skip_filter(messagein(interface), skip_strategy) |> schedule_on(scheduler)
     end
 
-    # TODO: (bvdmitri) this probably can be implemented more efficient
     tinterfaces = Tuple(getinterfaces(node))
-
     stream = combineLatest(map(fnstream, tinterfaces), PushNew())
 
     vtag       = Val{clustername(getinboundinterfaces(node))}()
