@@ -65,7 +65,7 @@ update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Messag
 
 function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
     @assert size(datavars) === size(data) """
-    Invalid `update!` call: size of datavar array and data must match: `$(name(first(datavars)))` has size $(size(datavars)) and data has size $(size(data)). 
+    Invalid `update!` call: size of datavar array and data must match: `variables` has size $(size(datavars)) and `data` has size $(size(data)). 
     """
     foreach(zip(datavars, data)) do (var, d)
         update!(var, d)
