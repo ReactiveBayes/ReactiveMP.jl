@@ -46,7 +46,7 @@ end
                     return s
                 end
 
-                activate!(var, DataVariableActivationOptions(false))
+                activate!(var, DataVariableActivationOptions(false, false, nothing, nothing))
 
                 messages = map(msg, rand(d))
 
