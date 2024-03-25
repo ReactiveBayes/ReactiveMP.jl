@@ -209,12 +209,20 @@ Base.show(io::IO, ::VariationalMessage) = print(io, "VariationalMessage()")
 getcache(vmessage::VariationalMessage)                    = vmessage.cache
 setcache!(vmessage::VariationalMessage, message::Message) = vmessage.cache = message
 
-function materialize!(vmessage::VariationalMessage)
-    cache = getcache(vmessage)
-    if cache !== nothing
-        return cache
-    end
-    message = materialize!(vmessage.mappingFn, (getrecent(vmessage.messages), getrecent(vmessage.marginals)))
+function materialize!(vmessage::VariationalMessage)::Message
+    return materialize!(vmessage, getcache(vmessage))
+end
+
+function materialize!(vmessage::VariationalMessage, cache::Message)::Message
+    return cache
+end
+
+function materialize!(vmessage::VariationalMessage, cache::Nothing)::Message
+    return materialize!(vmessage, cache, getrecent(vmessage.messages), getrecent(vmessage.marginals))
+end
+
+function materialize!(vmessage::VariationalMessage, cache::Nothing, messages, marginals)::Message
+    message = materialize!(vmessage.mappingFn, (messages, marginals))
     setcache!(vmessage, message)
     return message
 end
