@@ -57,7 +57,7 @@ function activate!(datavar::DataVariable, options::DataVariableActivationOptions
         # If the variable is linked to another we need to apply a transformation from the linked variables
         linkvalues = combineLatestUpdates(map(l -> __link_getmarginal(l), options.args))
         linkstream = linkvalues |> map(Marginal, (args) -> let f = options.transform
-            return Marginal(__apply_link(f, getrecent.(args)), true, false, nothing)
+            return Marginal(__apply_link(f, getrecent.(args)), false, false, nothing)
         end)
         connect!(datavar.marginal, linkstream)
     end
@@ -81,8 +81,8 @@ allows_missings(datavars::AbstractArray{<:DataVariable}) = all(allows_missings, 
 allows_missings(datavar::DataVariable, ::Type{Message{D}}) where {D} = false
 allows_missings(datavar::DataVariable, ::Type{Union{Message{Missing}, Message{D}}} where {D}) = true
 
-update!(datavar::DataVariable, data)      = next!(messageout(datavar, 1), Message(PointMass(data), true, false, nothing))
-update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Message(missing, true, false, nothing))
+update!(datavar::DataVariable, data)      = next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
+update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
 
 function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
     @assert size(datavars) === size(data) """
