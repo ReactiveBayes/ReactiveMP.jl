@@ -10,7 +10,6 @@ end
 function DataVariable()
     messageout = RecentSubject(Message)
     marginal = MarginalObservable()
-    connect!(marginal, messageout |> map(Marginal, as_marginal))
     return DataVariable(Vector{MessageObservable{AbstractMessage}}(), marginal, messageout, nothing) # MarginalObservable())
 end
 
@@ -41,14 +40,36 @@ end
 
 struct DataVariableActivationOptions
     prediction::Bool
+    linked::Bool
+    transform
+    args
 end
 
 function activate!(datavar::DataVariable, options::DataVariableActivationOptions)
     if options.prediction
         _setprediction!(datavar, _makeprediction(datavar))
     end
+
+    # If the variable is not linked to another we simply redirect the message as a marginal
+    if !options.linked
+        connect!(datavar.marginal, datavar.messageout |> map(Marginal, as_marginal))
+    else
+        # If the variable is linked to another we need to apply a transformation from the linked variables
+        linkvalues = combineLatestUpdates(map(l -> __link_getmarginal(l), options.args))
+        linkstream = linkvalues |> map(Marginal, (args) -> let f = options.transform
+            return Marginal(__apply_link(f, getrecent.(args)), true, false, nothing)
+        end)
+        connect!(datavar.marginal, linkstream)
+    end
     return nothing
 end
+
+__link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false, nothing))
+__link_getmarginal(l::AbstractVariable) = getmarginal(l, IncludeAll())
+__link_getmarginal(l::AbstractArray{<:AbstractVariable}) = getmarginals(l, IncludeAll())
+
+__apply_link(f::F, args) where {F} = __apply_link(f, getdata.(args))
+__apply_link(f::F, args::NTuple{N, PointMass}) where {F, N} = PointMass(f(mean.(args)...))
 
 _getmarginal(datavar::DataVariable)       = datavar.marginal
 _setmarginal!(::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
@@ -60,8 +81,8 @@ allows_missings(datavars::AbstractArray{<:DataVariable}) = all(allows_missings, 
 allows_missings(datavar::DataVariable, ::Type{Message{D}}) where {D} = false
 allows_missings(datavar::DataVariable, ::Type{Union{Message{Missing}, Message{D}}} where {D}) = true
 
-update!(datavar::DataVariable, data)      = next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
-update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
+update!(datavar::DataVariable, data)      = next!(messageout(datavar, 1), Message(PointMass(data), true, false, nothing))
+update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Message(missing, true, false, nothing))
 
 function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
     @assert size(datavars) === size(data) """
