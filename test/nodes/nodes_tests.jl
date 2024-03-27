@@ -1,5 +1,5 @@
 @testitem "GenericFactorNode constructor" begin
-    import ReactiveMP: functionalform, getinterfaces, getinterface
+    import ReactiveMP: functionalform, getinterfaces, getinterface, name
 
     struct ArbitraryNodeType end
 
