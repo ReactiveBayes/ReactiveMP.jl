@@ -14,6 +14,7 @@ To quickly check the list of all predefined factor nodes, call `?ReactiveMP.is_p
 ```
 
 ```@example is_predefined_node_print
+using ReactiveMP #hide
 println(string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node)))) #hide
 nothing #hide
 ```
@@ -72,8 +73,8 @@ nothing #hide
 To get an actual instance of the type object we use [`sdtype`](@ref) function:
 
 ```@example lib-node-types
-println("sdtype() of `+` node is ", sdtype(plus_node))
-println("sdtype() of `Bernoulli` node is ", sdtype(bernoulli_node))
+println("sdtype() of `+` node is ", sdtype(+))
+println("sdtype() of `Bernoulli` node is ", sdtype(Bernoulli))
 nothing #hide
 ```
 

@@ -9,9 +9,3 @@
 ReactiveMP.SkipIndexIterator
 ReactiveMP.skipindex
 ```
-
-## [FunctionalIndex](@id lib-helpers-functional-index)
-
-```@docs
-ReactiveMP.FunctionalIndex
-```
