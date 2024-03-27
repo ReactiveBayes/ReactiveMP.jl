@@ -5,7 +5,16 @@ In the message passing framework, one of the most important concepts is a factor
 A factor node represents a local function in a factorised representation of a generative model.
 
 !!! note
-    To quickly check the list of all available factor nodes that can be used in the model specification language, call `?make_node` or `Base.doc(make_node)`.
+    To quickly check the list of all available factor nodes that can be used in the model specification language, call `?ReactiveMP.is_predefined_node` or `Base.doc(ReactiveMP.is_predefined_node)`.
+
+```
+?ReactiveMP.is_predefined_node
+```
+
+```@example is_predefined_node_print
+println(string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node)))) #hide
+nothing #hide
+```
 
 ## [Adding a custom node](@id lib-custom-node)
 
@@ -45,20 +54,17 @@ using ReactiveMP, BayesBase, Distributions, ExponentialFamily
 For example the `+` node has the [`Deterministic`](@ref) type:
 
 ```@example lib-node-types
-plus_node = make_node(+)
-
-println("Is `+` node deterministic: ", isdeterministic(plus_node))
-println("Is `+` node stochastic: ", isstochastic(plus_node))
+println("Is `+` node deterministic: ", isdeterministic(sdtype(+)))
+println("Is `+` node stochastic: ", isstochastic(sdtype(+)))
 nothing #hide
 ```
 
 On the other hand, the `Bernoulli` node has the [`Stochastic`](@ref) type:
 
 ```@example lib-node-types
-bernoulli_node = make_node(Bernoulli)
-
-println("Is `Bernoulli` node deterministic: ", isdeterministic(bernoulli_node))
-println("Is `Bernoulli` node stochastic: ", isstochastic(bernoulli_node))
+println("Is `Bernoulli` node deterministic: ", isdeterministic(sdtype(Bernoulli)))
+println("Is `Bernoulli` node stochastic: ", isstochastic(sdtype(Bernoulli)))
+nothing #hide
 ```
 
 To get an actual instance of the type object we use [`sdtype`](@ref) function:
@@ -95,15 +101,15 @@ ReactiveMP.RequireEverythingFunctionalDependencies
 
 ## [Node traits](@id lib-node-traits)
 
-Each factor node has to define the [`ReactiveMP.as_node_functional_form`](@ref) trait function and to specify a [`ReactiveMP.ValidNodeFunctionalForm`](@ref) 
-singleton as a return object. By default [`ReactiveMP.as_node_functional_form`](@ref) returns [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref). 
+Each factor node has to define the [`ReactiveMP.is_predefined_node`](@ref) trait function and to specify a [`ReactiveMP.PredefinedNodeFunctionalForm`](@ref) 
+singleton as a return object. By default [`ReactiveMP.is_predefined_node`](@ref) returns [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref). 
 Objects that do not specify this property correctly cannot be used in model specification.
 
 !!! note
     `@node` macro does that automatically
 
 ```@docs
-ReactiveMP.ValidNodeFunctionalForm
+ReactiveMP.PredefinedNodeFunctionalForm
 ReactiveMP.UndefinedNodeFunctionalForm
-ReactiveMP.as_node_functional_form
+ReactiveMP.is_predefined_node
 ```

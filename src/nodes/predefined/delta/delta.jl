@@ -154,12 +154,6 @@ end
 __unpack_latest_static(_, constvar::ConstVariable) = getconst(constvar)
 __unpack_latest_static(_, datavar::DataVariable) = BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(datavar, 1))))
 
-##
-
-function make_node(fform::F, options, args::Vararg{<:AbstractVariable}) where {F <: Function}
-    return __make_delta_fn_node(fform, options, args[1], args[2:end])
-end
-
 # By default all `meta` objects fallback to the `DeltaFnDefaultRuleLayout`
 # We, however, allow for specific approximation methods to override the default `DeltaFn` rule layout for better efficiency
 deltafn_rule_layout(factornode::DeltaFnNode, meta::DeltaMeta) = deltafn_rule_layout(factornode, getmethod(meta), getinverse(meta))

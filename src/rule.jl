@@ -242,7 +242,7 @@ Returns either `CallRuleNodeRequired()` or `CallRuleNodeNotRequired()` depending
 `fformtype` requires an access to the corresponding node in order to compute a message update rule.
 Returns `CallRuleNodeNotRequired()` for all known functional forms by default and `CallRuleNodeRequired()` for all unknown functional forms.
 """
-call_rule_is_node_required(fformtype) = call_rule_is_node_required(as_node_functional_form(fformtype), fformtype)
+call_rule_is_node_required(fformtype) = call_rule_is_node_required(is_predefined_node(fformtype), fformtype)
 
 call_rule_is_node_required(::ValidNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
 call_rule_is_node_required(::UndefinedNodeFunctionalForm, fformtype) = CallRuleNodeRequired()

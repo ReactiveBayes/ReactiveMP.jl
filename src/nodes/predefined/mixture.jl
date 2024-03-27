@@ -7,7 +7,7 @@ ReactiveMP.as_node_symbol(::Type{<:Mixture}) = :Mixture
 
 interfaces(::Type{<:Mixture}) = Val((:out, :switch, :inputs))
 alias_interface(::Type{<:Mixture}, ::Int64, name::Symbol) = name
-as_node_functional_form(::Type{<:Mixture}) = ValidNodeFunctionalForm()
+is_predefined_node(::Type{<:Mixture}) = PredefinedNodeFunctionalForm()
 sdtype(::Type{<:Mixture}) = Stochastic()
 collect_factorisation(::Type{<:Mixture}, factorization) = MixtureNodeFactorisation()
 

@@ -16,34 +16,37 @@ import Base: getindex, setindex!, firstindex, lastindex
 ## Node traits
 
 """
-    ValidNodeFunctionalForm
+    PredefinedNodeFunctionalForm
 
-Trait specification for an object that can be used in model specification as a factor node.
+Trait specification for an object that has been marked as a valid factor node with the `@node` macro.
 
-See also: [`ReactiveMP.as_node_functional_form`](@ref), [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref)
+See also: [`ReactiveMP.is_predefined_node`](@ref), [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref)
 """
-struct ValidNodeFunctionalForm end
+struct PredefinedNodeFunctionalForm end
 
 """
     UndefinedNodeFunctionalForm
 
-Trait specification for an object that can **not** be used in model specification as a factor node.
+Trait specification for an object that has **not** been marked as a factor node with the `@node` macro.
+Note that it does not necessarily mean that the object is not a valid factor node, but rather that it has not been marked as such.
+The ReactiveMP inference engine support arbitrary deterministic function as factor nodes, but they require manual specification of the approximation method.
 
-See also: [`ReactiveMP.as_node_functional_form`](@ref), [`ReactiveMP.ValidNodeFunctionalForm`](@ref)
+See also: [`ReactiveMP.is_predefined_node`](@ref), [`ReactiveMP.PredefinedNodeFunctionalForm`](@ref)
 """
 struct UndefinedNodeFunctionalForm end
 
 """
-    as_node_functional_form(object)
+    is_predefined_node(object)
 
-Determines `object` node functional form trait specification.
-Returns either `ValidNodeFunctionalForm()` or `UndefinedNodeFunctionalForm()`.
+Determines if the `object` has been marked as a factor node with the `@node` macro.
+Returns either `PredefinedNodeFunctionalForm()` or `UndefinedNodeFunctionalForm()`.
 
-See also: [`ReactiveMP.ValidNodeFunctionalForm`](@ref), [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref)
+See also: [`ReactiveMP.PredefinedNodeFunctionalForm`](@ref), [`ReactiveMP.UndefinedNodeFunctionalForm`](@ref)
 """
-function as_node_functional_form end
+function is_predefined_node end
 
-as_node_functional_form(some) = UndefinedNodeFunctionalForm()
+# By default all objects are not marked as nodes
+is_predefined_node(some) = UndefinedNodeFunctionalForm()
 
 ## Node types
 
@@ -170,12 +173,12 @@ struct FactorNode{F, I, C} <: AbstractFactorNode
 end
 
 function factornode(fform::F, interfaces::I, factorization) where {F, I}
-    return factornode(as_node_functional_form(fform), fform, interfaces, factorization)
+    return factornode(is_predefined_node(fform), fform, interfaces, factorization)
 end
 
-# `ValidNodeFunctionalForm` are generally the nodes that are defined with the `@node` macro
+# `PredefinedNodeFunctionalForm` are generally the nodes that are defined with the `@node` macro
 # The `UndefinedNodeFunctionalForm` nodes can be created as well, but only if the `fform` is a `Function` (see `predefined/delta.jl`)
-function factornode(::ValidNodeFunctionalForm, fform::F, interfaces::I, factorization) where {F, I}
+function factornode(::PredefinedNodeFunctionalForm, fform::F, interfaces::I, factorization) where {F, I}
     processed_interfaces = __prepare_interfaces_generic(fform, interfaces)
     localclusters = FactorNodeLocalClusters(processed_interfaces, collect_factorisation(fform, factorization))
     return FactorNode(fform, processed_interfaces, localclusters)
@@ -272,6 +275,13 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         :(Type{<:$node_fform})
     end
 
+    foreach(interfaces) do (name, aliases)
+        @assert !occursin('_', string(name)) "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `$(name)`."
+        foreach(aliases) do alias
+            @assert !occursin('_', string(alias)) "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `$(alias)`."
+        end
+    end
+
     alias_corrections = Expr(:block)
     alias_corrections.args = map(enumerate(interfaces)) do (index, (name, aliases))
         # The `index` and `name` variables are defined further in the `alias_interface` function
@@ -289,12 +299,21 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         :(ReactiveMP.collect_factorisation(::$dispatch_type, factorisation::Tuple) = ($(ntuple(identity, length(interfaces))),))
     end
 
+    doctype   = rpad(dispatch_type, 30)
+    docsdtype = rpad(node_type, 15)
+    docedges  = join(map(((name, aliases),) -> string(name, !isempty(aliases) ? string(" (or ", join(aliases, ", "), ")") : ""), interfaces), ", ")
+    doc       = """    
+        $doctype : $docsdtype : $docedges
+    The `$(node_fform)` has been marked as a valid `$(node_type)` factor node with the `@node` macro with `[ $(docedges) ]` interfaces.
+    """
+
     # Define the necessary function types
     result = quote
-        ReactiveMP.as_node_functional_form(::$dispatch_type) = ReactiveMP.ValidNodeFunctionalForm()
-        ReactiveMP.sdtype(::$dispatch_type)                  = (ReactiveMP.$node_type)()
-        ReactiveMP.interfaces(::$dispatch_type)              = Val($(Tuple(map(first, interfaces))))
-        ReactiveMP.inputinterfaces(::$dispatch_type)         = Val($(Tuple(map(first, skipindex(interfaces, 1)))))
+        @doc $doc ReactiveMP.is_predefined_node(::$dispatch_type) = ReactiveMP.PredefinedNodeFunctionalForm()
+
+        ReactiveMP.sdtype(::$dispatch_type)          = (ReactiveMP.$node_type)()
+        ReactiveMP.interfaces(::$dispatch_type)      = Val($(Tuple(map(first, interfaces))))
+        ReactiveMP.inputinterfaces(::$dispatch_type) = Val($(Tuple(map(first, skipindex(interfaces, 1)))))
 
         $collect_factorisation_fn
 

@@ -7,7 +7,7 @@ ReactiveMP.as_node_symbol(::Type{<:GammaMixture}) = :GammaMixture
 
 interfaces(::Type{<:GammaMixture}) = Val((:out, :switch, :a, :b))
 alias_interface(::Type{<:GammaMixture}, ::Int64, name::Symbol) = name
-as_node_functional_form(::Type{<:GammaMixture}) = ValidNodeFunctionalForm()
+is_predefined_node(::Type{<:GammaMixture}) = PredefinedNodeFunctionalForm()
 sdtype(::Type{<:GammaMixture}) = Stochastic()
 collect_factorisation(::Type{<:GammaMixture}, factorization) = GammaMixtureNodeFactorisation()
 
