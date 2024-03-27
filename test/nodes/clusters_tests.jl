@@ -1,5 +1,5 @@
 @testitem "FactorNodeLocalMarginal" begin
-    import ReactiveMP: FactorNodeLocalMarginal, MarginalObservable, getmarginal, setmarginal!, tag
+    import ReactiveMP: FactorNodeLocalMarginal, MarginalObservable, getmarginal, setmarginal!, tag, name
 
     @testset let localmarginal = FactorNodeLocalMarginal(:a)
         @test name(localmarginal) === :a
@@ -17,7 +17,7 @@
 end
 
 @testitem "FactorNodeLocalClusters constructor" begin
-    import ReactiveMP: NodeInterface, FactorNodeLocalClusters, getfactorization, getmarginals, getmarginal
+    import ReactiveMP: NodeInterface, FactorNodeLocalClusters, getfactorization, getmarginals, getmarginal, name
 
     a = NodeInterface(:a, randomvar())
     b = NodeInterface(:b, randomvar())

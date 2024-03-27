@@ -1,7 +1,7 @@
 @testitem "NodeInterface" begin
     using Rocket
 
-    import ReactiveMP: AbstractVariable, NodeInterface, messageout, messagein, tag, getvariable, MessageObservable, connect!
+    import ReactiveMP: AbstractVariable, NodeInterface, messageout, messagein, tag, getvariable, MessageObservable, connect!, name
 
     struct AbstractVariableImplemention <: AbstractVariable
         messageout::MessageObservable
