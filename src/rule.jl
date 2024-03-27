@@ -1235,9 +1235,7 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
     end
 end
 
-"""
-    Convert method into a markdown row
-"""
+# Convert method into a markdown row
 function convert_to_markdown(m::Method)
     node = get_node(m)
     inputs = get_inputs(m)
@@ -1251,25 +1249,19 @@ function convert_to_markdown(m::Method)
     return output
 end
 
-"""
-    Extracts node from rule Method
-"""
+# Extracts node from rule Method
 function get_node_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
     return decls[2][2][8:(end - 1)]
 end
 
-"""
-    Extracts output from rule Method
-"""
+# Extracts output from rule Method
 function get_output_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
     return replace(decls[3][2], r"Type|Val|{|}|:|\(|\)|\,|Tuple|Int64" => "")
 end
 
-"""
-    Extracts messages from rule Method
-"""
+# Extracts messages from rule Method
 function get_messages_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
     tmp1 = replace(replace(decls[6][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
@@ -1282,9 +1274,7 @@ function get_messages_from_rule_method(m::Method)
     return interfaces .* " :: " .* types
 end
 
-"""
-    Extracts marginals from rule method
-"""
+# Extracts marginals from rule method
 function get_marginals_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
     tmp1 = replace(replace(decls[8][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
@@ -1297,17 +1287,13 @@ function get_marginals_from_rule_method(m::Method)
     return interfaces .* " :: " .* types
 end
 
-"""
-    Extracts meta from rule method
-"""
+# Extracts meta from rule method
 function get_meta_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
     return decls[9][2]
 end
 
-"""
-    Prints the rows corresponding to a single rule method in a table
-"""
+# Prints the rows corresponding to a single rule method in a table 
 function print_rule_rows(m::Method)
     node = get_node_from_rule_method(m)
     output = get_output_from_rule_method(m)
@@ -1328,11 +1314,8 @@ function print_rule_rows(m::Method)
     return txt
 end
 
-"""
-    Prints a table of all message passing update rules in ReactiveMP.
-    
-    Use `Markdown.parse` on the output of this function to get a prettified table.
-"""
+# Prints a table of all message passing update rules in ReactiveMP.
+# Use `Markdown.parse` on the output of this function to get a prettified table.
 function print_rules_table()
     mtds = methods(ReactiveMP.rule)
     """
