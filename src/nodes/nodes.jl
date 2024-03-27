@@ -1,6 +1,6 @@
 export Deterministic, Stochastic, isdeterministic, isstochastic, sdtype
 export Marginalisation, MomentMatching
-export functionalform, getinterfaces, factorisation, localmarginals, localmarginalnames, metadata
+export functionalform, getinterfaces, factorisation, localmarginals, localmarginalnames
 export FactorNode, factornode
 export @node
 

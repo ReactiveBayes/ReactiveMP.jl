@@ -1,8 +1,7 @@
 export AbstractVariable, degree
-export is_clamped, is_marginalisation, is_moment_matching
 export FoldLeftProdStrategy, FoldRightProdStrategy, CustomProdStrategy
-export getprediction, getpredictions, getmarginal, getmarginals, setmarginal!, setmarginals!, name, as_variable
-export setmessage!, setmessages!
+export getprediction, getpredictions, getmarginal, getmarginals
+export setmarginal!, setmarginals!, setmessage!, setmessages!
 
 using Rocket
 
