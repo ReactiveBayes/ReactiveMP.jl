@@ -13,10 +13,9 @@ To quickly check the list of all predefined factor nodes, call `?ReactiveMP.is_p
 ?ReactiveMP.is_predefined_node
 ```
 
-```@example is_predefined_node_print
-using ReactiveMP #hide
-println(string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node)))) #hide
-nothing #hide
+```@eval
+using ReactiveMP, Markdown
+Markdown.parse(string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node))))
 ```
 
 ## [Adding a custom node](@id lib-custom-node)
