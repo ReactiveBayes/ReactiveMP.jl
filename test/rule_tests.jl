@@ -392,7 +392,7 @@
                     (as_vague_mrg(Gamma),),
                     nothing,
                     nothing,
-                    make_node(NormalMeanPrecision)
+                    nothing
                 )
 
                 io = IOBuffer()
@@ -417,7 +417,7 @@
                     (as_vague_mrg(Gamma),),
                     1.0,
                     nothing,
-                    make_node(NormalMeanPrecision)
+                    nothing
                 )
 
                 io = IOBuffer()
@@ -443,7 +443,7 @@
                     nothing,
                     1.0,
                     nothing,
-                    make_node(NormalMeanPrecision)
+                    nothing
                 )
 
                 io = IOBuffer()
@@ -469,7 +469,7 @@
                     (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)),
                     1.0,
                     nothing,
-                    make_node(NormalMeanPrecision)
+                    nothing
                 )
 
                 io = IOBuffer()
@@ -495,7 +495,7 @@
                     (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
                     1.0,
                     nothing,
-                    make_node(NormalMeanPrecision)
+                    nothing
                 )
 
                 io = IOBuffer()
@@ -520,15 +520,15 @@
                     (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
                     1.0,
                     nothing,
-                    make_node(NormalMeanPrecision)
+                    nothing
                 )
 
                 io = IOBuffer()
                 showerror(io, err)
                 output = String(take!(io))
 
-                @test occursin("[WARN]: Non-standard rule layout found!", output)
                 @test occursin("Possible fix, define", output)
+                @test occursin("(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)", output)
             end
         end
 
@@ -538,14 +538,7 @@
 
             let
                 err = ReactiveMP.MarginalRuleMethodError(
-                    NormalMeanPrecision,
-                    Val{:μ}(),
-                    Val{(:out,)}(),
-                    (as_vague_msg(NormalMeanVariance),),
-                    Val{(:τ,)}(),
-                    (as_vague_mrg(Gamma),),
-                    nothing,
-                    make_node(NormalMeanPrecision)
+                    NormalMeanPrecision, Val{:μ}(), Val{(:out,)}(), (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}(), (as_vague_mrg(Gamma),), nothing, nothing
                 )
 
                 io = IOBuffer()
@@ -560,7 +553,7 @@
 
             let
                 err = ReactiveMP.MarginalRuleMethodError(
-                    NormalMeanPrecision, Val{:μ}(), Val{(:out,)}(), (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}(), (as_vague_mrg(Gamma),), 1.0, make_node(NormalMeanPrecision)
+                    NormalMeanPrecision, Val{:μ}(), Val{(:out,)}(), (as_vague_msg(NormalMeanVariance),), Val{(:τ,)}(), (as_vague_mrg(Gamma),), 1.0, nothing
                 )
 
                 io = IOBuffer()
@@ -576,14 +569,7 @@
 
             let
                 err = ReactiveMP.MarginalRuleMethodError(
-                    NormalMeanPrecision,
-                    Val{:μ}(),
-                    Val{(:out, :τ)}(),
-                    (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)),
-                    nothing,
-                    nothing,
-                    1.0,
-                    make_node(NormalMeanPrecision)
+                    NormalMeanPrecision, Val{:μ}(), Val{(:out, :τ)}(), (as_vague_msg(NormalMeanVariance), as_vague_msg(Gamma)), nothing, nothing, 1.0, nothing
                 )
 
                 io = IOBuffer()
@@ -599,14 +585,7 @@
 
             let
                 err = ReactiveMP.MarginalRuleMethodError(
-                    NormalMeanPrecision,
-                    Val{:μ}(),
-                    nothing,
-                    nothing,
-                    Val{(:out, :τ)}(),
-                    (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)),
-                    1.0,
-                    make_node(NormalMeanPrecision)
+                    NormalMeanPrecision, Val{:μ}(), nothing, nothing, Val{(:out, :τ)}(), (as_vague_mrg(NormalMeanVariance), as_vague_mrg(Gamma)), 1.0, nothing
                 )
 
                 io = IOBuffer()
@@ -622,14 +601,7 @@
 
             let
                 err = ReactiveMP.MarginalRuleMethodError(
-                    NormalMeanPrecision,
-                    Val{:τ}(),
-                    nothing,
-                    nothing,
-                    Val{(:out_μ,)}(),
-                    (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
-                    1.0,
-                    make_node(NormalMeanPrecision)
+                    NormalMeanPrecision, Val{:τ}(), nothing, nothing, Val{(:out_μ,)}(), (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),), 1.0, nothing
                 )
 
                 io = IOBuffer()
@@ -651,15 +623,15 @@
                     Val{(:out_μ,)}(),
                     (Marginal(vague(MvNormalMeanPrecision, 2), false, false, nothing),),
                     1.0,
-                    make_node(NormalMeanPrecision)
+                    nothing
                 )
 
                 io = IOBuffer()
                 showerror(io, err)
                 output = String(take!(io))
 
-                @test occursin("[WARN]: Non-standard rule layout found!", output)
                 @test occursin("Possible fix, define", output)
+                @test occursin("(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)", output)
             end
         end
     end

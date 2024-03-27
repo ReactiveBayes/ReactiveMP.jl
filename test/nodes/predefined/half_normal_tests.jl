@@ -2,8 +2,6 @@
 @testitem "HalfNormalNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-    import ReactiveMP: make_node
-
     @testset "AverageEnergy" begin
         begin
             q_out = GammaShapeRate(2.0, 1.0)

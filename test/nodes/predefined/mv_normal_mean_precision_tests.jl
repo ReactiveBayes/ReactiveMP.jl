@@ -2,8 +2,6 @@
 @testitem "MvNormalMeanPrecisionNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
-    import ReactiveMP: make_node
-
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass([1.0, 1.0])
