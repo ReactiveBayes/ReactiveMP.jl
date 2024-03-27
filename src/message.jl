@@ -46,11 +46,11 @@ true
 
 ```
 """
-struct Message{D, A} <: AbstractMessage
-    data       :: D
-    is_clamped :: Bool
-    is_initial :: Bool
-    addons     :: A
+mutable struct Message{D, A} <: AbstractMessage # `mutable` structure here appears to be more performance 
+    const data       :: D                       # in `RxInfer` benchmarks
+    const is_clamped :: Bool                    # could be revised at some point though
+    const is_initial :: Bool
+    const addons     :: A
 end
 
 """
