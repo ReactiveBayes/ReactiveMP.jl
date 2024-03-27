@@ -1,4 +1,3 @@
-
 @testitem "Message" begin
     using Random, ReactiveMP, BayesBase, Distributions, ExponentialFamily
 
@@ -10,9 +9,7 @@
     import SpecialFunctions: loggamma
 
     @testset "Default methods" begin
-        data = PointMass(1)
-
-        for clamped in (true, false), initial in (true, false), addons in (1, 2)
+        for clamped in (true, false), initial in (true, false), addons in (1, 2), data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
             msg = Message(data, clamped, initial, addons)
             @test getdata(msg) === data
             @test is_clamped(msg) === clamped
@@ -20,6 +17,8 @@
             @test materialize!(msg) === msg
             @test getaddons(msg) === addons
             @test occursin("Message", repr(msg))
+            @test occursin(repr(data), repr(msg))
+            @test occursin(repr(addons), repr(msg))
         end
 
         dist1 = NormalMeanVariance(0.0, 1.0)
@@ -158,5 +157,35 @@
                 @test method(message, point) === method(distribution, point)
             end
         end
+    end
+end
+
+@testitem "Deffered message" begin
+    using Rocket
+    import ReactiveMP: DefferedMessage, as_message, getdata
+
+    for a in rand(3), b in rand(3)
+        messages_stream = RecentSubject(Float64)
+        marginals_stream = RecentSubject(Float64)
+
+        dmessage = DefferedMessage(messages_stream, marginals_stream, (a, b) -> Message(a + b, false, false, nothing))
+
+        # The data cannot be computed since no values were provided yet
+        @test_throws MethodError as_message(dmessage)
+        @test occursin("DeferredMessage([ use `as_message` to compute the message ])", repr(dmessage))
+
+        next!(messages_stream, a)
+        next!(marginals_stream, b)
+
+        # The data should be computed after the values are available
+        @test getdata(as_message(dmessage)) === a + b
+        @test occursin("DeferredMessage($(a + b))", repr(dmessage))
+
+        next!(messages_stream, a + 1)
+        next!(marginals_stream, b + 1)
+
+        # The data should not be changed after the first materialization
+        @test getdata(as_message(dmessage)) === a + b
+        @test occursin("DeferredMessage($(a + b))", repr(dmessage))
     end
 end

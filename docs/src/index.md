@@ -21,7 +21,10 @@ Pages = [
   "lib/message.md",
   "lib/node.md",
   "lib/math.md",
-  "extra/contributing.md"
+  "lib/rules/rules.md",
+  "lib/nodes/nodes.md",
+  "extra/contributing.md",
+  "extra/extensions.md"
 ]
 Depth = 2
 ```
