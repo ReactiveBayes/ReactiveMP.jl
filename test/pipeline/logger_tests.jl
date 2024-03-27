@@ -4,7 +4,7 @@
     using Distributions
     using Rocket
 
-    import ReactiveMP: tag
+    import ReactiveMP: tag, factornode, getinterfaces
 
     struct DummyNode end
 
@@ -13,12 +13,12 @@
     # In real applications the stream should be a stream of messages
     # For testing purposes it does not really matter though
     stream = Subject(String)
-    node = make_node(DummyNode)
+    node = factornode(DummyNode, [(:out, randomvar()), (:x, randomvar()), (:y, randomvar())], ((1, 2, 3),))
 
     @testset "no prefix" begin
         io = IOBuffer()
         pipeline = LoggerPipelineStage(io)
-        modified_stream = apply_pipeline_stage(pipeline, node, tag(first(interfaces(node))), stream)
+        modified_stream = apply_pipeline_stage(pipeline, node, tag(first(getinterfaces(node))), stream)
         subscription = subscribe!(modified_stream, void())
 
         next!(stream, "hello")
@@ -36,7 +36,7 @@
     @testset "with custom prefix" begin
         io = IOBuffer()
         pipeline = LoggerPipelineStage(io, "custom_prefix")
-        modified_stream = apply_pipeline_stage(pipeline, node, tag(first(interfaces(node))), stream)
+        modified_stream = apply_pipeline_stage(pipeline, node, tag(first(getinterfaces(node))), stream)
         subscription = subscribe!(modified_stream, void())
 
         next!(stream, "hello")
