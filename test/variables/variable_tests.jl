@@ -10,14 +10,16 @@
     @node CustomDeterministicNode Deterministic [out, x]
 
     function test_variable_set_method(variable, dist::T, k) where {T}
-        activate!(variable, TestOptions())
-
-        test_out_var = randomvar(:out)
+    
+        test_out_var = randomvar()
 
         # messages could be initialized only when the node is created
         for _ in 1:k
-            make_node(identity, ReactiveMP.FactorNodeCreationOptions(ReactiveMP.DeltaFn, TestNodeMetaData(), nothing), test_out_var, variable)
+            factornode(CustomDeterministicNode, [ (:out, test_out_var), (:x, variable) ], ((1, 2,), ))
         end
+
+        activate!(test_out_var, RandomVariableActivationOptions())
+        activate!(variable, RandomVariableActivationOptions())
 
         @test degree(variable) === k
 
@@ -59,24 +61,18 @@
         end
     end
 
-    struct TestNodeMetaData end
-
-    ReactiveMP.collect_meta(::Type{D}, options::FactorNodeCreationOptions{F, T}) where {D <: DeltaFn, F, T <: TestNodeMetaData} = TestNodeMetaData()
-    ReactiveMP.getinverse(::TestNodeMetaData) = nothing
-    ReactiveMP.getinverse(::TestNodeMetaData, k::Int) = nothing
-
     function test_variables_set_methods(variables, dist::T, k::Int) where {T}
         marginal_subscription_flag = false
 
-        activate!.(variables, TestOptions())
-
         @test_throws AssertionError setmarginals!(variables, Iterators.repeated(dist, length(variables) - 1))
 
-        test_out_var = randomvar(:out)
+        test_out_var = randomvar()
 
         for _ in 1:k
-            make_node(identity, ReactiveMP.FactorNodeCreationOptions(ReactiveMP.DeltaFn, TestNodeMetaData(), nothing), test_out_var, variables...)
+            factornode((x) -> sum(x...), [ (:out, test_out_var), map(var -> (:in, var), variables)... ], nothing)
         end
+
+        foreach(var -> activate!(var, RandomVariableActivationOptions()), variables)
 
         @test all(degree.(variables) .== k)
 
@@ -129,18 +125,13 @@
         end
     end
 
-    struct TestOptions end
-
-    Rocket.getscheduler(::TestOptions) = AsapScheduler()
-    Base.broadcastable(::TestOptions) = Ref(TestOptions()) # for broadcasting
-
     @testset "setmarginal! and setmessages! tests for randomvar" begin
         dists = (NormalMeanVariance(-2.0, 3.0), NormalMeanPrecision(-2.0, 3.0), PointMass(2.0))
         number_of_nodes = 1:4
         for (dist, k) in Iterators.product(dists, number_of_nodes)
-            test_variable_set_method(randomvar(:r), dist, k)
-            test_variables_set_methods(randomvar(:r, 2), dist, k)
-            test_variables_set_methods(randomvar(:r, 2, 2), dist, k)
+            test_variable_set_method(randomvar(), dist, k)
+            test_variables_set_methods(map(_ -> randomvar(), ones(2)), dist, k)
+            test_variables_set_methods(map(_ -> randomvar(), ones(2, 2)), dist, k)
         end
     end
 end
