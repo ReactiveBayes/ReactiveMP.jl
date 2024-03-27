@@ -244,7 +244,7 @@ Returns `CallRuleNodeNotRequired()` for all known functional forms by default an
 """
 call_rule_is_node_required(fformtype) = call_rule_is_node_required(is_predefined_node(fformtype), fformtype)
 
-call_rule_is_node_required(::ValidNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
+call_rule_is_node_required(::PredefinedNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
 call_rule_is_node_required(::UndefinedNodeFunctionalForm, fformtype) = CallRuleNodeRequired()
 
 # Returns the `node` if it is required for a rule, otherwise returns `nothing`

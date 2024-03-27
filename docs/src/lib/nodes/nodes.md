@@ -4,8 +4,10 @@
 In the message passing framework, one of the most important concepts is a factor node.
 A factor node represents a local function in a factorised representation of a generative model.
 
-!!! note
-    To quickly check the list of all available factor nodes that can be used in the model specification language, call `?ReactiveMP.is_predefined_node` or `Base.doc(ReactiveMP.is_predefined_node)`.
+
+## [List of predefined factor node](@id lib-predefined-nodes)    
+
+To quickly check the list of all predefined factor nodes, call `?ReactiveMP.is_predefined_node` or `Base.doc(ReactiveMP.is_predefined_node)`.
 
 ```
 ?ReactiveMP.is_predefined_node
