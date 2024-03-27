@@ -199,10 +199,10 @@ A special type of a message, for which the actual message is not computed immedi
 To compute and get the actual message, one needs to call the `as_message` method.
 """
 mutable struct DefferedMessage{R, S, F} <: AbstractMessage
-    messages  :: R
-    marginals :: S
-    mappingFn :: F
-    cache     :: Union{Nothing, Message}
+    const messages  :: R
+    const marginals :: S
+    const mappingFn :: F
+    cache :: Union{Nothing, Message}
 end
 
 DefferedMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DefferedMessage(messages, marginals, mappingFn, nothing)
