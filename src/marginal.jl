@@ -7,11 +7,11 @@ using Rocket
 import Rocket: getrecent
 import Base: ==, ndims, precision, length, size, iterate
 
-struct Marginal{D, A}
-    data       :: D
-    is_clamped :: Bool
-    is_initial :: Bool
-    addons     :: A
+mutable struct Marginal{D, A}  # `mutable` structure here appears to be more performance 
+    const data       :: D      # in `RxInfer` benchmarks
+    const is_clamped :: Bool   # could be revised at some point though
+    const is_initial :: Bool
+    const addons     :: A
 end
 
 function Base.show(io::IO, marginal::Marginal)

@@ -5,7 +5,7 @@
     import Base: methods
     import Base.Iterators: repeated, product
     import BayesBase: xtlog, mirrorlog
-    import ReactiveMP: getaddons, multiply_messages, materialize!
+    import ReactiveMP: getaddons, multiply_messages, as_message
     import SpecialFunctions: loggamma
 
     @testset "Default methods" begin
@@ -14,7 +14,7 @@
             @test getdata(msg) === data
             @test is_clamped(msg) === clamped
             @test is_initial(msg) === initial
-            @test materialize!(msg) === msg
+            @test as_message(msg) === msg
             @test getaddons(msg) === addons
             @test occursin("Message", repr(msg))
             @test occursin(repr(data), repr(msg))
