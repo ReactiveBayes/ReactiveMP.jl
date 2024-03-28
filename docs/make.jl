@@ -15,18 +15,19 @@ makedocs(
         "Introduction"    => "index.md",
         "Custom functionality" => [
             "Custom functional form" => "custom/custom-functional-form.md",
-            "Custom addons" => "custom/custom-addons.md"
+            "Custom addons"          => "custom/custom-addons.md"
         ],
         "Library" => [
-            "Messages"     => "lib/message.md",
             "Factor nodes" => [ 
                 "Overview" => "lib/nodes/nodes.md",
                 "Flow"     => "lib/nodes/flow.md"
             ],
+            "Messages"             => "lib/message.md",
+            "Marginals"            => "lib/marginal.md",
             "Message update rules" => "lib/rules/rules.md",
-            "Helper utils"        => "lib/helpers.md",
-            "Algebra utils"       => "lib/algebra/common.md",
-            "Exported methods"    => "lib/methods.md"
+            "Helper utils"         => "lib/helpers.md",
+            "Algebra utils"        => "lib/algebra/common.md",
+            "Exported methods"     => "lib/methods.md"
         ],
         "Contributing" => "extra/contributing.md",
     ],

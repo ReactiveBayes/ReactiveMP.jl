@@ -1,7 +1,7 @@
 
 # [Messages implementation](@id lib-message)
 
-In our message passing framework, one of the most important concepts is the message.
+In the message passing framework, one of the most important concepts is the message.
 Given a factor graph, messages are arbitrary functions that flow along the edges of the graph and hold information about the part of the graph from which they originate.
 
 ## [Message as a distribution](@id lib-messages-as-distributions)
@@ -51,24 +51,22 @@ ReactiveMP.getaddons(message::Message)
 ReactiveMP.as_message
 ```
 
-```@setup bp-message
-using ReactiveMP, BayesBase, Distributions, ExponentialFamily
-```
+```@example message
+using ReactiveMP, BayesBase, ExponentialFamily
 
-```@example bp-message
-distribution = NormalMeanPrecision(0.0, 1.0)
+distribution = ExponentialFamily.NormalMeanPrecision(0.0, 1.0)
 message      = Message(distribution, false, true, nothing)
 ```
 
-```@example bp-message
+```@example message
 mean(message), precision(message)
 ```
 
-```@example bp-message
+```@example message
 logpdf(message, 1.0)
 ```
 
-```@example bp-message
+```@example message
 is_clamped(message), is_initial(message)
 ```
 

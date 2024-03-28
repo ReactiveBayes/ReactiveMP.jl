@@ -18,8 +18,10 @@ The `ReactiveMP.jl` package is intended for advanced users with a deep understan
 
 ```@contents
 Pages = [
-  "lib/message.md",
   "lib/node.md",
+  "lib/message.md",
+  "lib/marginal.md",
+  
   "lib/math.md",
   "lib/rules/rules.md",
   "lib/nodes/nodes.md",
