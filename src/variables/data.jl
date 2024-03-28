@@ -10,7 +10,8 @@ end
 function DataVariable()
     messageout = RecentSubject(Message)
     marginal = MarginalObservable()
-    return DataVariable(Vector{MessageObservable{AbstractMessage}}(), marginal, messageout, nothing) # MarginalObservable())
+    prediction = MarginalObservable()
+    return DataVariable(Vector{MessageObservable{AbstractMessage}}(), marginal, messageout, prediction)
 end
 
 datavar() = DataVariable()
@@ -46,7 +47,7 @@ struct DataVariableActivationOptions
 end
 
 function activate!(datavar::DataVariable, options::DataVariableActivationOptions)
-    if options.prediction
+    if true # options.prediction
         _setprediction!(datavar, _makeprediction(datavar))
     end
 
@@ -75,12 +76,6 @@ _getmarginal(datavar::DataVariable)       = datavar.marginal
 _setmarginal!(::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
 _makemarginal(::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
-allows_missings(datavar::DataVariable) = allows_missings(datavar, eltype(datavar.messageout))
-
-allows_missings(datavars::AbstractArray{<:DataVariable}) = all(allows_missings, datavars)
-allows_missings(datavar::DataVariable, ::Type{Message{D}}) where {D} = false
-allows_missings(datavar::DataVariable, ::Type{Union{Message{Missing}, Message{D}}} where {D}) = true
-
 update!(datavar::DataVariable, data)      = next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
 update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
 
@@ -90,6 +85,12 @@ function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
     """
     foreach(zip(datavars, data)) do (var, d)
         update!(var, d)
+    end
+end
+
+function update!(datavars::AbstractArray{<:DataVariable}, data::Missing)
+    foreach(datavars) do var
+        update!(var, data)
     end
 end
 
