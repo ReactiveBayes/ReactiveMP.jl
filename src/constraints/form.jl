@@ -20,8 +20,6 @@ import Base: +
 Every functional form constraint is a subtype of `AbstractFormConstraint` abstract type.
 
 Note: this is not strictly necessary, but it makes automatic dispatch easier and compatible with the `CompositeFormConstraint`.
-
-See also: [`CompositeFormConstraint`](@ref)
 """
 abstract type AbstractFormConstraint end
 
@@ -31,8 +29,6 @@ abstract type AbstractFormConstraint end
 This form constraint check strategy checks functional form of the messages product after each product in an equality chain. 
 Usually if a variable has been connected to multiple nodes we want to perform multiple `prod` to obtain a posterior marginal.
 With this form check strategy `constrain_form` function will be executed after each subsequent `prod` function.
-
-See also: [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`constrain_form`](@ref)
 """
 struct FormConstraintCheckEach end
 
@@ -42,8 +38,6 @@ struct FormConstraintCheckEach end
 This form constraint check strategy checks functional form of the last messages product in the equality chain. 
 Usually if a variable has been connected to multiple nodes we want to perform multiple `prod` to obtain a posterior marginal.
 With this form check strategy `constrain_form` function will be executed only once after all subsequenct `prod` functions have been executed.
-
-See also: [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`constrain_form`](@ref)
 """
 struct FormConstraintCheckLast end
 
@@ -51,8 +45,6 @@ struct FormConstraintCheckLast end
     FormConstraintCheckPickDefault
 
 This form constraint check strategy simply fallbacks to a default check strategy for a given form constraint. 
-
-See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref)
 """
 struct FormConstraintCheckPickDefault end
 
@@ -60,8 +52,6 @@ struct FormConstraintCheckPickDefault end
     default_form_check_strategy(form_constraint)
 
 Returns a default check strategy (e.g. `FormConstraintCheckEach` or `FormConstraintCheckEach`) for a given form constraint object.
-
-See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`constrain_form`](@ref)
 """
 function default_form_check_strategy end
 
@@ -76,8 +66,6 @@ function default_prod_constraint end
     constrain_form(form_constraint, distribution)
 
 This function must approximate `distribution` object in a form that satisfies `form_constraint`.
-
-See also: [`FormConstraintCheckEach`](@ref), [`FormConstraintCheckLast`](@ref), [`default_form_check_strategy`](@ref), [`is_point_mass_form_constraint`](@ref)
 """
 function constrain_form end
 
@@ -86,13 +74,6 @@ function constrain_form end
 
 One of the form constraint objects. Does not imply any form constraints and simply returns the same object as receives.
 However it does not allow `DistProduct` to be a valid functional form in the inference backend.
-
-# Traits 
-- `default_form_check_strategy`   = `FormConstraintCheckLast()`
-- `default_prod_constraint`       = `GenericProd()`
-- `make_form_constraint`          = `Nothing` (for use in `@constraints` macro)
-
-See also: [`constrain_form`](@ref)
 """
 struct UnspecifiedFormConstraint <: AbstractFormConstraint end
 
@@ -108,7 +89,6 @@ constrain_form(::UnspecifiedFormConstraint, something::Union{ProductOf, Lineariz
     CompositeFormConstraint
 
 Creates a composite form constraint that applies form constraints in order. The composed form constraints must be compatible and have the exact same `form_check_strategy`. 
-Any functional form constraint that defines `is_point_mass_form_constraint() = true` may be used only as the last element of the composition.
 """
 struct CompositeFormConstraint{C} <: AbstractFormConstraint
     constraints::C

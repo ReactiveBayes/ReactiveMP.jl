@@ -62,7 +62,6 @@ struct MeanPrecisionFormConstraint <: AbstractFormConstraint end
 Next we define the behaviour of our functional form constraint:
 
 ```@example custom-functional-form-example
-ReactiveMP.is_point_mass_form_constraint(::MeanPrecisionFormConstraint) = false
 ReactiveMP.default_form_check_strategy(::MeanPrecisionFormConstraint)   = FormConstraintCheckLast()
 ReactiveMP.default_prod_constraint(::MeanPrecisionFormConstraint)       = GenericProd()
 
