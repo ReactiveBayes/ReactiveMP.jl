@@ -4,37 +4,45 @@
 In the message passing framework, one of the most important concepts is a factor node.
 A factor node represents a local function in a factorised representation of a generative model.
 
-
-## [List of predefined factor node](@id lib-predefined-nodes)    
-
-To quickly check the list of all predefined factor nodes, call `?ReactiveMP.is_predefined_node` or `Base.doc(ReactiveMP.is_predefined_node)`.
-
-```
-?ReactiveMP.is_predefined_node
-```
-
-```@eval
-using ReactiveMP, Markdown
-Markdown.parse(string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node))))
+```@docs
+@node
+ReactiveMP.FactorNode
+ReactiveMP.FactorNodeLocalMarginal
+ReactiveMP.NodeInterface
+ReactiveMP.IndexedNodeInterface
+ReactiveMP.messagein
+ReactiveMP.messageout
+ReactiveMP.tag
+ReactiveMP.name
+ReactiveMP.interfaces
+ReactiveMP.getvariable
+ReactiveMP.inputinterfaces
+ReactiveMP.alias_interface
+ReactiveMP.collect_factorisation
+ReactiveMP.collect_pipeline
+ReactiveMP.collect_meta
+ReactiveMP.default_meta
+ReactiveMP.as_node_symbol
 ```
 
 ## [Adding a custom node](@id lib-custom-node)
 
-`ReactiveMP.jl` exports the `@node` macro that allows for quick definition of a factor node with a __fixed__ number of edges. The interface is the following:
+`ReactiveMP.jl` exports the [`@node`](@ref) macro that allows for quick definition of a factor node with a __fixed__ number of edges. The example application can be the following:
 
 ```julia
 struct MyNewCustomNode end
 
-@node MyNewCustomNode   Stochastic         [ x, y, z ]
+@node MyNewCustomNode   Stochastic         [ x, y, (z, aliases = [ d ] ) ]
 #     ^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^      ^^^^^^^^^^^
 #     Node's tag/name   Node's type        A fixed set of edges
 #                       Another possible   The very first edge (in this example `x`) is considered
 #                       value is           to be the output of the node
-#                       `Deterministic`
+#                       `Deterministic`    - Edges can have aliases, e.g. `z` can be both `z` or `d`
 ```
 
-This expression registers a new node that can be used with the inference engine. Note howeve, that the `@node` macro does not generate any message passing update rules.
-These must be defined using the `@rule` macro.
+This expression registers a new node that can be used with the inference engine. 
+Note, however, that the `@node` macro does not generate any message passing update rules.
+These must be defined using the [`@rule`](@ref) macro. 
 
 ## [Node types](@id lib-node-types)
 
@@ -114,4 +122,31 @@ Objects that do not specify this property correctly cannot be used in model spec
 ReactiveMP.PredefinedNodeFunctionalForm
 ReactiveMP.UndefinedNodeFunctionalForm
 ReactiveMP.is_predefined_node
+```
+
+## [Node pipelines](@id lib-node-pipelines)
+
+```@docs
+ReactiveMP.AbstractPipelineStage
+ReactiveMP.apply_pipeline_stage
+ReactiveMP.EmptyPipelineStage
+ReactiveMP.CompositePipelineStage
+ReactiveMP.LoggerPipelineStage
+ReactiveMP.DiscontinuePipelineStage
+ReactiveMP.AsyncPipelineStage
+ReactiveMP.ScheduleOnPipelineStage
+ReactiveMP.schedule_updates
+```
+
+## [List of predefined factor node](@id lib-predefined-nodes)    
+
+To quickly check the list of all predefined factor nodes, call `?ReactiveMP.is_predefined_node` or `Base.doc(ReactiveMP.is_predefined_node)`.
+
+```
+?ReactiveMP.is_predefined_node
+```
+
+```@eval
+using ReactiveMP, Markdown
+Markdown.parse(string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node))))
 ```

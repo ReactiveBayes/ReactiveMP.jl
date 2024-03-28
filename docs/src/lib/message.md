@@ -79,6 +79,7 @@ defined in `BayesBase.jl` with various product strategies. We refer an intereste
 
 ```@docs
 ReactiveMP.multiply_messages
+ReactiveMP.messages_prod_fn
 ```
 
 

@@ -5,8 +5,6 @@
 This object represents local marginals for some specific factor node.
 The local marginal can be joint in case of structured factorisation.
 Local to factor node marginal also can be shared with a corresponding marginal of some random variable.
-
-See also: [`FactorNodeLocalClusters`](@ref)
 """
 mutable struct FactorNodeLocalMarginal
     const name::Symbol

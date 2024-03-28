@@ -14,6 +14,7 @@ q(x) = f\left(\frac{\overrightarrow{\mu}(x)\overleftarrow{\mu}(x)}{\int \overrig
 
 ```@docs 
 AbstractFormConstraint
+UnspecifiedFormConstraint
 CompositeFormConstraint
 ```
  
@@ -28,6 +29,7 @@ Every custom functional form must implement a new method for the [`default_form_
 default_form_check_strategy
 FormConstraintCheckEach
 FormConstraintCheckLast
+FormConstraintCheckPickDefault
 ```
 
 ### Prod constraint 
@@ -44,22 +46,6 @@ The main function that a custom functional form must implement, which we referre
 
 ```@docs
 constrain_form
-```
-
-### Is point mass form constraint (optional)
-
-Every custom functional form may implement a new method for the [`is_point_mass_form_constraint`](@ref) function that returns either `true` or `false`. This is an utility function that simplifes computation of the Bethe Free Energy and is not strictly necessary.
-
-```@docs 
-is_point_mass_form_constraint
-```
-
-### Compatibility with `@constraints` macro (optional)
-
-To make custom functional form constraint compatible with the `@constraints` macro, it must implement a new method for the [`make_form_constraint`](@ref) function.
-
-```@docs 
-make_form_constraint
 ```
 
 ## [Custom Functional Form Example](@id custom-functional-form-example)

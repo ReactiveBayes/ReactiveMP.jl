@@ -26,7 +26,7 @@ This function is used to compute an outbound message for a given node
 - `addons`: Extra addons information
 - `__node`: Node reference
 
-For all available rules, see [`ReactiveMP.print_rules_table()`](@ref).
+For all available rules, see `ReactiveMP.print_rules_table()`.
 
 See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
 """

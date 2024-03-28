@@ -16,6 +16,7 @@ ReactiveMP.is_clamped(marginal::Marginal)
 ReactiveMP.is_initial(marginal::Marginal)
 ReactiveMP.getaddons(marginal::Marginal)
 ReactiveMP.as_marginal
+ReactiveMP.to_marginal
 ```
 
 ```@example marginal

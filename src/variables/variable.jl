@@ -24,8 +24,6 @@ end
     messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
 
 Returns a suitable prod computation function for a given strategy and constraints
-
-See also: [`FoldLeftProdStrategy`](@ref), [`FoldRightProdStrategy`](@ref), [`CustomProdStrategy`](@ref)
 """
 function messages_prod_fn end
 

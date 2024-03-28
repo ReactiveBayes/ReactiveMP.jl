@@ -2,8 +2,6 @@
     NodeInterface
 
 `NodeInterface` object represents a single node-variable connection.
-
-See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
 struct NodeInterface
     name::Symbol
@@ -32,8 +30,6 @@ isconst(interface::NodeInterface)  = isconst(interface.variable)
     name(interface)
 
 Returns a name of the interface.
-
-See also: [`NodeInterface`](@ref), [`tag`](@ref)
 """
 name(symbol::Symbol) = symbol
 name(interface::NodeInterface) = name(interface.name)
@@ -43,8 +39,6 @@ name(interface::NodeInterface) = name(interface.name)
 
 Returns a tag of the interface in the form of `Val{ name(interface) }`.
 The major difference between tag and name is that it is possible to dispath on interface's tag in message computation rule.
-
-See also: [`NodeInterface`](@ref), [`name`](@ref)
 """
 tag(interface::NodeInterface) = Val{name(interface)}()
 
@@ -52,8 +46,6 @@ tag(interface::NodeInterface) = Val{name(interface)}()
     messageout(interface)
 
 Returns an outbound messages stream from the given interface.
-
-See also: [`NodeInterface`](@ref), [`messagein`](@ref)
 """
 messageout(interface::NodeInterface) = interface.m_out
 
@@ -61,8 +53,6 @@ messageout(interface::NodeInterface) = interface.m_out
     messagein(interface)
 
 Returns an inbound messages stream from the given interface.
-
-See also: [`NodeInterface`](@ref), [`messageout`](@ref)
 """
 messagein(interface::NodeInterface) = messageout(interface.variable, interface.message_index)
 
@@ -70,8 +60,6 @@ messagein(interface::NodeInterface) = messageout(interface.variable, interface.m
     getvariable(interface)
 
 Returns a variable connected to the given interface.
-
-See also: [`NodeInterface`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
 getvariable(interface::NodeInterface) = interface.variable
 
@@ -80,8 +68,6 @@ getvariable(interface::NodeInterface) = interface.variable
 
 `IndexedNodeInterface` object represents a repetative node-variable connection.
 Used in cases when a node may connect to a different number of random variables with the same name, e.g. means and precisions of a Gaussian Mixture node.
-
-See also: [`name`](@ref), [`tag`](@ref), [`messageout`](@ref), [`messagein`](@ref)
 """
 struct IndexedNodeInterface
     index     :: Int

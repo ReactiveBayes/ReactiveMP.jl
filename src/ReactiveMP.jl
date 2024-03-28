@@ -84,6 +84,7 @@ include("pipeline/pipeline.jl")
 include("pipeline/async.jl")
 include("pipeline/discontinue.jl")
 include("pipeline/logger.jl")
+include("pipeline/scheduled.jl")
 
 include("nodes/nodes.jl")
 

@@ -23,7 +23,7 @@ benchmark: benchmark_init ## Runs simple benchmark
 .PHONY: docs
 
 doc_init:
-	julia --project=docs -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate();'
+	julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate();'
 
 docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl

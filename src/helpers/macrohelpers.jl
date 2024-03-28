@@ -22,8 +22,6 @@ This function returns `T` expression for the following input expressions:
 
 # Arguments
 - `type`: Type expression to be lowered
-
-# See also: [`extract_fformtype`](@ref), [`upper_type`](@ref)
 """
 function bottom_type(type)
     @capture(type, (DeltaFn{T_}) | (ReactiveMP.DeltaFn{T_}) | (typeof(T_)) | (Type{<:T_}) | (Type{T_}) | (T_)) ||
@@ -42,8 +40,6 @@ This function returns `Type{ <: T }` expression for the following input expressi
 
 # Arguments
 - `type`: Type expression to be extended
-
-# See also: [`extract_fformtype`](@ref), [`bottom_type`](@ref)
 """
 function upper_type(type)
     if @capture(type, typeof(T_))

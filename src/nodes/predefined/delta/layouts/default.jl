@@ -141,8 +141,6 @@ In order to compute:
 - `q_ins`: uses inbound message on the `out` edge and all inbound messages on the `ins` edges (same as the `DeltaFnDefaultRuleLayout`)
 - `m_out`: uses all inbound messages on the `ins` edges (same as the `DeltaFnDefaultRuleLayout`)
 - `m_in_k`: uses inbound message on the `out` edge and inbound messages on the `ins` edges except `k`
-
-See also: [`ReactiveMP.DeltaFnDefaultRuleLayout`](@ref)
 """
 struct DeltaFnDefaultKnownInverseRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 

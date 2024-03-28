@@ -12,8 +12,6 @@ In order to compute:
 - `q_ins`: uses inbound message on the `out` edge and all inbound messages on the `ins` edges
 - `m_out`: uses the joint over the `ins` edges
 - `m_in_k`: uses the inbound message on the `in_k` edge and `q_ins`
-
-See also: [`ReactiveMP.DeltaFnDefaultRuleLayout`](@ref)
 """
 struct CVIApproximationDeltaFnRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 

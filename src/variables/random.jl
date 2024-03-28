@@ -2,17 +2,6 @@ export randomvar, RandomVariable, RandomVariableActivationOptions
 
 ## Random variable implementation
 
-"""
-    RandomVariable
-
-A random variable defines properties that are needed for reactive message passing.
-
-- `input_messages`: a vector of input messages streams, this should be created by nodes that are connected to this random variable. The nodes should use `getmessagein!` function.
-- `output_messages`: a vector of output messages streams, this should be set by the random variable itself. The random variable should use `activate!` function when all nodes are connected.
-- `marginal`: a marginal stream, this should be set by the random variable itself. The random variable should use `activate!` function when all nodes are connected.
-- `messages_prod_fn`: a function that accepts a collection of messages and defines how to compute a product of those. Used in the outbound message computation.
-- `marginal_prod_fn`: a function that accepts a collection of messages and defines how to compute a product of those. Used in the marginal computation.
-"""
 mutable struct RandomVariable <: AbstractVariable
     input_messages::Vector{MessageObservable{AbstractMessage}}
     output_messages::Vector{MessageObservable{Message}}
