@@ -29,7 +29,7 @@
 end
 
 @testitem "sdtype" begin
-    
+    using Distributions
 
     @test isdeterministic(Deterministic()) === true
     @test isdeterministic(Deterministic) === true
@@ -41,7 +41,11 @@ end
     @test isstochastic(Stochastic) === true
 
     @test sdtype(() -> nothing) === Deterministic()
-    @test_throws MethodError sdtype(0)
+    @test sdtype(Normal(0.0, 1.0)) === Stochastic()
+
+    @test_throws "Unknown if an object of type `Vector{Float64}` is stochastic or deterministic." sdtype([ 1.0, 2.0, 3.0 ])
+    @test_throws "Unknown if an object of type `Matrix{Float64}` is stochastic or deterministic." sdtype([ 1.0 0.0; 0.0 1.0 ])
+    @test_throws "Unknown if an object of type `Int64` is stochastic or deterministic." sdtype(0)
 end
 
 @testitem "is_predefined_node" begin 

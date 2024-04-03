@@ -103,13 +103,14 @@ Returns either `Deterministic` or `Stochastic` for a given object (if defined).
 
 See also: [`Deterministic`](@ref), [`Stochastic`](@ref), [`isdeterministic`](@ref), [`isstochastic`](@ref)
 """
-function sdtype end
+sdtype(any) = error("Unknown if an object of type `$(typeof(any))` is stochastic or deterministic.")
 
 # Any `Type` is considered to be a deterministic mapping unless stated otherwise (By convention, any `Distribution` type is not deterministic)
 # E.g. `Matrix` is not an instance of the `Function` abstract type, however we would like to pretend it is a deterministic function
 sdtype(::Type{T}) where {T}    = Deterministic()
-sdtype(::Type{<:Distribution}) = Stochastic()
 sdtype(::Function)             = Deterministic()
+sdtype(::Type{<:Distribution}) = Stochastic()
+sdtype(::Distribution)         = Stochastic()
 
 """
     as_node_symbol(type)
