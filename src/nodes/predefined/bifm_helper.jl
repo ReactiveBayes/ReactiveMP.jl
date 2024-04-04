@@ -21,14 +21,13 @@ struct BIFMHelper <: AbstractFactorNode end
 @node BIFMHelper Stochastic [out, in]
 
 # specify custom functional dependencies for BIFMHelper node
-function functional_dependencies(dependencies, factornode::FactorNode{<:Type{BIFMHelper}}, iindex::Int)
-    cindex = clusterindex(factornode, iindex)
+function functional_dependencies(::DefaultFunctionalDependencies, factornode::FactorNode{<:Type{BIFMHelper}}, interface, iindex)
+    
+    clusters = getlocalclusters(factornode)
+    cindex = clusterindex(clusters, iindex)
 
-    nodeinterfaces     = interfaces(factornode)
-    nodeclusters       = factorisation(factornode)
-    nodelocalmarginals = localmarginals(factornode)
-
-    varcluster = @inbounds nodeclusters[cindex]
+    nodeinterfaces     = getinterfaces(factornode)
+    nodelocalmarginals = getmarginals(clusters)
 
     # output
     if iindex === 2
