@@ -87,10 +87,10 @@ default_meta(::Type{GCV}) = DefaultGCVNodeMetadata
     A = exp(-ω_mean + ω_var / 2)
     B = exp(-κ_mean * z_mean + ksi / 2)
 
-    0.5 * log2π + 0.5 * (z_mean * κ_mean + ω_mean) + 0.5 * (psi * A * B)
+    (log2π + (z_mean * κ_mean + ω_mean) + (psi * A * B)) / 2
 end
 
-@average_energy GCV (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_z::NormalDistributionsFamily, q_κ::Any, q_ω::Any) = begin
+@average_energy GCV (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_z::NormalDistributionsFamily, q_κ::Any, q_ω::Any, meta::Union{<:GCVMetadata, Nothing}) = begin
     y_mean, y_var = mean_var(q_y)
     x_mean, x_var = mean_var(q_x)
     z_mean, z_var = mean_var(q_z)
@@ -102,5 +102,5 @@ end
     A = exp(-ω_mean + ω_var / 2)
     B = exp(-κ_mean * z_mean + ksi / 2)
 
-    0.5 * log2π + 0.5 * (z_mean * κ_mean + ω_mean) + 0.5 * (psi * A * B)
+    (log2π + (z_mean * κ_mean + ω_mean) + (psi * A * B)) / 2
 end
