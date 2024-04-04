@@ -12,7 +12,8 @@ ReactiveMP.jl
 
 ## Examples and tutorials
 
-The `ReactiveMP.jl` package is intended for advanced users with a deep understanding of message passing principles. For accesible tutorials and examples are available in the [RxInfer documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
+The `ReactiveMP.jl` package is intended for advanced users with a deep understanding of message passing principles. 
+Accesible tutorials and examples are available in the [RxInfer documentation](https://reactivebayes.github.io/RxInfer.jl/stable/).
 
 ## Table of Contents
 
