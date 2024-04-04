@@ -38,7 +38,7 @@ end
 const DefaultMessageProdFn = messages_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
 const DefaultMarginalProdFn = marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
 
-struct RandomVariableActivationOptions{S,F,M}
+struct RandomVariableActivationOptions{S, F, M}
     scheduler::S
     message_prod_fn::F
     marginal_prod_fn::M

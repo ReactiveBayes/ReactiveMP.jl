@@ -3,7 +3,6 @@
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
     @testset "Average energy" begin
-
         @test score(
             AverageEnergy(),
             Probit,

@@ -1,7 +1,7 @@
 
 @testitem "SoftDotNode" begin
     using ReactiveMP, Random, BayesBase, ExponentialFamily
-    
+
     @testset "AverageEnergy" begin
         begin
             q_y = NormalMeanVariance(3.0, 7.0)

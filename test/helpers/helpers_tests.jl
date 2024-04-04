@@ -11,5 +11,4 @@
         @test collect(s) == [1, 3]
         @test collect(skipindex(s, 1)) == [3]
     end
-
 end

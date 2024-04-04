@@ -10,12 +10,11 @@
     @node CustomDeterministicNode Deterministic [out, x]
 
     function test_variable_set_method(variable, dist::T, k) where {T}
-    
         test_out_var = randomvar()
 
         # messages could be initialized only when the node is created
         for _ in 1:k
-            factornode(CustomDeterministicNode, [ (:out, test_out_var), (:x, variable) ], ((1, 2,), ))
+            factornode(CustomDeterministicNode, [(:out, test_out_var), (:x, variable)], ((1, 2),))
         end
 
         activate!(test_out_var, RandomVariableActivationOptions())
@@ -69,7 +68,7 @@
         test_out_var = randomvar()
 
         for _ in 1:k
-            factornode((x) -> sum(x...), [ (:out, test_out_var), map(var -> (:in, var), variables)... ], nothing)
+            factornode((x) -> sum(x...), [(:out, test_out_var), map(var -> (:in, var), variables)...], nothing)
         end
 
         foreach(var -> activate!(var, RandomVariableActivationOptions()), variables)

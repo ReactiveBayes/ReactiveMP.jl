@@ -80,7 +80,7 @@
         ]
 
         for (distribution, distribution_methods) in zip(distributions, dists_methods), method in methods_to_test
-            T       = typeof(distribution)
+            T = typeof(distribution)
             marginal = Marginal(distribution, false, false, nothing)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(method, (T,))
@@ -92,8 +92,8 @@
         fn_mean_functions = (inv, log, xtlog, mirrorlog, loggamma)
 
         for distribution in distributions, fn_mean in fn_mean_functions
-            F       = typeof(fn_mean)
-            T       = typeof(distribution)
+            F = typeof(fn_mean)
+            T = typeof(distribution)
             marginal = Marginal(distribution, false, false, nothing)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(mean, (F, T), ReactiveMP)

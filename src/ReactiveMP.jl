@@ -97,7 +97,6 @@ include("score/node.jl")
 include("nodes/predefined.jl")
 include("rules/predefined.jl")
 
-
 # This symbol is only defined on Julia versions that support extensions
 @static if !isdefined(Base, :get_extension)
     using Requires

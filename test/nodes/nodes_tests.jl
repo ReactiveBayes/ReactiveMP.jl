@@ -43,12 +43,12 @@ end
     @test sdtype(() -> nothing) === Deterministic()
     @test sdtype(Normal(0.0, 1.0)) === Stochastic()
 
-    @test_throws "Unknown if an object of type `Vector{Float64}` is stochastic or deterministic." sdtype([ 1.0, 2.0, 3.0 ])
-    @test_throws "Unknown if an object of type `Matrix{Float64}` is stochastic or deterministic." sdtype([ 1.0 0.0; 0.0 1.0 ])
+    @test_throws "Unknown if an object of type `Vector{Float64}` is stochastic or deterministic." sdtype([1.0, 2.0, 3.0])
+    @test_throws "Unknown if an object of type `Matrix{Float64}` is stochastic or deterministic." sdtype([1.0 0.0; 0.0 1.0])
     @test_throws "Unknown if an object of type `Int64` is stochastic or deterministic." sdtype(0)
 end
 
-@testitem "is_predefined_node" begin 
+@testitem "is_predefined_node" begin
     import ReactiveMP: is_predefined_node, PredefinedNodeFunctionalForm, UndefinedNodeFunctionalForm
 
     @test is_predefined_node(() -> nothing) === UndefinedNodeFunctionalForm()
@@ -56,7 +56,7 @@ end
 
     struct ArbitraryFactorNodeForIsPredefinedTest end
 
-    @node ArbitraryFactorNodeForIsPredefinedTest Stochastic [ out, in ]
+    @node ArbitraryFactorNodeForIsPredefinedTest Stochastic [out, in]
 
     @test is_predefined_node(ArbitraryFactorNodeForIsPredefinedTest) === PredefinedNodeFunctionalForm()
 end
@@ -147,9 +147,9 @@ end
     struct DummyNodeForDocumentationStochastic end
     struct DummyNodeForDocumentationDeterministic end
 
-    @node DummyNodeForDocumentationStochastic Stochastic [out, x, (y, aliases = [ yy ])]
+    @node DummyNodeForDocumentationStochastic Stochastic [out, x, (y, aliases = [yy])]
 
-    @node DummyNodeForDocumentationDeterministic Deterministic [out, (x, aliases = [ xx, xxx ]), y]
+    @node DummyNodeForDocumentationDeterministic Deterministic [out, (x, aliases = [xx, xxx]), y]
 
     documentation = string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node)))
 

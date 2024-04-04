@@ -202,7 +202,7 @@ mutable struct DefferedMessage{R, S, F} <: AbstractMessage
     const messages  :: R
     const marginals :: S
     const mappingFn :: F
-    cache :: Union{Nothing, Message}
+    cache           :: Union{Nothing, Message}
 end
 
 DefferedMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DefferedMessage(messages, marginals, mappingFn, nothing)

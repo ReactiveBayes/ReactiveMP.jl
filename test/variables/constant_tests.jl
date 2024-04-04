@@ -39,7 +39,6 @@ end
         # Test marginal computation
         @testset for d in 1:5:100, constant in rand(10)
             @testset let var = constvar(constant)
-
                 marginal_expected = mgl(PointMass(constant))
                 marginal_result = check_stream_updated_once(getmarginal(var)) do
                     nothing

@@ -3,7 +3,6 @@
     using ReactiveMP, Random, BayesBase, ExponentialFamily
 
     @testset "Average energy" begin
-
         for l in 1:20, k in 1:20
             @test isapprox(
                 score(AverageEnergy(), Poisson, Val{(:out, :l)}(), (Marginal(PointMass(k), false, false, nothing), Marginal(PointMass(l), false, false, nothing)), nothing),
