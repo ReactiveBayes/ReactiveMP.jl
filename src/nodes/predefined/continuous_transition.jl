@@ -75,7 +75,7 @@ process_Fs(f::Function, a) = [ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 
 
 default_meta(::Type{CTMeta}) = error("ContinuousTransition node requires meta flag explicitly specified")
 
-default_functional_dependencies(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies((3,), (nothing,))
+default_functional_dependencies(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies(a = nothing)
 
 """
     `ctcompanion_matrix` casts a vector `a` into a matrix `A` by means of linearization of the transformation function `f` around the expansion point `a0`.

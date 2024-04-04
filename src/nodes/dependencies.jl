@@ -186,7 +186,7 @@ RequireMarginalFunctionalDependencies(μ = vague(NormalMeanPrecision),     τ = 
 
 See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
 """
-struct RequireMarginalFunctionalDependencies{S <: NamedTuple}
+struct RequireMarginalFunctionalDependencies{S <: NamedTuple} <: FunctionalDependencies
     specification::S
 end
 
@@ -238,7 +238,7 @@ This includes all inbound messages (including on the same edge) and marginals ov
 
 See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)
 """
-struct RequireEverythingFunctionalDependencies end
+struct RequireEverythingFunctionalDependencies <: FunctionalDependencies end
 
 function functional_dependencies(::RequireEverythingFunctionalDependencies, factornode, interface, iindex)
     clusters = getlocalclusters(factornode)
