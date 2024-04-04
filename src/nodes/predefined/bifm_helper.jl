@@ -22,7 +22,6 @@ struct BIFMHelper <: AbstractFactorNode end
 
 # specify custom functional dependencies for BIFMHelper node
 function functional_dependencies(::DefaultFunctionalDependencies, factornode::FactorNode{<:Type{BIFMHelper}}, interface, iindex)
-    
     clusters = getlocalclusters(factornode)
     cindex = clusterindex(clusters, iindex)
 
