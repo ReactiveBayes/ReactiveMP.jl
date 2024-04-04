@@ -206,9 +206,11 @@ function functional_dependencies(dependencies::RequireMarginalFunctionalDependen
     message_dependencies = Iterators.map(inds -> map(i -> getinterface(factornode, i), inds), vdependencies)
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies_default = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies_default_clusters      = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies_default_factorization = skipindex(getfactorization(clusters), cindex)
 
     marginal_dependencies = if name(interface) ∈ keys(specification)
+        
         # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
         extra_localmarginal = FactorNodeLocalMarginal(name(interface))
         # Create a stream of marginals and connect it with the streams of marginals of the actual variable
@@ -221,10 +223,10 @@ function functional_dependencies(dependencies::RequireMarginalFunctionalDependen
             setmarginal!(extra_stream, initialmarginals)
         end
 
-        insertafter = sum(first(el) < iindex ? 1 : 0 for el in marginal_dependencies_default; init = 0)
-        TupleTools.insertafter(marginal_dependencies_default, insertafter, (extra_localmarginal,))
+        insertafter = sum(first(el) < iindex ? 1 : 0 for el in marginal_dependencies_default_factorization; init = 0)
+        TupleTools.insertafter(marginal_dependencies_default_clusters, insertafter, (extra_localmarginal,))
     else
-        marginal_dependencies_default
+        marginal_dependencies_default_clusters
     end
 
     return message_dependencies, marginal_dependencies
