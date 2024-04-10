@@ -210,7 +210,7 @@ function functional_dependencies(dependencies::RequireMarginalFunctionalDependen
     marginal_dependencies_default_factorization = skipindex(getfactorization(clusters), cindex)
 
     marginal_dependencies = if name(interface) ∈ keys(specification)
-        
+
         # We create an auxiliary local marginal with non-standard index here and inject it to other standard dependencies
         extra_localmarginal = FactorNodeLocalMarginal(name(interface))
         # Create a stream of marginals and connect it with the streams of marginals of the actual variable

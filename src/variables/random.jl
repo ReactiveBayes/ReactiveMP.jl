@@ -100,7 +100,7 @@ end
 
 _getmarginal(randomvar::RandomVariable) = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, observable) = connect!(_getmarginal(randomvar), observable)
-_makemarginal(randomvar::RandomVariable, options::RandomVariableActivationOptions) = begin 
+_makemarginal(randomvar::RandomVariable, options::RandomVariableActivationOptions) = begin
     return collectLatest(AbstractMessage, Marginal, randomvar.input_messages, options.marginal_prod_fn, reset_vstatus)
 end
 
