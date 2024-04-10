@@ -74,7 +74,7 @@ function initialize_output_messages!(randomvar::RandomVariable, options::RandomV
 
     @inbounds for i in 1:d
         outputmsgs[i] = MessageObservable(Message)
-        outputmsg = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn)
+        outputmsg = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn, reset_vstatus)
         connect!(outputmsgs[i], outputmsg)
     end
 
@@ -100,24 +100,20 @@ end
 
 _getmarginal(randomvar::RandomVariable) = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, observable) = connect!(_getmarginal(randomvar), observable)
-_makemarginal(randomvar::RandomVariable, options::RandomVariableActivationOptions) = collectLatest(AbstractMessage, Marginal, randomvar.input_messages, options.marginal_prod_fn)
+_makemarginal(randomvar::RandomVariable, options::RandomVariableActivationOptions) = begin 
+    return collectLatest(AbstractMessage, Marginal, randomvar.input_messages, options.marginal_prod_fn, reset_vstatus)
+end
 
-# name(randomvar::RandomVariable)            = randomvar.name
-# isanonymous(randomvar::RandomVariable)     = randomvar.anonymous
-# proxy_variables(randomvar::RandomVariable) = randomvar.proxy_variables
-# collection_type(randomvar::RandomVariable) = randomvar.collection_type
-# equality_chain(randomvar::RandomVariable)  = randomvar.equality_chain
-# prod_constraint(randomvar::RandomVariable) = randomvar.prod_constraint
-# prod_strategy(randomvar::RandomVariable)   = randomvar.prod_strategy
-
-# marginal_form_constraint(randomvar::RandomVariable)     = randomvar.marginal_form_constraint
-# marginal_form_check_strategy(randomvar::RandomVariable) = _marginal_form_check_strategy(randomvar.marginal_form_check_strategy, randomvar)
-
-# _marginal_form_check_strategy(::FormConstraintCheckPickDefault, randomvar::RandomVariable) = default_form_check_strategy(marginal_form_constraint(randomvar))
-# _marginal_form_check_strategy(form_check_strategy, randomvar::RandomVariable)              = form_check_strategy
-
-# messages_form_constraint(randomvar::RandomVariable)     = randomvar.messages_form_constraint
-# messages_form_check_strategy(randomvar::RandomVariable) = _messages_form_check_strategy(randomvar.messages_form_check_strategy, randomvar)
-
-# _messages_form_check_strategy(::FormConstraintCheckPickDefault, randomvar::RandomVariable) = default_form_check_strategy(messages_form_constraint(randomvar))
-# _messages_form_check_strategy(form_check_strategy, randomvar::RandomVariable)              = form_check_strategy
+# Reset consumption of the combination of inbound messages if the result of the computations is `is_initial`
+# This is a helper function for the `EqualityChain` structure, but also for the marginals computation (both single and joint)
+function reset_vstatus(wrapper, value)
+    # We need to reset the internal Rocket.jl `vstatus` buffer from the `wrapper` if the result of the computation is `is_initial`
+    # The `wrapper` here is the internal structure for `collectLatest` and `combineLatestUpdates` functions
+    # The logic here is that if the result of the computation is `is_initial` we should reuse the arguments for the next computation
+    # This may happen, when we initialize messages on the graph, which in turn also initializes marginals (implicitly)
+    # if this happens, the inference cannot proceed further, since the initial messages have been consumed
+    # This also prevents weird FE behaviour, when it "maximizes" the FE value, but converges to a minimum value 
+    if is_initial(value)
+        Rocket.fill_vstatus!(wrapper, true)
+    end
+end

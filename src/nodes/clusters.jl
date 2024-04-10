@@ -98,9 +98,8 @@ function activate_cluster!(clusters::FactorNodeLocalClusters, index::Int, depend
         vtag  = tag(getmarginal(clusters, index))
         meta  = collect_meta(fform, getmetadata(options))
 
-        mapping = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
-        # TODO: discontinue operator is needed for loopy belief propagation? Check
-        marginalout = combineLatest((messages, marginals), PushNew()) |> discontinue() |> map(Marginal, mapping)
+        mapping     = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
+        marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
 
         connect!(getmarginal(marginal), marginalout)
     end
