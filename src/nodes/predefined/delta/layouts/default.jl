@@ -61,7 +61,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
         vtag  = Val{:ins}()
 
         mapping     = MarginalMapping(fform, vtag, msgs_names, marginal_names, meta, factornode)
-        marginalout = with_statics(factornode, combineLatest((msgs_observable, marginals_observable), PushNew())) |> discontinue() |> map(Marginal, mapping)
+        marginalout = with_statics(factornode, combineLatestUpdates((msgs_observable, marginals_observable), PushNew(), Marginal, mapping, reset_vstatus))
 
         connect!(cmarginal, marginalout)
     end
