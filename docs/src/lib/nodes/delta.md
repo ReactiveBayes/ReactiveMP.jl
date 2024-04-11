@@ -1,0 +1,22 @@
+# [Delta node](@id lib-nodes-delta)
+
+```@docs
+ReactiveMP.DeltaMeta
+ReactiveMP.ManyOf
+ReactiveMP.Linearization
+ReactiveMP.local_linearization
+ReactiveMP.smoothRTS
+ReactiveMP.Unscented
+ReactiveMP.sigma_points_weights
+ReactiveMP.CVIApproximationDeltaFnRuleLayout
+ReactiveMP.log_approximate
+ReactiveMP.ForwardDiffGrad
+ReactiveMP.UT
+ReactiveMP.UnscentedTransform
+ReactiveMP.ProdCVI
+ReactiveMP.CVI
+ReactiveMP.cvi_setup!
+ReactiveMP.cvi_update!
+ReactiveMP.DeltaFnDefaultRuleLayout
+ReactiveMP.DeltaFnDefaultKnownInverseRuleLayout
+```

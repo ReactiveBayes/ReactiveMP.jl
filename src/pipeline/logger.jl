@@ -7,8 +7,6 @@ Logs all updates from `stream` into `output`
 
 # Arguments 
 - `output`: (optional), an output stream used to print log statements
-
-See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`EmptyPipelineStage`](@ref), [`CompositePipelineStage`](@ref)
 """
 struct LoggerPipelineStage{T} <: AbstractPipelineStage
     output::T

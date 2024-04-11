@@ -8,8 +8,6 @@ import Base: +
     AbstractPipelineStage
 
 An abstract type for all custom pipelines stages
-
-See also: [`apply_pipeline_stage`](@ref), [`EmptyPipelineStage`](@ref), [`CompositePipelineStage`](@ref)
 """
 abstract type AbstractPipelineStage end
 
@@ -17,8 +15,6 @@ abstract type AbstractPipelineStage end
     apply_pipeline_stage(stage, factornode, tag, stream)
 
 Applies a given pipeline stage to the `stream` argument given `factornode` and `tag` of an edge.
-
-See also: [`AbstractPipelineStage`](@ref), [`EmptyPipelineStage`](@ref), [`CompositePipelineStage`](@ref)
 """
 function apply_pipeline_stage end
 
@@ -28,8 +24,6 @@ function apply_pipeline_stage end
     EmptyPipelineStage <: AbstractPipelineStage
 
 Dummy empty pipeline stage that does not modify the original pipeline.
-
-See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`CompositePipelineStage`](@ref)
 """
 struct EmptyPipelineStage <: AbstractPipelineStage end
 
@@ -41,8 +35,6 @@ apply_pipeline_stage(::EmptyPipelineStage, factornode, tag, stream) = stream
     CompositePipelineStage{T} <: AbstractPipelineStage
 
 Composite pipeline stage that consists of multiple inner pipeline stages 
-
-See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`EmptyPipelineStage`](@ref)
 """
 struct CompositePipelineStage{T} <: AbstractPipelineStage
     stages::T
@@ -60,3 +52,13 @@ Base.:+(left::AbstractPipelineStage, right::AbstractPipelineStage)   = Composite
 Base.:+(left::AbstractPipelineStage, right::CompositePipelineStage)  = CompositePipelineStage((left, right.stages...))
 Base.:+(left::CompositePipelineStage, right::AbstractPipelineStage)  = CompositePipelineStage((left.stages..., right))
 Base.:+(left::CompositePipelineStage, right::CompositePipelineStage) = CompositePipelineStage((left.stages..., right.stages...))
+
+"""
+    collect_pipeline(nodetype, pipeline)
+
+This function converts given pipeline to a correct internal pipeline representation for a factor given node.
+"""
+function collect_pipeline end
+
+collect_pipeline(any, ::Nothing) = EmptyPipelineStage()
+collect_pipeline(any, something) = something

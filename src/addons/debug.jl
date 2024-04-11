@@ -7,15 +7,11 @@ This addon calls the function `f` over the output of the message mapping and pro
 
 ## Example
 ```julia
+checkfornans(x) = isnan(x)
+checkfornans(x::AbstractArray) = any(checkfornans.(x))
+checkfornans(x::Tuple) = any(checkfornans.(x))
 
-    checkfornans(x) = isnan(x)
-    checkfornans(x::AbstractArray) = any(checkfornans.(x))
-    checkfornans(x::Tuple) = any(checkfornans.(x))
-
-    inference(
-        ...
-        addons = (AddonDebug(dist -> checkfornans(params(dist))),)
-    )
+addons = (AddonDebug(dist -> checkfornans(params(dist))),)
 ```
 """
 struct AddonDebug <: AbstractAddon

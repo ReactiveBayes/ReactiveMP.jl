@@ -4,23 +4,24 @@ import Base: tail
 
 struct FactorBoundFreeEnergy end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
-    return score(T, FactorBoundFreeEnergy(), sdtype(node), node, skip_strategy, scheduler)
+function score(::Type{T}, ::FactorBoundFreeEnergy, node::AbstractFactorNode, meta, skip_strategy, scheduler) where {T <: CountingReal}
+    return score(T, FactorBoundFreeEnergy(), sdtype(node), node, collect_meta(functionalform(node), meta), skip_strategy, scheduler)
 end
 
 ## Deterministic mapping
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::AbstractFactorNode, meta, skip_strategy, scheduler) where {T <: CountingReal}
     fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
         (interface) -> apply_skip_filter(messagein(interface), skip_strategy) |> schedule_on(scheduler)
     end
 
-    stream = combineLatest(map(fnstream, interfaces(node)), PushNew())
+    tinterfaces = Tuple(getinterfaces(node))
+    stream = combineLatest(map(fnstream, tinterfaces), PushNew())
 
-    vtag       = Val{inboundclustername(node)}()
-    msgs_names = Val{map(name, interfaces(node))}()
+    vtag       = Val{clustername(getinboundinterfaces(node))}()
+    msgs_names = Val{map(name, tinterfaces)}()
 
-    mapping = let fform = functionalform(node), vtag = vtag, meta = metadata(node), msgs_names = msgs_names, node = node
+    mapping = let fform = functionalform(node), vtag = vtag, msgs_names = msgs_names, node = node
         (messages) -> begin
             # We do not really care about (is_clamped, is_initial) at this stage, so it can be (false, false)
             marginal = Marginal(marginalrule(fform, vtag, msgs_names, messages, nothing, nothing, meta, node), false, false, nothing)
@@ -33,14 +34,15 @@ end
 
 ## Stochastic mapping
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, skip_strategy, scheduler) where {T <: CountingReal}
-    fnstream = let node = node, skip_strategy = skip_strategy, scheduler = scheduler
-        (cluster) -> getmarginal!(node, cluster, skip_strategy) |> schedule_on(scheduler)
+function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::AbstractFactorNode, meta, skip_strategy, scheduler) where {T <: CountingReal}
+    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
+        (localmarginal) -> apply_skip_filter(getmarginal(localmarginal), skip_strategy) |> schedule_on(scheduler)
     end
 
-    stream = combineLatest(map(fnstream, localmarginals(node)), PushNew())
+    localmarginals = getmarginals(getlocalclusters(node))
+    stream = combineLatest(map(fnstream, localmarginals), PushNew())
 
-    mapping = let fform = functionalform(node), meta = metadata(node), marginal_names = Val{localmarginalnames(node)}()
+    mapping = let fform = functionalform(node), marginal_names = Val{Tuple(map(name, localmarginals))}()
         (marginals) -> begin
             average_energy   = score(AverageEnergy(), fform, marginal_names, marginals, meta)
             clusters_entropy = mapreduce(marginal -> score(DifferentialEntropy(), marginal), +, marginals)

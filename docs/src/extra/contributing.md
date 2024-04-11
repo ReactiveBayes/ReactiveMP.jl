@@ -46,7 +46,7 @@ We use default [Julia style guide](https://docs.julialang.org/en/v1/manual/style
 
 - Use 4 spaces for indentation
 - Type names use `UpperCamelCase`. For example: `AbstractFactorNode`, `RandomVariable`, etc..
-- Function names are `lowercase` with underscores, when necessary. For example: `activate!`, `randomvar`, `as_variable`, etc..
+- Function names are `lowercase` with underscores, when necessary. For example: `activate!`, `randomvar`, etc..
 - Variable names and function arguments use `snake_case`
 - The name of a method that modifies its argument(s) must end in `!`
 
