@@ -234,7 +234,7 @@ function prod(approximation::CVI, outbound, inbound)
         optimizer_and_state, new_λ = cvi_update!(optimizer_and_state, new_λ, current_λ, current_∇)
 
         # check whether updated natural parameters are proper
-        if isproper(NaturalParametersSpace(), T, new_λ, inbound_c) && enforce_proper_message(approximation.enforce_proper_messages, T, cache, new_λ, inbound_η, inbound_c)
+        if enforce_proper_message(approximation.enforce_proper_messages, T, cache, new_λ, inbound_η, inbound_c)
             copyto!(current_λ, new_λ)
             hasupdated = true
         end

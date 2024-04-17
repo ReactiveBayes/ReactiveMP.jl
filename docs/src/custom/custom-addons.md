@@ -62,3 +62,9 @@ here we add the number of operations from the addons that are being multiplied a
 ### More information
 
 For more advanced information check the implementation of the log-scale or memory addons.
+
+### Built-in addons
+
+```@docs 
+ReactiveMP.AddonDebug
+```

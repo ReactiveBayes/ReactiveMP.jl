@@ -30,3 +30,4 @@ function resolve_form_prod(constraints, specification, name)
     entry = get(specification, name, __EmptyFormConstraintSpecification)
     return entry.form_constraint, entry.prod_constraint
 end
+

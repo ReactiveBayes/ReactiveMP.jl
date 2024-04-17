@@ -93,3 +93,4 @@ function Base.push!(collection::VariablesCollection, randomprocesses::AbstractAr
     setindex!(getvardict(collection), randomprocesses, name(first(randomprocesses)))
     return randomprocesses
 end
+

@@ -4,7 +4,7 @@ import Distributions: Distribution
 import BayesBase: AbstractContinuousGenericLogPdf
 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVI} = begin
-    g = getnodefn(Val(:out))
+    g = getnodefn(meta, Val(:out))
 
     # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
     F = promote_variate_type(variate_form(typeof(first(m_ins))), AbstractContinuousGenericLogPdf)
@@ -19,7 +19,7 @@ end
     rng = something(method.rng, Random.GLOBAL_RNG)
     pre_samples = zip(map(m_in_k -> cvilinearize(rand(rng, m_in_k, method.n_samples)), m_ins)...)
 
-    logp_nc_drop_index = let g = getnodefn(Val(:out)), pre_samples = pre_samples
+    logp_nc_drop_index = let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
         (z, i, pre_samples) -> begin
             samples = map(ttuple -> TupleTools.insertat(ttuple, i, (z,)), pre_samples)
             t_samples = map(s -> g(s...), samples)

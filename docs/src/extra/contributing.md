@@ -4,7 +4,7 @@ We welcome all possible contributors. This page details the some of the guidelin
 
 ## Reporting bugs
 
-We track bugs using [GitHub issues](https://github.com/biaslab/ReactiveMP.jl/issues). We encourage you to write complete, specific, reproducible bug reports. Mention the versions of Julia and `ReactiveMP` for which you observe unexpected behavior. Please provide a concise description of the problem and complement it with code snippets, test cases, screenshots, tracebacks or any other information that you consider relevant. This will help us to replicate the problem and narrow the search space for solutions.
+We track bugs using [GitHub issues](https://github.com/reactivebayes/ReactiveMP.jl/issues). We encourage you to write complete, specific, reproducible bug reports. Mention the versions of Julia and `ReactiveMP` for which you observe unexpected behavior. Please provide a concise description of the problem and complement it with code snippets, test cases, screenshots, tracebacks or any other information that you consider relevant. This will help us to replicate the problem and narrow the search space for solutions.
 
 ## Suggesting features
 
@@ -46,7 +46,7 @@ We use default [Julia style guide](https://docs.julialang.org/en/v1/manual/style
 
 - Use 4 spaces for indentation
 - Type names use `UpperCamelCase`. For example: `AbstractFactorNode`, `RandomVariable`, etc..
-- Function names are `lowercase` with underscores, when necessary. For example: `activate!`, `randomvar`, `as_variable`, etc..
+- Function names are `lowercase` with underscores, when necessary. For example: `activate!`, `randomvar`, etc..
 - Variable names and function arguments use `snake_case`
 - The name of a method that modifies its argument(s) must end in `!`
 
