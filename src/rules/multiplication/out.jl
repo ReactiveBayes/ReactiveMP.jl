@@ -144,9 +144,6 @@ function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
 end
 
 
-@rule typeof(*)(:out, Marginalisation) (m_A::GaussianProcess, m_in::LogNormal, meta::ProcessMeta) = begin 
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A=m_in,m_in=m_A,meta=meta)
-end
 
 function make_productdist_message(samples_A,d_in)
     return let samples_A=samples_A,d_in=d_in
@@ -157,20 +154,6 @@ function make_productdist_message(samples_A,d_in)
             return log(result)
         end
     end
-end
-
-@rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::GaussianProcess, meta::ProcessMeta) = begin 
-    index = meta.index
-    m_gp, cov_gp = mean_cov(m_in.finitemarginal)
-    d_in = NormalMeanVariance(m_gp[index], cov_gp[index,index])
-    nsamples = 100
-    samples_A1  = rand(m_A,nsamples)
-    samples_A2  = rand(m_A,nsamples)
-    samples_in = rand(d_in,nsamples)
-    samples_prod =  samples_A1 .* samples_in
-    p = make_productdist_message(samples_A2,d_in)
-
-    return ContinuousUnivariateLogPdf(p)
 end
 
 @rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 

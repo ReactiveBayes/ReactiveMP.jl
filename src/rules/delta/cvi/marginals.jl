@@ -41,28 +41,3 @@ end
 
     return FactorizedJoint(ntuple(i -> optimize_natural_parameters(i, pre_samples), length(m_ins)))
 end
-
-
-#gp test 
-@marginalrule DeltaFn(:ins) (m_out::UnivariateGaussianDistributionsFamily, m_ins::ManyOf{1, GaussianProcess}, meta::Tuple{<:ProcessMeta, <:DeltaMeta{M}}) where {M <: CVI} = begin 
-    g = getnodefn(Val(:out))
-    
-    gp_finitemarginal = m_ins[1].finitemarginal
-    m_gp, cov_gp = mean_cov(gp_finitemarginal)
-    index = meta[1].index
-    kernelf = m_ins[1].kernelfunction
-    test    = m_ins[1].testinput
-    meanf   = m_ins[1].meanfunction
-    train   = m_ins[1].traininput
-    cov_strategy = m_ins[1].covariance_strategy
-    x_u = m_ins[1].inducing_input
-
-    mean_gp, var_gp = ReactiveMP.predictMVN(cov_strategy, kernelf,meanf,test,[train[index]],m_gp, x_u) #changed here
-
-    # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
-    F = promote_variate_type(variate_form(NormalMeanVariance(mean_gp[1], var_gp[1])), AbstractContinuousGenericLogPdf)
-    f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
-    q = prod(getmethod(meta[2]), f, NormalMeanVariance(mean_gp[1], var_gp[1]))
-
-    return FactorizedJoint((q,))
-end
