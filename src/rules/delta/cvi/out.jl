@@ -18,14 +18,3 @@ end
     samples = map(x -> g(x...), zip(samples_linear...))
     return TerminalProdArgument(SampleList(samples))
 end
-
-
-### gp test 
-@rule DeltaFn(:out, Marginalisation) (q_ins::FactorizedJoint, meta::Tuple{<:ProcessMeta, <:DeltaMeta{M}}) where {M <: CVI} = begin 
-    method            = getmethod(meta[2])
-    q_sample_friendly = ReactiveMP.logpdf_sample_friendly(q_ins[1])[2]
-    rng               = something(method.rng, Random.GLOBAL_RNG)
-    samples           = map(x -> rand(rng, q_sample_friendly), 1:(method.n_samples))
-    q_out             = map(getnodefn(Val(:out)), samples)
-    return ProdFinal(SampleList(q_out))
-end

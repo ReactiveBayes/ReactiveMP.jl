@@ -119,112 +119,79 @@ Modified-bessel function of second kind
 mx, vx : mean and variance of the random variable x 
 my, vy : mean and variance of the random variable y 
 rho    : correlation coefficient
-"""
-function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
-    logpdf = function (x)
-        x += jitter
-        term1 = -1 / (2 * (1 - rho^2)) * (mx^2 / vx + my^2 / vy - 2 * rho * (x + mx * my) / sqrt(vx * vy))
+# """
+# function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
+#     logpdf = function (x)
+#         x += jitter
+#         term1 = -1 / (2 * (1 - rho^2)) * (mx^2 / vx + my^2 / vy - 2 * rho * (x + mx * my) / sqrt(vx * vy))
 
-        term2 = 0.0
-        for n in 0:truncation
-            for m in 0:(2 * n)
-                term2 +=
-                    x^(2 * n - m) * abs(x)^(m - n) * sqrt(vx)^(m - n - 1) / (pi * factorial(2 * n) * (1 - rho^2)^(2 * n + 1 / 2) * sqrt(vy)^(m - n + 1)) *
-                    (mx / vx - rho * my / sqrt(vx * vy))^m *
-                    binomial(2 * n, m) *
-                    (my / vy - rho * mx / sqrt(vx * vy))^(2 * n - m) *
-                    besselk(m - n, abs(x) / ((1 - rho^2) * sqrt(vx * vy)))
-            end
-        end
-        return term1 + log(term2)
-    end
-    μ_in, var_in = mean_var(m_in)
-    μ_A, var_A = mean_var(m_A)
-    return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,0.0)))
-end
+#         term2 = 0.0
+#         for n in 0:truncation
+#             for m in 0:(2 * n)
+#                 term2 +=
+#                     x^(2 * n - m) * abs(x)^(m - n) * sqrt(vx)^(m - n - 1) / (pi * factorial(2 * n) * (1 - rho^2)^(2 * n + 1 / 2) * sqrt(vy)^(m - n + 1)) *
+#                     (mx / vx - rho * my / sqrt(vx * vy))^m *
+#                     binomial(2 * n, m) *
+#                     (my / vy - rho * mx / sqrt(vx * vy))^(2 * n - m) *
+#                     besselk(m - n, abs(x) / ((1 - rho^2) * sqrt(vx * vy)))
+#             end
+#         end
+#         return term1 + log(term2)
+#     end
+#     μ_in, var_in = mean_var(m_in)
+#     μ_A, var_A = mean_var(m_A)
+#     return ContinuousUnivariateLogPdf((x) -> log(besselmod(x,μ_in,var_in,μ_A,var_A,0.0)))
+# end
 
 
 
-function make_productdist_message(samples_A,d_in)
-    return let samples_A=samples_A,d_in=d_in
-        (x) -> begin
-            result = mapreduce(+, zip(samples_A,)) do (sampleA,)
-                return 1/abs(sampleA) * pdf(d_in,x/sampleA)
-            end
-            return log(result)
-        end
-    end
-end
+# function make_productdist_message(samples_A,d_in)
+#     return let samples_A=samples_A,d_in=d_in
+#         (x) -> begin
+#             result = mapreduce(+, zip(samples_A,)) do (sampleA,)
+#                 return 1/abs(sampleA) * pdf(d_in,x/sampleA)
+#             end
+#             return log(result)
+#         end
+#     end
+# end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::LogNormal, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin 
-    if isnothing(messages[1].addons) && isnothing(messages[2].addons)==false
-        @logscale getlogscale(messages[2])
-    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)==false
-        @logscale getlogscale(messages[1])
-    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)
-        @logscale 0
-    else
-        @logscale getlogscale(messages[1]) + getlogscale(messages[2]) #correct
-    end
-    μ_A,v_A = mean_var(m_A)
-    μ_in,v_in = mean_var(m_in)
-    m = μ_A * μ_in
-    v = v_A*v_in + v_A*μ_in^2 + v_in*μ_A^2
-    return NormalMeanVariance(m,v)
-end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
-    if isnothing(messages[1].addons) && isnothing(messages[2].addons)==false
-        @logscale getlogscale(messages[2])
-    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)==false
-        @logscale getlogscale(messages[1])
-    elseif isnothing(messages[2].addons) && isnothing(messages[1].addons)
-        @logscale 0
-    else
-        @logscale getlogscale(messages[1]) + getlogscale(messages[2]) #correct
-    end
-    μ_A,v_A = mean_var(m_A)
-    μ_in,v_in = mean_var(m_in)
-    m = μ_A * μ_in
-    v = v_A*v_in + v_A*μ_in^2 + v_in*μ_A^2
-    return NormalMeanVariance(m,v)
-end
+# using SpecialFunctions: besselk
 
-using SpecialFunctions: besselk
+# function besselmod(mx, vx, my, vy, rho; truncation=15, jitter=1e-8)
 
-function besselmod(mx, vx, my, vy, rho; truncation=15, jitter=1e-8)
+#     # construct logpdf function
+#     logpdf = function (x)
 
-    # construct logpdf function
-    logpdf = function (x)
+#         # add jitter
+#         x += jitter
 
-        # add jitter
-        x += jitter
+#         # first term
+#         term1 = -1/(2*(1-rho^2)) * (mx^2/vx + my^2/vy - 2*rho*(x + mx*my)/sqrt(vx*vy))
 
-        # first term
-        term1 = -1/(2*(1-rho^2)) * (mx^2/vx + my^2/vy - 2*rho*(x + mx*my)/sqrt(vx*vy))
+#         # other terms
+#         term2 = 0.0
+#         for n = 0:truncation
+#             for m = 0:2*n
+#                 term2 += x^(2*n - m) * abs(x)^(m - n) * sqrt(vx)^(m - n - 1) /
+#                     (pi * factorial(2*n) * (1 - rho^2)^(2*n + 1/2) * sqrt(vy)^(m - n + 1)) *
+#                     (mx / vx - rho * my / sqrt(vx * vy) )^m *
+#                     binomial(2*n, m) *
+#                     (my / vy - rho*mx/sqrt(vx*vy))^(2 * n - m) *
+#                     besselk( m-n, abs(x) / (( 1 - rho^2) * sqrt(vx*vy)) )
+#             end
+#         end
 
-        # other terms
-        term2 = 0.0
-        for n = 0:truncation
-            for m = 0:2*n
-                term2 += x^(2*n - m) * abs(x)^(m - n) * sqrt(vx)^(m - n - 1) /
-                    (pi * factorial(2*n) * (1 - rho^2)^(2*n + 1/2) * sqrt(vy)^(m - n + 1)) *
-                    (mx / vx - rho * my / sqrt(vx * vy) )^m *
-                    binomial(2*n, m) *
-                    (my / vy - rho*mx/sqrt(vx*vy))^(2 * n - m) *
-                    besselk( m-n, abs(x) / (( 1 - rho^2) * sqrt(vx*vy)) )
-            end
-        end
+#         # return logpdf
+#         return term1 + log(term2)
 
-        # return logpdf
-        return term1 + log(term2)
+#     end
 
-    end
+#     # return logpdf
+#     return logpdf
 
-    # return logpdf
-    return logpdf
-
-end
+# end
 
 # #-----------------------
 # # Univariate Normal * Univariate Normal 

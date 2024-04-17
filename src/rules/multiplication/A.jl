@@ -81,37 +81,7 @@ function make_productdist_message(samples_in,d_out)
 end
 
 
-@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::TinyCorrection) = begin
-    nsamples    = 3000
-    samples_in = rand(m_in,nsamples)
-    samples_out = rand(m_out,nsamples)
-    #this rule is used 
-    p = make_productdist_message(samples_in,m_out)
-    return ContinuousUnivariateLogPdf(p)
-end
 
-@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::TinyCorrection) = begin
-    μ_in, var_in = mean_var(m_in)
-    μ_out, var_out = mean_var(m_out)
-
-    backwardpass = (x) -> -log(abs(x)) - 0.5*log(2π * (var_in + var_out / x^2))  - 1/2 * (μ_out  - x*μ_in)^2 / (var_in*x^2 + var_out)
-
-    return ContinuousUnivariateLogPdf(backwardpass)    
-end
-
-@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::ProcessMeta) = begin
-    return @call_rule typeof(*)(:A, Marginalisation) (m_out=m_out,m_in=m_in,meta=TinyCorrection())
-end
-
-@rule typeof(*)(:A, Marginalisation) (m_out::PointMass, m_in::LogNormal, meta::ProcessMeta) = begin 
-    m_out_proxy = GaussianMeanVariance(mean(m_out),0.0001)
-    return @call_rule typeof(*)(:A,Marginalisation) (m_out=m_out_proxy, m_in=m_in,meta=meta)
-end
-
-
-@rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::LogNormal, meta::ProcessMeta) = begin 
-    return @call_rule typeof(*)(:A, Marginalisation) (m_out=m_out,m_in=m_in,meta=TinyCorrection())
-end
 
 
 # @rule typeof(*)(:A, Marginalisation) (m_out::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrection, Nothing}) = begin

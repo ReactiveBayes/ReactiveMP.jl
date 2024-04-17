@@ -22,14 +22,4 @@ end
     return approximate(getmethod(meta), getnodefn(meta, Val(:in), k), (m_out, m_ins...))
 end
 
-# #Test with gp 
-@rule DeltaFn((:in, _), Marginalisation) (m_out::ContinuousUnivariateLogPdf, m_ins::Nothing, meta::Tuple{ProcessMeta, DeltaMeta{M,I}}) where {M <: Unscented, I <: Function}= begin 
-    μ_out = mean(m_out)
-    var_out = var(m_out)
-    # exp_mean = exp(μ_out)
-    # exp_var = exp(μ_out + var_out)
-    # approx_out = NormalMeanVariance(exp_mean,exp_var)
-    approx_out = NormalMeanVariance(μ_out,var_out)
-    return approximate(getmethod(meta[2]), getnodefn(Val(:in)), (approx_out,))
-end
 

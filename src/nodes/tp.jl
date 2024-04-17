@@ -1,4 +1,4 @@
-export GeneralizedTProcess, ProcessMeta 
+export GeneralizedTProcess
 
 # Create GP structure 
 struct GeneralizedTProcess{F, K, V, M,I1, I2, I4, S}
