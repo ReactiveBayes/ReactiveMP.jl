@@ -29,9 +29,6 @@ include("addons/debug.jl")
 include("addons/logscale.jl")
 include("addons/memory.jl")
 
-## add gp strategy
-include("gpstrategy.jl")
-
 """
     to_marginal(any)
 
