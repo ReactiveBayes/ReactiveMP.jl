@@ -17,7 +17,7 @@ end
 
 constvar(constant) = ConstVariable(constant)
 
-degree(constvar::ConstVariable)          = nconnected(constvar)
+degree(constvar::ConstVariable)          = constvar.nconnected
 name(constvar::ConstVariable)            = constvar.name
 proxy_variables(constvar::ConstVariable) = nothing
 collection_type(constvar::ConstVariable) = constvar.collection_type
