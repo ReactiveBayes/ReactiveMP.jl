@@ -69,3 +69,130 @@ end
         end
     end
 end
+
+@testitem "DataVariable: linked variable" begin
+    using BayesBase
+    import ReactiveMP: DataVariable, DataVariableActivationOptions, activate!, messageout
+
+    include("../testutilities.jl")
+
+    for fn in (+, *), val1 in 1:3, val2 in 1:3
+        @testset begin
+            var = datavar()
+            options = DataVariableActivationOptions(true, true, fn, (val1, val2))
+            activate!(var, options)
+            marginal = check_stream_updated_once(getmarginal(var))
+            @test getdata(marginal) === PointMass(fn(val1, val2))
+
+            # `|> take(1)` here is a hack, because the value updates twice
+            # first its being retranslated from the subscription to the marginal, 
+            # then its going to be recomputed again from the linked datavars
+            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            @test getdata(message) === PointMass(fn(val1, val2))
+        end
+
+        # Just marginal
+        @testset begin
+            var = datavar()
+            options = DataVariableActivationOptions(true, true, fn, (val1, val2))
+            activate!(var, options)
+            marginal = check_stream_updated_once(getmarginal(var))
+            @test getdata(marginal) === PointMass(fn(val1, val2))
+        end
+
+        # Just message
+        @testset begin
+            var = datavar()
+            options = DataVariableActivationOptions(true, true, fn, (val1, val2))
+            activate!(var, options)
+            message = check_stream_updated_once(messageout(var, 1))
+            @test getdata(message) === PointMass(fn(val1, val2))
+        end
+
+        @testset begin
+            var1 = datavar()
+            activate!(var1, DataVariableActivationOptions(true, false, nothing, nothing))
+
+            var = datavar()
+            options = DataVariableActivationOptions(true, true, fn, (var1, val2))
+            activate!(var, options)
+            @test check_stream_not_updated(getmarginal(var))
+
+            marginal = check_stream_updated_once(getmarginal(var)) do 
+                update!(var1, val1)
+            end
+            @test getdata(marginal) === PointMass(fn(val1, val2))
+
+            # The message should preserve the value from the previous update
+            # `|> take(1)` here is a hack, because the value updates twice
+            # first its being retranslated from the subscription to the marginal, 
+            # then its going to be recomputed again from the linked datavars
+            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            @test getdata(message) === PointMass(fn(val1, val2))
+        end
+
+        @testset begin
+            var2 = datavar()
+            activate!(var2, DataVariableActivationOptions(true, false, nothing, nothing))
+
+            var = datavar()
+            options = DataVariableActivationOptions(true, true, fn, (val1, var2))
+            activate!(var, options)
+            @test check_stream_not_updated(getmarginal(var))
+
+            marginal = check_stream_updated_once(getmarginal(var)) do 
+                update!(var2, val2)
+            end
+            @test getdata(marginal) === PointMass(fn(val1, val2))
+
+            # `|> take(1)` here is a hack, because the value updates twice
+            # first its being retranslated from the subscription to the marginal, 
+            # then its going to be recomputed again from the linked datavars
+            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            @test getdata(message) === PointMass(fn(val1, val2))
+        end
+
+        @testset begin
+            var1 = datavar()
+            var2 = datavar()
+            activate!(var1, DataVariableActivationOptions(true, false, nothing, nothing))
+            activate!(var2, DataVariableActivationOptions(true, false, nothing, nothing))
+
+            var = datavar()
+            options = DataVariableActivationOptions(true, true, fn, (var1, var2))
+            activate!(var, options)
+            @test check_stream_not_updated(getmarginal(var))
+
+            marginal = check_stream_updated_once(getmarginal(var)) do 
+                update!(var1, val1)
+                update!(var2, val2)
+            end
+            @test getdata(marginal) === PointMass(fn(val1, val2))
+
+            # `|> take(1)` here is a hack, because the value updates twice
+            # first its being retranslated from the subscription to the marginal, 
+            # then its going to be recomputed again from the linked datavars
+            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            @test getdata(message) === PointMass(fn(val1, val2))
+        end
+
+        @testset begin
+            var1 = datavar()
+            var2 = datavar()
+            activate!(var1, DataVariableActivationOptions(true, false, nothing, nothing))
+            activate!(var2, DataVariableActivationOptions(true, false, nothing, nothing))
+
+            var = datavar()
+            options = DataVariableActivationOptions(true, true, fn, (var1, var2))
+            activate!(var, options)
+            @test check_stream_not_updated(getmarginal(var))
+
+            # We still should be able to update the stream manually
+            marginal = check_stream_updated_once(getmarginal(var)) do 
+                update!(var, 4)
+            end
+            @test getdata(marginal) === PointMass(4)
+        end
+    end
+
+end

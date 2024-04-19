@@ -241,12 +241,13 @@ dropproxytype(::Type{<:Message{T}}) where {T} = T
 
 ## Message observable 
 
-struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
-    subject :: Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
+struct MessageObservable{M <: AbstractMessage, S <: AbstractSubject} <: Subscribable{M}
+    subject :: S
     stream  :: LazyObservable{M}
 end
 
-MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(RecentSubject(M), lazy(M))
+MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable(RecentSubject(M), lazy(M))
+MessageObservable(subject::AbstractSubject{M}) where {M} = MessageObservable(subject, lazy(M))
 
 Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(observable.subject)
 

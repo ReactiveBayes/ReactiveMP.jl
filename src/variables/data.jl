@@ -1,17 +1,19 @@
 export datavar, DataVariable, update!, DataVariableActivationOptions
 
 mutable struct DataVariable{M, P} <: AbstractVariable
+    datastream     :: M
     input_messages :: Vector{MessageObservable{AbstractMessage}}
+    messageout     :: MessageObservable{Message}
     marginal       :: MarginalObservable
-    messageout     :: M
     prediction     :: P
 end
 
 function DataVariable()
-    messageout = RecentSubject(Message)
-    marginal = MarginalObservable()
+    datastream = Subject(Message)
+    messageout = MessageObservable(Message)
+    marginal   = MarginalObservable()
     prediction = MarginalObservable()
-    return DataVariable(Vector{MessageObservable{AbstractMessage}}(), marginal, messageout, prediction)
+    return DataVariable(datastream, Vector{MessageObservable{AbstractMessage}}(), messageout, marginal, prediction)
 end
 
 datavar() = DataVariable()
@@ -46,22 +48,28 @@ struct DataVariableActivationOptions
     args
 end
 
+DataVariableActivationOptions() = DataVariableActivationOptions(false, false, nothing, nothing)
+
 function activate!(datavar::DataVariable, options::DataVariableActivationOptions)
-    if true # options.prediction
+    if options.prediction
         _setprediction!(datavar, _makeprediction(datavar))
     end
 
-    # If the variable is not linked to another we simply redirect the message as a marginal
+    # If the variable is not linked to another we simply redirect the message from the datastream
     if !options.linked
-        connect!(datavar.marginal, datavar.messageout |> map(Marginal, as_marginal))
+        connect!(datavar.messageout, datavar.datastream)
     else
         # If the variable is linked to another we need to apply a transformation from the linked variables
         linkvalues = combineLatestUpdates(map(l -> __link_getmarginal(l), options.args))
-        linkstream = linkvalues |> map(Marginal, (args) -> let f = options.transform
-            return Marginal(__apply_link(f, getrecent.(args)), false, false, nothing)
+        linkstream = linkvalues |> map(Message, (args) -> let f = options.transform
+            return Message(__apply_link(f, getrecent.(args)), false, false, nothing)
         end)
-        connect!(datavar.marginal, linkstream)
+        connect!(datavar.messageout, merged((datavar.datastream, linkstream)))
     end
+
+    # The marginal stream is always the same as the message out
+    connect!(datavar.marginal, datavar.messageout |> map(Marginal, as_marginal))
+
     return nothing
 end
 
@@ -76,8 +84,8 @@ _getmarginal(datavar::DataVariable)       = datavar.marginal
 _setmarginal!(::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
 _makemarginal(::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
-update!(datavar::DataVariable, data)      = next!(messageout(datavar, 1), Message(PointMass(data), false, false, nothing))
-update!(datavar::DataVariable, ::Missing) = next!(messageout(datavar, 1), Message(missing, false, false, nothing))
+update!(datavar::DataVariable, data)      = next!(datavar.datastream, Message(PointMass(data), false, false, nothing))
+update!(datavar::DataVariable, ::Missing) = next!(datavar.datastream, Message(missing, false, false, nothing))
 
 function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
     @assert size(datavars) === size(data) """
