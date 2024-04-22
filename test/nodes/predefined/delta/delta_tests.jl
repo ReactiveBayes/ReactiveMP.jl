@@ -40,7 +40,7 @@ end
 
         # In this test we attempt to create a lot of possible combinations 
         # of random, data and const inputs to the delta node
-        function create_interfaces(i) 
+        function create_interfaces(i)
             r = randomvar()
             d = datavar()
             c = constvar(vals[i])

@@ -114,7 +114,7 @@ end
             activate!(var, options)
             @test check_stream_not_updated(getmarginal(var))
 
-            marginal = check_stream_updated_once(getmarginal(var)) do 
+            marginal = check_stream_updated_once(getmarginal(var)) do
                 update!(var1, val1)
             end
             @test getdata(marginal) === PointMass(fn(val1, val2))
@@ -131,7 +131,7 @@ end
             activate!(var, options)
             @test check_stream_not_updated(getmarginal(var))
 
-            marginal = check_stream_updated_once(getmarginal(var)) do 
+            marginal = check_stream_updated_once(getmarginal(var)) do
                 update!(var2, val2)
             end
             @test getdata(marginal) === PointMass(fn(val1, val2))
@@ -151,7 +151,7 @@ end
             activate!(var, options)
             @test check_stream_not_updated(getmarginal(var))
 
-            marginal = check_stream_updated_once(getmarginal(var)) do 
+            marginal = check_stream_updated_once(getmarginal(var)) do
                 update!(var1, val1)
                 update!(var2, val2)
             end
@@ -173,11 +173,10 @@ end
             @test check_stream_not_updated(getmarginal(var))
 
             # We still should be able to update the stream manually
-            marginal = check_stream_updated_once(getmarginal(var)) do 
+            marginal = check_stream_updated_once(getmarginal(var)) do
                 update!(var, 4)
             end
             @test getdata(marginal) === PointMass(4)
         end
     end
-
 end
