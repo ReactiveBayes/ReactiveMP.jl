@@ -83,11 +83,7 @@ end
             activate!(var, options)
             marginal = check_stream_updated_once(getmarginal(var))
             @test getdata(marginal) === PointMass(fn(val1, val2))
-
-            # `|> take(1)` here is a hack, because the value updates twice
-            # first its being retranslated from the subscription to the marginal, 
-            # then its going to be recomputed again from the linked datavars
-            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            message = check_stream_updated_once(messageout(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -122,12 +118,7 @@ end
                 update!(var1, val1)
             end
             @test getdata(marginal) === PointMass(fn(val1, val2))
-
-            # The message should preserve the value from the previous update
-            # `|> take(1)` here is a hack, because the value updates twice
-            # first its being retranslated from the subscription to the marginal, 
-            # then its going to be recomputed again from the linked datavars
-            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            message = check_stream_updated_once(messageout(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -145,10 +136,7 @@ end
             end
             @test getdata(marginal) === PointMass(fn(val1, val2))
 
-            # `|> take(1)` here is a hack, because the value updates twice
-            # first its being retranslated from the subscription to the marginal, 
-            # then its going to be recomputed again from the linked datavars
-            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            message = check_stream_updated_once(messageout(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -169,10 +157,7 @@ end
             end
             @test getdata(marginal) === PointMass(fn(val1, val2))
 
-            # `|> take(1)` here is a hack, because the value updates twice
-            # first its being retranslated from the subscription to the marginal, 
-            # then its going to be recomputed again from the linked datavars
-            message = check_stream_updated_once(messageout(var, 1) |> take(1))
+            message = check_stream_updated_once(messageout(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 

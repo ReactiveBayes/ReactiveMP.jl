@@ -16,9 +16,6 @@
 
     activate!(x, RandomVariableActivationOptions())
     activate!(y, DataVariableActivationOptions())
-    # We need to subscribe on the message, otherwise the recent message
-    # will not be propagated to the nodefunction
-    subscribe!(messageout(y, 1), void())
 
     update!(y, 2.0)
 
@@ -50,9 +47,6 @@ end
 
             activate!(r, RandomVariableActivationOptions())
             activate!(d, DataVariableActivationOptions())
-            # We need to subscribe on the message, otherwise the recent message
-            # will not be propagated to the nodefunction
-            subscribe!(messageout(d, 1), void())
 
             return ((:in, r), (:in, d), (:in, c))
         end
