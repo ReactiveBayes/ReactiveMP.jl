@@ -1,6 +1,7 @@
 
 @testitem "DeltaNode - creation with static inputs (simple case) #1" begin
-    import ReactiveMP: nodefunction, DeltaMeta, Linearization
+    using Rocket
+    import ReactiveMP: nodefunction, DeltaMeta, Linearization, messageout, activate!, RandomVariableActivationOptions, DataVariableActivationOptions
 
     foo(x, y, z) = x * y + z
 
@@ -13,6 +14,9 @@
     node = factornode(foo, [(:out, out), (:in, x), (:in, y), (:in, z)], ((1, 2, 3, 4),))
     meta = DeltaMeta(method = Linearization())
 
+    activate!(x, RandomVariableActivationOptions())
+    activate!(y, DataVariableActivationOptions())
+
     update!(y, 2.0)
 
     for xval in rand(10)
@@ -23,7 +27,8 @@
 end
 
 @testitem "DeltaNode - Creation with static inputs (all permutations) #2" begin
-    import ReactiveMP: nodefunction, DeltaMeta, Linearization
+    using Rocket
+    import ReactiveMP: nodefunction, DeltaMeta, Linearization, messageout, activate!, RandomVariableActivationOptions, DataVariableActivationOptions
 
     foo1(x, y, z) = x * y + z
     foo2(x, y, z) = x / y - z
@@ -35,7 +40,16 @@ end
 
         # In this test we attempt to create a lot of possible combinations 
         # of random, data and const inputs to the delta node
-        create_interfaces(i) = ((:in, randomvar()), (:in, datavar()), (:in, constvar(vals[i])))
+        function create_interfaces(i)
+            r = randomvar()
+            d = datavar()
+            c = constvar(vals[i])
+
+            activate!(r, RandomVariableActivationOptions())
+            activate!(d, DataVariableActivationOptions())
+
+            return ((:in, r), (:in, d), (:in, c))
+        end
 
         for x in create_interfaces(1), y in create_interfaces(2), z in create_interfaces(3)
             in_interfaces = [x, y, z]
