@@ -1,4 +1,4 @@
-function compute_delta(my, Vy, mx, Vx, Vyx, ma, Va, mA, meta)
+function compute_delta_mar(my, Vy, mx, Vx, Vyx, ma, Va, mA, meta)
     _, ds = getorder(meta), getdimensionality(meta)
     Fs, es    = getmasks(meta), getunits(meta)
     G₁ = (my * my' + Vy)[1:ds, 1:ds]
@@ -25,7 +25,7 @@ end
     mx, Vx = ar_slice(Multivariate, m, (dim + 1):(2dim)), ar_slice(Multivariate, V, (dim + 1):(2dim), (dim + 1):(2dim))
     Vyx    = ar_slice(Multivariate, V, 1:(dim), (dim + 1):(2dim))
 
-    Δ = compute_delta(my, Vy, mx, Vx, Vyx, ma, Va, mA, meta)
+    Δ = compute_delta_mar(my, Vy, mx, Vx, Vyx, ma, Va, mA, meta)
 
     return WishartMessage(ds + 2, Δ)
 end
@@ -37,6 +37,6 @@ end
 
     mA = mar_companion_matrix(ma, meta)
 
-    Δ = compute_delta(my, Vy, mx, Vx, ma, Va, mA, meta)
+    Δ = compute_delta_mar(my, Vy, mx, Vx, ma, Va, mA, meta)
     return WishartMessage(ds + 2, Δ)
 end
