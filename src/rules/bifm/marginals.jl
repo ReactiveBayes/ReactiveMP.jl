@@ -1,7 +1,7 @@
 @marginalrule BIFM(:in_zprev_znext) (
     m_out::MultivariateNormalDistributionsFamily,
     m_in::MultivariateNormalDistributionsFamily,
-    m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily},
+    m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily},
     m_znext::MultivariateNormalDistributionsFamily,
     meta::BIFMMeta
 ) = begin
@@ -15,7 +15,7 @@
     Λ_ztilde = getΛztilde(meta)
 
     # # extract parameters from messages
-    ξ_zprev_marginal, Λ_zprev_marginal = weightedmean_precision(m_zprev)
+    ξ_zprev_marginal, Λ_zprev_marginal = weightedmean_precision(m_zprev.argument)
     ξ_in, Λ_in = weightedmean_precision(m_in)
     ξ_out, Λ_out = weightedmean_precision(m_out)
 
@@ -25,13 +25,13 @@
 
     # Actual return type depends on meta object as well, so we explicitly cast the result here
     # Should be noop if type matches
-    T = promote_samplefloattype(m_out, m_in, m_zprev, m_znext)
+    T = promote_samplefloattype(m_out, m_in, m_zprev.argument, m_znext)
 
     # calculate message towards znext from y
     dist1 = convert(MvNormalWeightedMeanPrecision{T}, MvNormalWeightedMeanPrecision(C' * ξ_out, C' * Λ_out * C))
 
     # calculate message from z towards the addition node
-    dist2 = prod(ProdAnalytical(), dist1, m_znext)
+    dist2 = prod(GenericProd(), dist1, m_znext)
     ξ2, Λ2 = weightedmean_precision(dist2)
 
     # # calculate joint message from the addition node
@@ -47,5 +47,5 @@
     left = MvNormalWeightedMeanPrecision(ξ3, Λ3)
     right = MvNormalWeightedMeanPrecision(ξ4, Λ4)
 
-    return prod(ProdAnalytical(), left, right)
+    return prod(GenericProd(), left, right)
 end

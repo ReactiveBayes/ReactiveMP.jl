@@ -1,6 +1,5 @@
-export AbstractMessage, Message, VariationalMessage
+export AbstractMessage, Message, DefferedMessage
 export getdata, is_clamped, is_initial, as_message
-export multiply_messages
 
 using Distributions
 using Rocket
@@ -9,49 +8,35 @@ import Rocket: getrecent
 import Base: ==, *, +, ndims, precision, length, size, show
 
 """
-    AbstractMessage
-
 An abstract supertype for all concrete message types.
-
-See also: [`Message`](@ref)
 """
 abstract type AbstractMessage end
 
 """
-    materialize!(message::AbstractMessage)
+    Message(data, is_clamped, is_initial, addons)
 
-Materializes an abstract message and converts it to be of type `Message`.
-
-See also: [`Message`](@ref)
-"""
-function materialize! end
-
-"""
-    Message{D, A} <: AbstractMessage
-
-`Message` structure encodes a **Belief Propagation** message, which holds some `data` that usually a probability distribution, but can also be an arbitrary object.
-Message acts as a proxy structure to `data` object and proxies most of the statistical functions, e.g. `mean`, `mode`, `cov` etc.
+An implementation of a message in variational message passing framework.
 
 # Arguments
-- `data::D`: message always holds some data object associated with it
-- `is_clamped::Bool`, specifies if this message is clamped
-- `is_initial::Bool`, specifies if this message is initial
-- `addons::A`, specifies the addons of the message
+- `data::D`: message always holds some data object associated with it, which is usually a probability distribution, but can also be an arbitrary function
+- `is_clamped::Bool`, specifies if this message was the result of constant computations (e.g. clamped constants)
+- `is_initial::Bool`, specifies if this message was used for initialization
+- `addons::A`, specifies the addons of the message, which may carry extra bits of information, e.g. debug information, memory, etc.
 
 # Example 
 
 ```jldoctest
 julia> distribution = Gamma(10.0, 2.0)
-Gamma{Float64}(α=10.0, θ=2.0)
+Distributions.Gamma{Float64}(α=10.0, θ=2.0)
 
 julia> message = Message(distribution, false, true, nothing)
-Message(Gamma{Float64}(α=10.0, θ=2.0))
+Message(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
 
 julia> mean(message) 
 20.0
 
 julia> getdata(message)
-Gamma{Float64}(α=10.0, θ=2.0)
+Distributions.Gamma{Float64}(α=10.0, θ=2.0)
 
 julia> is_clamped(message)
 false
@@ -60,15 +45,22 @@ julia> is_initial(message)
 true
 
 ```
-
-See also: [`AbstractMessage`](@ref), [`ReactiveMP.materialize!`](@ref)
 """
-struct Message{D, A} <: AbstractMessage
-    data       :: D
-    is_clamped :: Bool
-    is_initial :: Bool
-    addons     :: A
+mutable struct Message{D, A} <: AbstractMessage # `mutable` structure here appears to be more performance 
+    const data       :: D                       # in `RxInfer` benchmarks
+    const is_clamped :: Bool                    # could be revised at some point though
+    const is_initial :: Bool
+    const addons     :: A
 end
+
+"""
+    as_message(::AbstractMessage)
+
+A function that converts an abstract message to an instance of `Message`.
+"""
+function as_message end
+
+as_message(message::Message) = message
 
 """
     getdata(message::Message)    
@@ -81,8 +73,6 @@ getdata(message::Message) = message.data
     is_clamped(message::Message)
 
 Checks if `message` is clamped or not.
-
-See also: [`is_initial`](@ref)
 """
 is_clamped(message::Message) = message.is_clamped
 
@@ -90,18 +80,20 @@ is_clamped(message::Message) = message.is_clamped
     is_initial(message::Message)
 
 Checks if `message` is initial or not.
-
-See also: [`is_clamped`](@ref)
 """
 is_initial(message::Message) = message.is_initial
+
+"""
+    getaddons(message::Message)
+
+Returns `addons` associated with the `message`.
+"""
 getaddons(message::Message) = message.addons
 
 typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
-
-materialize!(message::Message) = message
 
 # Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
 function show(io::IO, message::Message)
@@ -111,15 +103,19 @@ function show(io::IO, message::Message)
     end
 end
 
-Base.:*(left::Message, right::Message) = multiply_messages(ProdAnalytical(), left, right)
-
 # We need this dummy method as Julia is not smart enough to 
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
     return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
 end
 
-function multiply_messages(prod_constraint, left::Message, right::Message)
+"""
+    multiply_messages(prod_strategy, left::Message, right::Message)
+
+Multiplies two messages `left` and `right` using a given product strategy `prod_strategy`.
+Returns a new message with the result of the multiplication. Note that the resulting message is not necessarily normalized.
+"""
+function multiply_messages(prod_strategy, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
@@ -128,7 +124,7 @@ function multiply_messages(prod_constraint, left::Message, right::Message)
     # process distributions
     left_dist  = getdata(left)
     right_dist = getdata(right)
-    new_dist   = prod(prod_constraint, left_dist, right_dist)
+    new_dist   = prod(prod_strategy, left_dist, right_dist)
 
     # process addons
     left_addons  = getaddons(left)
@@ -144,7 +140,7 @@ constrain_form_as_message(message::Message, form_constraint) =
     Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
-# We want to cast it explicitly to a Message structure (which as_message does in case of VariationalMessage)
+# We want to cast it explicitly to a Message structure (which as_message does in case of DefferedMessage)
 # We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
     (messages) -> foldl((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
@@ -164,68 +160,82 @@ Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), 
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
 
 MacroHelpers.@proxy_methods Message getdata [
-    Distributions.mean,
-    Distributions.median,
-    Distributions.mode,
-    Distributions.shape,
-    Distributions.scale,
-    Distributions.rate,
-    Distributions.var,
-    Distributions.std,
-    Distributions.cov,
-    Distributions.invcov,
-    Distributions.logdetcov,
-    Distributions.entropy,
-    Distributions.params,
+    BayesBase.mean,
+    BayesBase.median,
+    BayesBase.mode,
+    BayesBase.shape,
+    BayesBase.scale,
+    BayesBase.rate,
+    BayesBase.var,
+    BayesBase.std,
+    BayesBase.cov,
+    BayesBase.invcov,
+    BayesBase.logdetcov,
+    BayesBase.entropy,
+    BayesBase.params,
+    BayesBase.mean_cov,
+    BayesBase.mean_var,
+    BayesBase.mean_invcov,
+    BayesBase.mean_precision,
+    BayesBase.weightedmean_cov,
+    BayesBase.weightedmean_var,
+    BayesBase.weightedmean_invcov,
+    BayesBase.weightedmean_precision,
+    BayesBase.probvec,
+    BayesBase.weightedmean,
     Base.precision,
     Base.length,
     Base.ndims,
     Base.size,
-    Base.eltype,
-    mean_cov,
-    mean_var,
-    mean_invcov,
-    mean_precision,
-    weightedmean_cov,
-    weightedmean_var,
-    weightedmean_invcov,
-    weightedmean_precision,
-    probvec,
-    weightedmean
+    Base.eltype
 ]
 
 Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
 
-## Variational Message
+## Deffered Message
 
-mutable struct VariationalMessage{R, S, F} <: AbstractMessage
-    messages  :: R
-    marginals :: S
-    mappingFn :: F
-    cache     :: Union{Nothing, Message}
+"""
+A special type of a message, for which the actual message is not computed immediately, but is computed later on demand (potentially never).
+To compute and get the actual message, one needs to call the `as_message` method.
+"""
+mutable struct DefferedMessage{R, S, F} <: AbstractMessage
+    const messages  :: R
+    const marginals :: S
+    const mappingFn :: F
+    cache           :: Union{Nothing, Message}
 end
 
-VariationalMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = VariationalMessage(messages, marginals, mappingFn, nothing)
+DefferedMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DefferedMessage(messages, marginals, mappingFn, nothing)
 
-Base.show(io::IO, ::VariationalMessage) = print(io, "VariationalMessage()")
-
-getcache(vmessage::VariationalMessage)                    = vmessage.cache
-setcache!(vmessage::VariationalMessage, message::Message) = vmessage.cache = message
-
-function materialize!(vmessage::VariationalMessage)
-    cache = getcache(vmessage)
-    if cache !== nothing
-        return cache
+function Base.show(io::IO, message::DefferedMessage)
+    cache = getcache(message)
+    if isnothing(cache)
+        print(io, "DeferredMessage([ use `as_message` to compute the message ])")
+    else
+        print(io, "DeferredMessage(", getdata(cache), ")")
     end
-    message = materialize!(vmessage.mappingFn, (getrecent(vmessage.messages), getrecent(vmessage.marginals)))
-    setcache!(vmessage, message)
-    return message
 end
 
-## Utility functions
+getcache(message::DefferedMessage) = message.cache
+setcache!(message::DefferedMessage, cache::Message) = message.cache = cache
 
-as_message(message::Message)             = message
-as_message(vmessage::VariationalMessage) = materialize!(vmessage)
+function as_message(message::DefferedMessage)::Message
+    return as_message(message, getcache(message))
+end
+
+function as_message(message::DefferedMessage, cache::Message)::Message
+    return cache
+end
+
+function as_message(message::DefferedMessage, cache::Nothing)::Message
+    return as_message(message, cache, getrecent(message.messages), getrecent(message.marginals))
+end
+
+function as_message(message::DefferedMessage, cache::Nothing, messages, marginals)::Message
+    computed = message.mappingFn(messages, marginals)
+    setcache!(message, computed)
+    return computed
+end
 
 dropproxytype(::Type{<:Message{T}}) where {T} = T
 
@@ -313,11 +323,7 @@ function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_n
     return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
 end
 
-function materialize!(mapping::MessageMapping, dependencies)
-    return materialize!(mapping, dependencies[1], dependencies[2])
-end
-
-function materialize!(mapping::MessageMapping, messages, marginals)
+function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
     is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 

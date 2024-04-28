@@ -26,6 +26,8 @@ This function is used to compute an outbound message for a given node
 - `addons`: Extra addons information
 - `__node`: Node reference
 
+For all available rules, see `ReactiveMP.print_rules_table()`.
+
 See also: [`@rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`](@ref)
 """
 function rule end
@@ -240,9 +242,9 @@ Returns either `CallRuleNodeRequired()` or `CallRuleNodeNotRequired()` depending
 `fformtype` requires an access to the corresponding node in order to compute a message update rule.
 Returns `CallRuleNodeNotRequired()` for all known functional forms by default and `CallRuleNodeRequired()` for all unknown functional forms.
 """
-call_rule_is_node_required(fformtype) = call_rule_is_node_required(as_node_functional_form(fformtype), fformtype)
+call_rule_is_node_required(fformtype) = call_rule_is_node_required(is_predefined_node(fformtype), fformtype)
 
-call_rule_is_node_required(::ValidNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
+call_rule_is_node_required(::PredefinedNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
 call_rule_is_node_required(::UndefinedNodeFunctionalForm, fformtype) = CallRuleNodeRequired()
 
 # Returns the `node` if it is required for a rule, otherwise returns `nothing`
@@ -561,7 +563,7 @@ end
 
 ```julia
 @marginalrule NormalMeanPrecision(:out_μ) (m_out::PointMass, m_μ::UnivariateNormalDistributionsFamily, q_τ::Any) = begin
-    return (out = m_out, μ = prod(ProdAnalytical(), NormalMeanPrecision(mean(m_out), mean(q_τ)), m_μ))
+    return (out = m_out, μ = prod(ClosedProd(), NormalMeanPrecision(mean(m_out), mean(q_τ)), m_μ))
 end
 ```
 
@@ -673,7 +675,7 @@ The macro takes three arguments:
 The following options are available:
 
 - `check_type_promotion`: By default, this option is set to `false`. If set to `true`, the macro generates an extensive list of extra tests that aim to check the correct type promotion within the tests. For example, if all inputs are of type `Float32`, then the expected output should also be of type `Float32`. See the `paramfloattype` and `convert_paramfloattype` functions for details.
-- `atol`: Sets the desired accuracy for the tests. The tests use the `custom_isapprox` function from `ReactiveMP` to check if outputs are approximately the same. This argument can be either a single number or an array of `key => value` pairs.
+- `atol`: Sets the desired accuracy for the tests. The tests use the `custom_rule_isapprox` function from `ReactiveMP` to check if outputs are approximately the same. This argument can be either a single number or an array of `key => value` pairs.
 - `extra_float_types`: A set of extra float types to be used in the `check_type_promotion` tests. This argument has no effect if `check_type_promotion` is set to `false`.
 
 The default values for the `atol` option are:
@@ -932,15 +934,15 @@ function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, 
         let invoke_test_fn = $invoke_test_fn, expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
             local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
-            local _isapprox = ReactiveMP.custom_isapprox(actual_output, expected_output; atol = _tolerance)
-            local _is_typeof_equal = ReactiveMP.is_typeof_equal(actual_output, expected_output)
+            local _isapprox = ReactiveMP.custom_rule_isapprox(actual_output, expected_output; atol = _tolerance)
+            local _isequal_typeof = ReactiveMP.BayesBase.isequal_typeof(actual_output, expected_output)
 
-            if !_isapprox || !_is_typeof_equal
+            if !_isapprox || !_isequal_typeof
                 ReactiveMP.test_rules_failed_warning(rule_spec_str, rule_inputs_str, expected_output, actual_output)
             end
 
             # We should not put `@test` within the aut-generated macro, because it allocates a lot of garbage
-            invoke_test_fn(_isapprox && _is_typeof_equal)
+            invoke_test_fn(_isapprox && _isequal_typeof)
         end
     end
     return generated
@@ -969,7 +971,7 @@ function test_rules_convert_paramfloattype(expression, eltype)
     elseif @capture(expression, key_ = value_)
         return :($key = $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype)))
     else
-        return :(ReactiveMP.convert_paramfloattype($eltype, $expression))
+        return :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, $expression))
     end
 end
 
@@ -983,10 +985,65 @@ function test_rules_promote_paramfloattype(values)
             return value
         end
     end
-    return :(ReactiveMP.promote_paramfloattype($(cvalues...)))
+    return :(ReactiveMP.BayesBase.promote_paramfloattype($(cvalues...)))
 end
 
 # Error utilities
+
+## Custom approx 
+
+import DomainIntegrals, DomainSets
+
+custom_rule_isapprox(left, right; kwargs...) = isapprox(left, right; kwargs...)
+custom_rule_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false
+
+function custom_rule_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) where {K}
+    _isapprox = true
+    for key in keys(left)
+        _isapprox = _isapprox && custom_rule_isapprox(left[key], right[key]; kwargs...)
+    end
+    return _isapprox
+end
+
+import BayesBase: AbstractContinuousGenericLogPdf
+
+# These methods are inaccurate and relies on various approximation methods, which may fail in different scenarios
+# This should not be used though anywhere in the real code, but only in tests
+# Current implementation of `isapprox` method supports only FullSpace and HalfLine domains with limited accuracy
+function custom_rule_isapprox(left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    if (BayesBase.getdomain(left) !== BayesBase.getdomain(right)) ||
+        (value_support(typeof(left)) !== value_support(typeof(right))) ||
+        (variate_form(typeof(left)) !== variate_form(typeof(right)))
+        return false
+    end
+    return culogpdf__isapprox(BayesBase.getdomain(left), left, right; kwargs...)
+end
+
+# https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
+function culogpdf__isapprox(domain::DomainSets.FullSpace, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(DomainIntegrals.Q_GaussHermite(32), (x) -> exp(x^2) * abs(left(x) - right(x))); kwargs...)
+end
+
+# https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
+function culogpdf__isapprox(domain::DomainSets.HalfLine, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(DomainIntegrals.Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x))); kwargs...)
+end
+
+function culogpdf__isapprox(domain::DomainSets.VcatDomain, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
+    b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
+    (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
+    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) && isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
+end
+
+function culogpdf__isapprox(domain::DomainSets.FixedIntervalProduct, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+    a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
+    b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
+    (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
+    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) && isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
+end
+
+## Dummy node
 
 mutable struct NodeErrorStub
     counter::Int
@@ -1002,7 +1059,7 @@ function interfaceindex(stub::NodeErrorStub, iname::Symbol)
     return stub.counter
 end
 
-function interfaces(stub::NodeErrorStub)
+function getinterfaces(stub::NodeErrorStub)
     return fill(nothing, stub.counter)
 end
 
@@ -1065,7 +1122,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
         spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-        spec = Vector(undef, 4length(interfaces(node)))
+        spec = Vector(undef, 4length(getinterfaces(node)))
 
         fill!(spec, nothing)
 
@@ -1140,7 +1197,7 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
     spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
     spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
 
-    spec = Vector(undef, 4length(interfaces(node)))
+    spec = Vector(undef, 4length(getinterfaces(node)))
 
     if isempty(intersect(Set(m_indices), Set(q_indices)))
         fill!(spec, nothing)
@@ -1176,4 +1233,93 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
     end
+end
+
+# Convert method into a markdown row
+function convert_to_markdown(m::Method)
+    node = get_node(m)
+    inputs = get_inputs(m)
+    output = ""
+    for k in 1:length(inputs)
+        output *= "| "
+        k == 1 ? output *= node : output *= " | "
+        output *= " $(inputs)[k]"
+        output *= " |\n --- \n"
+    end
+    return output
+end
+
+# Extracts node from rule Method
+function get_node_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    return decls[2][2][8:(end - 1)]
+end
+
+# Extracts output from rule Method
+function get_output_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    return replace(decls[3][2], r"Type|Val|{|}|:|\(|\)|\,|Tuple|Int64" => "")
+end
+
+# Extracts messages from rule Method
+function get_messages_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    tmp1 = replace(replace(decls[6][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp2 = strip.(strip.(split(tmp1, "Message")[2:end]), ',')
+    tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
+    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
+    interfaces = "μ(" .* split(replace(decls[5][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .* ")"
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
+    return interfaces .* " :: " .* types
+end
+
+# Extracts marginals from rule method
+function get_marginals_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    tmp1 = replace(replace(decls[8][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp2 = strip.(strip.(split(tmp1, "Marginal")[2:end]), ',')
+    tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
+    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
+    interfaces = "q(" .* split(replace(decls[7][2], r"Type|Val|{|}|:|\(|\)|\," => "")) .* ")"
+    types = map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
+    return interfaces .* " :: " .* types
+end
+
+# Extracts meta from rule method
+function get_meta_from_rule_method(m::Method)
+    _, decls, _, _ = Base.arg_decl_parts(m)
+    return decls[9][2]
+end
+
+# Prints the rows corresponding to a single rule method in a table 
+function print_rule_rows(m::Method)
+    node = get_node_from_rule_method(m)
+    output = get_output_from_rule_method(m)
+    inputs = vcat(get_messages_from_rule_method(m), get_marginals_from_rule_method(m))
+    meta = get_meta_from_rule_method(m)
+    txt = ""
+    for k in 1:length(inputs)
+        txt *= "| "
+        k == 1 ? txt *= node : nothing
+        txt *= " | "
+        k == 1 ? txt *= output : nothing
+        txt *= " | "
+        txt *= inputs[k]
+        txt *= " | "
+        k == 1 ? txt *= meta : nothing
+        txt *= " |\n"
+    end
+    return txt
+end
+
+# Prints a table of all message passing update rules in ReactiveMP.
+# Use `Markdown.parse` on the output of this function to get a prettified table.
+function print_rules_table()
+    mtds = methods(ReactiveMP.rule)
+    """
+                   | Node | Output | Inputs | Meta |
+                   |:-----|:-------|:-------|:-----|
+                   """ * mapreduce(ReactiveMP.print_rule_rows, *, mtds)
 end

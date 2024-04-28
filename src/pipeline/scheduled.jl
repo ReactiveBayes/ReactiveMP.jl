@@ -9,8 +9,6 @@ Applies the `schedule_on()` operator from `Rocket.jl` library to the given pipel
 
 # Arguments 
 - `scheduler`: scheduler to schedule updates on. Must be compatible with `Rocket.jl` library and `schedule_on()` operator.
-
-See also: [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref), [`EmptyPipelineStage`](@ref), [`CompositePipelineStage`](@ref)
 """
 struct ScheduleOnPipelineStage{S} <: AbstractPipelineStage
     scheduler::S
@@ -49,8 +47,6 @@ end
 
 Schedules posterior marginal updates for given variables using `stage`. By default creates `ScheduleOnPipelineStage` with `PendingScheduler()` from `Rocket.jl` library.
 Returns a scheduler with `release!` method available to release all scheduled updates.
-
-See also: [`ScheduleOnPipelineStage`](@ref), [`AbstractPipelineStage`](@ref), [`apply_pipeline_stage`](@ref)
 """
 function schedule_updates(args...; pipeline_stage = ScheduleOnPipelineStage(PendingScheduler()))
     return map((arg) -> __schedule_updates(pipeline_stage, arg), args)

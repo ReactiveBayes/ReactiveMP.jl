@@ -1,6 +1,9 @@
 
 @rule BIFM(:out, Marginalisation) (
-    m_in::MultivariateNormalDistributionsFamily, m_zprev::ProdFinal{<:MultivariateNormalDistributionsFamily}, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta
+    m_in::MultivariateNormalDistributionsFamily,
+    m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily},
+    m_znext::MultivariateNormalDistributionsFamily,
+    meta::BIFMMeta
 ) = begin
 
     # fetch information from meta data
@@ -14,7 +17,7 @@
 
     # fetch statistics
     μ_in, Σ_in       = mean_cov(m_in)
-    μ_zprev, Σ_zprev = mean_cov(m_zprev)
+    μ_zprev, Σ_zprev = mean_cov(m_zprev.argument)
 
     # calculate intermediate quantities
     F = I - Λz * BHBt
@@ -34,8 +37,8 @@
 
     # Actual return type depends on meta object as well, so we explicitly cast the result here
     # Should be noop if type matches
-    T = promote_samplefloattype(m_in, m_zprev, m_znext)
+    T = promote_samplefloattype(m_in, m_zprev.argument, m_znext)
 
     # return outgoing marginal
-    return ProdFinal(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_out, Σ_out)))
+    return TerminalProdArgument(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_out, Σ_out)))
 end

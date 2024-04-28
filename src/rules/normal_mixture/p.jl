@@ -5,7 +5,7 @@ export rule
     m_out, v_out       = mean_cov(q_out)
     z_bar              = probvec(q_switch)
 
-    return rule_nm_p_k(variate_form(q_out), m_mean_k, v_mean_k, m_out, v_out, z_bar, k)
+    return rule_nm_p_k(variate_form(typeof(q_out)), m_mean_k, v_mean_k, m_out, v_out, z_bar, k)
 end
 
 function rule_nm_p_k(::Type{Univariate}, m_mean_k, v_mean_k, m_out, v_out, z_bar, k)
@@ -13,5 +13,5 @@ function rule_nm_p_k(::Type{Univariate}, m_mean_k, v_mean_k, m_out, v_out, z_bar
 end
 
 function rule_nm_p_k(::Type{Multivariate}, m_mean_k, v_mean_k, m_out, v_out, z_bar, k)
-    return WishartMessage(one(eltype(z_bar)) + z_bar[k] + length(m_mean_k), z_bar[k] * (v_out + v_mean_k + (m_out - m_mean_k) * (m_out - m_mean_k)'))
+    return WishartFast(one(eltype(z_bar)) + z_bar[k] + length(m_mean_k), z_bar[k] * (v_out + v_mean_k + (m_out - m_mean_k) * (m_out - m_mean_k)'))
 end
