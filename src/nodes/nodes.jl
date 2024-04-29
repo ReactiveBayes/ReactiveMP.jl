@@ -197,7 +197,6 @@ interfaceindex(factornode::FactorNode, iname::Symbol)                         = 
 interfaceindices(factornode::FactorNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
 interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
-# Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
 function prepare_interfaces_generic(fform::F, interfaces::AbstractVector) where {F}
     prepare_interfaces_check_nonempty(fform, interfaces)
     prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
