@@ -200,7 +200,7 @@ interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where {N} = 
 # Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
 function prepare_interfaces_generic(fform::F, interfaces::AbstractVector) where {F}
     prepare_interfaces_check_nonempty(fform, interfaces)
-    prepare_interfaces_check_duplicates(fform, interfaces)
+    prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
     prepare_interfaces_check_numarguments(fform, interfaces)
     return map(enumerate(interfaces)) do (index, (name, variable))
         return NodeInterface(alias_interface(fform, index, name), variable)
@@ -211,7 +211,12 @@ function prepare_interfaces_check_nonempty(fform, interfaces)
     length(interfaces) > 0 || error(lazy"At least one argument is required for a factor node. Got none for `$(fform)`")
 end
 
-function prepare_interfaces_check_duplicates(fform, interfaces)
+function prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
+    # Here we create an iterator that checks ONLY adjacent interfaces 
+    # The reason here is that we don't want to check all possible combinations of all input interfaces
+    # because that would require allocating an intermediate storage for `Set`, which would harm the 
+    # performance of nodes creation. The `zip(interfaces, Iterators.drop(interfaces, 1))` creates a generic 
+    # iterator of adjacent interface pairs
     foreach(zip(interfaces, Iterators.drop(interfaces, 1))) do (left, right)
         lname, _ = left
         rname, _ = right
@@ -224,15 +229,13 @@ function prepare_interfaces_check_duplicates(fform, interfaces)
 end
 
 function prepare_interfaces_check_numarguments(fform::F, interfaces) where {F}
-    prepare_interfaces_check_numarguments(fform, inputinterfaces(fform), interfaces)
+    prepare_interfaces_check_num_inputarguments(fform, inputinterfaces(fform), interfaces)
 end
 
-function prepare_interfaces_check_numarguments(fform, inputinterfaces::Val{Input}, interfaces) where {Input}
+function prepare_interfaces_check_num_inputarguments(fform, inputinterfaces::Val{Input}, interfaces) where {Input}
     (length(interfaces) - 1) === length(Input) ||
         error(lazy"Expected $(length(Input)) input arguments for `$(fform)`, got $(length(interfaces) - 1): $(join(map(first, Iterators.drop(interfaces, 1)), \", \"))")
 end
-
-## activate!
 
 struct FactorNodeActivationOptions{M, D, P, A, S}
     metadata::M

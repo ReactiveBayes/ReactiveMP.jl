@@ -157,7 +157,7 @@ end
     @test occursin(r"DummyNodeForDocumentationDeterministic.*Deterministic.*out, x \(or xx, xxx\), y", documentation)
 end
 
-@testitem "Predefined nodes should check number of arguments supplied" begin
+@testitem "Predefined nodes should check the arguments supplied" begin
     struct StochasticNodeWithThreeArguments end
     struct DeterministicNodeWithFourArguments end
 
@@ -199,7 +199,7 @@ end
 end
 
 @testitem "Generic node construction checks should not allocate" begin
-    import ReactiveMP: prepare_interfaces_check_duplicates, prepare_interfaces_check_nonempty, prepare_interfaces_check_numarguments
+    import ReactiveMP: prepare_interfaces_check_adjacent_duplicates, prepare_interfaces_check_nonempty, prepare_interfaces_check_numarguments
 
     struct NodeForCheckDuplicatesTest end
     @node NodeForCheckDuplicatesTest Stochastic [out, x, y, z]
@@ -213,7 +213,7 @@ end
     # compile first
     function foo(interfaces)
         prepare_interfaces_check_nonempty(NodeForCheckDuplicatesTest, interfaces)
-        prepare_interfaces_check_duplicates(NodeForCheckDuplicatesTest, interfaces)
+        prepare_interfaces_check_adjacent_duplicates(NodeForCheckDuplicatesTest, interfaces)
         prepare_interfaces_check_numarguments(NodeForCheckDuplicatesTest, interfaces)
     end
     foo(interfaces)
