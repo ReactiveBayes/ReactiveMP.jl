@@ -180,7 +180,7 @@ end
 # `PredefinedNodeFunctionalForm` are generally the nodes that are defined with the `@node` macro
 # The `UndefinedNodeFunctionalForm` nodes can be created as well, but only if the `fform` is a `Function` (see `predefined/delta.jl`)
 function factornode(::PredefinedNodeFunctionalForm, fform::F, interfaces::I, factorization) where {F, I}
-    processed_interfaces = __prepare_interfaces_generic(fform, interfaces)
+    processed_interfaces = prepare_interfaces_generic(fform, interfaces)
     localclusters = FactorNodeLocalClusters(processed_interfaces, collect_factorisation(fform, factorization))
     return FactorNode(fform, processed_interfaces, localclusters)
 end
@@ -197,14 +197,44 @@ interfaceindex(factornode::FactorNode, iname::Symbol)                         = 
 interfaceindices(factornode::FactorNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
 interfaceindices(factornode::FactorNode, inames::NTuple{N, Symbol}) where {N} = map(iname -> interfaceindex(factornode, iname), inames)
 
-# Takes a named tuple of abstract variables and converts to a tuple of NodeInterfaces with the same order
-function __prepare_interfaces_generic(fform::F, interfaces::AbstractVector) where {F}
+function prepare_interfaces_generic(fform::F, interfaces::AbstractVector) where {F}
+    prepare_interfaces_check_nonempty(fform, interfaces)
+    prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
+    prepare_interfaces_check_numarguments(fform, interfaces)
     return map(enumerate(interfaces)) do (index, (name, variable))
         return NodeInterface(alias_interface(fform, index, name), variable)
     end
 end
 
-## activate!
+function prepare_interfaces_check_nonempty(fform, interfaces)
+    length(interfaces) > 0 || error(lazy"At least one argument is required for a factor node. Got none for `$(fform)`")
+end
+
+function prepare_interfaces_check_adjacent_duplicates(fform, interfaces)
+    # Here we create an iterator that checks ONLY adjacent interfaces 
+    # The reason here is that we don't want to check all possible combinations of all input interfaces
+    # because that would require allocating an intermediate storage for `Set`, which would harm the 
+    # performance of nodes creation. The `zip(interfaces, Iterators.drop(interfaces, 1))` creates a generic 
+    # iterator of adjacent interface pairs
+    foreach(zip(interfaces, Iterators.drop(interfaces, 1))) do (left, right)
+        lname, _ = left
+        rname, _ = right
+        if isequal(lname, rname)
+            error(
+                lazy"`$fform` has duplicate entry for interface `$lname`. Did you pass an array (e.g. `x`) instead of an array element (e.g. `x[i]`)? Check your variable indices."
+            )
+        end
+    end
+end
+
+function prepare_interfaces_check_numarguments(fform::F, interfaces) where {F}
+    prepare_interfaces_check_num_inputarguments(fform, inputinterfaces(fform), interfaces)
+end
+
+function prepare_interfaces_check_num_inputarguments(fform, inputinterfaces::Val{Input}, interfaces) where {Input}
+    (length(interfaces) - 1) === length(Input) ||
+        error(lazy"Expected $(length(Input)) input arguments for `$(fform)`, got $(length(interfaces) - 1): $(join(map(first, Iterators.drop(interfaces, 1)), \", \"))")
+end
 
 struct FactorNodeActivationOptions{M, D, P, A, S}
     metadata::M
