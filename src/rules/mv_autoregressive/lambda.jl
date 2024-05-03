@@ -27,7 +27,7 @@ end
 
     Δ = compute_delta_mar(my, Vy, mx, Vx, Vyx, ma, Va, mA, meta)
 
-    return WishartMessage(ds + 2, Δ)
+    return WishartFast(ds + 2, Δ)
 end
 
 @rule MAR(:Λ, Marginalisation) (q_y::MultivariateNormalDistributionsFamily, q_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, meta::MARMeta) = begin
@@ -38,5 +38,5 @@ end
     mA = mar_companion_matrix(ma, meta)
 
     Δ = compute_delta_mar(my, Vy, mx, Vx, ma, Va, mA, meta)
-    return WishartMessage(ds + 2, Δ)
+    return WishartFast(ds + 2, Δ)
 end
