@@ -16,6 +16,7 @@ q(x) = f\left(\frac{\overrightarrow{\mu}(x)\overleftarrow{\mu}(x)}{\int \overrig
 AbstractFormConstraint
 UnspecifiedFormConstraint
 CompositeFormConstraint
+ReactiveMP.preprocess_form_constraints
 ```
  
 ### Form check strategy
@@ -50,35 +51,70 @@ constrain_form
 
 ## [Custom Functional Form Example](@id custom-functional-form-example)
 
-In this demo we show how to build a custom functional form constraint that is compatible with the `ReactiveMP.jl` inference backend. An important part of the functional forms constraint implementation is the `prod` function in the [`BayesBase`](https://reactivebayes.github.io/BayesBase.jl/stable/) package. We show a relatively simple use-case, which might not be very useful in practice, but serves as a simple step-by-step guide. Assume that we want a specific posterior marginal of some random variable in our model to have a specific Gaussian parametrisation, for example mean-precision. We can use built-in `NormalMeanPrecision` distribution, but we still need to define our custom functional form constraint:
+In this demo, we show how to build a custom functional form constraint that is compatible with the `ReactiveMP.jl` inference backend. An important part of the functional form constraint implementation is the `prod` function in the [`BayesBase`](https://reactivebayes.github.io/BayesBase.jl/stable/) package. We present a relatively simple use case, which may not be very practical but serves as a straightforward step-by-step guide.
+
+Assume that we want a specific posterior marginal of some random variable in our model to have a specific Gaussian parameterization, such as mean-precision. Here, how we can achieve this with our custom `MeanPrecisionFormConstraint` functional form constraint:
 
 ```@example custom-functional-form-example
-using ReactiveMP, BayesBase
+using ReactiveMP, ExponentialFamily, Distributions, BayesBase
 
-# First we define our functional form structure with no fields
+# First, we define our functional form structure with no fields
 struct MeanPrecisionFormConstraint <: AbstractFormConstraint end
-```
 
-Next we define the behaviour of our functional form constraint:
-
-```@example custom-functional-form-example
-ReactiveMP.default_form_check_strategy(::MeanPrecisionFormConstraint)   = FormConstraintCheckLast()
-ReactiveMP.default_prod_constraint(::MeanPrecisionFormConstraint)       = GenericProd()
+ReactiveMP.default_form_check_strategy(::MeanPrecisionFormConstraint) = FormConstraintCheckLast()
+ReactiveMP.default_prod_constraint(::MeanPrecisionFormConstraint) = GenericProd()
 
 function ReactiveMP.constrain_form(::MeanPrecisionFormConstraint, distribution) 
-    # This is quite a naive assumption, that a given `dsitribution` object has `mean` and `precision` defined
-    # However this quantities might be approximated with some other external method, e.g. Laplace approximation
+    # This assumes that the given `distribution` object has `mean` and `precision` defined.
+    # These quantities might be approximated using other methods, such as Laplace approximation.
     m = mean(distribution)      # or approximate with some other method
     p = precision(distribution) # or approximate with some other method
     return NormalMeanPrecision(m, p)
 end
 
 function ReactiveMP.constrain_form(::MeanPrecisionFormConstraint, distribution::BayesBase.ProductOf)
-    # ProductOf is the special case, read about this type more in the corresponding documentation section
-    # of the `BayesBase` package
+    # `ProductOf` is a special case. Read more about this type in the corresponding 
+    # documentation section of the `BayesBase` package.
     # ... 
 end
+
+constraint = ReactiveMP.preprocess_form_constraints(MeanPrecisionFormConstraint())
+
+constrain_form(constraint, NormalMeanVariance(0, 2))
 ```
 
+## Wrapped Form Constraints 
+
+Some constraint objects might not be subtypes of `AbstractFormConstraint`. This can occur, for instance, if the object is defined in a different package or needs to subtype a different abstract type. In such cases, `ReactiveMP` expects users to pass a `WrappedFormConstraint` object, which wraps the original object and makes it compatible with the `ReactiveMP` inference backend. Note that the [`ReactiveMP.preprocess_form_constraints`](@ref) function automatically wraps all objects that are not subtypes of `AbstractFormConstraint`.
+
+Additionally, objects wrapped by `WrappedFormConstraints` may implement the `ReactiveMP.prepare_context` function. This function's output will be stored in the `WrappedFormConstraints` along with the original object. If `prepare_context` is implemented, the `constrain_form` function will take three arguments: the original constraint, the context, and the object that needs to be constrained.
+
+```@docs 
+ReactiveMP.WrappedFormConstraint
+ReactiveMP.prepare_context
+ReactiveMP.constrain_form(::ReactiveMP.WrappedFormConstraint, something)
+```
+
+```@example wrapped-form-constraint-example
+using ReactiveMP, Distributions, BayesBase, Random
+
+# First, we define our custom form constraint that creates a set of samples
+# Note that this is not a subtype of `AbstractFormConstraint`
+struct MyCustomSampleListFormConstraint end
+
+# We implement the `prepare_context` function, which returns a random number generator
+function ReactiveMP.prepare_context(constraint::MyCustomSampleListFormConstraint)
+    return Random.default_rng()
+end
+
+# We implement the `constrain_form` function, which returns a set of samples
+function ReactiveMP.constrain_form(constraint::MyCustomSampleListFormConstraint, context, distribution)
+    return rand(context, distribution, 10)
+end
+
+constraint = ReactiveMP.preprocess_form_constraints(MyCustomSampleListFormConstraint())
+
+constrain_form(constraint, Normal(0, 10))
+```
 
 
