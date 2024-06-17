@@ -71,7 +71,7 @@ end
     @test preprocess_form_constraints(preprocess_form_constraints(FormConstraint3WithContext())) == WrappedFormConstraint(FormConstraint3WithContext(), FormConstraint3Context())
 end
 
-@testitem "`WrappedFormConstraint` should not pass empty context to the `constrain_form` call" begin 
+@testitem "`WrappedFormConstraint` should not pass empty context to the `constrain_form` call" begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 
     struct FormConstraintWithoutContext end
@@ -89,7 +89,6 @@ end
     @test constrain_form(constraint, 1) == 2
     @test constrain_form(constraint, 2) == 3
     @test constrain_form(constraint, 7) == 8
-
 end
 
 @testitem "`WrappedFormConstraint` should be able to reuse the context between multiple `constrain_form` calls" begin
