@@ -338,6 +338,22 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     The `$(node_fform)` has been marked as a valid `$(node_type)` factor node with the `@node` macro with `[ $(docedges) ]` interfaces.
     """
 
+    nodefunctions = quote
+        ReactiveMP.nodefunction(::$dispatch_type) = (args...) -> logpdf(($node_fform)(args[2:end]...), args[1])
+    end
+
+    foreach(enumerate(interfaces)) do (index, interface)
+        interfacename = first(interface)
+        args = Tuple(map(i -> :(args[$i]), 1:(length(interfaces)-1)))
+        args = TupleTools.insertafter(args, index-1, (interfacename, ))
+        edgespecificfn =
+            :(ReactiveMP.nodefunction(::$dispatch_type, ::Val{$(QuoteNode(interfacename))}, args...) = ($interfacename) -> ReactiveMP.nodefunction($node_fform)($(args...),))
+        nodefunctions = quote
+            $nodefunctions
+            $edgespecificfn
+        end
+    end
+
     # Define the necessary function types
     result = quote
         @doc $doc ReactiveMP.is_predefined_node(::$dispatch_type) = ReactiveMP.PredefinedNodeFunctionalForm()
@@ -347,6 +363,7 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         ReactiveMP.inputinterfaces(::$dispatch_type) = Val($(Tuple(map(first, skipindex(interfaces, 1)))))
 
         $collect_factorisation_fn
+        $nodefunctions
 
         function ReactiveMP.alias_interface(dispatch_type::$dispatch_type, index, name)
             $alias_corrections
