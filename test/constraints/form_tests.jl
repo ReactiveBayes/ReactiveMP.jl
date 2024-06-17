@@ -71,6 +71,22 @@ end
     @test preprocess_form_constraints(preprocess_form_constraints(FormConstraint3WithContext())) == WrappedFormConstraint(FormConstraint3WithContext(), FormConstraint3Context())
 end
 
+@testitem "`WrappedFormConstraint` should simply redirect all the important functions to the underlying object" begin
+    import ReactiveMP: constrain_form, preprocess_form_constraints
+
+    struct FormConstraint end
+
+    ReactiveMP.default_form_check_strategy(::FormConstraint) = "hello"
+    ReactiveMP.default_prod_constraint(::FormConstraint) = "world"
+
+    constrain_form(::FormConstraint, x) = x + 1
+
+    constraint = preprocess_form_constraints(FormConstraint())
+
+    @test default_form_check_strategy(constraint) == "hello"
+    @test default_prod_constraint(constraint) == "world"
+end
+
 @testitem "`WrappedFormConstraint` should not pass empty context to the `constrain_form` call" begin
     import ReactiveMP: constrain_form, preprocess_form_constraints
 

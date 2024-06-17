@@ -123,6 +123,9 @@ constrain_form(wrapped::WrappedFormConstraint, something) = constrain_form(wrapp
 constrain_form(wrapped::WrappedFormConstraint, ::WrappedFormConstraintNoContext, something) = constrain_form(wrapped.constraint, something)
 constrain_form(wrapped::WrappedFormConstraint, context, something) = constrain_form(wrapped.constraint, context, something)
 
+default_form_check_strategy(wrapped::WrappedFormConstraint) = default_form_check_strategy(wrapped.constraint)
+default_prod_constraint(wrapped::WrappedFormConstraint) = default_prod_constraint(wrapped.constraint)
+
 """
     preprocess_form_constraints(constraints)
 

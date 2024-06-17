@@ -102,6 +102,11 @@ using ReactiveMP, Distributions, BayesBase, Random
 # Note that this is not a subtype of `AbstractFormConstraint`
 struct MyCustomSampleListFormConstraint end
 
+# Note that we still need to implement `default_form_check_strategy` and `default_prod_constraint` functions
+#  which are necessary for the `ReactiveMP` inference backend
+ReactiveMP.default_form_check_strategy(::MyCustomSampleListFormConstraint) = FormConstraintCheckLast()
+ReactiveMP.default_prod_constraint(::MyCustomSampleListFormConstraint) = GenericProd()
+
 # We implement the `prepare_context` function, which returns a random number generator
 function ReactiveMP.prepare_context(constraint::MyCustomSampleListFormConstraint)
     return Random.default_rng()
