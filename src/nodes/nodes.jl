@@ -96,6 +96,8 @@ isstochastic(::Type{Stochastic})    = true
 isstochastic(::Deterministic)       = false
 isstochastic(::Type{Deterministic}) = false
 
+function nodefunction end
+
 """
     sdtype(object)
 
