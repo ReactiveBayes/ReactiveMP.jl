@@ -347,6 +347,7 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
 
     foreach(enumerate(interfaces)) do (index, interface)
         interfacename = first(interface)
+        # TODO: write tests for this
         edgespecificfn =
             :(ReactiveMP.nodefunction(::$dispatch_type, ::Val{$(QuoteNode(interfacename))}; kwargs...) = begin 
                 return let ckwargs = kwargs
