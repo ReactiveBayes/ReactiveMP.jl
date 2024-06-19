@@ -1096,8 +1096,24 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) =
-    throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node))
+# rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) =
+#     throw(RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node))
+
+mergevals(::Nothing, ::Val{T}) where T = T
+mergevals(::Val{T}, ::Nothing) where T = T
+mergevals(::Val{L}, ::Val{R}) where {L, R} = (L..., R...)
+
+extractmeans(::Nothing, vals::Tuple) = mean.(vals)
+extractmeans(vals::Tuple, ::Nothing) = mean.(vals)
+extractmeans(left::Tuple, right::Tuple) = (mean.(left)..., mean.(right)...)
+
+function ReactiveMP.rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+    vals   = mergevals(mnames, qnames)
+    means  = extractmeans(messages, marginals)
+    kwargs = NamedTuple{vals}(means)
+    fn     = ReactiveMP.nodefunction(fform, on; kwargs...)
+    return ContinuousUnivariateLogPdf(UnspecifiedDomain(), fn), addons
+end
 
 function Base.showerror(io::IO, error::RuleMethodError)
     print(io, "RuleMethodError: no method matching rule for the given arguments")

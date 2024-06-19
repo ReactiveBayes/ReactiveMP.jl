@@ -340,16 +340,19 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     The `$(node_fform)` has been marked as a valid `$(node_type)` factor node with the `@node` macro with `[ $(docedges) ]` interfaces.
     """
 
+    nodefunctionargnames = first.(interfaces)
     nodefunctions = quote
-        ReactiveMP.nodefunction(::$dispatch_type) = (args...) -> logpdf(($node_fform)(args[2:end]...), args[1])
+        ReactiveMP.nodefunction(::$dispatch_type) = (; $(nodefunctionargnames...)) -> logpdf(($node_fform)($(nodefunctionargnames[2:end]...)), $(nodefunctionargnames[1]))
     end
 
     foreach(enumerate(interfaces)) do (index, interface)
         interfacename = first(interface)
-        args = Tuple(map(i -> :(args[$i]), 1:(length(interfaces)-1)))
-        args = TupleTools.insertafter(args, index-1, (interfacename, ))
         edgespecificfn =
-            :(ReactiveMP.nodefunction(::$dispatch_type, ::Val{$(QuoteNode(interfacename))}, args...) = ($interfacename) -> ReactiveMP.nodefunction($node_fform)($(args...),))
+            :(ReactiveMP.nodefunction(::$dispatch_type, ::Val{$(QuoteNode(interfacename))}; kwargs...) = begin 
+                return let ckwargs = kwargs
+                    ($interfacename) -> ReactiveMP.nodefunction($node_fform)(; $interfacename = $interfacename, ckwargs...)
+                end
+            end)
         nodefunctions = quote
             $nodefunctions
             $edgespecificfn
