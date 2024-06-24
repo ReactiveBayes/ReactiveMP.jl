@@ -220,3 +220,43 @@ end
     @test (@allocated(foo(interfaces)) == 0)
     @test (@allocations(foo(interfaces)) == 0)
 end
+
+@testitem "`@node` macro should generate the node function in all directions for `Stochastic` nodes" begin
+    @testset "For a regular node a user needs to define a node function" begin
+        struct DummyNodeForNodeFunction end
+
+        @node DummyNodeForNodeFunction Stochastic [out, x, y, z]
+
+        nodefunction = (out, x, y, z) -> out^4 + x^3 + y^2 + z
+
+        ReactiveMP.nodefunction(::Type{DummyNodeForNodeFunction}) = (; out, x, y, z) -> nodefunction(out, x, y, z)
+
+        for out in (-1, 1), x in (-1, 1), y in (-1, 1), z in (-1, 1)
+            @test ReactiveMP.nodefunction(DummyNodeForNodeFunction, Val(:out), x = x, y = y, z = z)(out) ≈ nodefunction(out, x, y, z)
+            @test ReactiveMP.nodefunction(DummyNodeForNodeFunction, Val(:x), out = out, y = y, z = z)(x) ≈ nodefunction(out, x, y, z)
+            @test ReactiveMP.nodefunction(DummyNodeForNodeFunction, Val(:y), out = out, x = x, z = z)(y) ≈ nodefunction(out, x, y, z)
+            @test ReactiveMP.nodefunction(DummyNodeForNodeFunction, Val(:z), out = out, x = x, y = y)(z) ≈ nodefunction(out, x, y, z)
+        end
+    end
+
+    @testset "Distributions are the special case and they simple call the `logpdf` as their node function" begin
+        using Distributions
+
+        struct DummyNodeForNodeFunctionAsDistribution <: Distributions.ContinuousUnivariateDistribution
+            mean
+            var
+        end
+
+        @node DummyNodeForNodeFunctionAsDistribution Stochastic [out, mean, var]
+
+        Distributions.logpdf(node::DummyNodeForNodeFunctionAsDistribution, out) = Distributions.logpdf(Distributions.Normal(node.mean, node.var), out)
+
+        nodefunction = (out, mean, var) -> Distributions.logpdf(Distributions.Normal(mean, var), out)
+
+        for out in (-1, 1), mean in (-1, 1), var in (1, 2)
+            @test ReactiveMP.nodefunction(DummyNodeForNodeFunctionAsDistribution, Val(:out), mean = mean, var = var)(out) ≈ nodefunction(out, mean, var)
+            @test ReactiveMP.nodefunction(DummyNodeForNodeFunctionAsDistribution, Val(:mean), out = out, var = var)(mean) ≈ nodefunction(out, mean, var)
+            @test ReactiveMP.nodefunction(DummyNodeForNodeFunctionAsDistribution, Val(:var), out = out, mean = mean)(var) ≈ nodefunction(out, mean, var)
+        end
+    end
+end

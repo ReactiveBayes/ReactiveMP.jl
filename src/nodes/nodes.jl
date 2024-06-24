@@ -96,6 +96,12 @@ isstochastic(::Type{Stochastic})    = true
 isstochastic(::Deterministic)       = false
 isstochastic(::Type{Deterministic}) = false
 
+"""
+    nodefunction(::Type{T}) where {T}
+
+Returns a function that represents a node of type `T`. 
+The function typically takes arguments that represent the node's input and output variables in the same order as defined in the `@node` macro.
+"""
 function nodefunction end
 
 """
@@ -340,24 +346,38 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     The `$(node_fform)` has been marked as a valid `$(node_type)` factor node with the `@node` macro with `[ $(docedges) ]` interfaces.
     """
 
-    nodefunctionargnames = first.(interfaces)
-    nodefunctions = quote
-        ReactiveMP.nodefunction(::$dispatch_type) = (; $(nodefunctionargnames...)) -> logpdf(($node_fform)($(nodefunctionargnames[2:end]...)), $(nodefunctionargnames[1]))
-    end
+    # For `Stochastic` nodes the `nodefunctions` are pre-generated automatically 
+    #   by calling the `corresponding` logpdf
+    nodefunctions = if node_type == :Stochastic
+        nodefunctionargnames = first.(interfaces)
 
-    foreach(enumerate(interfaces)) do (index, interface)
-        interfacename = first(interface)
-        # TODO: write tests for this
-        edgespecificfn =
-            :(ReactiveMP.nodefunction(::$dispatch_type, ::Val{$(QuoteNode(interfacename))}; kwargs...) = begin 
-                return let ckwargs = kwargs
-                    ($interfacename) -> ReactiveMP.nodefunction($node_fform)(; $interfacename = $interfacename, ckwargs...)
+        # The very first function is a generic method that only accepts type and returns 
+        # a function that fallbacks to calculate the logpdf of the distribution
+        fncollection = [
+            :(
+                ReactiveMP.nodefunction(::$dispatch_type) =
+                    (; $(nodefunctionargnames...)) -> ReactiveMP.BayesBase.logpdf(($node_fform)($(nodefunctionargnames[2:end]...)), $(nodefunctionargnames[1]))
+            )
+        ]
+
+        # The rest are individual node functions in each direction
+        for interface in interfaces
+            interfacename = first(interface)
+            edgespecificfn = :(
+                ReactiveMP.nodefunction(::$dispatch_type, ::Val{$(QuoteNode(interfacename))}; kwargs...) = begin
+                    return let ckwargs = kwargs
+                        ($interfacename) -> ReactiveMP.nodefunction($node_fform)(; $interfacename = $interfacename, ckwargs...)
+                    end
                 end
-            end)
-        nodefunctions = quote
-            $nodefunctions
-            $edgespecificfn
+            )
+            push!(fncollection, edgespecificfn)
         end
+
+        _block = Expr(:block)
+        _block.args = fncollection
+        _block
+    else
+        :(nothing)
     end
 
     # Define the necessary function types
