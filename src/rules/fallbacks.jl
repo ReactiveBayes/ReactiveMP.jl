@@ -16,9 +16,17 @@ BayesBase.insupport(f::UnnormalizedLogPdf, x) = true
 BayesBase.logpdf(f::UnnormalizedLogPdf, x) = f.fn(x)
 
 function rulefallback_nodefunction(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+    return rulefallback_nodefunction(sdtype(fform), fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+end
+
+function rulefallback_nodefunction(::Stochastic, fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
     vals   = _mergevals(mnames, qnames)
     means  = _extractmeans(messages, marginals)
     kwargs = NamedTuple{vals}(means)
     fn     = ReactiveMP.nodefunction(fform, on; kwargs...)
     return UnnormalizedLogPdf(fn), addons
+end
+
+function rulefallback_nodefunction(::Deterministic, fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+    error("Rule fallback for deterministic nodes is not implemented yet")
 end

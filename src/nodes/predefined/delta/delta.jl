@@ -190,20 +190,21 @@ function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependencie
         (!isnothing(getvariable(interface))) || error("Empty variable on interface $(interface) of node $(factornode)")
     end
 
-    scheduler = getscheduler(options)
-    addons    = getaddons(options)
+    scheduler    = getscheduler(options)
+    addons       = getaddons(options)
+    rulefallback = getrulefallback(options)
 
     # First we declare local marginal for `out` edge
-    deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons, rulefallback)
 
     # Second we declare how to compute a joint marginal over all inbound edges
-    deltafn_apply_layout(layout, Val(:q_ins), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:q_ins), factornode, meta, pipeline, scheduler, addons, rulefallback)
 
     # Second we declare message passing logic for out interface
-    deltafn_apply_layout(layout, Val(:m_out), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:m_out), factornode, meta, pipeline, scheduler, addons, rulefallback)
 
     # At last we declare message passing logic for input interfaces
-    deltafn_apply_layout(layout, Val(:m_in), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:m_in), factornode, meta, pipeline, scheduler, addons, rulefallback)
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, meta, skip_strategy, scheduler) where {T <: CountingReal}
