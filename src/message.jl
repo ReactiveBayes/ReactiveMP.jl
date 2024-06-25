@@ -279,7 +279,7 @@ end
 ## We create a lambda-like callable structure to improve type inference and make it more stable
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 
-struct MessageMapping{F, T, C, N, M, A, X, R}
+struct MessageMapping{F, T, C, N, M, A, X, R, K}
     vtag            :: T
     vconstraint     :: C
     msgs_names      :: N
@@ -287,6 +287,7 @@ struct MessageMapping{F, T, C, N, M, A, X, R}
     meta            :: A
     addons          :: X
     factornode      :: R
+    rulefallback    :: K
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -315,12 +316,14 @@ end
 # Other addons may override this behaviour (if necessary, see e.g. AddonMemory)
 message_mapping_addon(addon, mapping, messages, marginals, result) = addon
 
-function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
+function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K) where {F, T, C, N, M, A, X, R, K}
+    return MessageMapping{F, T, C, N, M, A, X, R, K}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback)
 end
 
-function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F <: Function, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
+function MessageMapping(
+    ::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K
+) where {F <: Function, T, C, N, M, A, X, R, K}
+    return MessageMapping{F, T, C, N, M, A, X, R, K}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback)
 end
 
 function (mapping::MessageMapping)(messages, marginals)
@@ -335,7 +338,7 @@ function (mapping::MessageMapping)(messages, marginals)
     elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
         missing, mapping.addons
     else
-        rule(
+        ruleargs = (
             message_mapping_fform(mapping),
             mapping.vtag,
             mapping.vconstraint,
@@ -347,6 +350,14 @@ function (mapping::MessageMapping)(messages, marginals)
             mapping.addons,
             mapping.factornode
         )
+        ruleoutput = rule(ruleargs...)
+        # if `@rule` is not defined, the default behaviour is to return 
+        # the `RuleMethodError` object
+        if ruleoutput isa RuleMethodError
+            !isnothing(mapping.rulefallback) ? mapping.rulefallback(ruleargs...) : throw(ruleoutput)
+        else
+            ruleoutput
+        end
     end
 
     # Inject extra addons after the rule has been executed

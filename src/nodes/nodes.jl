@@ -244,12 +244,13 @@ function prepare_interfaces_check_num_inputarguments(fform, inputinterfaces::Val
         error(lazy"Expected $(length(Input)) input arguments for `$(fform)`, got $(length(interfaces) - 1): $(join(map(first, Iterators.drop(interfaces, 1)), \", \"))")
 end
 
-struct FactorNodeActivationOptions{M, D, P, A, S}
+struct FactorNodeActivationOptions{M, D, P, A, S, R}
     metadata::M
     dependencies::D
     pipeline::P
     addons::A
     scheduler::S
+    rulefallback::R
 end
 
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
@@ -257,6 +258,7 @@ getdependecies(options::FactorNodeActivationOptions) = options.dependencies
 getpipeline(options::FactorNodeActivationOptions) = options.pipeline
 getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
+getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     dependencies = collect_functional_dependencies(functionalform(factornode), getdependecies(options))

@@ -189,3 +189,30 @@ end
         @test occursin("DeferredMessage($(a + b))", repr(dmessage))
     end
 end
+
+@testitem "MessageMapping should call `rulefallback` is no rule is available" begin
+    import ReactiveMP: MessageMapping, getdata
+
+    struct SomeArbitraryNode end
+
+    @node SomeArbitraryNode Stochastic [out, in]
+
+    struct NonexistingDistribution end
+
+    meta = "meta"
+    addons = ()
+
+    mapping_no_rule_fallback = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, meta, addons, SomeArbitraryNode(), nothing)
+
+    messages  = (Message(NonexistingDistribution(), false, false, nothing),)
+    marginals = nothing
+
+    @test_throws ReactiveMP.RuleMethodError mapping_no_rule_fallback(messages, marginals)
+
+    rulefallback = (args...) -> (args, nothing)
+
+    mapping_with_fallback = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, meta, addons, SomeArbitraryNode(), rulefallback)
+
+    @test getdata(mapping_with_fallback(messages, marginals)) ==
+        (SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), messages, nothing, marginals, meta, addons, SomeArbitraryNode())
+end
