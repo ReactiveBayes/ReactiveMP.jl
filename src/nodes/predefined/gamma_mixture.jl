@@ -183,6 +183,8 @@ struct GammaShapeLikelihood{T <: Real} <: ContinuousUnivariateDistribution
     γ::T # p * β
 end
 
+Distributions.@distr_support GammaShapeLikelihood 0.0 Inf
+
 BayesBase.support(dist::GammaShapeLikelihood) = Distributions.RealInterval(0.0, Inf)
 BayesBase.logpdf(distribution::GammaShapeLikelihood, x::Real) = distribution.γ * x - distribution.p * loggamma(x)
 
