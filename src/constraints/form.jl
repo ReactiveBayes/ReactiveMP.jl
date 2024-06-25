@@ -63,9 +63,9 @@ Returns a default prod constraint needed to apply a given `form_constraint`. For
 function default_prod_constraint end
 
 """
-    constrain_form(form_constraint, distribution)
+    constrain_form(constraint, something)
 
-This function must approximate `distribution` object in a form that satisfies `form_constraint`.
+This function applies a given form constraint to a given object. 
 """
 function constrain_form end
 
@@ -80,13 +80,6 @@ struct UnspecifiedFormConstraint <: AbstractFormConstraint end
 default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLast()
 
 default_prod_constraint(::UnspecifiedFormConstraint) = GenericProd()
-
-"""
-    constrain_form(constraint, something)
-
-This function applies a given form constraint to a given object. 
-"""
-function constrain_form end
 
 constrain_form(::UnspecifiedFormConstraint, something) = something
 constrain_form(::UnspecifiedFormConstraint, something::Union{ProductOf, LinearizedProductOf}) =
