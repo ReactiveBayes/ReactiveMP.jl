@@ -97,4 +97,12 @@
             )
         ]
     end
+
+    @testset "Error belief Propagation: (m_in1::NormalDistributionsFamily, m_in2::NormalDistributionsFamily)" begin
+        @test_throws r"The rule for the dot product node between two NormalDistributionsFamily instances is not available in closed form. Please use SoftDot instead." @call_rule typeof(
+            dot
+        )(
+            :out, Marginalisation
+        ) (m_in1 = NormalMeanVariance(2.0, 2.0), m_in2 = NormalMeanVariance(2.0, 2.0), meta = NoCorrection())
+    end
 end
