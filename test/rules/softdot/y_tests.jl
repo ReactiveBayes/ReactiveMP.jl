@@ -97,4 +97,37 @@
             )
         end
     end
+
+    @testset "VMP: structured rules" begin
+        @testset "(q_θ::NormalMeanVariance, m_x::NormalMeanVariance, q_γ::Any" begin
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [
+                (input = (q_θ = PointMass(3.0), q_x = PointMass(11.0), q_γ = GammaShapeRate(7.0, 5.0)), output = NormalMeanPrecision(33.0, 1.4)),
+                (input = (q_θ = PointMass(3.0), q_x = PointMass(11.0), q_γ = GammaShapeScale(7.0, 5.0)), output = NormalMeanPrecision(33.0, 35.0))
+            ]
+
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [
+                (input = (m_x = NormalMeanVariance(1.0, 1.0), q_θ = NormalMeanVariance(1.0, 1.0), q_γ = GammaShapeRate(1.0, 1.0)), output = NormalMeanVariance(0.5, 1.5)),
+                (
+                    input = (m_x = NormalWeightedMeanPrecision(1.0, 1.0), q_θ = NormalMeanPrecision(1.0, 2.0), q_γ = GammaShapeScale(2.0, 1.0)),
+                    output = NormalMeanVariance(0.5, 1.0)
+                )
+            ]
+        end
+
+        @testset "(q_θ::MvNormalMeanCovariance, m_x::MvNormalMeanCovariance, q_γ::Any" begin
+            order = 2
+            @test_rules [check_type_promotion = true] SoftDot(:y, Marginalisation) [
+                (
+                    input = (
+                        m_x = MvNormalMeanCovariance(ones(order), diageye(order)), q_θ = MvNormalMeanCovariance(zeros(order), diageye(order)), q_γ = GammaShapeScale(1.0, 1.0)
+                    ),
+                    output = NormalMeanVariance(0.0, 1.0)
+                ),
+                (
+                    input = (m_x = MvNormalMeanCovariance(ones(order), diageye(order)), q_θ = MvNormalMeanCovariance(ones(order), diageye(order)), q_γ = Gamma(1.0, 1.0)),
+                    output = NormalMeanVariance(1.0, 2.0)
+                )
+            ]
+        end
+    end
 end # testset

@@ -131,4 +131,25 @@
             )
         end
     end # testset: mean-field
+
+    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any)" begin
+        @test_rules [check_type_promotion = true] SoftDot(:γ, Marginalisation) [
+            (input = (q_y_x = MvNormalMeanCovariance(ones(2), diageye(2)), q_θ = NormalMeanPrecision(1.0, 1.0)), output = GammaShapeRate(3 / 2, 2.0)),
+            (input = (q_y_x = MvNormalMeanCovariance(2 * ones(2), diageye(2)), q_θ = NormalMeanPrecision(2.0, 1.0)), output = GammaShapeRate(3 / 2, 7.0))
+        ]
+    end
+
+    @testset "Structured : (q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any)" begin
+        order = 2
+        @test_rules [check_type_promotion = true] SoftDot(:γ, Marginalisation) [
+            (
+                input = (q_y_x = MvNormalMeanCovariance(ones(order + 1), diageye(order + 1)), q_θ = MvNormalMeanPrecision(ones(order), diageye(order))),
+                output = GammaShapeRate(3 / 2, 4.0)
+            ),
+            (
+                input = (q_y_x = MvNormalMeanCovariance(ones(order + 1), diageye(order + 1)), q_θ = MvNormalMeanPrecision(zeros(order), diageye(order))),
+                output = GammaShapeRate(3 / 2, 3.0)
+            )
+        ]
+    end
 end # testset
