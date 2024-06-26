@@ -1,5 +1,7 @@
 import DomainSets
 
-@rule GammaShapeRate(:α, Marginalisation) (q_out::Gamma, q_β::Gamma) = begin
-    return ContinuousUnivariateLogPdf(DomainSets.HalfLine(), (α) -> α * mean(log, q_β) + (α - 1) * mean(log, q_out) - loggamma(α))
+@rule GammaShapeRate(:α, Marginalisation) (q_out::Any, q_β::GammaDistributionsFamily) = begin
+    γ = mean(log, q_β) + mean(log, q_out)
+    params = promote(1, γ)
+    return GammaShapeLikelihood(params...)
 end
