@@ -9,7 +9,7 @@
     @testset "Linear transformation" begin
         # the following rule is used for testing purposes only
         # It is derived separately by Thijs van de Laar
-        function benchmark_rule(q_y_x, mA, ΣA, UA)
+        function benchmark_rule_structured(q_y_x, mA, ΣA, UA)
             myx, Vyx = mean_cov(q_y_x)
 
             dy  = size(mA, 1)
@@ -39,7 +39,7 @@
                 qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
 
                 @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:W, Marginalisation) [(
-                    input = (q_y_x = qyx, q_a = qa, meta = metal), output = benchmark_rule(qyx, mA, ΣA, UA)
+                    input = (q_y_x = qyx, q_a = qa, meta = metal), output = benchmark_rule_structured(qyx, mA, ΣA, UA)
                 )]
             end
         end
@@ -59,6 +59,41 @@
             qa = MvNormalMeanCovariance(zeros(1), diageye(1))
             @test_rules [check_type_promotion = true] ContinuousTransition(:W, Marginalisation) [(
                 input = (q_y_x = qyx, q_a = qa, meta = metanl), output = WishartFast(dy + 2, dy * diageye(dy))
+            )]
+        end
+    end
+
+    # the following rule is used for testing purposes only
+    # It is derived separately by Thijs van de Laar
+    function benchmark_rule_meanfield(q_y, q_x, mA, ΣA, UA)
+        my, Vy = mean_cov(q_y)
+        mx, Vx = mean_cov(q_x)
+
+        dy = size(mA, 1)
+
+        G = tr(Vx * UA) * ΣA + mA * Vx * mA' + Vy + ΣA * mx' * UA * mx + (mA * mx - my) * (mA * mx - my)'
+
+        return WishartFast(dy + 2, G)
+    end
+
+    @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, meta::CTMeta)" begin
+        for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
+            dydx = dy * dx
+            transformation = (a) -> reshape(a, dy, dx)
+            mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
+
+            metal = CTMeta(transformation)
+            Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
+            μx, Σx = rand(rng, dx), Lx * Lx'
+            μy, Σy = rand(rng, dy), Ly * Ly'
+
+            qy = MvNormalMeanCovariance(μy, Σy)
+            qx = MvNormalMeanCovariance(μx, Σx)
+
+            qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
+
+            @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:W, Marginalisation) [(
+                input = (q_y = qy, q_x = qx, q_a = qa, meta = metal), output = benchmark_rule_meanfield(qy, qx, mA, ΣA, UA)
             )]
         end
     end

@@ -55,4 +55,25 @@
             )]
         end
     end
+
+    @testset "Mean-field: (q_y::Any, q_a::Any, q_W::Any, meta::CTMeta)" begin
+        for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
+            dydx = dy * dx
+            transformation = (a) -> reshape(a, dy, dx)
+
+            mA = rand(rng, dy, dx)
+
+            metal = CTMeta(transformation)
+            Lx = rand(rng, dx, dx)
+            μx, Σx = rand(rng, dx), Lx * Lx'
+
+            qx = MvNormalMeanCovariance(μx, Σx)
+            qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
+            qW = Wishart(dy + 1, diageye(dy))
+
+            @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:y, Marginalisation) [(
+                input = (q_x = qx, q_a = qa, q_W = qW, meta = metal), output = MvNormalMeanPrecision(mA * μx, mean(qW))
+            )]
+        end
+    end
 end
