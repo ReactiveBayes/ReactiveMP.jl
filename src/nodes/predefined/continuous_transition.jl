@@ -122,7 +122,7 @@ end
     return AE
 end
 
-@average_energy ContinuousTransition (q_y::Any, q_x::Any, q_W::Any, meta::CTMeta) = begin
+@average_energy ContinuousTransition (q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta) = begin
     ma, Va = mean_cov(q_a)
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)
@@ -134,8 +134,6 @@ end
     n = div(ndims(q_y), 2)
     mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
 
-    g1 = -mA
-    g2 = g1'
     trWSU, trkronxxWSU = zero(eltype(ma)), zero(eltype(ma))
     xxt = mx * mx'
     for (i, j) in Iterators.product(1:dy, 1:dy)
@@ -143,7 +141,7 @@ end
         trWSU += mW[j, i] * tr(FjVaFi)
         trkronxxWSU += mW[j, i] * tr(xxt * FjVaFi)
     end
-    AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + g1 + g2 + Vy + (mA * mx - my) * (mA * mx - my)')) + trWSU + trkronxxWSU) / 2
+    AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + Vy + (mA * mx - my) * (mA * mx - my)')) + trWSU + trkronxxWSU) / 2
 
     return AE
 end
