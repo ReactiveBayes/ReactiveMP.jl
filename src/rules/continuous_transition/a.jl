@@ -1,4 +1,4 @@
-# NOTE: Both rules require q_a as input. This is a particular requirement for the ContinuousTransition node as it might need the expansion point for the transformation. This is not a general requirement for the VMP rules.
+# Important note: ContinuousTransition node requires q(a) as input to compute the update message for a. This is a particular requirement for the ContinuousTransition node as it might need the expansion point for the transformation. This is not a general requirement for the VMP rules.
 
 # VMP: Stuctured
 @rule ContinuousTransition(:a, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta) = begin
