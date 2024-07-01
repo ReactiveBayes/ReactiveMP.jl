@@ -27,6 +27,19 @@ function rulefallback_nodefunction(::Stochastic, fform, on, vconstraint, mnames,
     return UnnormalizedLogPdf(fn), addons
 end
 
-function rulefallback_nodefunction(::Deterministic, fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+function rulefallback_nodefunction(::Deterministic, fform, on::Val{:out}, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+    # f = nodefunction(__node, meta, Val(:out))
+    # # @show f
+    # # error(1)
+    # manyof = messages[1]
+    # @assert length(manyof.collection) === 1
+    # msg = let m = mean(manyof.collection[1])
+    #     (x) -> logpdf(Normal(f(m), 0.1), x)
+    # end
+    # return UnnormalizedLogPdf(msg), addons
     error("Rule fallback for deterministic nodes is not implemented yet")
+end
+
+function rulefallback_nodefunction(::Deterministic, fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+    error("Rule fallback for deterministic nodes for edge $on is not implemented yet")
 end
