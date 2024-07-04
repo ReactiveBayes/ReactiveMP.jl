@@ -1,4 +1,20 @@
 
+import ReactiveMP:
+    deltafn_rule_layout,
+    deltafn_apply_layout,
+    AbstractDeltaNodeDependenciesLayout,
+    DeltaFnDefaultRuleLayout,
+    DeltaFnNode,
+    getmarginal,
+    functionalform,
+    tag,
+    Marginalisation,
+    MessageMapping,
+    DefferedMessage,
+    with_statics,
+    apply_pipeline_stage,
+    messageout
+
 """
     CVIProjectionApproximationDeltaFnRuleLayout
 
@@ -15,6 +31,13 @@ In order to compute:
 """
 struct CVIProjectionApproximationDeltaFnRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 
+deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) = CVIProjectionApproximationDeltaFnRuleLayout()
+
+function deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Any)
+    @warn "CVI projection approximation does not accept the inverse function. Ignoring the provided inverse."
+    return CVIProjectionApproximationDeltaFnRuleLayout()
+end
+
 # This function declares how to compute `q_out` locally around `DeltaFn`
 function deltafn_apply_layout(::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback)
     return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback)
@@ -28,7 +51,6 @@ end
 # This function declares how to compute `m_out` 
 function deltafn_apply_layout(::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback)
     let interface = factornode.out
-
         msgs_names      = Val{(:out,)}()
         msgs_observable = combineLatestUpdates((messagein(factornode.out),), PushNew())
 
