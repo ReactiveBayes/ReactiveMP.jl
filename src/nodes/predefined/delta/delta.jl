@@ -160,16 +160,23 @@ abstract type AbstractDeltaNodeDependenciesLayout end
 
 include("layouts/default.jl")
 include("layouts/cvi.jl")
+include("layouts/cvi_projection.jl")
 
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Nothing)                       = DeltaFnDefaultRuleLayout()
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Function)                      = DeltaFnDefaultKnownInverseRuleLayout()
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::NTuple{N, Function}) where {N} = DeltaFnDefaultKnownInverseRuleLayout()
 
 deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Nothing) = CVIApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) = CVIProjectionApproximationDeltaFnRuleLayout()
 
 function deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Any)
-    @warn "CVI Approximation does not accept the inverse function. Ignoring the provided inverse."
+    @warn "CVI approximation does not accept the inverse function. Ignoring the provided inverse."
     return CVIApproximationDeltaFnRuleLayout()
+end
+
+function deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Any)
+    @warn "CVI projection approximation does not accept the inverse function. Ignoring the provided inverse."
+    return CVIProjectionApproximationDeltaFnRuleLayout()
 end
 
 function activate!(factornode::DeltaFnNode, options)
