@@ -1,6 +1,7 @@
+
 @rule DeltaFn(:out, Marginalisation) (m_out::Any, q_out::Any, q_ins::FactorizedJoint{P}, meta::DeltaMeta{U}) where {P <: NTuple{1}, U <: CVIProjection} = begin
     
-    rng = StableRNG(42)
+    rng = Random.default_rng()
     method            = ReactiveMP.getmethod(meta)
     q_sample_friendly = sampling_optimized(q_ins[1])
     samples           = map(x -> rand(rng, q_sample_friendly), 1:10)

@@ -1,4 +1,5 @@
 
+using Rocket
 import ReactiveMP:
     deltafn_rule_layout,
     deltafn_apply_layout,
@@ -13,7 +14,9 @@ import ReactiveMP:
     DefferedMessage,
     with_statics,
     apply_pipeline_stage,
-    messageout
+    messageout,
+    messagein,
+    connect!
 
 """
     CVIProjectionApproximationDeltaFnRuleLayout

@@ -1,6 +1,6 @@
 module ReactiveMPProjectionExt
 
-using ReactiveMP, ExponentialFamily, ExponentialFamilyProjection, BayesBase
+using ReactiveMP, ExponentialFamily, ExponentialFamilyProjection, BayesBase, Random, LinearAlgebra, FastCholesky
 
 export CVIProjection
 
