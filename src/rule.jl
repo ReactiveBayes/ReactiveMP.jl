@@ -452,6 +452,7 @@ The `@call_rule` accepts optional list of options before the functional form spe
 The list of available options is:
 
 - `return_addons` - forces the `@call_rule` to return the tuple of `(result, addons)`
+- `fallback` - specifies the fallback rule to use in case the rule is not defined for the given `NodeType` and specified arguments
 
 See also: [`@rule`](@ref), [`rule`](@ref), [`@call_marginalrule`](@ref)
 """
@@ -489,6 +490,7 @@ function call_rule_expression(options, fform, args)
     # Options
     # Option 1. Modifies the output of the `@call_rule` macro and returns a tuple of the result and the enabled addons
     return_addons = false
+    fallback = nothing
 
     if !isnothing(options)
         @capture(options, [voptions__]) || error("Error in macro. Options should be in a form of `[ option1 = value1, ... ]`, got $(options).")
@@ -496,20 +498,32 @@ function call_rule_expression(options, fform, args)
             @capture(option, key_ = value_) || error("Error in macro. An options should be in a form of `option = value`, got $(option).")
             if key === :return_addons
                 return_addons = Bool(value)
+            elseif key === :fallback
+                fallback = value
             else
                 @warn "Unknown option in the `@call_rule` macro: $(option)"
             end
         end
     end
 
+    __rule_result_sym = gensym(:call_rule_result)
+    __distribution_sym = gensym(:call_rule_distribution)
+    __addons_sym = gensym(:call_rule_addons)
+
     call = quote
-        local __distribution_sym, __addons_sym = ReactiveMP.rule(
-            $fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node
+        local $__rule_result_sym = ReactiveMP.rule(
+            $fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node            
         )
+        if ($__rule_result_sym) isa ReactiveMP.RuleMethodError && !isnothing($fallback)
+            $__rule_result_sym = $(fallback)($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
+        else 
+            throw($__rule_result_sym)
+        end
+        local $(__distribution_sym), $(__addons_sym) = $(__rule_result_sym)
     end
 
     output = if !return_addons
-        :($call; __distribution_sym)
+        :($call; $__distribution_sym)
     else
         :($call)
     end
