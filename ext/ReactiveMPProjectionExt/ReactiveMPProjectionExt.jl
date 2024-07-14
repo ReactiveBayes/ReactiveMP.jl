@@ -2,7 +2,7 @@ module ReactiveMPProjectionExt
 
 using ReactiveMP, ExponentialFamily, Distributions, ExponentialFamilyProjection, BayesBase, Random, LinearAlgebra, FastCholesky
 
-export CVIProjection
+export CVIProjection, DivisionOf
 
 struct CVIProjection <: ReactiveMP.AbstractApproximationMethod end
 
