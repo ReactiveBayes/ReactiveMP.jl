@@ -48,14 +48,20 @@ end
     return DivisionOf(q_out, m_out)
 end
 
-@rule DeltaFn(:out, Marginalisation) (q_ins::FactorizedJoint, meta::DeltaMeta{M}) where {M <: CVIProjection} = begin
-    error("resive this")
+@rule DeltaFn(:out, Marginalisation) (m_out::Any, q_out::Any, q_ins::FactorizedJoint, meta::DeltaMeta{M}) where {M <: CVIProjection} = begin
     method = ReactiveMP.getmethod(meta)
+    rng = method.rng
     q_ins_sample_friendly = map(marginal -> sampling_optimized(marginal), components(q_ins))
-    rng = something(StableRNG(42), Random.default_rng())
-    q_ins_samples = map(marginal -> rand(rng, marginal, 10), q_ins_sample_friendly)
+    q_ins_samples = map(marginal -> rand(rng, marginal, method.nsamples), q_ins_sample_friendly)
     samples_linear = map(ReactiveMP.cvilinearize, q_ins_samples)
     g = getnodefn(meta, Val(:out))
-    samples = map(x -> g(x...), zip(samples_linear...))
-    return TerminalProdArgument(SampleList(samples))
+    q_out_samples = map(x -> g(x...), zip(samples_linear...))
+
+    T = ExponentialFamily.exponential_family_typetag(q_out)
+    q_out_ef = convert(ExponentialFamilyDistribution, q_out)
+    c = getconditioner(q_out_ef)
+    prj = ProjectedTo(T, size(mean(q_out_ef))...; conditioner = c)
+
+    q_out = rule_q_out_cvi_projectio(rng, prj, q_out_samples, getnaturalparameters(q_out_ef))
+    return DivisionOf(q_out, m_out)
 end

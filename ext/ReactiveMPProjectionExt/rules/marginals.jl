@@ -11,21 +11,20 @@ import BayesBase: AbstractContinuousGenericLogPdf
     f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
 
     T = ExponentialFamily.exponential_family_typetag(first(m_ins))
-    prj = ProjectedTo(T)
+    prj = ProjectedTo(T; parameters = method.prjparams)
     q = project_to(prj, f, first(m_ins))
 
     return FactorizedJoint((q,))
 end
 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
-    error("revise this")
-
-    rng = something(StableRNG(42), Random.GLOBAL_RNG)
-    pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, 5)), m_ins)...)
+    method = ReactiveMP.getmethod(meta)
+    rng = method.rng
+    pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, method.nsamples)), m_ins)...)
 
     logp_nc_drop_index = let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
         (z, i, pre_samples) -> begin
-            samples = map(ttuple -> RxInfer.ReactiveMP.TupleTools.insertat(ttuple, i, (z,)), pre_samples)
+            samples = map(ttuple -> ReactiveMP.TupleTools.insertat(ttuple, i, (z,)), pre_samples)
             t_samples = map(s -> g(s...), samples)
             logpdfs = map(out -> logpdf(m_out, out), t_samples)
             return mean(logpdfs)
@@ -41,8 +40,8 @@ end
             logp = convert(promote_variate_type(variate_form(typeof(first(m_ins))), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
 
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T)
-            
+            prj = ProjectedTo(T; parameters = method.prjparams)
+
             return project_to(prj, logp, m_ins[i])
         end
     end
