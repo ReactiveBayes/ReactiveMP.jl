@@ -4,7 +4,10 @@ using ReactiveMP, ExponentialFamily, Distributions, ExponentialFamilyProjection,
 
 export CVIProjection
 
-struct CVIProjection <: ReactiveMP.AbstractApproximationMethod end
+Base.@kwdef struct CVIProjection{R, S} <: ReactiveMP.AbstractApproximationMethod 
+    rng::R = Random.MersenneTwister(42)
+    nsamples::S = 100
+end
 
 struct DivisionOf{A, B}
     numerator::A
