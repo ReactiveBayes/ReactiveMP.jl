@@ -1,4 +1,4 @@
-using TupleTools
+using TupleTools, AdvancedHMC, LogDensityProblems
 
 import Distributions: Distribution
 import BayesBase: AbstractContinuousGenericLogPdf
@@ -27,41 +27,63 @@ import BayesBase: AbstractContinuousGenericLogPdf
     return FactorizedJoint((q,))
 end
 
+
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
-    method = ReactiveMP.getmethod(meta)
-    rng = method.rng
+    method                = ReactiveMP.getmethod(meta)
+    rng                   = method.rng
     projection_parameters = method.projection_parameters
-    pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, method.marginal_samples_no)), m_ins)...)
+    node_function = getnodefn(meta, Val(:out))
 
-    logp_nc_drop_index = let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
-        (z, i, pre_samples) -> begin
-            samples = map(ttuple -> ReactiveMP.TupleTools.insertat(ttuple, i, (z,)), pre_samples)
-            t_samples = map(s -> g(s...), samples)
-            logpdfs = map(out -> logpdf(m_out, out), t_samples)
-            return mean(logpdfs)
-        end
-    end
+    means_m_ins   = map(mean, m_ins)
+    dims          = map(size, means_m_ins)
+    lengths       = mapreduce(length, vcat, means_m_ins)
+    d             = sum(lengths)
+    cum_lengths   = map(d -> d+1, cumsum(lengths))
+    start_indices = append!([1], cum_lengths[1:N-1])
+    ### for HMC
+    joint_logpdf = (x) -> logpdf(m_out, node_function(ReactiveMP.__splitjoin(x, dims)...)) + mapreduce((m_in,k) -> logpdf(m_in, ReactiveMP.__splitjoinelement(x, k, getindex(dims, k))) , +, m_ins, 1:N)
+    
+    log_target_density = LogTargetDensity(d, joint_logpdf)
+    
+    initial_x = mapreduce(m_in -> rand(rng, m_in), vcat, m_ins)
+    
+    n_adapts = 1_000
+    
+    metric = AdvancedHMC.DiagEuclideanMetric(d) ### We should use fisher metric here
+    hamiltonian = AdvancedHMC.Hamiltonian(metric, log_target_density, ForwardDiff)
+    initial_ϵ = AdvancedHMC.find_good_stepsize(hamiltonian, initial_x)
+    integrator = AdvancedHMC.Leapfrog(initial_ϵ)
+    
 
-    optimize_natural_parameters = let m_ins = m_ins, logp_nc_drop_index = logp_nc_drop_index
-        (i, pre_samples) -> begin
-            df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
-                (z) -> logp_nc_drop_index(z, i, pre_samples) 
+    kernel = AdvancedHMC.HMCKernel(Trajectory{MultinomialTS}(integrator, GeneralisedNoUTurn()))
+    adaptor = AdvancedHMC.StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.8, integrator))
+    samples, _ = AdvancedHMC.sample(hamiltonian, kernel, initial_x, method.out_samples_no+1, adaptor, n_adapts; verbose = false, progress=false)
+    samples_matrix = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims, k)), samples[2:end]), 1:N)
+    
+    m_ins_efs              = map(component -> convert(ExponentialFamilyDistribution, component), m_ins)
+    Ts                     = map(ExponentialFamily.exponential_family_typetag, m_ins_efs)
+    conditioners           = map(getconditioner, m_ins_efs)
+    manifolds              = map((T, conditioner,m_in_ef) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, size(mean(m_in_ef)), conditioner), Ts, conditioners, m_ins_efs)
+    natural_parameters_efs = map((m, p) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(m,p) ,manifolds, map(getnaturalparameters, m_ins_efs))
+
+    function projection_to_ef(i)
+        manifold = getindex(manifolds, i)
+        naturalparameters = getindex(natural_parameters_efs,i)
+        f = let @views sample = samples_matrix[i]
+            (M, p) -> begin
+                return targetfn(M, p, sample)
             end
-            T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            var_form = variate_form(typeof(m_ins[i]))
-            logp = convert(promote_variate_type(var_form, BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
-            if var_form <: Univariate
-                prj = ProjectedTo(T ; parameters = projection_parameters)
-            elseif var_form <: Multivariate
-                prj = ProjectedTo(T, length(mean(m_ins[i])); parameters = projection_parameters)
-            elseif var_form <: Matrixvariate
-                prj = ProjectedTo(T, size(mean(m_ins[i]))...; parameters = projection_parameters)
-            end
-          
-            projection_result =  project_to(prj, logp, m_ins[i])
-            return projection_result
         end
+        g = let @views sample = samples_matrix[i]
+            (M, p) -> begin 
+                return grad_targetfn(M, p, sample)
+            end
+        end
+        return convert(ExponentialFamilyDistribution, manifold,
+            ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, naturalparameters; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
+        )
     end
-    result = FactorizedJoint(ntuple(i -> optimize_natural_parameters(i, pre_samples), length(m_ins)))
+    result = FactorizedJoint(map(d -> convert(Distribution, d), ntuple(i -> projection_to_ef(i), N)))
     return result
+
 end

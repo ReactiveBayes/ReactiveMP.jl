@@ -1,18 +1,3 @@
-using ForwardDiff
-# cost function
-function targetfn(M, p, data)
-    ef = convert(ExponentialFamilyDistribution, M, p)
-    return -mean(logpdf(ef, data))
-end
-
-# # gradient function
-## I think this is wrong. This is not a gradient on the manifolds. It is just Euclidean gradient.
-function grad_targetfn(M, p, data)
-    ef = convert(ExponentialFamilyDistribution, M, p)
-    fisher = cholinv(Hermitian(fisherinformation(ef)))
-    return ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(M, fisher*ForwardDiff.gradient((p) -> targetfn(M, p, data),p))
-end
-
 
 @rule DeltaFn(:out, Marginalisation) (m_out::Union{FactorizedJoint, Uninformative}, q_out::FactorizedJoint, q_ins::FactorizedJoint, meta::DeltaMeta{U}) where {U <: CVIProjection} = begin
     node_function         = getnodefn(meta, Val(:out))
@@ -59,8 +44,6 @@ end
         )
     end
     
-    
-    
     ## Option 2
     # @inbounds @views for i in eachindex(q_out_efs)
     #     manifold = getindex(manifolds, i)
@@ -80,14 +63,6 @@ end
     #     )
     # end
     
-    # if typeof(m_out) <: FactorizedJoint
-    #     components_m_out = components(m_out)
-    #     return (x -> logpdf(getindex(ests,k), x) - logpdf(getindex(components_m_out, k), x) for k in eachindex(q_out_efs))
-    # else
-    #     return (x -> logpdf(getindex(ests,k), x) for k in eachindex(q_out_efs))
-    # end
-
-
     if typeof(m_out) <: FactorizedJoint
         components_m_out = components(m_out)
         return (DivisionOf(getindex(ests,k), getindex(components_m_out, k)) for k in eachindex(q_out_efs))
@@ -104,7 +79,7 @@ end
     method                = ReactiveMP.getmethod(meta)
     rng                   = method.rng
     q_ins_components      = components(q_ins)
-    dimensions            = map(size, q_ins_components)
+    dimensions            = map(size, mean.(q_ins_components))
     q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
     ## Option 1
     # samples               = map(i -> collect(map(q -> rand(rng, q), q_ins_sample_friendly)), 1:method.out_samples_no)
