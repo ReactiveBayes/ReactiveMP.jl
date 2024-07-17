@@ -81,11 +81,7 @@ end
     q_ins_components      = components(q_ins)
     dimensions            = map(size, mean.(q_ins_components))
     q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
-    ## Option 1
-    # samples               = map(i -> collect(map(q -> rand(rng, q), q_ins_sample_friendly)), 1:method.out_samples_no)
-    # q_out_samples         = map(sample -> node_function(ReactiveMP.__splitjoin(sample, dimensions)...), samples)
-
-    ## Option 2
+   
     samples               = map(ReactiveMP.cvilinearize ,map(q_in -> rand(rng, q_in, method.out_samples_no), q_ins_sample_friendly))
     q_out_samples         = map(x -> node_function(x...), zip(samples...))
     
@@ -101,6 +97,5 @@ end
     est = convert(ExponentialFamilyDistribution, manifold,
         ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
     )
-    # return est
     return DivisionOf(est, m_out)
 end

@@ -30,8 +30,8 @@ end
 ## I think this is wrong. This is not a gradient on the manifolds. It is just Euclidean gradient.
 function grad_targetfn(M, p, data)
     ef = convert(ExponentialFamilyDistribution, M, p)
-    fisher = cholinv(Hermitian(fisherinformation(ef)))
-    X = ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(M, fisher*ForwardDiff.gradient((p) -> targetfn(M, p, data),p))
+    invfisher = cholinv(Hermitian(fisherinformation(ef)))
+    X = ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(M, invfisher*ForwardDiff.gradient((p) -> targetfn(M, p, data),p))
     return ExponentialFamilyProjection.Manopt.project(M, p, X)
 end
 
