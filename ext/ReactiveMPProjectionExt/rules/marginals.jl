@@ -7,12 +7,13 @@ import BayesBase: AbstractContinuousGenericLogPdf
     method = ReactiveMP.getmethod(meta)
     g = getnodefn(meta, Val(:out))
 
+    m_in = first(m_ins)
     # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
-    F = promote_variate_type(variate_form(typeof(first(m_ins))), BayesBase.AbstractContinuousGenericLogPdf)
+    F = promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf)
     f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
 
-    T = ExponentialFamily.exponential_family_typetag(first(m_ins))
-    prj = ProjectedTo(T; parameters = method.prjparams)
+    T = ExponentialFamily.exponential_family_typetag(m_in)
+    prj = ProjectedTo(T, size(m_in)...; parameters = method.prjparams)
     q = project_to(prj, f, first(m_ins))
 
     return FactorizedJoint((q,))
@@ -21,7 +22,7 @@ end
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
     method = ReactiveMP.getmethod(meta)
     rng = method.rng
-    pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, method.nsamples)), m_ins)...)
+    pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, method.marginalsamples)), m_ins)...)
 
     logp_nc_drop_index = let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
         (z, i, pre_samples) -> begin
@@ -41,7 +42,7 @@ end
             logp = convert(promote_variate_type(variate_form(typeof(first(m_ins))), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
 
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T; parameters = method.prjparams)
+            prj = ProjectedTo(T, size(m_ins[i])...; parameters = method.prjparams)
 
             return project_to(prj, logp, m_ins[i])
         end

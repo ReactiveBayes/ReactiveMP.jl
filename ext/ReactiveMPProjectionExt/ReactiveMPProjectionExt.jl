@@ -6,7 +6,8 @@ export CVIProjection
 
 Base.@kwdef struct CVIProjection{R, S, P} <: ReactiveMP.AbstractApproximationMethod 
     rng::R = Random.MersenneTwister(42)
-    nsamples::S = 10
+    marginalsamples::S = 100
+    outsamples::S = 500
     prjparams::P = ExponentialFamilyProjection.DefaultProjectionParameters()
 end
 
@@ -17,6 +18,18 @@ end
 
 BayesBase.insupport(d::DivisionOf, p) = insupport(d.numerator, p) && insupport(d.denumerator, p)
 BayesBase.logpdf(d::DivisionOf, p) = logpdf(d.numerator, p) - logpdf(d.denumerator, p)
+
+function BayesBase.prod(::GenericProd, something, division::DivisionOf) 
+    return prod(GenericProd(), division, something)
+end
+
+function BayesBase.prod(::GenericProd, division::DivisionOf, something)
+    if division.denumerator == something
+        return division.numerator
+    else
+        return ProductOf(division, something)
+    end
+end
 
 include("layout/cvi_projection.jl")
 include("rules/in.jl")

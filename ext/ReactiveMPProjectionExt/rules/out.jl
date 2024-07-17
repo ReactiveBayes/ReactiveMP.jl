@@ -1,67 +1,48 @@
+using ForwardDiff
 
-# This function performs MLE estimation for `q_out` given a set of samples
-function rule_q_out_cvi_projectio(rng, prj, samples, starting_point)
-    f = let samples = samples
-        (M, p) -> begin
-            ef = convert(ExponentialFamilyDistribution, M, p)
-            return -sum((d) -> logpdf(ef, d), samples)
-        end
-    end
-
-    g = let f = f
-        (M, p) -> begin
-            X = ReactiveMP.ForwardDiff.gradient((p) -> f(M, p), p)
-            X = ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(M, X)
-            N = norm(M, p, X)
-            if N > one(N)
-                X = X ./ N
-            end
-            return X
-        end
-    end
-
-    M = ExponentialFamilyProjection.get_projected_to_manifold(prj)
-    p = rand(rng, M)
-    p .= starting_point
-    q = ExponentialFamilyProjection.Manopt.gradient_descent(M, f, g, p; stepsize = ExponentialFamilyProjection.Manopt.ConstantStepsize(0.1), debug = missing)
-
-    return convert(ExponentialFamilyDistribution, M, q)
+# cost function
+function targetfn(M, p, data)
+    ef = convert(ExponentialFamilyDistribution, M, p)
+    return -mean(logpdf(ef, data))
 end
 
-@rule DeltaFn(:out, Marginalisation) (m_out::Any, q_out::Any, q_ins::FactorizedJoint{P}, meta::DeltaMeta{U}) where {P <: NTuple{1}, U <: CVIProjection} = begin
-    method            = ReactiveMP.getmethod(meta)
-    rng               = method.rng
-    q_sample_friendly = sampling_optimized(q_ins[1])
-    samples           = map(x -> rand(rng, q_sample_friendly), 1:(method.nsamples))
-    q_out_samples     = map(getnodefn(meta, Val(:out)), samples)
-
-    T = ExponentialFamily.exponential_family_typetag(q_out)
-    q_out_ef = convert(ExponentialFamilyDistribution, q_out)
-    c = getconditioner(q_out_ef)
-    prj = ProjectedTo(T, size(mean(q_out_ef))...; conditioner = c)
-
-    # r = sampling_optimized(q_out)
-    # est = fit_mle(typeof(r), q_out_samples)
-
-    q_out = rule_q_out_cvi_projectio(rng, prj, q_out_samples, getnaturalparameters(q_out_ef))
-
-    return DivisionOf(q_out, m_out)
+# # gradient function
+## I think this is wrong. This is not a gradient on the manifolds. It is just Euclidean gradient.
+function grad_targetfn(M, p, data)
+    ef = convert(ExponentialFamilyDistribution, M, p)
+    fisher = cholinv(Hermitian(fisherinformation(ef)))
+    return ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(M, fisher * ForwardDiff.gradient((p) -> targetfn(M, p, data), p))
 end
 
-@rule DeltaFn(:out, Marginalisation) (m_out::Any, q_out::Any, q_ins::FactorizedJoint, meta::DeltaMeta{M}) where {M <: CVIProjection} = begin
-    method = ReactiveMP.getmethod(meta)
-    rng = method.rng
-    q_ins_sample_friendly = map(marginal -> sampling_optimized(marginal), components(q_ins))
-    q_ins_samples = map(marginal -> rand(rng, marginal, method.nsamples), q_ins_sample_friendly)
-    samples_linear = map(ReactiveMP.cvilinearize, q_ins_samples)
-    g = getnodefn(meta, Val(:out))
-    q_out_samples = map(x -> g(x...), zip(samples_linear...))
+@rule DeltaFn(:out, Marginalisation) (m_out::Any, q_out::Any, q_ins::FactorizedJoint, meta::DeltaMeta{U}) where {U <: CVIProjection} = begin
+    node_function         = getnodefn(meta, Val(:out))
+    method                = ReactiveMP.getmethod(meta)
+    rng                   = method.rng
+    q_ins_components      = components(q_ins)
+    dimensions            = map(size, q_ins_components)
+    q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
+    ## Option 1
+    # samples               = map(i -> collect(map(q -> rand(rng, q), q_ins_sample_friendly)), 1:method.out_samples_no)
+    # q_out_samples         = map(sample -> node_function(ReactiveMP.__splitjoin(sample, dimensions)...), samples)
 
-    T = ExponentialFamily.exponential_family_typetag(q_out)
-    q_out_ef = convert(ExponentialFamilyDistribution, q_out)
-    c = getconditioner(q_out_ef)
-    prj = ProjectedTo(T, size(mean(q_out_ef))...; conditioner = c)
+    ## Option 2
+    samples       = map(ReactiveMP.cvilinearize, map(q_in -> rand(rng, q_in, method.outsamples), q_ins_sample_friendly))
+    q_out_samples = map(x -> node_function(x...), zip(samples...))
 
-    q_out = rule_q_out_cvi_projectio(rng, prj, q_out_samples, getnaturalparameters(q_out_ef))
-    return DivisionOf(q_out, m_out)
+    T           = ExponentialFamily.exponential_family_typetag(q_out)
+    q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
+    conditioner = getconditioner(q_out_ef)
+    manifold    = ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, size(mean(q_out_ef)), conditioner)
+    nat_params  = ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(manifold, getnaturalparameters(q_out_ef))
+
+    f = (M, p) -> targetfn(M, p, q_out_samples)
+    g = (M, p) -> grad_targetfn(M, p, q_out_samples)
+
+    est = convert(
+        ExponentialFamilyDistribution,
+        manifold,
+        ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
+    )
+    # return x -> logpdf(est, x) - logpdf(m_out, x)
+    return DivisionOf(est, m_out)
 end
