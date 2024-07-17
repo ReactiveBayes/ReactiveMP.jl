@@ -6,23 +6,17 @@ import BayesBase: AbstractContinuousGenericLogPdf
 
 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVIProjection} = begin
-    g = getnodefn(meta, Val(:out))
     method = ReactiveMP.getmethod(meta)
-    var_form = variate_form(typeof(first(m_ins)))
-    F = promote_variate_type(var_form, BayesBase.AbstractContinuousGenericLogPdf)
-    f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z))+ logpdf(first(m_ins),z))
+    g = getnodefn(meta, Val(:out))
 
-    
-    T = ExponentialFamily.exponential_family_typetag(first(m_ins))
-    projection_parameters = method.projection_parameters
-    if var_form <: Univariate
-        prj = ProjectedTo(T ; parameters = projection_parameters)
-    elseif var_form <: Multivariate
-        prj = ProjectedTo(T, length(mean(first(m_ins))); parameters = projection_parameters)
-    elseif var_form <: Matrixvariate
-        prj = ProjectedTo(T, size(mean(first(m_ins)))...; parameters = projection_parameters)
-    end
-    q = project_to(prj, f)
+    m_in = first(m_ins)
+    # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
+    F = promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf)
+    f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
+
+    T = ExponentialFamily.exponential_family_typetag(m_in)
+    prj = ProjectedTo(T, size(m_in)...; parameters = method.projection_parameters)
+    q = project_to(prj, f, first(m_ins))
 
     return FactorizedJoint((q,))
 end
@@ -31,8 +25,7 @@ end
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
     method                = ReactiveMP.getmethod(meta)
     rng                   = method.rng
-    projection_parameters = method.projection_parameters
-    node_function = getnodefn(meta, Val(:out))
+    node_function         = getnodefn(meta, Val(:out))
 
     means_m_ins   = map(mean, m_ins)
     dims          = map(size, means_m_ins)
@@ -57,7 +50,7 @@ end
 
     kernel = AdvancedHMC.HMCKernel(Trajectory{MultinomialTS}(integrator, GeneralisedNoUTurn()))
     adaptor = AdvancedHMC.StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.8, integrator))
-    samples, _ = AdvancedHMC.sample(hamiltonian, kernel, initial_x, method.out_samples_no+1, adaptor, n_adapts; verbose = false, progress=false)
+    samples, _ = AdvancedHMC.sample(rng, hamiltonian, kernel, initial_x, method.marginal_samples_no+1, adaptor, n_adapts; verbose = false, progress=false)
     samples_matrix = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims, k)), samples[2:end]), 1:N)
     
     m_ins_efs              = map(component -> convert(ExponentialFamilyDistribution, component), m_ins)
@@ -82,6 +75,7 @@ end
         return convert(ExponentialFamilyDistribution, manifold,
             ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, naturalparameters; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
         )
+     
     end
     result = FactorizedJoint(map(d -> convert(Distribution, d), ntuple(i -> projection_to_ef(i), N)))
     return result

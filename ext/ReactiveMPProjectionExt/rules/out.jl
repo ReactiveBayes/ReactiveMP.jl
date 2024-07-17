@@ -88,7 +88,7 @@ end
     ## Option 2
     samples               = map(ReactiveMP.cvilinearize ,map(q_in -> rand(rng, q_in, method.out_samples_no), q_ins_sample_friendly))
     q_out_samples         = map(x -> node_function(x...), zip(samples...))
-
+    
     T           = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
     conditioner = getconditioner(q_out_ef)
@@ -101,6 +101,6 @@ end
     est = convert(ExponentialFamilyDistribution, manifold,
         ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
     )
-    # return x -> logpdf(est, x) - logpdf(m_out, x)
+    # return est
     return DivisionOf(est, m_out)
 end

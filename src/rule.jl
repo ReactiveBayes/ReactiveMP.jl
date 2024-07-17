@@ -516,7 +516,7 @@ function call_rule_expression(options, fform, args)
         )
         if ($__rule_result_sym) isa ReactiveMP.RuleMethodError && !isnothing($fallback)
             $__rule_result_sym = $(fallback)($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
-        else 
+        elseif ($__rule_result_sym) isa ReactiveMP.RuleMethodError
             throw($__rule_result_sym)
         end
         local $(__distribution_sym), $(__addons_sym) = $(__rule_result_sym)
