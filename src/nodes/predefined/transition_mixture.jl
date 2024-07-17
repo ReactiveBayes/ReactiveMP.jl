@@ -59,7 +59,7 @@ function factornode(::Type{<:TransitionMixture}, interfaces, factorization)
     m_matrices = ntuple(i -> FactorNodeLocalMarginal(Symbol(:matrices, :_, i)), N)
     marginals = (FactorNodeLocalMarginal(:out_in_switch), m_matrices...)
 
-    m_mf = ntuple(i -> (i+3,), N)
+    m_mf = ntuple(i -> (i + 3,), N)
     factornodelocalclusters = FactorNodeLocalClusters(marginals, ((1, 2, 3), m_mf...))
 
     if length(matricesinterface) < 2
