@@ -3,15 +3,17 @@ using ForwardDiff
 # cost function
 function targetfn(M, p, data)
     ef = convert(ExponentialFamilyDistribution, M, p)
-    return -mean(logpdf(ef, data))
+    return -sum((d) -> logpdf(ef, d), data)
 end
 
 # # gradient function
 ## I think this is wrong. This is not a gradient on the manifolds. It is just Euclidean gradient.
 function grad_targetfn(M, p, data)
     ef = convert(ExponentialFamilyDistribution, M, p)
-    fisher = cholinv(Hermitian(fisherinformation(ef)))
-    return ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(M, fisher * ForwardDiff.gradient((p) -> targetfn(M, p, data), p))
+    ifisher = cholinv(Hermitian(fisherinformation(ef)))
+    X = ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(M, ifisher * ForwardDiff.gradient((p) -> targetfn(M, p, data), p))
+    X = ExponentialFamilyProjection.ExponentialFamilyManifolds.ManifoldsBase.project(M, p, X)
+    return X
 end
 
 @rule DeltaFn(:out, Marginalisation) (m_out::Any, q_out::Any, q_ins::FactorizedJoint, meta::DeltaMeta{U}) where {U <: CVIProjection} = begin
@@ -41,7 +43,11 @@ end
     est = convert(
         ExponentialFamilyDistribution,
         manifold,
-        ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
+        ExponentialFamilyProjection.Manopt.gradient_descent(
+            manifold, f, g, nat_params; 
+            stepsize = ExponentialFamilyProjection.Manopt.ConstantStepsize(0.1), 
+            direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1)
+        )
     )
     # return x -> logpdf(est, x) - logpdf(m_out, x)
     return DivisionOf(est, m_out)

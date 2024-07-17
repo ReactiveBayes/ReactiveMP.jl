@@ -8,9 +8,10 @@
 
     using .ext
 
+    # So here we use an `identity` function, in which case the delta node is a no-op
     @testset "f(x) -> x, x~EF, out~EF" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
-        # Since we use `identity` as a function we expect that the result is a product of `m_out` and `m_in`
+        # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
         inputs = [
             (NormalMeanVariance(0, 1), NormalMeanVariance(0, 1)),
             (Gamma(2, 2), Gamma(2, 2)),
