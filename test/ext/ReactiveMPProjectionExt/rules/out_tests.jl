@@ -1,4 +1,4 @@
-@testitem "Basic out rule tests" begin
+@testitem "Basic out rule tests #1" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
@@ -31,5 +31,41 @@
             @test m_out_projected ≈ m_out_outbound atol = 5e-1
             @test q_out_projected ≈ q_out atol = 5e-1
         end
+    end
+end
+
+# In this test we are trying to check that `DeltaFn` node can accept arbitrary (univariate) inputs 
+# and compute an outbound (multivariate) message. 
+# We use a simple node function f(x) = [x, y] and we test the following assumptions:
+# - `mean(m_out) ≈ [ mean(m_x), mean(m_y) ]`
+@testitem "Basic out rule tests #2" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase
+    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+    @test !isnothing(ext)
+    using .ext
+
+    meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
+    f(x, y) = [x, y]
+
+    inputs = [
+        (NormalMeanVariance(-2.0, 1.0), NormalMeanVariance(3.0, 1.0), MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])),
+        (NormalMeanVariance(3.0, 1.0), NormalMeanVariance(-2.0, 1.0), MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])),
+        (Beta(10.0, 1.0), Beta(1.0, 10.0), MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0]))
+    ]
+
+    for input in inputs
+        m_x = input[1]
+        m_y = input[2]
+        m_out_incoming = input[3]
+        q_out = input[3]
+
+        # The outbound message rule first requires to compute the joint marginal over inputs
+        q_ins = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out_incoming, m_ins = ManyOf(m_x, m_y), meta = meta)
+        m_out_outbound_approximated = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = q_out, q_ins = q_ins, meta = meta)
+
+        prj = ProjectedTo(ExponentialFamily.exponential_family_typetag(m_out_incoming), size(m_out_incoming)...)
+        m_out = project_to(prj, (x) -> logpdf(m_out_outbound_approximated, x))
+
+        @test mean(m_out) ≈ [mean(m_x), mean(m_y)] atol = 2e-1
     end
 end
