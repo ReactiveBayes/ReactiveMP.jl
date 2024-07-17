@@ -56,9 +56,11 @@ function factornode(::Type{<:TransitionMixture}, interfaces, factorization)
     N = length(matricesinterface)
     nmatricesinterface = ntuple(i -> IndexedNodeInterface(i, NodeInterface(matricesinterface[i]...)), N)
 
-    marginals = (FactorNodeLocalMarginal(:out_in_switch), FactorNodeLocalMarginal(:matrices))
+    m_matrices = ntuple(i -> FactorNodeLocalMarginal(Symbol(:matrices, :_, i)), N)
+    marginals = (FactorNodeLocalMarginal(:out_in_switch), m_matrices...)
 
-    factornodelocalclusters = FactorNodeLocalClusters(marginals, ((1, 2, 3), (4:N...,)))
+    m_mf = ntuple(i -> (i+3,), N)
+    factornodelocalclusters = FactorNodeLocalClusters(marginals, ((1, 2, 3), m_mf...))
 
     if length(matricesinterface) < 2
         error("The number of matrices in `TransitionMixture` must be at least 2. Got `$(length(matricesinterface))` matrices instead.")
