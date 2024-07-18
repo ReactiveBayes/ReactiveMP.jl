@@ -83,7 +83,9 @@ end
     q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
    
     samples               = map(ReactiveMP.cvilinearize ,map(q_in -> rand(rng, q_in, method.out_samples_no), q_ins_sample_friendly))
+    @show samples
     q_out_samples         = map(x -> node_function(x...), zip(samples...))
+    @show q_out_samples
     
     T           = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
@@ -97,5 +99,6 @@ end
     est = convert(ExponentialFamilyDistribution, manifold,
         ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
     )
+    @show convert(Distribution, est)
     return DivisionOf(est, m_out)
 end

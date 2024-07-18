@@ -4,9 +4,11 @@ using ReactiveMP, ExponentialFamily, AdvancedHMC, LogDensityProblems, Distributi
 using ForwardDiff
 export CVIProjection, DivisionOf
 
-Base.@kwdef struct CVIProjection{OS, MS, P, R} <: ReactiveMP.AbstractApproximationMethod 
+Base.@kwdef struct CVIProjection{OS, MS, TS, DS, P, R} <: ReactiveMP.AbstractApproximationMethod 
     out_samples_no::OS = 100
     marginal_samples_no::MS = 10
+    projection_types::TS = nothing
+    projection_dims::DS = nothing
     projection_parameters::P = ExponentialFamilyProjection.DefaultProjectionParameters()
     rng::R = Random.MersenneTwister(42)
 end
