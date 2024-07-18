@@ -1,10 +1,9 @@
 @testitem "DivisionOf" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
+    # `DivisionOf` is internal to the extension
     ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
-
     @test !isnothing(ext)
-
     using .ext
 
     d1 = NormalMeanVariance(0, 1)
@@ -18,5 +17,4 @@ end
     using ExponentialFamilyProjection
     
     @test ReactiveMP.is_delta_node_compatible(CVIProjection()) === Val(true)
-    
 end
