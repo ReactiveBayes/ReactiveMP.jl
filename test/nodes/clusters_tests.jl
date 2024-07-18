@@ -180,7 +180,7 @@ end
 
             node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 2, 3),))
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
 
             @test length(getmarginals(getlocalclusters(node))) === 1
 
@@ -198,7 +198,7 @@ end
 
             node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 2), (3,)))
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
@@ -217,7 +217,7 @@ end
 
             node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 3), (2,)))
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
@@ -236,7 +236,7 @@ end
 
             node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1,), (2, 3)))
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
