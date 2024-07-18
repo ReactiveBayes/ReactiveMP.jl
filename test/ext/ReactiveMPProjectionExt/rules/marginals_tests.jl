@@ -8,7 +8,6 @@
 
     using .ext
 
-    # So here we use an `identity` function, in which case the delta node is a no-op
     @testset "f(x) -> x, x~EF, out~EF" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
@@ -29,10 +28,11 @@
         end
     end
 
+
     @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
         f(x, y) = [x, y]
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
-        @test_marginalrules [check_type_promotion = false, atol = 1e-2] DeltaFn{f}(:ins) [(
+        @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{f}(:ins) [(
             input = (m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]), m_ins = ManyOf(NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)), meta = meta),
             output = FactorizedJoint((NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0)))
         )]

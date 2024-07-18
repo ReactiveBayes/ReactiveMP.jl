@@ -31,6 +31,14 @@ end
     samples       = map(ReactiveMP.cvilinearize, map(q_in -> rand(rng, q_in, method.outsamples), q_ins_sample_friendly))
     q_out_samples = map(x -> node_function(x...), zip(samples...))
 
+    ## Option 3
+    # T = ExponentialFamily.exponential_family_typetag(q_out)
+    # s = sampling_optimized(q_out)
+    # d = fit_mle(typeof(s), q_out_samples)
+    # m = DivisionOf(d, m_out)
+    # r = project_to(ProjectedTo(T, size(q_out)...; parameters = method.prjparams), (x) -> logpdf(m, x))
+    # return r
+
     T           = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
     conditioner = getconditioner(q_out_ef)

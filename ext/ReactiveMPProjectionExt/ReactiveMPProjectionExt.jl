@@ -6,8 +6,8 @@ export CVIProjection
 
 Base.@kwdef struct CVIProjection{R, S, P} <: ReactiveMP.AbstractApproximationMethod 
     rng::R = Random.MersenneTwister(42)
-    marginalsamples::S = 100
-    outsamples::S = 500
+    marginalsamples::S = 10
+    outsamples::S = 100
     prjparams::P = ExponentialFamilyProjection.DefaultProjectionParameters()
 end
 
