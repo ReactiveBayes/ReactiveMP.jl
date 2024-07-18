@@ -2,15 +2,6 @@ module ReactiveMPProjectionExt
 
 using ReactiveMP, ExponentialFamily, Distributions, ExponentialFamilyProjection, BayesBase, Random, LinearAlgebra, FastCholesky
 
-export CVIProjection
-
-Base.@kwdef struct CVIProjection{R, S, P} <: ReactiveMP.AbstractApproximationMethod 
-    rng::R = Random.MersenneTwister(42)
-    marginalsamples::S = 10
-    outsamples::S = 100
-    prjparams::P = ExponentialFamilyProjection.DefaultProjectionParameters()
-end
-
 struct DivisionOf{A, B}
     numerator::A
     denumerator::B
@@ -35,5 +26,10 @@ include("layout/cvi_projection.jl")
 include("rules/in.jl")
 include("rules/out.jl")
 include("rules/marginals.jl")
+
+# This will enable the extension and make `CVIProjection` compatible with delta nodes 
+# Otherwise it should throw an error suggesting users to install `ExponentialFamilyProjection`
+# See `approximations/cvi_projection.jl`
+ReactiveMP.is_delta_node_compatible(::ReactiveMP.CVIProjection) = Val(true)
 
 end

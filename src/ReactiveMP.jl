@@ -71,6 +71,7 @@ include("approximations/rts.jl")
 include("approximations/linearization.jl")
 include("approximations/unscented.jl")
 include("approximations/cvi.jl")
+include("approximations/cvi_projection.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")

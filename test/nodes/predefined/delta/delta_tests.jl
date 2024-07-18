@@ -71,3 +71,17 @@ end
         end
     end
 end
+
+@testitem "Unssupported methods should throw in DeltaMeta" begin 
+    struct UnsupportedApproximationMethod end
+
+    @test_throws "Method `$(UnsupportedApproximationMethod())` is not compatible with delta nodes" DeltaMeta(method = UnsupportedApproximationMethod())
+end
+
+@testitem "Supported methods should not throw in DeltaMeta" begin 
+    struct SupportedApproximationMetßhod end
+
+    ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) = Val(true)
+
+    @test DeltaMeta(method = SupportedApproximationMetßhod()) isa DeltaMeta
+end

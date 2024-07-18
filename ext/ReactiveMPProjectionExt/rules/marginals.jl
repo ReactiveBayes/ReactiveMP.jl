@@ -13,7 +13,7 @@ import BayesBase: AbstractContinuousGenericLogPdf
     f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
 
     T = ExponentialFamily.exponential_family_typetag(m_in)
-    prj = ProjectedTo(T, size(m_in)...; parameters = method.prjparams)
+    prj = ProjectedTo(T, size(m_in)...; parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
     q = project_to(prj, f, first(m_ins))
 
     return FactorizedJoint((q,))
@@ -42,7 +42,7 @@ end
             logp = convert(promote_variate_type(variate_form(typeof(first(m_ins))), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
 
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; parameters = method.prjparams)
+            prj = ProjectedTo(T, size(m_ins[i])...; parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
 
             return project_to(prj, logp, m_ins[i])
         end

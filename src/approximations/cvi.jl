@@ -74,6 +74,8 @@ end
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
 const CVI = ProdCVI
 
+is_delta_node_compatible(::ProdCVI) = Val(true)
+
 #---------------------------
 # CVI implementations
 #---------------------------

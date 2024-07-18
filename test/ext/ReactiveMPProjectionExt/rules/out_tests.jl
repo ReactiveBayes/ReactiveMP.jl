@@ -1,11 +1,5 @@
 @testitem "Basic out rule tests #1" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
-
-    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
-
-    @test !isnothing(ext)
-
-    using .ext
     
     @testset "f(x) = x, x ~ EF" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
@@ -45,9 +39,6 @@ end
 # - `mean(m_out) ≈ [ mean(m_x), mean(m_y) ]`
 @testitem "Basic out rule tests #2" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
-    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
-    @test !isnothing(ext)
-    using .ext
 
     meta = DeltaMeta(method = CVIProjection(outsamples = 1000), inverse = nothing)
     f(x, y) = [x; y]
@@ -80,12 +71,6 @@ end
 @testitem "Basic out rule tests #3" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
-    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
-
-    @test !isnothing(ext)
-
-    using .ext
-    
     @testset "f(x) = a*x + b, x ~ Normal (Univariate)" begin
         meta = DeltaMeta(method = CVIProjection(outsamples = 10000), inverse = nothing)
         q_ins = [
@@ -120,12 +105,6 @@ end
 
 @testitem "Basic out rule tests #4" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
-
-    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
-
-    @test !isnothing(ext)
-
-    using .ext
     
     @testset "f(x) = x + constant, x ~ Normal (Multivariate)" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
@@ -156,12 +135,6 @@ end
 ## Exp(λ), f(x) = exp(-x) results in Beta(λ, 1) ## EFP errors with NaN
 @testitem "Basic out rule tests #5" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
-
-    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
-
-    @test !isnothing(ext)
-
-    using .ext
     
     @testset "Differen set of non-linearities x ~ NonNormal EF (Univariate)" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)

@@ -2,12 +2,6 @@
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
     import ReactiveMP: @test_rules, @test_marginalrules
 
-    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
-
-    @test !isnothing(ext)
-
-    using .ext
-
     @testset "f(x) -> x, x~EF, out~EF" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
