@@ -1,6 +1,6 @@
 export CVIProjection
 
-Base.@kwdef struct CVIProjection{R, S, P} <: AbstractApproximationMethod 
+Base.@kwdef struct CVIProjection{R, S, P} <: AbstractApproximationMethod
     rng::R = Random.MersenneTwister(42)
     marginalsamples::S = 10
     outsamples::S = 100

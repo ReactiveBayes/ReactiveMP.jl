@@ -80,7 +80,9 @@ function rulefallback_nodefunction(fallback::NodeFunctionRuleFallback, ::Stochas
     return FallbackNodeFunctionUnnormalizedLogPdf(fn), addons
 end
 
-function rulefallback_nodefunction(fallback::NodeFunctionRuleFallback, ::Deterministic, fform, on::Val{:out}, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+function rulefallback_nodefunction(
+    fallback::NodeFunctionRuleFallback, ::Deterministic, fform, on::Val{:out}, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node
+)
     error("This fallback rule does not work for deterministic nodes. Use `@meta` to define an approximation method for the deterministic node $(fform).")
 end
 

@@ -15,6 +15,6 @@ end
 
 @testitem "Extension availability with `ExponentialFamilyProjection`" begin
     using ExponentialFamilyProjection
-    
+
     @test ReactiveMP.is_delta_node_compatible(CVIProjection()) === Val(true)
 end

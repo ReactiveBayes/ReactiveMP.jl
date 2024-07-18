@@ -22,7 +22,6 @@
         end
     end
 
-
     @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
         f(x, y) = [x, y]
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
