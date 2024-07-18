@@ -17,7 +17,7 @@ struct DeltaMeta{M, I}
 end
 
 function DeltaMeta(; method::M, inverse::I = nothing) where {M, I}
-    check_compatibility(method)
+    check_delta_node_compatibility(method)
     return DeltaMeta{M, I}(method, inverse)
 end
 
@@ -25,9 +25,9 @@ getmethod(meta::DeltaMeta)          = meta.method
 getinverse(meta::DeltaMeta)         = meta.inverse
 getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
 
-check_compatibility(method) = check_compatibility(is_delta_node_compatible(method), method)
-check_compatibility(::Val{false}, method) = error(lazy"Method `$method` is not compatible with delta nodes.")
-check_compatibility(::Val{true}, method) = nothing
+check_delta_node_compatibility(method) = check_delta_node_compatibility(is_delta_node_compatible(method), method)
+check_delta_node_compatibility(::Val{false}, method) = error(lazy"Method `$method` is not compatible with delta nodes.")
+check_delta_node_compatibility(::Val{true}, method) = nothing
 
 import Base: map
 

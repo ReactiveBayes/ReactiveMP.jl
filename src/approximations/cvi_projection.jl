@@ -9,4 +9,4 @@ end
 
 # This method should only be invoked if a user did not install `ExponentialFamilyProjection`
 # in the current Julia session
-ReactiveMP.check_compatibility(::Val{false}, ::CVIProjection) = error("CVI projection requires `using ExponentialFamilyProjection` in the current session.")
+check_delta_node_compatibility(::Val{false}, ::CVIProjection) = error("CVI projection requires `using ExponentialFamilyProjection` in the current session.")
