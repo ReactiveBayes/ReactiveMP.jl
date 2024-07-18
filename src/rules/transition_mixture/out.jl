@@ -1,4 +1,4 @@
-@rule TransitionMixture{N}(:out, Marginalisation) (m_in::Categorical, m_switch::Categorical, m_matrices::ManyOf{N, PointMass}) where {N} = begin
+@rule TransitionMixture{N}(:out, Marginalisation) (m_in::Union{Categorical, PointMass}, m_switch::Union{Categorical, PointMass}, m_matrices::ManyOf{N, PointMass}) where {N} = begin
     πs = probvec(m_switch)
     ndims = length(probvec(m_in))
     a = tiny * ones(ndims)
@@ -8,7 +8,9 @@
     return Categorical(a ./ sum(a))
 end
 
-@rule TransitionMixture{N}(:out, Marginalisation) (m_in::Categorical, m_switch::Categorical, q_matrices::ManyOf{N, Union{MatrixDirichlet, PointMass}}) where {N} = begin
+@rule TransitionMixture{N}(:out, Marginalisation) (
+    m_in::Union{Categorical, PointMass}, m_switch::Union{Categorical, PointMass}, q_matrices::ManyOf{N, Union{MatrixDirichlet, PointMass}}
+) where {N} = begin
     πs = probvec(m_switch)
     ndims = length(probvec(m_in))
     a = tiny * ones(ndims)

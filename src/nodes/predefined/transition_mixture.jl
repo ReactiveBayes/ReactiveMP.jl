@@ -44,7 +44,6 @@ function interfaceindex(factornode::TransitionMixtureNode, iname::Symbol)
 end
 
 function factornode(::Type{<:TransitionMixture}, interfaces, factorization)
-    @show interfaces factorization
     outinterface = interfaces[findfirst(((name, variable),) -> name == :out, interfaces)]
     ininterface = interfaces[findfirst(((name, variable),) -> name == :in, interfaces)]
     switchinterface = interfaces[findfirst(((name, variable),) -> name == :switch, interfaces)]
