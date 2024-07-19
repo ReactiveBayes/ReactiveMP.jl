@@ -62,6 +62,8 @@ const UT = Unscented
 """An alias for the [`Unscented`](@ref) approximation method."""
 const UnscentedTransform = Unscented
 
+is_delta_node_compatible(::Unscented) = Val(true)
+
 # get-functions for the Unscented structure
 
 getα(approximation::Unscented) = approximation.α

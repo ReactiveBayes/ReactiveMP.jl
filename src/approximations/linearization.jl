@@ -15,6 +15,8 @@ The `Linearization` structure is used inside the `DeltaMeta` or `FlowMeta` struc
 """
 struct Linearization <: AbstractApproximationMethod end
 
+is_delta_node_compatible(::Linearization) = Val(true)
+
 # ported from ForneyLab.jl
 using ForwardDiff
 

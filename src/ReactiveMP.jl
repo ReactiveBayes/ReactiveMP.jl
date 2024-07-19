@@ -71,6 +71,7 @@ include("approximations/rts.jl")
 include("approximations/linearization.jl")
 include("approximations/unscented.jl")
 include("approximations/cvi.jl")
+include("approximations/cvi_projection.jl")
 
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
@@ -96,6 +97,7 @@ include("score/node.jl")
 
 include("nodes/predefined.jl")
 include("rules/predefined.jl")
+include("rules/fallbacks.jl")
 
 # This symbol is only defined on Julia versions that support extensions
 @static if !isdefined(Base, :get_extension)
@@ -109,6 +111,7 @@ function __init__()
     @static if !isdefined(Base, :get_extension)
         @require Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2" include("../ext/ReactiveMPOptimisersExt/ReactiveMPOptimisersExt.jl")
         @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/ReactiveMPZygoteExt/ReactiveMPZygoteExt.jl")
+        @require ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b" include("../ext/ReactiveMPProjectionExt/ReactiveMPProjectionExt.jl")
     end
 end
 

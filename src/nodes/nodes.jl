@@ -97,6 +97,14 @@ isstochastic(::Deterministic)       = false
 isstochastic(::Type{Deterministic}) = false
 
 """
+    nodefunction(::Type{T}) where {T}
+
+Returns a function that represents a node of type `T`. 
+The function typically takes arguments that represent the node's input and output variables in the same order as defined in the `@node` macro.
+"""
+function nodefunction end
+
+"""
     sdtype(object)
 
 Returns either `Deterministic` or `Stochastic` for a given object (if defined).
@@ -236,12 +244,13 @@ function prepare_interfaces_check_num_inputarguments(fform, inputinterfaces::Val
         error(lazy"Expected $(length(Input)) input arguments for `$(fform)`, got $(length(interfaces) - 1): $(join(map(first, Iterators.drop(interfaces, 1)), \", \"))")
 end
 
-struct FactorNodeActivationOptions{M, D, P, A, S}
+struct FactorNodeActivationOptions{M, D, P, A, S, R}
     metadata::M
     dependencies::D
     pipeline::P
     addons::A
     scheduler::S
+    rulefallback::R
 end
 
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
@@ -249,6 +258,7 @@ getdependecies(options::FactorNodeActivationOptions) = options.dependencies
 getpipeline(options::FactorNodeActivationOptions) = options.pipeline
 getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
+getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     dependencies = collect_functional_dependencies(functionalform(factornode), getdependecies(options))
@@ -338,6 +348,40 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     The `$(node_fform)` has been marked as a valid `$(node_type)` factor node with the `@node` macro with `[ $(docedges) ]` interfaces.
     """
 
+    # For `Stochastic` nodes the `nodefunctions` are pre-generated automatically 
+    #   by calling the `corresponding` logpdf
+    nodefunctions = if node_type == :Stochastic
+        nodefunctionargnames = first.(interfaces)
+
+        # The very first function is a generic method that only accepts type and returns 
+        # a function that fallbacks to calculate the logpdf of the distribution
+        fncollection = [
+            :(
+                ReactiveMP.nodefunction(::$dispatch_type) =
+                    (; $(nodefunctionargnames...)) -> ReactiveMP.BayesBase.logpdf(($node_fform)($(nodefunctionargnames[2:end]...)), $(nodefunctionargnames[1]))
+            )
+        ]
+
+        # The rest are individual node functions in each direction
+        for interface in interfaces
+            interfacename = first(interface)
+            edgespecificfn = :(
+                ReactiveMP.nodefunction(::$dispatch_type, ::Val{$(QuoteNode(interfacename))}; kwargs...) = begin
+                    return let ckwargs = kwargs
+                        ($interfacename) -> ReactiveMP.nodefunction($node_fform)(; $interfacename = $interfacename, ckwargs...)
+                    end
+                end
+            )
+            push!(fncollection, edgespecificfn)
+        end
+
+        _block = Expr(:block)
+        _block.args = fncollection
+        _block
+    else
+        :(nothing)
+    end
+
     # Define the necessary function types
     result = quote
         @doc $doc ReactiveMP.is_predefined_node(::$dispatch_type) = ReactiveMP.PredefinedNodeFunctionalForm()
@@ -347,6 +391,7 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
         ReactiveMP.inputinterfaces(::$dispatch_type) = Val($(Tuple(map(first, skipindex(interfaces, 1)))))
 
         $collect_factorisation_fn
+        $nodefunctions
 
         function ReactiveMP.alias_interface(dispatch_type::$dispatch_type, index, name)
             $alias_corrections
