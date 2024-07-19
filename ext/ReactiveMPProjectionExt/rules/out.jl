@@ -54,7 +54,8 @@ end
         ExponentialFamilyProjection.Manopt.gradient_descent(
             manifold, f, g, nat_params; 
             stepsize = ExponentialFamilyProjection.Manopt.ConstantStepsize(0.1), 
-            direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1)
+            direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1),
+            debug = missing
         )
     )
     # return x -> logpdf(est, x) - logpdf(m_out, x)
