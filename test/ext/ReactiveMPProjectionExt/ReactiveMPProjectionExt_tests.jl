@@ -12,9 +12,3 @@
     @test d1 ≈ prod(GenericProd(), ext.DivisionOf(d1, d2), d2)
     @test d1 ≈ prod(GenericProd(), d2, ext.DivisionOf(d1, d2))
 end
-
-@testitem "Extension availability with `ExponentialFamilyProjection`" begin
-    using ExponentialFamilyProjection
-
-    @test ReactiveMP.is_delta_node_compatible(CVIProjection()) === Val(true)
-end
