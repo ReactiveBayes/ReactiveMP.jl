@@ -100,9 +100,7 @@ end
     @testset "f(x) = x + constant, x ~ Normal (Multivariate)" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
 
-        q_ins_m_out_incomings_fs_constants = [
-        # (FactorizedJoint((MvNormalMeanCovariance(zeros(3), 2*diageye(3)),)) , MvNormalMeanCovariance(zeros(3), 0.4*diageye(3)), x -> x+[1.0, 2.0, 0.4], [1.0, 2.0, 0.4]),
-        (
+        q_ins_m_out_incomings_fs_constants = [(
             FactorizedJoint((MvNormalMeanCovariance([0.3, 0.7, 10.0], 0.1 * diageye(3)),)),
             MvNormalMeanCovariance(ones(3), 0.9 * diageye(3)),
             x -> x + [0.2, -9.0, 3.0],
@@ -136,10 +134,8 @@ end
         q_ins_m_out_incomings_q_outs_non_linearities = [
             (FactorizedJoint((Beta(5, 2),)), Beta(20, 3), Beta(2, 5), x -> 1 - x),
             (FactorizedJoint((Gamma(3, 4),)), Gamma(10, 7), Gamma(3, 4 * 0.1), x -> 0.1 * x),
-            (FactorizedJoint((Exponential(0.5),)), Exponential(3), Rayleigh(1 / (sqrt(2 * 3))), x -> sqrt(x))
-            # (FactorizedJoint((Exponential(0.5),)), Exponential(3), Geometric(1 - exp(-0.5)), x->ceil(x)) 
-            # (FactorizedJoint((Exponential(0.5),)), Exponential(3), Pareto(3, 0.5), x->3*exp(x) ) ##exponential family projection errors
-            # (FactorizedJoint((Exponential(0.5),)), Exponential(30), Beta(0.5, 1), x->exp(-x) ) ##exponential family projection errors
+            (FactorizedJoint((Exponential(0.5),)), Exponential(3), Rayleigh(1 / (sqrt(2 * 3))), x -> sqrt(x)),
+            (FactorizedJoint((Exponential(0.5),)), Exponential(30), Beta(0.5, 1), x -> exp(-x))
         ]
         for (q_in, m_out_incoming, q_out, f) in q_ins_m_out_incomings_q_outs_non_linearities
             msg = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta)
