@@ -7,15 +7,9 @@
     dimensions            = map(size, q_ins_components)
     q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
     
-    ## Option 1
     samples               = map(i -> collect(map(q -> rand(rng, q), q_ins_sample_friendly)), 1:method.out_samples_no)
     q_out_samples         = mapreduce(sample -> node_function(ReactiveMP.__splitjoin(sample, dimensions)...),hcat, samples)
     
-    ## Option 2
-    # samples               = map(ReactiveMP.cvilinearize ,map(q_in -> rand(rng, q_in, method.out_samples_no), q_ins_sample_friendly))
-    # q_out_samples         = map(x -> node_function(x...), zip(samples...))
-    
-
     q_out_components      = components(q_out)
     Ts                    = map(ExponentialFamily.exponential_family_typetag, q_out_components)
     
@@ -44,25 +38,7 @@
         )
     end
     
-    ## Option 2
-    # @inbounds @views for i in eachindex(q_out_efs)
-    #     manifold = getindex(manifolds, i)
-    #     naturalparameters = getindex(natural_parameters_efs,i)
-    #     f = let  qsamples = getindex(q_out_samples, i)
-    #         (M, p) -> begin
-    #             return targetfn(M, p, qsamples)
-    #         end
-    #     end
-    #     g = let  qsamples = getindex(q_out_samples,i)
-    #         (M, p) -> begin 
-    #             return grad_targetfn(M, p, qsamples)
-    #         end
-    #     end
-    #     ests[i] = convert(ExponentialFamilyDistribution, manifold,
-    #         ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, naturalparameters; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
-    #     )
-    # end
-    
+  
     if typeof(m_out) <: FactorizedJoint
         components_m_out = components(m_out)
         return (DivisionOf(getindex(ests,k), getindex(components_m_out, k)) for k in eachindex(q_out_efs))
@@ -70,7 +46,6 @@
         return (DivisionOf(getindex(ests,k), m_out) for k in eachindex(q_out_efs))
     end
 
-   
 end
 
 
@@ -83,9 +58,7 @@ end
     q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
    
     samples               = map(ReactiveMP.cvilinearize ,map(q_in -> rand(rng, q_in, method.out_samples_no), q_ins_sample_friendly))
-    @show samples
     q_out_samples         = map(x -> node_function(x...), zip(samples...))
-    @show q_out_samples
     
     T           = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
@@ -97,8 +70,64 @@ end
     g = (M, p) -> grad_targetfn(M , p, q_out_samples)
   
     est = convert(ExponentialFamilyDistribution, manifold,
-        ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
+        ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; 
+            direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
     )
-    @show convert(Distribution, est)
     return DivisionOf(est, m_out)
+end
+
+
+@rule DeltaFn(:out, Marginalisation) (m_ins::ManyOf{1, Any}, meta::DeltaMeta{U}) where {U <: CVIProjection} = begin
+    node_function       = getnodefn(meta, Val(:out))
+    method              = ReactiveMP.getmethod(meta)
+    rng                 = getcvirng(method)
+    projection_dims     = getcviprojectiondims(method)
+    projection_types    = getcviprojectiontypes(method)
+    number_out_samples  = getcvioutsamplesno(method)
+    conditioner_out     = getcviprojectionconditioners(method)
+    dim_in              = first(projection_dims[:in])
+    T_in                = first(projection_types[:in])
+    dim_out             = projection_dims[:out]
+    T_out               = projection_types[:out]
+    prod_dim_in         = prod(dim_in)
+    var_form            = variate_form(T_in)
+    out_manifold        = ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T_out, dim_out, conditioner_out)
+    logf                = log_target_adjusted_log_pdf(var_form, first(m_ins), dim_in)
+    log_target_density  = LogTargetDensity(prod_dim_in, logf)
+    
+    
+    initial_sample     = vectorized_rand_with_variate_type(var_form, rng, first(m_ins))
+    
+    samples            = hmc_samples(rng, prod_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)
+    out_samples        = modify_vectorized_samples_with_variate_type(var_form,map(x -> node_function(x...), zip(samples)),dim_out)
+
+
+    f = (M, p) -> targetfn(M, p, out_samples)
+    g = (M, p) -> grad_targetfn(M, p, out_samples)
+    
+    ef_out = convert(ExponentialFamilyDistribution, out_manifold,
+            ExponentialFamilyProjection.Manopt.gradient_descent(out_manifold, f, g, rand(rng, out_manifold); direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
+        )
+
+    dist_out = convert(Distribution, ef_out)
+    return dist_out
+end
+
+@rule DeltaFn(:out, Marginalisation) (m_ins::ManyOf{N, Any}, meta::DeltaMeta{U}) where {N, U <: CVIProjection} = begin
+    node_function         = getnodefn(meta, Val(:out))
+    method                = ReactiveMP.getmethod(meta)
+    rng                   = method.rng
+    dims_in               = method.projection_dims[:in]
+    T_ins                 = method.projection_types[:in]
+    dims_out              = method.projection_dims[:out]
+    T_out                 = method.projection_types[:out]
+    prod_dims_in          = map(prod, dims_in)
+    cum_lengths           = mapreduce(d -> d+1,vcat, cumsum(prod_dims_in))
+    start_indices         = append!([1], cum_lengths[1:N-1])
+
+    # ### Argument to joint logpdf should be vectorized since AdvancedHMC works that way
+    joint_logpdf = (x) -> mapreduce((m_in,k) -> logpdf(m_in, ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))) , +, m_ins, 1:N)
+    
+
+
 end

@@ -26,13 +26,14 @@ end
     method                = ReactiveMP.getmethod(meta)
     rng                   = method.rng
     node_function         = getnodefn(meta, Val(:out))
-
     means_m_ins   = map(mean, m_ins)
     dims          = map(size, means_m_ins)
     lengths       = mapreduce(length, vcat, means_m_ins)
     d             = sum(lengths)
     cum_lengths   = map(d -> d+1, cumsum(lengths))
     start_indices = append!([1], cum_lengths[1:N-1])
+
+    
     ### for HMC
     joint_logpdf = (x) -> logpdf(m_out, node_function(ReactiveMP.__splitjoin(x, dims)...)) + mapreduce((m_in,k) -> logpdf(m_in, ReactiveMP.__splitjoinelement(x, k, getindex(dims, k))) , +, m_ins, 1:N)
     
