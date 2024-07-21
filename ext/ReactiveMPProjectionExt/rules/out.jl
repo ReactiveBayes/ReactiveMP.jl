@@ -10,9 +10,7 @@
     
     samples               = map(i -> collect(map(q -> rand(rng, q), q_ins_sample_friendly)), 1:number_out_samples)
     q_out_samples         = mapreduce(sample -> node_function(ReactiveMP.__splitjoin(sample, dimensions)...), hcat, samples)
-    # samples               = map(ReactiveMP.cvilinearize, map(q_in -> rand(rng, q_in, number_out_samples), q_ins_sample_friendly))
-    # q_out_samples         = map(x -> node_function(x...), zip(samples...))
-    
+  
     q_out_components      = components(q_out)
     Ts                    = map(ExponentialFamily.exponential_family_typetag, q_out_components)
     
@@ -144,8 +142,8 @@ end
     joint_logpdf = (x) -> mapreduce((m_in,k,T) -> log_target_adjusted_log_pdf(T, m_in,getindex(dims_in, k))(ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))), +, m_ins, 1:N,var_form_ins)
     log_target_density  = LogTargetDensity(sum_dim_in, joint_logpdf)
 
-    initial_sample             = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k),vcat, m_ins, 1:N)
-    initial_natparams          = initialize_cvi_natural_parameters(method, rng, out_manifold)
+    initial_sample      = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k),vcat, m_ins, 1:N)
+    initial_natparams   = initialize_cvi_natural_parameters(method, rng, out_manifold)
         
     samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)
     out_samples        = modify_vectorized_samples_with_variate_type(var_form_out, map(x -> node_function(x...), samples), dim_out)
