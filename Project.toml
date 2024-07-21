@@ -45,11 +45,6 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 ReactiveMPOptimisersExt = "Optimisers"
 ReactiveMPProjectionExt = "ExponentialFamilyProjection"
 ReactiveMPRequiresExt = "Requires"
-<<<<<<< HEAD
-
-=======
->>>>>>> main
-
 [compat]
 AdvancedHMC = "0.6.1"
 LogDensityProblems = "2.1.1"
@@ -110,8 +105,4 @@ AdvancedHMC = "0bf59076-c3b1-5ca4-86bd-e02cd72cde3d"
 LogDensityProblems = "6fdf6af0-433a-55f7-b3ed-c6c6e0b8df7c"
 
 [targets]
-<<<<<<< HEAD
 test = ["Aqua", "CpuId", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection", "AdvancedHMC", "LogDensityProblems"]
-=======
-test = ["Aqua", "CpuId", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection"]
->>>>>>> main

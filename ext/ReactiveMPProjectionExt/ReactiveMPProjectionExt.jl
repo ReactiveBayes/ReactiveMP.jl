@@ -2,10 +2,13 @@ module ReactiveMPProjectionExt
 
 using ReactiveMP, ExponentialFamily, AdvancedHMC, LogDensityProblems, Distributions, ExponentialFamilyProjection, BayesBase, Random, LinearAlgebra, FastCholesky
 using ForwardDiff
-export CVIProjection,CVIProjectionEssentials,CVIProjectionOptional, DivisionOf, LogTargetDensity
-export getcviprojectionessentials,getcviprojectionoptional,getcviprojectionconditioners
-export getcviprojectiontypes, getcviprojectionparameters, getcviprojectionparameters,getcvioutsamplesno
-export getcvimarginalsamplesno, getcvirng
+
+export DivisionOf, CVIProjection, CVIProjectionEssentials, CVIProjectionOptional, LogTargetDensity
+# export CVIProjection,CVIProjectionEssentials,CVIProjectionOptional, DivisionOf, LogTargetDensity
+# export getcviprojectionessentials,getcviprojectionoptional,getcviprojectionconditioners
+# export getcviprojectiontypes, getcviprojectionparameters, getcviprojectionparameters,getcvioutsamplesno
+# export getcvimarginalsamplesno, getcvirng
+
 
 Base.@kwdef struct CVIProjection{CVIPE, CVIPO} <: ReactiveMP.AbstractApproximationMethod 
     projection_essentials::CVIPE = CVIProjectionEssentials()
@@ -49,6 +52,7 @@ end
 getcvioutsamplesno(cvipo::CVIProjectionOptional) = cvipo.out_samples_no
 getcvimarginalsamplesno(cvipo::CVIProjectionOptional) = cvipo.marginal_samples_no
 getcvirng(cvipo::CVIProjectionOptional) = cvipo.rng
+
 
 
 struct DivisionOf{A, B}
@@ -148,6 +152,6 @@ include("rules/marginals.jl")
 # This will enable the extension and make `CVIProjection` compatible with delta nodes 
 # Otherwise it should throw an error suggesting users to install `ExponentialFamilyProjection`
 # See `approximations/cvi_projection.jl`
-ReactiveMP.is_delta_node_compatible(::ReactiveMP.CVIProjection) = Val(true)
+ReactiveMP.is_delta_node_compatible(::CVIProjection) = Val(true)
 
 end

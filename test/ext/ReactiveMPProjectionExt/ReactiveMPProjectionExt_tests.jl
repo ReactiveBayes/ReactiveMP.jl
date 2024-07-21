@@ -18,7 +18,6 @@ end
 
 @testitem "CVIProjection" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
-
     ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
 
     @test !isnothing(ext)
@@ -35,7 +34,6 @@ end
     initial_samples              = ext.getcviinitialsamples(cviprojection)
     @test initial_samples        == (0.11, 20.0)
 
-  
     @test ext.getcviprojectionconditioners(cviprojection) === nothing
     @test projection_dims_keys == (:out, :in)
     @test projection_types_keys == (:out, :in)

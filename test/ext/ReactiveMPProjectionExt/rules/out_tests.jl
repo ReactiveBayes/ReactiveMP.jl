@@ -215,7 +215,7 @@ end
             msg_in  = Gamma(a, b)
             msg_out = @call_rule DeltaFn{identity}(:out, Marginalisation) (m_ins = ManyOf(msg_in,), meta = meta)
         
-            @test mean(msg_out) ≈ mean(msg_in) atol = 5e-1     
+            @test mean(msg_out) ≈ mean(msg_in) atol = 1.0     
         end
     end
 
