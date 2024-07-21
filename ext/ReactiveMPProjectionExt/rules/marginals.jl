@@ -8,15 +8,10 @@ import BayesBase: AbstractContinuousGenericLogPdf
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVIProjection} = begin
     method = ReactiveMP.getmethod(meta)
     g = getnodefn(meta, Val(:out))
-
     m_in = first(m_ins)
-    # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
-    F = promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf)
-    f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
-
     T = ExponentialFamily.exponential_family_typetag(m_in)
-    prj = ProjectedTo(T, size(m_in)...; parameters = method.projection_parameters)
-    q = project_to(prj, f, first(m_ins))
+    prj = ProjectedTo(T, size(m_in)...; parameters = getcviprojectionparameters(method))
+    q = project_to(prj, (z) -> logpdf(m_out, g(z)), m_in)
 
     return FactorizedJoint((q,))
 end
@@ -52,6 +47,8 @@ end
     kernel = AdvancedHMC.HMCKernel(Trajectory{MultinomialTS}(integrator, GeneralisedNoUTurn()))
     adaptor = AdvancedHMC.StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.8, integrator))
     samples, _ = AdvancedHMC.sample(rng, hamiltonian, kernel, initial_x, method.marginal_samples_no+1, adaptor, n_adapts; verbose = false, progress=false)
+    
+    
     samples_matrix = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims, k)), samples[2:end]), 1:N)
     
     m_ins_efs              = map(component -> convert(ExponentialFamilyDistribution, component), m_ins)

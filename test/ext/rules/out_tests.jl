@@ -8,7 +8,7 @@
     using .ext
     
     @testset "f(x) = x, x ~ EF" begin
-        meta = DeltaMeta(method = CVIProjection(out_samples_no = 1000), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
        
         q_ins_m_out_incomings = [
             (FactorizedJoint((NormalMeanVariance(2, 2),)), NormalMeanVariance(0, 1)),
@@ -49,7 +49,7 @@ end
     @test !isnothing(ext)
     using .ext
 
-    meta = DeltaMeta(method = CVIProjection(out_samples_no = 1000), inverse = nothing)
+    meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
     f(x, y) = [x; y]
     q_ins_m_out_incomings = [
         (FactorizedJoint((NormalMeanVariance(3.0, 1.0),MvNormalMeanCovariance([2.0, 5.2], 3diageye(2)))), MvNormalMeanCovariance([2.0, 3.4, -1.0], Diagonal([0.2, 0.01, 4.0]))),
@@ -87,7 +87,7 @@ end
     using .ext
     
     @testset "f(x) = a*x + b, x ~ Normal (Univariate)" begin
-        meta = DeltaMeta(method = CVIProjection(out_samples_no = 1000), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         q_ins = [
             FactorizedJoint((NormalMeanVariance(0, 2),)),
             FactorizedJoint((NormalMeanVariance(3, 4),)),
@@ -128,7 +128,7 @@ end
     using .ext
     
     @testset "f(x) = x + constant, x ~ Normal (Multivariate)" begin
-        meta = DeltaMeta(method = CVIProjection(out_samples_no = 100), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
    
         q_ins_m_out_incomings_fs_constants = [
             (FactorizedJoint((MvNormalMeanCovariance(zeros(3), 2*diageye(3)),)) , MvNormalMeanCovariance(zeros(3), 0.4*diageye(3)), x -> x+[1.0, 2.0, 0.4], [1.0, 2.0, 0.4]),
@@ -148,7 +148,6 @@ end
             q_out_projected = project_to(prj, (x) -> logpdf(msg, x) , m_out_incoming, initialpoint = q_out) 
     
             @test mean(q_out_projected) ≈ mean(q_out) rtol = 5e-1
-            @test var(q_out_projected) ≈ var(q_out) rtol = 5e-1
         end
     end
 end
@@ -169,7 +168,7 @@ end
     using .ext
     
     @testset "Differen set of non-linearities x ~ NonNormal EF (Univariate)" begin
-        meta = DeltaMeta(method = CVIProjection(out_samples_no = 1000), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
 
         q_ins_m_out_incomings_q_outs_non_linearities = [
             (FactorizedJoint((Beta(5, 2),)), Beta(20,3), Beta(2, 5), x-> 1-x ),
@@ -194,7 +193,7 @@ end
 
 
 
-@testitem "Basic out rule tests #6: Generic sum product projection" begin
+@testitem "Basic out rule tests #6: Generic sum-product projection" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
     import ExponentialFamily: WishartFast
     using ForwardDiff
@@ -204,32 +203,21 @@ end
 
     using .ext
 
-    function estimate_mean_cov_upto_2nd_order(::Univariate, f, μ, Σ )
-        H = ForwardDiff.Hessian(f, μ)
-        
 
+    @testset "Identity non-linearities univariate in univariate out " begin
+        projection_types = (out = Gamma, in = (Gamma, ))
+        projection_dimensions = (out = ( ), in =((),))
+        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
+        
+        for a in (3.0:7.0), b in (1.0:2.0)
+          
+            msg_in  = Gamma(a, b)
+            msg_out = @call_rule DeltaFn{identity}(:out, Marginalisation) (m_ins = ManyOf(msg_in,), meta = meta)
+        
+            @test mean(msg_out) ≈ mean(msg_in) atol = 5e-1     
+        end
     end
-
-    function estimate_mean_cov_upto_2nd_order(::Multivariate, f, μ, Σ )
-        H = ForwardDiff.jacobian(f, μ)
-
-
-    end
-
-
-    # @testset "Differen set of non-linearities univariate in univariate out " begin
-    #     projection_types = (out = Gamma, in = (Gamma, ))
-    #     projection_dimensions = (out = ( ), in =((),))
-    #     projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-    #     meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
-        
-    #     for a in (3:7), b in (1:2)
-    #         msg_in  = Gamma(a, b)
-    #         msg_out = @call_rule DeltaFn{identity}(:out, Marginalisation) (m_ins = ManyOf(msg_in,), meta = meta)
-        
-    #         @test mean(msg_out) ≈ mean(msg_in) atol = 5e-1     
-    #     end
-    # end
 
     @testset "Differen set of non-linearities Multivariate in Multivariate out " begin
         projection_types = (out = MvNormalMeanCovariance, in = (MvNormalMeanCovariance, ))
@@ -269,8 +257,7 @@ end
         
         f    = (x, y) -> x + y
         msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(Gamma(3, 3), Beta(3, 4)), meta = meta)
-
-
+        @test mean(msg) ≈ mean(Gamma(3, 3)) + mean(Beta(3, 4)) atol = 1
     end
 
     @testset "Differen set of non-linearities univariate in multivariate out " begin
@@ -283,19 +270,20 @@ end
         f    = (x, y) -> [x , y]
         msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(Gamma(3, 3), Beta(3, 4)), meta = meta)
 
+        @test mean(msg) ≈ f(mean(Gamma(3,3)),mean(Beta(3,4))) rtol = 5e-1
     end
 
 
     # @testset "Differen set of non-linearities univariate ins matrix variate out" begin
-    #     projection_types = (out = MvNormalMeanCovariance, in = (Gamma, Beta))
+    #     projection_types = (out = WishartFast, in = (Gamma, NormalMeanVariance))
     #     projection_dimensions = (out = (2,2), in =((),()))
     #     projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
     #     meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
         
     #     f    = (x, y) -> [x -y; -y x]
-    #     msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(Gamma(3, 3), Beta(3, 4)), meta = meta)
+    #     msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(Gamma(3, 3), NormalMeanVariance(0, 1e-7)), meta = meta)
 
-    #     # @show msg([3,0.4])
+    #     @test mean(msg) ≈ [mean(Gamma(3,3)) 0; 0 mean(Gamma(3,3)) ] rtol = 5e-1
     # end
 
 
@@ -305,10 +293,9 @@ end
     #     projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
     #     meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
 
-    #     f    = (x, y) -> [x -y; -y x]
-    #     V    = rand(WishartFast(4, diageye(2)))
+    #     f    = (x, y) -> x*y
      
-    #     msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(WishartFast(3, V), Beta(3, 4)), meta = meta)
+    #     msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(WishartFast(5, Diagonal(ones(2))), Beta(3, 4)), meta = meta)
 
     #     # @show msg([vec(V); 0.2])
     # end

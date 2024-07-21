@@ -8,8 +8,8 @@ export getcviprojectiontypes, getcviprojectionparameters, getcviprojectionparame
 export getcvimarginalsamplesno, getcvirng
 
 Base.@kwdef struct CVIProjection{CVIPE, CVIPO} <: ReactiveMP.AbstractApproximationMethod 
-    projection_essentials::CVIPE
-    projection_optional::CVIPO = CVIProjectionOptional()
+    projection_essentials::CVIPE = CVIProjectionEssentials()
+    projection_optional::CVIPO   = CVIProjectionOptional()
 end
 
 getcviprojectionessentials(cvi::CVIProjection) = cvi.projection_essentials
@@ -21,11 +21,16 @@ getcviprojectionparameters(cvi::CVIProjection) = getcviprojectionparameters(getc
 getcvioutsamplesno(cvi::CVIProjection) = getcvioutsamplesno(getcviprojectionoptional(cvi))
 getcvimarginalsamplesno(cvi::CVIProjection) = getcvimarginalsamplesno(getcviprojectionoptional(cvi))
 getcvirng(cvi::CVIProjection) = getcvirng(getcviprojectionoptional(cvi))
+getcviinitialsamples(cvi::CVIProjection) = getcviinitialsamples(getcviprojectionessentials(cvi))
+getcviinitialnaturalparameters(cvi::CVIProjection) = getcviinitialnaturalparameters(getcviprojectionessentials(cvi))
 
-Base.@kwdef struct CVIProjectionEssentials{CS, TS, DS, P}
+
+Base.@kwdef struct CVIProjectionEssentials{TS, DS, IS, INP, CS, P}
+    projection_types::TS = nothing
+    projection_dims::DS = nothing
+    initial_samples::IS = nothing
+    initial_naturalparameters::INP = nothing
     projection_conditioners::CS = nothing
-    projection_types::TS 
-    projection_dims::DS 
     projection_parameters::P = ExponentialFamilyProjection.DefaultProjectionParameters()
 end
 
@@ -33,6 +38,8 @@ getcviprojectionconditioners(cvipe::CVIProjectionEssentials) = cvipe.projection_
 getcviprojectiontypes(cvipe::CVIProjectionEssentials) = cvipe.projection_types
 getcviprojectiondims(cvipe::CVIProjectionEssentials) = cvipe.projection_dims
 getcviprojectionparameters(cvipe::CVIProjectionEssentials) = cvipe.projection_parameters
+getcviinitialsamples(cvipe::CVIProjectionEssentials) = cvipe.initial_samples
+getcviinitialnaturalparameters(cvipe::CVIProjectionEssentials) = cvipe.initial_naturalparameters
 
 Base.@kwdef struct CVIProjectionOptional{OS, MS, R} 
     out_samples_no::OS = 1000
@@ -103,14 +110,23 @@ function hmc_samples(rng, d, log_target_density, initial_x; no_samples = 2_000, 
     return samples[2:end]
 end
 
+vectorize_sample(::Type{Univariate}, sample) = [sample]
+vectorize_sample(::Type{Multivariate}, sample) = sample
+vectorize_sample(::Type{Matrixvariate}, sample) = vec(sample)
 
 vectorized_rand_with_variate_type(::Type{Univariate}, rng, m_in) = [rand(rng, m_in)]
 vectorized_rand_with_variate_type(::Type{Multivariate}, rng, m_in) = rand(rng, m_in)
-vectorized_rand_with_variate_type(::Type{Matrixvariate}, rng, m_in) = vec(rand(rng, m_in))
+vectorized_rand_with_variate_type(::Type{Matrixvariate}, rng, m_in)  = vec(rand(rng, m_in))
+
 
 modify_vectorized_samples_with_variate_type(::Type{Univariate}, samples, _) = map(sample ->first(sample) ,samples)
 modify_vectorized_samples_with_variate_type(::Type{Multivariate}, samples,_) = samples
 modify_vectorized_samples_with_variate_type(::Type{Matrixvariate}, samples,dims) = map(sample -> reshape(sample, dims), samples)
+
+initialize_cvi_samples(method, rng, m_in, k) = !isnothing(getcviinitialsamples(method)) ? getindex(getcviinitialsamples(method), k) : rand(rng, m_in) 
+initialize_cvi_natural_parameters(method, rng, manifold) = !isnothing(getcviinitialnaturalparameters(method)) ? first(getcviinitialnaturalparameters(method)) : rand(rng, manifold)
+
+
 
 include("layout/cvi_projection.jl")
 include("rules/in.jl")

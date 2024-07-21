@@ -27,11 +27,15 @@ end
 
     named_tuple_types_projection = (out = MvNormalMeanCovariance, in = (Beta, Gamma) )
     projection_dimensions        = (out = (4,), in = ((), ()))
-    cviprojectionessentials      = CVIProjectionEssentials(projection_dims = projection_dimensions, projection_types = named_tuple_types_projection)
+    cviprojectionessentials      = CVIProjectionEssentials(projection_dims = projection_dimensions, projection_types = named_tuple_types_projection, initial_samples = (0.11, 20.0))
     cviprojection                = CVIProjection(projection_essentials = cviprojectionessentials)
     projection_dims_keys         = keys(ext.getcviprojectiondims(cviprojection))
     projection_types_keys        = keys(ext.getcviprojectiontypes(cviprojection))
 
+    initial_samples              = ext.getcviinitialsamples(cviprojection)
+    @test initial_samples        == (0.11, 20.0)
+
+  
     @test ext.getcviprojectionconditioners(cviprojection) === nothing
     @test projection_dims_keys == (:out, :in)
     @test projection_types_keys == (:out, :in)
