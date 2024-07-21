@@ -129,4 +129,34 @@
         end
         # NOTE: γ can theoretically be Any, so also NormalMeanVariance
     end
+
+    @testset "VMP: structured rules" begin
+        @testset "(m_y::NormalMeanVariance, q_θ::NormalMeanVariance, q_γ::Any)" begin
+            @test_rules [check_type_promotion = true] SoftDot(:x, Marginalisation) [
+                (input = (m_y = NormalMeanVariance(1.0, 1.0), q_θ = NormalMeanVariance(1.0, 1.0), q_γ = GammaShapeRate(1.0, 1.0)), output = NormalWeightedMeanPrecision(0.5, 1.5)),
+                (
+                    input = (m_y = NormalWeightedMeanPrecision(1.0, 1.0), q_θ = NormalMeanPrecision(1.0, 2.0), q_γ = GammaShapeScale(1.0, 1.0)),
+                    output = NormalWeightedMeanPrecision(0.5, 1.0)
+                )
+            ]
+        end
+
+        @testset "(m_y::UnivariateNormalDistributionsFamily, q_θ::MultivariateNormalDistributionsFamily, q_γ::Any)" begin
+            order = 2
+            @test_rules [check_type_promotion = false] SoftDot(:x, Marginalisation) [
+                (
+                    input = (m_y = NormalMeanVariance(0.0, 1.0), q_θ = MvNormalMeanCovariance(ones(order), diageye(order)), q_γ = GammaShapeRate(1.0, 1.0)),
+                    output = MvNormalWeightedMeanPrecision([0.0, 0.0], [1.5 0.5; 0.5 1.5])
+                ),
+                (
+                    input = (m_y = NormalMeanVariance(1.0, 1.0), q_θ = MvNormalMeanCovariance(zeros(order), diageye(order)), q_γ = GammaShapeScale(1.0, 1.0)),
+                    output = MvNormalWeightedMeanPrecision([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+                ),
+                (
+                    input = (m_y = NormalMeanVariance(1.0, 1.0), q_θ = MvNormalMeanCovariance(ones(order), diageye(order)), q_γ = Gamma(1.0, 1.0)),
+                    output = MvNormalWeightedMeanPrecision([0.5, 0.5], [1.5 0.5; 0.5 1.5])
+                )
+            ]
+        end
+    end
 end # testset

@@ -10,7 +10,7 @@
 
         # the following rule is used for testing purposes only
         # It is derived separately by Thijs van de Laar
-        function benchmark_rule(q_y_x, q_W)
+        function benchmark_rule_structured(q_y_x, q_W)
             myx, Vyx = mean_cov(q_y_x)
             dy = size(q_W.S, 1)
             Vx = Vyx[(dy + 1):end, (dy + 1):end]
@@ -36,7 +36,7 @@
                 qa = MvNormalMeanCovariance(a0, diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
                 @test_rules [check_type_promotion = false] ContinuousTransition(:a, Marginalisation) [(
-                    input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule(qyx, qW)
+                    input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_structured(qyx, qW)
                 )]
             end
         end
@@ -57,6 +57,40 @@
             qW = Wishart(dy, diageye(dy))
             @test_rules [check_type_promotion = true] ContinuousTransition(:a, Marginalisation) [(
                 input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metanl), output = MvNormalWeightedMeanPrecision(zeros(1), (qW.df * dy * dx) * diageye(1))
+            )]
+        end
+    end
+
+    # the following rule is used for testing purposes only
+    # It is derived separately by Thijs van de Laar
+    # NOTE: this test rule does not allow q_x as a PointMass as it involves the covariance matrix of q_x
+    function benchmark_rule_meanfield(q_y, q_x, q_W)
+        my = mean(q_y)
+        mx, Vx = mean_cov(q_x)
+        mW = mean(q_W)
+        Λ = kron(Vx + mx * mx', mW)
+        return MvNormalWeightedMeanPrecision(Λ * (vec(my * mx' * inv(Vx + mx * mx'))), Λ)
+    end
+
+    @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta)" begin
+        for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
+            dydx = dy * dx
+            transformation = (a) -> reshape(a, dy, dx)
+            a0 = rand(Float32, dydx)
+            metal = CTMeta(transformation)
+            Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
+            μx, Σx = rand(rng, dx), Lx * Lx'
+            μy, Σy = rand(rng, dy), Ly * Ly'
+            qy = MvNormalMeanCovariance(μy, Σy)
+            qx = MvNormalMeanCovariance(μx, Σx)
+            qa = MvNormalMeanCovariance(a0, diageye(dydx))
+            qW = Wishart(dy + 1, diageye(dy))
+            @test_rules [check_type_promotion = false] ContinuousTransition(:a, Marginalisation) [(
+                input = (q_y = qy, q_x = qx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_meanfield(qy, qx, qW)
+            )]
+
+            @test_rules [check_type_promotion = false] ContinuousTransition(:a, Marginalisation) [(
+                input = (q_y = PointMass(μy), q_x = qx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_meanfield(PointMass(μy), qx, qW)
             )]
         end
     end

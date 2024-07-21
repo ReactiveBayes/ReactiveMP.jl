@@ -15,6 +15,7 @@ ReactiveMP.UT
 ReactiveMP.UnscentedTransform
 ReactiveMP.ProdCVI
 ReactiveMP.CVI
+ReactiveMP.CVIProjection
 ReactiveMP.cvi_setup!
 ReactiveMP.cvi_update!
 ReactiveMP.DeltaFnDefaultRuleLayout

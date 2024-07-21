@@ -129,4 +129,25 @@
         end
         # NOTE: γ can theoretically be Any, so also NormalMeanVariance
     end
+
+    @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any)" begin
+        @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [
+            (input = (q_y_x = MvNormalMeanCovariance(ones(2), diageye(2)), q_γ = GammaShapeRate(1.0, 1.0)), output = NormalWeightedMeanPrecision(1.0, 2.0)),
+            (input = (q_y_x = MvNormalMeanCovariance(2 * ones(2), diageye(2)), q_γ = GammaShapeScale(2.0, 1.0)), output = NormalWeightedMeanPrecision(8.0, 10.0))
+        ]
+    end
+
+    @testset "Structured : (q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any)" begin
+        order = 2
+        @test_rules [check_type_promotion = true] SoftDot(:θ, Marginalisation) [
+            (
+                input = (q_y_x = MvNormalMeanCovariance(ones(order + 1), diageye(order + 1)), q_γ = GammaShapeRate(1.0, 1.0)),
+                output = MvNormalWeightedMeanPrecision(ones(order), [2.0 1.0; 1.0 2.0])
+            ),
+            (
+                input = (q_y_x = MvNormalMeanCovariance(zeros(order + 1), diageye(order + 1)), q_γ = GammaShapeRate(1.0, 1.0)),
+                output = MvNormalWeightedMeanPrecision(zeros(order), [1.0 0.0; 0.0 1.0])
+            )
+        ]
+    end
 end # testset

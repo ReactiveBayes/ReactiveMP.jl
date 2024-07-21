@@ -1,3 +1,4 @@
+using ForwardDiff
 
 @rule DeltaFn(:out, Marginalisation) (m_out::Union{FactorizedJoint, Uninformative}, q_out::FactorizedJoint, q_ins::FactorizedJoint, meta::DeltaMeta{U}) where {U <: CVIProjection} = begin
     node_function         = getnodefn(meta, Val(:out))

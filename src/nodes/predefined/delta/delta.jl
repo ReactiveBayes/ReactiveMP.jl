@@ -17,12 +17,17 @@ struct DeltaMeta{M, I}
 end
 
 function DeltaMeta(; method::M, inverse::I = nothing) where {M, I}
+    check_delta_node_compatibility(method)
     return DeltaMeta{M, I}(method, inverse)
 end
 
 getmethod(meta::DeltaMeta)          = meta.method
 getinverse(meta::DeltaMeta)         = meta.inverse
 getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
+
+check_delta_node_compatibility(method) = check_delta_node_compatibility(is_delta_node_compatible(method), method)
+check_delta_node_compatibility(::Val{false}, method) = error(lazy"Method `$method` is not compatible with delta nodes.")
+check_delta_node_compatibility(::Val{true}, method) = nothing
 
 import Base: map
 
@@ -76,6 +81,9 @@ end
 
 # For missing rules error msg
 rule_method_error_extract_fform(::Type{<:DeltaFn}) = "DeltaFn"
+
+# For extensions and approximation methods
+is_delta_node_compatible(method::Any) = Val(false)
 
 # `DeltaFn` requires an access to the node function, hence, node reference is required
 call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()

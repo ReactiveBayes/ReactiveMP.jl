@@ -511,9 +511,7 @@ function call_rule_expression(options, fform, args)
     __addons_sym = gensym(:call_rule_addons)
 
     call = quote
-        local $__rule_result_sym = ReactiveMP.rule(
-            $fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node            
-        )
+        local $__rule_result_sym = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
         if ($__rule_result_sym) isa ReactiveMP.RuleMethodError && !isnothing($fallback)
             $__rule_result_sym = $(fallback)($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
         elseif ($__rule_result_sym) isa ReactiveMP.RuleMethodError

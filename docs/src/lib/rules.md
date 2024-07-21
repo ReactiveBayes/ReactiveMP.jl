@@ -30,6 +30,13 @@ ReactiveMP.@test_rules
 ReactiveMP.@test_marginalrules
 ```
 
+## [Rule fallbacks](@id lib-rules-fallbacks)
+
+```@docs
+ReactiveMP.NodeFunctionRuleFallback
+ReactiveMP.nodefunction
+```
+
 ## [Table of available update rules](@id lib-rules-table)
 
 !!! note
