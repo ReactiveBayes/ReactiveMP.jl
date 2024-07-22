@@ -69,7 +69,7 @@ end
 
     samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)
     samples_matrix     = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims_in, k)), samples), 1:N)
-
+    
     function projection_to_ef(i)
         manifold = getindex(manifolds, i)
         naturalparameters = getindex(natural_parameters_efs,i)
