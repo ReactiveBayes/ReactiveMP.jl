@@ -86,7 +86,7 @@ end
     projection_dims     = getcviprojectiondims(method)
     projection_types    = getcviprojectiontypes(method)
     number_out_samples  = getcvioutsamplesno(method)
-    conditioner_out     = getcviprojectionconditioners(method)
+    conditioner_out     = getcviprojectionconditioners(method)[:out]
     dim_in              = first(projection_dims[:in])
     T_in                = first(projection_types[:in])
     dim_out             = projection_dims[:out]
@@ -99,9 +99,9 @@ end
     log_target_density  = LogTargetDensity(prod_dim_in, logf)
     
 
-    initial_sample             = initialize_cvi_samples(method, rng, first(m_ins), 1)
+    initial_sample             = initialize_cvi_samples(method, rng, first(m_ins), 1, :in)
     vectorized_initial_sample  = vectorize_sample(var_form, initial_sample)
-    initial_natparams          = initialize_cvi_natural_parameters(method, rng, out_manifold)
+    initial_natparams          = initialize_cvi_natural_parameters(method, rng, out_manifold,1,:out)
 
     samples            = hmc_samples(rng, prod_dim_in, log_target_density, vectorized_initial_sample; no_samples = number_out_samples + 1)
     out_samples        = modify_vectorized_samples_with_variate_type(var_form, map(x -> node_function(x...), zip(samples)), dim_out)
@@ -125,7 +125,7 @@ end
     projection_dims     = getcviprojectiondims(method)
     projection_types    = getcviprojectiontypes(method)
     number_out_samples  = getcvioutsamplesno(method)
-    conditioner_out     = getcviprojectionconditioners(method)
+    conditioner_out     = getcviprojectionconditioners(method)[:out]
     dims_in             = projection_dims[:in]
     Ts_in               = projection_types[:in]
     dim_out             = projection_dims[:out]
@@ -134,8 +134,7 @@ end
     var_form_out        = variate_form(T_out)
     out_manifold        = ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T_out, dim_out, conditioner_out)
     prod_dims_in        = map(prod, dims_in)
-    sum_dim_in          = prod(sum(prod, dims_in))
-
+    sum_dim_in          = sum(prod_dims_in)
     cum_lengths         = mapreduce(d -> d+1, vcat, cumsum(prod_dims_in))
     start_indices       = append!([1], cum_lengths[1:N-1])
     
@@ -143,11 +142,11 @@ end
     joint_logpdf = (x) -> mapreduce((m_in,k,T) -> log_target_adjusted_log_pdf(T, m_in,getindex(dims_in, k))(ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))), +, m_ins, 1:N,var_form_ins)
     log_target_density  = LogTargetDensity(sum_dim_in, joint_logpdf)
 
-    initial_sample      = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k),vcat, m_ins, 1:N)
-    initial_natparams   = initialize_cvi_natural_parameters(method, rng, out_manifold)
+    initial_sample      = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k, :in),vcat, m_ins, 1:N)
+    initial_natparams   = initialize_cvi_natural_parameters(method, rng, out_manifold,1,:out)
         
     samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)
-    out_samples        = modify_vectorized_samples_with_variate_type(var_form_out, map(x -> node_function(x...), samples), dim_out)
+    out_samples        = modify_vectorized_samples_with_variate_type(var_form_out, map(x -> node_function(ReactiveMP.__splitjoin(x, dims_in)...), samples), dim_out)
 
     f = (M, p) -> targetfn(M, p, out_samples)
     g = (M, p) -> grad_targetfn(M, p, out_samples)

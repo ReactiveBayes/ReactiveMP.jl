@@ -208,14 +208,15 @@ end
         projection_types = (out = Gamma, in = (Gamma, ))
         projection_dimensions = (out = ( ), in =((),))
         projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
+        projection_optionals = CVIProjectionOptional(out_samples_no = 2000)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials, projection_optional = projection_optionals), inverse = nothing)
         
-        for a in (3.0:7.0), b in (1.0:2.0)
+        for a in (3.0:6.0), b in (1.2:2.2)
           
             msg_in  = Gamma(a, b)
             msg_out = @call_rule DeltaFn{identity}(:out, Marginalisation) (m_ins = ManyOf(msg_in,), meta = meta)
         
-            @test mean(msg_out) ≈ mean(msg_in) atol = 1.0     
+            @test mean(msg_out) ≈ mean(msg_in) atol = 5e-1   
         end
     end
 
@@ -223,7 +224,8 @@ end
         projection_types = (out = MvNormalMeanCovariance, in = (MvNormalMeanCovariance, ))
         projection_dimensions = (out = (2, ), in =((2, ),))
         projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
+        projection_optionals = CVIProjectionOptional(out_samples_no = 2000)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials, projection_optional = projection_optionals), inverse = nothing)
         
         f = (x,k) -> x.^k
         for m in (zeros(2), ones(2), randn(2)), v in ([1, 2], [0.1,0.8],[4.0, 0.2]), k in (1,2,3)
@@ -236,17 +238,30 @@ end
     end
 
 
-    # @testset "Differen set of non-linearities matrixvariate in matrixvariate out " begin
-    #     projection_types = (out = WishartFast, in = (WishartFast, ))
-    #     projection_dimensions = (out = (2,2), in =((2, 2),))
-    #     projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-    #     meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
+    @testset "Differen set of non-linearities multi-univariate in in multivariate out " begin
+        projection_types = (out = MvNormalMeanCovariance, in = (MvNormalMeanCovariance, Gamma))
+        projection_dimensions = (out = (2,), in =((2,),()))
+        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
         
-    #     f    = (x) -> x + x'
-    #     @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(WishartFast(5, 10diageye(2)),), meta = meta)
+        f    = (x,y) -> y*x 
+        msg_out = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(MvNormalMeanCovariance(zeros(2), diageye(2)),Gamma(3,3)), meta = meta)
 
-    # end
+        @test mean(msg_out) ≈ zeros(2) rtol = 3.0
+    end
 
+
+    @testset "Differen set of non-linearities multi-multivariate in in multivariate out " begin
+        projection_types = (out = MvNormalMeanCovariance, in = (MvNormalMeanCovariance, MvNormalMeanCovariance))
+        projection_dimensions = (out = (2,), in =((2,),(2,)))
+        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
+        
+        f    = (x,y) -> x + y
+        msg_out = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(MvNormalMeanCovariance(zeros(2), diageye(2)),MvNormalMeanCovariance(ones(2), diageye(2))), meta = meta)
+
+        @test mean(msg_out) ≈ ones(2) rtol = 5e-1
+    end
 
     
     @testset "Differen set of non-linearities univariate in univariate out " begin

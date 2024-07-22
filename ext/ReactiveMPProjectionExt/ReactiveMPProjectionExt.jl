@@ -29,11 +29,11 @@ getcviinitialnaturalparameters(cvi::CVIProjection) = getcviinitialnaturalparamet
 
 
 Base.@kwdef struct CVIProjectionEssentials{TS, DS, IS, INP, CS, P}
-    projection_types::TS = nothing
-    projection_dims::DS = nothing
-    initial_samples::IS = nothing
-    initial_naturalparameters::INP = nothing
-    projection_conditioners::CS = nothing
+    projection_types::TS = (out = nothing, in = nothing)
+    projection_dims::DS = (out = nothing, in = nothing)
+    initial_samples::IS = (out = nothing, in = nothing)
+    initial_naturalparameters::INP = (out = nothing, in = nothing)
+    projection_conditioners::CS = (out = nothing, in = nothing)
     projection_parameters::P = ExponentialFamilyProjection.DefaultProjectionParameters()
 end
 
@@ -101,6 +101,20 @@ function log_target_adjusted_log_pdf(::Type{Matrixvariate}, m_in, dims)
     return x -> logpdf(m_in, reshape(x,dims))
 end
 
+
+
+function log_target_adjusted_log_measure(::Type{Univariate}, logmeasure, _)
+    return x -> logmeasure(first(x))
+end
+
+log_target_adjusted_log_measure(::Type{Multivariate}, logmeasure, _) = logmeasure
+
+
+function log_target_adjusted_log_measure(::Type{Matrixvariate}, logmeasure, dims)
+    return x -> logmeasure(reshape(x,dims))
+end
+
+
 function hmc_samples(rng, d, log_target_density, initial_x; no_samples = 2_000, n_adapts = 1_000, acceptance_probability = 0.8)
     metric = AdvancedHMC.DiagEuclideanMetric(d) ### We should use fisher metric here
     hamiltonian = AdvancedHMC.Hamiltonian(metric, log_target_density, ForwardDiff)
@@ -127,8 +141,8 @@ modify_vectorized_samples_with_variate_type(::Type{Univariate}, samples, _) = ma
 modify_vectorized_samples_with_variate_type(::Type{Multivariate}, samples,_) = samples
 modify_vectorized_samples_with_variate_type(::Type{Matrixvariate}, samples,dims) = map(sample -> reshape(sample, dims), samples)
 
-initialize_cvi_samples(method, rng, m_in, k) = !isnothing(getcviinitialsamples(method)) ? getindex(getcviinitialsamples(method), k) : rand(rng, m_in) 
-initialize_cvi_natural_parameters(method, rng, manifold) = !isnothing(getcviinitialnaturalparameters(method)) ? first(getcviinitialnaturalparameters(method)) : rand(rng, manifold)
+initialize_cvi_samples(method, rng, m_in, k, symbol) = !isnothing(getcviinitialsamples(method)[symbol]) ? getindex(getcviinitialsamples(method)[symbol], k) : rand(rng, m_in) 
+initialize_cvi_natural_parameters(method, rng, manifold, k, symbol) = !isnothing(getcviinitialnaturalparameters(method)[symbol]) ? ExponentialFamilyProjection.partition_point(manifold,getindex(getcviinitialnaturalparameters(method)[symbol], k)) : rand(rng, manifold)
 
 
 
