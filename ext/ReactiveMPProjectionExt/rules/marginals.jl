@@ -64,13 +64,7 @@ end
         initial_sample         = rand(rng, sum_dim_in)
     end
 
-
-    if !isnothing(m_ins_efs)
-        joint_logpdf = (x) -> logpdf(m_out, node_function(ReactiveMP.__splitjoin(x, dims_in)...)) + mapreduce((m_in,k,T) -> log_target_adjusted_log_pdf(T, m_in, getindex(dims_in, k))(ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))), +, m_ins, 1:N, var_form_ins)
-    else
-        joint_logpdf = (x) -> logpdf(m_out, node_function(ReactiveMP.__splitjoin(x, dims_in)...)) + mapreduce((m_in,k,T) -> log_target_adjusted_log_measure(T, m_in, getindex(dims_in, k))(ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))), +, m_ins, 1:N, var_form_ins)
-    end
-    
+    joint_logpdf = (x) -> logpdf(m_out, node_function(ReactiveMP.__splitjoin(x, dims_in)...)) + mapreduce((m_in,k,T) -> log_target_adjusted_log_pdf(T, m_in, getindex(dims_in, k))(ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))), +, m_ins, 1:N, var_form_ins)
     log_target_density  = LogTargetDensity(sum_dim_in, joint_logpdf)
 
     samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)

@@ -4,10 +4,6 @@ using ReactiveMP, ExponentialFamily, AdvancedHMC, LogDensityProblems, Distributi
 using ForwardDiff
 
 export DivisionOf, CVIProjection, CVIProjectionEssentials, CVIProjectionOptional, LogTargetDensity
-# export CVIProjection,CVIProjectionEssentials,CVIProjectionOptional, DivisionOf, LogTargetDensity
-# export getcviprojectionessentials,getcviprojectionoptional,getcviprojectionconditioners
-# export getcviprojectiontypes, getcviprojectionparameters, getcviprojectionparameters,getcvioutsamplesno
-# export getcvimarginalsamplesno, getcvirng
 
 
 Base.@kwdef struct CVIProjection{CVIPE, CVIPO} <: ReactiveMP.AbstractApproximationMethod 
@@ -89,30 +85,40 @@ LogDensityProblems.capabilities(::LogTargetDensity) = LogDensityProblems.LogDens
 LogDensityProblems.dimension(p::LogTargetDensity)   = p.dim
 
 
-function log_target_adjusted_log_pdf(::Type{Univariate}, m_in, _)
+function log_target_adjusted_log_pdf(::Type{Univariate}, m_in::Union{Distribution, ExponentialFamilyDistribution}, _)
     return x -> logpdf(m_in, first(x))
 end
 
-function log_target_adjusted_log_pdf(::Type{Multivariate}, m_in, _)
+function log_target_adjusted_log_pdf(::Type{Multivariate}, m_in::Union{Distribution, ExponentialFamilyDistribution}, _)
     return x -> logpdf(m_in, x)
 end
 
-function log_target_adjusted_log_pdf(::Type{Matrixvariate}, m_in, dims)
+function log_target_adjusted_log_pdf(::Type{Matrixvariate}, m_in::Union{Distribution, ExponentialFamilyDistribution}, dims)
     return x -> logpdf(m_in, reshape(x,dims))
 end
 
 
-
-function log_target_adjusted_log_measure(::Type{Univariate}, logmeasure, _)
+function log_target_adjusted_log_pdf(::Type{Univariate}, logmeasure, _)
     return x -> logmeasure(first(x))
 end
 
-log_target_adjusted_log_measure(::Type{Multivariate}, logmeasure, _) = logmeasure
-
-
-function log_target_adjusted_log_measure(::Type{Matrixvariate}, logmeasure, dims)
+log_target_adjusted_log_pdf(::Type{Multivariate}, logmeasure, _) = logmeasure
+function log_target_adjusted_log_pdf(::Type{Matrixvariate}, logmeasure, dims)
     return x -> logmeasure(reshape(x,dims))
 end
+
+function log_target_adjusted_log_pdf(::Type{Univariate}, logmeasure::DivisionOf, _)
+    return x -> logpdf(logmeasure, first(x))
+end
+
+function log_target_adjusted_log_pdf(::Type{Multivariate}, logmeasure::DivisionOf, _) 
+    return x -> logpdf(logmeasure,x)
+end
+
+function log_target_adjusted_log_pdf(::Type{Matrixvariate}, logmeasure::DivisionOf, dims)
+    return x -> logpdf(logmeasure, reshape(x,dims))
+end
+
 
 
 function hmc_samples(rng, d, log_target_density, initial_x; no_samples = 2_000, n_adapts = 1_000, acceptance_probability = 0.8)
@@ -157,6 +163,8 @@ function BayesBase.prod(::GenericProd, division::DivisionOf, something)
         return ProductOf(division, something)
     end
 end
+
+BayesBase.prod(::GenericProd, division_left::DivisionOf, division_right::DivisionOf) = ProductOf(division_left, division_right)
 
 include("layout/cvi_projection.jl")
 include("rules/in.jl")
