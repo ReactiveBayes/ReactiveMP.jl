@@ -1,6 +1,6 @@
 @testitem "LogTargetDensity" begin
     using LogDensityProblems, ReactiveMP
-   
+
     ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
 
     @test !isnothing(ext)
@@ -14,9 +14,4 @@
     for x in -3:0.1:3
         @test LogDensityProblems.logdensity(ltd, x) == μ(x)
     end
-   
 end
-
-
-
-

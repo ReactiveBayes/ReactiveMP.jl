@@ -18,7 +18,6 @@
     end
 end
 
-
 @testitem "Basic check for in rule" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
