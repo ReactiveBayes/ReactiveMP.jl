@@ -85,18 +85,17 @@ LogDensityProblems.capabilities(::LogTargetDensity) = LogDensityProblems.LogDens
 LogDensityProblems.dimension(p::LogTargetDensity)   = p.dim
 
 
-function log_target_adjusted_log_pdf(::Type{Univariate}, m_in::Union{Distribution, ExponentialFamilyDistribution}, _)
+function log_target_adjusted_log_pdf(::Type{Univariate}, m_in::Union{Distribution, ExponentialFamilyDistribution, DivisionOf}, _)
     return x -> logpdf(m_in, first(x))
 end
 
-function log_target_adjusted_log_pdf(::Type{Multivariate}, m_in::Union{Distribution, ExponentialFamilyDistribution}, _)
+function log_target_adjusted_log_pdf(::Type{Multivariate}, m_in::Union{Distribution, ExponentialFamilyDistribution, DivisionOf}, _)
     return x -> logpdf(m_in, x)
 end
 
-function log_target_adjusted_log_pdf(::Type{Matrixvariate}, m_in::Union{Distribution, ExponentialFamilyDistribution}, dims)
+function log_target_adjusted_log_pdf(::Type{Matrixvariate}, m_in::Union{Distribution, ExponentialFamilyDistribution, DivisionOf}, dims)
     return x -> logpdf(m_in, reshape(x,dims))
 end
-
 
 function log_target_adjusted_log_pdf(::Type{Univariate}, logmeasure, _)
     return x -> logmeasure(first(x))
@@ -106,20 +105,6 @@ log_target_adjusted_log_pdf(::Type{Multivariate}, logmeasure, _) = logmeasure
 function log_target_adjusted_log_pdf(::Type{Matrixvariate}, logmeasure, dims)
     return x -> logmeasure(reshape(x,dims))
 end
-
-function log_target_adjusted_log_pdf(::Type{Univariate}, logmeasure::DivisionOf, _)
-    return x -> logpdf(logmeasure, first(x))
-end
-
-function log_target_adjusted_log_pdf(::Type{Multivariate}, logmeasure::DivisionOf, _) 
-    return x -> logpdf(logmeasure,x)
-end
-
-function log_target_adjusted_log_pdf(::Type{Matrixvariate}, logmeasure::DivisionOf, dims)
-    return x -> logpdf(logmeasure, reshape(x,dims))
-end
-
-
 
 function hmc_samples(rng, d, log_target_density, initial_x; no_samples = 2_000, n_adapts = 1_000, acceptance_probability = 0.8)
     metric = AdvancedHMC.DiagEuclideanMetric(d) ### We should use fisher metric here

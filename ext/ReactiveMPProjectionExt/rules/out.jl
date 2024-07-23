@@ -94,21 +94,24 @@ end
     prod_dim_in         = prod(dim_in)
     var_form            = variate_form(T_in)
     
-    out_manifold        = ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T_out, dim_out, conditioner_out)
-    logf                = log_target_adjusted_log_pdf(var_form, first(m_ins), dim_in)
-    log_target_density  = LogTargetDensity(prod_dim_in, logf)
-    
+    samples = try
+        rand(rng, first(m_ins), number_out_samples)
+    catch
+        logf                = log_target_adjusted_log_pdf(var_form, first(m_ins), dim_in)
+        log_target_density  = LogTargetDensity(prod_dim_in, logf)
+        initial_sample      = initialize_cvi_samples(method, rng, first(m_ins), 1, :in)
+        vectorized_initial_sample  = vectorize_sample(var_form, initial_sample)
+        samples_hmc =  hmc_samples(rng, prod_dim_in, log_target_density, vectorized_initial_sample; no_samples = number_out_samples + 1)
+        modify_vectorized_samples_with_variate_type(variate_form(T_in), samples_hmc, dim_in)
+    end
 
-    initial_sample             = initialize_cvi_samples(method, rng, first(m_ins), 1, :in)
-    vectorized_initial_sample  = vectorize_sample(var_form, initial_sample)
-    initial_natparams          = initialize_cvi_natural_parameters(method, rng, out_manifold,1,:out)
-
-    samples            = hmc_samples(rng, prod_dim_in, log_target_density, vectorized_initial_sample; no_samples = number_out_samples + 1)
-    out_samples        = modify_vectorized_samples_with_variate_type(var_form, map(x -> node_function(x...), zip(samples)), dim_out)
+    out_samples        = modify_vectorized_samples_with_variate_type(var_form, map(x -> node_function(x), samples), dim_out)
 
     f = (M, p) -> targetfn(M, p, out_samples)
     g = (M, p) -> grad_targetfn(M, p, out_samples)
     
+    out_manifold      = ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T_out, dim_out, conditioner_out)
+    initial_natparams = initialize_cvi_natural_parameters(method, rng, out_manifold,1,:out)
     ef_out = convert(ExponentialFamilyDistribution, out_manifold,
             ExponentialFamilyProjection.Manopt.gradient_descent(out_manifold, f, g, initial_natparams; 
                     direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))

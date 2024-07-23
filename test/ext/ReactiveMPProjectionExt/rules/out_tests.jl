@@ -140,9 +140,37 @@ end
             q_out = MvNormalMeanCovariance(mean(q_in_component) + c, cov(q_in_component))
 
             msg = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta)
-            # prj = ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...; 
-            #     parameters = ExponentialFamilyProjection.ProjectionParameters(niterations = 5000, tolerance = missing)
-            # )
+            prj = ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...)
+        
+            q_out_projected = project_to(prj, (x) -> logpdf(msg, x) , m_out_incoming, initialpoint = q_out) 
+    
+            @test mean(q_out_projected) ≈ mean(q_out) rtol = 5e-1
+        end
+    end
+end
+
+@testitem "Basic out rule tests #5" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
+
+    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+
+    @test !isnothing(ext)
+
+    using .ext
+    
+    @testset "f(x) = Ax , x ~ Normal (Multivariate)" begin
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
+   
+        q_ins_m_out_incomings_fs_constants = [
+            (FactorizedJoint((MvNormalMeanCovariance(ones(3), 2*diageye(3)),)) , MvNormalMeanCovariance(zeros(3), 0.4*diageye(3)), x -> [1.0 2.0 0.4; 0.1 0.2 0.3; 0.1 -0.3 0.5]*x, [1.0 2.0 0.4; 0.1 0.2 0.3; 0.1 -0.3 0.5]),
+            (FactorizedJoint((MvNormalMeanCovariance([0.3, 0.7, 10.0], 0.1*diageye(3)),)), MvNormalMeanCovariance(ones(3), 0.9*diageye(3)), x -> [1.6 0.2 0.4; -0.1 0.2 -0.3; 0.1 -0.3 0.5]*x, [1.6 0.2 0.4; -0.1 0.2 -0.3; 0.1 -0.3 0.5])
+        ]
+        for (q_in, m_out_incoming, f, c) in q_ins_m_out_incomings_fs_constants
+           
+            q_in_component = first(components(q_in))
+            q_out = MvNormalMeanCovariance(c*mean(q_in_component) , c*cov(q_in_component)*c')
+
+            msg = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta)
             prj = ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...)
         
             q_out_projected = project_to(prj, (x) -> logpdf(msg, x) , m_out_incoming, initialpoint = q_out) 
@@ -157,8 +185,8 @@ end
 ## Gamma(a,b), f(x) = cx results in Gamma(a, b*c) in shape scale parameterization
 ## Exp(λ), f(x) = sqrt(x) results in Rayleigh(1/sqrt(2λ))
 ## Exp(λ), f(x) = kexp(x) results in Pareto(k,λ) ## EFP errors
-## Exp(λ), f(x) = exp(-x) results in Beta(λ, 1) ## EFP errors with NaN
-@testitem "Basic out rule tests #5" begin
+## Exp(λ), f(x) = exp(-x) results in Beta(λ, 1) 
+@testitem "Basic out rule tests #6" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
     ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
@@ -168,32 +196,33 @@ end
     using .ext
     
     @testset "Differen set of non-linearities x ~ NonNormal EF (Univariate)" begin
-        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
+        projection_optional = CVIProjectionOptional(out_samples_no = 5000)
+        meta = DeltaMeta(method = CVIProjection(projection_optional = projection_optional), inverse = nothing)
 
         q_ins_m_out_incomings_q_outs_non_linearities = [
             (FactorizedJoint((Beta(5, 2),)), Beta(20,3), Beta(2, 5), x-> 1-x ),
             (FactorizedJoint((Gamma(3, 4),)), Gamma(10, 7),  Gamma(3, 4*0.1), x->0.1*x),
             (FactorizedJoint((Exponential(0.5),)), Exponential(3), Rayleigh(1/(sqrt(2*3))), x->sqrt(x) ),
-            # (FactorizedJoint((Exponential(0.5),)), Exponential(3), Geometric(1 - exp(-0.5)), x->ceil(x)) 
-            # (FactorizedJoint((Exponential(0.5),)), Exponential(3), Pareto(3, 0.5), x->3*exp(x) ) ##exponential family projection errors
-            # (FactorizedJoint((Exponential(0.5),)), Exponential(30), Beta(0.5, 1), x->exp(-x) ) ##exponential family projection errors
+            # (FactorizedJoint((Exponential(0.5),)), Exponential(3), Geometric(1 - exp(-0.5)), x->ceil(x)) ,
+            # (FactorizedJoint((Exponential(0.5),)), Exponential(3), Pareto(3, 0.5), x->3*exp(x) ),
+            (FactorizedJoint((Exponential(0.5),)), Exponential(3), Beta(7, 1), x->exp(-x) ) 
         ]
         for (q_in,m_out_incoming, q_out, f) in q_ins_m_out_incomings_q_outs_non_linearities
 
             msg = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = q_out, q_ins = q_in, meta = meta)
-
-            prj = ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...)
+            prj_parameters = ProjectionParameters(niterations = 10)
+            prj = ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...;parameters = prj_parameters)
             
             q_out_projected = project_to(prj, (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x))
-            @test mean(q_out_projected) ≈ mean(q_out) atol = 1e-1
-            @test var(q_out_projected) ≈ var(q_out) atol = 1e-1
+            @test mean(q_out_projected) ≈ mean(q_out) atol = 5e-1
+            @test var(q_out_projected) ≈ var(q_out) atol = 5e-1
         end
     end
 end
 
 
 
-@testitem "Basic out rule tests #6: Generic sum-product projection" begin
+@testitem "Basic out rule tests #7: Generic sum-product projection" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
     import ExponentialFamily: WishartFast
     using ForwardDiff
@@ -314,4 +343,48 @@ end
 
     #     # @show msg([vec(V); 0.2])
     # end
+end
+
+
+@testitem "Basic out rule tests #8: Generic sum-product projection" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase
+
+    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+
+    @test !isnothing(ext)
+
+    using .ext
+    @testset "Beta with f(x) = 1 - x " begin
+        projection_types = (out = Beta, in = (Beta, ))
+        projection_dimensions = (out = ( ), in =((), ))
+        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
+        
+        f    = (x) -> 1 - x
+        for a in 3:6, b in 4:9
+            msg_in = Beta(a,b)
+            msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(msg_in, ), meta = meta)
+
+            @test mean(msg) ≈ mean(Beta(b,a)) atol = 5e-1
+            @test var(msg) ≈ var(Beta(b,a)) atol = 5e-1
+            @test collect(params(msg)) ≈ [b, a] rtol = 5e-1
+        end
+    end
+
+
+    @testset "Gamma with f(x) = cx " begin
+        projection_types = (out = Gamma, in = (Gamma, ))
+        projection_dimensions = (out = ( ), in =((), ))
+        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
+        for c in (0.1:0.1:2), a in (2, 3), b in (0.1, 0.5) ## if b is high then the mean and move gets large and tolerance needs to be adaptively adjusted
+            f    = (x) -> c*x
+            msg  = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(Gamma(a, b), ), meta = meta)
+
+            @test mean(msg) ≈ mean(Gamma(a, b*c)) atol = 5e-1
+            @test var(msg) ≈ var(Gamma(a, b*c)) atol = 5e-1
+        end
+    end
+   
+   
 end

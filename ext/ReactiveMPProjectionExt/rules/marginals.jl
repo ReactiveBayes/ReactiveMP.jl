@@ -26,7 +26,7 @@ end
     node_function       = getnodefn(meta, Val(:out))
     method              = ReactiveMP.getmethod(meta)
     rng                 = getcvirng(method)
-    number_out_samples  = getcvioutsamplesno(method)
+    number_marginal_samples  = getcvimarginalsamplesno(method)
 
     m_ins_efs = try
         map(component -> convert(ExponentialFamilyDistribution, component), m_ins)
@@ -67,7 +67,7 @@ end
     joint_logpdf = (x) -> logpdf(m_out, node_function(ReactiveMP.__splitjoin(x, dims_in)...)) + mapreduce((m_in,k,T) -> log_target_adjusted_log_pdf(T, m_in, getindex(dims_in, k))(ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))), +, m_ins, 1:N, var_form_ins)
     log_target_density  = LogTargetDensity(sum_dim_in, joint_logpdf)
 
-    samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)
+    samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_marginal_samples + 1)
     samples_matrix     = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims_in, k)), samples), 1:N)
     
     function projection_to_ef(i)

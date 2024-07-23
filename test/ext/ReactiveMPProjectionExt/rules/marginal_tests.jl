@@ -42,11 +42,25 @@
         f(x, y) = [x, y]
         projection_types = (out = MvNormalMeanCovariance, in = (NormalMeanVariance, NormalMeanVariance))
         projection_dimensions = (out = (2, ), in =((),()))
+        projection_optional = CVIProjectionOptional(marginal_samples_no  = 5000) #because the tolerance is atol we use high number of samples
         projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials), inverse = nothing)
-        @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{f}(:ins) [(
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials,projection_optional = projection_optional), inverse = nothing)
+        @test_marginalrules [check_type_promotion = false, atol =1e-1] DeltaFn{f}(:ins) [(
             input = (m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]), m_ins = ManyOf(x -> logpdf(NormalMeanVariance(0, 1),x), x -> logpdf(NormalMeanVariance(1, 2),x)), meta = meta),
             output = FactorizedJoint((NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0)))
+        )]
+    end
+
+    @testset "f(x, y) -> [x, y], x~MvNormal, y~MvNormal, out~MvMvNormal (marginalization)" begin
+        f(x, y) = [x; y]
+        projection_types = (out = MvNormalMeanCovariance, in = (NormalMeanVariance, NormalMeanVariance))
+        projection_dimensions = (out = (5, ), in =((2,),(3,)))
+        projection_optional = CVIProjectionOptional(marginal_samples_no  = 5000) ## because the tolerance is atol we use high number of samples
+        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials,projection_optional = projection_optional), inverse = nothing)
+        @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{f}(:ins) [(
+            input = (m_out = MvGaussianMeanCovariance(ones(5), 2*diageye(5)), m_ins = ManyOf(MvNormalMeanCovariance(zeros(2), diageye(2)),MvNormalMeanCovariance(ones(3), 2*diageye(3))), meta = meta),
+            output = FactorizedJoint((MvNormalMeanCovariance(1 / 3*ones(2), 2 / 3*diageye(2)), MvNormalMeanCovariance(ones(3), diageye(3))))
         )]
     end
 end
