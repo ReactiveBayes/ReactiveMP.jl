@@ -379,3 +379,37 @@ end
         end
     end
 end
+
+@testitem "Basic out rule tests #9" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase
+
+    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+
+    @test !isnothing(ext)
+
+    using .ext
+
+    @testset "Different set of non-linearities x ~ NonNormal EF (Univariate)" begin
+        projection_optional = CVIProjectionOptional(out_samples_no = 5000)
+        projection_types = (out = NormalMeanVariance, in = (Gamma,Beta,NormalMeanVariance))
+        projection_dimensions = (out = (), in = ((),(),()))
+        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
+        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials,projection_optional = projection_optional), inverse = nothing)
+        f = (x,y,z) -> x*y + z
+        m_in1 = Gamma(3, 4)
+        m_in2 = Beta(5, 2)
+        m_in3 = NormalMeanVariance(3, 0.2)
+        m_out_incoming = NormalMeanVariance(0.0, 1.0)
+
+        
+        msg_sum_product_projection = @call_rule DeltaFn{f}(:out, Marginalisation) (m_ins = ManyOf(m_in1,m_in2,m_in3), meta = meta)
+        q_in = FactorizedJoint((m_in1, m_in2, m_in3))
+    
+        msg = @call_rule DeltaFn{f}(:out, Marginalisation) (m_out = m_out_incoming, q_out = msg_sum_product_projection , q_ins = q_in, meta = meta)
+        prj_parameters = ProjectionParameters(niterations = 1000)
+        prj = ProjectedTo(ExponentialFamily.exponential_family_typetag( msg_sum_product_projection), size( msg_sum_product_projection)...; parameters = prj_parameters)
+
+        q_out_projected = project_to(prj, (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x))
+        @test mean(q_out_projected) ≈ mean(msg_sum_product_projection) atol = 5e-1
+    end
+end
