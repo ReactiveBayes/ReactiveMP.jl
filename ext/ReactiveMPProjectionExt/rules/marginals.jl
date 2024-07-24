@@ -27,7 +27,7 @@ end
         cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
     catch
         #drop indices based method will fail if m_ins are not sampleable
-        cvi_compute_in_marginals(DropIndicesBased(),nodefunction, m_out, m_ins, meta, N)
+        cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
     end
     return marginal
 end
