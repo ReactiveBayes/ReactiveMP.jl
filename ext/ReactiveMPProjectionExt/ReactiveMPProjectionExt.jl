@@ -60,6 +60,11 @@ end
 BayesBase.insupport(d::DivisionOf, p) = insupport(d.numerator, p) && insupport(d.denumerator, p)
 BayesBase.logpdf(d::DivisionOf, p) = logpdf(d.numerator, p) - logpdf(d.denumerator, p)
 
+function (DO::DivisionOf)(x)
+    return logpdf(DO, x)
+end
+
+
 # cost function
 function targetfn(M, p, data)
     ef = convert(ExponentialFamilyDistribution, M, p)

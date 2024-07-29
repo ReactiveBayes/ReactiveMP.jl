@@ -7,12 +7,12 @@ import BayesBase: AbstractContinuousGenericLogPdf
     method = ReactiveMP.getmethod(meta)
     g      = getnodefn(meta, Val(:out))
     m_in   = first(m_ins)
-    T  = try 
-            ExponentialFamily.exponential_family_typetag(m_in)
+    (T, conditioner)  = try 
+            (ExponentialFamily.exponential_family_typetag(m_in), getconditioner(convert(ExponentialFamilyDistribution, m_in)))
         catch e
-            first(getcviprojectiontypes(method)[:in])
+            (first(getcviprojectiontypes(method)[:in]), first(getcviprojectionconditioners(method)[:in]))
         end
-    prj = ProjectedTo(T, size(m_in)...; parameters = getcviprojectionparameters(method))
+    prj = ProjectedTo(T, size(m_in)...; conditioner = conditioner, parameters = getcviprojectionparameters(method))
     q = project_to(prj, (z) -> logpdf(m_out, g(z)), m_in)
     # q = project_to(prj, (z) -> logpdf(m_out, g(z)) + logpdf(m_in,z)) ## this is still valid if m_in is not in ef
 
