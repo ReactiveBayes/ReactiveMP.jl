@@ -82,8 +82,7 @@
 
     @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
         f(x, y) = [x, y]
-        projection_optional = CVIProjectionOptional(marginal_samples_no = (5000, 5))
-        meta = DeltaMeta(method = CVIProjection(projection_optional = projection_optional), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{f}(:ins) [(
             input = (m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]), m_ins = ManyOf(NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)), meta = meta),
             output = FactorizedJoint((NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0)))
@@ -109,11 +108,7 @@
 
     @testset "f(x, y) -> [x, y], x~MvNormal, y~MvNormal, out~MvMvNormal (marginalization)" begin
         f(x, y) = [x; y]
-        projection_types = (out = MvNormalMeanCovariance, in = (NormalMeanVariance, NormalMeanVariance))
-        projection_dimensions = (out = (5,), in = ((2,), (3,)))
-        projection_optional = CVIProjectionOptional(marginal_samples_no = (5000, 5))
-        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials, projection_optional = projection_optional), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{f}(:ins) [(
             input = (
                 m_out = MvGaussianMeanCovariance(ones(5), 2 * diageye(5)),
@@ -126,11 +121,7 @@
 
     @testset "f(x, y) -> y + x, x~Poisson, y~Poisson, out~Poisson (marginalization)" begin
         f(x, y) = x + y
-        projection_types = (out = Poisson, in = (Poisson, Poisson))
-        projection_dimensions = (out = (), in = ((), ()))
-        projection_optional = CVIProjectionOptional(marginal_samples_no = (2000, 5)) ## because the tolerance is atol we use high number of samples
-        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials, projection_optional = projection_optional), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         for λout in (2, 5), λin1 in (3, 4), λin2 in (6, 7)
             m_out = Poisson(λout)
             m_in1 = Poisson(λin1)
@@ -155,11 +146,7 @@
 
     @testset "f(x, y) -> [1 - x, 1 - y], x~Beta, y~Beta, out~FactorizedJoint((Beta, Beta)) (marginalization)" begin
         f(x, y) = [1 - x, 1 - y]
-        projection_types = (out = FactorizedJoint, in = (Beta, Beta))
-        projection_dimensions = (out = (2,), in = ((), ()))
-        projection_optional = CVIProjectionOptional(marginal_samples_no = (1000, 5))
-        projection_essentials = CVIProjectionEssentials(projection_types = projection_types, projection_dims = projection_dimensions)
-        meta = DeltaMeta(method = CVIProjection(projection_essentials = projection_essentials, projection_optional = projection_optional), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         for a1 in (2, 3), b1 in (2, 3), a2 in (3, 4), b2 in (4, 5), ain1 in (3, 5), ain2 in (4, 5), bin1 in (2, 4), bin2 in (4, 8)
             m_out1 = Beta(a1, b1)
             m_out2 = Beta(a2, b2)
