@@ -25,7 +25,7 @@ end
     @test !isnothing(ext)
 
     using .ext
-    
+
     meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
     m_in_incoming = NormalMeanVariance(0, 1)
     m_in_outbound_real = NormalMeanVariance(0, 1)
