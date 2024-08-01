@@ -8,42 +8,94 @@
 
     using .ext
 
-    # @testset "f(x) -> x, x~EF, out~EF" begin
-    #     meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
-    #     # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
-    #     inputs = [
-    #         NormalMeanVariance(0, 1),
-    #         Gamma(2, 2),
-    #         Beta(1, 1), 
-    #         MvNormalMeanCovariance([0.5, 0.5]),
-    #         MvNormalMeanCovariance([0.5, 0.5, -1.0]), 
-    #     ]
-    #     for input in inputs
-    #         m_in = input
-    #         m_out = input
-    #         q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (m_out = m_out, m_ins = ManyOf(m_in), meta = meta)
-    #         @test length(q_factorised) === 1
-    #         q_in_1 = component(q_factorised, 1)
-    #         @test q_in_1 ≈ prod(GenericProd(), m_in, m_out) atol = 1e-1
-    #     end
-    # end
+    @testset "f(x) -> x, x~EF, out~EF, out = x" begin
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
+        # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
+        inputs = [
+            NormalMeanVariance(0, 1),
+            Gamma(2, 2),
+            Beta(1, 1), 
+            MvNormalMeanCovariance([0.5, 0.5]),
+            MvNormalMeanCovariance([0.5, 0.5, -1.0]), 
+            Geometric(0.3),
+        ]
+        for input in inputs
+            m_in = input
+            m_out = input
+            q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (m_out = m_out, m_ins = ManyOf(m_in), meta = meta)
+            @test length(q_factorised) === 1
+            q_in_1 = component(q_factorised, 1)
+            @test q_in_1 ≈ prod(GenericProd(), m_in, m_out) atol = 1e-1
+        end
+    end
 
-    # @testset "f(x) -> x, x~EF, out~EF with conditioners" begin
+    @testset "f(x) -> x, x~EF, out~EF , out ≠ x" begin
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
+        # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
+        inputs_outputs = [
+            (NormalMeanVariance(0, 1), NormalMeanVariance(-2, 10) ), 
+            (Gamma(2, 2), Gamma(14,3)),
+            (Beta(1, 1), Beta(2,3)),
+            (MvNormalMeanCovariance([0.5, 0.5]), MvNormalMeanCovariance([0.2, 0.3]) ),
+            (Dirichlet([2, 3, 19]), Dirichlet([0.1, 0.3, 0.5])),
+            (Geometric(0.2), Geometric(0.3)),
+        ]
+        for input_output in inputs_outputs
+            m_in = first(input_output)
+            m_out = last(input_output)
+            q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (m_out = m_out, m_ins = ManyOf(m_in), meta = meta)
+            @test length(q_factorised) === 1
+            q_in_1 = component(q_factorised, 1)
+            @test q_in_1 ≈ prod(GenericProd(), m_in, m_out) rtol = 1e-1
+        end
+    end
+
+    # @testset "f(x) -> x, x~EF, out~EF with Poisson, out ≠ x" begin
     #     meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
     #     # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
     #     inputs = [
-    #         Binomial(10, 0.4),
+    #         Poisson(3.2),
+    #         Poisson(10.0),
     #         Poisson(4.0)
     #     ]
+    #     outputs = [
+    #         Poisson(4.1),
+    #         Poisson(5.2),
+    #         Poisson(10.0)
+    #     ]
+    #     grid = 0:100
+    #     for input in inputs, output in outputs
+    #         m_in = input
+    #         m_out = output
+    #         q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (m_out = m_out, m_ins = ManyOf(m_in), meta = meta)
+    #         @test length(q_factorised) === 1
+    #         component1 = component(q_factorised, 1)
+    #         q_prod = prod(PreserveTypeProd(ExponentialFamilyDistribution), m_in, m_out)
+    #         mean_prod = sum(grid .* pdf(q_prod, grid))
+    #         @test mean(component1) ≈ mean_prod atol = 5e-1    
+    #     end
+    # end
+    
+    # ###Generalization of this test when out ≠ x is not passing because EFP errors
+    # @testset "f(x) -> x, x~EF, out~EF with Binomial where out = x" begin
+    #     meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
+    #     # Since we use `identity` as a function we expect that the result of marginal computation is a product of `m_out` and `m_in`
+    #     inputs = [
+    #         Binomial(5, 0.2),
+    #         Binomial(10, 0.9),
+    #         Binomial(7, 0.4)
+    #     ]
+  
     #     for input in inputs
     #         m_in = input
     #         m_out = input
     #         q_factorised = @call_marginalrule DeltaFn{identity}(:ins) (m_out = m_out, m_ins = ManyOf(m_in), meta = meta)
     #         @test length(q_factorised) === 1
-    #         q_ef_component = convert(ExponentialFamilyDistribution, component(q_factorised, 1))
+    #         component1 = component(q_factorised, 1)
     #         q_prod = prod(PreserveTypeProd(ExponentialFamilyDistribution), m_in, m_out)
-    #         η_prod = getnaturalparameters(q_prod)
-    #         @test_broken getnaturalparameters(q_ef_component) ≈ η_prod atol = 5e-1    
+    #         grid   = getsupport(q_prod)
+    #         mean_prod = sum(grid .* pdf(q_prod, grid))
+    #         @test mean(component1) ≈ mean_prod atol = 5e-1    
     #     end
     # end
 

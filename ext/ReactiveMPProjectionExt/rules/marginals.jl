@@ -9,7 +9,7 @@ import BayesBase: AbstractContinuousGenericLogPdf
     m_in   = first(m_ins)
     (T, conditioner)  = try 
             (ExponentialFamily.exponential_family_typetag(m_in), getconditioner(convert(ExponentialFamilyDistribution, m_in)))
-        catch e
+        catch 
             (first(getcviprojectiontypes(method)[:in]), first(getcviprojectionconditioners(method)[:in]))
         end
     prj = ProjectedTo(T, size(m_in)...; conditioner = conditioner, parameters = getcviprojectionparameters(method))
@@ -23,11 +23,9 @@ end
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
     nodefunction = getnodefn(meta, Val(:out))
     marginal = try
-        #hmc based method will fail if there are discrete rvs
-        cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
-    catch
-        #drop indices based method will fail if m_ins are not sampleable
         cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
+    catch
+        cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
     end
     return marginal
 end
@@ -133,14 +131,13 @@ function cvi_compute_in_marginals(based::DropIndicesBased, nodefunction, m_out, 
 
     optimize_natural_parameters = let m_ins = m_ins, logp_nc_drop_index = logp_nc_drop_index
         (i, pre_samples) -> begin
-            # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
             df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
                 (z) -> logp_nc_drop_index(z, i, pre_samples)
             end
-            logp = convert(promote_variate_type(variate_form(typeof(first(m_ins))), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
-
+            logp = convert(promote_variate_type(variate_form(typeof(m_ins[i])), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
+            ef_m_in = convert(ExponentialFamilyDistribution, m_ins[i])
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; parameters = something(ExponentialFamilyProjection.DefaultProjectionParameters()))
+            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=getconditioner(ef_m_in), parameters = something(ExponentialFamilyProjection.DefaultProjectionParameters()))
 
             return project_to(prj, logp, m_ins[i])
         end
@@ -158,11 +155,6 @@ function cvi_compute_in_marginals(based::DropIndicesBased,nodefunction,m_out::Fa
     components_out   = components(m_out)
     components_length = length(components_out)
     @assert components_length > 1 "Length of the FactorizedJoint $m_out should be greater than 1."
-    components_sizes = map(size, components_out)
-    prod_dims_components  = map(prod, components_sizes)
-    joint_logpdf_components = (x) -> mapreduce((component,sz,k) -> logpdf(component, ReactiveMP.__splitjoinelement(x, getindex(start_indices_components,k) ,sz)), +,components_out, components_sizes, 1:components_length)
-    cum_lengths_components  = mapreduce(d -> d+1, vcat, cumsum(prod_dims_components))
-    start_indices_components = append!([1], cum_lengths_components[1:N-1])
 
     pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, number_marginal_samples)), m_ins)...)
 
@@ -182,10 +174,11 @@ function cvi_compute_in_marginals(based::DropIndicesBased,nodefunction,m_out::Fa
             df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
                 (z) -> logp_nc_drop_index(z, i, pre_samples)
             end
-            logp = convert(promote_variate_type(variate_form(typeof(first(m_ins))), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
+            logp = convert(promote_variate_type(variate_form(m_ins[i]), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
 
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; parameters = something(ExponentialFamilyProjection.DefaultProjectionParameters()))
+            ef_m_in = convert(ExponentialFamilyDistribution, m_ins[i])
+            prj = ProjectedTo(T, size(m_ins[i])...; conditioner = getconditioner(ef_m_in) ,parameters = something(ExponentialFamilyProjection.DefaultProjectionParameters()))
 
             return project_to(prj, logp, m_ins[i])
         end

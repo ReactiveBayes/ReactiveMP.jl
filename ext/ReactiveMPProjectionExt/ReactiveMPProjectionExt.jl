@@ -161,11 +161,11 @@ function __auxiliary_variables(rng, m_ins, method, N)
         sum_dim_in             = sum(prod_dims_in)
         cum_lengths            = mapreduce(d -> d+1, vcat, cumsum(prod_dims_in))
         start_indices          = append!([1], cum_lengths[1:N-1])
-        Ts                     = map(ExponentialFamily.exponential_family_typetag, m_ins_efs)
         conditioners           = map(getconditioner, m_ins_efs)
+        Ts                     = map(ExponentialFamily.exponential_family_typetag, m_ins_efs)
         manifolds              = map((T, conditioner,m_in_ef) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, size(mean(m_in_ef)), conditioner), Ts, conditioners, m_ins_efs)
         natural_parameters_efs = map((m, p) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(m,p) ,manifolds, map(getnaturalparameters, m_ins_efs))
-        initial_sample         = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k, :in),vcat, m_ins, 1:N)
+        initial_sample         = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k, :in), vcat, m_ins, 1:N)
     else
         var_form_ins        = map(variate_form, getcviprojectiontypes(method)[:in])
         dims_in             = getcviprojectiondims(method)[:in]
