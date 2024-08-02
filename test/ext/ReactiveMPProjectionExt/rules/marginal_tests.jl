@@ -168,3 +168,44 @@
         end
     end
 end
+
+@testitem "Complex settings for marginal rules" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase, SpecialFunctions
+    import ReactiveMP: @test_rules, @test_marginalrules
+
+    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+
+    @test !isnothing(ext)
+
+    using .ext
+
+    @testset "Different set of nonlinearities , x~Poisson, y~Poisson, z ~ Poisson,  out ~ Poisson" begin
+        g(x, y, z) = x + y*z
+        h(x, y, z) = x*y + z
+        k(x, y, z) = x < z ? x*y*(z-x) : x*y
+        m(x, y, z) = y < z ? (z - y) * x + z*y : (y - z)*x 
+        meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
+        grid = [[x, y, z] for x in 0:50, y in 0:50, z in 0:50]
+        for  λin1 in (0.9, 2.3), λin2 in (0.6, 1.3), λin3 in (2.3, 1.1), λout in (3.2, 5.4), f in (g, h, k, m)
+            m_out = Poisson(λout)
+            m_in1 = Poisson(λin1)
+            m_in2 = Poisson(λin2)
+            m_in3 = Poisson(λin3)
+            marginal = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out, m_ins = ManyOf(m_in1, m_in2, m_in3), meta = meta)
+            component1 = component(marginal, 1)
+            component2 = component(marginal, 2)
+            component3 = component(marginal, 3)
+            ## This is a joint pdf. Our method approximates this joint with independent marginals as factorized joint.
+            exact_marginal_logpdf = (x) -> logpdf(m_out, f(x[1], x[2], x[3])) + logpdf(m_in1, x[1]) + logpdf(m_in2, x[2]) + logpdf(m_in3, x[3])
+            exact_marginal_pdf_unnormalized = x -> exp(exact_marginal_logpdf(x))
+
+            normalization = sum(map(exact_marginal_pdf_unnormalized, grid))
+            exact_marginal_pdf_normalized = x -> exact_marginal_pdf_unnormalized(x) / normalization
+
+            exact_mean = mapreduce(x -> x * exact_marginal_pdf_normalized(x), +, grid)
+            @test [mean(component1), mean(component2), mean(component3)] ≈ exact_mean rtol = 1e-1
+        end
+    end
+
+
+end

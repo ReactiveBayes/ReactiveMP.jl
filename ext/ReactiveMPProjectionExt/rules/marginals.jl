@@ -22,11 +22,14 @@ end
 #We would need a mixed HMC method to be able to sample from mixed continuous and discrete 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
     nodefunction = getnodefn(meta, Val(:out))
-    marginal = try
-        cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
-    catch
-        cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
-    end
+    # marginal = try
+    #     @show "try drop"
+    #     cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
+    # catch
+    #     @show "try hmc"
+    #     cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
+    # end
+    marginal = cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
     return marginal
 end
 
@@ -116,7 +119,7 @@ function cvi_compute_in_marginals(based::DropIndicesBased, nodefunction, m_out, 
     method = ReactiveMP.getmethod(meta)
     rng = getcvirng(method)
     number_marginal_samples  = getcvimarginalsamplesno(based, method)
-    prj  = getcviprojectionparameters(method)
+    prj_params  = getcviprojectionparameters(method)
 
     pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, number_marginal_samples)), m_ins)...)
 
@@ -137,7 +140,7 @@ function cvi_compute_in_marginals(based::DropIndicesBased, nodefunction, m_out, 
             logp = convert(promote_variate_type(variate_form(typeof(m_ins[i])), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
             ef_m_in = convert(ExponentialFamilyDistribution, m_ins[i])
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=getconditioner(ef_m_in), parameters = something(ExponentialFamilyProjection.DefaultProjectionParameters()))
+            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=getconditioner(ef_m_in), parameters = prj_params)
 
             return project_to(prj, logp, m_ins[i])
         end
@@ -151,7 +154,7 @@ function cvi_compute_in_marginals(based::DropIndicesBased,nodefunction,m_out::Fa
     method              = ReactiveMP.getmethod(meta)
     rng                 = getcvirng(method)
     number_marginal_samples  = getcvimarginalsamplesno(based, method)
-
+    prj_params  = getcviprojectionparameters(method)
     components_out   = components(m_out)
     components_length = length(components_out)
     @assert components_length > 1 "Length of the FactorizedJoint $m_out should be greater than 1."
@@ -178,7 +181,7 @@ function cvi_compute_in_marginals(based::DropIndicesBased,nodefunction,m_out::Fa
 
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
             ef_m_in = convert(ExponentialFamilyDistribution, m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; conditioner = getconditioner(ef_m_in) ,parameters = something(ExponentialFamilyProjection.DefaultProjectionParameters()))
+            prj = ProjectedTo(T, size(m_ins[i])...; conditioner = getconditioner(ef_m_in) ,parameters = prj_params)
 
             return project_to(prj, logp, m_ins[i])
         end
