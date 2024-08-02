@@ -33,11 +33,7 @@
 
     @testset "f(x) -> x, x~EF, out~EF with Binomial" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
-        inputs_outputs = [
-            (Binomial(3, 0.9), Binomial(7, 0.4)),
-            (Binomial(8, 0.9), Binomial(8, 0.9)),
-            (Binomial(5, 0.01), Binomial(6, 0.98)),
-        ]
+        inputs_outputs = [(Binomial(3, 0.9), Binomial(7, 0.4)), (Binomial(8, 0.9), Binomial(8, 0.9)), (Binomial(5, 0.01), Binomial(6, 0.98))]
         for input_output in inputs_outputs
             m_in = first(input_output)
             m_out = last(input_output)
@@ -54,9 +50,9 @@
     @testset "f(x) -> x, x~EF, out~EF with Categorical" begin
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         inputs_outputs = [
-            (Categorical([1/4, 1/4, 1/2]), Categorical([1/2, 1/8, 3/8])),
-            (Categorical([1/8, 1/8, 3/4]), Categorical([1/16, 13/16, 1/8])),
-            (Categorical([1/7, 1/7, 2/7, 3/7]), Categorical([1/8, 2/8, 2/8, 3/8]))
+            (Categorical([1 / 4, 1 / 4, 1 / 2]), Categorical([1 / 2, 1 / 8, 3 / 8])),
+            (Categorical([1 / 8, 1 / 8, 3 / 4]), Categorical([1 / 16, 13 / 16, 1 / 8])),
+            (Categorical([1 / 7, 1 / 7, 2 / 7, 3 / 7]), Categorical([1 / 8, 2 / 8, 2 / 8, 3 / 8]))
         ]
         for input_output in inputs_outputs
             m_in = first(input_output)
