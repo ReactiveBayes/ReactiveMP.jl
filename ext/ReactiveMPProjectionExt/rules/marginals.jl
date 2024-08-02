@@ -8,12 +8,13 @@ import BayesBase: AbstractContinuousGenericLogPdf
     g = getnodefn(meta, Val(:out))
 
     m_in = first(m_ins)
+    ef_in = convert(ExponentialFamilyDistribution, m_in)
     # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
     F = promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf)
     f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
 
     T = ExponentialFamily.exponential_family_typetag(m_in)
-    prj = ProjectedTo(T, size(m_in)...; parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    prj = ProjectedTo(T, size(m_in)...; conditioner = getconditioner(ef_in), parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
     q = project_to(prj, f, first(m_ins))
 
     return FactorizedJoint((q,))
@@ -39,10 +40,10 @@ end
             df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
                 (z) -> logp_nc_drop_index(z, i, pre_samples)
             end
-            logp = convert(promote_variate_type(variate_form(typeof(first(m_ins))), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
-
+            logp = convert(promote_variate_type(variate_form(typeof(m_ins[i])), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
+            conditioner = getconditioner(convert(ExponentialFamilyDistribution, m_ins[i]))
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
 
             return project_to(prj, logp, m_ins[i])
         end
