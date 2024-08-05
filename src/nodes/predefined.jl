@@ -31,6 +31,7 @@ include("predefined/probit.jl")
 include("predefined/poisson.jl")
 include("predefined/continuous_transition.jl")
 include("predefined/half_normal.jl")
+include("predefined/binomial.jl")
 
 include("predefined/flow/flow.jl")
 include("predefined/delta/delta.jl")
