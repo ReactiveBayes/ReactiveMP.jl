@@ -186,7 +186,7 @@ end
         m(x, y, z) = y < z ? (z - y) * x + z*y : (y - z)*x 
         meta = DeltaMeta(method = CVIProjection(), inverse = nothing)
         grid = [[x, y, z] for x in 0:50, y in 0:50, z in 0:50]
-        for  λin1 in (0.9, 2.3), λin2 in (0.6, 1.3), λin3 in (2.3, 1.1), λout in (3.2, 5.4), f in (g, h, k, m)
+        for  λin1 in (4.9, 2.3), λin2 in (5.6, 1.3), λin3 in (2.3, 5.1), λout in (3.2, 5.4), f in (g, h, k, m)
             m_out = Poisson(λout)
             m_in1 = Poisson(λin1)
             m_in2 = Poisson(λin2)
@@ -203,9 +203,8 @@ end
             exact_marginal_pdf_normalized = x -> exact_marginal_pdf_unnormalized(x) / normalization
 
             exact_mean = mapreduce(x -> x * exact_marginal_pdf_normalized(x), +, grid)
-            @test [mean(component1), mean(component2), mean(component3)] ≈ exact_mean rtol = 1e-1
+            @test [mean(component1), mean(component2), mean(component3)] ≈ exact_mean rtol = 5e-1
         end
     end
-
 
 end

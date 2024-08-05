@@ -44,7 +44,7 @@ getcviinitialnaturalparameters(cvipe::CVIProjectionEssentials) = cvipe.initial_n
 
 Base.@kwdef struct CVIProjectionOptional{OS, MS, R} 
     out_samples_no::OS = 1000
-    marginal_samples_no::MS = (1000, 5)
+    marginal_samples_no::MS = (1000, 40)
     rng::R = Random.MersenneTwister(42)
 end
 getcvioutsamplesno(cvipo::CVIProjectionOptional) = cvipo.out_samples_no
