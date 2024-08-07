@@ -111,30 +111,6 @@ end
 
 RequireMessageFunctionalDependencies(; kwargs...) = RequireMessageFunctionalDependencies((; kwargs...))
 
-function message_dependencies(dependencies::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-
-    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
-    depindex = findfirst((i) -> i === iindex, dependencies.indices)
-
-    # If we have `depindex` in our `indices` we include it in our list of functional dependencies. It effectively forces rule to require inbound message
-    if depindex !== nothing
-        # `mapindex` is a lambda function here
-        output     = messagein(nodeinterfaces[iindex])
-        start_with = dependencies.start_with[depindex]
-        # Initialise now, if message has not been initialised before and `start_with` element is not empty
-        if isnothing(getrecent(output)) && !isnothing(start_with)
-            setmessage!(output, start_with)
-        end
-        return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), varcluster)
-    else
-        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    end
-end
-
-function marginal_dependencies(::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-end
-
 function functional_dependencies(dependencies::RequireMessageFunctionalDependencies, factornode, interface, iindex)
     specification = dependencies.specification
 
