@@ -182,3 +182,7 @@ include("delta/cvi/out.jl")
 include("delta/cvi/marginals.jl")
 
 include("half_normal/out.jl")
+
+include("binomial/n.jl")
+include("binomial/k.jl")
+include("binomial/p.jl")
