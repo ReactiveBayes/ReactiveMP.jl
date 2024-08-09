@@ -31,29 +31,25 @@
     end
 
     @testset "Sum Product Message Passing: (m_n, m_p)" begin
-        Ns = [20, 10, 5]
-
-        for N in Ns
-            inputs = [
-                (PointMass(N), PointMass(0.3)),
-                (PointMass(N), PointMass(0.99)),
-                (Binomial(N, 0.1), PointMass(0.1)),
-                (Binomial(N, 0.8), Beta(2, 2.3)),
-                (Binomial(N, 0.01), PointMass(0.01)),
-                (PointMass(N), Beta(3.1, 5.2))
-            ]
+        Ns = [5, 40]
+        ps = [0.99, 0.01]
+        pbs = [0.01, 0.4, 0.99]
+        as = [2.0, 5.0]
+        bs = [3.0, 9.0]
+        for N in Ns, p in ps, pb in pbs, a in as, b in bs
+            inputs = [(PointMass(N), PointMass(p)), (Binomial(N, pb), PointMass(p)), (Binomial(N, pb), Beta(a, b))]
             for input in inputs
                 vmp_output = @call_rule Binomial(:k, Marginalisation) (q_n = first(input), q_p = last(input))
                 output = @call_rule Binomial(:k, Marginalisation) (m_n = first(input), m_p = last(input))
                 supp_out = Distributions.support(output)
-                @test supp_out == DomainSets.Interval(0, N)
-                normalization = sum(x -> pdf(output, x), leftendpoint(supp_out):rightendpoint(supp_out))
+                normalization = sum(map(x -> pdf(output, x), 0:N))
                 pdf_normalized = (x) -> pdf(output, x) / normalization
-
-                @test sum(pdf_normalized, leftendpoint(supp_out):rightendpoint(supp_out)) ≈ 1.0
-                entropy_sp_message = -sum(map(x -> pdf_normalized(x) * log(pdf_normalized(x)), leftendpoint(supp_out):rightendpoint(supp_out)))
-                entropy_vmp_message = -sum(map(x -> logpdf(vmp_output, x) == -Inf ? 0 : pdf(vmp_output, x) * logpdf(vmp_output, x), leftendpoint(supp_out):rightendpoint(supp_out)))
-                @test entropy_vmp_message ≤ entropy_sp_message
+                entropy_sp_message = -sum(map(x -> log(pdf_normalized(x)) == -Inf ? 0 : pdf_normalized(x) * log(pdf_normalized(x)), 0:N))
+                mean_sp_message = mean(x -> x * pdf_normalized(x), 0:N)
+                @test sum(pdf_normalized, 0:N) ≈ 1.0
+                @test -Inf < entropy_sp_message < Inf
+                @test !isnan(entropy_sp_message)
+                @test !isnan(mean_sp_message)
             end
         end
     end

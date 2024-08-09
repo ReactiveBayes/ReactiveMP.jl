@@ -18,15 +18,24 @@ using LogExpFunctions
     return ef
 end
 
+@rule Binomial(:n, Marginalisation) (m_k::PointMass, m_p::Any) = begin
+    k = BayesBase.getpointmass(m_k)
+    grid = 0:0.001:1
+    logμ_tilde = (n, p) -> logpdf(Binomial(n, p), k)
+    logμ_n = (n) -> logsumexp(map(p -> logμ_tilde(n, p) == -Inf || logpdf(m_p, p) == -Inf ? 0 : logμ_tilde(n, p) + logpdf(m_p, p), grid))
+
+    return DiscreteUnivariateLogPdf(DomainSets.ClosedInterval(k:Int(k + floor(logfactorial(k)))), logμ_n)
+end
+
 @rule Binomial(:n, Marginalisation) (m_k::Any, m_p::Any) = begin
-    lb = if typeof(m_k) <: PointMass
-        BayesBase.getpointmass(m_k)
-    elseif typeof(m_k) <: ExponentialFamilyDistribution
+    ub = if typeof(m_k) <: ExponentialFamilyDistribution
         maximum(getsupport(m_k))
     else
         maximum(Distributions.support(m_k))
     end
-    μ_tilde = (n, p) -> sum(map(k -> pdf(Binomial(n, p), k) * pdf(m_k, k), 0:lb))
-    logμ_n = (n) -> logsumexp(map(p -> log(μ_tilde(n, p)), 0:0.001:1))
-    return DiscreteUnivariateLogPdf(DomainSets.Interval(lb, Int(lb + floor(logfactorial(lb)))), logμ_n)
+    grid = 0:0.01:1
+    logμ_tilde = (n, p) -> logsumexp(map(k -> logpdf(Binomial(n, p), k) == -Inf || logpdf(m_k, k) == -Inf ? 0 : logpdf(Binomial(n, p), k) + logpdf(m_k, k), 0:ub))
+    logμ_n = (n) -> logsumexp(map(p -> logμ_tilde(n, p) == -Inf || logpdf(m_p, p) == -Inf ? 0 : logμ_tilde(n, p) + logpdf(m_p, p), grid))
+
+    return DiscreteUnivariateLogPdf(DomainSets.ClosedInterval(ub:Int(ub + floor(logfactorial(ub)))), logμ_n)
 end
