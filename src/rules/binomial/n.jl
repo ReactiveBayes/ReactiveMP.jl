@@ -18,9 +18,16 @@ using LogExpFunctions
     return ef
 end
 
+@rule Binomial(:n, Marginalisation) (m_k::PointMass, m_p::PointMass) = begin
+    k = BayesBase.getpointmass(m_k)
+    p = BayesBase.getpointmass(m_p)
+
+    return DiscreteUnivariateLogPdf(DomainSets.ClosedInterval(k:Int(k + floor(logfactorial(k)))), n -> logpdf(Binomial(n, p),k))
+end
+
 @rule Binomial(:n, Marginalisation) (m_k::PointMass, m_p::Any) = begin
     k = BayesBase.getpointmass(m_k)
-    grid = 0:0.001:1
+    grid = 0:0.01:1
     logμ_tilde = (n, p) -> logpdf(Binomial(n, p), k)
     logμ_n = (n) -> logsumexp(map(p -> logμ_tilde(n, p) == -Inf || logpdf(m_p, p) == -Inf ? 0 : logμ_tilde(n, p) + logpdf(m_p, p), grid))
 

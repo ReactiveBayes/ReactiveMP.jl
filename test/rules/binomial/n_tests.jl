@@ -35,11 +35,12 @@
             for input in inputs
                 output = @call_rule Binomial(:n, Marginalisation) (m_k = first(input), m_p = last(input))
                 supp_out = support(output)
-                @test supp_out == DomainSets.Interval(N, N + floor(logfactorial(N)))
                 normalization = sum(x -> pdf(output, x), leftendpoint(supp_out):rightendpoint(supp_out))
                 pdf_normalized = (x) -> pdf(output, x) / normalization
                 entropy_sp_message = -sum(map(x -> pdf_normalized(x) * log(pdf_normalized(x)), leftendpoint(supp_out):rightendpoint(supp_out)))
                 mean_sp_message = sum(map(x -> pdf_normalized(x) * x, leftendpoint(supp_out):rightendpoint(supp_out)))
+                @test typeof(output) <: DiscreteUnivariateLogPdf
+                @test supp_out == DomainSets.Interval(N, N + floor(logfactorial(N)))
                 @test sum(pdf_normalized, leftendpoint(supp_out):rightendpoint(supp_out)) ≈ 1.0
                 @test -Inf < entropy_sp_message < Inf
                 @test !isnan(entropy_sp_message)
