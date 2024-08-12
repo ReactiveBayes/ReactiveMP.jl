@@ -1,4 +1,5 @@
 using LogExpFunctions
+##VMP
 @rule Binomial(:n, Marginalisation) (q_k::Any, q_p::Any) = begin
     basemeasure = n -> ReactiveMP.expectation_logbinomial(q_k, PointMass(n))
     ss = (identity,)
@@ -18,6 +19,7 @@ using LogExpFunctions
     return ef
 end
 
+##Sum-Product
 @rule Binomial(:n, Marginalisation) (m_k::PointMass, m_p::PointMass) = begin
     k = BayesBase.getpointmass(m_k)
     p = BayesBase.getpointmass(m_p)
@@ -28,8 +30,7 @@ end
 @rule Binomial(:n, Marginalisation) (m_k::PointMass, m_p::Any) = begin
     k = BayesBase.getpointmass(m_k)
     grid = 0:0.01:1
-    logμ_tilde = (n, p) -> logpdf(Binomial(n, p), k)
-    logμ_n = (n) -> logsumexp(map(p -> logμ_tilde(n, p) == -Inf || logpdf(m_p, p) == -Inf ? 0 : logμ_tilde(n, p) + logpdf(m_p, p), grid))
+    logμ_n = (n) -> log(mapreduce(p -> pdf(Binomial(n, p), k)* pdf(m_p, p), +, grid)) - log(length(grid))
 
     return DiscreteUnivariateLogPdf(DomainSets.ClosedInterval(k:Int(k + ceil(logfactorial(k)))), logμ_n)
 end
@@ -41,8 +42,7 @@ end
         maximum(Distributions.support(m_k))
     end
     grid = 0:0.01:1
-    logμ_tilde = (n, p) -> logsumexp(map(k -> logpdf(Binomial(n, p), k) == -Inf || logpdf(m_k, k) == -Inf ? 0 : logpdf(Binomial(n, p), k) + logpdf(m_k, k), 0:ub))
-    logμ_n = (n) -> logsumexp(map(p -> logμ_tilde(n, p) == -Inf || logpdf(m_p, p) == -Inf ? 0 : logμ_tilde(n, p) + logpdf(m_p, p), grid))
-
+    μ_tilde = (n, p) -> mapreduce(k -> pdf(Binomial(n,p),k)*pdf(m_k, k) , +, 0:ub )
+    logμ_n = (n) -> log(mapreduce(p -> μ_tilde(n, p)* pdf(m_p, p), + , grid)) - log(length(grid))
     return DiscreteUnivariateLogPdf(DomainSets.ClosedInterval(ub:Int(ub + ceil(logfactorial(ub)))), logμ_n)
 end

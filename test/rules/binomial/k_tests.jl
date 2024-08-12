@@ -23,10 +23,12 @@
             output = @call_rule Binomial(:k, Marginalisation) (q_n = first(input), q_p = last(input))
             @test sum(pdf(output, getsupport(output))) ≈ 1.0
             @test getsupport(output) == support(first(input))
-
+            
             mean_output = derivative(x -> getlogpartition(output)(x), η[1])
             ## We dont expect the result to be Binomial so mean should not be approximately the Binomial approximation
             @test mean_output ≉ mean(binom_approximate)
+            @test mean_output ≤ first(input).n
+            @test mean_output ≈ sum(x -> pdf(output, x) * x, getsupport(output))
         end
     end
 
@@ -50,6 +52,7 @@
                 @test -Inf < entropy_sp_message < Inf
                 @test !isnan(entropy_sp_message)
                 @test !isnan(mean_sp_message)
+                @test mean_sp_message ≤ N
             end
         end
     end

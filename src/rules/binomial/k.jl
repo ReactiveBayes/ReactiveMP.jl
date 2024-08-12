@@ -20,8 +20,7 @@ end
     n = BayesBase.getpointmass(m_n)
     supp = DomainSets.ClosedInterval(0:n)
     grid = 0:0.01:1
-    logμ_tilde = (k, p) -> logpdf(Binomial(n, p), k)
-    logμ_k = (k) -> logsumexp(map(p -> logμ_tilde(k, p) + logpdf(m_p, p) - log(length(grid)), grid))
+    logμ_k = (k) -> mapreduce(p -> pdf(Binomial(n,p),k)*pdf(m_p, p), +, grid) - log(length(grid))
 
     return DiscreteUnivariateLogPdf(supp, logμ_k)
 end
@@ -35,8 +34,8 @@ end
 
     supp = DomainSets.ClosedInterval(0:maximum(supp_n))
     grid = 0:0.01:1
-    logμ_tilde = (k, p) -> logsumexp(map(n -> logpdf(Binomial(n, p), k) == -Inf || logpdf(m_n, n) == -Inf ? 0 : logpdf(Binomial(n, p), k) + logpdf(m_n, n), k:maximum(supp_n)))
-    logμ_k = (k) -> logsumexp(map(p -> logμ_tilde(k, p) + logpdf(m_p, p) - log(length(grid)), grid))
+    μ_tilde = (k, p) -> mapreduce(n ->  pdf(Binomial(n, p), k) * pdf(m_n, n), +, k:maximum(supp_n))
+    logμ_k = (k) -> log(mapreduce(p -> μ_tilde(k, p)*pdf(m_p, p), +, grid)) - log(length(grid))
 
     return DiscreteUnivariateLogPdf(supp, logμ_k)
 end

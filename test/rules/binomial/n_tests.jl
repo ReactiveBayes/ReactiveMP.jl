@@ -1,6 +1,6 @@
 @testitem "rules:Binomial:n" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, DomainSets
-    using SpecialFunctions
+    using SpecialFunctions, ForwardDiff
     import ReactiveMP: @test_rules
 
     @testset "Variational Message Passing: (q_k, q_p)" begin
@@ -20,6 +20,7 @@
                 @test supp_out == N:(N + ceil(logfactorial(N)))
                 @test sum(x -> pdf(output, x), supp_out) ≈ 1.0
                 @test mean_output ≥ N
+                @test mean_output ≈ first(ForwardDiff.gradient(getlogpartition(output), collect(getnaturalparameters(output))))
             end
         end
     end
