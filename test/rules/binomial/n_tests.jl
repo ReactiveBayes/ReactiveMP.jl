@@ -16,9 +16,10 @@
             for input in inputs
                 output = @call_rule Binomial(:n, Marginalisation) (q_k = first(input), q_p = last(input))
                 supp_out = getsupport(output)
-                mean_output = sum(x -> pdf(output, x) * x, supp_out)
+                pdf_evaluated = pdf(output,supp_out)
+                mean_output = sum(map((x,p) -> p * x, supp_out, pdf_evaluated))
                 @test supp_out == N:(N + ceil(logfactorial(N)))
-                @test sum(x -> pdf(output, x), supp_out) ≈ 1.0
+                @test sum(pdf_evaluated) ≈ 1.0
                 @test mean_output ≥ N
                 @test mean_output ≈ first(ForwardDiff.gradient(getlogpartition(output), collect(getnaturalparameters(output))))
             end
