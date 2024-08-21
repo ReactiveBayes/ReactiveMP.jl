@@ -7,8 +7,19 @@ struct DivisionOf{A, B}
     denumerator::B
 end
 
+(divisionof::DivisionOf)(x) = logpdf(divisionof, x)
 BayesBase.insupport(d::DivisionOf, p) = insupport(d.numerator, p) && insupport(d.denumerator, p)
 BayesBase.logpdf(d::DivisionOf, p) = logpdf(d.numerator, p) - logpdf(d.denumerator, p)
+
+function BayesBase.prod(::GenericProd, something::DivisionOf, division::DivisionOf) 
+    if division.denumerator == something.numerator
+        return DivisionOf(division.numerator, something.denumerator)
+    elseif division.numerator == something.denumerator
+        return DivisionOf(something.numerator, division.denumerator)
+    else
+        return ProductOf(something, division)
+    end
+end
 
 function BayesBase.prod(::GenericProd, something, division::DivisionOf) 
     return prod(GenericProd(), division, something)
@@ -20,6 +31,10 @@ function BayesBase.prod(::GenericProd, division::DivisionOf, something)
     else
         return ProductOf(division, something)
     end
+end
+
+function BayesBase.prod(::GenericProd, productof::ProductOf, divisionof::DivisionOf) 
+    return ProductOf(productof, divisionof)
 end
 
 include("layout/cvi_projection.jl")
