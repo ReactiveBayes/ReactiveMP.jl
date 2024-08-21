@@ -15,29 +15,12 @@ using ForwardDiff
     q_out_components      = components(q_out)
     Ts                    = map(ExponentialFamily.exponential_family_typetag, q_out_components)
     
-    q_out_efs              = map(component -> convert(ExponentialFamilyDistribution, component), q_out_components)
-    conditioners           = map(getconditioner, q_out_efs)
-    manifolds              = map((T, conditioner, q_out_ef) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, size(mean(q_out_ef)), conditioner), Ts, conditioners, q_out_efs)
-    natural_parameters_efs = map((m, p) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(m,p) ,manifolds, map(getnaturalparameters, q_out_efs))
+    conditioners           = map(getconditioner, map(component -> convert(ExponentialFamilyDistribution, component), q_out_components))
     ests                   = Vector{ExponentialFamilyDistribution}(undef, length(q_out_efs))
     
-    ## Option 1
     @inbounds @views for i in eachindex(q_out_efs)
-        manifold = getindex(manifolds, i)
-        naturalparameters = getindex(natural_parameters_efs,i)
-        f = let  qsamples = q_out_samples[i, :]
-            (M, p) -> begin
-                return targetfn(M, p, qsamples)
-            end
-        end
-        g = let  qsamples = q_out_samples[i, :]
-            (M, p) -> begin 
-                return grad_targetfn(M, p, qsamples)
-            end
-        end
-        ests[i] = convert(ExponentialFamilyDistribution, manifold,
-            ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, naturalparameters; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
-        )
+        prj = ProjectedTo(Ts[i], size(first(q_out_samples[i, :]))...; conditioner = conditioners[i], parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+        ests[i]  = project_to(prj, q_out_samples[i, :]) 
     end
     
   
@@ -58,23 +41,17 @@ end
     number_out_samples    = getcvioutsamplesno(method)
     q_ins_components      = components(q_ins)
     q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
-   
-    samples               = map(ReactiveMP.cvilinearize, map(q_in -> rand(rng, q_in, number_out_samples), q_ins_sample_friendly))
-    q_out_samples         = map(x -> node_function(x...), zip(samples...))
-    
+  
+    samples       = map(ReactiveMP.cvilinearize, map(q_in -> rand(rng, q_in, method.outsamples), q_ins_sample_friendly))
+    q_out_samples = map(x -> node_function(x...), zip(samples...))
+
     T           = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
     conditioner = getconditioner(q_out_ef)
-    manifold    = ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, size(mean(q_out_ef)), conditioner)
-    nat_params  = ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(manifold,getnaturalparameters(q_out_ef)) 
-
-    f = (M, p) -> targetfn(M, p, q_out_samples) 
-    g = (M, p) -> grad_targetfn(M , p, q_out_samples)
-  
-    est = convert(ExponentialFamilyDistribution, manifold,
-        ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, nat_params; 
-            direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
-    )
+    
+    prj = ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    est  = project_to(prj, q_out_samples)
+    
     return DivisionOf(est, m_out)
 end
 
@@ -105,18 +82,10 @@ end
         modify_vectorized_samples_with_variate_type(variate_form(T_in), samples_hmc, dim_in)
     end
 
-    out_samples        = modify_vectorized_samples_with_variate_type(var_form, map(x -> node_function(x), samples), dim_out)
+    out_samples = modify_vectorized_samples_with_variate_type(var_form, map(x -> node_function(x), samples), dim_out)
 
-    f = (M, p) -> targetfn(M, p, out_samples)
-    g = (M, p) -> grad_targetfn(M, p, out_samples)
-    
-    out_manifold      = ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T_out, dim_out, conditioner_out)
-    initial_natparams = initialize_cvi_natural_parameters(method, rng, out_manifold,1,:out)
-    ef_out = convert(ExponentialFamilyDistribution, out_manifold,
-            ExponentialFamilyProjection.Manopt.gradient_descent(out_manifold, f, g, initial_natparams; 
-                    direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
-        )
-
+    prj = ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner_out, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    est  = project_to(prj, q_out_samples)
     dist_out = convert(Distribution, ef_out)
     return dist_out
 end
@@ -146,20 +115,14 @@ end
     log_target_density  = LogTargetDensity(sum_dim_in, joint_logpdf)
 
     initial_sample      = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k, :in),vcat, m_ins, 1:N)
-    initial_natparams   = initialize_cvi_natural_parameters(method, rng, out_manifold,1,:out)
         
     samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)
     out_samples        = modify_vectorized_samples_with_variate_type(var_form_out, map(x -> node_function(ReactiveMP.__splitjoin(x, dims_in)...), samples), dim_out)
 
-    f = (M, p) -> targetfn(M, p, out_samples)
-    g = (M, p) -> grad_targetfn(M, p, out_samples)
-    
-    
-    ef_out = convert(ExponentialFamilyDistribution, out_manifold,
-            ExponentialFamilyProjection.Manopt.gradient_descent(out_manifold, f, g, initial_natparams; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
-        )
+    prj = ProjectedTo(T, size(first(out_samples))...; conditioner = conditioner_out, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    est  = project_to(prj, out_samples)
 
-    dist_out = convert(Distribution, ef_out)
+    dist_out = convert(Distribution, est)
     return dist_out
 
 end

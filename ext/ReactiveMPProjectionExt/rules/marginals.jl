@@ -14,7 +14,6 @@ import BayesBase: AbstractContinuousGenericLogPdf
         end
     prj = ProjectedTo(T, size(m_in)...; conditioner = conditioner, parameters = getcviprojectionparameters(method))
     q = project_to(prj, (z) -> logpdf(m_out, g(z)), m_in)
-    # q = project_to(prj, (z) -> logpdf(m_out, g(z)) + logpdf(m_in,z)) ## this is still valid if m_in is not in ef
 
     return FactorizedJoint((q,))
 end
@@ -22,14 +21,14 @@ end
 #We would need a mixed HMC method to be able to sample from mixed continuous and discrete 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
     nodefunction = getnodefn(meta, Val(:out))
-    # marginal = try
-    #     @show "try drop"
-    #     cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
-    # catch
-    #     @show "try hmc"
-    #     cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
-    # end
-    marginal = cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
+    marginal = try
+        @show "try drop"
+        cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
+    catch
+        @show "try hmc"
+        cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
+    end
+    # marginal = cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
     return marginal
 end
 
@@ -38,7 +37,7 @@ function cvi_compute_in_marginals(based::HMCBased,node_function, m_out, m_ins, m
     rng                 = getcvirng(method)
     number_marginal_samples  = getcvimarginalsamplesno(based, method)
 
-    var_form_ins, dims_in, sum_dim_in, start_indices, manifolds, natural_parameters_efs, initial_sample = __auxiliary_variables(rng, m_ins, method, N)
+    var_form_ins, dims_in, sum_dim_in, start_indices, Ts, initial_sample, conditioners = __auxiliary_variables(rng, m_ins, method, N)
     joint_logpdf = (x) -> logpdf(m_out, node_function(ReactiveMP.__splitjoin(x, dims_in)...)) + mapreduce((m_in,k,T) -> log_target_adjusted_log_pdf(T, m_in, getindex(dims_in, k))(ReactiveMP.__splitjoinelement(x, getindex(start_indices, k), getindex(dims_in, k))), +, m_ins, 1:N, var_form_ins)
     log_target_density  = LogTargetDensity(sum_dim_in, joint_logpdf)
 
@@ -46,22 +45,8 @@ function cvi_compute_in_marginals(based::HMCBased,node_function, m_out, m_ins, m
     samples_collection = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims_in, k)), samples), 1:N)
     
     function projection_to_ef(i)
-        manifold = getindex(manifolds, i)
-        naturalparameters = getindex(natural_parameters_efs,i)
-        f = let @views sample = samples_collection[i]
-            (M, p) -> begin
-                return targetfn(M, p, sample)
-            end
-        end
-        g = let @views sample = samples_collection[i]
-            (M, p) -> begin 
-                return grad_targetfn(M, p, sample)
-            end
-        end
-        return convert(ExponentialFamilyDistribution, manifold,
-            ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, naturalparameters; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
-        )
-     
+        prj = ProjectedTo(Ts[i], size(first(samples_collection[i]))...; conditioner = conditioners[i], parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+        return project_to(prj, samples_collection[i])
     end
     result = FactorizedJoint(map(d -> convert(Distribution, d), ntuple(i -> projection_to_ef(i), N)))
     return result
@@ -72,7 +57,7 @@ function cvi_compute_in_marginals(based::HMCBased, node_function, m_out::Factori
     method              = ReactiveMP.getmethod(meta)
     rng                 = getcvirng(method)
     number_marginal_samples  = getcvimarginalsamplesno(based, method)
-    var_form_ins, dims_in, sum_dim_in, start_indices, manifolds, natural_parameters_efs, initial_sample = __auxiliary_variables(rng, m_ins, method, N)
+    var_form_ins, dims_in, sum_dim_in, start_indices, Ts, initial_sample, conditioners = __auxiliary_variables(rng, m_ins, method, N)
     
     components_out   = components(m_out)
     components_length = length(components_out)
@@ -92,22 +77,8 @@ function cvi_compute_in_marginals(based::HMCBased, node_function, m_out::Factori
     samples_collection = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims_in, k)), samples), 1:N)
     
     function projection_to_ef(i)
-        manifold = getindex(manifolds, i)
-        naturalparameters = getindex(natural_parameters_efs,i)
-        f = let @views sample = samples_collection[i]
-            (M, p) -> begin
-                return targetfn(M, p, sample)
-            end
-        end
-        g = let @views sample = samples_collection[i]
-            (M, p) -> begin 
-                return grad_targetfn(M, p, sample)
-            end
-        end
-        return convert(ExponentialFamilyDistribution, manifold,
-            ExponentialFamilyProjection.Manopt.gradient_descent(manifold, f, g, naturalparameters; direction = ExponentialFamilyProjection.BoundedNormUpdateRule(1))
-        )
-     
+        prj = ProjectedTo(Ts[i], size(first(samples_collection[i]))...; conditioner = conditioners[i], parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+        return project_to(prj, samples_collection[i])
     end
     result = FactorizedJoint(map(d -> convert(Distribution, d), ntuple(i -> projection_to_ef(i), N)))
     return result
@@ -138,9 +109,9 @@ function cvi_compute_in_marginals(based::DropIndicesBased, nodefunction, m_out, 
                 (z) -> logp_nc_drop_index(z, i, pre_samples)
             end
             logp = convert(promote_variate_type(variate_form(typeof(m_ins[i])), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
-            ef_m_in = convert(ExponentialFamilyDistribution, m_ins[i])
+            conditioner = getconditioner(convert(ExponentialFamilyDistribution, m_ins[i]))
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=getconditioner(ef_m_in), parameters = prj_params)
+            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
 
             return project_to(prj, logp, m_ins[i])
         end

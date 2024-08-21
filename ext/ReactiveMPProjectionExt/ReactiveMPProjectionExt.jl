@@ -57,6 +57,7 @@ struct DivisionOf{A, B}
     denumerator::B
 end
 
+(divisionof::DivisionOf)(x) = logpdf(divisionof, x)
 BayesBase.insupport(d::DivisionOf, p) = insupport(d.numerator, p) && insupport(d.denumerator, p)
 BayesBase.logpdf(d::DivisionOf, p) = logpdf(d.numerator, p) - logpdf(d.denumerator, p)
 
@@ -132,6 +133,16 @@ modify_vectorized_samples_with_variate_type(::Type{Matrixvariate}, samples,dims)
 initialize_cvi_samples(method, rng, m_in, k, symbol) = !isnothing(getcviinitialsamples(method)[symbol]) ? getindex(getcviinitialsamples(method)[symbol], k) : rand(rng, m_in) 
 initialize_cvi_natural_parameters(method, rng, manifold, k, symbol) = !isnothing(getcviinitialnaturalparameters(method)[symbol]) ? ExponentialFamilyProjection.partition_point(manifold,getindex(getcviinitialnaturalparameters(method)[symbol], k)) : rand(rng, manifold)
 
+function BayesBase.prod(::GenericProd, something::DivisionOf, division::DivisionOf) 
+    if division.denumerator == something.numerator
+        return DivisionOf(division.numerator, something.denumerator)
+    elseif division.numerator == something.denumerator
+        return DivisionOf(something.numerator, division.denumerator)
+    else
+        return ProductOf(something, division)
+    end
+end
+
 function BayesBase.prod(::GenericProd, something, division::DivisionOf) 
     return prod(GenericProd(), division, something)
 end
@@ -163,8 +174,6 @@ function __auxiliary_variables(rng, m_ins, method, N)
         start_indices          = append!([1], cum_lengths[1:N-1])
         conditioners           = map(getconditioner, m_ins_efs)
         Ts                     = map(ExponentialFamily.exponential_family_typetag, m_ins_efs)
-        manifolds              = map((T, conditioner,m_in_ef) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, size(mean(m_in_ef)), conditioner), Ts, conditioners, m_ins_efs)
-        natural_parameters_efs = map((m, p) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.partition_point(m,p) ,manifolds, map(getnaturalparameters, m_ins_efs))
         initial_sample         = mapreduce((m_in,k) -> initialize_cvi_samples(method, rng, m_in, k, :in), vcat, m_ins, 1:N)
     else
         var_form_ins        = map(variate_form, getcviprojectiontypes(method)[:in])
@@ -175,19 +184,17 @@ function __auxiliary_variables(rng, m_ins, method, N)
         start_indices       = append!([1], cum_lengths[1:N-1])
         conditioners        = getcviprojectionconditioners(method)[:in]
         Ts                  = getcviprojectiontypes(method)[:in]
-        manifolds = if !isnothing(conditioners)
-                map((T, conditioner, dim) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, dim, conditioner), Ts, conditioners, dims_in)
-            else
-                map((T, dim) -> ExponentialFamilyProjection.ExponentialFamilyManifolds.get_natural_manifold(T, dim), Ts, dims_in)
-            end
-        natural_parameters_efs = map((manifold,k) -> initialize_cvi_natural_parameters(method, rng, manifold, k, :in), manifolds, 1:N)
         initial_sample         = rand(rng, sum_dim_in)
     end
 
-    return var_form_ins, dims_in, sum_dim_in, start_indices, manifolds, natural_parameters_efs, initial_sample
+    return var_form_ins, dims_in, sum_dim_in, start_indices, Ts, initial_sample, conditioners
 
 end
 
+
+function BayesBase.prod(::GenericProd, productof::ProductOf, divisionof::DivisionOf) 
+    return ProductOf(productof, divisionof)
+end
 
 include("layout/cvi_projection.jl")
 include("rules/in.jl")
