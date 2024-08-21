@@ -61,9 +61,6 @@ end
 BayesBase.insupport(d::DivisionOf, p) = insupport(d.numerator, p) && insupport(d.denumerator, p)
 BayesBase.logpdf(d::DivisionOf, p) = logpdf(d.numerator, p) - logpdf(d.denumerator, p)
 
-function (DO::DivisionOf)(x)
-    return logpdf(DO, x)
-end
 
 
 # cost function
@@ -155,7 +152,6 @@ function BayesBase.prod(::GenericProd, division::DivisionOf, something)
     end
 end
 
-BayesBase.prod(::GenericProd, division_left::DivisionOf, division_right::DivisionOf) = ProductOf(division_left, division_right)
 
 function __auxiliary_variables(rng, m_ins, method, N)
 
@@ -184,7 +180,7 @@ function __auxiliary_variables(rng, m_ins, method, N)
         start_indices       = append!([1], cum_lengths[1:N-1])
         conditioners        = getcviprojectionconditioners(method)[:in]
         Ts                  = getcviprojectiontypes(method)[:in]
-        initial_sample         = rand(rng, sum_dim_in)
+        initial_sample      = rand(rng, sum_dim_in)
     end
 
     return var_form_ins, dims_in, sum_dim_in, start_indices, Ts, initial_sample, conditioners

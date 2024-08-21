@@ -22,11 +22,10 @@ end
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
     nodefunction = getnodefn(meta, Val(:out))
     marginal = try
-        @show "try drop"
         cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
     catch
-        @show "try hmc"
         cvi_compute_in_marginals(HMCBased(), nodefunction, m_out, m_ins, meta, N)
+        
     end
     # marginal = cvi_compute_in_marginals(DropIndicesBased(), nodefunction, m_out, m_ins, meta, N)
     return marginal
@@ -45,7 +44,7 @@ function cvi_compute_in_marginals(based::HMCBased,node_function, m_out, m_ins, m
     samples_collection = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims_in, k)), samples), 1:N)
     
     function projection_to_ef(i)
-        prj = ProjectedTo(Ts[i], size(first(samples_collection[i]))...; conditioner = conditioners[i], parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+        prj = ProjectedTo(Ts[i], size(first(samples_collection[i]))...; conditioner = conditioners === nothing ? nothing : conditioners[i], parameters = something(getcviprojectionparameters(method), ExponentialFamilyProjection.DefaultProjectionParameters()))
         return project_to(prj, samples_collection[i])
     end
     result = FactorizedJoint(map(d -> convert(Distribution, d), ntuple(i -> projection_to_ef(i), N)))
@@ -77,7 +76,7 @@ function cvi_compute_in_marginals(based::HMCBased, node_function, m_out::Factori
     samples_collection = map(k -> map((sample) -> ReactiveMP.__splitjoinelement(sample, getindex(start_indices,k), getindex(dims_in, k)), samples), 1:N)
     
     function projection_to_ef(i)
-        prj = ProjectedTo(Ts[i], size(first(samples_collection[i]))...; conditioner = conditioners[i], parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+        prj = ProjectedTo(Ts[i], size(first(samples_collection[i]))...; conditioner = conditioners[i], parameters = something(getcviprojectionparameters(method), ExponentialFamilyProjection.DefaultProjectionParameters()))
         return project_to(prj, samples_collection[i])
     end
     result = FactorizedJoint(map(d -> convert(Distribution, d), ntuple(i -> projection_to_ef(i), N)))
@@ -111,7 +110,7 @@ function cvi_compute_in_marginals(based::DropIndicesBased, nodefunction, m_out, 
             logp = convert(promote_variate_type(variate_form(typeof(m_ins[i])), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
             conditioner = getconditioner(convert(ExponentialFamilyDistribution, m_ins[i]))
             T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=conditioner, parameters = something(getcviprojectionparameters(method), ExponentialFamilyProjection.DefaultProjectionParameters()))
 
             return project_to(prj, logp, m_ins[i])
         end

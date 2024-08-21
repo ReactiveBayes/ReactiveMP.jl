@@ -19,7 +19,7 @@ using ForwardDiff
     ests                   = Vector{ExponentialFamilyDistribution}(undef, length(q_out_efs))
     
     @inbounds @views for i in eachindex(q_out_efs)
-        prj = ProjectedTo(Ts[i], size(first(q_out_samples[i, :]))...; conditioner = conditioners[i], parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+        prj = ProjectedTo(Ts[i], size(first(q_out_samples[i, :]))...; conditioner = conditioners[i], parameters = something(getcviprojectionparameters(method), ExponentialFamilyProjection.DefaultProjectionParameters()))
         ests[i]  = project_to(prj, q_out_samples[i, :]) 
     end
     
@@ -42,14 +42,14 @@ end
     q_ins_components      = components(q_ins)
     q_ins_sample_friendly = map(q_in -> sampling_optimized(q_in), q_ins_components)
   
-    samples       = map(ReactiveMP.cvilinearize, map(q_in -> rand(rng, q_in, method.outsamples), q_ins_sample_friendly))
+    samples       = map(ReactiveMP.cvilinearize, map(q_in -> rand(rng, q_in, number_out_samples), q_ins_sample_friendly))
     q_out_samples = map(x -> node_function(x...), zip(samples...))
 
     T           = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
     conditioner = getconditioner(q_out_ef)
     
-    prj = ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    prj = ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner, parameters = something(getcviprojectionparameters(method), ExponentialFamilyProjection.DefaultProjectionParameters()))
     est  = project_to(prj, q_out_samples)
     
     return DivisionOf(est, m_out)
@@ -84,7 +84,7 @@ end
 
     out_samples = modify_vectorized_samples_with_variate_type(var_form, map(x -> node_function(x), samples), dim_out)
 
-    prj = ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner_out, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    prj = ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner_out, parameters = something(getcviprojectionparameters(method), ExponentialFamilyProjection.DefaultProjectionParameters()))
     est  = project_to(prj, q_out_samples)
     dist_out = convert(Distribution, ef_out)
     return dist_out
@@ -119,7 +119,7 @@ end
     samples            = hmc_samples(rng, sum_dim_in, log_target_density, initial_sample; no_samples = number_out_samples + 1)
     out_samples        = modify_vectorized_samples_with_variate_type(var_form_out, map(x -> node_function(ReactiveMP.__splitjoin(x, dims_in)...), samples), dim_out)
 
-    prj = ProjectedTo(T, size(first(out_samples))...; conditioner = conditioner_out, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    prj = ProjectedTo(T, size(first(out_samples))...; conditioner = conditioner_out, parameters = something(getcviprojectionparameters(method), ExponentialFamilyProjection.DefaultProjectionParameters()))
     est  = project_to(prj, out_samples)
 
     dist_out = convert(Distribution, est)
