@@ -77,8 +77,9 @@ end
         logf                = log_target_adjusted_log_pdf(var_form, first(m_ins), dim_in)
         log_target_density  = LogTargetDensity(prod_dim_in, logf)
         initial_sample      = initialize_cvi_samples(method, rng, first(m_ins), 1, :in)
+        
         vectorized_initial_sample  = vectorize_sample(var_form, initial_sample)
-        samples_hmc =  hmc_samples(rng, prod_dim_in, log_target_density, vectorized_initial_sample; no_samples = number_out_samples + 1)
+        samples_hmc                =  hmc_samples(rng, prod_dim_in, log_target_density, vectorized_initial_sample; no_samples = number_out_samples + 1)
         modify_vectorized_samples_with_variate_type(variate_form(T_in), samples_hmc, dim_in)
     end
 
