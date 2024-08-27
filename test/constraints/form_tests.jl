@@ -7,14 +7,6 @@
     @test constrain_form(UnspecifiedFormConstraint(), MvNormal([0.0, 0.0])) == MvNormal([0.0, 0.0])
 end
 
-@testitem "`UnspecifiedFormConstraint` should error on `ProductOf` and `LinearizedProductOf` objects" begin
-    using Distributions, BayesBase
-    import ReactiveMP: constrain_form
-
-    @test_throws "object cannot be used as a functional form in inference backend" constrain_form(UnspecifiedFormConstraint(), ProductOf(Beta(1, 1), Normal(0, 1)))
-    @test_throws "object cannot be used as a functional form in inference backend" constrain_form(UnspecifiedFormConstraint(), LinearizedProductOf([Beta(1, 1), Beta(1, 1)], 2))
-end
-
 @testitem "`CompositeFormConstraint` should call the constraints in the specified order" begin
     import ReactiveMP: constrain_form
 

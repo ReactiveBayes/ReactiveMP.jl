@@ -82,8 +82,6 @@ default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLa
 default_prod_constraint(::UnspecifiedFormConstraint) = GenericProd()
 
 constrain_form(::UnspecifiedFormConstraint, something) = something
-constrain_form(::UnspecifiedFormConstraint, something::Union{ProductOf, LinearizedProductOf}) =
-    error("`ProductOf` object cannot be used as a functional form in inference backend. Use form constraints to restrict the functional form of marginal posteriors.")
 
 """
     WrappedFormConstraint(constraint, context)
