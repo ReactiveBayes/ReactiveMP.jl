@@ -51,7 +51,7 @@ function activate!(randomvar::RandomVariable, options::RandomVariableActivationO
 
     # `5` here is empirical observation, maybe we can come up with better heuristic?
     # in case if number of connections is large we use cache equality nodes chain structure 
-    if length(randomvar.input_messages) > 5
+    if length(randomvar.input_messages) > 0
         initialize_output_messages!(randomvar, options, EqualityChain(randomvar.input_messages, schedule_on(options.scheduler), options.message_prod_fn))
     else
         initialize_output_messages!(randomvar, options)
