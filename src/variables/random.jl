@@ -62,6 +62,8 @@ function activate!(randomvar::RandomVariable, options::RandomVariableActivationO
         # If the number of input message is equal to `1`,
         # than the output message is not producing any value
         connect!(outputmsgs[1], never(Message))
+    else 
+        throw(ArgumentError("Cannot activate a random variable with zero or less than one inbound messages."))
     end
 
     _setmarginal!(randomvar, _makemarginal(randomvar, options))

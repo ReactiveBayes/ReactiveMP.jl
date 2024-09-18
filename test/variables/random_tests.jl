@@ -97,3 +97,11 @@ end
         end
     end
 end
+
+@testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" begin
+    import ReactiveMP: RandomVariableActivationOptions, activate!, messageout
+
+    @testset let var = randomvar()
+        @test_throws "Cannot activate a random variable with zero or less than one inbound messages." activate!(var, RandomVariableActivationOptions())
+    end
+end
