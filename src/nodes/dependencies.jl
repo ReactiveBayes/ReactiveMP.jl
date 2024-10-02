@@ -33,7 +33,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                 vmessageout = combineLatest((messages, marginals), PushNew())
 
                 mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode), rulefallback)
-                    (dependencies) -> DefferedMessage(dependencies[1], dependencies[2], messagemap)
+                    (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
                 end
 
                 vmessageout = vmessageout |> map(AbstractMessage, mapping)
