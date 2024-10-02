@@ -160,15 +160,15 @@
     end
 end
 
-@testitem "Deffered message" begin
+@testitem "Deferred message" begin
     using Rocket
-    import ReactiveMP: DefferedMessage, as_message, getdata
+    import ReactiveMP: DeferredMessage, as_message, getdata
 
     for a in rand(3), b in rand(3)
         messages_stream = RecentSubject(Float64)
         marginals_stream = RecentSubject(Float64)
 
-        dmessage = DefferedMessage(messages_stream, marginals_stream, (a, b) -> Message(a + b, false, false, nothing))
+        dmessage = DeferredMessage(messages_stream, marginals_stream, (a, b) -> Message(a + b, false, false, nothing))
 
         # The data cannot be computed since no values were provided yet
         @test_throws MethodError as_message(dmessage)

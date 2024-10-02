@@ -44,7 +44,7 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback)
-            (dependencies) -> DefferedMessage(dependencies[1], dependencies[2], messagemap)
+            (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
         end
 
         vmessageout = with_statics(factornode, vmessageout)

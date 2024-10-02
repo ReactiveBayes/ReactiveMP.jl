@@ -1,4 +1,4 @@
-export AbstractMessage, Message, DefferedMessage
+export AbstractMessage, Message, DeferredMessage
 export getdata, is_clamped, is_initial, as_message
 
 using Distributions
@@ -192,22 +192,22 @@ MacroHelpers.@proxy_methods Message getdata [
 
 Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
 
-## Deffered Message
+## Deferred Message
 
 """
 A special type of a message, for which the actual message is not computed immediately, but is computed later on demand (potentially never).
 To compute and get the actual message, one needs to call the `as_message` method.
 """
-mutable struct DefferedMessage{R, S, F} <: AbstractMessage
+mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     const messages  :: R
     const marginals :: S
     const mappingFn :: F
     cache           :: Union{Nothing, Message}
 end
 
-DefferedMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DefferedMessage(messages, marginals, mappingFn, nothing)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(messages, marginals, mappingFn, nothing)
 
-function Base.show(io::IO, message::DefferedMessage)
+function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
     if isnothing(cache)
         print(io, "DeferredMessage([ use `as_message` to compute the message ])")
@@ -216,22 +216,22 @@ function Base.show(io::IO, message::DefferedMessage)
     end
 end
 
-getcache(message::DefferedMessage) = message.cache
-setcache!(message::DefferedMessage, cache::Message) = message.cache = cache
+getcache(message::DeferredMessage) = message.cache
+setcache!(message::DeferredMessage, cache::Message) = message.cache = cache
 
-function as_message(message::DefferedMessage)::Message
+function as_message(message::DeferredMessage)::Message
     return as_message(message, getcache(message))
 end
 
-function as_message(message::DefferedMessage, cache::Message)::Message
+function as_message(message::DeferredMessage, cache::Message)::Message
     return cache
 end
 
-function as_message(message::DefferedMessage, cache::Nothing)::Message
+function as_message(message::DeferredMessage, cache::Nothing)::Message
     return as_message(message, cache, getrecent(message.messages), getrecent(message.marginals))
 end
 
-function as_message(message::DefferedMessage, cache::Nothing, messages, marginals)::Message
+function as_message(message::DeferredMessage, cache::Nothing, messages, marginals)::Message
     computed = message.mappingFn(messages, marginals)
     setcache!(message, computed)
     return computed
