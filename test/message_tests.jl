@@ -160,15 +160,15 @@
     end
 end
 
-@testitem "Deffered message" begin
+@testitem "Deferred message" begin
     using Rocket
-    import ReactiveMP: DefferedMessage, as_message, getdata
+    import ReactiveMP: DeferredMessage, as_message, getdata
 
     for a in rand(3), b in rand(3)
         messages_stream = RecentSubject(Float64)
         marginals_stream = RecentSubject(Float64)
 
-        dmessage = DefferedMessage(messages_stream, marginals_stream, (a, b) -> Message(a + b, false, false, nothing))
+        dmessage = DeferredMessage(messages_stream, marginals_stream, (a, b) -> Message(a + b, false, false, nothing))
 
         # The data cannot be computed since no values were provided yet
         @test_throws MethodError as_message(dmessage)
@@ -188,4 +188,31 @@ end
         @test getdata(as_message(dmessage)) === a + b
         @test occursin("DeferredMessage($(a + b))", repr(dmessage))
     end
+end
+
+@testitem "MessageMapping should call `rulefallback` is no rule is available" begin
+    import ReactiveMP: MessageMapping, getdata
+
+    struct SomeArbitraryNode end
+
+    @node SomeArbitraryNode Stochastic [out, in]
+
+    struct NonexistingDistribution end
+
+    meta = "meta"
+    addons = ()
+
+    mapping_no_rule_fallback = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, meta, addons, SomeArbitraryNode(), nothing)
+
+    messages  = (Message(NonexistingDistribution(), false, false, nothing),)
+    marginals = nothing
+
+    @test_throws ReactiveMP.RuleMethodError mapping_no_rule_fallback(messages, marginals)
+
+    rulefallback = (args...) -> (args, nothing)
+
+    mapping_with_fallback = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, meta, addons, SomeArbitraryNode(), rulefallback)
+
+    @test getdata(mapping_with_fallback(messages, marginals)) ==
+        (SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), messages, nothing, marginals, meta, addons, SomeArbitraryNode())
 end

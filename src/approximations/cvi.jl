@@ -33,6 +33,9 @@ cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 The `ProdCVI` structure defines the approximation method hyperparameters of the `prod(approximation::CVI, logp::F, dist)`.
 This method performs an approximation of the product of the `dist` and `logp` with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
 
+!!! note
+    `ProdCVI` is deprecated in favor of `CVIProjection`.
+
 Arguments
  - `rng`: random number generator
  - `n_samples`: number of samples to use for statistics approximation
@@ -73,6 +76,8 @@ end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
 const CVI = ProdCVI
+
+is_delta_node_compatible(::ProdCVI) = Val(true)
 
 #---------------------------
 # CVI implementations

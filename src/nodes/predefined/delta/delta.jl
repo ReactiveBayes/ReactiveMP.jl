@@ -17,12 +17,17 @@ struct DeltaMeta{M, I}
 end
 
 function DeltaMeta(; method::M, inverse::I = nothing) where {M, I}
+    check_delta_node_compatibility(method)
     return DeltaMeta{M, I}(method, inverse)
 end
 
 getmethod(meta::DeltaMeta)          = meta.method
 getinverse(meta::DeltaMeta)         = meta.inverse
 getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
+
+check_delta_node_compatibility(method) = check_delta_node_compatibility(is_delta_node_compatible(method), method)
+check_delta_node_compatibility(::Val{false}, method) = error(lazy"Method `$method` is not compatible with delta nodes.")
+check_delta_node_compatibility(::Val{true}, method) = nothing
 
 import Base: map
 
@@ -76,6 +81,9 @@ end
 
 # For missing rules error msg
 rule_method_error_extract_fform(::Type{<:DeltaFn}) = "DeltaFn"
+
+# For extensions and approximation methods
+is_delta_node_compatible(method::Any) = Val(false)
 
 # `DeltaFn` requires an access to the node function, hence, node reference is required
 call_rule_is_node_required(::Type{<:DeltaFn}) = CallRuleNodeRequired()
@@ -168,7 +176,7 @@ deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::NTupl
 deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Nothing) = CVIApproximationDeltaFnRuleLayout()
 
 function deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Any)
-    @warn "CVI Approximation does not accept the inverse function. Ignoring the provided inverse."
+    @warn "CVI approximation does not accept the inverse function. Ignoring the provided inverse."
     return CVIApproximationDeltaFnRuleLayout()
 end
 
@@ -190,20 +198,21 @@ function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependencie
         (!isnothing(getvariable(interface))) || error("Empty variable on interface $(interface) of node $(factornode)")
     end
 
-    scheduler = getscheduler(options)
-    addons    = getaddons(options)
+    scheduler    = getscheduler(options)
+    addons       = getaddons(options)
+    rulefallback = getrulefallback(options)
 
     # First we declare local marginal for `out` edge
-    deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons, rulefallback)
 
     # Second we declare how to compute a joint marginal over all inbound edges
-    deltafn_apply_layout(layout, Val(:q_ins), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:q_ins), factornode, meta, pipeline, scheduler, addons, rulefallback)
 
     # Second we declare message passing logic for out interface
-    deltafn_apply_layout(layout, Val(:m_out), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:m_out), factornode, meta, pipeline, scheduler, addons, rulefallback)
 
     # At last we declare message passing logic for input interfaces
-    deltafn_apply_layout(layout, Val(:m_in), factornode, meta, pipeline, scheduler, addons)
+    deltafn_apply_layout(layout, Val(:m_in), factornode, meta, pipeline, scheduler, addons, rulefallback)
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, meta, skip_strategy, scheduler) where {T <: CountingReal}

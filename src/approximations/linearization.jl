@@ -15,6 +15,8 @@ The `Linearization` structure is used inside the `DeltaMeta` or `FlowMeta` struc
 """
 struct Linearization <: AbstractApproximationMethod end
 
+is_delta_node_compatible(::Linearization) = Val(true)
+
 # ported from ForneyLab.jl
 using ForwardDiff
 
@@ -60,23 +62,31 @@ function local_linearization(g::G, x_hat::Tuple) where {G}
         (x) -> g(__splitjoin(x, ds)...)
     end
 
-    return local_linearization(g(x_hat...), splitg, g, x_hat)
+    return local_linearization(g(x_hat...), splitg, x_hat)
 end
 
 # In case if `g(x_hat)` returns a number and inputs are numbers too
-function local_linearization(r::Real, splitg::S, g::G, x_hat) where {S, G}
-    return local_linearization(r, splitg, g, (g, lx_hat) -> (ForwardDiff.gradient(splitg, lx_hat)::Vector{eltype(lx_hat)})', x_hat)
+function local_linearization(r::Real, splitg::S, x_hat::H) where {S, H}
+    # `r` is a scalar, so we need to use `gradient` instead of `jacobian`
+    fA = let splitg = splitg
+        (lx_hat) -> (ForwardDiff.gradient(splitg, lx_hat)::Vector{eltype(lx_hat)})'
+    end
+    return local_linearization_split(r, fA, x_hat)
 end
 
 # In case if `g(x_hat)` returns a vector, but inputs are numbers
-function local_linearization(r::AbstractVector, splitg::S, g::G, x_hat) where {S, G}
-    return local_linearization(r, splitg, g, (g, lx_hat) -> (ForwardDiff.jacobian(splitg, lx_hat)::Matrix{eltype(lx_hat)}), x_hat)
+function local_linearization(r::AbstractVector, splitg::S, x_hat::H) where {S, H}
+    # `r` is a vector, so we need to use `jacobian` instead of `gradient`
+    fA = let splitg = splitg
+        (lx_hat) -> (ForwardDiff.jacobian(splitg, lx_hat)::Matrix{eltype(lx_hat)})
+    end
+    return local_linearization_split(r, fA, x_hat)
 end
 
-function local_linearization(r, splitg::S, g::G, fA::F, x_hat) where {S, G, F}
+function local_linearization_split(r::R, fA::F, x_hat::H) where {R, F, H}
     lx_hat = __as_vec(x_hat)
     # `fA` calls either `gradient` or `jacobian`, depending on the type of the `r`
-    A = fA(splitg, lx_hat)
+    A = fA(lx_hat)
     b = r - A * lx_hat
     return (A, b)
 end

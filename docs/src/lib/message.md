@@ -83,8 +83,8 @@ ReactiveMP.messages_prod_fn
 ```
 
 
-### [Deffered messages](@id lib-messages-deffered)
+### [Deferred messages](@id lib-messages-deferred)
 
 ```@docs 
-ReactiveMP.DefferedMessage
+ReactiveMP.DeferredMessage
 ```

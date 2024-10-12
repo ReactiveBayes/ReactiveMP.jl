@@ -14,11 +14,12 @@ end
 abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
-    scheduler = getscheduler(options)
-    addons    = getaddons(options)
-    fform     = functionalform(factornode)
-    meta      = collect_meta(fform, getmetadata(options))
-    pipeline  = collect_pipeline(fform, getpipeline(options))
+    scheduler    = getscheduler(options)
+    addons       = getaddons(options)
+    rulefallback = getrulefallback(options)
+    fform        = functionalform(factornode)
+    meta         = collect_meta(fform, getmetadata(options))
+    pipeline     = collect_pipeline(fform, getpipeline(options))
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
@@ -31,8 +32,8 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
 
                 vmessageout = combineLatest((messages, marginals), PushNew())
 
-                mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode))
-                    (dependencies) -> DefferedMessage(dependencies[1], dependencies[2], messagemap)
+                mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode), rulefallback)
+                    (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
                 end
 
                 vmessageout = vmessageout |> map(AbstractMessage, mapping)
@@ -109,30 +110,6 @@ struct RequireMessageFunctionalDependencies{S <: NamedTuple} <: FunctionalDepend
 end
 
 RequireMessageFunctionalDependencies(; kwargs...) = RequireMessageFunctionalDependencies((; kwargs...))
-
-function message_dependencies(dependencies::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-
-    # First we find dependency index in `indices`, we use it later to find `start_with` distribution
-    depindex = findfirst((i) -> i === iindex, dependencies.indices)
-
-    # If we have `depindex` in our `indices` we include it in our list of functional dependencies. It effectively forces rule to require inbound message
-    if depindex !== nothing
-        # `mapindex` is a lambda function here
-        output     = messagein(nodeinterfaces[iindex])
-        start_with = dependencies.start_with[depindex]
-        # Initialise now, if message has not been initialised before and `start_with` element is not empty
-        if isnothing(getrecent(output)) && !isnothing(start_with)
-            setmessage!(output, start_with)
-        end
-        return map(inds -> map(i -> @inbounds(nodeinterfaces[i]), inds), varcluster)
-    else
-        return message_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    end
-end
-
-function marginal_dependencies(::RequireMessageFunctionalDependencies, nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-    return marginal_dependencies(DefaultFunctionalDependencies(), nodeinterfaces, nodelocalmarginals, varcluster, cindex, iindex)
-end
 
 function functional_dependencies(dependencies::RequireMessageFunctionalDependencies, factornode, interface, iindex)
     specification = dependencies.specification

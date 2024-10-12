@@ -1,7 +1,7 @@
 name = "ReactiveMP"
 uuid = "a194aa59-28ba-4574-a09c-4a745416d6e3"
 authors = ["Dmitry Bagaev <d.v.bagaev@tue.nl>", "Albert Podusenko <a.podusenko@tue.nl>", "Bart van Erp <b.v.erp@tue.nl>", "Ismail Senoz <i.senoz@tue.nl>"]
-version = "4.2.0"
+version = "4.4.3"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
@@ -35,11 +35,13 @@ TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 Unrolled = "9602ed7d-8fef-5bc8-8597-8f21381861e8"
 
 [weakdeps]
+ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [extensions]
 ReactiveMPOptimisersExt = "Optimisers"
+ReactiveMPProjectionExt = "ExponentialFamilyProjection"
 ReactiveMPRequiresExt = "Requires"
 
 [compat]
@@ -50,18 +52,19 @@ Distributions = "0.24, 0.25"
 DomainIntegrals = "0.3.2, 0.4"
 DomainSets = "0.5.2, 0.6, 0.7"
 ExponentialFamily = "1.2.0"
+ExponentialFamilyProjection = "1.1"
 FastCholesky = "1.3.0"
 FastGaussQuadrature = "0.4, 0.5"
 FixedArguments = "0.1"
 ForwardDiff = "0.10"
 HCubature = "1.0.0"
-LazyArrays = "0.21, 0.22, 1"
+LazyArrays = "0.21, 0.22, 1, 2"
 LinearAlgebra = "1.9"
 LoopVectorization = "0.12"
 MacroTools = "0.5"
 MatrixCorrectionTools = "1.2.0"
 Optim = "1.0.0"
-Optimisers = "0.2"
+Optimisers = "0.2, 0.3"
 PositiveFactorizations = "0.2"
 Random = "1.9"
 Requires = "1"
@@ -85,6 +88,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
@@ -96,4 +100,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 
 [targets]
-test = ["Aqua", "CpuId", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults"]
+test = ["Aqua", "CpuId", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection"]
