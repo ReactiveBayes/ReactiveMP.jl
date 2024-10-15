@@ -1151,25 +1151,15 @@ function Base.showerror(io::IO, error::RuleMethodError)
         arguments_spec = join(spec, ", ")
         meta_spec      = rule_method_error_extract_meta(error.meta)
 
+        # Print list of existing rules for this node
         println(io, "\n\nExisting rule(s) for node:\n")
-        
-        # Retrieve all rules for this node
         all_rules = methods(ReactiveMP.rule)
-        this_node_fform = error.fform
-        this_node_rules = all_rules[get_node_from_rule_method.(all_rules) .== "$this_node_fform"]
-        
+        this_node_rules = all_rules[get_node_from_rule_method.(all_rules) .== "$(error.fform)"]
         for node_rule in this_node_rules
-
             node_name = get_node_from_rule_method(node_rule)
             node_inputs = get_messages_from_rule_method(node_rule)
-
             if typeof(node_inputs) !== Vector{Any}
-
-                node_rule_string = """
-                    $node_name($(join(node_inputs, ", ")))
-                    """
-                println(io, node_rule_string)
-
+                println(io, "$node_name($(join(node_inputs, ", ")))")
             end
         end
 
