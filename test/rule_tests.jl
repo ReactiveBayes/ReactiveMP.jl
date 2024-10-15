@@ -530,6 +530,29 @@
                 @test occursin("Possible fix, define", output)
                 @test occursin("(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)", output)
             end
+
+            let
+                err = ReactiveMP.RuleMethodError(
+                    Beta,
+                    Val{:a}(),
+                    Marginalisation(),
+                    Val{(:out, :b)}(),
+                    (Message(PointMass, false, false, nothing), Message(PointMass, false, false, nothing)),
+                    Val{(:out_b,)}(),
+                    (Marginal(PointMass, false, false, nothing),),
+                    1.0,
+                    nothing,
+                    nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Existing rule(s) for node:", output)
+                @test occursin("Distributions.Beta", output)
+                @test occursin("μ(a) :: BayesBase.PointMass, μ(b) :: BayesBase.PointMass", output)
+            end
         end
 
         @testset "marginalrule_method_error" begin
