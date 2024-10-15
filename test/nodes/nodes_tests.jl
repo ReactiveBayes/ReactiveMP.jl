@@ -151,8 +151,10 @@ end
 
     @node DummyNodeForDocumentationDeterministic Deterministic [out, (x, aliases = [xx, xxx]), y]
 
-    documentation = string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node)))
+    binding = @doc(ReactiveMP.is_predefined_node)
+    @test !isnothing(binding)
 
+    documentation = string(binding)
     @test occursin(r"DummyNodeForDocumentationStochastic.*Stochastic.*out, x, y \(or yy\)", documentation)
     @test occursin(r"DummyNodeForDocumentationDeterministic.*Deterministic.*out, x \(or xx, xxx\), y", documentation)
 end
