@@ -144,6 +144,8 @@ end
 end
 
 @testitem "@node macro should generate a documentation entry for a newly specified node" begin
+    using REPL # `REPL` changes the docstring output format
+
     struct DummyNodeForDocumentationStochastic end
     struct DummyNodeForDocumentationDeterministic end
 
