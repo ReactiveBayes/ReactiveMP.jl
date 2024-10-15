@@ -1,5 +1,5 @@
 
-@rule Transition(:a, Marginalisation) (q_out::Any, q_in::Union{DiscreteNonParametric, PointMass}) = begin
+@rule Transition(:a, Marginalisation) (q_out::Union{DiscreteNonParametric, PointMass}, q_in::Union{DiscreteNonParametric, PointMass}) = begin
     return MatrixDirichlet(collect(probvec(q_out)) * probvec(q_in)' .+ 1)
 end
 
