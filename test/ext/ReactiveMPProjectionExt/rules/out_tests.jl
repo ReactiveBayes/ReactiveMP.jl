@@ -6,7 +6,7 @@
 
         q_ins_m_out_incomings = [
             (FactorizedJoint((NormalMeanVariance(2, 2),)), NormalMeanVariance(0, 1)),
-            (FactorizedJoint((Gamma(3, 4),)), Gamma(2, 3)),
+            (FactorizedJoint((Gamma(2, 1),)), Gamma(2, 2)),
             (FactorizedJoint((Beta(5, 4),)), Beta(5, 5)),
             (FactorizedJoint((Rayleigh(4),)), Rayleigh(5.2)),
             (FactorizedJoint((Geometric(0.3),)), Geometric(0.9)),
