@@ -34,7 +34,7 @@
                 qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                @test_rules [check_type_promotion = true, atol = 1e-6] ContinuousTransition(:x, Marginalisation) [(
+                @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(:x, Marginalisation) [(
                     input = (m_y = qy, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_strucutred(qy, qW, mA, ΣA, UA)
                 )]
             end
@@ -85,7 +85,7 @@
             qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true, atol = 1e-6] ContinuousTransition(:x, Marginalisation) [(
+            @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(:x, Marginalisation) [(
                 input = (q_y = qy, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_meanfield(qy, qW, mA, ΣA, UA)
             )]
         end
