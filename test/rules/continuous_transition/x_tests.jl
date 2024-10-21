@@ -28,7 +28,7 @@
 
                 metal = CTMeta(transformation)
                 Ly = rand(rng, dy, dy)
-                μy, Σy = rand(rng, dy), Ly * Ly'
+                μy, Σy = rand(rng, dy), Ly * Ly' + dydx * I
 
                 qy = MvNormalMeanCovariance(μy, Σy)
                 qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
@@ -79,7 +79,7 @@
 
             metal = CTMeta(transformation)
             Ly = rand(rng, dy, dy)
-            μy, Σy = rand(rng, dy), Ly * Ly'
+            μy, Σy = rand(rng, dy), Ly * Ly' + dydx * I
 
             qy = MvNormalMeanCovariance(μy, Σy)
             qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
