@@ -551,7 +551,8 @@
 
                 @test occursin("Existing rule(s) for node:", output)
                 @test occursin("Distributions.Beta", output)
-                @test occursin("μ(a) :: BayesBase.PointMass, μ(b) :: BayesBase.PointMass", output)
+                @test occursin("μ(a) :: BayesBase.PointMass", output)
+                @test occursin("μ(b) :: BayesBase.PointMass", output)
             end
         end
 

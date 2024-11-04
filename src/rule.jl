@@ -1159,7 +1159,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
             node_name = get_node_from_rule_method(node_rule)
             node_inputs = get_messages_from_rule_method(node_rule)
             if typeof(node_inputs) !== Vector{Any}
-                println(io, "$node_name($(join(node_inputs, ", ")))")
+                println(io, node_name, "(", join(node_inputs, ", "), ")")
             end
         end
 
