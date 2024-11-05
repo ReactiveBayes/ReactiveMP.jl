@@ -148,3 +148,49 @@ end
         end
     end
 end
+
+
+@testitem "ProjectionForm target tests" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase
+
+    @testset "Testing abs transformation with ProjectionForm override" begin
+        # Create a ProjectionForm for LogNormal output
+        form = ProjectionForm(
+            LogNormal,      # type
+            (),            # dims (empty tuple for scalar)
+            nothing        # conditioner
+        )
+        
+        # Setup the meta with the projection form
+        meta = DeltaMeta(
+            method = CVIProjection(
+                target_out_form = form,
+                outsamples = 1000,  # High number of samples for better convergence
+            ),
+            inverse = nothing
+        )
+
+        # Setup distributions
+        q_in = FactorizedJoint((NormalMeanVariance(0.0, 1.0),))  # Standard normal input
+        m_out = Gamma(2.0, 2.0)  # Some arbitrary output message
+        q_out = Gamma(2.0, 2.0)  # Initial q_out as Gamma
+
+        # Call the rule with absolute value function
+        msg = @call_rule DeltaFn{exp}(:out, Marginalisation) (
+            m_out = m_out,
+            q_out = q_out,
+            q_ins = q_in,
+            meta = meta
+        )
+
+        # Additional statistical checks if needed
+        result_dist = msg.numerator
+        @test isa(result_dist, LogNormal)
+        
+        # The absolute value of a standard normal follows a folded normal distribution
+        # We can check if the mean is approximately correct
+        # For a folded standard normal, E[|X|] ≈ 0.7978845608028654
+        @show result_dist
+        @test mean(result_dist) ≈ exp(1/2) rtol = 0.05
+    end
+end
