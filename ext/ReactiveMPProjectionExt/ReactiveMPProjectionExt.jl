@@ -33,6 +33,9 @@ function BayesBase.prod(::GenericProd, division::DivisionOf, something)
     end
 end
 
+BayesBase.prod(::GenericProd, division::DivisionOf, ::Missing) = division
+BayesBase.prod(::GenericProd, ::Missing, division::DivisionOf) = division
+
 function BayesBase.prod(::GenericProd, productof::ProductOf, divisionof::DivisionOf) 
     return ProductOf(productof, divisionof)
 end

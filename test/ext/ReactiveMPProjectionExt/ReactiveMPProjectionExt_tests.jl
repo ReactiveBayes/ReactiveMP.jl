@@ -11,4 +11,6 @@
 
     @test d1 ≈ prod(GenericProd(), ext.DivisionOf(d1, d2), d2)
     @test d1 ≈ prod(GenericProd(), d2, ext.DivisionOf(d1, d2))
+    @test ext.DivisionOf(d1, d2) == prod(GenericProd(), ext.DivisionOf(d1, d2), missing)
+    @test ext.DivisionOf(d1, d2) == prod(GenericProd(), missing, ext.DivisionOf(d1, d2))
 end
