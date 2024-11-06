@@ -3,6 +3,20 @@ using TupleTools
 import Distributions: Distribution
 import BayesBase: AbstractContinuousGenericLogPdf
 
+
+function create_project_to_ins(method::CVIProjection, m_in::Any, k::Int)
+    form = ReactiveMP.get_kth_in_form(method, k)
+    
+    if isnothing(form)
+        T = ExponentialFamily.exponential_family_typetag(m_in)
+        ef_in = convert(ExponentialFamilyDistribution, m_in)
+        conditioner = getconditioner(ef_in)
+        return ProjectedTo(T, size(m_in)...; conditioner = conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    else
+        return ProjectedTo(form.typeform, form.dims...; conditioner = form.conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    end
+end
+
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVIProjection} = begin
     method = ReactiveMP.getmethod(meta)
     g = getnodefn(meta, Val(:out))
@@ -13,8 +27,7 @@ import BayesBase: AbstractContinuousGenericLogPdf
     F = promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf)
     f = convert(F, UnspecifiedDomain(), (z) -> logpdf(m_out, g(z)))
 
-    T = ExponentialFamily.exponential_family_typetag(m_in)
-    prj = ProjectedTo(T, size(m_in)...; conditioner = getconditioner(ef_in), parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    prj = create_project_to_ins(method, m_in, 1)
     q = project_to(prj, f, first(m_ins))
 
     return FactorizedJoint((q,))
@@ -35,17 +48,32 @@ end
     end
 
     optimize_natural_parameters = let m_ins = m_ins, logp_nc_drop_index = logp_nc_drop_index
-        (i, pre_samples) -> begin
-            # Create an `AbstractContinuousGenericLogPdf` with an unspecified domain and the transformed `logpdf` function
-            df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
-                (z) -> logp_nc_drop_index(z, i, pre_samples)
+            (i, pre_samples) -> begin
+            m_in = m_ins[i]
+            default_type = ExponentialFamily.exponential_family_typetag(m_in)
+            custom_form = ReactiveMP.get_kth_in_form(method, i)
+            
+            can_use_supplementary = isnothing(custom_form) || 
+                                (custom_form.typeform === default_type && 
+                                custom_form.dims == size(m_in))
+            
+            prj = create_project_to_ins(method, m_in, i)
+            
+            if can_use_supplementary
+                # Use more optimal solution when forms match
+                df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
+                    (z) -> logp_nc_drop_index(z, i, pre_samples)
+                end
+                logp = convert(promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
+                return project_to(prj, logp, m_in)
+            else
+                # Include logpdf in objective when forms differ
+                df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index, m_in = m_in
+                    (z) -> logp_nc_drop_index(z, i, pre_samples) + logpdf(m_in, z)
+                end
+                logp = convert(promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
+                return project_to(prj, logp)
             end
-            logp = convert(promote_variate_type(variate_form(typeof(m_ins[i])), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
-            conditioner = getconditioner(convert(ExponentialFamilyDistribution, m_ins[i]))
-            T = ExponentialFamily.exponential_family_typetag(m_ins[i])
-            prj = ProjectedTo(T, size(m_ins[i])...; conditioner=conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
-
-            return project_to(prj, logp, m_ins[i])
         end
     end
 

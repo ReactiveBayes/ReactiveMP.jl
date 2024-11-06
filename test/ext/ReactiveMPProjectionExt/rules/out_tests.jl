@@ -231,7 +231,7 @@ end
         @test mean(result_dist) ≈ [1.0, 1.0] rtol = 0.1
 
         # Test with non-zero mean
-        μ2 = [3.0, -2.0]
+        μ2 = [7.0, -3.0]
         q_in2 = FactorizedJoint((MvNormalMeanCovariance(μ2, Σ),))
         
         msg2 = @call_rule DeltaFn{square_components}(:out, Marginalisation) (

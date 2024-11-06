@@ -65,3 +65,61 @@
         end
     end
 end
+
+
+@testitem "CVIProjection form access tests" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
+    import ReactiveMP: get_kth_in_form
+
+    @testset "Testing input edge form access with get_kth_in_form" begin
+        # Create forms for specific inputs
+        form1 = ProjectionForm(
+            NormalMeanVariance,
+            (),
+            nothing
+        )
+        
+        form2 = ProjectionForm(
+            MvNormalMeanScalePrecision,
+            (2,),
+            nothing
+        )
+
+        # Check form access behavior
+        method_with_forms = CVIProjection(target_in_forms = (in_1 = form1, in_2 = form2))
+        @test !isnothing(get_kth_in_form(method_with_forms, 1))
+        @test !isnothing(get_kth_in_form(method_with_forms, 2))
+        @test isnothing(get_kth_in_form(method_with_forms, 3))  # Non-existent index
+
+        method_default = CVIProjection()
+        @test isnothing(get_kth_in_form(method_default, 1))
+        @test isnothing(get_kth_in_form(method_default, 2))
+
+        # Test with partial specification
+        meta_partial = DeltaMeta(
+            method = CVIProjection(
+                target_in_forms = (in_2 = form2,), # Only specify second input
+                marginalsamples = 10,
+            ),
+            inverse = nothing
+        )
+
+        # Setup messages
+        m_out = MvNormalMeanCovariance([2.0, 3.0], Matrix{Float64}(I, 2, 2))
+        m_in1 = Gamma(2.0, 2.0)
+        m_in2 = MvNormalMeanCovariance([1.0, 1.0], [2.0 0.0; 0.0 2.0])
+
+        f(x, y) = x .* y
+
+        msg = @call_marginalrule DeltaFn{f}(:ins) (
+            m_out = m_out,
+            m_ins = ManyOf(m_in1, m_in2),
+            meta = meta_partial
+        )
+
+        # First input should use default form (nothing specified)
+        # Second input should be MvNormalMeanScalePrecision as specified
+        @test isa(result[1], Gamma)
+        @test isa(result[2], MvNormalMeanScalePrecision)
+    end
+end
