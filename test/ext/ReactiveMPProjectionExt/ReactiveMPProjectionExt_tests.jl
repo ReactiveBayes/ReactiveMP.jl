@@ -31,7 +31,7 @@ end
             method = CVIProjection(target_in_forms = nothing)
             m_in = NormalMeanVariance(0.0, 1.0)
             k = 1
-            
+
             @test_opt ext.create_project_to_ins(method, m_in, k)
             result = ext.create_project_to_ins(method, m_in, k)
             @test result isa ProjectedTo{<:NormalMeanVariance}
@@ -39,15 +39,11 @@ end
 
         # Test Case 2: Custom form specified
         let
-            form = ProjectionForm(
-                MvNormalMeanCovariance,
-                (2,),
-                nothing
-            )
+            form = ProjectionForm(MvNormalMeanCovariance, (2,), nothing)
             method = CVIProjection(target_in_forms = (in_1 = form,))
             m_in = NormalMeanVariance(0.0, 1.0)  # Input type different from target
             k = 1
-            
+
             @test_opt ext.create_project_to_ins(method, m_in, k)
             result = ext.create_project_to_ins(method, m_in, k)
             @test result isa ProjectedTo{<:MvNormalMeanCovariance}
@@ -58,7 +54,7 @@ end
             method = CVIProjection(target_in_forms = NamedTuple())
             m_in = Gamma(2.0, 2.0)
             k = 1
-            
+
             @test_opt ext.create_project_to_ins(method, m_in, k)
             result = ext.create_project_to_ins(method, m_in, k)
             @test result isa ProjectedTo{<:Gamma}
@@ -66,17 +62,14 @@ end
 
         # Test Case 4: Multiple forms specified
         let
-            forms = (
-                in_1 = ProjectionForm(NormalMeanVariance, (), nothing),
-                in_2 = ProjectionForm(MvNormalMeanCovariance, (2,), nothing)
-            )
+            forms = (in_1 = ProjectionForm(NormalMeanVariance, (), nothing), in_2 = ProjectionForm(MvNormalMeanCovariance, (2,), nothing))
             method = CVIProjection(target_in_forms = forms)
             m_in = Gamma(2.0, 2.0)
-            
+
             for k in 1:2
                 @test_opt ext.create_project_to_ins(method, m_in, k)
                 result = ext.create_project_to_ins(method, m_in, k)
-                
+
                 if k == 1
                     @test result isa ProjectedTo{<:NormalMeanVariance}
                 else
@@ -88,18 +81,11 @@ end
         # Test Case 5: Different parameter types
         let
             custom_params = ExponentialFamilyProjection.ProjectionParameters()
-            form = ProjectionForm(
-                NormalMeanVariance,
-                (),
-                nothing
-            )
-            method = CVIProjection(
-                target_in_forms = (in_1 = form,),
-                prjparams = custom_params
-            )
+            form = ProjectionForm(NormalMeanVariance, (), nothing)
+            method = CVIProjection(target_in_forms = (in_1 = form,), prjparams = custom_params)
             m_in = NormalMeanVariance(0.0, 1.0)
             k = 1
-            
+
             @test_opt ext.create_project_to_ins(method, m_in, k)
             result = ext.create_project_to_ins(method, m_in, k)
             @test result isa ProjectedTo{<:NormalMeanVariance}

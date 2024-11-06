@@ -6,7 +6,6 @@ struct ProjectionForm{T, D, C}
     conditioner::C
 end
 
-
 """
     CVIProjection(; parameters...)
 
@@ -38,11 +37,11 @@ Base.@kwdef struct CVIProjection{R, S, P, OF, IFS} <: AbstractApproximationMetho
     target_in_forms::IFS = nothing
 end
 
-function get_kth_in_form(::CVIProjection{R,S,P,OF,Nothing}, ::Int) where {R,S,P,OF}
+function get_kth_in_form(::CVIProjection{R, S, P, OF, Nothing}, ::Int) where {R, S, P, OF}
     return nothing
 end
 
-function get_kth_in_form(method::CVIProjection{R,S,P,OF,NT}, k::Int) where {R,S,P,OF,NT}
+function get_kth_in_form(method::CVIProjection{R, S, P, OF, NT}, k::Int) where {R, S, P, OF, NT}
     key = Symbol("in_$k")
     return get(method.target_in_forms, key, nothing)
 end
