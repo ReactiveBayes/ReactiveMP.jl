@@ -99,7 +99,7 @@ end
 
         f(x, y) = x .* y
 
-        msg = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta_partial)
+        result = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta_partial)
 
         # First input should use default form (nothing specified)
         # Second input should be MvNormalMeanScalePrecision as specified
