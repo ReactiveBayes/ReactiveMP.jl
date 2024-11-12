@@ -81,7 +81,6 @@ end
     end
 end
 
-
 @testitem "create_project_to type stability" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, Test
     using ReactiveMP: CVIProjection
@@ -91,7 +90,7 @@ end
     ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
     @test !isnothing(ext)
     using .ext
-    
+
     @testset "Complete type stability tests for create_project_to" begin
         # Test Case 1: Default form (Nothing case)
         let
@@ -101,7 +100,7 @@ end
 
             @test_opt ext.create_project_to(method, q_out, q_out_samples)
             result = ext.create_project_to(method, q_out, q_out_samples)
-            
+
             @test result isa ProjectedTo{<:NormalMeanVariance}
             @test ExponentialFamilyProjection.get_projected_to_dims(result) == size(first(q_out_samples))
         end
@@ -115,7 +114,7 @@ end
 
             @test_opt ext.create_project_to(method, q_out, q_out_samples)
             result = ext.create_project_to(method, q_out, q_out_samples)
-            
+
             @test result === method.out_prjparams
             @test result isa ProjectedTo{<:MvNormalMeanScalePrecision}
         end
@@ -129,7 +128,7 @@ end
 
             @test_opt ext.create_project_to(method, q_out, q_out_samples)
             result = ext.create_project_to(method, q_out, q_out_samples)
-            
+
             @test result isa ProjectedTo{<:Gamma}
             @test result.parameters === method.out_prjparams
             @test ExponentialFamilyProjection.get_projected_to_dims(result) == size(first(q_out_samples))
@@ -139,15 +138,13 @@ end
         let
             method = CVIProjection()
             distributions_and_samples = [
-                (MvNormalMeanScalePrecision([1, 2, 3], 1), [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]),
-                (NormalMeanVariance(0.0, 1.0), [[1.0], [2.0]]),
-                (Gamma(2.0, 2.0), [[1.0], [2.0]])
+                (MvNormalMeanScalePrecision([1, 2, 3], 1), [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]), (NormalMeanVariance(0.0, 1.0), [[1.0], [2.0]]), (Gamma(2.0, 2.0), [[1.0], [2.0]])
             ]
 
             for (dist, samples) in distributions_and_samples
                 @test_opt ext.create_project_to(method, dist, samples)
                 result = ext.create_project_to(method, dist, samples)
-                
+
                 @test result isa ProjectedTo
                 @test ExponentialFamilyProjection.get_projected_to_dims(result) == size(first(samples))
                 @test result.parameters isa ExponentialFamilyProjection.ProjectionParameters
