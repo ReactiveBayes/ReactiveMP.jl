@@ -10,7 +10,7 @@ function create_project_to(method::CVIProjection{R, S, OF}, ::Any, ::Any) where 
     return method.out_prjparams 
 end
 
-function create_project_to(method::CVIProjection{R, S, OF}, ::Any, ::Any) where {R, S, OF <: ProjectionParameters}
+function create_project_to(method::CVIProjection{R, S, OF}, q_out::Any, q_out_samples::Any) where {R, S, OF <: ProjectionParameters}
     T = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
     conditioner = getconditioner(q_out_ef)
