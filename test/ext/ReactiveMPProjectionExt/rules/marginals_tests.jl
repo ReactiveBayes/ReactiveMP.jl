@@ -48,8 +48,10 @@
     end
 
     @testset "f(x) -> x, x~EF, out~EF with Categorical" begin
-        meta = DeltaMeta(method = CVIProjection(
-            in_prjparams=(in_1 = ExponentialFamilyProjection.ProjectionParameters(strategy = ExponentialFamilyProjection.ControlVariateStrategy(nsamples = 4000)),))
+        meta = DeltaMeta(
+            method = CVIProjection(
+                in_prjparams = (in_1 = ExponentialFamilyProjection.ProjectionParameters(strategy = ExponentialFamilyProjection.ControlVariateStrategy(nsamples = 4000)),)
+            )
         )
         inputs_outputs = [
             (Categorical([1 / 4, 1 / 4, 1 / 2]), Categorical([1 / 2, 1 / 8, 3 / 8])),
