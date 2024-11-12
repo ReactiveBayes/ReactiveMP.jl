@@ -19,7 +19,7 @@ function create_project_to_ins(::CVIProjection, form::ProjectedTo, ::Any)
     return form
 end
 
-function create_project_to_ins(::CVIProjection, params::ProjectionParameters, ::Any)
+function create_project_to_ins(::CVIProjection, params::ProjectionParameters, m_in::Any)
     T = ExponentialFamily.exponential_family_typetag(m_in)
     ef_in = convert(ExponentialFamilyDistribution, m_in)
     conditioner = getconditioner(ef_in)
