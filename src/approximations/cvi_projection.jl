@@ -14,9 +14,8 @@ This structure is a subtype of `AbstractApproximationMethod` and is used to conf
 - `rng::R`: The random number generator used for sampling. Default is `Random.MersenneTwister(42)`.
 - `marginalsamples::S`: The number of samples used for approximating marginal distributions. Default is `10`.
 - `outsamples::S`: The number of samples used for approximating output message distributions. Default is `100`.
-- `prjparams::P`: Parameters for the exponential family projection. Default is `nothing`, in which case it will use `ExponentialFamilyProjection.DefaultProjectionParameters()`.
-- `target_out_form::OF`: the form parameter used to select the distribution form on which one to project out edge, if it's not provided will be infered from marginal form
-- `target_in_forms::IFS`: a namedtuple like object to select the form on which one to project in the input edge, if it's not provided will be infered from the incoming message onto this edge
+- `out_prjparams::OF`: the form parameter used to select the distribution form on which one to project out edge, if it's not provided will be infered from marginal form
+- `in_prjparams::IFS`: a namedtuple like object to select the form on which one to project in the input edge, if it's not provided will be infered from the incoming message onto this edge
 
 !!! note
     The `CVIProjection` method is an experimental enhancement of the now-deprecated `CVI`, offering better stability and improved accuracy. 
