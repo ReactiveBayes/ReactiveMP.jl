@@ -1,14 +1,20 @@
 # First method: when there's no projection form
-function create_project_to(method::CVIProjection{R, S, P, Nothing}, q_out::Any, q_out_samples::Any) where {R, S, P}
+function create_project_to(::CVIProjection{R, S, Nothing}, q_out::Any, q_out_samples::Any) where {R, S}
     T = ExponentialFamily.exponential_family_typetag(q_out)
     q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
     conditioner = getconditioner(q_out_ef)
-    return ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+    return ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner, parameters = ExponentialFamilyProjection.DefaultProjectionParameters())
 end
 
-function create_project_to(method::CVIProjection{R, S, P, F}, ::Any, ::Any) where {R, S, P, F <: ProjectionForm}
-    form = method.target_out_form
-    return ProjectedTo(form.typeform, form.dims...; conditioner = form.conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
+function create_project_to(method::CVIProjection{R, S, OF}, ::Any, ::Any) where {R, S, OF <: ProjectedTo}
+    return method.out_prjparams 
+end
+
+function create_project_to(method::CVIProjection{R, S, OF}, ::Any, ::Any) where {R, S, OF <: ProjectionParameters}
+    T = ExponentialFamily.exponential_family_typetag(q_out)
+    q_out_ef    = convert(ExponentialFamilyDistribution, q_out)
+    conditioner = getconditioner(q_out_ef)
+    return ProjectedTo(T, size(first(q_out_samples))...; conditioner = conditioner, parameters = method.out_prjparams)
 end
 
 @rule DeltaFn(:out, Marginalisation) (m_out::Any, q_out::Any, q_ins::FactorizedJoint, meta::DeltaMeta{U}) where {U <: CVIProjection} = begin

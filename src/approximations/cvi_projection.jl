@@ -1,10 +1,4 @@
-export CVIProjection, ProjectionForm
-
-struct ProjectionForm{T, D, C}
-    typeform::T
-    dims::D
-    conditioner::C
-end
+export CVIProjection
 
 """
     CVIProjection(; parameters...)
@@ -28,22 +22,21 @@ This structure is a subtype of `AbstractApproximationMethod` and is used to conf
     The `CVIProjection` method is an experimental enhancement of the now-deprecated `CVI`, offering better stability and improved accuracy. 
     Note that the parameters of this structure, as well as their defaults, are subject to change during the experimentation phase.
 """
-Base.@kwdef struct CVIProjection{R, S, P, OF, IFS} <: AbstractApproximationMethod
+Base.@kwdef struct CVIProjection{R, S, OF, IFS} <: AbstractApproximationMethod
     rng::R = Random.MersenneTwister(42)
     marginalsamples::S = 10
     outsamples::S = 100
-    prjparams::P = nothing # ExponentialFamilyProjection.DefaultProjectionParameters()
-    target_out_form::OF = nothing
-    target_in_forms::IFS = nothing
+    out_prjparams::OF = nothing
+    in_prjparams::IFS = nothing
 end
 
-function get_kth_in_form(::CVIProjection{R, S, P, OF, Nothing}, ::Int) where {R, S, P, OF}
+function get_kth_in_form(::CVIProjection{R, S, OF, Nothing}, ::Int) where {R, S, OF}
     return nothing
 end
 
-function get_kth_in_form(method::CVIProjection{R, S, P, OF, NT}, k::Int) where {R, S, P, OF, NT}
+function get_kth_in_form(method::CVIProjection, k::Int)
     key = Symbol("in_$k")
-    return get(method.target_in_forms, key, nothing)
+    return get(method.in_prjparams, key, nothing)
 end
 
 # This method should only be invoked if a user did not install `ExponentialFamilyProjection`

@@ -152,10 +152,10 @@ end
 @testitem "ProjectionForm target tests" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
 
-    @testset "Testing abs transformation with ProjectionForm override" begin
-        form = ProjectionForm(LogNormal, (), nothing)
+    @testset "Testing abs transformation with ProjectedTo override" begin
+        form = ProjectedTo(LogNormal)
 
-        meta = DeltaMeta(method = CVIProjection(target_out_form = form, outsamples = 1000), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(out_prjparams = form, outsamples = 1000), inverse = nothing)
 
         q_in = FactorizedJoint((NormalMeanVariance(0.0, 1.0),))
         m_out = Gamma(2.0, 2.0)
@@ -171,16 +171,15 @@ end
         @test mean(result_dist) ≈ exp(1 / 2) rtol = 0.05
     end
 
-    @testset "Testing x^2 transformation with MVNormal and ProjectionForm override" begin
+    @testset "Testing x^2 transformation with MVNormal and ProjectedTo override" begin
         # For 2D case, create form for MVNormal projection
-        form = ProjectionForm(
+        form = ProjectedTo(
             MvNormalMeanScalePrecision,
-            (2,),     # 2-dimensional output
-            nothing
+            2  # 2-dimensional output
         )
 
         meta = DeltaMeta(method = CVIProjection(
-            target_out_form = form,
+            out_prjparams = form,
             outsamples = 10000  # More samples for better accuracy
         ), inverse = nothing)
 

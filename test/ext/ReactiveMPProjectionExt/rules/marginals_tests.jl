@@ -72,12 +72,12 @@ end
 
     @testset "Testing input edge form access with get_kth_in_form" begin
         # Create forms for specific inputs
-        form1 = ProjectionForm(NormalMeanVariance, (), nothing)
+        form1 = ProjectedTo(NormalMeanVariance)
 
-        form2 = ProjectionForm(MvNormalMeanScalePrecision, (2,), nothing)
+        form2 = ProjectedTo(MvNormalMeanScalePrecision, 2)
 
         # Check form access behavior
-        method_with_forms = CVIProjection(target_in_forms = (in_1 = form1, in_2 = form2))
+        method_with_forms = CVIProjection(in_prjparams = (in_1 = form1, in_2 = form2))
         @test !isnothing(get_kth_in_form(method_with_forms, 1))
         @test !isnothing(get_kth_in_form(method_with_forms, 2))
         @test isnothing(get_kth_in_form(method_with_forms, 3))  # Non-existent index
@@ -88,7 +88,7 @@ end
 
         # Test with partial specification
         meta_partial = DeltaMeta(method = CVIProjection(
-            target_in_forms = (in_2 = form2,), # Only specify second input
+            in_prjparams = (in_2 = form2,), # Only specify second input
             marginalsamples = 10
         ), inverse = nothing)
 

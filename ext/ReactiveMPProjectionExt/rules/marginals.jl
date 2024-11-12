@@ -3,18 +3,37 @@ using TupleTools
 import Distributions: Distribution
 import BayesBase: AbstractContinuousGenericLogPdf
 
+function create_project_to_ins(::CVIProjection, ::Nothing, m_in::Any)
+    T = ExponentialFamily.exponential_family_typetag(m_in)
+    ef_in = convert(ExponentialFamilyDistribution, m_in)
+    conditioner = getconditioner(ef_in)
+    return ProjectedTo(
+        T,
+        size(m_in)...;
+        conditioner = conditioner,
+        parameters =  ExponentialFamilyProjection.DefaultProjectionParameters()
+    )
+end
+
+function create_project_to_ins(::CVIProjection, form::ProjectedTo, ::Any)
+    return form
+end
+
+function create_project_to_ins(::CVIProjection, params::ProjectionParameters, ::Any)
+    T = ExponentialFamily.exponential_family_typetag(m_in)
+    ef_in = convert(ExponentialFamilyDistribution, m_in)
+    conditioner = getconditioner(ef_in)
+    return ProjectedTo(
+        T,
+        size(m_in)...;
+        conditioner = conditioner,
+        parameters = params
+    )
+end
 
 function create_project_to_ins(method::CVIProjection, m_in::Any, k::Int)
     form = ReactiveMP.get_kth_in_form(method, k)
-    
-    if isnothing(form)
-        T = ExponentialFamily.exponential_family_typetag(m_in)
-        ef_in = convert(ExponentialFamilyDistribution, m_in)
-        conditioner = getconditioner(ef_in)
-        return ProjectedTo(T, size(m_in)...; conditioner = conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
-    else
-        return ProjectedTo(form.typeform, form.dims...; conditioner = form.conditioner, parameters = something(method.prjparams, ExponentialFamilyProjection.DefaultProjectionParameters()))
-    end
+    return create_project_to_ins(method, form, m_in)
 end
 
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{1, Any}, meta::DeltaMeta{M}) where {M <: CVIProjection} = begin
@@ -51,13 +70,11 @@ end
             (i, pre_samples) -> begin
             m_in = m_ins[i]
             default_type = ExponentialFamily.exponential_family_typetag(m_in)
-            custom_form = ReactiveMP.get_kth_in_form(method, i)
-            
-            can_use_supplementary = isnothing(custom_form) || 
-                                (custom_form.typeform === default_type && 
-                                custom_form.dims == size(m_in))
-            
             prj = create_project_to_ins(method, m_in, i)
+
+            typeform = ExponentialFamilyProjection.get_projected_to_type(prj)
+            dims = ExponentialFamilyProjection.get_projected_to_dims(prj)            
+            can_use_supplementary = typeform === default_type && dims == size(m_in)
             
             if can_use_supplementary
                 # Use more optimal solution when forms match
