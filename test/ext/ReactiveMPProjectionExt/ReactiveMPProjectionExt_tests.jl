@@ -80,9 +80,9 @@ end
 
         # Test Case 5: not form but just a gradient descent parameters
         let
-            params = DefaultProjectionParameters()
+            params = ExponentialFamilyProjection.DefaultProjectionParameters()
             method = CVIProjection(in_prjparams = (in_1 = params,))
-            m_in = Gamma(0.0, 1.0)
+            m_in = Gamma(1.0, 1.0)
             k = 1
 
             @test_opt ext.create_project_to_ins(method, m_in, k)
