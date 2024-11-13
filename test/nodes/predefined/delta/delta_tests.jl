@@ -113,7 +113,7 @@ end
     x   = randomvar()
     y   = datavar()
 
-    # Create node with one random and one data input
+    # Create node with two random and one data input
     node = factornode(f, [(:out, out), (:in, x), (:in, y)], ((1, 2, 3),))
     
     # Test meta creation and compatibility
