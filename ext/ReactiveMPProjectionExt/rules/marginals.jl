@@ -67,30 +67,34 @@ end
     end
 
     optimize_natural_parameters = let m_ins = m_ins, logp_nc_drop_index = logp_nc_drop_index
-            (i, pre_samples) -> begin
+        (i, pre_samples) -> begin
             m_in = m_ins[i]
             default_type = ExponentialFamily.exponential_family_typetag(m_in)
+            
             prj = create_project_to_ins(method, m_in, i)
 
             typeform = ExponentialFamilyProjection.get_projected_to_type(prj)
             dims = ExponentialFamilyProjection.get_projected_to_dims(prj)            
-            can_use_supplementary = typeform === default_type && dims == size(m_in)
+            forms_match = typeform === default_type && dims == size(m_in)
             
-            if can_use_supplementary
-                # Use more optimal solution when forms match
-                df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
+            # Create log probability function
+            df = if forms_match
+                let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
                     (z) -> logp_nc_drop_index(z, i, pre_samples)
                 end
-                logp = convert(promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
-                return project_to(prj, logp, m_in)
             else
-                # Include logpdf in objective when forms differ
-                df = let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index, m_in = m_in
+                let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index, m_in = m_in
                     (z) -> logp_nc_drop_index(z, i, pre_samples) + logpdf(m_in, z)
                 end
-                logp = convert(promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
-                return project_to(prj, logp)
             end
+
+            logp = convert(
+                promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), 
+                UnspecifiedDomain(), 
+                df
+            )
+
+            return forms_match ? project_to(prj, logp, m_in) : project_to(prj, logp)
         end
     end
 
