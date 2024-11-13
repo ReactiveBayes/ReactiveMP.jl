@@ -102,6 +102,7 @@ end
 @testitem "DeltaNode - CVI layout functionality" begin
     using Rocket
     import BayesBase
+    using ExponentialFamilyProjection
     import ReactiveMP: DeltaFn, DeltaFnNode, DeltaMeta, CVIProjection, messageout, activate!, RandomVariableActivationOptions, DataVariableActivationOptions
 
     # Define a simple function for the delta node
