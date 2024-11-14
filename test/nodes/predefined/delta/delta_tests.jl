@@ -98,3 +98,34 @@ end
 
     @test DeltaMeta(method = SupportedApproximationMetßhod()) isa DeltaMeta
 end
+
+@testitem "DeltaNode - CVI layout functionality" begin
+    using Rocket
+    import BayesBase
+    using ExponentialFamilyProjection
+    import ReactiveMP: DeltaFn, DeltaFnNode, DeltaMeta, CVIProjection, messageout, activate!, RandomVariableActivationOptions, DataVariableActivationOptions
+
+    # Define a simple function for the delta node
+    f(x, y) = x + y
+
+    # Create variables
+    out = randomvar()
+    x   = randomvar()
+    y   = datavar()
+
+    # Create node with two random and one data input
+    node = factornode(f, [(:out, out), (:in, x), (:in, y)], ((1, 2, 3),))
+
+    # Test meta creation and compatibility
+    meta = DeltaMeta(method = CVIProjection())
+    @test meta.method isa CVIProjection
+    @test isnothing(meta.inverse)
+
+    # Activate variables with default options
+    activate!(x, RandomVariableActivationOptions())
+    activate!(y, DataVariableActivationOptions())
+
+    # Test data variable update propagation
+    update!(y, 2.0)
+    @test BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(y, 1)))) ≈ 2.0
+end
