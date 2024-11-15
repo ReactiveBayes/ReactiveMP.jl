@@ -78,10 +78,19 @@ function optimize_parameters(i, pre_samples, m_ins, logp_nc_drop_index, method)
     return forms_match ? project_to(prj, logp, m_in) : project_to(prj, logp)
 end
 
+function generate_samples(rng, ::Nothing, m_ins, n_samples)
+    return return zip(map(m_in -> ReactiveMP.cvilinearize(rand(rng, m_in, n_samples)), m_ins)...)
+end
+
+function generate_samples(rng, proposal_distribution::FactorizedJoint, ::Any, n_samples)
+    return return zip(map(q_in -> ReactiveMP.cvilinearize(rand(rng, q_in, n_samples)), proposal_distribution.multipliers)...)
+end
+
 @marginalrule DeltaFn(:ins) (m_out::Any, m_ins::ManyOf{N, Any}, meta::DeltaMeta{M}) where {N, M <: CVIProjection} = begin
     method = ReactiveMP.getmethod(meta)
     rng = method.rng
-    pre_samples = zip(map(m_in_k -> ReactiveMP.cvilinearize(rand(rng, m_in_k, method.marginalsamples)), m_ins)...)
+    proposal_distribution_container = method.proposal_distribution
+    pre_samples = generate_samples(rng, proposal_distribution_container.distribution, m_ins, method.marginalsamples)
     
     logp_nc_drop_index = let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
         (z, i, pre_samples) -> begin
@@ -98,5 +107,7 @@ end
             length(m_ins)
         )
     )
+
+    proposal_distribution_container.distribution = result
     return result
 end

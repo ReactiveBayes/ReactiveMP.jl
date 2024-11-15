@@ -111,3 +111,29 @@ end
         @test isa(result[2], MvNormalMeanScalePrecision)
     end
 end
+
+@testitem "CVIProjection proposal distribution tests" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
+    using Random
+
+    @testset "Multiple inputs" begin
+        method = CVIProjection()
+        meta = DeltaMeta(method = method, inverse = nothing)
+        
+        m_out = MvNormalMeanCovariance(zeros(2), I(2))
+        m_in1 = MvNormalMeanCovariance(ones(2), 2 * I(2))
+        m_in2 = MvNormalMeanCovariance(2 * ones(2), 3 * I(2))
+
+        f(x, y) = x .* y
+        
+        # first call to initialize proposal distribution
+        result_first = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta)
+        
+        @test result_first == method.proposal_distribution.distribution
+        @test length(result_first) == 2
+
+        # second call will use the initialized proposal distribution
+        result_second = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta)
+        @test result_second != result_first
+    end
+end
