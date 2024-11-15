@@ -147,17 +147,62 @@ end
 
         # Run multiple iterations and collect KL divergences
         n_iterations = 10
-        kl_divergences = Float64[]
+        kl_divergences = Vector{Float64}(undef, n_iterations)
         
-        for _ in 1:n_iterations
+        for i in 1:n_iterations
             result = @call_marginalrule DeltaFn{f}(:ins) (
                 m_out = m_out, 
                 m_ins = ManyOf(m_in1, m_in2), 
                 meta = meta
             )
-            push!(kl_divergences, estimate_kl_divergence(result))
+            kl_divergences[i] = estimate_kl_divergence(result)
         end
 
         @test kl_divergences[1] > kl_divergences[end]
     end
+end
+
+@testitem "Basic checks for marginal rule with mean based approximation" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase
+    import ReactiveMP: @test_rules, @test_marginalrules
+
+    @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
+        f(x, y) = [x, y]
+        meta = DeltaMeta(method = CVIProjection(sampling_strategy = MeanBased), inverse = nothing)
+        @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{f}(:ins) [(
+            input = (m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]), m_ins = ManyOf(NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)), meta = meta),
+            output = FactorizedJoint((NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0)))
+        )]
+    end
+end
+
+@testitem "DeltaNode - CVI sampling strategy performance comparison" begin
+    using Test
+    using BenchmarkTools
+    using BayesBase, ExponentialFamily, ExponentialFamilyProjection
+    
+    f(x, y) = [x, y]
+
+    function run_marginal_test(strategy)
+        meta = DeltaMeta(method = CVIProjection(sampling_strategy = strategy))
+        m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2])
+        m_in1 = NormalMeanVariance(0.0, 2.0)
+        m_in2 = NormalMeanVariance(0.0, 2.0)
+        return @belapsed begin
+            @call_marginalrule DeltaFn{f}(:ins) (
+                m_out = $m_out, 
+                m_ins = ManyOf($m_in1, $m_in2), 
+                meta = $meta
+            )
+        end samples = 2
+    end
+
+    # Run benchmarks
+    full_time = run_marginal_test(FullSampling)
+    mean_time = run_marginal_test(MeanBased)
+
+    @test mean_time < full_time
+
+    # Optional: Print the actual times for verification
+    @info "Sampling strategy performance" full_time mean_time ratio=(full_time/mean_time)
 end
