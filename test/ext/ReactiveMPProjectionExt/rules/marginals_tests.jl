@@ -112,28 +112,52 @@ end
     end
 end
 
-@testitem "CVIProjection proposal distribution tests" begin
+@testitem "CVIProjection proposal distribution convergence tests" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
-    using Random
+    using Random, Distributions
 
-    @testset "Multiple inputs" begin
-        method = CVIProjection()
+    @testset "Posterior approximation quality" begin
+        rng = MersenneTwister(123)
+        method = CVIProjection(rng = rng, marginalsamples = 2000)
         meta = DeltaMeta(method = method, inverse = nothing)
         
-        m_out = MvNormalMeanCovariance(zeros(2), I(2))
-        m_in1 = MvNormalMeanCovariance(ones(2), 2 * I(2))
-        m_in2 = MvNormalMeanCovariance(2 * ones(2), 3 * I(2))
-
-        f(x, y) = x .* y
+        f(x, y) = x * y
         
-        # first call to initialize proposal distribution
-        result_first = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta)
+        # Define distributions
+        m_out = NormalMeanVariance(2.0, 0.1)
+        m_in1 = NormalMeanVariance(0.0, 2.0)
+        m_in2 = NormalMeanVariance(0.0, 2.0)
         
-        @test result_first == method.proposal_distribution.distribution
-        @test length(result_first) == 2
+        # Function to compute unnormalized log posterior for a sample
+        function log_posterior(x, y)
+            return logpdf(m_in1, x) + logpdf(m_in2, y) + logpdf(m_out, f(x, y))
+        end
 
-        # second call will use the initialized proposal distribution
-        result_second = @call_marginalrule DeltaFn{f}(:ins) (m_out = m_out, m_ins = ManyOf(m_in1, m_in2), meta = meta)
-        @test result_second != result_first
+        # Estimate KL divergence using samples
+        function estimate_kl_divergence(q_result)
+            n_samples = 10000
+            samples_q = [(rand(rng, q_result[1]), rand(rng, q_result[2])) for _ in 1:n_samples]
+            
+            # Compute E_q[log q(x,y) - log p(x,y)]
+            log_q_terms = [logpdf(q_result[1], x) + logpdf(q_result[2], y) for (x, y) in samples_q]
+            log_p_terms = [log_posterior(x, y) for (x, y) in samples_q]
+            
+            return mean(log_q_terms .- log_p_terms)
+        end
+
+        # Run multiple iterations and collect KL divergences
+        n_iterations = 10
+        kl_divergences = Float64[]
+        
+        for _ in 1:n_iterations
+            result = @call_marginalrule DeltaFn{f}(:ins) (
+                m_out = m_out, 
+                m_ins = ManyOf(m_in1, m_in2), 
+                meta = meta
+            )
+            push!(kl_divergences, estimate_kl_divergence(result))
+        end
+
+        @test kl_divergences[1] > kl_divergences[end]
     end
 end
