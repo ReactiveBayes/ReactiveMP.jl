@@ -124,7 +124,6 @@ function __init__()
             println(io, errmsg)
         end
     end
-    
 end
 
 end
