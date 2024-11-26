@@ -549,10 +549,63 @@
                 showerror(io, err)
                 output = String(take!(io))
 
-                @test occursin("Existing rule(s) for node:", output)
-                @test occursin("Distributions.Beta", output)
-                @test occursin("μ(a) :: BayesBase.PointMass", output)
-                @test occursin("μ(b) :: BayesBase.PointMass", output)
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("m_a::BayesBase.PointMass", output)
+                @test occursin("m_b::BayesBase.PointMass", output)
+                @test occursin("q_a::BayesBase.PointMass", output)
+                @test occursin("q_b::BayesBase.PointMass", output)
+            end
+
+            let
+                err = ReactiveMP.RuleMethodError(
+                    GammaShapeRate,
+                    Val{:a}(),
+                    Marginalisation(),
+                    Val{(:out, :b)}(),
+                    (Message(PointMass, false, false, nothing), Message(PointMass, false, false, nothing)),
+                    Val{(:out_b,)}(),
+                    (Marginal(PointMass, false, false, nothing),),
+                    1.0,
+                    nothing,
+                    nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("GammaShapeRate", output)
+                @test occursin("m_α::BayesBase.PointMass", output)
+                @test occursin("m_β::BayesBase.PointMass", output)
+                @test occursin("q_out::activeMP", output)
+                @test occursin("q_α::Any", output)
+                @test occursin("q_β::Any", output)
+                @test occursin("q_β::ExponentialFamily.GammaDistributionsFamily", output)
+            end
+
+            let
+                err = ReactiveMP.RuleMethodError(
+                    Dirichlet,
+                    Val{:a}(),
+                    Marginalisation(),
+                    Val{(:out,)}(),
+                    (Message(PointMass, false, false, nothing),),
+                    Val{(:a,)}(),
+                    (Marginal(PointMass, false, false, nothing),),
+                    1.0,
+                    nothing,
+                    nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("Dirichlet", output)
+                @test occursin("m_a::BayesBase.PointMass", output)
+                @test occursin("q_a::BayesBase.PointMass", output)
             end
         end
 
@@ -656,6 +709,33 @@
 
                 @test occursin("Possible fix, define", output)
                 @test occursin("(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)", output)
+            end
+        end
+
+        @testset "get_from_rule_method" begin
+
+            let 
+                rule1 = methods(ReactiveMP.rule)[1]
+
+                messages_rule1  = ReactiveMP.get_messages_from_rule_method(rule1)
+                message_names_rule1  = ReactiveMP.get_message_names_from_rule_method(rule1)
+                message_types_rule1  = ReactiveMP.get_message_types_from_rule_method(rule1)
+
+                marginals_rule1 = ReactiveMP.get_marginals_from_rule_method(rule1)
+                marginal_names_rule1 = ReactiveMP.get_marginal_names_from_rule_method(rule1)
+                marginal_types_rule1 = ReactiveMP.get_marginal_types_from_rule_method(rule1)
+                
+                @test ReactiveMP.get_node_from_rule_method(rule1) == "*"
+                @test occursin("μ(A) :: BayesBase.PointMass", messages_rule1[1])
+                @test occursin("μ(out) :: Union{ExponentialFamily.NormalDistributionsFamily{T}", messages_rule1[2])
+                @test occursin("A", message_names_rule1[1])
+                @test occursin("out", message_names_rule1[2])
+                @test occursin("PointMass", message_types_rule1[1])
+                @test occursin("Union", message_types_rule1[2])
+
+                @test isempty(marginals_rule1)
+                @test occursin("Nothing", marginal_names_rule1[1])
+                @test isempty(marginal_types_rule1)
             end
         end
     end
