@@ -713,18 +713,17 @@
         end
 
         @testset "get_from_rule_method" begin
-
-            let 
+            let
                 rule1 = methods(ReactiveMP.rule)[1]
 
-                messages_rule1  = ReactiveMP.get_messages_from_rule_method(rule1)
-                message_names_rule1  = ReactiveMP.get_message_names_from_rule_method(rule1)
-                message_types_rule1  = ReactiveMP.get_message_types_from_rule_method(rule1)
+                messages_rule1      = ReactiveMP.get_messages_from_rule_method(rule1)
+                message_names_rule1 = ReactiveMP.get_message_names_from_rule_method(rule1)
+                message_types_rule1 = ReactiveMP.get_message_types_from_rule_method(rule1)
 
                 marginals_rule1 = ReactiveMP.get_marginals_from_rule_method(rule1)
                 marginal_names_rule1 = ReactiveMP.get_marginal_names_from_rule_method(rule1)
                 marginal_types_rule1 = ReactiveMP.get_marginal_types_from_rule_method(rule1)
-                
+
                 @test ReactiveMP.get_node_from_rule_method(rule1) == "*"
                 @test occursin("μ(A) :: BayesBase.PointMass", messages_rule1[1])
                 @test occursin("μ(out) :: Union{ExponentialFamily.NormalDistributionsFamily{T}", messages_rule1[2])
