@@ -264,3 +264,17 @@ end
         end
     end
 end
+
+@testitem "`factornode` should throw an error if the functional form is not defined with the `@node` macro" begin
+    struct UnknownDistribution end
+
+    out = randomvar()
+    alpha = randomvar()
+    beta = randomvar()
+
+    interfaces = [(:out, out), (:alpha, alpha), (:beta, beta)]
+
+    @test_throws r"`.*UnknownDistribution.*` has been used but the `ReactiveMP` backend does not support `.*UnknownDistribution.*` as a factor node." factornode(
+        UnknownDistribution, interfaces, ((1, 2, 3),)
+    )
+end
