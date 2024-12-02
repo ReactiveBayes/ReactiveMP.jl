@@ -148,3 +148,71 @@ end
         end
     end
 end
+
+@testitem "ProjectionForm target tests" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase, LinearAlgebra
+
+    @testset "Testing abs transformation with ProjectedTo override" begin
+        form = ProjectedTo(LogNormal)
+
+        meta = DeltaMeta(method = CVIProjection(out_prjparams = form, outsamples = 1000), inverse = nothing)
+
+        q_in = FactorizedJoint((NormalMeanVariance(0.0, 1.0),))
+        m_out = Gamma(2.0, 2.0)
+        q_out = Gamma(2.0, 2.0)
+
+        msg = @call_rule DeltaFn{exp}(:out, Marginalisation) (m_out = m_out, q_out = q_out, q_ins = q_in, meta = meta)
+
+        result_dist = msg.numerator
+        @test isa(result_dist, LogNormal)
+
+        # For the standard normal, E[exp(x)] = exp(1/2)
+        @show result_dist
+        @test mean(result_dist) ≈ exp(1 / 2) rtol = 0.05
+    end
+
+    @testset "Testing x^2 transformation with MVNormal and ProjectedTo override" begin
+        # For 2D case, create form for MVNormal projection
+        form = ProjectedTo(
+            MvNormalMeanScalePrecision,
+            2  # 2-dimensional output
+        )
+
+        meta = DeltaMeta(method = CVIProjection(
+            out_prjparams = form,
+            outsamples = 10000  # More samples for better accuracy
+        ), inverse = nothing)
+
+        # Input: Standard 2D normal distribution
+        μ = [0.0, 0.0]
+        Σ = [1.0 0.5; 0.5 1.0]
+        q_in = FactorizedJoint((MvNormalMeanCovariance(μ, Σ),))
+
+        # Output messages (can be arbitrary as they'll be ignored due to ProjectionForm)
+        m_out = MvNormalMeanCovariance(ones(2), Matrix{Float64}(I, 2, 2))
+        q_out = MvNormalMeanCovariance(ones(2), Matrix{Float64}(I, 2, 2))
+
+        # Function to square each component
+        square_components(x) = x .^ 2
+
+        msg = @call_rule DeltaFn{square_components}(:out, Marginalisation) (m_out = m_out, q_out = q_out, q_ins = q_in, meta = meta)
+
+        result_dist = msg.numerator
+        @test isa(result_dist, MvNormalMeanScalePrecision)
+
+        # For standard normal X, E[X^2] = 1
+        # Each component should have mean ≈ 1
+        @test mean(result_dist) ≈ [1.0, 1.0] rtol = 0.1
+
+        # Test with non-zero mean
+        μ2 = [7.0, -3.0]
+        q_in2 = FactorizedJoint((MvNormalMeanCovariance(μ2, Σ),))
+
+        msg2 = @call_rule DeltaFn{square_components}(:out, Marginalisation) (m_out = m_out, q_out = q_out, q_ins = q_in2, meta = meta)
+
+        result_dist2 = msg2.numerator
+        # For normal X with mean μ and variance σ², E[X^2] = μ² + σ²
+        expected_means = μ2 .^ 2 .+ diag(Σ)
+        @test mean(result_dist2) ≈ expected_means rtol = 0.1
+    end
+end
