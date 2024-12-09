@@ -714,7 +714,14 @@
 
         @testset "get_from_rule_method" begin
             let
-                rule1 = methods(ReactiveMP.rule)[1]
+                struct GetFromRuleMethod end
+
+                # dummy rule for test
+                @rule GetFromRuleMethod(:out, Marginalisation) (m_in::NormalMeanVariance, q_a::NormalMeanPrecision) = begin 
+                    return 0
+                end
+
+                rule1 = methods(ReactiveMP.rule, Tuple{Type{GetFromRuleMethod}, Vararg{Any}})[1]
 
                 messages_rule1      = ReactiveMP.get_messages_from_rule_method(rule1)
                 message_names_rule1 = ReactiveMP.get_message_names_from_rule_method(rule1)
@@ -724,17 +731,14 @@
                 marginal_names_rule1 = ReactiveMP.get_marginal_names_from_rule_method(rule1)
                 marginal_types_rule1 = ReactiveMP.get_marginal_types_from_rule_method(rule1)
 
-                @test ReactiveMP.get_node_from_rule_method(rule1) == "*"
-                @test occursin("μ(A) :: BayesBase.PointMass", messages_rule1[1])
-                @test occursin("μ(out) :: Union{ExponentialFamily.NormalDistributionsFamily{T}", messages_rule1[2])
-                @test occursin("A", message_names_rule1[1])
-                @test occursin("out", message_names_rule1[2])
-                @test occursin("PointMass", message_types_rule1[1])
-                @test occursin("Union", message_types_rule1[2])
+                @test occursin("GetFromRuleMethod", ReactiveMP.get_node_from_rule_method(rule1))
+                @test occursin("μ(in) :: ExponentialFamily.NormalMeanVariance", messages_rule1[1])
+                @test occursin("in", message_names_rule1[1])
+                @test occursin("NormalMeanVariance", message_types_rule1[1])
 
-                @test isempty(marginals_rule1)
-                @test occursin("Nothing", marginal_names_rule1[1])
-                @test isempty(marginal_types_rule1)
+                @test occursin("q(a) :: ExponentialFamily.NormalMeanPrecision", marginals_rule1[1])
+                @test occursin("a", marginal_names_rule1[1])
+                @test occursin("NormalMeanPrecision", marginal_types_rule1[1])
             end
         end
     end
