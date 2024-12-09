@@ -717,7 +717,7 @@
                 struct GetFromRuleMethod end
 
                 # dummy rule for test
-                @rule GetFromRuleMethod(:out, Marginalisation) (m_in::NormalMeanVariance, q_a::NormalMeanPrecision) = begin 
+                @rule GetFromRuleMethod(:out, Marginalisation) (m_in::NormalMeanVariance, q_a::NormalMeanPrecision) = begin
                     return 0
                 end
 
