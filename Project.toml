@@ -84,7 +84,6 @@ Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkCI = "20533458-34a3-403d-a444-e18f38190b5b"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
-CpuId = "adafc99b-e345-5852-983c-f28acb93d879"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -104,4 +103,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 
 [targets]
-test = ["Aqua", "CpuId", "Hwloc", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "JET", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection", "REPL"]
+test = ["Aqua", "Hwloc", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "JET", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection", "REPL"]
