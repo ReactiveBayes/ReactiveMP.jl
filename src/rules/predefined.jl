@@ -107,6 +107,12 @@ include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")
 
+include("transition_mixture/marginals.jl")
+include("transition_mixture/out.jl")
+include("transition_mixture/in.jl")
+include("transition_mixture/switch.jl")
+include("transition_mixture/matrices.jl")
+
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")
 include("continuous_transition/a.jl")
