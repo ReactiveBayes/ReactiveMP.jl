@@ -415,3 +415,102 @@ end
         end
     end
 end
+
+@testitem "Functional dependencies may change depending on the metadata from options" begin
+    # This test demonstrates how functional dependencies can be customized based on metadata
+    # passed during node activation. This is useful when:
+    # 1. The same node type needs different message passing behaviors in different contexts
+    # 2. Users want to override the default message passing behavior without creating a new node type
+    #
+    # The test creates a custom node with 3 interfaces (out, in1, in2) and shows how:
+    # - With meta = :use_a, the output message depends only on in1
+    # - With meta = :use_b, the output message depends only on in2
+    # - With meta = nothing, it falls back to default dependencies
+    #
+    # This pattern allows for flexible message passing schemes that can be configured at runtime
+    # rather than being hardcoded into the node type.
+
+    include("../testutilities.jl")
+    using BayesBase, Rocket
+
+    import ReactiveMP: NodeInterface, collect_functional_dependencies, getdata, getrecent, activate!, getmetadata, name, getinterface
+    import ReactiveMP: FunctionalDependencies, functional_dependencies, DefaultFunctionalDependencies, FactorNodeActivationOptions, getdependecies
+
+    # Define a custom node for testing
+    struct CustomMetaNode end
+
+    @node CustomMetaNode Stochastic [out, in1, in2]
+
+    # Define custom functional dependencies that we'll use based on meta
+    struct CustomDependencyA <: FunctionalDependencies end
+    struct CustomDependencyB <: FunctionalDependencies end
+
+    # Define how meta affects functional dependencies
+    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions) =
+        ReactiveMP.collect_functional_dependencies(CustomMetaNode, options, getmetadata(options))
+
+    # Mock different behavior for our custom dependencies
+    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, ::FactorNodeActivationOptions, meta::Symbol) = meta === :use_a ? CustomDependencyA() : CustomDependencyB()
+    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions, meta::Nothing) =
+        ReactiveMP.collect_functional_dependencies(CustomMetaNode, getdependecies(options))
+
+    # Mock different behavior for our custom dependencies
+    function ReactiveMP.functional_dependencies(::CustomDependencyA, factornode, interface, iindex)
+        # CustomDependencyA only depends on in1
+        msg_deps = name(interface) === :out ? (getinterface(factornode, 2),) : () # only in1
+        return (msg_deps, ())
+    end
+
+    function ReactiveMP.functional_dependencies(::CustomDependencyB, factornode, interface, iindex)
+        # CustomDependencyB only depends on in2
+        msg_deps = name(interface) === :out ? (getinterface(factornode, 3),) : () # only in2
+        return (msg_deps, ())
+    end
+
+    # Create test variables
+    out_v = randomvar()
+    in1_v = ConstVariable(1.0)
+    in2_v = ConstVariable(2.0)
+
+    @testset "use_a metadata results in CustomDependencyA" begin
+        options_a = FactorNodeActivationOptions(:use_a, nothing, nothing, nothing, AsapScheduler(), nothing)
+        deps = collect_functional_dependencies(CustomMetaNode, options_a)
+        @test deps isa CustomDependencyA
+    end
+
+    @testset "use_b metadata results in CustomDependencyB" begin
+        options_b = FactorNodeActivationOptions(:use_b, nothing, nothing, nothing, AsapScheduler(), nothing)
+        deps = collect_functional_dependencies(CustomMetaNode, options_b)
+        @test deps isa CustomDependencyB
+    end
+
+    @testset "no metadata falls back to default dependencies" begin
+        options_default = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, AsapScheduler(), nothing)
+        deps = collect_functional_dependencies(CustomMetaNode, options_default)
+        @test deps isa DefaultFunctionalDependencies
+    end
+
+    @testset "Dependencies change based on meta" begin
+        # Create node with meta :use_a
+        node_a = factornode(CustomMetaNode, [(:out, out_v), (:in1, in1_v), (:in2, in2_v)], ((1,),))
+        options_a = FactorNodeActivationOptions(:use_a, nothing, nothing, nothing, AsapScheduler(), nothing)
+        deps_a = collect_functional_dependencies(CustomMetaNode, options_a)
+        activate!(node_a, options_a)
+
+        out_interface_a = getinterface(node_a, 1)
+        msg_deps_a, marg_deps_a = functional_dependencies(deps_a, node_a, out_interface_a, 1)
+        @test length(msg_deps_a) == 1
+        @test name(first(msg_deps_a)) === :in1
+
+        # Test that functional dependencies are different with meta :use_b
+        node_b = factornode(CustomMetaNode, [(:out, out_v), (:in1, in1_v), (:in2, in2_v)], ((1,),))
+        options_b = FactorNodeActivationOptions(:use_b, nothing, nothing, nothing, AsapScheduler(), nothing)
+        deps_b = collect_functional_dependencies(CustomMetaNode, options_b)
+        activate!(node_b, options_b)
+        out_interface_b = getinterface(node_b, 1)
+        msg_deps_b, marg_deps_b = functional_dependencies(deps_b, node_b, out_interface_b, 1)
+        @test length(msg_deps_b) == 1
+        @test name(first(msg_deps_b)) === :in2
+        
+    end
+end
