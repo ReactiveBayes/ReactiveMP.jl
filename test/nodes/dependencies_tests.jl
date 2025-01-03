@@ -511,6 +511,5 @@ end
         msg_deps_b, marg_deps_b = functional_dependencies(deps_b, node_b, out_interface_b, 1)
         @test length(msg_deps_b) == 1
         @test name(first(msg_deps_b)) === :in2
-        
     end
 end
