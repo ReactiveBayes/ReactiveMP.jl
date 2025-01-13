@@ -22,9 +22,10 @@ the rules will use the means to compute the messages. Both schemes yield very si
 struct BinomialPolyaMeta
     n_samples::Int 
 end
+#1 sample is enough. Increasing it doesn't add much accuracy and increases computational cost.
 
 getn_samples(meta::BinomialPolyaMeta) = meta.n_samples
-default_meta(::Type{BinomialPolya}) = BinomialPolyaMeta(1) ##1 Sample is enough. Increasing it doesn't add and increases computational cost.
+default_meta(::Type{BinomialPolya}) = nothing 
 
 @node BinomialPolya Stochastic [y, x, n, β]
 
