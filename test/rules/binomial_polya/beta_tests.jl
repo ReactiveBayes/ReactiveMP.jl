@@ -16,9 +16,9 @@
         Λ = [0.0125 0.025; 0.025 0.05]
         xi = [0.05, 0.1]
 
-        @test_rules [check_type_promotion = false] BinomialPolya(:β, Marginalisation) [
-            (input = (q_y = q_y, q_x = q_x, q_n = q_n, m_β = m_β, meta = metas[1]), output = MvNormalWeightedMeanPrecision(xi, Λ))
-        ]
+        @test_rules [check_type_promotion = false] BinomialPolya(:β, Marginalisation) [(
+            input = (q_y = q_y, q_x = q_x, q_n = q_n, m_β = m_β, meta = metas[1]), output = MvNormalWeightedMeanPrecision(xi, Λ)
+        )]
 
         for meta in metas
             out = @call_rule BinomialPolya(:β, Marginalisation) (q_y = q_y, q_x = q_x, q_n = q_n, m_β = m_β, meta = meta)
