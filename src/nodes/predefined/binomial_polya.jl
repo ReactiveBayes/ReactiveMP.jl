@@ -20,12 +20,12 @@ the rules will use the means to compute the messages. Both schemes yield very si
                    Default is 1, as increasing it adds computational cost without significant benefit.
 """
 struct BinomialPolyaMeta
-    n_samples::Int 
+    n_samples::Int
 end
 #1 sample is enough. Increasing it doesn't add much accuracy and increases computational cost.
 
 getn_samples(meta::BinomialPolyaMeta) = meta.n_samples
-default_meta(::Type{BinomialPolya}) = nothing 
+default_meta(::Type{BinomialPolya}) = nothing
 
 @node BinomialPolya Stochastic [y, x, n, β]
 
@@ -51,19 +51,17 @@ Calculate the average energy (negative log probability) for the BinomialPolya no
     β = mean(q_β)
 
     if meta === nothing
-        term1 = -n*log((1 + exp(-dot(x, β))))
+        term1 = -n * log((1 + exp(-dot(x, β))))
     else
         n_samples = getn_samples(meta)
         βsamples = rand(q_β, n_samples)
-        term1_vec = map(βsample -> -n*log((1 + exp(-dot(x, βsample)))), eachcol(βsamples))
+        term1_vec = map(βsample -> -n * log((1 + exp(-dot(x, βsample)))), eachcol(βsamples))
         term1 = mean(term1_vec)
     end
 
-    term1 = -n*log((1 + exp(-dot(x, β))))
-    term2 = (y-n)*dot(x, β)
+    term1 = -n * log((1 + exp(-dot(x, β))))
+    term2 = (y - n) * dot(x, β)
     term3 = loggamma(n + 1) - (loggamma(n - y + 1) + loggamma(y + 1))
-    
+
     return -(term1 + term2 + term3)
 end
-
-

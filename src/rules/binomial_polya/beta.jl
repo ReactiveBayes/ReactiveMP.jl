@@ -6,7 +6,7 @@ using PolyaGammaHybridSamplers
 
     if meta === nothing
         β = mean(m_β)
-        ωsampler = PolyaGammaHybridSampler(n, dot(x, β));
+        ωsampler = PolyaGammaHybridSampler(n, dot(x, β))
         ω_sample = mean(ωsampler)
     else
         n_samples = getn_samples(meta)
@@ -16,11 +16,9 @@ using PolyaGammaHybridSamplers
         ω_sample = mean(ω_samples)
     end
 
-    κ = y - n/2
-    Λ = x*ω_sample*x'
+    κ = y - n / 2
+    Λ = x * ω_sample * x'
     xi = κ * x
 
     return MvNormalWeightedMeanPrecision(xi, Λ)
 end
-
-
