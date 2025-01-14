@@ -4,10 +4,10 @@ using Documenter, ReactiveMP
 ## https://gr-framework.org/workstations.html#no-output
 ENV["GKSwstype"] = "100"
 
-DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive=true)
+DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive = true)
 
 makedocs(
-    modules  = [ ReactiveMP ],
+    modules  = [ReactiveMP],
     clean    = true,
     sitename = "ReactiveMP.jl",
     pages    = [
@@ -48,9 +48,5 @@ makedocs(
 )
 
 if get(ENV, "CI", nothing) == "true"
-    deploydocs(
-        repo = "github.com/ReactiveBayes/ReactiveMP.jl.git",
-        devbranch = "main", 
-        forcepush = true
-    )
+    deploydocs(repo = "github.com/ReactiveBayes/ReactiveMP.jl.git", devbranch = "main", forcepush = true)
 end
