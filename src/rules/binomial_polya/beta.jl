@@ -23,6 +23,5 @@ using PolyaGammaHybridSamplers
     Λ = x * ω_sample * x'
     xi = κ * x
 
-
     return MvNormalWeightedMeanPrecision(xi, Λ)
 end
