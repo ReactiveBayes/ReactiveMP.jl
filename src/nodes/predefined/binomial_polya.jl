@@ -17,12 +17,16 @@ the rules will use the means to compute the messages. Both schemes yield very si
 
 # Fields
 - `n_samples::Int`: Number of samples to use for Monte Carlo estimation of the average energy.
-                   Default is 1, as increasing it adds computational cost without significant benefit.
+                    Default is 1, as increasing it adds computational cost without significant benefit.
+- `rng::AbstractRNG`: Random number generator to use for sampling. Defaults to Random.default_rng().
 """
 struct BinomialPolyaMeta
     n_samples::Int
+    rng::AbstractRNG
 end
-#1 sample is enough. Increasing it doesn't add much accuracy and increases computational cost.
+
+# Constructor with default RNG
+BinomialPolyaMeta(n_samples::Int = 1) = BinomialPolyaMeta(n_samples, Random.default_rng())
 
 getn_samples(meta::BinomialPolyaMeta) = meta.n_samples
 default_meta(::Type{BinomialPolya}) = nothing
@@ -39,7 +43,7 @@ default_meta(::Type{BinomialPolya}) = nothing
         term1 = -n * log((1 + exp(-dot(x, β))))
     else
         n_samples = getn_samples(meta)
-        βsamples = rand(q_β, n_samples)
+        βsamples = rand(meta.rng, q_β, n_samples)
         term1_vec = map(βsample -> -n * log((1 + exp(-dot(x, βsample)))), eachcol(βsamples))
         term1 = mean(term1_vec)
     end

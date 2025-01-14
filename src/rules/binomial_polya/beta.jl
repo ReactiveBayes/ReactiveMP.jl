@@ -1,10 +1,11 @@
 using PolyaGammaHybridSamplers
+
 @rule BinomialPolya(:β, Marginalisation) (q_y::PointMass, q_x::PointMass, q_n::PointMass, m_β::GaussianDistributionsFamily, meta::Union{BinomialPolyaMeta, Nothing}) = begin
     y = mean(q_y)
     x = mean(q_x)
     n = mean(q_n)
 
-    if meta === nothing
+    if isnothing(meta)
         β = mean(m_β)
         ωsampler = PolyaGammaHybridSampler(n, dot(x, β))
         ω_sample = mean(ωsampler)
