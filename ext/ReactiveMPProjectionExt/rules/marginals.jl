@@ -7,12 +7,7 @@ function create_project_to_ins(::CVIProjection, ::Nothing, m_in::Any)
     T = ExponentialFamily.exponential_family_typetag(m_in)
     ef_in = convert(ExponentialFamilyDistribution, m_in)
     conditioner = getconditioner(ef_in)
-    return ProjectedTo(
-        T,
-        size(m_in)...;
-        conditioner = conditioner,
-        parameters =  ExponentialFamilyProjection.DefaultProjectionParameters()
-    )
+    return ProjectedTo(T, size(m_in)...; conditioner = conditioner, parameters = ExponentialFamilyProjection.DefaultProjectionParameters())
 end
 
 function create_project_to_ins(::CVIProjection, form::ProjectedTo, ::Any)
@@ -23,12 +18,7 @@ function create_project_to_ins(::CVIProjection, params::ProjectionParameters, m_
     T = ExponentialFamily.exponential_family_typetag(m_in)
     ef_in = convert(ExponentialFamilyDistribution, m_in)
     conditioner = getconditioner(ef_in)
-    return ProjectedTo(
-        T,
-        size(m_in)...;
-        conditioner = conditioner,
-        parameters = params
-    )
+    return ProjectedTo(T, size(m_in)...; conditioner = conditioner, parameters = params)
 end
 
 function create_project_to_ins(method::CVIProjection, m_in::Any, k::Int)
@@ -70,13 +60,13 @@ end
         (i, pre_samples) -> begin
             m_in = m_ins[i]
             default_type = ExponentialFamily.exponential_family_typetag(m_in)
-            
+
             prj = create_project_to_ins(method, m_in, i)
 
             typeform = ExponentialFamilyProjection.get_projected_to_type(prj)
-            dims = ExponentialFamilyProjection.get_projected_to_dims(prj)            
+            dims = ExponentialFamilyProjection.get_projected_to_dims(prj)
             forms_match = typeform === default_type && dims == size(m_in)
-            
+
             # Create log probability function
             df = if forms_match
                 let i = i, pre_samples = pre_samples, logp_nc_drop_index = logp_nc_drop_index
@@ -88,11 +78,7 @@ end
                 end
             end
 
-            logp = convert(
-                promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), 
-                UnspecifiedDomain(), 
-                df
-            )
+            logp = convert(promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
 
             return forms_match ? project_to(prj, logp, m_in) : project_to(prj, logp)
         end
