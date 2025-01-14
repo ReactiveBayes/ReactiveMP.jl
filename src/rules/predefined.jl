@@ -182,3 +182,5 @@ include("delta/cvi/out.jl")
 include("delta/cvi/marginals.jl")
 
 include("half_normal/out.jl")
+
+include("binomial_polya/beta.jl")
