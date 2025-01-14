@@ -26,6 +26,7 @@ makedocs(
                 "Logical" => "lib/nodes/logical.md",
                 "Continuous transition" => "lib/nodes/ctransition.md",
                 "Autoregressive" => "lib/nodes/ar.md",
+                "BinomialPolya" => "lib/nodes/binomial_polya.md",
             ]
         ],
         "Custom functionality" => [

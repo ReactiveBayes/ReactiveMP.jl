@@ -29,21 +29,6 @@ default_meta(::Type{BinomialPolya}) = nothing
 
 @node BinomialPolya Stochastic [y, x, n, β]
 
-"""
-    @average_energy BinomialPolya(q_y, q_x, q_n, q_β, meta)
-
-Calculate the average energy (negative log probability) for the BinomialPolya node.
-
-# Arguments
-- `q_y::PointMass`: Point mass distribution for the observed count
-- `q_x::PointMass`: Point mass distribution for the covariates
-- `q_n::PointMass`: Point mass distribution for the number of trials
-- `q_β::Any`: Distribution for the regression coefficients
-- `meta::Union{BinomialPolyaMeta, Nothing}`: Metadata for controlling the sampling behavior
-
-# Returns
-- The negative log probability (average energy) of the Binomial-Polya distribution
-"""
 @average_energy BinomialPolya (q_y::PointMass, q_x::PointMass, q_n::PointMass, q_β::Any, meta::Union{BinomialPolyaMeta, Nothing}) = begin
     y = mean(q_y)
     x = mean(q_x)
