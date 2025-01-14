@@ -13,9 +13,9 @@ using PolyaGammaHybridSamplers
         ω_sample = convert(T, mean(ωsampler))
     else
         n_samples = getn_samples(meta)
-        βsamples = rand(m_β, n_samples)
+        βsamples = rand(meta.rng, m_β, n_samples)
         ωsampler = map(βsample -> PolyaGammaHybridSampler(n, dot(x, βsample)), eachcol(βsamples))
-        ω_samples = map(ωsampler -> rand(ωsampler), ωsampler)
+        ω_samples = map(ωsampler -> rand(meta.rng, ωsampler), ωsampler)
         ω_sample = convert(T, mean(ω_samples))
     end
 

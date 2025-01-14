@@ -10,7 +10,7 @@
         q_x = PointMass([0.1, 0.2])
         q_n = PointMass(5)
         m_β = MvNormalWeightedMeanPrecision(zeros(2), diageye(2))
-        metas = [nothing, BinomialPolyaMeta(1), BinomialPolyaMeta(10), BinomialPolyaMeta(1, MersenneTwister(42))]
+        metas = [nothing, BinomialPolyaMeta(1, MersenneTwister(123)), BinomialPolyaMeta(10, MersenneTwister(42))]
 
         ## Hand-calculated values. If meta is not nothing, the values will be a bit different.
         Λ = [0.0125 0.025; 0.025 0.05]

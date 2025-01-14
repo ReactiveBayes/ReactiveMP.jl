@@ -44,7 +44,7 @@ default_meta(::Type{BinomialPolya}) = nothing
     else
         n_samples = getn_samples(meta)
         βsamples = rand(meta.rng, q_β, n_samples)
-        term1_vec = map(βsample -> -n * log((1 + exp(-dot(x, βsample)))), eachcol(βsamples))
+        term1_vec = map(βsample -> (-n * log((1 + exp(-dot(x, βsample))))), eachcol(βsamples))
         term1 = mean(term1_vec)
     end
 
