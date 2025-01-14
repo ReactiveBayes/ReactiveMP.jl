@@ -13,6 +13,7 @@ on:
     - cron: '0 8 * * 1' # run the cron job one time per week on Monday 8:00 AM
 jobs:
   code-style:
+    name: Code Style Suggestions
     runs-on: ubuntu-latest
     steps:
       - uses: julia-actions/julia-format@v3
