@@ -5,21 +5,24 @@ using PolyaGammaHybridSamplers
     x = mean(q_x)
     n = mean(q_n)
 
+    T = promote_samplefloattype(q_y, q_x, q_n, m_β)
+
     if isnothing(meta)
         β = mean(m_β)
         ωsampler = PolyaGammaHybridSampler(n, dot(x, β))
-        ω_sample = mean(ωsampler)
+        ω_sample = convert(T, mean(ωsampler))
     else
         n_samples = getn_samples(meta)
         βsamples = rand(m_β, n_samples)
         ωsampler = map(βsample -> PolyaGammaHybridSampler(n, dot(x, βsample)), eachcol(βsamples))
         ω_samples = map(ωsampler -> rand(ωsampler), ωsampler)
-        ω_sample = mean(ω_samples)
+        ω_sample = convert(T, mean(ω_samples))
     end
 
-    κ = y - n / 2
+    κ = convert(T, y - n / 2)
     Λ = x * ω_sample * x'
     xi = κ * x
+
 
     return MvNormalWeightedMeanPrecision(xi, Λ)
 end
