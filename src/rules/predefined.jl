@@ -106,6 +106,7 @@ include("transition/marginals.jl")
 include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")
+include("transition/t.jl")
 
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")

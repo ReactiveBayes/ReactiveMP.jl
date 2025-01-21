@@ -23,3 +23,18 @@ end
     m_in_2 = @call_rule Transition(:in, Marginalisation) (m_out = m_out, m_a = m_a, meta = meta)
     return convert_paramfloattype((out = m_out, in = prod(ClosedProd(), m_in_2, m_in), a = m_a))
 end
+
+outer_product(vs) = prod.(Iterators.product(vs...))
+
+function __reduce_td_from_messages(messages, q_A, interface_index)
+    e_log_a = mean(BroadcastFunction(log), q_A)
+    vmp = clamp.(exp.(e_log_a), tiny, Inf)
+    probvecs = outer_product(probvec.(messages))
+    s = size(probvecs)
+    probvecs = reshape(probvecs, (s[1:(interface_index - 1)]..., 1, s[(interface_index):end]...))
+    vmp = vmp .* probvecs
+    dims = filter!(x -> x ≠ interface_index, collect(1:ndims(vmp)))
+    vmp = sum(vmp, dims = Tuple(dims))
+    vmp = reshape(vmp ./ sum(vmp), :)
+    return Categorical(vmp)
+end

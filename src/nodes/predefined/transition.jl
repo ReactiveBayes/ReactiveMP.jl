@@ -4,7 +4,30 @@ import Base.Broadcast: BroadcastFunction
 
 struct Transition end
 
-@node Transition Stochastic [out, in, a]
+ReactiveMP.sdtype(::Type{Transition}) = ReactiveMP.Stochastic()
+ReactiveMP.is_predefined_node(::Type{Transition}) = ReactiveMP.PredefinedNodeFunctionalForm()
+
+function ReactiveMP.prepare_interfaces_generic(fform::Type{Transition}, interfaces::AbstractVector)
+    return map(enumerate(interfaces)) do (index, (name, variable))
+        return ReactiveMP.NodeInterface(ReactiveMP.alias_interface(fform, index, name), variable)
+    end
+end
+
+function ReactiveMP.alias_interface(::Type{Transition}, index, name)
+    if name === :out && index === 1
+        return :out
+    elseif name === :in && index === 2
+        return :in
+    elseif name === :in && index === 3
+        return :a
+    elseif name === :in && index >= 4
+        return Symbol(:T, index - 3)
+    end
+end
+
+function ReactiveMP.collect_factorisation(::Type{Transition}, t::Tuple)
+    return t
+end
 
 @average_energy Transition (q_out::Any, q_in::Any, q_a::MatrixDirichlet) = begin
     return -probvec(q_out)' * mean(BroadcastFunction(log), q_a) * probvec(q_in)
