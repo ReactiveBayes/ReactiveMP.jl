@@ -29,8 +29,12 @@ function ReactiveMP.collect_factorisation(::Type{Transition}, t::Tuple)
     return t
 end
 
-@average_energy Transition (q_out::Any, q_in::Any, q_a::Union{MatrixDirichlet, PointMass}) = begin
+@average_energy Transition (q_out::Any, q_in::Any, q_a::PointMass) = begin
     return -probvec(q_out)' * mean(BroadcastFunction(clamplog), q_a) * probvec(q_in)
+end
+
+@average_energy Transition (q_out::Any, q_in::Any, q_a::MatrixDirichlet) = begin
+    return -probvec(q_out)' * mean(BroadcastFunction(log), q_a) * probvec(q_in)
 end
 
 @average_energy Transition (q_out_in::Contingency, q_a::MatrixDirichlet) = begin
