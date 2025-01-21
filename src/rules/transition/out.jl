@@ -47,17 +47,5 @@ function ReactiveMP.rule(
     addons::Any,
     ::Any
 ) where {m_names}
-    # return __reduce_td_from_messages(messages, first(marginals), 1), addons
-
-    # Keep this because this is faster.
-    q_A = first(marginals)
-    e_log_a = mean(Base.Broadcast.BroadcastFunction(log), q_A)
-    vmp = clamp.(exp.(e_log_a), tiny, Inf)
-    probvecs = probvec.(messages)
-    s = size(vmp)
-    for i in length(s):-1:2
-        vmp = reshape(vmp, (prod(s[1:(i - 1)]), s[i])) * probvecs[i - 1]
-    end
-    vmp = vmp ./ sum(vmp)
-    return Categorical(vmp), addons
+    return __reduce_td_from_messages(messages, first(marginals), 1), addons
 end
