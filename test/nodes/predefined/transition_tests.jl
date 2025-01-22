@@ -1,5 +1,15 @@
 @testitem "TransitionNode" begin
     using Test, ReactiveMP, Random, Distributions, BayesBase, ExponentialFamily
+
+    @testset "Transition node properties" begin
+        @test ReactiveMP.sdtype(Transition) == Stochastic()
+        @test ReactiveMP.alias_interface(Transition, 1, :out) == :out
+        @test ReactiveMP.alias_interface(Transition, 2, :in) == :in
+        @test ReactiveMP.alias_interface(Transition, 3, :in) == :a
+        @test ReactiveMP.alias_interface(Transition, 4, :in) == :T1
+
+        @test ReactiveMP.collect_factorisation(Transition, ()) == ()
+    end
     @testset "AverageEnergy(q_out_in::Contingency, q_a::MatrixDirichlet)" begin end
 
     @testset "AverageEnergy(q_out_in::Contingency, q_a::PointMass)" begin
@@ -47,9 +57,6 @@
         marginals = (Marginal(q_out_in, false, false, nothing), Marginal(q_a, false, false, nothing))
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
-        @show expected
-        @show score(AverageEnergy(), Transition, Val{(:out_in, :a)}(), marginals, nothing)
-
         @test score(AverageEnergy(), Transition, Val{(:out_in, :a)}(), marginals, nothing) ≈ expected
     end
 
