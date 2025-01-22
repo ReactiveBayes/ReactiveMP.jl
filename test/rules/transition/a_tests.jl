@@ -18,4 +18,16 @@
             input = (q_out_in = Contingency(diageye(3)),), output = MatrixDirichlet([1.333333333333333 1 1; 1 1.3333333333333 1; 1 1 1.33333333333333333])
         )]
     end
+
+    @testset "Variational Bayes: (q_out_in_t1::Contingency)" begin
+        @test_rules [check_type_promotion = false] Transition(:a, Marginalisation) [(
+            input = (q_out_in_t1 = Contingency(ones(3, 3, 3)),), output = TensorDirichlet(ones(3, 3, 3) .+ (1 / 27))
+        )]
+    end
+
+    @testset "Variational Bayes: (q_out_in_t1_t2::Contingency)" begin
+        @test_rules [check_type_promotion = false] Transition(:a, Marginalisation) [(
+            input = (q_out_in_t1_t2 = Contingency(ones(3, 3, 3, 3)),), output = TensorDirichlet(ones(3, 3, 3, 3) .+ (1 / 81))
+        )]
+    end
 end

@@ -26,3 +26,18 @@ end
     normalize!(p, 1)
     return Categorical(p)
 end
+
+function ReactiveMP.rule(
+    fform::Type{<:Transition},
+    on::Val{:in},
+    vconstraint::Marginalisation,
+    messages_names::Val{m_names},
+    messages::Tuple,
+    marginals_names::Val{(:a,)},
+    marginals::Tuple,
+    meta::Any,
+    addons::Any,
+    ::Any
+) where {m_names}
+    return __reduce_td_from_messages(messages, first(marginals), 2), addons
+end

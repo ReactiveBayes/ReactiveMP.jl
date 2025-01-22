@@ -23,3 +23,16 @@ end
     m_in_2 = @call_rule Transition(:in, Marginalisation) (m_out = m_out, m_a = m_a, meta = meta)
     return convert_paramfloattype((out = m_out, in = prod(ClosedProd(), m_in_2, m_in), a = m_a))
 end
+
+@marginalrule Transition(:out_in) (m_out::PointMass, m_in::Categorical, q_a::PointMass) = begin
+    m_in_2 = @call_rule Transition(:in, Marginalisation) (m_out = m_out, q_a = q_a)
+    return convert_paramfloattype((out = m_out, in = prod(ClosedProd(), m_in, m_in_2)))
+end
+
+outer_product(vs) = prod.(Iterators.product(vs...))
+
+function marginalrule(
+    ::Type{<:Transition}, ::Val{marginal_symbol}, ::Val{message_names}, messages::Tuple, ::Val{marginal_names}, marginals::Tuple, ::Any, ::Any
+) where {marginal_symbol, message_names, marginal_names}
+    return Contingency(outer_product(probvec.(messages)) .* clamp.(exp.(mean(BroadcastFunction(log), first(marginals))), tiny, huge))
+end

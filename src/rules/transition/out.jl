@@ -34,3 +34,18 @@ end
     @logscale 0
     return @call_rule Transition(:out, Marginalisation) (m_in = m_in, m_a = q_a, meta = meta, addons = getaddons())
 end
+
+function ReactiveMP.rule(
+    fform::Type{<:Transition},
+    on::Val{:out},
+    vconstraint::Marginalisation,
+    messages_names::Val{m_names},
+    messages::Tuple,
+    marginals_names::Val{(:a,)},
+    marginals::Tuple,
+    meta::Any,
+    addons::Any,
+    ::Any
+) where {m_names}
+    return __reduce_td_from_messages(messages, first(marginals), 1), addons
+end

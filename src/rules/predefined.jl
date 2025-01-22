@@ -106,6 +106,7 @@ include("transition/marginals.jl")
 include("transition/out.jl")
 include("transition/in.jl")
 include("transition/a.jl")
+include("transition/t.jl")
 
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")
@@ -184,3 +185,6 @@ include("delta/cvi/marginals.jl")
 include("half_normal/out.jl")
 
 include("binomial_polya/beta.jl")
+
+include("tensor_dirichlet/out.jl")
+include("tensor_dirichlet/marginals.jl")
