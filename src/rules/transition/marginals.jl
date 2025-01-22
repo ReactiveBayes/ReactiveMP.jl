@@ -24,6 +24,11 @@ end
     return convert_paramfloattype((out = m_out, in = prod(ClosedProd(), m_in_2, m_in), a = m_a))
 end
 
+@marginalrule Transition(:out_in) (m_out::PointMass, m_in::Categorical, q_a::PointMass) = begin
+    m_in_2 = @call_rule Transition(:in, Marginalisation) (m_out = m_out, q_a = q_a)
+    return convert_paramfloattype((out = m_out, in = prod(ClosedProd(), m_in, m_in_2)))
+end
+
 outer_product(vs) = prod.(Iterators.product(vs...))
 
 function marginalrule(

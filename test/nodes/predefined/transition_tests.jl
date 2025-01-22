@@ -29,7 +29,6 @@
         @test score(AverageEnergy(), Transition, Val{(:out_in, :a)}(), marginals, nothing) ≈ expected
 
         contingency_matrix = prod.(Iterators.product([0, 1, 0], [0.1, 0.4, 0.5]))
-        @show contingency_matrix
         a_matrix = diageye(3)
 
         q_out_in = Contingency(contingency_matrix)
@@ -38,7 +37,18 @@
         marginals = (Marginal(q_out_in, false, false, nothing), Marginal(q_a, false, false, nothing))
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
+
+        @test score(AverageEnergy(), Transition, Val{(:out_in, :a)}(), marginals, nothing) ≈ expected
+
+        contingency_matrix = [0.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 0.0]
+        q_out_in = Contingency(contingency_matrix)
+        q_a = PointMass(diageye(3))
+
+        marginals = (Marginal(q_out_in, false, false, nothing), Marginal(q_a, false, false, nothing))
+
+        expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
         @show expected
+        @show score(AverageEnergy(), Transition, Val{(:out_in, :a)}(), marginals, nothing)
 
         @test score(AverageEnergy(), Transition, Val{(:out_in, :a)}(), marginals, nothing) ≈ expected
     end
