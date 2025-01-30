@@ -1,6 +1,5 @@
 using PolyaGammaHybridSamplers
 
-
 ### When N = 1 , we will have one-hot-encoding for x representing it as categorical distribution
 @rule MultinomialPolya(:ψ, Marginalisation) (q_x::PointMass, q_N::PointMass, m_ψ::GaussianDistributionsFamily, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
     x = mean(q_x)
