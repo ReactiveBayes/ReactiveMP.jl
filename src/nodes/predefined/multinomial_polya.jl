@@ -3,7 +3,7 @@ export MultinomialPolya, MultinomialPolyaMeta
 """
     MultinomialPolya
 
-A node type representing a Multinomial likelihood with linear predictor through softmax. A Normal prior on the weights is used. 
+A node type representing a MultinomialPolya likelihood with linear predictor through softmax. A Normal prior on the weights is used. 
 The prior is augmented with a PolyaGamma distribution, which is used for modeling count data with overdispersion. 
 This implementation follows the PolyaGamma augmentation scheme for Bayesian inference. Can be used for Multinomial regression. 
 """
