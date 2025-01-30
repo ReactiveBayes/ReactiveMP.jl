@@ -186,5 +186,7 @@ include("half_normal/out.jl")
 
 include("binomial_polya/beta.jl")
 
+include("multinomial_polya/psi.jl")
+
 include("tensor_dirichlet/out.jl")
 include("tensor_dirichlet/marginals.jl")
