@@ -11,7 +11,7 @@ using ExponentialFamily.LogExpFunctions
     else
         n_samples = getn_samples(meta)
         βsamples = rand(meta.rng, q_β, n_samples)
-        p_avg = mapreduce(βsample -> logistic(dot(x, βsample)), +, eachcol(βsamples))/n_samples
+        p_avg = mapreduce(βsample -> logistic(dot(x, βsample)), +, eachcol(βsamples)) / n_samples
         return Binomial(n, p_avg)
     end
 end
