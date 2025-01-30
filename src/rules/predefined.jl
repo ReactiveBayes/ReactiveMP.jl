@@ -185,6 +185,7 @@ include("delta/cvi/marginals.jl")
 include("half_normal/out.jl")
 
 include("binomial_polya/beta.jl")
+include("binomial_polya/y.jl")
 
 include("multinomial_polya/psi.jl")
 
