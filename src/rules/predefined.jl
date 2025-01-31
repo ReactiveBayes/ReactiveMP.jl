@@ -188,6 +188,7 @@ include("binomial_polya/beta.jl")
 include("binomial_polya/y.jl")
 
 include("multinomial_polya/psi.jl")
+include("multinomial_polya/x.jl")
 
 include("tensor_dirichlet/out.jl")
 include("tensor_dirichlet/marginals.jl")
