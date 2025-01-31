@@ -24,9 +24,9 @@ using PolyaGammaHybridSamplers
         
         @inbounds for i in 1:n_samples
             @views ψ_i = ψ_samples[:, i]
-            @inbounds for k in 1:K-1
+            for k in 1:K-1
                 sampler = PolyaGammaHybridSampler(Nks[k], ψ_i[k])
-                @views ω_accum[k] += rand(meta.rng, sampler)
+                @views ω_accum[k] += rand(meta.rng, PolyaGammaHybridSampler(Nks[k], ψ_i[k]))
             end
         end
         ω = ω_accum ./ n_samples

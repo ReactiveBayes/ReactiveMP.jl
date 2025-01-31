@@ -1,5 +1,5 @@
-export MultinomialPolya, MultinomialPolyaMeta
-
+export MultinomialPolya, MultinomialPolyaMeta, logistic_stic_breaking
+using PolyaGammaHybridSamplers
 """
     MultinomialPolya
 
@@ -34,6 +34,36 @@ default_meta(::Type{MultinomialPolya}) = nothing
 @node MultinomialPolya Stochastic [x, N, ψ]
 
 ##TODO: Implement the average energy for MultinomialPolya
-@average_energy MultinomialPolya (q_x::PointMass, q_N::PointMass, q_ψ::Any, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
-    return 0.0
+@average_energy MultinomialPolya (q_x::Union{PointMass, Multinomial}, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily,PointMass}, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
+    # Get parameters from variational distributions
+    N = mean(q_N)
+    K = length(mean(q_x))
+    p = q_x isa PointMass ? mean(q_x) ./ N : probs(q_x)
+    
+    # Get ψ statistics
+    μ_ψ = mean(q_ψ)
+    Σ_ψ = cov(q_ψ)
+    var_ψ = diag(Σ_ψ)
+    
+    # Compute expectations analytically
+    linear_term = sum((N * p[k] - N/2) * μ_ψ[k] for k in 1:(K-1)) + (N * p[K] - N/2) * 0.0
+    
+    # E[ω_kψ_k^2] = E[ψ_k^2] * E[ω_k] using law of total expectation
+    # For Polya-Gamma: E[ω_k] = N/(2c) * tanh(c/2) where c = |ψ_k|
+    # We approximate E[tanh(|ψ_k|/2)/|ψ_k|] using Taylor expansion
+    quadratic_term = sum(N/4 * (var_ψ[k] + μ_ψ[k]^2 - abs(μ_ψ[k])) for k in 1:(K-1))
+    
+    return linear_term - quadratic_term
+end
+
+function logistic_stic_breaking(m)
+    Km1 = length(m)
+
+    p = Array{Float64}(undef, Km1+1)
+    p[1] = logistic(m[1])
+    for i in 2:Km1
+        p[i] = logistic(m[i])*(1 - sum(p[1:i-1]))
+    end
+    p[end] = 1 - sum(p[1:end-1])
+    return p
 end
