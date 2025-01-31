@@ -2,7 +2,7 @@
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, PolyaGammaHybridSamplers
 
     import ReactiveMP: @test_rules, weightedmean
-    import LinearAlgebra: Diagonal,diag
+    import LinearAlgebra: Diagonal, diag
 
     @testset "Expectation Propagation: (q_x::PointMass, q_N::PointMass, m_ψ::GaussianDistributionsFamily, meta::Union{Nothing, MultinomialPolyaMeta})" begin
         q_x = PointMass([0, 1, 2])
@@ -17,8 +17,7 @@
         Λ_expected = Diagonal([0.75, 0.75])
 
         @test_rules [check_type_promotion = false] MultinomialPolya(:ψ, Marginalisation) [(
-            input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = metas[1]), 
-            output = MvGaussianWeightedMeanPrecision(η_expected, Λ_expected)
+            input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = metas[1]), output = MvGaussianWeightedMeanPrecision(η_expected, Λ_expected)
         )]
 
         for meta in metas
