@@ -1,4 +1,4 @@
-export MultinomialPolya, MultinomialPolyaMeta, logistic_stic_breaking
+export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, inverse_logistic_stick_breaking
 using PolyaGammaHybridSamplers
 """
     MultinomialPolya
@@ -58,14 +58,16 @@ default_meta(::Type{MultinomialPolya}) = nothing
     return linear_term - quadratic_term
 end
 
-function logistic_stic_breaking(m)
+function logistic_stick_breaking(m)
     Km1 = length(m)
 
     p = Array{Float64}(undef, Km1 + 1)
-    p[1] = logistic(m[1])
-    for i in 2:Km1
-        p[i] = logistic(m[i]) * (1 - sum(p[1:(i - 1)]))
+    remaining = 1.0
+    @inbounds for i in 1:Km1
+        v = logistic(m[i])
+        p[i] = v * remaining
+        remaining *= (1 - v)
     end
-    p[end] = 1 - sum(p[1:(end - 1)])
+    p[end] = remaining
     return p
 end
