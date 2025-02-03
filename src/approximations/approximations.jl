@@ -76,8 +76,25 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
     return mean, cov
 end
 
-function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, distribution)
+function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, distribution::T) where {T<:MultivariateDistribution}
     return approximate_kernel_expectation(method, g, mean(distribution), cov(distribution))
+end
+
+function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, distribution::T) where {T<:UnivariateDistribution}
+    return approximate_kernel_expectation(method, g, mean(distribution), var(distribution))
+end
+
+function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::Real, P::Real)
+
+    weights = getweights(method, m, P)
+    points  = getpoints(method, m, P)
+
+    gbar = g(m) .* 0
+    foreach(zip(weights, points)) do (weight, point)
+        gbar += weight * g(point)
+    end
+
+    return gbar
 end
 
 function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractMatrix{T}) where {T <: Real}
