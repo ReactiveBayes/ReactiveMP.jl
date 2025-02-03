@@ -25,7 +25,7 @@ default_functional_dependencies(::Type{<:Probit}) = RequireMessageFunctionalDepe
     m, v = mean_var(q_in)
 
     # specify function
-    h = (x) -> -p * log(normcdf(x)) - (1 - p) * log(normcdf(-x))
+    h = (x) -> -p * log(normcdf(x) + 1e-12) - (1 - p) * log(normcdf(-x) + 1e-12)
 
     # calculate average average energy (default of 32 points)
     gh_cubature = GaussHermiteCubature(getp(meta))
