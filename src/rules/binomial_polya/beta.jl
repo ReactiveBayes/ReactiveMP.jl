@@ -1,6 +1,6 @@
 using PolyaGammaHybridSamplers
 
-@rule BinomialPolya(:β, Marginalisation) (q_y::PointMass, q_x::PointMass, q_n::PointMass, m_β::GaussianDistributionsFamily, meta::Union{BinomialPolyaMeta, Nothing}) = begin
+@rule BinomialPolya(:β, Marginalisation) (q_y::Union{PointMass,Multinomial}, q_x::PointMass, q_n::PointMass, m_β::GaussianDistributionsFamily, meta::Union{BinomialPolyaMeta, Nothing}) = begin
     y = mean(q_y)
     x = mean(q_x)
     n = mean(q_n)
@@ -22,6 +22,9 @@ using PolyaGammaHybridSamplers
     κ = convert(T, y - n / 2)
     Λ = x * ω_sample * x'
     xi = κ * x
-
-    return MvNormalWeightedMeanPrecision(xi, Λ)
+    if typeof(xi) <: AbstractVector
+        return MvNormalWeightedMeanPrecision(xi, Λ)
+    else
+        return NormalWeightedMeanPrecision(xi, Λ)
+    end
 end
