@@ -1,5 +1,5 @@
 
-@testitem "marginalrules:Transition" begin
+@testitem "rules::Transition:marginals" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
     import ReactiveMP: @test_marginalrules
