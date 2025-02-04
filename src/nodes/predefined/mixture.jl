@@ -24,7 +24,7 @@ struct MixtureNode{N} <: AbstractFactorNode
     - `:switch`: The switch interface representing the mixture weights (e.g. Categorical distribution)
     - `:inputs`: The N component interfaces representing the mixture components
 
-    # Example
+    # Example with `@model` from RxInfer.jl
     ```julia
     # Create a mixture of 2 Gaussians
     @model function mixture_model()
@@ -40,7 +40,7 @@ struct MixtureNode{N} <: AbstractFactorNode
     end
     ```
 
-    Note: The `Mixture` node requires the `AddonLogScale` addon to be included in the addons. However, this addon is not available for most message update rules. Only for certain sum-product update rules these are included. For a detailed explanation on the `Mixture` node see the [Mixture node paper](https://www.mdpi.com/1099-4300/25/8/1138).
+    Note: The `Mixture` node requires the `AddonLogScale` addon to be included in the addons. However, this addon is not available for most message update rules. RxInfer.jl, which uses `ReactiveMP.jl` under the hood, allows to pass addons in the [`infer`](https://reactivebayes.github.io/RxInfer.jl/stable/manuals/inference/overview/) function. Only for certain sum-product update rules these are included. For a detailed explanation on the `Mixture` node see the [Mixture node paper](https://www.mdpi.com/1099-4300/25/8/1138).
     """
     out    :: NodeInterface
     switch :: NodeInterface
