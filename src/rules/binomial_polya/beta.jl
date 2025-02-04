@@ -1,6 +1,8 @@
 using PolyaGammaHybridSamplers
 
-@rule BinomialPolya(:β, Marginalisation) (q_y::Union{PointMass,Multinomial}, q_x::PointMass, q_n::PointMass, m_β::GaussianDistributionsFamily, meta::Union{BinomialPolyaMeta, Nothing}) = begin
+@rule BinomialPolya(:β, Marginalisation) (
+    q_y::Union{PointMass, Multinomial}, q_x::PointMass, q_n::PointMass, m_β::GaussianDistributionsFamily, meta::Union{BinomialPolyaMeta, Nothing}
+) = begin
     y = mean(q_y)
     x = mean(q_x)
     n = mean(q_n)
