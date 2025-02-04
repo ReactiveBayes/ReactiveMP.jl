@@ -24,9 +24,6 @@ using PolyaGammaHybridSamplers
     κ = convert(T, y - n / 2)
     Λ = x * ω_sample * x'
     xi = κ * x
-    if typeof(xi) <: AbstractVector
-        return MvNormalWeightedMeanPrecision(xi, Λ)
-    else
-        return NormalWeightedMeanPrecision(xi, Λ)
-    end
+
+    return convert(promote_variate_type(typeof(xi), NormalWeightedMeanPrecision), xi, Λ)
 end
