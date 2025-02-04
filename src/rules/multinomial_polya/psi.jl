@@ -1,6 +1,6 @@
 using PolyaGammaHybridSamplers
 
-@rule MultinomialPolya(:ψ, Marginalisation) (q_x::PointMass, q_N::PointMass, m_ψ::GaussianDistributionsFamily, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
+@rule MultinomialPolya(:ψ, Marginalisation) (q_x::Any, q_N::PointMass, m_ψ::GaussianDistributionsFamily, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
     x = mean(q_x)
     N = mean(q_N)
 
