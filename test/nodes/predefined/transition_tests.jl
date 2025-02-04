@@ -10,7 +10,7 @@
 
         @test ReactiveMP.collect_factorisation(Transition, ()) == ()
     end
-    @testset "AverageEnergy(q_out_in::Contingency, q_a::MatrixDirichlet)" begin end
+    @testset "AverageEnergy(q_out_in::Contingency, q_a::DirichletCollection)" begin end
 
     @testset "AverageEnergy(q_out_in::Contingency, q_a::PointMass)" begin
         contingency_matrix = [0.2 0.3; 0.4 0.1]

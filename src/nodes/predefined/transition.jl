@@ -29,11 +29,11 @@ function ReactiveMP.collect_factorisation(::Type{Transition}, t::Tuple)
     return t
 end
 
-@average_energy Transition (q_out::Any, q_in::Any, q_a::MatrixDirichlet) = begin
+@average_energy Transition (q_out::Any, q_in::Any, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
     return -probvec(q_out)' * mean(BroadcastFunction(log), q_a) * probvec(q_in)
 end
 
-@average_energy Transition (q_out_in::Contingency, q_a::MatrixDirichlet) = begin
+@average_energy Transition (q_out_in::Contingency, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
     return -tr(components(q_out_in)' * mean(BroadcastFunction(log), q_a))
 end
 
@@ -50,7 +50,7 @@ end
     return -probvec(q_out)' * mean(BroadcastFunction(clamplog), q_a) * probvec(q_in)
 end
 
-function score(::AverageEnergy, ::Type{<:Transition}, ::Val{mnames}, marginals::Tuple{<:Marginal{<:Contingency}, <:Marginal{<:TensorDirichlet}}, ::Nothing) where {mnames}
+function score(::AverageEnergy, ::Type{<:Transition}, ::Val{mnames}, marginals::Tuple{<:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}}, ::Nothing) where {mnames}
     q_contingency, q_a = getdata.(marginals)
     return -sum(mean(BroadcastFunction(log), q_a) .* components(q_contingency))
 end

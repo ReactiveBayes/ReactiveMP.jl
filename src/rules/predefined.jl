@@ -35,8 +35,6 @@ include("beta/marginals.jl")
 include("dirichlet/marginals.jl")
 include("dirichlet/out.jl")
 
-include("matrix_dirichlet/out.jl")
-
 include("categorical/out.jl")
 include("categorical/p.jl")
 include("categorical/marginals.jl")
@@ -187,5 +185,5 @@ include("half_normal/out.jl")
 include("binomial_polya/beta.jl")
 include("binomial_polya/y.jl")
 
-include("tensor_dirichlet/out.jl")
-include("tensor_dirichlet/marginals.jl")
+include("dirichlet_collection/out.jl")
+include("dirichlet_collection/marginals.jl")

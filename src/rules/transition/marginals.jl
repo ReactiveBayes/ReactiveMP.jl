@@ -1,6 +1,6 @@
 import Base.Broadcast: BroadcastFunction
 
-@marginalrule Transition(:out_in) (m_out::Categorical, m_in::Categorical, q_a::MatrixDirichlet) = begin
+@marginalrule Transition(:out_in) (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
     D = map(e -> clamp(exp(e), tiny, huge), mean(BroadcastFunction(log), q_a))
     B = Diagonal(probvec(m_out)) * D * Diagonal(probvec(m_in))
     P = map!(Base.Fix2(/, sum(B)), B, B) # inplace version of B ./ sum(B)
