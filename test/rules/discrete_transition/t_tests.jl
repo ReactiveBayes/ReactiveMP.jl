@@ -1,10 +1,10 @@
-@testitem "rules:Transition:t" begin
+@testitem "rules:DiscreteTransition:t" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
 
     @testset "Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" begin
-        @test_rules [check_type_promotion = false] Transition(:t1, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:t1, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.0510559014089735, 0.05387178800920238, 0.8950723105818241]),
@@ -49,7 +49,7 @@
     end
 
     @testset "Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_t2::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:T1, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),
@@ -134,7 +134,7 @@
     end
 
     @testset "Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_t1::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:t2, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:t2, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),

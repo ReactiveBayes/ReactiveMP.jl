@@ -1,14 +1,14 @@
 
-@rule Transition(:a, Marginalisation) (q_out::Union{DiscreteNonParametric, PointMass, Bernoulli}, q_in::Union{DiscreteNonParametric, PointMass, Bernoulli}) = begin
+@rule DiscreteTransition(:a, Marginalisation) (q_out::Union{DiscreteNonParametric, PointMass, Bernoulli}, q_in::Union{DiscreteNonParametric, PointMass, Bernoulli}) = begin
     return DirichletCollection(collect(probvec(q_out)) * probvec(q_in)' .+ 1)
 end
 
-@rule Transition(:a, Marginalisation) (q_out_in::Contingency,) = begin
+@rule DiscreteTransition(:a, Marginalisation) (q_out_in::Contingency,) = begin
     return DirichletCollection(components(q_out_in) .+ 1)
 end
 
 ReactiveMP.rule(
-    fform::Type{<:Transition},
+    fform::Type{<:DiscreteTransition},
     on::Val{:a},
     vconstraint::Marginalisation,
     messages_names::Nothing,

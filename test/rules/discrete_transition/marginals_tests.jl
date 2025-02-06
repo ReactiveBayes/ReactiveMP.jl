@@ -1,11 +1,11 @@
 
-@testitem "rules::Transition:marginals" begin
+@testitem "rules:DiscreteTransition:marginals" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
     import ReactiveMP: @test_marginalrules
 
     @testset "out_in: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" begin
-        @test_marginalrules [check_type_promotion = false] Transition(:out_in) [(
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in) [(
             input = (m_out = Categorical([0.2, 0.5, 0.3]), m_in = Categorical([0.7, 0.1, 0.2]), q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])),
             output = Contingency(
                 [
@@ -18,7 +18,7 @@
     end
 
     @testset "out_in_t1: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, q_a::DirichletCollection)" begin
-        @test_marginalrules [check_type_promotion = false] Transition(:out_in_t1) [
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_t1) [
             (
                 input = (
                     m_out = Categorical([0.2, 0.5, 0.3]),
@@ -51,7 +51,7 @@
     end
 
     @testset "out_in_t1_t2: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, m_t2::Categorical, q_a::DirichletCollection)" begin
-        @test_marginalrules [check_type_promotion = false] Transition(:out_in_t1_t2) [(
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_t1_t2) [(
             input = (
                 m_out = Categorical([0.2, 0.5, 0.3]),
                 m_in = Categorical([0.7, 0.1, 0.2]),

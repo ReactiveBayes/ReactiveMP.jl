@@ -1,25 +1,25 @@
 
-@testitem "rules:Transition:in" begin
+@testitem "rules:DiscreteTransition:in" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
 
     @testset "Belief Propagation: (m_out::Categorical, m_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (m_out = Categorical([0.1, 0.4, 0.5]), m_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
         )]
     end
 
     @testset "Variational Bayes: (q_out::Any, q_a::DirichletCollection)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.03245589526827472, 0.5950912160314408, 0.37245288870028453])
         )]
     end
 
     @testset "Variational Bayes: (m_out::Categorical, q_a::DirichletCollection)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
             (
                 input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
                 output = Categorical([0.27575594149188243, 0.5503434892576381, 0.17390056925047945])
@@ -32,21 +32,21 @@
     end
 
     @testset "Variational Bayes: (m_out::Categorical, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
         )]
     end
 
     @testset "Variational Bayes: (q_out::PointMass, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
         )]
     end
 
     @testset "Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.06363608348699812, 0.4635487496635592, 0.47281516684944275]),
@@ -91,7 +91,7 @@
     end
 
     @testset "Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical, m_t2::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),

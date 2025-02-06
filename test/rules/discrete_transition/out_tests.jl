@@ -1,11 +1,11 @@
 
-@testitem "rules:Transition:out" begin
+@testitem "rules:DiscreteTransition:out" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
 
     @testset "Belief Propagation: (q_in::PointMass, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (
                 input = (q_in = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
                 output = Categorical([0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
@@ -18,7 +18,7 @@
     end
 
     @testset "Belief Propagation: (q_in::Categorical, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (
                 input = (m_in = Categorical([0.1, 0.4, 0.5]), m_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
                 output = Categorical([0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
@@ -31,14 +31,14 @@
     end
 
     @testset "Variational Bayes: (q_in::Categorical, q_a::Any)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [(
             input = (q_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.2994385327821292, 0.3260399327754116, 0.37452153444245917])
         )]
     end
 
     @testset "Variational Bayes: (m_in::Categorical, q_a::DirichletCollection)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (input = (q_in = Categorical([0.1, 0.9]), q_a = DirichletCollection([0.1 0.1; 0.3 0.4])), output = Categorical([0.0004227712570263357, 0.9995772287429735])),
             (
                 input = (q_in = Categorical([0.2, 0.5, 0.3]), q_a = DirichletCollection([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])),
@@ -48,7 +48,7 @@
     end
 
     @testset "Variational Bayes: (m_in::DiscreteNonParametric, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (
                 input = (m_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
                 output = Categorical([0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
@@ -61,14 +61,14 @@
     end
 
     @testset "Variational Bayes: (m_in::PointMass, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (input = (m_in = PointMass([0, 1, 0]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])), output = Categorical([0.1, 0.3, 0.6])),
             (input = (m_in = PointMass([1, 0, 0]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])), output = Categorical([0.1 / 0.9, 0.6 / 0.9, 0.2 / 0.9]))
         ]
     end
 
     @testset "Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, m_t1::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (
                 input = (
                     m_in = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),
@@ -113,7 +113,7 @@
     end
 
     @testset "Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, m_t1::Categorical, m_t2::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (
                 input = (
                     m_in = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),
