@@ -3,14 +3,14 @@ import Base.Broadcast: BroadcastFunction
 # Belief Propagation                #
 # --------------------------------- #
 
-@rule DiscreteTransition(:out, Marginalisation) (m_in::Union{PointMass, DiscreteNonParametric}, m_a::PointMass) = begin
+@rule DiscreteTransition(:out, Marginalisation) (m_in::Union{PointMass{<:Vector{<:Real}}, DiscreteNonParametric}, m_a::PointMass{<:Matrix{<:Real}}) = begin
     @logscale 0
     p = mean(m_a) * probvec(m_in)
     normalize!(p, 1)
     return Categorical(p)
 end
 
-@rule DiscreteTransition(:out, Marginalisation) (q_in::PointMass, q_a::PointMass) = begin
+@rule DiscreteTransition(:out, Marginalisation) (q_in::PointMass{<:Vector{<:Real}}, q_a::PointMass{<:Matrix{<:Real}}) = begin
     @logscale 0
     p = mean(q_a) * mean(q_in)
     normalize!(p, 1)
@@ -20,19 +20,14 @@ end
 # Variational                       # 
 # --------------------------------- #
 
-@rule DiscreteTransition(:out, Marginalisation) (q_in::DiscreteNonParametric, q_a::Any) = begin
+@rule DiscreteTransition(:out, Marginalisation) (q_in::DiscreteNonParametric, q_a::Union{DirichletCollection{T, 2, A}, PointMass{<:Matrix{<:Real}}}) where {T, A} = begin
     a = clamp.(exp.(mean(BroadcastFunction(log), q_a) * probvec(q_in)), tiny, Inf)
     return Categorical(a ./ sum(a))
 end
 
-@rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::ContinuousMatrixDistribution) = begin
+@rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::Union{DirichletCollection{T, 2, A}, PointMass{<:Matrix{<:Real}}}) where {T, A} = begin
     a = clamp.(exp.(mean(BroadcastFunction(log), q_a)) * probvec(m_in), tiny, Inf)
     return Categorical(a ./ sum(a))
-end
-
-@rule DiscreteTransition(:out, Marginalisation) (m_in::Union{PointMass, DiscreteNonParametric}, q_a::PointMass, meta::Any) = begin
-    @logscale 0
-    return @call_rule DiscreteTransition(:out, Marginalisation) (m_in = m_in, m_a = q_a, meta = meta, addons = getaddons())
 end
 
 function ReactiveMP.rule(
