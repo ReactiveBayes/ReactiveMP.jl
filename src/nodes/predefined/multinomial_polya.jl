@@ -1,4 +1,4 @@
-export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, inverse_logistic_stick_breaking
+export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, inverse_logistic_stick_breaking, compose_Nks
 using PolyaGammaHybridSamplers
 """
     MultinomialPolya
@@ -33,29 +33,43 @@ default_meta(::Type{MultinomialPolya}) = nothing
 
 @node MultinomialPolya Stochastic [x, N, ψ]
 
-##TODO: Implement the average energy for MultinomialPolya
+
 @average_energy MultinomialPolya (
-    q_x::Union{PointMass, Multinomial}, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily, PointMass}, meta::Union{MultinomialPolyaMeta, Nothing}
+    q_x::Any, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily, PointMass}, meta::Union{MultinomialPolyaMeta, Nothing}
 ) = begin
-    # Get parameters from variational distributions
     N = mean(q_N)
-    K = length(mean(q_x))
-    p = q_x isa PointMass ? mean(q_x) ./ N : probs(q_x)
-
-    # Get ψ statistics
+    K = first(size(mean(q_x)))
+    x = mean(q_x)
+    T = promote_samplefloattype(q_x, q_N, q_ψ)
     μ_ψ = mean(q_ψ)
-    Σ_ψ = cov(q_ψ)
-    var_ψ = diag(Σ_ψ)
+    v_ψ = var(q_ψ)
+    Nks = compose_Nks(x, N)
+    method = ReactiveMP.ghcubature(21)
+    weights(m, v) = ReactiveMP.getweights(method, m, v)
+    points(m, v)  = ReactiveMP.getpoints(method, m, v)
+    expectations = map((m,v) -> mapreduce((w,p) -> w*softplus(p), +, weights(m, v), points(m, v)), μ_ψ, v_ψ)
 
-    # Compute expectations analytically
-    linear_term = sum((N * p[k] - N / 2) * μ_ψ[k] for k in 1:(K - 1)) + (N * p[K] - N / 2) * 0.0
+    if q_x isa PointMass
+        term1 = -mapreduce((Nk, y) -> loggamma(Nk+1) - loggamma(Nk - y + 1) - loggamma(y + 1), +, Nks, x)
+    elseif q_x isa Multinomial || q_x isa Categorical
+        if N != 1
+            p = q_x.p
+            binomials = map(x -> Binomial(N, x), p)
+            term1 = -sum(expected_log_gamma.(binomials)) + log(N)
+        else
+            term1 = 0
+        end
+    else
+        error("Unsupported distribution for x: $(typeof(q_x))")
+    end
+    term2 = -sum(x[1:(K-1)] .* μ_ψ)
+    term3 = mapreduce((e,Nk) -> Nk*e, +, expectations, Nks) 
+    return term1 + term2 + term3
 
-    # E[ω_kψ_k^2] = E[ψ_k^2] * E[ω_k] using law of total expectation
-    # For Polya-Gamma: E[ω_k] = N/(2c) * tanh(c/2) where c = |ψ_k|
-    # We approximate E[tanh(|ψ_k|/2)/|ψ_k|] using Taylor expansion
-    quadratic_term = sum(N / 4 * (var_ψ[k] + μ_ψ[k]^2 - abs(μ_ψ[k])) for k in 1:(K - 1))
+end
 
-    return linear_term - quadratic_term
+function expected_log_gamma(binom)
+    return mapreduce((p) -> loggamma(p + 1)*pdf(binom, p), +, collect(0:binom.n))
 end
 
 function logistic_stick_breaking(m)
@@ -70,4 +84,18 @@ function logistic_stick_breaking(m)
     end
     p[end] = remaining
     return p
+end
+
+function compose_Nks(x, N)
+    T = eltype(x)
+    K = length(x)
+    Nks = Vector{T}(undef, K - 1)
+    prev_sum = zero(T)
+    @inbounds for k in 1:(K - 1)
+        Nks[k] = N - prev_sum
+        if k < K - 1
+            prev_sum += x[k]
+        end
+    end
+    return Nks
 end

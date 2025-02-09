@@ -17,7 +17,7 @@
                     Marginal(q_ψ, false, false, nothing)
                 ),
                 nothing
-            ) ≈ -66.33 atol = 0.1
+            ) ≈ 104.19 atol = 0.1
         end
 
         let
@@ -38,7 +38,7 @@
                     Marginal(q_ψ, false, false, nothing)
                 ),
                 meta
-            ) ≈ -80.25 atol = 0.1
+            ) ≈ -101.72 atol = 0.1
         end
 
         let
@@ -58,7 +58,7 @@
                 nothing
             )
             
-            @test result ≈ -3.75 atol = 0.1
+            @test result ≈ 23.76 atol = 0.1
         end
     end
 end

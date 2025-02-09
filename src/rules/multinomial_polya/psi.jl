@@ -7,14 +7,7 @@ using PolyaGammaHybridSamplers
     T = promote_samplefloattype(q_x, q_N, m_ψ)
 
     K = length(x)
-    Nks = Vector{T}(undef, K - 1)
-    prev_sum = zero(T)
-    @inbounds for k in 1:(K - 1)
-        Nks[k] = N - prev_sum
-        if k < K - 1
-            prev_sum += x[k]
-        end
-    end
+    Nks = compose_Nks(x, N)
     if isnothing(meta)
         ω = map((n, x) -> mean(PolyaGammaHybridSampler(n, x)), Nks, mean(m_ψ))
     else
