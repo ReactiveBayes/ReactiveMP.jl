@@ -63,7 +63,7 @@ default_meta(::Type{MultinomialPolya}) = nothing
         error("Unsupported distribution for x: $(typeof(q_x))")
     end
     term2 = -sum(x[1:(K-1)] .* μ_ψ)
-    term3 = mapreduce((e,Nk) -> Nk*e, +, expectations, Nks) 
+    term3 = mapreduce((e,Nk) -> e*Nk, +, expectations, Nks) 
     return term1 + term2 + term3
 
 end

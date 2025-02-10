@@ -3,9 +3,7 @@ using PolyaGammaHybridSamplers
 @rule MultinomialPolya(:ψ, Marginalisation) (q_x::Any, q_N::PointMass, m_ψ::GaussianDistributionsFamily, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
     x = mean(q_x)
     N = mean(q_N)
-
     T = promote_samplefloattype(q_x, q_N, m_ψ)
-
     K = length(x)
     Nks = compose_Nks(x, N)
     if isnothing(meta)
@@ -25,10 +23,17 @@ using PolyaGammaHybridSamplers
         ω = ω_accum ./ n_samples
     end
 
-    # Compute natural parameters for likelihood only
-    Λ = Diagonal(ω)
+    
     η = map((d, n) -> d - n / 2, view(x, 1:(K - 1)), Nks)
-
+    if length(η) == 1
+        Λ = ω[1]
+        η = η[1]
+    else
+        Λ = Diagonal(ω)
+    end
     # Return likelihood contribution without prior
-    return MvGaussianWeightedMeanPrecision(η, Λ)
+    # return  MvNormalWeightedMeanPrecision(η, Λ)
+    dist = convert(promote_variate_type(typeof(η), NormalWeightedMeanPrecision), η, Λ)
+    return dist
 end
+
