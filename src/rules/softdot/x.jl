@@ -11,7 +11,7 @@
 end
 
 # Variational MP: Structured
-@rule softdot(:x, Marginalisation) (m_y::Any, q_θ::Any, q_γ::Any) = begin
+@rule softdot(:x, Marginalisation) (m_y::UnivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any) = begin
     # the naive call of AR rule is not possible, because the softdot rule expects m_y to be a UnivariateNormalDistributionsFamily
     mθ, Vθ = mean_cov(q_θ)
     my, Vy = mean_cov(m_y)

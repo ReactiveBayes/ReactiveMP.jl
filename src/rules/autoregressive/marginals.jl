@@ -1,9 +1,9 @@
 
-@marginalrule AR(:y_x) (m_y::Any, m_x::Any, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
+@marginalrule AR(:y_x) (m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
     return ar_y_x_marginal(getstype(meta), m_y, m_x, q_θ, q_γ, meta)
 end
 
-function ar_y_x_marginal(::ARsafe, m_y::Any, m_x::Any, q_θ::Any, q_γ::Any, meta::ARMeta)
+function ar_y_x_marginal(::ARsafe, m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta)
     mθ, Vθ = mean_cov(q_θ)
     mγ = mean(q_γ)
 
