@@ -15,7 +15,7 @@ const softdot = SoftDot
     return (-mean(log, q_γ) + log2π + m_γ * (V_y + m_y^2 - 2m_γ * m_y * m_θ'm_x + mul_trace(V_θ, V_x) + m_x'V_θ * m_x + m_θ' * (V_x + m_x * m_x') * m_θ)) / 2
 end
 
-@average_energy softdot (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate) = begin
+@average_energy softdot (q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any) = begin
     mθ, Vθ   = mean_cov(q_θ)
     myx, Vyx = mean_cov(q_y_x)
     mγ       = mean(q_γ)
