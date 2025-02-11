@@ -34,7 +34,7 @@ function ar_y_x_marginal(::ARsafe, m_y::NormalDistributionsFamily, m_x::NormalDi
     return MvNormalWeightedMeanPrecision(ξ, W)
 end
 
-function ar_y_x_marginal(::ARunsafe, m_y::Any, m_x::Any, q_θ::Any, q_γ::Any, meta::ARMeta)
+function ar_y_x_marginal(::ARunsafe, m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta)
     mθ, Vθ = mean(q_θ), cov(q_θ)
 
     mA = as_companion_matrix(mθ)
