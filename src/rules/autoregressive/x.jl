@@ -1,5 +1,5 @@
 
-@rule AR(:x, Marginalisation) (m_y::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::Any, meta::ARMeta) = begin
+@rule AR(:x, Marginalisation) (m_y::Any, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
     mθ, Vθ = mean_cov(q_θ)
     my, Vy = mean_cov(m_y)
 
