@@ -1,6 +1,6 @@
 
 # The following marginal rule is adaptation of the marginal rule for Autoregressive node
-@marginalrule SoftDot(:y_x) (m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::Any) = begin
+@marginalrule SoftDot(:y_x) (m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any) = begin
     mθ, Vθ = mean_cov(q_θ)
     mγ = mean(q_γ)
 
