@@ -23,7 +23,6 @@ using PolyaGammaHybridSamplers
         ω = ω_accum ./ n_samples
     end
 
-    
     η = map((d, n) -> d - n / 2, view(x, 1:(K - 1)), Nks)
     if length(η) == 1
         Λ = ω[1]
@@ -36,4 +35,3 @@ using PolyaGammaHybridSamplers
     dist = convert(promote_variate_type(typeof(η), NormalWeightedMeanPrecision), η, Λ)
     return dist
 end
-

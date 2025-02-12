@@ -33,24 +33,21 @@ default_meta(::Type{MultinomialPolya}) = nothing
 
 @node MultinomialPolya Stochastic [x, N, ψ]
 
-
-@average_energy MultinomialPolya (
-    q_x::Any, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily, PointMass}, meta::Union{MultinomialPolyaMeta, Nothing}
-) = begin
-    N = mean(q_N)
-    K = first(size(mean(q_x)))
-    x = mean(q_x)
-    T = promote_samplefloattype(q_x, q_N, q_ψ)
-    μ_ψ = mean(q_ψ)
-    v_ψ = var(q_ψ)
-    Nks = compose_Nks(x, N)
-    method = ReactiveMP.ghcubature(21)
+@average_energy MultinomialPolya (q_x::Any, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily, PointMass}, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
+    N             = mean(q_N)
+    K             = first(size(mean(q_x)))
+    x             = mean(q_x)
+    T             = promote_samplefloattype(q_x, q_N, q_ψ)
+    μ_ψ           = mean(q_ψ)
+    v_ψ           = var(q_ψ)
+    Nks           = compose_Nks(x, N)
+    method        = ReactiveMP.ghcubature(21)
     weights(m, v) = ReactiveMP.getweights(method, m, v)
     points(m, v)  = ReactiveMP.getpoints(method, m, v)
-    expectations = map((m,v) -> mapreduce((w,p) -> w*softplus(p), +, weights(m, v), points(m, v)), μ_ψ, v_ψ)
+    expectations  = map((m, v) -> mapreduce((w, p) -> w * softplus(p), +, weights(m, v), points(m, v)), μ_ψ, v_ψ)
 
     if q_x isa PointMass
-        term1 = -mapreduce((Nk, y) -> loggamma(Nk+1) - loggamma(Nk - y + 1) - loggamma(y + 1), +, Nks, x)
+        term1 = -mapreduce((Nk, y) -> loggamma(Nk + 1) - loggamma(Nk - y + 1) - loggamma(y + 1), +, Nks, x)
     elseif q_x isa Multinomial || q_x isa Categorical
         if N != 1
             p = q_x.p
@@ -62,14 +59,13 @@ default_meta(::Type{MultinomialPolya}) = nothing
     else
         error("Unsupported distribution for x: $(typeof(q_x))")
     end
-    term2 = -sum(x[1:(K-1)] .* μ_ψ)
-    term3 = mapreduce((e,Nk) -> e*Nk, +, expectations, Nks) 
+    term2 = -sum(x[1:(K - 1)] .* μ_ψ)
+    term3 = mapreduce((e, Nk) -> e * Nk, +, expectations, Nks)
     return term1 + term2 + term3
-
 end
 
 function expected_log_gamma(binom)
-    return mapreduce((p) -> loggamma(p + 1)*pdf(binom, p), +, collect(0:binom.n))
+    return mapreduce((p) -> loggamma(p + 1) * pdf(binom, p), +, collect(0:(binom.n)))
 end
 
 function logistic_stick_breaking(m)
