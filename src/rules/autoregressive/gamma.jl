@@ -1,5 +1,5 @@
 
-@rule AR(:γ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, meta::ARMeta) = begin
+@rule AR(:γ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any, meta::ARMeta) = begin
     order = getorder(meta)
     F     = getvform(meta)
 
