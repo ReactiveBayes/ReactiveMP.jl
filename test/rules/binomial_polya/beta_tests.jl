@@ -34,12 +34,11 @@
         m_β = NormalWeightedMeanPrecision(0.0, 1.0)  # Univariate normal
         metas = [nothing, BinomialPolyaMeta(1, MersenneTwister(10))]
 
-        Λ = 0.0125  
-        ξ = 0.05 
+        Λ = 0.0125
+        ξ = 0.05
 
         @test_rules [check_type_promotion = true] BinomialPolya(:β, Marginalisation) [(
-            input = (q_y = q_y, q_x = q_x, q_n = q_n, m_β = m_β, meta = metas[1]), 
-            output = NormalWeightedMeanPrecision(ξ, Λ)
+            input = (q_y = q_y, q_x = q_x, q_n = q_n, m_β = m_β, meta = metas[1]), output = NormalWeightedMeanPrecision(ξ, Λ)
         )]
 
         for meta in metas
