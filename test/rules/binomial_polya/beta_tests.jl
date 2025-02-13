@@ -26,4 +26,26 @@
             @test diag(precision(out)) ≈ diag(Λ) atol = 1e-2
         end
     end
+
+    @testset "Expectation Propagation: Univariate (q_y::PointMass, q_x::PointMass, q_n::PointMass, m_β::NormalDistributionsFamily)" begin
+        q_y = PointMass(3)
+        q_x = PointMass(0.1)  # 1-dimensional x
+        q_n = PointMass(5)
+        m_β = NormalWeightedMeanPrecision(0.0, 1.0)  # Univariate normal
+        metas = [nothing, BinomialPolyaMeta(1, MersenneTwister(10))]
+
+        Λ = 0.0125  
+        ξ = 0.05 
+
+        @test_rules [check_type_promotion = true] BinomialPolya(:β, Marginalisation) [(
+            input = (q_y = q_y, q_x = q_x, q_n = q_n, m_β = m_β, meta = metas[1]), 
+            output = NormalWeightedMeanPrecision(ξ, Λ)
+        )]
+
+        for meta in metas
+            out = @call_rule BinomialPolya(:β, Marginalisation) (q_y = q_y, q_x = q_x, q_n = q_n, m_β = m_β, meta = meta)
+            @test weightedmean(out) ≈ ξ rtol = 1e-8
+            @test precision(out) ≈ Λ atol = 1e-2
+        end
+    end
 end
