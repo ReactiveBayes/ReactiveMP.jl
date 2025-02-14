@@ -1,12 +1,12 @@
 
-@testitem "marginalrules:Transition" begin
+@testitem "rules:DiscreteTransition:marginals" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
 
     import ReactiveMP: @test_marginalrules
 
-    @testset "out_in: (m_out::Categorical, m_in::Categorical, q_a::MatrixDirichlet)" begin
-        @test_marginalrules [check_type_promotion = false] Transition(:out_in) [(
-            input = (m_out = Categorical([0.2, 0.5, 0.3]), m_in = Categorical([0.7, 0.1, 0.2]), q_a = MatrixDirichlet([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])),
+    @testset "out_in: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in) [(
+            input = (m_out = Categorical([0.2, 0.5, 0.3]), m_in = Categorical([0.7, 0.1, 0.2]), q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])),
             output = Contingency(
                 [
                     0.1986102968597683 0.017209033482868178 0.034418066965736356
@@ -17,14 +17,14 @@
         )]
     end
 
-    @testset "out_in_t1: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, q_a::TensorDirichlet)" begin
-        @test_marginalrules [check_type_promotion = false] Transition(:out_in_t1) [
+    @testset "out_in_t1: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_t1) [
             (
                 input = (
                     m_out = Categorical([0.2, 0.5, 0.3]),
                     m_in = Categorical([0.7, 0.1, 0.2]),
                     m_t1 = Categorical([0.01, 0.9, 0.09]),
-                    q_a = TensorDirichlet([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])
+                    q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])
                 ),
                 output = Contingency(
                     [
@@ -39,7 +39,7 @@
                     m_out = Categorical([0, 1, 0]),
                     m_in = Categorical([0, 1, 0]),
                     m_t1 = Categorical([0, 0, 1]),
-                    q_a = TensorDirichlet([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])
+                    q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])
                 ),
                 output = Contingency([
                     0.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0;;;
@@ -50,14 +50,14 @@
         ]
     end
 
-    @testset "out_in_t1_t2: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, m_t2::Categorical, q_a::TensorDirichlet)" begin
-        @test_marginalrules [check_type_promotion = false] Transition(:out_in_t1_t2) [(
+    @testset "out_in_t1_t2: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, m_t2::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_t1_t2) [(
             input = (
                 m_out = Categorical([0.2, 0.5, 0.3]),
                 m_in = Categorical([0.7, 0.1, 0.2]),
                 m_t1 = Categorical([0.01, 0.9, 0.09]),
                 m_t2 = Categorical([0.25, 0.01, 0.09, 0.65]),
-                q_a = TensorDirichlet(
+                q_a = DirichletCollection(
                     [
                         3.4814561121678347 2.5351658244027844 2.0637422006197856; 2.2919979590901685 3.5854980740024467 2.057024456382512; 2.961498802369847 2.2641205050393607 3.2344282382034804;;; 3.748169016349685 2.1522033841434904 2.9468022556183513; 2.3868319648098764 3.3058305246781945 2.6555313055477683; 2.153603001551738 2.1909039151153378 3.218338677959591;;; 3.76759376279165 2.67577869934414 2.9092268547954774; 2.2886069210422426 3.7986205864251543 2.5056888207498655; 2.2768291735341766 2.2200857998842514 3.057692286732935;;;;
                         3.2742052774819848 2.4495891683271696 2.910828066613324; 2.5896672232696503 3.469476528069095 2.3827465484202577; 2.2438457120549247 2.6260212280800417 3.295102517531366;;; 3.0224009062118107 2.9849350862212414 2.3587228609218913; 2.2727605127367476 3.5102889560557706 2.8243063953618273; 2.511594139684071 2.7428760858629246 3.910232940256628;;; 3.1338212505134146 2.303530993403952 2.7961593523809443; 2.9308944983075493 3.8464245809821307 2.666661277436305; 2.3613769215551983 2.0716049642237397 3.8418737601142907;;;;

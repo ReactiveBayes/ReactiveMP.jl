@@ -1,13 +1,13 @@
 import Base.Broadcast: BroadcastFunction
 
 function ReactiveMP.rule(
-    fform::Type{<:Transition},
+    fform::Type{<:DiscreteTransition},
     on::Val{S},
     vconstraint::Marginalisation,
     messages_names::Val{m_names},
     messages::Tuple,
     marginals_names::Val{(:a,)},
-    marginals::Tuple,
+    marginals::Union{Tuple{<:Marginal{<:DirichletCollection}}, Tuple{<:Marginal{<:PointMass}}},
     meta::Any,
     addons::Any,
     ::Any
