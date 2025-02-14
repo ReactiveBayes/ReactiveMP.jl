@@ -20,12 +20,12 @@ end
 # Variational                       # 
 # --------------------------------- #
 
-@rule DiscreteTransition(:out, Marginalisation) (q_in::DiscreteNonParametric, q_a::Union{DirichletCollection{T, 2, A}, PointMass{<:Matrix{<:Real}}}) where {T, A} = begin
+@rule DiscreteTransition(:out, Marginalisation) (q_in::DiscreteNonParametric, q_a::Union{DirichletCollection{T, 2, A} where {T, A}, PointMass{<:Matrix{<:Real}}}) = begin
     a = clamp.(exp.(mean(BroadcastFunction(log), q_a) * probvec(q_in)), tiny, Inf)
     return Categorical(a ./ sum(a))
 end
 
-@rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::Union{DirichletCollection{T, 2, A}, PointMass{<:Matrix{<:Real}}}) where {T, A} = begin
+@rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::Union{DirichletCollection{T, 2, A} where {T, A}, PointMass{<:Matrix{<:Real}}}) = begin
     a = clamp.(exp.(mean(BroadcastFunction(log), q_a)) * probvec(m_in), tiny, Inf)
     return Categorical(a ./ sum(a))
 end
