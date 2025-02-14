@@ -46,7 +46,7 @@ ReactiveMPProjectionExt = "ExponentialFamilyProjection"
 ReactiveMPRequiresExt = "Requires"
 
 [compat]
-BayesBase = "1.1.0"
+BayesBase = "1.5"
 DataStructures = "0.17, 0.18"
 DiffResults = "1.1.0"
 Distributions = "0.24, 0.25"
@@ -68,14 +68,13 @@ Optim = "1.0.0"
 Optimisers = "0.2, 0.3"
 PolyaGammaHybridSamplers = "1.2.6"
 PositiveFactorizations = "0.2"
-REPL = "1.10.0"
 Random = "1.9"
 Requires = "1"
 Rocket = "1.8.0"
-SpecialFunctions = "1.4, 2"
-StaticArrays = "1.2"
-StatsBase = "0.33, 0.34"
-StatsFuns = "0.9, 1"
+SpecialFunctions = "2.3"
+StaticArrays = "1.9.0"
+StatsBase = "0.34.0"
+StatsFuns = "1.3.0"
 TinyHugeNumbers = "1.0.0"
 TupleTools = "1.2.0"
 Unrolled = "0.1.3"
@@ -83,7 +82,6 @@ julia = "1.11"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-BenchmarkCI = "20533458-34a3-403d-a444-e18f38190b5b"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -105,4 +103,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 
 [targets]
-test = ["Aqua", "Hwloc", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkCI", "BenchmarkTools", "JET", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection", "REPL"]
+test = ["Aqua", "Hwloc", "ReTestItems", "Test", "Pkg", "Logging", "InteractiveUtils", "TestSetExtensions", "Coverage", "Dates", "Distributed", "Documenter", "BenchmarkTools", "JET", "PkgBenchmark", "StableRNGs", "Optimisers", "DiffResults", "ExponentialFamilyProjection", "REPL"]

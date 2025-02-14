@@ -11,11 +11,14 @@ end
 AddonLogScale() = AddonLogScale(nothing)
 
 getlogscale(addon::AddonLogScale) = addon.logscale
+getlogscale(::Nothing) = error(
+    "Log-scale addon is not available. Make sure to include AddonLogScale in the addons. Currently, log scale factors are only supported for very specific nodes and messages in sum-product updates. Extensions to variational message passing are not yet supported."
+)
 
 function getlogscale(addons::NTuple{N, AbstractAddon}) where {N}
     logscales = filter(addon -> addon isa AddonLogScale, addons)
     if length(logscales) === 0
-        error("Log-scale addon is not available.")
+        error("Log-scale addon is not available. Make sure to include AddonLogScale in the addons.")
     end
     return mapreduce(getlogscale, +, logscales)
 end
