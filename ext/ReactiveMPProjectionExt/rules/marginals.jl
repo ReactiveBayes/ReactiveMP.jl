@@ -134,5 +134,7 @@ end
         end
     end
 
-    return FactorizedJoint(ntuple(i -> optimize_natural_parameters(i, pre_samples), length(m_ins)))
+    result = FactorizedJoint(ntuple(i -> optimize_natural_parameters(i, pre_samples), length(m_ins)))
+    proposal_distribution_container.distribution = result
+    return result
 end
