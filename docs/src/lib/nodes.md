@@ -1,4 +1,3 @@
-
 # [Nodes implementation](@id lib-node)
 
 In the message passing framework, one of the most important concepts is a factor node.
@@ -100,7 +99,11 @@ Here we see that in the standard setting for the belief-propagation message out 
 \mu(x) = \exp \int q(y) q(z) \log f(x, y, z) \mathrm{d}y \mathrm{d}z
 ```
 
-We see that in this setting, we do not need messages $\mu(y)$ and $\mu(z)$, but only the marginals $q(y)$ and $q(z)$. The purpose of a __functional dependencies pipeline__ is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in pipelines is presented below:
+We see that in this setting, we do not need messages $\mu(y)$ and $\mu(z)$, but only the marginals $q(y)$ and $q(z)$. 
+
+## [List of functional dependencies pipelines](@id lib-node-functional-dependencies-pipelines)
+
+The purpose of a __functional dependencies pipeline__ is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in pipelines is presented below:
 
 ```@docs
 ReactiveMP.DefaultFunctionalDependencies
@@ -108,6 +111,27 @@ ReactiveMP.RequireMessageFunctionalDependencies
 ReactiveMP.RequireMarginalFunctionalDependencies
 ReactiveMP.RequireEverythingFunctionalDependencies
 ```
+
+## [Customizing Dependencies with Metadata](@id lib-node-metadata-dependencies)
+
+The functional dependencies of a node can be customized at runtime using options during node activation. This allows for runtime customization of the functional dependencies, e.g. to test different message passing schemes or implement specialized behavior for specific instances of a node type:
+
+```julia
+# Define custom dependencies based on metadata
+function ReactiveMP.collect_functional_dependencies(::Type{MyNode}, options::FactorNodeActivationOptions)
+    if some_condition(options) # a user can specify dependencies based, for example, on metadata
+        return CustomDependencies()
+    end
+    # Fall back to default dependencies
+    return ReactiveMP.collect_functional_dependencies(MyNode, getdependecies(options))
+end
+
+# Use custom dependencies during activation
+node = factornode(MyNode, ...)
+activate!(node, FactorNodeActivationOptions(:custom_behavior, ...))
+```
+
+This feature is particularly useful for testing different message passing schemes or implementing specialized behavior for specific instances of a node type.
 
 ## [Node traits](@id lib-node-traits)
 
