@@ -1,6 +1,6 @@
 
 @testitem "rules:BinomialPolya:beta" begin
-    using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, PolyaGammaHybridSamplers
+    using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, PolyaGammaHybridSamplers, StableRNGs
 
     import ReactiveMP: @test_rules, weightedmean
     import LinearAlgebra: diag
@@ -10,7 +10,7 @@
         q_x = PointMass([0.1, 0.2])
         q_n = PointMass(5)
         m_β = MvNormalWeightedMeanPrecision(zeros(2), diageye(2))
-        metas = [nothing, BinomialPolyaMeta(1, MersenneTwister(10)), BinomialPolyaMeta(10, MersenneTwister(42))]
+        metas = [nothing, BinomialPolyaMeta(1, StableRNG(10)), BinomialPolyaMeta(10, StableRNG(42))]
 
         ## Hand-calculated values. If meta is not nothing, the values will be a bit different.
         Λ = [0.0125 0.025; 0.025 0.05]
@@ -32,7 +32,7 @@
         q_x = PointMass(0.1)  # 1-dimensional x
         q_n = PointMass(5)
         m_β = NormalWeightedMeanPrecision(0.0, 1.0)  # Univariate normal
-        metas = [nothing, BinomialPolyaMeta(1, MersenneTwister(10))]
+        metas = [nothing, BinomialPolyaMeta(1, StableRNG(10))]
 
         Λ = 0.0125
         ξ = 0.05
