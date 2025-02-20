@@ -1,56 +1,56 @@
 
-@testitem "rules:Transition:in" begin
+@testitem "rules:DiscreteTransition:in" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
 
     @testset "Belief Propagation: (m_out::Categorical, m_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (m_out = Categorical([0.1, 0.4, 0.5]), m_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
         )]
     end
 
-    @testset "Variational Bayes: (q_out::Any, q_a::MatrixDirichlet)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
-            input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = MatrixDirichlet([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
+    @testset "Variational Bayes: (q_out::Any, q_a::DirichletCollection)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
+            input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.03245589526827472, 0.5950912160314408, 0.37245288870028453])
         )]
     end
 
-    @testset "Variational Bayes: (m_out::Categorical, q_a::MatrixDirichlet)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [
+    @testset "Variational Bayes: (m_out::Categorical, q_a::DirichletCollection)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
             (
-                input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = MatrixDirichlet([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
+                input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
                 output = Categorical([0.27575594149188243, 0.5503434892576381, 0.17390056925047945])
             ),
             (
-                input = (m_out = Categorical([0.3, 0.3, 0.4]), q_a = MatrixDirichlet(diageye(3) .+ 1)),
+                input = (m_out = Categorical([0.3, 0.3, 0.4]), q_a = DirichletCollection(diageye(3) .+ 1)),
                 output = Categorical([0.32119415576170857, 0.32119415576170857, 0.357611688476583])
             )
         ]
     end
 
     @testset "Variational Bayes: (m_out::Categorical, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
         )]
     end
 
     @testset "Variational Bayes: (q_out::PointMass, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [(
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
         )]
     end
 
-    @testset "Belief Propagation: (m_out::Categorical, q_a::TensorDirichlet, m_t1::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [
+    @testset "Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.06363608348699812, 0.4635487496635592, 0.47281516684944275]),
-                    q_a = TensorDirichlet([3.0 2.0 9.0; 9.0 10.0 9.0; 4.0 6.0 3.0;;; 8.0 8.0 4.0; 9.0 1.0 6.0; 6.0 3.0 9.0;;; 3.0 7.0 8.0; 6.0 4.0 5.0; 6.0 1.0 10.0]),
+                    q_a = DirichletCollection([3.0 2.0 9.0; 9.0 10.0 9.0; 4.0 6.0 3.0;;; 8.0 8.0 4.0; 9.0 1.0 6.0; 6.0 3.0 9.0;;; 3.0 7.0 8.0; 6.0 4.0 5.0; 6.0 1.0 10.0]),
                     m_T1 = Categorical([0.5271858992772847, 0.07706246907875924, 0.3957516316439561])
                 ),
                 output = Categorical([0.37646565409395055, 0.3158727786171196, 0.30766156728892985])
@@ -58,7 +58,7 @@
             (
                 input = (
                     m_out = Categorical([0.5103858588726022, 0.42556134873724166, 0.06405279239015611]),
-                    q_a = TensorDirichlet([9.0 7.0 4.0; 4.0 1.0 7.0; 2.0 2.0 10.0;;; 7.0 8.0 6.0; 6.0 7.0 2.0; 4.0 7.0 8.0;;; 4.0 3.0 2.0; 2.0 8.0 7.0; 10.0 6.0 7.0]),
+                    q_a = DirichletCollection([9.0 7.0 4.0; 4.0 1.0 7.0; 2.0 2.0 10.0;;; 7.0 8.0 6.0; 6.0 7.0 2.0; 4.0 7.0 8.0;;; 4.0 3.0 2.0; 2.0 8.0 7.0; 10.0 6.0 7.0]),
                     m_T1 = Categorical([0.6160127621173446, 0.2777189566460366, 0.10626828123661897])
                 ),
                 output = Categorical([0.3781041880107084, 0.36464328449743966, 0.2572525274918519])
@@ -66,7 +66,7 @@
             (
                 input = (
                     m_out = Categorical([0.4453670227558059, 0.2630035661457053, 0.2916294110984888]),
-                    q_a = TensorDirichlet([7.0 1.0 1.0; 9.0 9.0 1.0; 7.0 2.0 3.0;;; 6.0 9.0 10.0; 4.0 9.0 1.0; 10.0 9.0 10.0;;; 4.0 7.0 9.0; 8.0 4.0 10.0; 9.0 3.0 6.0]),
+                    q_a = DirichletCollection([7.0 1.0 1.0; 9.0 9.0 1.0; 7.0 2.0 3.0;;; 6.0 9.0 10.0; 4.0 9.0 1.0; 10.0 9.0 10.0;;; 4.0 7.0 9.0; 8.0 4.0 10.0; 9.0 3.0 6.0]),
                     m_T1 = Categorical([0.15208943638244485, 0.6704322113566465, 0.17747835226090863])
                 ),
                 output = Categorical([0.3259798540726559, 0.3289172250099544, 0.3451029209173897])
@@ -74,7 +74,7 @@
             (
                 input = (
                     m_out = Categorical([0.15440187143581133, 0.8335492681493561, 0.012048860414832555]),
-                    q_a = TensorDirichlet([3.0 4.0 4.0; 9.0 4.0 8.0; 8.0 1.0 8.0;;; 7.0 8.0 9.0; 9.0 4.0 1.0; 7.0 3.0 10.0;;; 7.0 1.0 1.0; 3.0 3.0 4.0; 2.0 3.0 2.0]),
+                    q_a = DirichletCollection([3.0 4.0 4.0; 9.0 4.0 8.0; 8.0 1.0 8.0;;; 7.0 8.0 9.0; 9.0 4.0 1.0; 7.0 3.0 10.0;;; 7.0 1.0 1.0; 3.0 3.0 4.0; 2.0 3.0 2.0]),
                     m_T1 = Categorical([0.38463636429622916, 0.4014483333701451, 0.21391530233362574])
                 ),
                 output = Categorical([0.36339604758350774, 0.35400347953287076, 0.28260047288362156])
@@ -82,7 +82,7 @@
             (
                 input = (
                     m_out = Categorical([0.4161210892223872, 0.4941277161962706, 0.0897511945813421]),
-                    q_a = TensorDirichlet([6.0 3.0 5.0; 3.0 6.0 9.0; 8.0 6.0 6.0;;; 9.0 8.0 10.0; 7.0 2.0 8.0; 2.0 10.0 9.0;;; 10.0 4.0 6.0; 6.0 4.0 2.0; 4.0 2.0 3.0]),
+                    q_a = DirichletCollection([6.0 3.0 5.0; 3.0 6.0 9.0; 8.0 6.0 6.0;;; 9.0 8.0 10.0; 7.0 2.0 8.0; 2.0 10.0 9.0;;; 10.0 4.0 6.0; 6.0 4.0 2.0; 4.0 2.0 3.0]),
                     m_T1 = Categorical([0.2835337016406116, 0.26073332343890476, 0.45573297492048376])
                 ),
                 output = Categorical([0.35054919761788883, 0.3174728738964184, 0.3319779284856927])
@@ -90,12 +90,12 @@
         ]
     end
 
-    @testset "Belief Propagation: (m_out::Categorical, q_a::TensorDirichlet, m_t1::Categorical, m_t2::Categorical)" begin
-        @test_rules [check_type_promotion = false] Transition(:in, Marginalisation) [
+    @testset "Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical, m_t2::Categorical)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),
-                    q_a = TensorDirichlet(
+                    q_a = DirichletCollection(
                         [
                             14.0 10.0 1.0; 6.0 8.0 1.0; 3.0 10.0 7.0;;; 14.0 3.0 3.0; 4.0 9.0 3.0; 5.0 5.0 14.0;;; 9.0 10.0 1.0; 3.0 7.0 4.0; 8.0 2.0 12.0;;;;
                             13.0 9.0 1.0; 9.0 7.0 8.0; 5.0 1.0 11.0;;; 8.0 7.0 4.0; 1.0 14.0 7.0; 4.0 10.0 6.0;;; 15.0 5.0 5.0; 7.0 6.0 5.0; 7.0 3.0 10.0;;;;
@@ -111,7 +111,7 @@
             (
                 input = (
                     m_out = Categorical([0.41399930903334414, 0.2569572285438312, 0.32904346242282473]),
-                    q_a = TensorDirichlet(
+                    q_a = DirichletCollection(
                         [
                             15.0 4.0 4.0; 6.0 11.0 5.0; 1.0 1.0 14.0;;; 6.0 9.0 8.0; 10.0 10.0 5.0; 6.0 2.0 13.0;;; 13.0 2.0 7.0; 3.0 9.0 6.0; 5.0 5.0 7.0;;;;
                             7.0 2.0 9.0; 6.0 8.0 2.0; 6.0 4.0 12.0;;; 13.0 4.0 3.0; 1.0 10.0 2.0; 7.0 7.0 8.0;;; 9.0 9.0 4.0; 1.0 10.0 3.0; 4.0 4.0 12.0;;;;
@@ -127,7 +127,7 @@
             (
                 input = (
                     m_out = Categorical([0.28007415705382577, 0.362168131823555, 0.35775771112261917]),
-                    q_a = TensorDirichlet(
+                    q_a = DirichletCollection(
                         [
                             12.0 9.0 1.0; 2.0 8.0 7.0; 10.0 1.0 13.0;;; 11.0 8.0 7.0; 10.0 14.0 7.0; 5.0 2.0 15.0;;; 8.0 4.0 4.0; 7.0 11.0 5.0; 4.0 10.0 6.0;;;;
                             14.0 3.0 7.0; 8.0 15.0 2.0; 5.0 8.0 15.0;;; 7.0 7.0 4.0; 6.0 11.0 2.0; 10.0 9.0 12.0;;; 11.0 7.0 4.0; 2.0 7.0 4.0; 1.0 1.0 15.0;;;;
@@ -143,7 +143,7 @@
             (
                 input = (
                     m_out = Categorical([0.231721871481526, 0.43974647264393085, 0.3285316558745432]),
-                    q_a = TensorDirichlet(
+                    q_a = DirichletCollection(
                         [
                             11.0 8.0 5.0; 5.0 7.0 10.0; 2.0 1.0 11.0;;; 15.0 8.0 4.0; 8.0 12.0 3.0; 6.0 6.0 14.0;;; 13.0 10.0 8.0; 1.0 8.0 7.0; 8.0 8.0 14.0;;;;
                             8.0 4.0 8.0; 9.0 13.0 3.0; 8.0 2.0 7.0;;; 10.0 8.0 10.0; 5.0 11.0 8.0; 2.0 8.0 8.0;;; 10.0 3.0 2.0; 9.0 11.0 5.0; 10.0 4.0 15.0;;;;
@@ -159,7 +159,7 @@
             (
                 input = (
                     m_out = Categorical([0.3438709572699468, 0.327896945058581, 0.3282320976714722]),
-                    q_a = TensorDirichlet(
+                    q_a = DirichletCollection(
                         [
                             10.0 9.0 2.0; 6.0 8.0 10.0; 7.0 1.0 11.0;;; 8.0 5.0 2.0; 5.0 7.0 3.0; 8.0 1.0 8.0;;; 15.0 5.0 7.0; 4.0 13.0 6.0; 3.0 8.0 7.0;;;;
                             10.0 9.0 4.0; 6.0 12.0 10.0; 6.0 6.0 12.0;;; 12.0 8.0 3.0; 3.0 15.0 3.0; 6.0 3.0 10.0;;; 6.0 5.0 8.0; 8.0 6.0 10.0; 8.0 5.0 11.0;;;;
