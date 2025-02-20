@@ -1,3 +1,4 @@
+const CUBATURE_POINTS = 21
 export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, inverse_logistic_stick_breaking, compose_Nks
 using PolyaGammaHybridSamplers
 """
@@ -41,7 +42,7 @@ default_meta(::Type{MultinomialPolya}) = nothing
     μ_ψ           = mean(q_ψ)
     v_ψ           = var(q_ψ)
     Nks           = compose_Nks(x, N)
-    method        = ReactiveMP.ghcubature(21)
+    method        = ReactiveMP.ghcubature(CUBATURE_POINTS)
     weights(m, v) = ReactiveMP.getweights(method, m, v)
     points(m, v)  = ReactiveMP.getpoints(method, m, v)
     expectations  = map((m, v) -> mapreduce((w, p) -> w * softplus(p), +, weights(m, v), points(m, v)), μ_ψ, v_ψ)
