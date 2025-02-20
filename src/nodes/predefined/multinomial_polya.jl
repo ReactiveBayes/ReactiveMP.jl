@@ -1,5 +1,5 @@
 const MULTINOMIAL_POLYA_CUBATURE_POINTS = 21
-export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, compose_Nks
+export MultinomialPolya, logistic_stick_breaking, compose_Nks
 using PolyaGammaHybridSamplers
 """
     MultinomialPolya
@@ -10,31 +10,9 @@ This implementation follows the PolyaGamma augmentation scheme for Bayesian infe
 """
 struct MultinomialPolya end
 
-"""
-    MultinomialPolyaMeta
-
-Metadata structure for the MultinomialPolya node. It will be passed to rules. In case no meta is provided,
-the rules will use the means to compute the messages. Both schemes yield very similar results.
-
-# Fields
-- `n_samples::Int`: Number of samples to use for Monte Carlo estimation of the average energy.
-                    Default is 1, as increasing it adds computational cost without significant benefit.
-- `rng::AbstractRNG`: Random number generator to use for sampling. Defaults to Random.default_rng().
-"""
-struct MultinomialPolyaMeta
-    n_samples::Int
-    rng::AbstractRNG
-end
-
-# Constructor with default RNG
-MultinomialPolyaMeta(n_samples::Int = 1) = MultinomialPolyaMeta(n_samples, Random.default_rng())
-
-getn_samples(meta::MultinomialPolyaMeta) = meta.n_samples
-default_meta(::Type{MultinomialPolya}) = nothing
-
 @node MultinomialPolya Stochastic [x, N, ψ]
 
-@average_energy MultinomialPolya (q_x::Any, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily, PointMass}, meta::Union{MultinomialPolyaMeta, Nothing}) = begin
+@average_energy MultinomialPolya (q_x::Any, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily, PointMass}) = begin
     N             = mean(q_N)
     K             = first(size(mean(q_x)))
     x             = mean(q_x)
