@@ -1,5 +1,5 @@
 const MULTINOMIAL_POLYA_CUBATURE_POINTS = 21
-export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, inverse_logistic_stick_breaking, compose_Nks
+export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, compose_Nks
 using PolyaGammaHybridSamplers
 """
     MultinomialPolya
