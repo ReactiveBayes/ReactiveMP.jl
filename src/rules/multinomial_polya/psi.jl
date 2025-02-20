@@ -30,8 +30,7 @@ using PolyaGammaHybridSamplers
     else
         Λ = Diagonal(ω)
     end
-    # Return likelihood contribution without prior
-    # return  MvNormalWeightedMeanPrecision(η, Λ)
-    dist = convert(promote_variate_type(typeof(η), NormalWeightedMeanPrecision), η, Λ)
-    return dist
+
+    return convert(promote_variate_type(typeof(η), NormalWeightedMeanPrecision), η, Λ)
+    
 end
