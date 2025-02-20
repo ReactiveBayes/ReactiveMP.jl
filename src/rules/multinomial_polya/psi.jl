@@ -32,5 +32,4 @@ using PolyaGammaHybridSamplers
     end
 
     return convert(promote_variate_type(typeof(η), NormalWeightedMeanPrecision), η, Λ)
-    
 end
