@@ -4,5 +4,4 @@ The MultinomialPolya node implements a Multinomial likelihood with PolyaGamma au
 
 ```@docs
 ReactiveMP.MultinomialPolya
-ReactiveMP.MultinomialPolyaMeta
 ```
