@@ -9,7 +9,7 @@ The SoftDot node can be used as a substitute for the multiplication operator del
 
 y ~ N( x * θ' , γ^(-1))
 
-IInterfaces:
+Interfaces:
 1. y - result of the soft multiplication,
 2. θ - first variable to be multiplied,
 3. x - second variable to be multiplied,
