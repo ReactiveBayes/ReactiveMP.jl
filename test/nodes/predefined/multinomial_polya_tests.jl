@@ -17,8 +17,6 @@
         end
 
         let
-            rng = MersenneTwister(42)
-            meta = MultinomialPolyaMeta(1, rng)
 
             q_x = Multinomial(100, [0.2, 0.3, 0.5])
             q_N = PointMass(100)
@@ -28,8 +26,7 @@
                 AverageEnergy(),
                 MultinomialPolya,
                 Val{(:x, :N, :ψ)}(),
-                (Marginal(q_x, false, false, nothing), Marginal(q_N, false, false, nothing), Marginal(q_ψ, false, false, nothing)),
-                meta
+                (Marginal(q_x, false, false, nothing), Marginal(q_N, false, false, nothing), Marginal(q_ψ, false, false, nothing)),nothing
             ) ≈ -101.72 atol = 0.1
         end
 
