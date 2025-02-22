@@ -2,7 +2,7 @@ export softdot, SoftDot
 
 import StatsFuns: log2π
 
-"""
+@doc raw"""
 SoftDot [aliases = [Softdot]]: ReactiveMP node for message passing. 
 
 The SoftDot node can be used as a substitute for the multiplication operator delta node (the outgoing variable is the multiplication of two others). It softens the delta constraint by adding a Gaussian noise as follows:
