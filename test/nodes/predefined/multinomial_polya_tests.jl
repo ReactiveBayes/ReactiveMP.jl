@@ -17,7 +17,6 @@
         end
 
         let
-
             q_x = Multinomial(100, [0.2, 0.3, 0.5])
             q_N = PointMass(100)
             q_ψ = MvNormalMeanCovariance([0.1, -0.2], [2.0 0.5; 0.5 1.5])
@@ -26,7 +25,8 @@
                 AverageEnergy(),
                 MultinomialPolya,
                 Val{(:x, :N, :ψ)}(),
-                (Marginal(q_x, false, false, nothing), Marginal(q_N, false, false, nothing), Marginal(q_ψ, false, false, nothing)),nothing
+                (Marginal(q_x, false, false, nothing), Marginal(q_N, false, false, nothing), Marginal(q_ψ, false, false, nothing)),
+                nothing
             ) ≈ -101.72 atol = 0.1
         end
 
