@@ -3,23 +3,26 @@ export softdot, SoftDot
 import StatsFuns: log2π
 
 """
-SoftDot [aliases = [Softdot]]: ReactiveMP node for message passing. 
+SoftDot [aliases = [softdot]]: ReactiveMP node for message passing. 
 
-The SoftDot node can be used as a substitute for the multiplication operator delta node (the outgoing variable is the multiplication of two others). It softens the delta constraint by adding a Gaussian noise as follows:
+The SoftDot node can be used as a substitute for the dot product operator delta node (the outgoing variable is the dot product of two others). It softens the delta constraint by adding a Gaussian noise as follows:
 
-y ~ N( x * θ' , γ^(-1))
+    y ~ N(dot(θ, x), γ^(-1))
 
 Interfaces:
-1. y - result of the soft multiplication,
+1. y - result of the "soft" dot product,
 2. θ - first variable to be multiplied,
 3. x - second variable to be multiplied,
 4. γ - precision of the Gaussian noise.
 
-The delta node for multiplication implies intractable messages. 
-SoftDot implementation offers tractable closed-form variational messages for various constraints (naive mean field, structured mean field, moment matching...).
-It is recommanded to use variational message as belief progagation for SoftDot also leads to untractable messages.
+The advantage of using SoftDot is that it offers tractable and optimized closed-form variational messages 
+for both Belief Propagation and Variational Message Passing.
 """
 struct SoftDot end
+
+"""
+Alias for the `SoftDot` node.
+"""
 const softdot = SoftDot
 
 @node softdot Stochastic [y, (θ, aliases = [theta]), x, (γ, aliases = [gamma])]
