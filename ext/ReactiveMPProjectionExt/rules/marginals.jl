@@ -54,17 +54,13 @@ function optimize_parameters(i, pre_samples, m_ins, logp_nc_drop_index, method)
     m_in = m_ins[i]
     default_type = ExponentialFamily.exponential_family_typetag(m_in)
     prj = create_project_to_ins(method, m_in, i)
-    
+
     typeform = ExponentialFamilyProjection.get_projected_to_type(prj)
-    dims = ExponentialFamilyProjection.get_projected_to_dims(prj)            
+    dims = ExponentialFamilyProjection.get_projected_to_dims(prj)
     forms_match = typeform === default_type && dims == size(m_in)
-    
+
     df = create_density_function(forms_match, i, pre_samples, logp_nc_drop_index, m_in)
-    logp = convert(
-        promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), 
-        UnspecifiedDomain(), 
-        df
-    )
+    logp = convert(promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
 
     return forms_match ? project_to(prj, logp, m_in) : project_to(prj, logp)
 end
@@ -91,13 +87,8 @@ end
     proposal_distribution_container = method.proposal_distribution
     sampling_strategy = method.sampling_strategy
 
-    pre_samples = generate_samples(
-        rng, 
-        proposal_distribution_container.distribution, 
-        m_ins, 
-        sampling_strategy
-    )
-    
+    pre_samples = generate_samples(rng, proposal_distribution_container.distribution, m_ins, sampling_strategy)
+
     logp_nc_drop_index = let g = getnodefn(meta, Val(:out)), pre_samples = pre_samples
         (z, i, pre_samples) -> begin
             samples = map(ttuple -> ReactiveMP.TupleTools.insertat(ttuple, i, (z,)), pre_samples)

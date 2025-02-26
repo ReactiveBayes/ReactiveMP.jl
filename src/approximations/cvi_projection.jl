@@ -11,7 +11,6 @@ approximating distributions.
 """
 abstract type CVISamplingStrategy end
 
-
 """
     FullSampling <: CVISamplingStrategy
     FullSampling(samples::Int = 10)
@@ -29,7 +28,7 @@ strategy = FullSampling(100)
 """
 struct FullSampling <: CVISamplingStrategy
     samples::Int
-    
+
     FullSampling(samples::Int = 10) = new(samples)
 end
 
@@ -134,5 +133,3 @@ end
 # This method should only be invoked if a user did not install `ExponentialFamilyProjection`
 # in the current Julia session
 check_delta_node_compatibility(::Val{false}, ::CVIProjection) = error("CVI projection requires `using ExponentialFamilyProjection` in the current session.")
-
-
