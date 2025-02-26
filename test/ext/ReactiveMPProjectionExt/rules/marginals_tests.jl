@@ -93,7 +93,7 @@ end
         # Test with partial specification
         meta_partial = DeltaMeta(method = CVIProjection(
             in_prjparams = (in_2 = form2,), # Only specify second input
-            marginalsamples = 10
+            sampling_strategy = FullSampling(10)
         ), inverse = nothing)
 
         # Setup messages
@@ -118,7 +118,7 @@ end
 
     @testset "Posterior approximation quality" begin
         rng = MersenneTwister(123)
-        method = CVIProjection(rng = rng, marginalsamples = 2000)
+        method = CVIProjection(rng = rng, sampling_strategy = FullSampling(2000))
         meta = DeltaMeta(method = method, inverse = nothing)
 
         f(x, y) = x * y
@@ -164,7 +164,7 @@ end
 
     @testset "f(x, y) -> [x, y], x~Normal, y~Normal, out~MvNormal (marginalization)" begin
         f(x, y) = [x, y]
-        meta = DeltaMeta(method = CVIProjection(sampling_strategy = MeanBased), inverse = nothing)
+        meta = DeltaMeta(method = CVIProjection(sampling_strategy = MeanBased()), inverse = nothing)
         @test_marginalrules [check_type_promotion = false, atol = 1e-1] DeltaFn{f}(:ins) [(
             input = (m_out = MvGaussianMeanCovariance(ones(2), [2 0; 0 2]), m_ins = ManyOf(NormalMeanVariance(0, 1), NormalMeanVariance(1, 2)), meta = meta),
             output = FactorizedJoint((NormalMeanVariance(1 / 3, 2 / 3), NormalMeanVariance(1.0, 1.0)))
@@ -190,8 +190,8 @@ end
     end
 
     # Run benchmarks
-    full_time = run_marginal_test(FullSampling)
-    mean_time = run_marginal_test(MeanBased)
+    full_time = run_marginal_test(FullSampling(10))
+    mean_time = run_marginal_test(MeanBased())
 
     @test mean_time < full_time
 
