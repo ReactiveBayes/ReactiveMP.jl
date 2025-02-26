@@ -2,7 +2,6 @@ using TupleTools
 
 import Distributions: Distribution
 import BayesBase: AbstractContinuousGenericLogPdf
-import ReactiveMP: FullSampling, MeanBased
 
 function create_project_to_ins(::CVIProjection, ::Nothing, m_in::Any)
     T = ExponentialFamily.exponential_family_typetag(m_in)
