@@ -1,6 +1,6 @@
 using PolyaGammaHybridSamplers
 using ExponentialFamily.LogExpFunctions
-@rule BinomialPolya(:y, Marginalisation) (q_x::PointMass, q_n::PointMass, q_β::GaussianDistributionsFamily, meta::Union{BinomialPolyaMeta, Nothing}) = begin
+@rule BinomialPolya(:y, Marginalisation) (q_x::PointMass, q_n::Any, q_β::GaussianDistributionsFamily, meta::Union{BinomialPolyaMeta, Nothing}) = begin
     x = mean(q_x)
     n = mean(q_n)
     if isnothing(meta)

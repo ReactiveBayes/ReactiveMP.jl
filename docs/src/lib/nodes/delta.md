@@ -24,4 +24,6 @@ ReactiveMP.cvi_setup!
 ReactiveMP.cvi_update!
 ReactiveMP.DeltaFnDefaultRuleLayout
 ReactiveMP.DeltaFnDefaultKnownInverseRuleLayout
+ReactiveMP.SoftDot
+ReactiveMP.softdot
 ```
