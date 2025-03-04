@@ -118,7 +118,7 @@ end
 
     @testset "Posterior approximation quality" begin
         rng = MersenneTwister(123)
-        method = CVIProjection(rng = rng, sampling_strategy = FullSampling(100))
+        method = CVIProjection(rng = rng, sampling_strategy = FullSampling(200))
         meta = DeltaMeta(method = method, inverse = nothing)
 
         f(x, y) = x * y
