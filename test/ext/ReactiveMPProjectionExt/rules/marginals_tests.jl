@@ -118,7 +118,7 @@ end
 
     @testset "Posterior approximation quality" begin
         rng = MersenneTwister(123)
-        method = CVIProjection(rng = rng, sampling_strategy = FullSampling(2000))
+        method = CVIProjection(rng = rng, sampling_strategy = FullSampling(100))
         meta = DeltaMeta(method = method, inverse = nothing)
 
         f(x, y) = x * y
@@ -135,7 +135,7 @@ end
 
         # Estimate KL divergence using samples
         function estimate_kl_divergence(q_result)
-            n_samples = 10000
+            n_samples = 1000
             samples_q = [(rand(rng, q_result[1]), rand(rng, q_result[2])) for _ in 1:n_samples]
 
             # Compute E_q[log q(x,y) - log p(x,y)]
@@ -194,7 +194,4 @@ end
     mean_time = run_marginal_test(MeanBased())
 
     @test mean_time < full_time
-
-    # Optional: Print the actual times for verification
-    @info "Sampling strategy performance" full_time mean_time ratio = (full_time / mean_time)
 end

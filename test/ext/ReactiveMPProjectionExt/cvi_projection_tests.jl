@@ -83,4 +83,46 @@
         @test mean(result4) ≈ 5 / 3 atol = 1e-1 # (1*0.5 + 2*1)/(0.5+1) = 1.67
         @test var(result4) ≈ 2 / 3 atol = 1e-1 # 1/(0.5+1) = 0.67
     end
+
+end
+
+
+@testitem "optimize_parameters: with specified form" begin
+    using ExponentialFamily
+    using ExponentialFamilyProjection
+    using BayesBase
+    using ReactiveMP
+    using Distributions
+    using Random
+    using Manopt
+
+    ReactiveMPProjectionExt = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+    @test !isnothing(ReactiveMPProjectionExt)
+    using .ReactiveMPProjectionExt
+
+    m_in = NormalMeanVariance(0.0, 1.0)
+    m_ins = [m_in]
+    pre_samples = [0.0, 0.5, -0.5]
+    method = CVIProjection(in_prjparams = (in_1 = ProjectedTo(NormalMeanVariance),))
+
+    log_fn1 = (z, i, samples) -> -0.5 * z^2
+    result1 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins, log_fn1, method)
+
+    @test result1 isa NormalMeanVariance
+    @test mean(result1) ≈ 0.0 atol = 1e-1
+    @test var(result1) ≈ 0.5 atol = 1e-1
+
+    m_in = Laplace(0.0, 1.0)
+    m_ins = [m_in]
+    pre_samples = [0.0, 0.5, -0.5]
+    cost_recorder = Manopt.RecordCost()
+    method = CVIProjection(in_prjparams = (in_1 = ProjectedTo(Laplace, conditioner = 1, kwargs = (record = [cost_recorder],)),))
+
+    log_fn1 = (z, i, samples) -> -0.5 * abs(z)
+    result1 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins, log_fn1, method)
+    ef_result1 = convert(ExponentialFamilyDistribution, result1)
+
+    @test getconditioner(ef_result1) ≈ 1.0
+    @test result1 isa Laplace
+    @test cost_recorder.recorded_values[end] < cost_recorder.recorded_values[1]
 end

@@ -102,10 +102,10 @@ method = CVIProjection(
 )
 
 # Specify projection family for the output message
-method = CVIProjection(out_prjparams = NormalMeanPrecision)
+method = CVIProjection(out_prjparams = ProjectedTo(NormalMeanPrecision))
 
 # Specify projection family for input edges
-method = CVIProjection(in_prjparams = (in_1 = NormalMeanVariance, in_2 = GammaMeanShape))
+method = CVIProjection(in_prjparams = (in_1 = ProjectedTo(NormalMeanVariance), in_2 = ProjectedTo(GammaShapeRate)))
 ```
 
 !!! note

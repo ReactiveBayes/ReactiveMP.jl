@@ -56,7 +56,9 @@ function optimize_parameters(i, pre_samples, m_ins, logp_nc_drop_index, method)
 
     typeform = ExponentialFamilyProjection.get_projected_to_type(prj)
     dims = ExponentialFamilyProjection.get_projected_to_dims(prj)
-    forms_match = typeform === default_type && dims == size(m_in)
+    conditioner = prj.conditioner
+    ef_in = convert(ExponentialFamilyDistribution, m_in)
+    forms_match = typeform === default_type && dims == size(m_in) && conditioner == getconditioner(ef_in)
 
     df = create_density_function(forms_match, i, pre_samples, logp_nc_drop_index, m_in)
     logp = convert(promote_variate_type(variate_form(typeof(m_in)), BayesBase.AbstractContinuousGenericLogPdf), UnspecifiedDomain(), df)
