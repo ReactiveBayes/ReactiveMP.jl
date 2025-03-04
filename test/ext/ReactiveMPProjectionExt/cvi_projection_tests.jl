@@ -83,9 +83,7 @@
         @test mean(result4) ≈ 5 / 3 atol = 1e-1 # (1*0.5 + 2*1)/(0.5+1) = 1.67
         @test var(result4) ≈ 2 / 3 atol = 1e-1 # 1/(0.5+1) = 0.67
     end
-
 end
-
 
 @testitem "optimize_parameters: with specified form" begin
     using ExponentialFamily
