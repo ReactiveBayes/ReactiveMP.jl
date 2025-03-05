@@ -100,11 +100,9 @@ include("dot_product/out.jl")
 include("dot_product/in1.jl")
 include("dot_product/in2.jl")
 
+include("discrete_transition/categoricals.jl")
 include("discrete_transition/marginals.jl")
-include("discrete_transition/out.jl")
-include("discrete_transition/in.jl")
 include("discrete_transition/a.jl")
-include("discrete_transition/t.jl")
 
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")

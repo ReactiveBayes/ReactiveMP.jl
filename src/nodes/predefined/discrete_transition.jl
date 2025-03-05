@@ -1,4 +1,4 @@
-export DiscreteTransition
+export DiscreteTransition, discrete_transition_marginal_rule
 
 import Base.Broadcast: BroadcastFunction
 
@@ -55,24 +55,4 @@ function score(
 ) where {mnames}
     q_contingency, q_a = getdata.(marginals)
     return -sum(mean(BroadcastFunction(log), q_a) .* components(q_contingency))
-end
-
-function __reduce_td_from_messages(messages, q_A, interface_index)
-    vmp = clamp.(exp.(mean(BroadcastFunction(log), q_A)), tiny, Inf)
-    probvecs = probvec.(messages)
-    for (i, vector) in enumerate(probvecs)
-        if i ≥ interface_index
-            actual_index = i + 1
-        else
-            actual_index = i
-        end
-        v = view(vector, :)
-        localdims = ntuple(x -> x == actual_index::Int64 ? length(v) : 1, ndims(vmp))
-        vmp .*= reshape(v, localdims)
-    end
-    dims = ntuple(x -> x ≥ interface_index ? x + 1 : x, ndims(vmp) - 1)
-    vmp = sum(vmp, dims = dims)
-    msg = reshape(vmp, :)
-    msg ./= sum(msg)
-    return Categorical(msg)
 end

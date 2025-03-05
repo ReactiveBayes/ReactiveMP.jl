@@ -4,13 +4,6 @@
 
     import ReactiveMP: @test_rules
 
-    @testset "Belief Propagation: (m_out::Categorical, m_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
-            input = (m_out = Categorical([0.1, 0.4, 0.5]), m_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-            output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
-        )]
-    end
-
     @testset "Variational Bayes: (q_out::Any, q_a::DirichletCollection)" begin
         @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
@@ -34,13 +27,6 @@
     @testset "Variational Bayes: (m_out::Categorical, q_a::PointMass)" begin
         @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
             input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-            output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
-        )]
-    end
-
-    @testset "Variational Bayes: (q_out::PointMass, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
-            input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
             output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
         )]
     end
@@ -173,5 +159,27 @@
                 output = Categorical([0.33437642195805395, 0.3321767052616158, 0.33344687278033025])
             )
         ]
+    end
+
+    @testset "Structured Variational Message Passing: (m_out::Categorical, q_a::DirichletCollection, q_t1_t2::Contingency)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
+            input = (
+                m_out = Categorical([0.1, 0.1, 0.8]),
+                q_a = DirichletCollection(
+                    [
+                        20.0 8.0 5.0; 8.0 14.0 9.0; 3.0 6.0 12.0;;; 18.0 2.0 1.0; 6.0 19.0 10.0; 9.0 3.0 13.0;;; 14.0 6.0 4.0; 5.0 18.0 9.0; 2.0 3.0 12.0;;;;
+                        13.0 1.0 6.0; 2.0 13.0 7.0; 7.0 4.0 13.0;;; 12.0 9.0 3.0; 1.0 19.0 2.0; 4.0 5.0 19.0;;; 17.0 4.0 1.0; 6.0 18.0 3.0; 8.0 10.0 11.0;;;;
+                        18.0 1.0 1.0; 9.0 12.0 9.0; 3.0 3.0 12.0;;; 11.0 4.0 10.0; 10.0 15.0 1.0; 10.0 5.0 11.0;;; 13.0 6.0 7.0; 9.0 17.0 5.0; 3.0 7.0 20.0;;;;
+                        20.0 4.0 6.0; 1.0 11.0 6.0; 2.0 1.0 12.0;;; 13.0 3.0 6.0; 2.0 16.0 7.0; 4.0 7.0 11.0;;; 13.0 5.0 2.0; 1.0 11.0 8.0; 4.0 1.0 16.0
+                    ]
+                ),
+                q_t1_t2 = Contingency([
+                    1.0 4.0 7.0 10.0
+                    2.0 5.0 8.0 11.0
+                    3.0 6.0 9.0 12.0
+                ])
+            ),
+            output = Categorical([0.23238619977733496, 0.20664604788441424, 0.5609677523382509])
+        )]
     end
 end

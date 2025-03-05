@@ -8,24 +8,11 @@
         @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (
                 input = (q_in = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-                output = Categorical([0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
+                output = Categorical([0.29943853278212923, 0.32603993277541166, 0.3745215344424593])
             ),
             (
                 input = (q_in = PointMass([0.2, 0.5, 0.3]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])),
-                output = Categorical([0.40540540540540543, 0.2702702702702703, 0.32432432432432434])
-            )
-        ]
-    end
-
-    @testset "Belief Propagation: (q_in::Categorical, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
-            (
-                input = (m_in = Categorical([0.1, 0.4, 0.5]), m_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-                output = Categorical([0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
-            ),
-            (
-                input = (m_in = Categorical([0.2, 0.5, 0.3]), m_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])),
-                output = Categorical([0.40540540540540543, 0.2702702702702703, 0.32432432432432434])
+                output = Categorical([0.3218092957943072, 0.2819969875260698, 0.39619371667962294])
             )
         ]
     end
@@ -62,8 +49,8 @@
 
     @testset "Variational Bayes: (m_in::PointMass, q_a::PointMass)" begin
         @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
-            (input = (m_in = PointMass([0, 1, 0]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])), output = Categorical([0.1, 0.3, 0.6])),
-            (input = (m_in = PointMass([1, 0, 0]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])), output = Categorical([0.1 / 0.9, 0.6 / 0.9, 0.2 / 0.9]))
+            (input = (m_in = PointMass([0.0, 1.0, 0.0]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])), output = Categorical([0.1, 0.3, 0.6])),
+            (input = (m_in = PointMass([1.0, 0.0, 0.0]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])), output = Categorical([0.1 / 0.9, 0.6 / 0.9, 0.2 / 0.9]))
         ]
     end
 
