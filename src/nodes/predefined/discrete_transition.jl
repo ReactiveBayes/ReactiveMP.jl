@@ -1,4 +1,4 @@
-export DiscreteTransition, discrete_transition_marginal_rule
+export DiscreteTransition
 
 import Base.Broadcast: BroadcastFunction
 
