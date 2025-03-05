@@ -1,6 +1,6 @@
 export rule
 
-@rule NormalMixture((:m, k), Marginalisation) (q_out::Any, q_switch::Union{Categorical, PointMass{<:Vector}}, q_p::Any) = begin
+@rule NormalMixture((:m, k), Marginalisation) (q_out::Any, q_switch::Union{Categorical, Bernoulli, PointMass{<:AbstractVector}}, q_p::Any) = begin
     pv    = probvec(q_switch)
     T     = eltype(pv)
     z_bar = clamp.(pv, tiny, one(T) - tiny)
