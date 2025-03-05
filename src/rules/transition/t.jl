@@ -7,7 +7,7 @@ function ReactiveMP.rule(
     messages_names::Val{m_names},
     messages::Tuple,
     marginals_names::Val{(:a,)},
-    marginals::Tuple{<:Marginal{<:TensorDirichlet}},
+    marginals::Tuple,
     meta::Any,
     addons::Any,
     ::Any
