@@ -20,11 +20,11 @@ end
     myx, Vyx = mean_cov(q_y_x)
     mγ       = mean(q_γ)
 
-    order = length(mθ)
-    F     = order == 1 ? Univariate : Multivariate
-    mx, Vx   = ar_slice(F, myx, (2):(order+1)), ar_slice(F, Vyx, (2):(order+1), (2):(order+1))
+    order    = length(mθ)
+    F        = order == 1 ? Univariate : Multivariate
+    mx, Vx   = ar_slice(F, myx, (2):(order + 1)), ar_slice(F, Vyx, (2):(order + 1), (2):(order + 1))
     my1, Vy1 = first(myx), first(Vyx)
-    Vy1x     = ar_slice(F, Vyx, 1, (2):(order+1))
+    Vy1x     = ar_slice(F, Vyx, 1, (2):(order + 1))
 
     # Equivalent to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
     AE = (-mean(log, q_γ) + log2π + mγ * (Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))) / 2

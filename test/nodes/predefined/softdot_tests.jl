@@ -32,7 +32,6 @@
             @test score(AverageEnergy(), SoftDot, Val{(:y_x, :θ, :γ)}(), marginals, nothing) ≈ 1.92351917665616
         end
 
-
         begin
             q_y_x = MvNormalMeanCovariance(zeros(4), diageye(4))
             q_θ = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
