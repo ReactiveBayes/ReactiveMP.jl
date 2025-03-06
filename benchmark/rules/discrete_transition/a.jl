@@ -4,7 +4,7 @@ import ReactiveMP: Marginal, Contingency, Categorical, Marginalisation, normaliz
 using ReactiveMP.BayesBase
 
 function add_discrete_transition_a_rule_benchmarks(SUITE)
-    SUITE["a"] = BenchmarkGroup()
+    SUITE["a"] = BenchmarkGroup(["Rules", "DiscreteTransition"])
     for n_categories in 2:5
         for categorical_size in [3, 5, 10, 20]
             discrete_transition_mean_field_a_rule(SUITE["a"], n_categories, categorical_size)
