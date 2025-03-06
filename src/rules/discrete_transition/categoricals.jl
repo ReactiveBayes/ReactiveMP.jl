@@ -22,6 +22,13 @@ function multiply_dimensions!(tensor::AbstractArray{T, M}, dims::NTuple{N, Int},
     return tensor
 end
 
+function multiply_dimensions!(tensor::AbstractArray{T, M}, dims::NTuple{N, Int}, values::AbstractArray{P, N}) where {T, M, N, P}
+    NT = promote_type(T, P)
+    tensor = convert_paramfloattype(NT, tensor)
+    values = convert_paramfloattype(NT, values)
+    return multiply_dimensions!(tensor, dims, values)
+end
+
 """
     sum_out_dimensions(tensor::AbstractArray{T, M}, dims::NTuple{N, Int}, values::AbstractArray{T, N}) where {T, M, N}
 
@@ -30,6 +37,13 @@ Sum out the dimensions of the tensor that are not part of the marginal distribut
 function sum_out_dimensions(tensor::AbstractArray{T, M}, dims::NTuple{N, Int}, values::AbstractArray{T, N}) where {T, M, N}
     result = multiply_dimensions!(tensor, dims, values)
     return sum(result, dims = dims)
+end
+
+function sum_out_dimensions(tensor::AbstractArray{T, M}, dims::NTuple{N, Int}, values::AbstractArray{P, N}) where {T, M, N, P}
+    NT = promote_type(T, P)
+    tensor = convert_paramfloattype(NT, tensor)
+    values = convert_paramfloattype(NT, values)
+    return sum_out_dimensions(tensor, dims, values)
 end
 
 function get_corresponding_index(s)
