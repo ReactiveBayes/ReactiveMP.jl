@@ -33,7 +33,7 @@
         end
 
         begin
-            q_y_x = MvNormalMeanCovariance(zeros(4), diageye(4))
+            q_y_x = MvNormalMeanCovariance(zeros(3), diageye(3))
             q_θ = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
             q_γ = GammaShapeRate(2.0, 3.0)
 
