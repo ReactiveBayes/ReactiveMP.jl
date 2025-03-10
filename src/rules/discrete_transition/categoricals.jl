@@ -207,13 +207,13 @@ using Tullio
 # --------------- Rules for 2 interfaces (PointMass q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[i, a] * probvec(m_in)[a]
+    @tensor out[i] := eloga[i, a] * probvec(m_in)[a]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[a, i] * probvec(m_out)[a]
+    @tensor out[i] := eloga[a, i] * probvec(m_out)[a]
     return Categorical(normalize!(out, 1))
 end
 
@@ -221,7 +221,7 @@ end
 
 @rule DiscreteTransition(:in, Marginalisation) (q_out::PointMass, q_a::PointMass, meta::Any) = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
-    @tullio out[i] := eloga[a, i] * probvec(q_out)[a]
+    @tensor out[i] := eloga[a, i] * probvec(q_out)[a]
     out = exp.(out)
     return Categorical(normalize!(out, 1))
 end
@@ -229,13 +229,13 @@ end
 # --------------- Rules for 2 interfaces (DirichletCollection q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[i, a] * probvec(m_in)[a]
+    @tensor out[i] := eloga[i, a] * probvec(m_in)[a]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[a, i] * probvec(m_out)[a]
+    @tensor out[i] := eloga[a, i] * probvec(m_out)[a]
     return Categorical(normalize!(out, 1))
 end
 
@@ -243,7 +243,7 @@ end
 
 @rule DiscreteTransition(:in, Marginalisation) (q_out::PointMass, q_a::DirichletCollection, meta::Any) = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
-    @tullio out[i] := eloga[a, i] * probvec(q_out)[a]
+    @tensor out[i] := eloga[a, i] * probvec(q_out)[a]
     out = exp.(out)
     return Categorical(normalize!(out, 1))
 end
@@ -251,19 +251,19 @@ end
 # --------------- Rules for 3 interfaces (PointMass q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[i, a, b] * probvec(m_in)[a] * probvec(m_T1)[b]
+    @tensor out[i] := eloga[i, a, b] * probvec(m_in)[a] * probvec(m_T1)[b]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, m_T1::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[a, i, b] * probvec(m_out)[a] * probvec(m_T1)[b]
+    @tensor out[i] := eloga[a, i, b] * probvec(m_out)[a] * probvec(m_T1)[b]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:T1, Marginalisation) (m_out::DiscreteNonParametric, m_in::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[a, b, i] * probvec(m_out)[a] * probvec(m_in)[b]
+    @tensor out[i] := eloga[a, b, i] * probvec(m_out)[a] * probvec(m_in)[b]
     return Categorical(normalize!(out, 1))
 end
 
@@ -271,17 +271,17 @@ end
 
 @rule DiscreteTransition(:in, Marginalisation) (q_out::PointMass, q_a::PointMass, m_T1::DiscreteNonParametric, meta::Any) = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
-    @tullio out[i, j] := eloga[a, i, j] * probvec(q_out)[a]
+    @tensor out[i, j] := eloga[a, i, j] * probvec(q_out)[a]
     out .= exp.(out)
-    @tullio msg[i] := out[i, j] * probvec(m_T1)[j]
+    @tensor msg[i] := out[i, j] * probvec(m_T1)[j]
     return Categorical(normalize!(msg, 1))
 end
 
 @rule DiscreteTransition(:T1, Marginalisation) (q_out::PointMass, m_in::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
-    @tullio out[i, j] := eloga[a, i, j] * probvec(q_out)[a]
+    @tensor out[i, j] := eloga[a, i, j] * probvec(q_out)[a]
     out .= exp.(out)
-    @tullio msg[i] := out[j, i] * probvec(m_in)[j]
+    @tensor msg[i] := out[j, i] * probvec(m_in)[j]
     return Categorical(normalize!(msg, 1))
 end
 
@@ -289,68 +289,68 @@ end
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     # @show "rule triggered"
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[i, a, b] * probvec(m_in)[a] * probvec(m_T1)[b]
+    @tensor out[i] := eloga[i, a, b] * probvec(m_in)[a] * probvec(m_T1)[b]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, m_T1::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[a, i, b] * probvec(m_out)[a] * probvec(m_T1)[b]
+    @tensor out[i] := eloga[a, i, b] * probvec(m_out)[a] * probvec(m_T1)[b]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:T1, Marginalisation) (m_out::DiscreteNonParametric, m_in::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[a, b, i] * probvec(m_out)[a] * probvec(m_in)[b]
+    @tensor out[i] := eloga[a, b, i] * probvec(m_out)[a] * probvec(m_in)[b]
     return Categorical(normalize!(out, 1))
 end
 
 # --------------- Rules for 4 interfaces (PointMass q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, m_T2::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[i, a, b, c] * probvec(m_in)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
+    @tensor out[i] := eloga[i, a, b, c] * probvec(m_in)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, m_T1::DiscreteNonParametric, m_T2::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[a, i, b, c] * probvec(m_out)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
+    @tensor out[i] := eloga[a, i, b, c] * probvec(m_out)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:T1, Marginalisation) (m_out::DiscreteNonParametric, m_in::DiscreteNonParametric, m_T2::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[a, b, i, c] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T2)[c]
+    @tensor out[i] := eloga[a, b, i, c] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T2)[c]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:T2, Marginalisation) (m_out::DiscreteNonParametric, m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
     eloga = mean(q_a)
-    @tullio out[i] := eloga[a, b, c, i] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T1)[c]
+    @tensor out[i] := eloga[a, b, c, i] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T1)[c]
     return Categorical(normalize!(out, 1))
 end
 
 # --------------- Rules for 4 interfaces (DirichletCollection q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, m_T2::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[i, a, b, c] * probvec(m_in)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
+    @tensor out[i] := eloga[i, a, b, c] * probvec(m_in)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, m_T1::DiscreteNonParametric, m_T2::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[a, i, b, c] * probvec(m_out)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
+    @tensor out[i] := eloga[a, i, b, c] * probvec(m_out)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:T1, Marginalisation) (m_out::DiscreteNonParametric, m_in::DiscreteNonParametric, m_T2::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[a, b, i, c] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T2)[c]
+    @tensor out[i] := eloga[a, b, i, c] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T2)[c]
     return Categorical(normalize!(out, 1))
 end
 
 @rule DiscreteTransition(:T2, Marginalisation) (m_out::DiscreteNonParametric, m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tullio out[i] := eloga[a, b, c, i] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T1)[c]
+    @tensor out[i] := eloga[a, b, c, i] * probvec(m_out)[a] * probvec(m_in)[b] * probvec(m_T1)[c]
     return Categorical(normalize!(out, 1))
 end
