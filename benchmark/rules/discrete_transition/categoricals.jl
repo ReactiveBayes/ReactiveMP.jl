@@ -88,8 +88,7 @@ end
 
 function discrete_transition_bp_categoricals_rule(SUITE, n_categories, cat_size)
     incoming_marginal = (ReactiveMP.Marginal(DirichletCollection(rand(ntuple(_ -> cat_size, n_categories)...)), false, false, nothing),)
-    incoming_marginal_name = "a"
-    incoming_marginal_name = (Symbol(incoming_marginal_name),)
+    incoming_marginal_name = (:a,)
     incoming_messages = ntuple(_ -> ReactiveMP.Message(Categorical(normalize!(rand(cat_size), 1)), false, false, nothing), n_categories - 1)
     incoming_messages_name = [:in]
     for i in 1:(n_categories - 2)

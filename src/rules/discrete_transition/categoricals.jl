@@ -202,6 +202,7 @@ end
 # These rules are not strictly necessary, but they are more efficient than the generic rule. When using BP, we can use these rules.
 
 using TensorOperations
+using Tullio
 
 # --------------- Rules for 2 interfaces (PointMass q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::PointMass, meta::Any) = begin
@@ -286,8 +287,9 @@ end
 
 # --------------- Rules for 3 interfaces (DirichletCollection q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
+    # @show "rule triggered"
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tensor out[i] := eloga[i, a, b] * probvec(m_in)[a] * probvec(m_T1)[b]
+    @tullio out[i] := eloga[i, a, b] * probvec(m_in)[a] * probvec(m_T1)[b]
     return Categorical(normalize!(out, 1))
 end
 
@@ -331,7 +333,7 @@ end
 # --------------- Rules for 4 interfaces (DirichletCollection q_a) ---------------
 @rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, m_T1::DiscreteNonParametric, m_T2::DiscreteNonParametric, q_a::DirichletCollection, meta::Any) = begin
     eloga = exp.(mean(Base.Broadcast.BroadcastFunction(clamplog), q_a))
-    @tensor out[i] := eloga[i, a, b, c] * probvec(m_in)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
+    @tullio out[i] := eloga[i, a, b, c] * probvec(m_in)[a] * probvec(m_T1)[b] * probvec(m_T2)[c]
     return Categorical(normalize!(out, 1))
 end
 
