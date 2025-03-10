@@ -35,3 +35,5 @@ examples/*Compiled
 
 **/.benchmarkci
 benchmark/*.json
+
+benchmark_logs/*

@@ -1,0 +1,9 @@
+```@docs
+ReactiveMP.discrete_transition_decode_marginal 
+ReactiveMP.discrete_transition_marginal_rule
+ReactiveMP.discrete_transition_process_marginals
+ReactiveMP.multiply_dimensions!
+ReactiveMP.sum_out_dimensions
+ReactiveMP.discrete_transition_process_messages
+ReactiveMP.discrete_transition_structured_message_rule
+```
