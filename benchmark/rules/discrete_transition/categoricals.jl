@@ -15,6 +15,8 @@ function add_discrete_transition_categoricals_rule_benchmarks(SUITE)
             end
         end
     end
+    discrete_transition_bp_categoricals_rule(SUITE["Categoricals"], 10, 2)
+    discrete_transition_bp_categoricals_rule(SUITE["Categoricals"], 20, 2)
 end
 
 function discrete_transition_structured_categoricals_rule(SUITE, n_categories, cat_size)
