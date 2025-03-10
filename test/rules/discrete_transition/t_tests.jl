@@ -3,6 +3,60 @@
 
     import ReactiveMP: @test_rules
 
+    @testset "Belief Propagation (m_out::Categorical, m_in::Categorical, q_a::PointMass)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:t1, Marginalisation) [
+            (
+                input = (
+                    m_out = Categorical([0.2, 0.5, 0.3]),
+                    m_in = Categorical([0.2, 0.5, 0.3]),
+                    q_a = PointMass([1.0 6.0 32.0; 2.0 2.0 9.0; 5.0 5.0 6.0;;; 9.0 5.0 6.0; 4.0 10.0 6.0; 10.0 6.0 32.0;;; 6.0 1.0 8.0; 2.0 10.0 7.0; 1.0 3.0 8.0])
+                ),
+                output = Categorical([0.28971962616822433, 0.4392523364485981, 0.2710280373831776])
+            ),
+            (
+                input = (
+                    m_out = Categorical([0.2, 0.5, 0.3]),
+                    m_in = Categorical([0.2, 0.5, 0.3]),
+                    q_a = PointMass([1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0;;; 1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0;;; 1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0])
+                ),
+                output = Categorical([1 / 3, 1 / 3, 1 / 3])
+            ),
+            (
+                input = (
+                    m_out = Categorical([0.2, 0.5, 0.3]), m_in = Categorical([0.2, 0.5, 0.3]), q_a = PointMass([1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1])
+                ),
+                output = Categorical([1 / 3, 1 / 3, 1 / 3])
+            )
+        ]
+    end
+
+    @testset "Belief Propagation (q_out::PointMass, m_in::Categorical, q_a::PointMass)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:t1, Marginalisation) [
+            (
+                input = (
+                    q_out = PointMass([1.0, 0.0, 0.0]),
+                    m_in = Categorical([0.2, 0.5, 0.3]),
+                    q_a = PointMass([1.0 6.0 32.0; 2.0 2.0 9.0; 5.0 5.0 6.0;;; 9.0 5.0 6.0; 4.0 10.0 6.0; 10.0 6.0 32.0;;; 6.0 1.0 8.0; 2.0 10.0 7.0; 1.0 3.0 8.0])
+                ),
+                output = Categorical([0.5565217391304348, 0.2652173913043478, 0.17826086956521736])
+            ),
+            (
+                input = (
+                    q_out = PointMass([1.0, 0.0, 0.0]),
+                    m_in = Categorical([0.2, 0.5, 0.3]),
+                    q_a = PointMass([1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0;;; 1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0;;; 1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0])
+                ),
+                output = Categorical([1 / 3, 1 / 3, 1 / 3])
+            ),
+            (
+                input = (
+                    q_out = PointMass([1.0, 0.0, 0.0]), m_in = Categorical([0.2, 0.5, 0.3]), q_a = PointMass([1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1])
+                ),
+                output = Categorical([1 / 3, 1 / 3, 1 / 3])
+            )
+        ]
+    end
+
     @testset "Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" begin
         @test_rules [check_type_promotion = false] DiscreteTransition(:t1, Marginalisation) [
             (

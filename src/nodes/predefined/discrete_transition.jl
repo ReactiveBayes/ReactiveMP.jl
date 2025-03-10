@@ -54,5 +54,30 @@ function score(
     ::AverageEnergy, ::Type{<:DiscreteTransition}, ::Val{mnames}, marginals::Tuple{<:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}}, ::Nothing
 ) where {mnames}
     q_contingency, q_a = getdata.(marginals)
-    return -sum(mean(BroadcastFunction(log), q_a) .* components(q_contingency))
+    return -sum(mean(BroadcastFunction(clamplog), q_a) .* components(q_contingency))
+end
+
+function score(
+    ::AverageEnergy,
+    ::Type{<:DiscreteTransition},
+    ::Val{mnames},
+    marginals::NTuple{N, Union{<:Marginal{Bernoulli}, <:Marginal{Categorical}, <:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}, <:Marginal{<:PointMass}}},
+    ::Nothing
+) where {mnames, N}
+    q_a = marginals[findfirst(==(:a), mnames)]
+    e_log_a = mean(BroadcastFunction(clamplog), q_a)
+    foreach(zip(mnames, marginals)) do (marginal_name, marginal)
+        marginal = getdata(marginal)
+        if marginal_name === :a
+            return nothing
+        elseif marginal_name === :out
+            e_log_a = multiply_dimensions!(e_log_a, (1,), probvec(marginal))
+        elseif marginal_name === :in
+            e_log_a = multiply_dimensions!(e_log_a, (2,), probvec(marginal))
+        else
+            dims, p = discrete_transition_decode_marginal(String(marginal_name), marginal)
+            e_log_a = multiply_dimensions!(e_log_a, dims, p)
+        end
+    end
+    return -sum(e_log_a)
 end
