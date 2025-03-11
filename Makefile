@@ -14,11 +14,8 @@ format: scripts_init ## Code formating run
 
 .PHONY: benchmark
 
-benchmark_init:
-	julia --project=benchmark/ -e 'using Pkg; Pkg.instantiate();'
-
-benchmark: benchmark_init ## Runs simple benchmark
-	julia --project=benchmark/ --startup-file=no scripts/benchmark.jl
+bench: ## Run benchmark, use `make bench branch=...` to test against a specific branch
+	julia --startup-file=no --project=scripts/ scripts/bench.jl $(branch)
 
 .PHONY: docs
 

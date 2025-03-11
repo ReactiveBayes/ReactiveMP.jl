@@ -24,9 +24,11 @@ makedocs(
                 "Flow" => "lib/nodes/flow.md",
                 "BIFM" => "lib/nodes/bifm.md",
                 "Logical" => "lib/nodes/logical.md",
+                "Discrete Transition" => "lib/nodes/discrete_transition.md",
                 "Continuous transition" => "lib/nodes/ctransition.md",
                 "Autoregressive" => "lib/nodes/ar.md",
                 "BinomialPolya" => "lib/nodes/binomial_polya.md",
+                "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
             ]
         ],
         "Custom functionality" => [
