@@ -44,8 +44,8 @@ makedocs(
     ],
     format   = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true",
-        example_size_threshold = 200 * 1024,
-        size_threshold_warn = 200 * 1024,
+        example_size_threshold = 400 * 1024,
+        size_threshold_warn = 400 * 1024,
     )
 )
 
