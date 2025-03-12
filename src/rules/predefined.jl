@@ -103,6 +103,8 @@ include("dot_product/in2.jl")
 include("discrete_transition/categoricals.jl")
 include("discrete_transition/marginals.jl")
 include("discrete_transition/a.jl")
+include("discrete_transition/predefined/belief_propagation.jl")
+include("discrete_transition/predefined/structured_vmp.jl")
 
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")
