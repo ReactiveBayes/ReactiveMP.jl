@@ -1,8 +1,5 @@
 import Base.Broadcast: BroadcastFunction
 
-using Tullio
-using TupleTools
-
 outer_product(vs) = prod.(Iterators.product(vs...))
 
 # Fast implementation for the case where we need a joint marginal over all categoricals.
