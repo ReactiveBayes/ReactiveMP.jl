@@ -17,6 +17,23 @@
         )]
     end
 
+    @testset "out_in: (m_out::PointMass, m_in::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in) [
+            (
+                input = (m_out = PointMass([0.0, 1.0, 0.0]), m_in = Categorical([0.7, 0.1, 0.2]), q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])),
+                output = (out = PointMass([0.0, 1.0, 0.0]), in = Categorical([0.6573559230309131, 0.1548280989602547, 0.18781597800883235]))
+            ),
+            (
+                input = (m_out = PointMass([1.0, 0.0, 0.0]), m_in = Categorical([0.8, 0.1, 0.1]), q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])),
+                output = (out = PointMass([1.0, 0.0, 0.0]), in = Categorical([0.868332438332133, 0.06583378083393351, 0.06583378083393351]))
+            ),
+            (
+                input = (m_out = PointMass([0.0, 0.0, 1.0]), m_in = Categorical([0.1, 0.05, 0.85]), q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])),
+                output = (out = PointMass([0.0, 0.0, 1.0]), in = Categorical([0.06445736553534119, 0.032228682767670595, 0.9033139516969882]))
+            )
+        ]
+    end
+
     @testset "out_in_t1: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, q_a::DirichletCollection)" begin
         @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_t1) [
             (
@@ -63,13 +80,95 @@
         ]
     end
 
-    @testset "out_in_t1_t2: (m_out::Categorical, m_in::Categorical, m_t1::Categorical, m_t2::Categorical, q_a::DirichletCollection)" begin
-        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_t1_t2) [(
+    @testset "out_in_T1: (m_out::PointMass, m_in::Categorical, m_T1::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_T1) [
+            (
+                input = (
+                    m_out = PointMass([0.0, 1.0, 0.0]),
+                    m_in = Categorical([0.7, 0.1, 0.2]),
+                    m_T1 = Categorical([0.01, 0.9, 0.09]),
+                    q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])
+                ),
+                output = (
+                    out = PointMass([0.0, 1.0, 0.0]),
+                    in_T1 = Contingency(
+                        [
+                            0.006573559230309129 0.5916203307278217 0.05916203307278217
+                            0.0015482809896025464 0.1393452890642292 0.013934528906422917
+                            0.0018781597800883228 0.1690343802079491 0.016903438020794904
+                        ]
+                    )
+                )
+            ),
+            (
+                input = (
+                    m_out = PointMass([1.0, 0.0, 0.0]),
+                    m_in = Categorical([0.3, 0.4, 0.3]),
+                    m_T1 = Categorical([0.2, 0.3, 0.5]),
+                    q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])
+                ),
+                output = (
+                    out = PointMass([1.0, 0.0, 0.0]),
+                    in_T1 = Contingency(
+                        [
+                            0.0828075671805265 0.12421135077078975 0.20701891795131622
+                            0.0669671044682706 0.10045065670240588 0.16741776117067647
+                            0.05022532835120294 0.07533799252680441 0.12556332087800734
+                        ]
+                    )
+                )
+            )
+        ]
+    end
+
+    @testset "out_in_T1: (m_out::Categorical, m_in::PointMass, m_T1::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_T1) [
+            (
+                input = (
+                    m_out = Categorical([0.2, 0.5, 0.3]),
+                    m_in = PointMass([0.0, 1.0, 0.0]),
+                    m_T1 = Categorical([0.01, 0.9, 0.09]),
+                    q_a = DirichletCollection([3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0;;; 3.0 2.0 2.0; 2.0 3.0 2.0; 2.0 2.0 3.0])
+                ),
+                output = (
+                    out_T1 = Contingency(
+                        [
+                            0.0015101626751925813 0.13591464076733234 0.013591464076733232
+                            0.006224593312018544 0.560213398081669 0.056021339808166905
+                            0.002265244012788872 0.2038719611509985 0.02038719611509985
+                        ]
+                    ),
+                    in = PointMass([0.0, 1.0, 0.0])
+                )
+            ),
+            (
+                input = (
+                    m_out = Categorical([0.4, 0.3, 0.3]),
+                    m_in = PointMass([1.0, 0.0, 0.0]),
+                    m_T1 = Categorical([0.3, 0.4, 0.3]),
+                    q_a = DirichletCollection([4.0 1.0 2.0; 1.0 4.0 1.0; 2.0 1.0 4.0;;; 2.0 3.0 1.0; 3.0 2.0 3.0; 1.0 3.0 2.0;;; 1.0 2.0 3.0; 2.0 1.0 3.0; 3.0 2.0 1.0])
+                ),
+                output = (
+                    out_T1 = Contingency(
+                        [
+                            0.22859380787082062 0.15648529902096883 0.043175793266535034
+                            0.027410639968332862 0.1935004807858059 0.08802298069929496
+                            0.07450984453235242 0.043175793266535034 0.14512536058935444
+                        ]
+                    ),
+                    in = PointMass([1.0, 0.0, 0.0])
+                )
+            )
+        ]
+    end
+
+    @testset "out_in_T1_T2: (m_out::Categorical, m_in::Categorical, m_T1::Categorical, m_T2::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_T1_T2) [(
             input = (
                 m_out = Categorical([0.2, 0.5, 0.3]),
                 m_in = Categorical([0.7, 0.1, 0.2]),
-                m_t1 = Categorical([0.01, 0.9, 0.09]),
-                m_t2 = Categorical([0.25, 0.01, 0.09, 0.65]),
+                m_T1 = Categorical([0.01, 0.9, 0.09]),
+                m_T2 = Categorical([0.25, 0.01, 0.09, 0.65]),
                 q_a = DirichletCollection(
                     [
                         3.4814561121678347 2.5351658244027844 2.0637422006197856; 2.2919979590901685 3.5854980740024467 2.057024456382512; 2.961498802369847 2.2641205050393607 3.2344282382034804;;; 3.748169016349685 2.1522033841434904 2.9468022556183513; 2.3868319648098764 3.3058305246781945 2.6555313055477683; 2.153603001551738 2.1909039151153378 3.218338677959591;;; 3.76759376279165 2.67577869934414 2.9092268547954774; 2.2886069210422426 3.7986205864251543 2.5056888207498655; 2.2768291735341766 2.2200857998842514 3.057692286732935;;;;
@@ -90,13 +189,13 @@
         )]
     end
 
-    @testset "out_t1_t2: (m_out::Categorical,  m_t1::Categorical, m_t2::Categorical, q_in::Categorical, q_a::DirichletCollection)" begin
-        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_t1_t2) [(
+    @testset "out_T1_T2: (m_out::Categorical,  m_T1::Categorical, m_T2::Categorical, q_in::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_T1_T2) [(
             input = (
                 m_out = Categorical([0.2, 0.5, 0.3]),
                 q_in = Categorical([0.7, 0.1, 0.2]),
-                m_t1 = Categorical([0.01, 0.9, 0.09]),
-                m_t2 = Categorical([0.25, 0.01, 0.09, 0.65]),
+                m_T1 = Categorical([0.01, 0.9, 0.09]),
+                m_T2 = Categorical([0.25, 0.01, 0.09, 0.65]),
                 q_a = DirichletCollection(
                     [
                         7.0 3.0 8.0; 5.0 2.0 8.0; 4.0 6.0 4.0;;; 7.0 7.0 5.0; 7.0 3.0 6.0; 4.0 9.0 5.0;;; 1.0 3.0 3.0; 4.0 3.0 8.0; 9.0 6.0 2.0;;;;
@@ -114,6 +213,80 @@
                     0.0001290783597671086 0.04525431285975302 0.005674421003653644; 0.0017782358539476003 0.04684864295997063 0.006175516962183516; 0.00020687503738371039 0.06142169340451567 0.0026760195980617195
                 ]
             )
+        )]
+    end
+
+    @testset "out_in_T1_T2: (m_out::PointMass, m_in::Categorical, m_T1::PointMass, m_T2::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:out_in_T1_T2) [(
+            input = (
+                m_out = PointMass([0.0, 1.0, 0.0]),
+                m_in = Categorical([0.7, 0.1, 0.2]),
+                m_T1 = PointMass([1.0, 0.0, 0.0]),
+                m_T2 = Categorical([0.25, 0.01, 0.09, 0.65]),
+                q_a = DirichletCollection(
+                    [
+                        7.0 3.0 8.0; 5.0 2.0 8.0; 4.0 6.0 4.0;;; 7.0 7.0 5.0; 7.0 3.0 6.0; 4.0 9.0 5.0;;; 1.0 3.0 3.0; 4.0 3.0 8.0; 9.0 6.0 2.0;;;;
+                        10.0 5.0 6.0; 5.0 1.0 6.0; 9.0 1.0 8.0;;; 1.0 4.0 1.0; 4.0 1.0 5.0; 8.0 10.0 4.0;;; 4.0 6.0 8.0; 2.0 3.0 9.0; 9.0 4.0 7.0;;;;
+                        2.0 4.0 9.0; 7.0 8.0 2.0; 3.0 5.0 2.0;;; 8.0 5.0 2.0; 4.0 7.0 10.0; 3.0 7.0 10.0;;; 8.0 4.0 8.0; 6.0 6.0 10.0; 3.0 9.0 4.0;;;;
+                        1.0 2.0 5.0; 7.0 5.0 3.0; 1.0 10.0 3.0;;; 5.0 2.0 7.0; 2.0 2.0 4.0; 4.0 5.0 6.0;;; 8.0 5.0 5.0; 5.0 3.0 1.0; 2.0 10.0 3.0
+                    ]
+                )
+            ),
+            output = (
+                out = PointMass([0.0, 1.0, 0.0]),
+                in_T2 = Contingency(
+                    [
+                        0.09889918569659613 0.002609510516733399 0.06923233847572201 0.6763096052028288
+                        0.00705769324206054 0.00016766466951936572 0.007953112948931132 0.03450838372242786
+                        0.03738805177435899 0.001097408562025124 0.004268966543435505 0.06050807864536115
+                    ]
+                ),
+                T1 = PointMass([1.0, 0.0, 0.0])
+            )
+        )]
+    end
+
+    @testset "T1_T2: (q_out_in::Contingency, m_T1::Categorical, m_T2::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:T1_T2) [(
+            input = (
+                q_out_in = Contingency([7.0 2.0 9.0; 5.0 4.0 7.0; 4.0 5.0 4.0]),
+                m_T1 = Categorical([0.01, 0.9, 0.09]),
+                m_T2 = Categorical([0.25, 0.01, 0.09, 0.65]),
+                q_a = DirichletCollection(
+                    [
+                        9.0 9.0 1.0; 5.0 10.0 8.0; 2.0 4.0 5.0;;; 8.0 2.0 2.0; 5.0 9.0 1.0; 4.0 5.0 3.0;;; 8.0 1.0 6.0; 4.0 2.0 8.0; 10.0 4.0 8.0;;;;
+                        1.0 3.0 3.0; 5.0 9.0 7.0; 8.0 2.0 4.0;;; 5.0 7.0 6.0; 5.0 6.0 9.0; 1.0 7.0 9.0;;; 9.0 2.0 10.0; 10.0 8.0 1.0; 1.0 10.0 2.0;;;;
+                        8.0 9.0 3.0; 10.0 7.0 10.0; 3.0 3.0 6.0;;; 9.0 8.0 3.0; 3.0 1.0 2.0; 5.0 9.0 2.0;;; 3.0 4.0 4.0; 6.0 10.0 7.0; 9.0 4.0 9.0;;;;
+                        8.0 9.0 1.0; 8.0 3.0 10.0; 10.0 1.0 8.0;;; 7.0 10.0 4.0; 4.0 5.0 4.0; 5.0 4.0 2.0;;; 5.0 2.0 8.0; 2.0 4.0 8.0; 7.0 7.0 9.0
+                    ]
+                )
+            ),
+            output = Contingency(
+                [
+                    0.001909584605645378 7.577894913185698e-5 0.0008326181538949587 0.004047439339790858
+                    0.20982093572403915 0.008989148963980405 0.07438301435396961 0.6079946350978609
+                    0.02321766828411999 0.000728775525230242 0.0075065747531478065 0.06049382624918877
+                ]
+            )
+        )]
+    end
+
+    @testset "T1_T2: (q_out_in::Contingency, m_T1::PointMass, m_T2::Categorical, q_a::DirichletCollection)" begin
+        @test_marginalrules [check_type_promotion = false] DiscreteTransition(:T1_T2) [(
+            input = (
+                q_out_in = Contingency([7.0 2.0 9.0; 5.0 4.0 7.0; 4.0 5.0 4.0]),
+                m_T1 = PointMass([0.0, 1.0, 0.0]),
+                m_T2 = Categorical([0.25, 0.01, 0.09, 0.65]),
+                q_a = DirichletCollection(
+                    [
+                        9.0 9.0 1.0; 5.0 10.0 8.0; 2.0 4.0 5.0;;; 8.0 2.0 2.0; 5.0 9.0 1.0; 4.0 5.0 3.0;;; 8.0 1.0 6.0; 4.0 2.0 8.0; 10.0 4.0 8.0;;;;
+                        1.0 3.0 3.0; 5.0 9.0 7.0; 8.0 2.0 4.0;;; 5.0 7.0 6.0; 5.0 6.0 9.0; 1.0 7.0 9.0;;; 9.0 2.0 10.0; 10.0 8.0 1.0; 1.0 10.0 2.0;;;;
+                        8.0 9.0 3.0; 10.0 7.0 10.0; 3.0 3.0 6.0;;; 9.0 8.0 3.0; 3.0 1.0 2.0; 5.0 9.0 2.0;;; 3.0 4.0 4.0; 6.0 10.0 7.0; 9.0 4.0 9.0;;;;
+                        8.0 9.0 1.0; 8.0 3.0 10.0; 10.0 1.0 8.0;;; 7.0 10.0 4.0; 4.0 5.0 4.0; 5.0 4.0 2.0;;; 5.0 2.0 8.0; 2.0 4.0 8.0; 7.0 7.0 9.0
+                    ]
+                )
+            ),
+            output = (T1 = PointMass([0.0, 1.0, 0.0]), T2 = Categorical([0.23282711001865267, 0.00997477953088233, 0.08253886680444608, 0.674659243646019]))
         )]
     end
 end
