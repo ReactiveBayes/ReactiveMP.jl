@@ -13,7 +13,7 @@ function marginalrule(
     ::Any,
     ::Any
 ) where {marginal_symbol, message_names, N}
-    return Contingency(outer_product(probvec.(messages)) .* clamp.(exp.(mean(BroadcastFunction(log), first(marginals))), tiny, huge))
+    return Contingency(outer_product(probvec.(messages)) .* exp.(mean(BroadcastFunction(clamplog), first(marginals))))
 end
 
 nonparametric_distribution(v::Vector{<:Real}) = Categorical(normalize!(v, 1))

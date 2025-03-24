@@ -50,9 +50,7 @@ end
     return -probvec(q_out)' * mean(BroadcastFunction(clamplog), q_a) * probvec(q_in)
 end
 
-function score(
-    ::AverageEnergy, ::Type{<:DiscreteTransition}, ::Val{mnames}, marginals::Tuple{<:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}}, ::Nothing
-) where {mnames}
+function score(::AverageEnergy, ::Type{<:DiscreteTransition}, ::Val{mnames}, marginals::Tuple{<:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}}, ::Any) where {mnames}
     q_contingency, q_a = getdata.(marginals)
     return -sum(mean(BroadcastFunction(clamplog), q_a) .* components(q_contingency))
 end
@@ -62,7 +60,7 @@ function score(
     ::Type{<:DiscreteTransition},
     ::Val{mnames},
     marginals::NTuple{N, Union{<:Marginal{Bernoulli}, <:Marginal{Categorical}, <:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}, <:Marginal{<:PointMass}}},
-    ::Nothing
+    ::Any
 ) where {mnames, N}
     q_a = marginals[findfirst(==(:a), mnames)]
     e_log_a = mean(BroadcastFunction(clamplog), q_a)
