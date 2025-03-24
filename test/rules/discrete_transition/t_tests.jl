@@ -4,7 +4,7 @@
     import ReactiveMP: @test_rules
 
     @testset "Belief Propagation (m_out::Categorical, m_in::Categorical, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+        @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.2, 0.5, 0.3]),
@@ -31,7 +31,7 @@
     end
 
     @testset "Belief Propagation (q_out::PointMass, m_in::Categorical, q_a::PointMass)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+        @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
                     q_out = PointMass([1.0, 0.0, 0.0]),
@@ -47,18 +47,16 @@
                     q_a = PointMass([1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0;;; 1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0;;; 1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0])
                 ),
                 output = Categorical([1 / 3, 1 / 3, 1 / 3])
-            ),
-            (
-                input = (
-                    q_out = PointMass([1.0, 0.0, 0.0]), m_in = Categorical([0.2, 0.5, 0.3]), q_a = PointMass([1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1])
-                ),
-                output = Categorical([1 / 3, 1 / 3, 1 / 3])
             )
         ]
+        @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [(
+            input = (q_out = PointMass([1.0, 0.0, 0.0]), m_in = Categorical([0.2, 0.5, 0.3]), q_a = PointMass([1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1;;; 1 0 0; 0 1 0; 0 0 1])),
+            output = Categorical([1 / 3, 1 / 3, 1 / 3])
+        )]
     end
 
     @testset "Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+        @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.0510559014089735, 0.05387178800920238, 0.8950723105818241]),
@@ -103,7 +101,7 @@
     end
 
     @testset "Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_t2::Categorical)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+        @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),
@@ -188,7 +186,7 @@
     end
 
     @testset "Belief Propagation: (m_out::Categorical, m_in::Categorical, q_a::DirichletCollection, m_T1::Categorical)" begin
-        @test_rules [check_type_promotion = false] DiscreteTransition(:t2, Marginalisation) [
+        @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:t2, Marginalisation) [
             (
                 input = (
                     m_out = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),
@@ -275,7 +273,7 @@
     @testset "Additional T-interface tests for Belief Propagation" begin
         # Test T1 interface with 3 interfaces (BP with DirichletCollection q_a)
         @testset "Belief Propagation: T1 with 3 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -309,7 +307,7 @@
 
         # Test T1 interface with 3 interfaces (BP with PointMass q_a)
         @testset "Belief Propagation: T1 with 3 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -341,7 +339,7 @@
 
         # Test T1 interface with 4 interfaces (BP with DirichletCollection q_a)
         @testset "Belief Propagation: T1 with 4 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -377,7 +375,7 @@
 
         # Test T1 interface with 4 interfaces (BP with PointMass q_a)
         @testset "Belief Propagation: T1 with 4 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -413,7 +411,7 @@
 
         # Test T2 interface with 4 interfaces (BP with DirichletCollection q_a)
         @testset "Belief Propagation: T2 with 4 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -449,7 +447,7 @@
 
         # Test T2 interface with 4 interfaces (BP with PointMass q_a)
         @testset "Belief Propagation: T2 with 4 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -485,7 +483,7 @@
 
         # Test T1 interface with 5 interfaces (BP with DirichletCollection q_a)
         @testset "Belief Propagation: T1 with 5 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -523,7 +521,7 @@
 
         # Test T1 interface with 5 interfaces (BP with PointMass q_a)
         @testset "Belief Propagation: T1 with 5 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -561,7 +559,7 @@
 
         # Test T2 interface with 5 interfaces (BP with DirichletCollection q_a)
         @testset "Belief Propagation: T2 with 5 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -599,7 +597,7 @@
 
         # Test T2 interface with 5 interfaces (BP with PointMass q_a)
         @testset "Belief Propagation: T2 with 5 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -637,7 +635,7 @@
 
         # Test T3 interface with 5 interfaces (BP with DirichletCollection q_a)
         @testset "Belief Propagation: T3 with 5 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T3, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T3, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -675,7 +673,7 @@
 
         # Test T3 interface with 5 interfaces (BP with PointMass q_a)
         @testset "Belief Propagation: T3 with 5 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T3, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T3, Marginalisation) [
                 (
                     input = (
                         m_out = Categorical([0.3, 0.4, 0.3]),
@@ -714,7 +712,7 @@
     @testset "Additional T-interface tests for structured VMP" begin
         # Test T1 interface with 3 interfaces (BP with DirichletCollection q_a)
         @testset "Structured VMP: T1 with 3 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -748,7 +746,7 @@
 
         # Test T1 interface with 3 interfaces (BP with PointMass q_a)
         @testset "Structured VMP: T1 with 3 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -780,7 +778,7 @@
 
         # Test T1 interface with 4 interfaces (BP with DirichletCollection q_a)
         @testset "Structured VMP: T1 with 4 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -816,7 +814,7 @@
 
         # Test T1 interface with 4 interfaces (BP with PointMass q_a)
         @testset "Structured VMP: T1 with 4 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -852,7 +850,7 @@
 
         # Test T2 interface with 4 interfaces (BP with DirichletCollection q_a)
         @testset "Structured VMP: T2 with 4 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -888,7 +886,7 @@
 
         # Test T2 interface with 4 interfaces (BP with PointMass q_a)
         @testset "Structured VMP: T2 with 4 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -924,7 +922,7 @@
 
         # Test T1 interface with 5 interfaces (BP with DirichletCollection q_a)
         @testset "Structured VMP: T1 with 5 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -962,7 +960,7 @@
 
         # Test T1 interface with 5 interfaces (BP with PointMass q_a)
         @testset "Structured VMP: T1 with 5 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T1, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T1, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -1000,7 +998,7 @@
 
         # Test T2 interface with 5 interfaces (BP with DirichletCollection q_a)
         @testset "Structured VMP: T2 with 5 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -1038,7 +1036,7 @@
 
         # Test T2 interface with 5 interfaces (BP with PointMass q_a)
         @testset "Structured VMP: T2 with 5 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T2, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T2, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -1076,7 +1074,7 @@
 
         # Test T3 interface with 5 interfaces (BP with DirichletCollection q_a)
         @testset "Structured VMP: T3 with 5 interfaces (DirichletCollection q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T3, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T3, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
@@ -1114,7 +1112,7 @@
 
         # Test T3 interface with 5 interfaces (BP with PointMass q_a)
         @testset "Structured VMP: T3 with 5 interfaces (PointMass q_a)" begin
-            @test_rules [check_type_promotion = false] DiscreteTransition(:T3, Marginalisation) [
+            @test_rules [check_type_promotion = true, extra_float_types = [Float64, Float32]] DiscreteTransition(:T3, Marginalisation) [
                 (
                     input = (
                         q_out = PointMass([0.0, 1.0, 0.0]),
