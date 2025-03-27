@@ -18,11 +18,11 @@ function BayesBase.default_prod_rule(::Type{<:Uninformative}, ::Type{<:Uninforma
     return PreserveTypeProd(Uninformative)
 end
 
-function BayesBase.default_prod_rule(::Type{<:Uninformative}, ::Type{T}) where {T<:BayesBase.TerminalProdArgument}
+function BayesBase.default_prod_rule(::Type{<:Uninformative}, ::Type{T}) where {T <: BayesBase.TerminalProdArgument}
     return PreserveTypeProd(T)
 end
 
-function BayesBase.default_prod_rule(::Type{T}, ::Type{<:Uninformative}) where {T<:BayesBase.TerminalProdArgument}
+function BayesBase.default_prod_rule(::Type{T}, ::Type{<:Uninformative}) where {T <: BayesBase.TerminalProdArgument}
     return PreserveTypeProd(T)
 end
 
