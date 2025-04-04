@@ -173,7 +173,9 @@ function ReactiveMP.rule(
     messages_names::Val{mes_names},
     messages::NTuple{N, Union{Message{<:PointMass}, Message{<:DiscreteNonParametric}}},
     marginals_names::Val{mar_names},
-    marginals::NTuple{M, Union{Marginal{<:DirichletCollection}, Marginal{<:PointMass}, Marginal{<:DiscreteNonParametric}, Marginal{<:Contingency}, Marginal{<:Bernoulli}}},
+    marginals::NTuple{
+        M, Union{Marginal{<:DirichletCollection}, Marginal{<:PointMass{<:AbstractArray}}, Marginal{<:DiscreteNonParametric}, Marginal{<:Contingency}, Marginal{<:Bernoulli}}
+    },
     meta::Any,
     addons::Any,
     ::Any
@@ -189,7 +191,9 @@ function ReactiveMP.rule(
     messages_names::Nothing,
     messages::Nothing,
     marginals_names::Val{mar_names},
-    marginals::NTuple{M, Union{Marginal{<:DirichletCollection}, Marginal{<:PointMass}, Marginal{<:DiscreteNonParametric}, Marginal{<:Contingency}, Marginal{<:Bernoulli}}},
+    marginals::NTuple{
+        M, Union{Marginal{<:DirichletCollection}, Marginal{<:PointMass{<:AbstractArray}}, Marginal{<:DiscreteNonParametric}, Marginal{<:Contingency}, Marginal{<:Bernoulli}}
+    },
     meta::Any,
     addons::Any,
     ::Any
