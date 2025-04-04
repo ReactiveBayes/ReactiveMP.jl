@@ -37,7 +37,7 @@ end
     return -tr(components(q_out_in)' * mean(BroadcastFunction(log), q_a))
 end
 
-@average_energy DiscreteTransition (q_out_in::Contingency, q_a::PointMass) = begin
+@average_energy DiscreteTransition (q_out_in::Contingency, q_a::PointMass{<:AbstractArray{T, 2}}) where {T} = begin
     # `map(clamplog, mean(q_a))` is an equivalent of `mean(BroadcastFunction(log), q_a)` with an extra `clamp(el, tiny, Inf)` operation
     # The reason is that we don't want to take log of zeros in the matrix `q_a` (if there are any)
     # The trick here is that if RHS matrix has zero inputs, than the corresponding entries of the `contingency_matrix` matrix 
@@ -46,7 +46,7 @@ end
     return result
 end
 
-@average_energy DiscreteTransition (q_out::Any, q_in::Any, q_a::PointMass) = begin
+@average_energy DiscreteTransition (q_out::Any, q_in::Any, q_a::PointMass{<:AbstractArray{T, 2}}) where {T} = begin
     return -probvec(q_out)' * mean(BroadcastFunction(clamplog), q_a) * probvec(q_in)
 end
 
@@ -59,7 +59,9 @@ function score(
     ::AverageEnergy,
     ::Type{<:DiscreteTransition},
     ::Val{mnames},
-    marginals::NTuple{N, Union{<:Marginal{Bernoulli}, <:Marginal{Categorical}, <:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}, <:Marginal{<:PointMass}}},
+    marginals::NTuple{
+        N, Union{<:Marginal{Bernoulli}, <:Marginal{Categorical}, <:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}, <:Marginal{<:PointMass{<:AbstractArray}}}
+    },
     ::Any
 ) where {mnames, N}
     q_a = marginals[findfirst(==(:a), mnames)]
