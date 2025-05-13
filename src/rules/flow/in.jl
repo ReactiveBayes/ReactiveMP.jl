@@ -27,7 +27,7 @@ end
 
     # calculate new parameters
     μ_in = backward(model, μ_out)
-    J    = jacobian(model, μ_out)
+    J = jacobian(model, μ_out)
     Λ_in = J' * Λ_out * J
 
     # return distribution
@@ -44,7 +44,7 @@ end
 
     # calculate new parameters
     μ_in = backward(model, μ_out)
-    J    = jacobian(model, μ_out)
+    J = jacobian(model, μ_out)
     Λ_in = J' * Λ_out * J
 
     # return distribution

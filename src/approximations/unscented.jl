@@ -5,10 +5,10 @@ const default_beta = 2.0
 const default_kappa = 0.0
 
 struct UnscentedExtra{T, R, M, C}
-    L  :: T
-    λ  :: R
-    Wm :: M
-    Wc :: C
+    L::T
+    λ::R
+    Wm::M
+    Wc::C
 end
 
 """
@@ -72,13 +72,13 @@ getκ(approximation::Unscented) = approximation.κ
 
 getextra(approximation::Unscented) = approximation.e
 
-getL(approximation::Unscented)  = getL(getextra(approximation))
-getλ(approximation::Unscented)  = getλ(getextra(approximation))
+getL(approximation::Unscented) = getL(getextra(approximation))
+getλ(approximation::Unscented) = getλ(getextra(approximation))
 getWm(approximation::Unscented) = getWm(getextra(approximation))
 getWc(approximation::Unscented) = getWc(getextra(approximation))
 
-getL(extra::UnscentedExtra)  = extra.L
-getλ(extra::UnscentedExtra)  = extra.λ
+getL(extra::UnscentedExtra) = extra.L
+getλ(extra::UnscentedExtra) = extra.λ
 getWm(extra::UnscentedExtra) = extra.Wm
 getWc(extra::UnscentedExtra) = extra.Wc
 

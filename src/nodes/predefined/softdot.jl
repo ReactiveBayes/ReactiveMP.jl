@@ -38,9 +38,9 @@ const softdot = SoftDot
 end
 
 @average_energy softdot (q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any) = begin
-    mθ, Vθ   = mean_cov(q_θ)
+    mθ, Vθ = mean_cov(q_θ)
     myx, Vyx = mean_cov(q_y_x)
-    mγ       = mean(q_γ)
+    mγ = mean(q_γ)
 
     order    = length(mθ)
     F        = order == 1 ? Univariate : Multivariate

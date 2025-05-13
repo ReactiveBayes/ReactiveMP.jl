@@ -33,7 +33,7 @@ end
 
     # calculate new parameters
     μ_in_hat = backward(model, μ_out)
-    J        = jacobian(model, μ_out)
+    J = jacobian(model, μ_out)
     Λ_in_hat = J' * Λ_out * J
 
     # return marginal distribution
@@ -53,7 +53,7 @@ end
 
     # calculate new parameters
     μ_in_hat = backward(model, μ_out)
-    J        = jacobian(model, μ_out)
+    J = jacobian(model, μ_out)
     Λ_in_hat = J' * Λ_out * J
 
     # return marginal distribution

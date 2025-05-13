@@ -120,27 +120,21 @@ end
 
 # This is a limitation of the current implementation, which can be removed in the future
 @testitem "@node macro (in the current implementation) should not support interface names with underscores" begin
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
-        quote
-            struct DummyNode end
+    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(quote
+        struct DummyNode end
 
-            @node DummyNode Stochastic [out, c_d]
-        end
-    )
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `d_b_a`" eval(
-        quote
-            struct DummyNode end
+        @node DummyNode Stochastic [out, c_d]
+    end)
+    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `d_b_a`" eval(quote
+        struct DummyNode end
 
-            @node DummyNode Stochastic [out, c, d_b_a]
-        end
-    )
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
-        quote
-            struct DummyNode end
+        @node DummyNode Stochastic [out, c, d_b_a]
+    end)
+    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(quote
+        struct DummyNode end
 
-            @node DummyNode Stochastic [out, (c, aliases = [c_d])]
-        end
-    )
+        @node DummyNode Stochastic [out, (c, aliases = [c_d])]
+    end)
 end
 
 @testitem "@node macro should generate a documentation entry for a newly specified node" begin

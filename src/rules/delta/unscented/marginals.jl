@@ -10,9 +10,9 @@
 
     (μ_tilde, Σ_tilde, C_tilde) = unscented_statistics(getmethod(meta), getnodefn(meta, Val(:out)), μs_fw_in, Σs_fw_in)
 
-    joint              = convert(JointNormal, μs_fw_in, Σs_fw_in)
+    joint = convert(JointNormal, μs_fw_in, Σs_fw_in)
     (μ_fw_in, Σ_fw_in) = mean_cov(joint)
-    ds                 = ExponentialFamily.dimensionalities(joint)
+    ds = ExponentialFamily.dimensionalities(joint)
 
     # Apply the RTS smoother
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
