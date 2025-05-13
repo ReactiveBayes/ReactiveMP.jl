@@ -50,13 +50,13 @@
     @testset "f(x) -> x, x~EF, out~EF with Categorical" begin
         meta = DeltaMeta(
             method = CVIProjection(
-                in_prjparams = (in_1 = ExponentialFamilyProjection.ProjectionParameters(strategy = ExponentialFamilyProjection.ControlVariateStrategy(nsamples = 4000)),)
+                in_prjparams = (in_1 = ExponentialFamilyProjection.ProjectionParameters(strategy = ExponentialFamilyProjection.ControlVariateStrategy(nsamples = 1_000)),)
             )
         )
         inputs_outputs = [
             (Categorical([1 / 4, 1 / 4, 1 / 2]), Categorical([1 / 2, 1 / 8, 3 / 8])),
-            (Categorical([1 / 8, 1 / 8, 3 / 4]), Categorical([1 / 16, 13 / 16, 1 / 8])),
-            (Categorical([1 / 7, 1 / 7, 2 / 7, 3 / 7]), Categorical([1 / 8, 2 / 8, 2 / 8, 3 / 8]))
+            (Categorical([1 / 2, 1 / 8, 3 / 8]), Categorical([1 / 16, 13 / 16, 1 / 8])),
+            (Categorical([1 / 8, 1 / 8, 1 / 8, 5 / 8]), Categorical([2 / 7, 2 / 7, 1 / 7, 2 / 7]))
         ]
         for input_output in inputs_outputs
             m_in = first(input_output)
