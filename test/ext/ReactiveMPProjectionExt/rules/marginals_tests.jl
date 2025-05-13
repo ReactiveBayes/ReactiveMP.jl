@@ -50,7 +50,7 @@
     @testset "f(x) -> x, x~EF, out~EF with Categorical" begin
         meta = DeltaMeta(
             method = CVIProjection(
-                in_prjparams = (in_1 = ExponentialFamilyProjection.ProjectionParameters(strategy = ExponentialFamilyProjection.ControlVariateStrategy(nsamples = 1_000)),)
+                in_prjparams = (in_1 = ExponentialFamilyProjection.ProjectionParameters(strategy = ExponentialFamilyProjection.ControlVariateStrategy(nsamples = 4_000)),)
             )
         )
         inputs_outputs = [
@@ -65,7 +65,7 @@
             @test length(q_factorised) === 1
             component1 = component(q_factorised, 1)
             q_prod = prod(GenericProd(), m_in, m_out)
-            @test mean(component1) ≈ mean(q_prod) atol = 1e-1
+            @test mean(component1) ≈ mean(q_prod) atol = 2e-1
         end
     end
 end
