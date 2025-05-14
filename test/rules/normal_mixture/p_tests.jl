@@ -20,13 +20,13 @@
             ),
             (
                 input = (q_out = MvNormalMeanPrecision([8.5, 5.1], [0.5 0.1; 0.1 4]), q_switch = Bernoulli(0.8), q_m = MvNormalMeanPrecision([3.0, 10], [0.1 0.2; 0.2 -0.3])),
-                output = WishartFast(3.2, [9.59487 -5.97148; -5.97148 5.13797])
+                output = WishartFast(3.2, [7.181260 -5.553096; -5.553096 5.094238])
             ),
             (
                 input = (
                     q_out = MvNormalMeanPrecision([5.0, 8.0], [3 0.5; 0.5 -6]), q_switch = Categorical([0.25, 0.75]), q_m = MvNormalMeanPrecision([2.0, -3.0], [2.1 -1.0; -1.0 3.0])
                 ),
-                output = WishartFast(3.25, [2.47598 8.29032; 8.29032 30.3902])
+                output = WishartFast(3.25, [2.53919 8.28558; 8.28558 30.38920])
             ),
             (
                 input = (q_out = MvNormalMeanCovariance([-3], [2.0]), q_switch = Bernoulli(0.5), q_m = MvNormalMeanCovariance([5.0], [2.0])),

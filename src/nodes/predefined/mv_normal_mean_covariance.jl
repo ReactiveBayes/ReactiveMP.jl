@@ -8,7 +8,7 @@
 
     m_mean, v_mean = mean_cov(q_μ)
     m_out, v_out   = mean_cov(q_out)
-    inv_m_Σ        = mean(cholinv, q_Σ)
+    inv_m_Σ       = mean(cholinv, q_Σ)
 
     result = zero(promote_paramfloattype(q_out, q_μ, q_Σ))
     result += mean(logdet, q_Σ)

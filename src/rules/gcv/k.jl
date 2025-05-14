@@ -2,7 +2,7 @@ export rule
 
 @rule GCV(:κ, Marginalisation) (q_y_x::Any, q_z::Any, q_ω::Any, meta::GCVMetadata) = begin
     y_x_mean, y_x_var = mean_cov(q_y_x)
-    ω_mean, ω_var     = mean_var(q_ω)
+    ω_mean, ω_var   = mean_var(q_ω)
     z_mean, z_var     = mean_var(q_z)
 
     A = exp(-ω_mean + ω_var / 2)

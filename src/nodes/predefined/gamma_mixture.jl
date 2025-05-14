@@ -69,8 +69,9 @@ struct GammaMixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
 collect_functional_dependencies(::GammaMixtureNode, ::Nothing) = GammaMixtureNodeFunctionalDependencies()
 collect_functional_dependencies(::GammaMixtureNode, ::GammaMixtureNodeFunctionalDependencies) = GammaMixtureNodeFunctionalDependencies()
-collect_functional_dependencies(::GammaMixtureNode, ::Any) =
-    error("The functional dependencies for GammaMixtureNode must be either `Nothing` or `GammaMixtureNodeFunctionalDependencies`")
+collect_functional_dependencies(::GammaMixtureNode, ::Any) = error(
+    "The functional dependencies for GammaMixtureNode must be either `Nothing` or `GammaMixtureNodeFunctionalDependencies`"
+)
 
 function activate!(factornode::GammaMixtureNode, options::FactorNodeActivationOptions)
     dependecies = collect_functional_dependencies(factornode, getdependecies(options))

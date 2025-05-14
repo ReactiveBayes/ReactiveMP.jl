@@ -7,12 +7,12 @@
 ) = begin
 
     # fetch information from meta data
-    A       = getA(meta)
-    B       = getB(meta)
-    C       = getC(meta)
-    H       = getH(meta)
+    A        = getA(meta)
+    B        = getB(meta)
+    C        = getC(meta)
+    H        = getH(meta)
     ξztilde = getξztilde(meta)
-    BHBt    = getBHBt(meta)
+    BHBt     = getBHBt(meta)
     Λz      = getΛz(meta)
 
     # fetch statistics

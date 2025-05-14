@@ -36,8 +36,9 @@ end
 
 # prepare function for setting correct sizes in the layers (without assigning the parameters yet!)
 prepare(dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} = _prepare(dim, layers)
-Broadcast.broadcasted(::typeof(prepare), dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} =
-    broadcast(_prepare, Ref(dim), layers)
+Broadcast.broadcasted(::typeof(prepare), dim::Int, layers::T) where {T <: NTuple{N, Union{AbstractLayer, AbstractLayerPlaceholder}} where {N}} = broadcast(
+    _prepare, Ref(dim), layers
+)
 
 @doc raw"""
 The CompiledFlowModel structure is the most generic type of compiled Flow model, in which the layers are not constrained to be of a specific type. The FlowModel structure contains the input dimension and a tuple of compiled layers. Do not manually create a CompiledFlowModel! Instead create a FlowModel first and compile it with `compile(model::FlowModel)`. This will make sure that all layers/mappings are configured with the proper dimensionality and with randomly sampled parameters. Alternatively, if you would like to pass your own parameters, call `compile(model::FlowModel, params::Vector)`.
@@ -364,8 +365,9 @@ end
 backward_inv_jacobian(model::CompiledFlowModel, output::AbstractVector{<:Real}) = _backward_inv_jacobian(model, output)
 
 # for broadcasting over backward inverse jacobian, fix the model for multiple inputs
-Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) =
-    broadcast(_backward_inv_jacobian, Ref(model), output)
+Broadcast.broadcasted(::typeof(backward_inv_jacobian), model::CompiledFlowModel, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
+    _backward_inv_jacobian, Ref(model), output
+)
 
 # inplace inverse backward jacobian of the Flow model
 function backward_inv_jacobian!(input::AbstractVector{<:Real}, J::AbstractMatrix{T}, model::CompiledFlowModel, output::AbstractVector{<:Real}) where {T <: Real}

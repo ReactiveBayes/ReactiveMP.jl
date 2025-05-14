@@ -14,7 +14,7 @@ export rule
 end
 
 @rule GCV(:y, Marginalisation) (q_x::Any, q_z::Any, q_κ::Any, q_ω::Any, meta::Union{<:GCVMetadata, Nothing}) = begin
-    x_mean        = mean(q_x)
+    x_mean = mean(q_x)
     z_mean, z_var = mean_var(q_z)
     κ_mean, κ_var = mean_var(q_κ)
     ω_mean, ω_var = mean_var(q_ω)

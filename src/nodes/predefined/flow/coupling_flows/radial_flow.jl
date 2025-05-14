@@ -16,9 +16,9 @@ This function has been introduced in:
 Rezende, Danilo, and Shakir Mohamed. "Variational inference with normalizing flows." _International conference on machine learning._ PMLR, 2015.
 """
 mutable struct RadialFlow{T1, T2 <: Real} <: AbstractCouplingFlow
-    z0 :: T1
-    α  :: T2
-    β  :: T2
+    z0::T1
+    α::T2
+    β::T2
     function RadialFlow(z0::T1, α::T2, β::T2) where {T1, T2 <: Real}
         @assert α > 0 "The parameter α should be larger than 0."
         return new{T1, T2}(z0, float(α), float(β))
@@ -54,8 +54,8 @@ nr_params(flow::RadialFlowEmpty) = 2 + getdim(flow)
 
 # get-functions for the RadialFlow structure.
 getz0(f::RadialFlow)                    = return f.z0
-getα(f::RadialFlow)                     = return f.α
-getβ(f::RadialFlow)                     = return f.β
+getα(f::RadialFlow)                    = return f.α
+getβ(f::RadialFlow)                    = return f.β
 getall(f::RadialFlow)                   = return f.z0, f.α, f.β
 getdim(f::RadialFlowEmpty{N}) where {N} = return N
 

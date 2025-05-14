@@ -9,7 +9,7 @@ end
 
 @marginalrule NormalMeanPrecision(:out_μ_τ) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, m_τ::PointMass) = begin
     xi_out, W_out = weightedmean_precision(m_out)
-    xi_μ, W_μ     = weightedmean_precision(m_μ)
+    xi_μ, W_μ = weightedmean_precision(m_μ)
 
     W_bar = mean(m_τ)
 
@@ -21,7 +21,7 @@ end
 
 @marginalrule NormalMeanPrecision(:out_μ) (m_out::UnivariateNormalDistributionsFamily, m_μ::UnivariateNormalDistributionsFamily, q_τ::Any) = begin
     xi_out, W_out = weightedmean_precision(m_out)
-    xi_μ, W_μ     = weightedmean_precision(m_μ)
+    xi_μ, W_μ = weightedmean_precision(m_μ)
 
     W_bar = mean(q_τ)
 

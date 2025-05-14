@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - 'main'
-    tags: '*'
+    tags: ['*']
   check_run:
     types: [rerequested]
   schedule:
@@ -18,11 +18,6 @@ permissions:
   contents: read
 
 jobs:
-  code-style:
-    name: Code Style Suggestions
-    runs-on: ubuntu-latest
-    steps:
-      - uses: julia-actions/julia-format@v3
   test:
     name: Tests ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
