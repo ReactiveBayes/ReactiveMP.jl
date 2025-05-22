@@ -187,6 +187,17 @@
         ]
     end
 
+    @testset "Variational message passing: (m_in::Categorical, q_a::DirichletCollection, q_T1::PointMass)" begin
+        @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [(
+            input = (
+                m_in = Categorical([0.1, 0.8, 0.1]),
+                q_a = DirichletCollection([6.0 9.0 8.0; 9.0 9.0 4.0; 1.0 6.0 8.0;;; 3.0 6.0 8.0; 3.0 8.0 5.0; 4.0 5.0 2.0;;; 10.0 1.0 8.0; 2.0 7.0 1.0; 7.0 7.0 3.0]),
+                q_T1 = PointMass([0, 0, 1])
+            ),
+            output = Categorical([0.1, 0.9, 0.0])
+        )]
+    end
+
     @testset "Belief propagation: higher orders" begin
         @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
             (

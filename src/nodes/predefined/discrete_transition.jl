@@ -46,7 +46,7 @@ end
     return result
 end
 
-@average_energy DiscreteTransition (q_out::Any, q_in::Any, q_a::PointMass{<:AbstractArray{T, 2}}) where {T} = begin
+@average_energy DiscreteTransition (q_out::PointMass{<:AbstractVector}, q_in::Categorical, q_a::PointMass{<:AbstractArray{T, 2}}) where {T} = begin
     return -probvec(q_out)' * mean(BroadcastFunction(clamplog), q_a) * probvec(q_in)
 end
 
@@ -60,7 +60,7 @@ function score(
     ::Type{<:DiscreteTransition},
     ::Val{mnames},
     marginals::NTuple{
-        N, Union{<:Marginal{Bernoulli}, <:Marginal{Categorical}, <:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}, <:Marginal{<:PointMass{<:AbstractArray}}}
+        N, Union{<:Marginal{<:Bernoulli}, <:Marginal{<:Categorical}, <:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}, <:Marginal{<:PointMass{<:AbstractArray}}}
     },
     ::Any
 ) where {mnames, N}

@@ -39,16 +39,16 @@ function discrete_transition_marginal_rule(
     e_log_a = mean(BroadcastFunction(clamplog), q_a)
     e_log_a = discrete_transition_process_marginals(e_log_a, marginals_names, marginals)
 
-    marginal = clamp.(exp.(e_log_a), tiny, Inf)
+    marginal = clamp.(exp.(e_log_a), tiny, huge)
     marginal = discrete_transition_process_messages(marginal, message_names, messages, multiply_dimensions!)
     dims = Tuple(findall(size(marginal) .== 1))
     marginal = dropdims(marginal, dims = dims)
     return marginal
 end
 
-discrete_transition_marginal_rule_contingency(message_names::NTuple{N, Symbol}, messages::NTuple{N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}}, marginals_names::NTuple{M, Symbol}, marginals, q_a) where {N, M} = Contingency(
-    discrete_transition_marginal_rule(message_names, messages, marginals_names, marginals, q_a)
-)
+discrete_transition_marginal_rule_contingency(
+    message_names::NTuple{N, Symbol}, messages::NTuple{N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}}, marginals_names::NTuple{M, Symbol}, marginals, q_a
+) where {N, M} = Contingency(discrete_transition_marginal_rule(message_names, messages, marginals_names, marginals, q_a))
 
 function marginalrule(
     ::Type{<:DiscreteTransition},
