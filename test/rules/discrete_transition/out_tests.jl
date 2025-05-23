@@ -26,7 +26,7 @@ end
     )]
 end
 
-@testitem "rules:DiscreteTransition:out:Variational Bayes: (m_in::Categorical, q_a::DirichletCollection)" begin
+@testitem "rules:DiscreteTransition:out:Variational Bayes: (q_in::Categorical, q_a::DirichletCollection)" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -39,7 +39,7 @@ end
     ]
 end
 
-@testitem "rules:DiscreteTransition:out:Variational Bayes: (m_in::DiscreteNonParametric, q_a::PointMass)" begin
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::DiscreteNonParametric, q_a::PointMass)" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
@@ -51,6 +51,22 @@ end
         (
             input = (m_in = Categorical([0.2, 0.5, 0.3]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])),
             output = Categorical([0.40540540540540543, 0.2702702702702703, 0.32432432432432434])
+        )
+    ]
+end
+
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::DiscreteNonParametric, q_a::DirichletCollection)" begin
+    using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+
+    import ReactiveMP: @test_rules
+    @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
+        (
+            input = (m_in = Categorical([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
+            output = Categorical([0.4280270779871055, 0.15866163271215883, 0.41331128930073563])
+        ),
+        (
+            input = (m_in = Categorical([0.2, 0.5, 0.3]), q_a = DirichletCollection([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])),
+            output = Categorical([0.4205040676125305, 0.24198492369204194, 0.3375110086954277])
         )
     ]
 end
@@ -111,6 +127,54 @@ end
                 m_T1 = Categorical([0.08064616359815222, 0.3016652714857759, 0.6176885649160718])
             ),
             output = Categorical([0.3824006540022958, 0.334754745371225, 0.28284460062647926])
+        )
+    ]
+end
+
+@testitem "rules:DiscreteTransition:out:Belief Propagation: (m_in::Categorical, q_a::DirichletCollection, q_T1::PointMass)" begin
+    using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+
+    import ReactiveMP: @test_rules
+    @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
+        (
+            input = (
+                m_in = Categorical([0.08799332630703943, 0.29132551818215013, 0.6206811555108104]),
+                q_a = DirichletCollection([10.0 2.0 9.0; 1.0 6.0 1.0; 10.0 7.0 10.0;;; 2.0 4.0 8.0; 2.0 3.0 7.0; 5.0 3.0 8.0;;; 1.0 7.0 8.0; 2.0 10.0 10.0; 8.0 9.0 3.0]),
+                q_T1 = PointMass([0.0, 1.0, 0.0])
+            ),
+            output = Categorical([0.3539416858448124, 0.2917422171219365, 0.35431609703325095])
+        ),
+        (
+            input = (
+                m_in = Categorical([0.41399930903334414, 0.2569572285438312, 0.32904346242282473]),
+                q_a = DirichletCollection([9.0 6.0 8.0; 8.0 9.0 2.0; 2.0 5.0 8.0;;; 3.0 10.0 6.0; 4.0 6.0 1.0; 7.0 8.0 3.0;;; 8.0 8.0 7.0; 1.0 8.0 4.0; 6.0 4.0 2.0]),
+                q_T1 = PointMass([1.0, 0.0, 0.0])
+            ),
+            output = Categorical([0.4264320810294732, 0.32585531797496753, 0.2477126009955594])
+        ),
+        (
+            input = (
+                m_in = Categorical([0.28007415705382577, 0.362168131823555, 0.35775771112261917]),
+                q_a = DirichletCollection([5.0 1.0 10.0; 9.0 5.0 4.0; 7.0 2.0 6.0;;; 9.0 7.0 5.0; 4.0 3.0 3.0; 2.0 4.0 8.0;;; 8.0 9.0 9.0; 6.0 10.0 10.0; 8.0 9.0 6.0]),
+                q_T1 = PointMass([0.0, 1.0, 0.0])
+            ),
+            output = Categorical([0.4745812374034272, 0.20725020348126175, 0.3181685591153111])
+        ),
+        (
+            input = (
+                m_in = Categorical([0.231721871481526, 0.43974647264393085, 0.3285316558745432]),
+                q_a = DirichletCollection([6.0 9.0 8.0; 9.0 9.0 4.0; 1.0 6.0 8.0;;; 3.0 6.0 8.0; 3.0 8.0 5.0; 4.0 5.0 2.0;;; 10.0 1.0 8.0; 2.0 7.0 1.0; 7.0 7.0 3.0]),
+                q_T1 = PointMass([0.0, 1.0, 0.0])
+            ),
+            output = Categorical([0.3889045966054458, 0.3670164958182628, 0.24407890757629122])
+        ),
+        (
+            input = (
+                m_in = Categorical([0.3050714581189855, 0.42249711097760284, 0.27243143090341165]),
+                q_a = DirichletCollection([10.0 5.0 1.0; 10.0 8.0 4.0; 10.0 4.0 1.0;;; 9.0 9.0 4.0; 1.0 10.0 3.0; 7.0 4.0 1.0;;; 4.0 8.0 6.0; 4.0 9.0 4.0; 3.0 9.0 5.0]),
+                q_T1 = PointMass([0.0, 0.0, 1.0])
+            ),
+            output = Categorical([0.3518401177126311, 0.3295078050509307, 0.3186520772364382])
         )
     ]
 end
