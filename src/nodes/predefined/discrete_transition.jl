@@ -55,7 +55,11 @@ end
 end
 
 function score(
-    ::AverageEnergy, ::Type{<:DiscreteTransition}, ::Val{mnames}, marginals::Tuple{<:Marginal{<:Contingency{T, <:AbstractArray{T, N}}}, <:Marginal{<:DirichletCollection{T, N, A}}}, meta::Any
+    ::AverageEnergy,
+    ::Type{<:DiscreteTransition},
+    ::Val{mnames},
+    marginals::Tuple{<:Marginal{<:Contingency{T, <:AbstractArray{T, N}}}, <:Marginal{<:DirichletCollection{T, N, A}}},
+    meta::Any
 ) where {mnames, T, N, A}
     q_contingency, q_a = getdata.(marginals)
     return -sum(mean(BroadcastFunction(clamplog), q_a) .* components(q_contingency))
