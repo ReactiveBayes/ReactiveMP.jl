@@ -29,15 +29,19 @@ function ReactiveMP.collect_factorisation(::Type{DiscreteTransition}, t::Tuple)
     return t
 end
 
-@average_energy DiscreteTransition (q_out::Any, q_in::Any, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
+@average_energy DiscreteTransition (q_out::PointMass{<:AbstractVector}, q_in::Categorical, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
     return -probvec(q_out)' * mean(BroadcastFunction(log), q_a) * probvec(q_in)
 end
 
-@average_energy DiscreteTransition (q_out_in::Contingency, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
+@average_energy DiscreteTransition (q_out::Categorical, q_in::Categorical, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
+    return -probvec(q_out)' * mean(BroadcastFunction(log), q_a) * probvec(q_in)
+end
+
+@average_energy DiscreteTransition (q_out_in::Contingency{T, <:AbstractArray{T, 2}}, q_a::DirichletCollection{T, 2, A}) where {T, A} = begin
     return -tr(components(q_out_in)' * mean(BroadcastFunction(log), q_a))
 end
 
-@average_energy DiscreteTransition (q_out_in::Contingency, q_a::PointMass{<:AbstractArray{T, 2}}) where {T} = begin
+@average_energy DiscreteTransition (q_out_in::Contingency{T, <:AbstractArray{T, 2}}, q_a::PointMass{<:AbstractArray{T, 2}}) where {T} = begin
     # `map(clamplog, mean(q_a))` is an equivalent of `mean(BroadcastFunction(log), q_a)` with an extra `clamp(el, tiny, Inf)` operation
     # The reason is that we don't want to take log of zeros in the matrix `q_a` (if there are any)
     # The trick here is that if RHS matrix has zero inputs, than the corresponding entries of the `contingency_matrix` matrix 
@@ -50,7 +54,13 @@ end
     return -probvec(q_out)' * mean(BroadcastFunction(clamplog), q_a) * probvec(q_in)
 end
 
-function score(::AverageEnergy, ::Type{<:DiscreteTransition}, ::Val{mnames}, marginals::Tuple{<:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}}, ::Any) where {mnames}
+function score(
+    ::AverageEnergy,
+    ::Type{<:DiscreteTransition},
+    ::Val{mnames},
+    marginals::Tuple{<:Marginal{<:Contingency{T, <:AbstractArray{T, N}}}, <:Marginal{<:DirichletCollection{T, N, A}}},
+    meta::Any
+) where {mnames, T, N, A}
     q_contingency, q_a = getdata.(marginals)
     return -sum(mean(BroadcastFunction(clamplog), q_a) .* components(q_contingency))
 end
@@ -62,7 +72,7 @@ function score(
     marginals::NTuple{
         N, Union{<:Marginal{<:Bernoulli}, <:Marginal{<:Categorical}, <:Marginal{<:Contingency}, <:Marginal{<:DirichletCollection}, <:Marginal{<:PointMass{<:AbstractArray}}}
     },
-    ::Any
+    meta::Any
 ) where {mnames, N}
     q_a = marginals[findfirst(==(:a), mnames)]
     e_log_a = mean(BroadcastFunction(clamplog), q_a)
