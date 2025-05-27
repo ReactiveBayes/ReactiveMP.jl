@@ -77,7 +77,7 @@
     end
 
     @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, meta::CTMeta)" begin
-        for (dy, dx) in [(2, 2)] # [(1, 3), (2, 3), (3, 2), (2, 2)]
+        for (dy, dx) in [(1, 3), (2, 3), (3, 2), (2, 2)]
             dydx = dy * dx
             transformation = (a) -> reshape(a, dy, dx)
             mA, ΣA, UA = rand(rng, dy, dx), diageye(dy), diageye(dx)
