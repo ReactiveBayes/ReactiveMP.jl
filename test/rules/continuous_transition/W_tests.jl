@@ -21,7 +21,7 @@
 
             G = tr(Vx * UA) * ΣA + mA * Vx * mA' - mA * Vyx' - Vyx * mA' + Vy + ΣA * mx' * UA * mx + (mA * mx - my) * (mA * mx - my)'
 
-            return WishartFast(dy + 2, G)
+            return WishartFast(dy + 2, Matrix(Symmetric(G)))
         end
 
         @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, meta::CTMeta)" begin
@@ -73,7 +73,7 @@
 
         G = tr(Vx * UA) * ΣA + mA * Vx * mA' + Vy + ΣA * mx' * UA * mx + (mA * mx - my) * (mA * mx - my)'
 
-        return WishartFast(dy + 2, G)
+        return WishartFast(dy + 2, Matrix(Symmetric(G)))
     end
 
     @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, meta::CTMeta)" begin
