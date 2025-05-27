@@ -123,7 +123,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Ab
 
     g_sigma = g.(sigma_points)
     @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d))
-    @inbounds V_tilde = sum(weights_c[k + 1] * (g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d))
+    @inbounds V_tilde = sum(weights_c[k + 1] * ((g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)') for k in 0:(2d))
 
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = C ? sum(weights_c[k + 1] * (sigma_points[k + 1] - m) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) : nothing
@@ -144,7 +144,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, ms::Tuple, Vs::
 
     d = sum(prod.(ds)) # Dimensionality of joint
     @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d)) # Vector
-    @inbounds V_tilde = sum(weights_c[k + 1] * (g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) # Matrix
+    @inbounds V_tilde = sum(weights_c[k + 1] * ((g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)') for k in 0:(2d)) # Matrix
 
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = C ? sum(weights_c[k + 1] * (sigma_points[k + 1] - m) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) : nothing
