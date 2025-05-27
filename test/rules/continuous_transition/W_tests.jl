@@ -84,8 +84,8 @@
 
             metal = CTMeta(transformation)
             Lx, Ly = rand(rng, dx, dx), rand(rng, dy, dy)
-            μx, Σx = rand(rng, dx), (Lx * Lx' + 2 * dy * dx * I)
-            μy, Σy = rand(rng, dy), (Ly * Ly' + 2 * dy * dx * I)
+            μx, Σx = rand(rng, dx), Lx * Lx'
+            μy, Σy = rand(rng, dy), Ly * Ly'
 
             qy = MvNormalMeanCovariance(μy, Σy)
             qx = MvNormalMeanCovariance(μx, Σx)
