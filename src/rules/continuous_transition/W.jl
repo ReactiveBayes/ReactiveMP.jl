@@ -10,10 +10,13 @@ function compute_delta(my, Vy, mx, Vx, Vyx, mA, Va, ma, Fs)
     mamat = ma * ma'
     for (i, j) in Iterators.product(1:dy, 1:dy)
         tmp = Fs[i]' * Ex_xx * Fs[j]
-        G₅[i, j] = tr(tmp * mamat)
-        G₆[i, j] = tr(tmp * Va)
+        G₅[i, j] = mul_trace(tmp, mamat)
+        G₆[i, j] = mul_trace(tmp, Va)
     end
-    return G₁ - G₂ - G₃ + G₅ + G₆
+
+    G = G₁ - (G₂ + G₃) .+ Symmetric(G₅ + G₆)
+
+    return G
 end
 
 # VMP: Stuctured
