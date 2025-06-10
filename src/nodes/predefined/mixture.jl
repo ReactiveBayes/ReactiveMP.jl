@@ -14,6 +14,34 @@ collect_factorisation(::Type{<:Mixture}, factorization) = MixtureNodeFactorisati
 struct MixtureNodeFactorisation end
 
 struct MixtureNode{N} <: AbstractFactorNode
+    """
+        MixtureNode{N}
+
+    A factor node that represents a mixture model with N components that under the hood performs Bayesian model comparison.
+
+    # Interfaces
+    - `:out`: The output interface representing the mixture distribution
+    - `:switch`: The switch interface representing the mixture weights (e.g. Categorical distribution)
+    - `:inputs`: The N component interfaces representing the mixture components
+
+    # Example with `@model` from RxInfer.jl
+    ```julia
+    # Create a mixture of 2 Gaussians
+    @model function mixture_model()
+        # Switch variable (mixture weights)
+        s ~ Categorical([0.3, 0.7]) 
+        
+        # Component distributions
+        c1 ~ Normal(0.0, 1.0)
+        c2 ~ Normal(5.0, 1.0)
+        
+        # Mixture node connecting components
+        y ~ Mixture(s, [c1, c2])
+    end
+    ```
+
+    Note: The `Mixture` node requires the `AddonLogScale` addon to be included in the addons. However, this addon is not available for most message update rules. RxInfer.jl, which uses `ReactiveMP.jl` under the hood, allows to pass addons in the [`infer`](https://reactivebayes.github.io/RxInfer.jl/stable/manuals/inference/overview/) function. Only for certain sum-product update rules these are included. For a detailed explanation on the `Mixture` node see the [Mixture node paper](https://www.mdpi.com/1099-4300/25/8/1138).
+    """
     out    :: NodeInterface
     switch :: NodeInterface
     inputs :: NTuple{N, IndexedNodeInterface}
@@ -53,8 +81,9 @@ struct MixtureNodeFunctionalDependencies <: FunctionalDependencies end
 collect_functional_dependencies(::MixtureNode, ::Nothing) = MixtureNodeFunctionalDependencies()
 collect_functional_dependencies(::MixtureNode, ::MixtureNodeFunctionalDependencies) = MixtureNodeFunctionalDependencies()
 collect_functional_dependencies(::MixtureNode, ::RequireMarginalFunctionalDependencies) = RequireMarginalFunctionalDependencies()
-collect_functional_dependencies(::MixtureNode, ::Any) =
-    error("The functional dependencies for MixtureNode must be either `Nothing` or `MixtureNodeFunctionalDependencies` or `RequireMarginalFunctionalDependencies`")
+collect_functional_dependencies(::MixtureNode, ::Any) = error(
+    "The functional dependencies for MixtureNode must be either `Nothing` or `MixtureNodeFunctionalDependencies` or `RequireMarginalFunctionalDependencies`"
+)
 
 function activate!(factornode::MixtureNode, options::FactorNodeActivationOptions)
     dependecies = collect_functional_dependencies(factornode, getdependecies(options))

@@ -120,30 +120,26 @@ end
 
 # This is a limitation of the current implementation, which can be removed in the future
 @testitem "@node macro (in the current implementation) should not support interface names with underscores" begin
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
-        quote
-            struct DummyNode end
+    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(quote
+        struct DummyNode end
 
-            @node DummyNode Stochastic [out, c_d]
-        end
-    )
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `d_b_a`" eval(
-        quote
-            struct DummyNode end
+        @node DummyNode Stochastic [out, c_d]
+    end)
+    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `d_b_a`" eval(quote
+        struct DummyNode end
 
-            @node DummyNode Stochastic [out, c, d_b_a]
-        end
-    )
-    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(
-        quote
-            struct DummyNode end
+        @node DummyNode Stochastic [out, c, d_b_a]
+    end)
+    @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(quote
+        struct DummyNode end
 
-            @node DummyNode Stochastic [out, (c, aliases = [c_d])]
-        end
-    )
+        @node DummyNode Stochastic [out, (c, aliases = [c_d])]
+    end)
 end
 
 @testitem "@node macro should generate a documentation entry for a newly specified node" begin
+    using REPL # `REPL` changes the docstring output format
+
     struct DummyNodeForDocumentationStochastic end
     struct DummyNodeForDocumentationDeterministic end
 
@@ -151,8 +147,10 @@ end
 
     @node DummyNodeForDocumentationDeterministic Deterministic [out, (x, aliases = [xx, xxx]), y]
 
-    documentation = string(Base.doc(Base.Docs.Binding(ReactiveMP, :is_predefined_node)))
+    binding = @doc(ReactiveMP.is_predefined_node)
+    @test !isnothing(binding)
 
+    documentation = string(binding)
     @test occursin(r"DummyNodeForDocumentationStochastic.*Stochastic.*out, x, y \(or yy\)", documentation)
     @test occursin(r"DummyNodeForDocumentationDeterministic.*Deterministic.*out, x \(or xx, xxx\), y", documentation)
 end
@@ -259,4 +257,18 @@ end
             @test ReactiveMP.nodefunction(DummyNodeForNodeFunctionAsDistribution, Val(:var), out = out, mean = mean)(var) ≈ nodefunction(out, mean, var)
         end
     end
+end
+
+@testitem "`factornode` should throw an error if the functional form is not defined with the `@node` macro" begin
+    struct UnknownDistribution end
+
+    out = randomvar()
+    alpha = randomvar()
+    beta = randomvar()
+
+    interfaces = [(:out, out), (:alpha, alpha), (:beta, beta)]
+
+    @test_throws r"`.*UnknownDistribution.*` has been used but the `ReactiveMP` backend does not support `.*UnknownDistribution.*` as a factor node." factornode(
+        UnknownDistribution, interfaces, ((1, 2, 3),)
+    )
 end

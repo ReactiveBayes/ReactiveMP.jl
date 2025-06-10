@@ -55,9 +55,9 @@ mutable struct BIFMMeta{T}
     "Transition matrix B: converting the input to the latent state."
     B::Matrix{T}
     "Transition matrix C: converting the latent state to the output."
-    C       :: Matrix{T}
-    H       :: Union{Matrix{T}, Nothing}
-    BHBt    :: Union{Matrix{T}, Nothing}
+    C        :: Matrix{T}
+    H        :: Union{Matrix{T}, Nothing}
+    BHBt     :: Union{Matrix{T}, Nothing}
     ξz      :: Union{Vector{T}, Nothing}
     Λz      :: Union{Matrix{T}, Nothing}
     ξztilde :: Union{Vector{T}, Nothing}
@@ -101,11 +101,11 @@ function BIFMMeta(A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}, μu::Array{
     return BIFMMeta{T}(A, B, C, nothing, nothing, nothing, nothing, nothing, nothing, μu, Σu)
 end
 
-getA(meta::BIFMMeta)       = meta.A
-getB(meta::BIFMMeta)       = meta.B
-getC(meta::BIFMMeta)       = meta.C
-getH(meta::BIFMMeta)       = meta.H
-getBHBt(meta::BIFMMeta)    = meta.BHBt
+getA(meta::BIFMMeta)        = meta.A
+getB(meta::BIFMMeta)        = meta.B
+getC(meta::BIFMMeta)        = meta.C
+getH(meta::BIFMMeta)        = meta.H
+getBHBt(meta::BIFMMeta)     = meta.BHBt
 getξz(meta::BIFMMeta)      = meta.ξz
 getΛz(meta::BIFMMeta)      = meta.Λz
 getξztilde(meta::BIFMMeta) = meta.ξztilde

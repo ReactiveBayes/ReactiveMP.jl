@@ -11,7 +11,7 @@ end
 BayesBase.insupport(d::DivisionOf, p) = insupport(d.numerator, p) && insupport(d.denumerator, p)
 BayesBase.logpdf(d::DivisionOf, p) = logpdf(d.numerator, p) - logpdf(d.denumerator, p)
 
-function BayesBase.prod(::GenericProd, something::DivisionOf, division::DivisionOf) 
+function BayesBase.prod(::GenericProd, something::DivisionOf, division::DivisionOf)
     if division.denumerator == something.numerator
         return DivisionOf(division.numerator, something.denumerator)
     elseif division.numerator == something.denumerator
@@ -21,7 +21,7 @@ function BayesBase.prod(::GenericProd, something::DivisionOf, division::Division
     end
 end
 
-function BayesBase.prod(::GenericProd, something, division::DivisionOf) 
+function BayesBase.prod(::GenericProd, something, division::DivisionOf)
     return prod(GenericProd(), division, something)
 end
 
@@ -33,7 +33,10 @@ function BayesBase.prod(::GenericProd, division::DivisionOf, something)
     end
 end
 
-function BayesBase.prod(::GenericProd, productof::ProductOf, divisionof::DivisionOf) 
+BayesBase.prod(::GenericProd, division::DivisionOf, ::Missing) = division
+BayesBase.prod(::GenericProd, ::Missing, division::DivisionOf) = division
+
+function BayesBase.prod(::GenericProd, productof::ProductOf, divisionof::DivisionOf)
     return ProductOf(productof, divisionof)
 end
 

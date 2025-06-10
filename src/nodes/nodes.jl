@@ -260,8 +260,11 @@ getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 
+# Users can override the dependencies if they want to
+collect_functional_dependencies(fform::F, options::FactorNodeActivationOptions) where {F} = collect_functional_dependencies(fform, getdependecies(options))
+
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
-    dependencies = collect_functional_dependencies(functionalform(factornode), getdependecies(options))
+    dependencies = collect_functional_dependencies(functionalform(factornode), options)
     initialize_clusters!(getlocalclusters(factornode), dependencies, factornode, options)
     return activate!(dependencies, factornode, options)
 end

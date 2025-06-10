@@ -11,12 +11,12 @@
     (A, b) = approximate(getmethod(meta), getnodefn(meta, Val(:out)), μs_fw_in)
 
     # Invoke the "concatenated" messages in the local linearization
-    joint              = convert(JointNormal, μs_fw_in, Σs_fw_in)
+    joint = convert(JointNormal, μs_fw_in, Σs_fw_in)
     (μ_fw_in, Σ_fw_in) = mean_cov(joint)
 
     μ_fw_out = A * μ_fw_in + b
     Σ_fw_out = A * Σ_fw_in * A'
-    C_fw     = Σ_fw_in * A'
+    C_fw = Σ_fw_in * A'
 
     # Apply the RTS Smoother
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)

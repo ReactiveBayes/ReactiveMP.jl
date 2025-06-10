@@ -31,5 +31,14 @@
             marginals = (Marginal(q_y_x, false, false, nothing), Marginal(q_θ, false, false, nothing), Marginal(q_γ, false, false, nothing))
             @test score(AverageEnergy(), SoftDot, Val{(:y_x, :θ, :γ)}(), marginals, nothing) ≈ 1.92351917665616
         end
+
+        begin
+            q_y_x = MvNormalMeanCovariance(zeros(3), diageye(3))
+            q_θ = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+            q_γ = GammaShapeRate(2.0, 3.0)
+
+            marginals = (Marginal(q_y_x, false, false, nothing), Marginal(q_θ, false, false, nothing), Marginal(q_γ, false, false, nothing))
+            @test score(AverageEnergy(), SoftDot, Val{(:y_x, :θ, :γ)}(), marginals, nothing) ≈ 2.256852 atol = 1e-4
+        end
     end # testset: AverageEnergy
 end # testset

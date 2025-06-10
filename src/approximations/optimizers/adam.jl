@@ -6,9 +6,9 @@ mutable struct Adam{T} <: Optimizer
     r    :: T
     shat :: T
     rhat :: T
-    ρ1   :: Float64
-    ρ2   :: Float64
-    λ    :: Float64
+    ρ1  :: Float64
+    ρ2  :: Float64
+    λ   :: Float64
     it   :: Int64
     tmp  :: T
 end
@@ -26,9 +26,9 @@ gets(optimizer::Adam)    = return optimizer.s
 getr(optimizer::Adam)    = return optimizer.r
 getshat(optimizer::Adam) = return optimizer.shat
 getrhat(optimizer::Adam) = return optimizer.rhat
-getρ1(optimizer::Adam)   = return optimizer.ρ1
-getρ2(optimizer::Adam)   = return optimizer.ρ2
-getλ(optimizer::Adam)    = return optimizer.λ
+getρ1(optimizer::Adam)  = return optimizer.ρ1
+getρ2(optimizer::Adam)  = return optimizer.ρ2
+getλ(optimizer::Adam)   = return optimizer.λ
 getit(optimizer::Adam)   = return optimizer.it
 getall(optimizer::Adam)  = return optimizer.x, optimizer.s, optimizer.r, optimizer.shat, optimizer.rhat, optimizer.ρ1, optimizer.ρ2, optimizer.λ, optimizer.it, optimizer.tmp
 

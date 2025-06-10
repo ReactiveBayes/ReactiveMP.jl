@@ -113,6 +113,17 @@ function __init__()
         @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/ReactiveMPZygoteExt/ReactiveMPZygoteExt.jl")
         @require ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b" include("../ext/ReactiveMPProjectionExt/ReactiveMPProjectionExt.jl")
     end
+
+    Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
+        if exc.f == ReactiveMP.factornode && length(argtypes) >= 2 && argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
+            errmsg = """
+            `$(argtypes[2])` has been used but the `ReactiveMP` backend does not support `$(argtypes[2])` as a factor node.
+
+            Please refer to the [factor nodes](https://reactivebayes.github.io/ReactiveMP.jl/stable/lib/nodes/) section of the documentation for more details.
+            """
+            println(io, errmsg)
+        end
+    end
 end
 
 end

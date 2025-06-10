@@ -59,8 +59,7 @@
             @test_throws ErrorException test_rules_parse_configuration(:configuration, :([options = value = broken]))
 
             for name in (:configuration, :blabla),
-                check in (true, false),
-                atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
+                check in (true, false), atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
                 extra_types in (:([Float64]), :([Float32, BigFloat]))
 
                 expression = test_rules_parse_configuration(name, :([check_type_promotion = $check, atol = $atol, extra_float_types = $extra_types]))
@@ -530,6 +529,83 @@
                 @test occursin("Possible fix, define", output)
                 @test occursin("(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)", output)
             end
+
+            let
+                err = ReactiveMP.RuleMethodError(
+                    Beta,
+                    Val{:a}(),
+                    Marginalisation(),
+                    Val{(:out, :b)}(),
+                    (Message(PointMass, false, false, nothing), Message(PointMass, false, false, nothing)),
+                    Val{(:out_b,)}(),
+                    (Marginal(PointMass, false, false, nothing),),
+                    1.0,
+                    nothing,
+                    nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("m_a::BayesBase.PointMass", output)
+                @test occursin("m_b::BayesBase.PointMass", output)
+                @test occursin("q_a::BayesBase.PointMass", output)
+                @test occursin("q_b::BayesBase.PointMass", output)
+            end
+
+            let
+                err = ReactiveMP.RuleMethodError(
+                    GammaShapeRate,
+                    Val{:a}(),
+                    Marginalisation(),
+                    Val{(:out, :b)}(),
+                    (Message(PointMass, false, false, nothing), Message(PointMass, false, false, nothing)),
+                    Val{(:out_b,)}(),
+                    (Marginal(PointMass, false, false, nothing),),
+                    1.0,
+                    nothing,
+                    nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("GammaShapeRate", output)
+                @test occursin("m_α::BayesBase.PointMass", output)
+                @test occursin("m_β::BayesBase.PointMass", output)
+                @test occursin("q_out::activeMP", output)
+                @test occursin("q_α::Any", output)
+                @test occursin("q_β::Any", output)
+                @test occursin("q_β::ExponentialFamily.GammaDistributionsFamily", output)
+            end
+
+            let
+                err = ReactiveMP.RuleMethodError(
+                    Dirichlet,
+                    Val{:a}(),
+                    Marginalisation(),
+                    Val{(:out,)}(),
+                    (Message(PointMass, false, false, nothing),),
+                    Val{(:a,)}(),
+                    (Marginal(PointMass, false, false, nothing),),
+                    1.0,
+                    nothing,
+                    nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("Dirichlet", output)
+                @test occursin("m_a::BayesBase.PointMass", output)
+                @test occursin("q_a::BayesBase.PointMass", output)
+            end
         end
 
         @testset "marginalrule_method_error" begin
@@ -632,6 +708,36 @@
 
                 @test occursin("Possible fix, define", output)
                 @test occursin("(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)", output)
+            end
+        end
+
+        @testset "get_from_rule_method" begin
+            let
+                struct GetFromRuleMethod end
+
+                # dummy rule for test
+                @rule GetFromRuleMethod(:out, Marginalisation) (m_in::NormalMeanVariance, q_a::NormalMeanPrecision) = begin
+                    return 0
+                end
+
+                rule1 = methods(ReactiveMP.rule, Tuple{Type{GetFromRuleMethod}, Vararg{Any}})[1]
+
+                messages_rule1      = ReactiveMP.get_messages_from_rule_method(rule1)
+                message_names_rule1 = ReactiveMP.get_message_names_from_rule_method(rule1)
+                message_types_rule1 = ReactiveMP.get_message_types_from_rule_method(rule1)
+
+                marginals_rule1 = ReactiveMP.get_marginals_from_rule_method(rule1)
+                marginal_names_rule1 = ReactiveMP.get_marginal_names_from_rule_method(rule1)
+                marginal_types_rule1 = ReactiveMP.get_marginal_types_from_rule_method(rule1)
+
+                @test occursin("GetFromRuleMethod", ReactiveMP.get_node_from_rule_method(rule1))
+                @test occursin("μ(in) :: ExponentialFamily.NormalMeanVariance", messages_rule1[1])
+                @test occursin("in", message_names_rule1[1])
+                @test occursin("NormalMeanVariance", message_types_rule1[1])
+
+                @test occursin("q(a) :: ExponentialFamily.NormalMeanPrecision", marginals_rule1[1])
+                @test occursin("a", marginal_names_rule1[1])
+                @test occursin("NormalMeanPrecision", marginal_types_rule1[1])
             end
         end
     end

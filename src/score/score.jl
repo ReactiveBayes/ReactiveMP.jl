@@ -11,16 +11,46 @@ struct DifferentialEntropy end
 
 struct KLDivergence end
 
-## Average energy function helpers
+## We have a special case of marginals, that are represented as NamedTuple, 
+## in this case we need to decompose it into separate marginals and inject them into the score function recursively
+## This function is used to extract the index of the named tuple-based marginal (if it exists)
+scan_marginals_for_named_tuple(::Val{Index}, current::Marginal{<:NamedTuple{N}}, rest::Tuple) where {Index, N} = (Val{Index}(), Val{N}(), current)
+scan_marginals_for_named_tuple(::Val{Index}, current::Marginal{<:NamedTuple{N}}, rest::Tuple{}) where {Index, N} = (Val{Index}(), Val{N}(), current)
+scan_marginals_for_named_tuple(::Val{Index}, current::Marginal, rest::Tuple) where {Index} = scan_marginals_for_named_tuple(Val{Index + 1}(), rest[1], rest[2:end])
+scan_marginals_for_named_tuple(::Val{Index}, current::Marginal, rest::Tuple{}) where {Index} = (nothing, nothing, nothing)
 
-function score(::AverageEnergy, fform, ::Val, marginals::Tuple{<:Marginal{<:NamedTuple{N}}}, meta) where {N}
-    joint = marginals[1]
+function score(::AverageEnergy, fform, ::Val{Names}, marginals::Tuple, meta) where {Names}
+    # Generic method for the Average Score computation tries to scan the marginals for:
+    # NamedTuple-based marginals
+    # - If found, it decomposes the joint marginal into separate marginals and injects them into the score function recursively
+    valIndex, valN, joint = scan_marginals_for_named_tuple(Val(1), marginals[1], marginals[2:end])
 
-    transform = let is_joint_clamped = is_clamped(joint), is_joint_initial = is_initial(joint)
-        (data) -> Marginal(data, is_joint_clamped, is_joint_initial, nothing)
+    if !isnothing(valIndex)
+        transform = let is_joint_clamped = is_clamped(joint), is_joint_initial = is_initial(joint)
+            (data) -> Marginal(data, is_joint_clamped, is_joint_initial, nothing)
+        end
+
+        mod_marginals = TupleTools.insertat(marginals, unval(valIndex), map(transform, values(getdata(joint))))
+        mod_names = TupleTools.insertat(Names, unval(valIndex), unval(valN))
+
+        return score(AverageEnergy(), fform, Val{mod_names}(), mod_marginals, meta)
     end
 
-    return score(AverageEnergy(), fform, Val{N}(), map(transform, values(getdata(joint))), meta)
+    # - If not found, the method throws an error suggesting to use 
+    # the `@average_energy` macro to define the method for the provided marginals
+    error_names = map(n -> string(:q_, n), Names)
+    error_types = map(m -> typeofdata(m), marginals)
+    error_suggestion_args = join(map((z) -> string(z[1], "::", z[2]), zip(error_names, error_types)), ", ")
+
+    error(""" 
+    Cannot compute Average Energy for the $(fform) node, the method does not exist for the provided marginals.
+    Use the `@average_energy` macro to define the method for the provided marginals, e.g.
+
+        @average_energy $(fform) ($error_suggestion_args, $(ifelse(isnothing(meta), "", "meta::$(typeof(meta))"))) begin
+            # ...
+        end
+
+    """)
 end
 
 ## Differential entropy function helpers

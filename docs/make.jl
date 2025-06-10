@@ -4,10 +4,10 @@ using Documenter, ReactiveMP
 ## https://gr-framework.org/workstations.html#no-output
 ENV["GKSwstype"] = "100"
 
-DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive=true)
+DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions, ExponentialFamily, BayesBase); recursive = true)
 
 makedocs(
-    modules  = [ ReactiveMP ],
+    modules  = [ReactiveMP],
     clean    = true,
     sitename = "ReactiveMP.jl",
     pages    = [
@@ -24,8 +24,11 @@ makedocs(
                 "Flow" => "lib/nodes/flow.md",
                 "BIFM" => "lib/nodes/bifm.md",
                 "Logical" => "lib/nodes/logical.md",
+                "Discrete Transition" => "lib/nodes/discrete_transition.md",
                 "Continuous transition" => "lib/nodes/ctransition.md",
                 "Autoregressive" => "lib/nodes/ar.md",
+                "BinomialPolya" => "lib/nodes/binomial_polya.md",
+                "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
             ]
         ],
         "Custom functionality" => [
@@ -41,15 +44,12 @@ makedocs(
     ],
     format   = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true",
-        example_size_threshold = 200 * 1024,
-        size_threshold_warn = 200 * 1024,
+        example_size_threshold = 400 * 1024,
+        size_threshold_warn = 400 * 1024,
+        size_threshold = 400 * 1024,
     )
 )
 
 if get(ENV, "CI", nothing) == "true"
-    deploydocs(
-        repo = "github.com/ReactiveBayes/ReactiveMP.jl.git",
-        devbranch = "main", 
-        forcepush = true
-    )
+    deploydocs(repo = "github.com/ReactiveBayes/ReactiveMP.jl.git", devbranch = "main", forcepush = true)
 end

@@ -35,8 +35,6 @@ include("beta/marginals.jl")
 include("dirichlet/marginals.jl")
 include("dirichlet/out.jl")
 
-include("matrix_dirichlet/out.jl")
-
 include("categorical/out.jl")
 include("categorical/p.jl")
 include("categorical/marginals.jl")
@@ -108,10 +106,13 @@ include("dot_product/out.jl")
 include("dot_product/in1.jl")
 include("dot_product/in2.jl")
 
-include("transition/marginals.jl")
-include("transition/out.jl")
-include("transition/in.jl")
-include("transition/a.jl")
+include("discrete_transition/categoricals.jl")
+include("discrete_transition/marginals.jl")
+include("discrete_transition/a.jl")
+include("discrete_transition/predefined/a.jl")
+include("discrete_transition/predefined/marginals.jl")
+include("discrete_transition/predefined/belief_propagation.jl")
+include("discrete_transition/predefined/structured_vmp.jl")
 
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")
@@ -188,3 +189,12 @@ include("delta/cvi/out.jl")
 include("delta/cvi/marginals.jl")
 
 include("half_normal/out.jl")
+
+include("binomial_polya/beta.jl")
+include("binomial_polya/y.jl")
+
+include("multinomial_polya/psi.jl")
+include("multinomial_polya/x.jl")
+
+include("dirichlet_collection/out.jl")
+include("dirichlet_collection/marginals.jl")
