@@ -26,7 +26,6 @@ function BayesBase.prod(::GenericProd, something, division::DivisionOf)
 end
 
 function BayesBase.prod(::GenericProd, division::DivisionOf, something::Any)
-
     if division.denumerator == something
         return division.numerator
     else
@@ -36,7 +35,9 @@ end
 
 # DivisionOf{NormalMeanVariance{Float64}, NormalWeightedMeanPrecision{Float64}}, NormalMeanPrecision{Float64}}
 
-function BayesBase.prod(::ClosedProd, division::DivisionOf{A, B}, something::C) where {A <: GaussianDistributionsFamily, B <: GaussianDistributionsFamily, C <: GaussianDistributionsFamily}
+function BayesBase.prod(
+    ::ClosedProd, division::DivisionOf{A, B}, something::C
+) where {A <: GaussianDistributionsFamily, B <: GaussianDistributionsFamily, C <: GaussianDistributionsFamily}
     ef_a = convert(ExponentialFamilyDistribution, division.numerator)
     ef_b = convert(ExponentialFamilyDistribution, division.denumerator)
     ef_c = convert(ExponentialFamilyDistribution, something)
@@ -45,11 +46,13 @@ function BayesBase.prod(::ClosedProd, division::DivisionOf{A, B}, something::C) 
 
     resulting_nat_params = ExponentialFamily.getnaturalparameters(ef_a) - ExponentialFamily.getnaturalparameters(ef_b) + ExponentialFamily.getnaturalparameters(ef_c)
     ef_resulting = ExponentialFamily.ExponentialFamilyDistribution(ef_a_typetag, resulting_nat_params)
-    
+
     return convert(Distribution, ef_resulting)
 end
 
-function BayesBase.prod(::ClosedProd, something::C, division::DivisionOf{A, B}) where {A <: GaussianDistributionsFamily, B <: GaussianDistributionsFamily, C <: GaussianDistributionsFamily}
+function BayesBase.prod(
+    ::ClosedProd, something::C, division::DivisionOf{A, B}
+) where {A <: GaussianDistributionsFamily, B <: GaussianDistributionsFamily, C <: GaussianDistributionsFamily}
     ef_a = convert(ExponentialFamilyDistribution, division.numerator)
     ef_b = convert(ExponentialFamilyDistribution, division.denumerator)
     ef_c = convert(ExponentialFamilyDistribution, something)
@@ -58,7 +61,7 @@ function BayesBase.prod(::ClosedProd, something::C, division::DivisionOf{A, B}) 
 
     resulting_nat_params = ExponentialFamily.getnaturalparameters(ef_a) - ExponentialFamily.getnaturalparameters(ef_b) + ExponentialFamily.getnaturalparameters(ef_c)
     ef_resulting = ExponentialFamily.ExponentialFamilyDistribution(ef_a_typetag, resulting_nat_params)
-    
+
     return convert(Distribution, ef_resulting)
 end
 
