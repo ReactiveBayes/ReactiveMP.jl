@@ -15,6 +15,31 @@
     @test ext.DivisionOf(d1, d2) == prod(GenericProd(), missing, ext.DivisionOf(d1, d2))
 end
 
+@testitem "DivisionOf(Gaussian, Gaussian) x Gaussian" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase
+
+    # `DivisionOf` is internal to the extension
+    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+    @test !isnothing(ext)
+    using .ext
+
+    # `DivisionOf` is internal to the extension
+
+    d1 = NormalMeanVariance(0, 1)
+    d2 = NormalMeanVariance(1, 2)
+    d3 = NormalMeanVariance(2, 3)
+
+    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(ClosedProd(), d3, ext.DivisionOf(d1, d2))
+    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) isa NormalMeanVariance
+
+    d1 = NormalMeanVariance(0, 1)
+    d2 = convert(NormalWeightedMeanPrecision, d2)
+    d3 = convert(NormalMeanPrecision, d3)
+
+    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(ClosedProd(), d3, ext.DivisionOf(d1, d2))
+    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) isa NormalMeanVariance
+end
+
 @testitem "create_project_to_ins type stability" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase, Test
     using ReactiveMP: CVIProjection
