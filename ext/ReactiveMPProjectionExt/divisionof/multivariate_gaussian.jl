@@ -1,7 +1,6 @@
 function BayesBase.prod(
     ::ClosedProd, something::C, division::DivisionOf{A, B}
 ) where {A <: MultivariateGaussianDistributionsFamily, B <: MultivariateGaussianDistributionsFamily, C <: MultivariateGaussianDistributionsFamily}
-
     d_numerator = convert(MvNormalMeanPrecision, division.numerator)
     d_denumerator = convert(MvNormalMeanPrecision, division.denumerator)
     d_something = convert(MvNormalMeanPrecision, something)
