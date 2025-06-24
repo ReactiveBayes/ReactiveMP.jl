@@ -25,7 +25,7 @@ function BayesBase.prod(::GenericProd, something, division::DivisionOf)
     return prod(GenericProd(), division, something)
 end
 
-function BayesBase.prod(::GenericProd, division::DivisionOf, something)
+function BayesBase.prod(::GenericProd, division::DivisionOf, something::Any)
     if division.denumerator == something
         return division.numerator
     else
@@ -44,6 +44,8 @@ include("layout/cvi_projection.jl")
 include("rules/in.jl")
 include("rules/out.jl")
 include("rules/marginals.jl")
+include("divisionof/univariate_gaussian.jl")
+include("divisionof/multivariate_gaussian.jl")
 
 # This will enable the extension and make `CVIProjection` compatible with delta nodes 
 # Otherwise it should throw an error suggesting users to install `ExponentialFamilyProjection`
