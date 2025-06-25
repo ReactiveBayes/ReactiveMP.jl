@@ -63,7 +63,7 @@ end
     @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ result
 
     d1 = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
-    d2 = MvNormalMeanScalePrecision([1.0, 1.0], 1/2)
+    d2 = MvNormalMeanScalePrecision([1.0, 1.0], 1 / 2)
     d3 = convert(MvNormalMeanPrecision, d3)
 
     @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(GenericProd(), d3, ext.DivisionOf(d1, d2))
@@ -82,8 +82,8 @@ end
     d2 = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
     d3 = NormalMeanVariance(0, 1)
 
-    @test_throws MethodError prod(GenericProd(), ext.DivisionOf(d1, d2), d2)
-    @test_throws MethodError prod(GenericProd(), d2, ext.DivisionOf(d1, d2))
+    @test_throws "DivisionOf does not support arguments of different variate forms" prod(GenericProd(), ext.DivisionOf(d1, d2), d2)
+    @test_throws "DivisionOf does not support arguments of different variate forms" prod(GenericProd(), d2, ext.DivisionOf(d1, d2))
 end
 
 @testitem "create_project_to_ins type stability" begin
