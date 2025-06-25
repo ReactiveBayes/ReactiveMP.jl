@@ -1,5 +1,5 @@
 function BayesBase.prod(
-    ::ClosedProd, something::C, division::DivisionOf{A, B}
+    ::GenericProd, something::C, division::DivisionOf{A, B}
 ) where {A <: MultivariateGaussianDistributionsFamily, B <: MultivariateGaussianDistributionsFamily, C <: MultivariateGaussianDistributionsFamily}
     d_numerator = convert(MvNormalMeanPrecision, division.numerator)
     d_denumerator = convert(MvNormalMeanPrecision, division.denumerator)
@@ -18,7 +18,7 @@ function BayesBase.prod(
 end
 
 function BayesBase.prod(
-    prodtype::ClosedProd, division::DivisionOf{A, B}, something::C
+    prodtype::GenericProd, division::DivisionOf{A, B}, something::C
 ) where {A <: MultivariateGaussianDistributionsFamily, B <: MultivariateGaussianDistributionsFamily, C <: MultivariateGaussianDistributionsFamily}
     return prod(prodtype, something, division)
 end
