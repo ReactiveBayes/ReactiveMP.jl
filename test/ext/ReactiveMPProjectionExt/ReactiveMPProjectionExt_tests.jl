@@ -28,15 +28,15 @@ end
     d3 = NormalMeanVariance(2, 3)
     result = NormalMeanVariance(0.2, 1.2)
 
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(ClosedProd(), d3, ext.DivisionOf(d1, d2))
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ result
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(GenericProd(), d3, ext.DivisionOf(d1, d2))
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ result
 
     d1 = NormalMeanVariance(0, 1)
     d2 = convert(NormalWeightedMeanPrecision, d2)
     d3 = convert(NormalMeanPrecision, d3)
 
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(ClosedProd(), d3, ext.DivisionOf(d1, d2))
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ result
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(GenericProd(), d3, ext.DivisionOf(d1, d2))
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ result
 end
 
 @testitem "DivisionOf(MvGaussian, MvGaussian) x MvGaussian" begin
@@ -52,22 +52,22 @@ end
     d3 = MvNormalMeanCovariance([2.0, 2.0], [3.0 0.0; 0.0 3.0])
     result = MvNormalMeanCovariance([0.2, 0.2], [1.2 0.0; 0.0 1.2])
 
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(ClosedProd(), d3, ext.DivisionOf(d1, d2))
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ result
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(GenericProd(), d3, ext.DivisionOf(d1, d2))
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ result
 
     d1 = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
     d2 = convert(MvNormalWeightedMeanPrecision, d2)
     d3 = convert(MvNormalMeanPrecision, d3)
 
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(ClosedProd(), d3, ext.DivisionOf(d1, d2))
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ result
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(GenericProd(), d3, ext.DivisionOf(d1, d2))
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ result
 
     d1 = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
     d2 = MvNormalMeanScalePrecision([1.0, 1.0], 1/2)
     d3 = convert(MvNormalMeanPrecision, d3)
 
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(ClosedProd(), d3, ext.DivisionOf(d1, d2))
-    @test prod(ClosedProd(), ext.DivisionOf(d1, d2), d3) ≈ result
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ prod(GenericProd(), d3, ext.DivisionOf(d1, d2))
+    @test prod(GenericProd(), ext.DivisionOf(d1, d2), d3) ≈ result
 end
 
 @testitem "Raise error when DivisionOf of Univarive and Multivariate" begin
@@ -82,8 +82,8 @@ end
     d2 = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
     d3 = NormalMeanVariance(0, 1)
 
-    @test_throws MethodError prod(ClosedProd(), ext.DivisionOf(d1, d2), d2)
-    @test_throws MethodError prod(ClosedProd(), d2, ext.DivisionOf(d1, d2))
+    @test_throws MethodError prod(GenericProd(), ext.DivisionOf(d1, d2), d2)
+    @test_throws MethodError prod(GenericProd(), d2, ext.DivisionOf(d1, d2))
 end
 
 @testitem "create_project_to_ins type stability" begin
