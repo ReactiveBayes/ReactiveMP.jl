@@ -1,5 +1,5 @@
 function BayesBase.prod(
-    ::ClosedProd, something::C, division::DivisionOf{A, B}
+    ::GenericProd, something::C, division::DivisionOf{A, B}
 ) where {A <: UnivariateGaussianDistributionsFamily, B <: UnivariateGaussianDistributionsFamily, C <: UnivariateGaussianDistributionsFamily}
     ef_a = convert(ExponentialFamilyDistribution, division.numerator)
     ef_b = convert(ExponentialFamilyDistribution, division.denumerator)
@@ -14,7 +14,7 @@ function BayesBase.prod(
 end
 
 function BayesBase.prod(
-    prodtype::ClosedProd, division::DivisionOf{A, B}, something::C
+    prodtype::GenericProd, division::DivisionOf{A, B}, something::C
 ) where {A <: UnivariateGaussianDistributionsFamily, B <: UnivariateGaussianDistributionsFamily, C <: UnivariateGaussianDistributionsFamily}
     return prod(prodtype, something, division)
 end

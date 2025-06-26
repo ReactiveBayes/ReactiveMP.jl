@@ -5,6 +5,14 @@ using ReactiveMP, ExponentialFamily, Distributions, ExponentialFamilyProjection,
 struct DivisionOf{A, B}
     numerator::A
     denumerator::B
+
+    function DivisionOf(numerator::A, denumerator::B) where {A, B}
+        if variate_form(A) == variate_form(B)
+            return new{A, B}(numerator, denumerator)
+        else
+            error(lazy"DivisionOf does not support arguments of different variate forms: $(variate_form(A)) and $(variate_form(B))")
+        end
+    end
 end
 
 (divisionof::DivisionOf)(x) = logpdf(divisionof, x)
