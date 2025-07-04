@@ -5,12 +5,12 @@
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
         (
-            input = (q_in = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-            output = Categorical([0.29943853278212923, 0.32603993277541166, 0.3745215344424593])
+            input = (q_in = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.4 0.1; 0.1 0.3 0.6; 0.7 0.3 0.3])),
+            output = Categorical([0.2089059609775621, 0.425547421552122, 0.3655466174703161])
         ),
         (
-            input = (q_in = PointMass([0.2, 0.5, 0.3]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])),
-            output = Categorical([0.3218092957943072, 0.2819969875260698, 0.39619371667962294])
+            input = (q_in = PointMass([0.2, 0.5, 0.3]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])),
+            output = Categorical([0.35434347876072936, 0.4675590233555693, 0.17809749788370124])
         ),
         (input = (q_in = PointMass([1.0, 0.0, 0.0]), q_a = PointMass([1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0])), output = Categorical([1.0, 0.0, 0.0]))
     ]
@@ -21,8 +21,8 @@ end
 
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [(
-        input = (q_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-        output = Categorical([0.2994385327821292, 0.3260399327754116, 0.37452153444245917])
+        input = (q_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.4 0.1; 0.1 0.3 0.6; 0.7 0.3 0.3])),
+        output = Categorical([0.2089059609775621, 0.425547421552122, 0.3655466174703161])
     )]
 end
 
@@ -44,14 +44,8 @@ end
 
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
-        (
-            input = (m_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-            output = Categorical([0.3660714285714285, 0.27678571428571425, 0.35714285714285715])
-        ),
-        (
-            input = (m_in = Categorical([0.2, 0.5, 0.3]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])),
-            output = Categorical([0.40540540540540543, 0.2702702702702703, 0.32432432432432434])
-        )
+        (input = (m_in = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.4 0.1; 0.1 0.3 0.6; 0.7 0.3 0.3])), output = Categorical([0.23, 0.43, 0.34])),
+        (input = (m_in = Categorical([0.2, 0.5, 0.3]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])), output = Categorical([0.38, 0.43, 0.19]))
     ]
 end
 
@@ -77,9 +71,9 @@ end
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
         (input = (m_in = PointMass([0.0, 1.0, 0.0]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])), output = Categorical([0.1, 0.3, 0.6])),
-        (input = (m_in = PointMass([1.0, 0.0, 0.0]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])), output = Categorical([0.1 / 0.9, 0.6 / 0.9, 0.2 / 0.9])),
+        (input = (m_in = PointMass([1.0, 0.0, 0.0]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])), output = Categorical([0.1, 0.8, 0.1])),
         (input = (m_in = PointMass([0, 1, 0]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])), output = Categorical([0.1, 0.3, 0.6])),
-        (input = (m_in = PointMass([1, 0, 0]), q_a = PointMass([0.1 0.8 0.1; 0.6 0.3 0.1; 0.2 0.4 0.4])), output = Categorical([0.1 / 0.9, 0.6 / 0.9, 0.2 / 0.9]))
+        (input = (m_in = PointMass([1, 0, 0]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])), output = Categorical([0.1, 0.8, 0.1]))
     ]
 end
 

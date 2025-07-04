@@ -159,7 +159,7 @@ Compute the message for one of the Categorical interfaces of the `DiscreteTransi
 function discrete_transition_structured_message_rule(message_names, messages, marginals_names, marginals, q_a)
     e_log_a = mean(BroadcastFunction(clamplog), q_a)
     e_log_a = discrete_transition_process_marginals(e_log_a, marginals_names, marginals)
-    msg = clamp.(exp.(e_log_a), tiny, huge)
+    msg = clamp.(softmax!(e_log_a), tiny, huge)
     msg = discrete_transition_process_messages(msg, message_names, messages, sum_out_dimensions)
     msg = reshape(msg, :)
     normalize!(msg, 1)
