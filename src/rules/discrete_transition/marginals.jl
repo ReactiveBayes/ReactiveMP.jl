@@ -13,7 +13,7 @@ function marginalrule(
     ::Any,
     ::Any
 ) where {marginal_symbol, message_names, N}
-    result = outer_product(probvec.(messages)) .* exp.(mean(BroadcastFunction(clamplog), first(marginals)))
+    result = outer_product(probvec.(messages)) .* softmax!(mean(BroadcastFunction(clamplog), first(marginals)))
     normalize!(result, 1)
     return Contingency(result, Val(false))
 end
@@ -41,7 +41,7 @@ function discrete_transition_marginal_rule(
     e_log_a = mean(BroadcastFunction(clamplog), q_a)
     e_log_a = discrete_transition_process_marginals(e_log_a, marginals_names, marginals)
 
-    marginal = clamp.(exp.(e_log_a), tiny, huge)
+    marginal = clamp.(softmax!(e_log_a), tiny, huge)
     marginal = discrete_transition_process_messages(marginal, message_names, messages, multiply_dimensions!)
     dims = Tuple(findall(size(marginal) .== 1))
     marginal = dropdims(marginal, dims = dims)

@@ -3,9 +3,22 @@
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
+    @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
+        (
+            input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
+            output = Categorical([0.03245589526827472, 0.5950912160314408, 0.37245288870028453])
+        ),
+        (input = (q_out = PointMass([0.0, 1.0, 0.0]), q_a = DirichletCollection(diageye(3) .+ tiny)), output = Categorical([0.0, 1.0, 0.0]))
+    ]
+end
+
+@testitem "rules:DiscreteTransition:in:Variational Bayes: (q_out::Any, q_a::PointMass)" begin
+    using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+
+    import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
-        input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = DirichletCollection([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-        output = Categorical([0.03245589526827472, 0.5950912160314408, 0.37245288870028453])
+        input = (q_out = PointMass([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.4 0.1; 0.1 0.3 0.6; 0.7 0.3 0.3])),
+        output = Categorical([0.29943853278212923, 0.32603993277541166, 0.3745215344424593])
     )]
 end
 
@@ -29,10 +42,13 @@ end
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [(
-        input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])),
-        output = Categorical([0.23000000000000004, 0.43, 0.33999999999999997])
-    )]
+    @test_rules [check_type_promotion = false] DiscreteTransition(:in, Marginalisation) [
+        (
+            input = (m_out = Categorical([0.1, 0.4, 0.5]), q_a = PointMass([0.2 0.4 0.1; 0.1 0.3 0.6; 0.7 0.3 0.3])),
+            output = Categorical([0.36607142857142855, 0.27678571428571425, 0.35714285714285715])
+        ),
+        (input = (m_out = Categorical([1.0, 0.0, 0.0]), q_a = PointMass([0.0 0.0 0.0; 0.5 0.5 0.5; 0.5 0.5 0.5])), output = Categorical([1 / 3, 1 / 3, 1 / 3]))
+    ]
 end
 
 @testitem "rules:DiscreteTransition:in:Belief Propagation: (m_out::Categorical, q_a::DirichletCollection, m_t1::Categorical)" begin
