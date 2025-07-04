@@ -71,9 +71,9 @@ end
     import ReactiveMP: @test_rules
     @test_rules [check_type_promotion = false] DiscreteTransition(:out, Marginalisation) [
         (input = (m_in = PointMass([0.0, 1.0, 0.0]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])), output = Categorical([0.1, 0.3, 0.6])),
-        (input = (m_in = PointMass([1.0, 0.0, 0.0]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])), output = Categorical([0.1 / 0.9, 0.6 / 0.9, 0.2 / 0.9])),
+        (input = (m_in = PointMass([1.0, 0.0, 0.0]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])), output = Categorical([0.1, 0.8, 0.1])),
         (input = (m_in = PointMass([0, 1, 0]), q_a = PointMass([0.2 0.1 0.7; 0.4 0.3 0.3; 0.1 0.6 0.3])), output = Categorical([0.1, 0.3, 0.6])),
-        (input = (m_in = PointMass([1, 0, 0]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])), output = Categorical([0.1 / 0.9, 0.6 / 0.9, 0.2 / 0.9]))
+        (input = (m_in = PointMass([1, 0, 0]), q_a = PointMass([0.1 0.6 0.2; 0.8 0.3 0.4; 0.1 0.1 0.4])), output = Categorical([0.1, 0.8, 0.1]))
     ]
 end
 
