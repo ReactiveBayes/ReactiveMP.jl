@@ -9,7 +9,7 @@ function BayesBase.prod(
 
     resulting_nat_params = ExponentialFamily.getnaturalparameters(ef_a) - ExponentialFamily.getnaturalparameters(ef_b) + ExponentialFamily.getnaturalparameters(ef_c)
     ef_resulting = ExponentialFamily.ExponentialFamilyDistribution(ef_a_typetag, resulting_nat_params, nothing, nothing)
-    
+
     if !ExponentialFamily.isproper(ef_resulting)
         @warn "The product of $(something) and $(division.numerator) divided by $(division.denumerator) is not proper" maxlog=1
     end
