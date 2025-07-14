@@ -15,6 +15,34 @@
     @test ext.DivisionOf(d1, d2) == prod(GenericProd(), missing, ext.DivisionOf(d1, d2))
 end
 
+@testitem "Check warning when DivisionOf is not proper" begin
+    using ExponentialFamily, ExponentialFamilyProjection, BayesBase
+    ext = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+    @test !isnothing(ext)
+    using .ext
+
+    @testset "Check warning when DivisionOf is not proper" begin
+        d1 = NormalMeanVariance(0, 1)
+        d2 = NormalMeanVariance(0, 0.01)
+        d3 = NormalMeanVariance(0, 0.5)
+        @test_logs (:warn, "The product of $(d3) and $(d1) divided by $(d2) is not proper") prod(GenericProd(), ext.DivisionOf(d1, d2), d3)
+    end
+
+    @testset "Check warning when DivisionOf is not proper" begin
+        d1 = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+        d2 = MvNormalMeanCovariance([1.0, 1.0], [0.01 0.0; 0.0 0.01])
+        d3 = MvNormalMeanCovariance([2.0, 2.0], [3.0 0.0; 0.0 3.0])
+        @test_logs (:warn, "The product of $(d3) and $(d1) divided by $(d2) is not proper") prod(GenericProd(), ext.DivisionOf(d1, d2), d3)
+    end
+
+    @testset "Check no warning when DivisionOf is proper" begin
+        d1 = NormalMeanVariance(0, 1)
+        d2 = NormalMeanVariance(0, 2)
+        d3 = NormalMeanVariance(0, 1)
+        @test_logs prod(GenericProd(), ext.DivisionOf(d1, d2), d3)
+    end
+end
+
 @testitem "DivisionOf(Gaussian, Gaussian) x Gaussian" begin
     using ExponentialFamily, ExponentialFamilyProjection, BayesBase
 
