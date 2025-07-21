@@ -2,7 +2,6 @@ export diageye
 
 using StatsFuns: logistic
 using StatsFuns: softmax, softmax!
-using LoopVectorization
 using SpecialFunctions: gamma, loggamma
 
 import LinearAlgebra
@@ -98,7 +97,7 @@ function mul_trace(A::AbstractMatrix, B::AbstractMatrix)
     @assert (sA === sB) && (length(sA) === 2) && (first(sA) === last(sA))
     result = zero(promote_type(eltype(A), eltype(B)))
     n = first(sA)
-    @turbo for i in 1:n
+    for i in 1:n
         for j in 1:n
             result += A[i, j] * B[j, i]
         end
