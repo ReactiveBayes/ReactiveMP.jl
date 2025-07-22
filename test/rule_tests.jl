@@ -10,6 +10,7 @@
         import ReactiveMP: float_tolerance, float_tolerance!
         import ReactiveMP: extra_float_types, extra_float_types!
         import ReactiveMP: test_rules_parse_configuration
+        import ReactiveMP: rule_macro_convert_to_expr
 
         @testset "TestRulesConfiguration" begin
 
@@ -59,7 +60,8 @@
             @test_throws ErrorException test_rules_parse_configuration(:configuration, :([options = value = broken]))
 
             for name in (:configuration, :blabla),
-                check in (true, false), atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
+                check in (true, false),
+                atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
                 extra_types in (:([Float64]), :([Float32, BigFloat]))
 
                 expression = test_rules_parse_configuration(name, :([check_type_promotion = $check, atol = $atol, extra_float_types = $extra_types]))
@@ -95,11 +97,11 @@
             import ReactiveMP: TestRuleEntryInputSpecification
 
             let spec = TestRuleEntryInputSpecification([:m_x => 1], nothing)
-                @test convert(Expr, spec) == :((m_x = 1,))
+                @test rule_macro_convert_to_expr(spec) == :((m_x = 1,))
             end
 
             let spec = TestRuleEntryInputSpecification([:q_x => 1, :m_y => :(Normal(1.0, 1.0))], :(Meta(2)))
-                @test convert(Expr, spec) == :((q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)))
+                @test rule_macro_convert_to_expr(spec) == :((q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)))
             end
         end
 
@@ -120,11 +122,11 @@
             import ReactiveMP: TestRuleEntry
 
             let spec = TestRuleEntry(TestRuleEntryInputSpecification([:m_x => 1], nothing), :(Normal(0.0, 3.0)))
-                @test convert(Expr, spec) == :((input = (m_x = 1,), output = Normal(0.0, 3.0)))
+                @test rule_macro_convert_to_expr(spec) == :((input = (m_x = 1,), output = Normal(0.0, 3.0)))
             end
 
             let spec = TestRuleEntry(TestRuleEntryInputSpecification([:q_x => 1, :m_y => :(Normal(1.0, 1.0))], :(Meta(2))), :(Gamma(2.0, 3.0)))
-                @test convert(Expr, spec) == :((input = (q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)), output = Gamma(2.0, 3.0)))
+                @test rule_macro_convert_to_expr(spec) == :((input = (q_x = 1, m_y = Normal(1.0, 1.0), meta = Meta(2)), output = Gamma(2.0, 3.0)))
             end
         end
 
@@ -176,7 +178,7 @@
 
             for m in (1, :(Normal(0.0, 1.0))), v in (2, Gamma(2.0, 3.0)), output in (3, :(Normal(2.0, 3.0))), eltype in (:Float32, Float64)
                 let test_entry = TestRuleEntry(TestRuleEntryInputSpecification([:m => m, :v => v], :(Meta(1))), output)
-                    modified_inputs = map(e -> convert(Expr, e), test_rules_convert_paramfloattype_for_test_entry(test_entry, eltype))
+                    modified_inputs = map(e -> rule_macro_convert_to_expr(e), test_rules_convert_paramfloattype_for_test_entry(test_entry, eltype))
 
                     modified_m = :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, $m))
                     modified_v = :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, $v))
