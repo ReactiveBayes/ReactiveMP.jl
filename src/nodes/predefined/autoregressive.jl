@@ -127,8 +127,6 @@ end
 Base.size(precision::ARPrecisionMatrix) = (precision.order, precision.order)
 Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? precision.γ : ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
 
-Base.eltype(::Type{<:ARPrecisionMatrix{T}}) where {T} = T
-
 Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{R}) where {T, R} = ARPrecisionMatrix(matrix.order, convert(T, matrix.γ))
 Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{T}) where {T} = matrix
 
@@ -162,8 +160,6 @@ end
 
 Base.size(transition::ARTransitionMatrix) = (transition.order, transition.order)
 Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? transition.inv_γ : zero(eltype(transition))
-
-Base.eltype(::Type{<:ARTransitionMatrix{T}}) where {T} = T
 
 Base.convert(::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{R}) where {T, R} = ARTransitionMatrix{T}(matrix.order, convert(T, matrix.inv_γ))
 Base.convert(::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{T}) where {T} = matrix

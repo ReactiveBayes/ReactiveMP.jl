@@ -20,7 +20,6 @@ struct CompanionMatrix{R <: Real, T <: AbstractVector{R}} <: AbstractMatrix{R}
     θ::T
 end
 
-Base.eltype(::Type{<:CompanionMatrix{R}}) where {R} = R
 Base.size(cmatrix::CompanionMatrix) = (length(cmatrix.θ), length(cmatrix.θ))
 Base.length(cmatrix::CompanionMatrix) = prod(size(cmatrix))
 
@@ -40,7 +39,6 @@ struct CompanionMatrixTransposed{R <: Real, T <: AbstractVector{R}} <: AbstractM
     θ::T
 end
 
-Base.eltype(::Type{<:CompanionMatrixTransposed{R}}) where {R} = R
 Base.size(cmatrix::CompanionMatrixTransposed) = (length(cmatrix.θ), length(cmatrix.θ))
 Base.length(cmatrix::CompanionMatrixTransposed) = prod(size(cmatrix))
 
