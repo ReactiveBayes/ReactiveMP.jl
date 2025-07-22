@@ -40,7 +40,8 @@ function PermutationMatrix(dim::T; switch_first::Bool = true) where {T <: Intege
 end
 
 # extensions of base functionality
-Base.eltype(::PermutationMatrix{T}) where {T} = T
+Base.eltype(::Type{<:PermutationMatrix{T}}) where {T} = T
+
 function Base.size(mat::PermutationMatrix)
     nr_elements = length(mat.ind)
     return (nr_elements, nr_elements)

@@ -14,7 +14,6 @@ ExponentialLinearQuadratic(approximation, a::Real, b::Real, c::Real, d::Real)   
 ExponentialLinearQuadratic(approximation, a::Integer, b::Integer, c::Integer, d::Integer) = ExponentialLinearQuadratic(approximation, float(a), float(b), float(c), float(d))
 
 Base.eltype(::Type{<:ExponentialLinearQuadratic{A, T}}) where {A, T} = T
-Base.eltype(::ExponentialLinearQuadratic{A, T}) where {A, T}         = T
 
 Base.precision(dist::ExponentialLinearQuadratic) = mean_invcov(dist)[2]
 
@@ -79,8 +78,8 @@ default_meta(::Type{GCV}) = DefaultGCVNodeMetadata
 @average_energy GCV (q_y_x::MultivariateNormalDistributionsFamily, q_z::NormalDistributionsFamily, q_κ::Any, q_ω::Any, meta::Union{<:GCVMetadata, Nothing}) = begin
     y_x_mean, y_x_cov = mean_cov(q_y_x)
     z_mean, z_var     = mean_var(q_z)
-    κ_mean, κ_var   = mean_var(q_κ)
-    ω_mean, ω_var   = mean_var(q_ω)
+    κ_mean, κ_var     = mean_var(q_κ)
+    ω_mean, ω_var     = mean_var(q_ω)
 
     ksi = (κ_mean^2) * z_var + κ_var * ((z_mean^2) + z_var)
     psi = @inbounds (y_x_mean[2] - y_x_mean[1])^2 + y_x_cov[1, 1] + y_x_cov[2, 2] - y_x_cov[1, 2] - y_x_cov[2, 1]

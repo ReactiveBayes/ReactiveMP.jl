@@ -28,7 +28,6 @@ function StandardBasisVector(length::Int, index::Int, scale::T = one(Int)) where
     return StandardBasisVector{T}(length, index, scale)
 end
 
-Base.eltype(::StandardBasisVector{T}) where {T}       = T
 Base.eltype(::Type{StandardBasisVector{T}}) where {T} = T
 
 # extensions of base functionality

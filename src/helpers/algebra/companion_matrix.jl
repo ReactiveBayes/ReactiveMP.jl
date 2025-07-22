@@ -20,9 +20,9 @@ struct CompanionMatrix{R <: Real, T <: AbstractVector{R}} <: AbstractMatrix{R}
     θ::T
 end
 
-Base.eltype(::CompanionMatrix{R}) where {R} = R
-Base.size(cmatrix::CompanionMatrix)         = (length(cmatrix.θ), length(cmatrix.θ))
-Base.length(cmatrix::CompanionMatrix)       = prod(size(cmatrix))
+Base.eltype(::Type{<:CompanionMatrix{R}}) where {R} = R
+Base.size(cmatrix::CompanionMatrix) = (length(cmatrix.θ), length(cmatrix.θ))
+Base.length(cmatrix::CompanionMatrix) = prod(size(cmatrix))
 
 Base.getindex(cmatrix::CompanionMatrix, i::Int) = getindex(cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...)
 
@@ -40,9 +40,9 @@ struct CompanionMatrixTransposed{R <: Real, T <: AbstractVector{R}} <: AbstractM
     θ::T
 end
 
-Base.eltype(::CompanionMatrixTransposed{R}) where {R} = R
-Base.size(cmatrix::CompanionMatrixTransposed)         = (length(cmatrix.θ), length(cmatrix.θ))
-Base.length(cmatrix::CompanionMatrixTransposed)       = prod(size(cmatrix))
+Base.eltype(::Type{<:CompanionMatrixTransposed{R}}) where {R} = R
+Base.size(cmatrix::CompanionMatrixTransposed) = (length(cmatrix.θ), length(cmatrix.θ))
+Base.length(cmatrix::CompanionMatrixTransposed) = prod(size(cmatrix))
 
 Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int) = getindex(cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...)
 
