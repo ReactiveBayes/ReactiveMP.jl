@@ -17,8 +17,9 @@ LoggerPipelineStage()               = LoggerPipelineStage(Core.stdout, "Log")
 LoggerPipelineStage(output::IO)     = LoggerPipelineStage(output, "Log")
 LoggerPipelineStage(prefix::String) = LoggerPipelineStage(Core.stdout, prefix)
 
-logger_pipeline_stage_println(logger::LoggerPipelineStage, something::Any) =
-    logger_pipeline_stage_println(logger, logger.output, logger_pipeline_stage_append_prefix(logger, something))
+logger_pipeline_stage_println(logger::LoggerPipelineStage, something::Any) = logger_pipeline_stage_println(
+    logger, logger.output, logger_pipeline_stage_append_prefix(logger, something)
+)
 
 logger_pipeline_stage_println(logger::LoggerPipelineStage, output::Core.CoreSTDOUT, something) = Core.println(output, something)
 logger_pipeline_stage_println(logger::LoggerPipelineStage, output, something) = println(output, something)
