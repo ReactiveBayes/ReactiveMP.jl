@@ -14,7 +14,6 @@ ExponentialLinearQuadratic(approximation, a::Real, b::Real, c::Real, d::Real)   
 ExponentialLinearQuadratic(approximation, a::Integer, b::Integer, c::Integer, d::Integer) = ExponentialLinearQuadratic(approximation, float(a), float(b), float(c), float(d))
 
 Base.eltype(::Type{<:ExponentialLinearQuadratic{A, T}}) where {A, T} = T
-Base.eltype(::ExponentialLinearQuadratic{A, T}) where {A, T}         = T
 
 Base.precision(dist::ExponentialLinearQuadratic) = mean_invcov(dist)[2]
 

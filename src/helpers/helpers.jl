@@ -64,9 +64,8 @@ Base.IteratorSize(::Type{<:SkipIndexIterator})   = HasLength()
 Base.IteratorEltype(::Type{<:SkipIndexIterator}) = HasEltype()
 Base.IndexStyle(::Type{<:SkipIndexIterator})     = IndexLinear()
 
-Base.eltype(::Type{<:SkipIndexIterator{T}}) where {T} = T
-Base.length(iter::SkipIndexIterator)                  = length(iter.iterator) - 1
-Base.size(iter::SkipIndexIterator)                    = (length(iter),)
+Base.length(iter::SkipIndexIterator) = length(iter.iterator) - 1
+Base.size(iter::SkipIndexIterator)   = (length(iter),)
 
 Base.@propagate_inbounds Base.getindex(iter::SkipIndexIterator, i::Int)               = i < skip(iter) ? iter.iterator[i] : iter.iterator[i + 1]
 Base.@propagate_inbounds Base.getindex(iter::SkipIndexIterator, i::CartesianIndex{1}) = Base.getindex(iter, first(i.I))

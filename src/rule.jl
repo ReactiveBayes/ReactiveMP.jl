@@ -853,7 +853,7 @@ Base.copy(entry::TestRuleEntryInputSpecification) = TestRuleEntryInputSpecificat
 Base.values(entry::TestRuleEntryInputSpecification) = Base.Generator((arg) -> arg.second, entry.arguments)
 
 # Convert the `TestRuleEntryInputSpecification` back into the `Expr` form, e.g `(m_x = ..., q_y = ..., meta = ...)`
-function Base.convert(::Type{Expr}, test_entry::TestRuleEntryInputSpecification)
+function rule_macro_convert_to_expr(test_entry::TestRuleEntryInputSpecification)
     tuple = Expr(:tuple)
     tuple.args = map((arg) -> Expr(:(=), arg.first, arg.second), test_entry.arguments)
     if !isnothing(test_entry.meta)
@@ -889,8 +889,8 @@ struct TestRuleEntry
 end
 
 # Convert the `TestRuleEntry` back into the `Expr` form, e.g `(input = ..., output = ...)`
-function Base.convert(::Type{Expr}, test_entry::TestRuleEntry)
-    return Expr(:tuple, Expr(:(=), :input, convert(Expr, test_entry.input)), Expr(:(=), :output, test_entry.output))
+function rule_macro_convert_to_expr(test_entry::TestRuleEntry)
+    return Expr(:tuple, Expr(:(=), :input, rule_macro_convert_to_expr(test_entry.input)), Expr(:(=), :output, test_entry.output))
 end
 
 # This function takes a `test` parameter which is expected to be an expression of single test entry.
@@ -937,8 +937,8 @@ end
 
 function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, call_macro_fn, rule_specification, configuration)
     # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
-    actual_inputs = convert(Expr, test_entry.input)
-    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, convert(Expr, actual_inputs))
+    actual_inputs = rule_macro_convert_to_expr(test_entry.input)
+    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, actual_inputs)
     expected_output = test_entry.output
     rule_spec_str = "$rule_specification"
     rule_inputs_str = "$actual_inputs"

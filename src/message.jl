@@ -187,9 +187,12 @@ MacroHelpers.@proxy_methods Message getdata [
     Base.precision,
     Base.length,
     Base.ndims,
-    Base.size,
-    Base.eltype
+    Base.size
 ]
+
+# Eltype is special here, because it should be only defined on types
+# Otherwise it causes invalidations and slower compile times
+Base.eltype(::Type{<:Message{D}}) where {D} = Base.eltype(D)
 
 Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
 
