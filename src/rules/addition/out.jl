@@ -56,11 +56,11 @@ end
 
 # specialized
 @rule typeof(+)(:out, Marginalisation) (
-    m_in1::MvNormalWeightedMeanPrecision{T1}, m_in2::MvNormalWeightedMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat} = begin
+    m_in1::MvNormalWeightedMeanPrecision{T, Vector{T}, Matrix{T}}, m_in2::MvNormalWeightedMeanPrecision{T, Vector{T}, Matrix{T}}
+) where {T <: LinearAlgebra.BlasFloat} = begin
+    # `mean_cov` here allocates a new matrix and vector, which can be used later on as scratch space. This is not desirable logic but it is efficient.
     min2, vin2 = mean_cov(m_in2)
     vin1 = cov(m_in1)
-    T = promote_type(T1, T2)
     BLAS.gemv!('N', one(T), vin1, weightedmean(m_in1), one(T), min2)
     vin2 .+= vin1
     return MvNormalMeanCovariance(min2, vin2)

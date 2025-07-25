@@ -1,6 +1,7 @@
 
 @testitem "rules:typeof(+):out" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
+    using StaticArrays
 
     import ReactiveMP: @test_rules
 
@@ -137,6 +138,21 @@
             (
                 input = (m_in1 = MvNormalWeightedMeanPrecision([1.0, 4.0], [2.0 1.0; 1.0 3.0]), m_in2 = MvNormalMeanCovariance([1.0, -1.0], [3.0 1.0; 1.0 4.0])),
                 output = MvNormalMeanCovariance([4 / 5, 2 / 5], [36/10 4/5; 4/5 44/10])
+            ),
+            (
+                input = (m_in1 = MvNormalWeightedMeanPrecision([1.0, 4.0], [1.0 0.0; 0.0 1.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0])),
+                output = MvNormalMeanCovariance([2.0, 5.0], [2.0 0.0; 0.0 2.0])
+            ),
+            (
+                input = (m_in1 = MvNormalWeightedMeanPrecision([1.0, 4.0], [1.0 0.0; 0.0 1.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, -1.0], [2.0 0.0; 0.0 2.0])),
+                output = MvNormalMeanCovariance([1.5, 3.5], [1.5 0.0; 0.0 1.5])
+            ),
+            (
+                input = (
+                    m_in1 = MvNormalWeightedMeanPrecision(SVector(1.0, 4.0), SMatrix{2, 2}(1.0, 0.0, 0.0, 1.0)),
+                    m_in2 = MvNormalWeightedMeanPrecision(SVector(1.0, -1.0), SMatrix{2, 2}(2.0, 0.0, 0.0, 2.0))
+                ),
+                output = MvNormalMeanCovariance(SVector(1.5, 3.5), SMatrix{2, 2}(1.5, 0.0, 0.0, 1.5))
             )
         ]
     end
