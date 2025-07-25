@@ -56,11 +56,10 @@ end
 
 # specialized
 @rule typeof(+)(:in1, Marginalisation) (
-    m_out::MvNormalWeightedMeanPrecision{T1}, m_in2::MvNormalWeightedMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat} = begin
+    m_out::MvNormalWeightedMeanPrecision{T, Vector{T}, Matrix{T}}, m_in2::MvNormalWeightedMeanPrecision{T, Vector{T}, Matrix{T}}
+) where {T <: LinearAlgebra.BlasFloat} = begin
     min2, vin2 = mean_cov(m_in2)
     vout = cov(m_out)
-    T = promote_type(T1, T2)
     BLAS.gemv!('N', -one(T), vout, weightedmean(m_out), one(T), min2)
     vin2 .+= vout
     return MvNormalMeanCovariance(min2, vin2)
