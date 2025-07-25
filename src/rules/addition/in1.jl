@@ -65,7 +65,7 @@ end
     return MvNormalMeanCovariance(min2, vin2)
 end
 
-@rule typeof(+)(:in1, Marginalisation) (m_out::MvNormalWeightedMeanPrecision{T1}, m_in2::PointMass) where {T1} = begin
+@rule typeof(+)(:in1, Marginalisation) (m_out::MvNormalWeightedMeanPrecision{T1, Vector{T1}, Matrix{T1}}, m_in2::PointMass) where {T1} = begin
     ξout, wout = weightedmean_precision(m_out)
     ξin1 = wout * mean(m_in2)
     ξin1 .-= ξout
@@ -74,7 +74,7 @@ end
     return MvNormalWeightedMeanPrecision(ξin1, wout)
 end
 
-@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in2::MvNormalWeightedMeanPrecision) = begin
+@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in2::MvNormalWeightedMeanPrecision{T1, Vector{T1}, Matrix{T1}}) where {T1} = begin
     ξin2, win2 = weightedmean_precision(m_in2)
     ξin1 = win2 * mean(m_out)
     ξin1 .-= ξin2
