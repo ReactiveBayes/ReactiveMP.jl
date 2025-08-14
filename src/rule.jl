@@ -1108,8 +1108,9 @@ struct RuleMethodError
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) =
-    RuleMethodError(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) = RuleMethodError(
+    fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node
+)
 
 function Base.showerror(io::IO, error::RuleMethodError)
     print(io, "RuleMethodError: no method matching rule for the given arguments")
