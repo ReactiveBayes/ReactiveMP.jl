@@ -60,7 +60,8 @@
             @test_throws ErrorException test_rules_parse_configuration(:configuration, :([options = value = broken]))
 
             for name in (:configuration, :blabla),
-                check in (true, false), atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
+                check in (true, false),
+                atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
                 extra_types in (:([Float64]), :([Float32, BigFloat]))
 
                 expression = test_rules_parse_configuration(name, :([check_type_promotion = $check, atol = $atol, extra_float_types = $extra_types]))
@@ -606,6 +607,30 @@
                 @test occursin("Dirichlet", output)
                 @test occursin("m_a::BayesBase.PointMass", output)
                 @test occursin("q_a::BayesBase.PointMass", output)
+            end
+
+            let
+                struct MyCustomNode end
+
+                @node MyCustomNode Stochastic [out, a]
+
+                @rule MyCustomNode(:out, Marginalisation) (m_a::PointMass, q_a::PointMass, meta::Float64) = begin
+                    return 1
+                end
+
+                err = ReactiveMP.RuleMethodError(
+                    MyCustomNode, Val{:out}(), Marginalisation(), nothing, nothing, Val{(:a,)}(), (Marginal(PointMass, false, false, nothing),), "meta", nothing, nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("MyCustomNode", output)
+                @test occursin("q_a::BayesBase.PointMass", output)
+                @test occursin("MyCustomNode(m_a::BayesBase.PointMass, q_a::BayesBase.PointMass, meta::Float64)", output)
+                @test occursin("meta::Float64", output)
             end
         end
 
