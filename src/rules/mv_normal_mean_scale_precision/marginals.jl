@@ -32,7 +32,7 @@ end
 
     ξ = [xi_y; xi_m]
 
-    return (out_μ = MvNormalWeightedMeanPrecision(ξ, Λ), Λ = m_Λ)
+    return (out_μ = MvNormalWeightedMeanPrecision(ξ, Λ), γ = m_γ)
 end
 
 @marginalrule MvNormalMeanScalePrecision(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any) = begin
