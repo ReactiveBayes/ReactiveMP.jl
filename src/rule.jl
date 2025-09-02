@@ -1167,23 +1167,36 @@ function Base.showerror(io::IO, error::RuleMethodError)
         node_rules = filter(m -> ReactiveMP.get_node_from_rule_method(m) == spec_fform, methods(ReactiveMP.rule))
         println(io, "Alternatively, consider re-specifying model using an existing rule:\n")
 
-        node_message_names = filter(x -> x != ["Nothing"], get_message_names_from_rule_method.(node_rules))
-        node_message_types = filter(!isempty, get_message_types_from_rule_method.(node_rules))
-        for (m_name, m_type) in zip(node_message_names, node_message_types)
-            message_input = [string("m_", n, "::", t) for (n, t) in zip(m_name, m_type)]
-            println(io, spec_fform, "(", join(message_input, ", "), ")")
+        for node_rule in node_rules
+            node_message_names = filter(x -> x != ["Nothing"], get_message_names_from_rule_method(node_rule))
+            node_message_types = filter(!isempty, get_message_types_from_rule_method(node_rule))
+
+            node_marginal_names = filter(x -> x != ["Nothing"], get_marginal_names_from_rule_method(node_rule))
+            node_marginal_types = filter(!isempty, get_marginal_types_from_rule_method(node_rule))
+
+            node_meta = get_meta_from_rule_method(node_rule)
+
+            node_message_input = [string("m_", n, "::", t) for (n, t) in zip(node_message_names, node_message_types)]
+            node_marginal_input = [string("q_", n, "::", t) for (n, t) in zip(node_marginal_names, node_marginal_types)]
+
+            print(io, spec_fform)
+            print(io, "(")
+            join(io, node_message_input, ", ")
+            if !isempty(node_marginal_input)
+                print(io, ", ")
+            end
+            join(io, node_marginal_input, ", ")
+            print(io, ", ")
+
+            if node_meta !== "Nothing"
+                print(io, "meta::", node_meta)
+            end
+
+            print(io, ")")
+            println(io)
         end
 
-        node_marginal_names = filter(x -> x != ["Nothing"], get_marginal_names_from_rule_method.(node_rules))
-        node_marginal_types = filter(!isempty, get_marginal_types_from_rule_method.(node_rules))
-        for (m_name, m_type) in zip(node_marginal_names, node_marginal_types)
-            marginal_input = [string("q_", n, "::", t) for (n, t) in zip(m_name, m_type)]
-            println(io, spec_fform, "(", join(marginal_input, ", "), ")")
-        end
-        if !isempty(node_marginal_names)
-            println(io, "\nNote that for marginal rules (i.e., involving q_*), the order of input types matters.")
-        end
-
+        println(io, "\nNote that for rules involving `q_*`, the order of input types matters.")
     else
         println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)

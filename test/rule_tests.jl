@@ -607,6 +607,30 @@
                 @test occursin("m_a::BayesBase.PointMass", output)
                 @test occursin("q_a::BayesBase.PointMass", output)
             end
+
+            let
+                struct MyCustomNode end
+
+                @node MyCustomNode Stochastic [out, a]
+
+                @rule MyCustomNode(:out, Marginalisation) (m_a::PointMass, q_a::PointMass, meta::Float64) = begin
+                    return 1
+                end
+
+                err = ReactiveMP.RuleMethodError(
+                    MyCustomNode, Val{:out}(), Marginalisation(), nothing, nothing, Val{(:a,)}(), (Marginal(PointMass, false, false, nothing),), "meta", nothing, nothing
+                )
+
+                io = IOBuffer()
+                showerror(io, err)
+                output = String(take!(io))
+
+                @test occursin("Alternatively, consider re-specifying model using an existing rule:", output)
+                @test occursin("MyCustomNode", output)
+                @test occursin("q_a::BayesBase.PointMass", output)
+                @test occursin("MyCustomNode(m_a::BayesBase.PointMass, q_a::BayesBase.PointMass, meta::Float64)", output)
+                @test occursin("meta::Float64", output)
+            end
         end
 
         @testset "marginalrule_method_error" begin
