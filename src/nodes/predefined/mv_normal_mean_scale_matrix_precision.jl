@@ -21,7 +21,7 @@ end
     result = zero(promote_samplefloattype(q_out, q_μ, q_γ, q_G))
     result += dim * log2π
     result -= dim * mean(log, q_γ)
-    result -= dim * mean(logdet, q_G)
+    result -= mean(logdet, q_G)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
         result += m_Λ[k1, k2] * (v_out[k1, k2] + v_mean[k1, k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
@@ -48,7 +48,7 @@ end
     result = zero(promote_samplefloattype(q_out_μ, q_γ, q_G))
     result += dim * log2π
     result -= dim * mean(log, q_γ)
-    result -= dim * mean(logdet, q_G)
+    result -= mean(logdet, q_G)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
         result += m_Λ[k1, k2] * (v_out[k1, k2] - v_out_mean[k1, k2] - v_mean_out[k1, k2] + v_mean[k1, k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))

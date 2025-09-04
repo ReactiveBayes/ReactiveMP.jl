@@ -1,6 +1,6 @@
 # Variational                       # 
 # --------------------------------- #
-@rule MvNormalMeanScaleMatrixPrecision(:γ, Marginalisation) (q_out::Any, q_μ::Any, q_G::Any,) = begin
+@rule MvNormalMeanScaleMatrixPrecision(:γ, Marginalisation) (q_out::Any, q_μ::Any, q_G::Any) = begin
     m_out, v_out   = mean_cov(q_out)
     m_mean, v_mean = mean_cov(q_μ)
     G_bar = mean(q_G)
@@ -11,7 +11,7 @@
     return GammaShapeRate(convert(eltype(β), α), β)
 end
 
-@rule MvNormalMeanScaleMatrixPrecision(:γ, Marginalisation) (q_out_μ::Any, q_G::Any,) = begin
+@rule MvNormalMeanScaleMatrixPrecision(:γ, Marginalisation) (q_out_μ::Any, q_G::Any) = begin
     m_out_μ, v_out_μ = mean_cov(q_out_μ)
     G_bar = mean(q_G)
 

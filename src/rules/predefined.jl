@@ -66,6 +66,12 @@ include("mv_normal_mean_precision/mean.jl")
 include("mv_normal_mean_precision/precision.jl")
 include("mv_normal_mean_precision/marginals.jl")
 
+include("mv_normal_mean_scale_matrix_precision/out.jl")
+include("mv_normal_mean_scale_matrix_precision/mean.jl")
+include("mv_normal_mean_scale_matrix_precision/matrix.jl")
+include("mv_normal_mean_scale_matrix_precision/precision.jl")
+include("mv_normal_mean_scale_matrix_precision/marginals.jl")
+
 include("mv_normal_mean_scale_precision/out.jl")
 include("mv_normal_mean_scale_precision/mean.jl")
 include("mv_normal_mean_scale_precision/precision.jl")
