@@ -3,10 +3,10 @@
 @rule MvNormalMeanScaleMatrixPrecision(:γ, Marginalisation) (q_out::Any, q_μ::Any, q_G::Any) = begin
     m_out, v_out   = mean_cov(q_out)
     m_mean, v_mean = mean_cov(q_μ)
-    G_bar = mean(q_G)
+    G_bar          = mean(q_G)
 
     α = ndims(q_μ) / 2 + 1
-    β = tr( G_bar * (v_mean + v_out + (m_out - m_mean) * (m_out - m_mean)')) / 2
+    β = tr(G_bar * (v_mean + v_out + (m_out - m_mean) * (m_out - m_mean)')) / 2
 
     return GammaShapeRate(convert(eltype(β), α), β)
 end

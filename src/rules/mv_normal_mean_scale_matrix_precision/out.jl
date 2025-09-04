@@ -5,7 +5,7 @@
 @rule MvNormalMeanScaleMatrixPrecision(:out, Marginalisation) (m_μ::MultivariateNormalDistributionsFamily, q_γ::Any, q_G::Any) = begin
     μ_bar, Λ_μ = mean_precision(m_μ)
     Λ_f = mean(q_γ) * mean(q_G)
-    
+
     # Step 1: form M = Λ_μ + Λ_f
     M = Λ_μ + Λ_f
 
@@ -18,5 +18,5 @@
     # Step 4: form Λ_out
     Λ_out = Λ_μ - Λ_μ * X
 
-    return MvNormalMeanPrecision( μ_bar, Λ_out )
+    return MvNormalMeanPrecision(μ_bar, Λ_out)
 end

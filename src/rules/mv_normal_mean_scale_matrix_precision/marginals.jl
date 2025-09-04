@@ -8,7 +8,9 @@ end
     return (out = m_out, μ = prod(ClosedProd(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_γ) * mean(m_G))), γ = m_γ, G = m_G)
 end
 
-@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ_γ_G) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass, m_G::PointMass) = begin
+@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ_γ_G) (
+    m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass, m_G::PointMass
+) = begin
     xi_y, W_y = weightedmean_precision(m_out)
     xi_m, W_m = weightedmean_precision(m_μ)
 

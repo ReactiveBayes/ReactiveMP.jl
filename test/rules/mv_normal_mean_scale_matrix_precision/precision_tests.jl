@@ -11,11 +11,19 @@
         # output = GammaShapeRate(div(ndims(q_out), 2) + 1, 0.5*tr(mean(q_G)*(cov(q_out) + cov(q_μ) + (mean(q_out) - mean(q_μ))*(mean(q_out) - mean(q_μ))')))
         @test_rules [check_type_promotion = true] MvNormalMeanScaleMatrixPrecision(:γ, Marginalisation) [
             (
-                input = (q_out = MvNormalMeanCovariance([1.0; 2.0], [3.0 2.0; 2.0 4.0]), q_μ = MvNormalMeanCovariance([3.0; 5.0], [3.0 2.0; 2.0 4.0]), q_G = Wishart(4, [13.0 14.0; 14.0 20.0])),
+                input = (
+                    q_out = MvNormalMeanCovariance([1.0; 2.0], [3.0 2.0; 2.0 4.0]),
+                    q_μ = MvNormalMeanCovariance([3.0; 5.0], [3.0 2.0; 2.0 4.0]),
+                    q_G = Wishart(4, [13.0 14.0; 14.0 20.0])
+                ),
                 output = GammaShapeRate(2.0, 1500.0)
             ),
             (
-                input = (q_out = MvNormalMeanPrecision([1.0; 2.0], [3.0 2.0; 2.0 4.0]), q_μ = MvNormalMeanPrecision([3.0; 5.0], [3.0 2.0; 2.0 4.0]), q_G = Wishart(4, [13.0 14.0; 14.0 20.0])),
+                input = (
+                    q_out = MvNormalMeanPrecision([1.0; 2.0], [3.0 2.0; 2.0 4.0]),
+                    q_μ = MvNormalMeanPrecision([3.0; 5.0], [3.0 2.0; 2.0 4.0]),
+                    q_G = Wishart(4, [13.0 14.0; 14.0 20.0])
+                ),
                 output = GammaShapeRate(2.0, 828.0)
             )
         ]
