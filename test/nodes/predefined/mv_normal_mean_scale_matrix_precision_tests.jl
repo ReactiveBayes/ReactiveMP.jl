@@ -13,7 +13,12 @@
             # AE = - div(ndims(q_μ),2) * mean(log,q_γ) - 0.5*mean(logdet, q_G) + div(ndims(q_μ),2)*log(2pi) + 0.5*tr(mean(q_γ)*mean(q_G)*( Cov_out + Cov_μ + (m_out - m_μ)*(m_out - m_μ)'))
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), g in (Gamma,), M in (Wishart,)
-                marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(g, q_γ), false, false, nothing), Marginal(convert(M, q_G), false, false, nothing))
+                marginals = (
+                    Marginal(q_out, false, false, nothing),
+                    Marginal(convert(N, q_μ), false, false, nothing),
+                    Marginal(convert(g, q_γ), false, false, nothing),
+                    Marginal(convert(M, q_G), false, false, nothing)
+                )
                 @test score(AverageEnergy(), MvNormalMeanScaleMatrixPrecision, Val{(:out, :μ, :γ, :G)}(), marginals, nothing) ≈ 5.49230839621241
             end
         end
@@ -28,12 +33,14 @@
             # AE = - div(ndims(q_μ),2) * mean(log,q_γ) - 0.5*mean(logdet, q_G) + div(ndims(q_μ),2)*log(2pi) + 0.5*tr(mean(q_γ)*mean(q_G)*( Cov_out + Cov_μ + (m_out - m_μ)*(m_out - m_μ)'))
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
-                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
-                g in (Gamma,),
+                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), g in (Gamma,),
                 M in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing), Marginal(convert(N2, q_μ), false, false, nothing), Marginal(convert(g, q_γ), false, false, nothing), Marginal(convert(M, q_G), false, false, nothing)
+                    Marginal(convert(N1, q_out), false, false, nothing),
+                    Marginal(convert(N2, q_μ), false, false, nothing),
+                    Marginal(convert(g, q_γ), false, false, nothing),
+                    Marginal(convert(M, q_G), false, false, nothing)
                 )
                 @test score(AverageEnergy(), MvNormalMeanScaleMatrixPrecision, Val{(:out, :μ, :γ, :G)}(), marginals, nothing) ≈ 189.18709448153223
             end
@@ -51,13 +58,12 @@
             )
             d = div(ndims(q_out_μ), 2)
             q_γ = GammaShapeRate(3.0, 2.0)
-            q_G = Wishart(d + 2, 0.25*[0.349811  0.318591; 0.318591  0.401713])
+            q_G = Wishart(d + 2, 0.25*[0.349811 0.318591; 0.318591 0.401713])
             # m_out_μ, Cov_out_μ = mean_cov(q_out_μ)
             # m_out, m_μ = @views m_out_μ[1:d], m_out_μ[(d + 1):end]
             # Cov_out, Cov_μ = @views Cov_out_μ[1:d, 1:d], Cov_out_μ[(d + 1):end, (d + 1):end]
             # Cov_out_out, Cov_μ_μ = @views Cov_out_μ[1:d, (d + 1):end], Cov_out_μ[(d + 1):end, 1:d]
             # AE = - div(ndims(q_μ),2) * mean(log,q_γ) - 0.5*mean(logdet, q_G) + div(ndims(q_μ),2)*log(2pi) + 0.5*tr(mean(q_γ)*mean(q_G)*( Cov_out + Cov_μ - Cov_out_out - Cov_μ_μ + (m_out - m_μ)*(m_out - m_μ)'))
-
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
                 marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(q_γ, false, false, nothing), Marginal(q_G, false, false, nothing))
@@ -76,7 +82,7 @@
                 ]
             )
             q_γ = GammaShapeRate(4.0, 3.0)
-            q_G = Wishart(ndims(q_out) + 2, 0.25*[5.60439  4.34489; 4.34489  3.69273])
+            q_G = Wishart(ndims(q_out) + 2, 0.25*[5.60439 4.34489; 4.34489 3.69273])
             # m_out_μ, Cov_out_μ = mean_cov(q_out_μ)
             # m_out, m_μ = @views m_out_μ[1:d], m_out_μ[(d + 1):end]
             # Cov_out, Cov_μ = @views Cov_out_μ[1:d, 1:d], Cov_out_μ[(d + 1):end, (d + 1):end]

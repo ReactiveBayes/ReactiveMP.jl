@@ -37,12 +37,12 @@ end
 
     m, V = mean_cov(q_out_μ)
     m_out = m[1:dim]
-    m_mean = m[dim + 1:end]
+    m_mean = m[(dim + 1):end]
     # slice V into blocks according to dim-lengths of out and μ
     v_out = V[1:dim, 1:dim]
-    v_mean = V[dim + 1:end, dim + 1:end]
-    v_out_mean = V[1:dim, dim + 1:end]
-    v_mean_out = V[dim + 1:end, 1:dim]
+    v_mean = V[(dim + 1):end, (dim + 1):end]
+    v_out_mean = V[1:dim, (dim + 1):end]
+    v_mean_out = V[(dim + 1):end, 1:dim]
     m_Λ = mean(q_γ) * mean(q_G)
 
     result = zero(promote_samplefloattype(q_out_μ, q_γ, q_G))
