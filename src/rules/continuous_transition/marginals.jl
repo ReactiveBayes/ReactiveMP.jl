@@ -25,8 +25,15 @@ function continuous_tranition_marginal(m_y::MultivariateNormalDistributionsFamil
     W_21 = negate_inplace!(mA' * mW)
 
     Ξ = Wx
+
+
+    Y = similar(Va)
     for (i, j) in Iterators.product(1:dy, 1:dy)
-        Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
+
+        mul!(Y, Va, Fs[i]')
+        mul!(Ξ, Fs[j], Y, mW[j, i], 1)
+
+        # Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
     end
 
     W_22 = Ξ + mA' * mW * mA
