@@ -9,12 +9,10 @@ function compute_delta(my, Vy, mx, Vx, Vyx, mA, Va, ma, Fs)
     G₆ = zeros(eltype(ma), dy, dy)
     mamat = ma * ma'
 
-
     Y = similar(Ex_xx)
     Z = similar(Ex_xx)
 
     @inbounds for (i, j) in Iterators.product(1:dy, 1:dy)
-
         mul!(Y, Ex_xx, Fs[j])
         mul!(Z, Fs[i]', Y)
 

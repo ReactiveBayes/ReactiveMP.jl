@@ -18,7 +18,6 @@
     Y = similar(Va)
 
     for (i, j) in Iterators.product(1:dy, 1:dy)
-
         mul!(Y, Va, Fs[i]')
         mul!(Ξ, Fs[j], Y, mW[j, i], 1)
 
