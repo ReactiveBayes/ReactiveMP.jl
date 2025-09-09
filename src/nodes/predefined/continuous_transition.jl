@@ -74,42 +74,21 @@ Fields:
 
 The `ContinuousTransitionMeta` struct plays a pivotal role in defining how the vector `a` is transformed into the matrix `A`, thus influencing the behavior of the `ContinuousTransition` node.
 """
-mutable struct ContinuousTransitionMeta{F <: Function}
+struct ContinuousTransitionMeta{F <: Function}
     f::F  # transformation function
-    jcache::Any
 
     function ContinuousTransitionMeta(transformation::F) where {F}
-        return new{F}(transformation, nothing)
+        return new{F}(transformation)
     end
 end
 
 const CTMeta = ContinuousTransitionMeta
 
 gettransformation(meta::CTMeta) = meta.f
-getjcache(meta::CTMeta) = meta.jcache
 # getctoutputdim(meta::CTMeta, J) = div(size(J, 2), size(J, 1)) # returns dy where J ∈ ℝ^{dx × dydx}
 
-getjacobians(ctmeta::CTMeta, a) = process_Fs(ctmeta, getjcache(ctmeta), gettransformation(ctmeta), a)
-
-function process_Fs(ctmeta::CTMeta, cache::Nothing, f::F, a) where {F <: Function}
-    result = [ForwardDiff.jacobian(a -> view(f(a), i, :), a) for i in 1:size(f(a), 1)]
-
-    cfg = ForwardDiff.JacobianConfig(a -> view(f(a), 1, :), a)
-
-    ctmeta.jcache = (cfg, result)
-
-    return result
-end
-
-function process_Fs(ctmeta::CTMeta, cache::Tuple{Any, Any}, f::F, a) where {F <: Function}
-    cfg, result = cache
-
-    for (i, y) in enumerate(result)
-        ForwardDiff.jacobian!(y, (a) -> view(f(a), i, :), a, cfg, Val{false}())
-    end
-
-    return result
-end
+getjacobians(ctmeta::CTMeta, a) = process_Fs(gettransformation(ctmeta), a)
+process_Fs(f::Function, a) = [ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 1:size(f(a), 1)]
 
 default_meta(::Type{CTMeta}) = error("ContinuousTransition node requires meta flag explicitly specified")
 
