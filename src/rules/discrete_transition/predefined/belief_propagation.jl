@@ -53,7 +53,7 @@ end
 end
 
 # --------------- Rules for 3 interfaces (PointMass q_T1) ---------------
-@rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::DirichletCollection, q_T1::PointMass{<:AbstractArray{T, 3}}, meta::Any) where {T} = begin
+@rule DiscreteTransition(:out, Marginalisation) (m_in::DiscreteNonParametric, q_a::DirichletCollection, q_T1::PointMass{<:AbstractArray{T, 1}}, meta::Any) where {T} = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
     @tullio intermediate[i, a] := eloga[i, a, b] * probvec(q_T1)[b]
     softmax!(intermediate)
@@ -61,7 +61,7 @@ end
     return Categorical(normalize!(result, 1); check_args = false)
 end
 
-@rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, q_a::DirichletCollection, q_T1::PointMass{<:AbstractArray{T, 3}}, meta::Any) where {T} = begin
+@rule DiscreteTransition(:in, Marginalisation) (m_out::DiscreteNonParametric, q_a::DirichletCollection, q_T1::PointMass{<:AbstractArray{T, 1}}, meta::Any) where {T} = begin
     eloga = mean(Base.Broadcast.BroadcastFunction(clamplog), q_a)
     @tullio intermediate[a, i] := eloga[a, i, b] * probvec(q_T1)[b]
     softmax!(intermediate)
