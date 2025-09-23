@@ -112,7 +112,6 @@ function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, V}, sigma_points
 
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = C ? reshape(sum(wc * (xi - m) * (yi - m_tilde) for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)), 1, d_out) : nothing
-
     return (m_tilde, V_tilde, C_tilde)
 end
 
