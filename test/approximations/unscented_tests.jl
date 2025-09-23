@@ -59,7 +59,7 @@
             unscented_statistics(Unscented(; alpha = 2, beta = 3, kappa = 4), (x) -> x, ([2.0, -3.0],), ([4.0 -1.0; -1.0 2.0],)) .≈
             ([2.0, -3.0], [4.0 -1.0; -1.0 2.0], [4.0 -1.0; -1.0 2.0])
         )
-        
+
         @test all(
             isapprox.(
                 unscented_statistics(Unscented(; alpha = 2, beta = 3, kappa = 4), (x) -> x .^ 2, ([1.0, -1.0],), ([1.0 0.0; 0.0 1.0],)),
