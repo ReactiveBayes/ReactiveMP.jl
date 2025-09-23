@@ -1,12 +1,7 @@
 export MvNormalMeanScaleMatrixPrecision
 
 import StatsFuns: log2π
-
-struct MvNormalMeanScaleMatrixPrecision{T <: Real, M <: AbstractVector{T}, H <: AbstractMatrix{T}} <: AbstractMvNormal
-    μ::M
-    γ::T
-    G::H
-end
+import ExponentialFamily: MvNormalMeanScaleMatrixPrecision
 
 @node MvNormalMeanScaleMatrixPrecision Stochastic [out, (μ, aliases = [mean]), (γ, aliases = [scale]), (G, aliases = [matrix])]
 
