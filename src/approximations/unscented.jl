@@ -93,72 +93,64 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple
     return unscented_statistics(method, Val(true), g, means, covs)
 end
 
-function sigma_points_distribution(::Val{C}, g_sigma, sigma_points, m::Real, weights_m, weights_c) where {C}
-    y1 = first(g_sigma)
-
-    # Univariate output from g
-    if y1 isa Real
-        m_tilde = zero(y1)
-        for (wm, yi) in zip(weights_m, g_sigma)
-            m_tilde += wm * yi
-        end
-
-        V_tilde = zero(m_tilde)
-        for (wc, yi) in zip(weights_c, g_sigma)
-            diff = yi - m_tilde
-            V_tilde += wc * (diff * diff)
-        end
-
-        C_tilde = nothing
-        if C
-            ct = zero(m_tilde)
-            for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
-                ct += wc * (xi - m) * (yi - m_tilde)
-            end
-            C_tilde = ct
-        end
-
-        return (m_tilde, V_tilde, C_tilde)
+function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points::NTuple{N, S}, m::Real, weights_m::NTuple{N, R}, weights_c::NTuple{N, R}) where {C, N, T<:Real, S<:Real, R<:Real}
+    m_tilde = zero(T)
+    for (wm, yi) in zip(weights_m, g_sigma)
+        m_tilde += wm * yi
     end
 
-    # Multivariate output from g (e.g. g: R -> R^k)
-    if y1 isa AbstractVector
-        d_out = length(y1)
-        T = eltype(y1)
+    V_tilde = zero(T)
+    for (wc, yi) in zip(weights_c, g_sigma)
+        diff = yi - m_tilde
+        V_tilde += wc * (diff * diff)
+    end
 
-        m_tilde = zeros(T, d_out)
-        for (wm, yi) in zip(weights_m, g_sigma)
+    C_tilde = nothing
+    if C
+        ct = zero(promote_type(T, typeof(m)))
+        for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
+            ct += wc * (xi - m) * (yi - m_tilde)
+        end
+        C_tilde = ct
+    end
+
+    return (m_tilde, V_tilde, C_tilde)
+end
+
+function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, V}, sigma_points::NTuple{N, S}, m::Real, weights_m::NTuple{N, R}, weights_c::NTuple{N, R}) where {C, N, V<:AbstractVector, S<:Real, R<:Real}
+    d_out = length(first(g_sigma))
+    T = eltype(first(g_sigma))
+
+    m_tilde = zeros(T, d_out)
+    for (wm, yi) in zip(weights_m, g_sigma)
+        @inbounds for j in 1:d_out
+            m_tilde[j] += wm * yi[j]
+        end
+    end
+
+    V_tilde = zeros(T, d_out, d_out)
+    for (wc, yi) in zip(weights_c, g_sigma)
+        @inbounds for i in 1:d_out
+            di = yi[i] - m_tilde[i]
+            for j in 1:d_out
+                dj = yi[j] - m_tilde[j]
+                V_tilde[i, j] += wc * di * dj
+            end
+        end
+    end
+
+    C_tilde = nothing
+    if C
+        CT = zeros(promote_type(T, typeof(m)), 1, d_out)
+        for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
             @inbounds for j in 1:d_out
-                m_tilde[j] += wm * yi[j]
+                CT[1, j] += wc * (xi - m) * (yi[j] - m_tilde[j])
             end
         end
-
-        V_tilde = zeros(T, d_out, d_out)
-        for (wc, yi) in zip(weights_c, g_sigma)
-            @inbounds for i in 1:d_out
-                di = yi[i] - m_tilde[i]
-                for j in 1:d_out
-                    dj = yi[j] - m_tilde[j]
-                    V_tilde[i, j] += wc * di * dj
-                end
-            end
-        end
-
-        C_tilde = nothing
-        if C
-            CT = zeros(promote_type(T, typeof(m)), 1, d_out)
-            for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
-                @inbounds for j in 1:d_out
-                    CT[1, j] += wc * (xi - m) * (yi[j] - m_tilde[j])
-                end
-            end
-            C_tilde = CT
-        end
-
-        return (m_tilde, V_tilde, C_tilde)
+        C_tilde = CT
     end
 
-    error("Unsupported output type from g in unscented transform: $(typeof(y1))")
+    return (m_tilde, V_tilde, C_tilde)
 end 
 
 # Single univariate variable
