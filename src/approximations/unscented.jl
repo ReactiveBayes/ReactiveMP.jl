@@ -93,7 +93,7 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple
     return unscented_statistics(method, Val(true), g, means, covs)
 end
 
-function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points::NTuple{N, S}, m::Real, weights_m::NTuple{N, R}, weights_c::NTuple{N, R}) where {C, N, T<:Real, S<:Real, R<:Real}
+function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points, m::Real, weights_m, weights_c) where {C, N, T<:Real}
     m_tilde = sum(weights_m .* g_sigma)
     V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
 
@@ -102,7 +102,7 @@ function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points
     return (m_tilde, V_tilde, C_tilde)
 end
 
-function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, V}, sigma_points::NTuple{N, S}, m::Real, weights_m::NTuple{N, R}, weights_c::NTuple{N, R}) where {C, N, V<:AbstractVector, S<:Real, R<:Real}
+function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, V}, sigma_points, m::Real, weights_m, weights_c) where {C, N, V<:AbstractVector}
     d_out = length(first(g_sigma))
     T = eltype(first(g_sigma))
 
