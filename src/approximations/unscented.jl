@@ -93,6 +93,74 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple
     return unscented_statistics(method, Val(true), g, means, covs)
 end
 
+function sigma_points_distribution(::Val{C}, g_sigma, sigma_points, m::Real, weights_m, weights_c) where {C}
+    y1 = first(g_sigma)
+
+    # Univariate output from g
+    if y1 isa Real
+        m_tilde = zero(y1)
+        for (wm, yi) in zip(weights_m, g_sigma)
+            m_tilde += wm * yi
+        end
+
+        V_tilde = zero(m_tilde)
+        for (wc, yi) in zip(weights_c, g_sigma)
+            diff = yi - m_tilde
+            V_tilde += wc * (diff * diff)
+        end
+
+        C_tilde = nothing
+        if C
+            ct = zero(m_tilde)
+            for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
+                ct += wc * (xi - m) * (yi - m_tilde)
+            end
+            C_tilde = ct
+        end
+
+        return (m_tilde, V_tilde, C_tilde)
+    end
+
+    # Multivariate output from g (e.g. g: R -> R^k)
+    if y1 isa AbstractVector
+        d_out = length(y1)
+        T = eltype(y1)
+
+        m_tilde = zeros(T, d_out)
+        for (wm, yi) in zip(weights_m, g_sigma)
+            @inbounds for j in 1:d_out
+                m_tilde[j] += wm * yi[j]
+            end
+        end
+
+        V_tilde = zeros(T, d_out, d_out)
+        for (wc, yi) in zip(weights_c, g_sigma)
+            @inbounds for i in 1:d_out
+                di = yi[i] - m_tilde[i]
+                for j in 1:d_out
+                    dj = yi[j] - m_tilde[j]
+                    V_tilde[i, j] += wc * di * dj
+                end
+            end
+        end
+
+        C_tilde = nothing
+        if C
+            CT = zeros(promote_type(T, typeof(m)), 1, d_out)
+            for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
+                @inbounds for j in 1:d_out
+                    CT[1, j] += wc * (xi - m) * (yi[j] - m_tilde[j])
+                end
+            end
+            C_tilde = CT
+        end
+
+        return (m_tilde, V_tilde, C_tilde)
+    end
+
+    error("Unsupported output type from g in unscented transform: $(typeof(y1))")
+end 
+
 # Single univariate variable
 function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {C, G}
     m = first(means)
@@ -100,14 +168,11 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Re
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
+    # Evaluate g at sigma points
     g_sigma = g.(sigma_points)
-    m_tilde = sum(weights_m .* g_sigma)
-    V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
 
-    # Compute `C_tilde` only if `C === true`
-    C_tilde = C ? sum(weights_c .* (sigma_points .- m) .* (g_sigma .- m_tilde)) : nothing
-
-    return (m_tilde, V_tilde, C_tilde)
+    # Compute output statistics depending on the output variate type
+    return sigma_points_distribution(Val(C), g_sigma, sigma_points, m, weights_m, weights_c)
 end
 
 # Single multivariate inbound
