@@ -2,7 +2,7 @@
 @testitem "Unscented approximation method" begin
     using ReactiveMP
 
-    import ReactiveMP: Unscented, unscented_statistics
+    import ReactiveMP: Unscented, unscented_statistics, approximate
 
     @testset "Univariate `unscented_statistics`" begin
 
@@ -59,7 +59,7 @@
             unscented_statistics(Unscented(; alpha = 2, beta = 3, kappa = 4), (x) -> x, ([2.0, -3.0],), ([4.0 -1.0; -1.0 2.0],)) .≈
             ([2.0, -3.0], [4.0 -1.0; -1.0 2.0], [4.0 -1.0; -1.0 2.0])
         )
-
+        
         @test all(
             isapprox.(
                 unscented_statistics(Unscented(; alpha = 2, beta = 3, kappa = 4), (x) -> x .^ 2, ([1.0, -1.0],), ([1.0 0.0; 0.0 1.0],)),
@@ -74,5 +74,9 @@
                 atol = 1e-4
             )
         )
+    end
+
+    @testset "Univariate approximate unscented" begin
+        @test @inferred(approximate(Unscented(), (x) -> x .- [1, 1], (1.0,), (1.0,))) == ([1.0, 1.0], [1.0, 1.0; 1.0, 1.0])
     end
 end
