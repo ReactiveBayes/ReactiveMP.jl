@@ -94,26 +94,11 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple
 end
 
 function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points::NTuple{N, S}, m::Real, weights_m::NTuple{N, R}, weights_c::NTuple{N, R}) where {C, N, T<:Real, S<:Real, R<:Real}
-    m_tilde = zero(T)
-    for (wm, yi) in zip(weights_m, g_sigma)
-        m_tilde += wm * yi
-    end
+    m_tilde = sum(weights_m .* g_sigma)
+    V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
 
-    V_tilde = zero(T)
-    for (wc, yi) in zip(weights_c, g_sigma)
-        diff = yi - m_tilde
-        V_tilde += wc * (diff * diff)
-    end
-
-    C_tilde = nothing
-    if C
-        ct = zero(promote_type(T, typeof(m)))
-        for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
-            ct += wc * (xi - m) * (yi - m_tilde)
-        end
-        C_tilde = ct
-    end
-
+    # Compute `C_tilde` only if `C === true`
+    C_tilde = C ? sum(weights_c .* (sigma_points .- m) .* (g_sigma .- m_tilde)) : nothing
     return (m_tilde, V_tilde, C_tilde)
 end
 
