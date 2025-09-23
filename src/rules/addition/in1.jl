@@ -56,17 +56,16 @@ end
 
 # specialized
 @rule typeof(+)(:in1, Marginalisation) (
-    m_out::MvNormalWeightedMeanPrecision{T1}, m_in2::MvNormalWeightedMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat} = begin
+    m_out::MvNormalWeightedMeanPrecision{T, Vector{T}, Matrix{T}}, m_in2::MvNormalWeightedMeanPrecision{T, Vector{T}, Matrix{T}}
+) where {T <: LinearAlgebra.BlasFloat} = begin
     min2, vin2 = mean_cov(m_in2)
     vout = cov(m_out)
-    T = promote_type(T1, T2)
     BLAS.gemv!('N', -one(T), vout, weightedmean(m_out), one(T), min2)
     vin2 .+= vout
     return MvNormalMeanCovariance(min2, vin2)
 end
 
-@rule typeof(+)(:in1, Marginalisation) (m_out::MvNormalWeightedMeanPrecision{T1}, m_in2::PointMass) where {T1} = begin
+@rule typeof(+)(:in1, Marginalisation) (m_out::MvNormalWeightedMeanPrecision{T1, Vector{T1}, Matrix{T1}}, m_in2::PointMass) where {T1} = begin
     ξout, wout = weightedmean_precision(m_out)
     ξin1 = wout * mean(m_in2)
     ξin1 .-= ξout
@@ -75,7 +74,7 @@ end
     return MvNormalWeightedMeanPrecision(ξin1, wout)
 end
 
-@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in2::MvNormalWeightedMeanPrecision) = begin
+@rule typeof(+)(:in1, Marginalisation) (m_out::PointMass, m_in2::MvNormalWeightedMeanPrecision{T1, Vector{T1}, Matrix{T1}}) where {T1} = begin
     ξin2, win2 = weightedmean_precision(m_in2)
     ξin1 = win2 * mean(m_out)
     ξin1 .-= ξin2

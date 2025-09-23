@@ -27,14 +27,13 @@ include("gamma_inverse/marginals.jl")
 include("gamma_shape_rate/out.jl")
 include("gamma_shape_rate/marginals.jl")
 include("gamma_shape_rate/a.jl")
+include("gamma_shape_rate/b.jl")
 
 include("beta/out.jl")
 include("beta/marginals.jl")
 
 include("dirichlet/marginals.jl")
 include("dirichlet/out.jl")
-
-include("matrix_dirichlet/out.jl")
 
 include("categorical/out.jl")
 include("categorical/p.jl")
@@ -66,6 +65,12 @@ include("mv_normal_mean_precision/out.jl")
 include("mv_normal_mean_precision/mean.jl")
 include("mv_normal_mean_precision/precision.jl")
 include("mv_normal_mean_precision/marginals.jl")
+
+include("mv_normal_mean_scale_matrix_precision/out.jl")
+include("mv_normal_mean_scale_matrix_precision/mean.jl")
+include("mv_normal_mean_scale_matrix_precision/matrix.jl")
+include("mv_normal_mean_scale_matrix_precision/precision.jl")
+include("mv_normal_mean_scale_matrix_precision/marginals.jl")
 
 include("mv_normal_mean_scale_precision/out.jl")
 include("mv_normal_mean_scale_precision/mean.jl")
@@ -101,15 +106,13 @@ include("dot_product/out.jl")
 include("dot_product/in1.jl")
 include("dot_product/in2.jl")
 
-include("softdot/y.jl")
-include("softdot/x.jl")
-include("softdot/theta.jl")
-include("softdot/gamma.jl")
-
-include("transition/marginals.jl")
-include("transition/out.jl")
-include("transition/in.jl")
-include("transition/a.jl")
+include("discrete_transition/categoricals.jl")
+include("discrete_transition/marginals.jl")
+include("discrete_transition/a.jl")
+include("discrete_transition/predefined/a.jl")
+include("discrete_transition/predefined/marginals.jl")
+include("discrete_transition/predefined/belief_propagation.jl")
+include("discrete_transition/predefined/structured_vmp.jl")
 
 include("continuous_transition/y.jl")
 include("continuous_transition/x.jl")
@@ -122,6 +125,12 @@ include("autoregressive/x.jl")
 include("autoregressive/theta.jl")
 include("autoregressive/gamma.jl")
 include("autoregressive/marginals.jl")
+
+include("softdot/y.jl")
+include("softdot/x.jl")
+include("softdot/theta.jl")
+include("softdot/gamma.jl")
+include("softdot/marginals.jl")
 
 include("probit/marginals.jl")
 include("probit/in.jl")
@@ -180,3 +189,12 @@ include("delta/cvi/out.jl")
 include("delta/cvi/marginals.jl")
 
 include("half_normal/out.jl")
+
+include("binomial_polya/beta.jl")
+include("binomial_polya/y.jl")
+
+include("multinomial_polya/psi.jl")
+include("multinomial_polya/x.jl")
+
+include("dirichlet_collection/out.jl")
+include("dirichlet_collection/marginals.jl")

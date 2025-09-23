@@ -5,8 +5,8 @@
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass(1.0)
-            q_μ   = NormalMeanPrecision(1.0, 1.0)
-            q_τ   = GammaShapeRate(1.5, 1.5)
+            q_μ = NormalMeanPrecision(1.0, 1.0)
+            q_τ = GammaShapeRate(1.5, 1.5)
 
             for N in (NormalMeanPrecision, NormalMeanVariance, NormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_τ), false, false, nothing))
@@ -15,9 +15,32 @@
         end
 
         begin
+            q_out_μ = (out = PointMass(1.0), μ = NormalMeanPrecision(1.0, 1.0))
+            q_τ = GammaShapeRate(1.5, 1.5)
+
+            marginals = (Marginal(q_out_μ, false, false, nothing), Marginal(q_τ, false, false, nothing))
+            @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out_μ, :τ)}(), marginals, nothing) ≈ 1.6034261002694663
+        end
+
+        begin
+            q_out = PointMass(1.0)
+            q_μ_τ = (μ = NormalMeanPrecision(1.0, 1.0), τ = GammaShapeRate(1.5, 1.5))
+
+            marginals = (Marginal(q_out, false, false, nothing), Marginal(q_μ_τ, false, false, nothing))
+            @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ_τ)}(), marginals, nothing) ≈ 1.6034261002694663
+        end
+
+        begin
+            q_out_μ_τ = (out = PointMass(1.0), μ = NormalMeanPrecision(1.0, 1.0), τ = GammaShapeRate(1.5, 1.5))
+
+            marginals = (Marginal(q_out_μ_τ, false, false, nothing),)
+            @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out_μ_τ,)}(), marginals, nothing) ≈ 1.6034261002694663
+        end
+
+        begin
             q_out = NormalMeanPrecision(1.0, 1.0)
-            q_μ   = NormalMeanPrecision(1.0, 1.0)
-            q_τ   = GammaShapeRate(1.5, 1.5)
+            q_μ = NormalMeanPrecision(1.0, 1.0)
+            q_τ = GammaShapeRate(1.5, 1.5)
 
             for N in (NormalMeanPrecision, NormalMeanVariance, NormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_τ), false, false, nothing))
@@ -27,8 +50,8 @@
 
         begin
             q_out = PointMass(0.956629)
-            q_μ   = NormalMeanPrecision(0.255332, 0.762870)
-            q_τ   = GammaShapeRate(0.93037, 0.79312)
+            q_μ = NormalMeanPrecision(0.255332, 0.762870)
+            q_τ = GammaShapeRate(0.93037, 0.79312)
 
             for N in (NormalMeanPrecision, NormalMeanVariance, NormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_τ), false, false, nothing))
@@ -38,8 +61,8 @@
 
         begin
             q_out = NormalMeanPrecision(0.148725, 0.483501)
-            q_μ   = NormalMeanPrecision(0.992776, 0.545851)
-            q_τ   = GammaShapeRate(0.309396, 0.343814)
+            q_μ = NormalMeanPrecision(0.992776, 0.545851)
+            q_τ = GammaShapeRate(0.309396, 0.343814)
 
             for N in (NormalMeanPrecision, NormalMeanVariance, NormalWeightedMeanPrecision), G in (GammaShapeRate, GammaShapeScale)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_τ), false, false, nothing))
@@ -65,6 +88,21 @@
                 marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(convert(G, q_τ), false, false, nothing))
                 @test score(AverageEnergy(), NormalMeanPrecision, Val{(:out_μ, :τ)}(), marginals, nothing) ≈ 138.6947657738283
             end
+        end
+
+        begin
+            q_a = PointMass(1.0)
+            q_b = PointMass(1.0)
+            q_c = PointMass(1.0)
+            marginals = (Marginal(q_a, false, false, nothing), Marginal(q_b, false, false, nothing), Marginal(q_c, false, false, nothing))
+            meta = 1
+            @test_throws r"Cannot compute Average Energy for the .*NormalMeanPrecision node, the method does not exist for the provided marginals." score(
+                AverageEnergy(), NormalMeanPrecision, Val{(:a, :b, :c)}(), marginals, 1
+            )
+            @test_throws r"\(q_a::.*PointMass.*, q_b::.*PointMass.*, q_c::.*PointMass.*, \)" score(AverageEnergy(), NormalMeanPrecision, Val{(:a, :b, :c)}(), marginals, nothing)
+            @test_throws r"\(q_a::.*PointMass.*, q_b::.*PointMass.*, q_c::.*PointMass.*, meta::Int64\)" score(
+                AverageEnergy(), NormalMeanPrecision, Val{(:a, :b, :c)}(), marginals, 1
+            )
         end
     end
 end

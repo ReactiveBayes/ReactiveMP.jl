@@ -64,9 +64,8 @@ Base.IteratorSize(::Type{<:SkipIndexIterator})   = HasLength()
 Base.IteratorEltype(::Type{<:SkipIndexIterator}) = HasEltype()
 Base.IndexStyle(::Type{<:SkipIndexIterator})     = IndexLinear()
 
-Base.eltype(::Type{<:SkipIndexIterator{T}}) where {T} = T
-Base.length(iter::SkipIndexIterator)                  = length(iter.iterator) - 1
-Base.size(iter::SkipIndexIterator)                    = (length(iter),)
+Base.length(iter::SkipIndexIterator) = length(iter.iterator) - 1
+Base.size(iter::SkipIndexIterator)   = (length(iter),)
 
 Base.@propagate_inbounds Base.getindex(iter::SkipIndexIterator, i::Int)               = i < skip(iter) ? iter.iterator[i] : iter.iterator[i + 1]
 Base.@propagate_inbounds Base.getindex(iter::SkipIndexIterator, i::CartesianIndex{1}) = Base.getindex(iter, first(i.I))
@@ -79,11 +78,11 @@ import Base: +, -, *, /, convert, float, isfinite, isinf, zero, eltype
 
 # Symbol helpers
 
-__extract_val_type(::Type{Val{S}}) where {S} = S
-__extract_val_type(::Val{S}) where {S} = S
+unval(::Type{Val{S}}) where {S} = S
+unval(::Val{S}) where {S} = S
 
 @generated function split_underscored_symbol(symbol_val)
-    S = __extract_val_type(symbol_val)
+    S = unval(symbol_val)
     R = tuple(map(Symbol, split(string(S), "_"))...)
     return :(Val{$R}())
 end

@@ -6,19 +6,16 @@ SHELL = /bin/bash
 scripts_init:
 	julia --project=scripts/ -e 'using Pkg; Pkg.instantiate(); Pkg.update(); Pkg.precompile();'
 
-lint: scripts_init ## Code formating check
-	julia --project=scripts/ scripts/format.jl
+format: scripts_init ## Format Julia code
+	julia --project=scripts/ scripts/formatter.jl --overwrite
 
-format: scripts_init ## Code formating run
-	julia --project=scripts/ scripts/format.jl --overwrite
+check-format: scripts_init ## Check Julia code formatting (does not modify files)
+	julia --project=scripts/ scripts/formatter.jl
 
 .PHONY: benchmark
 
-benchmark_init:
-	julia --project=benchmark/ -e 'using Pkg; Pkg.instantiate();'
-
-benchmark: benchmark_init ## Runs simple benchmark
-	julia --project=benchmark/ --startup-file=no scripts/benchmark.jl
+bench: ## Run benchmark, use `make bench branch=...` to test against a specific branch
+	julia --startup-file=no --project=scripts/ scripts/bench.jl $(branch)
 
 .PHONY: docs
 

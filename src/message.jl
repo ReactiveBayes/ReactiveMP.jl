@@ -1,4 +1,4 @@
-export AbstractMessage, Message, DefferedMessage
+export AbstractMessage, Message, DeferredMessage
 export getdata, is_clamped, is_initial, as_message
 
 using Distributions
@@ -136,11 +136,12 @@ function multiply_messages(prod_strategy, left::Message, right::Message)
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
 
-constrain_form_as_message(message::Message, form_constraint) =
-    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
+constrain_form_as_message(message::Message, form_constraint) = Message(
+    constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message)
+)
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
-# We want to cast it explicitly to a Message structure (which as_message does in case of DefferedMessage)
+# We want to cast it explicitly to a Message structure (which as_message does in case of DeferredMessage)
 # We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
     (messages) -> foldl((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
@@ -186,28 +187,31 @@ MacroHelpers.@proxy_methods Message getdata [
     Base.precision,
     Base.length,
     Base.ndims,
-    Base.size,
-    Base.eltype
+    Base.size
 ]
+
+# Eltype is special here, because it should be only defined on types
+# Otherwise it causes invalidations and slower compile times
+Base.eltype(::Type{<:Message{D}}) where {D} = Base.eltype(D)
 
 Distributions.mean(fn::Function, message::Message) = mean(fn, getdata(message))
 
-## Deffered Message
+## Deferred Message
 
 """
 A special type of a message, for which the actual message is not computed immediately, but is computed later on demand (potentially never).
 To compute and get the actual message, one needs to call the `as_message` method.
 """
-mutable struct DefferedMessage{R, S, F} <: AbstractMessage
+mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     const messages  :: R
     const marginals :: S
     const mappingFn :: F
     cache           :: Union{Nothing, Message}
 end
 
-DefferedMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DefferedMessage(messages, marginals, mappingFn, nothing)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(messages, marginals, mappingFn, nothing)
 
-function Base.show(io::IO, message::DefferedMessage)
+function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
     if isnothing(cache)
         print(io, "DeferredMessage([ use `as_message` to compute the message ])")
@@ -216,22 +220,22 @@ function Base.show(io::IO, message::DefferedMessage)
     end
 end
 
-getcache(message::DefferedMessage) = message.cache
-setcache!(message::DefferedMessage, cache::Message) = message.cache = cache
+getcache(message::DeferredMessage) = message.cache
+setcache!(message::DeferredMessage, cache::Message) = message.cache = cache
 
-function as_message(message::DefferedMessage)::Message
+function as_message(message::DeferredMessage)::Message
     return as_message(message, getcache(message))
 end
 
-function as_message(message::DefferedMessage, cache::Message)::Message
+function as_message(message::DeferredMessage, cache::Message)::Message
     return cache
 end
 
-function as_message(message::DefferedMessage, cache::Nothing)::Message
+function as_message(message::DeferredMessage, cache::Nothing)::Message
     return as_message(message, cache, getrecent(message.messages), getrecent(message.marginals))
 end
 
-function as_message(message::DefferedMessage, cache::Nothing, messages, marginals)::Message
+function as_message(message::DeferredMessage, cache::Nothing, messages, marginals)::Message
     computed = message.mappingFn(messages, marginals)
     setcache!(message, computed)
     return computed
@@ -279,7 +283,7 @@ end
 ## We create a lambda-like callable structure to improve type inference and make it more stable
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
 
-struct MessageMapping{F, T, C, N, M, A, X, R}
+struct MessageMapping{F, T, C, N, M, A, X, R, K}
     vtag            :: T
     vconstraint     :: C
     msgs_names      :: N
@@ -287,6 +291,7 @@ struct MessageMapping{F, T, C, N, M, A, X, R}
     meta            :: A
     addons          :: X
     factornode      :: R
+    rulefallback    :: K
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -315,12 +320,14 @@ end
 # Other addons may override this behaviour (if necessary, see e.g. AddonMemory)
 message_mapping_addon(addon, mapping, messages, marginals, result) = addon
 
-function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
+function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K) where {F, T, C, N, M, A, X, R, K}
+    return MessageMapping{F, T, C, N, M, A, X, R, K}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback)
 end
 
-function MessageMapping(::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R) where {F <: Function, T, C, N, M, A, X, R}
-    return MessageMapping{F, T, C, N, M, A, X, R}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode)
+function MessageMapping(
+    ::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K
+) where {F <: Function, T, C, N, M, A, X, R, K}
+    return MessageMapping{F, T, C, N, M, A, X, R, K}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback)
 end
 
 function (mapping::MessageMapping)(messages, marginals)
@@ -335,7 +342,7 @@ function (mapping::MessageMapping)(messages, marginals)
     elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
         missing, mapping.addons
     else
-        rule(
+        ruleargs = (
             message_mapping_fform(mapping),
             mapping.vtag,
             mapping.vconstraint,
@@ -347,6 +354,14 @@ function (mapping::MessageMapping)(messages, marginals)
             mapping.addons,
             mapping.factornode
         )
+        ruleoutput = rule(ruleargs...)
+        # if `@rule` is not defined, the default behaviour is to return 
+        # the `RuleMethodError` object
+        if ruleoutput isa RuleMethodError
+            !isnothing(mapping.rulefallback) ? mapping.rulefallback(ruleargs...) : throw(ruleoutput)
+        else
+            ruleoutput
+        end
     end
 
     # Inject extra addons after the rule has been executed

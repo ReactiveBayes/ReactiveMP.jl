@@ -39,10 +39,10 @@ is_unsafe(meta::ARMeta) = getstype(meta) === ARunsafe()
 
 default_meta(::Type{AR}) = error("Autoregressive node requires meta flag explicitly specified")
 
-@average_energy AR (q_y_x::MultivariateNormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
-    mθ, Vθ   = mean_cov(q_θ)
+@average_energy AR (q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
+    mθ, Vθ = mean_cov(q_θ)
     myx, Vyx = mean_cov(q_y_x)
-    mγ       = mean(q_γ)
+    mγ = mean(q_γ)
 
     order = getorder(meta)
 
@@ -66,11 +66,11 @@ default_meta(::Type{AR}) = error("Autoregressive node requires meta flag explici
     return AE
 end
 
-@average_energy AR (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_θ::NormalDistributionsFamily, q_γ::GammaShapeRate, meta::ARMeta) = begin
+@average_energy AR (q_y::NormalDistributionsFamily, q_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
     mθ, Vθ = mean_cov(q_θ)
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)
-    mγ     = mean(q_γ)
+    mγ = mean(q_γ)
 
     order = getorder(meta)
 
@@ -120,15 +120,12 @@ end
 ## Allocation-free AR Precision Matrix
 
 struct ARPrecisionMatrix{T} <: AbstractMatrix{T}
-    order :: Int
-    γ     :: T
+    order::Int
+    γ::T
 end
 
 Base.size(precision::ARPrecisionMatrix) = (precision.order, precision.order)
 Base.getindex(precision::ARPrecisionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? precision.γ : ((i === j) ? convert(eltype(precision), huge) : zero(eltype(precision)))
-
-Base.eltype(::Type{<:ARPrecisionMatrix{T}}) where {T} = T
-Base.eltype(::ARPrecisionMatrix{T}) where {T}         = T
 
 Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{R}) where {T, R} = ARPrecisionMatrix(matrix.order, convert(T, matrix.γ))
 Base.convert(::Type{AbstractArray{T}}, matrix::ARPrecisionMatrix{T}) where {T} = matrix
@@ -163,9 +160,6 @@ end
 
 Base.size(transition::ARTransitionMatrix) = (transition.order, transition.order)
 Base.getindex(transition::ARTransitionMatrix, i::Int, j::Int) = (i === 1 && j === 1) ? transition.inv_γ : zero(eltype(transition))
-
-Base.eltype(::Type{<:ARTransitionMatrix{T}}) where {T} = T
-Base.eltype(::ARTransitionMatrix{T}) where {T}         = T
 
 Base.convert(::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{R}) where {T, R} = ARTransitionMatrix{T}(matrix.order, convert(T, matrix.inv_γ))
 Base.convert(::Type{AbstractArray{T}}, matrix::ARTransitionMatrix{T}) where {T} = matrix

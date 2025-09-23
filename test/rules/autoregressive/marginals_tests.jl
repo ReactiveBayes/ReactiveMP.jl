@@ -15,6 +15,28 @@
             ),
             output = MvNormalWeightedMeanPrecision(zeros(2), [2.0 -1.0; -1.0 3.0])
         )]
+
+        @test_marginalrules [check_type_promotion = true] Autoregressive(:y_x) [(
+            input = (
+                m_y = NormalMeanPrecision(0.0, 1.0),
+                m_x = NormalMeanPrecision(0.0, 1.0),
+                q_θ = GammaShapeRate(1.0, 1.0),
+                q_γ = GammaShapeRate(1.0, 1.0),
+                meta = ARMeta(Univariate, 1, ARsafe())
+            ),
+            output = MvNormalWeightedMeanPrecision(zeros(2), [2.0 -1.0; -1.0 3.0])
+        )]
+
+        @test_marginalrules [check_type_promotion = true] Autoregressive(:y_x) [(
+            input = (
+                m_y = NormalMeanPrecision(0.0, 1.0),
+                m_x = NormalMeanPrecision(0.0, 1.0),
+                q_θ = GammaShapeRate(1.0, 1.0),
+                q_γ = NormalMeanPrecision(1.0, 1.0),
+                meta = ARMeta(Univariate, 1, ARsafe())
+            ),
+            output = MvNormalWeightedMeanPrecision(zeros(2), [2.0 -1.0; -1.0 3.0])
+        )]
         # Test for multivariate m_x and m_y are absent due to the numerical instabilities induced by jitters (see marginal rule for autoregressive node)
     end
 end

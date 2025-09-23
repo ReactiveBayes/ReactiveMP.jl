@@ -33,6 +33,9 @@ cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
 The `ProdCVI` structure defines the approximation method hyperparameters of the `prod(approximation::CVI, logp::F, dist)`.
 This method performs an approximation of the product of the `dist` and `logp` with Stochastic Variational message passing (SVMP-CVI) (See [`Probabilistic programming with stochastic variational message passing`](https://biaslab.github.io/publication/probabilistic_programming_with_stochastic_variational_message_passing/)).
 
+!!! note
+    `ProdCVI` is deprecated in favor of `CVIProjection`.
+
 Arguments
  - `rng`: random number generator
  - `n_samples`: number of samples to use for statistics approximation
@@ -73,6 +76,8 @@ end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
 const CVI = ProdCVI
+
+is_delta_node_compatible(::ProdCVI) = Val(true)
 
 #---------------------------
 # CVI implementations
@@ -197,11 +202,11 @@ function prod(approximation::CVI, outbound, inbound)
 
     # Initial parameters of projected distribution
     current_ef = convert(ExponentialFamilyDistribution, inbound) # current EF distribution
-    current_λ  = getnaturalparameters(current_ef) # current natural parameters
+    current_λ = getnaturalparameters(current_ef) # current natural parameters
     scontainer = rand(rng, sampling_optimized(inbound), approximation.n_gradpoints) # sampling container
-    current_∇  = similar(current_λ) # current gradient
-    new_λ      = similar(current_λ) # new natural parameters
-    cache      = similar(current_λ) # just intermediate buffer
+    current_∇ = similar(current_λ) # current gradient
+    new_λ = similar(current_λ) # new natural parameters
+    cache = similar(current_λ) # just intermediate buffer
 
     # We avoid use of lambda functions, because they cannot capture `T`
     # which leads to performance issues 

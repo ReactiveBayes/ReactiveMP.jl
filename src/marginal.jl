@@ -133,9 +133,12 @@ MacroHelpers.@proxy_methods Marginal getdata [
     Base.precision,
     Base.length,
     Base.ndims,
-    Base.size,
-    Base.eltype
+    Base.size
 ]
+
+# Eltype is special here, because it should be only defined on types
+# Otherwise it causes invalidations and slower compile times
+Base.eltype(::Type{<:Marginal{D}}) where {D} = Base.eltype(D)
 
 Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal))
 

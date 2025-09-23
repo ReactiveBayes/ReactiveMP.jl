@@ -40,8 +40,9 @@ struct CompositePipelineStage{T} <: AbstractPipelineStage
     stages::T
 end
 
-apply_pipeline_stage(composite::CompositePipelineStage, factornode, tag, stream) =
-    reduce((stream, stage) -> apply_pipeline_stage(stage, factornode, tag, stream), composite.stages; init = stream)
+apply_pipeline_stage(composite::CompositePipelineStage, factornode, tag, stream) = reduce(
+    (stream, stage) -> apply_pipeline_stage(stage, factornode, tag, stream), composite.stages; init = stream
+)
 
 Base.:+(stage::AbstractPipelineStage) = stage
 

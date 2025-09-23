@@ -7,8 +7,8 @@
 ) = begin
 
     # fetch information of meta data
-    A       = getA(meta)
-    B       = getB(meta)
+    A        = getA(meta)
+    B        = getB(meta)
     μu      = getμu(meta)
     Σu      = getΣu(meta)
     ξztilde = getξztilde(meta)

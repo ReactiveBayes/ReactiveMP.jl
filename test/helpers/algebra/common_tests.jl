@@ -59,11 +59,7 @@
             A = rand(rng, T1, size, size)
             B = rand(rng, T2, size, size)
 
-            # See: https://github.com/JuliaSIMD/LoopVectorization.jl/issues/377
-            # Remove if statement once fixed
-            if T1 !== Float32 || T2 !== Float32
-                @test ReactiveMP.mul_trace(A, B) ≈ tr(A * B)
-            end
+            @test ReactiveMP.mul_trace(A, B) ≈ tr(A * B)
 
             a = rand(rng, T1)
             b = rand(rng, T2)

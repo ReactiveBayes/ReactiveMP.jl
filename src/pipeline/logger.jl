@@ -17,12 +17,14 @@ LoggerPipelineStage()               = LoggerPipelineStage(Core.stdout, "Log")
 LoggerPipelineStage(output::IO)     = LoggerPipelineStage(output, "Log")
 LoggerPipelineStage(prefix::String) = LoggerPipelineStage(Core.stdout, prefix)
 
-Base.println(stage::LoggerPipelineStage, something) = Base.println(stage, stage.output, append_prefix(stage, something))
+logger_pipeline_stage_println(logger::LoggerPipelineStage, something::Any) = logger_pipeline_stage_println(
+    logger, logger.output, logger_pipeline_stage_append_prefix(logger, something)
+)
 
-Base.println(stage::LoggerPipelineStage, output::Core.CoreSTDOUT, something) = Core.println(output, something)
-Base.println(stage::LoggerPipelineStage, output, something) = println(output, something)
+logger_pipeline_stage_println(logger::LoggerPipelineStage, output::Core.CoreSTDOUT, something) = Core.println(output, something)
+logger_pipeline_stage_println(logger::LoggerPipelineStage, output, something) = println(output, something)
 
-append_prefix(stage::LoggerPipelineStage, something) = string("[", stage.prefix, "]", something)
+logger_pipeline_stage_append_prefix(logger::LoggerPipelineStage, something) = string("[", logger.prefix, "]: ", something)
 
-apply_pipeline_stage(stage::LoggerPipelineStage, factornode, tag::Val{T}, stream) where {T}             = stream |> tap((v) -> println(stage, "[$(functionalform(factornode))][$(T)]: $v"))
-apply_pipeline_stage(stage::LoggerPipelineStage, factornode, tag::Tuple{Val{T}, Int}, stream) where {T} = stream |> tap((v) -> println(stage, "[$(functionalform(factornode))][$(T):$(tag[2])]: $v"))
+apply_pipeline_stage(logger::LoggerPipelineStage, factornode, tag::Val{T}, stream) where {T}             = stream |> tap((v) -> logger_pipeline_stage_println(logger, string("[", functionalform(factornode), "][", T, "]: ", v)))
+apply_pipeline_stage(logger::LoggerPipelineStage, factornode, tag::Tuple{Val{T}, Int}, stream) where {T} = stream |> tap((v) -> logger_pipeline_stage_println(logger, string("[", functionalform(factornode), "][", T, ":", tag[2], "]: ", v)))

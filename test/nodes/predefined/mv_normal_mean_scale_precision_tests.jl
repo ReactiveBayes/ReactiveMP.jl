@@ -5,8 +5,8 @@
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass([1.0, 1.0])
-            q_μ   = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0])
-            q_γ   = GammaShapeRate(1.0, 1.0)
+            q_μ = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0])
+            q_γ = GammaShapeRate(1.0, 1.0)
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), g in (Gamma,)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(g, q_γ), false, false, nothing))
@@ -16,8 +16,8 @@
 
         begin
             q_out = MvNormalMeanPrecision([0.8625589157256603, 0.6694783342639599], [1.0014322413749484 0.7989099036521625; 0.7989099036521625 1.0976639268696966])
-            q_μ   = MvNormalMeanPrecision([0.9334416739853251, 0.38318522701093105], [0.21867945696266933 0.5704895781120056; 0.5704895781120056 1.5321190185800933])
-            q_γ   = Gamma(2.0, 1.0)
+            q_μ = MvNormalMeanPrecision([0.9334416739853251, 0.38318522701093105], [0.21867945696266933 0.5704895781120056; 0.5704895781120056 1.5321190185800933])
+            q_γ = Gamma(2.0, 1.0)
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),

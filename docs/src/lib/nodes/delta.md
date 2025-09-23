@@ -15,8 +15,15 @@ ReactiveMP.UT
 ReactiveMP.UnscentedTransform
 ReactiveMP.ProdCVI
 ReactiveMP.CVI
+ReactiveMP.CVIProjection
+ReactiveMP.CVISamplingStrategy
+ReactiveMP.FullSampling
+ReactiveMP.MeanBased
+ReactiveMP.ProposalDistributionContainer
 ReactiveMP.cvi_setup!
 ReactiveMP.cvi_update!
 ReactiveMP.DeltaFnDefaultRuleLayout
 ReactiveMP.DeltaFnDefaultKnownInverseRuleLayout
+ReactiveMP.SoftDot
+ReactiveMP.softdot
 ```

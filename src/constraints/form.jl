@@ -63,9 +63,9 @@ Returns a default prod constraint needed to apply a given `form_constraint`. For
 function default_prod_constraint end
 
 """
-    constrain_form(form_constraint, distribution)
+    constrain_form(constraint, something)
 
-This function must approximate `distribution` object in a form that satisfies `form_constraint`.
+This function applies a given form constraint to a given object. 
 """
 function constrain_form end
 
@@ -82,8 +82,52 @@ default_form_check_strategy(::UnspecifiedFormConstraint) = FormConstraintCheckLa
 default_prod_constraint(::UnspecifiedFormConstraint) = GenericProd()
 
 constrain_form(::UnspecifiedFormConstraint, something) = something
-constrain_form(::UnspecifiedFormConstraint, something::Union{ProductOf, LinearizedProductOf}) =
-    error("`ProductOf` object cannot be used as a functional form in inference backend. Use form constraints to restrict the functional form of marginal posteriors.")
+
+"""
+    WrappedFormConstraint(constraint, context)
+
+This is a wrapper for a form constraint object. It allows to pass additional context to the `constrain_form` function.
+By default all objects that are not sub-typed from `AbstractFormConstraint` are wrapped into this object. 
+Use `ReactiveMP.prepare_context` to provide an extra context for a given form constraint, that can be reused between multiple `constrain_form` calls.
+"""
+struct WrappedFormConstraint{C, X} <: AbstractFormConstraint
+    constraint::C
+    context::X
+end
+
+struct WrappedFormConstraintNoContext end
+
+"""
+    prepare_context(constraint)
+
+This function prepares a context for a given form constraint. Returns `WrappedFormConstraintNoContext` if no context is needed (the default behaviour).
+"""
+prepare_context(constraint) = WrappedFormConstraintNoContext()
+
+"""
+    constrain_form(wrapped::WrappedFormConstraint, something)
+
+This function unwraps the `wrapped` object and calls `constrain_form` function with the provided context.
+If the context is not provided, simply calls `constrain_form` with the wrapped constraint. Otherwise passes the context to the `constrain_form` function as the second argument.
+"""
+constrain_form(wrapped::WrappedFormConstraint, something) = constrain_form(wrapped, wrapped.context, something)
+constrain_form(wrapped::WrappedFormConstraint, ::WrappedFormConstraintNoContext, something) = constrain_form(wrapped.constraint, something)
+constrain_form(wrapped::WrappedFormConstraint, context, something) = constrain_form(wrapped.constraint, context, something)
+
+default_form_check_strategy(wrapped::WrappedFormConstraint) = default_form_check_strategy(wrapped.constraint)
+default_prod_constraint(wrapped::WrappedFormConstraint) = default_prod_constraint(wrapped.constraint)
+
+"""
+    preprocess_form_constraints(constraints)
+
+This function preprocesses form constraints and converts the provided objects into a form compatible with ReactiveMP inference backend (if possible). 
+If a tuple of constraints is passed, it creates a `CompositeFormConstraint` object. Wraps unknown form constraints into a `WrappedFormConstraint` object.
+"""
+function preprocess_form_constraints end
+
+preprocess_form_constraints(constraints::Tuple) = CompositeFormConstraint(map(preprocess_form_constraints, constraints))
+preprocess_form_constraints(constraint::AbstractFormConstraint) = constraint
+preprocess_form_constraints(constraint) = WrappedFormConstraint(constraint, prepare_context(constraint))
 
 """
     CompositeFormConstraint

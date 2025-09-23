@@ -5,8 +5,8 @@
     @testset "AverageEnergy" begin
         begin
             q_out = PointMass([1.0, 1.0])
-            q_μ   = MvNormalMeanCovariance([1.0, 1.0], [1.0 0.0; 0.0 1.0])
-            q_Σ   = PointMass([2.0 0.0; 0.0 2.0])
+            q_μ = MvNormalMeanCovariance([1.0, 1.0], [1.0 0.0; 0.0 1.0])
+            q_Σ = PointMass([2.0 0.0; 0.0 2.0])
 
             for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
                 marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(q_Σ, false, false, nothing))
@@ -16,8 +16,8 @@
 
         begin
             q_out = MvNormalMeanCovariance([0.34777017741128646, 0.478300212208703], [0.36248838736696753 0.42718825177834396; 0.42718825177834396 0.6613345138178703])
-            q_μ   = MvNormalMeanCovariance([0.28114649146383175, 0.7773140083754762], [0.5753219837395999 0.57742814389364; 0.57742814389364 0.7164979237943061])
-            q_Σ   = PointMass([0.9575163948991356 0.952247049670764; 0.952247049670764 1.001998675194526])
+            q_μ = MvNormalMeanCovariance([0.28114649146383175, 0.7773140083754762], [0.5753219837395999 0.57742814389364; 0.57742814389364 0.7164979237943061])
+            q_Σ = PointMass([0.9575163948991356 0.952247049670764; 0.952247049670764 1.001998675194526])
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
@@ -29,8 +29,8 @@
 
         begin
             q_out = MvNormalMeanCovariance([0.3685447210709054, 0.7059290804186025], [0.47091887707487257 0.1715872501382935; 0.1715872501382935 0.07937045688177925])
-            q_μ   = MvNormalMeanCovariance([0.9821121935372943, 0.8740184196009864], [1.2740987247403437 0.376849163380472; 0.376849163380472 0.17831073369063927])
-            q_Σ   = PointMass([0.761731832494188 0.21222845781825198; 0.21222845781825198 0.5989429144303828])
+            q_μ = MvNormalMeanCovariance([0.9821121935372943, 0.8740184196009864], [1.2740987247403437 0.376849163380472; 0.376849163380472 0.17831073369063927])
+            q_Σ = PointMass([0.761731832494188 0.21222845781825198; 0.21222845781825198 0.5989429144303828])
 
             for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
                 N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)

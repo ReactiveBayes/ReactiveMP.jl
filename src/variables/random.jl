@@ -46,54 +46,27 @@ end
 
 RandomVariableActivationOptions() = RandomVariableActivationOptions(AsapScheduler(), DefaultMessageProdFn, DefaultMarginalProdFn)
 
-# options here must implement at least `Rocket.getscheduler`
 function activate!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
+    d = length(randomvar.input_messages)
+    outputmsgs = randomvar.output_messages
+    resize!(outputmsgs, d)
 
-    # `5` here is empirical observation, maybe we can come up with better heuristic?
-    # in case if number of connections is large we use cache equality nodes chain structure 
-    if length(randomvar.input_messages) > 5
-        initialize_output_messages!(randomvar, options, EqualityChain(randomvar.input_messages, schedule_on(options.scheduler), options.message_prod_fn))
+    @inbounds for i in 1:d
+        outputmsgs[i] = MessageObservable(Message)
+    end
+
+    if length(randomvar.input_messages) > 1
+        chain = EqualityChain(randomvar.input_messages, schedule_on(options.scheduler), options.message_prod_fn)
+        initialize!(chain, outputmsgs)
+    elseif length(randomvar.input_messages) == 1
+        # If the number of input message is equal to `1`,
+        # than the output message is not producing any value
+        connect!(outputmsgs[1], never(Message))
     else
-        initialize_output_messages!(randomvar, options)
+        throw(ArgumentError("Cannot activate a random variable with zero or less than one inbound messages."))
     end
 
     _setmarginal!(randomvar, _makemarginal(randomvar, options))
-
-    return nothing
-end
-
-# Generic fallback for variables with small number of connected nodes, somewhere <= 5
-# We do not create equality chain in this cases, but simply do eager product
-function initialize_output_messages!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
-    d = length(randomvar.input_messages)
-    outputmsgs = randomvar.output_messages
-    inputmsgs = randomvar.input_messages
-    prod_fn = options.message_prod_fn
-
-    resize!(outputmsgs, d)
-
-    @inbounds for i in 1:d
-        outputmsgs[i] = MessageObservable(Message)
-        outputmsg = collectLatest(AbstractMessage, Message, skipindex(inputmsgs, i), prod_fn, reset_vstatus)
-        connect!(outputmsgs[i], outputmsg)
-    end
-
-    return nothing
-end
-
-# Equality chain initialisation for variables with large number of connected nodes, somewhere > 5
-# In this cases it is more efficient to create an equality chain structure, but it does allocate way more memory
-function initialize_output_messages!(randomvar::RandomVariable, options::RandomVariableActivationOptions, chain::EqualityChain)
-    d = length(randomvar.input_messages)
-    outputmsgs = randomvar.output_messages
-
-    resize!(outputmsgs, d)
-
-    @inbounds for i in 1:d
-        outputmsgs[i] = MessageObservable(Message)
-    end
-
-    initialize!(chain, outputmsgs)
 
     return nothing
 end
