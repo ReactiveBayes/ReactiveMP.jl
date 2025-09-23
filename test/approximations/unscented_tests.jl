@@ -77,11 +77,6 @@
     end
 
     @testset "Univariate approximate unscented" begin
-        res1 = approximate(Unscented(), (x) -> x .- [1, 1], ([1.0],), ([1.0;;],))
-        @show res1
-        @test all(res1 .≈ ([0.0, 0.0], [1.0 1.0; 1.0 1.0]))
-        res1 = approximate(Unscented(), (x) -> x .- [1, 1], (1.0,), (1.0,))
-        @show res1
-        @test all(res1 .≈ ([0.0, 0.0], [1.0 1.0; 1.0 1.0]))
+        @test all(approximate(Unscented(), (x) -> x .- [1, 1], (1.0,), (1.0,)) .≈ ([0.0, 0.0], [1.0 1.0; 1.0 1.0]))
     end
 end
