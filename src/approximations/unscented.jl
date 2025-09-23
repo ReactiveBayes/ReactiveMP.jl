@@ -95,7 +95,7 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple
     return unscented_statistics(method, Val(true), g, means, covs)
 end
 
-function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points, m::Real, weights_m, weights_c) where {C, N, T <: Real}
+function statistic_estimation(::Val{C}, g_sigma::NTuple{N, T}, sigma_points, m::Real, weights_m, weights_c) where {C, N, T <: Real}
     m_tilde = sum(weights_m .* g_sigma)
     V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
 
@@ -104,7 +104,7 @@ function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points
     return (m_tilde, V_tilde, C_tilde)
 end
 
-function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, V}, sigma_points, m::Real, weights_m, weights_c) where {C, N, V <: AbstractVector}
+function statistic_estimation(::Val{C}, g_sigma::NTuple{N, V}, sigma_points, m::Real, weights_m, weights_c) where {C, N, V <: AbstractVector}
     d_out = length(first(g_sigma))
 
     @inbounds m_tilde = sum(wm * yi for (wm, yi) in zip(weights_m, g_sigma))
@@ -126,7 +126,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Re
     g_sigma = g.(sigma_points)
 
     # Compute output statistics depending on the output variate type
-    return sigma_points_distribution(Val(C), g_sigma, sigma_points, m, weights_m, weights_c)
+    return statistic_estimation(Val(C), g_sigma, sigma_points, m, weights_m, weights_c)
 end
 
 # Single multivariate inbound

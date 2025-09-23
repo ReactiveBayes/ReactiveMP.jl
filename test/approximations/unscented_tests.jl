@@ -76,7 +76,7 @@
         )
     end
 
-    @testset "Univariate approximate unscented" begin
+    @testset "Univariate approximate `unscented_statistics` dispatch `statistic_estimation`" begin
         @test all(approximate(Unscented(), (x) -> x .- [1, 1], (1.0,), (1.0,)) .≈ ([0.0, 0.0], [1.0 1.0; 1.0 1.0]))
         @test all(approximate(Unscented(), (x) -> [x^2, x], (1.0,), (1.0,)) .≈ ([2.0, 1.0], [6.0 2.0; 2.0 1.0]))
     end
