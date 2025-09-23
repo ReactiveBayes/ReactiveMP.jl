@@ -5,10 +5,10 @@ const default_beta = 2.0
 const default_kappa = 0.0
 
 struct UnscentedExtra{T, R, M, C}
-    L  :: T
-    λ  :: R
-    Wm :: M
-    Wc :: C
+    L::T
+    λ::R
+    Wm::M
+    Wc::C
 end
 
 """
@@ -70,13 +70,13 @@ getκ(approximation::Unscented) = approximation.κ
 
 getextra(approximation::Unscented) = approximation.e
 
-getL(approximation::Unscented)  = getL(getextra(approximation))
-getλ(approximation::Unscented)  = getλ(getextra(approximation))
+getL(approximation::Unscented) = getL(getextra(approximation))
+getλ(approximation::Unscented) = getλ(getextra(approximation))
 getWm(approximation::Unscented) = getWm(getextra(approximation))
 getWc(approximation::Unscented) = getWc(getextra(approximation))
 
-getL(extra::UnscentedExtra)  = extra.L
-getλ(extra::UnscentedExtra)  = extra.λ
+getL(extra::UnscentedExtra) = extra.L
+getλ(extra::UnscentedExtra) = extra.λ
 getWm(extra::UnscentedExtra) = extra.Wm
 getWc(extra::UnscentedExtra) = extra.Wc
 
@@ -93,7 +93,7 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple
     return unscented_statistics(method, Val(true), g, means, covs)
 end
 
-function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points, m::Real, weights_m, weights_c) where {C, N, T<:Real}
+function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points, m::Real, weights_m, weights_c) where {C, N, T <: Real}
     m_tilde = sum(weights_m .* g_sigma)
     V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
 
@@ -102,41 +102,17 @@ function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, T}, sigma_points
     return (m_tilde, V_tilde, C_tilde)
 end
 
-function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, V}, sigma_points, m::Real, weights_m, weights_c) where {C, N, V<:AbstractVector}
+function sigma_points_distribution(::Val{C}, g_sigma::NTuple{N, V}, sigma_points, m::Real, weights_m, weights_c) where {C, N, V <: AbstractVector}
     d_out = length(first(g_sigma))
-    T = eltype(first(g_sigma))
 
-    m_tilde = zeros(T, d_out)
-    for (wm, yi) in zip(weights_m, g_sigma)
-        @inbounds for j in 1:d_out
-            m_tilde[j] += wm * yi[j]
-        end
-    end
+    @inbounds m_tilde = sum(wm * yi for (wm, yi) in zip(weights_m, g_sigma))
+    @inbounds V_tilde = sum(wc * (yi - m_tilde) * (yi - m_tilde)' for (wc, yi) in zip(weights_c, g_sigma))
 
-    V_tilde = zeros(T, d_out, d_out)
-    for (wc, yi) in zip(weights_c, g_sigma)
-        @inbounds for i in 1:d_out
-            di = yi[i] - m_tilde[i]
-            for j in 1:d_out
-                dj = yi[j] - m_tilde[j]
-                V_tilde[i, j] += wc * di * dj
-            end
-        end
-    end
-
-    C_tilde = nothing
-    if C
-        CT = zeros(promote_type(T, typeof(m)), 1, d_out)
-        for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
-            @inbounds for j in 1:d_out
-                CT[1, j] += wc * (xi - m) * (yi[j] - m_tilde[j])
-            end
-        end
-        C_tilde = CT
-    end
+    # Compute `C_tilde` only if `C === true`
+    @inbounds C_tilde = C ? reshape(sum(wc * (xi - m) * (yi - m_tilde) for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)), 1, d_out) : nothing
 
     return (m_tilde, V_tilde, C_tilde)
-end 
+end
 
 # Single univariate variable
 function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {C, G}
@@ -160,14 +136,11 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Ab
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     d = length(m)
-
     g_sigma = g.(sigma_points)
     @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d))
     @inbounds V_tilde = sum(weights_c[k + 1] * (g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d))
-
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = C ? sum(weights_c[k + 1] * (sigma_points[k + 1] - m) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) : nothing
-
     return (m_tilde, V_tilde, C_tilde)
 end
 
