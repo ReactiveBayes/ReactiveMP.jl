@@ -47,7 +47,7 @@ ReactiveMPRequiresExt = "Requires"
 
 [compat]
 BayesBase = "1.5"
-DataStructures = "0.17, 0.18"
+DataStructures = "0.17, 0.18, 0.19"
 DiffResults = "1.1.0"
 Distributions = "0.24, 0.25"
 DomainIntegrals = "0.3.2, 0.4, 0.5"
