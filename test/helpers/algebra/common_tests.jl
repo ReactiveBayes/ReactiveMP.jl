@@ -89,3 +89,25 @@
         end
     end
 end
+
+@testitem "isonehot" begin
+    import ReactiveMP: isonehot
+
+    for T in [Float64, Float32, Float16, BigFloat]
+        @test isonehot(T.([0.0, 1.0])) == true
+        @test isonehot(T.([0.0, 1.0, 0.0])) == true
+        @test isonehot(T.([1.0, 0.0, 0.0])) == true
+        @test isonehot(T.([0.0, 0.0, 1.0])) == true
+
+        @test isonehot(T.([0.0, 0.0, 0.0])) == false
+        @test isonehot(T.([1.0, 1.0, 1.0])) == false
+
+        @test isonehot(T.([0.0, 0.1, 1.0])) == false
+        @test isonehot(T.([0.1, 0.1, 0.8])) == false
+
+        if T !== BigFloat
+            v = T.([0.0, 1.0])
+            @test @allocated(isonehot(v)) == 0
+        end
+    end
+end
