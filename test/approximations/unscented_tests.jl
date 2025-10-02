@@ -80,4 +80,21 @@
         @test all(approximate(Unscented(), (x) -> x .- [1, 1], (1.0,), (1.0,)) .≈ ([0.0, 0.0], [1.0 1.0; 1.0 1.0]))
         @test all(approximate(Unscented(), (x) -> [x^2, x], (1.0,), (1.0,)) .≈ ([2.0, 1.0], [6.0 2.0; 2.0 1.0]))
     end
+
+end
+
+@testitem "Unscented approximation method" begin
+    using ReactiveMP
+
+    import ReactiveMP: Unscented, unscented_statistics, approximate
+
+
+    @testset "Unscented approximate input edge cases" begin
+        @test_throws DomainError approximate(Unscented(), (x) -> x + 1.0 , (1.0,), (Inf,))
+        @test all(approximate(Unscented(), (x) -> x + 1.0, (1.0,), (0.0,) .≈ (2.0, 0.0)))
+        @test all(approximate(Unscented(), (x) -> [x^2, x], (2.0,), (0.0,)) .≈ ([4.0, 2.0], [0.0 0.0; 0.0 0.0]))
+        @test all(approximate(Unscented(), (x) -> x + 1.0, (NaN,), (1.0,) .≈ (NaN, NaN)))
+        @test all(approximate(Unscented(), (x) -> [x^2, x], (NaN,), (1.0,)) .≈ ([NaN, NaN], [NaN NaN; NaN NaN]))
+        @test all(approximate(Unscented(), (x) -> x + 1.0, (1.0,), (NaN,) .≈ (NaN, NaN)))
+    end
 end
