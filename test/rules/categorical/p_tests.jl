@@ -4,15 +4,11 @@
     import ReactiveMP: @test_rules
 
     @testset "Variational Message Passing: (q_out::PointMass)" begin
-        @test_rules [check_type_promotion = true] Categorical(:p, Marginalisation) [
-            (input = (q_out = PointMass([0.0, 1.0]),), output = Dirichlet([1.0, 2.0])),
-        ]
+        @test_rules [check_type_promotion = true] Categorical(:p, Marginalisation) [(input = (q_out = PointMass([0.0, 1.0]),), output = Dirichlet([1.0, 2.0])),]
     end
 
     @testset "Variational Message Passing: (q_out::Categorical)" begin
-        @test_rules [check_type_promotion = false] Categorical(:p, Marginalisation) [
-            (input = (q_out = Categorical([0.0, 1.0]),), output = Dirichlet([1.0, 2.0])),
-        ]
+        @test_rules [check_type_promotion = false] Categorical(:p, Marginalisation) [(input = (q_out = Categorical([0.0, 1.0]),), output = Dirichlet([1.0, 2.0])),]
     end
 
     # Test if the input q_out for the outgoing message towards p edge is not a scalar
