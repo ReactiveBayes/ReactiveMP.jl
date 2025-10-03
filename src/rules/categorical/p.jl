@@ -1,12 +1,24 @@
-export rule
 
 using SpecialFunctions: logfactorial
 
-@rule Categorical(:p, Marginalisation) (q_out::Any,) = begin
-    return Dirichlet(probvec(q_out) .+ one(eltype(probvec(q_out))))
+# https://github.com/JuliaStats/Distributions.jl/blob/master/src/univariate/discrete/categorical.jl#L27
+@rule Categorical(:p, Marginalisation) (q_out::Categorical,) = begin
+    probs = probvec(q_out)
+    if !isonehot(probs)
+        throw(ArgumentError("q_out must be one-hot encoded. Got: $probs"))
+    end
+    @logscale -logfactorial(length(probs))
+    return Dirichlet(probs .+ one(eltype(probs)))
 end
 
-@rule Categorical(:p, Marginalisation) (q_out::PointMass,) = begin
-    @logscale -logfactorial(length(probvec(q_out)))
-    return Dirichlet(probvec(q_out) .+ one(eltype(probvec(q_out))))
+# https://github.com/ReactiveBayes/BayesBase.jl/blob/main/src/densities/pointmass.jl
+@rule Categorical(:p, Marginalisation) (q_out::PointMass{V},) where {T <: Real, V <: AbstractVector{T}} = begin
+    probs = probvec(q_out)
+    if !isonehot(probs)
+        throw(ArgumentError("q_out must be one-hot encoded. Got: $probs"))
+    end
+    @logscale -logfactorial(length(probs))
+    return Dirichlet(probs .+ one(eltype(probs)))
 end
+
+@rule Categorical(:p, Marginalisation) (q_out::Any,) = throw(ArgumentError("q_out is only defined for PointMass or Categorical over a one-hot vector. Got: $(typeof(q_out))"))

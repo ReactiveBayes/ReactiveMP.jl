@@ -16,4 +16,5 @@ ReactiveMP.rank1update
 ReactiveMP.v_a_vT
 ReactiveMP.powerset
 ReactiveMP.besselmod
+ReactiveMP.isonehot
 ```
