@@ -82,14 +82,11 @@
     end
 
     @testset "Unscented approximate input edge cases" begin
-        @test_throws DomainError approximate(Unscented(), (x) -> x + 1.0 , (1.0,), (Inf,))
+        @test_throws DomainError approximate(Unscented(), (x) -> x + 1.0, (1.0,), (Inf,))
         @test all(approximate(Unscented(), (x) -> x + 1.0, (1.0,), (0.0,) .≈ (2.0, 0.0)))
         @test all(approximate(Unscented(), (x) -> [x^2, x], (2.0,), (0.0,)) .≈ ([4.0, 2.0], [0.0 0.0; 0.0 0.0]))
         @test all(approximate(Unscented(), (x) -> x + 1.0, (NaN,), (1.0,) .≈ (NaN, NaN)))
         @test all(approximate(Unscented(), (x) -> [x^2, x], (NaN,), (1.0,)) .≈ ([NaN, NaN], [NaN NaN; NaN NaN]))
         @test all(approximate(Unscented(), (x) -> x + 1.0, (1.0,), (NaN,) .≈ (NaN, NaN)))
     end
-
 end
-
-
