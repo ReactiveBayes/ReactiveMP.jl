@@ -129,7 +129,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Re
     end
 
     if any(isinf, V)
-        throw(DomainError("infinite variance"))
+        throw(DomainError("unscented_statistics cannot be computed with infinite variance $covs"))
     end
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
@@ -146,7 +146,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Ab
     m = first(means)
     V = first(covs)
     if any(isinf, V)
-        throw(DomainError("infinite variance"))
+        throw(DomainError("unscented_statistics cannot be computed with infinite variance $covs"))
     end
 
     if all(vec -> all(x -> x == 0.0, vec), covs)
