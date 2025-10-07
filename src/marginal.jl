@@ -145,7 +145,8 @@ Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal
 """
     as_marginal(any)
 
-A function that converts `any` to an instance of `Marginal`.
+A function that converts an instance of `Message` to an instance of `Marginal`.
+For `Marginal` itself it returns the input unchanged.
 """
 function as_marginal end
 
