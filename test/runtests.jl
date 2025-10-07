@@ -18,10 +18,7 @@ else
         candidate = join(split(arg, ":"), "/")
 
         # Build possible test paths relative to the package test directory
-        paths = [
-            joinpath(test_root, candidate),
-            joinpath(test_root, candidate * ".jl")
-        ]
+        paths = [joinpath(test_root, candidate), joinpath(test_root, candidate * ".jl")]
 
         path = findfirst(ispath, paths)
 
@@ -34,4 +31,3 @@ else
         end
     end
 end
-
