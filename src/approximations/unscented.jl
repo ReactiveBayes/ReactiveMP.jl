@@ -123,7 +123,7 @@ function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Re
     m = first(means)
     V = first(covs)
     if V == 0.0
-        @warn "Unscented transform called with zero covariance input (function $g)"
+        @warn "Unscented transform called with zero covariance input (function $g)" maxlog=1
         resulting_m = g(m)
         return __unscented_parameters_zero_covariance(resulting_m)
     end
