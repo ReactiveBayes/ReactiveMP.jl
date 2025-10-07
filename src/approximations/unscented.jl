@@ -115,10 +115,22 @@ function statistic_estimation(::Val{C}, first_element::V, g_sigma, sigma_points,
     return (m_tilde, V_tilde, C_tilde)
 end
 
+__unscented_parameters_zero_covariance(m::T) where {T <: Real} = (m, zero(T), nothing)
+__unscented_parameters_zero_covariance(m::AbstractVector{T}) where {T <: Real} = (m, zeros(T, length(m), length(m)), nothing)
+
 # Single univariate variable
 function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {C, G}
     m = first(means)
     V = first(covs)
+    if V == 0.0
+        @warn "Unscented transform called with zero covariance input (function $g)"
+        resulting_m = g(m)
+        return __unscented_parameters_zero_covariance(resulting_m)
+    end
+
+    if any(isinf, V)
+        throw(DomainError("infinite variance"))
+    end
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
@@ -133,6 +145,15 @@ end
 function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{AbstractVector}, covs::Tuple{AbstractMatrix}) where {C, G}
     m = first(means)
     V = first(covs)
+    if any(isinf, V)
+        throw(DomainError("infinite variance"))
+    end
+
+    if all(vec -> all(x -> x == 0.0, vec), covs)
+        @warn "Unscented transform called with zero covariance input (function $g)"
+        resulting_m = g(m)
+        return __unscented_parameters_zero_covariance(resulting_m)
+    end
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
