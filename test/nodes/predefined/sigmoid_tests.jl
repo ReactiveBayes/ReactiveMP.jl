@@ -9,10 +9,10 @@
             @test score(
                 AverageEnergy(),
                 Sigmoid,
-                Val{(:out, :in, :ξ)}(),
+                Val{(:out, :in, :ζ)}(),
                 (Marginal(Categorical(0.5, 0.5), false, false, nothing), Marginal(q_in_adj, false, false, nothing), Marginal(PointMass(1.0), false, false, nothing)),
                 nothing
-            )≈ -0.8132616875182228
+            ) ≈ 0.8132616875182228
         end
     end
 end

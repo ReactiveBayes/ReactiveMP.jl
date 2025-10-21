@@ -198,3 +198,7 @@ include("multinomial_polya/x.jl")
 
 include("dirichlet_collection/out.jl")
 include("dirichlet_collection/marginals.jl")
+
+include("sigmoid/in.jl")
+include("sigmoid/out.jl")
+include("sigmoid/zeta.jl")
