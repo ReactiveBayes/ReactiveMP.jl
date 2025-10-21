@@ -99,11 +99,21 @@ end
         @test isonehot(T.([1.0, 0.0, 0.0])) == true
         @test isonehot(T.([0.0, 0.0, 1.0])) == true
 
+        # approx behaviour
+        @test isonehot(T.([[2.9999999999849994e-12, 2.9999999999849994e-12, 0.999999999994]])) == true
+        @test isonehot(T.([[2.9999999999849994e-12, 0.999999999994, 2.9999999999849994e-12]])) == true
+        @test isonehot(T.([[0.999999999994, 2.9999999999849994e-12, 2.9999999999849994e-12]])) == true
+
         @test isonehot(T.([0.0, 0.0, 0.0])) == false
         @test isonehot(T.([1.0, 1.0, 1.0])) == false
 
         @test isonehot(T.([0.0, 0.1, 1.0])) == false
         @test isonehot(T.([0.1, 0.1, 0.8])) == false
+
+        # approx behaviour
+        @test isonehot(T.([[0.003, 0.003, 0.994]])) == false
+        @test isonehot(T.([[0.003, 0.994, 0.003]])) == false
+        @test isonehot(T.([[0.994, 0.003, 0.003]])) == false
 
         if T !== BigFloat
             v = T.([0.0, 1.0])
