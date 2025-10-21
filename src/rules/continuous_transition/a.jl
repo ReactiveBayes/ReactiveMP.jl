@@ -23,7 +23,6 @@
     for i in 1:dy
         xi += Fs[i]' * Vxymxy * mW[:, i]
         for j in 1:dy
-
             mul!(Y, Vxmx, Fs[j])
             mul!(W, Fs[i]', Y, mW[j, i], 1)
 
