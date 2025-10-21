@@ -26,6 +26,6 @@
         @test_throws "q_out must be one-hot encoded" @call_rule Categorical(:p, Marginalisation) (q_out = PointMass([0.5, 0.5]),)
         @test_throws "q_out must be one-hot encoded" @call_rule Categorical(:p, Marginalisation) (q_out = PointMass([1.0, 1.0]),)
         # Arbitrary non-distribution
-        @test_throws "q_out is only defined for PointMass over a one-hot vector" @call_rule Categorical(:p, Marginalisation) (q_out = "Hello?",)
+        @test_throws "This rule is only defined for PointMass over a one-hot vector" @call_rule Categorical(:p, Marginalisation) (q_out = "Hello?",)
     end
 end

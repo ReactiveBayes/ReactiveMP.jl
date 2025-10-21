@@ -19,5 +19,5 @@ end
 end
 
 @rule Categorical(:p, Marginalisation) (q_out::Any,) = throw(
-    ArgumentError("q_out is only defined for PointMass over a one-hot vector or a Categorical distribution. Got: $(typeof(q_out))")
+    ArgumentError("This rule is only defined for PointMass over a one-hot vector or a Categorical distribution. Got: $(typeof(q_out))")
 )
