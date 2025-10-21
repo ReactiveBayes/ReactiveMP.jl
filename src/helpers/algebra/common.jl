@@ -138,15 +138,16 @@ Checks if the given vector `vec` is a one-hot vector, i.e., a vector with exactl
 
 Returns `true` if `vec` is one-hot, otherwise returns `false`.
 """
-function isonehot(vec::AbstractVector)
+function isonehot(vec::AbstractVector{T}) where {T}
     number_of_ones::Int = 0
+    atol = sqrt(eps(T))
     for e in vec
-        if isapprox(e, one(e))
+        if isapprox(e, one(e); atol = atol)
             if number_of_ones > 1
                 return false
             end
             number_of_ones += 1
-        elseif !isapprox(e, zero(e))
+        elseif !isapprox(e, zero(e); atol = atol)
             return false
         end
     end
