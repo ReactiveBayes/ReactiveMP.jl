@@ -21,4 +21,3 @@ end
     q_a = prod(ClosedProd(), m_A, m_outbound_A)
     return (A = q_a, in = m_in)
 end
-
