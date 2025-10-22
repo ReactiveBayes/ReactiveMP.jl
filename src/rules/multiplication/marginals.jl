@@ -11,7 +11,8 @@ end
 @marginalrule typeof(*)(:A_in) (
     m_out::UnivariateNormalDistributionsFamily, m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}
 ) = begin
-    return @call_marginalrule typeof(*)(:A_in) (m_out = m_out, m_A = m_in, m_in = m_A, meta = meta)
+    flipped_result = @call_marginalrule typeof(*)(:A_in) (m_out = m_out, m_A = m_in, m_in = m_A, meta = meta)
+    return (A = flipped_result[:in], in = flipped_result[:A])
 end
 
 # Specific version for univariate and pointmass input
