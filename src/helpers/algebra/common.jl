@@ -99,7 +99,7 @@ function mul_trace(A::AbstractMatrix, B::AbstractMatrix)
     n = first(sA)
     for i in 1:n
         for j in 1:n
-            result += A[i, j] * B[j, i]
+            @inbounds result += A[i, j] * B[j, i]
         end
     end
     return result
