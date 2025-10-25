@@ -107,8 +107,28 @@ typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
 
 paramfloattype(many::ManyOf) = paramfloattype(many.collection)
 
-rule_method_error_type_nameof(::Type{T}) where {N, R, V <: NTuple{N, <:R}, T <: ManyOf{V}}           = string("ManyOf{", N, ", ", rule_method_error_type_nameof(dropproxytype(R)), "}")
-rule_method_error_type_nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V}} = string("ManyOf{", N, ", Union{", join(map(r -> rule_method_error_type_nameof(dropproxytype(r)), fieldtypes(V)), ","), "}}")
+#rule_method_error_type_nameof(::Type{T}) where {N, R, V <: NTuple{N, <:R}, T <: ManyOf{V}}           = string("ManyOf{", N, ", ", rule_method_error_type_nameof(dropproxytype(R)), "}")
+#rule_method_error_type_nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V}} = string("ManyOf{", N, ", Union{", join(map(r -> rule_method_error_type_nameof(dropproxytype(r)), fieldtypes(V)), ","), "}}")
+
+rule_method_error_type_nameof(::Type{T}) where {V, T <: ManyOf{V}} = begin
+    # V is the tuple type carried in ManyOf{V}
+    fts = fieldtypes(V)               # get the element type tuple, works for NTuple and Tuple
+    N = length(fts)                   # number of elements
+
+    if N == 0
+        return "ManyOf{0, }"
+    end
+
+    # If all element types are the same, produce the compact NTuple-style message:
+    if all(ft -> ft === fts[1], fts)
+        elt = dropproxytype(fts[1])
+        return string("ManyOf{", N, ", ", rule_method_error_type_nameof(elt), "}")
+    end
+
+    # Otherwise produce the Union of element type names:
+    unions = join(map(r -> rule_method_error_type_nameof(dropproxytype(r)), fts), ",")
+    return string("ManyOf{", N, ", Union{", unions, "}}")
+end
 
 Base.iterate(many::ManyOf)        = iterate(many.collection)
 Base.iterate(many::ManyOf, state) = iterate(many.collection, state)
