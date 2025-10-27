@@ -10,4 +10,3 @@
     # Check that it uses the expected `tiny` value
     @test meta.value == tiny
 end
-
