@@ -1,10 +1,10 @@
-@testitem "dot node: default_meta" begin
+@testitem "multiplication node: default_meta" begin
     using ReactiveMP
     using MatrixCorrectionTools
     import ReactiveMP: default_meta
 
-    # Check that `default_meta` for `dot` returns the correct type
-    meta = default_meta(dot)
+    # Check that `default_meta` for `multiplication` returns the correct type
+    meta = default_meta(*)
     @test meta isa MatrixCorrectionTools.ReplaceZeroDiagonalEntries
 
     # Check that it uses the expected `tiny` value
