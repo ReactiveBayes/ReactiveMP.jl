@@ -11,20 +11,22 @@ end
 @testitem "nodes:GammaMixtureNode" begin
     using ReactiveMP, BayesBase, ExponentialFamily, Test
 
-    import ReactiveMP: GammaMixtureNode, GammaMixtureNodeFactorisation, GammaMixtureNodeFunctionalDependencies, GammaShapeLikelihood, ManyOf, NodeInterface, IndexedNodeInterface, interfaceindex, collect_functional_dependencies, collect_latest_marginals
+    import ReactiveMP:
+        GammaMixtureNode,
+        GammaMixtureNodeFactorisation,
+        GammaMixtureNodeFunctionalDependencies,
+        GammaShapeLikelihood,
+        ManyOf,
+        NodeInterface,
+        IndexedNodeInterface,
+        interfaceindex,
+        collect_functional_dependencies,
+        collect_latest_marginals
     import SpecialFunctions: loggamma
-    interfaces = [
-        (:out, datavar()),
-        (:switch, randomvar()),
-        (:a, randomvar()),
-        (:a, randomvar()),
-        (:b, randomvar()),
-        (:b, randomvar())
-    ]
+    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
     factorizations = [[:out], [:switch], [:a1], [:a2], [:b1], [:b2]]
 
     @testset "Construction and interface structure" begin
-
         node = factornode(GammaMixture, interfaces, factorizations)
 
         @test node isa GammaMixtureNode{2}
@@ -80,9 +82,12 @@ end
     end
 
     @testset "Collect functional dependencies" begin
-        node = GammaMixtureNode(NodeInterface(interfaces[1]...), NodeInterface(interfaces[2]...),
-                                (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
-                                (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...))))
+        node = GammaMixtureNode(
+            NodeInterface(interfaces[1]...),
+            NodeInterface(interfaces[2]...),
+            (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
+            (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+        )
 
         @test collect_functional_dependencies(node, nothing) isa GammaMixtureNodeFunctionalDependencies
         @test collect_functional_dependencies(node, GammaMixtureNodeFunctionalDependencies()) isa GammaMixtureNodeFunctionalDependencies
@@ -91,9 +96,12 @@ end
 
     @testset "Collect latest marginals (arity check)" begin
         deps = GammaMixtureNodeFunctionalDependencies()
-        node = GammaMixtureNode(NodeInterface(interfaces[1]...), NodeInterface(interfaces[2]...),
-                                (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
-                                (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...))))
+        node = GammaMixtureNode(
+            NodeInterface(interfaces[1]...),
+            NodeInterface(interfaces[2]...),
+            (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
+            (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+        )
 
         # First overload: (out, as, bs)
         marg_names, marg_obs = collect_latest_marginals(deps, node, (node.out, node.as, node.bs))
