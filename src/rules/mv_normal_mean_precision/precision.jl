@@ -10,7 +10,7 @@
     invS = invS_raw + 1e-6 * diagm(ones(d))
     
     return WishartFast(df, invS)
-end 
+end
 
 @rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out_μ::Any,) = begin
     m_out_μ, v_out_μ = mean_cov(q_out_μ)
