@@ -125,5 +125,39 @@ end
         @test prod_d.γ == 5.0
     end
 
-    # TODO: AverageEnergy tests
 end
+
+# TODO: AverageEnergy tests
+@testitem "AverageEnergy" skip=true begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Random, Test
+
+    import ReactiveMP: ManyOf, GammaMixture
+    import ExponentialFamily: NormalMeanVariance, NormalMeanPrecision, GammaShapeRate
+
+    @testset "GammaMixture AverageEnergy" begin
+        q_out = GammaShapeRate(1.0, 1.0)
+        q_switch = Categorical([0.2, 0.8])
+        q_a = (GammaShapeRate(2.0, 3.0), GammaShapeRate(4.0, 5.0))
+        q_b = (GammaShapeRate(1.5, 2.5), GammaShapeRate(3.5, 4.5))
+
+        marginals = (
+            Marginal(q_out, false, false, nothing),
+            Marginal(q_switch, false, false, nothing),
+            ManyOf(map(q -> Marginal(q, false, false, nothing), q_a)),
+            ManyOf(map(q -> Marginal(q, false, false, nothing), q_b))
+        )
+
+        z = probvec(q_switch)
+        #[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[i], q_b[i])), nothing)
+        #[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
+        ref_val =
+            z[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(),
+                map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
+            z[2] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(),
+                map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[2], q_b[2])), nothing)
+
+        #function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N}, meta, skip_strategy, scheduler) where {T <: CountingReal, N}
+        @test score(AverageEnergy(), GammaMixture, Val{(:out, :switch, :a, :b)}(), marginals, nothing) ≈ ref_val
+    end
+end
+
