@@ -120,12 +120,9 @@ end
 
         z = probvec(q_switch)
         ref_val =
-            z[1] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(),
-                map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing) +
-            z[2] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(),
-                map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing)
+            z[1] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing) +
+            z[2] * score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing)
 
         @test score(AverageEnergy(), Mixture, Val{(:out, :switch, :inputs)}(), marginals, nothing) ≈ ref_val
     end
 end
-

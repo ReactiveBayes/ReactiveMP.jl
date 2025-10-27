@@ -124,7 +124,6 @@ end
         @test prod_d.p == 3.0
         @test prod_d.γ == 5.0
     end
-
 end
 
 # TODO: AverageEnergy tests
@@ -151,13 +150,10 @@ end
         #[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[i], q_b[i])), nothing)
         #[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
         ref_val =
-            z[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(),
-                map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
-            z[2] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(),
-                map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[2], q_b[2])), nothing)
+            z[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
+            z[2] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[2], q_b[2])), nothing)
 
         #function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N}, meta, skip_strategy, scheduler) where {T <: CountingReal, N}
         @test score(AverageEnergy(), GammaMixture, Val{(:out, :switch, :a, :b)}(), marginals, nothing) ≈ ref_val
     end
 end
-
