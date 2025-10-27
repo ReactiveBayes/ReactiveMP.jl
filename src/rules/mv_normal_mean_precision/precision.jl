@@ -1,15 +1,16 @@
-
 # Variational                       # 
 # --------------------------------- #
-@rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out::Any, q_μ::Any) = begin
+ @rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out::Any, q_μ::Any) = begin
     m_out, v_out   = mean_cov(q_out)
     m_mean, v_mean = mean_cov(q_μ)
+    d = ndims(q_μ)
 
-    df   = ndims(q_μ) + 2
-    invS = v_mean + v_out + (m_mean - m_out) * (m_mean - m_out)'
-
+    df   = d + 2
+    invS_raw = v_mean + v_out + (m_mean - m_out) * (m_mean - m_out)'
+    invS = invS_raw + 1e-6 * diagm(ones(d))
+    
     return WishartFast(df, invS)
-end
+end 
 
 @rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out_μ::Any,) = begin
     m_out_μ, v_out_μ = mean_cov(q_out_μ)
