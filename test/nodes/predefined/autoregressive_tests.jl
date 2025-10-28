@@ -56,7 +56,6 @@
 
     # TODO: multivariate case coverage
 
-
 end
 
 @testitem "AutoregressiveNode: is_univariate, is_safe, is_unsafe, default_meta, is_multivariate cases, ar_unit, ARPrecisionMatrix" begin
