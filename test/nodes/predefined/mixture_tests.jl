@@ -97,3 +97,64 @@
         @test length(marg) == 1
     end
 end
+
+@testitem "nodes:MixtureNode:Extended" begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Test
+    import ReactiveMP:
+        Mixture,
+        MixtureNode,
+        MixtureNodeFactorisation,
+        MixtureNodeFunctionalDependencies,
+        RequireMarginalFunctionalDependencies,
+        NodeInterface,
+        IndexedNodeInterface,
+        interfaceindex,
+        interfaceindices,
+        collect_factorisation,
+        collect_latest_marginals,
+        collect_latest_messages,
+        interfaces,
+        alias_interface,
+        is_predefined_node,
+        PredefinedNodeFunctionalForm
+
+    @testset "Type-level definitions" begin
+        @test ReactiveMP.as_node_symbol(Mixture{2}) === :Mixture
+        @test interfaces(Mixture{2}) == Val((:out, :switch, :inputs))
+        @test alias_interface(Mixture{2}, 1, :foo) === :foo
+        @test is_predefined_node(Mixture{2}) isa PredefinedNodeFunctionalForm
+        @test sdtype(Mixture{2}) === Stochastic()
+        @test collect_factorisation(Mixture{2}, nothing) isa MixtureNodeFactorisation
+    end
+
+    # Construct a simple MixtureNode for reuse
+    vinterfaces = [(:out, datavar()), (:switch, randomvar()), (:inputs, randomvar()), (:inputs, randomvar())]
+    factorizations = [[:out], [:switch], [:inputs1], [:inputs2]]
+    node = factornode(Mixture, vinterfaces, factorizations)
+
+    @testset "Interface indices" begin
+        # Single symbol
+        @test interfaceindices(node, :out) == (1,)
+        # Multiple symbols
+        res = interfaceindices(node, (:out, :switch))
+        @test res == (1, 2)
+    end
+
+    # TODO: collect_latest_messages
+
+    @testset "Collect latest marginals" begin
+        deps1 = MixtureNodeFunctionalDependencies()
+        deps2 = RequireMarginalFunctionalDependencies()
+
+        # Variant 1: no marginals
+        val1, obs1 = collect_latest_marginals(deps1, node, ())
+        @test val1 === nothing
+        @test obs1 !== nothing
+
+        # Variant 2: with switch marginal
+        switchiface = NodeInterface(:switch, randomvar())
+        val2, obs2 = collect_latest_marginals(deps2, node, (switchiface,))
+        @test val2 isa Val
+        @test obs2 !== nothing
+    end
+end
