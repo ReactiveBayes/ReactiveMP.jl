@@ -154,3 +154,143 @@ end
         @test score(AverageEnergy(), GammaMixture, Val{(:out, :switch, :a, :b)}(), marginals, nothing) ≈ ref_val
     end
 end
+
+@testitem "GammaMixture: type-level utilities" begin
+    using ReactiveMP, Test
+    import ReactiveMP: GammaMixture, GammaMixtureNodeFactorisation, as_node_symbol, interfaces, alias_interface, sdtype, collect_factorisation
+
+    @test as_node_symbol(GammaMixture{2}) === :GammaMixture
+    @test interfaces(GammaMixture{2}) === Val((:out, :switch, :a, :b))
+    @test alias_interface(GammaMixture, 1, :a) === :a
+    @test sdtype(GammaMixture{2}) == Stochastic()
+
+    # collect_factorisation should always return GammaMixtureNodeFactorisation
+    fact = collect_factorisation(GammaMixture{2}, :anything)
+    @test fact isa GammaMixtureNodeFactorisation
+end
+
+@testitem "GammaMixtureNode: interfaceindices and unknown interface" begin
+    using ReactiveMP, Test
+    import ReactiveMP: GammaMixtureNode, NodeInterface, IndexedNodeInterface, interfaceindex, interfaceindices, functionalform
+
+    # minimal fake interfaces
+    interfaces = [
+        (:out, datavar()),
+        (:switch, randomvar()),
+        (:a, randomvar()),
+        (:a, randomvar()),
+        (:b, randomvar()),
+        (:b, randomvar())
+    ]
+    node = GammaMixtureNode(
+        NodeInterface(interfaces[1]...),
+        NodeInterface(interfaces[2]...),
+        (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
+        (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+    )
+
+    # Single symbol version
+    @test interfaceindices(node, :out) == (1,)
+    @test interfaceindices(node, :switch) == (2,)
+
+    # Multiple symbols version
+    syms = (:out, :switch, :a, :b)
+    idxs = interfaceindices(node, syms)
+    @test idxs == map(s -> interfaceindex(node, s), syms)
+
+    # Unknown interface must throw and contain node functionalform in message
+    err = try
+        interfaceindex(node, :nonexistent)
+    catch e
+        e
+    end
+    @test occursin("Unknown interface", sprint(showerror, err))
+    @test occursin(string(functionalform(node)), sprint(showerror, err))
+end
+
+@testitem "GammaMixture: mismatch count error message" begin
+    using ReactiveMP, Test
+    import ReactiveMP: factornode, GammaMixture
+
+    # mismatched counts of a and b
+    err = try
+        factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1], [:b1], [:b2]])
+    catch e
+        e
+    end
+    @test occursin("must be at least", sprint(showerror, err))
+    err = try
+        factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:a, :a3), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1, :a2, :a3], [:b1], [:b2]])
+    catch e
+        e
+    end
+    @test occursin("must be the same", sprint(showerror, err))
+end
+
+# TODO figure out what those activationoptions are and the expected return should be
+@testitem "GammaMixtureNode: activate! minimal call" skip=true begin
+    using ReactiveMP, Test
+    import ReactiveMP: GammaMixtureNode, NodeInterface, IndexedNodeInterface, collect_functional_dependencies, GammaMixtureNodeFunctionalDependencies, activate!, functionalform
+    import ReactiveMP: FactorNodeActivationOptions
+
+    interfaces = [
+        (:out, datavar()),
+        (:switch, randomvar()),
+        (:a, randomvar()),
+        (:a, randomvar()),
+        (:b, randomvar()),
+        (:b, randomvar())
+    ]
+    node = GammaMixtureNode(
+        NodeInterface(interfaces[1]...),
+        NodeInterface(interfaces[2]...),
+        (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
+        (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+    )
+
+    opts = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
+    @test activate!(node, opts) !== nothing
+end
+
+@testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" begin
+    using ReactiveMP, Test
+    import ReactiveMP: GammaMixtureNodeFunctionalDependencies, GammaMixtureNode, NodeInterface, IndexedNodeInterface, collect_latest_messages
+
+    interfaces = [
+        (:out, datavar()),
+        (:switch, randomvar()),
+        (:a, randomvar()),
+        (:a, randomvar()),
+        (:b, randomvar()),
+        (:b, randomvar())
+    ]
+    node = GammaMixtureNode(
+        NodeInterface(interfaces[1]...),
+        NodeInterface(interfaces[2]...),
+        (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
+        (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+    )
+
+    deps = GammaMixtureNodeFunctionalDependencies()
+    val, obs = collect_latest_messages(deps, node, ())
+    @test val === nothing
+    @test obs !== nothing
+end
+
+@testitem "GammaShapeLikelihood: support and prod rule" begin
+    using ReactiveMP, BayesBase, Distributions, Test
+    import ReactiveMP: GammaShapeLikelihood
+
+    d = GammaShapeLikelihood(1.0, 2.0)
+
+    # support should be (0.0, Inf)
+    s = support(d)
+    @test s isa Distributions.RealInterval
+    @test s.lb == 0.0
+    @test s.ub == Inf
+
+    # default_prod_rule dispatch
+    rule = BayesBase.default_prod_rule(GammaShapeLikelihood, GammaShapeLikelihood)
+    @test rule == PreserveTypeProd(Distribution)
+end
+
