@@ -53,4 +53,73 @@
             @test cmatrix == (matrix + ftransition)
         end
     end
+
+    # TODO: multivariate case coverage
+
+
+end
+
+@testitem "AutoregressiveNode: is_univariate, is_safe, is_unsafe, default_meta, is_multivariate cases, ar_unit, ARPrecisionMatrix" begin
+    using ReactiveMP, Distributions, ExponentialFamily, LazyArrays, LinearAlgebra, Test
+    import ReactiveMP: ARMeta, ARsafe, ARunsafe, AR, ar_unit, ar_precision, ARPrecisionMatrix
+    @testset "ARMeta and ARPrecisionMatrix extensions" begin
+
+        # --- ARMeta property tests ---
+        meta_uni = ARMeta(Univariate, 1, ARsafe())
+        meta_multi = ARMeta(Multivariate, 3, ARunsafe())
+
+        @test ReactiveMP.is_univariate(meta_uni)
+        @test !ReactiveMP.is_multivariate(meta_uni)
+        @test ReactiveMP.is_safe(meta_uni)
+        @test !ReactiveMP.is_unsafe(meta_uni)
+
+        @test ReactiveMP.is_multivariate(meta_multi)
+        @test !ReactiveMP.is_univariate(meta_multi)
+        @test ReactiveMP.is_unsafe(meta_multi)
+        @test !ReactiveMP.is_safe(meta_multi)
+
+        # --- default_meta should throw ---
+        @test_throws ErrorException ReactiveMP.default_meta(AR)
+
+        # --- ar_unit coverage ---
+        @test ar_unit(Univariate, 1) == 1.0
+        @test ar_unit(Multivariate, 3)[1] ≈ 1.0
+        @test eltype(ar_unit(Float32, Univariate, 1)) === Float32
+        @test ar_unit(Float64, Multivariate, 2) isa ReactiveMP.StandardBasisVector
+
+        # --- ar_precision and ARPrecisionMatrix ---
+        γ = 2.5
+        order = 3
+        pm = ar_precision(Multivariate, order, γ)
+        @test pm isa ARPrecisionMatrix
+        @test size(pm) == (3, 3)
+        @test pm[1, 1] == γ
+        @test pm[2, 2] ≈ convert(Float64, huge)
+        @test pm[1, 2] == 0.0
+
+        # convert(::Type{AbstractArray{T}})
+        pm32 = convert(AbstractArray{Float32}, pm)
+        @test eltype(pm32.γ) == Float32
+
+        # add_precision & add_precision!
+        A = zeros(3, 3)
+        B = copy(A)
+        res = ReactiveMP.add_precision(A, pm)
+        @test res[1, 1] == γ
+        @test res[2, 2] ≈ huge
+
+        ReactiveMP.add_precision!(B, pm)
+        @test B[1, 1] == γ
+        @test B[3, 3] ≈ huge
+
+        # Real + Real overloads
+        @test ReactiveMP.add_precision!(1.0, 2.0) == 3.0
+        @test ReactiveMP.add_precision(1.0, 2.0) == 3.0
+
+        # Broadcast! directly
+        C = zeros(3, 3)
+        broadcast!(+, C, pm)
+        @test C[1, 1] == γ
+        @test all(diag(C)[2:end] .≈ huge)
+    end
 end
