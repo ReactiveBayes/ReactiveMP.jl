@@ -174,14 +174,7 @@ end
     import ReactiveMP: GammaMixtureNode, NodeInterface, IndexedNodeInterface, interfaceindex, interfaceindices, functionalform
 
     # minimal fake interfaces
-    interfaces = [
-        (:out, datavar()),
-        (:switch, randomvar()),
-        (:a, randomvar()),
-        (:a, randomvar()),
-        (:b, randomvar()),
-        (:b, randomvar())
-    ]
+    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
     node = GammaMixtureNode(
         NodeInterface(interfaces[1]...),
         NodeInterface(interfaces[2]...),
@@ -233,14 +226,7 @@ end
     import ReactiveMP: GammaMixtureNode, NodeInterface, IndexedNodeInterface, collect_functional_dependencies, GammaMixtureNodeFunctionalDependencies, activate!, functionalform
     import ReactiveMP: FactorNodeActivationOptions
 
-    interfaces = [
-        (:out, datavar()),
-        (:switch, randomvar()),
-        (:a, randomvar()),
-        (:a, randomvar()),
-        (:b, randomvar()),
-        (:b, randomvar())
-    ]
+    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
     node = GammaMixtureNode(
         NodeInterface(interfaces[1]...),
         NodeInterface(interfaces[2]...),
@@ -256,14 +242,7 @@ end
     using ReactiveMP, Test
     import ReactiveMP: GammaMixtureNodeFunctionalDependencies, GammaMixtureNode, NodeInterface, IndexedNodeInterface, collect_latest_messages
 
-    interfaces = [
-        (:out, datavar()),
-        (:switch, randomvar()),
-        (:a, randomvar()),
-        (:a, randomvar()),
-        (:b, randomvar()),
-        (:b, randomvar())
-    ]
+    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
     node = GammaMixtureNode(
         NodeInterface(interfaces[1]...),
         NodeInterface(interfaces[2]...),
@@ -293,4 +272,3 @@ end
     rule = BayesBase.default_prod_rule(GammaShapeLikelihood, GammaShapeLikelihood)
     @test rule == PreserveTypeProd(Distribution)
 end
-

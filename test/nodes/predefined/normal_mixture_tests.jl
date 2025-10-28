@@ -111,14 +111,7 @@ end
         collect_factorisation
 
     @testset "Construction and interface structure" begin
-        interfaces = [
-            (:out, datavar()),
-            (:switch, randomvar()),
-            (:m, randomvar()),
-            (:m, randomvar()),
-            (:p, randomvar()),
-            (:p, randomvar())
-        ]
+        interfaces = [(:out, datavar()), (:switch, randomvar()), (:m, randomvar()), (:m, randomvar()), (:p, randomvar()), (:p, randomvar())]
         factorizations = [[:out], [:switch], [:m1], [:m2], [:p1], [:p2]]
 
         node = factornode(NormalMixture, interfaces, factorizations)
@@ -152,14 +145,7 @@ end
     end
 
     @testset "Functional dependencies" begin
-        interfaces = [
-            (:out, datavar()),
-            (:switch, randomvar()),
-            (:m, randomvar()),
-            (:m, randomvar()),
-            (:p, randomvar()),
-            (:p, randomvar())
-        ]
+        interfaces = [(:out, datavar()), (:switch, randomvar()), (:m, randomvar()), (:m, randomvar()), (:p, randomvar()), (:p, randomvar())]
         factorizations = [[:out], [:switch], [:m1], [:m2], [:p1], [:p2]]
         node = factornode(NormalMixture, interfaces, factorizations)
         deps = NormalMixtureNodeFunctionalDependencies()
@@ -257,4 +243,3 @@ end
         @test occursin(string(functionalform(node)), sprint(showerror, err))
     end
 end
-
