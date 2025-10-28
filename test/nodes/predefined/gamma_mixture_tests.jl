@@ -126,8 +126,7 @@ end
     end
 end
 
-# TODO: AverageEnergy tests
-@testitem "AverageEnergy" skip=true begin
+@testitem "AverageEnergy" begin
     using ReactiveMP, BayesBase, ExponentialFamily, Random, Test
 
     import ReactiveMP: ManyOf, GammaMixture
@@ -146,14 +145,12 @@ end
             ManyOf(map(q -> Marginal(q, false, false, nothing), q_b))
         )
 
+        # @average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::ManyOf{N, Any}, q_b::ManyOf{N, GammaShapeRate})
         z = probvec(q_switch)
-        #[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[i], q_b[i])), nothing)
-        #[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
         ref_val =
             z[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
             z[2] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[2], q_b[2])), nothing)
 
-        #function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N}, meta, skip_strategy, scheduler) where {T <: CountingReal, N}
         @test score(AverageEnergy(), GammaMixture, Val{(:out, :switch, :a, :b)}(), marginals, nothing) ≈ ref_val
     end
 end
