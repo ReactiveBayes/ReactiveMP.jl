@@ -183,16 +183,19 @@ struct GammaShapeLikelihood{T <: Real} <: ContinuousUnivariateDistribution
     p::T
     γ::T # p * β
 end
+GammaShapeLikelihood(p::Real, γ::Real) = GammaShapeLikelihood(promote(p, γ)...)
 
 Distributions.params(distribution::GammaShapeLikelihood) = (distribution.p, distribution.γ)
 
 Distributions.@distr_support GammaShapeLikelihood 0.0 Inf
 
-BayesBase.support(dist::GammaShapeLikelihood) = Distributions.RealInterval(0.0, Inf)
-BayesBase.logpdf(distribution::GammaShapeLikelihood, x::Real) = distribution.γ * x - distribution.p * loggamma(x)
+BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} = Distributions.RealInterval(zero(T), T(Inf))
+
+BayesBase.logpdf(distribution::GammaShapeLikelihood{T}, x::Real) where {T} = distribution.γ * x - distribution.p * loggamma(x)
 
 BayesBase.default_prod_rule(::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}) = PreserveTypeProd(Distribution)
 
-function prod(::PreserveTypeProd{Distribution}, left::GammaShapeLikelihood, right::GammaShapeLikelihood)
-    return GammaShapeLikelihood(left.p + right.p, left.γ + right.γ)
+function prod(::PreserveTypeProd{Distribution}, left::GammaShapeLikelihood{T1}, right::GammaShapeLikelihood{T2}) where {T1, T2}
+    T = promote_type(T1, T2)
+    return GammaShapeLikelihood(T(left.p) + T(right.p), T(left.γ) + T(right.γ))
 end
