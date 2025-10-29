@@ -201,7 +201,9 @@ end
 
     # mismatched counts of a and b
     @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1], [:b1], [:b2]])
-    @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:a, :a3), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1, :a2, :a3], [:b1], [:b2]])
+    @test_throws ErrorException factornode(
+        GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:a, :a3), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1, :a2, :a3], [:b1], [:b2]]
+    )
 end
 
 @testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" begin
