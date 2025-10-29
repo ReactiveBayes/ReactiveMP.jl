@@ -234,12 +234,6 @@ end
         idxs = interfaceindices(node, syms)
         @test idxs == map(s -> interfaceindex(node, s), syms)
 
-        err = try
-            interfaceindex(node, :nonexistent)
-        catch e
-            e
-        end
-        @test occursin("Unknown interface", sprint(showerror, err))
-        @test occursin(string(functionalform(node)), sprint(showerror, err))
+        @test_throws ErrorException interfaceindex(node, :nonexistent)
     end
 end

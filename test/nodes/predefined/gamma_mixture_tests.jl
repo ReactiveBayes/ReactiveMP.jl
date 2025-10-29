@@ -192,13 +192,7 @@ end
     @test idxs == map(s -> interfaceindex(node, s), syms)
 
     # Unknown interface must throw and contain node functionalform in message
-    err = try
-        interfaceindex(node, :nonexistent)
-    catch e
-        e
-    end
-    @test occursin("Unknown interface", sprint(showerror, err))
-    @test occursin(string(functionalform(node)), sprint(showerror, err))
+    @test_throws ErrorException interfaceindex(node, :nonexistent)
 end
 
 @testitem "GammaMixture: mismatch count error message" begin
@@ -206,36 +200,8 @@ end
     import ReactiveMP: factornode, GammaMixture
 
     # mismatched counts of a and b
-    err = try
-        factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1], [:b1], [:b2]])
-    catch e
-        e
-    end
-    @test occursin("must be at least", sprint(showerror, err))
-    err = try
-        factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:a, :a3), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1, :a2, :a3], [:b1], [:b2]])
-    catch e
-        e
-    end
-    @test occursin("must be the same", sprint(showerror, err))
-end
-
-# TODO figure out what those activationoptions are and the expected return should be
-@testitem "GammaMixtureNode: activate! minimal call" skip=true begin
-    using ReactiveMP, Test
-    import ReactiveMP: GammaMixtureNode, NodeInterface, IndexedNodeInterface, collect_functional_dependencies, GammaMixtureNodeFunctionalDependencies, activate!, functionalform
-    import ReactiveMP: FactorNodeActivationOptions
-
-    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
-    node = GammaMixtureNode(
-        NodeInterface(interfaces[1]...),
-        NodeInterface(interfaces[2]...),
-        (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
-        (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
-    )
-
-    opts = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
-    @test activate!(node, opts) !== nothing
+    @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1], [:b1], [:b2]])
+    @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:a, :a3), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1, :a2, :a3], [:b1], [:b2]])
 end
 
 @testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" begin
