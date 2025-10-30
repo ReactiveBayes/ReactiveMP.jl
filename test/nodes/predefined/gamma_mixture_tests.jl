@@ -232,9 +232,8 @@ end
 
     # support should be (0.0, Inf)
     s = support(d)
-    @test s isa Distributions.RealInterval
-    @test s.lb == 0.0
-    @test s.ub == Inf
+    @test minimum(s) == 0.0
+    @test maximum(s) == Inf
 
     # default_prod_rule dispatch
     rule = BayesBase.default_prod_rule(GammaShapeLikelihood, GammaShapeLikelihood)

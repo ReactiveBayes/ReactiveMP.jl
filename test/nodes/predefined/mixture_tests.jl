@@ -1,106 +1,6 @@
 @testitem "nodes:MixtureNode" begin
     using ReactiveMP, BayesBase, ExponentialFamily, Test
     import ReactiveMP:
-        MixtureNode,
-        MixtureNodeFactorisation,
-        MixtureNodeFunctionalDependencies,
-        RequireMarginalFunctionalDependencies,
-        NodeInterface,
-        IndexedNodeInterface,
-        interfaceindex,
-        collect_functional_dependencies,
-        collect_latest_marginals,
-        collect_latest_messages,
-        factornode,
-        functional_dependencies,
-        FactorNodeActivationOptions,
-        activate!,
-        Mixture,
-        MixtureNode
-
-    interfaces = [(:out, datavar()), (:switch, randomvar()), (:inputs, randomvar()), (:inputs, randomvar())]
-    factorizations = [[:out], [:switch], [:inputs1], [:inputs2]]
-
-    @testset "Construction and interface structure" begin
-        node = factornode(Mixture, interfaces, factorizations)
-
-        @test node isa MixtureNode{2}
-        @test sdtype(node) == Stochastic()
-        @test functionalform(node) == Mixture{2}
-        @test getinterfaces(node) isa Tuple
-        @test length(getinterfaces(node)) == 4  # out, switch, inputs...
-
-        @test node.out isa NodeInterface
-        @test node.switch isa NodeInterface
-        @test all(i -> i isa IndexedNodeInterface, node.inputs)
-
-        # index mapping
-        @test interfaceindex(node, :out) == 1
-        @test interfaceindex(node, :switch) == 2
-        @test interfaceindex(node, :inputs) == 3
-        @test_throws ErrorException interfaceindex(node, :invalid)
-    end
-
-    @testset "Collect functional dependencies" begin
-        node = MixtureNode(
-            NodeInterface(interfaces[1]...),
-            NodeInterface(interfaces[2]...),
-            (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...)))
-        )
-
-        @test collect_functional_dependencies(node, nothing) isa MixtureNodeFunctionalDependencies
-        @test collect_functional_dependencies(node, MixtureNodeFunctionalDependencies()) isa MixtureNodeFunctionalDependencies
-        @test collect_functional_dependencies(node, RequireMarginalFunctionalDependencies()) isa RequireMarginalFunctionalDependencies
-        @test_throws ErrorException collect_functional_dependencies(node, :wrongtype)
-    end
-
-    @testset "Functional dependencies" begin
-        node = factornode(Mixture, interfaces, factorizations)
-        deps = MixtureNodeFunctionalDependencies()
-
-        # out
-        msg, marg = functional_dependencies(deps, node, node.out, 1)
-        @test msg == (node.switch, node.inputs)
-        @test marg == ()
-
-        # switch
-        msg, marg = functional_dependencies(deps, node, node.switch, 2)
-        @test msg == (node.out, node.inputs)
-        @test marg == ()
-
-        # inputs
-        msg, marg = functional_dependencies(deps, node, node.inputs[1], 3)
-        @test msg == (node.out, node.switch)
-        @test marg == ()
-
-        # invalid
-        @test_throws ErrorException functional_dependencies(deps, node, node.out, 99)
-    end
-
-    @testset "RequireMarginalFunctionalDependencies variant" begin
-        node = factornode(Mixture, interfaces, factorizations)
-        deps = RequireMarginalFunctionalDependencies()
-
-        # out depends on inputs + marginal on switch
-        msg, marg = functional_dependencies(deps, node, 1)
-        @test length(msg) == 1
-        @test length(marg) == 1
-
-        # switch depends on out, inputs + no marginal
-        msg, marg = functional_dependencies(deps, node, 2)
-        @test length(msg) == 2
-        @test isempty(marg)
-
-        # input depends on out + marginal on switch
-        msg, marg = functional_dependencies(deps, node, 3)
-        @test length(msg) == 1
-        @test length(marg) == 1
-    end
-end
-
-@testitem "nodes:MixtureNode:Extended" begin
-    using ReactiveMP, BayesBase, ExponentialFamily, Test
-    import ReactiveMP:
         Mixture,
         MixtureNode,
         MixtureNodeFactorisation,
@@ -111,12 +11,22 @@ end
         interfaceindex,
         interfaceindices,
         collect_factorisation,
+        collect_functional_dependencies,
         collect_latest_marginals,
         collect_latest_messages,
-        interfaces,
+        functional_dependencies,
         alias_interface,
         is_predefined_node,
-        PredefinedNodeFunctionalForm
+        PredefinedNodeFunctionalForm,
+        interfaces,
+        sdtype,
+        factornode,
+        FactorNodeActivationOptions,
+        activate!
+
+    # Common interfaces and factorizations used by both test groups
+    interfaces_list = [(:out, datavar()), (:switch, randomvar()), (:inputs, randomvar()), (:inputs, randomvar())]
+    factorizations = [[:out], [:switch], [:inputs1], [:inputs2]]
 
     @testset "Type-level definitions" begin
         @test ReactiveMP.as_node_symbol(Mixture{2}) === :Mixture
@@ -127,31 +37,90 @@ end
         @test collect_factorisation(Mixture{2}, nothing) isa MixtureNodeFactorisation
     end
 
-    # Construct a simple MixtureNode for reuse
-    vinterfaces = [(:out, datavar()), (:switch, randomvar()), (:inputs, randomvar()), (:inputs, randomvar())]
-    factorizations = [[:out], [:switch], [:inputs1], [:inputs2]]
-    node = factornode(Mixture, vinterfaces, factorizations)
+    @testset "Construction and interface structure" begin
+        node = factornode(Mixture, interfaces_list, factorizations)
 
-    @testset "Interface indices" begin
-        # Single symbol
-        @test interfaceindices(node, :out) == (1,)
-        # Multiple symbols
-        res = interfaceindices(node, (:out, :switch))
-        @test res == (1, 2)
+        @test node isa MixtureNode{2}
+        @test sdtype(node) == Stochastic()
+        @test functionalform(node) == Mixture{2}
+        @test getinterfaces(node) isa Tuple
+        @test length(getinterfaces(node)) == 4
+
+        @test node.out isa NodeInterface
+        @test node.switch isa NodeInterface
+        @test all(i -> i isa IndexedNodeInterface, node.inputs)
+
+        @test interfaceindex(node, :out) == 1
+        @test interfaceindex(node, :switch) == 2
+        @test interfaceindex(node, :inputs) == 3
+        @test_throws ErrorException interfaceindex(node, :invalid)
     end
 
-    # TODO: collect_latest_messages
+    @testset "Interface indices" begin
+        node = factornode(Mixture, interfaces_list, factorizations)
+
+        @test interfaceindices(node, :out) == (1,)
+        @test interfaceindices(node, (:out, :switch)) == (1, 2)
+    end
+
+    @testset "Collect functional dependencies" begin
+        node = MixtureNode(
+            NodeInterface(interfaces_list[1]...),
+            NodeInterface(interfaces_list[2]...),
+            (IndexedNodeInterface(1, NodeInterface(interfaces_list[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces_list[4]...)))
+        )
+
+        @test collect_functional_dependencies(node, nothing) isa MixtureNodeFunctionalDependencies
+        @test collect_functional_dependencies(node, MixtureNodeFunctionalDependencies()) isa MixtureNodeFunctionalDependencies
+        @test collect_functional_dependencies(node, RequireMarginalFunctionalDependencies()) isa RequireMarginalFunctionalDependencies
+        @test_throws ErrorException collect_functional_dependencies(node, :wrongtype)
+    end
+
+    @testset "Functional dependencies" begin
+        node = factornode(Mixture, interfaces_list, factorizations)
+        deps = MixtureNodeFunctionalDependencies()
+
+        msg, marg = functional_dependencies(deps, node, node.out, 1)
+        @test msg == (node.switch, node.inputs)
+        @test marg == ()
+
+        msg, marg = functional_dependencies(deps, node, node.switch, 2)
+        @test msg == (node.out, node.inputs)
+        @test marg == ()
+
+        msg, marg = functional_dependencies(deps, node, node.inputs[1], 3)
+        @test msg == (node.out, node.switch)
+        @test marg == ()
+
+        @test_throws ErrorException functional_dependencies(deps, node, node.out, 99)
+    end
+
+    @testset "RequireMarginalFunctionalDependencies variant" begin
+        node = factornode(Mixture, interfaces_list, factorizations)
+        deps = RequireMarginalFunctionalDependencies()
+
+        msg, marg = functional_dependencies(deps, node, 1)
+        @test length(msg) == 1
+        @test length(marg) == 1
+
+        msg, marg = functional_dependencies(deps, node, 2)
+        @test length(msg) == 2
+        @test isempty(marg)
+
+        msg, marg = functional_dependencies(deps, node, 3)
+        @test length(msg) == 1
+        @test length(marg) == 1
+    end
 
     @testset "Collect latest marginals" begin
+        node = factornode(Mixture, interfaces_list, factorizations)
         deps1 = MixtureNodeFunctionalDependencies()
         deps2 = RequireMarginalFunctionalDependencies()
 
-        # Variant 1: no marginals
         val1, obs1 = collect_latest_marginals(deps1, node, ())
         @test val1 === nothing
         @test obs1 !== nothing
 
-        # Variant 2: with switch marginal
         switchiface = NodeInterface(:switch, randomvar())
         val2, obs2 = collect_latest_marginals(deps2, node, (switchiface,))
         @test val2 isa Val

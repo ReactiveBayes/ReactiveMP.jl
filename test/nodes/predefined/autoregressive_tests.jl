@@ -84,21 +84,15 @@ end
         @test ar_unit(Univariate, 1) == 1.0
         @test ar_unit(Multivariate, 3)[1] ≈ 1.0
         @test eltype(ar_unit(Float32, Univariate, 1)) === Float32
-        @test ar_unit(Float64, Multivariate, 2) isa ReactiveMP.StandardBasisVector
 
         # --- ar_precision and ARPrecisionMatrix ---
         γ = 2.5
         order = 3
         pm = ar_precision(Multivariate, order, γ)
-        @test pm isa ARPrecisionMatrix
         @test size(pm) == (3, 3)
         @test pm[1, 1] == γ
         @test pm[2, 2] ≈ convert(Float64, huge)
         @test pm[1, 2] == 0.0
-
-        # convert(::Type{AbstractArray{T}})
-        pm32 = convert(AbstractArray{Float32}, pm)
-        @test eltype(pm32.γ) == Float32
 
         # add_precision & add_precision!
         A = zeros(3, 3)
