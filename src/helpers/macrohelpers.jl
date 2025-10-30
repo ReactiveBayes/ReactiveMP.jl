@@ -68,7 +68,7 @@ function proxy_type(proxy, type::Expr)
     if @capture(type, Vararg{rest__})
         error("Vararg{T, N} is forbidden in @rule macro, use `ManyOf{N, T}` instead.")
     elseif @capture(type, ManyOf{N_, T_})
-        return :(ReactiveMP.ManyOf{<:NTuple{$N, $(proxy_type(proxy, T))}}) # this does now work in all cases? :)
+        return :(ReactiveMP.ManyOf{<:NTuple{$N, $(proxy_type(proxy, T))}})
     else
         return :($(proxy){<:$(type)})
     end

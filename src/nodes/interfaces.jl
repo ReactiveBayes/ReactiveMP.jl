@@ -107,9 +107,6 @@ typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
 
 paramfloattype(many::ManyOf) = paramfloattype(many.collection)
 
-#rule_method_error_type_nameof(::Type{T}) where {N, R, V <: NTuple{N, <:R}, T <: ManyOf{V}}           = string("ManyOf{", N, ", ", rule_method_error_type_nameof(dropproxytype(R)), "}")
-#rule_method_error_type_nameof(::Type{T}) where {N, V <: Tuple{Vararg{R, N} where R}, T <: ManyOf{V}} = string("ManyOf{", N, ", Union{", join(map(r -> rule_method_error_type_nameof(dropproxytype(r)), fieldtypes(V)), ","), "}}")
-
 rule_method_error_type_nameof(::Type{T}) where {V, T <: ManyOf{V}} = begin
     # V is the tuple type carried in ManyOf{V}
     fts = fieldtypes(V)               # get the element type tuple, works for NTuple and Tuple
