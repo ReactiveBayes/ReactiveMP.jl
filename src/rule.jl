@@ -327,6 +327,40 @@ end
 
 import .MacroHelpers
 
+# Helper functions to get the actual values of Val types
+function valof_set(x, mod::Module)
+    if x === nothing || x === :Nothing
+        return Set{Symbol}()
+    elseif x isa Symbol
+        return Set([x])
+    elseif x isa Val
+        # Extract from the type parameter
+        return valof_set(typeof(x).parameters[1], mod)
+    elseif x isa DataType && x <: Val
+        # For Val types, extract parameter
+        return valof_set(x.parameters[1], mod)
+    elseif x isa Tuple
+        s = Set{Symbol}()
+        for xi in x
+            try
+                s = union(s, valof_set(xi, mod))
+            catch
+                # Ignore elements that cannot be converted
+            end
+        end
+        return s
+    elseif x isa Expr
+        # Evaluate expression and recurse
+        return valof_set(Core.eval(mod, x), mod)
+    else
+        # Ignore other types that are not symbols or Val
+        return Set{Symbol}()
+    end
+end
+
+
+
+
 """
     @rule NodeType(:Edge, Constraint) (Arguments..., [ meta::MetaType ]) = begin
         # rule body
@@ -404,6 +438,37 @@ macro rule(fform, lambda)
 
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+
+    #println(fform)
+    #println(lambda)
+    fexpr = fform.head == :call ? fform.args[1] : fform
+    if fexpr isa Expr && fexpr.head == :curly fexpr = fexpr.args[1] end
+    fform_type = Core.eval(__module__, fexpr)
+    ifaces = ReactiveMP.interfaces(fform_type)
+    #println("ifaces: $ifaces")
+    names_expected  = valof_set(ifaces, __module__)
+    #println("on_type: $on_type")
+    onames  = valof_set(on_type, __module__)
+    #println("onames: $onames")
+    mnames  = valof_set(m_names, __module__)
+    #println("mnames: $mnames")
+    qnames  = valof_set(q_names, __module__)
+    #println("qnames: $qnames")
+    names_used = union(mnames, qnames, onames)
+    #println("names_used: $names_used")
+    #println("names_expected: $names_expected")
+    names_unknown = setdiff(names_expected, names_used)
+    #println("difference: $names_unknown")
+    #println()
+
+
+    if !isempty(names_unknown)
+        #error("Rule interface mismatch for $(fform_type): expected interface symbols $(names_expected), but provided symbols $(names_used). Missing: $(names_unknown)")
+        println("⚠️ Rule interface mismatch for $(fform_type):")
+        println("  Expected interface symbols: $(names_expected)")
+        println("  Provided symbols:          $(names_used)")
+        println("  Missing symbols:           $(names_unknown)")
+    end
 
     output = quote
         $(
