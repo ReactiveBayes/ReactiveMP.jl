@@ -189,7 +189,7 @@ Distributions.params(distribution::GammaShapeLikelihood) = (distribution.p, dist
 
 Distributions.@distr_support GammaShapeLikelihood 0.0 Inf
 
-BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} = Distributions.RealInterval(zero(T), T(Inf))
+BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} = Distributions.RealInterval(zero(T), typemax(T))
 
 BayesBase.logpdf(distribution::GammaShapeLikelihood{T}, x::Real) where {T} = distribution.γ * x - distribution.p * loggamma(x)
 
