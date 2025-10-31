@@ -15,8 +15,13 @@
     WymW = Wy - Wy * cholinv(Wy + mW) * Wy
     Ξ = mA' * WymW * mA
 
+    Y = similar(Va)
+
     for (i, j) in Iterators.product(1:dy, 1:dy)
-        Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
+        mul!(Y, Va, Fs[i]')
+        mul!(Ξ, Fs[j], Y, mW[j, i], 1)
+
+        # Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
     end
 
     z = mA' * WymW * my
