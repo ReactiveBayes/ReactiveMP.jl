@@ -91,6 +91,10 @@ macro average_energy(fformtype, lambda)
 
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :Marginal)
 
+    fform_type = Core.eval(__module__, fformtype)
+    ifaces        = ReactiveMP.interfaces(fform_type)
+    MacroHelpers.check_rule_interfaces("@average_energy", fformtype, lambda, ifaces, nothing, nothing, q_names; mod=__module__)
+
     result = quote
         function ReactiveMP.score(::AverageEnergy, fform::$(fuppertype), marginals_names::$(q_names), marginals::$(q_types), meta::$(metatype)) where {$(whereargs...)}
             $(q_init_block...)

@@ -117,4 +117,80 @@ macro test_inferred(T, expression)
     end)
 end
 
+function check_rule_interfaces(macrotype, fform, lambda, ifaces, on_type, m_names, q_names; mod=__MODULE__)
+    # skip rules like (typeof(+))(:in1_in2) for which interfaces returns nothing
+    if ifaces === nothing return end
+    names_expected = valof_set(ifaces, mod)
+    onames         = valof_set(on_type, mod)
+    mnames         = valof_set(m_names, mod)
+    qnames         = valof_set(q_names, mod)
+    names_used     = union(onames, mnames, qnames)
+
+    names_unknown  = setdiff(names_expected, names_used)
+    if !isempty(names_unknown)
+        missing_list = join(sort(collect(names_unknown)), ", ")
+        expected_list = join(sort(collect(names_expected)), ", ")
+        provided_list = join(sort(collect(names_used)), ", ")
+
+        throw(ArgumentError("""
+        Interface mismatch for $(macrotype) $(fform) $(lambda):
+          Expected symbols: $expected_list
+          Provided symbols: $provided_list
+          Missing symbols:  $missing_list
+        """))
+    end
+
+    names_extra    = setdiff(names_used, names_expected)
+    if !isempty(names_extra)
+        extras_list = join(sort(collect(names_extra)), ", ")
+        expected_list = join(sort(collect(names_expected)), ", ")
+        provided_list = join(sort(collect(names_used)), ", ")
+
+        throw(ArgumentError("""
+        Interface mismatch for $(macrotype) $(fform) $(lambda):
+          Expected symbols: $expected_list
+          Provided symbols: $provided_list
+          Extra symbols:    $extras_list
+        """))
+    end
+end
+
+function valof_set(x, mod::Module)
+    s = Set{Symbol}()
+
+    if x === nothing || x === :Nothing
+        return s
+    elseif x isa Symbol
+        # Split joint message symbol by underscores
+        for part in split(string(x), '_')
+            push!(s, Symbol(part))
+        end
+        return s
+    elseif x isa Val
+        return valof_set(typeof(x).parameters[1], mod)
+    elseif x isa DataType && x <: Val
+        return valof_set(x.parameters[1], mod)
+    elseif x isa DataType && x <: Tuple
+        # Handle tuple types like Tuple{Val{:inputs}, Int}
+        for p in x.parameters
+            if p <: Integer
+                continue
+            end
+            s = union(s, valof_set(p, mod))
+        end
+        return s
+    elseif x isa Tuple
+        # Handle **tuple values** (instances)
+        for xi in x
+            s = union(s, valof_set(xi, mod))
+        end
+        return s
+    elseif x isa Expr
+        return valof_set(Core.eval(mod, x), mod)
+    else
+        return s
+    end
+end
+
+
 end
