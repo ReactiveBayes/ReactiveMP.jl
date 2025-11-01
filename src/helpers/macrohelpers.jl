@@ -117,16 +117,18 @@ macro test_inferred(T, expression)
     end)
 end
 
-function check_rule_interfaces(macrotype, fform, lambda, ifaces, on_type, m_names, q_names; mod=__MODULE__)
+function check_rule_interfaces(macrotype, fform, lambda, ifaces, on_type, m_names, q_names; mod = __MODULE__)
     # skip rules like (typeof(+))(:in1_in2) for which interfaces returns nothing
-    if ifaces === nothing return end
+    if ifaces === nothing
+        return nothing
+    end
     names_expected = valof_set(ifaces, mod)
     onames         = valof_set(on_type, mod)
     mnames         = valof_set(m_names, mod)
     qnames         = valof_set(q_names, mod)
     names_used     = union(onames, mnames, qnames)
 
-    names_unknown  = setdiff(names_expected, names_used)
+    names_unknown = setdiff(names_expected, names_used)
     if !isempty(names_unknown)
         missing_list = join(sort(collect(names_unknown)), ", ")
         expected_list = join(sort(collect(names_expected)), ", ")
@@ -140,7 +142,7 @@ function check_rule_interfaces(macrotype, fform, lambda, ifaces, on_type, m_name
         """))
     end
 
-    names_extra    = setdiff(names_used, names_expected)
+    names_extra = setdiff(names_used, names_expected)
     if !isempty(names_extra)
         extras_list = join(sort(collect(names_extra)), ", ")
         expected_list = join(sort(collect(names_expected)), ", ")
@@ -191,6 +193,5 @@ function valof_set(x, mod::Module)
         return s
     end
 end
-
 
 end

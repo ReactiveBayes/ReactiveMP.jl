@@ -406,10 +406,12 @@ macro rule(fform, lambda)
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     fexpr = fform.head == :call ? fform.args[1] : fform
-    if fexpr isa Expr && fexpr.head == :curly fexpr = fexpr.args[1] end
+    if fexpr isa Expr && fexpr.head == :curly
+        fexpr = fexpr.args[1]
+    end
     fform_type = Core.eval(__module__, fexpr)
-    ifaces        = ReactiveMP.interfaces(fform_type)
-    MacroHelpers.check_rule_interfaces("@rule", fform, lambda, ifaces, on_type, m_names, q_names; mod=__module__)
+    ifaces = ReactiveMP.interfaces(fform_type)
+    MacroHelpers.check_rule_interfaces("@rule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
 
     output = quote
         $(
@@ -609,10 +611,12 @@ macro marginalrule(fform, lambda)
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
 
     fexpr = fform.head == :call ? fform.args[1] : fform
-    if fexpr isa Expr && fexpr.head == :curly fexpr = fexpr.args[1] end
+    if fexpr isa Expr && fexpr.head == :curly
+        fexpr = fexpr.args[1]
+    end
     fform_type = Core.eval(__module__, fexpr)
-    ifaces        = ReactiveMP.interfaces(fform_type)
-    MacroHelpers.check_rule_interfaces("@marginalrule", fform, lambda, ifaces, on_type, m_names, q_names; mod=__module__)
+    ifaces = ReactiveMP.interfaces(fform_type)
+    MacroHelpers.check_rule_interfaces("@marginalrule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
 
     output = quote
         $(
