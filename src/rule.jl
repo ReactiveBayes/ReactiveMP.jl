@@ -369,13 +369,15 @@ function check_rule_interfaces(fform, lambda, on_type, m_names, q_names; mod=__M
     if fexpr isa Expr && fexpr.head == :curly fexpr = fexpr.args[1] end
     fform_type = Core.eval(mod, fexpr)
     ifaces        = ReactiveMP.interfaces(fform_type)
+    # skip rules like (typeof(+))(:in1_in2) for which interfaces returns nothing
+    if ifaces === nothing return end
     names_expected = valof_set(ifaces, mod)
     onames         = valof_set(on_type, mod)
     mnames         = valof_set(m_names, mod)
     qnames         = valof_set(q_names, mod)
     names_used     = union(onames, mnames, qnames)
-    names_unknown  = setdiff(names_expected, names_used)
 
+    names_unknown  = setdiff(names_expected, names_used)
     if !isempty(names_unknown)
         missing_list = join(sort(collect(names_unknown)), ", ")
         expected_list = join(sort(collect(names_expected)), ", ")
@@ -386,6 +388,20 @@ function check_rule_interfaces(fform, lambda, on_type, m_names, q_names; mod=__M
           Expected symbols: $expected_list
           Provided symbols: $provided_list
           Missing symbols:  $missing_list
+        """))
+    end
+
+    names_extra    = setdiff(names_used, names_expected)
+    if !isempty(names_extra)
+        extras_list = join(sort(collect(names_extra)), ", ")
+        expected_list = join(sort(collect(names_expected)), ", ")
+        provided_list = join(sort(collect(names_used)), ", ")
+
+        throw(ArgumentError("""
+        Rule interface mismatch for @rule $(fform) $(lambda):
+          Expected symbols: $expected_list
+          Provided symbols: $provided_list
+          Extra symbols:    $extras_list
         """))
     end
 end
