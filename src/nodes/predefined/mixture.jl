@@ -194,3 +194,18 @@ function collect_latest_marginals(::RequireMarginalFunctionalDependencies, facto
 
     return marginal_names, marginals_observable
 end
+
+# FreeEnergy related functions
+@average_energy Mixture (q_out::Any, q_switch::Any, q_inputs::ManyOf{N, Any}) where {N} = begin
+    @warn """
+    AverageEnergy not defined for Mixture node.
+
+    The Mixture node performs model comparison using log-scale factors,
+    hence its contribution to the Bethe Free Energy (BFE) is not well-defined.
+
+    Returning 0.0 as a placeholder. If you need a proper energy term,
+    consider expanding the mixture explicitly or using Gate-style nodes.
+    """
+    return 0.0
+end
+
