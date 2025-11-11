@@ -88,3 +88,11 @@ ReactiveMP.messages_prod_fn
 ```@docs 
 ReactiveMP.DeferredMessage
 ```
+
+### [Message mappings](@id lib-messages-mapping)
+
+A *message mapping* defines how messages are transformed or mapped during the propagation process — for example, when combining multiple incoming messages or applying specific transformation rules. This structure helps organize and reuse mapping logic across different inference algorithms.
+
+```@docs
+ReactiveMP.MessageMapping
+```

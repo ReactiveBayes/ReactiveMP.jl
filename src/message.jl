@@ -282,7 +282,21 @@ end
 ## Explanation: Julia cannot fully infer type of the lambda callback function in activate! method in node.jl file
 ## We create a lambda-like callable structure to improve type inference and make it more stable
 ## However it is not fully inferrable due to dynamic tags and variable constraints, but still better than just a raw lambda callback
+"""
+    MessageMapping
 
+A callable structure representing a deferred computation of a message in the
+variational message passing framework. It stores all contextual information
+necessary to compute a message later, such as variable tags, constraints,
+addons, and the associated factor node.
+
+`MessageMapping` replaces the original lambda-based implementation to improve
+type stability and inference. When invoked as a function, it computes an
+outgoing `Message` from given input messages and marginals using the appropriate
+`@rule`.
+
+See also: [`Message`](@ref), [`DeferredMessage`](@ref)
+"""
 struct MessageMapping{F, T, C, N, M, A, X, R, K}
     vtag            :: T
     vconstraint     :: C
