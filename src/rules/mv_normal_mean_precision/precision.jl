@@ -3,11 +3,11 @@
 @rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out::Any, q_μ::Any, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
     m_out, v_out   = mean_cov(q_out)
     m_mean, v_mean = mean_cov(q_μ)
-    d = ndims(q_μ)
+    d              = ndims(q_μ)
 
     df   = d + 2
     invS = correction!(meta, v_mean + v_out + (m_mean - m_out) * (m_mean - m_out)')
-    
+
     return WishartFast(df, invS)
 end
 
