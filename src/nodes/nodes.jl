@@ -398,8 +398,8 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     result = quote
         @doc $doc ReactiveMP.is_predefined_node(::$dispatch_type) = ReactiveMP.PredefinedNodeFunctionalForm()
 
-        ReactiveMP.sdtype(::$dispatch_type)          = (ReactiveMP.$node_type)()
-        ReactiveMP.interfaces(::$dispatch_type)      = Val($(Tuple(map(first, interfaces))))
+        ReactiveMP.sdtype(::$dispatch_type) = (ReactiveMP.$node_type)()
+        ReactiveMP.interfaces(::$dispatch_type) = Val($(Tuple(map(first, interfaces))))
         ReactiveMP.inputinterfaces(::$dispatch_type) = Val($(Tuple(map(first, skipindex(interfaces, 1)))))
         ReactiveMP.nodesymbol_to_nodefform(::Val{$(QuoteNode(node_symbol))}) = $node_symbol
 
