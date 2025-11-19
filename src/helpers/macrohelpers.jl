@@ -157,41 +157,59 @@ function check_rule_interfaces(macrotype, fform, lambda, ifaces, on_type, m_name
     end
 end
 
-function valof_set(x, mod::Module)
-    s = Set{Symbol}()
+function valof_set(x::Nothing, mod::Module)
+    return Set{Symbol}()
+end
 
-    if x === nothing || x === :Nothing
-        return s
-    elseif x isa Symbol
-        # Split joint message symbol by underscores
-        for part in split(string(x), '_')
-            push!(s, Symbol(part))
-        end
-        return s
-    elseif x isa Val
-        return valof_set(typeof(x).parameters[1], mod)
-    elseif x isa DataType && x <: Val
-        return valof_set(x.parameters[1], mod)
-    elseif x isa DataType && x <: Tuple
-        # Handle tuple types like Tuple{Val{:inputs}, Int}
-        for p in x.parameters
-            if p <: Integer
-                continue
-            end
-            s = union(s, valof_set(p, mod))
-        end
-        return s
-    elseif x isa Tuple
-        # Handle **tuple values** (instances)
-        for xi in x
-            s = union(s, valof_set(xi, mod))
-        end
-        return s
-    elseif x isa Expr
-        return valof_set(Core.eval(mod, x), mod)
-    else
+function valof_set(x::Symbol, mod::Module)
+    s = Set{Symbol}()
+    if x === :Nothing
         return s
     end
+    # Split joint message symbol by underscores
+    for part in split(string(x), '_')
+        push!(s, Symbol(part))
+    end
+    return s
 end
+
+function valof_set(x::Val, mod::Module)
+    return valof_set(typeof(x).parameters[1], mod)
+end
+
+valof_set(x::Type{<:Val}, mod::Module) = valof_set(first(x.parameters), mod)
+
+function valof_set(x::Type{<:Tuple}, mod::Module)
+    # Handle tuple types like Tuple{Val{:inputs}, Int}
+    s = Set{Symbol}()
+    for p in x.parameters
+        if p <: Integer
+            continue
+        end
+        s = union(s, valof_set(p, mod))
+    end
+    return s
+end
+
+function valof_set(x::Tuple, mod::Module)
+    # Handle **tuple values** (instances)
+    s = Set{Symbol}()
+    for xi in x
+        s = union(s, valof_set(xi, mod))
+    end
+    return s
+end
+
+function valof_set(x::Expr, mod::Module)
+    @capture(x, (Val{values_}))
+    return __split_val(values, mod)
+end
+
+__split_val(x::QuoteNode, mod) = valof_set(x.value, mod)
+__split_val(x::Expr, mod) = valof_set(Tuple(map(z -> z.value, x.args)), mod)
+__split_val(x::Nothing, mod) = error("Unexpected expression encountered (Not of form `Val{...}`).")
+
+# Fallback for other types
+valof_set(x, mod::Module) = Set{Symbol}()
 
 end
