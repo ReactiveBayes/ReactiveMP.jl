@@ -292,6 +292,15 @@ Converts the given `name` to a correct interface name for a given factor node ty
 """
 function alias_interface end
 
+"""
+    nodesymbol_to_nodefform(symbol_in_val)
+
+Returns the factor node type associated with a given symbol wrapped in a `Val` object. Returns `nothing` for unknown symbol.
+"""
+function nodesymbol_to_nodefform(::Val)
+    return nothing
+end
+
 node_expression_extract_interface(s::Symbol) = (s, [])
 
 function node_expression_extract_interface(e::Expr)
@@ -313,10 +322,10 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     interfaces = map(node_expression_extract_interface, node_interfaces.args)
 
     # Determine whether we should dispatch on `typeof($fform)` or `Type{$node_fform}`
-    dispatch_type = if @capture(node_fform, typeof(fform_))
-        :(typeof($fform))
+    dispatch_type, node_symbol = if @capture(node_fform, typeof(fform_))
+        (:(typeof($fform)), fform)
     else
-        :(Type{<:$node_fform})
+        (:(Type{<:$node_fform}), node_fform)
     end
 
     foreach(interfaces) do (name, aliases)
@@ -389,9 +398,10 @@ function generate_node_expression(node_fform, node_type, node_interfaces)
     result = quote
         @doc $doc ReactiveMP.is_predefined_node(::$dispatch_type) = ReactiveMP.PredefinedNodeFunctionalForm()
 
-        ReactiveMP.sdtype(::$dispatch_type)          = (ReactiveMP.$node_type)()
-        ReactiveMP.interfaces(::$dispatch_type)      = Val($(Tuple(map(first, interfaces))))
+        ReactiveMP.sdtype(::$dispatch_type) = (ReactiveMP.$node_type)()
+        ReactiveMP.interfaces(::$dispatch_type) = Val($(Tuple(map(first, interfaces))))
         ReactiveMP.inputinterfaces(::$dispatch_type) = Val($(Tuple(map(first, skipindex(interfaces, 1)))))
+        ReactiveMP.nodesymbol_to_nodefform(::Val{$(QuoteNode(node_symbol))}) = $node_symbol
 
         $collect_factorisation_fn
         $nodefunctions

@@ -386,6 +386,7 @@ macro rule(fform, lambda)
     @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
+    fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
     metatype                         = metatype === nothing ? :Nothing : metatype
@@ -404,6 +405,17 @@ macro rule(fform, lambda)
 
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+
+    # Some `@rules` are more complex in terms of functional form specification, e.g. `NormalMixture{N}`
+    if fbottomtype isa Symbol
+        # Not all nodes are defined with the `@node` macro, so we need to check if the node is defined with the `@node` macro
+        # `nodesymbol_to_nodefform` may return `nothing` for such nodes, in this case we skip the interface check
+        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(Val(fbottomtype))
+        if !isnothing(nodefform_from_symbol)
+            ifaces = ReactiveMP.interfaces(nodefform_from_symbol)
+            MacroHelpers.check_rule_interfaces("@rule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
+        end
+    end
 
     output = quote
         $(
@@ -588,6 +600,7 @@ macro marginalrule(fform, lambda)
     @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
+    fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
     metatype                         = metatype === nothing ? :Any : metatype
@@ -601,6 +614,17 @@ macro marginalrule(fform, lambda)
 
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+
+    # Some `@rules` are more complex in terms of functional form specification, e.g. `NormalMixture{N}`
+    if fbottomtype isa Symbol
+        # Not all nodes are defined with the `@node` macro, so we need to check if the node is defined with the `@node` macro
+        # `nodesymbol_to_nodefform` may return `nothing` for such nodes, in this case we skip the interface check
+        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(Val(fbottomtype))
+        if !isnothing(nodefform_from_symbol)
+            ifaces = ReactiveMP.interfaces(nodefform_from_symbol)
+            MacroHelpers.check_rule_interfaces("@marginalrule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
+        end
+    end
 
     output = quote
         $(

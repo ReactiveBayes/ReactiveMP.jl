@@ -272,3 +272,85 @@ end
         UnknownDistribution, interfaces, ((1, 2, 3),)
     )
 end
+
+@testitem "new node defined with `@node` macro should define Symbol -> Node function mapping" begin
+    struct DummyNodeToTestSymbolToNodeFunctionMapping end
+
+    @node DummyNodeToTestSymbolToNodeFunctionMapping Stochastic [out, x, y, z]
+
+    @test ReactiveMP.nodesymbol_to_nodefform(Val(:DummyNodeToTestSymbolToNodeFunctionMapping)) == DummyNodeToTestSymbolToNodeFunctionMapping
+end
+
+@testitem "nodesymbol_to_nodefform returns nothing for an unknown node symbol" begin
+    @test ReactiveMP.nodesymbol_to_nodefform(Val(:UnknownNode)) === nothing
+end
+
+@testitem "`@node` macro should error if defined a rule for undefined interface" begin
+    struct DummyNodeToTestRuleForUndefinedInterface end
+
+    @node DummyNodeToTestRuleForUndefinedInterface Stochastic [out, x]
+
+    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:out, Marginalisation)" eval(
+        quote
+            @rule DummyNodeToTestRuleForUndefinedInterface(:out, Marginalisation) (m_y::PointMass,) = 0.0
+        end
+    )
+    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:out, Marginalisation)" eval(
+        quote
+            @rule DummyNodeToTestRuleForUndefinedInterface(:out, Marginalisation) (q_y::PointMass,) = 0.0
+        end
+    )
+    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation)" eval(
+        quote
+            @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation) (m_y::PointMass,) = 0.0
+        end
+    )
+    @test_throws "Interface mismatch for @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation)" eval(
+        quote
+            @rule DummyNodeToTestRuleForUndefinedInterface(:x, Marginalisation) (q_y::PointMass,) = 0.0
+        end
+    )
+
+    @test_throws "Interface mismatch for @marginalrule DummyNodeToTestRuleForUndefinedInterface(:out) (m_y::Any, m_x::Any)" eval(
+        quote
+            @marginalrule DummyNodeToTestRuleForUndefinedInterface(:out) (m_y::Any, m_x::Any) = 0.0
+        end
+    )
+
+    @test_throws "Interface mismatch for @average_energy DummyNodeToTestRuleForUndefinedInterface (q_y::Any, q_x::Any)" eval(
+        quote
+            @average_energy DummyNodeToTestRuleForUndefinedInterface (q_y::Any, q_x::Any) = 0.0
+        end
+    )
+
+    function dummynodetestruleforundefinedinterface end
+
+    @node typeof(dummynodetestruleforundefinedinterface) Stochastic [out, x]
+
+    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:out, Marginalisation)" eval(
+        quote
+            @rule typeof(dummynodetestruleforundefinedinterface)(:out, Marginalisation) (m_y::PointMass,) = 0.0
+        end
+    )
+    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:out, Marginalisation)" eval(
+        quote
+            @rule typeof(dummynodetestruleforundefinedinterface)(:out, Marginalisation) (q_y::PointMass,) = 0.0
+        end
+    )
+    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:x, Marginalisation)" eval(
+        quote
+            @rule typeof(dummynodetestruleforundefinedinterface)(:x, Marginalisation) (m_y::PointMass,) = 0.0
+        end
+    )
+    @test_throws "Interface mismatch for @rule (typeof(dummynodetestruleforundefinedinterface))(:x, Marginalisation)" eval(
+        quote
+            @rule typeof(dummynodetestruleforundefinedinterface)(:x, Marginalisation) (q_y::PointMass,) = 0.0
+        end
+    )
+
+    @test_throws "Interface mismatch for @average_energy typeof(dummynodetestruleforundefinedinterface) (q_y::Any, q_x::Any)" eval(
+        quote
+            @average_energy typeof(dummynodetestruleforundefinedinterface) (q_y::Any, q_x::Any) = 0.0
+        end
+    )
+end
