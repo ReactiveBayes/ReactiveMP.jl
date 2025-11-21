@@ -17,10 +17,16 @@
 
     Vxymxy = rank1update(Vyx', mx, my)
     Vxmx = rank1update(Vx, mx)
+
+    Y = similar(Vxmx)
+
     for i in 1:dy
         xi += Fs[i]' * Vxymxy * mW[:, i]
         for j in 1:dy
-            W += mW[j, i] * Fs[i]' * Vxmx * Fs[j]
+            mul!(Y, Vxmx, Fs[j])
+            mul!(W, Fs[i]', Y, mW[j, i], 1)
+
+            # W += mW[j, i] * Fs[i]' * Vxmx * Fs[j]
         end
     end
 
