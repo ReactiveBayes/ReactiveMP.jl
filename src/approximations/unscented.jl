@@ -95,39 +95,75 @@ function unscented_statistics(method::Unscented, g::G, means::Tuple, covs::Tuple
     return unscented_statistics(method, Val(true), g, means, covs)
 end
 
-# Single univariate variable
-function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {C, G}
-    m = first(means)
-    V = first(covs)
-
-    (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
-
-    g_sigma = g.(sigma_points)
+function statistic_estimation(::Val{C}, first_element::T, g_sigma, sigma_points, m, weights_m, weights_c) where {C, T <: Real}
     m_tilde = sum(weights_m .* g_sigma)
     V_tilde = sum(weights_c .* (g_sigma .- m_tilde) .^ 2)
 
     # Compute `C_tilde` only if `C === true`
     C_tilde = C ? sum(weights_c .* (sigma_points .- m) .* (g_sigma .- m_tilde)) : nothing
-
     return (m_tilde, V_tilde, C_tilde)
+end
+
+function statistic_estimation(::Val{C}, first_element::V, g_sigma, sigma_points, m, weights_m, weights_c) where {C, V <: AbstractVector}
+    d_out = length(first(g_sigma))
+
+    @inbounds m_tilde = sum(wm * yi for (wm, yi) in zip(weights_m, g_sigma))
+    @inbounds V_tilde = sum(wc * (yi - m_tilde) * (yi - m_tilde)' for (wc, yi) in zip(weights_c, g_sigma))
+
+    # Compute `C_tilde` only if `C === true`
+    @inbounds C_tilde = C ? reshape(sum(wc * (xi - m) * (yi - m_tilde) for (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)), 1, d_out) : nothing
+    return (m_tilde, V_tilde, C_tilde)
+end
+
+__unscented_parameters_zero_covariance(m::T) where {T <: Real} = (m, zero(T), nothing)
+__unscented_parameters_zero_covariance(m::AbstractVector{T}) where {T <: Real} = (m, zeros(T, length(m), length(m)), nothing)
+
+# Single univariate variable
+function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{Real}, covs::Tuple{Real}) where {C, G}
+    m = first(means)
+    V = first(covs)
+    if V == 0.0
+        @warn "Unscented transform called with zero covariance input (function $g)" maxlog=1
+        resulting_m = g(m)
+        return __unscented_parameters_zero_covariance(resulting_m)
+    end
+
+    if any(isinf, V)
+        throw(DomainError("unscented_statistics cannot be computed with infinite variance $covs"))
+    end
+
+    (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
+
+    # Evaluate g at sigma points
+    g_sigma = g.(sigma_points)
+
+    # Compute output statistics depending on the output variate type
+    return statistic_estimation(Val(C), first(g_sigma), g_sigma, sigma_points, m, weights_m, weights_c)
 end
 
 # Single multivariate inbound
 function unscented_statistics(method::Unscented, ::Val{C}, g::G, means::Tuple{AbstractVector}, covs::Tuple{AbstractMatrix}) where {C, G}
     m = first(means)
     V = first(covs)
+    if any(isinf, V)
+        throw(DomainError("unscented_statistics cannot be computed with infinite variance $covs"))
+    end
+
+    if all(vec -> all(x -> x == 0.0, vec), covs)
+        @warn "Unscented transform called with zero covariance input (function $g)"
+        resulting_m = g(m)
+        return __unscented_parameters_zero_covariance(resulting_m)
+    end
 
     (sigma_points, weights_m, weights_c) = sigma_points_weights(method, m, V)
 
     d = length(m)
-
     g_sigma = g.(sigma_points)
     @inbounds m_tilde = sum(weights_m[k + 1] * g_sigma[k + 1] for k in 0:(2d))
     @inbounds V_tilde = sum(weights_c[k + 1] * ((g_sigma[k + 1] - m_tilde) * (g_sigma[k + 1] - m_tilde)') for k in 0:(2d))
 
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = C ? sum(weights_c[k + 1] * (sigma_points[k + 1] - m) * (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)) : nothing
-
     return (m_tilde, V_tilde, C_tilde)
 end
 

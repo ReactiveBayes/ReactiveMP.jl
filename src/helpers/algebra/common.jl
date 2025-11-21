@@ -130,3 +130,29 @@ function powerset(iterator)
     end
     return filter(!isempty, result)
 end
+
+"""
+    isonehot(vec::AbstractVector)
+
+Checks if the given vector `vec` is a one-hot vector, i.e., a vector with exactly one entry approximately equal to `one(eltype(vec))` and all other entries approximately equal to `zero(eltype(vec))`.
+
+Returns `true` if `vec` is one-hot, otherwise returns `false`.
+"""
+function isonehot(vec::AbstractVector{T}) where {T}
+    number_of_ones::Int = 0
+    atol = sqrt(eps(T))
+    for e in vec
+        if isapprox(e, one(e); atol = atol)
+            if number_of_ones > 1
+                return false
+            end
+            number_of_ones += 1
+        elseif !isapprox(e, zero(e); atol = atol)
+            return false
+        end
+    end
+    return number_of_ones == 1
+end
+
+isonehot(::Real) = false
+isonehot(::AbstractMatrix) = false

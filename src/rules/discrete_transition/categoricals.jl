@@ -83,7 +83,7 @@ function discrete_transition_decode_marginal(marginal_name::String, marginal::Be
     return (get_corresponding_index(marginal_name),), collect(probvec(marginal))
 end
 
-function discrete_transition_decode_marginal(marginal_name::String, marginal::PointMass{<:Vector{<:Real}})
+function discrete_transition_decode_marginal(marginal_name::String, marginal::PointMass{<:AbstractVector{<:Real}})
     return (get_corresponding_index(marginal_name),), mean(marginal)
 end
 

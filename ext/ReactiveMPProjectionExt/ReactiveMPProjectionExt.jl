@@ -5,13 +5,6 @@ using ReactiveMP, ExponentialFamily, Distributions, ExponentialFamilyProjection,
 struct DivisionOf{A, B}
     numerator::A
     denumerator::B
-    function DivisionOf(numerator::A, denumerator::B) where {A, B}
-        if variate_form(A) == variate_form(B)
-            return new{A, B}(numerator, denumerator)
-        else
-            error("DivisionOf does not support arguments of different variate forms: $(variate_form(A)) and $(variate_form(B))")
-        end
-    end
 end
 
 (divisionof::DivisionOf)(x) = logpdf(divisionof, x)
@@ -51,8 +44,6 @@ include("layout/cvi_projection.jl")
 include("rules/in.jl")
 include("rules/out.jl")
 include("rules/marginals.jl")
-include("divisionof/univariate_gaussian.jl")
-include("divisionof/multivariate_gaussian.jl")
 
 # This will enable the extension and make `CVIProjection` compatible with delta nodes 
 # Otherwise it should throw an error suggesting users to install `ExponentialFamilyProjection`

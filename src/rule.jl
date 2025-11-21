@@ -386,6 +386,7 @@ macro rule(fform, lambda)
     @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
+    fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
     metatype                         = metatype === nothing ? :Nothing : metatype
@@ -404,6 +405,17 @@ macro rule(fform, lambda)
 
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+
+    # Some `@rules` are more complex in terms of functional form specification, e.g. `NormalMixture{N}`
+    if fbottomtype isa Symbol
+        # Not all nodes are defined with the `@node` macro, so we need to check if the node is defined with the `@node` macro
+        # `nodesymbol_to_nodefform` may return `nothing` for such nodes, in this case we skip the interface check
+        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(Val(fbottomtype))
+        if !isnothing(nodefform_from_symbol)
+            ifaces = ReactiveMP.interfaces(nodefform_from_symbol)
+            MacroHelpers.check_rule_interfaces("@rule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
+        end
+    end
 
     output = quote
         $(
@@ -588,6 +600,7 @@ macro marginalrule(fform, lambda)
     @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
+    fbottomtype                      = MacroHelpers.bottom_type(fformtype)
     on_type, on_index, on_index_init = rule_macro_parse_on_tag(on)
     whereargs                        = whereargs === nothing ? [] : whereargs
     metatype                         = metatype === nothing ? :Any : metatype
@@ -601,6 +614,17 @@ macro marginalrule(fform, lambda)
 
     m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
     q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+
+    # Some `@rules` are more complex in terms of functional form specification, e.g. `NormalMixture{N}`
+    if fbottomtype isa Symbol
+        # Not all nodes are defined with the `@node` macro, so we need to check if the node is defined with the `@node` macro
+        # `nodesymbol_to_nodefform` may return `nothing` for such nodes, in this case we skip the interface check
+        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(Val(fbottomtype))
+        if !isnothing(nodefform_from_symbol)
+            ifaces = ReactiveMP.interfaces(nodefform_from_symbol)
+            MacroHelpers.check_rule_interfaces("@marginalrule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
+        end
+    end
 
     output = quote
         $(
@@ -1167,23 +1191,36 @@ function Base.showerror(io::IO, error::RuleMethodError)
         node_rules = filter(m -> ReactiveMP.get_node_from_rule_method(m) == spec_fform, methods(ReactiveMP.rule))
         println(io, "Alternatively, consider re-specifying model using an existing rule:\n")
 
-        node_message_names = filter(x -> x != ["Nothing"], get_message_names_from_rule_method.(node_rules))
-        node_message_types = filter(!isempty, get_message_types_from_rule_method.(node_rules))
-        for (m_name, m_type) in zip(node_message_names, node_message_types)
-            message_input = [string("m_", n, "::", t) for (n, t) in zip(m_name, m_type)]
-            println(io, spec_fform, "(", join(message_input, ", "), ")")
+        for node_rule in node_rules
+            node_message_names = filter(x -> x != ["Nothing"], get_message_names_from_rule_method(node_rule))
+            node_message_types = filter(!isempty, get_message_types_from_rule_method(node_rule))
+
+            node_marginal_names = filter(x -> x != ["Nothing"], get_marginal_names_from_rule_method(node_rule))
+            node_marginal_types = filter(!isempty, get_marginal_types_from_rule_method(node_rule))
+
+            node_meta = get_meta_from_rule_method(node_rule)
+
+            node_message_input = [string("m_", n, "::", t) for (n, t) in zip(node_message_names, node_message_types)]
+            node_marginal_input = [string("q_", n, "::", t) for (n, t) in zip(node_marginal_names, node_marginal_types)]
+
+            print(io, spec_fform)
+            print(io, "(")
+            join(io, node_message_input, ", ")
+            if !isempty(node_marginal_input)
+                print(io, ", ")
+            end
+            join(io, node_marginal_input, ", ")
+            print(io, ", ")
+
+            if node_meta !== "Nothing"
+                print(io, "meta::", node_meta)
+            end
+
+            print(io, ")")
+            println(io)
         end
 
-        node_marginal_names = filter(x -> x != ["Nothing"], get_marginal_names_from_rule_method.(node_rules))
-        node_marginal_types = filter(!isempty, get_marginal_types_from_rule_method.(node_rules))
-        for (m_name, m_type) in zip(node_marginal_names, node_marginal_types)
-            marginal_input = [string("q_", n, "::", t) for (n, t) in zip(m_name, m_type)]
-            println(io, spec_fform, "(", join(marginal_input, ", "), ")")
-        end
-        if !isempty(node_marginal_names)
-            println(io, "\nNote that for marginal rules (i.e., involving q_*), the order of input types matters.")
-        end
-
+        println(io, "\nNote that for rules involving `q_*`, the order of input types matters.")
     else
         println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
         println(io, "rule.fform: ", error.fform)

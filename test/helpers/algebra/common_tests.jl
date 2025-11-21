@@ -89,3 +89,41 @@
         end
     end
 end
+
+@testitem "isonehot" begin
+    import ReactiveMP: isonehot
+
+    for T in [Float64, Float32, Float16, BigFloat]
+        @test isonehot(T.([0.0, 1.0])) == true
+        @test isonehot(T.([0.0, 1.0, 0.0])) == true
+        @test isonehot(T.([1.0, 0.0, 0.0])) == true
+        @test isonehot(T.([0.0, 0.0, 1.0])) == true
+
+        @test isonehot(T.([0.0, 0.0, 0.0])) == false
+        @test isonehot(T.([1.0, 1.0, 1.0])) == false
+
+        @test isonehot(T.([0.0, 0.1, 1.0])) == false
+        @test isonehot(T.([0.1, 0.1, 0.8])) == false
+
+        if T !== BigFloat
+            v = T.([0.0, 1.0])
+            @test @allocated(isonehot(v)) == 0
+        end
+    end
+end
+
+@testitem "isonehot approx" begin
+    import ReactiveMP: isonehot
+
+    @test isonehot([2.9999999999849994e-12, 2.9999999999849994e-12, 0.999999999994]) == true
+    @test isonehot([2.9999999999849994e-12, 0.999999999994, 2.9999999999849994e-12]) == true
+    @test isonehot([0.999999999994, 2.9999999999849994e-12, 2.9999999999849994e-12]) == true
+
+    @test isonehot([0.03, 0.03, 0.94]) == false
+    @test isonehot([0.03, 0.94, 0.03]) == false
+    @test isonehot([0.94, 0.03, 0.03]) == false
+
+    @test isonehot([0.0003, 0.0003, 0.9994]) == false
+    @test isonehot([0.0003, 0.9994, 0.0003]) == false
+    @test isonehot([0.9994, 0.0003, 0.0003]) == false
+end

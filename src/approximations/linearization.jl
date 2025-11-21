@@ -77,6 +77,13 @@ function local_linearization(r::Real, splitg::S, x_hat::H) where {S, H}
     return local_linearization_split(r, fA, x_hat)
 end
 
+# In case if `g(x_hat)` returns a vector, but input is a number
+function local_linearization(result::AbstractVector, g::G, x_hat::Tuple{T}) where {G, T <: Real}
+    A = ForwardDiff.derivative(g, first(x_hat))
+    b = result - A * first(x_hat)
+    return (A, b)
+end
+
 # In case if `g(x_hat)` returns a vector, but inputs are numbers
 function local_linearization(r::AbstractVector, splitg::S, x_hat::H) where {S, H}
     # `r` is a vector, so we need to use `jacobian` instead of `gradient`

@@ -2,7 +2,7 @@
 @testitem "Unscented approximation method" begin
     using ReactiveMP
 
-    import ReactiveMP: Unscented, unscented_statistics
+    import ReactiveMP: Unscented, unscented_statistics, approximate
 
     @testset "Univariate `unscented_statistics`" begin
 
@@ -74,5 +74,20 @@
                 atol = 1e-4
             )
         )
+    end
+
+    @testset "Univariate approximate `unscented_statistics` dispatch `statistic_estimation`" begin
+        @test all(approximate(Unscented(), (x) -> x .- [1, 1], (1.0,), (1.0,)) .≈ ([0.0, 0.0], [1.0 1.0; 1.0 1.0]))
+        @test all(approximate(Unscented(), (x) -> [x^2, x], (1.0,), (1.0,)) .≈ ([2.0, 1.0], [6.0 2.0; 2.0 1.0]))
+    end
+
+    @testset "Unscented approximate input edge cases" begin
+        @test_throws DomainError approximate(Unscented(), (x) -> x + 1.0, (1.0,), (Inf,))
+        @test all(approximate(Unscented(), (x) -> x + 1.0, (1.0,), (0.0,)) .≈ (2.0, 0.0))
+        @test all(approximate(Unscented(), (x) -> [x^2, x], (2.0,), (0.0,)) .≈ ([4.0, 2.0], [0.0 0.0; 0.0 0.0]))
+        @test all(x -> all(isnan, x), approximate(Unscented(), (x) -> x + 1.0, (NaN,), (1.0,)))
+        @test all(x -> all(isnan, x), approximate(Unscented(), (x) -> [x^2, x], (NaN,), (1.0,)))
+        @show approximate(Unscented(), (x) -> [x^2, x], (NaN,), (1.0,))
+        @test all(x -> all(isnan, x), approximate(Unscented(), (x) -> x + 1.0, (1.0,), (NaN,)))
     end
 end
