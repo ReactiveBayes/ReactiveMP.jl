@@ -1,0 +1,1 @@
+@node MvNormalWishart Stochastic [out, (μ, aliases = [mean]), (W, aliases = [scale]), λ, ν]

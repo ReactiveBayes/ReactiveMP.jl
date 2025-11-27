@@ -55,6 +55,7 @@ include("mv_normal_mean_covariance/out.jl")
 include("mv_normal_mean_covariance/mean.jl")
 include("mv_normal_mean_covariance/covariance.jl")
 include("mv_normal_mean_covariance/marginals.jl")
+include("mv_normal_wishart/out.jl")
 
 include("normal_mean_variance/out.jl")
 include("normal_mean_variance/mean.jl")
