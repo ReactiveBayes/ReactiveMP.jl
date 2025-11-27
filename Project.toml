@@ -41,7 +41,6 @@ Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
 [extensions]
 ReactiveMPOptimisersExt = "Optimisers"
 ReactiveMPProjectionExt = "ExponentialFamilyProjection"
-ReactiveMPRequiresExt = "Requires"
 
 [compat]
 BayesBase = "1.5"
@@ -66,7 +65,6 @@ Optimisers = "0.2, 0.3, 0.4"
 PolyaGammaHybridSamplers = "1.2.6"
 PositiveFactorizations = "0.2"
 Random = "1.9"
-Requires = "1"
 Rocket = "1.8.0"
 SpecialFunctions = "2.3"
 StaticArrays = "1.9.0"
