@@ -100,7 +100,6 @@ include("rules/predefined.jl")
 include("rules/fallbacks.jl")
 
 function __init__()
-
     Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
         if exc.f == ReactiveMP.factornode && length(argtypes) >= 2 && argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
             errmsg = """
