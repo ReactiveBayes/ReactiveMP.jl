@@ -99,21 +99,7 @@ include("nodes/predefined.jl")
 include("rules/predefined.jl")
 include("rules/fallbacks.jl")
 
-# This symbol is only defined on Julia versions that support extensions
-@static if !isdefined(Base, :get_extension)
-    using Requires
-end
-
 function __init__()
-
-    # A backward-compatible solution for older versions of Julia
-    # For Julia > 1.9 this will be loaded automatically without need in `Requires.jl`
-    @static if !isdefined(Base, :get_extension)
-        @require Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2" include("../ext/ReactiveMPOptimisersExt/ReactiveMPOptimisersExt.jl")
-        @require Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f" include("../ext/ReactiveMPZygoteExt/ReactiveMPZygoteExt.jl")
-        @require ExponentialFamilyProjection = "17f509fa-9a96-44ba-99b2-1c5f01f0931b" include("../ext/ReactiveMPProjectionExt/ReactiveMPProjectionExt.jl")
-    end
-
     Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
         if exc.f == ReactiveMP.factornode && length(argtypes) >= 2 && argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
             errmsg = """
