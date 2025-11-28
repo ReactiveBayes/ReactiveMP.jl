@@ -22,6 +22,7 @@ ReactiveMP.collect_pipeline
 ReactiveMP.collect_meta
 ReactiveMP.default_meta
 ReactiveMP.as_node_symbol
+ReactiveMP.nodesymbol_to_nodefform
 ```
 
 ## [Adding a custom node](@id lib-custom-node)
