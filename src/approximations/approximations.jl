@@ -89,7 +89,7 @@ end
 function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::Union{T, AbstractVector{T}}, P::Union{T, AbstractMatrix{T}}) where {T <: Real}
     weights = getweights(method, m, P)
     points  = getpoints(method, m, P)
-    gbar = zero(g(m))
+    gbar    = zero(g(m))
     foreach(zip(weights, points)) do (weight, point)
         gbar = gbar .+ weight .* g(point)
     end
@@ -100,7 +100,9 @@ function approximate_kernel_expectation!(gbar::K, method::AbstractApproximationM
     return approximate_kernel_expectation!(gbar, method, g, mean(distribution), cov(distribution))
 end
 
-function approximate_kernel_expectation!(gbar::K, method::AbstractApproximationMethod, g::Function, m::Union{T, AbstractVector{T}}, P::Union{T, AbstractMatrix{T}}) where {K <: Array, T <: Real}
+function approximate_kernel_expectation!(
+    gbar::K, method::AbstractApproximationMethod, g::Function, m::Union{T, AbstractVector{T}}, P::Union{T, AbstractMatrix{T}}
+) where {K <: Array, T <: Real}
     weights = getweights(method, m, P)
     points  = getpoints(method, m, P)
 
