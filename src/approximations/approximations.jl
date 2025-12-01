@@ -1,5 +1,6 @@
 export AbstractApproximationMethod
 export approximation_name, approximation_short_name
+export approximate_kernel_expectation!, approximate_kernel_expectation, approximate_meancov
 
 abstract type AbstractApproximationMethod end
 
@@ -76,20 +77,36 @@ function approximate_meancov(method::AbstractApproximationMethod, g::Function, m
     return mean, cov
 end
 
-function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, distribution)
+"""
+   approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, distribution::D) where {D <: NormalDistributionsFamily}
+   
+Approximate the expectation E[g(x)] where x ~ distribution using the specified approximation method.
+"""
+function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, distribution::D) where {D <: NormalDistributionsFamily}
     return approximate_kernel_expectation(method, g, mean(distribution), cov(distribution))
 end
 
-function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::AbstractVector{T}, P::AbstractMatrix{T}) where {T <: Real}
-    ndims = length(m)
+function approximate_kernel_expectation(method::AbstractApproximationMethod, g::Function, m::Union{T, AbstractVector{T}}, P::Union{T, AbstractMatrix{T}}) where {T <: Real}
+    weights = getweights(method, m, P)
+    points  = getpoints(method, m, P)
+    gbar = zero(g(m))
+    foreach(zip(weights, points)) do (weight, point)
+        gbar = gbar .+ weight .* g(point)
+    end
+    return gbar
+end
 
+function approximate_kernel_expectation!(gbar::K, method::AbstractApproximationMethod, g::Function, distribution::D) where {K <: Array, D <: NormalDistributionsFamily}
+    return approximate_kernel_expectation!(gbar, method, g, mean(distribution), cov(distribution))
+end
+
+function approximate_kernel_expectation!(gbar::K, method::AbstractApproximationMethod, g::Function, m::Union{T, AbstractVector{T}}, P::Union{T, AbstractMatrix{T}}) where {K <: Array, T <: Real}
     weights = getweights(method, m, P)
     points  = getpoints(method, m, P)
 
-    gbar = zeros(ndims, ndims)
+    gbar .= 0
     foreach(zip(weights, points)) do (weight, point)
         axpy!(weight, g(point), gbar) # gbar = gbar + weight * g(point)
     end
-
     return gbar
 end
