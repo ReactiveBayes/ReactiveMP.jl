@@ -24,9 +24,14 @@ function continuous_tranition_marginal(m_y::MultivariateNormalDistributionsFamil
 
     W_21 = negate_inplace!(mA' * mW)
 
+    # Optimized: factor out inner summation to reduce complexity from O(dy²) to O(dy)
+    # Step 1: For each i, compute H[i] = Σⱼ mW[j,i] * Fs[j]
+    H = [sum(mW[j, i] * Fs[j] for j in 1:dy) for i in 1:dy]
+
+    # Step 2: Compute Ξ
     Ξ = Wx
-    for (i, j) in Iterators.product(1:dy, 1:dy)
-        Ξ += mW[j, i] * Fs[j] * Va * Fs[i]'
+    for i in 1:dy
+        Ξ += H[i] * Va * Fs[i]'
     end
 
     W_22 = Ξ + mA' * mW * mA
