@@ -43,12 +43,7 @@ function create_ct_benchmark_data(dx, dy)
     m_y = MvNormalMeanCovariance(μy, Σy)
     m_x = MvNormalMeanCovariance(μx, Σx)
 
-    return (
-        meta = meta,
-        q_y = q_y, q_x = q_x, q_a = q_a, q_W = q_W,
-        q_y_x = q_y_x,
-        m_y = m_y, m_x = m_x
-    )
+    return (meta = meta, q_y = q_y, q_x = q_x, q_a = q_a, q_W = q_W, q_y_x = q_y_x, m_y = m_y, m_x = m_x)
 end
 
 """
@@ -72,23 +67,12 @@ function add_continuous_transition_a_benchmarks(SUITE)
 
         # Structured VMP: q(y,x) joint
         SUITE["a"]["Structured"]["dx=$(dx), dy=$(dy)"] = @benchmarkable begin
-            @call_rule ContinuousTransition(:a, Marginalisation) (
-                q_y_x = $data.q_y_x,
-                q_a = $data.q_a,
-                q_W = $data.q_W,
-                meta = $data.meta
-            )
+            @call_rule ContinuousTransition(:a, Marginalisation) (q_y_x = $data.q_y_x, q_a = $data.q_a, q_W = $data.q_W, meta = $data.meta)
         end
 
         # Mean-field VMP: q(y)q(x)q(a)q(W)
         SUITE["a"]["Mean-field"]["dx=$(dx), dy=$(dy)"] = @benchmarkable begin
-            @call_rule ContinuousTransition(:a, Marginalisation) (
-                q_y = $data.q_y,
-                q_x = $data.q_x,
-                q_a = $data.q_a,
-                q_W = $data.q_W,
-                meta = $data.meta
-            )
+            @call_rule ContinuousTransition(:a, Marginalisation) (q_y = $data.q_y, q_x = $data.q_x, q_a = $data.q_a, q_W = $data.q_W, meta = $data.meta)
         end
     end
 end
@@ -104,14 +88,7 @@ function add_continuous_transition_marginals_benchmarks(SUITE)
 
         # y_x marginal rule
         SUITE["marginals"]["y_x"]["dx=$(dx), dy=$(dy)"] = @benchmarkable begin
-            @call_marginalrule ContinuousTransition(:y_x) (
-                m_y = $data.m_y,
-                m_x = $data.m_x,
-                q_a = $data.q_a,
-                q_W = $data.q_W,
-                meta = $data.meta
-            )
+            @call_marginalrule ContinuousTransition(:y_x) (m_y = $data.m_y, m_x = $data.m_x, q_a = $data.q_a, q_W = $data.q_W, meta = $data.meta)
         end
     end
 end
-
