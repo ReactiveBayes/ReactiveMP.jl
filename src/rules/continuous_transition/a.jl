@@ -17,11 +17,15 @@
 
     Vxymxy = rank1update(Vyx', mx, my)
     Vxmx = rank1update(Vx, mx)
+
+    # Optimized: factor out inner summation to reduce complexity from O(dy²) to O(dy)
+    # Step 1: For each i, compute H[i] = Σⱼ mW[j,i] * Fs[j]
+    H = [sum(mW[j, i] * Fs[j] for j in 1:dy) for i in 1:dy]
+
+    # Step 2: Compute xi and W
     for i in 1:dy
         xi += Fs[i]' * Vxymxy * mW[:, i]
-        for j in 1:dy
-            W += mW[j, i] * Fs[i]' * Vxmx * Fs[j]
-        end
+        W += Fs[i]' * Vxmx * H[i]
     end
 
     return MvNormalWeightedMeanPrecision(xi, W)
@@ -42,11 +46,14 @@ end
     mxmy = mx * my'
     Vxmx = rank1update(Vx, mx)
 
+    # Optimized: factor out inner summation to reduce complexity from O(dy²) to O(dy)
+    # Step 1: For each i, compute H[i] = Σⱼ mW[j,i] * Fs[j]
+    H = [sum(mW[j, i] * Fs[j] for j in 1:dy) for i in 1:dy]
+
+    # Step 2: Compute xi and W
     for i in 1:dy
         xi += Fs[i]' * mxmy * mW[:, i]
-        for j in 1:dy
-            W += mW[j, i] * Fs[i]' * Vxmx * Fs[j]
-        end
+        W += Fs[i]' * Vxmx * H[i]
     end
 
     return MvNormalWeightedMeanPrecision(xi, W)

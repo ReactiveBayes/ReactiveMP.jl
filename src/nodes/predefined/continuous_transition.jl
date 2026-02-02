@@ -127,12 +127,18 @@ end
 
     g1 = -mA * Vyx'
     g2 = g1'
+
+    # Optimized: factor out inner summation to reduce complexity from O(dy²) to O(dy)
+    # Step 1: For each i, compute H[i] = Σⱼ mW[j,i] * Fs[j]
+    H = [sum(mW[j, i] * Fs[j] for j in 1:dy) for i in 1:dy]
+
+    # Step 2: Compute traces
     trWSU, trkronxxWSU = zero(eltype(ma)), zero(eltype(ma))
     xxt = mx * mx'
-    for (i, j) in Iterators.product(1:dy, 1:dy)
-        FjVaFi = Fs[j] * Va * Fs[i]'
-        trWSU += mW[j, i] * tr(FjVaFi)
-        trkronxxWSU += mW[j, i] * tr(xxt * FjVaFi)
+    for i in 1:dy
+        HVaFi = H[i] * Va * Fs[i]'
+        trWSU += tr(HVaFi)
+        trkronxxWSU += tr(xxt * HVaFi)
     end
     AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + g1 + g2 + Vy + (mA * mx - my) * (mA * mx - my)')) + trWSU + trkronxxWSU) / 2
 
@@ -151,12 +157,17 @@ end
     n = div(ndims(q_y), 2)
     mA = ctcompanion_matrix(ma, sqrt.(var(q_a)), meta)
 
+    # Optimized: factor out inner summation to reduce complexity from O(dy²) to O(dy)
+    # Step 1: For each i, compute H[i] = Σⱼ mW[j,i] * Fs[j]
+    H = [sum(mW[j, i] * Fs[j] for j in 1:dy) for i in 1:dy]
+
+    # Step 2: Compute traces
     trWSU, trkronxxWSU = zero(eltype(ma)), zero(eltype(ma))
     xxt = mx * mx'
-    for (i, j) in Iterators.product(1:dy, 1:dy)
-        FjVaFi = Fs[j] * Va * Fs[i]'
-        trWSU += mW[j, i] * tr(FjVaFi)
-        trkronxxWSU += mW[j, i] * tr(xxt * FjVaFi)
+    for i in 1:dy
+        HVaFi = H[i] * Va * Fs[i]'
+        trWSU += tr(HVaFi)
+        trkronxxWSU += tr(xxt * HVaFi)
     end
     AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + Vy + (mA * mx - my) * (mA * mx - my)')) + trWSU + trkronxxWSU) / 2
 
