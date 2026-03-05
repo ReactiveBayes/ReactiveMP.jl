@@ -5,7 +5,7 @@ A simple structure to name an event and enable dispatch on different event types
 ```jldoctest
 julia> struct MyEventHandler end
 
-julia> ReactiveMP.handle_event(handler::MyEventHandler, event::Event{:before_message_rule_call}, args...) = print(args);
+julia> ReactiveMP.handle_event(handler::MyEventHandler, event::ReactiveMP.Event{:before_message_rule_call}, args...) = print(args...);
 
 julia> ReactiveMP.broadcast_event(MyEventHandler(), ReactiveMP.Event{:before_message_rule_call}(), 1)
 1
@@ -35,9 +35,7 @@ A typical event has type [`ReactiveMP.Event`](@ref), e.g. `ReactiveMP.Event{:bef
 The `event_handler` can also be a `NamedTuple` with fields corresponding to event names, e.g.
 
 ```jldoctest
-julia> event_handler = (
-    before_message_rule_call = (args...) -> sum(args),
-);
+julia> event_handler = (before_message_rule_call = (args...) -> sum(args),);
 
 julia> ReactiveMP.broadcast_event(event_handler, ReactiveMP.Event{:before_message_rule_call}(), 1, 2)
 3
