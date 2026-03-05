@@ -63,3 +63,4 @@ end
         @test isconst(NodeInterface(:random, constvar))
     end
 end
+
