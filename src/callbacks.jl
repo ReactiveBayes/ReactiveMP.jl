@@ -43,16 +43,17 @@ function invoke_callback(callbacks::NamedTuple{K}, ::Val{E}, args...) where {K, 
 end
 
 """
-    MergedCallbacks
+    MergedCallbacks{F, C}(reduce_fn, callbacks)
 
 The result of the [`ReactiveMP.merge_callbacks`](@ref) procedure.
 """
-struct MergedCallbacks{C}
+struct MergedCallbacks{F, C}
+    reduce_fn::F
     callbacks::C
 end
 
 """
-    merge_callbacks(callbacks_handlers...)
+    merge_callbacks(callbacks_handlers...; reduce_fn = nothing)
 
 This function accept an arbitrary amount of callback handlers and merges them together. 
 Some callback handlers may or may not react on certain type of events.
@@ -64,32 +65,55 @@ julia> handler2 = (event1 = (args...) -> println("Event 1 from handler 2"),);
 
 julia> merged_handler = ReactiveMP.merge_callbacks(handler1, handler2);
 
-julia> ReactiveMP.invoke_callback(merged_handler, Val(:event1))
+julia> ReactiveMP.invoke_callback(merged_handler, Val(:event1));
 Event 1 from handler 1
 Event 1 from handler 2
 
-julia> ReactiveMP.invoke_callback(merged_handler, Val(:event2))
+julia> ReactiveMP.invoke_callback(merged_handler, Val(:event2));
 Event 2 from handler 1
 ```
 
-See also: [`ReactiveMP.invoke_callback`](@ref)
+If `reduce_fn` is not `nothing`, the result of all the callbacks will be reduced
+with the provided reduce function.
 
+```jldoctest
+julia> callback_handler1 = (event1 = (a, b) -> a + b,);
+
+julia> callback_handler2 = (event1 = (a, b) -> a * b,);
+
+julia> merged_handler = ReactiveMP.merge_callbacks(callback_handler1, callback_handler2);
+
+julia> ReactiveMP.invoke_callback(merged_handler, Val(:event1), 2, 3)
+(5, 6)
+
+julia> merged_handler_with_reduce = ReactiveMP.merge_callbacks(callback_handler1, callback_handler2; reduce_fn = +);
+
+julia> ReactiveMP.invoke_callback(merged_handler_with_reduce, Val(:event1), 2, 3)
+11
+```
+
+See also: [`ReactiveMP.invoke_callback`](@ref)
 """
-function merge_callbacks(callback_handlers...)
-    return MergedCallbacks(callback_handlers)
+function merge_callbacks(callback_handlers...; reduce_fn = nothing)
+    return MergedCallbacks(reduce_fn, callback_handlers)
 end
 
 """
     invoke_callback(merged::MergedCallbacks, event, args...)
 
 A specialized version of [`ReactiveMP.invoke_callback`](@ref) for [`ReactiveMP.MergedCallbacks`](@ref). 
-Calls the provided callbacks in order.
+Calls the provided callbacks in order and uses the provided reduce function to 
+reduce the collection of results into a single one.
 """
 function invoke_callback(merged::MergedCallbacks, event, args...)
-    foreach(merged.callbacks) do callback
+    result = map(merged.callbacks) do callback
         invoke_callback(callback, event, args...)
     end
+    return merged_callback_reduce_result(merged.reduce_fn, result)
 end
+
+merged_callback_reduce_result(::Nothing, result) = result
+merged_callback_reduce_result(reduce_fn::F, result) where {F} = reduce(reduce_fn, result)
 
 # All defined events go here, so its easier to document them all in one place
 

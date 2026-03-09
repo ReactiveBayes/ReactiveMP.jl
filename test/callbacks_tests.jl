@@ -89,3 +89,22 @@ end
     @test length(custom_handler.events) == 5
     @test Set(custom_handler.events) == Set([:event2])
 end
+
+@testitem "It should be possible to reduce the result of the merged callback handlers" begin
+    import ReactiveMP: invoke_callback, merge_callbacks
+
+    callback_handler1 = (event1 = (a, b) -> a + b,)
+    callback_handler2 = (event1 = (a, b) -> a * b,)
+
+    merged_handler1 = merge_callbacks(callback_handler1, callback_handler2)
+
+    @test @inferred(invoke_callback(merged_handler1, Val(:event1), 2, 3)) === (5, 6)
+
+    merged_handler2 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = +)
+
+    @test @inferred(invoke_callback(merged_handler2, Val(:event1), 4, 5)) === 29
+
+    merged_handler3 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = *)
+
+    @test @inferred(invoke_callback(merged_handler3, Val(:event1), 1.0, 2.0)) === 6.0
+end
