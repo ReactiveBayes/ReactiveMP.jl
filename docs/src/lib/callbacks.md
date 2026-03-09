@@ -9,7 +9,7 @@ ReactiveMP.invoke_callback
 
 ## All defined events
 
-Here is the list of predefined events, to which a custom event handler can subscribe to.
+Here is the list of predefined event types, to which a custom callback handler can react to.
 
 ```@docs 
 ReactiveMP.BeforeMessageRuleCallback
