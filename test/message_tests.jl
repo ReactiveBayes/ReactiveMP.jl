@@ -217,7 +217,7 @@ end
         (SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), messages, nothing, marginals, meta, addons, SomeArbitraryNode())
 end
 
-@testitem "MessageMapping should call provided event handler" begin
+@testitem "MessageMapping should call provided callbacks handler" begin
     import ReactiveMP: MessageMapping, getdata
 
     struct SomeArbitraryNode end
@@ -228,12 +228,12 @@ end
 
     events = []
 
-    event_handler = (
+    callbacks = (
         before_message_rule_call = (args...) -> push!(events, (event = :before_message_rule_call, args = args)),
         after_message_rule_call = (args...) -> push!(events, (event = :after_message_rule_call, args = args))
     )
 
-    mapping = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, nothing, (), SomeArbitraryNode(), nothing, event_handler)
+    mapping = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, nothing, (), SomeArbitraryNode(), nothing, callbacks)
 
     messages = (Message(1, false, false, nothing),)
     marginals = nothing

@@ -36,7 +36,7 @@ function with_statics(factornode::DeltaFnNode, statics::Tuple{}, stream::T) wher
 end
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
     let out = factornode.out, localmarginal = factornode.localmarginals.marginals[1]
         # We simply subscribe on the marginal of the connected variable on `out` edge
         setmarginal!(localmarginal, getmarginal(getvariable(out), IncludeAll()))
@@ -44,7 +44,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_out}, factorn
 end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
     let out = factornode.out, ins = factornode.ins, localmarginal = factornode.localmarginals.marginals[2]
         cmarginal = MarginalObservable()
         setmarginal!(localmarginal, cmarginal)
@@ -68,7 +68,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:q_ins}, factorn
 end
 
 # This function declares how to compute `m_out` 
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
     let out = factornode.out, ins = factornode.ins
 
         # By default we simply request all inbound messages from `ins` edges
@@ -85,7 +85,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, event_handler)
+        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
         end
 
@@ -99,7 +99,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
 end
 
 # This function declares how to compute `m_in` for each `k` 
-function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
 
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
@@ -115,7 +115,7 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, event_handler)
+        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
         end
 
@@ -144,21 +144,21 @@ In order to compute:
 """
 struct DeltaFnDefaultKnownInverseRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
+    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
 end
 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
+    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
 end
 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
+    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
 end
 
 # This function declares how to compute `m_in` 
 function deltafn_apply_layout(
-    ::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler
+    ::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks
 ) where {F}
     N = length(factornode.ins)
 
@@ -185,7 +185,7 @@ function deltafn_apply_layout(
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, event_handler)
+        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
         end
 

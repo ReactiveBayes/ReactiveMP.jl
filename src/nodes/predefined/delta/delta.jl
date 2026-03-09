@@ -201,19 +201,19 @@ function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependencie
     scheduler     = getscheduler(options)
     addons        = getaddons(options)
     rulefallback  = getrulefallback(options)
-    event_handler = geteventhandler(options)
+    callbacks     = getcallbacks(options)
 
     # First we declare local marginal for `out` edge
-    deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons, rulefallback, event_handler)
+    deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons, rulefallback, callbacks)
 
     # Second we declare how to compute a joint marginal over all inbound edges
-    deltafn_apply_layout(layout, Val(:q_ins), factornode, meta, pipeline, scheduler, addons, rulefallback, event_handler)
+    deltafn_apply_layout(layout, Val(:q_ins), factornode, meta, pipeline, scheduler, addons, rulefallback, callbacks)
 
     # Second we declare message passing logic for out interface
-    deltafn_apply_layout(layout, Val(:m_out), factornode, meta, pipeline, scheduler, addons, rulefallback, event_handler)
+    deltafn_apply_layout(layout, Val(:m_out), factornode, meta, pipeline, scheduler, addons, rulefallback, callbacks)
 
     # At last we declare message passing logic for input interfaces
-    deltafn_apply_layout(layout, Val(:m_in), factornode, meta, pipeline, scheduler, addons, rulefallback, event_handler)
+    deltafn_apply_layout(layout, Val(:m_in), factornode, meta, pipeline, scheduler, addons, rulefallback, callbacks)
 end
 
 function score(::Type{T}, ::FactorBoundFreeEnergy, ::Deterministic, node::DeltaFnNode, meta, skip_strategy, scheduler) where {T <: CountingReal}

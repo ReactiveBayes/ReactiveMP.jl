@@ -251,7 +251,7 @@ struct FactorNodeActivationOptions{M, D, P, A, S, R, E}
     addons::A
     scheduler::S
     rulefallback::R
-    event_handler::E
+    callbacks::E
 end
 
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
@@ -260,7 +260,7 @@ getpipeline(options::FactorNodeActivationOptions) = options.pipeline
 getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
-geteventhandler(options::FactorNodeActivationOptions) = options.event_handler
+getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 
 # Users can override the dependencies if they want to
 collect_functional_dependencies(fform::F, options::FactorNodeActivationOptions) where {F} = collect_functional_dependencies(fform, getdependecies(options))

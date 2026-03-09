@@ -305,7 +305,7 @@ struct MessageMapping{F, T, C, N, M, A, X, R, K, E}
     addons          :: X
     factornode      :: R
     rulefallback    :: K
-    event_handler   :: E
+    callbacks       :: E
 end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
@@ -335,15 +335,15 @@ end
 message_mapping_addon(addon, mapping, messages, marginals, result) = addon
 
 function MessageMapping(
-    ::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K, event_handlers::E
+    ::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K, callbacks::E
 ) where {F, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback, event_handlers)
+    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback, callbacks)
 end
 
 function MessageMapping(
-    ::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K, event_handlers::E
+    ::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K, callbacks::E
 ) where {F <: Function, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback, event_handlers)
+    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback, callbacks)
 end
 
 function (mapping::MessageMapping)(messages, marginals)
@@ -353,7 +353,7 @@ function (mapping::MessageMapping)(messages, marginals)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    broadcast_event(mapping.event_handler, BeforeMessageRuleCallEvent(), mapping, messages, marginals)
+    invoke_callback(mapping.callbacks, BeforeMessageRuleCallback(), mapping, messages, marginals)
     result, addons = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
         missing, mapping.addons
     elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
@@ -383,7 +383,7 @@ function (mapping::MessageMapping)(messages, marginals)
 
     # Inject extra addons after the rule has been executed
     addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)
-    broadcast_event(mapping.event_handler, AfterMessageRuleCallEvent(), mapping, messages, marginals, result, addons)
+    invoke_callback(mapping.callbacks, AfterMessageRuleCallback(), mapping, messages, marginals, result, addons)
 
     return Message(result, is_message_clamped, is_message_initial, addons)
 end

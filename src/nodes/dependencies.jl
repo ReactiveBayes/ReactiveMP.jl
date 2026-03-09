@@ -14,13 +14,13 @@ end
 abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
-    scheduler     = getscheduler(options)
-    addons        = getaddons(options)
-    rulefallback  = getrulefallback(options)
-    event_handler = geteventhandler(options)
-    fform         = functionalform(factornode)
-    meta          = collect_meta(fform, getmetadata(options))
-    pipeline      = collect_pipeline(fform, getpipeline(options))
+    scheduler    = getscheduler(options)
+    addons       = getaddons(options)
+    rulefallback = getrulefallback(options)
+    callbacks    = getcallbacks(options)
+    fform        = functionalform(factornode)
+    meta         = collect_meta(fform, getmetadata(options))
+    pipeline     = collect_pipeline(fform, getpipeline(options))
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
@@ -34,9 +34,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                 vmessageout = combineLatest((messages, marginals), PushNew())
 
                 mapping =
-                    let messagemap = MessageMapping(
-                            fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode), rulefallback, event_handler
-                        )
+                    let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode), rulefallback, callbacks)
                         (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
                     end
 
