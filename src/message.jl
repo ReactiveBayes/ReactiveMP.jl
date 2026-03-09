@@ -136,8 +136,9 @@ function multiply_messages(prod_strategy, left::Message, right::Message)
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
 
-constrain_form_as_message(message::Message, form_constraint) =
-    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
+constrain_form_as_message(message::Message, form_constraint) = Message(
+    constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message)
+)
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of DeferredMessage)

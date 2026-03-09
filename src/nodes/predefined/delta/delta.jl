@@ -198,10 +198,10 @@ function activate!(factornode::DeltaFnNode, layout::AbstractDeltaNodeDependencie
         (!isnothing(getvariable(interface))) || error("Empty variable on interface $(interface) of node $(factornode)")
     end
 
-    scheduler     = getscheduler(options)
-    addons        = getaddons(options)
-    rulefallback  = getrulefallback(options)
-    callbacks     = getcallbacks(options)
+    scheduler    = getscheduler(options)
+    addons       = getaddons(options)
+    rulefallback = getrulefallback(options)
+    callbacks    = getcallbacks(options)
 
     # First we declare local marginal for `out` edge
     deltafn_apply_layout(layout, Val(:q_out), factornode, meta, pipeline, scheduler, addons, rulefallback, callbacks)
