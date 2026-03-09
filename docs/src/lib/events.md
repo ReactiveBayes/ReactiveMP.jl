@@ -9,3 +9,11 @@ ReactiveMP.handle_event
 ReactiveMP.broadcast_event
 ```
 
+## All defined events
+
+Here is the list of predefined events, to which a custom event handler can subscribe to.
+
+```@docs 
+ReactiveMP.BeforeMessageRuleCallEvent
+ReactiveMP.AfterMessageRuleCallEvent
+```

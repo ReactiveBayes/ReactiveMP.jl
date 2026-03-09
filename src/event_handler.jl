@@ -68,3 +68,49 @@ function handle_event(event_handler::NamedTuple{K}, ::Event{E}, args...) where {
     end
     return nothing
 end
+
+
+
+# All defined events go here, so its easier to document them all in one place
+
+"""
+    BeforeMessageRuleCallEvent # Event{:before_message_rule_call}
+
+Alias for `Event{:before_message_rule_call}`. This event that is being fired right 
+before computing the message and calling the corresponding rule. The handler for this event 
+should accept three arguments in the following order:
+- `mapping` of type [`ReactiveMP.MessageMapping`](@ref)
+- `messages`, typically of type `Tuple` if present, `nothing` otherwise
+- `marginals`, typically of type `Tuple` if present, `nothing` otherwise
+
+```jldoctest
+julia> import ReactiveMP: BeforeMessageRuleCallEvent
+
+julia> struct MyEventHandler end
+
+julia> ReactiveMP.handle_event(::MyEventHandler, ::BeforeMessageRuleCallEvent, mapping, messages, marginals) = println("Before message called!")
+```
+"""
+const BeforeMessageRuleCallEvent = Event{:before_message_rule_call}
+
+"""
+    AfterMessageRuleCallEvent # Event{:after_message_rule_call}
+
+Alias for `Event{:after_message_rule_call}`. This event that is being fired right 
+after computing the message and calling the corresponding rule. The handler for this event 
+should accept three arguments in the following order:
+- `mapping` of type [`ReactiveMP.MessageMapping`](@ref)
+- `messages`, typically of type `Tuple` if present, `nothing` otherwise
+- `marginals`, typically of type `Tuple` if present, `nothing` otherwise
+- `result`, the result of the rule invocation (of `rulefallback`), can be any type
+- `addons`, the result of the addons invocation, if present, can be any type
+
+```jldoctest
+julia> import ReactiveMP: AfterMessageRuleCallEvent
+
+julia> struct MyEventHandler end
+
+julia> ReactiveMP.handle_event(::MyEventHandler, ::AfterMessageRuleCallEvent, mapping, messages, marginals) = println("After message called!")
+```
+"""
+const AfterMessageRuleCallEvent = Event{:after_message_rule_call}

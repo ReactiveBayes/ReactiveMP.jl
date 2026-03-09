@@ -136,9 +136,8 @@ function multiply_messages(prod_strategy, left::Message, right::Message)
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
 
-constrain_form_as_message(message::Message, form_constraint) = Message(
-    constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message)
-)
+constrain_form_as_message(message::Message, form_constraint) =
+    Message(constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of DeferredMessage)
@@ -354,7 +353,7 @@ function (mapping::MessageMapping)(messages, marginals)
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
     is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
 
-    broadcast_event(mapping.event_handler, Event{:before_message_rule_call}(), mapping, messages, marginals)
+    broadcast_event(mapping.event_handler, BeforeMessageRuleCallEvent(), mapping, messages, marginals)
     result, addons = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
         missing, mapping.addons
     elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
@@ -384,7 +383,7 @@ function (mapping::MessageMapping)(messages, marginals)
 
     # Inject extra addons after the rule has been executed
     addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)
-    broadcast_event(mapping.event_handler, Event{:after_message_rule_call}(), mapping, messages, marginals, result, addons)
+    broadcast_event(mapping.event_handler, AfterMessageRuleCallEvent(), mapping, messages, marginals, result, addons)
 
     return Message(result, is_message_clamped, is_message_initial, addons)
 end
