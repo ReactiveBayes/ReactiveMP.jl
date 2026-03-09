@@ -157,7 +157,9 @@ function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_o
 end
 
 # This function declares how to compute `m_in` 
-function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler) where {F}
+function deltafn_apply_layout(
+    ::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode{F}, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler
+) where {F}
     N = length(factornode.ins)
 
     # For each outbound message from `in_k` edge we need an inbound messages from all OTHER! `in_*` edges and inbound message on `m_out`

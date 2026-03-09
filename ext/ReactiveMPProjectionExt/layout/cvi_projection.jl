@@ -42,17 +42,23 @@ function deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Any)
 end
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
-function deltafn_apply_layout(::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(
+    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler
+)
     return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
 end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
-function deltafn_apply_layout(::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(
+    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler
+)
     return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
 end
 
 # This function declares how to compute `m_out` 
-function deltafn_apply_layout(::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(
+    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler
+)
     let interface = factornode.out
         msgs_names      = Val{(:out,)}()
         msgs_observable = combineLatestUpdates((messagein(factornode.out),), PushNew())
@@ -80,6 +86,8 @@ function deltafn_apply_layout(::CVIProjectionApproximationDeltaFnRuleLayout, ::V
 end
 
 # This function declares how to compute `m_in` for each `k` 
-function deltafn_apply_layout(::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
+function deltafn_apply_layout(
+    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler
+)
     return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, event_handler)
 end
