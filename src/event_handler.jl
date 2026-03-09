@@ -68,4 +68,3 @@ function handle_event(event_handler::NamedTuple{K}, ::Event{E}, args...) where {
     end
     return nothing
 end
-
