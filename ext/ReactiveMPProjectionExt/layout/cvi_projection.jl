@@ -72,7 +72,7 @@ function deltafn_apply_layout(
 
         vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
 
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks, callbacks)
+        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
         end
 
