@@ -12,6 +12,8 @@ julia> struct MyCustomCallbackHandler end;
 
 julia> ReactiveMP.invoke_callback(::MyCustomCallbackHandler, event, args...) = print("Event \$(event) has been called with \$(args)");
 ```
+
+See also: [`ReactiveMP.merge_callbacks`](@ref)
 """
 function invoke_callback(callbacks::Nothing, args...)
     return nothing
@@ -38,6 +40,55 @@ function invoke_callback(callbacks::NamedTuple{K}, ::Val{E}, args...) where {K, 
         return callbacks[E](args...)
     end
     return nothing
+end
+
+"""
+    MergedCallbacks
+
+The result of the [`ReactiveMP.merge_callbacks`](@ref) procedure.
+"""
+struct MergedCallbacks{C}
+    callbacks::C
+end
+
+"""
+    merge_callbacks(callbacks_handlers...)
+
+This function accept an arbitrary amount of callback handlers and merges them together. 
+Some callback handlers may or may not react on certain type of events.
+
+```jldoctest
+julia> handler1 = (event1 = (args...) -> println("Event 1 from handler 1"), event2 = (args...) -> println("Event 2 from handler 1"));
+
+julia> handler2 = (event1 = (args...) -> println("Event 1 from handler 2"),);
+
+julia> merged_handler = ReactiveMP.merge_callbacks(handler1, handler2);
+
+julia> ReactiveMP.invoke_callback(merged_handler, Val(:event1))
+Event 1 from handler 1
+Event 1 from handler 2
+
+julia> ReactiveMP.invoke_callback(merged_handler, Val(:event2))
+Event 2 from handler 1
+```
+
+See also: [`ReactiveMP.invoke_callback`](@ref)
+
+"""
+function merge_callbacks(callback_handlers...)
+    return MergedCallbacks(callback_handlers)
+end
+
+"""
+    invoke_callback(merged::MergedCallbacks, event, args...)
+
+A specialized version of [`ReactiveMP.invoke_callback`](@ref) for [`ReactiveMP.MergedCallbacks`](@ref). 
+Calls the provided callbacks in order.
+"""
+function invoke_callback(merged::MergedCallbacks, event, args...)
+    foreach(merged.callbacks) do callback
+        invoke_callback(callback, event, args...)
+    end
 end
 
 # All defined events go here, so its easier to document them all in one place

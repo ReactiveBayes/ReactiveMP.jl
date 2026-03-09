@@ -5,6 +5,8 @@ via "callbacks". This can be useful, for example, to debug messages or monitor t
 
 ```@docs 
 ReactiveMP.invoke_callback
+ReactiveMP.merge_callbacks
+ReactiveMP.MergedCallbacks
 ```
 
 ## All defined events

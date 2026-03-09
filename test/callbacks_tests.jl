@@ -52,3 +52,40 @@ end
     @test @inferred(invoke_callback(callback_handler, Val{:prod_event}(), 1, 2, 5)) == 10
     @test @inferred(invoke_callback(callback_handler, Val{:other_event}(), 1, 2, 3)) === nothing
 end
+
+@testitem "It should be possible to merge callback handlers" begin
+    import ReactiveMP: invoke_callback, merge_callbacks
+
+    # listens to event 1 and event 2
+    handler1_events = []
+    callback_handler1 = (event1 = (args...) -> push!(handler1_events, :event1), event2 = (args...) -> push!(handler1_events, :event2))
+
+    # listens to event3 and event 2
+    handler2_events = []
+    callback_handler2 = (event3 = (args...) -> push!(handler2_events, :event3), event2 = (args...) -> push!(handler2_events, :event2))
+
+    # only listens to event 2
+    struct MyCustomHandler
+        events
+    end
+
+    ReactiveMP.invoke_callback(::MyCustomHandler, event, args...) = nothing
+    ReactiveMP.invoke_callback(handler::MyCustomHandler, event::Val{:event2}, args...) = push!(handler.events, :event2)
+
+    custom_handler = MyCustomHandler([])
+
+    merged_handler = merge_callbacks(callback_handler1, callback_handler2, custom_handler)
+
+    for i in 1:5
+        invoke_callback(merged_handler, Val(:event1), 1, 1)
+        invoke_callback(merged_handler, Val(:event2), "hello")
+        invoke_callback(merged_handler, Val(:event3), 3.0)
+    end
+
+    @test length(handler1_events) == 10
+    @test Set(handler1_events) == Set([:event1, :event2])
+    @test length(handler2_events) == 10
+    @test Set(handler2_events) == Set([:event3, :event2])
+    @test length(custom_handler.events) == 5
+    @test Set(custom_handler.events) == Set([:event2])
+end
