@@ -42,8 +42,6 @@ function invoke_callback(callbacks::NamedTuple{K}, ::Val{E}, args...) where {K, 
     return nothing
 end
 
-invoke_callback(callbacks::Ref, event, args...) = invoke_callback(callbacks[], event, args...)
-
 """
     MergedCallbacks{F, C}(reduce_fn, callbacks)
 
