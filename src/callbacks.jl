@@ -92,6 +92,26 @@ julia> ReactiveMP.invoke_callback(merged_handler_with_reduce, Val(:event1), 2, 3
 11
 ```
 
+The `reduce_fn` can also be a `NamedTuple` that sets different reduce functions for 
+different events.
+
+```jldoctest
+julia> callback_handler1 = (event1 = (a, b) -> a + b, event2 = (a, b) -> a - b);
+
+julia> callback_handler2 = (event1 = (a, b) -> a * b, event2 = (a, b) -> a / b);
+
+julia> merged_handler = ReactiveMP.merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (
+           event1 = +,
+           event2 = *
+       ));
+
+julia> ReactiveMP.invoke_callback(merged_handler, Val(:event1), 4, 5)
+29
+
+julia> ReactiveMP.invoke_callback(merged_handler, Val(:event2), 5, 5)
+0.0
+```
+
 See also: [`ReactiveMP.invoke_callback`](@ref)
 """
 function merge_callbacks(callback_handlers...; reduce_fn = nothing)
@@ -109,11 +129,13 @@ function invoke_callback(merged::MergedCallbacks, event, args...)
     result = map(merged.callbacks) do callback
         invoke_callback(callback, event, args...)
     end
-    return merged_callback_reduce_result(merged.reduce_fn, result)
+    return merged_callback_reduce_result(merged.reduce_fn, event, result)
 end
 
-merged_callback_reduce_result(::Nothing, result) = result
-merged_callback_reduce_result(reduce_fn::F, result) where {F} = reduce(reduce_fn, result)
+merged_callback_reduce_result(::Nothing, _, result) = result
+merged_callback_reduce_result(reduce_fn::F, _, result) where {F} = reduce(reduce_fn, result)
+# If `reduce_fn` is a NamedTuple, then we choose a specific function for a specific event from this tuple
+merged_callback_reduce_result(reduce_fn::NamedTuple{K}, event::Val{E}, result) where {K, E} = merged_callback_reduce_result(get(reduce_fn, E, nothing), event, result)
 
 # All defined events go here, so its easier to document them all in one place
 

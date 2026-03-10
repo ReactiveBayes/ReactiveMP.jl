@@ -108,3 +108,45 @@ end
 
     @test @inferred(invoke_callback(merged_handler3, Val(:event1), 1.0, 2.0)) === 6.0
 end
+
+@testitem "It should be possible to use different reduce functions for different events" begin
+    import ReactiveMP: invoke_callback, merge_callbacks
+
+    callback_handler1 = (event1 = (a, b) -> a + b, event2 = (a, b) -> a - b)
+    callback_handler2 = (event1 = (a, b) -> a * b, event2 = (a, b) -> a / b)
+
+    merged_handler1 = merge_callbacks(callback_handler1, callback_handler2)
+
+    @test @inferred(invoke_callback(merged_handler1, Val(:event1), 2, 3)) === (5, 6)
+    @test @inferred(invoke_callback(merged_handler1, Val(:event2), 3, 4)) === (-1, 3/4)
+
+    merged_handler2 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (
+        event1 = +,
+        event2 = *
+    ))
+
+    @test @inferred(invoke_callback(merged_handler2, Val(:event1), 4, 5)) === 29
+    @test @inferred(invoke_callback(merged_handler2, Val(:event2), 4, 5)) === -4/5
+
+    merged_handler3 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (
+        event1 = *,
+        event2 = +
+    ))
+
+    @test @inferred(invoke_callback(merged_handler3, Val(:event1), 1.0, 2.0)) === 6.0
+    @test @inferred(invoke_callback(merged_handler3, Val(:event2), 1.0, 2.0)) === -1.0+1.0/2.0
+
+    merged_handler4 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (
+        event1 = -,
+    ))
+
+    @test @inferred(invoke_callback(merged_handler4, Val(:event1), 1.0, 2.0)) === 1.0
+    @test @inferred(invoke_callback(merged_handler4, Val(:event2), 1.0, 2.0)) === (-1.0, 1.0/2.0)
+
+    merged_handler5 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (
+        event2 = /,
+    ))
+
+    @test @inferred(invoke_callback(merged_handler5, Val(:event1), 1.0, 2.0)) === (3.0, 2.0)
+    @test @inferred(invoke_callback(merged_handler5, Val(:event2), 1.0, 2.0)) === -1.0/(1.0/2.0)
+end
