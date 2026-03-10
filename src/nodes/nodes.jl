@@ -244,13 +244,14 @@ function prepare_interfaces_check_num_inputarguments(fform, inputinterfaces::Val
         error(lazy"Expected $(length(Input)) input arguments for `$(fform)`, got $(length(interfaces) - 1): $(join(map(first, Iterators.drop(interfaces, 1)), \", \"))")
 end
 
-struct FactorNodeActivationOptions{M, D, P, A, S, R}
+struct FactorNodeActivationOptions{M, D, P, A, S, R, E}
     metadata::M
     dependencies::D
     pipeline::P
     addons::A
     scheduler::S
     rulefallback::R
+    callbacks::E
 end
 
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
@@ -259,6 +260,7 @@ getpipeline(options::FactorNodeActivationOptions) = options.pipeline
 getaddons(options::FactorNodeActivationOptions) = options.addons
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
+getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 
 # Users can override the dependencies if they want to
 collect_functional_dependencies(fform::F, options::FactorNodeActivationOptions) where {F} = collect_functional_dependencies(fform, getdependecies(options))

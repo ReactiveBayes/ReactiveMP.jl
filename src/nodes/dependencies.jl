@@ -17,6 +17,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
     scheduler    = getscheduler(options)
     addons       = getaddons(options)
     rulefallback = getrulefallback(options)
+    callbacks    = getcallbacks(options)
     fform        = functionalform(factornode)
     meta         = collect_meta(fform, getmetadata(options))
     pipeline     = collect_pipeline(fform, getpipeline(options))
@@ -32,9 +33,10 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
 
                 vmessageout = combineLatest((messages, marginals), PushNew())
 
-                mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode), rulefallback)
-                    (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
-                end
+                mapping =
+                    let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode), rulefallback, callbacks)
+                        (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
+                    end
 
                 vmessageout = vmessageout |> map(AbstractMessage, mapping)
                 vmessageout = apply_pipeline_stage(pipeline, factornode, vtag, vmessageout)

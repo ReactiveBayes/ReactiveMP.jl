@@ -21,6 +21,7 @@ include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/form.jl")
 
+include("callbacks.jl")
 include("message.jl")
 include("marginal.jl")
 include("addons.jl")

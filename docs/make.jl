@@ -17,6 +17,7 @@ makedocs(
             "Messages"             => "lib/message.md",
             "Marginals"            => "lib/marginal.md",
             "Message update rules" => "lib/rules.md",
+            "Callbacks"            => "lib/callbacks.md",
             "Helper utils"         => "lib/helpers.md",
             "Algebra utils"        => "lib/algebra.md",
             "Specific factor nodes" => [
