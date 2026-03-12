@@ -44,4 +44,24 @@
             )
         ]
     end
+
+    @testset "Performance: MvNormalMeanScalePrecision rule allocates less than general rule" begin
+        import ReactiveMP: @call_rule
+
+        for n in (10, 100)
+            m_out_scale = MvNormalMeanScalePrecision(zeros(n), 3.0)
+            m_out_general = MvNormalMeanCovariance(zeros(n), diageye(Float64, n) / 3.0)
+            q_γ = GammaShapeRate(2.0, 1.0)
+
+            # Warm up
+            @call_rule MvNormalMeanScalePrecision(:μ, Marginalisation) (m_out = m_out_scale, q_γ = q_γ)
+            @call_rule MvNormalMeanScalePrecision(:μ, Marginalisation) (m_out = m_out_general, q_γ = q_γ)
+
+            allocs_scale = @allocated @call_rule MvNormalMeanScalePrecision(:μ, Marginalisation) (m_out = m_out_scale, q_γ = q_γ)
+            allocs_general = @allocated @call_rule MvNormalMeanScalePrecision(:μ, Marginalisation) (m_out = m_out_general, q_γ = q_γ)
+
+            # The scale rule avoids allocating N×N matrices, so it should allocate at least N times less
+            @test allocs_scale * n < allocs_general
+        end
+    end
 end
