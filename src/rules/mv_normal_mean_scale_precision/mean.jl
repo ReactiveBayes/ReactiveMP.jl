@@ -9,7 +9,7 @@
 end
 
 @rule MvNormalMeanScalePrecision(:μ, Marginalisation) (m_out::MvNormalMeanScalePrecision, q_γ::Any) = begin
-    m_out_mean = mean_cov(m_out)
+    m_out_mean = mean(m_out)
     l_γ = m_out.γ
     r_γ = mean(q_γ)
     return MvNormalMeanScalePrecision(m_out_mean, (l_γ*r_γ)/(l_γ+r_γ))
