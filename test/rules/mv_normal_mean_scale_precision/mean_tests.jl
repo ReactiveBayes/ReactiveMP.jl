@@ -6,10 +6,7 @@
 
     @testset "Variational: (q_out::MultivariateNormalDistributionsFamily, q_γ::Gamma)" begin
         @test_rules [check_type_promotion = true] MvNormalMeanScalePrecision(:μ, Marginalisation) [
-            (
-                input = (q_out = MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]), q_γ = GammaShapeRate(1.0, 1.0)),
-                output = MvNormalMeanScalePrecision([2.0, 1.0], 1.0)
-            ),
+            (input = (q_out = MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]), q_γ = GammaShapeRate(1.0, 1.0)), output = MvNormalMeanScalePrecision([2.0, 1.0], 1.0)),
             (input = (q_out = MvNormalMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]), q_γ = Gamma(3.0, 1.0)), output = MvNormalMeanScalePrecision([2.0, 1.0], 3.0))
         ]
     end
@@ -30,10 +27,7 @@
 
     @testset "Structured variational: (m_out::MvNormalMeanScalePrecision, q_γ::Gamma)" begin
         @test_rules [check_type_promotion = true] MvNormalMeanScalePrecision(:μ, Marginalisation) [
-            (
-                input = (m_out = MvNormalMeanScalePrecision([2.0, 1.0], 3.0), q_γ = Gamma(1.0, 1.0)),
-                output = MvNormalMeanScalePrecision([2.0, 1.0], 3.0 * 1.0 / (3.0 + 1.0))
-            ),
+            (input = (m_out = MvNormalMeanScalePrecision([2.0, 1.0], 3.0), q_γ = Gamma(1.0, 1.0)), output = MvNormalMeanScalePrecision([2.0, 1.0], 3.0 * 1.0 / (3.0 + 1.0))),
             (
                 input = (m_out = MvNormalMeanScalePrecision([0.0, 0.0], 4.0), q_γ = GammaShapeRate(4.0, 2.0)),
                 output = MvNormalMeanScalePrecision([0.0, 0.0], 4.0 * 2.0 / (4.0 + 2.0))

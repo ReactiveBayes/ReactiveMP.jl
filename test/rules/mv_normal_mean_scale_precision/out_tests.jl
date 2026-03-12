@@ -8,10 +8,7 @@
         @test_rules [check_type_promotion = true] MvNormalMeanScalePrecision(:out, Marginalisation) [
             (input = (q_μ = MvNormalMeanCovariance([2.0, 1.0], [3.0 2.0; 2.0 4.0]), q_γ = Gamma(1.0, 1.0)), output = MvNormalMeanScalePrecision([2.0, 1.0], 1.0)),
             (input = (q_μ = MvNormalMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]), q_γ = Gamma(3.0, 2.0)), output = MvNormalMeanScalePrecision([2.0, 1.0], 6.0)),
-            (
-                input = (q_μ = MvNormalWeightedMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]), q_γ = Gamma(4.0, 2.0)),
-                output = MvNormalMeanScalePrecision([3 / 4, -1 / 8], 8.0)
-            )
+            (input = (q_μ = MvNormalWeightedMeanPrecision([2.0, 1.0], [3.0 2.0; 2.0 4.0]), q_γ = Gamma(4.0, 2.0)), output = MvNormalMeanScalePrecision([3 / 4, -1 / 8], 8.0))
         ]
     end
 
@@ -28,14 +25,8 @@
 
     @testset "Structured variational: (m_μ::MvNormalMeanScalePrecision, q_γ::Gamma)" begin
         @test_rules [check_type_promotion = true] MvNormalMeanScalePrecision(:out, Marginalisation) [
-            (
-                input = (m_μ = MvNormalMeanScalePrecision([2.0, 1.0], 3.0), q_γ = Gamma(1.0, 1.0)),
-                output = MvNormalMeanScalePrecision([2.0, 1.0], 3.0 * 1.0 / (3.0 + 1.0))
-            ),
-            (
-                input = (m_μ = MvNormalMeanScalePrecision([0.0, 0.0], 4.0), q_γ = GammaShapeRate(4.0, 2.0)),
-                output = MvNormalMeanScalePrecision([0.0, 0.0], 4.0 * 2.0 / (4.0 + 2.0))
-            ),
+            (input = (m_μ = MvNormalMeanScalePrecision([2.0, 1.0], 3.0), q_γ = Gamma(1.0, 1.0)), output = MvNormalMeanScalePrecision([2.0, 1.0], 3.0 * 1.0 / (3.0 + 1.0))),
+            (input = (m_μ = MvNormalMeanScalePrecision([0.0, 0.0], 4.0), q_γ = GammaShapeRate(4.0, 2.0)), output = MvNormalMeanScalePrecision([0.0, 0.0], 4.0 * 2.0 / (4.0 + 2.0))),
             (
                 input = (m_μ = MvNormalMeanScalePrecision([3.0, -1.0], 2.0), q_γ = GammaShapeRate(2.0, 1.0)),
                 output = MvNormalMeanScalePrecision([3.0, -1.0], 2.0 * 2.0 / (2.0 + 2.0))
