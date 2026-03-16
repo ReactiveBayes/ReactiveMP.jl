@@ -106,7 +106,10 @@ end
 # We need this dummy method as Julia is not smart enough to 
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
-    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
+    return left.is_clamped == right.is_clamped &&
+           left.is_initial == right.is_initial &&
+           left.data == right.data &&
+           left.addons == right.addons
 end
 
 """
@@ -122,7 +125,7 @@ The following `kwargs` are supported:
 - `form_constraint_check_strategy`: defines the strategy to check the specified form constraint, either [`ReactiveMP.FormConstraintCheckLast`](@ref) or [`ReactiveMP.FormConstraintCheckEach`](@ref), default is [`ReactiveMP.FormConstraintCheckLast`](@ref)
     + [`ReactiveMP.FormConstraintCheckLast`](@ref) will only call [`ReactiveMP.constrain_form`](@ref) at the end of the `[ReactiveMP.compute_product_of_messages]`
     + [`ReactiveMP.FormConstraintCheckEach`](@ref) will call [`ReactiveMP.constrain_form`](@ref) at each of the [`ReactiveMP.compute_product_of_two_messages`](@ref)
-- `folding_strategy`: defines the strategy (or simply speaking the direction) of the messages product for [`ReactiveMP.compute_message_product`](@ref), default is [`MessagesProductFromLeftToRight`](@ref). Can be a custom function that accepts a `context` and collection of `messages` and does arbitrary order, but still needs to call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood (unless you do some experimental stuff).
+- `fold_strategy`: defines the strategy (or simply speaking the direction) of the messages product for [`ReactiveMP.compute_message_product`](@ref), default is [`MessagesProductFromLeftToRight`](@ref). Can be a custom function that accepts a `context` and collection of `messages` and does arbitrary order, but still needs to call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood (unless you do some experimental stuff). By the way it is called __fold__ to reflect the computer science term with "left-fold" or "right-fold" (and we use the builtin Julia `foldl` and `foldr` functions for that).
 - `callbacks`: callbacks handler, see [`ReactiveMP.invoke_callback`](@ref) for more details.
 
 See also: [`ReactiveMP.compute_product_of_messages`](@ref), [`ReactiveMP.compute_product_of_two_messages`]
@@ -131,7 +134,7 @@ Base.@kwdef struct MessageProductContext{C, F, S, L, A}
     prod_constraint::C = BayesBase.GenericProd()
     form_constraint::F = UnspecifiedFormConstraint()
     form_constraint_check_strategy::S = FormConstraintCheckLast()
-    folding_strategy::L = MessagesProductFromLeftToRight()
+    fold_strategy::L = MessagesProductFromLeftToRight()
     callbacks::A = nothing
 end
 
@@ -154,11 +157,16 @@ The rules for the product are the following:
 
 See: [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref)
 """
-function compute_product_of_two_messages(context::MessageProductContext, left::Message, right::Message)
+function compute_product_of_two_messages(
+    context::MessageProductContext, left::Message, right::Message
+)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
-    is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
+    is_prod_initial =
+        !is_prod_clamped &&
+        (is_clamped_or_initial(left)) &&
+        (is_clamped_or_initial(right))
 
     # process distributions
     left_dist  = getdata(left)
@@ -174,29 +182,42 @@ function compute_product_of_two_messages(context::MessageProductContext, left::M
     right_addons = getaddons(right)
 
     # process addons
-    new_addons = multiply_addons(left_addons, right_addons, new_dist, left_dist, right_dist)
+    new_addons = multiply_addons(
+        left_addons, right_addons, new_dist, left_dist, right_dist
+    )
     result = Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 
     return result
 end
 
 # Sometimes we call the product on the `DeferredMessage` that need to be casted to a `Message`
-function compute_product_of_two_messages(context::MessageProductContext, left, right)
-    return compute_product_of_two_messages(context::MessageProductContext, as_message(left), as_message(right))
+function compute_product_of_two_messages(
+    context::MessageProductContext, left, right
+)
+    return compute_product_of_two_messages(
+        context::MessageProductContext, as_message(left), as_message(right)
+    )
 end
 
 """
     compute_product_of_messages(context::MessageProductContext, messages)
 
-Computes the product of **collection** of messages (in contrast to `compute_product_of_two_messages(context, left, right)` that computes the product of **two** messages) given the provided `context`. Uses the `context.folding_strategy` to determine in which order to call the [`ReactiveMP.compute_product_of_two_messages`](@ref). Typically is set to [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), but can be also set to an arbitrary function that accepts `context` and `messages` and which **must** call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood.
+Computes the product of **collection** of messages (in contrast to `compute_product_of_two_messages(context, left, right)` that computes the product of **two** messages) given the provided `context`. Uses the `context.fold_strategy` to determine in which order to call the [`ReactiveMP.compute_product_of_two_messages`](@ref). Typically is set to [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), but can be also set to an arbitrary function that accepts `context` and `messages` and which **must** call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood.
 
 See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref)
 """
 function compute_product_of_messages(context::MessageProductContext, messages)
-    result = compute_product_of_messages(context.folding_strategy, context, messages)
+    result = compute_product_of_messages(
+        context.fold_strategy, context, messages
+    )
 
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
-        result = Message(constrain_form(context.form_constraint, getdata(result)), is_clamped(result), is_initial(result), getaddons(result))
+        result = Message(
+            constrain_form(context.form_constraint, getdata(result)),
+            is_clamped(result),
+            is_initial(result),
+            getaddons(result)
+        )
     end
 
     return result
@@ -209,8 +230,13 @@ Use this strategy in [`ReactiveMP.MessageProductContext`](@ref) to compute messa
 """
 struct MessagesProductFromLeftToRight end
 
-function compute_product_of_messages(::MessagesProductFromLeftToRight, context::MessageProductContext, messages)
-    return foldl((left, right) -> compute_product_of_two_messages(context, left, right), messages)
+function compute_product_of_messages(
+    ::MessagesProductFromLeftToRight, context::MessageProductContext, messages
+)
+    return foldl(
+        (left, right) -> compute_product_of_two_messages(context, left, right),
+        messages
+    )
 end
 
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
@@ -265,12 +291,15 @@ mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     cache           :: Union{Nothing, Message}
 end
 
-DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(messages, marginals, mappingFn, nothing)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
+    DeferredMessage(messages, marginals, mappingFn, nothing)
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
     if isnothing(cache)
-        print(io, "DeferredMessage([ use `as_message` to compute the message ])")
+        print(
+            io, "DeferredMessage([ use `as_message` to compute the message ])"
+        )
     else
         print(io, "DeferredMessage(", getdata(cache), ")")
     end
@@ -288,10 +317,17 @@ function as_message(message::DeferredMessage, cache::Message)::Message
 end
 
 function as_message(message::DeferredMessage, cache::Nothing)::Message
-    return as_message(message, cache, getrecent(message.messages), getrecent(message.marginals))
+    return as_message(
+        message,
+        cache,
+        getrecent(message.messages),
+        getrecent(message.marginals)
+    )
 end
 
-function as_message(message::DeferredMessage, cache::Nothing, messages, marginals)::Message
+function as_message(
+    message::DeferredMessage, cache::Nothing, messages, marginals
+)::Message
     computed = message.mappingFn(messages, marginals)
     setcache!(message, computed)
     return computed
@@ -306,11 +342,14 @@ struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     stream  :: LazyObservable{M}
 end
 
-MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(RecentSubject(M), lazy(M))
+MessageObservable(::Type{M} = AbstractMessage) where {M} =
+    MessageObservable{M}(RecentSubject(M), lazy(M))
 
-Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(observable.subject)
+Rocket.getrecent(observable::MessageObservable) =
+    Rocket.getrecent(observable.subject)
 
-@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(observable.stream, actor)
+@inline Rocket.on_subscribe!(observable::MessageObservable, actor) =
+    subscribe!(observable.stream, actor)
 
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)
@@ -369,21 +408,48 @@ message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
 # Some addons add post rule execution logic
-function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons)
-    return message_mapping_addons(mapping, mapping.addons, messages, marginals, result, addons)
+function message_mapping_addons(
+    mapping::MessageMapping, messages, marginals, result, addons
+)
+    return message_mapping_addons(
+        mapping, mapping.addons, messages, marginals, result, addons
+    )
 end
 
 # `enabled_addons` are always type-stable, whether `addons` are not, so we check based on the `enabled_addons` and ignore the `addons`
 # As a consequence if any message update rule returns non-empty `addons`, but `enabled_addons` is empty, then the resulting value 
 # of the `addons` will be simply ignored
-message_mapping_addons(mapping::MessageMapping, enabled_addons::Nothing, messages, marginals, result, addons) = enabled_addons
-message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple{}, messages, marginals, result, addons) = enabled_addons
+message_mapping_addons(
+    mapping::MessageMapping,
+    enabled_addons::Nothing,
+    messages,
+    marginals,
+    result,
+    addons
+) = enabled_addons
+message_mapping_addons(
+    mapping::MessageMapping,
+    enabled_addons::Tuple{},
+    messages,
+    marginals,
+    result,
+    addons
+) = enabled_addons
 
 # The main logic here is that some addons may add extra computation AFTER the rule has been computed
 # The benefit of that is that we have an access to the `MessageMapping` structure and is mostly useful for debug addons
-function message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple, messages, marginals, result, addons)
+function message_mapping_addons(
+    mapping::MessageMapping,
+    enabled_addons::Tuple,
+    messages,
+    marginals,
+    result,
+    addons
+)
     return map(addons) do addon
-        return message_mapping_addon(addon, mapping, messages, marginals, result)
+        return message_mapping_addon(
+            addon, mapping, messages, marginals, result
+        )
     end
 end
 
@@ -392,55 +458,121 @@ end
 message_mapping_addon(addon, mapping, messages, marginals, result) = addon
 
 function MessageMapping(
-    ::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K, callbacks::E
+    ::Type{F},
+    vtag::T,
+    vconstraint::C,
+    msgs_names::N,
+    marginals_names::M,
+    meta::A,
+    addons::X,
+    factornode::R,
+    rulefallback::K,
+    callbacks::E
 ) where {F, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback, callbacks)
+    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
+        vtag,
+        vconstraint,
+        msgs_names,
+        marginals_names,
+        meta,
+        addons,
+        factornode,
+        rulefallback,
+        callbacks
+    )
 end
 
 function MessageMapping(
-    ::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K, callbacks::E
+    ::F,
+    vtag::T,
+    vconstraint::C,
+    msgs_names::N,
+    marginals_names::M,
+    meta::A,
+    addons::X,
+    factornode::R,
+    rulefallback::K,
+    callbacks::E
 ) where {F <: Function, T, C, N, M, A, X, R, K, E}
-    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback, callbacks)
+    return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
+        vtag,
+        vconstraint,
+        msgs_names,
+        marginals_names,
+        meta,
+        addons,
+        factornode,
+        rulefallback,
+        callbacks
+    )
 end
 
 function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
-    is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+    is_message_clamped =
+        __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
-
-    invoke_callback(mapping.callbacks, BeforeMessageRuleCallback(), mapping, messages, marginals)
-    result, addons = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
-        missing, mapping.addons
-    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
-        missing, mapping.addons
-    else
-        ruleargs = (
-            message_mapping_fform(mapping),
-            mapping.vtag,
-            mapping.vconstraint,
-            mapping.msgs_names,
-            messages,
-            mapping.marginals_names,
-            marginals,
-            mapping.meta,
-            mapping.addons,
-            mapping.factornode
+    is_message_initial =
+        !is_message_clamped && (
+            __check_all(is_clamped_or_initial, messages) &&
+            __check_all(is_clamped_or_initial, marginals)
         )
-        ruleoutput = rule(ruleargs...)
-        # if `@rule` is not defined, the default behaviour is to return 
-        # the `RuleMethodError` object
-        if ruleoutput isa RuleMethodError
-            !isnothing(mapping.rulefallback) ? mapping.rulefallback(ruleargs...) : throw(ruleoutput)
+
+    invoke_callback(
+        mapping.callbacks,
+        BeforeMessageRuleCallback(),
+        mapping,
+        messages,
+        marginals
+    )
+    result, addons =
+        if !isnothing(messages) &&
+            any(ismissing, TupleTools.flatten(getdata.(messages)))
+            missing, mapping.addons
+        elseif !isnothing(marginals) &&
+            any(ismissing, TupleTools.flatten(getdata.(marginals)))
+            missing, mapping.addons
         else
-            ruleoutput
+            ruleargs = (
+                message_mapping_fform(mapping),
+                mapping.vtag,
+                mapping.vconstraint,
+                mapping.msgs_names,
+                messages,
+                mapping.marginals_names,
+                marginals,
+                mapping.meta,
+                mapping.addons,
+                mapping.factornode
+            )
+            ruleoutput = rule(ruleargs...)
+            # if `@rule` is not defined, the default behaviour is to return 
+            # the `RuleMethodError` object
+            if ruleoutput isa RuleMethodError
+                if !isnothing(mapping.rulefallback)
+                    mapping.rulefallback(ruleargs...)
+                else
+                    throw(ruleoutput)
+                end
+            else
+                ruleoutput
+            end
         end
-    end
 
     # Inject extra addons after the rule has been executed
-    addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)
-    invoke_callback(mapping.callbacks, AfterMessageRuleCallback(), mapping, messages, marginals, result, addons)
+    addons = message_mapping_addons(
+        mapping, getdata(messages), getdata(marginals), result, addons
+    )
+    invoke_callback(
+        mapping.callbacks,
+        AfterMessageRuleCallback(),
+        mapping,
+        messages,
+        marginals,
+        result,
+        addons
+    )
 
     return Message(result, is_message_clamped, is_message_initial, addons)
 end
