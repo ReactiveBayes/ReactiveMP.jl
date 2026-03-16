@@ -144,7 +144,7 @@
             (
                 input = (m_in1 = MvNormalWeightedMeanPrecision([1.0, 4.0], [1.0 0.0; 0.0 1.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, -1.0], [2.0 0.0; 0.0 2.0])),
                 output = MvNormalMeanCovariance([1.5, 3.5], [1.5 0.0; 0.0 1.5])
-            ),
+            )
         ]
     end
 end

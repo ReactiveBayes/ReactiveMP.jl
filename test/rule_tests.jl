@@ -60,8 +60,7 @@
             @test_throws ErrorException test_rules_parse_configuration(:configuration, :([options = value = broken]))
 
             for name in (:configuration, :blabla),
-                check in (true, false),
-                atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
+                check in (true, false), atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
                 extra_types in (:([Float64]), :([Float32, BigFloat]))
 
                 expression = test_rules_parse_configuration(name, :([check_type_promotion = $check, atol = $atol, extra_float_types = $extra_types]))
@@ -790,9 +789,13 @@
 
         @test (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = nothing)) === 3
 
-        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 2))
+        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (
+            q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 2
+        ))
 
-        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 3))
+        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (
+            q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 3
+        ))
     end
 
     @testset "Check the `return_addons` option" begin
