@@ -20,7 +20,9 @@ struct NodeInterface
     end
 end
 
-Base.show(io::IO, interface::NodeInterface) = print(io, "Interface(", name(interface), ")")
+Base.show(io::IO, interface::NodeInterface) = print(
+    io, "Interface(", name(interface), ")"
+)
 
 israndom(interface::NodeInterface) = israndom(interface.variable)
 isdata(interface::NodeInterface)   = isdata(interface.variable)
@@ -54,7 +56,9 @@ messageout(interface::NodeInterface) = interface.m_out
 
 Returns an inbound messages stream from the given interface.
 """
-messagein(interface::NodeInterface) = messageout(interface.variable, interface.message_index)
+messagein(interface::NodeInterface) = messageout(
+    interface.variable, interface.message_index
+)
 
 """
     getvariable(interface)
@@ -74,7 +78,10 @@ struct IndexedNodeInterface
     interface :: NodeInterface
 end
 
-Base.show(io::IO, interface::IndexedNodeInterface) = print(io, string("IndexedInterface(", index(interface), ", ", name(interface), ")"))
+Base.show(io::IO, interface::IndexedNodeInterface) = print(
+    io,
+    string("IndexedInterface(", index(interface), ", ", name(interface), ")")
+)
 
 index(interface::IndexedNodeInterface) = interface.index
 name(interface::IndexedNodeInterface)  = name(interface.interface)
@@ -96,7 +103,9 @@ struct ManyOf{T}
     collection::T
 end
 
-Base.show(io::IO, manyof::ManyOf) = print(io, "ManyOf(", join(manyof.collection, ",", ""), ")")
+Base.show(io::IO, manyof::ManyOf) = print(
+    io, "ManyOf(", join(manyof.collection, ",", ""), ")"
+)
 
 Rocket.getrecent(many::ManyOf) = ManyOf(getrecent(many.collection))
 
@@ -119,11 +128,15 @@ rule_method_error_type_nameof(::Type{T}) where {V, T <: ManyOf{V}} = begin
     # If all element types are the same, produce the compact NTuple-style message:
     if all(ft -> ft === fts[1], fts)
         elt = dropproxytype(fts[1])
-        return string("ManyOf{", N, ", ", rule_method_error_type_nameof(elt), "}")
+        return string(
+            "ManyOf{", N, ", ", rule_method_error_type_nameof(elt), "}"
+        )
     end
 
     # Otherwise produce the Union of element type names:
-    unions = join(map(r -> rule_method_error_type_nameof(dropproxytype(r)), fts), ",")
+    unions = join(
+        map(r -> rule_method_error_type_nameof(dropproxytype(r)), fts), ","
+    )
     return string("ManyOf{", N, ", Union{", unions, "}}")
 end
 
@@ -136,12 +149,18 @@ struct ManyOfObservable{S} <: Subscribable{ManyOf}
     source::S
 end
 
-Rocket.getrecent(observable::ManyOfObservable) = ManyOf(Rocket.getrecent(observable.source))
+Rocket.getrecent(observable::ManyOfObservable) = ManyOf(
+    Rocket.getrecent(observable.source)
+)
 
 @inline function Rocket.on_subscribe!(observable::ManyOfObservable, actor)
     return subscribe!(observable.source |> map(ManyOf, (d) -> ManyOf(d)), actor)
 end
 
-function combineLatestMessagesInUpdates(indexed::NTuple{N, <:IndexedNodeInterface}) where {N}
-    return ManyOfObservable(combineLatestUpdates(map((in) -> messagein(in), indexed), PushNew()))
+function combineLatestMessagesInUpdates(
+    indexed::NTuple{N, <:IndexedNodeInterface}
+) where {N}
+    return ManyOfObservable(
+        combineLatestUpdates(map((in) -> messagein(in), indexed), PushNew())
+    )
 end

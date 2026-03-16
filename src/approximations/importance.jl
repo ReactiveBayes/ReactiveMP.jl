@@ -22,18 +22,33 @@ struct ImportanceSamplingApproximation{T, R}
     rsamples   :: Vector{T}
 end
 
-function ImportanceSamplingApproximation(rng::R, nsamples::Int; resampling::Bool = true) where {R}
-    return ImportanceSamplingApproximation(Float64, rng, nsamples; resampling = resampling)
+function ImportanceSamplingApproximation(
+    rng::R, nsamples::Int; resampling::Bool = true
+) where {R}
+    return ImportanceSamplingApproximation(
+        Float64, rng, nsamples; resampling = resampling
+    )
 end
 
-function ImportanceSamplingApproximation(::Type{T}, rng::R, nsamples::Int; resampling::Bool = true) where {T, R}
-    return ImportanceSamplingApproximation{T, R}(rng, nsamples, Vector{T}(undef, nsamples), Vector{T}(undef, nsamples), resampling, Vector{T}(undef, nsamples))
+function ImportanceSamplingApproximation(
+    ::Type{T}, rng::R, nsamples::Int; resampling::Bool = true
+) where {T, R}
+    return ImportanceSamplingApproximation{T, R}(
+        rng,
+        nsamples,
+        Vector{T}(undef, nsamples),
+        Vector{T}(undef, nsamples),
+        resampling,
+        Vector{T}(undef, nsamples)
+    )
 end
 
 getsamples(approximation::ImportanceSamplingApproximation, distribution)           = getsamples(approximation, distribution, approximation.nsamples)
 getsamples(approximation::ImportanceSamplingApproximation, distribution, nsamples) = rand(approximation.rng, distribution, nsamples)
 
-function approximate_meancov(approximation::ImportanceSamplingApproximation, g::Function, distribution)
+function approximate_meancov(
+    approximation::ImportanceSamplingApproximation, g::Function, distribution
+)
 
     # We use preallocated arrays to sample and compute transformed samples and weightd
     rand!(approximation.rng, distribution, approximation.bsamples)
@@ -49,7 +64,12 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
             # We use rsamples as a temporary buffer here
             copyto!(approximation.rsamples, 1, approximation.bsamples, 1, N)
             # Here rsamples are equal to bsamples, but during sampling bsamples will be overwritten
-            sample!(approximation.rng, approximation.rsamples, Weights(approximation.bweights), approximation.bsamples)
+            sample!(
+                approximation.rng,
+                approximation.rsamples,
+                Weights(approximation.bweights),
+                approximation.bsamples
+            )
             fill!(approximation.bweights, 1 / N)
         end
     end
@@ -60,7 +80,11 @@ function approximate_meancov(approximation::ImportanceSamplingApproximation, g::
         return mean(distribution), var(distribution)
     end
 
-    map!(Base.Fix2(/, normalization), approximation.bweights, approximation.bweights)
+    map!(
+        Base.Fix2(/, normalization),
+        approximation.bweights,
+        approximation.bweights
+    )
 
     m = mapreduce(prod, +, zip(approximation.bweights, approximation.bsamples))
 

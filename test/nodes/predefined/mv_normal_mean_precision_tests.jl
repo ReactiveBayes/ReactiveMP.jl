@@ -8,16 +8,38 @@
             q_μ = MvNormalMeanPrecision([1.0, 1.0], [1.0 0.0; 0.0 1.0])
             q_Λ = Wishart(3, [2.0 0.0; 0.0 2.0])
 
-            for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
-                marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), marginals, nothing) ≈ 6.721945550750932
+            for N in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
+                G in (Wishart,)
+
+                marginals = (
+                    Marginal(q_out, false, false, nothing),
+                    Marginal(convert(N, q_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
+                )
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out, :μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 6.721945550750932
             end
         end
 
         begin
-            q_out = PointMass([0.3873049736301686, 0.6250550344669505, 0.9865681758036855])
+            q_out = PointMass([
+                0.3873049736301686, 0.6250550344669505, 0.9865681758036855
+            ])
             q_μ = MvNormalMeanPrecision(
-                [0.21393068431529905, 0.5271266845217295, 0.0032162989237940476],
+                [
+                    0.21393068431529905,
+                    0.5271266845217295,
+                    0.0032162989237940476
+                ],
                 [
                     1.1178940049080035 1.004643185289189 0.5726053202206195;
                     1.004643185289189 0.9113807582278761 0.515956570765438;
@@ -33,25 +55,75 @@
                 ]
             )
 
-            for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
-                marginals = (Marginal(q_out, false, false, nothing), Marginal(convert(N, q_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), marginals, nothing) ≈ 57.362404928342
+            for N in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
+                G in (Wishart,)
+
+                marginals = (
+                    Marginal(q_out, false, false, nothing),
+                    Marginal(convert(N, q_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
+                )
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out, :μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 57.362404928342
             end
         end
 
         begin
-            q_out = MvNormalMeanPrecision([0.8625589157256603, 0.6694783342639599], [1.0014322413749484 0.7989099036521625; 0.7989099036521625 1.0976639268696966])
-            q_μ = MvNormalMeanPrecision([0.9334416739853251, 0.38318522701093105], [0.21867945696266933 0.5704895781120056; 0.5704895781120056 1.5321190185800933])
-            q_Λ = Wishart(3, [1.2509510680086597 1.3662166757006484; 1.3662166757006484 1.4925451500802907])
+            q_out = MvNormalMeanPrecision(
+                [0.8625589157256603, 0.6694783342639599],
+                [
+                    1.0014322413749484 0.7989099036521625;
+                    0.7989099036521625 1.0976639268696966
+                ]
+            )
+            q_μ = MvNormalMeanPrecision(
+                [0.9334416739853251, 0.38318522701093105],
+                [
+                    0.21867945696266933 0.5704895781120056;
+                    0.5704895781120056 1.5321190185800933
+                ]
+            )
+            q_Λ = Wishart(
+                3,
+                [
+                    1.2509510680086597 1.3662166757006484;
+                    1.3662166757006484 1.4925451500802907
+                ]
+            )
 
-            for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
-                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
+            for N1 in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
+                N2 in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing), Marginal(convert(N2, q_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing)
+                    Marginal(convert(N1, q_out), false, false, nothing),
+                    Marginal(convert(N2, q_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
                 )
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), marginals, nothing) ≈ 114.57678973411974
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out, :μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 114.57678973411974
             end
         end
 
@@ -81,14 +153,30 @@
                 ]
             )
 
-            for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
-                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
+            for N1 in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
+                N2 in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing), Marginal(convert(N2, q_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing)
+                    Marginal(convert(N1, q_out), false, false, nothing),
+                    Marginal(convert(N2, q_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
                 )
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), marginals, nothing) ≈ 14.92006071729396
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out, :μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 14.92006071729396
             end
         end
 
@@ -117,17 +205,40 @@
                 ]
             )
 
-            for N1 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision),
-                N2 in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
+            for N1 in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
+                N2 in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                )
 
-                marginals = (Marginal(convert(N1, q_out), false, false, nothing), Marginal(convert(N2, q_μ), false, false, nothing), Marginal(q_Λ, false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), marginals, nothing) ≈ 38.31309509463591
+                marginals = (
+                    Marginal(convert(N1, q_out), false, false, nothing),
+                    Marginal(convert(N2, q_μ), false, false, nothing),
+                    Marginal(q_Λ, false, false, nothing)
+                )
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out, :μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 38.31309509463591
             end
         end
 
         begin
             q_out_μ = MvNormalMeanPrecision(
-                [0.2932046487282065, 0.7716085147100042, 0.03978072440454361, 0.2814883836121471],
+                [
+                    0.2932046487282065,
+                    0.7716085147100042,
+                    0.03978072440454361,
+                    0.2814883836121471
+                ],
                 [
                     1.0684808331872628 0.6721958601342372 0.7164104160110533 0.2869444930570181
                     0.6721958601342372 1.4472786772965438 1.3516272546828385 0.5533932426057602
@@ -135,17 +246,40 @@
                     0.2869444930570181 0.5533932426057602 0.5171784879755998 0.30898006058959576
                 ]
             )
-            q_Λ = PointMass([0.6531636197654624 0.8023009003361893; 0.8023009003361893 1.0001231468452463])
+            q_Λ = PointMass(
+                [
+                    0.6531636197654624 0.8023009003361893;
+                    0.8023009003361893 1.0001231468452463
+                ]
+            )
 
-            for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
-                marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(q_Λ, false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out_μ, :Λ)}(), marginals, nothing) ≈ 87.02279699224562
+            for N in (
+                MvNormalMeanPrecision,
+                MvNormalMeanCovariance,
+                MvNormalWeightedMeanPrecision
+            )
+                marginals = (
+                    Marginal(convert(N, q_out_μ), false, false, nothing),
+                    Marginal(q_Λ, false, false, nothing)
+                )
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out_μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 87.02279699224562
             end
         end
 
         begin
             q_out_μ = MvNormalMeanPrecision(
-                [0.35156676223859784, 0.6798203100143094, 0.954485919235333, 0.9236981452828203],
+                [
+                    0.35156676223859784,
+                    0.6798203100143094,
+                    0.954485919235333,
+                    0.9236981452828203
+                ],
                 [
                     1.3182839156957349 0.9159049032047119 1.170482409249098 1.132202025059748
                     0.9159049032047119 1.4737964254194567 1.4024254322343757 0.7350293025705011
@@ -153,17 +287,40 @@
                     1.132202025059748 0.7350293025705011 1.3137472032115916 1.2083880803032556
                 ]
             )
-            q_Λ = PointMass([0.6202203324986401 0.6037236520027125; 0.6037236520027125 1.140352058799863])
+            q_Λ = PointMass(
+                [
+                    0.6202203324986401 0.6037236520027125;
+                    0.6037236520027125 1.140352058799863
+                ]
+            )
 
-            for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision)
-                marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(q_Λ, false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out_μ, :Λ)}(), marginals, nothing) ≈ 11.240486862933556
+            for N in (
+                MvNormalMeanPrecision,
+                MvNormalMeanCovariance,
+                MvNormalWeightedMeanPrecision
+            )
+                marginals = (
+                    Marginal(convert(N, q_out_μ), false, false, nothing),
+                    Marginal(q_Λ, false, false, nothing)
+                )
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out_μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 11.240486862933556
             end
         end
 
         begin
             q_out_μ = MvNormalMeanPrecision(
-                [0.35156676223859784, 0.6798203100143094, 0.954485919235333, 0.9236981452828203],
+                [
+                    0.35156676223859784,
+                    0.6798203100143094,
+                    0.954485919235333,
+                    0.9236981452828203
+                ],
                 [
                     1.3182839156957349 0.9159049032047119 1.170482409249098 1.132202025059748
                     0.9159049032047119 1.4737964254194567 1.4024254322343757 0.7350293025705011
@@ -171,17 +328,43 @@
                     1.132202025059748 0.7350293025705011 1.3137472032115916 1.2083880803032556
                 ]
             )
-            q_Λ = Wishart(3, [0.6202203324986401 0.6037236520027125; 0.6037236520027125 1.140352058799863])
+            q_Λ = Wishart(
+                3,
+                [
+                    0.6202203324986401 0.6037236520027125;
+                    0.6037236520027125 1.140352058799863
+                ]
+            )
 
-            for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
-                marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out_μ, :Λ)}(), marginals, nothing) ≈ 28.552276936591902
+            for N in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
+                G in (Wishart,)
+
+                marginals = (
+                    Marginal(convert(N, q_out_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
+                )
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out_μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 28.552276936591902
             end
         end
 
         begin
             q_out_μ = MvNormalMeanPrecision(
-                [0.5500318675144917, 0.817183383468487, 0.5347013723720735, 0.5114047207869656],
+                [
+                    0.5500318675144917,
+                    0.817183383468487,
+                    0.5347013723720735,
+                    0.5114047207869656
+                ],
                 [
                     1.1343108996797893 0.47265813998866796 0.9272779005094741 1.0428711245585718
                     0.47265813998866796 0.715974520938224 0.7635970006454071 1.193450872579602
@@ -189,11 +372,32 @@
                     1.0428711245585718 1.193450872579602 1.5818118006093156 2.158417891827849
                 ]
             )
-            q_Λ = Wishart(3, [1.545789934380036 1.1984283177361577; 1.1984283177361577 1.1061038557496674])
+            q_Λ = Wishart(
+                3,
+                [
+                    1.545789934380036 1.1984283177361577;
+                    1.1984283177361577 1.1061038557496674
+                ]
+            )
 
-            for N in (MvNormalMeanPrecision, MvNormalMeanCovariance, MvNormalWeightedMeanPrecision), G in (Wishart,)
-                marginals = (Marginal(convert(N, q_out_μ), false, false, nothing), Marginal(convert(G, q_Λ), false, false, nothing))
-                @test score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out_μ, :Λ)}(), marginals, nothing) ≈ 1938.6631975673586
+            for N in (
+                    MvNormalMeanPrecision,
+                    MvNormalMeanCovariance,
+                    MvNormalWeightedMeanPrecision
+                ),
+                G in (Wishart,)
+
+                marginals = (
+                    Marginal(convert(N, q_out_μ), false, false, nothing),
+                    Marginal(convert(G, q_Λ), false, false, nothing)
+                )
+                @test score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out_μ, :Λ)}(),
+                    marginals,
+                    nothing
+                ) ≈ 1938.6631975673586
             end
         end
     end

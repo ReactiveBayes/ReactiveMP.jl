@@ -1,6 +1,8 @@
 # Variational                       # 
 # --------------------------------- #
-@rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out::Any, q_μ::Any, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule MvNormalMeanPrecision(:Λ, Marginalisation) (
+    q_out::Any, q_μ::Any, meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     m_out, v_out   = mean_cov(q_out)
     m_mean, v_mean = mean_cov(q_μ)
     d              = ndims(q_μ)
@@ -11,7 +13,9 @@
     return WishartFast(df, invS)
 end
 
-@rule MvNormalMeanPrecision(:Λ, Marginalisation) (q_out_μ::Any, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule MvNormalMeanPrecision(:Λ, Marginalisation) (
+    q_out_μ::Any, meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     m_out_μ, v_out_μ = mean_cov(q_out_μ)
 
     d = div(ndims(q_out_μ), 2)

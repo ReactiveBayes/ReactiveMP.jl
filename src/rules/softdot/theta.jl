@@ -7,11 +7,19 @@
     mγ = mean(q_γ)
     Dθ = mγ * (Vx + mx * mx')
     zθ = mγ * mx * my
-    return convert(promote_variate_type(variate_form(typeof(q_x)), NormalWeightedMeanPrecision), zθ, Dθ)
+    return convert(
+        promote_variate_type(
+            variate_form(typeof(q_x)), NormalWeightedMeanPrecision
+        ),
+        zθ,
+        Dθ
+    )
 end
 
 # Variational MP: Structured
-@rule softdot(:θ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any) = begin
+@rule softdot(:θ, Marginalisation) (
+    q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any
+) = begin
     # q_y is always Univariate
     order = length(q_y_x) - 1
     F     = order == 1 ? Univariate : Multivariate

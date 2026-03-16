@@ -1,5 +1,9 @@
 # most of the routines are ported directly from ForneyLab.jl
-@marginalrule DeltaFn(:ins) (m_out::NormalDistributionsFamily, m_ins::ManyOf{N, NormalDistributionsFamily}, meta::DeltaMeta{M}) where {N, M <: Linearization} = begin
+@marginalrule DeltaFn(:ins) (
+    m_out::NormalDistributionsFamily,
+    m_ins::ManyOf{N, NormalDistributionsFamily},
+    meta::DeltaMeta{M}
+) where {N, M <: Linearization} = begin
     # Approximate joint inbounds
     # Collect individual means and covariances
     statistics = mean_cov.(m_ins)
@@ -20,9 +24,13 @@
 
     # Apply the RTS Smoother
     (μ_bw_out, Σ_bw_out) = mean_cov(m_out)
-    (μ_in, Σ_in) = smoothRTS(μ_fw_out, Σ_fw_out, C_fw, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out)
+    (μ_in, Σ_in) = smoothRTS(
+        μ_fw_out, Σ_fw_out, C_fw, μ_fw_in, Σ_fw_in, μ_bw_out, Σ_bw_out
+    )
 
-    dist = convert(promote_variate_type(typeof(μ_in), NormalMeanVariance), μ_in, Σ_in)
+    dist = convert(
+        promote_variate_type(typeof(μ_in), NormalMeanVariance), μ_in, Σ_in
+    )
 
     return convert(JointNormal, dist, sizes)
 end

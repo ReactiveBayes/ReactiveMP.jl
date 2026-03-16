@@ -11,11 +11,15 @@ function ReactiveMP.cvi_setup(opt::Optimisers.AbstractRule, λ)
     return (copt, init)
 end
 
-function ReactiveMP.cvi_update!(opt_and_state::Tuple{Optimisers.AbstractRule, Any}, new_λ, λ, ∇)
+function ReactiveMP.cvi_update!(
+    opt_and_state::Tuple{Optimisers.AbstractRule, Any}, new_λ, λ, ∇
+)
     # Retrieve the optimiser and its current state
     optimiser, current_state = opt_and_state
     # Apply the optimiser to the current state and adjust the gradient
-    adjusted_state, adjusted_∇ = Optimisers.apply!(optimiser, current_state, λ, ∇)
+    adjusted_state, adjusted_∇ = Optimisers.apply!(
+        optimiser, current_state, λ, ∇
+    )
     # Update the vector of parameters λ
     @inbounds for (i, λᵢ, Δᵢ) in zip(eachindex(new_λ), λ, adjusted_∇)
         new_λ[i] = λᵢ - Δᵢ

@@ -6,5 +6,7 @@
 end
 
 @marginalrule Bernoulli(:out_p) (m_out::Bernoulli, m_p::PointMass) = begin
-    return convert_paramfloattype((out = prod(ClosedProd(), Bernoulli(mean(m_p)), m_out), p = m_p))
+    return convert_paramfloattype((
+        out = prod(ClosedProd(), Bernoulli(mean(m_p)), m_out), p = m_p
+    ))
 end

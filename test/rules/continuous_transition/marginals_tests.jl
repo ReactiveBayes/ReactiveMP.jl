@@ -1,6 +1,12 @@
 
 @testitem "marginalrules:ContinuousTransition" begin
-    using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+    using Test,
+        ReactiveMP,
+        BayesBase,
+        Random,
+        ExponentialFamily,
+        Distributions,
+        LinearAlgebra
     import ReactiveMP: @test_marginalrules
 
     rng = MersenneTwister(42)
@@ -37,8 +43,13 @@
 
                 metal = CTMeta(transformation)
 
-                @test_marginalrules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:y_x) [(
-                    input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule(mx, my, qW, qA)
+                @test_marginalrules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                    :y_x
+                ) [(
+                    input = (
+                        m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metal
+                    ),
+                    output = benchmark_rule(mx, my, qW, qA)
                 )]
             end
         end
@@ -59,9 +70,17 @@
 
             metanl = CTMeta(transformation)
 
-            @test_marginalrules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:y_x) [(
+            @test_marginalrules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                :y_x
+            ) [(
                 input = (m_y = my, m_x = mx, q_a = qa, q_W = qW, meta = metanl),
-                output = MvNormalWeightedMeanPrecision(zeros(4), [(dy + qW.df - 1)*diageye(dy) -(qW.df)diageye(dx); -(qW.df)diageye(dx) (dy + qW.df - 1)diageye(dy)])
+                output = MvNormalWeightedMeanPrecision(
+                    zeros(4),
+                    [
+                        (dy + qW.df - 1)*diageye(dy) -(qW.df)diageye(dx);
+                        -(qW.df)diageye(dx) (dy + qW.df - 1)diageye(dy)
+                    ]
+                )
             )]
         end
     end

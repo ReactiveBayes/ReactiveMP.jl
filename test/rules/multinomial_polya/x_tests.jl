@@ -11,7 +11,11 @@
         p_expected = [0.5, 0.25, 0.25]  # logistic(0) = 0.5, then 0.5*(1-0.5)=0.25, remainder 0.25
         dist_expected = Multinomial(3, p_expected)
 
-        @test_rules [check_type_promotion = false] MultinomialPolya(:x, Marginalisation) [(input = (q_N = q_N, q_ψ = q_ψ, meta = meta), output = dist_expected)]
+        @test_rules [check_type_promotion = false] MultinomialPolya(
+            :x, Marginalisation
+        ) [(
+            input = (q_N = q_N, q_ψ = q_ψ, meta = meta), output = dist_expected
+        )]
     end
 
     @testset "Predictive Distribution: (q_N::Poisson, q_ψ::GaussianDistributionsFamily)" begin
@@ -23,7 +27,12 @@
         p_expected = [0.5, 0.25, 0.25]  # logistic(0) = 0.5, then 0.5*(1-0.5)=0.25, remainder 0.25
         dist_expected = Multinomial(3, p_expected)
         for q_N in q_Ns
-            @test_rules [check_type_promotion = false] MultinomialPolya(:x, Marginalisation) [(input = (q_N = q_N, q_ψ = q_ψ, meta = meta), output = dist_expected)]
+            @test_rules [check_type_promotion = false] MultinomialPolya(
+                :x, Marginalisation
+            ) [(
+                input = (q_N = q_N, q_ψ = q_ψ, meta = meta),
+                output = dist_expected
+            )]
         end
     end
 end

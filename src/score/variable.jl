@@ -2,7 +2,13 @@ export VariableBoundEntropy
 
 struct VariableBoundEntropy end
 
-function score(::Type{T}, ::VariableBoundEntropy, variable::RandomVariable, skip_strategy, scheduler) where {T <: CountingReal}
+function score(
+    ::Type{T},
+    ::VariableBoundEntropy,
+    variable::RandomVariable,
+    skip_strategy,
+    scheduler
+) where {T <: CountingReal}
     mapping = let d = degree(variable)
         (marginal) -> begin
             # The entropy of point masses is not finite
@@ -13,5 +19,7 @@ function score(::Type{T}, ::VariableBoundEntropy, variable::RandomVariable, skip
             return scaling * entropy
         end
     end
-    return getmarginal(variable, skip_strategy) |> schedule_on(scheduler) |> map(T, mapping)
+    return getmarginal(variable, skip_strategy) |>
+           schedule_on(scheduler) |>
+           map(T, mapping)
 end

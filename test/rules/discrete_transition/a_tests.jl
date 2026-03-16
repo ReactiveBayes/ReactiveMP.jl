@@ -2,10 +2,31 @@
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:a, Marginalisation) [
-        (input = (q_out = Categorical([0.2, 0.5, 0.3]), q_in = Categorical([0.1, 0.4, 0.5])), output = DirichletCollection([1.02 1.08 1.1; 1.05 1.2 1.25; 1.03 1.12 1.15])),
-        (input = (q_out = PointMass([0.2, 0.5, 0.3]), q_in = Categorical([0.1, 0.4, 0.5])), output = DirichletCollection([1.02 1.08 1.1; 1.05 1.2 1.25; 1.03 1.12 1.15])),
-        (input = (q_out = Bernoulli(0.3), q_in = Categorical([0.4, 0.6])), output = DirichletCollection([1.28 1.42; 1.12 1.18]))
+    @test_rules [check_type_promotion = false] DiscreteTransition(
+        :a, Marginalisation
+    ) [
+        (
+            input = (
+                q_out = Categorical([0.2, 0.5, 0.3]),
+                q_in = Categorical([0.1, 0.4, 0.5])
+            ),
+            output = DirichletCollection(
+                [1.02 1.08 1.1; 1.05 1.2 1.25; 1.03 1.12 1.15]
+            )
+        ),
+        (
+            input = (
+                q_out = PointMass([0.2, 0.5, 0.3]),
+                q_in = Categorical([0.1, 0.4, 0.5])
+            ),
+            output = DirichletCollection(
+                [1.02 1.08 1.1; 1.05 1.2 1.25; 1.03 1.12 1.15]
+            )
+        ),
+        (
+            input = (q_out = Bernoulli(0.3), q_in = Categorical([0.4, 0.6])),
+            output = DirichletCollection([1.28 1.42; 1.12 1.18])
+        )
     ]
 end
 
@@ -13,8 +34,17 @@ end
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:a, Marginalisation) [(
-        input = (q_out_in = Contingency(diageye(3)),), output = DirichletCollection([1.333333333333333 1 1; 1 1.3333333333333 1; 1 1 1.33333333333333333])
+    @test_rules [check_type_promotion = false] DiscreteTransition(
+        :a, Marginalisation
+    ) [(
+        input = (q_out_in = Contingency(diageye(3)),),
+        output = DirichletCollection(
+            [
+                1.333333333333333 1 1;
+                1 1.3333333333333 1;
+                1 1 1.33333333333333333
+            ]
+        )
     )]
 end
 
@@ -22,8 +52,11 @@ end
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:a, Marginalisation) [(
-        input = (q_out_in_T1 = Contingency(ones(3, 3, 3)),), output = DirichletCollection(ones(3, 3, 3) .+ (1 / 27))
+    @test_rules [check_type_promotion = false] DiscreteTransition(
+        :a, Marginalisation
+    ) [(
+        input = (q_out_in_T1 = Contingency(ones(3, 3, 3)),),
+        output = DirichletCollection(ones(3, 3, 3) .+ (1 / 27))
     )]
 end
 
@@ -31,8 +64,11 @@ end
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:a, Marginalisation) [(
-        input = (q_out_in_T1_t2 = Contingency(ones(3, 3, 3, 3)),), output = DirichletCollection(ones(3, 3, 3, 3) .+ (1 / 81))
+    @test_rules [check_type_promotion = false] DiscreteTransition(
+        :a, Marginalisation
+    ) [(
+        input = (q_out_in_T1_t2 = Contingency(ones(3, 3, 3, 3)),),
+        output = DirichletCollection(ones(3, 3, 3, 3) .+ (1 / 81))
     )]
 end
 
@@ -41,9 +77,14 @@ end
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:a, Marginalisation) [
+    @test_rules [check_type_promotion = false] DiscreteTransition(
+        :a, Marginalisation
+    ) [
         (
-            input = (q_out_in = Contingency([0.1 0.4 0.5; 0.2 0.5 0.3; 0.3 0.6 0.2]), q_T1 = Categorical([0.1, 0.4, 0.5])),
+            input = (
+                q_out_in = Contingency([0.1 0.4 0.5; 0.2 0.5 0.3; 0.3 0.6 0.2]),
+                q_T1 = Categorical([0.1, 0.4, 0.5])
+            ),
             output = DirichletCollection(
                 [
                     1.0032258064516129 1.0129032258064516 1.0161290322580645; 1.0064516129032257 1.0161290322580645 1.0096774193548388; 1.0096774193548388 1.0193548387096774 1.0064516129032257;;;
@@ -53,7 +94,10 @@ end
             )
         ),
         (
-            input = (q_out_in = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]), q_T1 = Categorical([0.1, 0.4, 0.5])),
+            input = (
+                q_out_in = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]),
+                q_T1 = Categorical([0.1, 0.4, 0.5])
+            ),
             output = DirichletCollection(
                 [
                     1.017777777777778 1.008888888888889 1.011111111111111; 1.0044444444444445 1.011111111111111 1.0066666666666666; 1.0222222222222221 1.0133333333333334 1.0044444444444445;;;
@@ -70,9 +114,14 @@ end
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:a, Marginalisation) [
+    @test_rules [check_type_promotion = false] DiscreteTransition(
+        :a, Marginalisation
+    ) [
         (
-            input = (q_out_in = Contingency([0.1 0.4 0.5; 0.2 0.5 0.3; 0.3 0.6 0.2]), q_T1 = PointMass([0.0, 1.0, 0.0])),
+            input = (
+                q_out_in = Contingency([0.1 0.4 0.5; 0.2 0.5 0.3; 0.3 0.6 0.2]),
+                q_T1 = PointMass([0.0, 1.0, 0.0])
+            ),
             output = DirichletCollection(
                 [
                     1.0 1.0 1.0; 1.0 1.0 1.0; 1.0 1.0 1.0;;;
@@ -82,7 +131,10 @@ end
             )
         ),
         (
-            input = (q_out_in = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]), q_T1 = PointMass([0.0, 1.0, 0.0])),
+            input = (
+                q_out_in = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]),
+                q_T1 = PointMass([0.0, 1.0, 0.0])
+            ),
             output = DirichletCollection(
                 [
                     1.0 1.0 1.0; 1.0 1.0 1.0; 1.0 1.0 1.0;;;
@@ -99,8 +151,13 @@ end
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
 
     import ReactiveMP: @test_rules
-    @test_rules [check_type_promotion = false] DiscreteTransition(:a, Marginalisation) [(
-        input = (q_out_T1 = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]), q_in = Categorical([0.1, 0.4, 0.5])),
+    @test_rules [check_type_promotion = false] DiscreteTransition(
+        :a, Marginalisation
+    ) [(
+        input = (
+            q_out_T1 = Contingency([0.8 0.4 0.5; 0.2 0.5 0.3; 1.0 0.6 0.2]),
+            q_in = Categorical([0.1, 0.4, 0.5])
+        ),
         output = DirichletCollection(
             [
                 1.017777777777778 1.0711111111111111 1.0888888888888888; 1.0044444444444445 1.017777777777778 1.0222222222222221; 1.0222222222222221 1.0888888888888888 1.1111111111111112;;;

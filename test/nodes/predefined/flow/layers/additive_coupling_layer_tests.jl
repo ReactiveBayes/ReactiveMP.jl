@@ -1,8 +1,18 @@
 
 @testitem "Additive Coupling Layer" begin
     using ReactiveMP
-    using ReactiveMP: getf, getflow, getdim, forward, forward!, backward, backward!, jacobian, inv_jacobian
-    using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
+    using ReactiveMP:
+        getf,
+        getflow,
+        getdim,
+        forward,
+        forward!,
+        backward,
+        backward!,
+        jacobian,
+        inv_jacobian
+    using ReactiveMP:
+        det_jacobian, absdet_jacobian, logdet_jacobian, logabsdet_jacobian
 
     @testset "Constructor" begin
 
@@ -84,7 +94,8 @@
         layer = compile(ReactiveMP._prepare(2, layer), params)
         @test forward(layer, [5.0, 1.5]) == [5.0, 7.4999983369439445]
         @test forward(layer, [4.0, 2.5]) == [4.0, 7.499909204262595]
-        @test forward.(layer, [[5.0, 1.5], [4.0, 2.5]]) == [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]
+        @test forward.(layer, [[5.0, 1.5], [4.0, 2.5]]) ==
+            [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]
 
         # check forward! function
         params = [1.0, 2.0, -3.0]
@@ -111,7 +122,9 @@
         layer = compile(ReactiveMP._prepare(2, layer), params)
         @test backward(layer, [5.0, 7.4999983369439445]) == [5.0, 1.5]
         @test backward(layer, [4.0, 7.499909204262595]) == [4.0, 2.5]
-        @test backward.(layer, [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]) == [[5.0, 1.5], [4.0, 2.5]]
+        @test backward.(
+            layer, [[5.0, 7.4999983369439445], [4.0, 7.499909204262595]]
+        ) == [[5.0, 1.5], [4.0, 2.5]]
 
         # check backward! function
         params = [1.0, 2.0, -3.0]
@@ -134,16 +147,23 @@
         layer = compile(ReactiveMP._prepare(2, layer), params)
         @test jacobian(layer, [3.0, 1.5]) == [1.0 0.0; 1.0197320743308804 1.0]
         @test jacobian(layer, [2.5, 5.0]) == [1.0 0.0; 1.1413016497063289 1.0]
-        @test jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]]
+        @test jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [
+            [1.0 0.0; 1.0197320743308804 1.0], [1.0 0.0; 1.1413016497063289 1.0]
+        ]
 
         # check jacobian function
         params = [1.0, 2.0, -3.0]
         f = PlanarFlow()
         layer = AdditiveCouplingLayer(f; permute = false)
         layer = compile(ReactiveMP._prepare(2, layer), params)
-        @test inv_jacobian(layer, [3.0, 1.5]) == [1.0 0.0; -1.0197320743308804 1.0]
-        @test inv_jacobian(layer, [2.5, 5.0]) == [1.0 0.0; -1.1413016497063289 1.0]
-        @test inv_jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [[1.0 0.0; -1.0197320743308804 1.0], [1.0 0.0; -1.1413016497063289 1.0]]
+        @test inv_jacobian(layer, [3.0, 1.5]) ==
+            [1.0 0.0; -1.0197320743308804 1.0]
+        @test inv_jacobian(layer, [2.5, 5.0]) ==
+            [1.0 0.0; -1.1413016497063289 1.0]
+        @test inv_jacobian.(layer, [[3.0, 1.5], [2.5, 5.0]]) == [
+            [1.0 0.0; -1.0197320743308804 1.0],
+            [1.0 0.0; -1.1413016497063289 1.0]
+        ]
 
         # check for invertibility 
         layer = AdditiveCouplingLayer(PlanarFlow(); permute = false)

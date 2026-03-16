@@ -3,8 +3,10 @@
     import ReactiveMP: constrain_form
 
     @test constrain_form(UnspecifiedFormConstraint(), Beta(1, 1)) == Beta(1, 1)
-    @test constrain_form(UnspecifiedFormConstraint(), Normal(0, 1)) == Normal(0, 1)
-    @test constrain_form(UnspecifiedFormConstraint(), MvNormal([0.0, 0.0])) == MvNormal([0.0, 0.0])
+    @test constrain_form(UnspecifiedFormConstraint(), Normal(0, 1)) ==
+        Normal(0, 1)
+    @test constrain_form(UnspecifiedFormConstraint(), MvNormal([0.0, 0.0])) ==
+        MvNormal([0.0, 0.0])
 end
 
 @testitem "`CompositeFormConstraint` should call the constraints in the specified order" begin
@@ -30,13 +32,18 @@ end
     struct FormConstraint2 <: AbstractFormConstraint end
 
     constraints = (FormConstraint1(), FormConstraint2())
-    @test preprocess_form_constraints(constraints) == CompositeFormConstraint(constraints)
+    @test preprocess_form_constraints(constraints) ==
+        CompositeFormConstraint(constraints)
     @test preprocess_form_constraints(FormConstraint1()) == FormConstraint1()
     @test preprocess_form_constraints(FormConstraint2()) == FormConstraint2()
 end
 
 @testitem "`preprocess_form_constraints` should wrap unknown form constraints into a `WrappedFormConstraint`" begin
-    import ReactiveMP: preprocess_form_constraints, AbstractFormConstraint, WrappedFormConstraint, WrappedFormConstraintNoContext
+    import ReactiveMP:
+        preprocess_form_constraints,
+        AbstractFormConstraint,
+        WrappedFormConstraint,
+        WrappedFormConstraintNoContext
 
     struct FormConstraint1 <: AbstractFormConstraint end
     struct FormConstraint2 end
@@ -46,21 +53,61 @@ end
     ReactiveMP.prepare_context(::FormConstraint3WithContext) = FormConstraint3Context()
 
     @test preprocess_form_constraints(FormConstraint1()) == FormConstraint1()
-    @test preprocess_form_constraints(FormConstraint2()) == WrappedFormConstraint(FormConstraint2(), WrappedFormConstraintNoContext())
-    @test preprocess_form_constraints(FormConstraint3WithContext()) == WrappedFormConstraint(FormConstraint3WithContext(), FormConstraint3Context())
+    @test preprocess_form_constraints(FormConstraint2()) ==
+        WrappedFormConstraint(
+        FormConstraint2(), WrappedFormConstraintNoContext()
+    )
+    @test preprocess_form_constraints(FormConstraint3WithContext()) ==
+        WrappedFormConstraint(
+        FormConstraint3WithContext(), FormConstraint3Context()
+    )
     @test preprocess_form_constraints((FormConstraint1(), FormConstraint2())) ==
-        CompositeFormConstraint((FormConstraint1(), WrappedFormConstraint(FormConstraint2(), WrappedFormConstraintNoContext())))
-    @test preprocess_form_constraints((FormConstraint1(), FormConstraint3WithContext())) ==
-        CompositeFormConstraint((FormConstraint1(), WrappedFormConstraint(FormConstraint3WithContext(), FormConstraint3Context())))
-    @test preprocess_form_constraints((FormConstraint2(), FormConstraint3WithContext())) == CompositeFormConstraint((
-        WrappedFormConstraint(FormConstraint2(), WrappedFormConstraintNoContext()), WrappedFormConstraint(FormConstraint3WithContext(), FormConstraint3Context())
+        CompositeFormConstraint((
+        FormConstraint1(),
+        WrappedFormConstraint(
+            FormConstraint2(), WrappedFormConstraintNoContext()
+        )
     ))
-    @test preprocess_form_constraints((FormConstraint2(), FormConstraint3WithContext(), FormConstraint1())) == CompositeFormConstraint((
-        WrappedFormConstraint(FormConstraint2(), WrappedFormConstraintNoContext()), WrappedFormConstraint(FormConstraint3WithContext(), FormConstraint3Context()), FormConstraint1()
+    @test preprocess_form_constraints((
+        FormConstraint1(), FormConstraint3WithContext()
+    )) == CompositeFormConstraint((
+        FormConstraint1(),
+        WrappedFormConstraint(
+            FormConstraint3WithContext(), FormConstraint3Context()
+        )
+    ))
+    @test preprocess_form_constraints((
+        FormConstraint2(), FormConstraint3WithContext()
+    )) == CompositeFormConstraint((
+        WrappedFormConstraint(
+            FormConstraint2(), WrappedFormConstraintNoContext()
+        ),
+        WrappedFormConstraint(
+            FormConstraint3WithContext(), FormConstraint3Context()
+        )
+    ))
+    @test preprocess_form_constraints((
+        FormConstraint2(), FormConstraint3WithContext(), FormConstraint1()
+    )) == CompositeFormConstraint((
+        WrappedFormConstraint(
+            FormConstraint2(), WrappedFormConstraintNoContext()
+        ),
+        WrappedFormConstraint(
+            FormConstraint3WithContext(), FormConstraint3Context()
+        ),
+        FormConstraint1()
     ))
 
-    @test preprocess_form_constraints(preprocess_form_constraints(FormConstraint2())) == WrappedFormConstraint(FormConstraint2(), WrappedFormConstraintNoContext())
-    @test preprocess_form_constraints(preprocess_form_constraints(FormConstraint3WithContext())) == WrappedFormConstraint(FormConstraint3WithContext(), FormConstraint3Context())
+    @test preprocess_form_constraints(
+        preprocess_form_constraints(FormConstraint2())
+    ) == WrappedFormConstraint(
+        FormConstraint2(), WrappedFormConstraintNoContext()
+    )
+    @test preprocess_form_constraints(
+        preprocess_form_constraints(FormConstraint3WithContext())
+    ) == WrappedFormConstraint(
+        FormConstraint3WithContext(), FormConstraint3Context()
+    )
 end
 
 @testitem "`WrappedFormConstraint` should simply redirect all the important functions to the underlying object" begin
@@ -107,13 +154,17 @@ end
         value::Int
     end
 
-    ReactiveMP.prepare_context(::FormConstraintWithContext) = FormConstraintContext(0)
+    ReactiveMP.prepare_context(::FormConstraintWithContext) = FormConstraintContext(
+        0
+    )
 
     function constrain_form(::FormConstraintWithContext, x)
         error("This function should not be called")
     end
 
-    function constrain_form(::FormConstraintWithContext, context::FormConstraintContext, x)
+    function constrain_form(
+        ::FormConstraintWithContext, context::FormConstraintContext, x
+    )
         context.value += 1
         return x + context.value
     end

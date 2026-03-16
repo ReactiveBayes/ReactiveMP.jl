@@ -13,11 +13,29 @@ mutable struct Adam{T} <: Optimizer
     tmp  :: T
 end
 
-function Adam(x::Vector{Float64}; ρ1::Float64 = 0.9, ρ2::Float64 = 0.999, λ::Float64 = 1e-8)
-    return Adam(x, zeros(Float64, size(x)), zeros(Float64, size(x)), zeros(Float64, size(x)), zeros(Float64, size(x)), ρ1, ρ2, λ, 1, zeros(Float64, size(x)))
+function Adam(
+    x::Vector{Float64};
+    ρ1::Float64 = 0.9,
+    ρ2::Float64 = 0.999,
+    λ::Float64 = 1e-8
+)
+    return Adam(
+        x,
+        zeros(Float64, size(x)),
+        zeros(Float64, size(x)),
+        zeros(Float64, size(x)),
+        zeros(Float64, size(x)),
+        ρ1,
+        ρ2,
+        λ,
+        1,
+        zeros(Float64, size(x))
+    )
 end
 
-function Adam(x::T; ρ1::Float64 = 0.9, ρ2::Float64 = 0.999, λ::Float64 = 1e-8) where {T <: Real}
+function Adam(
+    x::T; ρ1::Float64 = 0.9, ρ2::Float64 = 0.999, λ::Float64 = 1e-8
+) where {T <: Real}
     return Adam(float(x), 0.0, 0.0, 0.0, 0.0, ρ1, ρ2, λ, 1, 0.0)
 end
 

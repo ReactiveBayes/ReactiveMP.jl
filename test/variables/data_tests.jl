@@ -31,7 +31,15 @@ end
 @testitem "DataVariable: getmarginal" begin
     using BayesBase
 
-    import ReactiveMP: MessageObservable, create_messagein!, messagein, degree, activate!, connect!, DataVariableActivationOptions, messageout
+    import ReactiveMP:
+        MessageObservable,
+        create_messagein!,
+        messagein,
+        degree,
+        activate!,
+        connect!,
+        DataVariableActivationOptions,
+        messageout
 
     include("../testutilities.jl")
 
@@ -46,7 +54,12 @@ end
                     return s
                 end
 
-                activate!(var, DataVariableActivationOptions(false, false, nothing, nothing))
+                activate!(
+                    var,
+                    DataVariableActivationOptions(
+                        false, false, nothing, nothing
+                    )
+                )
 
                 messages = map(msg, rand(d))
 
@@ -72,14 +85,17 @@ end
 
 @testitem "DataVariable: linked variable" begin
     using BayesBase
-    import ReactiveMP: DataVariable, DataVariableActivationOptions, activate!, messageout
+    import ReactiveMP:
+        DataVariable, DataVariableActivationOptions, activate!, messageout
 
     include("../testutilities.jl")
 
     for fn in (+, *), val1 in 1:3, val2 in 1:3
         @testset begin
             var = datavar()
-            options = DataVariableActivationOptions(true, true, fn, (val1, val2))
+            options = DataVariableActivationOptions(
+                true, true, fn, (val1, val2)
+            )
             activate!(var, options)
             marginal = check_stream_updated_once(getmarginal(var))
             @test getdata(marginal) === PointMass(fn(val1, val2))
@@ -90,7 +106,9 @@ end
         # Just marginal
         @testset begin
             var = datavar()
-            options = DataVariableActivationOptions(true, true, fn, (val1, val2))
+            options = DataVariableActivationOptions(
+                true, true, fn, (val1, val2)
+            )
             activate!(var, options)
             marginal = check_stream_updated_once(getmarginal(var))
             @test getdata(marginal) === PointMass(fn(val1, val2))
@@ -99,7 +117,9 @@ end
         # Just message
         @testset begin
             var = datavar()
-            options = DataVariableActivationOptions(true, true, fn, (val1, val2))
+            options = DataVariableActivationOptions(
+                true, true, fn, (val1, val2)
+            )
             activate!(var, options)
             message = check_stream_updated_once(messageout(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
@@ -107,10 +127,15 @@ end
 
         @testset begin
             var1 = datavar()
-            activate!(var1, DataVariableActivationOptions(true, false, nothing, nothing))
+            activate!(
+                var1,
+                DataVariableActivationOptions(true, false, nothing, nothing)
+            )
 
             var = datavar()
-            options = DataVariableActivationOptions(true, true, fn, (var1, val2))
+            options = DataVariableActivationOptions(
+                true, true, fn, (var1, val2)
+            )
             activate!(var, options)
             @test check_stream_not_updated(getmarginal(var))
 
@@ -124,10 +149,15 @@ end
 
         @testset begin
             var2 = datavar()
-            activate!(var2, DataVariableActivationOptions(true, false, nothing, nothing))
+            activate!(
+                var2,
+                DataVariableActivationOptions(true, false, nothing, nothing)
+            )
 
             var = datavar()
-            options = DataVariableActivationOptions(true, true, fn, (val1, var2))
+            options = DataVariableActivationOptions(
+                true, true, fn, (val1, var2)
+            )
             activate!(var, options)
             @test check_stream_not_updated(getmarginal(var))
 
@@ -143,11 +173,19 @@ end
         @testset begin
             var1 = datavar()
             var2 = datavar()
-            activate!(var1, DataVariableActivationOptions(true, false, nothing, nothing))
-            activate!(var2, DataVariableActivationOptions(true, false, nothing, nothing))
+            activate!(
+                var1,
+                DataVariableActivationOptions(true, false, nothing, nothing)
+            )
+            activate!(
+                var2,
+                DataVariableActivationOptions(true, false, nothing, nothing)
+            )
 
             var = datavar()
-            options = DataVariableActivationOptions(true, true, fn, (var1, var2))
+            options = DataVariableActivationOptions(
+                true, true, fn, (var1, var2)
+            )
             activate!(var, options)
             @test check_stream_not_updated(getmarginal(var))
 
@@ -164,11 +202,19 @@ end
         @testset begin
             var1 = datavar()
             var2 = datavar()
-            activate!(var1, DataVariableActivationOptions(true, false, nothing, nothing))
-            activate!(var2, DataVariableActivationOptions(true, false, nothing, nothing))
+            activate!(
+                var1,
+                DataVariableActivationOptions(true, false, nothing, nothing)
+            )
+            activate!(
+                var2,
+                DataVariableActivationOptions(true, false, nothing, nothing)
+            )
 
             var = datavar()
-            options = DataVariableActivationOptions(true, true, fn, (var1, var2))
+            options = DataVariableActivationOptions(
+                true, true, fn, (var1, var2)
+            )
             activate!(var, options)
             @test check_stream_not_updated(getmarginal(var))
 

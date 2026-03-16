@@ -43,7 +43,10 @@
     @testset "rank1update" begin
         rng = MersenneTwister(1234)
 
-        for size in 2:4, T1 in (Float32, Float64), T2 in (Float32, Float64), T3 in (Float32, Float64)
+        for size in 2:4,
+            T1 in (Float32, Float64), T2 in (Float32, Float64),
+            T3 in (Float32, Float64)
+
             A = rand(rng, T1, size, size)
             x = rand(rng, T2, size)
             @test ReactiveMP.rank1update(A, x) ≈ (A + x * x')
@@ -75,16 +78,26 @@
             @test v_a_vT(v1, a) ≈ v1 * v1' * a
         end
 
-        for n in (1, 2, 3), v1 in [rand(n) for _ in 1:5], v2 in [rand(n) for _ in 1:5], a in rand(5)
+        for n in (1, 2, 3),
+            v1 in [rand(n) for _ in 1:5], v2 in [rand(n) for _ in 1:5],
+            a in rand(5)
+
             @test v_a_vT(v1, a, v2) ≈ v1 * a * v2'
             @test v_a_vT(v1, a, v2) ≈ v1 * v2' * a
         end
 
-        for n in (1, 2, 3), v in [rand(1, n) for _ in 1:5], a in [rand(n, n) for _ in 1:5]
+        for n in (1, 2, 3),
+            v in [rand(1, n) for _ in 1:5],
+            a in [rand(n, n) for _ in 1:5]
+
             @test v_a_vT(v, a) ≈ v * a * v'
         end
 
-        for n in (1, 2, 3), v1 in [rand(1, n) for _ in 1:5], v2 in [rand(1, n) for _ in 1:5], a in [rand(n, n) for _ in 1:5]
+        for n in (1, 2, 3),
+            v1 in [rand(1, n) for _ in 1:5],
+            v2 in [rand(1, n) for _ in 1:5],
+            a in [rand(n, n) for _ in 1:5]
+
             @test v_a_vT(v1, a, v2) ≈ v1 * a * v2'
         end
     end
@@ -115,9 +128,15 @@ end
 @testitem "isonehot approx" begin
     import ReactiveMP: isonehot
 
-    @test isonehot([2.9999999999849994e-12, 2.9999999999849994e-12, 0.999999999994]) == true
-    @test isonehot([2.9999999999849994e-12, 0.999999999994, 2.9999999999849994e-12]) == true
-    @test isonehot([0.999999999994, 2.9999999999849994e-12, 2.9999999999849994e-12]) == true
+    @test isonehot([
+        2.9999999999849994e-12, 2.9999999999849994e-12, 0.999999999994
+    ]) == true
+    @test isonehot([
+        2.9999999999849994e-12, 0.999999999994, 2.9999999999849994e-12
+    ]) == true
+    @test isonehot([
+        0.999999999994, 2.9999999999849994e-12, 2.9999999999849994e-12
+    ]) == true
 
     @test isonehot([0.03, 0.03, 0.94]) == false
     @test isonehot([0.03, 0.94, 0.03]) == false

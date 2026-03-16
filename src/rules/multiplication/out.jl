@@ -1,27 +1,49 @@
 import SpecialFunctions: besselk
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = PointMass(mean(m_A) * mean(m_in))
+@rule typeof(*)(:out, Marginalisation) (m_A::PointMass, m_in::PointMass, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = PointMass(
+    mean(m_A) * mean(m_in)
+)
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::GammaDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:Real},
+    m_in::GammaDistributionsFamily,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     return GammaShapeRate(shape(m_in), rate(m_in) / mean(m_A))
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::GammaDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::GammaDistributionsFamily,
+    m_in::PointMass{<:Real},
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (
+        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+    ) # symmetric rule
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractMatrix}, m_in::F, meta::Union{<:AbstractCorrectionStrategy, Nothing}) where {F <: NormalDistributionsFamily} =
-    begin
-        @logscale 0
-        A = mean(m_A)
-        μ_in, Σ_in = mean_cov(m_in)
-        return convert(promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A')
-    end
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:AbstractMatrix},
+    m_in::F,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) where {F <: NormalDistributionsFamily} = begin
+    @logscale 0
+    A = mean(m_A)
+    μ_in, Σ_in = mean_cov(m_in)
+    return convert(
+        promote_variate_type(F, NormalMeanVariance), A * μ_in, A * Σ_in * A'
+    )
+end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::F, m_in::PointMass{<:AbstractMatrix}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) where {F <: NormalDistributionsFamily} =
-    begin
-        return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
-    end
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::F,
+    m_in::PointMass{<:AbstractMatrix},
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) where {F <: NormalDistributionsFamily} = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (
+        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+    ) # symmetric rule
+end
 
 #------------------------
 # AbstractVector * UnivariateNormalDistributions
@@ -35,7 +57,11 @@ end
 #     v  out ~ Multivariate -> R^n
 # -->[x]-->
 # in1 ~ Univariate -> R^1
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:AbstractVector}, m_in::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:AbstractVector},
+    m_in::UnivariateNormalDistributionsFamily,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     @logscale 0
     a = mean(m_A)
 
@@ -49,57 +75,96 @@ end
     return MvNormalMeanCovariance(μ, Σ)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateNormalDistributionsFamily, m_in::PointMass{<:AbstractVector}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::UnivariateNormalDistributionsFamily,
+    m_in::PointMass{<:AbstractVector},
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (
+        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+    ) # symmetric rule
 end
 
 #------------------------
 # Real * NormalDistributions
 #------------------------
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::UnivariateNormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:Real},
+    m_in::UnivariateNormalDistributionsFamily,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     @logscale 0
     a = mean(m_A)
     μ_in, v_in = mean_var(m_in)
     return NormalMeanVariance(a * μ_in, a^2 * v_in)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::MvNormalMeanCovariance, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:Real},
+    m_in::MvNormalMeanCovariance,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     @logscale 0
     a = mean(m_A)
     μ_in, v_in = mean_cov(m_in)
     return MvNormalMeanCovariance(a * μ_in, a^2 * v_in)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::MvNormalMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:Real},
+    m_in::MvNormalMeanPrecision,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     @logscale 0
     a = mean(m_A)
     μ_in, w_in = mean_precision(m_in)
     return MvNormalMeanPrecision(a * μ_in, w_in / a^2)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:Real}, m_in::MvNormalWeightedMeanPrecision, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:Real},
+    m_in::MvNormalWeightedMeanPrecision,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     @logscale 0
     a = mean(m_A)
     ξ_in, w_in = weightedmean_precision(m_in)
     return MvNormalWeightedMeanPrecision(ξ_in / a, w_in / a^2)
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::NormalDistributionsFamily, m_in::PointMass{<:Real}, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()) # symmetric rule
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::NormalDistributionsFamily,
+    m_in::PointMass{<:Real},
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (
+        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+    ) # symmetric rule
 end
 
 #------------------------
 # UniformScaling * NormalDistributions
 #------------------------
-@rule typeof(*)(:out, Marginalisation) (m_A::PointMass{<:UniformScaling}, m_in::NormalDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
-    return @call_rule typeof(*)(:out, Marginalisation) (m_A = PointMass(mean(m_A).λ), m_in = m_in, meta = meta, addons = getaddons()) # dispatch to real * normal
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::PointMass{<:UniformScaling},
+    m_in::NormalDistributionsFamily,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
+    return @call_rule typeof(*)(:out, Marginalisation) (
+        m_A = PointMass(mean(m_A).λ),
+        m_in = m_in,
+        meta = meta,
+        addons = getaddons()
+    ) # dispatch to real * normal
 end
 
 #-----------------------
 # Univariate Normal * Univariate Normal 
 #----------------------
 @rule typeof(*)(:out, Marginalisation) (
-    m_A::UnivariateGaussianDistributionsFamily, m_in::UnivariateGaussianDistributionsFamily, meta::Union{<:AbstractCorrectionStrategy, Nothing}
+    m_A::UnivariateGaussianDistributionsFamily,
+    m_in::UnivariateGaussianDistributionsFamily,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
 ) = begin
     μ_A, var_A = mean_var(m_A)
     μ_in, var_in = mean_var(m_in)
@@ -107,7 +172,11 @@ end
     return ContinuousUnivariateLogPdf(besselmod(μ_in, var_in, μ_A, var_A, 0.0))
 end
 
-@rule typeof(*)(:out, Marginalisation) (m_A::UnivariateDistribution, m_in::UnivariateDistribution, meta::Union{<:AbstractCorrectionStrategy, Nothing}) = begin
+@rule typeof(*)(:out, Marginalisation) (
+    m_A::UnivariateDistribution,
+    m_in::UnivariateDistribution,
+    meta::Union{<:AbstractCorrectionStrategy, Nothing}
+) = begin
     nsamples = 3000
     samples_A = rand(m_A, nsamples)
     p = make_productdist_message(samples_A, m_in)
@@ -125,13 +194,22 @@ rho    : correlation coefficient
 function besselmod(mx, vx, my, vy, rho; truncation = 10, jitter = 1e-8)
     logpdf = function (x)
         x += jitter
-        term1 = -1 / (2 * (1 - rho^2)) * (mx^2 / vx + my^2 / vy - 2 * rho * (x + mx * my) / sqrt(vx * vy))
+        term1 =
+            -1 / (2 * (1 - rho^2)) * (
+                mx^2 / vx + my^2 / vy - 2 * rho * (x + mx * my) / sqrt(vx * vy)
+            )
 
         term2 = 0.0
         for n in 0:truncation
             for m in 0:(2 * n)
                 term2 +=
-                    x^(2 * n - m) * abs(x)^(m - n) * sqrt(vx)^(m - n - 1) / (pi * factorial(2 * n) * (1 - rho^2)^(2 * n + 1 / 2) * sqrt(vy)^(m - n + 1)) *
+                    x^(2 * n - m) * abs(x)^(m - n) * sqrt(vx)^(m - n - 1) /
+                    (
+                        pi *
+                        factorial(2 * n) *
+                        (1 - rho^2)^(2 * n + 1 / 2) *
+                        sqrt(vy)^(m - n + 1)
+                    ) *
                     (mx / vx - rho * my / sqrt(vx * vy))^m *
                     binomial(2 * n, m) *
                     (my / vy - rho * mx / sqrt(vx * vy))^(2 * n - m) *

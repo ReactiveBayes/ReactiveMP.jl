@@ -106,7 +106,10 @@ end
 # We need this dummy method as Julia is not smart enough to 
 # do that automatically if `data` is mutable
 function Base.:(==)(left::Message, right::Message)
-    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
+    return left.is_clamped == right.is_clamped &&
+           left.is_initial == right.is_initial &&
+           left.data == right.data &&
+           left.addons == right.addons
 end
 
 """
@@ -119,7 +122,10 @@ function multiply_messages(prod_strategy, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
-    is_prod_initial = !is_prod_clamped && (is_clamped_or_initial(left)) && (is_clamped_or_initial(right))
+    is_prod_initial =
+        !is_prod_clamped &&
+        (is_clamped_or_initial(left)) &&
+        (is_clamped_or_initial(right))
 
     # process distributions
     left_dist  = getdata(left)
@@ -131,29 +137,60 @@ function multiply_messages(prod_strategy, left::Message, right::Message)
     right_addons = getaddons(right)
 
     # process addons
-    new_addons = multiply_addons(left_addons, right_addons, new_dist, left_dist, right_dist)
+    new_addons = multiply_addons(
+        left_addons, right_addons, new_dist, left_dist, right_dist
+    )
 
     return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 end
 
 constrain_form_as_message(message::Message, form_constraint) = Message(
-    constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message)
+    constrain_form(form_constraint, getdata(message)),
+    is_clamped(message),
+    is_initial(message),
+    getaddons(message)
 )
 
 # Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
 # We want to cast it explicitly to a Message structure (which as_message does in case of DeferredMessage)
 # We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
-    (messages) -> foldl((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
+    (messages) -> foldl(
+        (left, right) -> constrain_form_as_message(
+            multiply_messages(prod_constraint, left, right),
+            form_constraint
+        ),
+        Base.Generator(as_message, messages)
+    )
 
 prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
-    (messages) -> constrain_form_as_message(foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)), form_constraint)
+    (messages) -> constrain_form_as_message(
+        foldl(
+            (left, right) ->
+                multiply_messages(prod_constraint, left, right),
+            Base.Generator(as_message, messages)
+        ),
+        form_constraint
+    )
 
 prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
-    (messages) -> foldr((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
+    (messages) -> foldr(
+        (left, right) -> constrain_form_as_message(
+            multiply_messages(prod_constraint, left, right),
+            form_constraint
+        ),
+        Base.Generator(as_message, messages)
+    )
 
 prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
-    (messages) -> constrain_form_as_message(foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)), form_constraint)
+    (messages) -> constrain_form_as_message(
+        foldr(
+            (left, right) ->
+                multiply_messages(prod_constraint, left, right),
+            Base.Generator(as_message, messages)
+        ),
+        form_constraint
+    )
 
 # Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
 
@@ -209,12 +246,16 @@ mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     cache           :: Union{Nothing, Message}
 end
 
-DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(messages, marginals, mappingFn, nothing)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(
+    messages, marginals, mappingFn, nothing
+)
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
     if isnothing(cache)
-        print(io, "DeferredMessage([ use `as_message` to compute the message ])")
+        print(
+            io, "DeferredMessage([ use `as_message` to compute the message ])"
+        )
     else
         print(io, "DeferredMessage(", getdata(cache), ")")
     end
@@ -232,10 +273,17 @@ function as_message(message::DeferredMessage, cache::Message)::Message
 end
 
 function as_message(message::DeferredMessage, cache::Nothing)::Message
-    return as_message(message, cache, getrecent(message.messages), getrecent(message.marginals))
+    return as_message(
+        message,
+        cache,
+        getrecent(message.messages),
+        getrecent(message.marginals)
+    )
 end
 
-function as_message(message::DeferredMessage, cache::Nothing, messages, marginals)::Message
+function as_message(
+    message::DeferredMessage, cache::Nothing, messages, marginals
+)::Message
     computed = message.mappingFn(messages, marginals)
     setcache!(message, computed)
     return computed
@@ -250,11 +298,17 @@ struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     stream  :: LazyObservable{M}
 end
 
-MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(RecentSubject(M), lazy(M))
+MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(
+    RecentSubject(M), lazy(M)
+)
 
-Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(observable.subject)
+Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(
+    observable.subject
+)
 
-@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(observable.stream, actor)
+@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(
+    observable.stream, actor
+)
 
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)
@@ -312,21 +366,48 @@ message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
 # Some addons add post rule execution logic
-function message_mapping_addons(mapping::MessageMapping, messages, marginals, result, addons)
-    return message_mapping_addons(mapping, mapping.addons, messages, marginals, result, addons)
+function message_mapping_addons(
+    mapping::MessageMapping, messages, marginals, result, addons
+)
+    return message_mapping_addons(
+        mapping, mapping.addons, messages, marginals, result, addons
+    )
 end
 
 # `enabled_addons` are always type-stable, whether `addons` are not, so we check based on the `enabled_addons` and ignore the `addons`
 # As a consequence if any message update rule returns non-empty `addons`, but `enabled_addons` is empty, then the resulting value 
 # of the `addons` will be simply ignored
-message_mapping_addons(mapping::MessageMapping, enabled_addons::Nothing, messages, marginals, result, addons) = enabled_addons
-message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple{}, messages, marginals, result, addons) = enabled_addons
+message_mapping_addons(
+    mapping::MessageMapping,
+    enabled_addons::Nothing,
+    messages,
+    marginals,
+    result,
+    addons
+) = enabled_addons
+message_mapping_addons(
+    mapping::MessageMapping,
+    enabled_addons::Tuple{},
+    messages,
+    marginals,
+    result,
+    addons
+) = enabled_addons
 
 # The main logic here is that some addons may add extra computation AFTER the rule has been computed
 # The benefit of that is that we have an access to the `MessageMapping` structure and is mostly useful for debug addons
-function message_mapping_addons(mapping::MessageMapping, enabled_addons::Tuple, messages, marginals, result, addons)
+function message_mapping_addons(
+    mapping::MessageMapping,
+    enabled_addons::Tuple,
+    messages,
+    marginals,
+    result,
+    addons
+)
     return map(addons) do addon
-        return message_mapping_addon(addon, mapping, messages, marginals, result)
+        return message_mapping_addon(
+            addon, mapping, messages, marginals, result
+        )
     end
 end
 
@@ -334,52 +415,102 @@ end
 # Other addons may override this behaviour (if necessary, see e.g. AddonMemory)
 message_mapping_addon(addon, mapping, messages, marginals, result) = addon
 
-function MessageMapping(::Type{F}, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K) where {F, T, C, N, M, A, X, R, K}
-    return MessageMapping{F, T, C, N, M, A, X, R, K}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback)
+function MessageMapping(
+    ::Type{F},
+    vtag::T,
+    vconstraint::C,
+    msgs_names::N,
+    marginals_names::M,
+    meta::A,
+    addons::X,
+    factornode::R,
+    rulefallback::K
+) where {F, T, C, N, M, A, X, R, K}
+    return MessageMapping{F, T, C, N, M, A, X, R, K}(
+        vtag,
+        vconstraint,
+        msgs_names,
+        marginals_names,
+        meta,
+        addons,
+        factornode,
+        rulefallback
+    )
 end
 
 function MessageMapping(
-    ::F, vtag::T, vconstraint::C, msgs_names::N, marginals_names::M, meta::A, addons::X, factornode::R, rulefallback::K
+    ::F,
+    vtag::T,
+    vconstraint::C,
+    msgs_names::N,
+    marginals_names::M,
+    meta::A,
+    addons::X,
+    factornode::R,
+    rulefallback::K
 ) where {F <: Function, T, C, N, M, A, X, R, K}
-    return MessageMapping{F, T, C, N, M, A, X, R, K}(vtag, vconstraint, msgs_names, marginals_names, meta, addons, factornode, rulefallback)
+    return MessageMapping{F, T, C, N, M, A, X, R, K}(
+        vtag,
+        vconstraint,
+        msgs_names,
+        marginals_names,
+        meta,
+        addons,
+        factornode,
+        rulefallback
+    )
 end
 
 function (mapping::MessageMapping)(messages, marginals)
     # Message is clamped if all of the inputs are clamped
-    is_message_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+    is_message_clamped =
+        __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Message is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_message_initial = !is_message_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
-
-    result, addons = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
-        missing, mapping.addons
-    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
-        missing, mapping.addons
-    else
-        ruleargs = (
-            message_mapping_fform(mapping),
-            mapping.vtag,
-            mapping.vconstraint,
-            mapping.msgs_names,
-            messages,
-            mapping.marginals_names,
-            marginals,
-            mapping.meta,
-            mapping.addons,
-            mapping.factornode
+    is_message_initial =
+        !is_message_clamped && (
+            __check_all(is_clamped_or_initial, messages) &&
+            __check_all(is_clamped_or_initial, marginals)
         )
-        ruleoutput = rule(ruleargs...)
-        # if `@rule` is not defined, the default behaviour is to return 
-        # the `RuleMethodError` object
-        if ruleoutput isa RuleMethodError
-            !isnothing(mapping.rulefallback) ? mapping.rulefallback(ruleargs...) : throw(ruleoutput)
+
+    result, addons =
+        if !isnothing(messages) &&
+            any(ismissing, TupleTools.flatten(getdata.(messages)))
+            missing, mapping.addons
+        elseif !isnothing(marginals) &&
+            any(ismissing, TupleTools.flatten(getdata.(marginals)))
+            missing, mapping.addons
         else
-            ruleoutput
+            ruleargs = (
+                message_mapping_fform(mapping),
+                mapping.vtag,
+                mapping.vconstraint,
+                mapping.msgs_names,
+                messages,
+                mapping.marginals_names,
+                marginals,
+                mapping.meta,
+                mapping.addons,
+                mapping.factornode
+            )
+            ruleoutput = rule(ruleargs...)
+            # if `@rule` is not defined, the default behaviour is to return 
+            # the `RuleMethodError` object
+            if ruleoutput isa RuleMethodError
+                if !isnothing(mapping.rulefallback)
+                    mapping.rulefallback(ruleargs...)
+                else
+                    throw(ruleoutput)
+                end
+            else
+                ruleoutput
+            end
         end
-    end
 
     # Inject extra addons after the rule has been executed
-    addons = message_mapping_addons(mapping, getdata(messages), getdata(marginals), result, addons)
+    addons = message_mapping_addons(
+        mapping, getdata(messages), getdata(marginals), result, addons
+    )
 
     return Message(result, is_message_clamped, is_message_initial, addons)
 end

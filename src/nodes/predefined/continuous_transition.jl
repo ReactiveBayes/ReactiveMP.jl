@@ -88,11 +88,17 @@ gettransformation(meta::CTMeta) = meta.f
 # getctoutputdim(meta::CTMeta, J) = div(size(J, 2), size(J, 1)) # returns dy where J ∈ ℝ^{dx × dydx}
 
 getjacobians(ctmeta::CTMeta, a) = process_Fs(gettransformation(ctmeta), a)
-process_Fs(f::Function, a) = [ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 1:size(f(a), 1)]
+process_Fs(f::Function, a) = [
+    ForwardDiff.jacobian(a -> f(a)[i, :], a) for i in 1:size(f(a), 1)
+]
 
-default_meta(::Type{CTMeta}) = error("ContinuousTransition node requires meta flag explicitly specified")
+default_meta(::Type{CTMeta}) = error(
+    "ContinuousTransition node requires meta flag explicitly specified"
+)
 
-default_functional_dependencies(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies(a = nothing)
+default_functional_dependencies(::Type{<:ContinuousTransition}) = RequireMarginalFunctionalDependencies(
+    a = nothing
+)
 
 """
     `ctcompanion_matrix` casts a vector `a` into a matrix `A` by means of linearization of the transformation function `f` around the expansion point `a0`.
@@ -110,7 +116,9 @@ function ctcompanion_matrix(a, epsilon, meta::CTMeta)
     return A
 end
 
-@average_energy ContinuousTransition (q_y_x::Any, q_a::Any, q_W::Any, meta::CTMeta) = begin
+@average_energy ContinuousTransition (
+    q_y_x::Any, q_a::Any, q_W::Any, meta::CTMeta
+) = begin
     ma, Va   = mean_cov(q_a)
     myx, Vyx = mean_cov(q_y_x)
     mW       = mean(q_W)
@@ -140,12 +148,28 @@ end
         trWSU += tr(HVaFi)
         trkronxxWSU += tr(xxt * HVaFi)
     end
-    AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + g1 + g2 + Vy + (mA * mx - my) * (mA * mx - my)')) + trWSU + trkronxxWSU) / 2
+    AE =
+        n / 2 * log2π - mean(logdet, q_W) +
+        (
+            tr(
+                mW * (
+                    mA * Vx * mA' +
+                    g1 +
+                    g2 +
+                    Vy +
+                    (mA * mx - my) * (mA * mx - my)'
+                )
+            ) +
+            trWSU +
+            trkronxxWSU
+        ) / 2
 
     return AE
 end
 
-@average_energy ContinuousTransition (q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta) = begin
+@average_energy ContinuousTransition (
+    q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta
+) = begin
     ma, Va = mean_cov(q_a)
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)
@@ -169,7 +193,13 @@ end
         trWSU += tr(HVaFi)
         trkronxxWSU += tr(xxt * HVaFi)
     end
-    AE = n / 2 * log2π - mean(logdet, q_W) + (tr(mW * (mA * Vx * mA' + Vy + (mA * mx - my) * (mA * mx - my)')) + trWSU + trkronxxWSU) / 2
+    AE =
+        n / 2 * log2π - mean(logdet, q_W) +
+        (
+            tr(mW * (mA * Vx * mA' + Vy + (mA * mx - my) * (mA * mx - my)')) +
+            trWSU +
+            trkronxxWSU
+        ) / 2
 
     return AE
 end

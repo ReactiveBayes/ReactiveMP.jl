@@ -54,8 +54,10 @@
 
                         t = rand(rng, T)
 
-                        @test ReactiveMP.v_a_vT(e, t) ≈ ReactiveMP.v_a_vT(e_c, t)
-                        @test ReactiveMP.v_a_vT(e, t, e) ≈ ReactiveMP.v_a_vT(e_c, t, e_c)
+                        @test ReactiveMP.v_a_vT(e, t) ≈
+                            ReactiveMP.v_a_vT(e_c, t)
+                        @test ReactiveMP.v_a_vT(e, t, e) ≈
+                            ReactiveMP.v_a_vT(e_c, t, e_c)
 
                         @test dot(e, A, e) === dot(e_c, A, e_c)
                         @test dot(e, e) === dot(e_c, e_c)

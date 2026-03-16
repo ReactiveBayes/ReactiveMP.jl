@@ -94,7 +94,13 @@ hasfield(field::Symbol, ntuple::NamedTuple) = field ∈ fields(ntuple)
 
 function swapped(tuple::Tuple, i, j)
     @assert j > i
-    return (tuple[1:(i - 1)]..., tuple[j], tuple[(i + 1):(j - 1)]..., tuple[i], tuple[(j + 1):end]...)
+    return (
+        tuple[1:(i - 1)]...,
+        tuple[j],
+        tuple[(i + 1):(j - 1)]...,
+        tuple[i],
+        tuple[(j + 1):end]...
+    )
 end
 
 function swapped(array::AbstractArray, i, j)
@@ -111,10 +117,13 @@ __check_all(fn::Function, ::Nothing)    = true
 
 ##
 
-is_clamped_or_initial(something) = is_clamped(something) || is_initial(something)
+is_clamped_or_initial(something) =
+    is_clamped(something) || is_initial(something)
 
 # See: https://github.com/JuliaLang/julia/issues/42795
-function fill_bitarray!(V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x)
+function fill_bitarray!(
+    V::SubArray{Bool, <:Any, <:BitArray, <:Tuple{UnitRange{Int}}}, x
+)
     B = V.parent
     I0 = V.indices[1]
     l0 = length(I0)
@@ -125,4 +134,5 @@ end
 
 ##
 
-forward_range(range::OrdinalRange)::UnitRange = step(range) > 0 ? (first(range):last(range)) : (last(range):first(range))
+forward_range(range::OrdinalRange)::UnitRange =
+    step(range) > 0 ? (first(range):last(range)) : (last(range):first(range))

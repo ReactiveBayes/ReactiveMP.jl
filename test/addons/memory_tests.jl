@@ -12,13 +12,25 @@
     @testset "Simple application and printing" begin
         import ReactiveMP: MessageMapping, message_mapping_addon
 
-        mapping = MessageMapping(NormalMeanVariance, Val(:out), Marginalisation(), Val((:x, :y)), Val((:z, :k)), "meta", AddonMemory(), nothing, nothing)
+        mapping = MessageMapping(
+            NormalMeanVariance,
+            Val(:out),
+            Marginalisation(),
+            Val((:x, :y)),
+            Val((:z, :k)),
+            "meta",
+            AddonMemory(),
+            nothing,
+            nothing
+        )
 
         messages = (Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))
         marginals = (PointMass(1.0), NormalMeanPrecision(0.0, 1.0))
         result = MvNormalMeanCovariance(ones(2), diageye(2))
 
-        addon = message_mapping_addon(AddonMemory(), mapping, messages, marginals, result)
+        addon = message_mapping_addon(
+            AddonMemory(), mapping, messages, marginals, result
+        )
 
         displayed = repr(addon)
 

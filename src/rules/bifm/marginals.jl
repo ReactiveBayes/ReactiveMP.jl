@@ -15,7 +15,9 @@
     Λ_ztilde = getΛztilde(meta)
 
     # # extract parameters from messages
-    ξ_zprev_marginal, Λ_zprev_marginal = weightedmean_precision(m_zprev.argument)
+    ξ_zprev_marginal, Λ_zprev_marginal = weightedmean_precision(
+        m_zprev.argument
+    )
     ξ_in, Λ_in = weightedmean_precision(m_in)
     ξ_out, Λ_out = weightedmean_precision(m_out)
 
@@ -28,7 +30,10 @@
     T = promote_samplefloattype(m_out, m_in, m_zprev.argument, m_znext)
 
     # calculate message towards znext from y
-    dist1 = convert(MvNormalWeightedMeanPrecision{T}, MvNormalWeightedMeanPrecision(C' * ξ_out, C' * Λ_out * C))
+    dist1 = convert(
+        MvNormalWeightedMeanPrecision{T},
+        MvNormalWeightedMeanPrecision(C' * ξ_out, C' * Λ_out * C)
+    )
 
     # calculate message from z towards the addition node
     dist2 = prod(GenericProd(), dist1, m_znext)
@@ -40,8 +45,13 @@
     Λ3 = convert(AbstractMatrix{T}, BA * Λ2 * BA')
 
     # # create a joint message of the input messages
-    ξ4 = convert(AbstractVector{T}, vcat(ξ_in, (ξ_zprev_marginal - ξ_zprev_message)))
-    Λ4 = convert(AbstractMatrix{T}, cat(Λ_in, (Λ_zprev_marginal - Λ_zprev_message); dims = (1, 2)))
+    ξ4 = convert(
+        AbstractVector{T}, vcat(ξ_in, (ξ_zprev_marginal - ξ_zprev_message))
+    )
+    Λ4 = convert(
+        AbstractMatrix{T},
+        cat(Λ_in, (Λ_zprev_marginal - Λ_zprev_message); dims = (1, 2))
+    )
 
     # # return joint marginal
     left = MvNormalWeightedMeanPrecision(ξ3, Λ3)
