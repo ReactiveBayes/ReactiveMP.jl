@@ -35,18 +35,16 @@ end
 
     include("../testutilities.jl")
 
-    @testset begin
-        # Test marginal computation
-        for d in 1:5:100, constant in rand(10)
-            let var = constvar(constant)
-                marginal_expected = mgl(PointMass(constant))
-                marginal_result = check_stream_updated_once(getmarginal(var)) do
-                    nothing
-                end
-
-                @test getdata(marginal_result) === getdata(marginal_expected)
-                @test getdata(marginal_result) === PointMass(constant)
+    # Test marginal computation
+    for d in 1:5:100, constant in rand(10)
+        let var = constvar(constant)
+            marginal_expected = mgl(PointMass(constant))
+            marginal_result = check_stream_updated_once(getmarginal(var)) do
+                nothing
             end
+
+            @test getdata(marginal_result) === getdata(marginal_expected)
+            @test getdata(marginal_result) === PointMass(constant)
         end
     end
 end
