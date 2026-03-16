@@ -1,5 +1,3 @@
-import StaticArrays: SVector
-
 @rule Mixture(:switch, Marginalisation) (m_out::Any, m_inputs::ManyOf{N, Any}) where {N} = begin
 
     #  compute logscales of different products

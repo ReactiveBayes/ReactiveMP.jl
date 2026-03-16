@@ -60,7 +60,8 @@
             @test_throws ErrorException test_rules_parse_configuration(:configuration, :([options = value = broken]))
 
             for name in (:configuration, :blabla),
-                check in (true, false), atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
+                check in (true, false),
+                atol in (1e-4, :([Float64 => 1e-11, Float32 => 1e-4])),
                 extra_types in (:([Float64]), :([Float32, BigFloat]))
 
                 expression = test_rules_parse_configuration(name, :([check_type_promotion = $check, atol = $atol, extra_float_types = $extra_types]))
@@ -239,17 +240,17 @@
         end
 
         @testset "`@rule` invalid input arguments" begin
-            struct MyNode end
+            struct MyNode1 end
 
-            @eval @rule MyNode(:out, Marginalisation) (m_a::PointMass, q_b::PointMass, meta::Int) = begin end
-            @test_throws LoadError @eval @rule MyNode(:out, Marginalisation) (a::PointMass, b::PointMass) = begin end
+            @eval @rule MyNode1(:out, Marginalisation) (m_a::PointMass, q_b::PointMass, meta::Int) = begin end
+            @test_throws LoadError @eval @rule MyNode1(:out, Marginalisation) (a::PointMass, b::PointMass) = begin end
         end
 
         @testset "`@marginalrule` invalid input arguments" begin
-            struct MyNode end
+            struct MyNode2 end
 
-            @eval @marginalrule MyNode(:a_b) (m_a::PointMass, m_b::PointMass, q_c::PointMass, meta::Int) = begin end
-            @test_throws LoadError @eval @marginalrule MyNode(:out) (a::PointMass, b::PointMass, c::PointMass, meta::Int) = begin end
+            @eval @marginalrule MyNode2(:a_b) (m_a::PointMass, m_b::PointMass, q_c::PointMass, meta::Int) = begin end
+            @test_throws LoadError @eval @marginalrule MyNode2(:out) (a::PointMass, b::PointMass, c::PointMass, meta::Int) = begin end
         end
 
         @testset "basic `test_rule` macro invokation" begin
@@ -537,9 +538,9 @@
                     Val{:a}(),
                     Marginalisation(),
                     Val{(:out, :b)}(),
-                    (Message(PointMass, false, false, nothing), Message(PointMass, false, false, nothing)),
+                    (Message(PointMass(1), false, false, nothing), Message(PointMass, false, false, nothing)),
                     Val{(:out_b,)}(),
-                    (Marginal(PointMass, false, false, nothing),),
+                    (Marginal(PointMass(1), false, false, nothing),),
                     1.0,
                     nothing,
                     nothing
@@ -562,9 +563,9 @@
                     Val{:a}(),
                     Marginalisation(),
                     Val{(:out, :b)}(),
-                    (Message(PointMass, false, false, nothing), Message(PointMass, false, false, nothing)),
+                    (Message(PointMass(1), false, false, nothing), Message(PointMass(1), false, false, nothing)),
                     Val{(:out_b,)}(),
-                    (Marginal(PointMass, false, false, nothing),),
+                    (Marginal(PointMass(1), false, false, nothing),),
                     1.0,
                     nothing,
                     nothing
@@ -578,7 +579,7 @@
                 @test occursin("GammaShapeRate", output)
                 @test occursin("m_α::BayesBase.PointMass", output)
                 @test occursin("m_β::BayesBase.PointMass", output)
-                @test occursin("q_out::activeMP", output)
+                @test occursin("q_out::Any", output)
                 @test occursin("q_α::Any", output)
                 @test occursin("q_β::Any", output)
                 @test occursin("q_β::ExponentialFamily.GammaDistributionsFamily", output)
@@ -590,9 +591,9 @@
                     Val{:a}(),
                     Marginalisation(),
                     Val{(:out,)}(),
-                    (Message(PointMass, false, false, nothing),),
+                    (Message(PointMass(1), false, false, nothing),),
                     Val{(:a,)}(),
-                    (Marginal(PointMass, false, false, nothing),),
+                    (Marginal(PointMass(1), false, false, nothing),),
                     1.0,
                     nothing,
                     nothing
@@ -618,7 +619,7 @@
                 end
 
                 err = ReactiveMP.RuleMethodError(
-                    MyCustomNode, Val{:out}(), Marginalisation(), nothing, nothing, Val{(:a,)}(), (Marginal(PointMass, false, false, nothing),), "meta", nothing, nothing
+                    MyCustomNode, Val{:out}(), Marginalisation(), nothing, nothing, Val{(:a,)}(), (Marginal(PointMass(1), false, false, nothing),), "meta", nothing, nothing
                 )
 
                 io = IOBuffer()
@@ -768,30 +769,30 @@
     end
 
     @testset "Check that default meta is `nothing`" begin
-        struct DummyNode end
-        struct DummyNodeMeta end
+        struct DummyNodeForDefaultMetaNothingTests end
+        struct DummyNodeForDefaultMetaNothingTestsMeta end
 
-        @node DummyNode Stochastic [out, x, y]
+        @node DummyNodeForDefaultMetaNothingTests Stochastic [out, x, y]
 
-        @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision) = 1
-        @rule DummyNode(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision, meta::Int) = meta
-        @rule DummyNode(:out, Marginalisation) (q_x::NormalMeanPrecision, q_y::NormalMeanPrecision) = 3
+        @rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision) = 1
+        @rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (m_x::NormalMeanPrecision, m_y::NormalMeanPrecision, meta::Int) = meta
+        @rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x::NormalMeanPrecision, q_y::NormalMeanPrecision) = 3
 
-        @test (@call_rule DummyNode(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision))) === 1
+        @test (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision))) === 1
 
-        @test (@call_rule DummyNode(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision), meta = nothing)) === 1
+        @test (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision), meta = nothing)) === 1
 
-        @test (@call_rule DummyNode(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision), meta = 2)) === 2
+        @test (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision), meta = 2)) === 2
 
-        @test (@call_rule DummyNode(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision), meta = 3)) === 3
+        @test (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (m_x = vague(NormalMeanPrecision), m_y = vague(NormalMeanPrecision), meta = 3)) === 3
 
-        @test (@call_rule DummyNode(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision))) === 3
+        @test (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision))) === 3
 
-        @test (@call_rule DummyNode(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = nothing)) === 3
+        @test (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = nothing)) === 3
 
-        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNode(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 2))
+        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 2))
 
-        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNode(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 3))
+        @test_throws ReactiveMP.RuleMethodError (@call_rule DummyNodeForDefaultMetaNothingTests(:out, Marginalisation) (q_x = vague(NormalMeanPrecision), q_y = vague(NormalMeanPrecision), meta = 3))
     end
 
     @testset "Check the `return_addons` option" begin

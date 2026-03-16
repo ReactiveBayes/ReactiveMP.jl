@@ -3,7 +3,7 @@
     import ReactiveMP: messageout, messagein
 
     # Should throw if not initialised properly
-    @testset let var = datavar()
+    let var = datavar()
         for i in 1:10
             @test messageout(var, 1) === messageout(var, i)
             @test_throws BoundsError messagein(var, i)
@@ -15,8 +15,8 @@ end
     import ReactiveMP: MessageObservable, create_messagein!, messagein, degree
 
     # Test for different degrees `d`
-    @testset for d in 1:5:100
-        @testset let var = datavar()
+    for d in 1:5:100
+        let var = datavar()
             for i in 1:d
                 messagein, index = create_messagein!(var)
                 @test messagein isa MessageObservable
@@ -37,8 +37,8 @@ end
 
     @testset begin
         # Test marginal computation
-        @testset for d in 1:5:100
-            @testset let var = datavar()
+        for d in 1:5:100
+            let var = datavar()
                 messageins = map(1:d) do _
                     s = Subject(AbstractMessage)
                     m, i = create_messagein!(var)
