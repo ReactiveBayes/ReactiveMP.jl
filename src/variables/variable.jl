@@ -1,5 +1,4 @@
 export AbstractVariable, degree
-export FoldLeftProdStrategy, FoldRightProdStrategy, CustomProdStrategy
 export getprediction, getpredictions, getmarginal, getmarginals
 export setmarginal!, setmarginals!, setmessage!, setmessages!
 
