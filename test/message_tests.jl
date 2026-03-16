@@ -5,7 +5,7 @@
     import Base: methods
     import Base.Iterators: repeated, product
     import BayesBase: xtlog, mirrorlog
-    import ReactiveMP: getaddons, multiply_messages, as_message
+    import ReactiveMP: getaddons, compute_product_of_two_messages, MessageProductContext, as_message
     import SpecialFunctions: loggamma
 
     @testset "Default methods" begin
@@ -34,8 +34,8 @@
         end
     end
 
-    @testset "multiply_messages" begin
-        × = (x, y) -> multiply_messages(GenericProd(), x, y)
+    @testset "compute product of two messages" begin
+        × = (x, y) -> compute_product_of_two_messages(MessageProductContext(), x, y)
 
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
@@ -251,4 +251,91 @@ end
     @test events[2].args[3] === marginals
     @test events[2].args[4] === 2
     @test events[2].args[5] === ()
+end
+
+@testmodule MessageProductContextUtils begin
+    import ReactiveMP.BayesBase: prod, GenericProd
+
+    struct Normal
+        mean::Float64
+        var::Float64
+    end
+
+    function prod(::GenericProd, left::Normal, right::Normal)
+        result_var = 1 / (1 / left.var + 1 / right.var)
+        result_mean = result_var * (left.mean / left.var + right.mean / right.var)
+        return Normal(result_mean, result_var)
+    end
+
+    export Normal
+end
+
+@testitem "MessageProductContext should compute product of two messages" setup = [MessageProductContextUtils] begin
+    import ReactiveMP: Message, MessageProductContext, compute_product_of_two_messages, getdata
+
+    context = MessageProductContext()
+
+    msg1 = Message(Normal(0, 1), false, false, nothing)
+    msg2 = Message(Normal(0, 1), false, false, nothing)
+
+    result = @inferred(compute_product_of_two_messages(context, msg1, msg2))
+
+    @test result isa Message
+    @test getdata(result) === Normal(0, 1 / 2)
+end
+
+@testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" setup = [MessageProductContextUtils] begin
+    import ReactiveMP: Message, MessageProductContext, compute_product_of_two_messages, is_clamped, is_initial
+
+    context = MessageProductContext()
+
+    for left_is_clamped in (true, false), right_is_clamped in (true, false), left_is_initial in (true, false), right_is_initial in (true, false)
+        msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial, nothing)
+        msg2 = Message(Normal(0, 1), right_is_clamped, right_is_initial, nothing)
+
+        result = @inferred(compute_product_of_two_messages(context, msg1, msg2))
+
+        @test result isa Message
+
+        expected_result_is_clamped = left_is_clamped && right_is_clamped
+        expected_result_is_initial = !expected_result_is_clamped && (left_is_clamped || left_is_initial) && (right_is_clamped || right_is_initial)
+
+        @test is_clamped(result) === expected_result_is_clamped
+        @test is_initial(result) === expected_result_is_initial
+    end
+end
+
+@testitem "compute_message_product should support different folding strategies" setup = [MessageProductContextUtils] begin
+    import ReactiveMP: MessageProductContext, Message, compute_product_of_messages, getdata
+
+    struct SaveOrderOfComputationCallbacks
+        events
+    end
+
+    function ReactiveMP.invoke_callback(handler::SaveOrderOfComputationCallbacks, ::Val{E}, args...) where {E}
+        push!(handler.events, (event = E, args = args))
+    end
+
+    messages = [
+        Message(Normal(0, 1), false, false, nothing)
+        Message(Normal(0, 2), false, false, nothing)
+        Message(Normal(0, 3), false, false, nothing)
+    ]
+
+    @testset "From left to right" begin
+        import ReactiveMP: MessagesProductFromLeftToRight
+
+        handler = SaveOrderOfComputationCallbacks([])
+        context = MessageProductContext(
+            folding_strategy = MessagesProductFromLeftToRight(),
+            callbacks = handler
+        )
+
+        result = @inferred(compute_product_of_messages(context, messages))
+
+        @test result isa Message
+        @test getdata(result) === Normal(0, 1 / (1 + 1 / 2 + 1 / 3))
+
+        @test events[1].event === :on_product_of_two_messages
+    end
 end

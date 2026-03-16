@@ -110,12 +110,51 @@ function Base.:(==)(left::Message, right::Message)
 end
 
 """
-    multiply_messages(prod_strategy, left::Message, right::Message)
+    MessageProductContext(kwargs...)
 
-Multiplies two messages `left` and `right` using a given product strategy `prod_strategy`.
-Returns a new message with the result of the multiplication. Note that the resulting message is not necessarily normalized.
+The structure that defines the context for the product of **two** messages within ReactiveMP.
+The product is executed with the [`ReactiveMP.compute_message_product`](@ref) function and 
+uses the `BayesBase.prod` under the hood. See BayesBase product API documentation for detailed description.
+
+The following `kwargs` are supported:
+- `prod_constraint`: defines the first argument for the `BayesBase.prod` function (default is `BayesBase.GenericProd`)
+- `form_constraint`: defines the form constraint to be applied on the result of computation, default is [`ReactiveMP.UnspecifiedFormConstraint`](@ref)
+- `form_constraint_check_strategy`: defines the strategy to check the specified form constraint, either [`ReactiveMP.FormConstraintCheckLast`](@ref) or [`ReactiveMP.FormConstraintCheckEach`](@ref), default is [`ReactiveMP.FormConstraintCheckLast`](@ref)
+    + [`ReactiveMP.FormConstraintCheckLast`](@ref) will only call [`ReactiveMP.constrain_form`](@ref) at the end of the `[ReactiveMP.compute_product_of_messages]`
+    + [`ReactiveMP.FormConstraintCheckEach`](@ref) will call [`ReactiveMP.constrain_form`](@ref) at each of the [`ReactiveMP.compute_product_of_two_messages`](@ref)
+- `folding_strategy`: defines the strategy (or simply speaking the direction) of the messages product for [`ReactiveMP.compute_message_product`](@ref), default is [`MessagesProductFromLeftToRight`](@ref). Can be a custom function that accepts a `context` and collection of `messages` and does arbitrary order, but still needs to call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood (unless you do some experimental stuff).
+- `callbacks`: callbacks handler, see [`ReactiveMP.invoke_callback`](@ref) for more details.
+
+See also: [`ReactiveMP.compute_product_of_messages`](@ref), [`ReactiveMP.compute_product_of_two_messages`]
 """
-function multiply_messages(prod_strategy, left::Message, right::Message)
+Base.@kwdef struct MessageProductContext{C, F, S, L, A}
+    prod_constraint::C = BayesBase.GenericProd()
+    form_constraint::F = UnspecifiedFormConstraint()
+    form_constraint_check_strategy::S = FormConstraintCheckLast()
+    folding_strategy::L = MessagesProductFromLeftToRight()
+    callbacks::A = nothing
+end
+
+"""
+    compute_product_of_two_messages(context::MessageProductContext, left::Message, right::Message)
+
+Computes the product of two messages `left` and `right` using a given `context`.
+Returns a new message with the result of the multiplication. 
+Applies the specified `context.form_constraint` if `context.form_constraint_check_strategy` is set to 
+[`ReactiveMP.FormConstraintCheckEach`](@ref).
+Note that the resulting message is not necessarily normalized.
+
+## `is_clamped` and `is_initial`
+
+The [`ReactiveMP.Message`](@ref) carries the `is_clamped` and `is_initial` flags.
+The rules for the product are the following:
+- If both messages are clamped, the result is clamped, OR
+- If both messages are either clamped or initial, the result is initial, OR
+- The result is neither clamped nor initial
+
+See: [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref)
+"""
+function compute_product_of_two_messages(context::MessageProductContext, left::Message, right::Message)
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
@@ -124,7 +163,11 @@ function multiply_messages(prod_strategy, left::Message, right::Message)
     # process distributions
     left_dist  = getdata(left)
     right_dist = getdata(right)
-    new_dist   = prod(prod_strategy, left_dist, right_dist)
+    new_dist   = prod(context.prod_constraint, left_dist, right_dist)
+
+    if context.form_constraint_check_strategy === FormConstraintCheckEach()
+        new_dist = constrain_form(context.form_constraint, new_dist)
+    end
 
     # process addons
     left_addons  = getaddons(left)
@@ -132,30 +175,43 @@ function multiply_messages(prod_strategy, left::Message, right::Message)
 
     # process addons
     new_addons = multiply_addons(left_addons, right_addons, new_dist, left_dist, right_dist)
+    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 
-    return Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
+    return result
 end
 
-constrain_form_as_message(message::Message, form_constraint) = Message(
-    constrain_form(form_constraint, getdata(message)), is_clamped(message), is_initial(message), getaddons(message)
-)
+# Sometimes we call the product on the `DeferredMessage` that need to be casted to a `Message`
+function compute_product_of_two_messages(context::MessageProductContext, left, right)
+    return compute_product_of_two_messages(context::MessageProductContext, as_message(left), as_message(right))
+end
 
-# Note: we need extra Base.Generator(as_message, messages) step here, because some of the messages might be VMP messages
-# We want to cast it explicitly to a Message structure (which as_message does in case of DeferredMessage)
-# We use with Base.Generator to reduce an amount of memory used by this procedure since Generator generates items lazily
-prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
-    (messages) -> foldl((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
+"""
+    compute_product_of_messages(context::MessageProductContext, messages)
 
-prod_foldl_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
-    (messages) -> constrain_form_as_message(foldl((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)), form_constraint)
+Computes the product of **collection** of messages (in contrast to `compute_product_of_two_messages(context, left, right)` that computes the product of **two** messages) given the provided `context`. Uses the `context.folding_strategy` to determine in which order to call the [`ReactiveMP.compute_product_of_two_messages`](@ref). Typically is set to [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), but can be also set to an arbitrary function that accepts `context` and `messages` and which **must** call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood.
 
-prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckEach) =
-    (messages) -> foldr((left, right) -> constrain_form_as_message(multiply_messages(prod_constraint, left, right), form_constraint), Base.Generator(as_message, messages))
+See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref)
+"""
+function compute_product_of_messages(context::MessageProductContext, messages)
+    result = compute_product_of_messages(context.folding_strategy, context, messages)
 
-prod_foldr_reduce(prod_constraint, form_constraint, ::FormConstraintCheckLast) =
-    (messages) -> constrain_form_as_message(foldr((left, right) -> multiply_messages(prod_constraint, left, right), Base.Generator(as_message, messages)), form_constraint)
+    if context.form_constraint_check_strategy === FormConstraintCheckLast()
+        result = Message(constrain_form(context.form_constraint, getdata(result)), is_clamped(result), is_initial(result), getaddons(result))
+    end
 
-# Base.:*(m1::Message, m2::Message) = multiply_messages(m1, m2)
+    return result
+end
+
+"""
+    MessagesProductFromLeftToRight()
+
+Use this strategy in [`ReactiveMP.MessageProductContext`](@ref) to compute message from left to right within the [`ReactiveMP.compute_product_of_messages`](@ref).
+"""
+struct MessagesProductFromLeftToRight end
+
+function compute_product_of_messages(::MessagesProductFromLeftToRight, context::MessageProductContext, messages)
+    return foldl((left, right) -> compute_product_of_two_messages(context, left, right), messages)
+end
 
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
 Distributions.logpdf(message::Message, x) = Distributions.logpdf(getdata(message), x)
