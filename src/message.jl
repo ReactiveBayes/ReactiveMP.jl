@@ -207,8 +207,8 @@ Computes the product of **collection** of messages (in contrast to `compute_prod
 See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref)
 """
 function compute_product_of_messages(context::MessageProductContext, messages)
-    result = compute_product_of_messages(
-        context.fold_strategy, context, messages
+    result = as_message(
+        compute_product_of_messages(context.fold_strategy, context, messages)
     )
 
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
