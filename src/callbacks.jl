@@ -111,7 +111,7 @@ julia> ReactiveMP.invoke_callback(merged_handler, Val(:event1), 4, 5)
 29
 
 julia> ReactiveMP.invoke_callback(merged_handler, Val(:event2), 5, 5)
-0
+0.0
 ```
 
 See also: [`ReactiveMP.invoke_callback`](@ref)

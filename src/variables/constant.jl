@@ -25,6 +25,11 @@ function ConstVariable(constant; label = nothing)
     return ConstVariable(marginal, messageout, constant, 0, label)
 end
 
+"""
+    constvar(constant; label = nothing)
+
+Creates a new [`ReactiveMP.ConstVariable`](@ref) with the given `constant` value and an optional `label` for identification.
+"""
 constvar(constant; label = nothing) = ConstVariable(constant; label = label)
 
 degree(constvar::ConstVariable) = constvar.nconnected

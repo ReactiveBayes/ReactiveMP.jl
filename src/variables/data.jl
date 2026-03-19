@@ -29,6 +29,11 @@ function DataVariable(; label = nothing)
     )
 end
 
+"""
+    datavar(; label = nothing)
+
+Creates a new [`ReactiveMP.DataVariable`](@ref) with an optional `label` for identification.
+"""
 datavar(; label = nothing) = DataVariable(; label = label)
 
 degree(datavar::DataVariable) = length(datavar.input_messages)
@@ -104,6 +109,14 @@ _getmarginal(datavar::DataVariable)       = datavar.marginal
 _setmarginal!(::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
 _makemarginal(::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
+"""
+    update!(datavar::DataVariable, data)
+    update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
+
+Provides a new observation to a [`ReactiveMP.DataVariable`](@ref) (or an array of data variables).
+The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
+Pass `missing` to indicate that the observation is not available.
+"""
 update!(datavar::DataVariable, data)            = update!(datavar, PointMass(data))
 update!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false, nothing))
 update!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false, nothing))

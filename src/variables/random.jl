@@ -17,6 +17,11 @@ mutable struct RandomVariable <: AbstractVariable
     label           :: Any
 end
 
+"""
+    randomvar(; label = nothing)
+
+Creates a new [`ReactiveMP.RandomVariable`](@ref) with an optional `label` for identification.
+"""
 function randomvar(; label = nothing)
     return RandomVariable(
         Vector{MessageObservable{AbstractMessage}}(),

@@ -18,7 +18,7 @@ ReactiveMP.randomvar
 
 ## [Data variables](@id lib-variables-data)
 
-Data variables represent observed quantities. Their value is not fixed at creation time and can be updated later via `update!`.
+Data variables represent observed quantities. Their value is not fixed at creation time and can be updated later via [`update!`](@ref).
 
 ```@docs
 ReactiveMP.DataVariable
