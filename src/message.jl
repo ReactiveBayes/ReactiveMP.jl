@@ -179,7 +179,9 @@ function compute_product_of_two_messages(
     new_dist   = prod(context.prod_constraint, left_dist, right_dist)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
+        invoke_callback(context.callbacks, BeforeFormConstraintApplied(), variable, context, FormConstraintCheckEach(), new_dist)
         new_dist = constrain_form(context.form_constraint, new_dist)
+        invoke_callback(context.callbacks, AfterFormConstraintApplied(), variable, context, FormConstraintCheckEach(), new_dist)
     end
 
     # process addons
@@ -216,6 +218,8 @@ See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.Mes
 function compute_product_of_messages(
     variable::AbstractVariable, context::MessageProductContext, messages
 )
+    invoke_callback(context.callbacks, BeforeProductOfMessages(), variable, context, messages)
+
     result = as_message(
         compute_product_of_messages(
             context.fold_strategy, variable, context, messages
@@ -223,13 +227,19 @@ function compute_product_of_messages(
     )
 
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
+        dist = getdata(result)
+        invoke_callback(context.callbacks, BeforeFormConstraintApplied(), variable, context, FormConstraintCheckLast(), dist)
+        constrained_dist = constrain_form(context.form_constraint, dist)
+        invoke_callback(context.callbacks, AfterFormConstraintApplied(), variable, context, FormConstraintCheckLast(), constrained_dist)
         result = Message(
-            constrain_form(context.form_constraint, getdata(result)),
+            constrained_dist,
             is_clamped(result),
             is_initial(result),
             getaddons(result),
         )
     end
+
+    invoke_callback(context.callbacks, AfterProductOfMessages(), variable, context, messages, result)
 
     return result
 end

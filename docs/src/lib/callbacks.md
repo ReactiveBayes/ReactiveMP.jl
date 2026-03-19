@@ -18,4 +18,8 @@ ReactiveMP.BeforeMessageRuleCallback
 ReactiveMP.AfterMessageRuleCallback
 ReactiveMP.BeforeProductOfTwoMessages
 ReactiveMP.AfterProductOfTwoMessages
+ReactiveMP.BeforeProductOfMessages
+ReactiveMP.AfterProductOfMessages
+ReactiveMP.BeforeFormConstraintApplied
+ReactiveMP.AfterFormConstraintApplied
 ```

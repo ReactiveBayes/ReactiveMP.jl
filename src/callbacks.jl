@@ -216,3 +216,57 @@ should accept the following positional arguments:
 - `addons`, the computed addons for the result (can be `nothing`)
 """
 const AfterProductOfTwoMessages = Val{:after_product_of_two_messages}
+
+"""
+    BeforeProductOfMessages # Val{:before_product_of_messages}
+
+Alias for `Val{:before_product_of_messages}`. This event is being used to call a callback right
+before computing the product of a collection of messages (i.e. at the beginning of [`ReactiveMP.compute_product_of_messages`](@ref)).
+The callback handler for this event should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.AbstractVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `messages`, the collection of messages to be multiplied
+"""
+const BeforeProductOfMessages = Val{:before_product_of_messages}
+
+"""
+    AfterProductOfMessages # Val{:after_product_of_messages}
+
+Alias for `Val{:after_product_of_messages}`. This event is being used to call a callback right
+after computing the product of a collection of messages (i.e. at the end of [`ReactiveMP.compute_product_of_messages`](@ref)).
+The callback handler for this event should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.AbstractVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `messages`, the original collection of messages that were multiplied
+- `result` of type [`ReactiveMP.Message`](@ref), the final result after folding and form constraint application
+"""
+const AfterProductOfMessages = Val{:after_product_of_messages}
+
+"""
+    BeforeFormConstraintApplied # Val{:before_form_constraint_applied}
+
+Alias for `Val{:before_form_constraint_applied}`. This event is being used to call a callback right
+before applying the form constraint via [`ReactiveMP.constrain_form`](@ref). Fires in both
+[`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.FormConstraintCheckLast`](@ref) strategies.
+The callback handler for this event should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.AbstractVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `strategy`, the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
+- `distribution`, the distribution about to be constrained
+"""
+const BeforeFormConstraintApplied = Val{:before_form_constraint_applied}
+
+"""
+    AfterFormConstraintApplied # Val{:after_form_constraint_applied}
+
+Alias for `Val{:after_form_constraint_applied}`. This event is being used to call a callback right
+after applying the form constraint via [`ReactiveMP.constrain_form`](@ref). Fires in both
+[`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.FormConstraintCheckLast`](@ref) strategies.
+The callback handler for this event should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.AbstractVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `strategy`, the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
+- `distribution`, the distribution before the constraint was applied
+- `result`, the distribution after the constraint was applied
+"""
+const AfterFormConstraintApplied = Val{:after_form_constraint_applied}
