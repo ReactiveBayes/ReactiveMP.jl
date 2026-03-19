@@ -149,9 +149,9 @@ end
     end
 
     ReactiveMP.invoke_callback(::MyCustomHandler, event, args...) = nothing
-    ReactiveMP.invoke_callback(
-        handler::MyCustomHandler, event::Val{:event2}, args...
-    ) = push!(handler.events, :event2)
+    ReactiveMP.invoke_callback(handler::MyCustomHandler, event::Val{:event2}, args...) = push!(
+        handler.events, :event2
+    )
 
     custom_handler = MyCustomHandler([])
 
