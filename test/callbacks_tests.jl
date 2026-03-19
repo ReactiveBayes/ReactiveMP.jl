@@ -45,6 +45,63 @@ end
     )
 end
 
+@testitem "invoke_callback error hint for forgotten trailing comma in NamedTuple" begin
+    import ReactiveMP: invoke_callback
+
+    # This simulates the common mistake: `(before_product_of_messages = fn)` without trailing comma.
+    # Julia parses this as a plain assignment, so `callbacks` becomes just `fn` (a Function).
+    callbacks = (before_product_of_messages = (args...) -> nothing)
+
+    # Verify that Julia indeed parsed this as a Function, not a NamedTuple
+    @test callbacks isa Function
+    @test !(callbacks isa NamedTuple)
+
+    err = try
+        invoke_callback(callbacks, Val(:before_product_of_messages), 1, 2)
+    catch e
+        e
+    end
+    @test err isa MethodError
+
+    # Check that the error hint mentions both possible causes
+    hint_message = sprint(showerror, err)
+    @test occursin("invoke_callback", hint_message)
+    @test occursin("trailing comma", hint_message)
+end
+
+@testitem "invoke_callback error hint for custom handler with missing method" begin
+    import ReactiveMP: invoke_callback
+
+    # Custom handler that only implements invoke_callback for :event1 but not :event2
+    struct IncompleteHandler end
+
+    ReactiveMP.invoke_callback(::IncompleteHandler, ::Val{:event1}, args...) =
+        nothing
+
+    handler = IncompleteHandler()
+
+    # :event1 works fine
+    @test invoke_callback(handler, Val(:event1), 1, 2) === nothing
+
+    # :event2 is not implemented — should hit MethodError with a helpful hint
+    err = try
+        invoke_callback(handler, Val(:event2), 1, 2)
+    catch e
+        e
+    end
+    @test err isa MethodError
+
+    hint_message = sprint(showerror, err)
+    @test occursin(
+        "ReactiveMP.invoke_callback(::IncompleteHandler, ::Val{:event2}, args...) = ...",
+        hint_message,
+    )
+    @test occursin(
+        "You meant to pass a `NamedTuple` as the callbacks handler but forgot the trailing comma.",
+        hint_message,
+    )
+end
+
 @testitem "NamedTuple should be a supported event handler" begin
     import ReactiveMP: invoke_callback
 
@@ -92,9 +149,9 @@ end
     end
 
     ReactiveMP.invoke_callback(::MyCustomHandler, event, args...) = nothing
-    ReactiveMP.invoke_callback(handler::MyCustomHandler, event::Val{:event2}, args...) = push!(
-        handler.events, :event2
-    )
+    ReactiveMP.invoke_callback(
+        handler::MyCustomHandler, event::Val{:event2}, args...
+    ) = push!(handler.events, :event2)
 
     custom_handler = MyCustomHandler([])
 
@@ -153,7 +210,7 @@ end
     @test @inferred(invoke_callback(merged_handler1, Val(:event1), 2, 3)) ===
         (5, 6)
     @test @inferred(invoke_callback(merged_handler1, Val(:event2), 3, 4)) ===
-        (-1, 3/4)
+        (-1, 3 / 4)
 
     merged_handler2 = merge_callbacks(
         callback_handler1,
@@ -163,7 +220,7 @@ end
 
     @test @inferred(invoke_callback(merged_handler2, Val(:event1), 4, 5)) === 29
     @test @inferred(invoke_callback(merged_handler2, Val(:event2), 4, 5)) ===
-        -4/5
+        -4 / 5
 
     merged_handler3 = merge_callbacks(
         callback_handler1,
@@ -176,7 +233,7 @@ end
     ) === 6.0
     @test @inferred(
         invoke_callback(merged_handler3, Val(:event2), 1.0, 2.0)
-    ) === -1.0+1.0/2.0
+    ) === -1.0 + 1.0 / 2.0
 
     merged_handler4 = merge_callbacks(
         callback_handler1, callback_handler2; reduce_fn = (event1 = -,)
@@ -187,7 +244,7 @@ end
     ) === 1.0
     @test @inferred(
         invoke_callback(merged_handler4, Val(:event2), 1.0, 2.0)
-    ) === (-1.0, 1.0/2.0)
+    ) === (-1.0, 1.0 / 2.0)
 
     merged_handler5 = merge_callbacks(
         callback_handler1, callback_handler2; reduce_fn = (event2 = /,)
@@ -198,5 +255,5 @@ end
     ) === (3.0, 2.0)
     @test @inferred(
         invoke_callback(merged_handler5, Val(:event2), 1.0, 2.0)
-    ) === -1.0/(1.0/2.0)
+    ) === -1.0 / (1.0 / 2.0)
 end
