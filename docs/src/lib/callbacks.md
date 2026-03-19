@@ -17,4 +17,5 @@ Here is the list of predefined event types, to which a custom callback handler c
 ReactiveMP.BeforeMessageRuleCallback
 ReactiveMP.AfterMessageRuleCallback
 ReactiveMP.BeforeProductOfTwoMessages
+ReactiveMP.AfterProductOfTwoMessages
 ```

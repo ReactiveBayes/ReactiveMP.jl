@@ -197,6 +197,22 @@ before computing the product of two messages. The callback handler for this even
 should accept the following positional arguments:
 - `variable` of type [`ReactiveMP.AbstractVariable`](@ref)
 - `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `left` of type [`ReactiveMP.Message`](@ref), the left-hand side message in the product
+- `right` of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
 """
 const BeforeProductOfTwoMessages = Val{:before_product_of_two_messages}
 
+"""
+    AfterProductOfTwoMessages # Val{:after_product_of_two_messages}
+
+Alias for `Val{:after_product_of_two_messages}`. This event is being used to call a callback right
+after computing the product of two messages. The callback handler for this event
+should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.AbstractVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `left` of type [`ReactiveMP.Message`](@ref), the left-hand side message in the product
+- `right` of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
+- `result` of type [`ReactiveMP.Message`](@ref), the resulting message from the product
+- `addons`, the computed addons for the result (can be `nothing`)
+"""
+const AfterProductOfTwoMessages = Val{:after_product_of_two_messages}

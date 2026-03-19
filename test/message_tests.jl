@@ -14,7 +14,8 @@
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false), addons in (1, 2),
+            initial in (true, false),
+            addons in (1, 2),
             data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
             msg = Message(data, clamped, initial, addons)
@@ -32,7 +33,8 @@
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false),
-            clamped2 in (true, false), initial1 in (true, false),
+            clamped2 in (true, false),
+            initial1 in (true, false),
             initial2 in (true, false)
 
             msg1 = Message(dist1, clamped1, initial1, nothing)
@@ -47,10 +49,9 @@
     @testset "compute product of two messages" begin
         _testvar = ReactiveMP.randomvar()
         × =
-            (x, y) ->
-                compute_product_of_two_messages(
-                    _testvar, MessageProductContext(), x, y
-                )
+            (x, y) -> compute_product_of_two_messages(
+                _testvar, MessageProductContext(), x, y
+            )
 
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
@@ -227,9 +228,8 @@
             end
         end
 
-        _getpoint(rng, distribution) = _getpoint(
-            rng, variate_form(typeof(distribution)), distribution
-        )
+        _getpoint(rng, distribution) =
+            _getpoint(rng, variate_form(typeof(distribution)), distribution)
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
         _getpoint(rng, ::Type{<:Multivariate}, distribution) =
             10 .* rand(rng, 2)
@@ -438,7 +438,9 @@ end
     msg1 = Message(Normal(0, 1), false, false, nothing)
     msg2 = Message(Normal(0, 1), false, false, nothing)
 
-    result = @inferred(compute_product_of_two_messages(testvar, context, msg1, msg2))
+    result = @inferred(
+        compute_product_of_two_messages(testvar, context, msg1, msg2)
+    )
 
     @test result isa Message
     @test getdata(result) === Normal(0, 1 / 2)
@@ -457,7 +459,8 @@ end
     context = MessageProductContext()
 
     for left_is_clamped in (true, false),
-        right_is_clamped in (true, false), left_is_initial in (true, false),
+        right_is_clamped in (true, false),
+        left_is_initial in (true, false),
         right_is_initial in (true, false)
 
         msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial, nothing)
@@ -465,7 +468,9 @@ end
             Normal(0, 1), right_is_clamped, right_is_initial, nothing
         )
 
-        result = @inferred(compute_product_of_two_messages(testvar, context, msg1, msg2))
+        result = @inferred(
+            compute_product_of_two_messages(testvar, context, msg1, msg2)
+        )
 
         @test result isa Message
 
@@ -484,7 +489,11 @@ end
     MessageProductContextUtils
 ] begin
     import ReactiveMP:
-        MessageProductContext, Message, compute_product_of_messages, getdata
+        MessageProductContext,
+        Message,
+        compute_product_of_messages,
+        compute_product_of_two_messages,
+        getdata
 
     struct SaveOrderOfComputationCallbacks
         events
@@ -506,16 +515,138 @@ end
         import ReactiveMP: MessagesProductFromLeftToRight
 
         handler = SaveOrderOfComputationCallbacks([])
-        context = MessageProductContext(
+        context = MessageProductContext(;
             fold_strategy = MessagesProductFromLeftToRight(),
             callbacks = handler,
         )
 
-        result = @inferred(compute_product_of_messages(testvar, context, messages))
+        result = @inferred(
+            compute_product_of_messages(testvar, context, messages)
+        )
 
         @test result isa Message
         @test getdata(result) === Normal(0, 1 / (1 + 1 / 2 + 1 / 3))
 
-        @test handler.events[1].event === :on_product_of_two_messages
+        # 3 messages = 2 products, each product fires a before and after callback
+        @test length(handler.events) == 4
+        @test handler.events[1].event === :before_product_of_two_messages
+        @test handler.events[2].event === :after_product_of_two_messages
+        @test handler.events[3].event === :before_product_of_two_messages
+        @test handler.events[4].event === :after_product_of_two_messages
+
+        # First product: Normal(0,1) × Normal(0,2) — left to right order
+        @test getdata(handler.events[1].args[3]) == Normal(0, 1)
+        @test getdata(handler.events[1].args[4]) == Normal(0, 2)
+
+        # Second product: result of first × Normal(0,3)
+        @test getdata(handler.events[3].args[3]) ==
+            Normal(0, 1 / (1 / 1 + 1 / 2))
+        @test getdata(handler.events[3].args[4]) == Normal(0, 3)
+    end
+
+    @testset "From right to left" begin
+        import ReactiveMP: MessagesProductFromRightToLeft
+
+        handler = SaveOrderOfComputationCallbacks([])
+        context = MessageProductContext(;
+            fold_strategy = MessagesProductFromRightToLeft(),
+            callbacks = handler,
+        )
+
+        result = @inferred(
+            compute_product_of_messages(testvar, context, messages)
+        )
+
+        @test result isa Message
+        @test getdata(result) === Normal(0, 1 / (1 + 1 / 2 + 1 / 3))
+
+        # 3 messages = 2 products, each product fires a before and after callback
+        @test length(handler.events) == 4
+        @test handler.events[1].event === :before_product_of_two_messages
+        @test handler.events[2].event === :after_product_of_two_messages
+        @test handler.events[3].event === :before_product_of_two_messages
+        @test handler.events[4].event === :after_product_of_two_messages
+
+        # First product: Normal(0,2) × Normal(0,3) — right to left order
+        @test getdata(handler.events[1].args[3]) == Normal(0, 2)
+        @test getdata(handler.events[1].args[4]) == Normal(0, 3)
+
+        # Second product: Normal(0,1) × result of first
+        @test getdata(handler.events[3].args[3]) == Normal(0, 1)
+        @test getdata(handler.events[3].args[4]) ==
+            Normal(0, 1 / (1 / 2 + 1 / 3))
+    end
+
+    @testset "Custom fold strategy via Function" begin
+        # Custom strategy: compute (1 × 3) × 2
+        custom_fold =
+            (variable, context, messages) -> begin
+                first = compute_product_of_two_messages(
+                    variable, context, messages[1], messages[3]
+                )
+                return compute_product_of_two_messages(
+                    variable, context, first, messages[2]
+                )
+            end
+
+        handler = SaveOrderOfComputationCallbacks([])
+        context = MessageProductContext(;
+            fold_strategy = custom_fold, callbacks = handler
+        )
+
+        result = @inferred(
+            compute_product_of_messages(testvar, context, messages)
+        )
+
+        @test result isa Message
+        @test getdata(result) === Normal(0, 1 / (1 + 1 / 2 + 1 / 3))
+
+        @test length(handler.events) == 4
+
+        # First product: Normal(0,1) × Normal(0,3)
+        @test getdata(handler.events[1].args[3]) == Normal(0, 1)
+        @test getdata(handler.events[1].args[4]) == Normal(0, 3)
+
+        # Second product: result of first × Normal(0,2)
+        @test getdata(handler.events[3].args[3]) ==
+            Normal(0, 1 / (1 / 1 + 1 / 3))
+        @test getdata(handler.events[3].args[4]) == Normal(0, 2)
+    end
+
+    @testset "Before and after callbacks receive correct arguments" begin
+        import ReactiveMP: MessagesProductFromLeftToRight
+
+        handler = SaveOrderOfComputationCallbacks([])
+        context = MessageProductContext(;
+            fold_strategy = MessagesProductFromLeftToRight(),
+            callbacks = handler,
+        )
+
+        msg1 = Message(Normal(0, 1), false, false, nothing)
+        msg2 = Message(Normal(0, 2), false, false, nothing)
+
+        result = @inferred(
+            compute_product_of_messages(testvar, context, [msg1, msg2])
+        )
+
+        @test length(handler.events) == 2
+
+        # Before callback: variable, context, left, right
+        before = handler.events[1]
+        @test before.event === :before_product_of_two_messages
+        @test before.args[1] === testvar
+        @test before.args[2] === context
+        @test getdata(before.args[3]) == Normal(0, 1)
+        @test getdata(before.args[4]) == Normal(0, 2)
+
+        # After callback: variable, context, left, right, result, addons
+        after = handler.events[2]
+        @test after.event === :after_product_of_two_messages
+        @test after.args[1] === testvar
+        @test after.args[2] === context
+        @test getdata(after.args[3]) == Normal(0, 1)
+        @test getdata(after.args[4]) == Normal(0, 2)
+        @test after.args[5] == result
+        @test after.args[6] == nothing  # no addons
     end
 end

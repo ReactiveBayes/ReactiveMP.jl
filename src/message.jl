@@ -163,6 +163,8 @@ function compute_product_of_two_messages(
     left::Message,
     right::Message,
 )
+    invoke_callback(context.callbacks, BeforeProductOfTwoMessages(), variable, context, left, right)
+
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
     # We propagate initial message, in case if both are initial or left is initial and right is clameped or vice-versa
@@ -189,6 +191,8 @@ function compute_product_of_two_messages(
         left_addons, right_addons, new_dist, left_dist, right_dist
     )
     result = Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
+
+    invoke_callback(context.callbacks, AfterProductOfTwoMessages(), variable, context, left, right, result, new_addons)
 
     return result
 end
@@ -248,6 +252,42 @@ function compute_product_of_messages(
             compute_product_of_two_messages(variable, context, left, right),
         messages,
     )
+end
+
+"""
+    MessagesProductFromRightToLeft()
+
+Alternative fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Computes the product of messages from right to left using `foldr` within [`ReactiveMP.compute_product_of_messages`](@ref).
+"""
+struct MessagesProductFromRightToLeft end
+
+function compute_product_of_messages(
+    ::MessagesProductFromRightToLeft,
+    variable::AbstractVariable,
+    context::MessageProductContext,
+    messages,
+)
+    return foldr(
+        (left, right) ->
+            compute_product_of_two_messages(variable, context, left, right),
+        messages,
+    )
+end
+
+"""
+    compute_product_of_messages(f::Function, variable::AbstractVariable, context::MessageProductContext, messages)
+
+Custom fold strategy for [`ReactiveMP.compute_product_of_messages`](@ref). When `context.fold_strategy` is set to a `Function`,
+it will be called with `variable`, `context` and `messages` as arguments. The function must call
+[`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood to compute the pairwise products.
+"""
+function compute_product_of_messages(
+    f::Function,
+    variable::AbstractVariable,
+    context::MessageProductContext,
+    messages,
+)
+    return f(variable, context, messages)
 end
 
 Distributions.pdf(message::Message, x)    = Distributions.pdf(getdata(message), x)
