@@ -11,8 +11,10 @@
 
     @test d1 ≈ prod(GenericProd(), ext.DivisionOf(d1, d2), d2)
     @test d1 ≈ prod(GenericProd(), d2, ext.DivisionOf(d1, d2))
-    @test ext.DivisionOf(d1, d2) == prod(GenericProd(), ext.DivisionOf(d1, d2), missing)
-    @test ext.DivisionOf(d1, d2) == prod(GenericProd(), missing, ext.DivisionOf(d1, d2))
+    @test ext.DivisionOf(d1, d2) ==
+        prod(GenericProd(), ext.DivisionOf(d1, d2), missing)
+    @test ext.DivisionOf(d1, d2) ==
+        prod(GenericProd(), missing, ext.DivisionOf(d1, d2))
 end
 
 @testitem "create_project_to_ins type stability" begin
@@ -51,7 +53,10 @@ end
 
         # Test Case 3: Multiple forms specified
         let
-            forms = (in_1 = ProjectedTo(NormalMeanVariance), in_2 = ProjectedTo(MvNormalMeanCovariance))
+            forms = (
+                in_1 = ProjectedTo(NormalMeanVariance),
+                in_2 = ProjectedTo(MvNormalMeanCovariance),
+            )
             method = CVIProjection(in_prjparams = forms)
             m_in = Gamma(2.0, 2.0)
 
@@ -102,7 +107,8 @@ end
             result = ext.create_project_to(method, q_out, q_out_samples)
 
             @test result isa ProjectedTo{<:NormalMeanVariance}
-            @test ExponentialFamilyProjection.get_projected_to_dims(result) == size(first(q_out_samples))
+            @test ExponentialFamilyProjection.get_projected_to_dims(result) ==
+                size(first(q_out_samples))
         end
 
         # Test Case 2: Existing ProjectedTo form
@@ -131,14 +137,20 @@ end
 
             @test result isa ProjectedTo{<:Gamma}
             @test result.parameters === method.out_prjparams
-            @test ExponentialFamilyProjection.get_projected_to_dims(result) == size(first(q_out_samples))
+            @test ExponentialFamilyProjection.get_projected_to_dims(result) ==
+                size(first(q_out_samples))
         end
 
         # Test Case 4: Different dimensions and distributions
         let
             method = CVIProjection()
             distributions_and_samples = [
-                (MvNormalMeanScalePrecision([1, 2, 3], 1), [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]), (NormalMeanVariance(0.0, 1.0), [[1.0], [2.0]]), (Gamma(2.0, 2.0), [[1.0], [2.0]])
+                (
+                    MvNormalMeanScalePrecision([1, 2, 3], 1),
+                    [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+                ),
+                (NormalMeanVariance(0.0, 1.0), [[1.0], [2.0]]),
+                (Gamma(2.0, 2.0), [[1.0], [2.0]]),
             ]
 
             for (dist, samples) in distributions_and_samples
@@ -146,8 +158,11 @@ end
                 result = ext.create_project_to(method, dist, samples)
 
                 @test result isa ProjectedTo
-                @test ExponentialFamilyProjection.get_projected_to_dims(result) == size(first(samples))
-                @test result.parameters isa ExponentialFamilyProjection.ProjectionParameters
+                @test ExponentialFamilyProjection.get_projected_to_dims(
+                    result
+                ) == size(first(samples))
+                @test result.parameters isa
+                    ExponentialFamilyProjection.ProjectionParameters
             end
         end
     end

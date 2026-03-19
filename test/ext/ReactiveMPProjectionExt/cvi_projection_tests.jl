@@ -6,7 +6,9 @@
     using Distributions
     using Random
 
-    ReactiveMPProjectionExt = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+    ReactiveMPProjectionExt = Base.get_extension(
+        ReactiveMP, :ReactiveMPProjectionExt
+    )
     @test !isnothing(ReactiveMPProjectionExt)
     using .ReactiveMPProjectionExt
 
@@ -22,15 +24,20 @@
 
         # Test when forms match (should not include the message logpdf)
         forms_match = true
-        df_match = ReactiveMPProjectionExt.create_density_function(forms_match, 1, pre_samples, logp_nc_drop_index, m_in)
+        df_match = ReactiveMPProjectionExt.create_density_function(
+            forms_match, 1, pre_samples, logp_nc_drop_index, m_in
+        )
         @test df_match(0.5) ≈ logp_nc_drop_index(0.5, 1, pre_samples)
         @test df_match(1.0) ≈ -0.5 # Just the logp_nc_drop_index result
 
         # Test when forms don't match (should include the message logpdf)
         forms_match = false
-        df_no_match = ReactiveMPProjectionExt.create_density_function(forms_match, 1, pre_samples, logp_nc_drop_index, m_in)
+        df_no_match = ReactiveMPProjectionExt.create_density_function(
+            forms_match, 1, pre_samples, logp_nc_drop_index, m_in
+        )
         # Expected: logp_nc_drop_index + logpdf of the message
-        expected_value = logp_nc_drop_index(0.5, 1, pre_samples) + logpdf(m_in, 0.5)
+        expected_value =
+            logp_nc_drop_index(0.5, 1, pre_samples) + logpdf(m_in, 0.5)
         @test df_no_match(0.5) ≈ expected_value
     end
 
@@ -45,7 +52,9 @@
         # When combining Normal(0,1) prior with Normal(0,1) likelihood:
         # Expected posterior: Normal(0, 0.5) - precision adds (1+1=2, variance=1/2=0.5)
         log_fn1 = (z, i, samples) -> -0.5 * z^2
-        result1 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins, log_fn1, method)
+        result1 = ReactiveMPProjectionExt.optimize_parameters(
+            1, pre_samples, m_ins, log_fn1, method
+        )
 
         @test result1 isa NormalMeanVariance
         @test mean(result1) ≈ 0.0 atol = 1e-1
@@ -55,7 +64,9 @@
         # Combining Normal(0,1) prior with Normal(2,1) likelihood:
         # Expected posterior: Normal(1, 0.5) - weighted average of means
         log_fn2 = (z, i, samples) -> -0.5 * (z - 2.0)^2
-        result2 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins, log_fn2, method)
+        result2 = ReactiveMPProjectionExt.optimize_parameters(
+            1, pre_samples, m_ins, log_fn2, method
+        )
 
         @test result2 isa NormalMeanVariance
         @test mean(result2) ≈ 1.0 atol = 1e-1  # (0*1 + 2*1)/(1+1) = 1.0
@@ -65,7 +76,9 @@
         # Combining Normal(0,1) prior with Normal(2,0.25) likelihood:
         # Expected posterior: Normal(1.6, 0.2) 
         log_fn3 = (z, i, samples) -> -2.0 * (z - 2.0)^2
-        result3 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins, log_fn3, method)
+        result3 = ReactiveMPProjectionExt.optimize_parameters(
+            1, pre_samples, m_ins, log_fn3, method
+        )
 
         @test result3 isa NormalMeanVariance
         @test mean(result3) ≈ 1.6 atol = 1e-1 # (0*1 + 2*4)/(1+4) = 8/5 = 1.6
@@ -77,7 +90,9 @@
 
         # Combining Normal(1,2) prior with Normal(2,1) likelihood:
         # Expected posterior: Normal(5/3, 2/3)
-        result4 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins2, log_fn2, method)
+        result4 = ReactiveMPProjectionExt.optimize_parameters(
+            1, pre_samples, m_ins2, log_fn2, method
+        )
 
         @test result4 isa NormalMeanVariance
         @test mean(result4) ≈ 5 / 3 atol = 1e-1 # (1*0.5 + 2*1)/(0.5+1) = 1.67
@@ -94,17 +109,23 @@ end
     using Random
     using Manopt
 
-    ReactiveMPProjectionExt = Base.get_extension(ReactiveMP, :ReactiveMPProjectionExt)
+    ReactiveMPProjectionExt = Base.get_extension(
+        ReactiveMP, :ReactiveMPProjectionExt
+    )
     @test !isnothing(ReactiveMPProjectionExt)
     using .ReactiveMPProjectionExt
 
     m_in = NormalMeanVariance(0.0, 1.0)
     m_ins = [m_in]
     pre_samples = [0.0, 0.5, -0.5]
-    method = CVIProjection(in_prjparams = (in_1 = ProjectedTo(NormalMeanVariance),))
+    method = CVIProjection(
+        in_prjparams = (in_1 = ProjectedTo(NormalMeanVariance),)
+    )
 
     log_fn1 = (z, i, samples) -> -0.5 * z^2
-    result1 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins, log_fn1, method)
+    result1 = ReactiveMPProjectionExt.optimize_parameters(
+        1, pre_samples, m_ins, log_fn1, method
+    )
 
     @test result1 isa NormalMeanVariance
     @test mean(result1) ≈ 0.0 atol = 1e-1
@@ -114,10 +135,18 @@ end
     m_ins = [m_in]
     pre_samples = [0.0, 0.5, -0.5]
     cost_recorder = Manopt.RecordCost()
-    method = CVIProjection(in_prjparams = (in_1 = ProjectedTo(Laplace, conditioner = 1, kwargs = (record = [cost_recorder],)),))
+    method = CVIProjection(
+        in_prjparams = (
+            in_1 = ProjectedTo(
+                Laplace, conditioner = 1, kwargs = (record = [cost_recorder],)
+            ),
+        ),
+    )
 
     log_fn1 = (z, i, samples) -> -0.5 * abs(z)
-    result1 = ReactiveMPProjectionExt.optimize_parameters(1, pre_samples, m_ins, log_fn1, method)
+    result1 = ReactiveMPProjectionExt.optimize_parameters(
+        1, pre_samples, m_ins, log_fn1, method
+    )
     ef_result1 = convert(ExponentialFamilyDistribution, result1)
 
     @test getconditioner(ef_result1) ≈ 1.0

@@ -14,7 +14,7 @@ args = parse_args(ARGS, s)
 overwrite = args["overwrite"]
 projectroot = joinpath(@__DIR__, "..")
 
-passed = format(projectroot, verbose = true, overwrite = overwrite)
+passed = format(projectroot; verbose = true, overwrite = overwrite)
 
 if !passed && !overwrite
     @error "JuliaFormatter check has failed. Run `make format` from the main directory and commit your changes to fix code style."

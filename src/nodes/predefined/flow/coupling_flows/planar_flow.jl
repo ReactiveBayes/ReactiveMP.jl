@@ -108,11 +108,17 @@ function _forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
     # return result
     return result
 end
-forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(_forward, Ref(f), input)
+forward(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _forward(
+    f, input
+)
+Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(
+    _forward, Ref(f), input
+)
 
 # forward pass through the PlanarFlow function (univariate input)
-function _forward(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real}
+function _forward(
+    f::PlanarFlow{T1, T2}, input::T3
+) where {T1 <: Real, T2 <: Real, T3 <: Real}
 
     # fetch values
     u, w, b = getall(f)
@@ -125,19 +131,29 @@ function _forward(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Rea
     # return result
     return result
 end
-forward(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
+forward(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _forward(
+    f, input
+)
+Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(
+    _forward, Ref(f), input
+)
 
 function _forward(f::PlanarFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
     # function when the input is an array with 1 element
     @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the PlanarFlow flow."
     return forward(f, input[1])
 end
-forward(f::PlanarFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real} = _forward(f, input)
-Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(_forward, Ref(f), input)
+forward(f::PlanarFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real} = _forward(
+    f, input
+)
+Broadcast.broadcasted(::typeof(forward), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(
+    _forward, Ref(f), input
+)
 
 # inplace forward pass through the PlanarFlow function (multivariate input)
-function forward!(output::T1, f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
+function forward!(
+    output::T1, f::PlanarFlow{T1, T2}, input::T1
+) where {T1, T2 <: Real}
 
     # check dimensionality
     @assert length(output) == length(input) "The length of the preallocated vector does not seem to match the length of the input vector."
@@ -167,11 +183,17 @@ function _jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
     # return result
     return result
 end
-jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
+jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = _jacobian(
+    f, input
+)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{T1}) where {T1, T2 <: Real} = broadcast(
+    _jacobian, Ref(f), input
+)
 
 # jacobian of the PlanarFlow function (univariate input)
-function _jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real}
+function _jacobian(
+    f::PlanarFlow{T1, T2}, input::T3
+) where {T1 <: Real, T2 <: Real, T3 <: Real}
 
     # fetch values 
     u, w, b = getall(f)
@@ -182,19 +204,31 @@ function _jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Re
     # return result
     return result
 end
-jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
+jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3 <: Real} = _jacobian(
+    f, input
+)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector{<:Real}) where {T1 <: Real, T2 <: Real} = broadcast(
+    _jacobian, Ref(f), input
+)
 
-function _jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3}
+function _jacobian(
+    f::PlanarFlow{T1, T2}, input::T3
+) where {T1 <: Real, T2 <: Real, T3}
     # function when the input is an array with 1 element
     @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the PlanarFlow flow."
     return jacobian(f, input[1])
 end
-jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3} = _jacobian(f, input)
-Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(_jacobian, Ref(f), input)
+jacobian(f::PlanarFlow{T1, T2}, input::T3) where {T1 <: Real, T2 <: Real, T3} = _jacobian(
+    f, input
+)
+Broadcast.broadcasted(::typeof(jacobian), f::PlanarFlow{T1, T2}, input::AbstractVector) where {T1 <: Real, T2 <: Real} = broadcast(
+    _jacobian, Ref(f), input
+)
 
 # inplace jacobian of the PlanarFlow function (multivariate input)
-function jacobian!(output::AbstractMatrix{T2}, f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real}
+function jacobian!(
+    output::AbstractMatrix{T2}, f::PlanarFlow{T1, T2}, input::T1
+) where {T1, T2 <: Real}
 
     # check whether the dimensionality is correct
     @assert size(output) == (length(input), length(f.u)) "The dimensionality of the preallocated jacobian matrix seems incorrect."
@@ -215,7 +249,9 @@ function jacobian!(output::AbstractMatrix{T2}, f::PlanarFlow{T1, T2}, input::T1)
 end
 
 # determinant of the jacobian of the PlanarFlow function (multivariate input)
-det_jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = det(jacobian(f, input))
+det_jacobian(f::PlanarFlow{T1, T2}, input::T1) where {T1, T2 <: Real} = det(
+    jacobian(f, input)
+)
 
 # determinant of the jacobian of the PlanarFlow function (univariate input)
 function det_jacobian(f::PlanarFlow{T, T}, input::T) where {T <: Real}
@@ -240,7 +276,9 @@ inv_jacobian(f::PlanarFlow{T, T}, input::T) where {T <: Real}       = 1.0 / jaco
 absdet_jacobian(f::PlanarFlow{T, T}, input::T) where {T <: Real}    = abs(det_jacobian(f, input))
 logabsdet_jacobian(f::PlanarFlow{T, T}, input::T) where {T <: Real} = log(absdet_jacobian(f, input))
 
-function inv_jacobian(f::PlanarFlow{T1, T2}, input) where {T1 <: Real, T2 <: Real}
+function inv_jacobian(
+    f::PlanarFlow{T1, T2}, input
+) where {T1 <: Real, T2 <: Real}
     # function when the input is an array with 1 element
     @assert length(input) == 1 "Something is wrong with the dimensionality of the input to the PlanarFlow flow."
     return inv_jacobian(f, input[1])

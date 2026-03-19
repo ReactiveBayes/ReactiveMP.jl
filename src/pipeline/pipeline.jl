@@ -1,4 +1,5 @@
-export AbstractPipelineStage, EmptyPipelineStage, CompositePipelineStage, apply_pipeline_stage
+export AbstractPipelineStage,
+    EmptyPipelineStage, CompositePipelineStage, apply_pipeline_stage
 
 import Base: +
 
@@ -41,7 +42,9 @@ struct CompositePipelineStage{T} <: AbstractPipelineStage
 end
 
 apply_pipeline_stage(composite::CompositePipelineStage, factornode, tag, stream) = reduce(
-    (stream, stage) -> apply_pipeline_stage(stage, factornode, tag, stream), composite.stages; init = stream
+    (stream, stage) -> apply_pipeline_stage(stage, factornode, tag, stream),
+    composite.stages;
+    init = stream,
 )
 
 Base.:+(stage::AbstractPipelineStage) = stage

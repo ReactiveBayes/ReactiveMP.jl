@@ -9,7 +9,11 @@ mutable struct RandomVariable <: AbstractVariable
 end
 
 function randomvar()
-    return RandomVariable(Vector{MessageObservable{AbstractMessage}}(), Vector{MessageObservable{Message}}(), MarginalObservable())
+    return RandomVariable(
+        Vector{MessageObservable{AbstractMessage}}(),
+        Vector{MessageObservable{Message}}(),
+        MarginalObservable(),
+    )
 end
 
 degree(randomvar::RandomVariable) = length(randomvar.input_messages)
@@ -35,8 +39,18 @@ function messageout(randomvar::RandomVariable, index::Int)
     return randomvar.output_messages[index]
 end
 
-const DefaultMessageProdFn = messages_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
-const DefaultMarginalProdFn = marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+const DefaultMessageProdFn = messages_prod_fn(
+    FoldLeftProdStrategy(),
+    GenericProd(),
+    UnspecifiedFormConstraint(),
+    FormConstraintCheckLast(),
+)
+const DefaultMarginalProdFn = marginal_prod_fn(
+    FoldLeftProdStrategy(),
+    GenericProd(),
+    UnspecifiedFormConstraint(),
+    FormConstraintCheckLast(),
+)
 
 struct RandomVariableActivationOptions{S, F, M}
     scheduler::S
@@ -44,9 +58,13 @@ struct RandomVariableActivationOptions{S, F, M}
     marginal_prod_fn::M
 end
 
-RandomVariableActivationOptions() = RandomVariableActivationOptions(AsapScheduler(), DefaultMessageProdFn, DefaultMarginalProdFn)
+RandomVariableActivationOptions() = RandomVariableActivationOptions(
+    AsapScheduler(), DefaultMessageProdFn, DefaultMarginalProdFn
+)
 
-function activate!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
+function activate!(
+    randomvar::RandomVariable, options::RandomVariableActivationOptions
+)
     d = length(randomvar.input_messages)
     outputmsgs = randomvar.output_messages
     resize!(outputmsgs, d)
@@ -56,14 +74,22 @@ function activate!(randomvar::RandomVariable, options::RandomVariableActivationO
     end
 
     if length(randomvar.input_messages) > 1
-        chain = EqualityChain(randomvar.input_messages, schedule_on(options.scheduler), options.message_prod_fn)
+        chain = EqualityChain(
+            randomvar.input_messages,
+            schedule_on(options.scheduler),
+            options.message_prod_fn,
+        )
         initialize!(chain, outputmsgs)
     elseif length(randomvar.input_messages) == 1
         # If the number of input message is equal to `1`,
         # than the output message is not producing any value
         connect!(outputmsgs[1], never(Message))
     else
-        throw(ArgumentError("Cannot activate a random variable with zero or less than one inbound messages."))
+        throw(
+            ArgumentError(
+                "Cannot activate a random variable with zero or less than one inbound messages.",
+            ),
+        )
     end
 
     _setmarginal!(randomvar, _makemarginal(randomvar, options))
@@ -72,9 +98,19 @@ function activate!(randomvar::RandomVariable, options::RandomVariableActivationO
 end
 
 _getmarginal(randomvar::RandomVariable) = randomvar.marginal
-_setmarginal!(randomvar::RandomVariable, observable) = connect!(_getmarginal(randomvar), observable)
-_makemarginal(randomvar::RandomVariable, options::RandomVariableActivationOptions) = begin
-    return collectLatest(AbstractMessage, Marginal, randomvar.input_messages, options.marginal_prod_fn, reset_vstatus)
+_setmarginal!(randomvar::RandomVariable, observable) = connect!(
+    _getmarginal(randomvar), observable
+)
+_makemarginal(
+    randomvar::RandomVariable, options::RandomVariableActivationOptions
+) = begin
+    return collectLatest(
+        AbstractMessage,
+        Marginal,
+        randomvar.input_messages,
+        options.marginal_prod_fn,
+        reset_vstatus,
+    )
 end
 
 # Reset consumption of the combination of inbound messages if the result of the computations is `is_initial`

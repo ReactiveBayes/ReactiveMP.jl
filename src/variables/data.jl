@@ -11,7 +11,12 @@ function DataVariable()
     messageout = RecentSubject(Message)
     marginal   = MarginalObservable()
     prediction = MarginalObservable()
-    return DataVariable(Vector{MessageObservable{AbstractMessage}}(), marginal, messageout, prediction)
+    return DataVariable(
+        Vector{MessageObservable{AbstractMessage}}(),
+        marginal,
+        messageout,
+        prediction,
+    )
 end
 
 datavar() = DataVariable()
@@ -46,9 +51,13 @@ struct DataVariableActivationOptions
     args
 end
 
-DataVariableActivationOptions() = DataVariableActivationOptions(false, false, nothing, nothing)
+DataVariableActivationOptions() = DataVariableActivationOptions(
+    false, false, nothing, nothing
+)
 
-function activate!(datavar::DataVariable, options::DataVariableActivationOptions)
+function activate!(
+    datavar::DataVariable, options::DataVariableActivationOptions
+)
     if options.prediction
         _setprediction!(datavar, _makeprediction(datavar))
     end
@@ -56,10 +65,13 @@ function activate!(datavar::DataVariable, options::DataVariableActivationOptions
     if options.linked
         # If the variable is linked to another we need to apply a transformation from the linked variables
         # and redirect the updates to the `datavar` messageout stream
-        linkvalues = combineLatestUpdates(map(l -> __link_getmarginal(l), options.args))
-        linkstream = linkvalues |> map(Any, (args) -> let f = options.transform
-            return __apply_link(f, getrecent.(args))
-        end)
+        linkvalues = combineLatestUpdates(
+            map(l -> __link_getmarginal(l), options.args)
+        )
+        linkstream =
+            linkvalues |> map(Any, (args) -> let f = options.transform
+                return __apply_link(f, getrecent.(args))
+            end)
         # This subscription should unsubscribe automatically when the linked `datavar`s complete
         subscribe!(linkstream, (val) -> update!(datavar, val))
     end
@@ -70,9 +82,13 @@ function activate!(datavar::DataVariable, options::DataVariableActivationOptions
     return nothing
 end
 
-__link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false, nothing))
+__link_getmarginal(constant) = of(
+    Marginal(PointMass(constant), true, false, nothing)
+)
 __link_getmarginal(l::AbstractVariable) = getmarginal(l, IncludeAll())
-__link_getmarginal(l::AbstractArray{<:AbstractVariable}) = getmarginals(l, IncludeAll())
+__link_getmarginal(l::AbstractArray{<:AbstractVariable}) = getmarginals(
+    l, IncludeAll()
+)
 
 __apply_link(f::F, args) where {F} = __apply_link(f, getdata.(args))
 __apply_link(f::F, args::NTuple{N, PointMass}) where {F, N} = f(mean.(args)...)
@@ -100,7 +116,12 @@ function update!(datavars::AbstractArray{<:DataVariable}, data::Missing)
     end
 end
 
-marginal_prod_fn(datavar::DataVariable) = marginal_prod_fn(FoldLeftProdStrategy(), GenericProd(), UnspecifiedFormConstraint(), FormConstraintCheckLast())
+marginal_prod_fn(datavar::DataVariable) = marginal_prod_fn(
+    FoldLeftProdStrategy(),
+    GenericProd(),
+    UnspecifiedFormConstraint(),
+    FormConstraintCheckLast(),
+)
 
 _getprediction(datavar::DataVariable)              = datavar.prediction
 _setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)

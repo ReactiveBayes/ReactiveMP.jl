@@ -37,34 +37,47 @@ This layer structure has been introduced in:
 
 Dinh, Laurent, David Krueger, and Yoshua Bengio. "Nice: Non-linear independent components estimation." _arXiv preprint_ arXiv:1410.8516 (2014).
 """
-struct AdditiveCouplingLayer{T <: NTuple{N, AbstractCouplingFlow} where {N}} <: AbstractCouplingLayer
+struct AdditiveCouplingLayer{T <: NTuple{N, AbstractCouplingFlow} where {N}} <:
+       AbstractCouplingLayer
     dim           :: Int
     f             :: T
     partition_dim :: Int
 end
-struct AdditiveCouplingLayerEmpty{T <: NTuple{N, AbstractCouplingFlowEmpty} where {N}} <: AbstractCouplingLayer
+struct AdditiveCouplingLayerEmpty{
+    T <: NTuple{N, AbstractCouplingFlowEmpty} where {N}
+} <: AbstractCouplingLayer
     dim           :: Int
     f             :: T
     partition_dim :: Int
 end
-struct AdditiveCouplingLayerPlaceholder{T <: AbstractCouplingFlowEmpty, B} <: AbstractLayerPlaceholder
+struct AdditiveCouplingLayerPlaceholder{T <: AbstractCouplingFlowEmpty, B} <:
+       AbstractLayerPlaceholder
     f             :: T
     partition_dim :: Int
     permute       :: Val{B}
 end
-function AdditiveCouplingLayer(flow::T; partition_dim::Int = 1, permute::Bool = true) where {T <: AbstractCouplingFlowPlaceholder}
-    return AdditiveCouplingLayerPlaceholder(prepare(partition_dim, flow), partition_dim, Val(permute))
+function AdditiveCouplingLayer(
+    flow::T; partition_dim::Int = 1, permute::Bool = true
+) where {T <: AbstractCouplingFlowPlaceholder}
+    return AdditiveCouplingLayerPlaceholder(
+        prepare(partition_dim, flow), partition_dim, Val(permute)
+    )
 end
 
 # include permute as value type for type stability
-function _prepare(dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, true}) where {T}
+function _prepare(
+    dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, true}
+) where {T}
     ## TODO: generalize for non-1 partition dim and overlap
     @assert dim % getpartitiondim(layer) == 0 "The input dimensionality is not exactly divisible by the partition dimension."
     nr_maps = (dim ÷ getpartitiondim(layer)) - 1
     maps = ntuple((x) -> getf(layer), Val(nr_maps))
-    return AdditiveCouplingLayerEmpty(dim, maps, getpartitiondim(layer)), PermutationLayer(dim)
+    return AdditiveCouplingLayerEmpty(dim, maps, getpartitiondim(layer)),
+    PermutationLayer(dim)
 end
-function _prepare(dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, false}) where {T}
+function _prepare(
+    dim::Int, layer::AdditiveCouplingLayerPlaceholder{T, false}
+) where {T}
     ## TODO: generalize for non-1 partition dim and overlap
     @assert dim % getpartitiondim(layer) == 0 "The input dimensionality is not exactly divisible by the partition dimension."
     nr_maps = (dim ÷ getpartitiondim(layer)) - 1
@@ -98,7 +111,9 @@ getflow(layer::AdditiveCouplingLayerEmpty)         = layer.f
 getpartitiondim(layer::AdditiveCouplingLayerEmpty) = layer.partition_dim
 
 # custom Base function for the AdditiveCouplingLayer structure
-eltype(layer::AdditiveCouplingLayer{T}) where {T} = promote_type(map(eltype, getf(layer))...)
+eltype(layer::AdditiveCouplingLayer{T}) where {T} = promote_type(
+    map(eltype, getf(layer))...
+)
 
 # forward pass through the additive coupling layer
 function _forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real})
@@ -112,11 +127,19 @@ function _forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real})
     # return result
     return result
 end
-forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) = _forward(layer, input)
-Broadcast.broadcasted(::typeof(forward), layer::AdditiveCouplingLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_forward, Ref(layer), input)
+forward(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) = _forward(
+    layer, input
+)
+Broadcast.broadcasted(::typeof(forward), layer::AdditiveCouplingLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
+    _forward, Ref(layer), input
+)
 
 # inplace forward pass through the additive coupling layer
-function forward!(output::AbstractVector{<:Real}, layer::AdditiveCouplingLayer, input::AbstractVector{<:Real})
+function forward!(
+    output::AbstractVector{<:Real},
+    layer::AdditiveCouplingLayer,
+    input::AbstractVector{<:Real},
+)
 
     # fetch variables
     f = getf(layer)
@@ -136,8 +159,12 @@ function forward!(output::AbstractVector{<:Real}, layer::AdditiveCouplingLayer, 
     else
         view(output, 1:pdim) .= view(input, 1:pdim)
         for k in 2:(dim ÷ pdim)
-            view(output, (1 + (k - 1) * pdim):(k * pdim)) .= view(input, (1 + (k - 1) * pdim):(k * pdim))
-            view(output, (1 + (k - 1) * pdim):(k * pdim)) .+= forward(f[k - 1], view(input, (1 + (k - 2) * pdim):((k - 1) * pdim)))
+            view(output, (1 + (k - 1) * pdim):(k * pdim)) .= view(
+                input, (1 + (k - 1) * pdim):(k * pdim)
+            )
+            view(output, (1 + (k - 1) * pdim):(k * pdim)) .+= forward(
+                f[k - 1], view(input, (1 + (k - 2) * pdim):((k - 1) * pdim))
+            )
         end
     end
 end
@@ -154,11 +181,19 @@ function _backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real})
     # return result
     return result
 end
-backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) = _backward(layer, output)
-Broadcast.broadcasted(::typeof(backward), layer::AdditiveCouplingLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_backward, Ref(layer), output)
+backward(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) = _backward(
+    layer, output
+)
+Broadcast.broadcasted(::typeof(backward), layer::AdditiveCouplingLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
+    _backward, Ref(layer), output
+)
 
 # inplace backward pass through the additive coupling layer
-function backward!(input::AbstractVector{<:Real}, layer::AdditiveCouplingLayer, output::AbstractVector{<:Real})
+function backward!(
+    input::AbstractVector{<:Real},
+    layer::AdditiveCouplingLayer,
+    output::AbstractVector{<:Real},
+)
 
     # fetch variables
     f = getf(layer)
@@ -178,14 +213,20 @@ function backward!(input::AbstractVector{<:Real}, layer::AdditiveCouplingLayer, 
     else
         view(input, 1:pdim) .= view(output, 1:pdim)
         for k in 2:(dim ÷ pdim)
-            view(input, (1 + (k - 1) * pdim):(k * pdim)) .= view(output, (1 + (k - 1) * pdim):(k * pdim))
-            view(input, (1 + (k - 1) * pdim):(k * pdim)) .-= forward(f[k - 1], view(input, (1 + (k - 2) * pdim):((k - 1) * pdim)))
+            view(input, (1 + (k - 1) * pdim):(k * pdim)) .= view(
+                output, (1 + (k - 1) * pdim):(k * pdim)
+            )
+            view(input, (1 + (k - 1) * pdim):(k * pdim)) .-= forward(
+                f[k - 1], view(input, (1 + (k - 2) * pdim):((k - 1) * pdim))
+            )
         end
     end
 end
 
 # jacobian of the additive coupling layer
-function _jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{T}) where {T <: Real}
+function _jacobian(
+    layer::AdditiveCouplingLayer, input::AbstractVector{T}
+) where {T <: Real}
 
     # fetch variables
     dim = getdim(layer)
@@ -200,11 +241,19 @@ function _jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{T}) where
     # return result
     return LowerTriangular(result)
 end
-jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) = _jacobian(layer, input)
-Broadcast.broadcasted(::typeof(jacobian), layer::AdditiveCouplingLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_jacobian, Ref(layer), input)
+jacobian(layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) = _jacobian(
+    layer, input
+)
+Broadcast.broadcasted(::typeof(jacobian), layer::AdditiveCouplingLayer, input::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
+    _jacobian, Ref(layer), input
+)
 
 # inplace jacobian through the additive coupling layer
-function jacobian!(result::AbstractMatrix{T}, layer::AdditiveCouplingLayer, input::AbstractVector{<:Real}) where {T <: Real}
+function jacobian!(
+    result::AbstractMatrix{T},
+    layer::AdditiveCouplingLayer,
+    input::AbstractVector{<:Real},
+) where {T <: Real}
 
     # fetch variables
     f = getf(layer)
@@ -220,12 +269,16 @@ function jacobian!(result::AbstractMatrix{T}, layer::AdditiveCouplingLayer, inpu
         result[k, k] = one(T)
     end
     for k in 1:(dim ÷ pdim - 1)
-        result[(1 + k * pdim):((k + 1) * pdim), (1 + (k - 1) * pdim):(k * pdim)] .+= jacobian(f[k], input[(1 + (k - 1) * pdim):(k * pdim)])
+        result[(1 + k * pdim):((k + 1) * pdim), (1 + (k - 1) * pdim):(k * pdim)] .+= jacobian(
+            f[k], input[(1 + (k - 1) * pdim):(k * pdim)]
+        )
     end
 end
 
 # inverse jacobian of the additive coupling layer
-function _inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{T}) where {T <: Real}
+function _inv_jacobian(
+    layer::AdditiveCouplingLayer, output::AbstractVector{T}
+) where {T <: Real}
 
     # fetch variables
     dim = getdim(layer)
@@ -240,11 +293,19 @@ function _inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{T}) 
     # return result
     return LowerTriangular(result)
 end
-inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) = _inv_jacobian(layer, output)
-Broadcast.broadcasted(::typeof(inv_jacobian), layer::AdditiveCouplingLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(_inv_jacobian, Ref(layer), output)
+inv_jacobian(layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) = _inv_jacobian(
+    layer, output
+)
+Broadcast.broadcasted(::typeof(inv_jacobian), layer::AdditiveCouplingLayer, output::AbstractVector{<:AbstractVector{<:Real}}) = broadcast(
+    _inv_jacobian, Ref(layer), output
+)
 
 # inplace inv_jacobian through the additive coupling layer
-function inv_jacobian!(result::AbstractMatrix{T}, layer::AdditiveCouplingLayer, output::AbstractVector{<:Real}) where {T <: Real}
+function inv_jacobian!(
+    result::AbstractMatrix{T},
+    layer::AdditiveCouplingLayer,
+    output::AbstractVector{<:Real},
+) where {T <: Real}
 
     # fetch variables
     f = getf(layer)
@@ -263,7 +324,8 @@ function inv_jacobian!(result::AbstractMatrix{T}, layer::AdditiveCouplingLayer, 
         result[k:end, k] .= one(T)
     end
     for k in 1:(dim ÷ pdim - 1)
-        result[(k + 1):end, 1:k] .*= -jacobian(f[k], input[(1 + (k - 1) * pdim):(k * pdim)])
+        result[(k + 1):end, 1:k] .*=
+            -jacobian(f[k], input[(1 + (k - 1) * pdim):(k * pdim)])
     end
 end
 

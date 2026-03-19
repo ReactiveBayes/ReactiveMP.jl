@@ -1,6 +1,12 @@
 
 @testitem "rules:ContinuousTransition:x" begin
-    using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+    using Test,
+        ReactiveMP,
+        BayesBase,
+        Random,
+        ExponentialFamily,
+        Distributions,
+        LinearAlgebra
 
     import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians
 
@@ -34,8 +40,11 @@
                 qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(:x, Marginalisation) [(
-                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_strucutred(qy, qW, mA, ΣA, UA)
+                @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(
+                    :x, Marginalisation
+                ) [(
+                    input = (m_y = qy, q_a = qa, q_W = qW, meta = metal),
+                    output = benchmark_rule_strucutred(qy, qW, mA, ΣA, UA),
                 )]
             end
         end
@@ -54,8 +63,13 @@
             qa = MvNormalMeanCovariance(zeros(1), tiny * diageye(1))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true] ContinuousTransition(:x, Marginalisation) [(
-                input = (m_y = qy, q_a = qa, q_W = qW, meta = metanl), output = MvGaussianWeightedMeanPrecision(zeros(dx), 3 / 4 * diageye(dx))
+            @test_rules [check_type_promotion = true] ContinuousTransition(
+                :x, Marginalisation
+            ) [(
+                input = (m_y = qy, q_a = qa, q_W = qW, meta = metanl),
+                output = MvGaussianWeightedMeanPrecision(
+                    zeros(dx), 3 / 4 * diageye(dx)
+                ),
             )]
         end
     end
@@ -85,8 +99,11 @@
             qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(:x, Marginalisation) [(
-                input = (q_y = qy, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_meanfield(qy, qW, mA, ΣA, UA)
+            @test_rules [check_type_promotion = true, atol = 1e-4] ContinuousTransition(
+                :x, Marginalisation
+            ) [(
+                input = (q_y = qy, q_a = qa, q_W = qW, meta = metal),
+                output = benchmark_rule_meanfield(qy, qW, mA, ΣA, UA),
             )]
         end
     end

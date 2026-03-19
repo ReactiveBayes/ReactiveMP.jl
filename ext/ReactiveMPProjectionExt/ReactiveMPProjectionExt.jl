@@ -1,6 +1,13 @@
 module ReactiveMPProjectionExt
 
-using ReactiveMP, ExponentialFamily, Distributions, ExponentialFamilyProjection, BayesBase, Random, LinearAlgebra, FastCholesky
+using ReactiveMP,
+    ExponentialFamily,
+    Distributions,
+    ExponentialFamilyProjection,
+    BayesBase,
+    Random,
+    LinearAlgebra,
+    FastCholesky
 
 struct DivisionOf{A, B}
     numerator::A
@@ -8,10 +15,14 @@ struct DivisionOf{A, B}
 end
 
 (divisionof::DivisionOf)(x) = logpdf(divisionof, x)
-BayesBase.insupport(d::DivisionOf, p) = insupport(d.numerator, p) && insupport(d.denumerator, p)
-BayesBase.logpdf(d::DivisionOf, p) = logpdf(d.numerator, p) - logpdf(d.denumerator, p)
+BayesBase.insupport(d::DivisionOf, p) =
+    insupport(d.numerator, p) && insupport(d.denumerator, p)
+BayesBase.logpdf(d::DivisionOf, p) =
+    logpdf(d.numerator, p) - logpdf(d.denumerator, p)
 
-function BayesBase.prod(::GenericProd, something::DivisionOf, division::DivisionOf)
+function BayesBase.prod(
+    ::GenericProd, something::DivisionOf, division::DivisionOf
+)
     if division.denumerator == something.numerator
         return DivisionOf(division.numerator, something.denumerator)
     elseif division.numerator == something.denumerator
@@ -36,7 +47,9 @@ end
 BayesBase.prod(::GenericProd, division::DivisionOf, ::Missing) = division
 BayesBase.prod(::GenericProd, ::Missing, division::DivisionOf) = division
 
-function BayesBase.prod(::GenericProd, productof::ProductOf, divisionof::DivisionOf)
+function BayesBase.prod(
+    ::GenericProd, productof::ProductOf, divisionof::DivisionOf
+)
     return ProductOf(productof, divisionof)
 end
 

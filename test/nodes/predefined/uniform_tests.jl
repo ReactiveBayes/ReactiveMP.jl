@@ -8,14 +8,19 @@
             AverageEnergy(),
             Uniform,
             Val{(:out, :a, :b)}(),
-            (Marginal(Beta(α, β), false, false, nothing), Marginal(PointMass(a), false, false, nothing), Marginal(PointMass(b), false, false, nothing)),
-            nothing
+            (
+                Marginal(Beta(α, β), false, false, nothing),
+                Marginal(PointMass(a), false, false, nothing),
+                Marginal(PointMass(b), false, false, nothing),
+            ),
+            nothing,
         ) == 0.0
     end
 
     @testset "Product rule" begin
         # The default product rule between Uniform and Beta
-        @test BayesBase.default_prod_rule(Uniform, Beta) == PreserveTypeProd(Distribution)
+        @test BayesBase.default_prod_rule(Uniform, Beta) ==
+            PreserveTypeProd(Distribution)
 
         # The special case for Uniform(0, 1)
         u = Uniform(0.0, 1.0)

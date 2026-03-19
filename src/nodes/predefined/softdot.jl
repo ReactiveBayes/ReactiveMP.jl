@@ -34,10 +34,21 @@ const softdot = SoftDot
     m_θ, V_θ = mean_cov(q_θ)
     m_x, V_x = mean_cov(q_x)
     m_γ = mean(q_γ)
-    return (-mean(log, q_γ) + log2π + m_γ * (V_y + m_y^2 - 2m_γ * m_y * m_θ'm_x + mul_trace(V_θ, V_x) + m_x'V_θ * m_x + m_θ' * (V_x + m_x * m_x') * m_θ)) / 2
+    return (
+        -mean(log, q_γ) +
+        log2π +
+        m_γ * (
+            V_y + m_y^2 - 2m_γ * m_y * m_θ'm_x +
+            mul_trace(V_θ, V_x) +
+            m_x'V_θ * m_x +
+            m_θ' * (V_x + m_x * m_x') * m_θ
+        )
+    ) / 2
 end
 
-@average_energy softdot (q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any) = begin
+@average_energy softdot (
+    q_y_x::MultivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any
+) = begin
     mθ, Vθ = mean_cov(q_θ)
     myx, Vyx = mean_cov(q_y_x)
     mγ = mean(q_γ)
@@ -49,7 +60,18 @@ end
     Vy1x     = ar_slice(F, Vyx, 1, (2):(order + 1))
 
     # Equivalent to AE = (-mean(log, q_γ) + log2π + mγ*(Vy1+my1^2 - 2*mθ'*(Vy1x + mx*my1) + tr(Vθ*Vx) + mx'*Vθ*mx + mθ'*(Vx + mx*mx')*mθ)) / 2
-    AE = (-mean(log, q_γ) + log2π + mγ * (Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) + mul_trace(Vθ, Vx) + dot(mx, Vθ, mx) + dot(mθ, Vx, mθ) + abs2(dot(mθ, mx)))) / 2
+    AE =
+        (
+            -mean(log, q_γ) +
+            log2π +
+            mγ * (
+                Vy1 + my1^2 - 2 * mθ' * (Vy1x + mx * my1) +
+                mul_trace(Vθ, Vx) +
+                dot(mx, Vθ, mx) +
+                dot(mθ, Vx, mθ) +
+                abs2(dot(mθ, mx))
+            )
+        ) / 2
 
     return AE
 end

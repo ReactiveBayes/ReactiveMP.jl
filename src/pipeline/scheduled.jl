@@ -14,7 +14,8 @@ struct ScheduleOnPipelineStage{S} <: AbstractPipelineStage
     scheduler::S
 end
 
-apply_pipeline_stage(stage::ScheduleOnPipelineStage, factornode, tag, stream) = stream |> schedule_on(stage.scheduler)
+apply_pipeline_stage(stage::ScheduleOnPipelineStage, factornode, tag, stream) =
+    stream |> schedule_on(stage.scheduler)
 
 Rocket.release!(stage::ScheduleOnPipelineStage)                         = release!(stage.scheduler)
 Rocket.release!(stages::NTuple{N, <:ScheduleOnPipelineStage}) where {N} = foreach(release!, stages)
@@ -30,14 +31,21 @@ __schedule_updates(var::AbstractVariable)                         = __schedule_u
 __schedule_updates(vars::NTuple{N, <:AbstractVariable}) where {N} = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
 __schedule_updates(vars::AbstractArray{<:AbstractVariable})       = __schedule_updates(ScheduleOnPipelineStage(PendingScheduler()), vars)
 
-__schedule_updates(pipeline_stage::ScheduleOnPipelineStage, var::AbstractVariable) = __schedule_updates(pipeline_stage, (var,))
+__schedule_updates(pipeline_stage::ScheduleOnPipelineStage, var::AbstractVariable) = __schedule_updates(
+    pipeline_stage, (var,)
+)
 
-function __schedule_updates(pipeline_stage::ScheduleOnPipelineStage, vars::NTuple{N, <:AbstractVariable}) where {N}
+function __schedule_updates(
+    pipeline_stage::ScheduleOnPipelineStage, vars::NTuple{N, <:AbstractVariable}
+) where {N}
     foreach((v) -> add_pipeline_stage!(v, pipeline_stage), vars)
     return pipeline_stage
 end
 
-function __schedule_updates(pipeline_stage::ScheduleOnPipelineStage, vars::AbstractArray{<:AbstractVariable})
+function __schedule_updates(
+    pipeline_stage::ScheduleOnPipelineStage,
+    vars::AbstractArray{<:AbstractVariable},
+)
     foreach((v) -> add_pipeline_stage!(v, pipeline_stage), vars)
     return pipeline_stage
 end
@@ -48,6 +56,8 @@ end
 Schedules posterior marginal updates for given variables using `stage`. By default creates `ScheduleOnPipelineStage` with `PendingScheduler()` from `Rocket.jl` library.
 Returns a scheduler with `release!` method available to release all scheduled updates.
 """
-function schedule_updates(args...; pipeline_stage = ScheduleOnPipelineStage(PendingScheduler()))
+function schedule_updates(
+    args...; pipeline_stage = ScheduleOnPipelineStage(PendingScheduler())
+)
     return map((arg) -> __schedule_updates(pipeline_stage, arg), args)
 end

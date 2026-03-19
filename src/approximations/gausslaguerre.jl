@@ -6,7 +6,9 @@ using StatsFuns: logsumexp
 
 import Base: ==
 
-struct GaussLaguerreQuadrature{R <: DomainIntegrals.HalfLineRule, W <: AbstractVector} <: AbstractApproximationMethod
+struct GaussLaguerreQuadrature{
+    R <: DomainIntegrals.HalfLineRule, W <: AbstractVector
+} <: AbstractApproximationMethod
     rule::R
     logw::W
 end
@@ -27,7 +29,9 @@ getlength(approximation::GaussLaguerreQuadrature)     = length(getweights(approx
 approximation_name(approximation::GaussLaguerreQuadrature)       = "GaussLaguerre($(getlength(approximation)))"
 approximation_short_name(approximation::GaussLaguerreQuadrature) = "GL$(getlength(approximation))"
 
-approximate(approximation::GaussLaguerreQuadrature, fn::Function) = integral(approximation.rule, fn)
+approximate(approximation::GaussLaguerreQuadrature, fn::Function) = integral(
+    approximation.rule, fn
+)
 
 """
 This function calculates the log of the Gauss-laguerre integral by making use of the log of the integrable function.
@@ -55,6 +59,8 @@ function log_approximate(approximation::GaussLaguerreQuadrature, fn::Function)
     return logsumexp(logresult)
 end
 
-function Base.:(==)(left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}) where {R}
+function Base.:(==)(
+    left::GaussLaguerreQuadrature{R}, right::GaussLaguerreQuadrature{R}
+) where {R}
     return getlength(left) == getlength(right)
 end

@@ -1,5 +1,11 @@
 @testitem "FactorNodeLocalMarginal" begin
-    import ReactiveMP: FactorNodeLocalMarginal, MarginalObservable, getmarginal, setmarginal!, tag, name
+    import ReactiveMP:
+        FactorNodeLocalMarginal,
+        MarginalObservable,
+        getmarginal,
+        setmarginal!,
+        tag,
+        name
 
     @testset let localmarginal = FactorNodeLocalMarginal(:a)
         @test name(localmarginal) === :a
@@ -17,7 +23,13 @@
 end
 
 @testitem "FactorNodeLocalClusters constructor" begin
-    import ReactiveMP: NodeInterface, FactorNodeLocalClusters, getfactorization, getmarginals, getmarginal, name
+    import ReactiveMP:
+        NodeInterface,
+        FactorNodeLocalClusters,
+        getfactorization,
+        getmarginals,
+        getmarginal,
+        name
 
     a = NodeInterface(:a, randomvar())
     b = NodeInterface(:b, randomvar())
@@ -25,14 +37,18 @@ end
 
     # Interfaces can be both tuples and arrays
     for interfaces in [(a, b, c), [a, b, c]]
-        @testset let clusters = FactorNodeLocalClusters(interfaces, ((1, 2, 3),))
+        @testset let clusters = FactorNodeLocalClusters(
+                interfaces, ((1, 2, 3),)
+            )
             @test length(getmarginals(clusters)) === 1
             @test name(getmarginal(clusters, 1)) === :a_b_c
             @test getfactorization(clusters) === ((1, 2, 3),)
             @test getfactorization(clusters, 1) === (1, 2, 3)
         end
 
-        @testset let clusters = FactorNodeLocalClusters(interfaces, ((1, 2), (3,)))
+        @testset let clusters = FactorNodeLocalClusters(
+                interfaces, ((1, 2), (3,))
+            )
             @test length(getmarginals(clusters)) === 2
             @test name(getmarginal(clusters, 1)) === :a_b
             @test name(getmarginal(clusters, 2)) === :c
@@ -41,7 +57,9 @@ end
             @test getfactorization(clusters, 2) === (3,)
         end
 
-        @testset let clusters = FactorNodeLocalClusters(interfaces, ((1,), (2, 3)))
+        @testset let clusters = FactorNodeLocalClusters(
+                interfaces, ((1,), (2, 3))
+            )
             @test length(getmarginals(clusters)) === 2
             @test name(getmarginal(clusters, 1)) === :a
             @test name(getmarginal(clusters, 2)) === :b_c
@@ -50,7 +68,9 @@ end
             @test getfactorization(clusters, 2) === (2, 3)
         end
 
-        @testset let clusters = FactorNodeLocalClusters(interfaces, ((1,), (2,), (3,)))
+        @testset let clusters = FactorNodeLocalClusters(
+                interfaces, ((1,), (2,), (3,))
+            )
             @test length(getmarginals(clusters)) === 3
             @test name(getmarginal(clusters, 1)) === :a
             @test name(getmarginal(clusters, 2)) === :b
@@ -70,41 +90,71 @@ end
     @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2, 3),)), 2) === 1
     @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2, 3),)), 3) === 1
 
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2), (3,))), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2), (3,))), 2) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2), (3,))), 3) === 2
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2), (3,))), 1) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2), (3,))), 2) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 2), (3,))), 3) ===
+        2
 
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 3), (2,))), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 3), (2,))), 2) === 2
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 3), (2,))), 3) === 1
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 3), (2,))), 1) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 3), (2,))), 2) ===
+        2
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1, 3), (2,))), 3) ===
+        1
 
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2, 3))), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2, 3))), 2) === 2
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2, 3))), 3) === 2
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2, 3))), 1) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2, 3))), 2) ===
+        2
+    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2, 3))), 3) ===
+        2
 
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2,), (3,))), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2,), (3,))), 2) === 2
-    @test clusterindex(FactorNodeLocalClusters(missing, ((1,), (2,), (3,))), 3) === 3
+    @test clusterindex(
+        FactorNodeLocalClusters(missing, ((1,), (2,), (3,))), 1
+    ) === 1
+    @test clusterindex(
+        FactorNodeLocalClusters(missing, ((1,), (2,), (3,))), 2
+    ) === 2
+    @test clusterindex(
+        FactorNodeLocalClusters(missing, ((1,), (2,), (3,))), 3
+    ) === 3
 
     @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2, 3)]), 1) === 1
     @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2, 3)]), 2) === 1
     @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2, 3)]), 3) === 1
 
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2), (3,)]), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2), (3,)]), 2) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2), (3,)]), 3) === 2
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2), (3,)]), 1) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2), (3,)]), 2) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 2), (3,)]), 3) ===
+        2
 
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 3), (2,)]), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 3), (2,)]), 2) === 2
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 3), (2,)]), 3) === 1
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 3), (2,)]), 1) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 3), (2,)]), 2) ===
+        2
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1, 3), (2,)]), 3) ===
+        1
 
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2, 3)]), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2, 3)]), 2) === 2
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2, 3)]), 3) === 2
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2, 3)]), 1) ===
+        1
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2, 3)]), 2) ===
+        2
+    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2, 3)]), 3) ===
+        2
 
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2,), (3,)]), 1) === 1
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2,), (3,)]), 2) === 2
-    @test clusterindex(FactorNodeLocalClusters(missing, [(1,), (2,), (3,)]), 3) === 3
+    @test clusterindex(
+        FactorNodeLocalClusters(missing, [(1,), (2,), (3,)]), 1
+    ) === 1
+    @test clusterindex(
+        FactorNodeLocalClusters(missing, [(1,), (2,), (3,)]), 2
+    ) === 2
+    @test clusterindex(
+        FactorNodeLocalClusters(missing, [(1,), (2,), (3,)]), 3
+    ) === 3
 end
 
 @testitem "clustername" begin
@@ -154,19 +204,27 @@ end
 
     @node ArbitraryNode Stochastic [out, a, b]
 
-    @marginalrule ArbitraryNode(:out_a_b) (m_out::PointMass, m_a::PointMass, m_b::PointMass) = begin
+    @marginalrule ArbitraryNode(:out_a_b) (
+        m_out::PointMass, m_a::PointMass, m_b::PointMass
+    ) = begin
         return PointMass(mean(m_out) + mean(m_a) + mean(m_b))
     end
 
-    @marginalrule ArbitraryNode(:out_a) (m_out::PointMass, m_a::PointMass, q_b::PointMass) = begin
+    @marginalrule ArbitraryNode(:out_a) (
+        m_out::PointMass, m_a::PointMass, q_b::PointMass
+    ) = begin
         return PointMass(mean(m_out) + mean(m_a) - mean(q_b))
     end
 
-    @marginalrule ArbitraryNode(:out_b) (m_out::PointMass, q_a::PointMass, m_b::PointMass) = begin
+    @marginalrule ArbitraryNode(:out_b) (
+        m_out::PointMass, q_a::PointMass, m_b::PointMass
+    ) = begin
         return PointMass(mean(m_out) + mean(m_b) - mean(q_a))
     end
 
-    @marginalrule ArbitraryNode(:a_b) (q_out::PointMass, m_a::PointMass, m_b::PointMass) = begin
+    @marginalrule ArbitraryNode(:a_b) (
+        q_out::PointMass, m_a::PointMass, m_b::PointMass
+    ) = begin
         return PointMass(mean(m_a) + mean(m_b) - mean(q_out))
     end
 
@@ -178,15 +236,25 @@ end
             a = constvar(va)
             b = constvar(vb)
 
-            node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 2, 3),))
+            node = factornode(
+                ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 2, 3),)
+            )
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(
+                nothing, nothing, nothing, nothing, nothing, nothing
+            )
 
             @test length(getmarginals(getlocalclusters(node))) === 1
 
-            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
+            initialize_clusters!(
+                getlocalclusters(node), dependencies, node, options
+            )
 
-            @test PointMass(vout + va + vb) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 1))))
+            @test PointMass(vout + va + vb) == getdata(
+                check_stream_updated_once(
+                    getmarginal(getmarginal(getlocalclusters(node), 1))
+                ),
+            )
         end
     end
 
@@ -196,16 +264,27 @@ end
             a = constvar(va)
             b = constvar(vb)
 
-            node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 2), (3,)))
+            node = factornode(
+                ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 2), (3,))
+            )
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(
+                nothing, nothing, nothing, nothing, nothing, nothing
+            )
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
-            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
+            initialize_clusters!(
+                getlocalclusters(node), dependencies, node, options
+            )
 
-            @test PointMass(vout + va - vb) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 1))))
-            @test getmarginal(getmarginal(getlocalclusters(node), 2)) === getmarginal(b, IncludeAll())
+            @test PointMass(vout + va - vb) == getdata(
+                check_stream_updated_once(
+                    getmarginal(getmarginal(getlocalclusters(node), 1))
+                ),
+            )
+            @test getmarginal(getmarginal(getlocalclusters(node), 2)) ===
+                getmarginal(b, IncludeAll())
         end
     end
 
@@ -215,16 +294,27 @@ end
             a = constvar(va)
             b = constvar(vb)
 
-            node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 3), (2,)))
+            node = factornode(
+                ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1, 3), (2,))
+            )
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(
+                nothing, nothing, nothing, nothing, nothing, nothing
+            )
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
-            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
+            initialize_clusters!(
+                getlocalclusters(node), dependencies, node, options
+            )
 
-            @test PointMass(vout + vb - va) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 1))))
-            @test getmarginal(getmarginal(getlocalclusters(node), 2)) === getmarginal(a, IncludeAll())
+            @test PointMass(vout + vb - va) == getdata(
+                check_stream_updated_once(
+                    getmarginal(getmarginal(getlocalclusters(node), 1))
+                ),
+            )
+            @test getmarginal(getmarginal(getlocalclusters(node), 2)) ===
+                getmarginal(a, IncludeAll())
         end
     end
 
@@ -234,16 +324,27 @@ end
             a = constvar(va)
             b = constvar(vb)
 
-            node = factornode(ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1,), (2, 3)))
+            node = factornode(
+                ArbitraryNode, [(:out, out), (:a, a), (:b, b)], ((1,), (2, 3))
+            )
 
-            options = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, nothing, nothing)
+            options = FactorNodeActivationOptions(
+                nothing, nothing, nothing, nothing, nothing, nothing
+            )
 
             @test length(getmarginals(getlocalclusters(node))) === 2
 
-            initialize_clusters!(getlocalclusters(node), dependencies, node, options)
+            initialize_clusters!(
+                getlocalclusters(node), dependencies, node, options
+            )
 
-            @test PointMass(va + vb - vout) == getdata(check_stream_updated_once(getmarginal(getmarginal(getlocalclusters(node), 2))))
-            @test getmarginal(getmarginal(getlocalclusters(node), 1)) === getmarginal(out, IncludeAll())
+            @test PointMass(va + vb - vout) == getdata(
+                check_stream_updated_once(
+                    getmarginal(getmarginal(getlocalclusters(node), 2))
+                ),
+            )
+            @test getmarginal(getmarginal(getlocalclusters(node), 1)) ===
+                getmarginal(out, IncludeAll())
         end
     end
 end

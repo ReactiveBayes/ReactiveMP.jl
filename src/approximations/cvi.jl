@@ -22,7 +22,9 @@ function cvi_update! end
 
 # Specialized method for callback functions, a user can provide an arbitrary callback with the optimization procedure
 cvi_setup(callback::F, λ) where {F <: Function} = (callback, nothing)
-cvi_update!(tuple::Tuple{F, Nothing}, new_λ, λ, ∇) where {F <: Function} = (tuple, tuple[1](new_λ, λ, ∇))
+cvi_update!(tuple::Tuple{F, Nothing}, new_λ, λ, ∇) where {F <: Function} = (
+    tuple, tuple[1](new_λ, λ, ∇)
+)
 
 cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)
@@ -64,14 +66,47 @@ struct ProdCVI{R, O, G, B} <: AbstractApproximationMethod
     warn::Bool
 
     function ProdCVI(
-        rng::R, n_samples::Int, n_iterations::Int, opt::O, grad::G = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val{B} = Val(true), warn::Bool = true
+        rng::R,
+        n_samples::Int,
+        n_iterations::Int,
+        opt::O,
+        grad::G = ForwardDiffGrad(),
+        n_gradpoints::Int = 1,
+        enforce_proper_messages::Val{B} = Val(true),
+        warn::Bool = true,
     ) where {R, O, G, B}
-        return new{R, O, G, B}(rng, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
+        return new{R, O, G, B}(
+            rng,
+            n_samples,
+            n_iterations,
+            opt,
+            grad,
+            n_gradpoints,
+            enforce_proper_messages,
+            warn,
+        )
     end
 end
 
-function ProdCVI(n_samples::Int, n_iterations::Int, opt, grad = ForwardDiffGrad(), n_gradpoints::Int = 1, enforce_proper_messages::Val = Val(true), warn::Bool = true)
-    return ProdCVI(Random.GLOBAL_RNG, n_samples, n_iterations, opt, grad, n_gradpoints, enforce_proper_messages, warn)
+function ProdCVI(
+    n_samples::Int,
+    n_iterations::Int,
+    opt,
+    grad = ForwardDiffGrad(),
+    n_gradpoints::Int = 1,
+    enforce_proper_messages::Val = Val(true),
+    warn::Bool = true,
+)
+    return ProdCVI(
+        Random.GLOBAL_RNG,
+        n_samples,
+        n_iterations,
+        opt,
+        grad,
+        n_gradpoints,
+        enforce_proper_messages,
+        warn,
+    )
 end
 
 """Alias for the `ProdCVI` method. See help for [`ProdCVI`](@ref)"""
@@ -112,18 +147,24 @@ function compute_derivative(::ForwardDiffGrad, f::F, value::T)::T where {F, T}
     return ForwardDiff.derivative(f, value)
 end
 
-function compute_gradient!(::ForwardDiffGrad, result, cfg, f::F, vec::AbstractVector{T})::Vector{T} where {F, T}
+function compute_gradient!(
+    ::ForwardDiffGrad, result, cfg, f::F, vec::AbstractVector{T}
+)::Vector{T} where {F, T}
     ForwardDiff.gradient!(result, f, vec, cfg)
     return DiffResults.gradient(result)
 end
 
-function compute_hessian!(::ForwardDiffGrad, result, cfg, f::F, vec::AbstractVector{T})::Matrix{T} where {F, T}
+function compute_hessian!(
+    ::ForwardDiffGrad, result, cfg, f::F, vec::AbstractVector{T}
+)::Matrix{T} where {F, T}
     ForwardDiff.hessian!(result, f, vec, cfg)
     return DiffResults.hessian(result)
 end
 
 # We perform the check in case if the `enforce_proper_messages` setting is set to `Val{true}`
-function enforce_proper_message(::Val{true}, ::Type{T}, cache, λ, η, conditioner) where {T}
+function enforce_proper_message(
+    ::Val{true}, ::Type{T}, cache, λ, η, conditioner
+) where {T}
     # cache = λ .- η
     @inbounds for (i, λᵢ, ηᵢ) in zip(eachindex(cache), λ, η)
         cache[i] = λᵢ - ηᵢ
@@ -132,7 +173,9 @@ function enforce_proper_message(::Val{true}, ::Type{T}, cache, λ, η, condition
 end
 
 # We skip the check in case if the `enforce_proper_messages` setting is set to `Val{false}`
-enforce_proper_message(::Val{false}, ::Type{T}, cache, λ, η, conditioner) where {T} = true
+enforce_proper_message(
+    ::Val{false}, ::Type{T}, cache, λ, η, conditioner
+) where {T} = true
 
 # We need this structure to aboid performance issues with type parameter `T` in lambda functions
 # Otherwise the invokation of such function would be about 10x slower
@@ -141,17 +184,26 @@ struct LogGradientInvoker{T, S, O, C}
     outbound::O
     conditioner::C
 
-    function LogGradientInvoker(::Type{T}, samples::S, outbound::O, conditioner::C) where {T, S, O, C}
+    function LogGradientInvoker(
+        ::Type{T}, samples::S, outbound::O, conditioner::C
+    ) where {T, S, O, C}
         return new{T, S, O, C}(samples, logpdf_optimized(outbound), conditioner)
     end
 end
 
 # Some methods for some distributions require extra cache to be preallocated
 # Look for the the optimized versions in the bottom of this file
-function prepare_log_gradient_invoker_cache(::Type{T}, grad::ForwardDiffGrad, η, f) where {T}
-    ad_cache = DiffResults.DiffResult(first(η), similar(η), similar(η, length(η), length(η)))
+function prepare_log_gradient_invoker_cache(
+    ::Type{T}, grad::ForwardDiffGrad, η, f
+) where {T}
+    ad_cache = DiffResults.DiffResult(
+        first(η), similar(η), similar(η, length(η), length(η))
+    )
     chunk = getchunk(grad, η)
-    ad_cfgs = (ForwardDiff.GradientConfig(f, η, chunk), ForwardDiff.HessianConfig(f, ad_cache, η, chunk))
+    ad_cfgs = (
+        ForwardDiff.GradientConfig(f, η, chunk),
+        ForwardDiff.HessianConfig(f, ad_cache, η, chunk),
+    )
     ∇logq = similar(η)
     ∇f = similar(η)
     return (ad_cache, ad_cfgs, ∇logq, ∇f)
@@ -166,12 +218,17 @@ end
 # - https://doi.org/10.1016/j.ijar.2022.06.006
 function (invoker::LogGradientInvoker{T})(η) where {T}
     return mean(invoker.samples) do sample
-        return logpdf(invoker.outbound, sample) * logpdf(ExponentialFamilyDistribution(T, η, invoker.conditioner, nothing), sample)
+        return logpdf(invoker.outbound, sample) * logpdf(
+            ExponentialFamilyDistribution(T, η, invoker.conditioner, nothing),
+            sample,
+        )
     end
 end
 
 # Look for the the optimized versions in the bottom of this file
-function estimate_natural_gradient!(grad::ForwardDiffGrad, cache, invoker::LogGradientInvoker, current)
+function estimate_natural_gradient!(
+    grad::ForwardDiffGrad, cache, invoker::LogGradientInvoker, current
+)
     (ad_cache, ad_cfgs, ∇logq, ∇f) = cache
 
     point = getnaturalparameters(current)
@@ -203,7 +260,9 @@ function prod(approximation::CVI, outbound, inbound)
     # Initial parameters of projected distribution
     current_ef = convert(ExponentialFamilyDistribution, inbound) # current EF distribution
     current_λ = getnaturalparameters(current_ef) # current natural parameters
-    scontainer = rand(rng, sampling_optimized(inbound), approximation.n_gradpoints) # sampling container
+    scontainer = rand(
+        rng, sampling_optimized(inbound), approximation.n_gradpoints
+    ) # sampling container
     current_∇ = similar(current_λ) # current gradient
     new_λ = similar(current_λ) # new natural parameters
     cache = similar(current_λ) # just intermediate buffer
@@ -211,8 +270,12 @@ function prod(approximation::CVI, outbound, inbound)
     # We avoid use of lambda functions, because they cannot capture `T`
     # which leads to performance issues 
     # + some types `T` implement a more accure and efficient estimater
-    invoker = LogGradientInvoker(T, cvilinearize(scontainer), outbound, inbound_c)
-    logqcache = prepare_log_gradient_invoker_cache(T, gradmethod, current_λ, invoker)
+    invoker = LogGradientInvoker(
+        T, cvilinearize(scontainer), outbound, inbound_c
+    )
+    logqcache = prepare_log_gradient_invoker_cache(
+        T, gradmethod, current_λ, invoker
+    )
 
     hasupdated = false
 
@@ -220,21 +283,39 @@ function prod(approximation::CVI, outbound, inbound)
 
         # Some distributions implement "sampling" efficient versions
         # returns the same distribution by default
-        samples = cvilinearize(rand!(rng, sampling_optimized(convert(Distribution, current_ef)), scontainer))
+        samples = cvilinearize(
+            rand!(
+                rng,
+                sampling_optimized(convert(Distribution, current_ef)),
+                scontainer,
+            ),
+        )
 
         # compute gradient of log-likelihood
-        ∇f = estimate_natural_gradient!(gradmethod, logqcache, invoker, current_ef)
+        ∇f = estimate_natural_gradient!(
+            gradmethod, logqcache, invoker, current_ef
+        )
 
         # compute gradient on natural parameters (current_∇ = current_λ .- inbound_η .- ∇f)
-        @inbounds for (i, λᵢ, ηᵢ, ∇fᵢ) in zip(eachindex(current_∇), current_λ, inbound_η, ∇f)
+        @inbounds for (i, λᵢ, ηᵢ, ∇fᵢ) in
+                      zip(eachindex(current_∇), current_λ, inbound_η, ∇f)
             current_∇[i] = λᵢ - ηᵢ - ∇fᵢ
         end
 
         # perform gradient descent step
-        optimizer_and_state, new_λ = cvi_update!(optimizer_and_state, new_λ, current_λ, current_∇)
+        optimizer_and_state, new_λ = cvi_update!(
+            optimizer_and_state, new_λ, current_λ, current_∇
+        )
 
         # check whether updated natural parameters are proper
-        if enforce_proper_message(approximation.enforce_proper_messages, T, cache, new_λ, inbound_η, inbound_c)
+        if enforce_proper_message(
+            approximation.enforce_proper_messages,
+            T,
+            cache,
+            new_λ,
+            inbound_η,
+            inbound_c,
+        )
             copyto!(current_λ, new_λ)
             hasupdated = true
         end
@@ -255,7 +336,9 @@ function compute_df_mv(grad::ForwardDiffGrad, _, logp::F, z_s::Real) where {F}
     return df_m, df_v / 2
 end
 
-function compute_df_mv(grad::ForwardDiffGrad, cache, logp::F, z_s::AbstractVector) where {F}
+function compute_df_mv(
+    grad::ForwardDiffGrad, cache, logp::F, z_s::AbstractVector
+) where {F}
     # Extract cache and configs for the ForwardDiff
     ad_cache, ad_cfgs, _, _ = cache
     # Compute the hessian in-place
@@ -268,7 +351,9 @@ function compute_df_mv(grad::ForwardDiffGrad, cache, logp::F, z_s::AbstractVecto
     return df_m, df_v
 end
 
-function prepare_log_gradient_invoker_cache(::Type{T}, grad::ForwardDiffGrad, η, invoker) where {T <: NormalDistributionsFamily}
+function prepare_log_gradient_invoker_cache(
+    ::Type{T}, grad::ForwardDiffGrad, η, invoker
+) where {T <: NormalDistributionsFamily}
     # Specialized version for gaussians takes gradients and hessians with respect to a different function `f`
     f = (x) -> logpdf(invoker.outbound, x)
     ad_cache, ad_cfgs = __gaussian_ad_cache(grad, first(invoker.samples), f)
@@ -289,15 +374,22 @@ function __gaussian_ad_cache(grad::ForwardDiffGrad, sample::AbstractArray, f)
     k = length(sample)
     chunk = getchunk(grad, sample)
     # The hessians and gradients will be store in the `ad_cache` later on
-    ad_cache = DiffResults.DiffResult(first(sample), Vector{R}(undef, k), Matrix{R}(undef, k, k))
+    ad_cache = DiffResults.DiffResult(
+        first(sample), Vector{R}(undef, k), Matrix{R}(undef, k, k)
+    )
     # ForwardDiff configs are specialized for `f`
-    ad_cfgs = (ForwardDiff.GradientConfig(f, sample, chunk), ForwardDiff.HessianConfig(f, ad_cache, sample, chunk))
+    ad_cfgs = (
+        ForwardDiff.GradientConfig(f, sample, chunk),
+        ForwardDiff.HessianConfig(f, ad_cache, sample, chunk),
+    )
     return ad_cache, ad_cfgs
 end
 
 # This procedure does not call the `invoker`, 
 # but instead has a different target function saved in the `prepare_log_gradient_invoker_cache`
-function estimate_natural_gradient!(grad::ForwardDiffGrad, cache, invoker::LogGradientInvoker{T}, current) where {T <: NormalDistributionsFamily}
+function estimate_natural_gradient!(
+    grad::ForwardDiffGrad, cache, invoker::LogGradientInvoker{T}, current
+) where {T <: NormalDistributionsFamily}
     μ = mean(current)
     K = length(invoker.samples)
     _, _, f, ∇f, tmp = cache

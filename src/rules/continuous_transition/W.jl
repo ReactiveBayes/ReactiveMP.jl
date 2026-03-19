@@ -20,7 +20,11 @@ function compute_delta(my, Vy, mx, Vx, Vyx, mA, Va, ma, Fs)
 end
 
 # VMP: Stuctured
-@rule ContinuousTransition(:W, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, meta::CTMeta) = begin
+@rule ContinuousTransition(:W, Marginalisation) (
+    q_y_x::MultivariateNormalDistributionsFamily,
+    q_a::MultivariateNormalDistributionsFamily,
+    meta::CTMeta,
+) = begin
     ma, Va = mean_cov(q_a)
     Fs = getjacobians(meta, ma)
     dy = length(Fs)
@@ -40,7 +44,9 @@ end
 end
 
 # VMP: Mean-field
-@rule ContinuousTransition(:W, Marginalisation) (q_y::Any, q_x::Any, q_a::Any, meta::CTMeta) = begin
+@rule ContinuousTransition(:W, Marginalisation) (
+    q_y::Any, q_x::Any, q_a::Any, meta::CTMeta
+) = begin
     ma, Va = mean_cov(q_a)
     my, Vy = mean_cov(q_y)
     mx, Vx = mean_cov(q_x)
@@ -51,7 +57,9 @@ end
     epsilon = sqrt.(var(q_a))
     mA = ctcompanion_matrix(ma, epsilon, meta)
 
-    Δ = compute_delta(my, Vy, mx, Vx, zeros(eltype(ma), dy, length(mx)), mA, Va, ma, Fs)
+    Δ = compute_delta(
+        my, Vy, mx, Vx, zeros(eltype(ma), dy, length(mx)), mA, Va, ma, Fs
+    )
 
     return WishartFast(dy + 2, Δ)
 end

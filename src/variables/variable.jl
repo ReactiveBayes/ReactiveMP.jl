@@ -31,8 +31,12 @@ messages_prod_fn(::FoldLeftProdStrategy, prod_constraint, form_constraint, form_
 messages_prod_fn(::FoldRightProdStrategy, prod_constraint, form_constraint, form_check_strategy)      = prod_foldr_reduce(prod_constraint, form_constraint, form_check_strategy)
 messages_prod_fn(strategy::CustomProdStrategy, prod_constraint, form_constraint, form_check_strategy) = strategy.prod_callback_generator(prod_constraint, form_constraint, form_check_strategy)
 
-function marginal_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
-    return let prod_fn = messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
+function marginal_prod_fn(
+    strategy, prod_constraint, form_constraint, form_check_strategy
+)
+    return let prod_fn = messages_prod_fn(
+            strategy, prod_constraint, form_constraint, form_check_strategy
+        )
         return (messages) -> as_marginal(prod_fn(messages))
     end
 end
@@ -58,21 +62,29 @@ getmarginals(variables::AbstractArray{<:AbstractVariable}, skip_strategy::Margin
 
 ### Marginals
 
-setmarginal!(variable::AbstractVariable, marginal) = setmarginal!(getmarginal(variable, IncludeAll()), marginal)
+setmarginal!(variable::AbstractVariable, marginal) = setmarginal!(
+    getmarginal(variable, IncludeAll()), marginal
+)
 
 setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginal::PointMass)    = _setmarginals!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
 setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginal::Distribution) = _setmarginals!(Base.HasLength(), variables, Iterators.repeated(marginal, length(variables)))
 setmarginals!(variables::AbstractArray{<:AbstractVariable}, marginals)              = _setmarginals!(Base.IteratorSize(marginals), variables, marginals)
 
-function _setmarginals!(::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, marginals)
+function _setmarginals!(
+    ::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, marginals
+)
     @assert length(variables) == length(marginals) "Variables $(variables) and marginals $(marginals) should have the same length"
     foreach(zip(variables, marginals)) do (variable, marginal)
         setmarginal!(variable, marginal)
     end
 end
 
-function _setmarginals!(::Any, variables::AbstractArray{<:AbstractVariable}, marginals)
-    error("setmarginals!() failed. Default value is neither an iterable object nor a distribution.")
+function _setmarginals!(
+    ::Any, variables::AbstractArray{<:AbstractVariable}, marginals
+)
+    error(
+        "setmarginals!() failed. Default value is neither an iterable object nor a distribution.",
+    )
 end
 
 ### Messages
@@ -84,13 +96,19 @@ setmessages!(variables::AbstractArray{<:AbstractVariable}, message::PointMass)  
 setmessages!(variables::AbstractArray{<:AbstractVariable}, message::Distribution) = _setmessages!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
 setmessages!(variables::AbstractArray{<:AbstractVariable}, messages)              = _setmessages!(Base.IteratorSize(messages), variables, messages)
 
-function _setmessages!(::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, messages)
+function _setmessages!(
+    ::Base.IteratorSize, variables::AbstractArray{<:AbstractVariable}, messages
+)
     @assert length(variables) == length(messages) "Variables $(variables) and messages $(messages) should have the same length"
     foreach(zip(variables, messages)) do (variable, message)
         setmessage!(variable, message)
     end
 end
 
-function _setmessages!(::Any, variables::AbstractArray{<:AbstractVariable}, marginals)
-    error("setmessages!() failed. Default value is neither an iterable object nor a distribution.")
+function _setmessages!(
+    ::Any, variables::AbstractArray{<:AbstractVariable}, marginals
+)
+    error(
+        "setmessages!() failed. Default value is neither an iterable object nor a distribution.",
+    )
 end

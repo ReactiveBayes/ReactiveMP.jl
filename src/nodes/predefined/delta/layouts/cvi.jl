@@ -16,17 +16,62 @@ In order to compute:
 struct CVIApproximationDeltaFnRuleLayout <: AbstractDeltaNodeDependenciesLayout end
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
-function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback)
+function deltafn_apply_layout(
+    ::CVIApproximationDeltaFnRuleLayout,
+    ::Val{:q_out},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+)
+    return deltafn_apply_layout(
+        DeltaFnDefaultRuleLayout(),
+        Val(:q_out),
+        factornode,
+        meta,
+        pipeline_stages,
+        scheduler,
+        addons,
+        rulefallback,
+    )
 end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
-function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), factornode, meta, pipeline_stages, scheduler, addons, rulefallback)
+function deltafn_apply_layout(
+    ::CVIApproximationDeltaFnRuleLayout,
+    ::Val{:q_ins},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+)
+    return deltafn_apply_layout(
+        DeltaFnDefaultRuleLayout(),
+        Val(:q_ins),
+        factornode,
+        meta,
+        pipeline_stages,
+        scheduler,
+        addons,
+        rulefallback,
+    )
 end
 
 # This function declares how to compute `m_out` 
-function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback)
+function deltafn_apply_layout(
+    ::CVIApproximationDeltaFnRuleLayout,
+    ::Val{:m_out},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+)
     let interface = factornode.out
 
         # CVI does not need an inbound message 
@@ -41,15 +86,32 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        vmessageout = combineLatest(
+            (msgs_observable, marginals_observable), PushNew()
+        )
 
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback)
-            (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
-        end
+        mapping =
+            let messagemap = MessageMapping(
+                    fform,
+                    vtag,
+                    vconstraint,
+                    msgs_names,
+                    marginal_names,
+                    meta,
+                    addons,
+                    factornode,
+                    rulefallback,
+                )
+                (dependencies) -> DeferredMessage(
+                    dependencies[1], dependencies[2], messagemap
+                )
+            end
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, vmessageout
+        )
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)
@@ -57,6 +119,24 @@ function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_out}
 end
 
 # This function declares how to compute `m_in` for each `k` 
-function deltafn_apply_layout(::CVIApproximationDeltaFnRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback)
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), factornode, meta, pipeline_stages, scheduler, addons, rulefallback)
+function deltafn_apply_layout(
+    ::CVIApproximationDeltaFnRuleLayout,
+    ::Val{:m_in},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+)
+    return deltafn_apply_layout(
+        DeltaFnDefaultRuleLayout(),
+        Val(:m_in),
+        factornode,
+        meta,
+        pipeline_stages,
+        scheduler,
+        addons,
+        rulefallback,
+    )
 end

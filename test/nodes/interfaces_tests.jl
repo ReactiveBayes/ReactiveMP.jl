@@ -1,14 +1,26 @@
 @testitem "NodeInterface" begin
     using Rocket
 
-    import ReactiveMP: AbstractVariable, NodeInterface, messageout, messagein, tag, getvariable, MessageObservable, connect!, name
+    import ReactiveMP:
+        AbstractVariable,
+        NodeInterface,
+        messageout,
+        messagein,
+        tag,
+        getvariable,
+        MessageObservable,
+        connect!,
+        name
 
     struct AbstractVariableImplemention <: AbstractVariable
         messageout::MessageObservable
     end
 
-    ReactiveMP.create_messagein!(variable::AbstractVariableImplemention) = (variable.messageout, 1)
-    ReactiveMP.messageout(variable::AbstractVariableImplemention, ::Int) = variable.messageout
+    ReactiveMP.create_messagein!(variable::AbstractVariableImplemention) = (
+        variable.messageout, 1
+    )
+    ReactiveMP.messageout(variable::AbstractVariableImplemention, ::Int) =
+        variable.messageout
 
     varmessageout = MessageObservable()
     stream = Subject(AbstractMessage)
@@ -32,18 +44,27 @@
     next!(stream, Message(2, false, false, nothing))
     next!(stream, Message(3, false, false, nothing))
 
-    @test getvalues(actor) == [Message(1, false, false, nothing), Message(2, false, false, nothing), Message(3, false, false, nothing)]
+    @test getvalues(actor) == [
+        Message(1, false, false, nothing),
+        Message(2, false, false, nothing),
+        Message(3, false, false, nothing),
+    ]
 
     unsubscribe!(subscription)
 
     next!(stream, Message(4, false, false, nothing))
     next!(stream, Message(5, false, false, nothing))
 
-    @test getvalues(actor) == [Message(1, false, false, nothing), Message(2, false, false, nothing), Message(3, false, false, nothing)]
+    @test getvalues(actor) == [
+        Message(1, false, false, nothing),
+        Message(2, false, false, nothing),
+        Message(3, false, false, nothing),
+    ]
 end
 
 @testitem "NodeInterface israndom/isdata/isconst" begin
-    import ReactiveMP: AbstractVariable, NodeInterface, israndom, isdata, isconst
+    import ReactiveMP:
+        AbstractVariable, NodeInterface, israndom, isdata, isconst
 
     let randomvar = randomvar()
         @test israndom(NodeInterface(:random, randomvar))

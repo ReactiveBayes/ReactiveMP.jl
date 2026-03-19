@@ -1,5 +1,11 @@
 @testitem "rules:MultinomialPolya:psi" begin
-    using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, PolyaGammaHybridSamplers, StableRNGs
+    using ReactiveMP,
+        BayesBase,
+        Random,
+        ExponentialFamily,
+        Distributions,
+        PolyaGammaHybridSamplers,
+        StableRNGs
 
     import ReactiveMP: @test_rules, weightedmean
     import LinearAlgebra: Diagonal, diag
@@ -17,8 +23,11 @@
         η_expected = [-1.5, -0.5]
         Λ_expected = Diagonal([0.75, 0.75])
 
-        @test_rules [check_type_promotion = false] MultinomialPolya(:ψ, Marginalisation) [(
-            input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta), output = MvGaussianWeightedMeanPrecision(η_expected, Λ_expected)
+        @test_rules [check_type_promotion = false] MultinomialPolya(
+            :ψ, Marginalisation
+        ) [(
+            input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta),
+            output = MvGaussianWeightedMeanPrecision(η_expected, Λ_expected),
         )]
     end
 
@@ -32,8 +41,13 @@
         Λ_expected = Diagonal([0.75, 0.75])
 
         for q_N in q_Ns
-            @test_rules [check_type_promotion = false] MultinomialPolya(:ψ, Marginalisation) [(
-                input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta), output = MvGaussianWeightedMeanPrecision(η_expected, Λ_expected)
+            @test_rules [check_type_promotion = false] MultinomialPolya(
+                :ψ, Marginalisation
+            ) [(
+                input = (q_x = q_x, q_N = q_N, m_ψ = m_ψ, meta = meta),
+                output = MvGaussianWeightedMeanPrecision(
+                    η_expected, Λ_expected
+                ),
             )]
         end
     end

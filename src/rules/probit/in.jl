@@ -1,8 +1,13 @@
-using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
+using StatsFuns:
+    normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf, logsumexp
 
-@rule Probit(:in, Marginalisation) (q_out::PointMass, meta::Union{ProbitMeta, Nothing}) = @call_rule Probit(:in, Marginalisation) (m_out = q_out,)
+@rule Probit(:in, Marginalisation) (q_out::PointMass, meta::Union{ProbitMeta, Nothing}) = @call_rule Probit(
+    :in, Marginalisation
+) (m_out = q_out,)
 
-@rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, meta::Union{ProbitMeta, Nothing}) = begin
+@rule Probit(:in, Marginalisation) (
+    m_out::Union{PointMass, Bernoulli}, meta::Union{ProbitMeta, Nothing}
+) = begin
 
     # extract parameters
     p = mean(m_out)
@@ -14,11 +19,15 @@ using StatsFuns: normcdf, normccdf, normlogcdf, normlogccdf, normlogpdf, normpdf
     return ContinuousUnivariateLogPdf(f)
 end
 
-@rule Probit(:in, Marginalisation) (q_out::PointMass, m_in::UnivariateNormalDistributionsFamily, meta::Union{ProbitMeta, Nothing}) = @call_rule Probit(:in, Marginalisation) (
-    m_out = q_out, m_in = m_in, meta = meta
-)
+@rule Probit(:in, Marginalisation) (q_out::PointMass, m_in::UnivariateNormalDistributionsFamily, meta::Union{ProbitMeta, Nothing}) = @call_rule Probit(
+    :in, Marginalisation
+) (m_out = q_out, m_in = m_in, meta = meta)
 
-@rule Probit(:in, Marginalisation) (m_out::Union{PointMass, Bernoulli}, m_in::UnivariateNormalDistributionsFamily, meta::Union{ProbitMeta, Nothing}) = begin
+@rule Probit(:in, Marginalisation) (
+    m_out::Union{PointMass, Bernoulli},
+    m_in::UnivariateNormalDistributionsFamily,
+    meta::Union{ProbitMeta, Nothing},
+) = begin
 
     # extract parameters
     mz, vz = mean_cov(m_in)
@@ -34,13 +43,19 @@ end
     elseif γ <= 0 && p > 0.5
         log_mom0_pz = logsumexp((log(1 - p), log(2 * p - 1) + normlogcdf(γ)))
     elseif γ > 0 && p <= 0.5
-        log_mom0_pz = logsumexp((log(1 - p) + normlogcdf(-γ), log(p) + normlogcdf(γ)))
+        log_mom0_pz = logsumexp((
+            log(1 - p) + normlogcdf(-γ), log(p) + normlogcdf(γ)
+        ))
     else
-        log_mom0_pz = logsumexp((log(1 - p) + normlogccdf(γ), log(p) + normlogcdf(γ)))
+        log_mom0_pz = logsumexp((
+            log(1 - p) + normlogccdf(γ), log(p) + normlogcdf(γ)
+        ))
     end
     tmp = log(vz) + normlogpdf(γ) - log(1 + vz) / 2 - log_mom0_pz
     mom1_pz = mz + (2 * p - 1) * exp(tmp)
-    mom2_pz = vz + mz^2 + (2 * p - 1) * 2 * mz * exp(tmp) - (2p - 1) * γ * exp(log(vz) - log(1 + vz) / 2 + tmp)
+    mom2_pz =
+        vz + mz^2 + (2 * p - 1) * 2 * mz * exp(tmp) -
+        (2p - 1) * γ * exp(log(vz) - log(1 + vz) / 2 + tmp)
 
     # calculate parameters of posterior
     mpz = mom1_pz

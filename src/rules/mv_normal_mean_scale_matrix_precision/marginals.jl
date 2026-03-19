@@ -1,15 +1,46 @@
 export marginalrule
 
-@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ_γ_G) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, m_γ::PointMass, m_G::PointMass) = begin
-    return (out = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * mean(m_G)), m_out), μ = m_μ, γ = m_γ, G = m_G)
-end
-
-@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ_γ_G) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass, m_G::PointMass) = begin
-    return (out = m_out, μ = prod(ClosedProd(), m_μ, MvNormalMeanPrecision(mean(m_out), mean(m_γ) * mean(m_G))), γ = m_γ, G = m_G)
+@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ_γ_G) (
+    m_out::MultivariateNormalDistributionsFamily,
+    m_μ::PointMass,
+    m_γ::PointMass,
+    m_G::PointMass,
+) = begin
+    return (
+        out = prod(
+            ClosedProd(),
+            MvNormalMeanPrecision(mean(m_μ), mean(m_γ) * mean(m_G)),
+            m_out,
+        ),
+        μ = m_μ,
+        γ = m_γ,
+        G = m_G,
+    )
 end
 
 @marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ_γ_G) (
-    m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, m_γ::PointMass, m_G::PointMass
+    m_out::PointMass,
+    m_μ::MultivariateNormalDistributionsFamily,
+    m_γ::PointMass,
+    m_G::PointMass,
+) = begin
+    return (
+        out = m_out,
+        μ = prod(
+            ClosedProd(),
+            m_μ,
+            MvNormalMeanPrecision(mean(m_out), mean(m_γ) * mean(m_G)),
+        ),
+        γ = m_γ,
+        G = m_G,
+    )
+end
+
+@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ_γ_G) (
+    m_out::MultivariateNormalDistributionsFamily,
+    m_μ::MultivariateNormalDistributionsFamily,
+    m_γ::PointMass,
+    m_G::PointMass,
 ) = begin
     xi_y, W_y = weightedmean_precision(m_out)
     xi_m, W_m = weightedmean_precision(m_μ)
@@ -37,7 +68,12 @@ end
     return (out_μ = MvNormalWeightedMeanPrecision(ξ, Λ), γ = m_γ, G = m_G)
 end
 
-@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any, q_G::Any) = begin
+@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ) (
+    m_out::MultivariateNormalDistributionsFamily,
+    m_μ::MultivariateNormalDistributionsFamily,
+    q_γ::Any,
+    q_G::Any,
+) = begin
     xi_y, W_y = weightedmean_precision(m_out)
     xi_m, W_m = weightedmean_precision(m_μ)
 
@@ -64,10 +100,34 @@ end
     return MvNormalWeightedMeanPrecision(ξ, Λ)
 end
 
-@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ) (m_out::PointMass, m_μ::MultivariateNormalDistributionsFamily, q_γ::Any, q_G::Any) = begin
-    return (out = m_out, μ = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_out), mean(q_γ) * mean(q_G)), m_μ))
+@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ) (
+    m_out::PointMass,
+    m_μ::MultivariateNormalDistributionsFamily,
+    q_γ::Any,
+    q_G::Any,
+) = begin
+    return (
+        out = m_out,
+        μ = prod(
+            ClosedProd(),
+            MvNormalMeanPrecision(mean(m_out), mean(q_γ) * mean(q_G)),
+            m_μ,
+        ),
+    )
 end
 
-@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ) (m_out::MultivariateNormalDistributionsFamily, m_μ::PointMass, q_γ::Any, q_G::Any) = begin
-    return (out = prod(ClosedProd(), MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * mean(q_G)), m_out), μ = m_μ)
+@marginalrule MvNormalMeanScaleMatrixPrecision(:out_μ) (
+    m_out::MultivariateNormalDistributionsFamily,
+    m_μ::PointMass,
+    q_γ::Any,
+    q_G::Any,
+) = begin
+    return (
+        out = prod(
+            ClosedProd(),
+            MvNormalMeanPrecision(mean(m_μ), mean(q_γ) * mean(q_G)),
+            m_out,
+        ),
+        μ = m_μ,
+    )
 end

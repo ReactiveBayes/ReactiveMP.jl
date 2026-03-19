@@ -1,8 +1,15 @@
 
 @testitem "rules:ContinuousTransition:W" begin
-    using Test, ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions, LinearAlgebra
+    using Test,
+        ReactiveMP,
+        BayesBase,
+        Random,
+        ExponentialFamily,
+        Distributions,
+        LinearAlgebra
 
-    import ReactiveMP: @test_rules, ctcompanion_matrix, getjacobians, WishartFast
+    import ReactiveMP:
+        @test_rules, ctcompanion_matrix, getjacobians, WishartFast
 
     rng = MersenneTwister(42)
 
@@ -19,7 +26,11 @@
             my  = myx[1:dy]
             Vyx = Vyx[1:dy, (dy + 1):end]
 
-            G = tr(Vx * UA) * ΣA + mA * Vx * mA' - mA * Vyx' - Vyx * mA' + Vy + ΣA * mx' * UA * mx + (mA * mx - my) * (mA * mx - my)'
+            G =
+                tr(Vx * UA) * ΣA + mA * Vx * mA' - mA * Vyx' - Vyx * mA' +
+                Vy +
+                ΣA * mx' * UA * mx +
+                (mA * mx - my) * (mA * mx - my)'
 
             return WishartFast(dy + 2, Matrix(Symmetric(G)))
         end
@@ -35,11 +46,16 @@
                 μx, Σx = rand(rng, dx), Lx * Lx'
                 μy, Σy = rand(rng, dy), Ly * Ly'
 
-                qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+                qyx = MvNormalMeanCovariance(
+                    [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
+                )
                 qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
 
-                @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:W, Marginalisation) [(
-                    input = (q_y_x = qyx, q_a = qa, meta = metal), output = benchmark_rule_structured(qyx, mA, ΣA, UA)
+                @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                    :W, Marginalisation
+                ) [(
+                    input = (q_y_x = qyx, q_a = qa, meta = metal),
+                    output = benchmark_rule_structured(qyx, mA, ΣA, UA),
                 )]
             end
         end
@@ -55,10 +71,15 @@
             μx, Σx = zeros(dx), diageye(dx)
             μy, Σy = zeros(dy), diageye(dy)
 
-            qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+            qyx = MvNormalMeanCovariance(
+                [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
+            )
             qa = MvNormalMeanCovariance(zeros(1), diageye(1))
-            @test_rules [check_type_promotion = true] ContinuousTransition(:W, Marginalisation) [(
-                input = (q_y_x = qyx, q_a = qa, meta = metanl), output = WishartFast(dy + 2, dy * diageye(dy))
+            @test_rules [check_type_promotion = true] ContinuousTransition(
+                :W, Marginalisation
+            ) [(
+                input = (q_y_x = qyx, q_a = qa, meta = metanl),
+                output = WishartFast(dy + 2, dy * diageye(dy)),
             )]
         end
     end
@@ -71,7 +92,12 @@
 
         dy = size(mA, 1)
 
-        G = tr(Vx * UA) * ΣA + mA * Vx * mA' + Vy + ΣA * mx' * UA * mx + (mA * mx - my) * (mA * mx - my)'
+        G =
+            tr(Vx * UA) * ΣA +
+            mA * Vx * mA' +
+            Vy +
+            ΣA * mx' * UA * mx +
+            (mA * mx - my) * (mA * mx - my)'
 
         return WishartFast(dy + 2, Matrix(Symmetric(G)))
     end
@@ -92,8 +118,11 @@
 
             qa = MvNormalMeanCovariance(vec(mA), kron(UA, ΣA))
 
-            @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:W, Marginalisation) [(
-                input = (q_y = qy, q_x = qx, q_a = qa, meta = metal), output = benchmark_rule_meanfield(qy, qx, mA, ΣA, UA)
+            @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                :W, Marginalisation
+            ) [(
+                input = (q_y = qy, q_x = qx, q_a = qa, meta = metal),
+                output = benchmark_rule_meanfield(qy, qx, mA, ΣA, UA),
             )]
         end
     end

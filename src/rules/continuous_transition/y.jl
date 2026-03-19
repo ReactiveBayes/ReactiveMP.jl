@@ -1,5 +1,10 @@
 # VMP: Stuctured
-@rule ContinuousTransition(:y, Marginalisation) (m_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta) = begin
+@rule ContinuousTransition(:y, Marginalisation) (
+    m_x::MultivariateNormalDistributionsFamily,
+    q_a::MultivariateNormalDistributionsFamily,
+    q_W::Any,
+    meta::CTMeta,
+) = begin
     ma = mean(q_a)
     mx, Vx = mean_cov(m_x)
 

@@ -11,21 +11,29 @@ multiply_addons(::Nothing, ::Nothing, ::Any, ::Missing, ::Any) = nothing
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Any, ::Missing) = nothing
 multiply_addons(::Nothing, ::Nothing, ::Any, ::Missing, ::Missing) = nothing
 
-function multiply_addons(left_addons::Tuple, right_addons::Tuple, new_dist, left_dist, right_dist)
+function multiply_addons(
+    left_addons::Tuple, right_addons::Tuple, new_dist, left_dist, right_dist
+)
 
     # perform sanity check on the length of the addons
     @assert length(left_addons) == length(right_addons) "Trying to perform computations with different lengths of addons."
 
     # compute addon product elementwise
     return map(left_addons, right_addons) do left_addon, right_addon
-        multiply_addons(left_addon, right_addon, new_dist, left_dist, right_dist)
+        multiply_addons(
+            left_addon, right_addon, new_dist, left_dist, right_dist
+        )
     end
 end
 
 # Nice functionality, allows to write `addons = Addon1() + Addon2() + ...`
 +(left::AbstractAddon, right::AbstractAddon) = (left, right)
-+(left::NTuple{N, AbstractAddon}, right::AbstractAddon) where {N} = (left..., right)
-+(left::AbstractAddon, right::NTuple{N, AbstractAddon}) where {N} = (left, right...)
++(left::NTuple{N, AbstractAddon}, right::AbstractAddon) where {N} = (
+    left..., right
+)
++(left::AbstractAddon, right::NTuple{N, AbstractAddon}) where {N} = (
+    left, right...
+)
 
 macro invokeaddon(Type, callback)
     # invoke addon macro can be executed only inside the @rule macro 
