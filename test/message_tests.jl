@@ -297,9 +297,9 @@ end
 @testitem "MessageMapping should call `rulefallback` is no rule is available" begin
     import ReactiveMP: MessageMapping, getdata
 
-    struct SomeArbitraryNode end
+    struct SomeArbitraryNodeForRuleFallback end
 
-    @node SomeArbitraryNode Stochastic [out, in]
+    @node SomeArbitraryNodeForRuleFallback Stochastic [out, in]
 
     struct NonexistingDistribution end
 
@@ -307,14 +307,14 @@ end
     addons = ()
 
     mapping_no_rule_fallback = MessageMapping(
-        SomeArbitraryNode,
+        SomeArbitraryNodeForRuleFallback,
         Val(:out),
         Marginalisation(),
         Val((:in,)),
         nothing,
         meta,
         addons,
-        SomeArbitraryNode(),
+        SomeArbitraryNodeForRuleFallback(),
         nothing,
         nothing,
     )
@@ -329,20 +329,20 @@ end
     rulefallback = (args...) -> (args, nothing)
 
     mapping_with_fallback = MessageMapping(
-        SomeArbitraryNode,
+        SomeArbitraryNodeForRuleFallback,
         Val(:out),
         Marginalisation(),
         Val((:in,)),
         nothing,
         meta,
         addons,
-        SomeArbitraryNode(),
+        SomeArbitraryNodeForRuleFallback(),
         rulefallback,
         nothing,
     )
 
     @test getdata(mapping_with_fallback(messages, marginals)) == (
-        SomeArbitraryNode,
+        SomeArbitraryNodeForRuleFallback,
         Val(:out),
         Marginalisation(),
         Val((:in,)),
@@ -351,18 +351,18 @@ end
         marginals,
         meta,
         addons,
-        SomeArbitraryNode(),
+        SomeArbitraryNodeForRuleFallback(),
     )
 end
 
 @testitem "MessageMapping should call provided callbacks handler" begin
     import ReactiveMP: MessageMapping, getdata
 
-    struct SomeArbitraryNode end
+    struct SomeArbitraryNodeCallbacksTests end
 
-    @node SomeArbitraryNode Stochastic [out, in]
+    @node SomeArbitraryNodeCallbacksTests Stochastic [out, in]
 
-    @rule SomeArbitraryNode(:out, Marginalisation) (m_in::Int,) = m_in + 1
+    @rule SomeArbitraryNodeCallbacksTests(:out, Marginalisation) (m_in::Int,) = m_in + 1
 
     events = []
 
@@ -374,14 +374,14 @@ end
     )
 
     mapping = MessageMapping(
-        SomeArbitraryNode,
+        SomeArbitraryNodeCallbacksTests,
         Val(:out),
         Marginalisation(),
         Val((:in,)),
         nothing,
         nothing,
         (),
-        SomeArbitraryNode(),
+        SomeArbitraryNodeCallbacksTests(),
         nothing,
         callbacks,
     )
@@ -392,12 +392,12 @@ end
     @test getdata(mapping(messages, marginals)) == 2
 
     @test events[1].event == :before_message_rule_call
-    @test events[1].args[1].factornode === SomeArbitraryNode()
+    @test events[1].args[1].factornode === SomeArbitraryNodeCallbacksTests()
     @test events[1].args[2] === messages
     @test events[1].args[3] === marginals
 
     @test events[2].event == :after_message_rule_call
-    @test events[2].args[1].factornode === SomeArbitraryNode()
+    @test events[2].args[1].factornode === SomeArbitraryNodeCallbacksTests()
     @test events[2].args[2] === messages
     @test events[2].args[3] === marginals
     @test events[2].args[4] === 2
