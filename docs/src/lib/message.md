@@ -81,6 +81,7 @@ ReactiveMP.MessageProductContext
 ReactiveMP.compute_product_of_two_messages
 ReactiveMP.compute_product_of_messages
 ReactiveMP.MessagesProductFromLeftToRight
+ReactiveMP.MessagesProductFromRightToLeft
 ```
 
 

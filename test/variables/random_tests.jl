@@ -31,7 +31,9 @@ end
 @testitem "RandomVariable: getmarginal" begin
     import ReactiveMP:
         MessageObservable,
+        MessageProductContext,
         create_messagein!,
+        compute_product_of_messages,
         messagein,
         degree,
         activate!,
@@ -41,8 +43,8 @@ end
 
     include("../testutilities.jl")
 
-    message_prod_fn = (msgs) -> error("Messages should not be called here")
-    marginal_prod_fn = (msgs) -> mgl(sum(getdata.(msgs)))
+    message_prod_fold = (variable, context, msgs) -> error("Messages should not be called here")
+    marginal_prod_fold = (variable, context, msgs) -> msg(sum(getdata.(msgs)))
     for d in 1:5:100
         let var = randomvar()
             messageins = map(1:d) do _
@@ -55,20 +57,22 @@ end
             activate!(
                 var,
                 RandomVariableActivationOptions(
-                    AsapScheduler(), message_prod_fn, marginal_prod_fn
+                    AsapScheduler(),
+                    MessageProductContext(fold_strategy = message_prod_fold),
+                    MessageProductContext(fold_strategy = marginal_prod_fold),
                 ),
             )
 
             messages = map(msg, rand(d))
 
-            marginal_expected = marginal_prod_fn(messages)
+            marginal_expected = mgl(sum(getdata.(messages)))
             marginal_result = check_stream_updated_once(getmarginal(var)) do
                 foreach(zip(messageins, messages)) do (messagein, message)
                     next!(messagein, message)
                 end
             end
 
-            # We check the `getdata` here approximatelly because the `marginal_prod_fn` can rearrange 
+            # We check the `getdata` here approximatelly because the `marginal_prod_fn` can rearrange
             # the messages under the hood that introduces minor numerical differences
             @test getdata(marginal_result) ≈ getdata(marginal_expected)
         end
@@ -78,7 +82,9 @@ end
 @testitem "RandomVariable: messageout" begin
     import ReactiveMP:
         MessageObservable,
+        MessageProductContext,
         create_messagein!,
+        compute_product_of_messages,
         messagein,
         degree,
         activate!,
@@ -88,8 +94,8 @@ end
 
     include("../testutilities.jl")
 
-    message_prod_fn = (msgs) -> msg(sum(filter(!ismissing, getdata.(msgs))))
-    marginal_prod_fn = (msgs) -> error("Marginal should not be called here")
+    message_prod_fold = (variable, context, msgs) -> msg(sum(filter(!ismissing, getdata.(msgs))))
+    marginal_prod_fold = (variable, context, msgs) -> error("Marginal should not be called here")
 
     # We start from `2` because `1` is not a valid degree for a random variable
     for d in 2:5:100, k in 1:d
@@ -104,20 +110,22 @@ end
             activate!(
                 var,
                 RandomVariableActivationOptions(
-                    AsapScheduler(), message_prod_fn, marginal_prod_fn
+                    AsapScheduler(),
+                    MessageProductContext(fold_strategy = message_prod_fold),
+                    MessageProductContext(fold_strategy = marginal_prod_fold),
                 ),
             )
 
             messages = map(msg, rand(d))
 
             # the outbound message is the result of multiplication of `n - 1` messages excluding index `k`
-            kmessage_expected = message_prod_fn(collect(skipindex(messages, k)))
+            kmessage_expected = msg(sum(filter(!ismissing, getdata.(collect(skipindex(messages, k))))))
             kmessage_result = check_stream_updated_once(messageout(var, k)) do
                 foreach(zip(messageins, messages)) do (messagein, message)
                     next!(messagein, message)
                 end
             end
-            # We check the `getdata` here approximatelly because the `message_prod_fn` can rearrange 
+            # We check the `getdata` here approximatelly because the `message_prod_fn` can rearrange
             # the messages under the hood that introduces minor numerical differences
             @test getdata(kmessage_result) ≈ getdata(kmessage_expected)
         end
