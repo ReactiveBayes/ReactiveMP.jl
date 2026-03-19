@@ -108,6 +108,34 @@ end
 _getmarginal(randomvar::RandomVariable) = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, observable) =
     connect!(_getmarginal(randomvar), observable)
+
+function _compute_marginal_from_messages(
+    randomvar::RandomVariable,
+    options::RandomVariableActivationOptions,
+    messages,
+)
+    context = options.prod_context_for_marginal_computation
+    invoke_callback(
+        context.callbacks,
+        BeforeMarginalComputation(),
+        randomvar,
+        context,
+        messages,
+    )
+    result = as_marginal(
+        compute_product_of_messages(randomvar, context, messages)
+    )
+    invoke_callback(
+        context.callbacks,
+        AfterMarginalComputation(),
+        randomvar,
+        context,
+        messages,
+        result,
+    )
+    return result
+end
+
 _makemarginal(
     randomvar::RandomVariable, options::RandomVariableActivationOptions
 ) = begin
@@ -115,13 +143,8 @@ _makemarginal(
         AbstractMessage,
         Marginal,
         randomvar.input_messages,
-        (messages) -> as_marginal(
-            compute_product_of_messages(
-                randomvar,
-                options.prod_context_for_marginal_computation,
-                messages,
-            ),
-        ),
+        (messages) ->
+            _compute_marginal_from_messages(randomvar, options, messages),
         reset_vstatus,
     )
 end

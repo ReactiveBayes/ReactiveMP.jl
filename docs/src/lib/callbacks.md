@@ -22,4 +22,6 @@ ReactiveMP.BeforeProductOfMessages
 ReactiveMP.AfterProductOfMessages
 ReactiveMP.BeforeFormConstraintApplied
 ReactiveMP.AfterFormConstraintApplied
+ReactiveMP.BeforeMarginalComputation
+ReactiveMP.AfterMarginalComputation
 ```

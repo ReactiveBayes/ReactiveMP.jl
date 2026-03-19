@@ -270,3 +270,28 @@ The callback handler for this event should accept the following positional argum
 - `result`, the distribution after the constraint was applied
 """
 const AfterFormConstraintApplied = Val{:after_form_constraint_applied}
+
+"""
+    BeforeMarginalComputation # Val{:before_marginal_computation}
+
+Alias for `Val{:before_marginal_computation}`. This event fires right before computing the marginal
+for a [`ReactiveMP.RandomVariable`](@ref) from its incoming messages.
+The callback handler for this event should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.RandomVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `messages`, the collection of incoming messages used to compute the marginal
+"""
+const BeforeMarginalComputation = Val{:before_marginal_computation}
+
+"""
+    AfterMarginalComputation # Val{:after_marginal_computation}
+
+Alias for `Val{:after_marginal_computation}`. This event fires right after computing the marginal
+for a [`ReactiveMP.RandomVariable`](@ref) from its incoming messages.
+The callback handler for this event should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.RandomVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+- `messages`, the collection of incoming messages used to compute the marginal
+- `result`, the computed marginal
+"""
+const AfterMarginalComputation = Val{:after_marginal_computation}

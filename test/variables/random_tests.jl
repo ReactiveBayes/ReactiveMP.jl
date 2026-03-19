@@ -132,6 +132,133 @@ end
     end
 end
 
+@testitem "RandomVariable: before/after marginal computation callbacks" begin
+    import ReactiveMP:
+        MessageObservable,
+        MessageProductContext,
+        RandomVariableActivationOptions,
+        AbstractMessage,
+        create_messagein!,
+        activate!,
+        connect!,
+        getdata
+
+    import Rocket: Subject, next!
+
+    include("../testutilities.jl")
+
+    struct MarginalCallbackHandler
+        listen_to::Tuple
+        events
+    end
+
+    function ReactiveMP.invoke_callback(
+        handler::MarginalCallbackHandler, ::Val{E}, args...
+    ) where {E}
+        E ∈ handler.listen_to && push!(handler.events, (event = E, args = args))
+    end
+
+    @testset "Fires before and after marginal computation with 3 messages" begin
+        listen_to = (:before_marginal_computation, :after_marginal_computation)
+        handler = MarginalCallbackHandler(listen_to, [])
+        marginal_context = MessageProductContext(
+            fold_strategy = (variable, context, msgs) -> msg(sum(getdata.(msgs))),
+            callbacks = handler,
+        )
+
+        var = randomvar()
+
+        messageins = map(1:3) do _
+            s = Subject(AbstractMessage)
+            m, i = create_messagein!(var)
+            connect!(m, s)
+            return s
+        end
+
+        activate!(
+            var,
+            RandomVariableActivationOptions(
+                AsapScheduler(),
+                MessageProductContext(),
+                marginal_context,
+            ),
+        )
+
+        messages = [msg(1.0), msg(2.0), msg(3.0)]
+
+        marginal_result = check_stream_updated_once(getmarginal(var)) do
+            foreach(zip(messageins, messages)) do (messagein, message)
+                next!(messagein, message)
+            end
+        end
+
+        # sum(1.0 + 2.0 + 3.0) = 6.0
+        @test getdata(marginal_result) ≈ 6.0
+
+        @test length(handler.events) == 2
+
+        # Before: variable, context, messages
+        @test handler.events[1].event === :before_marginal_computation
+        @test handler.events[1].args[1] === var
+        @test handler.events[1].args[2] === marginal_context
+
+        # After: variable, context, messages, result
+        @test handler.events[2].event === :after_marginal_computation
+        @test handler.events[2].args[1] === var
+        @test handler.events[2].args[2] === marginal_context
+        @test length(handler.events[2].args[3]) == 3
+        @test getdata(handler.events[2].args[4]) ≈ 6.0
+    end
+
+    @testset "Fires before and after marginal computation with 2 messages" begin
+        listen_to = (:before_marginal_computation, :after_marginal_computation)
+        handler = MarginalCallbackHandler(listen_to, [])
+        marginal_context = MessageProductContext(
+            fold_strategy = (variable, context, msgs) -> msg(sum(getdata.(msgs))),
+            callbacks = handler,
+        )
+
+        var = randomvar()
+
+        messageins = map(1:2) do _
+            s = Subject(AbstractMessage)
+            m, i = create_messagein!(var)
+            connect!(m, s)
+            return s
+        end
+
+        activate!(
+            var,
+            RandomVariableActivationOptions(
+                AsapScheduler(),
+                MessageProductContext(),
+                marginal_context,
+            ),
+        )
+
+        messages = [msg(10.0), msg(20.0)]
+
+        marginal_result = check_stream_updated_once(getmarginal(var)) do
+            foreach(zip(messageins, messages)) do (messagein, message)
+                next!(messagein, message)
+            end
+        end
+
+        # sum(10.0 + 20.0) = 30.0
+        @test getdata(marginal_result) ≈ 30.0
+
+        @test length(handler.events) == 2
+
+        @test handler.events[1].event === :before_marginal_computation
+        @test handler.events[1].args[1] === var
+
+        @test handler.events[2].event === :after_marginal_computation
+        @test handler.events[2].args[1] === var
+        @test length(handler.events[2].args[3]) == 2
+        @test getdata(handler.events[2].args[4]) ≈ 30.0
+    end
+end
+
 @testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" begin
     import ReactiveMP: RandomVariableActivationOptions, activate!, messageout
 
