@@ -93,7 +93,7 @@ end
 
     hint_message = sprint(showerror, err)
     @test occursin(
-        "ReactiveMP.invoke_callback(::IncompleteHandler, ::Val{:event2}, args...) = ...",
+        r"ReactiveMP\.invoke_callback\(::.*IncompleteHandler, ::Val\{:event2\}, args\.\.\.\) = \.\.\.",
         hint_message,
     )
     @test occursin(
