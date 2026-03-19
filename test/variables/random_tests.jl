@@ -3,7 +3,7 @@
     import ReactiveMP: messageout, messagein
 
     # Should throw if not initialised properly
-    @testset let var = randomvar()
+    let var = randomvar()
         for i in 1:10
             @test_throws BoundsError messageout(var, i)
             @test_throws BoundsError messagein(var, i)
@@ -15,8 +15,8 @@ end
     import ReactiveMP: MessageObservable, create_messagein!, messagein, degree
 
     # Test for different degrees `d`
-    @testset for d in 1:5:100
-        @testset let var = randomvar()
+    for d in 1:5:100
+        let var = randomvar()
             for i in 1:d
                 messagein, index = create_messagein!(var)
                 @test messagein isa MessageObservable
@@ -35,8 +35,8 @@ end
 
     message_prod_fn = (msgs) -> error("Messages should not be called here")
     marginal_prod_fn = (msgs) -> mgl(sum(getdata.(msgs)))
-    @testset for d in 1:5:100
-        @testset let var = randomvar()
+    for d in 1:5:100
+        let var = randomvar()
             messageins = map(1:d) do _
                 s = Subject(AbstractMessage)
                 m, i = create_messagein!(var)
@@ -71,8 +71,8 @@ end
     marginal_prod_fn = (msgs) -> error("Marginal should not be called here")
 
     # We start from `2` because `1` is not a valid degree for a random variable
-    @testset for d in 2:5:100, k in 1:d
-        @testset let var = randomvar()
+    for d in 2:5:100, k in 1:d
+        let var = randomvar()
             messageins = map(1:d) do _
                 s = Subject(AbstractMessage)
                 m, i = create_messagein!(var)
@@ -101,7 +101,7 @@ end
 @testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" begin
     import ReactiveMP: RandomVariableActivationOptions, activate!, messageout
 
-    @testset let var = randomvar()
+    let var = randomvar()
         @test_throws "Cannot activate a random variable with zero or less than one inbound messages." activate!(var, RandomVariableActivationOptions())
     end
 end

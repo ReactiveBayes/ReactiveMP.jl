@@ -6,14 +6,14 @@
 
     import ReactiveMP: tag, factornode, getinterfaces
 
-    struct DummyNode end
+    struct DummyNodeForLoggerTests end
 
-    @node DummyNode Stochastic [out, x, y]
+    @node DummyNodeForLoggerTests Stochastic [out, x, y]
 
     # In real applications the stream should be a stream of messages
     # For testing purposes it does not really matter though
     stream = Subject(String)
-    node = factornode(DummyNode, [(:out, randomvar()), (:x, randomvar()), (:y, randomvar())], ((1, 2, 3),))
+    node = factornode(DummyNodeForLoggerTests, [(:out, randomvar()), (:x, randomvar()), (:y, randomvar())], ((1, 2, 3),))
 
     @testset "no prefix" begin
         io = IOBuffer()
@@ -26,7 +26,7 @@
         logged_str = String(take!(io))
 
         @test contains(logged_str, "Log") # default prefix
-        @test contains(logged_str, "DummyNode")
+        @test contains(logged_str, "DummyNodeForLoggerTests")
         @test contains(logged_str, "out")
         @test contains(logged_str, "hello")
 
@@ -44,7 +44,7 @@
         logged_str = String(take!(io))
 
         @test contains(logged_str, "custom_prefix")
-        @test contains(logged_str, "DummyNode")
+        @test contains(logged_str, "DummyNodeForLoggerTests")
         @test contains(logged_str, "out")
         @test contains(logged_str, "hello")
 

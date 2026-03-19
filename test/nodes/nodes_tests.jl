@@ -121,19 +121,19 @@ end
 # This is a limitation of the current implementation, which can be removed in the future
 @testitem "@node macro (in the current implementation) should not support interface names with underscores" begin
     @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(quote
-        struct DummyNode end
+        struct DummyNode1 end
 
-        @node DummyNode Stochastic [out, c_d]
+        @node DummyNode1 Stochastic [out, c_d]
     end)
     @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `d_b_a`" eval(quote
-        struct DummyNode end
+        struct DummyNode2 end
 
-        @node DummyNode Stochastic [out, c, d_b_a]
+        @node DummyNode2 Stochastic [out, c, d_b_a]
     end)
     @test_throws "Node interfaces names (and aliases) must not contain `_` symbol in them, found in `c_d`" eval(quote
-        struct DummyNode end
+        struct DummyNode3 end
 
-        @node DummyNode Stochastic [out, (c, aliases = [c_d])]
+        @node DummyNode3 Stochastic [out, (c, aliases = [c_d])]
     end)
 end
 
