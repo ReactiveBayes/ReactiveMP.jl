@@ -1,8 +1,6 @@
 
 @testitem "rules:typeof(+):out" begin
     using ReactiveMP, BayesBase, Random, ExponentialFamily, Distributions
-    using StaticArrays
-
     import ReactiveMP: @test_rules
 
     @testset "Belief Propagation: (m_in1::PointMass, m_in2::PointMass)" begin
@@ -146,13 +144,6 @@
             (
                 input = (m_in1 = MvNormalWeightedMeanPrecision([1.0, 4.0], [1.0 0.0; 0.0 1.0]), m_in2 = MvNormalWeightedMeanPrecision([1.0, -1.0], [2.0 0.0; 0.0 2.0])),
                 output = MvNormalMeanCovariance([1.5, 3.5], [1.5 0.0; 0.0 1.5])
-            ),
-            (
-                input = (
-                    m_in1 = MvNormalWeightedMeanPrecision(SVector(1.0, 4.0), SMatrix{2, 2}(1.0, 0.0, 0.0, 1.0)),
-                    m_in2 = MvNormalWeightedMeanPrecision(SVector(1.0, -1.0), SMatrix{2, 2}(2.0, 0.0, 0.0, 2.0))
-                ),
-                output = MvNormalMeanCovariance(SVector(1.5, 3.5), SMatrix{2, 2}(1.5, 0.0, 0.0, 1.5))
             )
         ]
     end

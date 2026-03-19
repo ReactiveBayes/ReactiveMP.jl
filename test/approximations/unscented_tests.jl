@@ -87,7 +87,6 @@
         @test all(approximate(Unscented(), (x) -> [x^2, x], (2.0,), (0.0,)) .≈ ([4.0, 2.0], [0.0 0.0; 0.0 0.0]))
         @test all(x -> all(isnan, x), approximate(Unscented(), (x) -> x + 1.0, (NaN,), (1.0,)))
         @test all(x -> all(isnan, x), approximate(Unscented(), (x) -> [x^2, x], (NaN,), (1.0,)))
-        @show approximate(Unscented(), (x) -> [x^2, x], (NaN,), (1.0,))
         @test all(x -> all(isnan, x), approximate(Unscented(), (x) -> x + 1.0, (1.0,), (NaN,)))
     end
 end

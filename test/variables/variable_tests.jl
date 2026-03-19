@@ -5,16 +5,16 @@
     import ReactiveMP: activate!
     import Rocket: getscheduler
 
-    struct CustomDeterministicNode end
+    struct CustomDeterministicNodeForVariableTests end
 
-    @node CustomDeterministicNode Deterministic [out, x]
+    @node CustomDeterministicNodeForVariableTests Deterministic [out, x]
 
     function test_variable_set_method(variable, dist::T, k) where {T}
         test_out_var = randomvar()
 
         # messages could be initialized only when the node is created
         for _ in 1:k
-            factornode(CustomDeterministicNode, [(:out, test_out_var), (:x, variable)], ((1, 2),))
+            factornode(CustomDeterministicNodeForVariableTests, [(:out, test_out_var), (:x, variable)], ((1, 2),))
         end
 
         activate!(test_out_var, RandomVariableActivationOptions())

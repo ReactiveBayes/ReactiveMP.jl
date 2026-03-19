@@ -4,16 +4,16 @@
 
     import ReactiveMP: NodeInterface, collect_latest_messages, getdata, getrecent, default_functional_dependencies
 
-    struct ArbitraryNode end
+    struct ArbitraryNodeForCollectLatestMessage end
 
-    @node ArbitraryNode Stochastic [a, b, c]
+    @node ArbitraryNodeForCollectLatestMessage Stochastic [a, b, c]
 
     a_v = ConstVariable(1)
     b_v = ConstVariable(2)
     c_v = ConstVariable(3)
 
-    node = factornode(ArbitraryNode, [(:a, a_v), (:b, b_v), (:c, c_v)], ((1, 2, 3),))
-    dependencies = default_functional_dependencies(ArbitraryNode)
+    node = factornode(ArbitraryNodeForCollectLatestMessage, [(:a, a_v), (:b, b_v), (:c, c_v)], ((1, 2, 3),))
+    dependencies = default_functional_dependencies(ArbitraryNodeForCollectLatestMessage)
 
     a, b, c = getinterfaces(node)
 
@@ -50,16 +50,16 @@ end
     import ReactiveMP:
         NodeInterface, FactorNodeLocalMarginal, getmarginal, collect_latest_marginals, getdata, getrecent, default_functional_dependencies, getlocalclusters, getmarginals
 
-    struct ArbitraryNode end
+    struct ArbitraryNodeForCollectLatestMarginals end
 
-    @node ArbitraryNode Stochastic [a, b, c]
+    @node ArbitraryNodeForCollectLatestMarginals Stochastic [a, b, c]
 
     a_v = ConstVariable(1)
     b_v = ConstVariable(2)
     c_v = ConstVariable(3)
 
-    node = factornode(ArbitraryNode, [(:a, a_v), (:b, b_v), (:c, c_v)], ((1,), (2,), (3,)))
-    dependencies = default_functional_dependencies(ArbitraryNode)
+    node = factornode(ArbitraryNodeForCollectLatestMarginals, [(:a, a_v), (:b, b_v), (:c, c_v)], ((1,), (2,), (3,)))
+    dependencies = default_functional_dependencies(ArbitraryNodeForCollectLatestMarginals)
 
     a, b, c = getmarginals(getlocalclusters(node))
 

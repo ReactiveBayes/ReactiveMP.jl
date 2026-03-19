@@ -61,7 +61,7 @@ end
 
         prj = ProjectedTo(ExponentialFamily.exponential_family_typetag(q_out), size(q_out)...)
 
-        q_out_projected = project_to(prj, (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x); initial_point = q_out)
+        q_out_projected = project_to(prj, (x) -> logpdf(msg, x) + logpdf(m_out_incoming, x); initialpoint = q_out)
         @test mean(q_out_projected) ≈ mean(q_out) rtol = 5e-1
         @test var(q_out_projected) ≈ var(q_out) rtol = 1.0
         @test mode(q_out_projected) ≈ mode(q_out) rtol = 5e-1
@@ -167,7 +167,6 @@ end
         @test isa(result_dist, LogNormal)
 
         # For the standard normal, E[exp(x)] = exp(1/2)
-        @show result_dist
         @test mean(result_dist) ≈ exp(1 / 2) rtol = 0.05
     end
 

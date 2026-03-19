@@ -136,7 +136,7 @@ function functional_dependencies(::RequireMarginalFunctionalDependencies, factor
     else
         error("Bad index in function_dependencies for MixtureNode")
     end
-    # println(marginal_dependencies)
+
     return message_dependencies, marginal_dependencies
 end
 

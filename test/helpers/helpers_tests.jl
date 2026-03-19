@@ -3,7 +3,6 @@
 
     import ReactiveMP: SkipIndexIterator, skipindex
     import ReactiveMP: CountingReal
-    import ReactiveMP: FunctionalIndex
 
     @testset "SkipIndexIterator" begin
         s = skipindex(1:3, 2)
