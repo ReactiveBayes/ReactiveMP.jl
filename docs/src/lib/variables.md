@@ -23,6 +23,7 @@ Data variables represent observed quantities. Their value is not fixed at creati
 ```@docs
 ReactiveMP.DataVariable
 ReactiveMP.datavar
+ReactiveMP.update!
 ```
 
 ## [Constant variables](@id lib-variables-constant)
