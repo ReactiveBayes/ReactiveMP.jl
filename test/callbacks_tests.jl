@@ -22,7 +22,9 @@ end
         events
     end
 
-    function ReactiveMP.invoke_callback(handler::MyCallbackHandler, ::Val{E}, args...) where {E}
+    function ReactiveMP.invoke_callback(
+        handler::MyCallbackHandler, ::Val{E}, args...
+    ) where {E}
         push!(handler.events, (event = E, args = args))
         return nothing
     end
@@ -38,19 +40,33 @@ end
     @test handler.events[2].event === :event2
     @test handler.events[2].args === (2, 3)
 
-    @test_throws MethodError invoke_callback(handler, "unsupported type of event", 1, 2)
+    @test_throws MethodError invoke_callback(
+        handler, "unsupported type of event", 1, 2
+    )
 end
 
 @testitem "NamedTuple should be a supported event handler" begin
     import ReactiveMP: invoke_callback
 
-    callback_handler = (sum_event = (args...) -> sum(args), prod_event = (args...) -> prod(args))
+    callback_handler = (
+        sum_event = (args...) -> sum(args), prod_event = (args...) -> prod(args)
+    )
 
-    @test @inferred(invoke_callback(callback_handler, Val{:sum_event}(), 1, 2)) == 3
-    @test @inferred(invoke_callback(callback_handler, Val{:sum_event}(), 1, 2, 3)) == 6
-    @test @inferred(invoke_callback(callback_handler, Val{:prod_event}(), 1, 2)) == 2
-    @test @inferred(invoke_callback(callback_handler, Val{:prod_event}(), 1, 2, 5)) == 10
-    @test @inferred(invoke_callback(callback_handler, Val{:other_event}(), 1, 2, 3)) === nothing
+    @test @inferred(
+        invoke_callback(callback_handler, Val{:sum_event}(), 1, 2)
+    ) == 3
+    @test @inferred(
+        invoke_callback(callback_handler, Val{:sum_event}(), 1, 2, 3)
+    ) == 6
+    @test @inferred(
+        invoke_callback(callback_handler, Val{:prod_event}(), 1, 2)
+    ) == 2
+    @test @inferred(
+        invoke_callback(callback_handler, Val{:prod_event}(), 1, 2, 5)
+    ) == 10
+    @test @inferred(
+        invoke_callback(callback_handler, Val{:other_event}(), 1, 2, 3)
+    ) === nothing
 end
 
 @testitem "It should be possible to merge callback handlers" begin
@@ -58,11 +74,17 @@ end
 
     # listens to event 1 and event 2
     handler1_events = []
-    callback_handler1 = (event1 = (args...) -> push!(handler1_events, :event1), event2 = (args...) -> push!(handler1_events, :event2))
+    callback_handler1 = (
+        event1 = (args...) -> push!(handler1_events, :event1),
+        event2 = (args...) -> push!(handler1_events, :event2),
+    )
 
     # listens to event3 and event 2
     handler2_events = []
-    callback_handler2 = (event3 = (args...) -> push!(handler2_events, :event3), event2 = (args...) -> push!(handler2_events, :event2))
+    callback_handler2 = (
+        event3 = (args...) -> push!(handler2_events, :event3),
+        event2 = (args...) -> push!(handler2_events, :event2),
+    )
 
     # only listens to event 2
     struct MyCustomHandler
@@ -70,11 +92,15 @@ end
     end
 
     ReactiveMP.invoke_callback(::MyCustomHandler, event, args...) = nothing
-    ReactiveMP.invoke_callback(handler::MyCustomHandler, event::Val{:event2}, args...) = push!(handler.events, :event2)
+    ReactiveMP.invoke_callback(handler::MyCustomHandler, event::Val{:event2}, args...) = push!(
+        handler.events, :event2
+    )
 
     custom_handler = MyCustomHandler([])
 
-    merged_handler = merge_callbacks(callback_handler1, callback_handler2, custom_handler)
+    merged_handler = merge_callbacks(
+        callback_handler1, callback_handler2, custom_handler
+    )
 
     for i in 1:5
         invoke_callback(merged_handler, Val(:event1), 1, 1)
@@ -98,15 +124,22 @@ end
 
     merged_handler1 = merge_callbacks(callback_handler1, callback_handler2)
 
-    @test @inferred(invoke_callback(merged_handler1, Val(:event1), 2, 3)) === (5, 6)
+    @test @inferred(invoke_callback(merged_handler1, Val(:event1), 2, 3)) ===
+        (5, 6)
 
-    merged_handler2 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = +)
+    merged_handler2 = merge_callbacks(
+        callback_handler1, callback_handler2; reduce_fn = +
+    )
 
     @test @inferred(invoke_callback(merged_handler2, Val(:event1), 4, 5)) === 29
 
-    merged_handler3 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = *)
+    merged_handler3 = merge_callbacks(
+        callback_handler1, callback_handler2; reduce_fn = *
+    )
 
-    @test @inferred(invoke_callback(merged_handler3, Val(:event1), 1.0, 2.0)) === 6.0
+    @test @inferred(
+        invoke_callback(merged_handler3, Val(:event1), 1.0, 2.0)
+    ) === 6.0
 end
 
 @testitem "It should be possible to use different reduce functions for different events" begin
@@ -117,26 +150,53 @@ end
 
     merged_handler1 = merge_callbacks(callback_handler1, callback_handler2)
 
-    @test @inferred(invoke_callback(merged_handler1, Val(:event1), 2, 3)) === (5, 6)
-    @test @inferred(invoke_callback(merged_handler1, Val(:event2), 3, 4)) === (-1, 3/4)
+    @test @inferred(invoke_callback(merged_handler1, Val(:event1), 2, 3)) ===
+        (5, 6)
+    @test @inferred(invoke_callback(merged_handler1, Val(:event2), 3, 4)) ===
+        (-1, 3/4)
 
-    merged_handler2 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (event1 = +, event2 = *))
+    merged_handler2 = merge_callbacks(
+        callback_handler1,
+        callback_handler2;
+        reduce_fn = (event1 = +, event2 = *),
+    )
 
     @test @inferred(invoke_callback(merged_handler2, Val(:event1), 4, 5)) === 29
-    @test @inferred(invoke_callback(merged_handler2, Val(:event2), 4, 5)) === -4/5
+    @test @inferred(invoke_callback(merged_handler2, Val(:event2), 4, 5)) ===
+        -4/5
 
-    merged_handler3 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (event1 = *, event2 = +))
+    merged_handler3 = merge_callbacks(
+        callback_handler1,
+        callback_handler2;
+        reduce_fn = (event1 = *, event2 = +),
+    )
 
-    @test @inferred(invoke_callback(merged_handler3, Val(:event1), 1.0, 2.0)) === 6.0
-    @test @inferred(invoke_callback(merged_handler3, Val(:event2), 1.0, 2.0)) === -1.0+1.0/2.0
+    @test @inferred(
+        invoke_callback(merged_handler3, Val(:event1), 1.0, 2.0)
+    ) === 6.0
+    @test @inferred(
+        invoke_callback(merged_handler3, Val(:event2), 1.0, 2.0)
+    ) === -1.0+1.0/2.0
 
-    merged_handler4 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (event1 = -,))
+    merged_handler4 = merge_callbacks(
+        callback_handler1, callback_handler2; reduce_fn = (event1 = -,)
+    )
 
-    @test @inferred(invoke_callback(merged_handler4, Val(:event1), 1.0, 2.0)) === 1.0
-    @test @inferred(invoke_callback(merged_handler4, Val(:event2), 1.0, 2.0)) === (-1.0, 1.0/2.0)
+    @test @inferred(
+        invoke_callback(merged_handler4, Val(:event1), 1.0, 2.0)
+    ) === 1.0
+    @test @inferred(
+        invoke_callback(merged_handler4, Val(:event2), 1.0, 2.0)
+    ) === (-1.0, 1.0/2.0)
 
-    merged_handler5 = merge_callbacks(callback_handler1, callback_handler2; reduce_fn = (event2 = /,))
+    merged_handler5 = merge_callbacks(
+        callback_handler1, callback_handler2; reduce_fn = (event2 = /,)
+    )
 
-    @test @inferred(invoke_callback(merged_handler5, Val(:event1), 1.0, 2.0)) === (3.0, 2.0)
-    @test @inferred(invoke_callback(merged_handler5, Val(:event2), 1.0, 2.0)) === -1.0/(1.0/2.0)
+    @test @inferred(
+        invoke_callback(merged_handler5, Val(:event1), 1.0, 2.0)
+    ) === (3.0, 2.0)
+    @test @inferred(
+        invoke_callback(merged_handler5, Val(:event2), 1.0, 2.0)
+    ) === -1.0/(1.0/2.0)
 end

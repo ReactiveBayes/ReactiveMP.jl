@@ -12,7 +12,7 @@ function randomvar()
     return RandomVariable(
         Vector{MessageObservable{AbstractMessage}}(),
         Vector{MessageObservable{Message}}(),
-        MarginalObservable()
+        MarginalObservable(),
     )
 end
 
@@ -68,7 +68,7 @@ function activate!(
             schedule_on(options.scheduler),
             (messages) -> compute_product_of_messages(
                 options.prod_context_for_message_computation, messages
-            )
+            ),
         )
         initialize!(chain, outputmsgs)
     elseif length(randomvar.input_messages) == 1
@@ -78,8 +78,8 @@ function activate!(
     else
         throw(
             ArgumentError(
-                "Cannot activate a random variable with zero or less than one inbound messages."
-            )
+                "Cannot activate a random variable with zero or less than one inbound messages.",
+            ),
         )
     end
 
@@ -89,8 +89,9 @@ function activate!(
 end
 
 _getmarginal(randomvar::RandomVariable) = randomvar.marginal
-_setmarginal!(randomvar::RandomVariable, observable) =
-    connect!(_getmarginal(randomvar), observable)
+_setmarginal!(randomvar::RandomVariable, observable) = connect!(
+    _getmarginal(randomvar), observable
+)
 _makemarginal(
     randomvar::RandomVariable, options::RandomVariableActivationOptions
 ) = begin
@@ -101,9 +102,9 @@ _makemarginal(
         (messages) -> as_marginal(
             compute_product_of_messages(
                 options.prod_context_for_marginal_computation, messages
-            )
+            ),
         ),
-        reset_vstatus
+        reset_vstatus,
     )
 end
 

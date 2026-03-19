@@ -639,27 +639,45 @@ end
     in2_v = ConstVariable(2.0)
 
     @testset "use_a metadata results in CustomDependencyA" begin
-        options_a = FactorNodeActivationOptions(:use_a, nothing, nothing, nothing, AsapScheduler(), nothing, nothing)
+        options_a = FactorNodeActivationOptions(
+            :use_a, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
+        )
         deps = collect_functional_dependencies(CustomMetaNode, options_a)
         @test deps isa CustomDependencyA
     end
 
     @testset "use_b metadata results in CustomDependencyB" begin
-        options_b = FactorNodeActivationOptions(:use_b, nothing, nothing, nothing, AsapScheduler(), nothing, nothing)
+        options_b = FactorNodeActivationOptions(
+            :use_b, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
+        )
         deps = collect_functional_dependencies(CustomMetaNode, options_b)
         @test deps isa CustomDependencyB
     end
 
     @testset "no metadata falls back to default dependencies" begin
-        options_default = FactorNodeActivationOptions(nothing, nothing, nothing, nothing, AsapScheduler(), nothing, nothing)
+        options_default = FactorNodeActivationOptions(
+            nothing,
+            nothing,
+            nothing,
+            nothing,
+            AsapScheduler(),
+            nothing,
+            nothing,
+        )
         deps = collect_functional_dependencies(CustomMetaNode, options_default)
         @test deps isa DefaultFunctionalDependencies
     end
 
     @testset "Dependencies change based on meta" begin
         # Create node with meta :use_a
-        node_a = factornode(CustomMetaNode, [(:out, out_v), (:in1, in1_v), (:in2, in2_v)], ((1,),))
-        options_a = FactorNodeActivationOptions(:use_a, nothing, nothing, nothing, AsapScheduler(), nothing, nothing)
+        node_a = factornode(
+            CustomMetaNode,
+            [(:out, out_v), (:in1, in1_v), (:in2, in2_v)],
+            ((1,),),
+        )
+        options_a = FactorNodeActivationOptions(
+            :use_a, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
+        )
         deps_a = collect_functional_dependencies(CustomMetaNode, options_a)
         activate!(node_a, options_a)
 
@@ -671,8 +689,14 @@ end
         @test name(first(msg_deps_a)) === :in1
 
         # Test that functional dependencies are different with meta :use_b
-        node_b = factornode(CustomMetaNode, [(:out, out_v), (:in1, in1_v), (:in2, in2_v)], ((1,),))
-        options_b = FactorNodeActivationOptions(:use_b, nothing, nothing, nothing, AsapScheduler(), nothing, nothing)
+        node_b = factornode(
+            CustomMetaNode,
+            [(:out, out_v), (:in1, in1_v), (:in2, in2_v)],
+            ((1,),),
+        )
+        options_b = FactorNodeActivationOptions(
+            :use_b, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
+        )
         deps_b = collect_functional_dependencies(CustomMetaNode, options_b)
         activate!(node_b, options_b)
         out_interface_b = getinterface(node_b, 1)

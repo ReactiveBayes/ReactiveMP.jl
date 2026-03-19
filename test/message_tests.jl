@@ -5,7 +5,11 @@
     import Base: methods
     import Base.Iterators: repeated, product
     import BayesBase: xtlog, mirrorlog
-    import ReactiveMP: getaddons, compute_product_of_two_messages, MessageProductContext, as_message
+    import ReactiveMP:
+        getaddons,
+        compute_product_of_two_messages,
+        MessageProductContext,
+        as_message
     import SpecialFunctions: loggamma
 
     @testset "Default methods" begin
@@ -41,7 +45,9 @@
     end
 
     @testset "compute product of two messages" begin
-        × = (x, y) -> compute_product_of_two_messages(MessageProductContext(), x, y)
+        × =
+            (x, y) ->
+                compute_product_of_two_messages(MessageProductContext(), x, y)
 
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
@@ -297,7 +303,18 @@ end
     meta = "meta"
     addons = ()
 
-    mapping_no_rule_fallback = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, meta, addons, SomeArbitraryNode(), nothing, nothing)
+    mapping_no_rule_fallback = MessageMapping(
+        SomeArbitraryNode,
+        Val(:out),
+        Marginalisation(),
+        Val((:in,)),
+        nothing,
+        meta,
+        addons,
+        SomeArbitraryNode(),
+        nothing,
+        nothing,
+    )
 
     messages  = (Message(NonexistingDistribution(), false, false, nothing),)
     marginals = nothing
@@ -308,7 +325,18 @@ end
 
     rulefallback = (args...) -> (args, nothing)
 
-    mapping_with_fallback = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, meta, addons, SomeArbitraryNode(), rulefallback, nothing)
+    mapping_with_fallback = MessageMapping(
+        SomeArbitraryNode,
+        Val(:out),
+        Marginalisation(),
+        Val((:in,)),
+        nothing,
+        meta,
+        addons,
+        SomeArbitraryNode(),
+        rulefallback,
+        nothing,
+    )
 
     @test getdata(mapping_with_fallback(messages, marginals)) == (
         SomeArbitraryNode,
@@ -336,11 +364,24 @@ end
     events = []
 
     callbacks = (
-        before_message_rule_call = (args...) -> push!(events, (event = :before_message_rule_call, args = args)),
-        after_message_rule_call = (args...) -> push!(events, (event = :after_message_rule_call, args = args))
+        before_message_rule_call = (args...) ->
+            push!(events, (event = :before_message_rule_call, args = args)),
+        after_message_rule_call = (args...) ->
+            push!(events, (event = :after_message_rule_call, args = args)),
     )
 
-    mapping = MessageMapping(SomeArbitraryNode, Val(:out), Marginalisation(), Val((:in,)), nothing, nothing, (), SomeArbitraryNode(), nothing, callbacks)
+    mapping = MessageMapping(
+        SomeArbitraryNode,
+        Val(:out),
+        Marginalisation(),
+        Val((:in,)),
+        nothing,
+        nothing,
+        (),
+        SomeArbitraryNode(),
+        nothing,
+        callbacks,
+    )
 
     messages = (Message(1, false, false, nothing),)
     marginals = nothing
@@ -370,15 +411,19 @@ end
 
     function prod(::GenericProd, left::Normal, right::Normal)
         result_var = 1 / (1 / left.var + 1 / right.var)
-        result_mean = result_var * (left.mean / left.var + right.mean / right.var)
+        result_mean =
+            result_var * (left.mean / left.var + right.mean / right.var)
         return Normal(result_mean, result_var)
     end
 
     export Normal
 end
 
-@testitem "MessageProductContext should compute product of two messages" setup = [MessageProductContextUtils] begin
-    import ReactiveMP: Message, MessageProductContext, compute_product_of_two_messages, getdata
+@testitem "MessageProductContext should compute product of two messages" setup = [
+    MessageProductContextUtils
+] begin
+    import ReactiveMP:
+        Message, MessageProductContext, compute_product_of_two_messages, getdata
 
     context = MessageProductContext()
 
@@ -391,35 +436,55 @@ end
     @test getdata(result) === Normal(0, 1 / 2)
 end
 
-@testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" setup = [MessageProductContextUtils] begin
-    import ReactiveMP: Message, MessageProductContext, compute_product_of_two_messages, is_clamped, is_initial
+@testitem "compute_message_product propagates the `is_clamped` and `is_initial` correctly" setup = [
+    MessageProductContextUtils
+] begin
+    import ReactiveMP:
+        Message,
+        MessageProductContext,
+        compute_product_of_two_messages,
+        is_clamped,
+        is_initial
 
     context = MessageProductContext()
 
-    for left_is_clamped in (true, false), right_is_clamped in (true, false), left_is_initial in (true, false), right_is_initial in (true, false)
+    for left_is_clamped in (true, false),
+        right_is_clamped in (true, false), left_is_initial in (true, false),
+        right_is_initial in (true, false)
+
         msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial, nothing)
-        msg2 = Message(Normal(0, 1), right_is_clamped, right_is_initial, nothing)
+        msg2 = Message(
+            Normal(0, 1), right_is_clamped, right_is_initial, nothing
+        )
 
         result = @inferred(compute_product_of_two_messages(context, msg1, msg2))
 
         @test result isa Message
 
         expected_result_is_clamped = left_is_clamped && right_is_clamped
-        expected_result_is_initial = !expected_result_is_clamped && (left_is_clamped || left_is_initial) && (right_is_clamped || right_is_initial)
+        expected_result_is_initial =
+            !expected_result_is_clamped &&
+            (left_is_clamped || left_is_initial) &&
+            (right_is_clamped || right_is_initial)
 
         @test is_clamped(result) === expected_result_is_clamped
         @test is_initial(result) === expected_result_is_initial
     end
 end
 
-@testitem "compute_message_product should support different folding strategies" setup = [MessageProductContextUtils] begin
-    import ReactiveMP: MessageProductContext, Message, compute_product_of_messages, getdata
+@testitem "compute_message_product should support different folding strategies" setup = [
+    MessageProductContextUtils
+] begin
+    import ReactiveMP:
+        MessageProductContext, Message, compute_product_of_messages, getdata
 
     struct SaveOrderOfComputationCallbacks
         events
     end
 
-    function ReactiveMP.invoke_callback(handler::SaveOrderOfComputationCallbacks, ::Val{E}, args...) where {E}
+    function ReactiveMP.invoke_callback(
+        handler::SaveOrderOfComputationCallbacks, ::Val{E}, args...
+    ) where {E}
         push!(handler.events, (event = E, args = args))
     end
 
@@ -435,7 +500,7 @@ end
         handler = SaveOrderOfComputationCallbacks([])
         context = MessageProductContext(
             folding_strategy = MessagesProductFromLeftToRight(),
-            callbacks = handler
+            callbacks = handler,
         )
 
         result = @inferred(compute_product_of_messages(context, messages))

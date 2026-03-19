@@ -35,7 +35,9 @@ julia> ReactiveMP.invoke_callback(callbacks , Val{:other_event}(), 1, 2, 3)
 
 If the `NamedTuple` does not have a field corresponding to the event name, the event will be ignored.
 """
-function invoke_callback(callbacks::NamedTuple{K}, ::Val{E}, args...) where {K, E}
+function invoke_callback(
+    callbacks::NamedTuple{K}, ::Val{E}, args...
+) where {K, E}
     if E in K
         return callbacks[E](args...)
     end
@@ -133,9 +135,13 @@ function invoke_callback(merged::MergedCallbacks, event, args...)
 end
 
 merged_callback_reduce_result(::Nothing, _, result) = result
-merged_callback_reduce_result(reduce_fn::F, _, result) where {F} = reduce(reduce_fn, result)
+merged_callback_reduce_result(reduce_fn::F, _, result) where {F} = reduce(
+    reduce_fn, result
+)
 # If `reduce_fn` is a NamedTuple, then we choose a specific function for a specific event from this tuple
-merged_callback_reduce_result(reduce_fn::NamedTuple{K}, event::Val{E}, result) where {K, E} = merged_callback_reduce_result(get(reduce_fn, E, nothing), event, result)
+merged_callback_reduce_result(reduce_fn::NamedTuple{K}, event::Val{E}, result) where {K, E} = merged_callback_reduce_result(
+    get(reduce_fn, E, nothing), event, result
+)
 
 # All defined events go here, so its easier to document them all in one place
 

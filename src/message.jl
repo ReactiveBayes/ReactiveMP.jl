@@ -216,7 +216,7 @@ function compute_product_of_messages(context::MessageProductContext, messages)
             constrain_form(context.form_constraint, getdata(result)),
             is_clamped(result),
             is_initial(result),
-            getaddons(result)
+            getaddons(result),
         )
     end
 
@@ -235,7 +235,7 @@ function compute_product_of_messages(
 )
     return foldl(
         (left, right) -> compute_product_of_two_messages(context, left, right),
-        messages
+        messages,
     )
 end
 
@@ -291,8 +291,9 @@ mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     cache           :: Union{Nothing, Message}
 end
 
-DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
-    DeferredMessage(messages, marginals, mappingFn, nothing)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(
+    messages, marginals, mappingFn, nothing
+)
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
@@ -321,7 +322,7 @@ function as_message(message::DeferredMessage, cache::Nothing)::Message
         message,
         cache,
         getrecent(message.messages),
-        getrecent(message.marginals)
+        getrecent(message.marginals),
     )
 end
 
@@ -342,14 +343,17 @@ struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     stream  :: LazyObservable{M}
 end
 
-MessageObservable(::Type{M} = AbstractMessage) where {M} =
-    MessageObservable{M}(RecentSubject(M), lazy(M))
+MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(
+    RecentSubject(M), lazy(M)
+)
 
-Rocket.getrecent(observable::MessageObservable) =
-    Rocket.getrecent(observable.subject)
+Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(
+    observable.subject
+)
 
-@inline Rocket.on_subscribe!(observable::MessageObservable, actor) =
-    subscribe!(observable.stream, actor)
+@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(
+    observable.stream, actor
+)
 
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)
@@ -425,7 +429,7 @@ message_mapping_addons(
     messages,
     marginals,
     result,
-    addons
+    addons,
 ) = enabled_addons
 message_mapping_addons(
     mapping::MessageMapping,
@@ -433,7 +437,7 @@ message_mapping_addons(
     messages,
     marginals,
     result,
-    addons
+    addons,
 ) = enabled_addons
 
 # The main logic here is that some addons may add extra computation AFTER the rule has been computed
@@ -444,7 +448,7 @@ function message_mapping_addons(
     messages,
     marginals,
     result,
-    addons
+    addons,
 )
     return map(addons) do addon
         return message_mapping_addon(
@@ -467,7 +471,7 @@ function MessageMapping(
     addons::X,
     factornode::R,
     rulefallback::K,
-    callbacks::E
+    callbacks::E,
 ) where {F, T, C, N, M, A, X, R, K, E}
     return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
         vtag,
@@ -478,7 +482,7 @@ function MessageMapping(
         addons,
         factornode,
         rulefallback,
-        callbacks
+        callbacks,
     )
 end
 
@@ -492,7 +496,7 @@ function MessageMapping(
     addons::X,
     factornode::R,
     rulefallback::K,
-    callbacks::E
+    callbacks::E,
 ) where {F <: Function, T, C, N, M, A, X, R, K, E}
     return MessageMapping{F, T, C, N, M, A, X, R, K, E}(
         vtag,
@@ -503,7 +507,7 @@ function MessageMapping(
         addons,
         factornode,
         rulefallback,
-        callbacks
+        callbacks,
     )
 end
 
@@ -524,7 +528,7 @@ function (mapping::MessageMapping)(messages, marginals)
         BeforeMessageRuleCallback(),
         mapping,
         messages,
-        marginals
+        marginals,
     )
     result, addons =
         if !isnothing(messages) &&
@@ -544,7 +548,7 @@ function (mapping::MessageMapping)(messages, marginals)
                 marginals,
                 mapping.meta,
                 mapping.addons,
-                mapping.factornode
+                mapping.factornode,
             )
             ruleoutput = rule(ruleargs...)
             # if `@rule` is not defined, the default behaviour is to return 
@@ -571,7 +575,7 @@ function (mapping::MessageMapping)(messages, marginals)
         messages,
         marginals,
         result,
-        addons
+        addons,
     )
 
     return Message(result, is_message_clamped, is_message_initial, addons)

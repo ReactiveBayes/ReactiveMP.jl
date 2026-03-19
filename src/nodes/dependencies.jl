@@ -19,9 +19,9 @@ function __collect_latest_updates(f::F, collection::Tuple) where {F}
         (nothing, of(nothing))
     else
         (
-        Val{map(name, collection)}(),
-        combineLatestUpdates(map(f, collection), PushNew()),
-    )
+            Val{map(name, collection)}(),
+            combineLatestUpdates(map(f, collection), PushNew()),
+        )
     end
 end
 
@@ -54,8 +54,21 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                 vmessageout = combineLatest((messages, marginals), PushNew())
 
                 mapping =
-                    let messagemap = MessageMapping(fform, vtag, vconstraint, messagestag, marginalstag, meta, addons, node_if_required(fform, factornode), rulefallback, callbacks)
-                        (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
+                    let messagemap = MessageMapping(
+                            fform,
+                            vtag,
+                            vconstraint,
+                            messagestag,
+                            marginalstag,
+                            meta,
+                            addons,
+                            node_if_required(fform, factornode),
+                            rulefallback,
+                            callbacks,
+                        )
+                        (dependencies) -> DeferredMessage(
+                            dependencies[1], dependencies[2], messagemap
+                        )
                     end
 
                 vmessageout = vmessageout |> map(AbstractMessage, mapping)
