@@ -150,8 +150,8 @@ merged_callback_reduce_result(reduce_fn::NamedTuple{K}, event::Val{E}, result) w
 
 Alias for `Val{:before_message_rule_call}`. This event is being used to call a callback right
 before computing the message and calling the corresponding rule. The callback handler for this event
-should accept three arguments in the following order:
-- `mapping` of type [`ReactiveMP.MessageMapping`](@ref)
+should accept the following positional arguments:
+- `mapping` of type [`ReactiveMP.MessageMapping`](@ref), contains information about the node type, etc
 - `messages`, typically of type `Tuple` if present, `nothing` otherwise
 - `marginals`, typically of type `Tuple` if present, `nothing` otherwise
 
@@ -172,8 +172,8 @@ const BeforeMessageRuleCallback = Val{:before_message_rule_call}
 
 Alias for `Val{:after_message_rule_call}`. This event is being used to call a callback right
 after computing the message and calling the corresponding rule. The callback handler for this event 
-should accept three arguments in the following order:
-- `mapping` of type [`ReactiveMP.MessageMapping`](@ref)
+should accept the following positional arguments:
+- `mapping` of type [`ReactiveMP.MessageMapping`](@ref), contains information about the node type, etc
 - `messages`, typically of type `Tuple` if present, `nothing` otherwise
 - `marginals`, typically of type `Tuple` if present, `nothing` otherwise
 - `result`, the result of the rule invocation (of `rulefallback`), can be any type
@@ -188,3 +188,15 @@ julia> ReactiveMP.invoke_callback(::MyCallbackHandler, ::AfterMessageRuleCallbac
 ```
 """
 const AfterMessageRuleCallback = Val{:after_message_rule_call}
+
+"""
+    BeforeProductOfTwoMessages # Val{:before_product_of_two_messages}
+
+Alias for `Val{:before_product_of_two_messages}`. This event is being used to call a callback right 
+before computing the product of two messages. The callback handler for this event 
+should accept the following positional arguments:
+- `variable` of type [`ReactiveMP.AbstractVariable`](@ref)
+- `context` of type [`ReactiveMP.MessageProductContext`](@ref)
+"""
+const BeforeProductOfTwoMessages = Val{:before_product_of_two_messages}
+

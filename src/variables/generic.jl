@@ -4,8 +4,6 @@ export setmarginal!, setmarginals!, setmessage!, setmessages!
 
 using Rocket
 
-abstract type AbstractVariable end
-
 ## Base interface extensions
 
 Base.broadcastable(v::AbstractVariable) = Ref(v)

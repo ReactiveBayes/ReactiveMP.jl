@@ -45,9 +45,12 @@
     end
 
     @testset "compute product of two messages" begin
+        _testvar = ReactiveMP.randomvar()
         × =
             (x, y) ->
-                compute_product_of_two_messages(MessageProductContext(), x, y)
+                compute_product_of_two_messages(
+                    _testvar, MessageProductContext(), x, y
+                )
 
         dist1 = NormalMeanVariance(randn(), rand())
         dist2 = NormalMeanVariance(randn(), rand())
@@ -402,6 +405,7 @@ end
 end
 
 @testmodule MessageProductContextUtils begin
+    import ReactiveMP: AbstractVariable
     import ReactiveMP.BayesBase: prod, GenericProd
 
     struct Normal
@@ -416,7 +420,11 @@ end
         return Normal(result_mean, result_var)
     end
 
-    export Normal
+    struct AbstractVariableForMessageProductContextTests <: AbstractVariable end
+
+    testvar = AbstractVariableForMessageProductContextTests()
+
+    export Normal, testvar
 end
 
 @testitem "MessageProductContext should compute product of two messages" setup = [
@@ -430,7 +438,7 @@ end
     msg1 = Message(Normal(0, 1), false, false, nothing)
     msg2 = Message(Normal(0, 1), false, false, nothing)
 
-    result = @inferred(compute_product_of_two_messages(context, msg1, msg2))
+    result = @inferred(compute_product_of_two_messages(testvar, context, msg1, msg2))
 
     @test result isa Message
     @test getdata(result) === Normal(0, 1 / 2)
@@ -457,7 +465,7 @@ end
             Normal(0, 1), right_is_clamped, right_is_initial, nothing
         )
 
-        result = @inferred(compute_product_of_two_messages(context, msg1, msg2))
+        result = @inferred(compute_product_of_two_messages(testvar, context, msg1, msg2))
 
         @test result isa Message
 
@@ -499,15 +507,15 @@ end
 
         handler = SaveOrderOfComputationCallbacks([])
         context = MessageProductContext(
-            folding_strategy = MessagesProductFromLeftToRight(),
+            fold_strategy = MessagesProductFromLeftToRight(),
             callbacks = handler,
         )
 
-        result = @inferred(compute_product_of_messages(context, messages))
+        result = @inferred(compute_product_of_messages(testvar, context, messages))
 
         @test result isa Message
         @test getdata(result) === Normal(0, 1 / (1 + 1 / 2 + 1 / 3))
 
-        @test events[1].event === :on_product_of_two_messages
+        @test handler.events[1].event === :on_product_of_two_messages
     end
 end

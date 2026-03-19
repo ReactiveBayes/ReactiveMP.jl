@@ -2,17 +2,27 @@ export randomvar, RandomVariable, RandomVariableActivationOptions
 
 ## Random variable implementation
 
+"""
+    RandomVariable <: AbstractVariable
+
+Represents a latent (unobserved) variable in the factor graph. Random variables collect incoming and outgoing messages
+from connected factor nodes and maintain a marginal belief. Use [`randomvar`](@ref) to create an instance.
+
+See also: [`ReactiveMP.ConstVariable`](@ref), [`ReactiveMP.DataVariable`](@ref)
+"""
 mutable struct RandomVariable <: AbstractVariable
-    input_messages::Vector{MessageObservable{AbstractMessage}}
-    output_messages::Vector{MessageObservable{Message}}
-    marginal::MarginalObservable
+    input_messages  :: Vector{MessageObservable{AbstractMessage}}
+    output_messages :: Vector{MessageObservable{Message}}
+    marginal        :: MarginalObservable
+    label           :: Any
 end
 
-function randomvar()
+function randomvar(; label = nothing)
     return RandomVariable(
         Vector{MessageObservable{AbstractMessage}}(),
         Vector{MessageObservable{Message}}(),
         MarginalObservable(),
+        label,
     )
 end
 
@@ -67,7 +77,9 @@ function activate!(
             randomvar.input_messages,
             schedule_on(options.scheduler),
             (messages) -> compute_product_of_messages(
-                options.prod_context_for_message_computation, messages
+                randomvar,
+                options.prod_context_for_message_computation,
+                messages,
             ),
         )
         initialize!(chain, outputmsgs)
@@ -89,9 +101,8 @@ function activate!(
 end
 
 _getmarginal(randomvar::RandomVariable) = randomvar.marginal
-_setmarginal!(randomvar::RandomVariable, observable) = connect!(
-    _getmarginal(randomvar), observable
-)
+_setmarginal!(randomvar::RandomVariable, observable) =
+    connect!(_getmarginal(randomvar), observable)
 _makemarginal(
     randomvar::RandomVariable, options::RandomVariableActivationOptions
 ) = begin
@@ -101,7 +112,9 @@ _makemarginal(
         randomvar.input_messages,
         (messages) -> as_marginal(
             compute_product_of_messages(
-                options.prod_context_for_marginal_computation, messages
+                randomvar,
+                options.prod_context_for_marginal_computation,
+                messages,
             ),
         ),
         reset_vstatus,

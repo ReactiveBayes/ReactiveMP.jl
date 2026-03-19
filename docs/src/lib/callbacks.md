@@ -13,7 +13,8 @@ ReactiveMP.MergedCallbacks
 
 Here is the list of predefined event types, to which a custom callback handler can react to.
 
-```@docs 
+```@docs
 ReactiveMP.BeforeMessageRuleCallback
 ReactiveMP.AfterMessageRuleCallback
+ReactiveMP.BeforeProductOfTwoMessages
 ```

@@ -125,7 +125,7 @@ The following `kwargs` are supported:
 - `form_constraint_check_strategy`: defines the strategy to check the specified form constraint, either [`ReactiveMP.FormConstraintCheckLast`](@ref) or [`ReactiveMP.FormConstraintCheckEach`](@ref), default is [`ReactiveMP.FormConstraintCheckLast`](@ref)
     + [`ReactiveMP.FormConstraintCheckLast`](@ref) will only call [`ReactiveMP.constrain_form`](@ref) at the end of the `[ReactiveMP.compute_product_of_messages]`
     + [`ReactiveMP.FormConstraintCheckEach`](@ref) will call [`ReactiveMP.constrain_form`](@ref) at each of the [`ReactiveMP.compute_product_of_two_messages`](@ref)
-- `fold_strategy`: defines the strategy (or simply speaking the direction) of the messages product for [`ReactiveMP.compute_message_product`](@ref), default is [`MessagesProductFromLeftToRight`](@ref). Can be a custom function that accepts a `context` and collection of `messages` and does arbitrary order, but still needs to call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood (unless you do some experimental stuff). By the way it is called __fold__ to reflect the computer science term with "left-fold" or "right-fold" (and we use the builtin Julia `foldl` and `foldr` functions for that).
+- `fold_strategy`: defines the strategy (or simply speaking the direction) of the messages product for [`ReactiveMP.compute_message_product`](@ref), default is [`MessagesProductFromLeftToRight`](@ref). Can be a custom function that accepts a `variable`, `context` and collection of `messages` and does arbitrary order, but still needs to call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood (unless you do some experimental stuff). By the way it is called __fold__ to reflect the computer science term with "left-fold" or "right-fold" (and we use the builtin Julia `foldl` and `foldr` functions for that).
 - `callbacks`: callbacks handler, see [`ReactiveMP.invoke_callback`](@ref) for more details.
 
 See also: [`ReactiveMP.compute_product_of_messages`](@ref), [`ReactiveMP.compute_product_of_two_messages`]
@@ -139,13 +139,13 @@ Base.@kwdef struct MessageProductContext{C, F, S, L, A}
 end
 
 """
-    compute_product_of_two_messages(context::MessageProductContext, left::Message, right::Message)
+    compute_product_of_two_messages(variable::AbstractVariable, context::MessageProductContext, left::Message, right::Message)
 
-Computes the product of two messages `left` and `right` using a given `context`.
-Returns a new message with the result of the multiplication. 
-Applies the specified `context.form_constraint` if `context.form_constraint_check_strategy` is set to 
-[`ReactiveMP.FormConstraintCheckEach`](@ref).
-Note that the resulting message is not necessarily normalized.
+Computes the product of two messages `left` and `right` for a given `variable` using the provided `context`.
+Returns a new message with the result of the multiplication (not necessarily normalized).
+Applies `context.form_constraint` if `context.form_constraint_check_strategy` is set to [`ReactiveMP.FormConstraintCheckEach`](@ref).
+
+The `variable` argument identifies which variable this product is being computed for, which is useful for callbacks (see [`ReactiveMP.BeforeProductOfTwoMessages`](@ref)).
 
 ## `is_clamped` and `is_initial`
 
@@ -158,7 +158,10 @@ The rules for the product are the following:
 See: [`ReactiveMP.MessageProductContext`](@ref), [`ReactiveMP.compute_product_of_messages`](@ref)
 """
 function compute_product_of_two_messages(
-    context::MessageProductContext, left::Message, right::Message
+    variable::AbstractVariable,
+    context::MessageProductContext,
+    left::Message,
+    right::Message,
 )
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
@@ -192,23 +195,27 @@ end
 
 # Sometimes we call the product on the `DeferredMessage` that need to be casted to a `Message`
 function compute_product_of_two_messages(
-    context::MessageProductContext, left, right
+    variable::AbstractVariable, context::MessageProductContext, left, right
 )
     return compute_product_of_two_messages(
-        context::MessageProductContext, as_message(left), as_message(right)
+        variable, context, as_message(left), as_message(right)
     )
 end
 
 """
-    compute_product_of_messages(context::MessageProductContext, messages)
+    compute_product_of_messages(variable::AbstractVariable, context::MessageProductContext, messages)
 
-Computes the product of **collection** of messages (in contrast to `compute_product_of_two_messages(context, left, right)` that computes the product of **two** messages) given the provided `context`. Uses the `context.fold_strategy` to determine in which order to call the [`ReactiveMP.compute_product_of_two_messages`](@ref). Typically is set to [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), but can be also set to an arbitrary function that accepts `context` and `messages` and which **must** call the [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood.
+Computes the product of a **collection** of messages for a given `variable` (as opposed to [`ReactiveMP.compute_product_of_two_messages`](@ref), which handles exactly **two** messages). Uses `context.fold_strategy` to determine the order in which [`ReactiveMP.compute_product_of_two_messages`](@ref) is called. By default this is [`ReactiveMP.MessagesProductFromLeftToRight`](@ref), but can be set to an arbitrary function that accepts `variable`, `context` and `messages` and which **must** call [`ReactiveMP.compute_product_of_two_messages`](@ref) under the hood.
 
 See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.MessagesProductFromLeftToRight`](@ref)
 """
-function compute_product_of_messages(context::MessageProductContext, messages)
+function compute_product_of_messages(
+    variable::AbstractVariable, context::MessageProductContext, messages
+)
     result = as_message(
-        compute_product_of_messages(context.fold_strategy, context, messages)
+        compute_product_of_messages(
+            context.fold_strategy, variable, context, messages
+        ),
     )
 
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
@@ -226,15 +233,19 @@ end
 """
     MessagesProductFromLeftToRight()
 
-Use this strategy in [`ReactiveMP.MessageProductContext`](@ref) to compute message from left to right within the [`ReactiveMP.compute_product_of_messages`](@ref).
+The default fold strategy for [`ReactiveMP.MessageProductContext`](@ref). Computes the product of messages from left to right using `foldl` within [`ReactiveMP.compute_product_of_messages`](@ref).
 """
 struct MessagesProductFromLeftToRight end
 
 function compute_product_of_messages(
-    ::MessagesProductFromLeftToRight, context::MessageProductContext, messages
+    ::MessagesProductFromLeftToRight,
+    variable::AbstractVariable,
+    context::MessageProductContext,
+    messages,
 )
     return foldl(
-        (left, right) -> compute_product_of_two_messages(context, left, right),
+        (left, right) ->
+            compute_product_of_two_messages(variable, context, left, right),
         messages,
     )
 end
@@ -291,9 +302,8 @@ mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     cache           :: Union{Nothing, Message}
 end
 
-DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(
-    messages, marginals, mappingFn, nothing
-)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
+    DeferredMessage(messages, marginals, mappingFn, nothing)
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
@@ -343,17 +353,14 @@ struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     stream  :: LazyObservable{M}
 end
 
-MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(
-    RecentSubject(M), lazy(M)
-)
+MessageObservable(::Type{M} = AbstractMessage) where {M} =
+    MessageObservable{M}(RecentSubject(M), lazy(M))
 
-Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(
-    observable.subject
-)
+Rocket.getrecent(observable::MessageObservable) =
+    Rocket.getrecent(observable.subject)
 
-@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(
-    observable.stream, actor
-)
+@inline Rocket.on_subscribe!(observable::MessageObservable, actor) =
+    subscribe!(observable.stream, actor)
 
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)

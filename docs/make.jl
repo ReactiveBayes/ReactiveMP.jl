@@ -14,6 +14,7 @@ makedocs(
         "Introduction"    => "index.md",
         "Library" => [
             "Factor nodes"         => "lib/nodes.md",
+            "Variables"             => "lib/variables.md",
             "Messages"             => "lib/message.md",
             "Marginals"            => "lib/marginal.md",
             "Message update rules" => "lib/rules.md",

@@ -22,6 +22,7 @@ include("helpers/algebra/standard_basis_vector.jl")
 include("constraints/form.jl")
 
 include("callbacks.jl")
+include("variable.jl")
 include("message.jl")
 include("marginal.jl")
 include("addons.jl")
@@ -77,7 +78,7 @@ include("approximations/cvi_projection.jl")
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
-include("variables/variable.jl")
+include("variables/generic.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")

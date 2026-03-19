@@ -1,13 +1,22 @@
 export datavar, DataVariable, update!, DataVariableActivationOptions
 
+"""
+    DataVariable <: AbstractVariable
+
+Represents an observed variable in the factor graph. Unlike [`ReactiveMP.ConstVariable`](@ref), the data is not fixed
+at creation time and can be updated later via [`update!`](@ref). Use [`datavar`](@ref) to create an instance.
+
+See also: [`ReactiveMP.RandomVariable`](@ref), [`ReactiveMP.ConstVariable`](@ref)
+"""
 mutable struct DataVariable{M, P} <: AbstractVariable
     input_messages :: Vector{MessageObservable{AbstractMessage}}
     marginal       :: MarginalObservable
     messageout     :: M
     prediction     :: P
+    label          :: Any
 end
 
-function DataVariable()
+function DataVariable(; label = nothing)
     messageout = RecentSubject(Message)
     marginal   = MarginalObservable()
     prediction = MarginalObservable()
@@ -16,10 +25,11 @@ function DataVariable()
         marginal,
         messageout,
         prediction,
+        label,
     )
 end
 
-datavar() = DataVariable()
+datavar(; label = nothing) = DataVariable(; label = label)
 
 degree(datavar::DataVariable) = length(datavar.input_messages)
 
@@ -51,9 +61,8 @@ struct DataVariableActivationOptions
     args
 end
 
-DataVariableActivationOptions() = DataVariableActivationOptions(
-    false, false, nothing, nothing
-)
+DataVariableActivationOptions() =
+    DataVariableActivationOptions(false, false, nothing, nothing)
 
 function activate!(
     datavar::DataVariable, options::DataVariableActivationOptions
@@ -82,13 +91,11 @@ function activate!(
     return nothing
 end
 
-__link_getmarginal(constant) = of(
-    Marginal(PointMass(constant), true, false, nothing)
-)
+__link_getmarginal(constant) =
+    of(Marginal(PointMass(constant), true, false, nothing))
 __link_getmarginal(l::AbstractVariable) = getmarginal(l, IncludeAll())
-__link_getmarginal(l::AbstractArray{<:AbstractVariable}) = getmarginals(
-    l, IncludeAll()
-)
+__link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
+    getmarginals(l, IncludeAll())
 
 __apply_link(f::F, args) where {F} = __apply_link(f, getdata.(args))
 __apply_link(f::F, args::NTuple{N, PointMass}) where {F, N} = f(mean.(args)...)
@@ -118,4 +125,4 @@ end
 
 _getprediction(datavar::DataVariable)              = datavar.prediction
 _setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)
-_makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, (messages) -> as_marginal(compute_product_of_messages(MessageProductContext(), messages)))
+_makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, (messages) -> as_marginal(compute_product_of_messages(datavar, MessageProductContext(), messages)))
