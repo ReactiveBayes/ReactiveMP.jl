@@ -126,6 +126,21 @@ end
     ) === nothing
 end
 
+@testitem "Dict{Symbol} should be a supported event handler" begin
+    import ReactiveMP: invoke_callback
+
+    callback_handler = Dict{Symbol, Any}(
+        :sum_event => (args...) -> sum(args),
+        :prod_event => (args...) -> prod(args),
+    )
+
+    @test invoke_callback(callback_handler, Val{:sum_event}(), 1, 2) == 3
+    @test invoke_callback(callback_handler, Val{:sum_event}(), 1, 2, 3) == 6
+    @test invoke_callback(callback_handler, Val{:prod_event}(), 1, 2) == 2
+    @test invoke_callback(callback_handler, Val{:prod_event}(), 1, 2, 5) == 10
+    @test invoke_callback(callback_handler, Val{:other_event}(), 1, 2, 3) === nothing
+end
+
 @testitem "It should be possible to merge callback handlers" begin
     import ReactiveMP: invoke_callback, merge_callbacks
 

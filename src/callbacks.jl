@@ -45,6 +45,32 @@ function invoke_callback(
 end
 
 """
+    invoke_callback(callbacks::Dict{Symbol}, event::Val{E}, args...)
+
+The `callbacks` can also be a `Dict{Symbol, Any}` with keys corresponding to event names.
+Works the same as the `NamedTuple` variant, but allows dynamic construction of callback handlers at runtime.
+
+```jldoctest
+julia> callbacks = Dict(:before_message_rule_call => (args...) -> sum(args));
+
+julia> ReactiveMP.invoke_callback(callbacks, Val{:before_message_rule_call}(), 1, 2)
+3
+
+julia> ReactiveMP.invoke_callback(callbacks, Val{:other_event}(), 1, 2, 3)
+```
+
+If the `Dict` does not have a key corresponding to the event name, the event will be ignored.
+"""
+function invoke_callback(
+    callbacks::Dict{Symbol}, ::Val{E}, args...
+) where {E}
+    if haskey(callbacks, E)
+        return callbacks[E](args...)
+    end
+    return nothing
+end
+
+"""
     MergedCallbacks{F, C}(reduce_fn, callbacks)
 
 The result of the [`ReactiveMP.merge_callbacks`](@ref) procedure.
