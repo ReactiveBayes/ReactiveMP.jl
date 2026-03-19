@@ -93,7 +93,9 @@ function rule_macro_parse_on_tag(on)
     elseif @capture(on, (:name_, k_ = index_Int))
         return :(Tuple{Val{$(QuoteNode(name))}, Int}),
         index,
-        :(error("`k = ...` syntax in the edge specification is only allowed in the `@call_rule` and `@call_marginalrule` macros"))
+        :(error(
+            "`k = ...` syntax in the edge specification is only allowed in the `@call_rule` and `@call_marginalrule` macros"
+        ))
     else
         error(
             "Error in macro. `on` specification is incorrect: $(on). Must be either a quoted symbol expression (e.g. `:out` or `:mean`) or tuple expression with quoted symbol and index identifier (e.g. `(:m, k)` or `(:w, k)`)"
@@ -113,7 +115,10 @@ function rule_macro_check_fn_args(inputs; allowed_inputs, allowed_prefixes)
     str_allowed_prefixes = map(string, allowed_prefixes)
     foreach(inputs) do input
         str_input = string(first(input))
-        if !(str_input ∈ str_allowed_inputs) && !(any(str_prefix -> startswith(str_input, str_prefix), str_allowed_prefixes))
+        if !(str_input ∈ str_allowed_inputs) && !(any(
+            str_prefix -> startswith(str_input, str_prefix),
+            str_allowed_prefixes
+        ))
             error(
                 "Found a bad input $(input) in the macro arguments specification. It must be either in `$(str_allowed_inputs)` or start with a prefix in `$(str_allowed_prefixes)`"
             )
@@ -144,7 +149,9 @@ See also: [`@rule`](@ref)
 """
 function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     # First we filter out only prefixed arguments
-    finputs = filter((i) -> startswith(string(first(i)), string(prefix)), inputs)
+    finputs = filter(
+        (i) -> startswith(string(first(i)), string(prefix)), inputs
+    )
 
     lprefix = length(string(prefix))
 
@@ -153,7 +160,8 @@ function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     types = map(last, finputs)
 
     # Check that all arguments have proper names and not only a single prefix in it
-    @assert all((n) -> length(string(n)) > lprefix, names) || error("Empty $(specname) name found in arguments")
+    @assert all((n) -> length(string(n)) > lprefix, names) ||
+        error("Empty $(specname) name found in arguments")
 
     # Initialisation block is simply a `getdata` call from `specname` for each argument
     init_block = map(enumerate(names)) do (index, iname)
@@ -165,9 +173,21 @@ function rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
     out_names = if isempty(names)
         :Nothing
     else
-        :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))})
+        :(Val{
+            $(Expr(
+                :tuple,
+                map(
+                    n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])),
+                    names
+                )...
+            ))
+        })
     end
-    out_types = isempty(types) ? :Nothing : :(Tuple{$(map((t) -> MacroHelpers.proxy_type(proxy, t), types)...)})
+    out_types = if isempty(types)
+        :Nothing
+    else
+        :(Tuple{$(map((t) -> MacroHelpers.proxy_type(proxy, t), types)...)})
+    end
 
     return out_names, out_types, init_block
 end
@@ -193,29 +213,47 @@ Returns parsed names without prefix and proxied values
 See also: [`@rule`](@ref)
 """
 function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
-    finputs = filter((i) -> startswith(string(first(i)), string(prefix)), inputs)
+    finputs = filter(
+        (i) -> startswith(string(first(i)), string(prefix)), inputs
+    )
 
     lprefix = length(string(prefix))
     names   = map(first, finputs)
     values  = map(last, finputs)
 
-    @assert all((n) -> length(string(n)) > lprefix, names) || error("Empty $(specname) name found in arguments")
+    @assert all((n) -> length(string(n)) > lprefix, names) ||
+        error("Empty $(specname) name found in arguments")
 
     # ManyOf are special cases
     function apply_proxy(any, proxy)
-        if any isa Expr && any.head === :call && (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
+        if any isa Expr &&
+            any.head === :call &&
+            (any.args[1] === :ManyOf || any.args[1] == :(ReactiveMP.ManyOf))
             argsvar = gensym(:ManyOf)
             return quote
                 let
                     local $argsvar = ($(any.args[2:end]...),)
                     if length($argsvar) === 1 && first($argsvar) isa Tuple
-                        ReactiveMP.ManyOf(map(element -> $(apply_proxy(:element, proxy)), first($argsvar)))
+                        ReactiveMP.ManyOf(
+                            map(
+                                element -> $(apply_proxy(:element, proxy)),
+                                first($argsvar)
+                            )
+                        )
                     else
-                        ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),))
+                        ReactiveMP.ManyOf((
+                            $(
+                                map(
+                                    v -> apply_proxy(v, proxy), any.args[2:end]
+                                )...
+                            ),
+                        ))
                     end
                 end
             end
-            return :(ReactiveMP.ManyOf(($(map(v -> apply_proxy(v, proxy), any.args[2:end])...),)))
+            return :(ReactiveMP.ManyOf((
+                $(map(v -> apply_proxy(v, proxy), any.args[2:end])...),
+            )))
         end
         return :($(proxy)($any, false, false, nothing))
     end
@@ -242,13 +280,17 @@ Returns either `CallRuleNodeRequired()` or `CallRuleNodeNotRequired()` depending
 `fformtype` requires an access to the corresponding node in order to compute a message update rule.
 Returns `CallRuleNodeNotRequired()` for all known functional forms by default and `CallRuleNodeRequired()` for all unknown functional forms.
 """
-call_rule_is_node_required(fformtype) = call_rule_is_node_required(is_predefined_node(fformtype), fformtype)
+call_rule_is_node_required(fformtype) = call_rule_is_node_required(
+    is_predefined_node(fformtype), fformtype
+)
 
 call_rule_is_node_required(::PredefinedNodeFunctionalForm, fformtype) = CallRuleNodeNotRequired()
 call_rule_is_node_required(::UndefinedNodeFunctionalForm, fformtype) = CallRuleNodeRequired()
 
 # Returns the `node` if it is required for a rule, otherwise returns `nothing`
-node_if_required(fformtype, node) = node_if_required(call_rule_is_node_required(fformtype), node)
+node_if_required(fformtype, node) = node_if_required(
+    call_rule_is_node_required(fformtype), node
+)
 
 node_if_required(::CallRuleNodeRequired, node) = node
 node_if_required(::CallRuleNodeNotRequired, node) = nothing
@@ -259,14 +301,20 @@ node_if_required(::CallRuleNodeNotRequired, node) = nothing
 Creates a node object that will be used inside `@call_rule` macro. 
 """
 function call_rule_make_node(fformtype, nodetype, meta)
-    return call_rule_make_node(call_rule_is_node_required(nodetype), fformtype, nodetype, meta)
+    return call_rule_make_node(
+        call_rule_is_node_required(nodetype), fformtype, nodetype, meta
+    )
 end
 
 function call_rule_make_node(::CallRuleNodeRequired, fformtype, nodetype, meta)
-    return error("Missing implementation for the `call_rule_make_node`. Cannot create a node of type `$nodetype` for the call rule routine.")
+    return error(
+        "Missing implementation for the `call_rule_make_node`. Cannot create a node of type `$nodetype` for the call rule routine."
+    )
 end
 
-function call_rule_make_node(::CallRuleNodeNotRequired, fformtype, nodetype, meta)
+function call_rule_make_node(
+    ::CallRuleNodeNotRequired, fformtype, nodetype, meta
+)
     return nothing
 end
 
@@ -275,7 +323,9 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Nothing)
     if @capture(bottomtype, Val{R_})
         return :(Val($R))
     else
-        error("Internal indexed call rule error: Invalid `on_type` in the `call_rule_macro_construct_on_arg` function.")
+        error(
+            "Internal indexed call rule error: Invalid `on_type` in the `call_rule_macro_construct_on_arg` function."
+        )
     end
 end
 
@@ -284,11 +334,24 @@ function call_rule_macro_construct_on_arg(on_type, on_index::Int)
     if @capture(bottomtype, Tuple{Val{R_}, Int})
         return :((Val($R), $on_index))
     else
-        error("Internal indexed call rule error: Invalid `on_type` in the `call_rule_macro_construct_on_arg` function.")
+        error(
+            "Internal indexed call rule error: Invalid `on_type` in the `call_rule_macro_construct_on_arg` function."
+        )
     end
 end
 
-function rule_function_expression(body::Function, fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs)
+function rule_function_expression(
+    body::Function,
+    fuppertype,
+    on_type,
+    vconstraint,
+    m_names,
+    m_types,
+    q_names,
+    q_types,
+    metatype,
+    whereargs
+)
     addonsvar = gensym(:addons)
     nodevar = gensym(:node)
     return quote
@@ -305,21 +368,40 @@ function rule_function_expression(body::Function, fuppertype, on_type, vconstrai
             $(nodevar)
         ) where {$(whereargs...)}
             local getnode = () -> $nodevar
-            local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
+            local getnodefn =
+                (args...) -> ReactiveMP.nodefunction($nodevar, args...)
             local getaddons = () -> $addonsvar
             $(body())
         end
     end
 end
 
-function marginalrule_function_expression(body::Function, fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs)
+function marginalrule_function_expression(
+    body::Function,
+    fuppertype,
+    on_type,
+    m_names,
+    m_types,
+    q_names,
+    q_types,
+    metatype,
+    whereargs
+)
     nodevar = gensym(:node)
     return quote
         function ReactiveMP.marginalrule(
-            fform::$(fuppertype), on::$(on_type), messages_names::$(m_names), messages::$(m_types), marginals_names::$(q_names), marginals::$(q_types), meta::$(metatype), $nodevar
+            fform::$(fuppertype),
+            on::$(on_type),
+            messages_names::$(m_names),
+            messages::$(m_types),
+            marginals_names::$(q_names),
+            marginals::$(q_types),
+            meta::$(metatype),
+            $nodevar
         ) where {$(whereargs...)}
             local getnode = () -> $nodevar
-            local getnodefn = (args...) -> ReactiveMP.nodefunction($nodevar, args...)
+            local getnodefn =
+                (args...) -> ReactiveMP.nodefunction($nodevar, args...)
             $(body())
         end
     end
@@ -378,12 +460,16 @@ end
 See also: [`rule`](@ref), [`marginalrule`](@ref), [`@marginalrule`], [`@call_rule`](@ref)
 """
 macro rule(fform, lambda)
-    @capture(fform, fformtype_(on_, vconstraint_, options__)) ||
-        error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_, options__)'")
+    @capture(fform, fformtype_(on_, vconstraint_, options__)) || error(
+        "Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_, options__)'"
+    )
 
-    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
+    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
+        error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error(
+        "Error in macro. Lambda body arguments specification is incorrect"
+    )
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -392,34 +478,70 @@ macro rule(fform, lambda)
     metatype                         = metatype === nothing ? :Nothing : metatype
 
     options = map(options) do option
-        @capture(option, name_ = value_) || error("Error in macro. Option specification '$(option)' is incorrect")
+        @capture(option, name_ = value_) || error(
+            "Error in macro. Option specification '$(option)' is incorrect"
+        )
         return (name, value)
     end
 
     inputs = map(inputs) do input
-        @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
+        @capture(input, iname_::itype_) ||
+            error("Error in macro. Input $(input) is incorrect")
         return (iname, itype)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(
+        inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_)
+    )
 
-    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(
+        inputs;
+        specname = :messages,
+        prefix = :m_,
+        proxy = :(ReactiveMP.Message)
+    )
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(
+        inputs;
+        specname = :marginals,
+        prefix = :q_,
+        proxy = :(ReactiveMP.Marginal)
+    )
 
     # Some `@rules` are more complex in terms of functional form specification, e.g. `NormalMixture{N}`
     if fbottomtype isa Symbol
         # Not all nodes are defined with the `@node` macro, so we need to check if the node is defined with the `@node` macro
         # `nodesymbol_to_nodefform` may return `nothing` for such nodes, in this case we skip the interface check
-        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(Val(fbottomtype))
+        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(
+            Val(fbottomtype)
+        )
         if !isnothing(nodefform_from_symbol)
             ifaces = ReactiveMP.interfaces(nodefform_from_symbol)
-            MacroHelpers.check_rule_interfaces("@rule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
+            MacroHelpers.check_rule_interfaces(
+                "@rule",
+                fform,
+                lambda,
+                ifaces,
+                on_type,
+                m_names,
+                q_names;
+                mod = __module__
+            )
         end
     end
 
     output = quote
         $(
-            rule_function_expression(fuppertype, on_type, vconstraint, m_names, m_types, q_names, q_types, metatype, whereargs) do
+            rule_function_expression(
+                fuppertype,
+                on_type,
+                vconstraint,
+                m_names,
+                m_types,
+                q_names,
+                q_types,
+                metatype,
+                whereargs
+            ) do
                 return quote
                     local _addons = getaddons()
                     # This trick allows us to use arbitrary control-flow logic
@@ -477,10 +599,15 @@ macro call_rule(fform, args)
 end
 
 function call_rule_expression(options, fform, args)
-    @capture(fform, fformtype_(on_, vconstraint_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'")
+    @capture(fform, fformtype_(on_, vconstraint_)) || error(
+        "Error in macro. Functional form specification should in the form of 'fformtype_(on_, vconstraint_)'"
+    )
 
-    @capture(args, (inputs__, meta = meta_, addons = addons_) | (inputs__, addons = addons_) | (inputs__, meta = meta_) | (inputs__,)) ||
-        error("Error in macro. Arguments specification is incorrect")
+    @capture(
+        args,
+        (inputs__, meta = meta_, addons = addons_) |
+        (inputs__, addons = addons_) | (inputs__, meta = meta_) | (inputs__,)
+    ) || error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -488,14 +615,27 @@ function call_rule_expression(options, fform, args)
     node                             = :(ReactiveMP.call_rule_make_node($fformtype, $fbottomtype, $meta))
 
     inputs = map(inputs) do input
-        @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
+        @capture(input, iname_ = ivalue_) ||
+            error("Error in macro. Argument $(input) is incorrect")
         return (iname, ivalue)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(
+        inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_)
+    )
 
-    m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(
+        inputs;
+        specname = :messages,
+        prefix = :m_,
+        proxy = :(ReactiveMP.Message)
+    )
+    q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(
+        inputs;
+        specname = :marginals,
+        prefix = :q_,
+        proxy = :(ReactiveMP.Marginal)
+    )
 
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
@@ -505,9 +645,13 @@ function call_rule_expression(options, fform, args)
     fallback = nothing
 
     if !isnothing(options)
-        @capture(options, [voptions__]) || error("Error in macro. Options should be in a form of `[ option1 = value1, ... ]`, got $(options).")
+        @capture(options, [voptions__]) || error(
+            "Error in macro. Options should be in a form of `[ option1 = value1, ... ]`, got $(options)."
+        )
         foreach(voptions) do option
-            @capture(option, key_ = value_) || error("Error in macro. An options should be in a form of `option = value`, got $(option).")
+            @capture(option, key_ = value_) || error(
+                "Error in macro. An options should be in a form of `option = value`, got $(option)."
+            )
             if key === :return_addons
                 return_addons = Bool(value)
             elseif key === :fallback
@@ -523,9 +667,32 @@ function call_rule_expression(options, fform, args)
     __addons_sym = gensym(:call_rule_addons)
 
     call = quote
-        local $__rule_result_sym = ReactiveMP.rule($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
-        if ($__rule_result_sym) isa ReactiveMP.RuleMethodError && !isnothing($fallback)
-            $__rule_result_sym = $(fallback)($fbottomtype, $on_arg, $(vconstraint)(), $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $addons, $node)
+        local $__rule_result_sym = ReactiveMP.rule(
+            $fbottomtype,
+            $on_arg,
+            $(vconstraint)(),
+            $m_names_arg,
+            $m_values_arg,
+            $q_names_arg,
+            $q_values_arg,
+            $meta,
+            $addons,
+            $node
+        )
+        if ($__rule_result_sym) isa ReactiveMP.RuleMethodError &&
+            !isnothing($fallback)
+            $__rule_result_sym = $(fallback)(
+                $fbottomtype,
+                $on_arg,
+                $(vconstraint)(),
+                $m_names_arg,
+                $m_values_arg,
+                $q_names_arg,
+                $q_values_arg,
+                $meta,
+                $addons,
+                $node
+            )
         elseif ($__rule_result_sym) isa ReactiveMP.RuleMethodError
             throw($__rule_result_sym)
         end
@@ -593,11 +760,16 @@ end
 
 """
 macro marginalrule(fform, lambda)
-    @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
+    @capture(fform, fformtype_(on_)) || error(
+        "Error in macro. Functional form specification should in the form of 'fformtype_(on_)'"
+    )
 
-    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) || error("Error in macro. Lambda body specification is incorrect")
+    @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
+        error("Error in macro. Lambda body specification is incorrect")
 
-    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error("Error in macro. Lambda body arguments specification is incorrect")
+    @capture(args, (inputs__, meta::metatype_) | (inputs__,)) || error(
+        "Error in macro. Lambda body arguments specification is incorrect"
+    )
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -606,29 +778,62 @@ macro marginalrule(fform, lambda)
     metatype                         = metatype === nothing ? :Any : metatype
 
     inputs = map(inputs) do input
-        @capture(input, iname_::itype_) || error("Error in macro. Input $(input) is incorrect")
+        @capture(input, iname_::itype_) ||
+            error("Error in macro. Input $(input) is incorrect")
         return (iname, itype)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(
+        inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_)
+    )
 
-    m_names, m_types, m_init_block = rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names, q_types, q_init_block = rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names, m_types, m_init_block = rule_macro_parse_fn_args(
+        inputs;
+        specname = :messages,
+        prefix = :m_,
+        proxy = :(ReactiveMP.Message)
+    )
+    q_names, q_types, q_init_block = rule_macro_parse_fn_args(
+        inputs;
+        specname = :marginals,
+        prefix = :q_,
+        proxy = :(ReactiveMP.Marginal)
+    )
 
     # Some `@rules` are more complex in terms of functional form specification, e.g. `NormalMixture{N}`
     if fbottomtype isa Symbol
         # Not all nodes are defined with the `@node` macro, so we need to check if the node is defined with the `@node` macro
         # `nodesymbol_to_nodefform` may return `nothing` for such nodes, in this case we skip the interface check
-        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(Val(fbottomtype))
+        nodefform_from_symbol = ReactiveMP.nodesymbol_to_nodefform(
+            Val(fbottomtype)
+        )
         if !isnothing(nodefform_from_symbol)
             ifaces = ReactiveMP.interfaces(nodefform_from_symbol)
-            MacroHelpers.check_rule_interfaces("@marginalrule", fform, lambda, ifaces, on_type, m_names, q_names; mod = __module__)
+            MacroHelpers.check_rule_interfaces(
+                "@marginalrule",
+                fform,
+                lambda,
+                ifaces,
+                on_type,
+                m_names,
+                q_names;
+                mod = __module__
+            )
         end
     end
 
     output = quote
         $(
-            marginalrule_function_expression(fuppertype, on_type, m_names, m_types, q_names, q_types, metatype, whereargs) do
+            marginalrule_function_expression(
+                fuppertype,
+                on_type,
+                m_names,
+                m_types,
+                q_names,
+                q_types,
+                metatype,
+                whereargs
+            ) do
                 return quote
                     $(on_index_init)
                     $(m_init_block...)
@@ -652,9 +857,12 @@ but instead each argument must have a specified value with the `=` operator.
 See also: [`@marginalrule`](@ref), [`marginalrule`](@ref), [`@call_rule`](@ref)
 """
 macro call_marginalrule(fform, args)
-    @capture(fform, fformtype_(on_)) || error("Error in macro. Functional form specification should in the form of 'fformtype_(on_)'")
+    @capture(fform, fformtype_(on_)) || error(
+        "Error in macro. Functional form specification should in the form of 'fformtype_(on_)'"
+    )
 
-    @capture(args, (inputs__, meta = meta_) | (inputs__,)) || error("Error in macro. Arguments specification is incorrect")
+    @capture(args, (inputs__, meta = meta_) | (inputs__,)) ||
+        error("Error in macro. Arguments specification is incorrect")
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -662,19 +870,41 @@ macro call_marginalrule(fform, args)
     node                             = :(ReactiveMP.call_rule_make_node($fformtype, $fbottomtype, $meta))
 
     inputs = map(inputs) do input
-        @capture(input, iname_ = ivalue_) || error("Error in macro. Argument $(input) is incorrect")
+        @capture(input, iname_ = ivalue_) ||
+            error("Error in macro. Argument $(input) is incorrect")
         return (iname, ivalue)
     end
 
-    rule_macro_check_fn_args(inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_))
+    rule_macro_check_fn_args(
+        inputs; allowed_inputs = (:meta,), allowed_prefixes = (:m_, :q_)
+    )
 
-    m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :messages, prefix = :m_, proxy = :(ReactiveMP.Message))
-    q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(inputs; specname = :marginals, prefix = :q_, proxy = :(ReactiveMP.Marginal))
+    m_names_arg, m_values_arg = call_rule_macro_parse_fn_args(
+        inputs;
+        specname = :messages,
+        prefix = :m_,
+        proxy = :(ReactiveMP.Message)
+    )
+    q_names_arg, q_values_arg = call_rule_macro_parse_fn_args(
+        inputs;
+        specname = :marginals,
+        prefix = :q_,
+        proxy = :(ReactiveMP.Marginal)
+    )
 
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     output = quote
-        ReactiveMP.marginalrule($fbottomtype, $on_arg, $m_names_arg, $m_values_arg, $q_names_arg, $q_values_arg, $meta, $node)
+        ReactiveMP.marginalrule(
+            $fbottomtype,
+            $on_arg,
+            $m_names_arg,
+            $m_values_arg,
+            $q_names_arg,
+            $q_values_arg,
+            $meta,
+            $node
+        )
     end
 
     return esc(output)
@@ -685,8 +915,12 @@ end
 # (bvdmitri) These are cryptic manually constructed expressions are needed to call a `macro` within another `macro`, 
 # but these must be prefixed with the `ReactiveMP` module. There might be a more elegant way to do the same, 
 # but I couldn't find one
-const CallRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_rule")))
-const CallMarginalRuleMacroFnExpr = Expr(:., :ReactiveMP, QuoteNode(Symbol("@call_marginalrule")))
+const CallRuleMacroFnExpr = Expr(
+    :., :ReactiveMP, QuoteNode(Symbol("@call_rule"))
+)
+const CallMarginalRuleMacroFnExpr = Expr(
+    :., :ReactiveMP, QuoteNode(Symbol("@call_marginalrule"))
+)
 const TestRulesDefaultTestCallback = quote
     (expression) -> @test expression
 end
@@ -751,30 +985,64 @@ See also: [`ReactiveMP.@test_rules`](@ref)
 macro test_marginalrules end
 
 macro test_rules(rule_specification, tests)
-    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallRuleMacroFnExpr, :([]), rule_specification, tests)
+    return ReactiveMP.test_rules_generate(
+        TestRulesDefaultTestCallback,
+        CallRuleMacroFnExpr,
+        :([]),
+        rule_specification,
+        tests
+    )
 end
 
 macro test_rules(options, rule_specification, tests)
-    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallRuleMacroFnExpr, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(
+        TestRulesDefaultTestCallback,
+        CallRuleMacroFnExpr,
+        options,
+        rule_specification,
+        tests
+    )
 end
 
 macro test_rules(call_test_fn, options, rule_specification, tests)
-    return ReactiveMP.test_rules_generate(call_test_fn, CallRuleMacroFnExpr, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(
+        call_test_fn, CallRuleMacroFnExpr, options, rule_specification, tests
+    )
 end
 
 macro test_marginalrules(rule_specification, tests)
-    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallMarginalRuleMacroFnExpr, :([]), rule_specification, tests)
+    return ReactiveMP.test_rules_generate(
+        TestRulesDefaultTestCallback,
+        CallMarginalRuleMacroFnExpr,
+        :([]),
+        rule_specification,
+        tests
+    )
 end
 
 macro test_marginalrules(options, rule_specification, tests)
-    return ReactiveMP.test_rules_generate(TestRulesDefaultTestCallback, CallMarginalRuleMacroFnExpr, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(
+        TestRulesDefaultTestCallback,
+        CallMarginalRuleMacroFnExpr,
+        options,
+        rule_specification,
+        tests
+    )
 end
 
 macro test_marginalrules(call_test_fn, options, rule_specification, tests)
-    return ReactiveMP.test_rules_generate(call_test_fn, CallMarginalRuleMacroFnExpr, options, rule_specification, tests)
+    return ReactiveMP.test_rules_generate(
+        call_test_fn,
+        CallMarginalRuleMacroFnExpr,
+        options,
+        rule_specification,
+        tests
+    )
 end
 
-function test_rules_generate(call_test_fn, call_macro_fn, options, rule_specification, tests)
+function test_rules_generate(
+    call_test_fn, call_macro_fn, options, rule_specification, tests
+)
     testsblock = :__tests_block
     configuration = :__configuration
     configuration_opts = test_rules_parse_configuration(configuration, options)
@@ -786,16 +1054,34 @@ function test_rules_generate(call_test_fn, call_macro_fn, options, rule_specific
 
     default_tests = Expr(:block)
     default_tests.args = map(test_entries) do test_entry
-        return test_rules_generate_testset(test_entry, test_fn, call_macro_fn, rule_specification, configuration)
+        return test_rules_generate_testset(
+            test_entry,
+            test_fn,
+            call_macro_fn,
+            rule_specification,
+            configuration
+        )
     end
 
     # Extra tests for type promotion, could be turned off if `check_type_promotion = false`
     type_promotion_T = :__promoted_T
-    type_promotion_tests = map(test_entry -> test_rules_convert_paramfloattype_for_test_entry(test_entry, type_promotion_T), test_entries)
+    type_promotion_tests = map(
+        test_entry -> test_rules_convert_paramfloattype_for_test_entry(
+            test_entry, type_promotion_T
+        ),
+        test_entries
+    )
     type_promotion_block = Expr(:block)
-    type_promotion_block.args = map(Iterators.flatten(type_promotion_tests)) do promoted_test_entry
-        return test_rules_generate_testset(promoted_test_entry, test_fn, call_macro_fn, rule_specification, configuration)
-    end
+    type_promotion_block.args =
+        map(Iterators.flatten(type_promotion_tests)) do promoted_test_entry
+            return test_rules_generate_testset(
+                promoted_test_entry,
+                test_fn,
+                call_macro_fn,
+                rule_specification,
+                configuration
+            )
+        end
 
     output = quote
         let $configuration = ReactiveMP.TestRulesConfiguration()
@@ -809,7 +1095,8 @@ function test_rules_generate(call_test_fn, call_macro_fn, options, rule_specific
             # Check if the `check_type_promotion` is true and
             # perform extra test set if required
             if ReactiveMP.check_type_promotion($configuration)
-                for $(type_promotion_T) in ReactiveMP.extra_float_types($(configuration))
+                for $(type_promotion_T) in
+                    ReactiveMP.extra_float_types($(configuration))
                     $type_promotion_block
                 end
             end
@@ -823,35 +1110,57 @@ end
 
 Base.@kwdef mutable struct TestRulesConfiguration
     check_type_promotion::Bool = false
-    float_tolerance::Dict = Dict(Float32 => 1e-4, Float64 => 1e-6, BigFloat => 1e-8)
+    float_tolerance::Dict = Dict(
+        Float32 => 1e-4, Float64 => 1e-6, BigFloat => 1e-8
+    )
     extra_float_types::Vector = [Float32, Float64, BigFloat]
 end
 
 const DefaultFloatTolerance = 1e-6
 
-check_type_promotion(configuration::TestRulesConfiguration)::Bool = configuration.check_type_promotion
-check_type_promotion!(configuration::TestRulesConfiguration, check::Bool) = configuration.check_type_promotion = check
+check_type_promotion(configuration::TestRulesConfiguration)::Bool =
+    configuration.check_type_promotion
+check_type_promotion!(configuration::TestRulesConfiguration, check::Bool) =
+    configuration.check_type_promotion = check
 
-float_tolerance(configuration::TestRulesConfiguration) = configuration.float_tolerance
-float_tolerance(configuration::TestRulesConfiguration, ::Type{T}) where {T} = get(() -> DefaultFloatTolerance, float_tolerance(configuration), T)
+float_tolerance(configuration::TestRulesConfiguration) =
+    configuration.float_tolerance
+float_tolerance(configuration::TestRulesConfiguration, ::Type{T}) where {T} = get(
+    () -> DefaultFloatTolerance, float_tolerance(configuration), T
+)
 
-float_tolerance!(configuration::TestRulesConfiguration, ::Type{T}, atol::Number) where {T} = configuration.float_tolerance[T] = atol
-float_tolerance!(configuration::TestRulesConfiguration, atol::Number) = foreach(((key, _),) -> float_tolerance!(configuration, key, atol), float_tolerance(configuration))
-float_tolerance!(configuration::TestRulesConfiguration, atol::AbstractArray) = foreach(((key, value),) -> float_tolerance!(configuration, key, value), atol)
+float_tolerance!(
+    configuration::TestRulesConfiguration, ::Type{T}, atol::Number
+) where {T} = configuration.float_tolerance[T] = atol
+float_tolerance!(configuration::TestRulesConfiguration, atol::Number) = foreach(
+    ((key, _),) -> float_tolerance!(configuration, key, atol),
+    float_tolerance(configuration)
+)
+float_tolerance!(configuration::TestRulesConfiguration, atol::AbstractArray) = foreach(
+    ((key, value),) -> float_tolerance!(configuration, key, value), atol
+)
 
-extra_float_types(configuration::TestRulesConfiguration) = configuration.extra_float_types
-extra_float_types!(configuration::TestRulesConfiguration, types) = configuration.extra_float_types = types
+extra_float_types(configuration::TestRulesConfiguration) =
+    configuration.extra_float_types
+extra_float_types!(configuration::TestRulesConfiguration, types) =
+    configuration.extra_float_types = types
 
 # used in the `@test_rules/@test_marginalrules`
 function test_rules_parse_configuration(configuration::Symbol, options::Expr)
-    @capture(options, [option_entries__]) || error("Cannot parse the test configuration. The options must be an array of `key = value` pairs.")
+    @capture(options, [option_entries__]) || error(
+        "Cannot parse the test configuration. The options must be an array of `key = value` pairs."
+    )
 
     block = Expr(:block)
     block.args = map(option_entries) do entry
-        @capture(entry, key_ = value_) || error("Cannot parse the test configuration. The options must be an array of `key = value` pairs.")
+        @capture(entry, key_ = value_) || error(
+            "Cannot parse the test configuration. The options must be an array of `key = value` pairs."
+        )
 
         if key === :check_type_promotion
-            return :(ReactiveMP.check_type_promotion!($configuration, convert(Bool, $value)))
+            return :(ReactiveMP.check_type_promotion!(
+                $configuration, convert(Bool, $value)
+            ))
         elseif key === :atol
             return :(ReactiveMP.float_tolerance!($configuration, $value))
         elseif key === :extra_float_types
@@ -871,15 +1180,24 @@ struct TestRuleEntryInputSpecification
     meta::Any
 end
 
-Base.:(==)(left::TestRuleEntryInputSpecification, right::TestRuleEntryInputSpecification) = (left.arguments == right.arguments) && (left.meta == right.meta)
+Base.:(==)(
+    left::TestRuleEntryInputSpecification,
+    right::TestRuleEntryInputSpecification
+) = (left.arguments == right.arguments) && (left.meta == right.meta)
 
-Base.copy(entry::TestRuleEntryInputSpecification) = TestRuleEntryInputSpecification(copy(entry.arguments), entry.meta) # no need to copy `meta`
-Base.values(entry::TestRuleEntryInputSpecification) = Base.Generator((arg) -> arg.second, entry.arguments)
+Base.copy(entry::TestRuleEntryInputSpecification) = TestRuleEntryInputSpecification(
+    copy(entry.arguments), entry.meta
+) # no need to copy `meta`
+Base.values(entry::TestRuleEntryInputSpecification) = Base.Generator(
+    (arg) -> arg.second, entry.arguments
+)
 
 # Convert the `TestRuleEntryInputSpecification` back into the `Expr` form, e.g `(m_x = ..., q_y = ..., meta = ...)`
 function rule_macro_convert_to_expr(test_entry::TestRuleEntryInputSpecification)
     tuple = Expr(:tuple)
-    tuple.args = map((arg) -> Expr(:(=), arg.first, arg.second), test_entry.arguments)
+    tuple.args = map(
+        (arg) -> Expr(:(=), arg.first, arg.second), test_entry.arguments
+    )
     if !isnothing(test_entry.meta)
         push!(tuple.args, Expr(:(=), :meta, test_entry.meta))
     end
@@ -890,13 +1208,17 @@ end
 # (key1 = value1, key2 = value2, ..., [ meta = ... ]) 
 # and returns `TestRuleEntryInputSpecification`
 function Base.convert(::Type{TestRuleEntryInputSpecification}, input::Expr)
-    @capture(input, (pairs__,)) || error("Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`.")
+    @capture(input, (pairs__,)) || error(
+        "Cannot parse the `input` specification: $(input). Should be in a form of the `NamedTuple`."
+    )
 
     arguments = Pair{Symbol, Any}[]
     meta = nothing
 
     for pair in pairs
-        @capture(pair, key_ = value_) || error("Cannot parse an argument of the `input` specification: $(pair). Should be in a form of the `key = value` expression.")
+        @capture(pair, key_ = value_) || error(
+            "Cannot parse an argument of the `input` specification: $(pair). Should be in a form of the `key = value` expression."
+        )
         if key === :meta # Reserved for the `meta` specification
             meta = value
         else
@@ -914,22 +1236,29 @@ end
 
 # Convert the `TestRuleEntry` back into the `Expr` form, e.g `(input = ..., output = ...)`
 function rule_macro_convert_to_expr(test_entry::TestRuleEntry)
-    return Expr(:tuple, Expr(:(=), :input, rule_macro_convert_to_expr(test_entry.input)), Expr(:(=), :output, test_entry.output))
+    return Expr(
+        :tuple,
+        Expr(:(=), :input, rule_macro_convert_to_expr(test_entry.input)),
+        Expr(:(=), :output, test_entry.output)
+    )
 end
 
 # This function takes a `test` parameter which is expected to be an expression of single test entry.
 # The test entry should be an expression of named tuple with an `input` and an `output` field.
 # The function returns an instance of the `TestRuleEntry` structure
 function Base.convert(::Type{TestRuleEntry}, test::Expr)
-    @capture(test, (input = input_, output = output_)) ||
-        error("Invalid test entry specification. Test entry should be in the form of a named tuple `(input = ..., output = ...)`.")
+    @capture(test, (input = input_, output = output_)) || error(
+        "Invalid test entry specification. Test entry should be in the form of a named tuple `(input = ..., output = ...)`."
+    )
     p_input = convert(TestRuleEntryInputSpecification, input)
     p_output = output
     return TestRuleEntry(p_input, p_output)
 end
 
 function Base.convert(::Type{Vector{TestRuleEntry}}, tests::Expr)
-    @capture(tests, [test_entries__]) || error("Invalid tests specification. Test sequence should be in the form of an array.")
+    @capture(tests, [test_entries__]) || error(
+        "Invalid tests specification. Test sequence should be in the form of an array."
+    )
     return map(test_entries) do test_entry
         return convert(TestRuleEntry, test_entry)
     end
@@ -940,7 +1269,9 @@ end
 # Then for each subset it convert the `key = value` pair to a specific float type (e.g. Float32)
 # The resulting float type of the rule is expected to be the same as the promoted type of 
 # the all `key = value` pairs after conversion
-function test_rules_convert_paramfloattype_for_test_entry(test_entry::TestRuleEntry, eltype)
+function test_rules_convert_paramfloattype_for_test_entry(
+    test_entry::TestRuleEntry, eltype
+)
     input = test_entry.input
     output = test_entry.output
 
@@ -950,7 +1281,12 @@ function test_rules_convert_paramfloattype_for_test_entry(test_entry::TestRuleEn
     return Base.Generator(combinations) do combination
         cinput = copy(input) # `meta` is not copied
         for index in combination
-            cinput.arguments[index] = (cinput.arguments[index].first => test_rules_convert_paramfloattype(cinput.arguments[index].second, eltype))
+            cinput.arguments[index] = (
+                cinput.arguments[index].first =>
+                    test_rules_convert_paramfloattype(
+                        cinput.arguments[index].second, eltype
+                    )
+            )
         end
         cvalues = values(cinput)
         coutput_eltype = test_rules_promote_paramfloattype(cvalues)
@@ -959,22 +1295,46 @@ function test_rules_convert_paramfloattype_for_test_entry(test_entry::TestRuleEn
     end
 end
 
-function test_rules_generate_testset(test_entry::TestRuleEntry, invoke_test_fn, call_macro_fn, rule_specification, configuration)
+function test_rules_generate_testset(
+    test_entry::TestRuleEntry,
+    invoke_test_fn,
+    call_macro_fn,
+    rule_specification,
+    configuration
+)
     # `nothing` here is a `LineNumberNode`, macrocall expects a `line` number, but we do not have it here
     actual_inputs = rule_macro_convert_to_expr(test_entry.input)
-    actual_output = Expr(:macrocall, call_macro_fn, nothing, rule_specification, actual_inputs)
+    actual_output = Expr(
+        :macrocall, call_macro_fn, nothing, rule_specification, actual_inputs
+    )
     expected_output = test_entry.output
     rule_spec_str = "$rule_specification"
     rule_inputs_str = "$actual_inputs"
     generated = quote
-        let invoke_test_fn = $invoke_test_fn, expected_output = $expected_output, actual_output = $actual_output, rule_spec_str = $rule_spec_str, rule_inputs_str = $rule_inputs_str
-            local _T = ReactiveMP.promote_paramfloattype(actual_output, expected_output)
+        let invoke_test_fn = $invoke_test_fn,
+            expected_output = $expected_output,
+            actual_output = $actual_output,
+            rule_spec_str = $rule_spec_str,
+            rule_inputs_str = $rule_inputs_str
+
+            local _T = ReactiveMP.promote_paramfloattype(
+                actual_output, expected_output
+            )
             local _tolerance = ReactiveMP.float_tolerance($configuration, _T)
-            local _isapprox = ReactiveMP.custom_rule_isapprox(actual_output, expected_output; atol = _tolerance)
-            local _isequal_typeof = ReactiveMP.BayesBase.isequal_typeof(actual_output, expected_output)
+            local _isapprox = ReactiveMP.custom_rule_isapprox(
+                actual_output, expected_output; atol = _tolerance
+            )
+            local _isequal_typeof = ReactiveMP.BayesBase.isequal_typeof(
+                actual_output, expected_output
+            )
 
             if !_isapprox || !_isequal_typeof
-                ReactiveMP.test_rules_failed_warning(rule_spec_str, rule_inputs_str, expected_output, actual_output)
+                ReactiveMP.test_rules_failed_warning(
+                    rule_spec_str,
+                    rule_inputs_str,
+                    expected_output,
+                    actual_output
+                )
             end
 
             # We should not put `@test` within the aut-generated macro, because it allocates a lot of garbage
@@ -986,7 +1346,9 @@ end
 
 # We should not put `@warn` withtin the auto-generated macro, because it allocates
 # a lot of garbage code
-function test_rules_failed_warning(rule_specification, rule_inputs, expected_output, actual_output)
+function test_rules_failed_warning(
+    rule_specification, rule_inputs, expected_output, actual_output
+)
     @warn """
         Testset for rule $(rule_specification) has failed!
         Inputs: $(rule_inputs)
@@ -1001,13 +1363,38 @@ end
 # Calls recursively for tuples and for `ManyOf` structures, which are tuple-like but for rules
 function test_rules_convert_paramfloattype(expression, eltype)
     if @capture(expression, (entries__,))
-        return :(($(map(entry -> ReactiveMP.test_rules_convert_paramfloattype(entry, eltype), entries)...),))
-    elseif @capture(expression, (ManyOf(entries__)) | (ReactiveMP.ManyOf(entries__)))
-        return :(ManyOf($(map(entry -> ReactiveMP.test_rules_convert_paramfloattype(entry, eltype), entries)...)))
+        return :((
+            $(
+                map(
+                    entry -> ReactiveMP.test_rules_convert_paramfloattype(
+                        entry, eltype
+                    ),
+                    entries
+                )...
+            ),
+        ))
+    elseif @capture(
+        expression, (ManyOf(entries__)) | (ReactiveMP.ManyOf(entries__))
+    )
+        return :(ManyOf(
+            $(
+                map(
+                    entry -> ReactiveMP.test_rules_convert_paramfloattype(
+                        entry, eltype
+                    ),
+                    entries
+                )...
+            )
+        ))
     elseif @capture(expression, key_ = value_)
-        return :($key = $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype)))
+        return :(
+            $key =
+                $(ReactiveMP.test_rules_convert_paramfloattype(value, eltype))
+        )
     else
-        return :(ReactiveMP.BayesBase.convert_paramfloattype($eltype, $expression))
+        return :(ReactiveMP.BayesBase.convert_paramfloattype(
+            $eltype, $expression
+        ))
     end
 end
 
@@ -1033,10 +1420,13 @@ import DomainIntegrals, DomainSets
 custom_rule_isapprox(left, right; kwargs...) = isapprox(left, right; kwargs...)
 custom_rule_isapprox(left::NamedTuple, right::NamedTuple; kwargs...) = false
 
-function custom_rule_isapprox(left::NamedTuple{K}, right::NamedTuple{K}; kwargs...) where {K}
+function custom_rule_isapprox(
+    left::NamedTuple{K}, right::NamedTuple{K}; kwargs...
+) where {K}
     _isapprox = true
     for key in keys(left)
-        _isapprox = _isapprox && custom_rule_isapprox(left[key], right[key]; kwargs...)
+        _isapprox =
+            _isapprox && custom_rule_isapprox(left[key], right[key]; kwargs...)
     end
     return _isapprox
 end
@@ -1046,7 +1436,11 @@ import BayesBase: AbstractContinuousGenericLogPdf
 # These methods are inaccurate and relies on various approximation methods, which may fail in different scenarios
 # This should not be used though anywhere in the real code, but only in tests
 # Current implementation of `isapprox` method supports only FullSpace and HalfLine domains with limited accuracy
-function custom_rule_isapprox(left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+function custom_rule_isapprox(
+    left::AbstractContinuousGenericLogPdf,
+    right::AbstractContinuousGenericLogPdf;
+    kwargs...
+)
     if (BayesBase.getdomain(left) !== BayesBase.getdomain(right)) ||
         (value_support(typeof(left)) !== value_support(typeof(right))) ||
         (variate_form(typeof(left)) !== variate_form(typeof(right)))
@@ -1056,27 +1450,63 @@ function custom_rule_isapprox(left::AbstractContinuousGenericLogPdf, right::Abst
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Hermite_quadrature
-function culogpdf__isapprox(domain::DomainSets.FullSpace, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
-    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(DomainIntegrals.Q_GaussHermite(32), (x) -> exp(x^2) * abs(left(x) - right(x))); kwargs...)
+function culogpdf__isapprox(
+    domain::DomainSets.FullSpace,
+    left::AbstractContinuousGenericLogPdf,
+    right::AbstractContinuousGenericLogPdf;
+    kwargs...
+)
+    return isapprox(
+        zero(eltype(domain)),
+        DomainIntegrals.integral(
+            DomainIntegrals.Q_GaussHermite(32),
+            (x) -> exp(x^2) * abs(left(x) - right(x))
+        );
+        kwargs...
+    )
 end
 
 # https://en.wikipedia.org/wiki/Gauss–Laguerre_quadrature
-function culogpdf__isapprox(domain::DomainSets.HalfLine, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
-    return isapprox(zero(eltype(domain)), DomainIntegrals.integral(DomainIntegrals.Q_GaussLaguerre(32), (x) -> exp(x) * abs(left(x) - right(x))); kwargs...)
+function culogpdf__isapprox(
+    domain::DomainSets.HalfLine,
+    left::AbstractContinuousGenericLogPdf,
+    right::AbstractContinuousGenericLogPdf;
+    kwargs...
+)
+    return isapprox(
+        zero(eltype(domain)),
+        DomainIntegrals.integral(
+            DomainIntegrals.Q_GaussLaguerre(32),
+            (x) -> exp(x) * abs(left(x) - right(x))
+        );
+        kwargs...
+    )
 end
 
-function culogpdf__isapprox(domain::DomainSets.VcatDomain, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+function culogpdf__isapprox(
+    domain::DomainSets.VcatDomain,
+    left::AbstractContinuousGenericLogPdf,
+    right::AbstractContinuousGenericLogPdf;
+    kwargs...
+)
     a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
     b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
-    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) && isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
+    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) &&
+           isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
 end
 
-function culogpdf__isapprox(domain::DomainSets.FixedIntervalProduct, left::AbstractContinuousGenericLogPdf, right::AbstractContinuousGenericLogPdf; kwargs...)
+function culogpdf__isapprox(
+    domain::DomainSets.FixedIntervalProduct,
+    left::AbstractContinuousGenericLogPdf,
+    right::AbstractContinuousGenericLogPdf;
+    kwargs...
+)
     a = clamp.(DomainSets.infimum(domain), -1e5, 1e5)
     b = clamp.(DomainSets.supremum(domain), -1e5, 1e5)
     (I, E) = HCubature.hcubature((x) -> abs(left(x) - right(x)), a, b)
-    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) && isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
+    return isapprox(zero(promote_paramfloattype(left, right)), I; kwargs...) &&
+           isapprox(zero(promote_paramfloattype(left, right)), E; kwargs...)
 end
 
 ## Dummy node
@@ -1133,11 +1563,22 @@ struct RuleMethodError
 end
 
 rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) = RuleMethodError(
-    fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node
+    fform,
+    on,
+    vconstraint,
+    mnames,
+    messages,
+    qnames,
+    marginals,
+    meta,
+    addons,
+    __node
 )
 
 function Base.showerror(io::IO, error::RuleMethodError)
-    print(io, "RuleMethodError: no method matching rule for the given arguments")
+    print(
+        io, "RuleMethodError: no method matching rule for the given arguments"
+    )
 
     node = error.node !== nothing ? error.node : NodeErrorStub()
 
@@ -1156,8 +1597,12 @@ function Base.showerror(io::IO, error::RuleMethodError)
     spec_q_types = rule_method_error_extract_types(error.marginals)
 
     if isempty(intersect(Set(m_indices), Set(q_indices)))
-        spec_m = map(m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types))
-        spec_q = map(q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types))
+        spec_m = map(
+            m -> string(m[1], "::", m[2]), zip(spec_m_names, spec_m_types)
+        )
+        spec_q = map(
+            q -> string(q[1], "::", q[2]), zip(spec_q_names, spec_q_types)
+        )
 
         spec = Vector(undef, 4length(getinterfaces(node)))
 
@@ -1188,20 +1633,42 @@ function Base.showerror(io::IO, error::RuleMethodError)
             println(io, "\n\nEnabled addons: ", error.addons, "\n")
         end
 
-        node_rules = filter(m -> ReactiveMP.get_node_from_rule_method(m) == spec_fform, methods(ReactiveMP.rule))
-        println(io, "Alternatively, consider re-specifying model using an existing rule:\n")
+        node_rules = filter(
+            m -> ReactiveMP.get_node_from_rule_method(m) == spec_fform,
+            methods(ReactiveMP.rule)
+        )
+        println(
+            io,
+            "Alternatively, consider re-specifying model using an existing rule:\n"
+        )
 
         for node_rule in node_rules
-            node_message_names = filter(x -> x != ["Nothing"], get_message_names_from_rule_method(node_rule))
-            node_message_types = filter(!isempty, get_message_types_from_rule_method(node_rule))
+            node_message_names = filter(
+                x -> x != ["Nothing"],
+                get_message_names_from_rule_method(node_rule)
+            )
+            node_message_types = filter(
+                !isempty, get_message_types_from_rule_method(node_rule)
+            )
 
-            node_marginal_names = filter(x -> x != ["Nothing"], get_marginal_names_from_rule_method(node_rule))
-            node_marginal_types = filter(!isempty, get_marginal_types_from_rule_method(node_rule))
+            node_marginal_names = filter(
+                x -> x != ["Nothing"],
+                get_marginal_names_from_rule_method(node_rule)
+            )
+            node_marginal_types = filter(
+                !isempty, get_marginal_types_from_rule_method(node_rule)
+            )
 
             node_meta = get_meta_from_rule_method(node_rule)
 
-            node_message_input = [string("m_", n, "::", t) for (n, t) in zip(node_message_names, node_message_types)]
-            node_marginal_input = [string("q_", n, "::", t) for (n, t) in zip(node_marginal_names, node_marginal_types)]
+            node_message_input = [
+                string("m_", n, "::", t) for
+                (n, t) in zip(node_message_names, node_message_types)
+            ]
+            node_marginal_input = [
+                string("q_", n, "::", t) for
+                (n, t) in zip(node_marginal_names, node_marginal_types)
+            ]
 
             print(io, spec_fform)
             print(io, "(")
@@ -1220,9 +1687,15 @@ function Base.showerror(io::IO, error::RuleMethodError)
             println(io)
         end
 
-        println(io, "\nNote that for rules involving `q_*`, the order of input types matters.")
+        println(
+            io,
+            "\nNote that for rules involving `q_*`, the order of input types matters."
+        )
     else
-        println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
+        println(
+            io,
+            "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n"
+        )
         println(io, "rule.fform: ", error.fform)
         println(io, "rule.on: ", error.on)
         println(io, "rule.vconstraint: ", error.vconstraint)
@@ -1246,10 +1719,17 @@ struct MarginalRuleMethodError
     node
 end
 
-marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) = throw(MarginalRuleMethodError(fform, on, mnames, messages, qnames, marginals, meta, __node))
+marginalrule(fform, on, mnames, messages, qnames, marginals, meta, __node) = throw(
+    MarginalRuleMethodError(
+        fform, on, mnames, messages, qnames, marginals, meta, __node
+    )
+)
 
 function Base.showerror(io::IO, error::MarginalRuleMethodError)
-    print(io, "MarginalRuleMethodError: no method matching rule for the given arguments")
+    print(
+        io,
+        "MarginalRuleMethodError: no method matching rule for the given arguments"
+    )
     node = error.node !== nothing ? error.node : NodeErrorStub()
 
     spec_fform = rule_method_error_extract_fform(error.fform)
@@ -1295,7 +1775,10 @@ function Base.showerror(io::IO, error::MarginalRuleMethodError)
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
     else
-        println(io, "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n")
+        println(
+            io,
+            "\n\n[WARN]: Non-standard rule layout found! Possible fix, define rule with the following arguments:\n"
+        )
         println(io, "rule.fform: ", error.fform)
         println(io, "rule.on: ", error.on)
         println(io, "rule.mnames: ", error.mnames)
@@ -1341,10 +1824,24 @@ end
 # Extracts type of message from rule method (e.g., PointMass, NormalMeanVariance)
 function get_message_types_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
-    tmp1 = replace(replace(decls[6][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp1 = replace(
+        replace(
+            decls[6][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""
+        ),
+        r"\, N}}}" => "xyz"
+    )
     tmp2 = strip.(strip.(split(tmp1, "Message")[2:end]), ',')
-    tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
-    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp3 = map(
+        x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2
+    )
+    tmp4 = map(
+        x -> if x == r"xyz*"
+            "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}"
+        else
+            x
+        end,
+        tmp3
+    )
     tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
     return map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
 end
@@ -1365,10 +1862,24 @@ end
 # Extracts type of marginal from rule method (e.g., PointMass, NormalMeanVariance)
 function get_marginal_types_from_rule_method(m::Method)
     _, decls, _, _ = Base.arg_decl_parts(m)
-    tmp1 = replace(replace(decls[8][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""), r"\, N}}}" => "xyz")
+    tmp1 = replace(
+        replace(
+            decls[8][2][7:(end - 1)], r"ReactiveMP.ManyOf{<:Tuple{Vararg{" => ""
+        ),
+        r"\, N}}}" => "xyz"
+    )
     tmp2 = strip.(strip.(split(tmp1, "Marginal")[2:end]), ',')
-    tmp3 = map(x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2)
-    tmp4 = map(x -> x == r"xyz*" ? "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}" : x, tmp3)
+    tmp3 = map(
+        x -> x == "xyz" ? "{<:ManyOf{<:Tuple{Vararg{Any, N}}}}" : x, tmp2
+    )
+    tmp4 = map(
+        x -> if x == r"xyz*"
+            "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}"
+        else
+            x
+        end,
+        tmp3
+    )
     tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
     return map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
 end
@@ -1390,7 +1901,9 @@ end
 function print_rule_rows(m::Method)
     node = get_node_from_rule_method(m)
     output = get_output_from_rule_method(m)
-    inputs = vcat(get_messages_from_rule_method(m), get_marginals_from_rule_method(m))
+    inputs = vcat(
+        get_messages_from_rule_method(m), get_marginals_from_rule_method(m)
+    )
     meta = get_meta_from_rule_method(m)
     txt = ""
     for k in 1:length(inputs)

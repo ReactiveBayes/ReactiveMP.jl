@@ -1,5 +1,10 @@
 # VMP: Stuctured
-@rule ContinuousTransition(:x, Marginalisation) (m_y::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta) = begin
+@rule ContinuousTransition(:x, Marginalisation) (
+    m_y::MultivariateNormalDistributionsFamily,
+    q_a::MultivariateNormalDistributionsFamily,
+    q_W::Any,
+    meta::CTMeta
+) = begin
     ma, Va = mean_cov(q_a)
     my, Wy = mean_precision(m_y)
     mW = mean(q_W)
@@ -25,7 +30,9 @@
 end
 
 # VMP: Mean-field
-@rule ContinuousTransition(:x, Marginalisation) (q_y::Any, q_a::Any, q_W::Any, meta::CTMeta) = begin
+@rule ContinuousTransition(:x, Marginalisation) (
+    q_y::Any, q_a::Any, q_W::Any, meta::CTMeta
+) = begin
     ma, Va = mean_cov(q_a)
     my = mean(q_y)
     mW = mean(q_W)

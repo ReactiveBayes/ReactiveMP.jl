@@ -32,5 +32,7 @@
     T = promote_samplefloattype(m_out, m_zprev.argument, m_znext)
 
     # return input marginal
-    return TerminalProdArgument(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_in, Σ_in)))
+    return TerminalProdArgument(
+        convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_in, Σ_in))
+    )
 end

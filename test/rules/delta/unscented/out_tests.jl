@@ -19,50 +19,125 @@
     h(x, y) = x .^ 2 .- y
 
     @testset "Single univariate input" begin
-        @test_rules [check_type_promotion = false] DeltaFn{g}(:out, Marginalisation) [
-            (input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaMeta(; method = Unscented())), output = NormalMeanVariance(2.0000000001164153, 66.00000000093132)),
-            (input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaMeta(; method = Unscented(; alpha = 1.0))), output = NormalMeanVariance(2.0, 66.0))
+        @test_rules [check_type_promotion = false] DeltaFn{g}(
+            :out, Marginalisation
+        ) [
+            (
+                input = (
+                    m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)),
+                    meta = DeltaMeta(; method = Unscented())
+                ),
+                output = NormalMeanVariance(
+                    2.0000000001164153, 66.00000000093132
+                )
+            ),
+            (
+                input = (
+                    m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)),
+                    meta = DeltaMeta(; method = Unscented(; alpha = 1.0))
+                ),
+                output = NormalMeanVariance(2.0, 66.0)
+            )
         ]
     end
 
     @testset "Single multivariate input" begin
-        @test_rules [check_type_promotion = false] DeltaFn{g}(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DeltaFn{g}(
+            :out, Marginalisation
+        ) [
             (
-                input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Unscented())),
-                output = MvNormalMeanCovariance([2.0000000001164153], [66.00000000093132])
+                input = (
+                    m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])),
+                    meta = DeltaMeta(; method = Unscented())
+                ),
+                output = MvNormalMeanCovariance(
+                    [2.0000000001164153], [66.00000000093132]
+                )
             ),
-            (input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Unscented(; alpha = 1.0))), output = MvNormalMeanCovariance([2.0], [66.0]))
+            (
+                input = (
+                    m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])),
+                    meta = DeltaMeta(; method = Unscented(; alpha = 1.0))
+                ),
+                output = MvNormalMeanCovariance([2.0], [66.0])
+            )
         ]
     end
 
     @testset "Single univariate input" begin
-        @test_rules [check_type_promotion = false] DeltaFn{g2}(:out, Marginalisation) [
-            (input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaMeta(; method = Unscented())), output = NormalMeanVariance(2.0000000001164153, 66.00000000093132)),
-            (input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)), meta = DeltaMeta(; method = Unscented(; alpha = 1.0))), output = NormalMeanVariance(2.0, 66.0))
+        @test_rules [check_type_promotion = false] DeltaFn{g2}(
+            :out, Marginalisation
+        ) [
+            (
+                input = (
+                    m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)),
+                    meta = DeltaMeta(; method = Unscented())
+                ),
+                output = NormalMeanVariance(
+                    2.0000000001164153, 66.00000000093132
+                )
+            ),
+            (
+                input = (
+                    m_ins = ManyOf(NormalMeanVariance(2.0, 3.0)),
+                    meta = DeltaMeta(; method = Unscented(; alpha = 1.0))
+                ),
+                output = NormalMeanVariance(2.0, 66.0)
+            )
         ]
     end
 
     @testset "Single multivariate input" begin
-        @test_rules [check_type_promotion = false] DeltaFn{g2}(:out, Marginalisation) [
+        @test_rules [check_type_promotion = false] DeltaFn{g2}(
+            :out, Marginalisation
+        ) [
             (
-                input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Unscented())),
-                output = MvNormalMeanCovariance([2.0000000001164153], [66.00000000093132])
+                input = (
+                    m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])),
+                    meta = DeltaMeta(; method = Unscented())
+                ),
+                output = MvNormalMeanCovariance(
+                    [2.0000000001164153], [66.00000000093132]
+                )
             ),
-            (input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])), meta = DeltaMeta(; method = Unscented(; alpha = 1.0))), output = MvNormalMeanCovariance([2.0], [66.0]))
+            (
+                input = (
+                    m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0])),
+                    meta = DeltaMeta(; method = Unscented(; alpha = 1.0))
+                ),
+                output = MvNormalMeanCovariance([2.0], [66.0])
+            )
         ]
     end
 
     @testset "Multiple univariate input" begin
-        @test_rules [check_type_promotion = false] DeltaFn{h}(:out, Marginalisation) [(
-            input = (m_ins = ManyOf(NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)), meta = DeltaMeta(; method = Unscented())),
+        @test_rules [check_type_promotion = false] DeltaFn{h}(
+            :out, Marginalisation
+        ) [(
+            input = (
+                m_ins = ManyOf(
+                    NormalMeanVariance(2.0, 3.0), NormalMeanVariance(5.0, 1.0)
+                ),
+                meta = DeltaMeta(; method = Unscented())
+            ),
             output = NormalMeanVariance(1.9999999997671694, 67.00000899657607)
         )]
     end
 
     @testset "Multiple multivariate input" begin
-        @test_rules [check_type_promotion = false] DeltaFn{h}(:out, Marginalisation) [(
-            input = (m_ins = ManyOf(MvNormalMeanCovariance([2.0], [3.0]), MvNormalMeanCovariance([5.0], [1.0])), meta = DeltaMeta(; method = Unscented())),
-            output = MvNormalMeanCovariance([1.9999999997671694], [67.00000899657607])
+        @test_rules [check_type_promotion = false] DeltaFn{h}(
+            :out, Marginalisation
+        ) [(
+            input = (
+                m_ins = ManyOf(
+                    MvNormalMeanCovariance([2.0], [3.0]),
+                    MvNormalMeanCovariance([5.0], [1.0])
+                ),
+                meta = DeltaMeta(; method = Unscented())
+            ),
+            output = MvNormalMeanCovariance(
+                [1.9999999997671694], [67.00000899657607]
+            )
         )]
     end
 end

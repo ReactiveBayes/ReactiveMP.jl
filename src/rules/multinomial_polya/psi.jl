@@ -1,6 +1,11 @@
 using PolyaGammaHybridSamplers
 
-@rule MultinomialPolya(:ψ, Marginalisation) (q_x::Any, q_N::Union{PointMass, Poisson, Binomial, Categorical}, m_ψ::GaussianDistributionsFamily, meta::MultinomialPolyaMeta) = begin
+@rule MultinomialPolya(:ψ, Marginalisation) (
+    q_x::Any,
+    q_N::Union{PointMass, Poisson, Binomial, Categorical},
+    m_ψ::GaussianDistributionsFamily,
+    meta::MultinomialPolyaMeta
+) = begin
     x = mean(q_x)
     N = mode(q_N)
     T = promote_samplefloattype(q_x, q_N, m_ψ)
@@ -17,5 +22,7 @@ using PolyaGammaHybridSamplers
         Λ = Diagonal(ω)
     end
 
-    return convert(promote_variate_type(typeof(η), NormalWeightedMeanPrecision), η, Λ)
+    return convert(
+        promote_variate_type(typeof(η), NormalWeightedMeanPrecision), η, Λ
+    )
 end

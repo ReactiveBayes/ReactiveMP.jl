@@ -1,7 +1,14 @@
 
 @testitem "DeltaNode - creation with static inputs (simple case) #1" begin
     using Rocket
-    import ReactiveMP: nodefunction, DeltaMeta, Linearization, messageout, activate!, RandomVariableActivationOptions, DataVariableActivationOptions
+    import ReactiveMP:
+        nodefunction,
+        DeltaMeta,
+        Linearization,
+        messageout,
+        activate!,
+        RandomVariableActivationOptions,
+        DataVariableActivationOptions
 
     foo(x, y, z) = x * y + z
 
@@ -11,7 +18,9 @@
     y = datavar()
     z = constvar(3.0)
 
-    node = factornode(foo, [(:out, out), (:in, x), (:in, y), (:in, z)], ((1, 2, 3, 4),))
+    node = factornode(
+        foo, [(:out, out), (:in, x), (:in, y), (:in, z)], ((1, 2, 3, 4),)
+    )
     meta = DeltaMeta(method = Linearization())
 
     activate!(x, RandomVariableActivationOptions())
@@ -28,7 +37,14 @@ end
 
 @testitem "DeltaNode - Creation with static inputs (all permutations) #2" begin
     using Rocket
-    import ReactiveMP: nodefunction, DeltaMeta, Linearization, messageout, activate!, RandomVariableActivationOptions, DataVariableActivationOptions
+    import ReactiveMP:
+        nodefunction,
+        DeltaMeta,
+        Linearization,
+        messageout,
+        activate!,
+        RandomVariableActivationOptions,
+        DataVariableActivationOptions
 
     foo1(x, y, z) = x * y + z
     foo2(x, y, z) = x / y - z
@@ -58,12 +74,17 @@ end
             nothing
         end
 
-        for x in create_interfaces(1), y in create_interfaces(2), z in create_interfaces(3)
+        for x in create_interfaces(1),
+            y in create_interfaces(2),
+            z in create_interfaces(3)
+
             out_interface = (:out, randomvar())
             in_interfaces = [deepcopy(x), deepcopy(y), deepcopy(z)]
             interfaces = [out_interface, in_interfaces...]
 
-            rpos = findall(i -> i isa Tuple{Symbol, RandomVariable}, in_interfaces)
+            rpos = findall(
+                i -> i isa Tuple{Symbol, RandomVariable}, in_interfaces
+            )
             node = factornode(foo, interfaces, ((1, 2, 3, 4),))
             meta = DeltaMeta(method = Linearization())
 
@@ -78,7 +99,8 @@ end
                 end
             end
 
-            @test nodefunction(node, meta, Val(:out))(vals[rpos]...) === foo(vals...)
+            @test nodefunction(node, meta, Val(:out))(vals[rpos]...) ===
+                foo(vals...)
             @test nodefunction(node)(foo(vals...), vals[rpos]...) === 1
             @test nodefunction(node)(foo(vals...) + 1, vals[rpos]...) === 0
         end
@@ -88,13 +110,17 @@ end
 @testitem "Unssupported methods should throw in DeltaMeta" begin
     struct UnsupportedApproximationMethod end
 
-    @test_throws "Method `$(UnsupportedApproximationMethod())` is not compatible with delta nodes" DeltaMeta(method = UnsupportedApproximationMethod())
+    @test_throws "Method `$(UnsupportedApproximationMethod())` is not compatible with delta nodes" DeltaMeta(
+        method = UnsupportedApproximationMethod()
+    )
 end
 
 @testitem "Supported methods should not throw in DeltaMeta" begin
     struct SupportedApproximationMetßhod end
 
-    ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) = Val(true)
+    ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) = Val(
+        true
+    )
 
     @test DeltaMeta(method = SupportedApproximationMetßhod()) isa DeltaMeta
 end
@@ -103,7 +129,15 @@ end
     using Rocket
     import BayesBase
     using ExponentialFamilyProjection
-    import ReactiveMP: DeltaFn, DeltaFnNode, DeltaMeta, CVIProjection, messageout, activate!, RandomVariableActivationOptions, DataVariableActivationOptions
+    import ReactiveMP:
+        DeltaFn,
+        DeltaFnNode,
+        DeltaMeta,
+        CVIProjection,
+        messageout,
+        activate!,
+        RandomVariableActivationOptions,
+        DataVariableActivationOptions
 
     # Define a simple function for the delta node
     f(x, y) = x + y
@@ -127,5 +161,6 @@ end
 
     # Test data variable update propagation
     update!(y, 2.0)
-    @test BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(y, 1)))) ≈ 2.0
+    @test BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(y, 1)))) ≈
+        2.0
 end

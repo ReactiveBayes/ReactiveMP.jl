@@ -23,7 +23,14 @@ end
         collect_functional_dependencies,
         collect_latest_marginals
     import SpecialFunctions: loggamma
-    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
+    interfaces = [
+        (:out, datavar()),
+        (:switch, randomvar()),
+        (:a, randomvar()),
+        (:a, randomvar()),
+        (:b, randomvar()),
+        (:b, randomvar())
+    ]
     factorizations = [[:out], [:switch], [:a1], [:a2], [:b1], [:b2]]
 
     @testset "Construction and interface structure" begin
@@ -49,11 +56,30 @@ end
 
     @testset "Construction errors" begin
         # not enough a/b
-        @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1)], [[:out], [:switch], [:a1], [:b1]])
+        @test_throws ErrorException factornode(
+            GammaMixture,
+            [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1)],
+            [[:out], [:switch], [:a1], [:b1]]
+        )
         # mismatch count
-        @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:b, :b1)], [[:out], [:switch], [:a1], [:a2], [:b1]])
+        @test_throws ErrorException factornode(
+            GammaMixture,
+            [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:b, :b1)],
+            [[:out], [:switch], [:a1], [:a2], [:b1]]
+        )
         # wrong factorization
-        @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:b, :b1), (:b, :b2)], [[:out, :switch]])
+        @test_throws ErrorException factornode(
+            GammaMixture,
+            [
+                (:out, :x),
+                (:switch, :z),
+                (:a, :a1),
+                (:a, :a2),
+                (:b, :b1),
+                (:b, :b2)
+            ],
+            [[:out, :switch]]
+        )
     end
 
     @testset "Functional dependencies" begin
@@ -66,7 +92,9 @@ end
         @test length(marg_deps) == 3  # (switch, as, bs)
 
         # switch dependencies
-        msg_deps, marg_deps = functional_dependencies(deps, node, node.switch, 2)
+        msg_deps, marg_deps = functional_dependencies(
+            deps, node, node.switch, 2
+        )
         @test length(marg_deps) == 3  # (out, as, bs)
 
         # a dependencies
@@ -78,20 +106,33 @@ end
         @test length(marg_deps) == 3  # (out, switch, a_i)
 
         # invalid index
-        @test_throws ErrorException functional_dependencies(deps, node, node.out, 99)
+        @test_throws ErrorException functional_dependencies(
+            deps, node, node.out, 99
+        )
     end
 
     @testset "Collect functional dependencies" begin
         node = GammaMixtureNode(
             NodeInterface(interfaces[1]...),
             NodeInterface(interfaces[2]...),
-            (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
-            (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+            (
+                IndexedNodeInterface(1, NodeInterface(interfaces[3]...)),
+                IndexedNodeInterface(2, NodeInterface(interfaces[4]...))
+            ),
+            (
+                IndexedNodeInterface(1, NodeInterface(interfaces[5]...)),
+                IndexedNodeInterface(2, NodeInterface(interfaces[6]...))
+            )
         )
 
-        @test collect_functional_dependencies(node, nothing) isa GammaMixtureNodeFunctionalDependencies
-        @test collect_functional_dependencies(node, GammaMixtureNodeFunctionalDependencies()) isa GammaMixtureNodeFunctionalDependencies
-        @test_throws ErrorException collect_functional_dependencies(node, :wrongtype)
+        @test collect_functional_dependencies(node, nothing) isa
+            GammaMixtureNodeFunctionalDependencies
+        @test collect_functional_dependencies(
+            node, GammaMixtureNodeFunctionalDependencies()
+        ) isa GammaMixtureNodeFunctionalDependencies
+        @test_throws ErrorException collect_functional_dependencies(
+            node, :wrongtype
+        )
     end
 
     @testset "Collect latest marginals (arity check)" begin
@@ -99,17 +140,27 @@ end
         node = GammaMixtureNode(
             NodeInterface(interfaces[1]...),
             NodeInterface(interfaces[2]...),
-            (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
-            (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+            (
+                IndexedNodeInterface(1, NodeInterface(interfaces[3]...)),
+                IndexedNodeInterface(2, NodeInterface(interfaces[4]...))
+            ),
+            (
+                IndexedNodeInterface(1, NodeInterface(interfaces[5]...)),
+                IndexedNodeInterface(2, NodeInterface(interfaces[6]...))
+            )
         )
 
         # First overload: (out, as, bs)
-        marg_names, marg_obs = collect_latest_marginals(deps, node, (node.out, node.as, node.bs))
+        marg_names, marg_obs = collect_latest_marginals(
+            deps, node, (node.out, node.as, node.bs)
+        )
         @test marg_names isa Val
         @test !isnothing(marg_obs)
 
         # Second overload: (out, switch, var)
-        marg_names, marg_obs = collect_latest_marginals(deps, node, (node.out, node.switch, node.as[1]))
+        marg_names, marg_obs = collect_latest_marginals(
+            deps, node, (node.out, node.switch, node.as[1])
+        )
         @test marg_names isa Val
         @test !isnothing(marg_obs)
     end
@@ -130,7 +181,8 @@ end
     using ReactiveMP, BayesBase, ExponentialFamily, Random, Test
 
     import ReactiveMP: ManyOf, GammaMixture
-    import ExponentialFamily: NormalMeanVariance, NormalMeanPrecision, GammaShapeRate
+    import ExponentialFamily:
+        NormalMeanVariance, NormalMeanPrecision, GammaShapeRate
 
     @testset "GammaMixture AverageEnergy" begin
         q_out = GammaShapeRate(1.0, 1.0)
@@ -148,16 +200,47 @@ end
         # @average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::ManyOf{N, Any}, q_b::ManyOf{N, GammaShapeRate})
         z = probvec(q_switch)
         ref_val =
-            z[1] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[1], q_b[1])), nothing) +
-            z[2] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[2], q_b[2])), nothing)
+            z[1] * score(
+                AverageEnergy(),
+                GammaShapeRate,
+                Val{(:out, :α, :β)}(),
+                map(
+                    (q) -> Marginal(q, false, false, nothing),
+                    (q_out, q_a[1], q_b[1])
+                ),
+                nothing
+            ) +
+            z[2] * score(
+                AverageEnergy(),
+                GammaShapeRate,
+                Val{(:out, :α, :β)}(),
+                map(
+                    (q) -> Marginal(q, false, false, nothing),
+                    (q_out, q_a[2], q_b[2])
+                ),
+                nothing
+            )
 
-        @test score(AverageEnergy(), GammaMixture, Val{(:out, :switch, :a, :b)}(), marginals, nothing) ≈ ref_val
+        @test score(
+            AverageEnergy(),
+            GammaMixture,
+            Val{(:out, :switch, :a, :b)}(),
+            marginals,
+            nothing
+        ) ≈ ref_val
     end
 end
 
 @testitem "GammaMixture: type-level utilities" begin
     using ReactiveMP, Test
-    import ReactiveMP: GammaMixture, GammaMixtureNodeFactorisation, as_node_symbol, interfaces, alias_interface, sdtype, collect_factorisation
+    import ReactiveMP:
+        GammaMixture,
+        GammaMixtureNodeFactorisation,
+        as_node_symbol,
+        interfaces,
+        alias_interface,
+        sdtype,
+        collect_factorisation
 
     @test as_node_symbol(GammaMixture{2}) === :GammaMixture
     @test interfaces(GammaMixture{2}) === Val((:out, :switch, :a, :b))
@@ -171,15 +254,34 @@ end
 
 @testitem "GammaMixtureNode: interfaceindices and unknown interface" begin
     using ReactiveMP, Test
-    import ReactiveMP: GammaMixtureNode, NodeInterface, IndexedNodeInterface, interfaceindex, interfaceindices, functionalform
+    import ReactiveMP:
+        GammaMixtureNode,
+        NodeInterface,
+        IndexedNodeInterface,
+        interfaceindex,
+        interfaceindices,
+        functionalform
 
     # minimal fake interfaces
-    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
+    interfaces = [
+        (:out, datavar()),
+        (:switch, randomvar()),
+        (:a, randomvar()),
+        (:a, randomvar()),
+        (:b, randomvar()),
+        (:b, randomvar())
+    ]
     node = GammaMixtureNode(
         NodeInterface(interfaces[1]...),
         NodeInterface(interfaces[2]...),
-        (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
-        (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+        (
+            IndexedNodeInterface(1, NodeInterface(interfaces[3]...)),
+            IndexedNodeInterface(2, NodeInterface(interfaces[4]...))
+        ),
+        (
+            IndexedNodeInterface(1, NodeInterface(interfaces[5]...)),
+            IndexedNodeInterface(2, NodeInterface(interfaces[6]...))
+        )
     )
 
     # Single symbol version
@@ -200,22 +302,54 @@ end
     import ReactiveMP: factornode, GammaMixture
 
     # mismatched counts of a and b
-    @test_throws ErrorException factornode(GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1], [:b1], [:b2]])
     @test_throws ErrorException factornode(
-        GammaMixture, [(:out, :x), (:switch, :z), (:a, :a1), (:a, :a2), (:a, :a3), (:b, :b1), (:b, :b2)], [[:out], [:switch], [:a1, :a2, :a3], [:b1], [:b2]]
+        GammaMixture,
+        [(:out, :x), (:switch, :z), (:a, :a1), (:b, :b1), (:b, :b2)],
+        [[:out], [:switch], [:a1], [:b1], [:b2]]
+    )
+    @test_throws ErrorException factornode(
+        GammaMixture,
+        [
+            (:out, :x),
+            (:switch, :z),
+            (:a, :a1),
+            (:a, :a2),
+            (:a, :a3),
+            (:b, :b1),
+            (:b, :b2)
+        ],
+        [[:out], [:switch], [:a1, :a2, :a3], [:b1], [:b2]]
     )
 end
 
 @testitem "GammaMixtureNodeFunctionalDependencies: collect_latest_messages empty tuple" begin
     using ReactiveMP, Test
-    import ReactiveMP: GammaMixtureNodeFunctionalDependencies, GammaMixtureNode, NodeInterface, IndexedNodeInterface, collect_latest_messages
+    import ReactiveMP:
+        GammaMixtureNodeFunctionalDependencies,
+        GammaMixtureNode,
+        NodeInterface,
+        IndexedNodeInterface,
+        collect_latest_messages
 
-    interfaces = [(:out, datavar()), (:switch, randomvar()), (:a, randomvar()), (:a, randomvar()), (:b, randomvar()), (:b, randomvar())]
+    interfaces = [
+        (:out, datavar()),
+        (:switch, randomvar()),
+        (:a, randomvar()),
+        (:a, randomvar()),
+        (:b, randomvar()),
+        (:b, randomvar())
+    ]
     node = GammaMixtureNode(
         NodeInterface(interfaces[1]...),
         NodeInterface(interfaces[2]...),
-        (IndexedNodeInterface(1, NodeInterface(interfaces[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces[4]...))),
-        (IndexedNodeInterface(1, NodeInterface(interfaces[5]...)), IndexedNodeInterface(2, NodeInterface(interfaces[6]...)))
+        (
+            IndexedNodeInterface(1, NodeInterface(interfaces[3]...)),
+            IndexedNodeInterface(2, NodeInterface(interfaces[4]...))
+        ),
+        (
+            IndexedNodeInterface(1, NodeInterface(interfaces[5]...)),
+            IndexedNodeInterface(2, NodeInterface(interfaces[6]...))
+        )
     )
 
     deps = GammaMixtureNodeFunctionalDependencies()
@@ -236,6 +370,8 @@ end
     @test maximum(s) == Inf
 
     # default_prod_rule dispatch
-    rule = BayesBase.default_prod_rule(GammaShapeLikelihood, GammaShapeLikelihood)
+    rule = BayesBase.default_prod_rule(
+        GammaShapeLikelihood, GammaShapeLikelihood
+    )
     @test rule == PreserveTypeProd(Distribution)
 end

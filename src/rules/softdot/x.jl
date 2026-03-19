@@ -7,11 +7,19 @@
     mγ = mean(q_γ)
     Dx = mγ * (Vθ + mθ * mθ')
     zx = mγ * mθ * my
-    return convert(promote_variate_type(variate_form(typeof(q_θ)), NormalWeightedMeanPrecision), zx, Dx)
+    return convert(
+        promote_variate_type(
+            variate_form(typeof(q_θ)), NormalWeightedMeanPrecision
+        ),
+        zx,
+        Dx
+    )
 end
 
 # Variational MP: Structured
-@rule softdot(:x, Marginalisation) (m_y::UnivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any) = begin
+@rule softdot(:x, Marginalisation) (
+    m_y::UnivariateNormalDistributionsFamily, q_θ::Any, q_γ::Any
+) = begin
     # the naive call of AR rule is not possible, because the softdot rule expects m_y to be a UnivariateNormalDistributionsFamily
     mθ, Vθ = mean_cov(q_θ)
     my, Vy = mean_cov(m_y)
@@ -25,5 +33,11 @@ end
     W = C * mθ' + mγ * Vθ
     ξ = C * my
 
-    return convert(promote_variate_type(variate_form(typeof(q_θ)), NormalWeightedMeanPrecision), ξ, W)
+    return convert(
+        promote_variate_type(
+            variate_form(typeof(q_θ)), NormalWeightedMeanPrecision
+        ),
+        ξ,
+        W
+    )
 end

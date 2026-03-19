@@ -30,8 +30,11 @@
                 qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
 
-                @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:y, Marginalisation) [(
-                    input = (m_x = qx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule(qx, qW, mA)
+                @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                    :y, Marginalisation
+                ) [(
+                    input = (m_x = qx, q_a = qa, q_W = qW, meta = metal),
+                    output = benchmark_rule(qx, qW, mA)
                 )]
             end
         end
@@ -50,8 +53,13 @@
             qa = MvNormalMeanCovariance(zeros(1), tiny * diageye(1))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true] ContinuousTransition(:y, Marginalisation) [(
-                input = (m_x = qx, q_a = qa, q_W = qW, meta = metanl), output = MvGaussianMeanCovariance(zeros(dy), 4 / 3 * diageye(dy))
+            @test_rules [check_type_promotion = true] ContinuousTransition(
+                :y, Marginalisation
+            ) [(
+                input = (m_x = qx, q_a = qa, q_W = qW, meta = metanl),
+                output = MvGaussianMeanCovariance(
+                    zeros(dy), 4 / 3 * diageye(dy)
+                )
             )]
         end
     end
@@ -71,8 +79,11 @@
             qa = MvNormalMeanCovariance(vec(mA), diageye(dydx))
             qW = Wishart(dy + 1, diageye(dy))
 
-            @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(:y, Marginalisation) [(
-                input = (q_x = qx, q_a = qa, q_W = qW, meta = metal), output = MvNormalMeanPrecision(mA * μx, mean(qW))
+            @test_rules [check_type_promotion = true, atol = 1e-5] ContinuousTransition(
+                :y, Marginalisation
+            ) [(
+                input = (q_x = qx, q_a = qa, q_W = qW, meta = metal),
+                output = MvNormalMeanPrecision(mA * μx, mean(qW))
             )]
         end
     end

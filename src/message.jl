@@ -291,8 +291,9 @@ mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     cache           :: Union{Nothing, Message}
 end
 
-DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
-    DeferredMessage(messages, marginals, mappingFn, nothing)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(
+    messages, marginals, mappingFn, nothing
+)
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
@@ -342,14 +343,17 @@ struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     stream  :: LazyObservable{M}
 end
 
-MessageObservable(::Type{M} = AbstractMessage) where {M} =
-    MessageObservable{M}(RecentSubject(M), lazy(M))
+MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(
+    RecentSubject(M), lazy(M)
+)
 
-Rocket.getrecent(observable::MessageObservable) =
-    Rocket.getrecent(observable.subject)
+Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(
+    observable.subject
+)
 
-@inline Rocket.on_subscribe!(observable::MessageObservable, actor) =
-    subscribe!(observable.stream, actor)
+@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(
+    observable.stream, actor
+)
 
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)

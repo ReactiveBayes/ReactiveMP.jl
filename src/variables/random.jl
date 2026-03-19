@@ -89,8 +89,9 @@ function activate!(
 end
 
 _getmarginal(randomvar::RandomVariable) = randomvar.marginal
-_setmarginal!(randomvar::RandomVariable, observable) =
-    connect!(_getmarginal(randomvar), observable)
+_setmarginal!(randomvar::RandomVariable, observable) = connect!(
+    _getmarginal(randomvar), observable
+)
 _makemarginal(
     randomvar::RandomVariable, options::RandomVariableActivationOptions
 ) = begin

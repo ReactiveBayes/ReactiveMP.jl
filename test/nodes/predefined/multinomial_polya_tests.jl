@@ -8,13 +8,19 @@
             let
                 q_x = PointMass([10, 20, 70])  # K=3 categories
                 q_N = PointMass(100)
-                q_ψ = MvNormalWeightedMeanPrecision([0.5, 0.3], [1.0 0.2; 0.2 1.0])  # K-1=2 dimensions
+                q_ψ = MvNormalWeightedMeanPrecision(
+                    [0.5, 0.3], [1.0 0.2; 0.2 1.0]
+                )  # K-1=2 dimensions
 
                 @test score(
                     AverageEnergy(),
                     MultinomialPolya,
                     Val{(:x, :N, :ψ)}(),
-                    (Marginal(q_x, false, false, nothing), Marginal(q_N, false, false, nothing), Marginal(q_ψ, false, false, meta)),
+                    (
+                        Marginal(q_x, false, false, nothing),
+                        Marginal(q_N, false, false, nothing),
+                        Marginal(q_ψ, false, false, meta)
+                    ),
                     meta
                 ) ≈ 104.19 atol = 0.1
             end
@@ -28,7 +34,11 @@
                     AverageEnergy(),
                     MultinomialPolya,
                     Val{(:x, :N, :ψ)}(),
-                    (Marginal(q_x, false, false, nothing), Marginal(q_N, false, false, nothing), Marginal(q_ψ, false, false, meta)),
+                    (
+                        Marginal(q_x, false, false, nothing),
+                        Marginal(q_N, false, false, nothing),
+                        Marginal(q_ψ, false, false, meta)
+                    ),
                     meta
                 ) ≈ -101.72 atol = 0.1
             end
@@ -42,7 +52,11 @@
                     AverageEnergy(),
                     MultinomialPolya,
                     Val{(:x, :N, :ψ)}(),
-                    (Marginal(q_x, false, false, nothing), Marginal(q_N, false, false, nothing), Marginal(q_ψ, false, false, meta)),
+                    (
+                        Marginal(q_x, false, false, nothing),
+                        Marginal(q_N, false, false, nothing),
+                        Marginal(q_ψ, false, false, meta)
+                    ),
                     meta
                 )
 

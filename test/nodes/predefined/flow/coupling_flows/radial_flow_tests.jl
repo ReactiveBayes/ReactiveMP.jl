@@ -2,8 +2,14 @@
 @testitem "Radial Flow" begin
     using ReactiveMP
     using ReactiveMP: getdim, getz0, getα, getβ, getall, setz0!, setα!, setβ!
-    using ReactiveMP: forward, forward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!
-    using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logdet_jacobian, logabsdet_jacobian
+    using ReactiveMP:
+        forward, forward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!
+    using ReactiveMP:
+        det_jacobian,
+        absdet_jacobian,
+        logdet_jacobian,
+        logdet_jacobian,
+        logabsdet_jacobian
 
     @testset "Constructor" begin
 
@@ -232,9 +238,14 @@
 
         # check forward function (multivariate)
         f = RadialFlow([1.0, 2.0], 3.0, 1.0)
-        @test forward(f, [-4.0, 3.0]) == [-4.617358680468466, 3.1234717360936934]
-        @test forward(f, [-2.0, 1.5]) == [-2.4965751817893183, 1.4172374697017802]
-        @test forward.(f, [[-4.0, 3.0], [-2.0, 1.5]]) == [[-4.617358680468466, 3.1234717360936934], [-2.4965751817893183, 1.4172374697017802]]
+        @test forward(f, [-4.0, 3.0]) ==
+            [-4.617358680468466, 3.1234717360936934]
+        @test forward(f, [-2.0, 1.5]) ==
+            [-2.4965751817893183, 1.4172374697017802]
+        @test forward.(f, [[-4.0, 3.0], [-2.0, 1.5]]) == [
+            [-4.617358680468466, 3.1234717360936934],
+            [-2.4965751817893183, 1.4172374697017802]
+        ]
 
         # check forward! function (multivariate)
         f = RadialFlow([1.0, 2.0], 3.0, 1.0)
@@ -251,29 +262,50 @@
         f = RadialFlow(1.0, 2.0, -3.0)
         @test jacobian(f, 1.5) == 0.03999999999999987
         @test jacobian(f, 2.5) == 0.5102040816326531
-        @test jacobian.(f, [1.5, 2.5]) == [0.03999999999999987, 0.5102040816326531]
+        @test jacobian.(f, [1.5, 2.5]) ==
+            [0.03999999999999987, 0.5102040816326531]
 
         # check jacobian function (univariate mapping, multivariate input)
         f = RadialFlow(1.0, 2.0, -3.0)
         @test jacobian(f, [1.5]) == 0.03999999999999987
         @test jacobian(f, [2.5]) == 0.5102040816326531
-        @test jacobian.(f, [[1.5], [2.5]]) == [0.03999999999999987, 0.5102040816326531]
+        @test jacobian.(f, [[1.5], [2.5]]) ==
+            [0.03999999999999987, 0.5102040816326531]
 
         # check jacobian function (multivariate)
         f = RadialFlow([1.0, 2.0], 3.0, 1.0)
-        @test jacobian(f, [-4.0, 3.0]) == [1.0487256521978074 0.014949216779177184; 0.014949216779177184 1.120481892737858]
-        @test jacobian(f, [-2.0, 1.5]) == [1.084447783638529 -0.013512879492985073; -0.013512879492985073 1.1632729140142752]
+        @test jacobian(f, [-4.0, 3.0]) == [
+            1.0487256521978074 0.014949216779177184;
+            0.014949216779177184 1.120481892737858
+        ]
+        @test jacobian(f, [-2.0, 1.5]) == [
+            1.084447783638529 -0.013512879492985073;
+            -0.013512879492985073 1.1632729140142752
+        ]
         @test jacobian.(f, [[-4.0, 3.0], [-2.0, 1.5]]) == [
-            [1.0487256521978074 0.014949216779177184; 0.014949216779177184 1.120481892737858], [1.084447783638529 -0.013512879492985073; -0.013512879492985073 1.1632729140142752]
+            [
+                1.0487256521978074 0.014949216779177184;
+                0.014949216779177184 1.120481892737858
+            ],
+            [
+                1.084447783638529 -0.013512879492985073;
+                -0.013512879492985073 1.1632729140142752
+            ]
         ]
 
         # check jacobian! function (multivariate)
         f = RadialFlow([1.0, 2.0], 3.0, 1.0)
         output = zeros(2, 2)
         jacobian!(output, f, [-4.0, 3.0])
-        @test output == [1.0487256521978074 0.014949216779177184; 0.014949216779177184 1.120481892737858]
+        @test output == [
+            1.0487256521978074 0.014949216779177184;
+            0.014949216779177184 1.120481892737858
+        ]
         jacobian!(output, f, [-2.0, 1.5])
-        @test output == [1.084447783638529 -0.013512879492985073; -0.013512879492985073 1.1632729140142752]
+        @test output == [
+            1.084447783638529 -0.013512879492985073;
+            -0.013512879492985073 1.1632729140142752
+        ]
     end
 
     @testset "Utility Jacobian" begin
@@ -288,7 +320,10 @@
         # check utility functions jacobian (multivariate)
         f = RadialFlow([1.0, 2.0], 3.0, 1.0)
         @test det_jacobian(f, [-4.0, 3.0]) == 1.1748546246550329
-        @test inv_jacobian(f, [-4.0, 3.0]) ≈ [0.9537196085574075 -0.012724311983337218; -0.012724311983337218 0.8926429110373889]
+        @test inv_jacobian(f, [-4.0, 3.0]) ≈ [
+            0.9537196085574075 -0.012724311983337218;
+            -0.012724311983337218 0.8926429110373889
+        ]
         @test absdet_jacobian(f, [-4.0, 3.0]) == 1.1748546246550329
         @test logabsdet_jacobian(f, [-4.0, 3.0]) == (0.16114441624386985, 1.0)
     end

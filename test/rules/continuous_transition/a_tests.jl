@@ -19,7 +19,9 @@
             Vyx = Vyx[1:dy, (dy + 1):end]
             mW = mean(q_W)
             Λ = kron(Vx + mx * mx', mW)
-            return MvNormalWeightedMeanPrecision(Λ * vec((Vyx + my * mx') * inv((Vx + mx * mx'))), Λ)
+            return MvNormalWeightedMeanPrecision(
+                Λ * vec((Vyx + my * mx') * inv((Vx + mx * mx'))), Λ
+            )
         end
 
         @testset "Structured: (q_y_x::MultivariateNormalDistributionsFamily, q_a::MultivariateNormalDistributionsFamily, q_W::Any, meta::CTMeta)" begin
@@ -32,11 +34,16 @@
                 μx, Σx = rand(rng, dx), Lx * Lx'
                 μy, Σy = rand(rng, dy), Ly * Ly'
 
-                qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+                qyx = MvNormalMeanCovariance(
+                    [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
+                )
                 qa = MvNormalMeanCovariance(a0, diageye(dydx))
                 qW = Wishart(dy + 1, diageye(dy))
-                @test_rules [check_type_promotion = false] ContinuousTransition(:a, Marginalisation) [(
-                    input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_structured(qyx, qW)
+                @test_rules [check_type_promotion = false] ContinuousTransition(
+                    :a, Marginalisation
+                ) [(
+                    input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metal),
+                    output = benchmark_rule_structured(qyx, qW)
                 )]
             end
         end
@@ -52,11 +59,18 @@
             μx, Σx = ones(dx), diageye(dx)
             μy, Σy = ones(dy), diageye(dy)
 
-            qyx = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+            qyx = MvNormalMeanCovariance(
+                [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
+            )
             qa = MvNormalMeanCovariance(a0, diageye(1))
             qW = Wishart(dy, diageye(dy))
-            @test_rules [check_type_promotion = true] ContinuousTransition(:a, Marginalisation) [(
-                input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metanl), output = MvNormalWeightedMeanPrecision(zeros(1), (qW.df * dy * dx) * diageye(1))
+            @test_rules [check_type_promotion = true] ContinuousTransition(
+                :a, Marginalisation
+            ) [(
+                input = (q_y_x = qyx, q_a = qa, q_W = qW, meta = metanl),
+                output = MvNormalWeightedMeanPrecision(
+                    zeros(1), (qW.df * dy * dx) * diageye(1)
+                )
             )]
         end
     end
@@ -69,7 +83,9 @@
         mx, Vx = mean_cov(q_x)
         mW = mean(q_W)
         Λ = kron(Vx + mx * mx', mW)
-        return MvNormalWeightedMeanPrecision(Λ * (vec(my * mx' * inv(Vx + mx * mx'))), Λ)
+        return MvNormalWeightedMeanPrecision(
+            Λ * (vec(my * mx' * inv(Vx + mx * mx'))), Λ
+        )
     end
 
     @testset "Mean-field: (q_y::Any, q_x::Any, q_a::Any, q_W::Any, meta::CTMeta)" begin
@@ -85,12 +101,24 @@
             qx = MvNormalMeanCovariance(μx, Σx)
             qa = MvNormalMeanCovariance(a0, diageye(dydx))
             qW = Wishart(dy + 1, diageye(dy))
-            @test_rules [check_type_promotion = false] ContinuousTransition(:a, Marginalisation) [(
-                input = (q_y = qy, q_x = qx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_meanfield(qy, qx, qW)
+            @test_rules [check_type_promotion = false] ContinuousTransition(
+                :a, Marginalisation
+            ) [(
+                input = (q_y = qy, q_x = qx, q_a = qa, q_W = qW, meta = metal),
+                output = benchmark_rule_meanfield(qy, qx, qW)
             )]
 
-            @test_rules [check_type_promotion = false] ContinuousTransition(:a, Marginalisation) [(
-                input = (q_y = PointMass(μy), q_x = qx, q_a = qa, q_W = qW, meta = metal), output = benchmark_rule_meanfield(PointMass(μy), qx, qW)
+            @test_rules [check_type_promotion = false] ContinuousTransition(
+                :a, Marginalisation
+            ) [(
+                input = (
+                    q_y = PointMass(μy),
+                    q_x = qx,
+                    q_a = qa,
+                    q_W = qW,
+                    meta = metal
+                ),
+                output = benchmark_rule_meanfield(PointMass(μy), qx, qW)
             )]
         end
     end

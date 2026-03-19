@@ -31,7 +31,15 @@ end
 @testitem "ConstVariable: getmarginal" begin
     using BayesBase
 
-    import ReactiveMP: MessageObservable, create_messagein!, messagein, degree, activate!, connect!, DataVariableActivationOptions, messageout
+    import ReactiveMP:
+        MessageObservable,
+        create_messagein!,
+        messagein,
+        degree,
+        activate!,
+        connect!,
+        DataVariableActivationOptions,
+        messageout
 
     include("../testutilities.jl")
 

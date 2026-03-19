@@ -49,12 +49,23 @@ function create_benchmark_data(dx, dy)
     q_x = MvNormalMeanCovariance(μx, Σx)
     q_a = MvNormalMeanCovariance(μa, Σa)
     q_W = Wishart(dy + 1, Matrix{Float64}(I, dy, dy))
-    q_y_x = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+    q_y_x = MvNormalMeanCovariance(
+        [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
+    )
 
     m_y = MvNormalMeanCovariance(μy, Σy)
     m_x = MvNormalMeanCovariance(μx, Σx)
 
-    return (meta = meta, q_y = q_y, q_x = q_x, q_a = q_a, q_W = q_W, q_y_x = q_y_x, m_y = m_y, m_x = m_x)
+    return (
+        meta = meta,
+        q_y = q_y,
+        q_x = q_x,
+        q_a = q_a,
+        q_W = q_W,
+        q_y_x = q_y_x,
+        m_y = m_y,
+        m_x = m_x
+    )
 end
 
 # ============================================================================
@@ -62,15 +73,29 @@ end
 # ============================================================================
 
 function bench_a_structured(data)
-    @call_rule ContinuousTransition(:a, Marginalisation) (q_y_x = data.q_y_x, q_a = data.q_a, q_W = data.q_W, meta = data.meta)
+    @call_rule ContinuousTransition(:a, Marginalisation) (
+        q_y_x = data.q_y_x, q_a = data.q_a, q_W = data.q_W, meta = data.meta
+    )
 end
 
 function bench_a_meanfield(data)
-    @call_rule ContinuousTransition(:a, Marginalisation) (q_y = data.q_y, q_x = data.q_x, q_a = data.q_a, q_W = data.q_W, meta = data.meta)
+    @call_rule ContinuousTransition(:a, Marginalisation) (
+        q_y = data.q_y,
+        q_x = data.q_x,
+        q_a = data.q_a,
+        q_W = data.q_W,
+        meta = data.meta
+    )
 end
 
 function bench_marginal_y_x(data)
-    @call_marginalrule ContinuousTransition(:y_x) (m_y = data.m_y, m_x = data.m_x, q_a = data.q_a, q_W = data.q_W, meta = data.meta)
+    @call_marginalrule ContinuousTransition(:y_x) (
+        m_y = data.m_y,
+        m_x = data.m_x,
+        q_a = data.q_a,
+        q_W = data.q_W,
+        meta = data.meta
+    )
 end
 
 # ============================================================================
@@ -81,7 +106,9 @@ function run_benchmarks(; quick_mode = false)
     println()
     println("=" ^ 80)
     println("  ContinuousTransition Rules Benchmark")
-    println("  Branch: ", strip(read(`git rev-parse --abbrev-ref HEAD`, String)))
+    println(
+        "  Branch: ", strip(read(`git rev-parse --abbrev-ref HEAD`, String))
+    )
     println("  Commit: ", strip(read(`git rev-parse --short HEAD`, String)))
     println("=" ^ 80)
     println()
@@ -96,7 +123,9 @@ function run_benchmarks(; quick_mode = false)
     println()
 
     # Results storage
-    results = Dict{String, Vector{Tuple{Int, Int, Float64}}}("a_structured" => [], "a_meanfield" => [], "marginal_y_x" => [])
+    results = Dict{String, Vector{Tuple{Int, Int, Float64}}}(
+        "a_structured" => [], "a_meanfield" => [], "marginal_y_x" => []
+    )
 
     for (dx, dy) in test_dims
         println("-" ^ 60)

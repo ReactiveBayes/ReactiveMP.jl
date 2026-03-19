@@ -54,7 +54,9 @@ end
 # This function extracts elements from the linearized version of inputs from the `__as_vec` function
 # In case of `size = (Int, Int)` we extract the specified amount of elements, reshape it into a matrix and treat it as a Matrixvariate variable
 function __splitjoinelement(x::AbstractVector, start, size::Tuple{Int, Int})
-    return reshape(view(x, start:(start + prod(size) - 1)), first(size), last(size))
+    return reshape(
+        view(x, start:(start + prod(size) - 1)), first(size), last(size)
+    )
 end
 
 # This function extracts elements from the linearized version of inputs from the `__as_vec` function all at once

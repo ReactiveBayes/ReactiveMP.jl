@@ -32,7 +32,8 @@ In order to compute:
 - `m_out`: uses the posterior over `out`, message from `out` and the joint over the `ins` edges
 - `m_in_k`: uses the inbound message on the `in_k` edge and `q_ins`
 """
-struct CVIProjectionApproximationDeltaFnRuleLayout <: AbstractDeltaNodeDependenciesLayout end
+struct CVIProjectionApproximationDeltaFnRuleLayout <:
+       AbstractDeltaNodeDependenciesLayout end
 
 deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) = CVIProjectionApproximationDeltaFnRuleLayout()
 
@@ -43,21 +44,65 @@ end
 
 # This function declares how to compute `q_out` locally around `DeltaFn`
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks
+    ::CVIProjectionApproximationDeltaFnRuleLayout,
+    ::Val{:q_out},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+    callbacks
 )
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
+    return deltafn_apply_layout(
+        DeltaFnDefaultRuleLayout(),
+        Val(:q_out),
+        factornode,
+        meta,
+        pipeline_stages,
+        scheduler,
+        addons,
+        rulefallback,
+        callbacks
+    )
 end
 
 # This function declares how to compute `q_ins` locally around `DeltaFn`
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:q_ins}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks
+    ::CVIProjectionApproximationDeltaFnRuleLayout,
+    ::Val{:q_ins},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+    callbacks
 )
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_ins), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
+    return deltafn_apply_layout(
+        DeltaFnDefaultRuleLayout(),
+        Val(:q_ins),
+        factornode,
+        meta,
+        pipeline_stages,
+        scheduler,
+        addons,
+        rulefallback,
+        callbacks
+    )
 end
 
 # This function declares how to compute `m_out` 
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:m_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks
+    ::CVIProjectionApproximationDeltaFnRuleLayout,
+    ::Val{:m_out},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+    callbacks
 )
     let interface = factornode.out
         msgs_names      = Val{(:out,)}()
@@ -70,15 +115,33 @@ function deltafn_apply_layout(
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        vmessageout = combineLatest(
+            (msgs_observable, marginals_observable), PushNew()
+        )
 
-        mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
-            (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
-        end
+        mapping =
+            let messagemap = MessageMapping(
+                    fform,
+                    vtag,
+                    vconstraint,
+                    msgs_names,
+                    marginal_names,
+                    meta,
+                    addons,
+                    factornode,
+                    rulefallback,
+                    callbacks
+                )
+                (dependencies) -> DeferredMessage(
+                    dependencies[1], dependencies[2], messagemap
+                )
+            end
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, vmessageout
+        )
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)
@@ -87,7 +150,25 @@ end
 
 # This function declares how to compute `m_in` for each `k` 
 function deltafn_apply_layout(
-    ::CVIProjectionApproximationDeltaFnRuleLayout, ::Val{:m_in}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks
+    ::CVIProjectionApproximationDeltaFnRuleLayout,
+    ::Val{:m_in},
+    factornode::DeltaFnNode,
+    meta,
+    pipeline_stages,
+    scheduler,
+    addons,
+    rulefallback,
+    callbacks
 )
-    return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:m_in), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
+    return deltafn_apply_layout(
+        DeltaFnDefaultRuleLayout(),
+        Val(:m_in),
+        factornode,
+        meta,
+        pipeline_stages,
+        scheduler,
+        addons,
+        rulefallback,
+        callbacks
+    )
 end

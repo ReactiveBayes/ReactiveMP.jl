@@ -8,7 +8,9 @@ _mergevals(::Val{L}, ::Val{R}) where {L, R} = (L..., R...)
 
 _extractvalues(f::F, ::Nothing, vals::Tuple) where {F} = f.(vals)
 _extractvalues(f::F, vals::Tuple, ::Nothing) where {F} = f.(vals)
-_extractvalues(f::F, left::Tuple, right::Tuple) where {F} = (f.(left)..., f.(right)...)
+_extractvalues(f::F, left::Tuple, right::Tuple) where {F} = (
+    f.(left)..., f.(right)...
+)
 
 struct FallbackNodeFunctionUnnormalizedLogPdf{F}
     fn::F
@@ -68,11 +70,49 @@ function (fallback::NodeFunctionRuleFallback)(args...)
     return rulefallback_nodefunction(fallback, args...)
 end
 
-function rulefallback_nodefunction(fallback::NodeFunctionRuleFallback, fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
-    return rulefallback_nodefunction(fallback, sdtype(fform), fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+function rulefallback_nodefunction(
+    fallback::NodeFunctionRuleFallback,
+    fform,
+    on,
+    vconstraint,
+    mnames,
+    messages,
+    qnames,
+    marginals,
+    meta,
+    addons,
+    __node
+)
+    return rulefallback_nodefunction(
+        fallback,
+        sdtype(fform),
+        fform,
+        on,
+        vconstraint,
+        mnames,
+        messages,
+        qnames,
+        marginals,
+        meta,
+        addons,
+        __node
+    )
 end
 
-function rulefallback_nodefunction(fallback::NodeFunctionRuleFallback, ::Stochastic, fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
+function rulefallback_nodefunction(
+    fallback::NodeFunctionRuleFallback,
+    ::Stochastic,
+    fform,
+    on,
+    vconstraint,
+    mnames,
+    messages,
+    qnames,
+    marginals,
+    meta,
+    addons,
+    __node
+)
     vals   = _mergevals(mnames, qnames)
     means  = _extractvalues(fallback.extractfn, messages, marginals)
     kwargs = NamedTuple{vals}(means)
@@ -81,11 +121,39 @@ function rulefallback_nodefunction(fallback::NodeFunctionRuleFallback, ::Stochas
 end
 
 function rulefallback_nodefunction(
-    fallback::NodeFunctionRuleFallback, ::Deterministic, fform, on::Val{:out}, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node
+    fallback::NodeFunctionRuleFallback,
+    ::Deterministic,
+    fform,
+    on::Val{:out},
+    vconstraint,
+    mnames,
+    messages,
+    qnames,
+    marginals,
+    meta,
+    addons,
+    __node
 )
-    error("This fallback rule does not work for deterministic nodes. Use `@meta` to define an approximation method for the deterministic node $(fform).")
+    error(
+        "This fallback rule does not work for deterministic nodes. Use `@meta` to define an approximation method for the deterministic node $(fform)."
+    )
 end
 
-function rulefallback_nodefunction(fallback::NodeFunctionRuleFallback, ::Deterministic, fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node)
-    error("This fallback rule does not work for deterministic nodes. Use `@meta` to define an approximation method for a deterministic node $(fform).")
+function rulefallback_nodefunction(
+    fallback::NodeFunctionRuleFallback,
+    ::Deterministic,
+    fform,
+    on,
+    vconstraint,
+    mnames,
+    messages,
+    qnames,
+    marginals,
+    meta,
+    addons,
+    __node
+)
+    error(
+        "This fallback rule does not work for deterministic nodes. Use `@meta` to define an approximation method for a deterministic node $(fform)."
+    )
 end

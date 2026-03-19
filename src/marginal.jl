@@ -57,7 +57,10 @@ end
 function Base.:(==)(left::Marginal, right::Marginal)
     # We need this dummy method as Julia is not smart enough to 
     # do that automatically if `data` is mutable
-    return left.is_clamped == right.is_clamped && left.is_initial == right.is_initial && left.data == right.data && left.addons == right.addons
+    return left.is_clamped == right.is_clamped &&
+           left.is_initial == right.is_initial &&
+           left.data == right.data &&
+           left.addons == right.addons
 end
 
 """
@@ -140,7 +143,9 @@ MacroHelpers.@proxy_methods Marginal getdata [
 # Otherwise it causes invalidations and slower compile times
 Base.eltype(::Type{<:Marginal{D}}) where {D} = Base.eltype(D)
 
-Distributions.mean(fn::Function, marginal::Marginal) = mean(fn, getdata(marginal))
+Distributions.mean(fn::Function, marginal::Marginal) = mean(
+    fn, getdata(marginal)
+)
 
 """
     as_marginal(any)
@@ -179,7 +184,9 @@ struct MarginalObservable <: Subscribable{Marginal}
     stream  :: LazyObservable{Marginal}
 end
 
-MarginalObservable() = MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
+MarginalObservable() = MarginalObservable(
+    RecentSubject(Marginal), lazy(Marginal)
+)
 
 as_marginal_observable(observable::MarginalObservable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(observable, skip_strategy)
 as_marginal_observable(observable)                                                          = as_marginal_observable(observable, IncludeAll())
@@ -190,9 +197,13 @@ function as_marginal_observable(observable, skip_strategy::MarginalSkipStrategy)
     return as_marginal_observable(output, skip_strategy)
 end
 
-Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(observable.subject)
+Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(
+    observable.subject
+)
 
-@inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(observable.stream, actor)
+@inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(
+    observable.stream, actor
+)
 
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{<:Marginal})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.NextActor{<:Marginal})       = Rocket.on_subscribe!(observable.stream, actor)
@@ -232,12 +243,25 @@ end
 marginal_mapping_fform(::MarginalMapping{F}) where {F} = F
 marginal_mapping_fform(::MarginalMapping{F}) where {F <: Function} = F.instance
 
-function MarginalMapping(::Type{F}, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F, T, N, M, A, R}
-    return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
+function MarginalMapping(
+    ::Type{F},
+    vtag::T,
+    msgs_names::N,
+    marginals_names::M,
+    meta::A,
+    factornode::R
+) where {F, T, N, M, A, R}
+    return MarginalMapping{F, T, N, M, A, R}(
+        vtag, msgs_names, marginals_names, meta, factornode
+    )
 end
 
-function MarginalMapping(::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R) where {F <: Function, T, N, M, A, R}
-    return MarginalMapping{F, T, N, M, A, R}(vtag, msgs_names, marginals_names, meta, factornode)
+function MarginalMapping(
+    ::F, vtag::T, msgs_names::N, marginals_names::M, meta::A, factornode::R
+) where {F <: Function, T, N, M, A, R}
+    return MarginalMapping{F, T, N, M, A, R}(
+        vtag, msgs_names, marginals_names, meta, factornode
+    )
 end
 
 function (mapping::MarginalMapping)(dependencies)
@@ -245,20 +269,41 @@ function (mapping::MarginalMapping)(dependencies)
     marginals = getrecent(dependencies[2])
 
     # Marginal is clamped if all of the inputs are clamped
-    is_marginal_clamped = __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
+    is_marginal_clamped =
+        __check_all(is_clamped, messages) && __check_all(is_clamped, marginals)
 
     # Marginal is initial if it is not clamped and all of the inputs are either clamped or initial
-    is_marginal_initial = !is_marginal_clamped && (__check_all(is_clamped_or_initial, messages) && __check_all(is_clamped_or_initial, marginals))
+    is_marginal_initial =
+        !is_marginal_clamped && (
+            __check_all(is_clamped_or_initial, messages) &&
+            __check_all(is_clamped_or_initial, marginals)
+        )
 
-    marginal = if !isnothing(messages) && any(ismissing, TupleTools.flatten(getdata.(messages)))
-        missing
-    elseif !isnothing(marginals) && any(ismissing, TupleTools.flatten(getdata.(marginals)))
-        missing
-    else
-        marginalrule(marginal_mapping_fform(mapping), mapping.vtag, mapping.msgs_names, messages, mapping.marginals_names, marginals, mapping.meta, mapping.factornode)
-    end
+    marginal =
+        if !isnothing(messages) &&
+            any(ismissing, TupleTools.flatten(getdata.(messages)))
+            missing
+        elseif !isnothing(marginals) &&
+            any(ismissing, TupleTools.flatten(getdata.(marginals)))
+            missing
+        else
+            marginalrule(
+                marginal_mapping_fform(mapping),
+                mapping.vtag,
+                mapping.msgs_names,
+                messages,
+                mapping.marginals_names,
+                marginals,
+                mapping.meta,
+                mapping.factornode
+            )
+        end
 
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial, nothing)
 end
 
-Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{T, M}(mapping)
+Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{
+    T, M
+}(
+    mapping
+)

@@ -23,7 +23,9 @@ The `FlowMeta` structure is required for the `Flow` factor node and can be inclu
     y ~ Flow(x) where { meta = FlowMeta(...) }
 ```
 """
-struct FlowMeta{T <: AbstractCompiledFlowModel, A <: AbstractApproximationMethod}
+struct FlowMeta{
+    T <: AbstractCompiledFlowModel, A <: AbstractApproximationMethod
+}
     model         :: T
     approximation :: A
 end

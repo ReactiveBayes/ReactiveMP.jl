@@ -24,8 +24,11 @@ This function returns `T` expression for the following input expressions:
 - `type`: Type expression to be lowered
 """
 function bottom_type(type)
-    @capture(type, (DeltaFn{T_}) | (ReactiveMP.DeltaFn{T_}) | (typeof(T_)) | (Type{<:T_}) | (Type{T_}) | (T_)) ||
-        error("Expression $(type) doesnt seem to be a valid type expression.")
+    @capture(
+        type,
+        (DeltaFn{T_}) | (ReactiveMP.DeltaFn{T_}) | (typeof(T_)) | (Type{<:T_}) |
+        (Type{T_}) | (T_)
+    ) || error("Expression $(type) doesnt seem to be a valid type expression.")
     return T
 end
 
@@ -66,7 +69,9 @@ end
 
 function proxy_type(proxy, type::Expr)
     if @capture(type, Vararg{rest__})
-        error("Vararg{T, N} is forbidden in @rule macro, use `ManyOf{N, T}` instead.")
+        error(
+            "Vararg{T, N} is forbidden in @rule macro, use `ManyOf{N, T}` instead."
+        )
     elseif @capture(type, ManyOf{N_, T_})
         return :(ReactiveMP.ManyOf{<:NTuple{$N, $(proxy_type(proxy, T))}})
     else
@@ -92,7 +97,9 @@ Distributions.var(proxy::Message)  = Distributions.mean(getdata(proxy))
 ```
 """
 macro proxy_methods(proxy_type, proxy_getter, proxy_methods)
-    @capture(proxy_methods, [methods__]) || error("Invalid specification of proxy methods, should be an array of methods")
+    @capture(proxy_methods, [methods__]) || error(
+        "Invalid specification of proxy methods, should be an array of methods"
+    )
 
     output      = Expr(:block)
     output.args = map(method -> :(($method)(proxy::$(proxy_type)) = ($method)($(proxy_getter)(proxy))), methods)
@@ -104,19 +111,35 @@ __test_inferred_typeof(x)                   = typeof(x)
 __test_inferred_typeof(::Type{T}) where {T} = Type{T}
 
 macro test_inferred(T, expression)
-    return esc(quote
-        let
-            local result = Test.@inferred($expression)
-            if !(ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T)
-                error("Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T")
+    return esc(
+        quote
+            let
+                local result = Test.@inferred($expression)
+                if !(
+                    ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
+                )
+                    error(
+                        "Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T"
+                    )
+                end
+                @test ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <:
+                    $T
+                result
             end
-            @test ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
-            result
         end
-    end)
+    )
 end
 
-function check_rule_interfaces(macrotype, fform, lambda, ifaces, on_type, m_names, q_names; mod = __MODULE__)
+function check_rule_interfaces(
+    macrotype,
+    fform,
+    lambda,
+    ifaces,
+    on_type,
+    m_names,
+    q_names;
+    mod = __MODULE__
+)
     # skip rules like (typeof(+))(:in1_in2) for which interfaces returns nothing
     if ifaces === nothing
         return nothing
@@ -206,7 +229,9 @@ end
 
 __split_val(x::QuoteNode, mod) = valof_set(x.value, mod)
 __split_val(x::Expr, mod) = valof_set(Tuple(map(z -> z.value, x.args)), mod)
-__split_val(x::Nothing, mod) = error("Unexpected expression encountered (Not of form `Val{...}`).")
+__split_val(x::Nothing, mod) = error(
+    "Unexpected expression encountered (Not of form `Val{...}`)."
+)
 
 # Fallback for other types
 valof_set(x, mod::Module) = Set{Symbol}()

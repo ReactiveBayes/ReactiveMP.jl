@@ -37,7 +37,12 @@ mutable struct EqualityNode
     cache_left  :: Message
     cache_right :: Message
 
-    EqualityNode() = new(lazy(Missing), lazy(Missing), Message(missing, true, true, nothing), Message(missing, true, true, nothing))
+    EqualityNode() = new(
+        lazy(Missing),
+        lazy(Missing),
+        Message(missing, true, true, nothing),
+        Message(missing, true, true, nothing)
+    )
 end
 
 getoutbound(::EqualityLeftOutbound, node::EqualityNode)  = node.left
@@ -66,10 +71,16 @@ struct EqualityChain{P, F}
     pipeline   :: P
     prod_fn    :: F
 
-    function EqualityChain(inputmsgs::Vector{MessageObservable{AbstractMessage}}, pipeline::P, prod_fn::F) where {P, F}
+    function EqualityChain(
+        inputmsgs::Vector{MessageObservable{AbstractMessage}},
+        pipeline::P,
+        prod_fn::F
+    ) where {P, F}
         n = length(inputmsgs)
         nodes = map(_ -> EqualityNode(), 1:n)
-        return new{P, F}(n, nodes, inputmsgs, falses(n), falses(n), pipeline, prod_fn)
+        return new{P, F}(
+            n, nodes, inputmsgs, falses(n), falses(n), pipeline, prod_fn
+        )
     end
 end
 
@@ -96,7 +107,9 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
 @propagate_inbounds setcache!(::EqualityLeftOutbound, chain::EqualityChain, range::OrdinalRange)  = fill_bitarray!(view(chain.cacheleft, forward_range(range)), true)
 @propagate_inbounds setcache!(::EqualityRightOutbound, chain::EqualityChain, range::OrdinalRange) = fill_bitarray!(view(chain.cacheright, forward_range(range)), true)
 
-@propagate_inbounds function getcache(type::EqualityNodeOutboundType, chain::EqualityChain, node_index)
+@propagate_inbounds function getcache(
+    type::EqualityNodeOutboundType, chain::EqualityChain, node_index
+)
     if __check_indices(type, chain, node_index)
         return getcache(type, getnode(chain, node_index))
     else
@@ -113,7 +126,9 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
 @propagate_inbounds precompute_range(type::EqualityLeftOutbound, chain::EqualityChain, node_index)  = first_unmaterialized_index(type, chain, node_index):-1:node_index
 @propagate_inbounds precompute_range(type::EqualityRightOutbound, chain::EqualityChain, node_index) = first_unmaterialized_index(type, chain, node_index):node_index
 
-@propagate_inbounds function materialize!(type::EqualityNodeOutboundType, chain::EqualityChain, node_index)
+@propagate_inbounds function materialize!(
+    type::EqualityNodeOutboundType, chain::EqualityChain, node_index
+)
     if __check_indices(type, chain, node_index)
         node = getnode(chain, node_index)
         if iscached(type, chain, node_index)
@@ -147,11 +162,25 @@ struct ChainInvalidationCallback
     end
 end
 
-Rocket.tap(callback::ChainInvalidationCallback) = Rocket.TapOperator{ChainInvalidationCallback}(callback)
+Rocket.tap(callback::ChainInvalidationCallback) = Rocket.TapOperator{
+    ChainInvalidationCallback
+}(
+    callback
+)
 
 function (callback::ChainInvalidationCallback)(_)
-    fill_bitarray!(view(callback.cacheleft, firstindex(callback.cacheleft):(callback.index)), false)
-    fill_bitarray!(view(callback.cacheright, (callback.index):lastindex(callback.cacheright)), false)
+    fill_bitarray!(
+        view(
+            callback.cacheleft, firstindex(callback.cacheleft):(callback.index)
+        ),
+        false
+    )
+    fill_bitarray!(
+        view(
+            callback.cacheright, (callback.index):lastindex(callback.cacheright)
+        ),
+        false
+    )
 end
 
 ## 
@@ -167,7 +196,11 @@ function (mapping::ChainOutboundMapping)(_)
     return as_message(prod(mapping.chain, from_left, from_right))
 end
 
-Base.map(::Type{Message}, mapping::ChainOutboundMapping) = Rocket.MapOperator{Message, ChainOutboundMapping}(mapping)
+Base.map(::Type{Message}, mapping::ChainOutboundMapping) = Rocket.MapOperator{
+    Message, ChainOutboundMapping
+}(
+    mapping
+)
 
 function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
     n = length(chain)
@@ -181,7 +214,10 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
         node = getnode(chain, index)
 
         # As soon as we receive new inbound message - we invalidate cache for part of the chain: see ChainInvalidationCallback
-        input = getinbound(chain, index) |> tap(ChainInvalidationCallback(index, chain)) |> share_recent()
+        input =
+            getinbound(chain, index) |>
+            tap(ChainInvalidationCallback(index, chain)) |>
+            share_recent()
 
         left  = combineLatestUpdates((getoutbound(Left, chain, nextindex(Left, index)), input), PushNew()) |> pipeline |> map_to(missing) |> share_recent()
         right = combineLatestUpdates((getoutbound(Right, chain, nextindex(Right, index)), input), PushNew()) |> pipeline |> map_to(missing) |> share_recent()
@@ -192,7 +228,13 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
         from_left  = getoutbound(Right, chain, nextindex(Right, index)) # Inbound message comming from left direction  (is a right from `index - 1`)
         from_right = getoutbound(Left, chain, nextindex(Left, index))  # Inbound message comming from right direction (is a left from `index + 1`)
 
-        outputmsg = combineLatestUpdates((from_left, from_right), PushNew(), Message, ChainOutboundMapping(index, chain), reset_vstatus)
+        outputmsg = combineLatestUpdates(
+            (from_left, from_right),
+            PushNew(),
+            Message,
+            ChainOutboundMapping(index, chain),
+            reset_vstatus
+        )
 
         connect!(outputmsgs[index], outputmsg)
     end

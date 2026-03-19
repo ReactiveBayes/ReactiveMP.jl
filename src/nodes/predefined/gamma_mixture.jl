@@ -21,7 +21,9 @@ struct GammaMixtureNode{N} <: AbstractFactorNode
 end
 
 functionalform(factornode::GammaMixtureNode{N}) where {N} = GammaMixture{N}
-getinterfaces(factornode::GammaMixtureNode) = (factornode.out, factornode.switch, factornode.as..., factornode.bs...)
+getinterfaces(factornode::GammaMixtureNode) = (
+    factornode.out, factornode.switch, factornode.as..., factornode.bs...
+)
 sdtype(factornode::GammaMixtureNode) = Stochastic()
 
 interfaceindices(factornode::GammaMixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
@@ -37,22 +39,34 @@ function interfaceindex(factornode::GammaMixtureNode, iname::Symbol)
     elseif iname === :b
         return 4
     else
-        error("Unknown interface ':$(iname)' for the [ $(functionalform(factornode)) ] node")
+        error(
+            "Unknown interface ':$(iname)' for the [ $(functionalform(factornode)) ] node"
+        )
     end
 end
 
 function factornode(::Type{<:GammaMixture}, interfaces, factorization)
-    outinterface = interfaces[findfirst(((name, variable),) -> name == :out, interfaces)]
-    switchinterface = interfaces[findfirst(((name, variable),) -> name == :switch, interfaces)]
+    outinterface = interfaces[findfirst(
+        ((name, variable),) -> name == :out, interfaces
+    )]
+    switchinterface = interfaces[findfirst(
+        ((name, variable),) -> name == :switch, interfaces
+    )]
     asinterfaces = filter(((name, variable),) -> name == :a, interfaces)
     bsinterfaces = filter(((name, variable),) -> name == :b, interfaces)
 
     if length(asinterfaces) < 2 || length(bsinterfaces) < 2
-        error("The number of `a` and `b` in `GammaMixture` must be at least 2. Got `$(length(asinterfaces))` and `$(length(bsinterfaces))`.")
+        error(
+            "The number of `a` and `b` in `GammaMixture` must be at least 2. Got `$(length(asinterfaces))` and `$(length(bsinterfaces))`."
+        )
     elseif length(asinterfaces) !== length(bsinterfaces)
-        error("The number of `a` and `b` in `GammaMixture` must be the same. Got `$(length(asinterfaces))` and `$(length(bsinterfaces))`.")
+        error(
+            "The number of `a` and `b` in `GammaMixture` must be the same. Got `$(length(asinterfaces))` and `$(length(bsinterfaces))`."
+        )
     elseif any(cluster -> length(cluster) !== 1, factorization)
-        error("The factorization around `GammaMixture` must be the naive mean-field.")
+        error(
+            "The factorization around `GammaMixture` must be the naive mean-field."
+        )
     end
 
     N = length(asinterfaces)
@@ -60,8 +74,12 @@ function factornode(::Type{<:GammaMixture}, interfaces, factorization)
     return GammaMixtureNode(
         NodeInterface(outinterface...),
         NodeInterface(switchinterface...),
-        ntuple(i -> IndexedNodeInterface(i, NodeInterface(asinterfaces[i]...)), N),
-        ntuple(i -> IndexedNodeInterface(i, NodeInterface(bsinterfaces[i]...)), N)
+        ntuple(
+            i -> IndexedNodeInterface(i, NodeInterface(asinterfaces[i]...)), N
+        ),
+        ntuple(
+            i -> IndexedNodeInterface(i, NodeInterface(bsinterfaces[i]...)), N
+        )
     )
 end
 
@@ -73,12 +91,21 @@ collect_functional_dependencies(::GammaMixtureNode, ::Any) = error(
     "The functional dependencies for GammaMixtureNode must be either `Nothing` or `GammaMixtureNodeFunctionalDependencies`"
 )
 
-function activate!(factornode::GammaMixtureNode, options::FactorNodeActivationOptions)
-    dependecies = collect_functional_dependencies(factornode, getdependecies(options))
+function activate!(
+    factornode::GammaMixtureNode, options::FactorNodeActivationOptions
+)
+    dependecies = collect_functional_dependencies(
+        factornode, getdependecies(options)
+    )
     return activate!(dependecies, factornode, options)
 end
 
-function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, factornode::GammaMixtureNode{N}, interface, iindex::Int) where {N}
+function functional_dependencies(
+    ::GammaMixtureNodeFunctionalDependencies,
+    factornode::GammaMixtureNode{N},
+    interface,
+    iindex::Int
+) where {N}
     message_dependencies = ()
 
     marginal_dependencies = if iindex === 1
@@ -96,37 +123,76 @@ function functional_dependencies(::GammaMixtureNodeFunctionalDependencies, facto
     return message_dependencies, marginal_dependencies
 end
 
-function collect_latest_messages(::GammaMixtureNodeFunctionalDependencies, ::GammaMixtureNode{N}, message_dependencies::Tuple{}) where {N}
+function collect_latest_messages(
+    ::GammaMixtureNodeFunctionalDependencies,
+    ::GammaMixtureNode{N},
+    message_dependencies::Tuple{}
+) where {N}
     return nothing, of(nothing)
 end
 
 function collect_latest_marginals(
-    ::GammaMixtureNodeFunctionalDependencies, ::GammaMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NTuple{N, IndexedNodeInterface}, NTuple{N, IndexedNodeInterface}}
+    ::GammaMixtureNodeFunctionalDependencies,
+    ::GammaMixtureNode{N},
+    marginal_dependencies::Tuple{
+        NodeInterface,
+        NTuple{N, IndexedNodeInterface},
+        NTuple{N, IndexedNodeInterface}
+    }
 ) where {N}
     varinterface = marginal_dependencies[1]
     asinterfaces = marginal_dependencies[2]
     bsinterfaces = marginal_dependencies[3]
 
-    marginal_names = Val{(name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1]))}()
+    marginal_names = Val{(
+        name(varinterface), name(asinterfaces[1]), name(bsinterfaces[1])
+    )}()
     marginals_observable =
         combineLatest(
             (
                 getmarginal(getvariable(varinterface), IncludeAll()),
-                combineLatest(map((rate) -> getmarginal(getvariable(rate), IncludeAll()), reverse(bsinterfaces)), PushNew()),
-                combineLatest(map((shape) -> getmarginal(getvariable(shape), IncludeAll()), reverse(asinterfaces)), PushNew())
+                combineLatest(
+                    map(
+                        (rate) -> getmarginal(getvariable(rate), IncludeAll()),
+                        reverse(bsinterfaces)
+                    ),
+                    PushNew()
+                ),
+                combineLatest(
+                    map(
+                        (shape) ->
+                            getmarginal(getvariable(shape), IncludeAll()),
+                        reverse(asinterfaces)
+                    ),
+                    PushNew()
+                )
             ),
             PushNew()
         ) |> map_to((
             getmarginal(getvariable(varinterface), IncludeAll()),
-            ManyOf(map((shape) -> getmarginal(getvariable(shape), IncludeAll()), asinterfaces)),
-            ManyOf(map((rate) -> getmarginal(getvariable(rate), IncludeAll()), bsinterfaces))
+            ManyOf(
+                map(
+                    (shape) -> getmarginal(getvariable(shape), IncludeAll()),
+                    asinterfaces
+                )
+            ),
+            ManyOf(
+                map(
+                    (rate) -> getmarginal(getvariable(rate), IncludeAll()),
+                    bsinterfaces
+                )
+            )
         ))
 
     return marginal_names, marginals_observable
 end
 
 function collect_latest_marginals(
-    ::GammaMixtureNodeFunctionalDependencies, ::GammaMixtureNode{N}, marginal_dependencies::Tuple{NodeInterface, NodeInterface, IndexedNodeInterface}
+    ::GammaMixtureNodeFunctionalDependencies,
+    ::GammaMixtureNode{N},
+    marginal_dependencies::Tuple{
+        NodeInterface, NodeInterface, IndexedNodeInterface
+    }
 ) where {N}
     outinterface    = marginal_dependencies[1]
     switchinterface = marginal_dependencies[2]
@@ -140,34 +206,89 @@ end
 
 # FreeEnergy related functions
 
-@average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::ManyOf{N, Any}, q_b::ManyOf{N, GammaShapeRate}) where {N} = begin
+@average_energy GammaMixture (
+    q_out::Any,
+    q_switch::Any,
+    q_a::ManyOf{N, Any},
+    q_b::ManyOf{N, GammaShapeRate}
+) where {N} = begin
     z_bar = probvec(q_switch)
     return mapreduce(+, 1:N; init = 0.0) do i
-        return z_bar[i] * score(AverageEnergy(), GammaShapeRate, Val{(:out, :α, :β)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_a[i], q_b[i])), nothing)
+        return z_bar[i] * score(
+            AverageEnergy(),
+            GammaShapeRate,
+            Val{(:out, :α, :β)}(),
+            map(
+                (q) -> Marginal(q, false, false, nothing),
+                (q_out, q_a[i], q_b[i])
+            ),
+            nothing
+        )
     end
 end
 
-function score(::Type{T}, ::FactorBoundFreeEnergy, ::Stochastic, node::GammaMixtureNode{N}, meta, skip_strategy, scheduler) where {T <: CountingReal, N}
+function score(
+    ::Type{T},
+    ::FactorBoundFreeEnergy,
+    ::Stochastic,
+    node::GammaMixtureNode{N},
+    meta,
+    skip_strategy,
+    scheduler
+) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(getvariable(node.out), skip_strategy) |> schedule_on(scheduler),
-            getmarginal(getvariable(node.switch), skip_strategy) |> schedule_on(scheduler),
-            ManyOfObservable(combineLatest(map((as) -> getmarginal(getvariable(as), skip_strategy) |> schedule_on(scheduler), node.as), PushNew())),
-            ManyOfObservable(combineLatest(map((bs) -> getmarginal(getvariable(bs), skip_strategy) |> schedule_on(scheduler), node.bs), PushNew()))
+            getmarginal(getvariable(node.out), skip_strategy) |>
+            schedule_on(scheduler),
+            getmarginal(getvariable(node.switch), skip_strategy) |>
+            schedule_on(scheduler),
+            ManyOfObservable(
+                combineLatest(
+                    map(
+                        (as) ->
+                            getmarginal(getvariable(as), skip_strategy) |>
+                            schedule_on(scheduler),
+                        node.as
+                    ),
+                    PushNew()
+                )
+            ),
+            ManyOfObservable(
+                combineLatest(
+                    map(
+                        (bs) ->
+                            getmarginal(getvariable(bs), skip_strategy) |>
+                            schedule_on(scheduler),
+                        node.bs
+                    ),
+                    PushNew()
+                )
+            )
         ),
         PushNew()
     )
 
     mapping = let fform = functionalform(node), meta = meta
         (marginals) -> begin
-            average_energy = score(AverageEnergy(), fform, Val{(:out, :switch, :a, :b)}(), marginals, meta)
+            average_energy = score(
+                AverageEnergy(),
+                fform,
+                Val{(:out, :switch, :a, :b)}(),
+                marginals,
+                meta
+            )
 
             out_entropy    = score(DifferentialEntropy(), marginals[1])
             switch_entropy = score(DifferentialEntropy(), marginals[2])
             a_entropies    = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[3])
             b_entropies    = mapreduce((m) -> score(DifferentialEntropy(), m), +, marginals[4])
 
-            return convert(T, average_energy - (out_entropy + switch_entropy + a_entropies + b_entropies))
+            return convert(
+                T,
+                average_energy - (
+                    out_entropy + switch_entropy + a_entropies + b_entropies
+                )
+            )
         end
     end
 
@@ -185,17 +306,28 @@ struct GammaShapeLikelihood{T <: Real} <: ContinuousUnivariateDistribution
 end
 GammaShapeLikelihood(p::Real, γ::Real) = GammaShapeLikelihood(promote(p, γ)...)
 
-Distributions.params(distribution::GammaShapeLikelihood) = (distribution.p, distribution.γ)
+Distributions.params(distribution::GammaShapeLikelihood) = (
+    distribution.p, distribution.γ
+)
 
 Distributions.@distr_support GammaShapeLikelihood 0.0 Inf
 
-BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} = Distributions.RealInterval(zero(T), typemax(T))
+BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} = Distributions.RealInterval(
+    zero(T), typemax(T)
+)
 
-BayesBase.logpdf(distribution::GammaShapeLikelihood{T}, x::Real) where {T} = distribution.γ * x - distribution.p * loggamma(x)
+BayesBase.logpdf(distribution::GammaShapeLikelihood{T}, x::Real) where {T} =
+    distribution.γ * x - distribution.p * loggamma(x)
 
-BayesBase.default_prod_rule(::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}) = PreserveTypeProd(
+    Distribution
+)
 
-function prod(::PreserveTypeProd{Distribution}, left::GammaShapeLikelihood{T1}, right::GammaShapeLikelihood{T2}) where {T1, T2}
+function prod(
+    ::PreserveTypeProd{Distribution},
+    left::GammaShapeLikelihood{T1},
+    right::GammaShapeLikelihood{T2}
+) where {T1, T2}
     T = promote_type(T1, T2)
     return GammaShapeLikelihood(T(left.p) + T(right.p), T(left.γ) + T(right.γ))
 end

@@ -2,8 +2,14 @@
 @testitem "Planar Flow" begin
     using ReactiveMP
     using ReactiveMP: getdim, getu, getb, getw, getall, setu!, setb!, setw!
-    using ReactiveMP: forward, forward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!
-    using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logdet_jacobian, logabsdet_jacobian
+    using ReactiveMP:
+        forward, forward!, jacobian, jacobian!, inv_jacobian, inv_jacobian!
+    using ReactiveMP:
+        det_jacobian,
+        absdet_jacobian,
+        logdet_jacobian,
+        logdet_jacobian,
+        logabsdet_jacobian
 
     @testset "Constructors" begin
 
@@ -57,9 +63,13 @@
         @test_throws MethodError PlanarFlow(2.0, [2.0, 3.0], 1.0)
         @test_throws MethodError PlanarFlow(1.0, [5.0, 6.0], 0.5)
         @test_throws AssertionError PlanarFlow([2.0, 3.0, 4.0], [2.0, 3.0], 1.0)
-        @test_throws AssertionError PlanarFlow([1.0, 6.0, 8.0], [5.0, 9.0], -2.0)
+        @test_throws AssertionError PlanarFlow(
+            [1.0, 6.0, 8.0], [5.0, 9.0], -2.0
+        )
         @test_throws AssertionError PlanarFlow([2.0, 3.0], [2.0, 3.0, 4.0], 1.0)
-        @test_throws AssertionError PlanarFlow([5.0, 9.0], [1.0, 6.0, 8.0], -2.0)
+        @test_throws AssertionError PlanarFlow(
+            [5.0, 9.0], [1.0, 6.0, 8.0], -2.0
+        )
     end
 
     @testset "Prepare-Compile" begin
@@ -235,7 +245,8 @@
         f = PlanarFlow([1.0, 2.0], [3.0, 4.0], 0.0)
         @test forward(f, [-4.0, 3.0]) == [-4.0, 3.0]
         @test forward(f, [-2.0, 1.5]) == [-2.0, 1.5]
-        @test forward.(f, [[-4.0, 3.0], [-2.0, 1.5]]) == [[-4.0, 3.0], [-2.0, 1.5]]
+        @test forward.(f, [[-4.0, 3.0], [-2.0, 1.5]]) ==
+            [[-4.0, 3.0], [-2.0, 1.5]]
 
         # check forward! function (multivariate)
         f = PlanarFlow([1.0, 2.0], [3.0, 4.0], 0.0)
@@ -264,7 +275,8 @@
         f = PlanarFlow([1.0, 2.0], [3.0, 4.0], 0.0)
         @test jacobian(f, [-4.0, 3.0]) == [4.0 4.0; 6.0 9.0]
         @test jacobian(f, [-2.0, 1.5]) == [4.0 4.0; 6.0 9.0]
-        @test jacobian.(f, [[-4.0, 3.0], [-2.0, 1.5]]) == [[4.0 4.0; 6.0 9.0], [4.0 4.0; 6.0 9.0]]
+        @test jacobian.(f, [[-4.0, 3.0], [-2.0, 1.5]]) ==
+            [[4.0 4.0; 6.0 9.0], [4.0 4.0; 6.0 9.0]]
 
         # check jacobian! function (multivariate)
         f = PlanarFlow([1.0, 2.0], [3.0, 4.0], 0.0)

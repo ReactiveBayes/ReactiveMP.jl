@@ -1,6 +1,9 @@
 
 @rule BIFM(:zprev, Marginalisation) (
-    m_out::MultivariateNormalDistributionsFamily, m_in::MultivariateNormalDistributionsFamily, m_znext::MultivariateNormalDistributionsFamily, meta::BIFMMeta
+    m_out::MultivariateNormalDistributionsFamily,
+    m_in::MultivariateNormalDistributionsFamily,
+    m_znext::MultivariateNormalDistributionsFamily,
+    meta::BIFMMeta
 ) = begin
 
     # fetch information from meta data
@@ -38,5 +41,8 @@
     T = promote_samplefloattype(m_out, m_in, m_znext)
 
     # return message
-    return convert(MvNormalWeightedMeanPrecision{T}, MvNormalWeightedMeanPrecision(ξ_zprev, Λ_zprev))
+    return convert(
+        MvNormalWeightedMeanPrecision{T},
+        MvNormalWeightedMeanPrecision(ξ_zprev, Λ_zprev)
+    )
 end
