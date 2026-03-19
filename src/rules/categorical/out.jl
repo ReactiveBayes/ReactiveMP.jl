@@ -10,6 +10,10 @@ end
     return Categorical(rho ./ sum(rho))
 end
 
-@rule Categorical(:out, Marginalisation) (m_p::PointMass,) = Categorical(mean(m_p))
+@rule Categorical(:out, Marginalisation) (m_p::PointMass,) = Categorical(
+    mean(m_p)
+)
 
-@rule Categorical(:out, Marginalisation) (q_p::PointMass,) = Categorical(mean(q_p))
+@rule Categorical(:out, Marginalisation) (q_p::PointMass,) = Categorical(
+    mean(q_p)
+)

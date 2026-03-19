@@ -3,10 +3,14 @@ export MvNormalMeanScaleMatrixPrecision
 import StatsFuns: log2π
 import ExponentialFamily: MvNormalMeanScaleMatrixPrecision
 
-@node MvNormalMeanScaleMatrixPrecision Stochastic [out, (μ, aliases = [mean]), (γ, aliases = [scale]), (G, aliases = [matrix])]
+@node MvNormalMeanScaleMatrixPrecision Stochastic [
+    out, (μ, aliases = [mean]), (γ, aliases = [scale]), (G, aliases = [matrix])
+]
 
 # default method for mean-field assumption
-@average_energy MvNormalMeanScaleMatrixPrecision (q_out::Any, q_μ::Any, q_γ::Any, q_G::Any) = begin
+@average_energy MvNormalMeanScaleMatrixPrecision (
+    q_out::Any, q_μ::Any, q_γ::Any, q_G::Any
+) = begin
     dim = ndims(q_out)
 
     m_mean, v_mean = mean_cov(q_μ)
@@ -19,7 +23,12 @@ import ExponentialFamily: MvNormalMeanScaleMatrixPrecision
     result -= mean(logdet, q_G)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result += m_Λ[k1, k2] * (v_out[k1, k2] + v_mean[k1, k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
+        result +=
+            m_Λ[k1, k2] * (
+                v_out[k1, k2] +
+                v_mean[k1, k2] +
+                (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1])
+            )
     end
     result /= 2
 
@@ -27,7 +36,9 @@ import ExponentialFamily: MvNormalMeanScaleMatrixPrecision
 end
 
 # default method for structured mean-field assumption
-@average_energy MvNormalMeanScaleMatrixPrecision (q_out_μ::Any, q_γ::Any, q_G::Any) = begin
+@average_energy MvNormalMeanScaleMatrixPrecision (
+    q_out_μ::Any, q_γ::Any, q_G::Any
+) = begin
     dim = div(ndims(q_out_μ), 2)
 
     m, V = mean_cov(q_out_μ)
@@ -46,7 +57,12 @@ end
     result -= mean(logdet, q_G)
     @inbounds for k1 in 1:dim, k2 in 1:dim
         # optimize trace operation (indices can be interchanges because of symmetry)
-        result += m_Λ[k1, k2] * (v_out[k1, k2] - v_out_mean[k1, k2] - v_mean_out[k1, k2] + v_mean[k1, k2] + (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1]))
+        result +=
+            m_Λ[k1, k2] * (
+                v_out[k1, k2] - v_out_mean[k1, k2] - v_mean_out[k1, k2] +
+                v_mean[k1, k2] +
+                (m_out[k2] - m_mean[k2]) * (m_out[k1] - m_mean[k1])
+            )
     end
     result /= 2
 

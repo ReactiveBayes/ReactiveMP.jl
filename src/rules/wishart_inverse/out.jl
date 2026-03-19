@@ -1,6 +1,8 @@
 # Belief Propagation                #
 # --------------------------------- #
-@rule InverseWishart(:out, Marginalisation) (m_ν::PointMass, m_S::PointMass) = InverseWishartFast(mean(m_ν), mean(m_S))
+@rule InverseWishart(:out, Marginalisation) (m_ν::PointMass, m_S::PointMass) = InverseWishartFast(
+    mean(m_ν), mean(m_S)
+)
 
 # Variational                       # 
 # --------------------------------- #

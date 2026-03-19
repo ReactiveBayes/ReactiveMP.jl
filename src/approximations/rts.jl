@@ -1,7 +1,9 @@
 """
 RTS smoother update for inbound marginal; based on (Petersen et al. 2018; On Approximate Delta Gaussian Message Passing on Factor Graphs)
 """
-function smoothRTS(m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out)
+function smoothRTS(
+    m_tilde, V_tilde, C_tilde, m_fw_in, V_fw_in, m_bw_out, V_bw_out
+)
     P = cholinv(V_tilde + V_bw_out)
     W_tilde = cholinv(V_tilde)
     D_tilde = C_tilde * W_tilde

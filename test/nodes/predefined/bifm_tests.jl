@@ -1,7 +1,26 @@
 @testitem "BIFM Node" begin
     using ReactiveMP, Distributions, LinearAlgebra, Random, Test
     import ReactiveMP:
-        getA, getB, getC, getH, getμu, getΣu, default_meta, setH!, setBHBt!, setξz!, setΛz!, setξztilde!, setΛztilde!, setμu!, setΣu!, getBHBt, getξz, getΛz, getξztilde, getΛztilde
+        getA,
+        getB,
+        getC,
+        getH,
+        getμu,
+        getΣu,
+        default_meta,
+        setH!,
+        setBHBt!,
+        setξz!,
+        setΛz!,
+        setξztilde!,
+        setΛztilde!,
+        setμu!,
+        setΣu!,
+        getBHBt,
+        getξz,
+        getΛz,
+        getξztilde,
+        getΛztilde
 
     @testset "BIFMMeta constructors" begin
         A = [1.0 0.1; 0.0 1.0]

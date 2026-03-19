@@ -16,9 +16,15 @@ ProbitMeta(; p = 32) = ProbitMeta(p)
 
 default_meta(::Type{Probit}) = ProbitMeta(32)
 
-default_functional_dependencies(::Type{<:Probit}) = RequireMessageFunctionalDependencies(in = NormalMeanPrecision(0.0, 100.0))
+default_functional_dependencies(::Type{<:Probit}) = RequireMessageFunctionalDependencies(
+    in = NormalMeanPrecision(0.0, 100.0)
+)
 
-@average_energy Probit (q_out::Union{PointMass, Bernoulli}, q_in::UnivariateNormalDistributionsFamily, meta::ProbitMeta) = begin
+@average_energy Probit (
+    q_out::Union{PointMass, Bernoulli},
+    q_in::UnivariateNormalDistributionsFamily,
+    meta::ProbitMeta,
+) = begin
 
     # extract parameters
     p = mean(q_out)

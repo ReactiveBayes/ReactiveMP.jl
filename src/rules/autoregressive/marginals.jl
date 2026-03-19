@@ -1,9 +1,22 @@
 
-@marginalrule AR(:y_x) (m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta) = begin
+@marginalrule AR(:y_x) (
+    m_y::NormalDistributionsFamily,
+    m_x::NormalDistributionsFamily,
+    q_θ::Any,
+    q_γ::Any,
+    meta::ARMeta,
+) = begin
     return ar_y_x_marginal(getstype(meta), m_y, m_x, q_θ, q_γ, meta)
 end
 
-function ar_y_x_marginal(::ARsafe, m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta)
+function ar_y_x_marginal(
+    ::ARsafe,
+    m_y::NormalDistributionsFamily,
+    m_x::NormalDistributionsFamily,
+    q_θ::Any,
+    q_γ::Any,
+    meta::ARMeta,
+)
     mθ, Vθ = mean_cov(q_θ)
     mγ = mean(q_γ)
 
@@ -34,7 +47,14 @@ function ar_y_x_marginal(::ARsafe, m_y::NormalDistributionsFamily, m_x::NormalDi
     return MvNormalWeightedMeanPrecision(ξ, W)
 end
 
-function ar_y_x_marginal(::ARunsafe, m_y::NormalDistributionsFamily, m_x::NormalDistributionsFamily, q_θ::Any, q_γ::Any, meta::ARMeta)
+function ar_y_x_marginal(
+    ::ARunsafe,
+    m_y::NormalDistributionsFamily,
+    m_x::NormalDistributionsFamily,
+    q_θ::Any,
+    q_γ::Any,
+    meta::ARMeta,
+)
     mθ, Vθ = mean(q_θ), cov(q_θ)
 
     mA = as_companion_matrix(mθ)
@@ -48,9 +68,29 @@ function ar_y_x_marginal(::ARunsafe, m_y::NormalDistributionsFamily, m_x::Normal
     E = mV - mV * inv(b_Vy + mV) * mV
     F = mV + mV * invmA' * (inv(f_Vx) + mγ * Vθ) * invmA' * mV
     ABDC = E - E * inv(F + E) * E
-    BD = -invmA' + invmA' * inv(invmA * mV * invmA' + inv((inv(f_Vx) + mγ * Vθ))) * invmA * mV * invmA'
-    DC = -invmA + invmA * mV * invmA' * inv(invmA * mV * invmA' + inv((inv(f_Vx) + mγ * Vθ))) * invmA
-    D = invmA * mV * invmA' - invmA * mV * invmA' * inv(invmA * mV * invmA' + inv((inv(f_Vx) + mγ * Vθ))) * invmA * mV * invmA'
+    BD =
+        -invmA' +
+        invmA' *
+        inv(invmA * mV * invmA' + inv((inv(f_Vx) + mγ * Vθ))) *
+        invmA *
+        mV *
+        invmA'
+    DC =
+        -invmA +
+        invmA *
+        mV *
+        invmA' *
+        inv(invmA * mV * invmA' + inv((inv(f_Vx) + mγ * Vθ))) *
+        invmA
+    D =
+        invmA * mV * invmA' -
+        invmA *
+        mV *
+        invmA' *
+        inv(invmA * mV * invmA' + inv((inv(f_Vx) + mγ * Vθ))) *
+        invmA *
+        mV *
+        invmA'
     invW = [ABDC -ABDC*BD; -DC*ABDC D+DC * ABDC * BD]
 
     m = invW * [inv(b_Vy) * b_my; inv(f_Vx) * f_mx]

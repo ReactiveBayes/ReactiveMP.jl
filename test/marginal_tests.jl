@@ -9,7 +9,10 @@
     import SpecialFunctions: loggamma
 
     @testset "Default methods" begin
-        for clamped in (true, false), initial in (true, false), addons in (1, 2), data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
+        for clamped in (true, false),
+            initial in (true, false), addons in (1, 2),
+            data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
+
             marginal = Marginal(data, clamped, initial, addons)
             @test getdata(marginal) === data
             @test is_clamped(marginal) === clamped
@@ -24,7 +27,10 @@
         dist1 = NormalMeanVariance(0.0, 1.0)
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
-        for clamped1 in (true, false), clamped2 in (true, false), initial1 in (true, false), initial2 in (true, false)
+        for clamped1 in (true, false),
+            clamped2 in (true, false), initial1 in (true, false),
+            initial2 in (true, false)
+
             msg1 = Marginal(dist1, clamped1, initial1, nothing)
             msg2 = Marginal(dist2, clamped2, initial2, nothing)
 
@@ -42,11 +48,13 @@
             Wishart(4.0, [2.0 -0.5; -0.5 1.0]),
             MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]),
             Bernoulli(0.5),
-            Categorical([0.8, 0.2])
+            Categorical([0.8, 0.2]),
         ]
 
         # Here we get all methods defined for a particular type of a distribution
-        dists_methods = map(d -> methodswith(eval(nameof(typeof(d)))), distributions)
+        dists_methods = map(
+            d -> methodswith(eval(nameof(typeof(d)))), distributions
+        )
 
         methods_to_test = [
             BayesBase.mean,
@@ -76,10 +84,13 @@
             Base.length,
             Base.ndims,
             Base.size,
-            Base.eltype
+            Base.eltype,
         ]
 
-        for (distribution, distribution_methods) in zip(distributions, dists_methods), method in methods_to_test
+        for (distribution, distribution_methods) in
+            zip(distributions, dists_methods),
+            method in methods_to_test
+
             T = typeof(distribution)
             marginal = Marginal(distribution, false, false, nothing)
             # Here we check that a specialised method for a particular type T exist
@@ -102,11 +113,20 @@
             end
         end
 
-        _getpoint(rng, distribution) = _getpoint(rng, variate_form(typeof(distribution)), distribution)
+        _getpoint(rng, distribution) = _getpoint(
+            rng, variate_form(typeof(distribution)), distribution
+        )
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
-        _getpoint(rng, ::Type{<:Multivariate}, distribution) = 10 .* rand(rng, 2)
+        _getpoint(rng, ::Type{<:Multivariate}, distribution) =
+            10 .* rand(rng, 2)
 
-        distributions2 = [Gamma(10.0, 2.0), NormalMeanVariance(-10.0, 1.0), MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]), Bernoulli(0.5), Categorical([0.8, 0.2])]
+        distributions2 = [
+            Gamma(10.0, 2.0),
+            NormalMeanVariance(-10.0, 1.0),
+            MvNormalMeanPrecision([2.0, -1.0], [7.0 -1.0; -1.0 3.0]),
+            Bernoulli(0.5),
+            Categorical([0.8, 0.2]),
+        ]
 
         methods_to_test2 = [Distributions.pdf, Distributions.logpdf]
 

@@ -1,5 +1,6 @@
 @testitem "WishartNode" begin
-    using ReactiveMP, Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Test
+    using ReactiveMP,
+        Random, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, Test
     import ReactiveMP: to_marginal
     import ExponentialFamily: WishartFast
 
@@ -9,9 +10,19 @@
             q_ν  = PointMass(2.0)
             q_S   = PointMass([2.0 0.0; 0.0 2.0])
 
-            marginals = (Marginal(q_out, false, false, nothing), Marginal(q_ν, false, false, nothing), Marginal(q_S, false, false, nothing))
+            marginals = (
+                Marginal(q_out, false, false, nothing),
+                Marginal(q_ν, false, false, nothing),
+                Marginal(q_S, false, false, nothing),
+            )
 
-            @test score(AverageEnergy(), Wishart, Val{(:out, :ν, :S)}(), marginals, nothing) ≈ 6.033250123747594 rtol = 1e-8
+            @test score(
+                AverageEnergy(),
+                Wishart,
+                Val{(:out, :ν, :S)}(),
+                marginals,
+                nothing,
+            ) ≈ 6.033250123747594 rtol = 1e-8
         end
 
         begin
@@ -26,9 +37,19 @@
             q_ν  = PointMass(ν)
             q_S   = PointMass(S)
 
-            marginals = (Marginal(q_out, false, false, nothing), Marginal(q_ν, false, false, nothing), Marginal(q_S, false, false, nothing))
+            marginals = (
+                Marginal(q_out, false, false, nothing),
+                Marginal(q_ν, false, false, nothing),
+                Marginal(q_S, false, false, nothing),
+            )
 
-            @test score(AverageEnergy(), Wishart, Val{(:out, :ν, :S)}(), marginals, nothing) ≈ 8.97595944423116 rtol = 1e-8
+            @test score(
+                AverageEnergy(),
+                Wishart,
+                Val{(:out, :ν, :S)}(),
+                marginals,
+                nothing,
+            ) ≈ 8.97595944423116 rtol = 1e-8
         end
     end
 

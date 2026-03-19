@@ -16,13 +16,37 @@
                 Marginal(q_out, false, false, nothing),
                 Marginal(q_switch, false, false, nothing),
                 ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p))
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
             )
 
             ref_val =
-                0.8 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
-                0.2 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
-            @test score(AverageEnergy(), NormalMixture, Val{(:out, :switch, :m, :p)}(), marginals, nothing) ≈ ref_val
+                0.8 * (score(
+                    AverageEnergy(),
+                    NormalMeanPrecision,
+                    Val{(:out, :μ, :τ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[1], q_p[1]),
+                    ),
+                    nothing,
+                )) +
+                0.2 * (score(
+                    AverageEnergy(),
+                    NormalMeanPrecision,
+                    Val{(:out, :μ, :τ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[2], q_p[2]),
+                    ),
+                    nothing,
+                ))
+            @test score(
+                AverageEnergy(),
+                NormalMixture,
+                Val{(:out, :switch, :m, :p)}(),
+                marginals,
+                nothing,
+            ) ≈ ref_val
         end
 
         begin
@@ -35,13 +59,37 @@
                 Marginal(q_out, false, false, nothing),
                 Marginal(q_switch, false, false, nothing),
                 ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p))
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
             )
 
             ref_val =
-                0.6 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
-                0.4 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
-            @test score(AverageEnergy(), NormalMixture, Val{(:out, :switch, :m, :p)}(), marginals, nothing) ≈ ref_val
+                0.6 * (score(
+                    AverageEnergy(),
+                    NormalMeanPrecision,
+                    Val{(:out, :μ, :τ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[1], q_p[1]),
+                    ),
+                    nothing,
+                )) +
+                0.4 * (score(
+                    AverageEnergy(),
+                    NormalMeanPrecision,
+                    Val{(:out, :μ, :τ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[2], q_p[2]),
+                    ),
+                    nothing,
+                ))
+            @test score(
+                AverageEnergy(),
+                NormalMixture,
+                Val{(:out, :switch, :m, :p)}(),
+                marginals,
+                nothing,
+            ) ≈ ref_val
         end
 
         begin
@@ -54,32 +102,86 @@
                 Marginal(q_out, false, false, nothing),
                 Marginal(q_switch, false, false, nothing),
                 ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p))
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
             )
 
             ref_val =
-                0.5 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
-                0.5 * (score(AverageEnergy(), NormalMeanPrecision, Val{(:out, :μ, :τ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
-            @test score(AverageEnergy(), NormalMixture, Val{(:out, :switch, :m, :p)}(), marginals, nothing) ≈ ref_val
+                0.5 * (score(
+                    AverageEnergy(),
+                    NormalMeanPrecision,
+                    Val{(:out, :μ, :τ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[1], q_p[1]),
+                    ),
+                    nothing,
+                )) +
+                0.5 * (score(
+                    AverageEnergy(),
+                    NormalMeanPrecision,
+                    Val{(:out, :μ, :τ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[2], q_p[2]),
+                    ),
+                    nothing,
+                ))
+            @test score(
+                AverageEnergy(),
+                NormalMixture,
+                Val{(:out, :switch, :m, :p)}(),
+                marginals,
+                nothing,
+            ) ≈ ref_val
         end
 
         begin
             q_out = MvNormalMeanCovariance([0.0], [1.0])
             q_switch = Categorical([0.5, 0.5])
-            q_m = (MvNormalMeanPrecision([1.0], [2.0]), MvNormalMeanPrecision([3.0], [4.0]))
-            q_p = (WishartFast(3.0, fill(3.0, 1, 1)), WishartFast(4.0, fill(5.0, 1, 1)))
+            q_m = (
+                MvNormalMeanPrecision([1.0], [2.0]),
+                MvNormalMeanPrecision([3.0], [4.0]),
+            )
+            q_p = (
+                WishartFast(3.0, fill(3.0, 1, 1)),
+                WishartFast(4.0, fill(5.0, 1, 1)),
+            )
 
             marginals = (
                 Marginal(q_out, false, false, nothing),
                 Marginal(q_switch, false, false, nothing),
                 ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p))
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
             )
 
             ref_val =
-                0.5 * (score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[1], q_p[1])), nothing)) +
-                0.5 * (score(AverageEnergy(), MvNormalMeanPrecision, Val{(:out, :μ, :Λ)}(), map((q) -> Marginal(q, false, false, nothing), (q_out, q_m[2], q_p[2])), nothing))
-            @test score(AverageEnergy(), NormalMixture, Val{(:out, :switch, :m, :p)}(), marginals, nothing) ≈ ref_val
+                0.5 * (score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out, :μ, :Λ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[1], q_p[1]),
+                    ),
+                    nothing,
+                )) +
+                0.5 * (score(
+                    AverageEnergy(),
+                    MvNormalMeanPrecision,
+                    Val{(:out, :μ, :Λ)}(),
+                    map(
+                        (q) -> Marginal(q, false, false, nothing),
+                        (q_out, q_m[2], q_p[2]),
+                    ),
+                    nothing,
+                ))
+            @test score(
+                AverageEnergy(),
+                NormalMixture,
+                Val{(:out, :switch, :m, :p)}(),
+                marginals,
+                nothing,
+            ) ≈ ref_val
         end
     end
 end
@@ -111,7 +213,14 @@ end
         collect_factorisation
 
     @testset "Construction and interface structure" begin
-        interfaces = [(:out, datavar()), (:switch, randomvar()), (:m, randomvar()), (:m, randomvar()), (:p, randomvar()), (:p, randomvar())]
+        interfaces = [
+            (:out, datavar()),
+            (:switch, randomvar()),
+            (:m, randomvar()),
+            (:m, randomvar()),
+            (:p, randomvar()),
+            (:p, randomvar()),
+        ]
         factorizations = [[:out], [:switch], [:m1], [:m2], [:p1], [:p2]]
 
         node = factornode(NormalMixture, interfaces, factorizations)
@@ -135,17 +244,43 @@ end
 
     @testset "Construction errors" begin
         # not enough means/precisions
-        @test_throws ErrorException factornode(NormalMixture, [(:out, :x), (:switch, :z), (:m, :m1), (:p, :p1)], [[:out], [:switch], [:m1], [:p1]])
+        @test_throws ErrorException factornode(
+            NormalMixture,
+            [(:out, :x), (:switch, :z), (:m, :m1), (:p, :p1)],
+            [[:out], [:switch], [:m1], [:p1]],
+        )
 
         # mismatch counts
-        @test_throws ErrorException factornode(NormalMixture, [(:out, :x), (:switch, :z), (:m, :m1), (:m, :m2), (:p, :p1)], [[:out], [:switch], [:m1], [:m2], [:p1]])
+        @test_throws ErrorException factornode(
+            NormalMixture,
+            [(:out, :x), (:switch, :z), (:m, :m1), (:m, :m2), (:p, :p1)],
+            [[:out], [:switch], [:m1], [:m2], [:p1]],
+        )
 
         # wrong factorization
-        @test_throws ErrorException factornode(NormalMixture, [(:out, :x), (:switch, :z), (:m, :m1), (:m, :m2), (:p, :p1), (:p, :p2)], [[:out, :switch]])
+        @test_throws ErrorException factornode(
+            NormalMixture,
+            [
+                (:out, :x),
+                (:switch, :z),
+                (:m, :m1),
+                (:m, :m2),
+                (:p, :p1),
+                (:p, :p2),
+            ],
+            [[:out, :switch]],
+        )
     end
 
     @testset "Functional dependencies" begin
-        interfaces = [(:out, datavar()), (:switch, randomvar()), (:m, randomvar()), (:m, randomvar()), (:p, randomvar()), (:p, randomvar())]
+        interfaces = [
+            (:out, datavar()),
+            (:switch, randomvar()),
+            (:m, randomvar()),
+            (:m, randomvar()),
+            (:p, randomvar()),
+            (:p, randomvar()),
+        ]
         factorizations = [[:out], [:switch], [:m1], [:m2], [:p1], [:p2]]
         node = factornode(NormalMixture, interfaces, factorizations)
         deps = NormalMixtureNodeFunctionalDependencies()
@@ -156,32 +291,51 @@ end
         @test length(marg_deps) == 3
 
         # switch dependencies
-        msg_deps, marg_deps = functional_dependencies(deps, node, node.switch, 2)
+        msg_deps, marg_deps = functional_dependencies(
+            deps, node, node.switch, 2
+        )
         @test length(marg_deps) == 3
 
         # mean dependencies
-        msg_deps, marg_deps = functional_dependencies(deps, node, node.means[1], 3)
+        msg_deps, marg_deps = functional_dependencies(
+            deps, node, node.means[1], 3
+        )
         @test length(marg_deps) == 3
 
         # precision dependencies
-        msg_deps, marg_deps = functional_dependencies(deps, node, node.precs[1], 5)
+        msg_deps, marg_deps = functional_dependencies(
+            deps, node, node.precs[1], 5
+        )
         @test length(marg_deps) == 3
 
         # invalid index
-        @test_throws ErrorException functional_dependencies(deps, node, node.out, 99)
+        @test_throws ErrorException functional_dependencies(
+            deps, node, node.out, 99
+        )
     end
 
     @testset "Collect functional dependencies" begin
         node = NormalMixtureNode(
             NodeInterface(:out, datavar()),
             NodeInterface(:switch, randomvar()),
-            (IndexedNodeInterface(1, NodeInterface(:m, randomvar())), IndexedNodeInterface(2, NodeInterface(:m, randomvar()))),
-            (IndexedNodeInterface(1, NodeInterface(:p, randomvar())), IndexedNodeInterface(2, NodeInterface(:p, randomvar())))
+            (
+                IndexedNodeInterface(1, NodeInterface(:m, randomvar())),
+                IndexedNodeInterface(2, NodeInterface(:m, randomvar())),
+            ),
+            (
+                IndexedNodeInterface(1, NodeInterface(:p, randomvar())),
+                IndexedNodeInterface(2, NodeInterface(:p, randomvar())),
+            ),
         )
 
-        @test collect_functional_dependencies(node, nothing) isa NormalMixtureNodeFunctionalDependencies
-        @test collect_functional_dependencies(node, NormalMixtureNodeFunctionalDependencies()) isa NormalMixtureNodeFunctionalDependencies
-        @test_throws ErrorException collect_functional_dependencies(node, :wrong)
+        @test collect_functional_dependencies(node, nothing) isa
+            NormalMixtureNodeFunctionalDependencies
+        @test collect_functional_dependencies(
+            node, NormalMixtureNodeFunctionalDependencies()
+        ) isa NormalMixtureNodeFunctionalDependencies
+        @test_throws ErrorException collect_functional_dependencies(
+            node, :wrong
+        )
     end
 
     @testset "Collect latest marginals and messages" begin
@@ -189,8 +343,14 @@ end
         node = NormalMixtureNode(
             NodeInterface(:out, datavar()),
             NodeInterface(:switch, randomvar()),
-            (IndexedNodeInterface(1, NodeInterface(:m, randomvar())), IndexedNodeInterface(2, NodeInterface(:m, randomvar()))),
-            (IndexedNodeInterface(1, NodeInterface(:p, randomvar())), IndexedNodeInterface(2, NodeInterface(:p, randomvar())))
+            (
+                IndexedNodeInterface(1, NodeInterface(:m, randomvar())),
+                IndexedNodeInterface(2, NodeInterface(:m, randomvar())),
+            ),
+            (
+                IndexedNodeInterface(1, NodeInterface(:p, randomvar())),
+                IndexedNodeInterface(2, NodeInterface(:p, randomvar())),
+            ),
         )
 
         # collect_latest_messages with empty tuple
@@ -199,12 +359,16 @@ end
         @test obs !== nothing
 
         # collect_latest_marginals with full (out, means, precs)
-        marg_names, marg_obs = collect_latest_marginals(deps, node, (node.out, node.means, node.precs))
+        marg_names, marg_obs = collect_latest_marginals(
+            deps, node, (node.out, node.means, node.precs)
+        )
         @test marg_names isa Val
         @test !isnothing(marg_obs)
 
         # collect_latest_marginals with (out, switch, var)
-        marg_names, marg_obs = collect_latest_marginals(deps, node, (node.out, node.switch, node.means[1]))
+        marg_names, marg_obs = collect_latest_marginals(
+            deps, node, (node.out, node.switch, node.means[1])
+        )
         @test marg_names isa Val
         @test !isnothing(marg_obs)
     end
@@ -223,8 +387,14 @@ end
         node = NormalMixtureNode(
             NodeInterface(:out, datavar()),
             NodeInterface(:switch, randomvar()),
-            (IndexedNodeInterface(1, NodeInterface(:m, randomvar())), IndexedNodeInterface(2, NodeInterface(:m, randomvar()))),
-            (IndexedNodeInterface(1, NodeInterface(:p, randomvar())), IndexedNodeInterface(2, NodeInterface(:p, randomvar())))
+            (
+                IndexedNodeInterface(1, NodeInterface(:m, randomvar())),
+                IndexedNodeInterface(2, NodeInterface(:m, randomvar())),
+            ),
+            (
+                IndexedNodeInterface(1, NodeInterface(:p, randomvar())),
+                IndexedNodeInterface(2, NodeInterface(:p, randomvar())),
+            ),
         )
 
         @test interfaceindices(node, :out) == (1,)

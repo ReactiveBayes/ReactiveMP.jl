@@ -3,8 +3,22 @@
     using ReactiveMP
     using LinearAlgebra
 
-    using ReactiveMP: getP, getmat, getdim, forward, forward!, backward, backward!, jacobian, inv_jacobian
-    using ReactiveMP: det_jacobian, absdet_jacobian, logdet_jacobian, logdet_jacobian, logabsdet_jacobian
+    using ReactiveMP:
+        getP,
+        getmat,
+        getdim,
+        forward,
+        forward!,
+        backward,
+        backward!,
+        jacobian,
+        inv_jacobian
+    using ReactiveMP:
+        det_jacobian,
+        absdet_jacobian,
+        logdet_jacobian,
+        logdet_jacobian,
+        logabsdet_jacobian
 
     @testset "Constructor" begin
 
@@ -84,7 +98,8 @@
         layer = PermutationLayer(3, P)
         @test forward(layer, [5.0, 1.5, 8.5]) == P * [5.0, 1.5, 8.5]
         @test forward(layer, [4.0, 2.5, -9.0]) == P * [4.0, 2.5, -9.0]
-        @test forward.(layer, [[5.0, 1.5, 8.5], [4.0, 2.5, -9.0]]) == [P * [5.0, 1.5, 8.5], P * [4.0, 2.5, -9.0]]
+        @test forward.(layer, [[5.0, 1.5, 8.5], [4.0, 2.5, -9.0]]) ==
+            [P * [5.0, 1.5, 8.5], P * [4.0, 2.5, -9.0]]
 
         # check forward! function
         P = PermutationMatrix(3)
@@ -100,7 +115,8 @@
         layer = PermutationLayer(3, P)
         @test backward(layer, [5.0, 1.5, 8.5]) == P' * [5.0, 1.5, 8.5]
         @test backward(layer, [4.0, 2.5, -9.0]) == P' * [4.0, 2.5, -9.0]
-        @test backward.(layer, [[5.0, 1.5, 8.5], [4.0, 2.5, -9.0]]) == [P' * [5.0, 1.5, 8.5], P' * [4.0, 2.5, -9.0]]
+        @test backward.(layer, [[5.0, 1.5, 8.5], [4.0, 2.5, -9.0]]) ==
+            [P' * [5.0, 1.5, 8.5], P' * [4.0, 2.5, -9.0]]
 
         # check backward! function
         P = PermutationMatrix(3)

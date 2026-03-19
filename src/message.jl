@@ -269,7 +269,7 @@ MacroHelpers.@proxy_methods Message getdata [
     Base.precision,
     Base.length,
     Base.ndims,
-    Base.size
+    Base.size,
 ]
 
 # Eltype is special here, because it should be only defined on types

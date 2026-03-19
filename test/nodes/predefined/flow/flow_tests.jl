@@ -11,13 +11,18 @@
             @testset "Default" begin
 
                 # create example meta data
-                meta = FlowMeta(compile(FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()),))))
+                meta = FlowMeta(
+                    compile(
+                        FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()),))
+                    ),
+                )
 
                 # check whether the Flow node has a default metadata structure
                 @test_throws ErrorException ReactiveMP.default_meta(Flow)
 
                 # check whether the getmodel function works
-                @test typeof(getmodel(meta)) <: ReactiveMP.AbstractCompiledFlowModel
+                @test typeof(getmodel(meta)) <:
+                    ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
                 @test getapproximation(meta) isa Linearization
@@ -26,13 +31,19 @@
             @testset "Linearization" begin
 
                 # create example meta data
-                meta = FlowMeta(compile(FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()),))), Linearization())
+                meta = FlowMeta(
+                    compile(
+                        FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()),))
+                    ),
+                    Linearization(),
+                )
 
                 # check whether the Flow node has a default metadata structure
                 @test_throws ErrorException ReactiveMP.default_meta(Flow)
 
                 # check whether the getmodel function works
-                @test typeof(getmodel(meta)) <: ReactiveMP.AbstractCompiledFlowModel
+                @test typeof(getmodel(meta)) <:
+                    ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
                 @test getapproximation(meta) isa Linearization
@@ -41,13 +52,19 @@
             @testset "Unscented" begin
 
                 # create example meta data
-                meta = FlowMeta(compile(FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()),))), Unscented(3))
+                meta = FlowMeta(
+                    compile(
+                        FlowModel(2, (AdditiveCouplingLayer(PlanarFlow()),))
+                    ),
+                    Unscented(3),
+                )
 
                 # check whether the Flow node has a default metadata structure
                 @test_throws ErrorException ReactiveMP.default_meta(Flow)
 
                 # check whether the getmodel function works
-                @test typeof(getmodel(meta)) <: ReactiveMP.AbstractCompiledFlowModel
+                @test typeof(getmodel(meta)) <:
+                    ReactiveMP.AbstractCompiledFlowModel
                 @test getmodel(meta) == meta.model
                 @test getapproximation(meta) == meta.approximation
                 @test getapproximation(meta) isa Unscented

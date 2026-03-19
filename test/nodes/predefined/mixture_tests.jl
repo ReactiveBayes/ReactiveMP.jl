@@ -24,7 +24,12 @@
         activate!
 
     # Common interfaces and factorizations used by both test groups
-    interfaces_list = [(:out, datavar()), (:switch, randomvar()), (:inputs, randomvar()), (:inputs, randomvar())]
+    interfaces_list = [
+        (:out, datavar()),
+        (:switch, randomvar()),
+        (:inputs, randomvar()),
+        (:inputs, randomvar()),
+    ]
     factorizations = [[:out], [:switch], [:inputs1], [:inputs2]]
 
     @testset "Type-level definitions" begin
@@ -33,7 +38,8 @@
         @test alias_interface(Mixture{2}, 1, :foo) === :foo
         @test is_predefined_node(Mixture{2}) isa PredefinedNodeFunctionalForm
         @test sdtype(Mixture{2}) === Stochastic()
-        @test collect_factorisation(Mixture{2}, nothing) isa MixtureNodeFactorisation
+        @test collect_factorisation(Mixture{2}, nothing) isa
+            MixtureNodeFactorisation
     end
 
     @testset "Construction and interface structure" begin
@@ -66,13 +72,23 @@
         node = MixtureNode(
             NodeInterface(interfaces_list[1]...),
             NodeInterface(interfaces_list[2]...),
-            (IndexedNodeInterface(1, NodeInterface(interfaces_list[3]...)), IndexedNodeInterface(2, NodeInterface(interfaces_list[4]...)))
+            (
+                IndexedNodeInterface(1, NodeInterface(interfaces_list[3]...)),
+                IndexedNodeInterface(2, NodeInterface(interfaces_list[4]...)),
+            ),
         )
 
-        @test collect_functional_dependencies(node, nothing) isa MixtureNodeFunctionalDependencies
-        @test collect_functional_dependencies(node, MixtureNodeFunctionalDependencies()) isa MixtureNodeFunctionalDependencies
-        @test collect_functional_dependencies(node, RequireMarginalFunctionalDependencies()) isa RequireMarginalFunctionalDependencies
-        @test_throws ErrorException collect_functional_dependencies(node, :wrongtype)
+        @test collect_functional_dependencies(node, nothing) isa
+            MixtureNodeFunctionalDependencies
+        @test collect_functional_dependencies(
+            node, MixtureNodeFunctionalDependencies()
+        ) isa MixtureNodeFunctionalDependencies
+        @test collect_functional_dependencies(
+            node, RequireMarginalFunctionalDependencies()
+        ) isa RequireMarginalFunctionalDependencies
+        @test_throws ErrorException collect_functional_dependencies(
+            node, :wrongtype
+        )
     end
 
     @testset "Functional dependencies" begin
@@ -91,7 +107,9 @@
         @test msg == (node.out, node.switch)
         @test marg == ()
 
-        @test_throws ErrorException functional_dependencies(deps, node, node.out, 99)
+        @test_throws ErrorException functional_dependencies(
+            deps, node, node.out, 99
+        )
     end
 
     @testset "RequireMarginalFunctionalDependencies variant" begin

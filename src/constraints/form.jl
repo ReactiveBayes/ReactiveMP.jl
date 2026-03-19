@@ -1,5 +1,6 @@
 export AbstractFormConstraint
-export FormConstraintCheckEach, FormConstraintCheckLast, FormConstraintCheckPickDefault
+export FormConstraintCheckEach,
+    FormConstraintCheckLast, FormConstraintCheckPickDefault
 export constrain_form, default_prod_constraint, default_form_check_strategy
 export UnspecifiedFormConstraint, CompositeFormConstraint
 
@@ -110,12 +111,22 @@ prepare_context(constraint) = WrappedFormConstraintNoContext()
 This function unwraps the `wrapped` object and calls `constrain_form` function with the provided context.
 If the context is not provided, simply calls `constrain_form` with the wrapped constraint. Otherwise passes the context to the `constrain_form` function as the second argument.
 """
-constrain_form(wrapped::WrappedFormConstraint, something) = constrain_form(wrapped, wrapped.context, something)
-constrain_form(wrapped::WrappedFormConstraint, ::WrappedFormConstraintNoContext, something) = constrain_form(wrapped.constraint, something)
-constrain_form(wrapped::WrappedFormConstraint, context, something) = constrain_form(wrapped.constraint, context, something)
+constrain_form(wrapped::WrappedFormConstraint, something) = constrain_form(
+    wrapped, wrapped.context, something
+)
+constrain_form(wrapped::WrappedFormConstraint, ::WrappedFormConstraintNoContext, something) = constrain_form(
+    wrapped.constraint, something
+)
+constrain_form(wrapped::WrappedFormConstraint, context, something) = constrain_form(
+    wrapped.constraint, context, something
+)
 
-default_form_check_strategy(wrapped::WrappedFormConstraint) = default_form_check_strategy(wrapped.constraint)
-default_prod_constraint(wrapped::WrappedFormConstraint) = default_prod_constraint(wrapped.constraint)
+default_form_check_strategy(wrapped::WrappedFormConstraint) = default_form_check_strategy(
+    wrapped.constraint
+)
+default_prod_constraint(wrapped::WrappedFormConstraint) = default_prod_constraint(
+    wrapped.constraint
+)
 
 """
     preprocess_form_constraints(constraints)
@@ -125,9 +136,13 @@ If a tuple of constraints is passed, it creates a `CompositeFormConstraint` obje
 """
 function preprocess_form_constraints end
 
-preprocess_form_constraints(constraints::Tuple) = CompositeFormConstraint(map(preprocess_form_constraints, constraints))
+preprocess_form_constraints(constraints::Tuple) = CompositeFormConstraint(
+    map(preprocess_form_constraints, constraints)
+)
 preprocess_form_constraints(constraint::AbstractFormConstraint) = constraint
-preprocess_form_constraints(constraint) = WrappedFormConstraint(constraint, prepare_context(constraint))
+preprocess_form_constraints(constraint) = WrappedFormConstraint(
+    constraint, prepare_context(constraint)
+)
 
 """
     CompositeFormConstraint
@@ -138,20 +153,30 @@ struct CompositeFormConstraint{C} <: AbstractFormConstraint
     constraints::C
 end
 
-Base.show(io::IO, constraint::CompositeFormConstraint) = join(io, constraint.constraints, " :: ")
+Base.show(io::IO, constraint::CompositeFormConstraint) = join(
+    io, constraint.constraints, " :: "
+)
 
 function constrain_form(composite::CompositeFormConstraint, something)
-    return reduce((form, constraint) -> constrain_form(constraint, form), composite.constraints; init = something)
+    return reduce(
+        (form, constraint) -> constrain_form(constraint, form),
+        composite.constraints;
+        init = something,
+    )
 end
 
 function default_prod_constraint(constraint::CompositeFormConstraint)
-    return mapfoldl(default_prod_constraint, resolve_prod_strategy, constraint.constraints)
+    return mapfoldl(
+        default_prod_constraint, resolve_prod_strategy, constraint.constraints
+    )
 end
 
 function default_form_check_strategy(composite::CompositeFormConstraint)
     strategies = map(default_form_check_strategy, composite.constraints)
     if !(all(e -> e === first(strategies), TupleTools.tail(strategies)))
-        error("Different default form check strategy for composite form constraints found. Use `form_check_strategy` options to specify check strategy.")
+        error(
+            "Different default form check strategy for composite form constraints found. Use `form_check_strategy` options to specify check strategy.",
+        )
     end
     return first(strategies)
 end

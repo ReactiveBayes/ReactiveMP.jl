@@ -23,13 +23,15 @@ The `FlowMeta` structure is required for the `Flow` factor node and can be inclu
     y ~ Flow(x) where { meta = FlowMeta(...) }
 ```
 """
-struct FlowMeta{T <: AbstractCompiledFlowModel, A <: AbstractApproximationMethod}
+struct FlowMeta{
+    T <: AbstractCompiledFlowModel, A <: AbstractApproximationMethod
+}
     model         :: T
     approximation :: A
 end
 
 default_meta(::Type{Flow}) = error(
-    "The Flow node requires the meta flag to be explicitly specified. Please create a `FlowMeta` structure for this purpose and include it with the Flow node as: `y ~ Flow(x) where { meta = FlowMeta(...) }` "
+    "The Flow node requires the meta flag to be explicitly specified. Please create a `FlowMeta` structure for this purpose and include it with the Flow node as: `y ~ Flow(x) where { meta = FlowMeta(...) }` ",
 )
 
 # structure constructors

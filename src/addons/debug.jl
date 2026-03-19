@@ -20,11 +20,15 @@ end
 
 AddonDebug() = AddonDebug(nothing)
 
-getdebugaddon(addons::NTuple{N, AbstractAddon}) where {N} = first(filter(x -> typeof(x) <: AddonDebug, addons))
+getdebugaddon(addons::NTuple{N, AbstractAddon}) where {N} = first(
+    filter(x -> typeof(x) <: AddonDebug, addons)
+)
 
 (addon::AddonDebug)(x) = addon.f(x)
 
-function message_mapping_addon(addon::AddonDebug, mapping, messages, marginals, result)
+function message_mapping_addon(
+    addon::AddonDebug, mapping, messages, marginals, result
+)
     if addon(result)
 
         #  create error message
@@ -60,7 +64,13 @@ function message_mapping_addon(addon::AddonDebug, mapping, messages, marginals, 
     return addon
 end
 
-function multiply_addons(left_addon::AddonDebug, right_addon::AddonDebug, new_dist, left_dist, right_dist)
+function multiply_addons(
+    left_addon::AddonDebug,
+    right_addon::AddonDebug,
+    new_dist,
+    left_dist,
+    right_dist,
+)
     if left_addon(new_dist)
 
         # create error message

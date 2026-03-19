@@ -23,14 +23,22 @@ function with_statics(factornode::DeltaFnNode, stream)
     return with_statics(factornode, factornode.statics, stream)
 end
 
-function with_statics(factornode::DeltaFnNode, statics::Tuple, stream::T) where {T}
+function with_statics(
+    factornode::DeltaFnNode, statics::Tuple, stream::T
+) where {T}
     # We wait for the statics to be available, but ignore their actual values 
     # They are being injected indirectly with the `fix` function upon node creation
-    statics = map(static -> messageout(static, 1), FixedArguments.value.(factornode.statics))
-    return combineLatest((stream, combineLatest(statics, PushNew()))) |> map(eltype(T), first)
+    statics = map(
+        static -> messageout(static, 1),
+        FixedArguments.value.(factornode.statics),
+    )
+    return combineLatest((stream, combineLatest(statics, PushNew()))) |>
+           map(eltype(T), first)
 end
 
-function with_statics(factornode::DeltaFnNode, statics::Tuple{}, stream::T) where {T}
+function with_statics(
+    factornode::DeltaFnNode, statics::Tuple{}, stream::T
+) where {T}
     # There is no need to touch the original stream if there are no statics
     return stream
 end
@@ -83,7 +91,9 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
         vtag        = Val{:out}()
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        vmessageout = combineLatest(
+            (msgs_observable, marginals_observable), PushNew()
+        )
 
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
@@ -91,7 +101,9 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_out}, factorn
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, vmessageout
+        )
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(out), vmessageout)
@@ -113,7 +125,9 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        vmessageout = combineLatest(
+            (msgs_observable, marginals_observable), PushNew()
+        )
 
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
@@ -121,7 +135,9 @@ function deltafn_apply_layout(::DeltaFnDefaultRuleLayout, ::Val{:m_in}, factorno
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, vmessageout
+        )
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)
@@ -142,7 +158,8 @@ In order to compute:
 - `m_out`: uses all inbound messages on the `ins` edges (same as the `DeltaFnDefaultRuleLayout`)
 - `m_in_k`: uses inbound message on the `out` edge and inbound messages on the `ins` edges except `k`
 """
-struct DeltaFnDefaultKnownInverseRuleLayout <: AbstractDeltaNodeDependenciesLayout end
+struct DeltaFnDefaultKnownInverseRuleLayout <:
+       AbstractDeltaNodeDependenciesLayout end
 
 function deltafn_apply_layout(::DeltaFnDefaultKnownInverseRuleLayout, ::Val{:q_out}, factornode::DeltaFnNode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
     return deltafn_apply_layout(DeltaFnDefaultRuleLayout(), Val(:q_out), factornode, meta, pipeline_stages, scheduler, addons, rulefallback, callbacks)
@@ -170,7 +187,9 @@ function deltafn_apply_layout(
         msgs_ins_stream = if N === 1 # `N` should be known at compile-time here so this `if` branch must be compiled out
             of(Message(nothing, true, true, nothing))
         else
-            combineLatestMessagesInUpdates(TupleTools.deleteat(factornode.ins, index))
+            combineLatestMessagesInUpdates(
+                TupleTools.deleteat(factornode.ins, index)
+            )
         end
 
         msgs_names      = Val{(:out, :ins)}()
@@ -183,7 +202,9 @@ function deltafn_apply_layout(
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        vmessageout = combineLatest(
+            (msgs_observable, marginals_observable), PushNew()
+        )
 
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
@@ -191,7 +212,9 @@ function deltafn_apply_layout(
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, vmessageout
+        )
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)

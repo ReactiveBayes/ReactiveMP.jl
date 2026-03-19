@@ -73,14 +73,28 @@ meta = BIFMMeta(A, B, C)
 ```
 where `A`, `B` and `C` are the transition matrices in the model.
 """
-function BIFMMeta(A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}) where {T1, T2, T3}
+function BIFMMeta(
+    A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}
+) where {T1, T2, T3}
     T = promote_type(T1, T2, T3)
     # check whether the dimensionality of transition matrices makes sense
     @assert size(A, 1) == size(B, 1)
     @assert size(A, 1) == size(C, 2)
 
     # return default metadata for BIFM node
-    return BIFMMeta{T}(A, B, C, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing)
+    return BIFMMeta{T}(
+        A,
+        B,
+        C,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+    )
 end
 @doc raw"""
 Initialization of the BIFMMeta object can be performed by calling
@@ -89,7 +103,13 @@ meta = BIFMMeta(A, B, C, μu, Σu)
 ```
 where `A`, `B` and `C` are the transition matrices in the model. `μu` and `Σu` are the mean vector and covariance matrix of the input. Importantly, in this setting we assume that these are known and do not change due to an external model.
 """
-function BIFMMeta(A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}, μu::Array{T4, 1}, Σu::Array{T5, 2}) where {T1, T2, T3, T4, T5}
+function BIFMMeta(
+    A::Array{T1, 2},
+    B::Array{T2, 2},
+    C::Array{T3, 2},
+    μu::Array{T4, 1},
+    Σu::Array{T5, 2},
+) where {T1, T2, T3, T4, T5}
     T = promote_type(T1, T2, T3, T4, T5)
     # check whether the dimensionality of transition matrices makes sense
     @assert size(A, 1) == size(B, 1)
@@ -98,7 +118,9 @@ function BIFMMeta(A::Array{T1, 2}, B::Array{T2, 2}, C::Array{T3, 2}, μu::Array{
     @assert size(μu, 1) == size(B, 2)
 
     # return default Meta data for BIFM node
-    return BIFMMeta{T}(A, B, C, nothing, nothing, nothing, nothing, nothing, nothing, μu, Σu)
+    return BIFMMeta{T}(
+        A, B, C, nothing, nothing, nothing, nothing, nothing, nothing, μu, Σu
+    )
 end
 
 getA(meta::BIFMMeta)        = meta.A
@@ -145,4 +167,6 @@ function setΣu!(meta::BIFMMeta, Σu)
     meta.Σu = Σu
 end
 
-default_meta(::Type{BIFM}) = error("BIFM node requires meta flag explicitly specified")
+default_meta(::Type{BIFM}) = error(
+    "BIFM node requires meta flag explicitly specified"
+)

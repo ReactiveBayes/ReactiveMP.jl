@@ -29,7 +29,15 @@ end
 end
 
 @testitem "RandomVariable: getmarginal" begin
-    import ReactiveMP: MessageObservable, create_messagein!, messagein, degree, activate!, connect!, RandomVariableActivationOptions, messageout
+    import ReactiveMP:
+        MessageObservable,
+        create_messagein!,
+        messagein,
+        degree,
+        activate!,
+        connect!,
+        RandomVariableActivationOptions,
+        messageout
 
     include("../testutilities.jl")
 
@@ -44,7 +52,12 @@ end
                 return s
             end
 
-            activate!(var, RandomVariableActivationOptions(AsapScheduler(), message_prod_fn, marginal_prod_fn))
+            activate!(
+                var,
+                RandomVariableActivationOptions(
+                    AsapScheduler(), message_prod_fn, marginal_prod_fn
+                ),
+            )
 
             messages = map(msg, rand(d))
 
@@ -63,7 +76,15 @@ end
 end
 
 @testitem "RandomVariable: messageout" begin
-    import ReactiveMP: MessageObservable, create_messagein!, messagein, degree, activate!, connect!, RandomVariableActivationOptions, messageout
+    import ReactiveMP:
+        MessageObservable,
+        create_messagein!,
+        messagein,
+        degree,
+        activate!,
+        connect!,
+        RandomVariableActivationOptions,
+        messageout
 
     include("../testutilities.jl")
 
@@ -80,7 +101,12 @@ end
                 return s
             end
 
-            activate!(var, RandomVariableActivationOptions(AsapScheduler(), message_prod_fn, marginal_prod_fn))
+            activate!(
+                var,
+                RandomVariableActivationOptions(
+                    AsapScheduler(), message_prod_fn, marginal_prod_fn
+                ),
+            )
 
             messages = map(msg, rand(d))
 
@@ -102,6 +128,8 @@ end
     import ReactiveMP: RandomVariableActivationOptions, activate!, messageout
 
     let var = randomvar()
-        @test_throws "Cannot activate a random variable with zero or less than one inbound messages." activate!(var, RandomVariableActivationOptions())
+        @test_throws "Cannot activate a random variable with zero or less than one inbound messages." activate!(
+            var, RandomVariableActivationOptions()
+        )
     end
 end

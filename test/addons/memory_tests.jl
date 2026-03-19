@@ -18,7 +18,9 @@
         marginals = (PointMass(1.0), NormalMeanPrecision(0.0, 1.0))
         result = MvNormalMeanCovariance(ones(2), diageye(2))
 
-        addon = message_mapping_addon(AddonMemory(), mapping, messages, marginals, result)
+        addon = message_mapping_addon(
+            AddonMemory(), mapping, messages, marginals, result
+        )
 
         displayed = repr(addon)
 

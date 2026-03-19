@@ -1,5 +1,7 @@
 
-@rule AR(:θ, Marginalisation) (q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any, meta::ARMeta) = begin
+@rule AR(:θ, Marginalisation) (
+    q_y_x::MultivariateNormalDistributionsFamily, q_γ::Any, meta::ARMeta
+) = begin
     order = getorder(meta)
     F     = getvform(meta)
 
@@ -24,18 +26,23 @@
     return convert(promote_variate_type(F, NormalWeightedMeanPrecision), ξ, W)
 end
 
-@rule AR(:θ, Marginalisation) (q_y::Any, q_x::Any, q_γ::Any, meta::ARMeta) = begin
-    order = getorder(meta)
+@rule AR(:θ, Marginalisation) (q_y::Any, q_x::Any, q_γ::Any, meta::ARMeta) =
+    begin
+        order = getorder(meta)
 
-    mx, Vx = mean_cov(q_x)
+        mx, Vx = mean_cov(q_x)
 
-    my, mγ = mean(q_y), mean(q_γ)
+        my, mγ = mean(q_y), mean(q_γ)
 
-    mV = ar_transition(getvform(meta), getorder(meta), mγ)
-    T = promote_paramfloattype(q_y, q_x, q_γ)
-    c = ar_unit(T, getvform(meta), order)
+        mV = ar_transition(getvform(meta), getorder(meta), mγ)
+        T = promote_paramfloattype(q_y, q_x, q_γ)
+        c = ar_unit(T, getvform(meta), order)
 
-    ξ = mx * c' * pinv(mV) * my
-    W = mγ * (Vx + mx * mx')
-    return convert(promote_variate_type(getvform(meta), NormalWeightedMeanPrecision), ξ, W)
-end
+        ξ = mx * c' * pinv(mV) * my
+        W = mγ * (Vx + mx * mx')
+        return convert(
+            promote_variate_type(getvform(meta), NormalWeightedMeanPrecision),
+            ξ,
+            W,
+        )
+    end

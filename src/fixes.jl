@@ -9,7 +9,9 @@
 import LinearAlgebra: dot
 import ForwardDiff
 
-function dot(x::AbstractVector, A::AbstractMatrix, y::AbstractVector{D}) where {D <: ForwardDiff.Dual}
+function dot(
+    x::AbstractVector, A::AbstractMatrix, y::AbstractVector{D}
+) where {D <: ForwardDiff.Dual}
     (axes(x)..., axes(y)...) == axes(A) || throw(DimensionMismatch())
     T = typeof(dot(first(x), first(A), first(y)))
     s = zero(T)

@@ -1,4 +1,5 @@
-export MultinomialPolya, MultinomialPolyaMeta, logistic_stick_breaking, compose_Nks
+export MultinomialPolya,
+    MultinomialPolyaMeta, logistic_stick_breaking, compose_Nks
 
 using PolyaGammaHybridSamplers
 
@@ -34,9 +35,16 @@ struct MultinomialPolyaMeta
     ncubaturepoints::Int
 end
 
-default_meta(::Type{MultinomialPolya}) = MultinomialPolyaMeta(MULTINOMIAL_POLYA_CUBATURE_POINTS)
+default_meta(::Type{MultinomialPolya}) = MultinomialPolyaMeta(
+    MULTINOMIAL_POLYA_CUBATURE_POINTS
+)
 
-@average_energy MultinomialPolya (q_x::Any, q_N::PointMass, q_ψ::Union{GaussianDistributionsFamily, PointMass}, meta::MultinomialPolyaMeta) = begin
+@average_energy MultinomialPolya (
+    q_x::Any,
+    q_N::PointMass,
+    q_ψ::Union{GaussianDistributionsFamily, PointMass},
+    meta::MultinomialPolyaMeta,
+) = begin
     N             = mean(q_N)
     K             = first(size(mean(q_x)))
     x             = mean(q_x)
@@ -50,7 +58,14 @@ default_meta(::Type{MultinomialPolya}) = MultinomialPolyaMeta(MULTINOMIAL_POLYA_
     expectations  = map((m, v) -> mapreduce((w, p) -> w * softplus(p), +, weights(m, v), points(m, v)), μ_ψ, v_ψ)
 
     if q_x isa PointMass
-        term1 = -mapreduce((Nk, y) -> loggamma(Nk + 1) - loggamma(Nk - y + 1) - loggamma(y + 1), +, Nks, x)
+        term1 =
+            -mapreduce(
+                (Nk, y) ->
+                    loggamma(Nk + 1) - loggamma(Nk - y + 1) - loggamma(y + 1),
+                +,
+                Nks,
+                x,
+            )
     elseif q_x isa Multinomial || q_x isa Categorical
         if N != 1
             p = q_x.p
@@ -68,7 +83,9 @@ default_meta(::Type{MultinomialPolya}) = MultinomialPolyaMeta(MULTINOMIAL_POLYA_
 end
 
 function expected_log_gamma(binom)
-    return mapreduce((p) -> loggamma(p + 1) * pdf(binom, p), +, collect(0:(binom.n)))
+    return mapreduce(
+        (p) -> loggamma(p + 1) * pdf(binom, p), +, collect(0:(binom.n))
+    )
 end
 
 function logistic_stick_breaking(m)

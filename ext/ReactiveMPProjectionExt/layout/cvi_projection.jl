@@ -32,7 +32,8 @@ In order to compute:
 - `m_out`: uses the posterior over `out`, message from `out` and the joint over the `ins` edges
 - `m_in_k`: uses the inbound message on the `in_k` edge and `q_ins`
 """
-struct CVIProjectionApproximationDeltaFnRuleLayout <: AbstractDeltaNodeDependenciesLayout end
+struct CVIProjectionApproximationDeltaFnRuleLayout <:
+       AbstractDeltaNodeDependenciesLayout end
 
 deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) = CVIProjectionApproximationDeltaFnRuleLayout()
 
@@ -70,7 +71,9 @@ function deltafn_apply_layout(
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest((msgs_observable, marginals_observable), PushNew())
+        vmessageout = combineLatest(
+            (msgs_observable, marginals_observable), PushNew()
+        )
 
         mapping = let messagemap = MessageMapping(fform, vtag, vconstraint, msgs_names, marginal_names, meta, addons, factornode, rulefallback, callbacks)
             (dependencies) -> DeferredMessage(dependencies[1], dependencies[2], messagemap)
@@ -78,7 +81,9 @@ function deltafn_apply_layout(
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(pipeline_stages, factornode, vtag, vmessageout)
+        vmessageout = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, vmessageout
+        )
         vmessageout = vmessageout |> schedule_on(scheduler)
 
         connect!(messageout(interface), vmessageout)

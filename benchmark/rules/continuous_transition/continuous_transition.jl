@@ -37,13 +37,24 @@ function create_ct_benchmark_data(dx, dy)
     q_W = Wishart(dy + 1, Matrix{Float64}(I, dy, dy))
 
     # Create joint distribution for structured factorization
-    q_y_x = MvNormalMeanCovariance([μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx])
+    q_y_x = MvNormalMeanCovariance(
+        [μy; μx], [Σy zeros(dy, dx); zeros(dx, dy) Σx]
+    )
 
     # Create messages for marginal rule
     m_y = MvNormalMeanCovariance(μy, Σy)
     m_x = MvNormalMeanCovariance(μx, Σx)
 
-    return (meta = meta, q_y = q_y, q_x = q_x, q_a = q_a, q_W = q_W, q_y_x = q_y_x, m_y = m_y, m_x = m_x)
+    return (
+        meta = meta,
+        q_y = q_y,
+        q_x = q_x,
+        q_a = q_a,
+        q_W = q_W,
+        q_y_x = q_y_x,
+        m_y = m_y,
+        m_x = m_x,
+    )
 end
 
 """
@@ -53,7 +64,9 @@ function add_continuous_transition_rule_benchmarks(SUITE)
     SUITE["ContinuousTransition"] = BenchmarkGroup()
 
     add_continuous_transition_a_benchmarks(SUITE["ContinuousTransition"])
-    add_continuous_transition_marginals_benchmarks(SUITE["ContinuousTransition"])
+    add_continuous_transition_marginals_benchmarks(
+        SUITE["ContinuousTransition"]
+    )
 end
 
 function add_continuous_transition_a_benchmarks(SUITE)
@@ -67,12 +80,23 @@ function add_continuous_transition_a_benchmarks(SUITE)
 
         # Structured VMP: q(y,x) joint
         SUITE["a"]["Structured"]["dx=$(dx), dy=$(dy)"] = @benchmarkable begin
-            @call_rule ContinuousTransition(:a, Marginalisation) (q_y_x = $data.q_y_x, q_a = $data.q_a, q_W = $data.q_W, meta = $data.meta)
+            @call_rule ContinuousTransition(:a, Marginalisation) (
+                q_y_x = $data.q_y_x,
+                q_a = $data.q_a,
+                q_W = $data.q_W,
+                meta = $data.meta,
+            )
         end
 
         # Mean-field VMP: q(y)q(x)q(a)q(W)
         SUITE["a"]["Mean-field"]["dx=$(dx), dy=$(dy)"] = @benchmarkable begin
-            @call_rule ContinuousTransition(:a, Marginalisation) (q_y = $data.q_y, q_x = $data.q_x, q_a = $data.q_a, q_W = $data.q_W, meta = $data.meta)
+            @call_rule ContinuousTransition(:a, Marginalisation) (
+                q_y = $data.q_y,
+                q_x = $data.q_x,
+                q_a = $data.q_a,
+                q_W = $data.q_W,
+                meta = $data.meta,
+            )
         end
     end
 end
@@ -88,7 +112,13 @@ function add_continuous_transition_marginals_benchmarks(SUITE)
 
         # y_x marginal rule
         SUITE["marginals"]["y_x"]["dx=$(dx), dy=$(dy)"] = @benchmarkable begin
-            @call_marginalrule ContinuousTransition(:y_x) (m_y = $data.m_y, m_x = $data.m_x, q_a = $data.q_a, q_W = $data.q_W, meta = $data.meta)
+            @call_marginalrule ContinuousTransition(:y_x) (
+                m_y = $data.m_y,
+                m_x = $data.m_x,
+                q_a = $data.q_a,
+                q_W = $data.q_W,
+                meta = $data.meta,
+            )
         end
     end
 end

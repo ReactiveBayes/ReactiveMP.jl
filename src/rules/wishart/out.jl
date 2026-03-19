@@ -1,7 +1,9 @@
 
 # Belief Propagation                #
 # --------------------------------- #
-@rule Wishart(:out, Marginalisation) (m_ν::PointMass, m_S::PointMass) = WishartFast(mean(m_ν), inv(mean(m_S)))
+@rule Wishart(:out, Marginalisation) (m_ν::PointMass, m_S::PointMass) = WishartFast(
+    mean(m_ν), inv(mean(m_S))
+)
 
 # Variational                       # 
 # --------------------------------- #

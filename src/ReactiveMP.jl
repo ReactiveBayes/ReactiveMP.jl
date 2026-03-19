@@ -101,8 +101,12 @@ include("rules/predefined.jl")
 include("rules/fallbacks.jl")
 
 function __init__()
-    Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-        if exc.f == ReactiveMP.factornode && length(argtypes) >= 2 && argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
+    Base.Experimental.register_error_hint(
+        MethodError
+    ) do io, exc, argtypes, kwargs
+        if exc.f == ReactiveMP.factornode &&
+            length(argtypes) >= 2 &&
+            argtypes[1] == ReactiveMP.UndefinedNodeFunctionalForm
             errmsg = """
             `$(argtypes[2])` has been used but the `ReactiveMP` backend does not support `$(argtypes[2])` as a factor node.
 

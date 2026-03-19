@@ -3,7 +3,7 @@
     m_in::MultivariateNormalDistributionsFamily,
     m_zprev::TerminalProdArgument{<:MultivariateNormalDistributionsFamily},
     m_znext::MultivariateNormalDistributionsFamily,
-    meta::BIFMMeta
+    meta::BIFMMeta,
 ) = begin
 
     # fetch information from meta data
@@ -40,5 +40,9 @@
     T = promote_samplefloattype(m_in, m_zprev.argument, m_znext)
 
     # return outgoing marginal
-    return TerminalProdArgument(convert(MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_out, Σ_out)))
+    return TerminalProdArgument(
+        convert(
+            MvNormalMeanCovariance{T}, MvNormalMeanCovariance(μ_out, Σ_out)
+        ),
+    )
 end

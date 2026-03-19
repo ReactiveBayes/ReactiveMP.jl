@@ -8,9 +8,12 @@ end
 
 AddonMemory() = AddonMemory(nothing)
 
-getmemoryaddon(addons::NTuple{N, AbstractAddon}) where {N} = first(filter(x -> typeof(x) <: AddonMemory, addons))
+getmemoryaddon(addons::NTuple{N, AbstractAddon}) where {N} = first(
+    filter(x -> typeof(x) <: AddonMemory, addons)
+)
 getmemory(addon::AddonMemory) = addon.memory
-getmemory(addons::NTuple{N, AbstractAddon}) where {N} = getmemoryaddon(addons).memory
+getmemory(addons::NTuple{N, AbstractAddon}) where {N} =
+    getmemoryaddon(addons).memory
 
 struct AddonMemoryMessageMapping{M <: MessageMapping, S, L, R}
     mapping   :: M
@@ -23,24 +26,42 @@ struct AddonMemoryProd{T}
     mappings::Vector{T}
 end
 
-function message_mapping_addon(::AddonMemory{Nothing}, mapping, messages, marginals, result)
-    return AddonMemory(AddonMemoryMessageMapping(mapping, messages, marginals, result))
+function message_mapping_addon(
+    ::AddonMemory{Nothing}, mapping, messages, marginals, result
+)
+    return AddonMemory(
+        AddonMemoryMessageMapping(mapping, messages, marginals, result)
+    )
 end
 
-function multiply_addons(left_addon::AddonMemory, right_addon::AddonMemory, new_dist, left_dist, right_dist)
-    return AddonMemory(construct_memory(getmemory(left_addon), getmemory(right_addon)))
+function multiply_addons(
+    left_addon::AddonMemory,
+    right_addon::AddonMemory,
+    new_dist,
+    left_dist,
+    right_dist,
+)
+    return AddonMemory(
+        construct_memory(getmemory(left_addon), getmemory(right_addon))
+    )
 end
 
-function construct_memory(left::AddonMemoryMessageMapping, right::AddonMemoryMessageMapping)
+function construct_memory(
+    left::AddonMemoryMessageMapping, right::AddonMemoryMessageMapping
+)
     return AddonMemoryProd(Any[left, right])
 end
 
-function construct_memory(left::AddonMemoryMessageMapping, right::AddonMemoryProd)
+function construct_memory(
+    left::AddonMemoryMessageMapping, right::AddonMemoryProd
+)
     pushfirst!(right.mappings, left)
     return right
 end
 
-function construct_memory(left::AddonMemoryProd, right::AddonMemoryMessageMapping)
+function construct_memory(
+    left::AddonMemoryProd, right::AddonMemoryMessageMapping
+)
     push!(left.mappings, right)
     return left
 end
@@ -54,14 +75,20 @@ function string(::AddonMemory)
     return string("memory present; ")
 end
 
-show(io::IO, addon::AddonMemory) = print(io, string("AddonMemory(", addon.memory, ")"))
+show(io::IO, addon::AddonMemory) = print(
+    io, string("AddonMemory(", addon.memory, ")")
+)
 
 function show(io::IO, addon::AddonMemoryMessageMapping)
     indent = get(io, :indent, 0)
     println(io, ' ', "Message mapping memory:")
-    println(io, ' '^indent, "At the node: ", message_mapping_fform(addon.mapping))
+    println(
+        io, ' '^indent, "At the node: ", message_mapping_fform(addon.mapping)
+    )
     println(io, ' '^indent, "Towards interface: ", addon.mapping.vtag)
-    println(io, ' '^indent, "With local constraint: ", addon.mapping.vconstraint)
+    println(
+        io, ' '^indent, "With local constraint: ", addon.mapping.vconstraint
+    )
     if !isnothing(addon.mapping.meta)
         println(io, ' '^indent, "With meta: ", addon.mapping.meta)
     end
@@ -69,10 +96,24 @@ function show(io::IO, addon::AddonMemoryMessageMapping)
         println(io, ' '^indent, "With addons: ", addon.mapping.addons)
     end
     if !isnothing(addon.messages)
-        println(io, ' '^indent, "With input messages on ", addon.mapping.msgs_names, " edges: ", addon.messages)
+        println(
+            io,
+            ' '^indent,
+            "With input messages on ",
+            addon.mapping.msgs_names,
+            " edges: ",
+            addon.messages,
+        )
     end
     if !isnothing(addon.marginals)
-        println(io, ' '^indent, "With input marginals on ", addon.mapping.marginals_names, " edges: ", addon.marginals)
+        println(
+            io,
+            ' '^indent,
+            "With input marginals on ",
+            addon.mapping.marginals_names,
+            " edges: ",
+            addon.marginals,
+        )
     end
     println(io, ' '^indent, "With the result: ", addon.result)
 end

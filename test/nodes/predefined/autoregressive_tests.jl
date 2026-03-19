@@ -10,23 +10,55 @@
         q_θ = NormalMeanVariance(0.0, 1.0)
         q_γ = GammaShapeRate(2.0, 3.0)
 
-        marginals = (Marginal(q_y, false, false, nothing), Marginal(q_x, false, false, nothing), Marginal(q_θ, false, false, nothing), Marginal(q_γ, false, false, nothing))
-        @test score(AverageEnergy(), Autoregressive, Val{(:y, :x, :θ, :γ)}(), marginals, ARMeta(Univariate, 1, ARsafe())) ≈ 1.92351917665
+        marginals = (
+            Marginal(q_y, false, false, nothing),
+            Marginal(q_x, false, false, nothing),
+            Marginal(q_θ, false, false, nothing),
+            Marginal(q_γ, false, false, nothing),
+        )
+        @test score(
+            AverageEnergy(),
+            Autoregressive,
+            Val{(:y, :x, :θ, :γ)}(),
+            marginals,
+            ARMeta(Univariate, 1, ARsafe()),
+        ) ≈ 1.92351917665
 
         q_y = MvNormalMeanCovariance(zeros(2), diageye(2))
         q_x = MvNormalMeanCovariance(zeros(2), diageye(2))
         q_θ = MvNormalMeanCovariance(zeros(2), diageye(2))
         q_γ = GammaShapeRate(2.0, 3.0)
 
-        marginals = (Marginal(q_y, false, false, nothing), Marginal(q_x, false, false, nothing), Marginal(q_θ, false, false, nothing), Marginal(q_γ, false, false, nothing))
-        @test score(AverageEnergy(), Autoregressive, Val{(:y, :x, :θ, :γ)}(), marginals, ARMeta(Univariate, 1, ARsafe())) ≈ 2.25685250999
+        marginals = (
+            Marginal(q_y, false, false, nothing),
+            Marginal(q_x, false, false, nothing),
+            Marginal(q_θ, false, false, nothing),
+            Marginal(q_γ, false, false, nothing),
+        )
+        @test score(
+            AverageEnergy(),
+            Autoregressive,
+            Val{(:y, :x, :θ, :γ)}(),
+            marginals,
+            ARMeta(Univariate, 1, ARsafe()),
+        ) ≈ 2.25685250999
 
         q_y_x = MvNormalMeanCovariance(zeros(2), diageye(2))
         q_θ = NormalMeanVariance(0.0, 1.0)
         q_γ = GammaShapeRate(2.0, 3.0)
 
-        marginals = (Marginal(q_y_x, false, false, nothing), Marginal(q_θ, false, false, nothing), Marginal(q_γ, false, false, nothing))
-        @test score(AverageEnergy(), Autoregressive, Val{(:y_x, :θ, :γ)}(), marginals, ARMeta(Univariate, 1, ARsafe())) ≈ 1.92351917665616
+        marginals = (
+            Marginal(q_y_x, false, false, nothing),
+            Marginal(q_θ, false, false, nothing),
+            Marginal(q_γ, false, false, nothing),
+        )
+        @test score(
+            AverageEnergy(),
+            Autoregressive,
+            Val{(:y_x, :θ, :γ)}(),
+            marginals,
+            ARMeta(Univariate, 1, ARsafe()),
+        ) ≈ 1.92351917665616
     end
 
     @testset "ARTransitionMatrix" begin
@@ -39,10 +71,15 @@
             ftransition[1] = inv(γ)
 
             @test broadcast(+, matrix, transition) == (matrix + ftransition)
-            @test_throws DimensionMismatch broadcast(+, zeros(order + 1, order + 1), transition)
+            @test_throws DimensionMismatch broadcast(
+                +, zeros(order + 1, order + 1), transition
+            )
 
-            @test ReactiveMP.add_transition(matrix, transition) == (matrix + ftransition)
-            @test_throws DimensionMismatch ReactiveMP.add_transition(zeros(order + 1, order + 1), transition)
+            @test ReactiveMP.add_transition(matrix, transition) ==
+                (matrix + ftransition)
+            @test_throws DimensionMismatch ReactiveMP.add_transition(
+                zeros(order + 1, order + 1), transition
+            )
 
             cmatrix = copy(matrix)
             broadcast!(+, cmatrix, transition)
@@ -59,8 +96,10 @@
 end
 
 @testitem "AutoregressiveNode: is_univariate, is_safe, is_unsafe, default_meta, is_multivariate cases, ar_unit, ARPrecisionMatrix" begin
-    using ReactiveMP, Distributions, ExponentialFamily, LazyArrays, LinearAlgebra, Test
-    import ReactiveMP: ARMeta, ARsafe, ARunsafe, AR, ar_unit, ar_precision, ARPrecisionMatrix
+    using ReactiveMP,
+        Distributions, ExponentialFamily, LazyArrays, LinearAlgebra, Test
+    import ReactiveMP:
+        ARMeta, ARsafe, ARunsafe, AR, ar_unit, ar_precision, ARPrecisionMatrix
     @testset "ARMeta and ARPrecisionMatrix extensions" begin
 
         # --- ARMeta property tests ---
