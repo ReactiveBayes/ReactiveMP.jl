@@ -43,7 +43,8 @@ end
 
     include("../testutilities.jl")
 
-    message_prod_fold = (variable, context, msgs) -> error("Messages should not be called here")
+    message_prod_fold =
+        (variable, context, msgs) -> error("Messages should not be called here")
     marginal_prod_fold = (variable, context, msgs) -> msg(sum(getdata.(msgs)))
     for d in 1:5:100
         let var = randomvar()
@@ -94,8 +95,11 @@ end
 
     include("../testutilities.jl")
 
-    message_prod_fold = (variable, context, msgs) -> msg(sum(filter(!ismissing, getdata.(msgs))))
-    marginal_prod_fold = (variable, context, msgs) -> error("Marginal should not be called here")
+    message_prod_fold =
+        (variable, context, msgs) ->
+            msg(sum(filter(!ismissing, getdata.(msgs))))
+    marginal_prod_fold =
+        (variable, context, msgs) -> error("Marginal should not be called here")
 
     # We start from `2` because `1` is not a valid degree for a random variable
     for d in 2:5:100, k in 1:d
@@ -119,7 +123,13 @@ end
             messages = map(msg, rand(d))
 
             # the outbound message is the result of multiplication of `n - 1` messages excluding index `k`
-            kmessage_expected = msg(sum(filter(!ismissing, getdata.(collect(skipindex(messages, k))))))
+            kmessage_expected = msg(
+                sum(
+                    filter(
+                        !ismissing, getdata.(collect(skipindex(messages, k)))
+                    ),
+                ),
+            )
             kmessage_result = check_stream_updated_once(messageout(var, k)) do
                 foreach(zip(messageins, messages)) do (messagein, message)
                     next!(messagein, message)
@@ -162,7 +172,8 @@ end
         listen_to = (:before_marginal_computation, :after_marginal_computation)
         handler = MarginalCallbackHandler(listen_to, [])
         marginal_context = MessageProductContext(
-            fold_strategy = (variable, context, msgs) -> msg(sum(getdata.(msgs))),
+            fold_strategy = (variable, context, msgs) ->
+                msg(sum(getdata.(msgs))),
             callbacks = handler,
         )
 
@@ -178,9 +189,7 @@ end
         activate!(
             var,
             RandomVariableActivationOptions(
-                AsapScheduler(),
-                MessageProductContext(),
-                marginal_context,
+                AsapScheduler(), MessageProductContext(), marginal_context
             ),
         )
 
@@ -214,7 +223,8 @@ end
         listen_to = (:before_marginal_computation, :after_marginal_computation)
         handler = MarginalCallbackHandler(listen_to, [])
         marginal_context = MessageProductContext(
-            fold_strategy = (variable, context, msgs) -> msg(sum(getdata.(msgs))),
+            fold_strategy = (variable, context, msgs) ->
+                msg(sum(getdata.(msgs))),
             callbacks = handler,
         )
 
@@ -230,9 +240,7 @@ end
         activate!(
             var,
             RandomVariableActivationOptions(
-                AsapScheduler(),
-                MessageProductContext(),
-                marginal_context,
+                AsapScheduler(), MessageProductContext(), marginal_context
             ),
         )
 

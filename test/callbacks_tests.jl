@@ -138,7 +138,8 @@ end
     @test invoke_callback(callback_handler, Val{:sum_event}(), 1, 2, 3) == 6
     @test invoke_callback(callback_handler, Val{:prod_event}(), 1, 2) == 2
     @test invoke_callback(callback_handler, Val{:prod_event}(), 1, 2, 5) == 10
-    @test invoke_callback(callback_handler, Val{:other_event}(), 1, 2, 3) === nothing
+    @test invoke_callback(callback_handler, Val{:other_event}(), 1, 2, 3) ===
+        nothing
 end
 
 @testitem "It should be possible to merge callback handlers" begin
@@ -164,9 +165,9 @@ end
     end
 
     ReactiveMP.invoke_callback(::MyCustomHandler, event, args...) = nothing
-    ReactiveMP.invoke_callback(
-        handler::MyCustomHandler, event::Val{:event2}, args...
-    ) = push!(handler.events, :event2)
+    ReactiveMP.invoke_callback(handler::MyCustomHandler, event::Val{:event2}, args...) = push!(
+        handler.events, :event2
+    )
 
     custom_handler = MyCustomHandler([])
 

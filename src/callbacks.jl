@@ -61,9 +61,7 @@ julia> ReactiveMP.invoke_callback(callbacks, Val{:other_event}(), 1, 2, 3)
 
 If the `Dict` does not have a key corresponding to the event name, the event will be ignored.
 """
-function invoke_callback(
-    callbacks::Dict{Symbol}, ::Val{E}, args...
-) where {E}
+function invoke_callback(callbacks::Dict{Symbol}, ::Val{E}, args...) where {E}
     if haskey(callbacks, E)
         return callbacks[E](args...)
     end

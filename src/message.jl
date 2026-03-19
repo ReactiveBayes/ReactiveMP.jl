@@ -163,7 +163,14 @@ function compute_product_of_two_messages(
     left::Message,
     right::Message,
 )
-    invoke_callback(context.callbacks, BeforeProductOfTwoMessages(), variable, context, left, right)
+    invoke_callback(
+        context.callbacks,
+        BeforeProductOfTwoMessages(),
+        variable,
+        context,
+        left,
+        right,
+    )
 
     # We propagate clamped message, in case if both are clamped
     is_prod_clamped = is_clamped(left) && is_clamped(right)
@@ -179,9 +186,23 @@ function compute_product_of_two_messages(
     new_dist   = prod(context.prod_constraint, left_dist, right_dist)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
-        invoke_callback(context.callbacks, BeforeFormConstraintApplied(), variable, context, FormConstraintCheckEach(), new_dist)
+        invoke_callback(
+            context.callbacks,
+            BeforeFormConstraintApplied(),
+            variable,
+            context,
+            FormConstraintCheckEach(),
+            new_dist,
+        )
         new_dist = constrain_form(context.form_constraint, new_dist)
-        invoke_callback(context.callbacks, AfterFormConstraintApplied(), variable, context, FormConstraintCheckEach(), new_dist)
+        invoke_callback(
+            context.callbacks,
+            AfterFormConstraintApplied(),
+            variable,
+            context,
+            FormConstraintCheckEach(),
+            new_dist,
+        )
     end
 
     # process addons
@@ -194,7 +215,16 @@ function compute_product_of_two_messages(
     )
     result = Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
 
-    invoke_callback(context.callbacks, AfterProductOfTwoMessages(), variable, context, left, right, result, new_addons)
+    invoke_callback(
+        context.callbacks,
+        AfterProductOfTwoMessages(),
+        variable,
+        context,
+        left,
+        right,
+        result,
+        new_addons,
+    )
 
     return result
 end
@@ -218,7 +248,13 @@ See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.Mes
 function compute_product_of_messages(
     variable::AbstractVariable, context::MessageProductContext, messages
 )
-    invoke_callback(context.callbacks, BeforeProductOfMessages(), variable, context, messages)
+    invoke_callback(
+        context.callbacks,
+        BeforeProductOfMessages(),
+        variable,
+        context,
+        messages,
+    )
 
     result = as_message(
         compute_product_of_messages(
@@ -228,9 +264,23 @@ function compute_product_of_messages(
 
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
         dist = getdata(result)
-        invoke_callback(context.callbacks, BeforeFormConstraintApplied(), variable, context, FormConstraintCheckLast(), dist)
+        invoke_callback(
+            context.callbacks,
+            BeforeFormConstraintApplied(),
+            variable,
+            context,
+            FormConstraintCheckLast(),
+            dist,
+        )
         constrained_dist = constrain_form(context.form_constraint, dist)
-        invoke_callback(context.callbacks, AfterFormConstraintApplied(), variable, context, FormConstraintCheckLast(), constrained_dist)
+        invoke_callback(
+            context.callbacks,
+            AfterFormConstraintApplied(),
+            variable,
+            context,
+            FormConstraintCheckLast(),
+            constrained_dist,
+        )
         result = Message(
             constrained_dist,
             is_clamped(result),
@@ -239,7 +289,14 @@ function compute_product_of_messages(
         )
     end
 
-    invoke_callback(context.callbacks, AfterProductOfMessages(), variable, context, messages, result)
+    invoke_callback(
+        context.callbacks,
+        AfterProductOfMessages(),
+        variable,
+        context,
+        messages,
+        result,
+    )
 
     return result
 end
@@ -352,8 +409,9 @@ mutable struct DeferredMessage{R, S, F} <: AbstractMessage
     cache           :: Union{Nothing, Message}
 end
 
-DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} =
-    DeferredMessage(messages, marginals, mappingFn, nothing)
+DeferredMessage(messages::R, marginals::S, mappingFn::F) where {R, S, F} = DeferredMessage(
+    messages, marginals, mappingFn, nothing
+)
 
 function Base.show(io::IO, message::DeferredMessage)
     cache = getcache(message)
@@ -403,14 +461,17 @@ struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     stream  :: LazyObservable{M}
 end
 
-MessageObservable(::Type{M} = AbstractMessage) where {M} =
-    MessageObservable{M}(RecentSubject(M), lazy(M))
+MessageObservable(::Type{M} = AbstractMessage) where {M} = MessageObservable{M}(
+    RecentSubject(M), lazy(M)
+)
 
-Rocket.getrecent(observable::MessageObservable) =
-    Rocket.getrecent(observable.subject)
+Rocket.getrecent(observable::MessageObservable) = Rocket.getrecent(
+    observable.subject
+)
 
-@inline Rocket.on_subscribe!(observable::MessageObservable, actor) =
-    subscribe!(observable.stream, actor)
+@inline Rocket.on_subscribe!(observable::MessageObservable, actor) = subscribe!(
+    observable.stream, actor
+)
 
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.Actor{<:AbstractMessage})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MessageObservable, actor::Rocket.NextActor{<:AbstractMessage})       = Rocket.on_subscribe!(observable.stream, actor)
