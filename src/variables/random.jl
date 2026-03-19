@@ -119,9 +119,9 @@ function _compute_marginal_from_messages(
     invoke_callback(
         context.callbacks,
         BeforeMarginalComputation(),
-        randomvar,
-        context,
-        messages,
+        BeforeMarginalComputationData(;
+            variable = randomvar, context = context, messages = messages
+        ),
     )
     result = as_marginal(
         compute_product_of_messages(randomvar, context, messages)
@@ -129,10 +129,9 @@ function _compute_marginal_from_messages(
     invoke_callback(
         context.callbacks,
         AfterMarginalComputation(),
-        randomvar,
-        context,
-        messages,
-        result,
+        AfterMarginalComputationData(;
+            variable = randomvar, context = context, messages = messages, result = result
+        ),
     )
     return result
 end

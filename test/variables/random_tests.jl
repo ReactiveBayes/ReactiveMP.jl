@@ -163,9 +163,9 @@ end
     end
 
     function ReactiveMP.invoke_callback(
-        handler::MarginalCallbackHandler, ::Val{E}, args...
+        handler::MarginalCallbackHandler, ::Val{E}, data
     ) where {E}
-        E ∈ handler.listen_to && push!(handler.events, (event = E, args = args))
+        E ∈ handler.listen_to && push!(handler.events, (event = E, data = data))
     end
 
     @testset "Fires before and after marginal computation with 3 messages" begin
@@ -208,15 +208,15 @@ end
 
         # Before: variable, context, messages
         @test handler.events[1].event === :before_marginal_computation
-        @test handler.events[1].args[1] === var
-        @test handler.events[1].args[2] === marginal_context
+        @test handler.events[1].data.variable === var
+        @test handler.events[1].data.context === marginal_context
 
         # After: variable, context, messages, result
         @test handler.events[2].event === :after_marginal_computation
-        @test handler.events[2].args[1] === var
-        @test handler.events[2].args[2] === marginal_context
-        @test length(handler.events[2].args[3]) == 3
-        @test getdata(handler.events[2].args[4]) ≈ 6.0
+        @test handler.events[2].data.variable === var
+        @test handler.events[2].data.context === marginal_context
+        @test length(handler.events[2].data.messages) == 3
+        @test getdata(handler.events[2].data.result) ≈ 6.0
     end
 
     @testset "Fires before and after marginal computation with 2 messages" begin
@@ -258,12 +258,12 @@ end
         @test length(handler.events) == 2
 
         @test handler.events[1].event === :before_marginal_computation
-        @test handler.events[1].args[1] === var
+        @test handler.events[1].data.variable === var
 
         @test handler.events[2].event === :after_marginal_computation
-        @test handler.events[2].args[1] === var
-        @test length(handler.events[2].args[3]) == 2
-        @test getdata(handler.events[2].args[4]) ≈ 30.0
+        @test handler.events[2].data.variable === var
+        @test length(handler.events[2].data.messages) == 2
+        @test getdata(handler.events[2].data.result) ≈ 30.0
     end
 end
 

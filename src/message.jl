@@ -145,7 +145,7 @@ Computes the product of two messages `left` and `right` for a given `variable` u
 Returns a new message with the result of the multiplication (not necessarily normalized).
 Applies `context.form_constraint` if `context.form_constraint_check_strategy` is set to [`ReactiveMP.FormConstraintCheckEach`](@ref).
 
-The `variable` argument identifies which variable this product is being computed for, which is useful for callbacks (see [`ReactiveMP.BeforeProductOfTwoMessages`](@ref)).
+The `variable` argument identifies which variable this product is being computed for, which is useful for callbacks (see [`ReactiveMP.BeforeProductOfTwoMessagesData`](@ref)).
 
 ## `is_clamped` and `is_initial`
 
@@ -166,10 +166,9 @@ function compute_product_of_two_messages(
     invoke_callback(
         context.callbacks,
         BeforeProductOfTwoMessages(),
-        variable,
-        context,
-        left,
-        right,
+        BeforeProductOfTwoMessagesData(;
+            variable = variable, context = context, left = left, right = right
+        ),
     )
 
     # We propagate clamped message, in case if both are clamped
@@ -189,19 +188,25 @@ function compute_product_of_two_messages(
         invoke_callback(
             context.callbacks,
             BeforeFormConstraintApplied(),
-            variable,
-            context,
-            FormConstraintCheckEach(),
-            new_dist,
+            BeforeFormConstraintAppliedData(;
+                variable = variable,
+                context = context,
+                strategy = FormConstraintCheckEach(),
+                distribution = new_dist,
+            ),
         )
+        pre_constraint_dist = new_dist
         new_dist = constrain_form(context.form_constraint, new_dist)
         invoke_callback(
             context.callbacks,
             AfterFormConstraintApplied(),
-            variable,
-            context,
-            FormConstraintCheckEach(),
-            new_dist,
+            AfterFormConstraintAppliedData(;
+                variable = variable,
+                context = context,
+                strategy = FormConstraintCheckEach(),
+                distribution = pre_constraint_dist,
+                result = new_dist,
+            ),
         )
     end
 
@@ -218,12 +223,14 @@ function compute_product_of_two_messages(
     invoke_callback(
         context.callbacks,
         AfterProductOfTwoMessages(),
-        variable,
-        context,
-        left,
-        right,
-        result,
-        new_addons,
+        AfterProductOfTwoMessagesData(;
+            variable = variable,
+            context = context,
+            left = left,
+            right = right,
+            result = result,
+            addons = new_addons,
+        ),
     )
 
     return result
@@ -251,9 +258,9 @@ function compute_product_of_messages(
     invoke_callback(
         context.callbacks,
         BeforeProductOfMessages(),
-        variable,
-        context,
-        messages,
+        BeforeProductOfMessagesData(;
+            variable = variable, context = context, messages = messages
+        ),
     )
 
     result = as_message(
@@ -267,19 +274,24 @@ function compute_product_of_messages(
         invoke_callback(
             context.callbacks,
             BeforeFormConstraintApplied(),
-            variable,
-            context,
-            FormConstraintCheckLast(),
-            dist,
+            BeforeFormConstraintAppliedData(;
+                variable = variable,
+                context = context,
+                strategy = FormConstraintCheckLast(),
+                distribution = dist,
+            ),
         )
         constrained_dist = constrain_form(context.form_constraint, dist)
         invoke_callback(
             context.callbacks,
             AfterFormConstraintApplied(),
-            variable,
-            context,
-            FormConstraintCheckLast(),
-            constrained_dist,
+            AfterFormConstraintAppliedData(;
+                variable = variable,
+                context = context,
+                strategy = FormConstraintCheckLast(),
+                distribution = dist,
+                result = constrained_dist,
+            ),
         )
         result = Message(
             constrained_dist,
@@ -292,10 +304,9 @@ function compute_product_of_messages(
     invoke_callback(
         context.callbacks,
         AfterProductOfMessages(),
-        variable,
-        context,
-        messages,
-        result,
+        AfterProductOfMessagesData(;
+            variable = variable, context = context, messages = messages, result = result
+        ),
     )
 
     return result
@@ -644,9 +655,9 @@ function (mapping::MessageMapping)(messages, marginals)
     invoke_callback(
         mapping.callbacks,
         BeforeMessageRuleCallback(),
-        mapping,
-        messages,
-        marginals,
+        BeforeMessageRuleCallbackData(;
+            mapping = mapping, messages = messages, marginals = marginals
+        ),
     )
     result, addons =
         if !isnothing(messages) &&
@@ -689,11 +700,13 @@ function (mapping::MessageMapping)(messages, marginals)
     invoke_callback(
         mapping.callbacks,
         AfterMessageRuleCallback(),
-        mapping,
-        messages,
-        marginals,
-        result,
-        addons,
+        AfterMessageRuleCallbackData(;
+            mapping = mapping,
+            messages = messages,
+            marginals = marginals,
+            result = result,
+            addons = addons,
+        ),
     )
 
     return Message(result, is_message_clamped, is_message_initial, addons)
