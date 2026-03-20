@@ -14,10 +14,12 @@ abstract type Event{E} end
 
 """
     event_name(::Type{<:Event{E}}) where {E}
+    event_name(event::Event)
 
-Returns the event name symbol `E` from an `Event{E}` type or any of its subtypes.
+Returns the event name symbol `E` from an `Event{E}` type, subtype, or instance.
 """
 event_name(::Type{<:Event{E}}) where {E} = E
+event_name(event::Event) = event_name(typeof(event))
 
 """
     invoke_callback(callbacks, event::Event)

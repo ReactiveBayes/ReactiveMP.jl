@@ -47,6 +47,28 @@ end
     @test @allocated(bar2(callback_handler)) === 0
 end
 
+@testitem "event_name should work on both types and instances" setup = [
+    CallbacksTestUtils
+] begin
+    import ReactiveMP: event_name, Event
+
+    struct MyEvent <: Event{:my_event}
+        value::Int
+    end
+
+    # Works on types
+    @test event_name(MyEvent) === :my_event
+    @test event_name(CustomEvent{:foo, Tuple{Int}}) === :foo
+
+    # Works on instances
+    @test event_name(MyEvent(42)) === :my_event
+    @test event_name(CustomEvent(:bar, 1, 2)) === :bar
+
+    # Works on built-in event types
+    @test event_name(ReactiveMP.BeforeMessageRuleCallEvent) === :before_message_rule_call
+    @test event_name(ReactiveMP.AfterProductOfTwoMessagesEvent) === :after_product_of_two_messages
+end
+
 @testitem "It should be possible to define custom callback handlers" setup = [
     CallbacksTestUtils
 ] begin
