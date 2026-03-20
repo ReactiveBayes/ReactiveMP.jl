@@ -8,7 +8,7 @@ Abstract supertype for all callback events in the reactive message passing proce
 Concrete event types should subtype `Event{:event_name}` and carry the relevant data as fields.
 The naming convention is that for an event `:event_name`, the corresponding struct is called `EventNameEvent`.
 
-See also: [`ReactiveMP.invoke_callback`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.handle_event`](@ref)
 """
 abstract type Event{E} end
 
@@ -22,12 +22,12 @@ event_name(::Type{<:Event{E}}) where {E} = E
 event_name(event::Event) = event_name(typeof(event))
 
 """
-    invoke_callback(callbacks, event::Event)
+    handle_event(handler, event::Event)
 
-Custom callbacks handlers should implement `invoke_callback` in order to listen to events
+Custom callback handlers should implement `handle_event` to listen to events
 during the reactive message passing procedure.
 Each event is a subtype of [`ReactiveMP.Event{E}`](@ref) that carries the relevant data as fields.
-Does nothing if `callbacks` is `nothing`.
+The return value of `handle_event` is ignored. To communicate state changes, use mutable event fields.
 
 ```jldoctest
 julia> struct MyEvent <: ReactiveMP.Event{:my_event}
@@ -36,33 +36,45 @@ julia> struct MyEvent <: ReactiveMP.Event{:my_event}
 
 julia> struct MyCustomCallbackHandler end;
 
-julia> ReactiveMP.invoke_callback(::MyCustomCallbackHandler, event::MyEvent) = print("Event value: \$(event.value)");
+julia> ReactiveMP.handle_event(::MyCustomCallbackHandler, event::MyEvent) = print("Event value: \$(event.value)");
 ```
 
-See also: [`ReactiveMP.Event`](@ref), [`ReactiveMP.merge_callbacks`](@ref)
+See also: [`ReactiveMP.Event`](@ref), [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.merge_callbacks`](@ref)
 """
-function invoke_callback(callbacks::Nothing, ::Event)
-    return nothing
+function handle_event end
+
+"""
+    invoke_callback(callbacks, event::Event)
+
+Invokes the callback handler(s) for the given event and returns the `event` itself.
+Internally dispatches to [`ReactiveMP.handle_event`](@ref) for each handler.
+Does nothing and returns the event if `callbacks` is `nothing`.
+
+See also: [`ReactiveMP.handle_event`](@ref), [`ReactiveMP.Event`](@ref), [`ReactiveMP.merge_callbacks`](@ref)
+"""
+function invoke_callback(callbacks::Nothing, event::Event)
+    return event
 end
 
 """
     invoke_callback(callbacks::NamedTuple, event::Event{E})
 
 The `callbacks` can also be a `NamedTuple` with fields corresponding to event names.
-Each callback function receives the event object itself.
+Each callback function receives the event object itself. The return value of the callback is ignored.
 
 ```jldoctest
-julia> struct SumEvent <: ReactiveMP.Event{:sum_event}
-           a::Int; b::Int
+julia> mutable struct CountEvent <: ReactiveMP.Event{:count_event}
+           count::Int
        end;
 
-julia> callbacks = (sum_event = (event) -> event.a + event.b,);
+julia> callbacks = (count_event = (event) -> event.count += 1,);
 
-julia> ReactiveMP.invoke_callback(callbacks, SumEvent(1, 2))
-3
+julia> event = CountEvent(0);
 
-julia> ReactiveMP.invoke_callback(callbacks, SumEvent(3, 4))
-7
+julia> ReactiveMP.invoke_callback(callbacks, event);
+
+julia> event.count
+1
 ```
 
 If the `NamedTuple` does not have a field corresponding to the event name, the event will be ignored.
@@ -71,9 +83,9 @@ function invoke_callback(
     callbacks::NamedTuple{K}, event::Event{E}
 ) where {K, E}
     if E in K
-        return callbacks[E](event)
+        callbacks[E](event)
     end
-    return nothing
+    return event
 end
 
 """
@@ -81,43 +93,39 @@ end
 
 The `callbacks` can also be a `Dict{Symbol, Any}` with keys corresponding to event names.
 Works the same as the `NamedTuple` variant, but allows dynamic construction of callback handlers at runtime.
-Each callback function receives the event object itself.
-
-```jldoctest
-julia> struct SumEvent <: ReactiveMP.Event{:sum_event}
-           a::Int; b::Int
-       end;
-
-julia> callbacks = Dict(:sum_event => (event) -> event.a + event.b);
-
-julia> ReactiveMP.invoke_callback(callbacks, SumEvent(1, 2))
-3
-
-julia> ReactiveMP.invoke_callback(callbacks, SumEvent(3, 4))
-7
-```
+Each callback function receives the event object itself. The return value of the callback is ignored.
 
 If the `Dict` does not have a key corresponding to the event name, the event will be ignored.
 """
 function invoke_callback(callbacks::Dict{Symbol}, event::Event{E}) where {E}
     if haskey(callbacks, E)
-        return callbacks[E](event)
+        callbacks[E](event)
     end
-    return nothing
+    return event
 end
 
 """
-    MergedCallbacks{F, C}(reduce_fn, callbacks)
+    invoke_callback(handler, event::Event)
+
+Fallback for custom callback handlers. Delegates to [`ReactiveMP.handle_event`](@ref) and returns the `event`.
+Custom handlers should implement `handle_event(handler, event)` rather than `invoke_callback`.
+"""
+function invoke_callback(handler, event::Event)
+    handle_event(handler, event)
+    return event
+end
+
+"""
+    MergedCallbacks{C}(callbacks)
 
 The result of the [`ReactiveMP.merge_callbacks`](@ref) procedure.
 """
-struct MergedCallbacks{F, C}
-    reduce_fn::F
+struct MergedCallbacks{C}
     callbacks::C
 end
 
 """
-    merge_callbacks(callbacks_handlers...; reduce_fn = nothing)
+    merge_callbacks(callbacks_handlers...)
 
 This function accepts an arbitrary amount of callback handlers and merges them together.
 Some callback handlers may or may not react on certain types of events.
@@ -138,40 +146,24 @@ Handler 1: hello
 Handler 2: hello
 ```
 
-If `reduce_fn` is not `nothing`, the result of all the callbacks will be reduced
-with the provided reduce function.
-
-The `reduce_fn` can also be a `NamedTuple` that sets different reduce functions for
-different events.
-
-See also: [`ReactiveMP.invoke_callback`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.handle_event`](@ref)
 """
-function merge_callbacks(callback_handlers...; reduce_fn = nothing)
-    return MergedCallbacks(reduce_fn, callback_handlers)
+function merge_callbacks(callback_handlers...)
+    return MergedCallbacks(callback_handlers)
 end
 
 """
     invoke_callback(merged::MergedCallbacks, event::Event)
 
 A specialized version of [`ReactiveMP.invoke_callback`](@ref) for [`ReactiveMP.MergedCallbacks`](@ref).
-Calls the provided callbacks in order and uses the provided reduce function to
-reduce the collection of results into a single one.
+Calls the provided callbacks in order. Returns the event after all handlers have been invoked.
 """
 function invoke_callback(merged::MergedCallbacks, event::Event)
-    result = map(merged.callbacks) do callback
+    for callback in merged.callbacks
         invoke_callback(callback, event)
     end
-    return merged_callback_reduce_result(merged.reduce_fn, event, result)
+    return event
 end
-
-merged_callback_reduce_result(::Nothing, _, result) = result
-merged_callback_reduce_result(reduce_fn::F, _, result) where {F} = reduce(
-    reduce_fn, result
-)
-# If `reduce_fn` is a NamedTuple, then we choose a specific function for a specific event from this tuple
-merged_callback_reduce_result(reduce_fn::NamedTuple{K}, event::Event{E}, result) where {K, E} = merged_callback_reduce_result(
-    get(reduce_fn, E, nothing), event, result
-)
 
 # All defined events go here, so its easier to document them all in one place
 

@@ -9,7 +9,16 @@
         return CustomEvent{E, typeof(args)}(args)
     end
 
-    export CustomEvent
+    mutable struct MutableCustomEvent{E, D} <: Event{E}
+        data::D
+        state::Any
+    end
+
+    function MutableCustomEvent(E::Symbol, args...; state = nothing)
+        return MutableCustomEvent{E, typeof(args)}(args, state)
+    end
+
+    export CustomEvent, MutableCustomEvent
 end
 
 @testitem "Callbacks handler should do absolutely nothing if no handler exists" setup = [
@@ -39,12 +48,72 @@ end
     @test @allocated(bar(callback_handler, event)) === 0
 
     function bar2(callback_handler)
-        invoke_callback(callback_handler, CustomEvent(:event1, 1, 2, "asd", [2]))
+        invoke_callback(
+            callback_handler, CustomEvent(:event1, 1, 2, "asd", [2])
+        )
         return 1 + 2
     end
 
+    bar2(callback_handler)
+
     @test @inferred(bar2(callback_handler)) === 3
     @test @allocated(bar2(callback_handler)) === 0
+
+    mutable struct EventWithTypeStableState <:
+                   Event{:event_with_typestable_state}
+        internal_state::Bool
+    end
+
+    function bar3(callback_handler)
+        event = EventWithTypeStableState(true)
+        invoke_callback(callback_handler, event)
+        return event.internal_state
+    end
+
+    bar3(callback_handler)
+
+    @test @inferred(bar3(callback_handler)) === true
+    @test @allocated(bar3(callback_handler)) === 0
+
+    mutable struct EventWithTypeUnstableState <:
+                   Event{:event_with_typeunstable_state}
+        state
+    end
+
+    function bar4(callback_handler)
+        event = EventWithTypeUnstableState(nothing)
+        invoke_callback(callback_handler, event)
+        if event.state === nothing
+            return 1
+        end
+        return [1]
+    end
+
+    bar4(callback_handler)
+
+    @test @allocated(bar4(callback_handler)) === 0
+end
+
+@testitem "invoke_callback should return the event" setup = [
+    CallbacksTestUtils
+] begin
+    import ReactiveMP: invoke_callback
+
+    event = CustomEvent(:event1, 1, 2)
+
+    # nothing handler returns the event
+    @test invoke_callback(nothing, event) === event
+
+    # NamedTuple handler returns the event
+    callbacks = (event1 = (e) -> nothing,)
+    @test invoke_callback(callbacks, event) === event
+
+    # Dict handler returns the event
+    dict_callbacks = Dict{Symbol, Any}(:event1 => (e) -> nothing)
+    @test invoke_callback(dict_callbacks, event) === event
+
+    # Unmatched event still returns the event
+    @test invoke_callback(callbacks, CustomEvent(:other, 1)) === CustomEvent(:other, 1)
 end
 
 @testitem "event_name should work on both types and instances" setup = [
@@ -65,20 +134,22 @@ end
     @test event_name(CustomEvent(:bar, 1, 2)) === :bar
 
     # Works on built-in event types
-    @test event_name(ReactiveMP.BeforeMessageRuleCallEvent) === :before_message_rule_call
-    @test event_name(ReactiveMP.AfterProductOfTwoMessagesEvent) === :after_product_of_two_messages
+    @test event_name(ReactiveMP.BeforeMessageRuleCallEvent) ===
+        :before_message_rule_call
+    @test event_name(ReactiveMP.AfterProductOfTwoMessagesEvent) ===
+        :after_product_of_two_messages
 end
 
-@testitem "It should be possible to define custom callback handlers" setup = [
+@testitem "It should be possible to define custom callback handlers via handle_event" setup = [
     CallbacksTestUtils
 ] begin
-    import ReactiveMP: invoke_callback, Event
+    import ReactiveMP: invoke_callback, handle_event, Event
 
     struct MyCallbackHandler
         events
     end
 
-    function ReactiveMP.invoke_callback(
+    function ReactiveMP.handle_event(
         handler::MyCallbackHandler, event::Event{E}
     ) where {E}
         push!(handler.events, (event = E, data = event.data))
@@ -87,8 +158,10 @@ end
 
     handler = MyCallbackHandler([])
 
-    @test invoke_callback(handler, CustomEvent(:event1, 1, 1)) === nothing
-    @test invoke_callback(handler, CustomEvent(:event2, 2, 3)) === nothing
+    @test invoke_callback(handler, CustomEvent(:event1, 1, 1)) isa
+        CustomEvent{:event1}
+    @test invoke_callback(handler, CustomEvent(:event2, 2, 3)) isa
+        CustomEvent{:event2}
 
     @test length(handler.events) === 2
     @test handler.events[1].event === :event1
@@ -99,6 +172,65 @@ end
     @test_throws MethodError invoke_callback(
         handler, "unsupported type of event"
     )
+end
+
+@testitem "Custom callback handler can mutate event state" setup = [
+    CallbacksTestUtils
+] begin
+    import ReactiveMP: invoke_callback, handle_event, Event
+
+    struct StateModifyingHandler end
+
+    function ReactiveMP.handle_event(
+        ::StateModifyingHandler, event::MutableCustomEvent{:my_event}
+    )
+        event.state = :modified
+        return nothing
+    end
+
+    handler = StateModifyingHandler()
+    event = MutableCustomEvent(:my_event, 1, 2; state = nothing)
+
+    @test event.state === nothing
+    returned_event = invoke_callback(handler, event)
+    @test returned_event === event
+    @test event.state === :modified
+end
+
+@testitem "NamedTuple callback can mutate event state" setup = [
+    CallbacksTestUtils
+] begin
+    import ReactiveMP: invoke_callback
+
+    callbacks = (
+        my_event = (event) -> begin
+            event.state = sum(event.data)
+        end,
+    )
+
+    event = MutableCustomEvent(:my_event, 3, 4; state = nothing)
+    returned_event = invoke_callback(callbacks, event)
+
+    @test returned_event === event
+    @test event.state === 7
+end
+
+@testitem "Dict callback can mutate event state" setup = [
+    CallbacksTestUtils
+] begin
+    import ReactiveMP: invoke_callback
+
+    callbacks = Dict{Symbol, Any}(
+        :my_event => (event) -> begin
+            event.state = prod(event.data)
+        end,
+    )
+
+    event = MutableCustomEvent(:my_event, 3, 5; state = nothing)
+    returned_event = invoke_callback(callbacks, event)
+
+    @test returned_event === event
+    @test event.state === 15
 end
 
 @testitem "invoke_callback error hint for forgotten trailing comma in NamedTuple" setup = [
@@ -123,7 +255,7 @@ end
 
     # Check that the error hint mentions both possible causes
     hint_message = sprint(showerror, err)
-    @test occursin("invoke_callback", hint_message)
+    @test occursin("handle_event", hint_message)
     @test occursin("trailing comma", hint_message)
 end
 
@@ -132,16 +264,17 @@ end
 ] begin
     import ReactiveMP: invoke_callback
 
-    # Custom handler that only implements invoke_callback for :event1 but not :event2
+    # Custom handler that only implements handle_event for :event1 but not :event2
     struct IncompleteHandler end
 
-    ReactiveMP.invoke_callback(::IncompleteHandler, ::CustomEvent{:event1}) =
+    ReactiveMP.handle_event(::IncompleteHandler, ::CustomEvent{:event1}) =
         nothing
 
     handler = IncompleteHandler()
 
     # :event1 works fine
-    @test invoke_callback(handler, CustomEvent(:event1)) === nothing
+    @test invoke_callback(handler, CustomEvent(:event1)) isa
+        CustomEvent{:event1}
 
     # :event2 is not implemented — should hit MethodError with a helpful hint
     err = try
@@ -153,7 +286,7 @@ end
 
     hint_message = sprint(showerror, err)
     @test occursin(
-        r"ReactiveMP\.invoke_callback\(::.*IncompleteHandler, event::Event\{:event2\}\) = \.\.\.",
+        r"ReactiveMP\.handle_event\(::.*IncompleteHandler, event::Event\{:event2\}\) = \.\.\.",
         hint_message,
     )
     @test occursin(
@@ -168,25 +301,18 @@ end
     import ReactiveMP: invoke_callback
 
     callback_handler = (
-        sum_event = (event) -> sum(event.data),
-        prod_event = (event) -> prod(event.data),
+        sum_event = (event) -> nothing,
+        prod_event = (event) -> nothing,
     )
 
-    @test @inferred(
-        invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2))
-    ) == 3
-    @test @inferred(
-        invoke_callback(callback_handler, CustomEvent(:prod_event, 1, 2, 3))
-    ) == 6
-    @test @inferred(
-        invoke_callback(callback_handler, CustomEvent(:prod_event, 1, 2))
-    ) == 2
-    @test @inferred(
-        invoke_callback(callback_handler, CustomEvent(:prod_event, 2, 5))
-    ) == 10
-    @test @inferred(
-        invoke_callback(callback_handler, CustomEvent(:other_event, 1, 2, 3))
-    ) === nothing
+    @test invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2)) isa
+        CustomEvent{:sum_event}
+    @test invoke_callback(
+        callback_handler, CustomEvent(:prod_event, 1, 2, 3)
+    ) isa CustomEvent{:prod_event}
+    @test invoke_callback(
+        callback_handler, CustomEvent(:other_event, 1, 2, 3)
+    ) isa CustomEvent{:other_event}
 end
 
 @testitem "Dict{Symbol} should be a supported event handler" setup = [
@@ -195,26 +321,23 @@ end
     import ReactiveMP: invoke_callback
 
     callback_handler = Dict{Symbol, Any}(
-        :sum_event => (event) -> sum(event.data),
-        :prod_event => (event) -> prod(event.data),
+        :sum_event => (event) -> nothing,
+        :prod_event => (event) -> nothing,
     )
 
-    @test invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2)) == 3
-    @test invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2, 3)) ==
-        6
-    @test invoke_callback(callback_handler, CustomEvent(:prod_event, 1, 2)) == 2
-    @test invoke_callback(
-        callback_handler, CustomEvent(:prod_event, 1, 2, 5)
-    ) == 10
+    @test invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2)) isa
+        CustomEvent{:sum_event}
+    @test invoke_callback(callback_handler, CustomEvent(:prod_event, 1, 2)) isa
+        CustomEvent{:prod_event}
     @test invoke_callback(
         callback_handler, CustomEvent(:other_event, 1, 2, 3)
-    ) === nothing
+    ) === CustomEvent(:other_event, 1, 2, 3)
 end
 
 @testitem "It should be possible to merge callback handlers" setup = [
     CallbacksTestUtils
 ] begin
-    import ReactiveMP: invoke_callback, merge_callbacks, Event
+    import ReactiveMP: invoke_callback, merge_callbacks, handle_event, Event
 
     # listens to event 1 and event 2
     handler1_events = []
@@ -235,8 +358,8 @@ end
         events
     end
 
-    ReactiveMP.invoke_callback(::MyCustomHandler, ::Event) = nothing
-    ReactiveMP.invoke_callback(
+    ReactiveMP.handle_event(::MyCustomHandler, ::Event) = nothing
+    ReactiveMP.handle_event(
         handler::MyCustomHandler, ::CustomEvent{:event2}
     ) = push!(handler.events, :event2)
 
@@ -260,105 +383,40 @@ end
     @test Set(custom_handler.events) == Set([:event2])
 end
 
-@testitem "It should be possible to reduce the result of the merged callback handlers" setup = [
+@testitem "Merged callbacks should return the event" setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback, merge_callbacks
 
-    callback_handler1 = (event1 = (event) -> event.data[1] + event.data[2],)
-    callback_handler2 = (event1 = (event) -> event.data[1] * event.data[2],)
+    callback_handler1 = (event1 = (event) -> nothing,)
+    callback_handler2 = (event1 = (event) -> nothing,)
 
-    merged_handler1 = merge_callbacks(callback_handler1, callback_handler2)
+    merged_handler = merge_callbacks(callback_handler1, callback_handler2)
 
-    @test @inferred(
-        invoke_callback(merged_handler1, CustomEvent(:event1, 2, 3))
-    ) === (5, 6)
-
-    merged_handler2 = merge_callbacks(
-        callback_handler1, callback_handler2; reduce_fn = +
-    )
-
-    @test @inferred(
-        invoke_callback(merged_handler2, CustomEvent(:event1, 4, 5))
-    ) === 29
-
-    merged_handler3 = merge_callbacks(
-        callback_handler1, callback_handler2; reduce_fn = *
-    )
-
-    @test @inferred(
-        invoke_callback(merged_handler3, CustomEvent(:event1, 1.0, 2.0))
-    ) === 6.0
+    event = CustomEvent(:event1, 2, 3)
+    @test invoke_callback(merged_handler, event) === event
 end
 
-@testitem "It should be possible to use different reduce functions for different events" setup = [
+@testitem "Merged callbacks can mutate event state across handlers" setup = [
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback, merge_callbacks
 
-    callback_handler1 = (
-        event1 = (event) -> event.data[1] + event.data[2],
-        event2 = (event) -> event.data[1] - event.data[2],
-    )
-    callback_handler2 = (
-        event1 = (event) -> event.data[1] * event.data[2],
-        event2 = (event) -> event.data[1] / event.data[2],
-    )
+    # First handler sets state to 1
+    handler1 = (my_event = (event) -> begin
+        event.state = 1
+    end,)
 
-    merged_handler1 = merge_callbacks(callback_handler1, callback_handler2)
+    # Second handler increments state
+    handler2 = (my_event = (event) -> begin
+        event.state += 10
+    end,)
 
-    @test @inferred(
-        invoke_callback(merged_handler1, CustomEvent(:event1, 2, 3))
-    ) === (5, 6)
-    @test @inferred(
-        invoke_callback(merged_handler1, CustomEvent(:event2, 3, 4))
-    ) === (-1, 3 / 4)
+    merged_handler = merge_callbacks(handler1, handler2)
 
-    merged_handler2 = merge_callbacks(
-        callback_handler1,
-        callback_handler2;
-        reduce_fn = (event1 = +, event2 = *),
-    )
+    event = MutableCustomEvent(:my_event, 1, 2; state = nothing)
+    returned_event = invoke_callback(merged_handler, event)
 
-    @test @inferred(
-        invoke_callback(merged_handler2, CustomEvent(:event1, 4, 5))
-    ) === 29
-    @test @inferred(
-        invoke_callback(merged_handler2, CustomEvent(:event2, 4, 5))
-    ) === -4 / 5
-
-    merged_handler3 = merge_callbacks(
-        callback_handler1,
-        callback_handler2;
-        reduce_fn = (event1 = *, event2 = +),
-    )
-
-    @test @inferred(
-        invoke_callback(merged_handler3, CustomEvent(:event1, 1.0, 2.0))
-    ) === 6.0
-    @test @inferred(
-        invoke_callback(merged_handler3, CustomEvent(:event2, 1.0, 2.0))
-    ) === -1.0 + 1.0 / 2.0
-
-    merged_handler4 = merge_callbacks(
-        callback_handler1, callback_handler2; reduce_fn = (event1 = -,)
-    )
-
-    @test @inferred(
-        invoke_callback(merged_handler4, CustomEvent(:event1, 1.0, 2.0))
-    ) === 1.0
-    @test @inferred(
-        invoke_callback(merged_handler4, CustomEvent(:event2, 1.0, 2.0))
-    ) === (-1.0, 1.0 / 2.0)
-
-    merged_handler5 = merge_callbacks(
-        callback_handler1, callback_handler2; reduce_fn = (event2 = /,)
-    )
-
-    @test @inferred(
-        invoke_callback(merged_handler5, CustomEvent(:event1, 1.0, 2.0))
-    ) === (3.0, 2.0)
-    @test @inferred(
-        invoke_callback(merged_handler5, CustomEvent(:event2, 1.0, 2.0))
-    ) === -1.0 / (1.0 / 2.0)
+    @test returned_event === event
+    @test event.state === 11
 end

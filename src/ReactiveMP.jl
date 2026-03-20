@@ -115,7 +115,7 @@ function __init__()
             """
             println(io, errmsg)
         end
-        if exc.f === ReactiveMP.invoke_callback && length(argtypes) >= 2
+        if exc.f === ReactiveMP.handle_event && length(argtypes) >= 2
             event_type = argtypes[2]
             event_hint = if event_type <: ReactiveMP.Event
                 "Event{$(repr(ReactiveMP.event_name(event_type)))}"
@@ -124,11 +124,11 @@ function __init__()
             end
             errmsg = """
 
-            `ReactiveMP.invoke_callback` was called with a callback handler of type `$(argtypes[1])` for event `$(event_type)`, but no matching method was found. This can happen if:
+            `ReactiveMP.handle_event` was called with a callback handler of type `$(argtypes[1])` for event `$(event_type)`, but no matching method was found. This can happen if:
 
-            1. You implemented a custom callback handler but forgot to define `invoke_callback` for this specific event type.
+            1. You implemented a custom callback handler but forgot to define `handle_event` for this specific event type.
                Make sure your handler has a method like:
-                 ReactiveMP.invoke_callback(::$(argtypes[1]), event::$(event_hint)) = ...
+                 ReactiveMP.handle_event(::$(argtypes[1]), event::$(event_hint)) = ...
 
             2. You meant to pass a `NamedTuple` as the callbacks handler but forgot the trailing comma.
                In Julia, `(key = value)` is parsed as a plain assignment, not a NamedTuple.
