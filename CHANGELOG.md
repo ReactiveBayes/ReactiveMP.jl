@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Callback/event system for hooking into message passing steps (rule calls, message products, form constraints, marginal computation)
+- `MessageProductContext` struct to bundle product computation settings and callbacks
+- Labels for variables (`RandomVariable`, `ConstVariable`, `DataVariable`)
+- Docstrings for variable types, form constraints, and related functions
+- Documentation page for callbacks
+- `MethodError` hint for mismatched `handle_event` signatures
+
 ### Changed
 - Switched from `ReTestItems` to `TestItemRunner` for tests ([#584](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/584))
 - Made formatting checks stricter
+- Renamed `variables/variable.jl` to `variables/generic.jl`
+- Replaced hardcoded `DefaultMessageProdFn`/`DefaultMarginalProdFn` with `MessageProductContext`
 
 ## [5.6.6] - 2026-03-13
 
