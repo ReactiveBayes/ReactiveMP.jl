@@ -1,13 +1,22 @@
 export datavar, DataVariable, update!, DataVariableActivationOptions
 
+"""
+    DataVariable <: AbstractVariable
+
+Represents an observed variable in the factor graph. Unlike [`ReactiveMP.ConstVariable`](@ref), the data is not fixed
+at creation time and can be updated later via [`update!`](@ref). Use [`datavar`](@ref) to create an instance.
+
+See also: [`ReactiveMP.RandomVariable`](@ref), [`ReactiveMP.ConstVariable`](@ref)
+"""
 mutable struct DataVariable{M, P} <: AbstractVariable
     input_messages :: Vector{MessageObservable{AbstractMessage}}
     marginal       :: MarginalObservable
     messageout     :: M
     prediction     :: P
+    label          :: Any
 end
 
-function DataVariable()
+function DataVariable(; label = nothing)
     messageout = RecentSubject(Message)
     marginal   = MarginalObservable()
     prediction = MarginalObservable()
@@ -16,10 +25,16 @@ function DataVariable()
         marginal,
         messageout,
         prediction,
+        label,
     )
 end
 
-datavar() = DataVariable()
+"""
+    datavar(; label = nothing)
+
+Creates a new [`ReactiveMP.DataVariable`](@ref) with an optional `label` for identification.
+"""
+datavar(; label = nothing) = DataVariable(; label = label)
 
 degree(datavar::DataVariable) = length(datavar.input_messages)
 
@@ -97,7 +112,15 @@ _getmarginal(datavar::DataVariable)       = datavar.marginal
 _setmarginal!(::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
 _makemarginal(::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
 
-update!(datavar::DataVariable, data)            = update!(datavar, PointMass(data))
+"""
+    update!(datavar::DataVariable, data)
+    update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
+
+Provides a new observation to a [`ReactiveMP.DataVariable`](@ref) (or an array of data variables).
+The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
+Pass `missing` to indicate that the observation is not available.
+"""
+update!(datavar::DataVariable, data) = update!(datavar, PointMass(data))
 update!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false, nothing))
 update!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false, nothing))
 
@@ -116,13 +139,6 @@ function update!(datavars::AbstractArray{<:DataVariable}, data::Missing)
     end
 end
 
-marginal_prod_fn(datavar::DataVariable) = marginal_prod_fn(
-    FoldLeftProdStrategy(),
-    GenericProd(),
-    UnspecifiedFormConstraint(),
-    FormConstraintCheckLast(),
-)
-
 _getprediction(datavar::DataVariable)              = datavar.prediction
 _setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)
-_makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, marginal_prod_fn(datavar))
+_makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, (messages) -> as_marginal(compute_product_of_messages(datavar, MessageProductContext(), messages)))

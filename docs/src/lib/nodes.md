@@ -113,27 +113,6 @@ ReactiveMP.RequireMarginalFunctionalDependencies
 ReactiveMP.RequireEverythingFunctionalDependencies
 ```
 
-## [Customizing Dependencies with Metadata](@id lib-node-metadata-dependencies)
-
-The functional dependencies of a node can be customized at runtime using options during node activation. This allows for runtime customization of the functional dependencies, e.g. to test different message passing schemes or implement specialized behavior for specific instances of a node type:
-
-```julia
-# Define custom dependencies based on metadata
-function ReactiveMP.collect_functional_dependencies(::Type{MyNode}, options::FactorNodeActivationOptions)
-    if some_condition(options) # a user can specify dependencies based, for example, on metadata
-        return CustomDependencies()
-    end
-    # Fall back to default dependencies
-    return ReactiveMP.collect_functional_dependencies(MyNode, getdependecies(options))
-end
-
-# Use custom dependencies during activation
-node = factornode(MyNode, ...)
-activate!(node, FactorNodeActivationOptions(:custom_behavior, ...))
-```
-
-This feature is particularly useful for testing different message passing schemes or implementing specialized behavior for specific instances of a node type.
-
 ## [Node traits](@id lib-node-traits)
 
 Each factor node has to define the [`ReactiveMP.is_predefined_node`](@ref) trait function and to specify a [`ReactiveMP.PredefinedNodeFunctionalForm`](@ref) 

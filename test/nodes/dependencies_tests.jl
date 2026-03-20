@@ -640,7 +640,7 @@ end
 
     @testset "use_a metadata results in CustomDependencyA" begin
         options_a = FactorNodeActivationOptions(
-            :use_a, nothing, nothing, nothing, AsapScheduler(), nothing
+            :use_a, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
         )
         deps = collect_functional_dependencies(CustomMetaNode, options_a)
         @test deps isa CustomDependencyA
@@ -648,7 +648,7 @@ end
 
     @testset "use_b metadata results in CustomDependencyB" begin
         options_b = FactorNodeActivationOptions(
-            :use_b, nothing, nothing, nothing, AsapScheduler(), nothing
+            :use_b, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
         )
         deps = collect_functional_dependencies(CustomMetaNode, options_b)
         @test deps isa CustomDependencyB
@@ -656,7 +656,13 @@ end
 
     @testset "no metadata falls back to default dependencies" begin
         options_default = FactorNodeActivationOptions(
-            nothing, nothing, nothing, nothing, AsapScheduler(), nothing
+            nothing,
+            nothing,
+            nothing,
+            nothing,
+            AsapScheduler(),
+            nothing,
+            nothing,
         )
         deps = collect_functional_dependencies(CustomMetaNode, options_default)
         @test deps isa DefaultFunctionalDependencies
@@ -670,7 +676,7 @@ end
             ((1,),),
         )
         options_a = FactorNodeActivationOptions(
-            :use_a, nothing, nothing, nothing, AsapScheduler(), nothing
+            :use_a, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
         )
         deps_a = collect_functional_dependencies(CustomMetaNode, options_a)
         activate!(node_a, options_a)
@@ -689,7 +695,7 @@ end
             ((1,),),
         )
         options_b = FactorNodeActivationOptions(
-            :use_b, nothing, nothing, nothing, AsapScheduler(), nothing
+            :use_b, nothing, nothing, nothing, AsapScheduler(), nothing, nothing
         )
         deps_b = collect_functional_dependencies(CustomMetaNode, options_b)
         activate!(node_b, options_b)

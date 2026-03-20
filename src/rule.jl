@@ -1839,8 +1839,7 @@ function get_message_types_from_rule_method(m::Method)
             "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}"
         else
             x
-        end,
-        tmp3,
+        end, tmp3
     )
     tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
     return map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))
@@ -1877,8 +1876,7 @@ function get_marginal_types_from_rule_method(m::Method)
             "{<:ManyOf{<:Tuple{Vararg{" * x[4:end] * ", N}}}}"
         else
             x
-        end,
-        tmp3,
+        end, tmp3
     )
     tmp5 = map(x -> occursin("xyz", x) ? x[1:(end - 3)] : x, tmp4)
     return map(x -> isempty(x) ? "Any" : x, map(x -> x[4:(end - 1)], tmp5))

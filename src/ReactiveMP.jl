@@ -21,6 +21,8 @@ include("helpers/algebra/standard_basis_vector.jl")
 
 include("constraints/form.jl")
 
+include("callbacks.jl")
+include("variable.jl")
 include("message.jl")
 include("marginal.jl")
 include("addons.jl")
@@ -76,7 +78,7 @@ include("approximations/cvi_projection.jl")
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
-include("variables/variable.jl")
+include("variables/generic.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
@@ -110,6 +112,27 @@ function __init__()
             `$(argtypes[2])` has been used but the `ReactiveMP` backend does not support `$(argtypes[2])` as a factor node.
 
             Please refer to the [factor nodes](https://reactivebayes.github.io/ReactiveMP.jl/stable/lib/nodes/) section of the documentation for more details.
+            """
+            println(io, errmsg)
+        end
+        if exc.f === ReactiveMP.handle_event && length(argtypes) >= 2
+            event_type = argtypes[2]
+            event_hint = if event_type <: ReactiveMP.Event
+                "Event{$(repr(ReactiveMP.event_name(event_type)))}"
+            else
+                string(event_type)
+            end
+            errmsg = """
+
+            `ReactiveMP.handle_event` was called with a callback handler of type `$(argtypes[1])` for event `$(event_type)`, but no matching method was found. This can happen if:
+
+            1. You implemented a custom callback handler but forgot to define `handle_event` for this specific event type.
+               Make sure your handler has a method like:
+                 ReactiveMP.handle_event(::$(argtypes[1]), event::$(event_hint)) = ...
+
+            2. You meant to pass a `NamedTuple` as the callbacks handler but forgot the trailing comma.
+               In Julia, `(key = value)` is parsed as a plain assignment, not a NamedTuple.
+               Use `(key = value,)` (with a trailing comma) instead.
             """
             println(io, errmsg)
         end

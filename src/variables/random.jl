@@ -2,17 +2,32 @@ export randomvar, RandomVariable, RandomVariableActivationOptions
 
 ## Random variable implementation
 
+"""
+    RandomVariable <: AbstractVariable
+
+Represents a latent (unobserved) variable in the factor graph. Random variables collect incoming and outgoing messages
+from connected factor nodes and maintain a marginal belief. Use [`randomvar`](@ref) to create an instance.
+
+See also: [`ReactiveMP.ConstVariable`](@ref), [`ReactiveMP.DataVariable`](@ref)
+"""
 mutable struct RandomVariable <: AbstractVariable
-    input_messages::Vector{MessageObservable{AbstractMessage}}
-    output_messages::Vector{MessageObservable{Message}}
-    marginal::MarginalObservable
+    input_messages  :: Vector{MessageObservable{AbstractMessage}}
+    output_messages :: Vector{MessageObservable{Message}}
+    marginal        :: MarginalObservable
+    label           :: Any
 end
 
-function randomvar()
+"""
+    randomvar(; label = nothing)
+
+Creates a new [`ReactiveMP.RandomVariable`](@ref) with an optional `label` for identification.
+"""
+function randomvar(; label = nothing)
     return RandomVariable(
         Vector{MessageObservable{AbstractMessage}}(),
         Vector{MessageObservable{Message}}(),
         MarginalObservable(),
+        label,
     )
 end
 
@@ -39,27 +54,16 @@ function messageout(randomvar::RandomVariable, index::Int)
     return randomvar.output_messages[index]
 end
 
-const DefaultMessageProdFn = messages_prod_fn(
-    FoldLeftProdStrategy(),
-    GenericProd(),
-    UnspecifiedFormConstraint(),
-    FormConstraintCheckLast(),
-)
-const DefaultMarginalProdFn = marginal_prod_fn(
-    FoldLeftProdStrategy(),
-    GenericProd(),
-    UnspecifiedFormConstraint(),
-    FormConstraintCheckLast(),
-)
-
-struct RandomVariableActivationOptions{S, F, M}
+struct RandomVariableActivationOptions{
+    S, F <: MessageProductContext, M <: MessageProductContext
+}
     scheduler::S
-    message_prod_fn::F
-    marginal_prod_fn::M
+    prod_context_for_message_computation::F
+    prod_context_for_marginal_computation::M
 end
 
 RandomVariableActivationOptions() = RandomVariableActivationOptions(
-    AsapScheduler(), DefaultMessageProdFn, DefaultMarginalProdFn
+    AsapScheduler(), MessageProductContext(), MessageProductContext()
 )
 
 function activate!(
@@ -77,7 +81,11 @@ function activate!(
         chain = EqualityChain(
             randomvar.input_messages,
             schedule_on(options.scheduler),
-            options.message_prod_fn,
+            (messages) -> compute_product_of_messages(
+                randomvar,
+                options.prod_context_for_message_computation,
+                messages,
+            ),
         )
         initialize!(chain, outputmsgs)
     elseif length(randomvar.input_messages) == 1
@@ -101,6 +109,27 @@ _getmarginal(randomvar::RandomVariable) = randomvar.marginal
 _setmarginal!(randomvar::RandomVariable, observable) = connect!(
     _getmarginal(randomvar), observable
 )
+
+function _compute_marginal_from_messages(
+    randomvar::RandomVariable,
+    options::RandomVariableActivationOptions,
+    messages,
+)
+    context = options.prod_context_for_marginal_computation
+    invoke_callback(
+        context.callbacks,
+        BeforeMarginalComputationEvent(randomvar, context, messages),
+    )
+    result = as_marginal(
+        compute_product_of_messages(randomvar, context, messages)
+    )
+    invoke_callback(
+        context.callbacks,
+        AfterMarginalComputationEvent(randomvar, context, messages, result),
+    )
+    return result
+end
+
 _makemarginal(
     randomvar::RandomVariable, options::RandomVariableActivationOptions
 ) = begin
@@ -108,7 +137,8 @@ _makemarginal(
         AbstractMessage,
         Marginal,
         randomvar.input_messages,
-        options.marginal_prod_fn,
+        (messages) ->
+            _compute_marginal_from_messages(randomvar, options, messages),
         reset_vstatus,
     )
 end

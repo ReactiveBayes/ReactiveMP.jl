@@ -305,6 +305,7 @@ function activate!(
     scheduler    = getscheduler(options)
     addons       = getaddons(options)
     rulefallback = getrulefallback(options)
+    callbacks    = getcallbacks(options)
 
     # First we declare local marginal for `out` edge
     deltafn_apply_layout(
@@ -316,6 +317,7 @@ function activate!(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 
     # Second we declare how to compute a joint marginal over all inbound edges
@@ -328,6 +330,7 @@ function activate!(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 
     # Second we declare message passing logic for out interface
@@ -340,6 +343,7 @@ function activate!(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 
     # At last we declare message passing logic for input interfaces
@@ -352,6 +356,7 @@ function activate!(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 end
 

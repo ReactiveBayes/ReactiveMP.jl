@@ -19,9 +19,9 @@ function __collect_latest_updates(f::F, collection::Tuple) where {F}
         (nothing, of(nothing))
     else
         (
-        Val{map(name, collection)}(),
-        combineLatestUpdates(map(f, collection), PushNew()),
-    )
+            Val{map(name, collection)}(),
+            combineLatestUpdates(map(f, collection), PushNew()),
+        )
     end
 end
 
@@ -31,6 +31,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
     scheduler    = getscheduler(options)
     addons       = getaddons(options)
     rulefallback = getrulefallback(options)
+    callbacks    = getcallbacks(options)
     fform        = functionalform(factornode)
     meta         = collect_meta(fform, getmetadata(options))
     pipeline     = collect_pipeline(fform, getpipeline(options))
@@ -63,6 +64,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                             addons,
                             node_if_required(fform, factornode),
                             rulefallback,
+                            callbacks,
                         )
                         (dependencies) -> DeferredMessage(
                             dependencies[1], dependencies[2], messagemap

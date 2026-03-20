@@ -52,6 +52,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
@@ -62,6 +63,7 @@ function deltafn_apply_layout(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -75,6 +77,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
@@ -85,6 +88,7 @@ function deltafn_apply_layout(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -98,6 +102,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     let interface = factornode.out
         msgs_names      = Val{(:out,)}()
@@ -125,6 +130,7 @@ function deltafn_apply_layout(
                     addons,
                     factornode,
                     rulefallback,
+                    callbacks,
                 )
                 (dependencies) -> DeferredMessage(
                     dependencies[1], dependencies[2], messagemap
@@ -152,6 +158,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
@@ -162,5 +169,6 @@ function deltafn_apply_layout(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 end

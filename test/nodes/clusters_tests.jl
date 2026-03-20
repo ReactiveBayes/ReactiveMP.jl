@@ -241,7 +241,7 @@ end
             )
 
             options = FactorNodeActivationOptions(
-                nothing, nothing, nothing, nothing, nothing, nothing
+                nothing, nothing, nothing, nothing, nothing, nothing, nothing
             )
 
             @test length(getmarginals(getlocalclusters(node))) === 1
@@ -269,7 +269,7 @@ end
             )
 
             options = FactorNodeActivationOptions(
-                nothing, nothing, nothing, nothing, nothing, nothing
+                nothing, nothing, nothing, nothing, nothing, nothing, nothing
             )
 
             @test length(getmarginals(getlocalclusters(node))) === 2
@@ -299,7 +299,7 @@ end
             )
 
             options = FactorNodeActivationOptions(
-                nothing, nothing, nothing, nothing, nothing, nothing
+                nothing, nothing, nothing, nothing, nothing, nothing, nothing
             )
 
             @test length(getmarginals(getlocalclusters(node))) === 2
@@ -329,7 +329,7 @@ end
             )
 
             options = FactorNodeActivationOptions(
-                nothing, nothing, nothing, nothing, nothing, nothing
+                nothing, nothing, nothing, nothing, nothing, nothing, nothing
             )
 
             @test length(getmarginals(getlocalclusters(node))) === 2

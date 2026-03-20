@@ -22,6 +22,7 @@
             AddonMemory(),
             nothing,
             nothing,
+            nothing,
         )
 
         messages = (Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))

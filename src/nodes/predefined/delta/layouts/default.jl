@@ -53,6 +53,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     let out = factornode.out,
         localmarginal = factornode.localmarginals.marginals[1]
@@ -71,6 +72,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     let out = factornode.out,
         ins = factornode.ins,
@@ -107,6 +109,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     let out = factornode.out, ins = factornode.ins
 
@@ -137,6 +140,7 @@ function deltafn_apply_layout(
                     addons,
                     factornode,
                     rulefallback,
+                    callbacks,
                 )
                 (dependencies) -> DeferredMessage(
                     dependencies[1], dependencies[2], messagemap
@@ -164,6 +168,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
 
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
@@ -193,6 +198,7 @@ function deltafn_apply_layout(
                     addons,
                     factornode,
                     rulefallback,
+                    callbacks,
                 )
                 (dependencies) -> DeferredMessage(
                     dependencies[1], dependencies[2], messagemap
@@ -236,6 +242,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
@@ -246,6 +253,7 @@ function deltafn_apply_layout(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -258,6 +266,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
@@ -268,6 +277,7 @@ function deltafn_apply_layout(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -280,6 +290,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
@@ -290,6 +301,7 @@ function deltafn_apply_layout(
         scheduler,
         addons,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -303,6 +315,7 @@ function deltafn_apply_layout(
     scheduler,
     addons,
     rulefallback,
+    callbacks,
 ) where {F}
     N = length(factornode.ins)
 
@@ -344,6 +357,7 @@ function deltafn_apply_layout(
                     addons,
                     factornode,
                     rulefallback,
+                    callbacks,
                 )
                 (dependencies) -> DeferredMessage(
                     dependencies[1], dependencies[2], messagemap

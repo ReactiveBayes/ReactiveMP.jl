@@ -1,45 +1,12 @@
 export AbstractVariable, degree
-export FoldLeftProdStrategy, FoldRightProdStrategy, CustomProdStrategy
 export getprediction, getpredictions, getmarginal, getmarginals
 export setmarginal!, setmarginals!, setmessage!, setmessages!
 
 using Rocket
 
-abstract type AbstractVariable end
-
 ## Base interface extensions
 
 Base.broadcastable(v::AbstractVariable) = Ref(v)
-
-## Messages to Marginal product strategies
-
-struct FoldLeftProdStrategy end
-struct FoldRightProdStrategy end
-
-struct CustomProdStrategy{F}
-    prod_callback_generator::F
-end
-
-"""
-    messages_prod_fn(strategy, prod_constraint, form_constraint, form_check_strategy)
-
-Returns a suitable prod computation function for a given strategy and constraints
-"""
-function messages_prod_fn end
-
-messages_prod_fn(::FoldLeftProdStrategy, prod_constraint, form_constraint, form_check_strategy)       = prod_foldl_reduce(prod_constraint, form_constraint, form_check_strategy)
-messages_prod_fn(::FoldRightProdStrategy, prod_constraint, form_constraint, form_check_strategy)      = prod_foldr_reduce(prod_constraint, form_constraint, form_check_strategy)
-messages_prod_fn(strategy::CustomProdStrategy, prod_constraint, form_constraint, form_check_strategy) = strategy.prod_callback_generator(prod_constraint, form_constraint, form_check_strategy)
-
-function marginal_prod_fn(
-    strategy, prod_constraint, form_constraint, form_check_strategy
-)
-    return let prod_fn = messages_prod_fn(
-            strategy, prod_constraint, form_constraint, form_check_strategy
-        )
-        return (messages) -> as_marginal(prod_fn(messages))
-    end
-end
 
 # Helper functions
 
