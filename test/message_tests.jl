@@ -14,7 +14,8 @@
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false), addons in (1, 2),
+            initial in (true, false),
+            addons in (1, 2),
             data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
             msg = Message(data, clamped, initial, addons)
@@ -32,7 +33,8 @@
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false),
-            clamped2 in (true, false), initial1 in (true, false),
+            clamped2 in (true, false),
+            initial1 in (true, false),
             initial2 in (true, false)
 
             msg1 = Message(dist1, clamped1, initial1, nothing)
@@ -226,9 +228,8 @@
             end
         end
 
-        _getpoint(rng, distribution) = _getpoint(
-            rng, variate_form(typeof(distribution)), distribution
-        )
+        _getpoint(rng, distribution) =
+            _getpoint(rng, variate_form(typeof(distribution)), distribution)
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
         _getpoint(rng, ::Type{<:Multivariate}, distribution) =
             10 .* rand(rng, 2)
@@ -367,10 +368,10 @@ end
     events = []
 
     callbacks = (
-        before_message_rule_call = (args...) ->
-            push!(events, (event = :before_message_rule_call, args = args)),
-        after_message_rule_call = (args...) ->
-            push!(events, (event = :after_message_rule_call, args = args)),
+        before_message_rule_call = (event) ->
+            push!(events, (event = :before_message_rule_call, data = event)),
+        after_message_rule_call = (event) ->
+            push!(events, (event = :after_message_rule_call, data = event)),
     )
 
     mapping = MessageMapping(
@@ -392,16 +393,18 @@ end
     @test getdata(mapping(messages, marginals)) == 2
 
     @test events[1].event == :before_message_rule_call
-    @test events[1].args[1].factornode === SomeArbitraryNodeCallbacksTests()
-    @test events[1].args[2] === messages
-    @test events[1].args[3] === marginals
+    @test events[1].data.mapping.factornode ===
+        SomeArbitraryNodeCallbacksTests()
+    @test events[1].data.messages === messages
+    @test events[1].data.marginals === marginals
 
     @test events[2].event == :after_message_rule_call
-    @test events[2].args[1].factornode === SomeArbitraryNodeCallbacksTests()
-    @test events[2].args[2] === messages
-    @test events[2].args[3] === marginals
-    @test events[2].args[4] === 2
-    @test events[2].args[5] === ()
+    @test events[2].data.mapping.factornode ===
+        SomeArbitraryNodeCallbacksTests()
+    @test events[2].data.messages === messages
+    @test events[2].data.marginals === marginals
+    @test events[2].data.result === 2
+    @test events[2].data.addons === ()
 end
 
 @testmodule MessageProductContextUtils begin
@@ -433,9 +436,8 @@ end
     # A simple form constraint that adds +1 to the mean of a Normal distribution
     struct AddOneToMeanConstraint <: AbstractFormConstraint end
 
-    constrain_form(::AddOneToMeanConstraint, dist::Normal) = Normal(
-        dist.mean + 1, dist.var
-    )
+    constrain_form(::AddOneToMeanConstraint, dist::Normal) =
+        Normal(dist.mean + 1, dist.var)
 
     # A callback handler that only records events from a specified set
     struct SaveOrderOfComputationCallbacks
@@ -444,9 +446,10 @@ end
     end
 
     function ReactiveMP.invoke_callback(
-        handler::SaveOrderOfComputationCallbacks, ::Val{E}, args...
+        handler::SaveOrderOfComputationCallbacks, event::ReactiveMP.Event{E}
     ) where {E}
-        E ∈ handler.listen_to && push!(handler.events, (event = E, args = args))
+        E ∈ handler.listen_to &&
+            push!(handler.events, (event = E, data = event))
     end
 
     export Normal,
@@ -485,7 +488,8 @@ end
     context = MessageProductContext()
 
     for left_is_clamped in (true, false),
-        right_is_clamped in (true, false), left_is_initial in (true, false),
+        right_is_clamped in (true, false),
+        left_is_initial in (true, false),
         right_is_initial in (true, false)
 
         msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial, nothing)
@@ -553,13 +557,13 @@ end
         @test handler.events[4].event === :after_product_of_two_messages
 
         # First product: Normal(0,1) × Normal(0,2) — left to right order
-        @test getdata(handler.events[1].args[3]) == Normal(0, 1)
-        @test getdata(handler.events[1].args[4]) == Normal(0, 2)
+        @test getdata(handler.events[1].data.left) == Normal(0, 1)
+        @test getdata(handler.events[1].data.right) == Normal(0, 2)
 
         # Second product: result of first × Normal(0,3)
-        @test getdata(handler.events[3].args[3]) ==
+        @test getdata(handler.events[3].data.left) ==
             Normal(0, 1 / (1 / 1 + 1 / 2))
-        @test getdata(handler.events[3].args[4]) == Normal(0, 3)
+        @test getdata(handler.events[3].data.right) == Normal(0, 3)
     end
 
     @testset "From right to left" begin
@@ -589,12 +593,12 @@ end
         @test handler.events[4].event === :after_product_of_two_messages
 
         # First product: Normal(0,2) × Normal(0,3) — right to left order
-        @test getdata(handler.events[1].args[3]) == Normal(0, 2)
-        @test getdata(handler.events[1].args[4]) == Normal(0, 3)
+        @test getdata(handler.events[1].data.left) == Normal(0, 2)
+        @test getdata(handler.events[1].data.right) == Normal(0, 3)
 
         # Second product: Normal(0,1) × result of first
-        @test getdata(handler.events[3].args[3]) == Normal(0, 1)
-        @test getdata(handler.events[3].args[4]) ==
+        @test getdata(handler.events[3].data.left) == Normal(0, 1)
+        @test getdata(handler.events[3].data.right) ==
             Normal(0, 1 / (1 / 2 + 1 / 3))
     end
 
@@ -628,13 +632,13 @@ end
         @test length(handler.events) == 4
 
         # First product: Normal(0,1) × Normal(0,3)
-        @test getdata(handler.events[1].args[3]) == Normal(0, 1)
-        @test getdata(handler.events[1].args[4]) == Normal(0, 3)
+        @test getdata(handler.events[1].data.left) == Normal(0, 1)
+        @test getdata(handler.events[1].data.right) == Normal(0, 3)
 
         # Second product: result of first × Normal(0,2)
-        @test getdata(handler.events[3].args[3]) ==
+        @test getdata(handler.events[3].data.left) ==
             Normal(0, 1 / (1 / 1 + 1 / 3))
-        @test getdata(handler.events[3].args[4]) == Normal(0, 2)
+        @test getdata(handler.events[3].data.right) == Normal(0, 2)
     end
 
     @testset "Before and after callbacks receive correct arguments" begin
@@ -661,20 +665,20 @@ end
         # Before callback: variable, context, left, right
         before = handler.events[1]
         @test before.event === :before_product_of_two_messages
-        @test before.args[1] === testvar
-        @test before.args[2] === context
-        @test getdata(before.args[3]) == Normal(0, 1)
-        @test getdata(before.args[4]) == Normal(0, 2)
+        @test before.data.variable === testvar
+        @test before.data.context === context
+        @test getdata(before.data.left) == Normal(0, 1)
+        @test getdata(before.data.right) == Normal(0, 2)
 
         # After callback: variable, context, left, right, result, addons
         after = handler.events[2]
         @test after.event === :after_product_of_two_messages
-        @test after.args[1] === testvar
-        @test after.args[2] === context
-        @test getdata(after.args[3]) == Normal(0, 1)
-        @test getdata(after.args[4]) == Normal(0, 2)
-        @test after.args[5] == result
-        @test after.args[6] == nothing  # no addons
+        @test after.data.variable === testvar
+        @test after.data.context === context
+        @test getdata(after.data.left) == Normal(0, 1)
+        @test getdata(after.data.right) == Normal(0, 2)
+        @test after.data.result == result
+        @test after.data.addons == nothing  # no addons
     end
 end
 
@@ -726,16 +730,16 @@ end
 
         # All form constraint events should carry the CheckEach strategy
         for e in handler.events
-            @test e.args[3] === FormConstraintCheckEach()
+            @test e.data.strategy === FormConstraintCheckEach()
         end
 
         # First constraint: before gets Normal(0, 2/3), after gets Normal(1, 2/3)
-        @test handler.events[1].args[4] ≈ Normal(0, 2 / 3)
-        @test handler.events[2].args[4] ≈ Normal(1, 2 / 3)
+        @test handler.events[1].data.distribution ≈ Normal(0, 2 / 3)
+        @test handler.events[2].data.result ≈ Normal(1, 2 / 3)
 
         # Second constraint: before gets Normal(9/11, 6/11), after gets Normal(20/11, 6/11)
-        @test handler.events[3].args[4] ≈ Normal(9 / 11, 6 / 11)
-        @test handler.events[4].args[4] ≈ Normal(20 / 11, 6 / 11)
+        @test handler.events[3].data.distribution ≈ Normal(9 / 11, 6 / 11)
+        @test handler.events[4].data.result ≈ Normal(20 / 11, 6 / 11)
     end
 end
 
@@ -782,15 +786,15 @@ end
         @test handler.events[2].event === :after_form_constraint_applied
 
         # The strategy should be CheckLast
-        @test handler.events[1].args[3] === FormConstraintCheckLast()
-        @test handler.events[2].args[3] === FormConstraintCheckLast()
+        @test handler.events[1].data.strategy === FormConstraintCheckLast()
+        @test handler.events[2].data.strategy === FormConstraintCheckLast()
 
         # Before constraint: Normal(0, 6/11), after constraint: Normal(1, 6/11)
-        @test handler.events[1].args[4] ≈ Normal(0, 6 / 11)
-        @test handler.events[2].args[4] ≈ Normal(1, 6 / 11)
+        @test handler.events[1].data.distribution ≈ Normal(0, 6 / 11)
+        @test handler.events[2].data.result ≈ Normal(1, 6 / 11)
 
         # The final result matches the after-constraint distribution
-        @test getdata(result) ≈ handler.events[2].args[4]
+        @test getdata(result) ≈ handler.events[2].data.result
     end
 
     @testset "Before/after product of messages callbacks fire around the whole computation" begin
@@ -807,16 +811,16 @@ end
         # BeforeProductOfMessages should be the first event
         @test length(handler.events) == 2
         @test handler.events[1].event === :before_product_of_messages
-        @test handler.events[1].args[1] === testvar
-        @test handler.events[1].args[2] === context
-        @test handler.events[1].args[3] === messages
+        @test handler.events[1].data.variable === testvar
+        @test handler.events[1].data.context === context
+        @test handler.events[1].data.messages === messages
 
         # AfterProductOfMessages should be the last event
         @test handler.events[2].event === :after_product_of_messages
-        @test handler.events[2].args[1] === testvar
-        @test handler.events[2].args[2] === context
-        @test handler.events[2].args[3] === messages
-        @test handler.events[2].args[4] == result
+        @test handler.events[2].data.variable === testvar
+        @test handler.events[2].data.context === context
+        @test handler.events[2].data.messages === messages
+        @test handler.events[2].data.result == result
     end
 end
 
@@ -847,16 +851,16 @@ end
 
         # Before: receives variable, context, and the original messages
         @test handler.events[1].event === :before_product_of_messages
-        @test handler.events[1].args[1] === testvar
-        @test handler.events[1].args[2] === context
-        @test handler.events[1].args[3] === messages
+        @test handler.events[1].data.variable === testvar
+        @test handler.events[1].data.context === context
+        @test handler.events[1].data.messages === messages
 
         # After: receives variable, context, original messages, and the final result
         @test handler.events[2].event === :after_product_of_messages
-        @test handler.events[2].args[1] === testvar
-        @test handler.events[2].args[2] === context
-        @test handler.events[2].args[3] === messages
-        @test getdata(handler.events[2].args[4]) ≈ getdata(result)
+        @test handler.events[2].data.variable === testvar
+        @test handler.events[2].data.context === context
+        @test handler.events[2].data.messages === messages
+        @test getdata(handler.events[2].data.result) ≈ getdata(result)
     end
 
     @testset "Fires with two messages" begin
@@ -878,7 +882,7 @@ end
         @test length(handler.events) == 2
         @test handler.events[1].event === :before_product_of_messages
         @test handler.events[2].event === :after_product_of_messages
-        @test getdata(handler.events[2].args[4]) ≈ getdata(result)
+        @test getdata(handler.events[2].data.result) ≈ getdata(result)
     end
 
     @testset "Before fires before any pairwise product, after fires after all" begin
@@ -910,6 +914,6 @@ end
         @test handler.events[6].event === :after_product_of_messages
 
         # The after_product_of_messages result should match the final result
-        @test getdata(handler.events[6].args[4]) ≈ getdata(result)
+        @test getdata(handler.events[6].data.result) ≈ getdata(result)
     end
 end
