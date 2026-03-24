@@ -4,6 +4,7 @@ module ReactiveMP
 # List global dependencies here
 using TinyHugeNumbers, MatrixCorrectionTools, FastCholesky, LinearAlgebra
 using BayesBase, ExponentialFamily
+using UUIDs
 
 import MatrixCorrectionTools: AbstractCorrectionStrategy, correction!
 

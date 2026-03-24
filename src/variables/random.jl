@@ -115,17 +115,18 @@ function _compute_marginal_from_messages(
     options::RandomVariableActivationOptions,
     messages,
 )
+    trace_id = uuid4()
     context = options.prod_context_for_marginal_computation
     invoke_callback(
         context.callbacks,
-        BeforeMarginalComputationEvent(randomvar, context, messages),
+        BeforeMarginalComputationEvent(randomvar, context, messages, trace_id),
     )
     result = as_marginal(
         compute_product_of_messages(randomvar, context, messages)
     )
     invoke_callback(
         context.callbacks,
-        AfterMarginalComputationEvent(randomvar, context, messages, result),
+        AfterMarginalComputationEvent(randomvar, context, messages, trace_id, result),
     )
     return result
 end
