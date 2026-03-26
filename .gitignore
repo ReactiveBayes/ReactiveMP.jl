@@ -37,3 +37,6 @@ examples/*Compiled
 benchmark/*.json
 
 benchmark_logs/*
+
+AGENTS.md
+CLAUDE.md
