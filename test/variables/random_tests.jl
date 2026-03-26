@@ -165,7 +165,8 @@ end
     function ReactiveMP.invoke_callback(
         handler::MarginalCallbackHandler, event::ReactiveMP.Event{E}
     ) where {E}
-        E ∈ handler.listen_to && push!(handler.events, (event = E, data = event))
+        E ∈ handler.listen_to &&
+            push!(handler.events, (event = E, data = event))
     end
 
     @testset "Fires before and after marginal computation with 3 messages" begin

@@ -95,8 +95,7 @@ end
     bar4(callback_handler)
 
     @test @allocated(bar4(callback_handler)) === 0
-    
-    
+
     # Test that trace_id does not cause allocations
     struct BeforeSuperCoolEvent <: Event{:my_custom_event_243}
         trace_id::UUID
@@ -105,31 +104,24 @@ end
         result::Float64
         trace_id::UUID
     end
-    
+
     function bar5(callback_handler, input::Float64)
         trace_id = uuid4()
-        
-        invoke_callback(callback_handler,
-            BeforeSuperCoolEvent(trace_id)
-        )
-        
+
+        invoke_callback(callback_handler, BeforeSuperCoolEvent(trace_id))
+
         result = input + 4.0
-        
-        invoke_callback(callback_handler,
-            AfterSuperCoolEvent(result, trace_id)
-        )
-        
+
+        invoke_callback(callback_handler, AfterSuperCoolEvent(result, trace_id))
+
         return result
     end
 
     @test bar5(callback_handler, 9.0) == 13.0
     @test @allocated(bar5(callback_handler, 9.0)) === 0
-    
 end
 
-@testitem "invoke_callback should return the event" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "invoke_callback should return the event" setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback
 
     event = CustomEvent(:event1, 1, 2)
@@ -146,7 +138,8 @@ end
     @test invoke_callback(dict_callbacks, event) === event
 
     # Unmatched event still returns the event
-    @test invoke_callback(callbacks, CustomEvent(:other, 1)) === CustomEvent(:other, 1)
+    @test invoke_callback(callbacks, CustomEvent(:other, 1)) ===
+        CustomEvent(:other, 1)
 end
 
 @testitem "event_name should work on both types and instances" setup = [
@@ -235,11 +228,9 @@ end
 ] begin
     import ReactiveMP: invoke_callback
 
-    callbacks = (
-        my_event = (event) -> begin
-            event.state = sum(event.data)
-        end,
-    )
+    callbacks = (my_event = (event) -> begin
+        event.state = sum(event.data)
+    end,)
 
     event = MutableCustomEvent(:my_event, 3, 4; state = nothing)
     returned_event = invoke_callback(callbacks, event)
@@ -248,15 +239,13 @@ end
     @test event.state === 7
 end
 
-@testitem "Dict callback can mutate event state" setup = [
-    CallbacksTestUtils
-] begin
+@testitem "Dict callback can mutate event state" setup = [CallbacksTestUtils] begin
     import ReactiveMP: invoke_callback
 
     callbacks = Dict{Symbol, Any}(
         :my_event => (event) -> begin
             event.state = prod(event.data)
-        end,
+        end
     )
 
     event = MutableCustomEvent(:my_event, 3, 5; state = nothing)
@@ -334,8 +323,7 @@ end
     import ReactiveMP: invoke_callback
 
     callback_handler = (
-        sum_event = (event) -> nothing,
-        prod_event = (event) -> nothing,
+        sum_event = (event) -> nothing, prod_event = (event) -> nothing
     )
 
     @test invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2)) isa
@@ -354,8 +342,7 @@ end
     import ReactiveMP: invoke_callback
 
     callback_handler = Dict{Symbol, Any}(
-        :sum_event => (event) -> nothing,
-        :prod_event => (event) -> nothing,
+        :sum_event => (event) -> nothing, :prod_event => (event) -> nothing
     )
 
     @test invoke_callback(callback_handler, CustomEvent(:sum_event, 1, 2)) isa
@@ -392,9 +379,9 @@ end
     end
 
     ReactiveMP.handle_event(::MyCustomHandler, ::Event) = nothing
-    ReactiveMP.handle_event(
-        handler::MyCustomHandler, ::CustomEvent{:event2}
-    ) = push!(handler.events, :event2)
+    ReactiveMP.handle_event(handler::MyCustomHandler, ::CustomEvent{:event2}) = push!(
+        handler.events, :event2
+    )
 
     custom_handler = MyCustomHandler([])
 
