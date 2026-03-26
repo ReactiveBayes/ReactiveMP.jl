@@ -135,13 +135,13 @@ function statistic_estimation(
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = if C
         reshape(
-        sum(
-            wc * (xi - m) * (yi - m_tilde) for
-            (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
-        ),
-        1,
-        d_out,
-    )
+            sum(
+                wc * (xi - m) * (yi - m_tilde) for
+                (wc, xi, yi) in zip(weights_c, sigma_points, g_sigma)
+            ),
+            1,
+            d_out,
+        )
     else
         nothing
     end
@@ -224,10 +224,10 @@ function unscented_statistics(
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = if C
         sum(
-        weights_c[k + 1] *
-        (sigma_points[k + 1] - m) *
-        (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
-    )
+            weights_c[k + 1] *
+            (sigma_points[k + 1] - m) *
+            (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
+        )
     else
         nothing
     end
@@ -258,10 +258,10 @@ function unscented_statistics(
     # Compute `C_tilde` only if `C === true`
     @inbounds C_tilde = if C
         sum(
-        weights_c[k + 1] *
-        (sigma_points[k + 1] - m) *
-        (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
-    )
+            weights_c[k + 1] *
+            (sigma_points[k + 1] - m) *
+            (g_sigma[k + 1] - m_tilde)' for k in 0:(2d)
+        )
     else
         nothing
     end
