@@ -176,6 +176,7 @@ This event fires right before computing the message and calling the correspondin
 - `mapping`: of type [`ReactiveMP.MessageMapping`](@ref), contains information about the node type, etc
 - `messages`: typically of type `Tuple` if present, `nothing` otherwise
 - `marginals`: typically of type `Tuple` if present, `nothing` otherwise
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterMessageRuleCallEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMessageRuleCallEvent`](@ref)
 """
@@ -183,6 +184,7 @@ struct BeforeMessageRuleCallEvent{M, Ms, Mr} <: Event{:before_message_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
+    trace_id::UUID
 end
 
 """
@@ -196,6 +198,7 @@ This event fires right after computing the message and calling the corresponding
 - `marginals`: typically of type `Tuple` if present, `nothing` otherwise
 - `result`: the result of the rule invocation (or `rulefallback`), can be any type
 - `addons`: the result of the addons invocation, if present, can be any type
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
 """
@@ -205,6 +208,7 @@ struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A} <: Event{:after_message_rule_c
     marginals::Mr
     result::R
     addons::A
+    trace_id::UUID
 end
 
 """
@@ -217,6 +221,7 @@ This event fires right before computing the product of two messages.
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `left`: of type [`ReactiveMP.Message`](@ref), the left-hand side message in the product
 - `right`: of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref)
 """
@@ -225,6 +230,7 @@ struct BeforeProductOfTwoMessagesEvent{V, C, L, R} <: Event{:before_product_of_t
     context::C
     left::L
     right::R
+    trace_id::UUID
 end
 
 """
@@ -239,6 +245,7 @@ This event fires right after computing the product of two messages.
 - `right`: of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
 - `result`: of type [`ReactiveMP.Message`](@ref), the resulting message from the product
 - `addons`: the computed addons for the result (can be `nothing`)
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
 """
@@ -249,6 +256,7 @@ struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A} <: Event{:after_product
     right::R
     result::Rs
     addons::A
+    trace_id::UUID
 end
 
 """
@@ -261,6 +269,7 @@ This event fires right before computing the product of a collection of messages
 - `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the collection of messages to be multiplied
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterProductOfMessagesEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfMessagesEvent`](@ref)
 """
@@ -268,6 +277,7 @@ struct BeforeProductOfMessagesEvent{V, C, Ms} <: Event{:before_product_of_messag
     variable::V
     context::C
     messages::Ms
+    trace_id::UUID
 end
 
 """
@@ -281,6 +291,7 @@ This event fires right after computing the product of a collection of messages
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the original collection of messages that were multiplied
 - `result`: of type [`ReactiveMP.Message`](@ref), the final result after folding and form constraint application
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref)
 """
@@ -289,6 +300,7 @@ struct AfterProductOfMessagesEvent{V, C, Ms, R} <: Event{:after_product_of_messa
     context::C
     messages::Ms
     result::R
+    trace_id::UUID
 end
 
 """
@@ -302,6 +314,7 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `strategy`: the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
 - `distribution`: the distribution about to be constrained
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref)
 """
@@ -310,6 +323,7 @@ struct BeforeFormConstraintAppliedEvent{V, C, S, D} <: Event{:before_form_constr
     context::C
     strategy::S
     distribution::D
+    trace_id::UUID
 end
 
 """
@@ -324,6 +338,7 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 - `strategy`: the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
 - `distribution`: the distribution before the constraint was applied
 - `result`: the distribution after the constraint was applied
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref)
 """
@@ -333,6 +348,7 @@ struct AfterFormConstraintAppliedEvent{V, C, S, D, R} <: Event{:after_form_const
     strategy::S
     distribution::D
     result::R
+    trace_id::UUID
 end
 
 """
@@ -344,6 +360,7 @@ This event fires right before computing the marginal for a [`ReactiveMP.RandomVa
 - `variable`: of type [`ReactiveMP.RandomVariable`](@ref)
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the collection of incoming messages used to compute the marginal
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterMarginalComputationEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMarginalComputationEvent`](@ref)
 """
@@ -351,6 +368,7 @@ struct BeforeMarginalComputationEvent{V, C, Ms} <: Event{:before_marginal_comput
     variable::V
     context::C
     messages::Ms
+    trace_id::UUID
 end
 
 """
@@ -362,6 +380,7 @@ This event fires right after computing the marginal for a [`ReactiveMP.RandomVar
 - `variable`: of type [`ReactiveMP.RandomVariable`](@ref)
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the collection of incoming messages used to compute the marginal
+- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
 - `result`: the computed marginal
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
@@ -370,5 +389,6 @@ struct AfterMarginalComputationEvent{V, C, Ms, R} <: Event{:after_marginal_compu
     variable::V
     context::C
     messages::Ms
+    trace_id::UUID
     result::R
 end

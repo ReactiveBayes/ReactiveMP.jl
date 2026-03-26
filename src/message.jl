@@ -163,9 +163,10 @@ function compute_product_of_two_messages(
     left::Message,
     right::Message,
 )
+    trace_id = uuid4()
     invoke_callback(
         context.callbacks,
-        BeforeProductOfTwoMessagesEvent(variable, context, left, right),
+        BeforeProductOfTwoMessagesEvent(variable, context, left, right, trace_id),
     )
 
     # We propagate clamped message, in case if both are clamped
@@ -182,10 +183,11 @@ function compute_product_of_two_messages(
     new_dist   = prod(context.prod_constraint, left_dist, right_dist)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
+        form_trace_id = uuid4()
         invoke_callback(
             context.callbacks,
             BeforeFormConstraintAppliedEvent(
-                variable, context, FormConstraintCheckEach(), new_dist
+                variable, context, FormConstraintCheckEach(), new_dist, form_trace_id
             ),
         )
         unconstrained_dist = new_dist
@@ -193,7 +195,7 @@ function compute_product_of_two_messages(
         invoke_callback(
             context.callbacks,
             AfterFormConstraintAppliedEvent(
-                variable, context, FormConstraintCheckEach(), unconstrained_dist, new_dist
+                variable, context, FormConstraintCheckEach(), unconstrained_dist, new_dist, form_trace_id
             ),
         )
     end
@@ -211,7 +213,7 @@ function compute_product_of_two_messages(
     invoke_callback(
         context.callbacks,
         AfterProductOfTwoMessagesEvent(
-            variable, context, left, right, result, new_addons
+            variable, context, left, right, result, new_addons, trace_id
         ),
     )
 
@@ -237,9 +239,10 @@ See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.Mes
 function compute_product_of_messages(
     variable::AbstractVariable, context::MessageProductContext, messages
 )
+    trace_id = uuid4()
     invoke_callback(
         context.callbacks,
-        BeforeProductOfMessagesEvent(variable, context, messages),
+        BeforeProductOfMessagesEvent(variable, context, messages, trace_id),
     )
 
     result = as_message(
@@ -250,17 +253,18 @@ function compute_product_of_messages(
 
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
         dist = getdata(result)
+        form_trace_id = uuid4()
         invoke_callback(
             context.callbacks,
             BeforeFormConstraintAppliedEvent(
-                variable, context, FormConstraintCheckLast(), dist
+                variable, context, FormConstraintCheckLast(), dist, form_trace_id
             ),
         )
         constrained_dist = constrain_form(context.form_constraint, dist)
         invoke_callback(
             context.callbacks,
             AfterFormConstraintAppliedEvent(
-                variable, context, FormConstraintCheckLast(), dist, constrained_dist
+                variable, context, FormConstraintCheckLast(), dist, constrained_dist, form_trace_id
             ),
         )
         result = Message(
@@ -273,7 +277,7 @@ function compute_product_of_messages(
 
     invoke_callback(
         context.callbacks,
-        AfterProductOfMessagesEvent(variable, context, messages, result),
+        AfterProductOfMessagesEvent(variable, context, messages, result, trace_id),
     )
 
     return result
@@ -619,9 +623,10 @@ function (mapping::MessageMapping)(messages, marginals)
             __check_all(is_clamped_or_initial, marginals)
         )
 
+    trace_id = uuid4()
     invoke_callback(
         mapping.callbacks,
-        BeforeMessageRuleCallEvent(mapping, messages, marginals),
+        BeforeMessageRuleCallEvent(mapping, messages, marginals, trace_id),
     )
     result, addons =
         if !isnothing(messages) &&
@@ -663,7 +668,7 @@ function (mapping::MessageMapping)(messages, marginals)
     )
     invoke_callback(
         mapping.callbacks,
-        AfterMessageRuleCallEvent(mapping, messages, marginals, result, addons),
+        AfterMessageRuleCallEvent(mapping, messages, marginals, result, addons, trace_id),
     )
 
     return Message(result, is_message_clamped, is_message_initial, addons)

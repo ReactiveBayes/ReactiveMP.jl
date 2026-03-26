@@ -25,6 +25,7 @@ end
     CallbacksTestUtils
 ] begin
     import ReactiveMP: invoke_callback, Event
+    using UUIDs
 
     # We use here a type stable structure to achieve 0 allocations
     struct MyCustomEvent{T} <: Event{:my_custom_event}
@@ -47,17 +48,19 @@ end
     @test @inferred(bar(callback_handler, event)) === nothing
     @test @allocated(bar(callback_handler, event)) === 0
 
-    function bar2(callback_handler)
-        invoke_callback(
-            callback_handler, CustomEvent(:event1, 1, 2, "asd", [2])
-        )
-        return 1 + 2
+    if VERSION >= v"1.12.0"
+        function bar2(callback_handler)
+            invoke_callback(
+                callback_handler, CustomEvent(:event1, 1, 2, "asd", [2])
+            )
+            return 1 + 2
+        end
+
+        bar2(callback_handler)
+
+        @test @inferred(bar2(callback_handler)) === 3
+        @test @allocated(bar2(callback_handler)) === 0
     end
-
-    bar2(callback_handler)
-
-    @test @inferred(bar2(callback_handler)) === 3
-    @test @allocated(bar2(callback_handler)) === 0
 
     mutable struct EventWithTypeStableState <:
                    Event{:event_with_typestable_state}
@@ -92,6 +95,38 @@ end
     bar4(callback_handler)
 
     @test @allocated(bar4(callback_handler)) === 0
+    
+    
+    if VERSION >= v"1.12.0"
+        # Test that trace_id does not cause allocations
+        struct BeforeSuperCoolEvent <: Event{:my_custom_event_243}
+            trace_id::UUID
+        end
+        struct AfterSuperCoolEvent <: Event{:my_custom_event_534}
+            result::Float64
+            trace_id::UUID
+        end
+        
+        function bar5(callback_handler, input::Float64)
+            trace_id = uuid4()
+            
+            invoke_callback(callback_handler,
+                BeforeSuperCoolEvent(trace_id)
+            )
+            
+            result = input + 4.0
+            
+            invoke_callback(callback_handler,
+                AfterSuperCoolEvent(result, trace_id)
+            )
+            
+            return result
+        end
+
+        @test bar5(callback_handler, 9.0) == 13.0
+        @test @allocated(bar5(callback_handler, 9.0)) === 0
+    end
+    
 end
 
 @testitem "invoke_callback should return the event" setup = [
