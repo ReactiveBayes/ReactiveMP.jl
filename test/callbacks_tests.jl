@@ -97,33 +97,35 @@ end
     @test @allocated(bar4(callback_handler)) === 0
     
     
-    # Test that trace_id does not cause allocations
-    struct BeforeSuperCoolEvent <: Event{:my_custom_event_243}
-        trace_id::UUID
-    end
-    struct AfterSuperCoolEvent <: Event{:my_custom_event_534}
-        result::Float64
-        trace_id::UUID
-    end
-    
-    function bar5(callback_handler, input::Float64)
-        trace_id = uuid4()
+    if VERSION >= v"1.12.0"
+        # Test that trace_id does not cause allocations
+        struct BeforeSuperCoolEvent <: Event{:my_custom_event_243}
+            trace_id::UUID
+        end
+        struct AfterSuperCoolEvent <: Event{:my_custom_event_534}
+            result::Float64
+            trace_id::UUID
+        end
         
-        invoke_callback(callback_handler,
-            BeforeSuperCoolEvent(trace_id)
-        )
-        
-        result = input + 4.0
-        
-        invoke_callback(callback_handler,
-            AfterSuperCoolEvent(result, trace_id)
-        )
-        
-        return result
-    end
+        function bar5(callback_handler, input::Float64)
+            trace_id = uuid4()
+            
+            invoke_callback(callback_handler,
+                BeforeSuperCoolEvent(trace_id)
+            )
+            
+            result = input + 4.0
+            
+            invoke_callback(callback_handler,
+                AfterSuperCoolEvent(result, trace_id)
+            )
+            
+            return result
+        end
 
-    @test bar5(callback_handler, 9.0) == 13.0
-    @test @allocated(bar5(callback_handler, 9.0)) === 0
+        @test bar5(callback_handler, 9.0) == 13.0
+        @test @allocated(bar5(callback_handler, 9.0)) === 0
+    end
     
 end
 
