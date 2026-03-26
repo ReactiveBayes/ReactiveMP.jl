@@ -711,10 +711,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@rule", output)
                 @test occursin("Marginalisation", output)
@@ -736,10 +733,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@rule", output)
                 @test occursin("Marginalisation", output)
@@ -762,10 +756,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@rule", output)
                 @test occursin("Marginalisation", output)
@@ -788,10 +779,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@rule", output)
                 @test occursin("Marginalisation", output)
@@ -821,10 +809,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@rule", output)
                 @test occursin("Marginalisation", output)
@@ -856,10 +841,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define", output)
                 @test occursin(
                     "(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)",
@@ -884,10 +866,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin(
                     "Alternatively, consider re-specifying model using an existing rule:",
                     output,
@@ -915,10 +894,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin(
                     "Alternatively, consider re-specifying model using an existing rule:",
                     output,
@@ -948,10 +924,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin(
                     "Alternatively, consider re-specifying model using an existing rule:",
                     output,
@@ -985,10 +958,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin(
                     "Alternatively, consider re-specifying model using an existing rule:",
                     output,
@@ -1023,10 +993,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@marginalrule", output)
                 @test occursin("m_out::NormalMeanVariance", output)
@@ -1045,10 +1012,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@marginalrule", output)
                 @test occursin("m_out::NormalMeanVariance", output)
@@ -1068,10 +1032,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@marginalrule", output)
                 @test occursin("m_out::NormalMeanVariance", output)
@@ -1091,10 +1052,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@marginalrule", output)
                 @test occursin("q_out::NormalMeanVariance", output)
@@ -1121,10 +1079,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define:", output)
                 @test occursin("@marginalrule", output)
                 @test occursin("q_out_μ::MvNormalMeanPrecision", output)
@@ -1153,10 +1108,7 @@
                     nothing,
                 )
 
-                io = IOBuffer()
-                showerror(io, err)
-                output = String(take!(io))
-
+                output = sprint(showerror, err)
                 @test occursin("Possible fix, define", output)
                 @test occursin(
                     "(m_out::NormalMeanVariance, m_μ::NormalMeanVariance, q_out_μ::MvNormalMeanPrecision, meta::Float64)",
