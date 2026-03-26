@@ -19,9 +19,9 @@ function __collect_latest_updates(f::F, collection::Tuple) where {F}
         (nothing, of(nothing))
     else
         (
-        Val{map(name, collection)}(),
-        combineLatestUpdates(map(f, collection), PushNew()),
-    )
+            Val{map(name, collection)}(),
+            combineLatestUpdates(map(f, collection), PushNew()),
+        )
     end
 end
 
