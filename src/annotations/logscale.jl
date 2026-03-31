@@ -29,19 +29,36 @@ macro logscale(value)
     return esc(:(ReactiveMP.annotate!(getannotations(), :logscale, $(value))))
 end
 
-function post_rule_annotations!(::LogScaleAnnotations, ann::AnnotationDict, mapping, messages, marginals, result)
+function post_rule_annotations!(
+    ::LogScaleAnnotations,
+    ann::AnnotationDict,
+    mapping,
+    messages,
+    marginals,
+    result,
+)
     has_annotation(ann, :logscale) && return nothing
     if isnothing(marginals) && all(m -> m isa PointMass, messages)
         annotate!(ann, :logscale, 0)
     elseif isnothing(messages) && all(m -> m isa PointMass, marginals)
         annotate!(ann, :logscale, 0)
     else
-        error("Log-scale annotation has not been set for the message update rule = $(mapping)")
+        error(
+            "Log-scale annotation has not been set for the message update rule = $(mapping)",
+        )
     end
     return nothing
 end
 
-function post_product_annotations!(::LogScaleAnnotations, merged::AnnotationDict, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist)
+function post_product_annotations!(
+    ::LogScaleAnnotations,
+    merged::AnnotationDict,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    left_dist,
+    right_dist,
+)
     left_logscale  = getlogscale(left_ann)
     right_logscale = getlogscale(right_ann)
     new_logscale   = compute_logscale(new_dist, left_dist, right_dist)

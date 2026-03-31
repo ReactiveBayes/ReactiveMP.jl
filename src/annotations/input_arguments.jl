@@ -1,4 +1,7 @@
-export InputArgumentsAnnotations, RuleInputArgumentsRecord, ProductInputArgumentsRecord, get_rule_input_arguments
+export InputArgumentsAnnotations,
+    RuleInputArgumentsRecord,
+    ProductInputArgumentsRecord,
+    get_rule_input_arguments
 
 """
     RuleInputArgumentsRecord
@@ -22,7 +25,7 @@ combined during one or more message products. Each element corresponds to one
 rule execution that contributed to the product.
 """
 struct ProductInputArgumentsRecord
-    mappings :: Vector{RuleInputArgumentsRecord}
+    mappings::Vector{RuleInputArgumentsRecord}
 end
 
 """
@@ -46,35 +49,68 @@ rule execution, or a [`ProductInputArgumentsRecord`](@ref) when it is the result
 of one or more message products. Throws `KeyError` if the annotation has not been
 set.
 """
-get_rule_input_arguments(ann::AnnotationDict) = get_annotation(ann, :rule_input_arguments)
+get_rule_input_arguments(ann::AnnotationDict) = get_annotation(
+    ann, :rule_input_arguments
+)
 
-function post_rule_annotations!(::InputArgumentsAnnotations, ann::AnnotationDict, mapping, messages, marginals, result)
-    annotate!(ann, :rule_input_arguments, RuleInputArgumentsRecord(mapping, messages, marginals, result))
+function post_rule_annotations!(
+    ::InputArgumentsAnnotations,
+    ann::AnnotationDict,
+    mapping,
+    messages,
+    marginals,
+    result,
+)
+    annotate!(
+        ann,
+        :rule_input_arguments,
+        RuleInputArgumentsRecord(mapping, messages, marginals, result),
+    )
     return nothing
 end
 
-function _merge_input_arguments(left::RuleInputArgumentsRecord, right::RuleInputArgumentsRecord)
+function _merge_input_arguments(
+    left::RuleInputArgumentsRecord, right::RuleInputArgumentsRecord
+)
     return ProductInputArgumentsRecord(RuleInputArgumentsRecord[left, right])
 end
 
-function _merge_input_arguments(left::RuleInputArgumentsRecord, right::ProductInputArgumentsRecord)
+function _merge_input_arguments(
+    left::RuleInputArgumentsRecord, right::ProductInputArgumentsRecord
+)
     pushfirst!(right.mappings, left)
     return right
 end
 
-function _merge_input_arguments(left::ProductInputArgumentsRecord, right::RuleInputArgumentsRecord)
+function _merge_input_arguments(
+    left::ProductInputArgumentsRecord, right::RuleInputArgumentsRecord
+)
     push!(left.mappings, right)
     return left
 end
 
-function _merge_input_arguments(left::ProductInputArgumentsRecord, right::ProductInputArgumentsRecord)
+function _merge_input_arguments(
+    left::ProductInputArgumentsRecord, right::ProductInputArgumentsRecord
+)
     append!(left.mappings, right.mappings)
     return left
 end
 
-function post_product_annotations!(::InputArgumentsAnnotations, merged::AnnotationDict, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist)
+function post_product_annotations!(
+    ::InputArgumentsAnnotations,
+    merged::AnnotationDict,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    left_dist,
+    right_dist,
+)
     left_record  = get_rule_input_arguments(left_ann)
     right_record = get_rule_input_arguments(right_ann)
-    annotate!(merged, :rule_input_arguments, _merge_input_arguments(left_record, right_record))
+    annotate!(
+        merged,
+        :rule_input_arguments,
+        _merge_input_arguments(left_record, right_record),
+    )
     return nothing
 end

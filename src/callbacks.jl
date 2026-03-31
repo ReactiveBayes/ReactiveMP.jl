@@ -79,9 +79,7 @@ julia> event.count
 
 If the `NamedTuple` does not have a field corresponding to the event name, the event will be ignored.
 """
-function invoke_callback(
-    callbacks::NamedTuple{K}, event::Event{E}
-) where {K, E}
+function invoke_callback(callbacks::NamedTuple{K}, event::Event{E}) where {K, E}
     if E in K
         callbacks[E](event)
     end
@@ -202,7 +200,8 @@ This event fires right after computing the message and calling the corresponding
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
 """
-struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A} <: Event{:after_message_rule_call}
+struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A} <:
+       Event{:after_message_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
@@ -225,7 +224,8 @@ This event fires right before computing the product of two messages.
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref)
 """
-struct BeforeProductOfTwoMessagesEvent{V, C, L, R} <: Event{:before_product_of_two_messages}
+struct BeforeProductOfTwoMessagesEvent{V, C, L, R} <:
+       Event{:before_product_of_two_messages}
     variable::V
     context::C
     left::L
@@ -249,7 +249,8 @@ This event fires right after computing the product of two messages.
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
 """
-struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A} <: Event{:after_product_of_two_messages}
+struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A} <:
+       Event{:after_product_of_two_messages}
     variable::V
     context::C
     left::L
@@ -273,7 +274,8 @@ This event fires right before computing the product of a collection of messages
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfMessagesEvent`](@ref)
 """
-struct BeforeProductOfMessagesEvent{V, C, Ms} <: Event{:before_product_of_messages}
+struct BeforeProductOfMessagesEvent{V, C, Ms} <:
+       Event{:before_product_of_messages}
     variable::V
     context::C
     messages::Ms
@@ -295,7 +297,8 @@ This event fires right after computing the product of a collection of messages
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref)
 """
-struct AfterProductOfMessagesEvent{V, C, Ms, R} <: Event{:after_product_of_messages}
+struct AfterProductOfMessagesEvent{V, C, Ms, R} <:
+       Event{:after_product_of_messages}
     variable::V
     context::C
     messages::Ms
@@ -318,7 +321,8 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref)
 """
-struct BeforeFormConstraintAppliedEvent{V, C, S, D} <: Event{:before_form_constraint_applied}
+struct BeforeFormConstraintAppliedEvent{V, C, S, D} <:
+       Event{:before_form_constraint_applied}
     variable::V
     context::C
     strategy::S
@@ -342,7 +346,8 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref)
 """
-struct AfterFormConstraintAppliedEvent{V, C, S, D, R} <: Event{:after_form_constraint_applied}
+struct AfterFormConstraintAppliedEvent{V, C, S, D, R} <:
+       Event{:after_form_constraint_applied}
     variable::V
     context::C
     strategy::S
@@ -364,7 +369,8 @@ This event fires right before computing the marginal for a [`ReactiveMP.RandomVa
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMarginalComputationEvent`](@ref)
 """
-struct BeforeMarginalComputationEvent{V, C, Ms} <: Event{:before_marginal_computation}
+struct BeforeMarginalComputationEvent{V, C, Ms} <:
+       Event{:before_marginal_computation}
     variable::V
     context::C
     messages::Ms
@@ -385,7 +391,8 @@ This event fires right after computing the marginal for a [`ReactiveMP.RandomVar
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
 """
-struct AfterMarginalComputationEvent{V, C, Ms, R} <: Event{:after_marginal_computation}
+struct AfterMarginalComputationEvent{V, C, Ms, R} <:
+       Event{:after_marginal_computation}
     variable::V
     context::C
     messages::Ms

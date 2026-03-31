@@ -1,5 +1,10 @@
 @testmodule AnnotationsTestUtils begin
-    import ReactiveMP: AbstractAnnotations, AnnotationDict, annotate!, get_annotation, post_product_annotations!
+    import ReactiveMP:
+        AbstractAnnotations,
+        AnnotationDict,
+        annotate!,
+        get_annotation,
+        post_product_annotations!
     import ReactiveMP
 
     struct Normal
@@ -9,8 +14,20 @@
 
     struct SumAnnotations <: AbstractAnnotations end
 
-    function ReactiveMP.post_product_annotations!(::SumAnnotations, merged, left_ann, right_ann, new_dist, left_dist, right_dist)
-        annotate!(merged, :sum, get_annotation(left_ann, :val) + get_annotation(right_ann, :val))
+    function ReactiveMP.post_product_annotations!(
+        ::SumAnnotations,
+        merged,
+        left_ann,
+        right_ann,
+        new_dist,
+        left_dist,
+        right_dist,
+    )
+        annotate!(
+            merged,
+            :sum,
+            get_annotation(left_ann, :val) + get_annotation(right_ann, :val),
+        )
     end
 end
 
@@ -60,40 +77,66 @@ end
     @test @allocated(foo()) === 0
 end
 
-@testitem "post_product_annotations! with no processors returns empty AnnotationDict" setup=[AnnotationsTestUtils] begin
-    import ReactiveMP: AnnotationDict, annotate!, has_annotation, post_product_annotations!
+@testitem "post_product_annotations! with no processors returns empty AnnotationDict" setup=[
+    AnnotationsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict, annotate!, has_annotation, post_product_annotations!
 
     left_ann  = AnnotationDict()
     right_ann = AnnotationDict()
-    annotate!(left_ann,  :foo, 1)
+    annotate!(left_ann, :foo, 1)
     annotate!(right_ann, :foo, 2)
 
     dist = AnnotationsTestUtils.Normal(0.0, 1.0)
 
     for processors in (nothing, ())
-        result = post_product_annotations!(processors, left_ann, right_ann, dist, dist, dist)
+        result = post_product_annotations!(
+            processors, left_ann, right_ann, dist, dist, dist
+        )
         @test result isa AnnotationDict
         @test !has_annotation(result, :foo)
     end
 end
 
-@testitem "post_product_annotations! calls per-processor post_product_annotations! for each processor" setup=[AnnotationsTestUtils] begin
-    import ReactiveMP: AnnotationDict, annotate!, get_annotation, has_annotation, post_product_annotations!
+@testitem "post_product_annotations! calls per-processor post_product_annotations! for each processor" setup=[
+    AnnotationsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict,
+        annotate!,
+        get_annotation,
+        has_annotation,
+        post_product_annotations!
 
     left_ann  = AnnotationDict()
     right_ann = AnnotationDict()
-    annotate!(left_ann,  :val, 3)
+    annotate!(left_ann, :val, 3)
     annotate!(right_ann, :val, 7)
 
     dist = AnnotationsTestUtils.Normal(0.0, 1.0)
 
-    result = post_product_annotations!((AnnotationsTestUtils.SumAnnotations(),), left_ann, right_ann, dist, dist, dist)
+    result = post_product_annotations!(
+        (AnnotationsTestUtils.SumAnnotations(),),
+        left_ann,
+        right_ann,
+        dist,
+        dist,
+        dist,
+    )
     @test has_annotation(result, :sum)
     @test get_annotation(result, :sum) == 10
 end
 
-@testitem "post_product_annotations! with missing left_dist copies right_ann" setup=[AnnotationsTestUtils] begin
-    import ReactiveMP: AnnotationDict, annotate!, get_annotation, has_annotation, post_product_annotations!
+@testitem "post_product_annotations! with missing left_dist copies right_ann" setup=[
+    AnnotationsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict,
+        annotate!,
+        get_annotation,
+        has_annotation,
+        post_product_annotations!
 
     left_ann  = AnnotationDict()
     right_ann = AnnotationDict()
@@ -101,13 +144,22 @@ end
 
     dist = AnnotationsTestUtils.Normal(0.0, 1.0)
 
-    result = post_product_annotations!(nothing, left_ann, right_ann, dist, missing, dist)
+    result = post_product_annotations!(
+        nothing, left_ann, right_ann, dist, missing, dist
+    )
     @test has_annotation(result, :logscale)
     @test get_annotation(result, :logscale) == 5.0
 end
 
-@testitem "post_product_annotations! with missing right_dist copies left_ann" setup=[AnnotationsTestUtils] begin
-    import ReactiveMP: AnnotationDict, annotate!, get_annotation, has_annotation, post_product_annotations!
+@testitem "post_product_annotations! with missing right_dist copies left_ann" setup=[
+    AnnotationsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict,
+        annotate!,
+        get_annotation,
+        has_annotation,
+        post_product_annotations!
 
     left_ann  = AnnotationDict()
     right_ann = AnnotationDict()
@@ -115,20 +167,27 @@ end
 
     dist = AnnotationsTestUtils.Normal(0.0, 1.0)
 
-    result = post_product_annotations!(nothing, left_ann, right_ann, dist, dist, missing)
+    result = post_product_annotations!(
+        nothing, left_ann, right_ann, dist, dist, missing
+    )
     @test has_annotation(result, :logscale)
     @test get_annotation(result, :logscale) == 3.0
 end
 
-@testitem "post_product_annotations! with both dists missing returns empty AnnotationDict" setup=[AnnotationsTestUtils] begin
-    import ReactiveMP: AnnotationDict, annotate!, has_annotation, post_product_annotations!
+@testitem "post_product_annotations! with both dists missing returns empty AnnotationDict" setup=[
+    AnnotationsTestUtils
+] begin
+    import ReactiveMP:
+        AnnotationDict, annotate!, has_annotation, post_product_annotations!
 
     left_ann  = AnnotationDict()
     right_ann = AnnotationDict()
-    annotate!(left_ann,  :logscale, 1.0)
+    annotate!(left_ann, :logscale, 1.0)
     annotate!(right_ann, :logscale, 2.0)
 
-    result = post_product_annotations!(nothing, left_ann, right_ann, missing, missing, missing)
+    result = post_product_annotations!(
+        nothing, left_ann, right_ann, missing, missing, missing
+    )
     @test result isa AnnotationDict
     @test !has_annotation(result, :logscale)
 end
