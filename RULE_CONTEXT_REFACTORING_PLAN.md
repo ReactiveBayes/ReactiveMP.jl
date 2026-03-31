@@ -40,7 +40,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - New `@logscale` macro: expands to `annotate!(getannotations(), :logscale, value)`
 - `getlogscale(ann::AnnotationDict)` reads `:logscale` key
 
-### Step 1.4: Create `src/annotations/input_arguments.jl`
+### Step 1.4: Create `src/annotations/input_arguments.jl` [DONE]
 - `struct InputArgumentsAnnotations <: AbstractAnnotations end` (replaces `AddonMemory` from `src/addons/memory.jl`)
 - `RuleInputArgumentsRecord` struct (replaces `AddonMemoryMessageMapping`)
 - `ProductInputArgumentsRecord` struct (replaces `AddonMemoryProd`)
@@ -71,8 +71,8 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ### Step 2.3: `src/ReactiveMP.jl` — Bridge functions (lines 47-59)
 - `as_marginal`/`as_message`: use `getannotations` instead of `getaddons`
-- `getlogscale(msg::Message)` -> `getlogscale(getannotations(msg))`
-- `getmemory(msg::Message)` -> `getmemory(getannotations(msg))`
+- `getlogscale(msg::Message)` -> removed, users should write `getlogscale(getannotations())` explicitly
+- `get_rule_input_arguments(msg::Message)` -> removed, users should write `get_rule_input_arguments(getannotations())` explicitly
 - Remove `getmemoryaddon` helpers
 
 ---
