@@ -5,7 +5,7 @@
 The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tuples of `AbstractAddon` subtypes, requires rules to return `(result, addons)` tuples, and has a nonsensical `multiply_addons` product concept. The goal is to replace it with a simpler "rule annotations" system where:
 - Messages carry an optional `AnnotationDict` (lazy-allocated, defined in `src/annotations.jl`)
 - Rules receive a mutable `AnnotationDict` as an argument and annotate it directly (no return tuple)
-- Annotation merging during message products is handled by `AbstractAnnotationProcessor` subtypes
+- Annotation merging during message products is handled by `AbstractAnnotations` subtypes (e.g. `LogScaleAnnotations`)
 - `AddonDebug` is removed (use callbacks instead)
 
 ## Key Design Decisions
@@ -26,24 +26,22 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - `get_annotation(ann, key)` — read an annotation (throws `KeyError` if absent)
 - `get_annotation(ann, ::Type{T}, key)` — typed read
 
-### Step 1.2: Create `src/rule_annotations.jl`
-- `abstract type AbstractAnnotationProcessor end`
-- `create_annotations(processors::Nothing)` -> `nothing`
-- `create_annotations(processors::Tuple)` -> `AnnotationDict()`
-- `merge_annotations(processors, left_ann, right_ann, new_dist, left_dist, right_dist)` -> iterates processors calling `merge_annotations!`
-- `merge_annotations!(p::AbstractAnnotationProcessor, merged, left_ann, right_ann, ...)` -> default no-op
-- `post_rule_annotations!(p::AbstractAnnotationProcessor, ann, mapping, messages, marginals, result)` -> default no-op
+### Step 1.2: Extend `src/annotations.jl` with processor infrastructure
+- `abstract type AbstractAnnotations end`
+- `AnnotationDict()` is always constructed (allocation is lazy inside `AnnotationDict` itself)
+- `merge_annotations(processors, left_ann, right_ann, new_dist, left_dist, right_dist)` -> always returns an `AnnotationDict`; iterates processors calling `merge_annotations!`
+- `merge_annotations!(p::AbstractAnnotations, merged, left_ann, right_ann, ...)` -> default no-op
+- `post_rule_annotations!(p::AbstractAnnotations, ann, mapping, messages, marginals, result)` -> default no-op
 
-### Step 1.3: Create `src/rule_annotations/logscale.jl`
-- `struct PropagateLogScale <: AbstractAnnotationProcessor end`
-- `merge_annotations!` for PropagateLogScale: reads `:logscale` from both annotation dicts, adds `compute_logscale(new_dist, ...)`
-- `post_rule_annotations!` for PropagateLogScale: if `:logscale` not set and all inputs are PointMass, set to 0; otherwise error
+### Step 1.3: Create `src/annotations/logscale.jl`
+- `struct LogScaleAnnotations <: AbstractAnnotations end`
+- `merge_annotations!` for LogScaleAnnotations: reads `:logscale` from both annotation dicts, adds `compute_logscale(new_dist, ...)`
+- `post_rule_annotations!` for LogScaleAnnotations: if `:logscale` not set and all inputs are PointMass, set to 0; otherwise error
 - New `@logscale` macro: expands to `annotate!(_annotations, :logscale, value)`
 - `getlogscale(ann::AnnotationDict)` reads `:logscale` key
-- `getlogscale(::Nothing)` -> error
 
-### Step 1.4: Create `src/rule_annotations/rule_input_arguments.jl`
-- `struct PropagateRuleInputArguments <: AbstractAnnotationProcessor end`
+### Step 1.4: Create `src/annotations/rule_input_arguments.jl`
+- `struct PropagateRuleInputArguments <: AbstractAnnotations end`
 - `RuleInputArgumentsRecord` struct (replaces `AddonMemoryMessageMapping`)
 - `RuleInputArgumentsProd` struct (replaces `AddonMemoryProd`)
 - `post_rule_annotations!`: stores `RuleInputArgumentsRecord` under `:rule_input_arguments`
@@ -51,10 +49,9 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - `getmemory(ann::AnnotationDict)` reads `:rule_input_arguments` key
 
 ### Files created:
-- `src/annotations.jl` ✓
-- `src/rule_annotations.jl`
-- `src/rule_annotations/logscale.jl`
-- `src/rule_annotations/rule_input_arguments.jl`
+- `src/annotations.jl` ✓ (extended with processor infrastructure in Step 1.2)
+- `src/annotations/logscale.jl`
+- `src/annotations/rule_input_arguments.jl`
 
 ---
 
@@ -62,13 +59,13 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ### Step 2.1: `src/message.jl` — Message struct
 - `Message{D, A}` -> `Message{D}`, remove type param `A`
-- Field `addons::A` -> `annotations::Union{Nothing, AnnotationDict}`
+- Field `addons::A` -> `annotations::AnnotationDict` (always present; zero-cost when unused due to lazy allocation)
 - `getaddons` -> `getannotations`
 - Update all `Message(data, clamped, initial, addons)` constructor calls in this file
 
 ### Step 2.2: `src/marginal.jl` — Marginal struct
 - Same transformation: `Marginal{D, A}` -> `Marginal{D}`
-- Field `addons::A` -> `annotations::Union{Nothing, AnnotationDict}`
+- Field `addons::A` -> `annotations::AnnotationDict` (always present)
 - `getaddons` -> `getannotations`
 
 ### Step 2.3: `src/ReactiveMP.jl` — Bridge functions (lines 47-59)
@@ -92,9 +89,9 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - The `_annotations` variable is in scope for `@logscale` and similar macros to write to
 
 ### Step 3.3: `src/rule.jl` — `@call_rule` macro (line 593)
-- Parse `annotations = ...` instead of `addons = ...` from args
-- Rule returns only the distribution (no destructuring of tuples)
-- `return_addons` option -> `return_annotations` (returns `(result, annotation_dict)`)
+- Parse `annotations = ...` instead of `addons = ...` from args; defaults to a fresh `AnnotationDict()`
+- The caller passes an `AnnotationDict` in and reads annotations back from it after the call — no return tuple
+- Remove `return_addons` / `return_annotations` option entirely
 - Adjust `@call_marginalrule` similarly if it references addons
 
 ### Step 3.4: Remove `@invokeaddon` from `src/addons.jl`
@@ -109,7 +106,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ### Step 4.2: `src/message.jl` — MessageMapping callable (line 614)
 - New flow:
-  1. `ann = create_annotations(mapping.annotations)` — creates `AnnotationDict` or `nothing`
+  1. `ann = AnnotationDict()` — always created (allocation is lazy inside `AnnotationDict`)
   2. Call `rule(...)` passing `ann` as 9th arg. Rule returns only the distribution.
   3. Loop over `mapping.annotations` processors, call `post_rule_annotations!(p, ann, mapping, messages, marginals, result)` for each
   4. Construct `Message(result, ..., ann)`
@@ -136,8 +133,20 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - Remove all `multiply_addons` calls
 
 ### Step 5.3: `src/variables/random.jl` — `RandomVariableActivationOptions`
-- May need to pass `annotations` processors into `MessageProductContext` construction
-- Check how RxInfer sets this up (likely needs corresponding RxInfer changes)
+- Add `annotations` field to `RandomVariableActivationOptions` to hold processors tuple
+- Pass it into `MessageProductContext` construction
+- **Design decision**: annotation processors are configured explicitly in both `FactorNodeActivationOptions`
+  (for rule-time annotation) and `MessageProductContext` (for product-time merging). RxInfer sets both.
+  There is no implicit inference of processors from neighbouring nodes.
+
+### Step 5.4: Handle `Missing` distribution in `merge_annotations!`
+- The current `multiply_addons` uses `left_dist::Missing` / `right_dist::Missing` as a sentinel
+  for a missing observation (unobserved variable on that edge)
+- When one side's distribution is `missing`, the convention is to pass the other side's annotations
+  through unchanged (there is nothing to merge from the missing side)
+- Add a top-level fallback in `merge_annotations` (before calling processors) that handles the
+  `left_dist isa Missing` / `right_dist isa Missing` cases, so individual processor implementations
+  do not need to repeat this logic
 
 ---
 
@@ -181,14 +190,13 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ### Step 8.2: Update `src/ReactiveMP.jl` includes
 - Remove old addon includes
-- Add new rule_annotations includes (after `src/annotations.jl`):
+- Add annotation subtype includes (after `src/annotations.jl`):
   ```julia
-  include("rule_annotations.jl")
-  include("rule_annotations/logscale.jl")
-  include("rule_annotations/rule_input_arguments.jl")
+  include("annotations/logscale.jl")
+  include("annotations/rule_input_arguments.jl")
   ```
 - Update exports: remove `AddonLogScale`, `AddonMemory`, `AddonDebug`, `getmemoryaddon`, `multiply_addons`
-- Add exports: `AbstractAnnotationProcessor`, `PropagateLogScale`, `PropagateRuleInputArguments`, `getannotations`
+- Add exports: `AbstractAnnotations`, `LogScaleAnnotations`, `PropagateRuleInputArguments`, `getannotations`
 
 ---
 
@@ -214,7 +222,7 @@ Verify compilation of these files:
 - `test/addons_tests.jl` -> `test/rule_annotations_tests.jl`
   - Test `annotate!`, `get_annotation`, `has_annotation` with `AnnotationDict`
   - Test `merge_annotations` with processors
-  - Test `PropagateLogScale` merge logic
+  - Test `LogScaleAnnotations` merge logic
 - `test/addons/logscale_tests.jl` -> `test/rule_annotations/logscale_tests.jl`
 - `test/addons/memory_tests.jl` -> `test/rule_annotations/rule_input_arguments_tests.jl`
 - Delete `test/addons/debug_tests.jl`
@@ -231,7 +239,7 @@ Verify compilation of these files:
 ## Phase 11: Update Documentation
 
 - Rewrite `docs/src/custom/custom-addons.md` -> `docs/src/custom/custom-rule-annotations.md`
-- Document: `AbstractAnnotationProcessor`, `@logscale`, `annotate!`, `merge_annotations!`, `post_rule_annotations!`
+- Document: `AbstractAnnotations`, `@logscale`, `annotate!`, `merge_annotations!`, `post_rule_annotations!`
 - Update any docstrings in source files
 
 ---
@@ -242,7 +250,6 @@ Verify compilation of these files:
 2. Run full test suite: `julia --project -e 'using Pkg; Pkg.test()'`
 3. Specifically verify:
    - `@logscale` works in all 17 rule files
-   - Message products with `PropagateLogScale` correctly merge log scales
+   - Message products with `LogScaleAnnotations` correctly merge log scales
    - `PropagateRuleInputArguments` captures rule inputs
-   - Messages without processors have `annotations === nothing` (zero overhead)
-   - `AnnotationDict` doesn't allocate when rule doesn't call `annotate!`
+   - `AnnotationDict` doesn't allocate its inner dict when no annotations are written
