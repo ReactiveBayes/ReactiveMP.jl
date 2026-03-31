@@ -26,16 +26,16 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - `get_annotation(ann, key)` — read an annotation (throws `KeyError` if absent)
 - `get_annotation(ann, ::Type{T}, key)` — typed read
 
-### Step 1.2: Extend `src/annotations.jl` with processor infrastructure
+### Step 1.2: Extend `src/annotations.jl` with processor infrastructure [DONE]
 - `abstract type AbstractAnnotations end`
 - `AnnotationDict()` is always constructed (allocation is lazy inside `AnnotationDict` itself)
-- `merge_annotations(processors, left_ann, right_ann, new_dist, left_dist, right_dist)` -> always returns an `AnnotationDict`; iterates processors calling `merge_annotations!`
-- `merge_annotations!(p::AbstractAnnotations, merged, left_ann, right_ann, ...)` -> default no-op
-- `post_rule_annotations!(p::AbstractAnnotations, ann, mapping, messages, marginals, result)` -> default no-op
+- `post_product_annotations!(processors, left_ann, right_ann, new_dist, left_dist, right_dist)` -> always returns an `AnnotationDict`; dispatches on `::Missing` dists, then iterates processors
+- `post_product_annotations!(p::AbstractAnnotations, merged, left_ann, right_ann, ...)` -> per-processor callback; no default; unimplemented processors throw `MethodError`
+- `post_rule_annotations!(p::AbstractAnnotations, ann, mapping, messages, marginals, result)` -> no default; unimplemented processors throw `MethodError`
 
 ### Step 1.3: Create `src/annotations/logscale.jl`
 - `struct LogScaleAnnotations <: AbstractAnnotations end`
-- `merge_annotations!` for LogScaleAnnotations: reads `:logscale` from both annotation dicts, adds `compute_logscale(new_dist, ...)`
+- `post_product_annotations!` for LogScaleAnnotations: reads `:logscale` from both annotation dicts, adds `compute_logscale(new_dist, ...)`
 - `post_rule_annotations!` for LogScaleAnnotations: if `:logscale` not set and all inputs are PointMass, set to 0; otherwise error
 - New `@logscale` macro: expands to `annotate!(_annotations, :logscale, value)`
 - `getlogscale(ann::AnnotationDict)` reads `:logscale` key
@@ -45,11 +45,11 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - `RuleInputArgumentsRecord` struct (replaces `AddonMemoryMessageMapping`)
 - `RuleInputArgumentsProd` struct (replaces `AddonMemoryProd`)
 - `post_rule_annotations!`: stores `RuleInputArgumentsRecord` under `:rule_input_arguments`
-- `merge_annotations!`: merges records from left/right annotation dicts
+- `post_product_annotations!`: merges records from left/right annotation dicts
 - `getmemory(ann::AnnotationDict)` reads `:rule_input_arguments` key
 
 ### Files created:
-- `src/annotations.jl` ✓ (extended with processor infrastructure in Step 1.2)
+- `src/annotations.jl` ✓
 - `src/annotations/logscale.jl`
 - `src/annotations/rule_input_arguments.jl`
 
@@ -136,7 +136,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
   ```julia
   left_ann = getannotations(left)
   right_ann = getannotations(right)
-  new_ann = merge_annotations(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+  new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
   result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
   ```
 - Remove all `multiply_addons` calls
@@ -148,12 +148,12 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
   (for rule-time annotation) and `MessageProductContext` (for product-time merging). RxInfer sets both.
   There is no implicit inference of processors from neighbouring nodes.
 
-### Step 5.4: Handle `Missing` distribution in `merge_annotations!`
+### Step 5.4: Handle `Missing` distribution in `post_product_annotations!`
 - The current `multiply_addons` uses `left_dist::Missing` / `right_dist::Missing` as a sentinel
   for a missing observation (unobserved variable on that edge)
 - When one side's distribution is `missing`, the convention is to pass the other side's annotations
   through unchanged (there is nothing to merge from the missing side)
-- Add a top-level fallback in `merge_annotations` (before calling processors) that handles the
+- Add a top-level fallback in `post_product_annotations!` (before calling processors) that handles the
   `left_dist isa Missing` / `right_dist isa Missing` cases, so individual processor implementations
   do not need to repeat this logic
 
@@ -230,7 +230,7 @@ Verify compilation of these files:
 ### Step 10.1: Rewrite addon tests -> annotation tests
 - `test/addons_tests.jl` -> `test/rule_annotations_tests.jl`
   - Test `annotate!`, `get_annotation`, `has_annotation` with `AnnotationDict`
-  - Test `merge_annotations` with processors
+  - Test `post_product_annotations!` with processors
   - Test `LogScaleAnnotations` merge logic
 - `test/addons/logscale_tests.jl` -> `test/rule_annotations/logscale_tests.jl`
 - `test/addons/memory_tests.jl` -> `test/rule_annotations/rule_input_arguments_tests.jl`
@@ -248,7 +248,7 @@ Verify compilation of these files:
 ## Phase 11: Update Documentation
 
 - Rewrite `docs/src/custom/custom-addons.md` -> `docs/src/custom/custom-rule-annotations.md`
-- Document: `AbstractAnnotations`, `@logscale`, `annotate!`, `merge_annotations!`, `post_rule_annotations!`
+- Document: `AbstractAnnotations`, `@logscale`, `annotate!`, `post_product_annotations!`, `post_rule_annotations!`
 - Update any docstrings in source files
 
 ---

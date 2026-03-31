@@ -1,15 +1,22 @@
 
 """
-    AnnotationDict
+    AnnotationDict()
+    AnnotationDict(other::AnnotationDict)
 
 A mutable dictionary that associates `Symbol` keys with arbitrary annotation values.
 Supports lazy initialization — no memory is allocated until the first write.
+
+The copy constructor creates an independent shallow copy of `other`.
 """
 mutable struct AnnotationDict
     data::Union{Nothing, Dict{Symbol, Any}}
 
     function AnnotationDict()
         return new(nothing)
+    end
+
+    function AnnotationDict(other::AnnotationDict)
+        return new(isnothing(other.data) ? nothing : copy(other.data::Dict{Symbol, Any}))
     end
 end
 
@@ -57,4 +64,62 @@ Return the value stored under `key`, converted to type `T`. Throws `KeyError` if
 """
 function get_annotation(ann::AnnotationDict, ::Type{T}, key::Symbol) where {T}
     return convert(T, get_annotation(ann, key))::T
+end
+
+"""
+    AbstractAnnotations
+
+Abstract base type for annotation processors. Subtypes define how annotations
+are written into messages after rule execution and merged during message products.
+
+See also: [`post_product_annotations!`](@ref), [`post_rule_annotations!`](@ref)
+"""
+abstract type AbstractAnnotations end
+
+"""
+    post_product_annotations!(processor::AbstractAnnotations, merged::AnnotationDict, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist)
+
+Write annotations into `merged` based on `left_ann`, `right_ann`, and the distributions
+involved in the message product. Called once per processor inside
+[`compute_product_of_two_messages`](@ref).
+"""
+function post_product_annotations! end
+
+"""
+    post_rule_annotations!(processor::AbstractAnnotations, ann::AnnotationDict, mapping, messages, marginals, result)
+
+Write annotations into `ann` after a rule has executed. Called once per processor
+inside the `MessageMapping` callable, after the rule returns its result distribution.
+"""
+function post_rule_annotations! end
+
+"""
+    post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist) -> AnnotationDict
+
+Produce a merged `AnnotationDict` from the annotations of two messages being multiplied.
+Called inside [`compute_product_of_two_messages`](@ref).
+
+If `left_dist` is `missing` the right annotations are copied through unchanged, and vice versa.
+If both are `missing`, or if `processors` is `nothing`, an empty `AnnotationDict` is returned.
+Otherwise each processor in `processors` is called via the per-processor `post_product_annotations!`
+to populate the result.
+"""
+post_product_annotations!(::Nothing, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist) =
+    AnnotationDict()
+
+post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, ::Missing) =
+    AnnotationDict()
+
+post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, right_dist) =
+    AnnotationDict(right_ann)
+
+post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, ::Missing) =
+    AnnotationDict(left_ann)
+
+function post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist)
+    merged = AnnotationDict()
+    for p in processors
+        post_product_annotations!(p, merged, left_ann, right_ann, new_dist, left_dist, right_dist)
+    end
+    return merged
 end
