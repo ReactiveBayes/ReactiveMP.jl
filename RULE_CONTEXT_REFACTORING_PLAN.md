@@ -33,25 +33,26 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - `post_product_annotations!(p::AbstractAnnotations, merged, left_ann, right_ann, ...)` -> per-processor callback; no default; unimplemented processors throw `MethodError`
 - `post_rule_annotations!(p::AbstractAnnotations, ann, mapping, messages, marginals, result)` -> no default; unimplemented processors throw `MethodError`
 
-### Step 1.3: Create `src/annotations/logscale.jl`
+### Step 1.3: Create `src/annotations/logscale.jl` [DONE]
 - `struct LogScaleAnnotations <: AbstractAnnotations end`
 - `post_product_annotations!` for LogScaleAnnotations: reads `:logscale` from both annotation dicts, adds `compute_logscale(new_dist, ...)`
 - `post_rule_annotations!` for LogScaleAnnotations: if `:logscale` not set and all inputs are PointMass, set to 0; otherwise error
-- New `@logscale` macro: expands to `annotate!(_annotations, :logscale, value)`
+- New `@logscale` macro: expands to `annotate!(getannotations(), :logscale, value)`
 - `getlogscale(ann::AnnotationDict)` reads `:logscale` key
 
-### Step 1.4: Create `src/annotations/rule_input_arguments.jl`
-- `struct PropagateRuleInputArguments <: AbstractAnnotations end`
+### Step 1.4: Create `src/annotations/input_arguments.jl`
+- `struct InputArgumentsAnnotations <: AbstractAnnotations end` (replaces `AddonMemory` from `src/addons/memory.jl`)
 - `RuleInputArgumentsRecord` struct (replaces `AddonMemoryMessageMapping`)
-- `RuleInputArgumentsProd` struct (replaces `AddonMemoryProd`)
+- `ProductInputArgumentsRecord` struct (replaces `AddonMemoryProd`)
 - `post_rule_annotations!`: stores `RuleInputArgumentsRecord` under `:rule_input_arguments`
 - `post_product_annotations!`: merges records from left/right annotation dicts
-- `getmemory(ann::AnnotationDict)` reads `:rule_input_arguments` key
+- `get_rule_input_arguments(ann::AnnotationDict)` reads `:rule_input_arguments` key
+- Old name `getmemory` is noted for CHANGELOG / breaking-changes documentation
 
 ### Files created:
 - `src/annotations.jl` ✓
-- `src/annotations/logscale.jl`
-- `src/annotations/rule_input_arguments.jl`
+- `src/annotations/logscale.jl` ✓
+- `src/annotations/input_arguments.jl` ✓
 
 ---
 
@@ -80,13 +81,12 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ### Step 3.1: `src/rule.jl` — `rule_function_expression` (line 343)
 - Rename `addonsvar` to `annotationsvar`
-- The generated `rule()` function receives an `AnnotationDict` (or `nothing`) as 9th arg
-- Expose `_annotations` variable (replaces `local getaddons = () -> $addonsvar`)
+- The generated `rule()` function receives an `AnnotationDict` as 9th arg
 
 ### Step 3.2: `src/rule.jl` — `@rule` macro (line 462)
-- Replace `local _addons = getaddons()` with `local _annotations = $annotationsvar`
+- Replace `local _addons = getaddons()` with `local getannotations = () -> $annotationsvar`
+- `getannotations` is the lambda available in rule body scope; `@logscale` and similar macros call it
 - Rule body no longer wrapped to return `(_message, _addons)` — just return `_message`
-- The `_annotations` variable is in scope for `@logscale` and similar macros to write to
 
 ### Step 3.3: `src/rule.jl` — `@call_rule` macro (line 593)
 - Replace `addons = ...` keyword with `annotations = ...`; defaults to a fresh `AnnotationDict()`
@@ -202,16 +202,16 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - Add annotation subtype includes (after `src/annotations.jl`):
   ```julia
   include("annotations/logscale.jl")
-  include("annotations/rule_input_arguments.jl")
+  include("annotations/input_arguments.jl")
   ```
 - Update exports: remove `AddonLogScale`, `AddonMemory`, `AddonDebug`, `getmemoryaddon`, `multiply_addons`
-- Add exports: `AbstractAnnotations`, `LogScaleAnnotations`, `PropagateRuleInputArguments`, `getannotations`
+- Add exports: `AbstractAnnotations`, `LogScaleAnnotations`, `InputArgumentsAnnotations`, `getannotations`
 
 ---
 
 ## Phase 9: Rule Files Using @logscale (17 files — no changes needed)
 
-The `@logscale` macro is updated in Phase 1.3 to expand to `annotate!(_annotations, :logscale, value)`. Since `_annotations` is now exposed by the `@rule` macro (Phase 3.2), all existing `@logscale 0` calls in rule files will work without modification.
+The `@logscale` macro is updated in Phase 1.3 to expand to `annotate!(getannotations(), :logscale, value)`. Since `getannotations` is defined by the `@rule` macro (Phase 3.2) as `() -> $annotationsvar`, all existing `@logscale 0` calls in rule files will work without modification.
 
 Verify compilation of these files:
 - `src/rules/bernoulli/{out,p}.jl`
@@ -233,7 +233,7 @@ Verify compilation of these files:
   - Test `post_product_annotations!` with processors
   - Test `LogScaleAnnotations` merge logic
 - `test/addons/logscale_tests.jl` -> `test/rule_annotations/logscale_tests.jl`
-- `test/addons/memory_tests.jl` -> `test/rule_annotations/rule_input_arguments_tests.jl`
+- `test/addons/memory_tests.jl` -> `test/annotations/rule_input_arguments_tests.jl`
 - Delete `test/addons/debug_tests.jl`
 - `test/annotations_tests.jl` ✓
 
@@ -247,9 +247,20 @@ Verify compilation of these files:
 
 ## Phase 11: Update Documentation
 
-- Rewrite `docs/src/custom/custom-addons.md` -> `docs/src/custom/custom-rule-annotations.md`
-- Document: `AbstractAnnotations`, `@logscale`, `annotate!`, `post_product_annotations!`, `post_rule_annotations!`
-- Update any docstrings in source files
+### New pages [DONE]
+- `docs/src/lib/annotations.md` ✓ — overview of `AnnotationDict`, `AbstractAnnotations`, custom processor guide
+- `docs/src/lib/annotations/logscale.md` ✓ — log-scale theory from van Erp et al. (2023), `LogScaleAnnotations`, `@logscale`
+- `docs/src/lib/annotations/input_arguments.md` ✓ — `InputArgumentsAnnotations`, `RuleInputArgumentsRecord`, `ProductInputArgumentsRecord`
+- All pages added to `docs/make.jl` under a new top-level "Annotations" section ✓
+
+### Remaining
+- Rewrite `docs/src/custom/custom-addons.md` -> `docs/src/custom/custom-annotations.md`
+  - Update the step-by-step example to use `AbstractAnnotations`, `annotate!`, `post_rule_annotations!`, `post_product_annotations!`
+  - Remove references to `AbstractAddon`, `multiply_addons`, `@invokeaddon`
+- Update `docs/src/lib/message.md`:
+  - Replace `getaddons` with `getannotations` in the `Message` section
+  - Update the `MessageProductContext` description to mention the `annotations` field
+- Update any remaining docstrings that still reference addon terminology
 
 ---
 
@@ -260,5 +271,5 @@ Verify compilation of these files:
 3. Specifically verify:
    - `@logscale` works in all 17 rule files
    - Message products with `LogScaleAnnotations` correctly merge log scales
-   - `PropagateRuleInputArguments` captures rule inputs
+   - `InputArgumentsAnnotations` captures rule inputs
    - `AnnotationDict` doesn't allocate its inner dict when no annotations are written

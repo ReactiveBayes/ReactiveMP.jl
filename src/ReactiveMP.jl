@@ -25,13 +25,10 @@ include("constraints/form.jl")
 include("callbacks.jl")
 include("variable.jl")
 include("annotations.jl")
+include("annotations/logscale.jl")
+include("annotations/input_arguments.jl")
 include("message.jl")
 include("marginal.jl")
-include("addons.jl")
-
-include("addons/debug.jl")
-include("addons/logscale.jl")
-include("addons/memory.jl")
 
 """
     to_marginal(any)

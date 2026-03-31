@@ -16,7 +16,13 @@ mutable struct AnnotationDict
     end
 
     function AnnotationDict(other::AnnotationDict)
-        return new(isnothing(other.data) ? nothing : copy(other.data::Dict{Symbol, Any}))
+        return new(
+            if isnothing(other.data)
+                nothing
+            else
+                copy(other.data::Dict{Symbol, Any})
+            end,
+        )
     end
 end
 
@@ -104,22 +110,49 @@ If both are `missing`, or if `processors` is `nothing`, an empty `AnnotationDict
 Otherwise each processor in `processors` is called via the per-processor `post_product_annotations!`
 to populate the result.
 """
-post_product_annotations!(::Nothing, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist) =
-    AnnotationDict()
-
-post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, ::Missing) =
-    AnnotationDict()
-
-post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, right_dist) =
-    AnnotationDict(right_ann)
-
-post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, ::Missing) =
-    AnnotationDict(left_ann)
-
-function post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, right_dist)
+function post_product_annotations!(
+    processors,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    left_dist,
+    right_dist,
+)
     merged = AnnotationDict()
+    if isnothing(processors)
+        return merged
+    end
     for p in processors
-        post_product_annotations!(p, merged, left_ann, right_ann, new_dist, left_dist, right_dist)
+        post_product_annotations!(
+            p, merged, left_ann, right_ann, new_dist, left_dist, right_dist
+        )
     end
     return merged
 end
+
+post_product_annotations!(
+    processors,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    ::Missing,
+    ::Missing,
+) = AnnotationDict()
+
+post_product_annotations!(
+    processors,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    ::Missing,
+    right_dist,
+) = AnnotationDict(right_ann)
+
+post_product_annotations!(
+    processors,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    left_dist,
+    ::Missing,
+) = AnnotationDict(left_ann)

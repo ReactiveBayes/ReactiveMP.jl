@@ -1,5 +1,6 @@
 @testmodule AnnotationsTestUtils begin
     import ReactiveMP: AbstractAnnotations, AnnotationDict, annotate!, get_annotation, post_product_annotations!
+    import ReactiveMP
 
     struct Normal
         mean::Float64
