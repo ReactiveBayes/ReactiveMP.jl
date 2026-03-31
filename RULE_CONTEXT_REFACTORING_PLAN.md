@@ -1,55 +1,60 @@
-# Refactor Addon System to Rule Context System
+# Refactor Addon System to Rule Annotations System
 
 ## Context
 
-The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tuples of `AbstractAddon` subtypes, requires rules to return `(result, addons)` tuples, and has a nonsensical `multiply_addons` product concept. The goal is to replace it with a simpler "rule context" system where:
-- Messages carry an optional `Dict{Symbol, Any}` context (lazy-allocated)
-- Rules receive a mutable context dict as an argument and write to it directly (no return tuple)
-- Context merging during message products is handled by `AbstractRuleContextPropagator` subtypes
+The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tuples of `AbstractAddon` subtypes, requires rules to return `(result, addons)` tuples, and has a nonsensical `multiply_addons` product concept. The goal is to replace it with a simpler "rule annotations" system where:
+- Messages carry an optional `AnnotationDict` (lazy-allocated, defined in `src/annotations.jl`)
+- Rules receive a mutable `AnnotationDict` as an argument and annotate it directly (no return tuple)
+- Annotation merging during message products is handled by `AbstractAnnotationProcessor` subtypes
 - `AddonDebug` is removed (use callbacks instead)
 
 ## Key Design Decisions
-- **Lazy allocation**: Use `Ref{Union{Nothing, Dict{Symbol, Any}}}` wrapper so Dict is only allocated on first `set_rule_context!` call
+- **Lazy allocation**: `AnnotationDict` only allocates its inner `Dict{Symbol, Any}` on the first `annotate!` call
 - **Clean break**: No deprecation shims for old names
-- **Field naming**: `rule_context` (not `rule_context_propagators`)
+- **Field naming**: `annotations` (not `addons`, not `rule_context`, not `rule_metadata`)
 
 ---
 
 ## Phase 1: New Core Infrastructure (new files, no old code changes)
 
-### Step 1.1: Create `src/rule_context.jl`
-- `abstract type AbstractRuleContextPropagator end`
-- `LazyRuleContext` wrapper: holds `Ref{Union{Nothing, Dict{Symbol, Any}}}`, only allocates Dict on first write
-- `set_rule_context!(ctx::Nothing, key, value)` -> no-op
-- `set_rule_context!(ctx::LazyRuleContext, key, value)` -> allocates Dict on first call, sets key
-- `get_rule_context(ctx, key, default)` -> read from context
-- `materialize_context(ctx::LazyRuleContext)` -> returns `nothing` or the `Dict` (for storing in Message)
-- `create_rule_context(propagators::Nothing)` -> `nothing`
-- `create_rule_context(propagators::Tuple)` -> `LazyRuleContext()`
-- `merge_context(propagators, left_ctx, right_ctx, new_dist, left_dist, right_dist)` -> iterates propagators calling `context_merge!`
-- `context_merge!(p::AbstractRuleContextPropagator, merged, left_ctx, right_ctx, ...)` -> default no-op
-- `post_rule_context!(p::AbstractRuleContextPropagator, context, mapping, messages, marginals, result)` -> default no-op
+### Step 1.1: `src/annotations.jl` — `AnnotationDict` [DONE]
 
-### Step 1.2: Create `src/rule_context/logscale.jl`
-- `struct PropagateLogScale <: AbstractRuleContextPropagator end`
-- `context_merge!` for PropagateLogScale: reads `:logscale` from both contexts, adds `compute_logscale(new_dist, ...)`
-- `post_rule_context!` for PropagateLogScale: if `:logscale` not set and all inputs are PointMass, set to 0; otherwise error
-- New `@logscale` macro: expands to `set_rule_context!(_rule_context, :logscale, value)`
-- `getlogscale(ctx::Dict)` reads `:logscale` key
+`AnnotationDict` provides lazy-allocated annotation storage. Already implemented:
+- `AnnotationDict()` — creates an empty instance
+- `has_annotation(ann, key)` — check for key presence
+- `annotate!(ann, key, value)` — write an annotation
+- `get_annotation(ann, key)` — read an annotation (throws `KeyError` if absent)
+- `get_annotation(ann, ::Type{T}, key)` — typed read
+
+### Step 1.2: Create `src/rule_annotations.jl`
+- `abstract type AbstractAnnotationProcessor end`
+- `create_annotations(processors::Nothing)` -> `nothing`
+- `create_annotations(processors::Tuple)` -> `AnnotationDict()`
+- `merge_annotations(processors, left_ann, right_ann, new_dist, left_dist, right_dist)` -> iterates processors calling `merge_annotations!`
+- `merge_annotations!(p::AbstractAnnotationProcessor, merged, left_ann, right_ann, ...)` -> default no-op
+- `post_rule_annotations!(p::AbstractAnnotationProcessor, ann, mapping, messages, marginals, result)` -> default no-op
+
+### Step 1.3: Create `src/rule_annotations/logscale.jl`
+- `struct PropagateLogScale <: AbstractAnnotationProcessor end`
+- `merge_annotations!` for PropagateLogScale: reads `:logscale` from both annotation dicts, adds `compute_logscale(new_dist, ...)`
+- `post_rule_annotations!` for PropagateLogScale: if `:logscale` not set and all inputs are PointMass, set to 0; otherwise error
+- New `@logscale` macro: expands to `annotate!(_annotations, :logscale, value)`
+- `getlogscale(ann::AnnotationDict)` reads `:logscale` key
 - `getlogscale(::Nothing)` -> error
 
-### Step 1.3: Create `src/rule_context/rule_input_arguments.jl`
-- `struct PropagateRuleInputArguments <: AbstractRuleContextPropagator end`
+### Step 1.4: Create `src/rule_annotations/rule_input_arguments.jl`
+- `struct PropagateRuleInputArguments <: AbstractAnnotationProcessor end`
 - `RuleInputArgumentsRecord` struct (replaces `AddonMemoryMessageMapping`)
 - `RuleInputArgumentsProd` struct (replaces `AddonMemoryProd`)
-- `post_rule_context!`: stores `RuleInputArgumentsRecord` under `:rule_input_arguments`
-- `context_merge!`: merges records from left/right contexts
-- `getmemory(ctx::Dict)` reads `:rule_input_arguments` key
+- `post_rule_annotations!`: stores `RuleInputArgumentsRecord` under `:rule_input_arguments`
+- `merge_annotations!`: merges records from left/right annotation dicts
+- `getmemory(ann::AnnotationDict)` reads `:rule_input_arguments` key
 
 ### Files created:
-- `src/rule_context.jl`
-- `src/rule_context/logscale.jl`
-- `src/rule_context/rule_input_arguments.jl`
+- `src/annotations.jl` ✓
+- `src/rule_annotations.jl`
+- `src/rule_annotations/logscale.jl`
+- `src/rule_annotations/rule_input_arguments.jl`
 
 ---
 
@@ -57,19 +62,19 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ### Step 2.1: `src/message.jl` — Message struct
 - `Message{D, A}` -> `Message{D}`, remove type param `A`
-- Field `addons::A` -> `context::Union{Nothing, Dict{Symbol, Any}}`
-- `getaddons` -> `getcontext`
+- Field `addons::A` -> `annotations::Union{Nothing, AnnotationDict}`
+- `getaddons` -> `getannotations`
 - Update all `Message(data, clamped, initial, addons)` constructor calls in this file
 
 ### Step 2.2: `src/marginal.jl` — Marginal struct
 - Same transformation: `Marginal{D, A}` -> `Marginal{D}`
-- Field `addons::A` -> `context::Union{Nothing, Dict{Symbol, Any}}`
-- `getaddons` -> `getcontext`
+- Field `addons::A` -> `annotations::Union{Nothing, AnnotationDict}`
+- `getaddons` -> `getannotations`
 
 ### Step 2.3: `src/ReactiveMP.jl` — Bridge functions (lines 47-59)
-- `as_marginal`/`as_message`: use `getcontext` instead of `getaddons`
-- `getlogscale(msg::Message)` -> `getlogscale(getcontext(msg))`
-- `getmemory(msg::Message)` -> `getmemory(getcontext(msg))`
+- `as_marginal`/`as_message`: use `getannotations` instead of `getaddons`
+- `getlogscale(msg::Message)` -> `getlogscale(getannotations(msg))`
+- `getmemory(msg::Message)` -> `getmemory(getannotations(msg))`
 - Remove `getmemoryaddon` helpers
 
 ---
@@ -77,62 +82,61 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 ## Phase 3: Refactor Rule System
 
 ### Step 3.1: `src/rule.jl` — `rule_function_expression` (line 343)
-- Rename `addonsvar` to `contextvar`
-- The generated `rule()` function receives context dict (not addons tuple) as 9th arg
-- Replace `local getaddons = () -> $addonsvar` with exposing `_rule_context` variable
+- Rename `addonsvar` to `annotationsvar`
+- The generated `rule()` function receives an `AnnotationDict` (or `nothing`) as 9th arg
+- Expose `_annotations` variable (replaces `local getaddons = () -> $addonsvar`)
 
 ### Step 3.2: `src/rule.jl` — `@rule` macro (line 462)
-- Replace `local _addons = getaddons()` with `local _rule_context = $contextvar`
+- Replace `local _addons = getaddons()` with `local _annotations = $annotationsvar`
 - Rule body no longer wrapped to return `(_message, _addons)` — just return `_message`
-- The `_rule_context` variable is in scope for `@logscale` and similar macros to write to
+- The `_annotations` variable is in scope for `@logscale` and similar macros to write to
 
 ### Step 3.3: `src/rule.jl` — `@call_rule` macro (line 593)
-- Parse `rule_context = ...` instead of `addons = ...` from args
+- Parse `annotations = ...` instead of `addons = ...` from args
 - Rule returns only the distribution (no destructuring of tuples)
-- `return_addons` option -> `return_context` (returns `(result, context_dict)`)
-- Adjust `@call_marginalrule` similarly if it references addons (it doesn't seem to currently)
+- `return_addons` option -> `return_annotations` (returns `(result, annotation_dict)`)
+- Adjust `@call_marginalrule` similarly if it references addons
 
 ### Step 3.4: Remove `@invokeaddon` from `src/addons.jl`
-- The `@logscale` macro now directly calls `set_rule_context!`, no need for `@invokeaddon`
+- The `@logscale` macro now directly calls `annotate!`, no need for `@invokeaddon`
 
 ---
 
 ## Phase 4: Refactor MessageMapping
 
 ### Step 4.1: `src/message.jl` — MessageMapping struct (line 499)
-- Rename field `addons::X` to `rule_context::X` (this holds the propagators tuple or nothing)
+- Rename field `addons::X` to `annotations::X` (holds the processors tuple or nothing)
 
 ### Step 4.2: `src/message.jl` — MessageMapping callable (line 614)
 - New flow:
-  1. `ctx = create_rule_context(mapping.rule_context)` — creates LazyRuleContext or nothing
-  2. Call `rule(...)` passing `ctx` as 9th arg. Rule returns only the distribution.
-  3. `materialized = materialize_context(ctx)` — get Dict or nothing
-  4. Loop over `mapping.rule_context` propagators, call `post_rule_context!(p, materialized, mapping, messages, marginals, result)` for each
-  5. Construct `Message(result, ..., materialized)`
+  1. `ann = create_annotations(mapping.annotations)` — creates `AnnotationDict` or `nothing`
+  2. Call `rule(...)` passing `ann` as 9th arg. Rule returns only the distribution.
+  3. Loop over `mapping.annotations` processors, call `post_rule_annotations!(p, ann, mapping, messages, marginals, result)` for each
+  4. Construct `Message(result, ..., ann)`
 - Remove `message_mapping_addons` and `message_mapping_addon` functions
 
 ### Step 4.3: MessageMapping constructors (lines 564-612)
-- Rename `addons` param to `rule_context` in both constructors
+- Rename `addons` param to `annotations` in both constructors
 
 ---
 
-## Phase 5: Refactor Message Products (Context Merging)
+## Phase 5: Refactor Message Products (Annotation Merging)
 
 ### Step 5.1: `src/message.jl` — `MessageProductContext` (line 133)
-- Add field `rule_context::X = nothing` to hold propagators tuple
+- Add field `annotations::X = nothing` to hold processors tuple
 
 ### Step 5.2: `src/message.jl` — `compute_product_of_two_messages` (line 160)
 - Replace lines 203-211:
   ```julia
-  left_ctx = getcontext(left)
-  right_ctx = getcontext(right)
-  new_ctx = merge_context(context.rule_context, left_ctx, right_ctx, new_dist, left_dist, right_dist)
-  result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ctx)
+  left_ann = getannotations(left)
+  right_ann = getannotations(right)
+  new_ann = merge_annotations(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+  result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
   ```
 - Remove all `multiply_addons` calls
 
 ### Step 5.3: `src/variables/random.jl` — `RandomVariableActivationOptions`
-- May need to pass `rule_context` propagators into `MessageProductContext` construction
+- May need to pass `annotations` processors into `MessageProductContext` construction
 - Check how RxInfer sets this up (likely needs corresponding RxInfer changes)
 
 ---
@@ -140,12 +144,12 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 ## Phase 6: Refactor Node Infrastructure
 
 ### Step 6.1: `src/nodes/nodes.jl` — `FactorNodeActivationOptions` (line 277)
-- Rename field `addons::A` to `rule_context::A`
-- `getaddons(options)` -> `getrulecontext(options)` (or similar accessor)
+- Rename field `addons::A` to `annotations::A`
+- `getaddons(options)` -> `getannotations(options)`
 
 ### Step 6.2: `src/nodes/dependencies.jl` — `activate!` (line 30)
-- `addons = getaddons(options)` -> `rule_context = getrulecontext(options)`
-- Pass `rule_context` to `MessageMapping` constructor
+- `addons = getaddons(options)` -> `annotations = getannotations(options)`
+- Pass `annotations` to `MessageMapping` constructor
 
 ### Step 6.3: Delta node files
 - `src/nodes/predefined/delta/delta.jl` — rename `addons` param in `rule()` redirect (line 82)
@@ -153,7 +157,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - `src/nodes/predefined/delta/layouts/cvi.jl` — rename all `addons` references
 
 ### Step 6.4: `src/rules/fallbacks.jl`
-- All `rulefallback_nodefunction` methods: rename `addons` param to `rule_context`
+- All `rulefallback_nodefunction` methods: rename `addons` param to `annotations`
 - Line 120: `return FallbackNodeFunctionUnnormalizedLogPdf(fn), addons` -> just return `FallbackNodeFunctionUnnormalizedLogPdf(fn)` (no tuple)
 
 ---
@@ -161,8 +165,8 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 ## Phase 7: Update Callbacks
 
 ### Step 7.1: `src/callbacks.jl`
-- `AfterMessageRuleCallEvent`: rename `addons::A` field to `context::A`
-- `AfterProductOfTwoMessagesEvent`: rename `addons::A` field to `context::A`
+- `AfterMessageRuleCallEvent`: rename `addons::A` field to `annotations::A`
+- `AfterProductOfTwoMessagesEvent`: rename `addons::A` field to `annotations::A`
 - Update docstrings
 
 ---
@@ -177,20 +181,20 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ### Step 8.2: Update `src/ReactiveMP.jl` includes
 - Remove old addon includes
-- Add new rule_context includes (after `src/marginal.jl`):
+- Add new rule_annotations includes (after `src/annotations.jl`):
   ```julia
-  include("rule_context.jl")
-  include("rule_context/logscale.jl")
-  include("rule_context/rule_input_arguments.jl")
+  include("rule_annotations.jl")
+  include("rule_annotations/logscale.jl")
+  include("rule_annotations/rule_input_arguments.jl")
   ```
 - Update exports: remove `AddonLogScale`, `AddonMemory`, `AddonDebug`, `getmemoryaddon`, `multiply_addons`
-- Add exports: `AbstractRuleContextPropagator`, `PropagateLogScale`, `PropagateRuleInputArguments`, `getcontext`
+- Add exports: `AbstractAnnotationProcessor`, `PropagateLogScale`, `PropagateRuleInputArguments`, `getannotations`
 
 ---
 
 ## Phase 9: Rule Files Using @logscale (17 files — no changes needed)
 
-The `@logscale` macro is updated in Phase 1.2 to expand to `set_rule_context!(_rule_context, :logscale, value)`. Since `_rule_context` is now exposed by the `@rule` macro (Phase 3.2), all existing `@logscale 0` calls in rule files will work without modification.
+The `@logscale` macro is updated in Phase 1.3 to expand to `annotate!(_annotations, :logscale, value)`. Since `_annotations` is now exposed by the `@rule` macro (Phase 3.2), all existing `@logscale 0` calls in rule files will work without modification.
 
 Verify compilation of these files:
 - `src/rules/bernoulli/{out,p}.jl`
@@ -206,27 +210,28 @@ Verify compilation of these files:
 
 ## Phase 10: Update Tests
 
-### Step 10.1: Rewrite addon tests -> rule_context tests
-- `test/addons_tests.jl` -> `test/rule_context_tests.jl`
-  - Test `set_rule_context!`, `get_rule_context` with nothing and LazyRuleContext
-  - Test `merge_context` with propagators
-  - Test PropagateLogScale merge logic
-- `test/addons/logscale_tests.jl` -> `test/rule_context/logscale_tests.jl`
-- `test/addons/memory_tests.jl` -> `test/rule_context/rule_input_arguments_tests.jl`
+### Step 10.1: Rewrite addon tests -> annotation tests
+- `test/addons_tests.jl` -> `test/rule_annotations_tests.jl`
+  - Test `annotate!`, `get_annotation`, `has_annotation` with `AnnotationDict`
+  - Test `merge_annotations` with processors
+  - Test `PropagateLogScale` merge logic
+- `test/addons/logscale_tests.jl` -> `test/rule_annotations/logscale_tests.jl`
+- `test/addons/memory_tests.jl` -> `test/rule_annotations/rule_input_arguments_tests.jl`
 - Delete `test/addons/debug_tests.jl`
+- `test/annotations_tests.jl` ✓
 
 ### Step 10.2: Update existing tests
-- `test/message_tests.jl` — update `Message(...)` constructor calls (4th arg = nothing), `getaddons` -> `getcontext`
+- `test/message_tests.jl` — update `Message(...)` constructor calls (4th arg = nothing), `getaddons` -> `getannotations`
 - `test/marginal_tests.jl` — same
-- `test/rule_tests.jl` — rules no longer return tuples, `addons=` -> `rule_context=`
+- `test/rule_tests.jl` — rules no longer return tuples, `addons=` -> `annotations=`
 - `test/variables/random_tests.jl` — update `MessageProductContext()` if signature changes
 
 ---
 
 ## Phase 11: Update Documentation
 
-- Rewrite `docs/src/custom/custom-addons.md` -> `docs/src/custom/custom-rule-context.md`
-- Document: `AbstractRuleContextPropagator`, `@logscale`, `set_rule_context!`, `context_merge!`, `post_rule_context!`
+- Rewrite `docs/src/custom/custom-addons.md` -> `docs/src/custom/custom-rule-annotations.md`
+- Document: `AbstractAnnotationProcessor`, `@logscale`, `annotate!`, `merge_annotations!`, `post_rule_annotations!`
 - Update any docstrings in source files
 
 ---
@@ -239,5 +244,5 @@ Verify compilation of these files:
    - `@logscale` works in all 17 rule files
    - Message products with `PropagateLogScale` correctly merge log scales
    - `PropagateRuleInputArguments` captures rule inputs
-   - Messages without propagators have `context === nothing` (zero overhead)
-   - LazyRuleContext doesn't allocate Dict when rule doesn't call `set_rule_context!`
+   - Messages without processors have `annotations === nothing` (zero overhead)
+   - `AnnotationDict` doesn't allocate when rule doesn't call `annotate!`

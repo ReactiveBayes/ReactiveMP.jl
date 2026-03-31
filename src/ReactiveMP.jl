@@ -24,6 +24,7 @@ include("constraints/form.jl")
 
 include("callbacks.jl")
 include("variable.jl")
+include("annotations.jl")
 include("message.jl")
 include("marginal.jl")
 include("addons.jl")
