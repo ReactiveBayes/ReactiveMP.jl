@@ -89,10 +89,19 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - The `_annotations` variable is in scope for `@logscale` and similar macros to write to
 
 ### Step 3.3: `src/rule.jl` — `@call_rule` macro (line 593)
-- Parse `annotations = ...` instead of `addons = ...` from args; defaults to a fresh `AnnotationDict()`
-- The caller passes an `AnnotationDict` in and reads annotations back from it after the call — no return tuple
-- Remove `return_addons` / `return_annotations` option entirely
-- Adjust `@call_marginalrule` similarly if it references addons
+- Replace `addons = ...` keyword with `annotations = ...`; defaults to a fresh `AnnotationDict()`
+- Remove `[return_addons = true]` option entirely — caller reads back from the dict after the call:
+  ```julia
+  # old
+  dist, addons = @call_rule [return_addons = true] Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2), addons = (AddonLogScale(),))
+
+  # new
+  ann = AnnotationDict()
+  dist = @call_rule Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2), annotations = ann)
+  logscale = get_annotation(ann, :logscale)
+  ```
+- `@call_marginalrule` does not use addons — no changes needed there
+- Update `test/rule_tests.jl` lines 1295–1315 (the `return_addons` testset) to use the new pattern
 
 ### Step 3.4: Remove `@invokeaddon` from `src/addons.jl`
 - The `@logscale` macro now directly calls `annotate!`, no need for `@invokeaddon`
