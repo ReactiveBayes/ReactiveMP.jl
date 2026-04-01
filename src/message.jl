@@ -6,6 +6,7 @@ using Rocket
 
 import Rocket: getrecent
 import Base: ==, *, +, ndims, precision, length, size, show
+import BayesBase: prod
 
 """
 An abstract supertype for all concrete message types.
@@ -13,7 +14,7 @@ An abstract supertype for all concrete message types.
 abstract type AbstractMessage end
 
 """
-    Message(data, is_clamped, is_initial, addons)
+    Message(data, is_clamped, is_initial[, annotations])
 
 An implementation of a message in variational message passing framework.
 
@@ -21,18 +22,18 @@ An implementation of a message in variational message passing framework.
 - `data::D`: message always holds some data object associated with it, which is usually a probability distribution, but can also be an arbitrary function
 - `is_clamped::Bool`, specifies if this message was the result of constant computations (e.g. clamped constants)
 - `is_initial::Bool`, specifies if this message was used for initialization
-- `addons::A`, specifies the addons of the message, which may carry extra bits of information, e.g. debug information, memory, etc.
+- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. log-scale, input arguments). Defaults to an empty `AnnotationDict()`.
 
-# Example 
+# Example
 
 ```jldoctest
 julia> distribution = Gamma(10.0, 2.0)
 Distributions.Gamma{Float64}(α=10.0, θ=2.0)
 
-julia> message = Message(distribution, false, true, nothing)
+julia> message = Message(distribution, false, true)
 Message(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
 
-julia> mean(message) 
+julia> mean(message)
 20.0
 
 julia> getdata(message)
@@ -46,12 +47,14 @@ true
 
 ```
 """
-mutable struct Message{D, A} <: AbstractMessage # `mutable` structure here appears to be more performance 
-    const data       :: D                       # in `RxInfer` benchmarks
-    const is_clamped :: Bool                    # could be revised at some point though
-    const is_initial :: Bool
-    const addons     :: A
+mutable struct Message{D} <: AbstractMessage    # `mutable` structure here appears to be more performance
+    const data        :: D                      # in `RxInfer` benchmarks
+    const is_clamped  :: Bool                   # could be revised at some point though
+    const is_initial  :: Bool
+    const annotations :: AnnotationDict
 end
+
+Message(data, is_clamped::Bool, is_initial::Bool) = Message(data, is_clamped, is_initial, AnnotationDict())
 
 """
     as_message(::AbstractMessage)
@@ -84,22 +87,22 @@ Checks if `message` is initial or not.
 is_initial(message::Message) = message.is_initial
 
 """
-    getaddons(message::Message)
+    getannotations(message::Message)
 
-Returns `addons` associated with the `message`.
+Returns the [`AnnotationDict`](@ref) associated with the `message`.
 """
-getaddons(message::Message) = message.addons
+getannotations(message::Message) = message.annotations
 
 typeofdata(message::Message) = typeof(getdata(message))
 
 getdata(messages::NTuple{N, <:Message}) where {N} = map(getdata, messages)
 getdata(messages::AbstractArray{<:Message})       = map(getdata, messages)
 
-# Base.show(io::IO, message::Message) = print(io, string("Message(", getdata(message), ") with ", string(getaddons(message))))
 function show(io::IO, message::Message)
-    print(io, string("Message(", getdata(message), ")"))
-    if !isnothing(getaddons(message))
-        print(io, ") with ", string(getaddons(message)))
+    print(io, "Message(", getdata(message), ")")
+    ann = getannotations(message)
+    if !isempty(ann)
+        print(io, " with ", ann)
     end
 end
 
@@ -108,8 +111,7 @@ end
 function Base.:(==)(left::Message, right::Message)
     return left.is_clamped == right.is_clamped &&
            left.is_initial == right.is_initial &&
-           left.data == right.data &&
-           left.addons == right.addons
+           left.data == right.data
 end
 
 """
@@ -130,11 +132,12 @@ The following `kwargs` are supported:
 
 See also: [`ReactiveMP.compute_product_of_messages`](@ref), [`ReactiveMP.compute_product_of_two_messages`]
 """
-Base.@kwdef struct MessageProductContext{C, F, S, L, A}
+Base.@kwdef struct MessageProductContext{C, F, S, L, N, A}
     prod_constraint::C = BayesBase.GenericProd()
     form_constraint::F = UnspecifiedFormConstraint()
     form_constraint_check_strategy::S = FormConstraintCheckLast()
     fold_strategy::L = MessagesProductFromLeftToRight()
+    annotations::N = nothing
     callbacks::A = nothing
 end
 
@@ -211,20 +214,18 @@ function compute_product_of_two_messages(
         )
     end
 
-    # process addons
-    left_addons  = getaddons(left)
-    right_addons = getaddons(right)
-
-    # process addons
-    new_addons = multiply_addons(
-        left_addons, right_addons, new_dist, left_dist, right_dist
+    # process annotations
+    left_ann  = getannotations(left)
+    right_ann = getannotations(right)
+    new_ann   = post_product_annotations!(
+        context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist
     )
-    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_addons)
+    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
 
     invoke_callback(
         context.callbacks,
         AfterProductOfTwoMessagesEvent(
-            variable, context, left, right, result, new_addons, trace_id
+            variable, context, left, right, result, new_ann, trace_id
         ),
     )
 
@@ -291,7 +292,7 @@ function compute_product_of_messages(
             constrained_dist,
             is_clamped(result),
             is_initial(result),
-            getaddons(result),
+            getannotations(result),
         )
     end
 
@@ -524,7 +525,7 @@ struct MessageMapping{F, T, C, N, M, A, X, R, K, E}
     msgs_names      :: N
     marginals_names :: M
     meta            :: A
-    addons          :: X
+    annotations     :: X
     factornode      :: R
     rulefallback    :: K
     callbacks       :: E
@@ -533,56 +534,6 @@ end
 message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
-# Some addons add post rule execution logic
-function message_mapping_addons(
-    mapping::MessageMapping, messages, marginals, result, addons
-)
-    return message_mapping_addons(
-        mapping, mapping.addons, messages, marginals, result, addons
-    )
-end
-
-# `enabled_addons` are always type-stable, whether `addons` are not, so we check based on the `enabled_addons` and ignore the `addons`
-# As a consequence if any message update rule returns non-empty `addons`, but `enabled_addons` is empty, then the resulting value 
-# of the `addons` will be simply ignored
-message_mapping_addons(
-    mapping::MessageMapping,
-    enabled_addons::Nothing,
-    messages,
-    marginals,
-    result,
-    addons,
-) = enabled_addons
-message_mapping_addons(
-    mapping::MessageMapping,
-    enabled_addons::Tuple{},
-    messages,
-    marginals,
-    result,
-    addons,
-) = enabled_addons
-
-# The main logic here is that some addons may add extra computation AFTER the rule has been computed
-# The benefit of that is that we have an access to the `MessageMapping` structure and is mostly useful for debug addons
-function message_mapping_addons(
-    mapping::MessageMapping,
-    enabled_addons::Tuple,
-    messages,
-    marginals,
-    result,
-    addons,
-)
-    return map(addons) do addon
-        return message_mapping_addon(
-            addon, mapping, messages, marginals, result
-        )
-    end
-end
-
-# By default `message_mapping_addon` does nothing and simply returns the addon itself
-# Other addons may override this behaviour (if necessary, see e.g. AddonMemory)
-message_mapping_addon(addon, mapping, messages, marginals, result) = addon
-
 function MessageMapping(
     ::Type{F},
     vtag::T,
@@ -590,7 +541,7 @@ function MessageMapping(
     msgs_names::N,
     marginals_names::M,
     meta::A,
-    addons::X,
+    annotations::X,
     factornode::R,
     rulefallback::K,
     callbacks::E,
@@ -601,7 +552,7 @@ function MessageMapping(
         msgs_names,
         marginals_names,
         meta,
-        addons,
+        annotations,
         factornode,
         rulefallback,
         callbacks,
@@ -615,7 +566,7 @@ function MessageMapping(
     msgs_names::N,
     marginals_names::M,
     meta::A,
-    addons::X,
+    annotations::X,
     factornode::R,
     rulefallback::K,
     callbacks::E,
@@ -626,7 +577,7 @@ function MessageMapping(
         msgs_names,
         marginals_names,
         meta,
-        addons,
+        annotations,
         factornode,
         rulefallback,
         callbacks,
@@ -650,13 +601,16 @@ function (mapping::MessageMapping)(messages, marginals)
         mapping.callbacks,
         BeforeMessageRuleCallEvent(mapping, messages, marginals, trace_id),
     )
-    result, addons =
+
+    ann = AnnotationDict()
+
+    result =
         if !isnothing(messages) &&
             any(ismissing, TupleTools.flatten(getdata.(messages)))
-            missing, mapping.addons
+            missing
         elseif !isnothing(marginals) &&
             any(ismissing, TupleTools.flatten(getdata.(marginals)))
-            missing, mapping.addons
+            missing
         else
             ruleargs = (
                 message_mapping_fform(mapping),
@@ -667,11 +621,11 @@ function (mapping::MessageMapping)(messages, marginals)
                 mapping.marginals_names,
                 marginals,
                 mapping.meta,
-                mapping.addons,
+                ann,
                 mapping.factornode,
             )
             ruleoutput = rule(ruleargs...)
-            # if `@rule` is not defined, the default behaviour is to return 
+            # if `@rule` is not defined, the default behaviour is to return
             # the `RuleMethodError` object
             if ruleoutput isa RuleMethodError
                 if !isnothing(mapping.rulefallback)
@@ -684,16 +638,19 @@ function (mapping::MessageMapping)(messages, marginals)
             end
         end
 
-    # Inject extra addons after the rule has been executed
-    addons = message_mapping_addons(
-        mapping, getdata(messages), getdata(marginals), result, addons
-    )
+    # Run annotation processors after the rule has been executed
+    if !isnothing(mapping.annotations)
+        for p in mapping.annotations
+            post_rule_annotations!(p, ann, mapping, messages, marginals, result)
+        end
+    end
+
     invoke_callback(
         mapping.callbacks,
         AfterMessageRuleCallEvent(
-            mapping, messages, marginals, result, addons, trace_id
+            mapping, messages, marginals, result, ann, trace_id
         ),
     )
 
-    return Message(result, is_message_clamped, is_message_initial, addons)
+    return Message(result, is_message_clamped, is_message_initial, ann)
 end

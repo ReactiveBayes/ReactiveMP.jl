@@ -26,6 +26,18 @@ mutable struct AnnotationDict
     end
 end
 
+Base.isempty(ann::AnnotationDict) = isnothing(ann.data) || isempty(ann.data::Dict{Symbol, Any})
+
+function Base.show(io::IO, ann::AnnotationDict)
+    if isempty(ann)
+        print(io, "AnnotationDict()")
+    else
+        print(io, "AnnotationDict(")
+        join(io, ("$k => $v" for (k, v) in ann.data::Dict{Symbol, Any}), ", ")
+        print(io, ")")
+    end
+end
+
 """
     has_annotation(ann::AnnotationDict, key::Symbol) -> Bool
 

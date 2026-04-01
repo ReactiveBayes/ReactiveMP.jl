@@ -56,24 +56,53 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ---
 
-## Phase 2: Refactor Message & Marginal Structs
+## Phase 2: Refactor Message & Marginal Structs + MessageMapping + Message Products
 
-### Step 2.1: `src/message.jl` — Message struct
+### Step 2.1: `src/message.jl` — Message struct [DONE]
 - `Message{D, A}` -> `Message{D}`, remove type param `A`
 - Field `addons::A` -> `annotations::AnnotationDict` (always present; zero-cost when unused due to lazy allocation)
+- Added 3-arg constructor `Message(data, is_clamped, is_initial)` that defaults to fresh `AnnotationDict()`
 - `getaddons` -> `getannotations`
-- Update all `Message(data, clamped, initial, addons)` constructor calls in this file
+- `show` only prints annotations when non-empty via `isempty(ann)`
+- Equality no longer compares annotations (metadata, not semantic content)
+- Updated docstring and jldoctest example
+- Added `Base.isempty(::AnnotationDict)` and `Base.show(::IO, ::AnnotationDict)` to `src/annotations.jl`
+- Updated `test/message_tests.jl`: all `Message(..., nothing)` -> `Message(...)`, `getaddons` -> `getannotations`
+- Added `isempty` and `show` tests to `test/annotations_tests.jl`
+- Updated `docs/src/lib/message.md`: `getaddons` -> `getannotations`, references `AnnotationDict`
 
-### Step 2.2: `src/marginal.jl` — Marginal struct
+### Step 2.2: `src/message.jl` — MessageMapping struct [DONE]
+- Field `addons::X` -> `annotations::X` (holds the processors tuple or nothing)
+- Renamed `addons` param to `annotations` in both constructors
+- Removed `message_mapping_addons` and `message_mapping_addon` functions
+- Updated callable `(mapping::MessageMapping)(messages, marginals)`:
+  1. Creates `ann = AnnotationDict()` upfront
+  2. Passes `ann` as 9th arg to `rule()`. Rule returns only the distribution.
+  3. Loops over `mapping.annotations` processors calling `post_rule_annotations!`
+  4. Constructs `Message(result, ..., ann)`
+
+### Step 2.3: `src/message.jl` — MessageProductContext + compute_product_of_two_messages [DONE]
+- Added `annotations::N = nothing` field to `MessageProductContext`
+- `compute_product_of_two_messages`: replaced `getaddons`/`multiply_addons` with `getannotations`/`post_product_annotations!` using `context.annotations`
+- `compute_product_of_messages`: `getaddons(result)` -> `getannotations(result)` when re-wrapping after form constraint
+
+### Step 2.4: `src/marginal.jl` — Marginal struct
 - Same transformation: `Marginal{D, A}` -> `Marginal{D}`
 - Field `addons::A` -> `annotations::AnnotationDict` (always present)
 - `getaddons` -> `getannotations`
 
-### Step 2.3: `src/ReactiveMP.jl` — Bridge functions (lines 47-59)
+### Step 2.5: `src/ReactiveMP.jl` — Bridge functions (lines 47-59)
 - `as_marginal`/`as_message`: use `getannotations` instead of `getaddons`
 - `getlogscale(msg::Message)` -> removed, users should write `getlogscale(getannotations())` explicitly
 - `get_rule_input_arguments(msg::Message)` -> removed, users should write `get_rule_input_arguments(getannotations())` explicitly
 - Remove `getmemoryaddon` helpers
+
+### Step 2.6: `src/variables/random.jl` — `RandomVariableActivationOptions`
+- Add `annotations` field to `RandomVariableActivationOptions` to hold processors tuple
+- Pass it into `MessageProductContext` construction
+- **Design decision**: annotation processors are configured explicitly in both `FactorNodeActivationOptions`
+  (for rule-time annotation) and `MessageProductContext` (for product-time merging). RxInfer sets both.
+  There is no implicit inference of processors from neighbouring nodes.
 
 ---
 
@@ -108,96 +137,45 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ---
 
-## Phase 4: Refactor MessageMapping
+## Phase 4: Refactor Node Infrastructure
 
-### Step 4.1: `src/message.jl` — MessageMapping struct (line 499)
-- Rename field `addons::X` to `annotations::X` (holds the processors tuple or nothing)
-
-### Step 4.2: `src/message.jl` — MessageMapping callable (line 614)
-- New flow:
-  1. `ann = AnnotationDict()` — always created (allocation is lazy inside `AnnotationDict`)
-  2. Call `rule(...)` passing `ann` as 9th arg. Rule returns only the distribution.
-  3. Loop over `mapping.annotations` processors, call `post_rule_annotations!(p, ann, mapping, messages, marginals, result)` for each
-  4. Construct `Message(result, ..., ann)`
-- Remove `message_mapping_addons` and `message_mapping_addon` functions
-
-### Step 4.3: MessageMapping constructors (lines 564-612)
-- Rename `addons` param to `annotations` in both constructors
-
----
-
-## Phase 5: Refactor Message Products (Annotation Merging)
-
-### Step 5.1: `src/message.jl` — `MessageProductContext` (line 133)
-- Add field `annotations::X = nothing` to hold processors tuple
-
-### Step 5.2: `src/message.jl` — `compute_product_of_two_messages` (line 160)
-- Replace lines 203-211:
-  ```julia
-  left_ann = getannotations(left)
-  right_ann = getannotations(right)
-  new_ann = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
-  result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
-  ```
-- Remove all `multiply_addons` calls
-
-### Step 5.3: `src/variables/random.jl` — `RandomVariableActivationOptions`
-- Add `annotations` field to `RandomVariableActivationOptions` to hold processors tuple
-- Pass it into `MessageProductContext` construction
-- **Design decision**: annotation processors are configured explicitly in both `FactorNodeActivationOptions`
-  (for rule-time annotation) and `MessageProductContext` (for product-time merging). RxInfer sets both.
-  There is no implicit inference of processors from neighbouring nodes.
-
-### Step 5.4: Handle `Missing` distribution in `post_product_annotations!`
-- The current `multiply_addons` uses `left_dist::Missing` / `right_dist::Missing` as a sentinel
-  for a missing observation (unobserved variable on that edge)
-- When one side's distribution is `missing`, the convention is to pass the other side's annotations
-  through unchanged (there is nothing to merge from the missing side)
-- Add a top-level fallback in `post_product_annotations!` (before calling processors) that handles the
-  `left_dist isa Missing` / `right_dist isa Missing` cases, so individual processor implementations
-  do not need to repeat this logic
-
----
-
-## Phase 6: Refactor Node Infrastructure
-
-### Step 6.1: `src/nodes/nodes.jl` — `FactorNodeActivationOptions` (line 277)
+### Step 4.1: `src/nodes/nodes.jl` — `FactorNodeActivationOptions` (line 277)
 - Rename field `addons::A` to `annotations::A`
 - `getaddons(options)` -> `getannotations(options)`
 
-### Step 6.2: `src/nodes/dependencies.jl` — `activate!` (line 30)
+### Step 4.2: `src/nodes/dependencies.jl` — `activate!` (line 30)
 - `addons = getaddons(options)` -> `annotations = getannotations(options)`
 - Pass `annotations` to `MessageMapping` constructor
 
-### Step 6.3: Delta node files
+### Step 4.3: Delta node files
 - `src/nodes/predefined/delta/delta.jl` — rename `addons` param in `rule()` redirect (line 82)
 - `src/nodes/predefined/delta/layouts/default.jl` — rename all `addons` references
 - `src/nodes/predefined/delta/layouts/cvi.jl` — rename all `addons` references
 
-### Step 6.4: `src/rules/fallbacks.jl`
+### Step 4.4: `src/rules/fallbacks.jl`
 - All `rulefallback_nodefunction` methods: rename `addons` param to `annotations`
 - Line 120: `return FallbackNodeFunctionUnnormalizedLogPdf(fn), addons` -> just return `FallbackNodeFunctionUnnormalizedLogPdf(fn)` (no tuple)
 
 ---
 
-## Phase 7: Update Callbacks
+## Phase 5: Update Callbacks
 
-### Step 7.1: `src/callbacks.jl`
+### Step 5.1: `src/callbacks.jl`
 - `AfterMessageRuleCallEvent`: rename `addons::A` field to `annotations::A`
 - `AfterProductOfTwoMessagesEvent`: rename `addons::A` field to `annotations::A`
 - Update docstrings
 
 ---
 
-## Phase 8: Clean Up Old Addon Files
+## Phase 6: Clean Up Old Addon Files
 
-### Step 8.1: Delete old files
+### Step 6.1: Delete old files
 - Delete `src/addons.jl`
 - Delete `src/addons/debug.jl`
 - Delete `src/addons/logscale.jl`
 - Delete `src/addons/memory.jl`
 
-### Step 8.2: Update `src/ReactiveMP.jl` includes
+### Step 6.2: Update `src/ReactiveMP.jl` includes
 - Remove old addon includes
 - Add annotation subtype includes (after `src/annotations.jl`):
   ```julia
@@ -209,7 +187,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ---
 
-## Phase 9: Rule Files Using @logscale (17 files — no changes needed)
+## Phase 7: Rule Files Using @logscale (17 files — no changes needed)
 
 The `@logscale` macro is updated in Phase 1.3 to expand to `annotate!(getannotations(), :logscale, value)`. Since `getannotations` is defined by the `@rule` macro (Phase 3.2) as `() -> $annotationsvar`, all existing `@logscale 0` calls in rule files will work without modification.
 
@@ -225,9 +203,9 @@ Verify compilation of these files:
 
 ---
 
-## Phase 10: Update Tests
+## Phase 8: Update Tests
 
-### Step 10.1: Rewrite addon tests -> annotation tests
+### Step 8.1: Rewrite addon tests -> annotation tests
 - `test/addons_tests.jl` -> `test/rule_annotations_tests.jl`
   - Test `annotate!`, `get_annotation`, `has_annotation` with `AnnotationDict`
   - Test `post_product_annotations!` with processors
@@ -237,15 +215,15 @@ Verify compilation of these files:
 - Delete `test/addons/debug_tests.jl`
 - `test/annotations_tests.jl` ✓
 
-### Step 10.2: Update existing tests
-- `test/message_tests.jl` — update `Message(...)` constructor calls (4th arg = nothing), `getaddons` -> `getannotations`
+### Step 8.2: Update existing tests
+- `test/message_tests.jl` — update `Message(...)` constructor calls (4th arg = nothing), `getaddons` -> `getannotations` ✓
 - `test/marginal_tests.jl` — same
 - `test/rule_tests.jl` — rules no longer return tuples, `addons=` -> `annotations=`
 - `test/variables/random_tests.jl` — update `MessageProductContext()` if signature changes
 
 ---
 
-## Phase 11: Update Documentation
+## Phase 9: Update Documentation
 
 ### New pages [DONE]
 - `docs/src/lib/annotations.md` ✓ — overview of `AnnotationDict`, `AbstractAnnotations`, custom processor guide
@@ -257,7 +235,7 @@ Verify compilation of these files:
 - Rewrite `docs/src/custom/custom-addons.md` -> `docs/src/custom/custom-annotations.md`
   - Update the step-by-step example to use `AbstractAnnotations`, `annotate!`, `post_rule_annotations!`, `post_product_annotations!`
   - Remove references to `AbstractAddon`, `multiply_addons`, `@invokeaddon`
-- Update `docs/src/lib/message.md`:
+- Update `docs/src/lib/message.md`: ✓
   - Replace `getaddons` with `getannotations` in the `Message` section
   - Update the `MessageProductContext` description to mention the `annotations` field
 - Update any remaining docstrings that still reference addon terminology

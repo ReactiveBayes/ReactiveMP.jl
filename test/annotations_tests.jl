@@ -64,6 +64,27 @@ end
     @test get_annotation(original, :foo) == 1
 end
 
+@testitem "AnnotationDict isempty" begin
+    import ReactiveMP: AnnotationDict, annotate!
+
+    ann = AnnotationDict()
+    @test isempty(ann)
+
+    annotate!(ann, :foo, 1)
+    @test !isempty(ann)
+end
+
+@testitem "AnnotationDict show" begin
+    import ReactiveMP: AnnotationDict, annotate!
+
+    ann = AnnotationDict()
+    @test repr(ann) == "AnnotationDict()"
+
+    annotate!(ann, :logscale, 1.0)
+    @test occursin("logscale", repr(ann))
+    @test occursin("1.0", repr(ann))
+end
+
 @testitem "AnnotationDict does not allocate on simple creation" begin
     import ReactiveMP: AnnotationDict, has_annotation
 
