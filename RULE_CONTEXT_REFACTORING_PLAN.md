@@ -98,18 +98,18 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - Updated `test/marginal_tests.jl`: all `Marginal(..., nothing)` -> `Marginal(...)`, `getaddons` -> `getannotations`
 - Updated `docs/src/lib/marginal.md`: `getaddons` -> `getannotations`, example uses 3-arg constructor
 
-### Step 2.5: `src/ReactiveMP.jl` — Bridge functions (lines 47-59)
+### Step 2.5: `src/ReactiveMP.jl` — Bridge functions (lines 45-57) [DONE]
 - `as_marginal`/`as_message`: use `getannotations` instead of `getaddons`
-- `getlogscale(msg::Message)` -> removed, users should write `getlogscale(getannotations())` explicitly
-- `get_rule_input_arguments(msg::Message)` -> removed, users should write `get_rule_input_arguments(getannotations())` explicitly
-- Remove `getmemoryaddon` helpers
+- Removed `getlogscale(msg::Message)`, `getlogscale(marginal::Marginal)` convenience wrappers
+- Removed `getmemoryaddon` and `getmemory` convenience wrappers
 
-### Step 2.6: `src/variables/random.jl` — `RandomVariableActivationOptions`
-- Add `annotations` field to `RandomVariableActivationOptions` to hold processors tuple
-- Pass it into `MessageProductContext` construction
-- **Design decision**: annotation processors are configured explicitly in both `FactorNodeActivationOptions`
-  (for rule-time annotation) and `MessageProductContext` (for product-time merging). RxInfer sets both.
-  There is no implicit inference of processors from neighbouring nodes.
+### Step 2.6: `src/variables/random.jl` — `RandomVariableActivationOptions` [DONE — no changes needed]
+- `RandomVariableActivationOptions` already holds two `MessageProductContext` instances
+- Since `MessageProductContext` gained the `annotations` field in Step 2.3, annotation processors
+  flow through naturally — no separate `annotations` field needed on `RandomVariableActivationOptions`
+- **Design decision**: annotation processors are configured explicitly in `FactorNodeActivationOptions`
+  (for rule-time annotation) and in the `MessageProductContext` instances (for product-time merging).
+  RxInfer sets both. There is no implicit inference of processors from neighbouring nodes.
 
 ---
 
@@ -258,3 +258,26 @@ Verify compilation of these files:
    - Message products with `LogScaleAnnotations` correctly merge log scales
    - `InputArgumentsAnnotations` captures rule inputs
    - `AnnotationDict` doesn't allocate its inner dict when no annotations are written
+
+---
+
+## Breaking Changes (for CHANGELOG)
+
+### Removed exports / public API
+- `getaddons(::Message)`, `getaddons(::Marginal)` → use `getannotations(...)` instead
+- `getlogscale(::Message)`, `getlogscale(::Marginal)` → use `getlogscale(getannotations(...))` instead
+- `getmemoryaddon(::Message)`, `getmemoryaddon(::Marginal)` → removed entirely
+- `getmemory(::Message)`, `getmemory(::Marginal)` → use `get_rule_input_arguments(getannotations(...))` instead
+- `AddonLogScale`, `AddonMemory`, `AddonDebug` structs → replaced by `LogScaleAnnotations`, `InputArgumentsAnnotations`
+- `AbstractAddon` → replaced by `AbstractAnnotations`
+- `multiply_addons` → replaced by `post_product_annotations!`
+- `@invokeaddon` → removed (macros like `@logscale` call `annotate!` directly)
+
+### Changed signatures
+- `Message{D, A}` → `Message{D}` (type parameter `A` removed)
+- `Marginal{D, A}` → `Marginal{D}` (type parameter `A` removed)
+- `Message(data, is_clamped, is_initial, addons)` → `Message(data, is_clamped, is_initial[, annotations::AnnotationDict])`
+- `Marginal(data, is_clamped, is_initial, addons)` → `Marginal(data, is_clamped, is_initial[, annotations::AnnotationDict])`
+- `@logscale(expr)` → `@logscale value` (no longer wraps in parentheses, directly sets annotation)
+- `@rule` body no longer returns `(result, addons)` tuple — just return the result
+- `@call_rule` no longer supports `return_addons` option or `addons` keyword — use `annotations` keyword with `AnnotationDict`

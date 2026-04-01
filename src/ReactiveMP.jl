@@ -42,19 +42,12 @@ Note: This function is a part of the private API and is not intended to be used 
 """
 to_marginal(any) = any
 
-as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getaddons(message))
-as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getaddons(marginal))
+as_marginal(message::Message)  = Marginal(to_marginal(getdata(message)), is_clamped(message), is_initial(message), getannotations(message))
+as_message(marginal::Marginal) = Message(getdata(marginal), is_clamped(marginal), is_initial(marginal), getannotations(marginal))
 
 getdata(::Nothing)                 = nothing
 getdata(collection::Tuple)         = map(getdata, collection)
 getdata(collection::AbstractArray) = map(getdata, collection)
-
-getlogscale(message::Message)      = getlogscale(getaddons(message))
-getlogscale(marginal::Marginal)    = getlogscale(getaddons(marginal))
-getmemoryaddon(message::Message)   = getmemoryaddon(getaddons(message))
-getmemoryaddon(marginal::Marginal) = getmemoryaddon(getaddons(marginal))
-getmemory(message::Message)        = getmemory(getaddons(message))
-getmemory(marginal::Marginal)      = getmemory(getaddons(marginal))
 
 # TupleTools.prod is a more efficient version of Base.all for Tuple here
 is_clamped(tuple::Tuple) = TupleTools.prod(map(is_clamped, tuple))
