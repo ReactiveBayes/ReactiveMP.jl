@@ -159,7 +159,10 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(*)(:in, Marginalisation) (
-        m_A = m_out, m_out = m_A, meta = meta, addons = getaddons()
+        m_A = m_out,
+        m_out = m_A,
+        meta = meta,
+        annotations = getannotations(),
     ) # symmetric rule
 end
 
@@ -175,6 +178,6 @@ end
         m_A = PointMass(mean(m_A).λ),
         m_out = m_out,
         meta = meta,
-        addons = getaddons(),
+        annotations = getannotations(),
     ) # dispatch to real * normal
 end

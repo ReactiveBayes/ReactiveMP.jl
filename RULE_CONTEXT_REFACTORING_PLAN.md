@@ -115,32 +115,32 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ## Phase 3: Refactor Rule System
 
-### Step 3.1: `src/rule.jl` — `rule_function_expression` (line 343)
-- Rename `addonsvar` to `annotationsvar`
+### Step 3.1: `src/rule.jl` — `rule_function_expression` [DONE]
+- Renamed `addonsvar` to `annotationsvar`
 - The generated `rule()` function receives an `AnnotationDict` as 9th arg
+- `local getaddons = () -> ...` → `local getannotations = () -> ...`
 
-### Step 3.2: `src/rule.jl` — `@rule` macro (line 462)
-- Replace `local _addons = getaddons()` with `local getannotations = () -> $annotationsvar`
-- `getannotations` is the lambda available in rule body scope; `@logscale` and similar macros call it
-- Rule body no longer wrapped to return `(_message, _addons)` — just return `_message`
+### Step 3.2: `src/rule.jl` — `@rule` macro [DONE]
+- Removed `local _addons = getaddons()` and the `_messagebody` wrapper lambda
+- Rule body no longer wrapped to return `(_message, _addons)` — just returns the result directly
+- Removed the comment block about type-stability of addons
 
-### Step 3.3: `src/rule.jl` — `@call_rule` macro (line 593)
-- Replace `addons = ...` keyword with `annotations = ...`; defaults to a fresh `AnnotationDict()`
-- Remove `[return_addons = true]` option entirely — caller reads back from the dict after the call:
-  ```julia
-  # old
-  dist, addons = @call_rule [return_addons = true] Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2), addons = (AddonLogScale(),))
+### Step 3.3: `src/rule.jl` — `@call_rule` macro [DONE]
+- Replaced `addons = ...` keyword with `annotations = ...`; defaults to `ReactiveMP.AnnotationDict()`
+- Removed `return_addons` option entirely — caller reads back from the dict after the call
+- No tuple unpacking — result is returned directly
+- Fallback also receives `annotations` as 9th arg
+- Updated docstring
+- Updated `test/rule_tests.jl`: replaced `return_addons` testset with `annotations` testset
+- Also updated `call_rule_macro_parse_fn_args` tests and `RuleMethodError` constructor calls to use 3-arg `Message`/`Marginal`
 
-  # new
-  ann = AnnotationDict()
-  dist = @call_rule Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2), annotations = ann)
-  logscale = get_annotation(ann, :logscale)
-  ```
-- `@call_marginalrule` does not use addons — no changes needed there
-- Update `test/rule_tests.jl` lines 1295–1315 (the `return_addons` testset) to use the new pattern
+### Step 3.4: `@call_marginalrule` — `call_rule_macro_parse_fn_args` [DONE]
+- Line 258: `:($(proxy)($any, false, false, nothing))` → `:($(proxy)($any, false, false))`
+- `@call_marginalrule` itself does not use addons/annotations — no other changes needed
 
-### Step 3.4: Remove `@invokeaddon` from `src/addons.jl`
-- The `@logscale` macro now directly calls `annotate!`, no need for `@invokeaddon`
+### Step 3.5: Remove `@invokeaddon` from `src/addons.jl` [DONE — already deleted in Phase 1]
+- `src/addons.jl` was deleted in Phase 1
+- `@logscale` in `src/annotations/logscale.jl` already calls `annotate!` directly
 
 ---
 
@@ -281,3 +281,11 @@ Verify compilation of these files:
 - `@logscale(expr)` → `@logscale value` (no longer wraps in parentheses, directly sets annotation)
 - `@rule` body no longer returns `(result, addons)` tuple — just return the result
 - `@call_rule` no longer supports `return_addons` option or `addons` keyword — use `annotations` keyword with `AnnotationDict`
+
+### Internal / rule-author changes
+- `getaddons()` lambda inside `@rule` body → `getannotations()` (returns the `AnnotationDict` passed as 9th arg)
+- `MessageMapping.addons` field → `MessageMapping.annotations` (holds processors tuple or nothing)
+- `MessageProductContext` gained `annotations` field for product-time annotation processors
+- `message_mapping_addons`, `message_mapping_addon` helper functions removed
+- `rule()` generated function: 9th parameter is now an `AnnotationDict` instead of an addons tuple
+- `rulefallback` functions: receive `AnnotationDict` as 9th arg, return only the distribution (no tuple)

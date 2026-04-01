@@ -291,7 +291,7 @@ end
     struct NonexistingDistribution end
 
     meta = "meta"
-    addons = ()
+    annotations = nothing
 
     mapping_no_rule_fallback = MessageMapping(
         SomeArbitraryNodeForRuleFallback,
@@ -300,7 +300,7 @@ end
         Val((:in,)),
         nothing,
         meta,
-        addons,
+        annotations,
         SomeArbitraryNodeForRuleFallback(),
         nothing,
         nothing,
@@ -322,7 +322,7 @@ end
         Val((:in,)),
         nothing,
         meta,
-        addons,
+        annotations,
         SomeArbitraryNodeForRuleFallback(),
         rulefallback,
         nothing,
@@ -337,7 +337,7 @@ end
         nothing,
         marginals,
         meta,
-        addons,
+        annotations,
         SomeArbitraryNodeForRuleFallback(),
     )
 end

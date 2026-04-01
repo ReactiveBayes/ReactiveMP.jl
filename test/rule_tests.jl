@@ -126,7 +126,9 @@
             outputs = (:(NormalMeanVariance(0.0, 0.0)), :(Gamma(2.0, 3.0)))
 
             for f in fns,
-                test_f in tfns, spec in specs, input in inputs,
+                test_f in tfns,
+                spec in specs,
+                input in inputs,
                 output in outputs
 
                 test_entry = convert(
@@ -650,10 +652,8 @@
 
             @test names == :(Val{(:out, :mean)}())
             @test values == :(
-                ReactiveMP.Message(PointMass(1.0), false, false, nothing),
-                ReactiveMP.Message(
-                    NormalMeanPrecision(0.0, 1.0), false, false, nothing
-                ),
+                ReactiveMP.Message(PointMass(1.0), false, false),
+                ReactiveMP.Message(NormalMeanPrecision(0.0, 1.0), false, false),
             )
 
             names, values = call_rule_macro_parse_fn_args(
@@ -682,7 +682,7 @@
             @test names == :(Val{(:mean,)}())
             @test values == :((
                 ReactiveMP.Marginal(
-                    NormalMeanPrecision(0.0, 1.0), false, false, nothing
+                    NormalMeanPrecision(0.0, 1.0), false, false
                 ),
             ))
         end
@@ -690,12 +690,8 @@
 
     @testset "Error utilities" begin
         @testset "rule_method_error" begin
-            as_vague_msg(::Type{T}) where {T} = Message(
-                vague(T), false, false, nothing
-            )
-            as_vague_mrg(::Type{T}) where {T} = Marginal(
-                vague(T), false, false, nothing
-            )
+            as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false)
+            as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false)
 
             let
                 err = ReactiveMP.RuleMethodError(
@@ -808,14 +804,7 @@
                     nothing,
                     nothing,
                     Val{(:out_μ,)}(),
-                    (
-                        Marginal(
-                            vague(MvNormalMeanPrecision, 2),
-                            false,
-                            false,
-                            nothing,
-                        ),
-                    ),
+                    (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                     1.0,
                     nothing,
                     nothing,
@@ -843,14 +832,7 @@
                         as_vague_msg(NormalMeanVariance),
                     ),
                     Val{(:out_μ,)}(),
-                    (
-                        Marginal(
-                            vague(MvNormalMeanPrecision, 2),
-                            false,
-                            false,
-                            nothing,
-                        ),
-                    ),
+                    (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                     1.0,
                     nothing,
                     nothing,
@@ -874,11 +856,11 @@
                     Marginalisation(),
                     Val{(:out, :b)}(),
                     (
-                        Message(PointMass(1), false, false, nothing),
-                        Message(PointMass, false, false, nothing),
+                        Message(PointMass(1), false, false),
+                        Message(PointMass, false, false),
                     ),
                     Val{(:out_b,)}(),
-                    (Marginal(PointMass(1), false, false, nothing),),
+                    (Marginal(PointMass(1), false, false),),
                     1.0,
                     nothing,
                     nothing,
@@ -905,11 +887,11 @@
                     Marginalisation(),
                     Val{(:out, :b)}(),
                     (
-                        Message(PointMass(1), false, false, nothing),
-                        Message(PointMass(1), false, false, nothing),
+                        Message(PointMass(1), false, false),
+                        Message(PointMass(1), false, false),
                     ),
                     Val{(:out_b,)}(),
-                    (Marginal(PointMass(1), false, false, nothing),),
+                    (Marginal(PointMass(1), false, false),),
                     1.0,
                     nothing,
                     nothing,
@@ -940,9 +922,9 @@
                     Val{:a}(),
                     Marginalisation(),
                     Val{(:out,)}(),
-                    (Message(PointMass(1), false, false, nothing),),
+                    (Message(PointMass(1), false, false),),
                     Val{(:a,)}(),
-                    (Marginal(PointMass(1), false, false, nothing),),
+                    (Marginal(PointMass(1), false, false),),
                     1.0,
                     nothing,
                     nothing,
@@ -979,7 +961,7 @@
                     nothing,
                     nothing,
                     Val{(:a,)}(),
-                    (Marginal(PointMass(1), false, false, nothing),),
+                    (Marginal(PointMass(1), false, false),),
                     "meta",
                     nothing,
                     nothing,
@@ -1004,12 +986,8 @@
         end
 
         @testset "marginalrule_method_error" begin
-            as_vague_msg(::Type{T}) where {T} = Message(
-                vague(T), false, false, nothing
-            )
-            as_vague_mrg(::Type{T}) where {T} = Marginal(
-                vague(T), false, false, nothing
-            )
+            as_vague_msg(::Type{T}) where {T} = Message(vague(T), false, false)
+            as_vague_mrg(::Type{T}) where {T} = Marginal(vague(T), false, false)
 
             let
                 err = ReactiveMP.MarginalRuleMethodError(
@@ -1109,14 +1087,7 @@
                     nothing,
                     nothing,
                     Val{(:out_μ,)}(),
-                    (
-                        Marginal(
-                            vague(MvNormalMeanPrecision, 2),
-                            false,
-                            false,
-                            nothing,
-                        ),
-                    ),
+                    (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                     1.0,
                     nothing,
                 )
@@ -1141,14 +1112,7 @@
                         as_vague_msg(NormalMeanVariance),
                     ),
                     Val{(:out_μ,)}(),
-                    (
-                        Marginal(
-                            vague(MvNormalMeanPrecision, 2),
-                            false,
-                            false,
-                            nothing,
-                        ),
-                    ),
+                    (Marginal(vague(MvNormalMeanPrecision, 2), false, false),),
                     1.0,
                     nothing,
                 )
@@ -1292,25 +1256,20 @@
         ))
     end
 
-    @testset "Check the `return_addons` option" begin
-        # Enable LogScale addon
-        dist_and_addons = @call_rule [return_addons = true] Bernoulli(
-            :out, Marginalisation
-        ) (m_p = Beta(1, 2), addons = (AddonLogScale(),))
+    @testset "Check the `annotations` option" begin
+        import ReactiveMP: AnnotationDict, has_annotation
 
-        @test dist_and_addons isa Tuple
-        @test length(dist_and_addons) === 2
-        @test dist_and_addons[1] isa Bernoulli
-        @test dist_and_addons[2] isa Tuple{AddonLogScale}
+        # Pass an AnnotationDict to capture annotations written by the rule
+        ann = AnnotationDict()
+        dist = @call_rule Bernoulli(:out, Marginalisation) (
+            m_p = Beta(1, 2), annotations = ann
+        )
 
-        # Without addons but with the option
-        dist_and_nothing = @call_rule [return_addons = true] Bernoulli(
-            :out, Marginalisation
-        ) (m_p = Beta(1, 2),)
+        @test dist isa Bernoulli
+        @test has_annotation(ann, :logscale)
 
-        @test dist_and_nothing isa Tuple
-        @test length(dist_and_nothing) === 2
-        @test dist_and_nothing[1] isa Bernoulli
-        @test dist_and_nothing[2] isa Nothing
+        # Without annotations keyword — rule still works, annotations are discarded
+        dist2 = @call_rule Bernoulli(:out, Marginalisation) (m_p = Beta(1, 2),)
+        @test dist2 isa Bernoulli
     end
 end
