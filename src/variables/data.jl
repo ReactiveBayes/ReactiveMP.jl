@@ -66,9 +66,8 @@ struct DataVariableActivationOptions
     args
 end
 
-DataVariableActivationOptions() = DataVariableActivationOptions(
-    false, false, nothing, nothing
-)
+DataVariableActivationOptions() =
+    DataVariableActivationOptions(false, false, nothing, nothing)
 
 function activate!(
     datavar::DataVariable, options::DataVariableActivationOptions
@@ -97,13 +96,11 @@ function activate!(
     return nothing
 end
 
-__link_getmarginal(constant) = of(
-    Marginal(PointMass(constant), true, false, nothing)
-)
+__link_getmarginal(constant) =
+    of(Marginal(PointMass(constant), true, false, nothing))
 __link_getmarginal(l::AbstractVariable) = getmarginal(l, IncludeAll())
-__link_getmarginal(l::AbstractArray{<:AbstractVariable}) = getmarginals(
-    l, IncludeAll()
-)
+__link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
+    getmarginals(l, IncludeAll())
 
 __apply_link(f::F, args) where {F} = __apply_link(f, getdata.(args))
 __apply_link(f::F, args::NTuple{N, PointMass}) where {F, N} = f(mean.(args)...)
@@ -121,8 +118,8 @@ The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
 Pass `missing` to indicate that the observation is not available.
 """
 update!(datavar::DataVariable, data) = update!(datavar, PointMass(data))
-update!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false, nothing))
-update!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false, nothing))
+update!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
+update!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false))
 
 function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
     @assert size(datavars) === size(data) """

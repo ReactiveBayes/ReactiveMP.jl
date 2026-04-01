@@ -26,7 +26,8 @@ mutable struct AnnotationDict
     end
 end
 
-Base.isempty(ann::AnnotationDict) = isnothing(ann.data) || isempty(ann.data::Dict{Symbol, Any})
+Base.isempty(ann::AnnotationDict) =
+    isnothing(ann.data) || isempty(ann.data::Dict{Symbol, Any})
 
 function Base.show(io::IO, ann::AnnotationDict)
     if isempty(ann)
@@ -36,6 +37,10 @@ function Base.show(io::IO, ann::AnnotationDict)
         join(io, ("$k => $v" for (k, v) in ann.data::Dict{Symbol, Any}), ", ")
         print(io, ")")
     end
+end
+
+function Base.:(==)(left::AnnotationDict, right::AnnotationDict)
+    return left.data == right.data
 end
 
 """
@@ -142,12 +147,29 @@ function post_product_annotations!(
     return merged
 end
 
-post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, ::Missing) = AnnotationDict()
+post_product_annotations!(
+    processors,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    ::Missing,
+    ::Missing,
+) = AnnotationDict()
 
-post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, right_dist) = AnnotationDict(
-    right_ann
-)
+post_product_annotations!(
+    processors,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    ::Missing,
+    right_dist,
+) = AnnotationDict(right_ann)
 
-post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, ::Missing) = AnnotationDict(
-    left_ann
-)
+post_product_annotations!(
+    processors,
+    left_ann::AnnotationDict,
+    right_ann::AnnotationDict,
+    new_dist,
+    left_dist,
+    ::Missing,
+) = AnnotationDict(left_ann)

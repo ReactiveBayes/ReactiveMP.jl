@@ -495,7 +495,7 @@ function connect!(message::MessageObservable, source)
 end
 
 function setmessage!(message::MessageObservable, value)
-    next!(message.subject, Message(value, false, true, nothing))
+    next!(message.subject, Message(value, false, true))
     return nothing
 end
 

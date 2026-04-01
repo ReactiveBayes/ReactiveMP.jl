@@ -14,18 +14,19 @@ struct KLDivergence end
 ## We have a special case of marginals, that are represented as NamedTuple, 
 ## in this case we need to decompose it into separate marginals and inject them into the score function recursively
 ## This function is used to extract the index of the named tuple-based marginal (if it exists)
-scan_marginals_for_named_tuple(::Val{Index}, current::Marginal{<:NamedTuple{N}}, rest::Tuple) where {Index, N} = (
-    Val{Index}(), Val{N}(), current
-)
-scan_marginals_for_named_tuple(::Val{Index}, current::Marginal{<:NamedTuple{N}}, rest::Tuple{}) where {Index, N} = (
-    Val{Index}(), Val{N}(), current
-)
-scan_marginals_for_named_tuple(::Val{Index}, current::Marginal, rest::Tuple) where {Index} = scan_marginals_for_named_tuple(
-    Val{Index + 1}(), rest[1], rest[2:end]
-)
-scan_marginals_for_named_tuple(::Val{Index}, current::Marginal, rest::Tuple{}) where {Index} = (
-    nothing, nothing, nothing
-)
+scan_marginals_for_named_tuple(
+    ::Val{Index}, current::Marginal{<:NamedTuple{N}}, rest::Tuple
+) where {Index, N} = (Val{Index}(), Val{N}(), current)
+scan_marginals_for_named_tuple(
+    ::Val{Index}, current::Marginal{<:NamedTuple{N}}, rest::Tuple{}
+) where {Index, N} = (Val{Index}(), Val{N}(), current)
+scan_marginals_for_named_tuple(
+    ::Val{Index}, current::Marginal, rest::Tuple
+) where {Index} =
+    scan_marginals_for_named_tuple(Val{Index + 1}(), rest[1], rest[2:end])
+scan_marginals_for_named_tuple(
+    ::Val{Index}, current::Marginal, rest::Tuple{}
+) where {Index} = (nothing, nothing, nothing)
 
 function score(
     ::AverageEnergy, fform, ::Val{Names}, marginals::Tuple, meta
@@ -42,8 +43,7 @@ function score(
             let is_joint_clamped = is_clamped(joint),
                 is_joint_initial = is_initial(joint)
 
-                (data) ->
-                    Marginal(data, is_joint_clamped, is_joint_initial, nothing)
+                (data) -> Marginal(data, is_joint_clamped, is_joint_initial)
             end
 
         mod_marginals = TupleTools.insertat(
@@ -89,9 +89,7 @@ function score(::DifferentialEntropy, marginal::Marginal{<:NamedTuple})
 
             (data) -> score(
                 DifferentialEntropy(),
-                Marginal(
-                    data, is_marginal_clamped, is_marginal_initial, nothing
-                ),
+                Marginal(data, is_marginal_clamped, is_marginal_initial),
             )
         end
 
@@ -100,9 +98,8 @@ end
 
 ## Kl KlDivergence
 
-score(::KLDivergence, marginal::Marginal, p::Distribution) = Distributions.kldivergence(
-    getdata(marginal), p
-)
+score(::KLDivergence, marginal::Marginal, p::Distribution) =
+    Distributions.kldivergence(getdata(marginal), p)
 
 ## Average enery macro helper
 

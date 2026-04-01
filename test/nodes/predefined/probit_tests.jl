@@ -32,9 +32,7 @@
                 Val{(:out, :in)}(),
                 (
                     Marginal(Bernoulli(k), false, false),
-                    Marginal(
-                        NormalMeanVariance(0.0, 1.0), false, false, nothing
-                    ),
+                    Marginal(NormalMeanVariance(0.0, 1.0), false, false),
                 ),
                 ProbitMeta(100),
             ) ≈ 1.0

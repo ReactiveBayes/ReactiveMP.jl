@@ -282,7 +282,7 @@ end
 end
 
 @testitem "MessageMapping should call `rulefallback` is no rule is available" begin
-    import ReactiveMP: MessageMapping, getdata
+    import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
     struct SomeArbitraryNodeForRuleFallback end
 
@@ -337,13 +337,13 @@ end
         nothing,
         marginals,
         meta,
-        annotations,
+        AnnotationDict(),
         SomeArbitraryNodeForRuleFallback(),
     )
 end
 
 @testitem "MessageMapping should call provided callbacks handler" begin
-    import ReactiveMP: MessageMapping, getdata
+    import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
     struct SomeArbitraryNodeCallbacksTests end
 
@@ -391,7 +391,7 @@ end
     @test events[2].data.messages === messages
     @test events[2].data.marginals === marginals
     @test events[2].data.result === 2
-    @test events[2].data.annotations === ()
+    @test events[2].data.annotations isa AnnotationDict
 end
 
 @testmodule MessageProductContextUtils begin
