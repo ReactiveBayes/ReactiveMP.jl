@@ -96,8 +96,7 @@ function activate!(
     return nothing
 end
 
-__link_getmarginal(constant) =
-    of(Marginal(PointMass(constant), true, false, nothing))
+__link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false))
 __link_getmarginal(l::AbstractVariable) = getmarginal(l, IncludeAll())
 __link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
     getmarginals(l, IncludeAll())
