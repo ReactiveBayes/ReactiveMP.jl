@@ -86,10 +86,17 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 - `compute_product_of_two_messages`: replaced `getaddons`/`multiply_addons` with `getannotations`/`post_product_annotations!` using `context.annotations`
 - `compute_product_of_messages`: `getaddons(result)` -> `getannotations(result)` when re-wrapping after form constraint
 
-### Step 2.4: `src/marginal.jl` — Marginal struct
-- Same transformation: `Marginal{D, A}` -> `Marginal{D}`
+### Step 2.4: `src/marginal.jl` — Marginal struct [DONE]
+- `Marginal{D, A}` -> `Marginal{D}`, removed type param `A`
 - Field `addons::A` -> `annotations::AnnotationDict` (always present)
+- Added 3-arg constructor `Marginal(data, is_clamped, is_initial)` that defaults to fresh `AnnotationDict()`
 - `getaddons` -> `getannotations`
+- `show` only prints annotations when non-empty via `isempty(ann)`
+- Equality no longer compares annotations (metadata, not semantic content)
+- Fixed `setmarginal!` and `MarginalMapping` callable to use 3-arg constructor
+- Updated docstring and jldoctest example
+- Updated `test/marginal_tests.jl`: all `Marginal(..., nothing)` -> `Marginal(...)`, `getaddons` -> `getannotations`
+- Updated `docs/src/lib/marginal.md`: `getaddons` -> `getannotations`, example uses 3-arg constructor
 
 ### Step 2.5: `src/ReactiveMP.jl` — Bridge functions (lines 47-59)
 - `as_marginal`/`as_message`: use `getannotations` instead of `getaddons`

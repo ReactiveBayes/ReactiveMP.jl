@@ -14,7 +14,7 @@ From an implementation point a view the `Marginal` structure does nothing but ho
 ReactiveMP.getdata(marginal::Marginal)
 ReactiveMP.is_clamped(marginal::Marginal)
 ReactiveMP.is_initial(marginal::Marginal)
-ReactiveMP.getaddons(marginal::Marginal)
+ReactiveMP.getannotations(marginal::Marginal)
 ReactiveMP.as_marginal
 ReactiveMP.to_marginal
 ```
@@ -23,7 +23,7 @@ ReactiveMP.to_marginal
 using ReactiveMP, BayesBase, ExponentialFamily
 
 distribution  = ExponentialFamily.NormalMeanPrecision(0.0, 1.0)
-marginal      = Marginal(distribution, false, true, nothing)
+marginal      = Marginal(distribution, false, true)
 ```
 
 ```@example marginal
