@@ -144,22 +144,22 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ---
 
-## Phase 4: Refactor Node Infrastructure
+## Phase 4: Refactor Node Infrastructure [DONE]
 
-### Step 4.1: `src/nodes/nodes.jl` — `FactorNodeActivationOptions` (line 277)
+### Step 4.1: `src/nodes/nodes.jl` — `FactorNodeActivationOptions` (line 277) [DONE]
 - Rename field `addons::A` to `annotations::A`
 - `getaddons(options)` -> `getannotations(options)`
 
-### Step 4.2: `src/nodes/dependencies.jl` — `activate!` (line 30)
+### Step 4.2: `src/nodes/dependencies.jl` — `activate!` (line 30) [DONE]
 - `addons = getaddons(options)` -> `annotations = getannotations(options)`
 - Pass `annotations` to `MessageMapping` constructor
 
-### Step 4.3: Delta node files
+### Step 4.3: Delta node files [DONE]
 - `src/nodes/predefined/delta/delta.jl` — rename `addons` param in `rule()` redirect (line 82)
 - `src/nodes/predefined/delta/layouts/default.jl` — rename all `addons` references
 - `src/nodes/predefined/delta/layouts/cvi.jl` — rename all `addons` references
 
-### Step 4.4: `src/rules/fallbacks.jl`
+### Step 4.4: `src/rules/fallbacks.jl` [DONE]
 - All `rulefallback_nodefunction` methods: rename `addons` param to `annotations`
 - Line 120: `return FallbackNodeFunctionUnnormalizedLogPdf(fn), addons` -> just return `FallbackNodeFunctionUnnormalizedLogPdf(fn)` (no tuple)
 

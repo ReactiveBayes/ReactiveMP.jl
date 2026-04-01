@@ -22,14 +22,14 @@
                     MvNormalWeightedMeanPrecision,
                 )
                     marginalsξ = (
-                        Marginal(q_out, false, false, nothing),
-                        Marginal(q_ξ, false, false, nothing),
-                        Marginal(q_Λ, false, false, nothing),
+                        Marginal(q_out, false, false),
+                        Marginal(q_ξ, false, false),
+                        Marginal(q_Λ, false, false),
                     )
                     marginalsμ = (
-                        Marginal(q_out, false, false, nothing),
-                        Marginal(q_μ, false, false, nothing),
-                        Marginal(q_Σ, false, false, nothing),
+                        Marginal(q_out, false, false),
+                        Marginal(q_μ, false, false),
+                        Marginal(q_Σ, false, false),
                     )
                     @test score(
                         AverageEnergy(),

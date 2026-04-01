@@ -49,5 +49,5 @@ function check_stream_not_updated(stream)
     return check_stream_not_updated(() -> nothing, stream)
 end
 
-msg(value) = Message(value, false, false, nothing)
-mgl(value) = Marginal(value, false, false, nothing)
+msg(value) = Message(value, false, false)
+mgl(value) = Marginal(value, false, false)

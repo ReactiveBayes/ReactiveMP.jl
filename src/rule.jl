@@ -23,7 +23,7 @@ This function is used to compute an outbound message for a given node
 - `qnames`: Ordered marginal names in form of the Val type, eg. `::Val{ (:mean, :precision) }`
 - `marginals`: Tuple of marginals of the same length as `qnames` used to compute an outbound message
 - `meta`: Extra meta information
-- `addons`: Extra addons information
+- `annotations`: An `AnnotationDict` for writing annotations during rule execution
 - `__node`: Node reference
 
 For all available rules, see `ReactiveMP.print_rules_table()`.
@@ -1540,11 +1540,11 @@ struct RuleMethodError
     qnames
     marginals
     meta
-    addons
+    annotations
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) = RuleMethodError(
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, annotations, __node) = RuleMethodError(
     fform,
     on,
     vconstraint,
@@ -1553,7 +1553,7 @@ rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, 
     qnames,
     marginals,
     meta,
-    addons,
+    annotations,
     __node,
 )
 
@@ -1611,9 +1611,6 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
-        if !isnothing(error.addons)
-            println(io, "\n\nEnabled addons: ", error.addons, "\n")
-        end
 
         node_rules = filter(
             m -> ReactiveMP.get_node_from_rule_method(m) == spec_fform,
@@ -1686,7 +1683,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         println(io, "rule.qnames: ", error.qnames)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
-        println(io, "rule.addons: ", error.addons)
+        println(io, "rule.annotations: ", error.annotations)
     end
 end
 

@@ -37,28 +37,28 @@
     actor = keep(AbstractMessage)
     subscription = subscribe!(messageout(interface), actor)
 
-    next!(stream, Message(1, false, false, nothing))
+    next!(stream, Message(1, false, false))
 
-    @test getvalues(actor) == [Message(1, false, false, nothing)]
+    @test getvalues(actor) == [Message(1, false, false)]
 
-    next!(stream, Message(2, false, false, nothing))
-    next!(stream, Message(3, false, false, nothing))
+    next!(stream, Message(2, false, false))
+    next!(stream, Message(3, false, false))
 
     @test getvalues(actor) == [
-        Message(1, false, false, nothing),
-        Message(2, false, false, nothing),
-        Message(3, false, false, nothing),
+        Message(1, false, false),
+        Message(2, false, false),
+        Message(3, false, false),
     ]
 
     unsubscribe!(subscription)
 
-    next!(stream, Message(4, false, false, nothing))
-    next!(stream, Message(5, false, false, nothing))
+    next!(stream, Message(4, false, false))
+    next!(stream, Message(5, false, false))
 
     @test getvalues(actor) == [
-        Message(1, false, false, nothing),
-        Message(2, false, false, nothing),
-        Message(3, false, false, nothing),
+        Message(1, false, false),
+        Message(2, false, false),
+        Message(3, false, false),
     ]
 end
 

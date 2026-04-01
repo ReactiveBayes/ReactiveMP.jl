@@ -8,9 +8,9 @@
             BinomialPolya,
             Val{(:y, :x, :n, :β)}(),
             (
-                Marginal(PointMass(1), false, false, nothing),
-                Marginal(PointMass([0.1, 0.2]), false, false, nothing),
-                Marginal(PointMass(5), false, false, nothing),
+                Marginal(PointMass(1), false, false),
+                Marginal(PointMass([0.1, 0.2]), false, false),
+                Marginal(PointMass(5), false, false),
                 Marginal(
                     MvNormalWeightedMeanPrecision(zeros(2), diageye(2)),
                     false,
@@ -29,9 +29,9 @@
             BinomialPolya,
             Val{(:y, :x, :n, :β)}(),
             (
-                Marginal(PointMass(1), false, false, nothing),
-                Marginal(PointMass([0.1, 0.2]), false, false, nothing),
-                Marginal(PointMass(5), false, false, nothing),
+                Marginal(PointMass(1), false, false),
+                Marginal(PointMass([0.1, 0.2]), false, false),
+                Marginal(PointMass(5), false, false),
                 Marginal(
                     MvNormalWeightedMeanPrecision(zeros(2), diageye(2)),
                     false,

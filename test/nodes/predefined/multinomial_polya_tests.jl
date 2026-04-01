@@ -17,8 +17,8 @@
                     MultinomialPolya,
                     Val{(:x, :N, :ψ)}(),
                     (
-                        Marginal(q_x, false, false, nothing),
-                        Marginal(q_N, false, false, nothing),
+                        Marginal(q_x, false, false),
+                        Marginal(q_N, false, false),
                         Marginal(q_ψ, false, false, meta),
                     ),
                     meta,
@@ -35,8 +35,8 @@
                     MultinomialPolya,
                     Val{(:x, :N, :ψ)}(),
                     (
-                        Marginal(q_x, false, false, nothing),
-                        Marginal(q_N, false, false, nothing),
+                        Marginal(q_x, false, false),
+                        Marginal(q_N, false, false),
                         Marginal(q_ψ, false, false, meta),
                     ),
                     meta,
@@ -53,8 +53,8 @@
                     MultinomialPolya,
                     Val{(:x, :N, :ψ)}(),
                     (
-                        Marginal(q_x, false, false, nothing),
-                        Marginal(q_N, false, false, nothing),
+                        Marginal(q_x, false, false),
+                        Marginal(q_N, false, false),
                         Marginal(q_ψ, false, false, meta),
                     ),
                     meta,

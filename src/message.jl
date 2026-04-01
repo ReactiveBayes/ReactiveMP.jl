@@ -510,7 +510,7 @@ end
 A callable structure representing a deferred computation of a message in the
 variational message passing framework. It stores all contextual information
 necessary to compute a message later, such as variable tags, constraints,
-addons, and the associated factor node.
+annotations, and the associated factor node.
 
 `MessageMapping` replaces the original lambda-based implementation to improve
 type stability and inference. When invoked as a function, it computes an

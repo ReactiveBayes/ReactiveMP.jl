@@ -16,9 +16,9 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_τ), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_τ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -43,9 +43,9 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_v), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_v), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -75,8 +75,8 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(convert(G, q_v), false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(convert(G, q_v), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -106,8 +106,8 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(convert(G, q_v), false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(convert(G, q_v), false, false),
                 )
                 @test score(
                     AverageEnergy(),

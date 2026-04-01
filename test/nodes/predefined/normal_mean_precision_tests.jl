@@ -16,9 +16,9 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_τ), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_τ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -35,8 +35,8 @@
             q_τ = GammaShapeRate(1.5, 1.5)
 
             marginals = (
-                Marginal(q_out_μ, false, false, nothing),
-                Marginal(q_τ, false, false, nothing),
+                Marginal(q_out_μ, false, false),
+                Marginal(q_τ, false, false),
             )
             @test score(
                 AverageEnergy(),
@@ -54,8 +54,8 @@
             )
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_μ_τ, false, false, nothing),
+                Marginal(q_out, false, false),
+                Marginal(q_μ_τ, false, false),
             )
             @test score(
                 AverageEnergy(),
@@ -73,7 +73,7 @@
                 τ = GammaShapeRate(1.5, 1.5),
             )
 
-            marginals = (Marginal(q_out_μ_τ, false, false, nothing),)
+            marginals = (Marginal(q_out_μ_τ, false, false),)
             @test score(
                 AverageEnergy(),
                 NormalMeanPrecision,
@@ -96,9 +96,9 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_τ), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_τ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -123,9 +123,9 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_τ), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_τ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -150,9 +150,9 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_τ), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_τ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -176,8 +176,8 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(convert(G, q_τ), false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(convert(G, q_τ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -201,8 +201,8 @@
                 G in (GammaShapeRate, GammaShapeScale)
 
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(convert(G, q_τ), false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(convert(G, q_τ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -219,9 +219,9 @@
             q_b = PointMass(1.0)
             q_c = PointMass(1.0)
             marginals = (
-                Marginal(q_a, false, false, nothing),
-                Marginal(q_b, false, false, nothing),
-                Marginal(q_c, false, false, nothing),
+                Marginal(q_a, false, false),
+                Marginal(q_b, false, false),
+                Marginal(q_c, false, false),
             )
             meta = 1
             @test_throws r"Cannot compute Average Energy for the .*NormalMeanPrecision node, the method does not exist for the provided marginals." score(

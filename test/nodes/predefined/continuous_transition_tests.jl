@@ -19,15 +19,15 @@
         q_W = Wishart(dy + 1, diageye(dy))
 
         marginals_st = (
-            Marginal(q_y_x, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
-            Marginal(q_W, false, false, nothing),
+            Marginal(q_y_x, false, false),
+            Marginal(q_a, false, false),
+            Marginal(q_W, false, false),
         )
         marginals_mf = (
-            Marginal(q_y, false, false, nothing),
-            Marginal(q_x, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
-            Marginal(q_W, false, false, nothing),
+            Marginal(q_y, false, false),
+            Marginal(q_x, false, false),
+            Marginal(q_a, false, false),
+            Marginal(q_W, false, false),
         )
 
         # 12,992 is a result of manual calculation 

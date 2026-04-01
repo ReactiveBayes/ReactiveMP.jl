@@ -15,8 +15,8 @@
                     q_a   = PointMass(a)
 
                     marginals = (
-                        Marginal(q_out, false, false, nothing),
-                        Marginal(q_a, false, false, nothing),
+                        Marginal(q_out, false, false),
+                        Marginal(q_a, false, false),
                     )
                     avg_energy = score(
                         AverageEnergy(),
@@ -32,8 +32,8 @@
                     avg_energy_matrix = 0.0
                     for (dir, a) in zip(q_out, q_a)
                         marginals = (
-                            Marginal(dir, false, false, nothing),
-                            Marginal(a, false, false, nothing),
+                            Marginal(dir, false, false),
+                            Marginal(a, false, false),
                         )
                         avg_energy_matrix += score(
                             AverageEnergy(),

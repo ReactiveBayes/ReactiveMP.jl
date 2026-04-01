@@ -13,10 +13,10 @@
             q_p = (GammaShapeRate(2.0, 3.0), GammaShapeRate(4.0, 5.0))
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_switch, false, false, nothing),
-                ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
+                Marginal(q_out, false, false),
+                Marginal(q_switch, false, false),
+                ManyOf(map(q_m_ -> Marginal(q_m_, false, false), q_m)),
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false), q_p)),
             )
 
             ref_val =
@@ -25,7 +25,7 @@
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
@@ -35,7 +35,7 @@
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
@@ -56,10 +56,10 @@
             q_p = (GammaShapeRate(2.0, 3.0), GammaShapeRate(1.0, 5.0))
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_switch, false, false, nothing),
-                ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
+                Marginal(q_out, false, false),
+                Marginal(q_switch, false, false),
+                ManyOf(map(q_m_ -> Marginal(q_m_, false, false), q_m)),
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false), q_p)),
             )
 
             ref_val =
@@ -68,7 +68,7 @@
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
@@ -78,7 +78,7 @@
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
@@ -99,10 +99,10 @@
             q_p = (GammaShapeRate(3.0, 3.0), GammaShapeRate(4.0, 5.0))
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_switch, false, false, nothing),
-                ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
+                Marginal(q_out, false, false),
+                Marginal(q_switch, false, false),
+                ManyOf(map(q_m_ -> Marginal(q_m_, false, false), q_m)),
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false), q_p)),
             )
 
             ref_val =
@@ -111,7 +111,7 @@
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
@@ -121,7 +121,7 @@
                     NormalMeanPrecision,
                     Val{(:out, :μ, :τ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
@@ -148,10 +148,10 @@
             )
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_switch, false, false, nothing),
-                ManyOf(map(q_m_ -> Marginal(q_m_, false, false, nothing), q_m)),
-                ManyOf(map(q_p_ -> Marginal(q_p_, false, false, nothing), q_p)),
+                Marginal(q_out, false, false),
+                Marginal(q_switch, false, false),
+                ManyOf(map(q_m_ -> Marginal(q_m_, false, false), q_m)),
+                ManyOf(map(q_p_ -> Marginal(q_p_, false, false), q_p)),
             )
 
             ref_val =
@@ -160,7 +160,7 @@
                     MvNormalMeanPrecision,
                     Val{(:out, :μ, :Λ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[1], q_p[1]),
                     ),
                     nothing,
@@ -170,7 +170,7 @@
                     MvNormalMeanPrecision,
                     Val{(:out, :μ, :Λ)}(),
                     map(
-                        (q) -> Marginal(q, false, false, nothing),
+                        (q) -> Marginal(q, false, false),
                         (q_out, q_m[2], q_p[2]),
                     ),
                     nothing,
