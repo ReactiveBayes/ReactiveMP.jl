@@ -165,7 +165,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ---
 
-## Phase 5: Update Callbacks
+## Phase 5: Update Callbacks [DONE]
 
 ### Step 5.1: `src/callbacks.jl`
 - `AfterMessageRuleCallEvent`: rename `addons::A` field to `annotations::A`
@@ -174,7 +174,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ---
 
-## Phase 6: Clean Up Old Addon Files
+## Phase 6: Clean Up Old Addon Files [DONE]
 
 ### Step 6.1: Delete old files
 - Delete `src/addons.jl`
@@ -194,7 +194,7 @@ The current "addon" system in ReactiveMP.jl is overly complex: it uses typed tup
 
 ---
 
-## Phase 7: Rule Files Using @logscale (17 files — no changes needed)
+## Phase 7: Rule Files Using @logscale [DONE]
 
 The `@logscale` macro is updated in Phase 1.3 to expand to `annotate!(getannotations(), :logscale, value)`. Since `getannotations` is defined by the `@rule` macro (Phase 3.2) as `() -> $annotationsvar`, all existing `@logscale 0` calls in rule files will work without modification.
 
@@ -210,7 +210,7 @@ Verify compilation of these files:
 
 ---
 
-## Phase 8: Update Tests
+## Phase 8: Update Tests [DONE]
 
 ### Step 8.1: Rewrite addon tests -> annotation tests
 - `test/addons_tests.jl` -> `test/rule_annotations_tests.jl`
