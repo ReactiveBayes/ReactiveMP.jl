@@ -391,7 +391,7 @@ end
     @test events[2].data.messages === messages
     @test events[2].data.marginals === marginals
     @test events[2].data.result === 2
-    @test events[2].data.addons === ()
+    @test events[2].data.annotations === ()
 end
 
 @testmodule MessageProductContextUtils begin
@@ -656,7 +656,7 @@ end
         @test getdata(before.data.left) == Normal(0, 1)
         @test getdata(before.data.right) == Normal(0, 2)
 
-        # After callback: variable, context, left, right, result, addons
+        # After callback: variable, context, left, right, result, annotations
         after = handler.events[2]
         @test after.event === :after_product_of_two_messages
         @test after.data.variable === testvar
@@ -664,7 +664,7 @@ end
         @test getdata(after.data.left) == Normal(0, 1)
         @test getdata(after.data.right) == Normal(0, 2)
         @test after.data.result == result
-        @test after.data.addons isa AnnotationDict  # AnnotationDict is default
+        @test after.data.annotations isa AnnotationDict  # AnnotationDict is default
     end
 end
 
