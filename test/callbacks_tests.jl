@@ -99,12 +99,12 @@ end
     
     if VERSION >= v"1.12.0"
         # Test that span_id does not cause allocations
-        struct BeforeSuperCoolEvent <: Event{:my_custom_event_243}
-            span_id::UUID
+        struct BeforeSuperCoolEvent{I} <: Event{:my_custom_event_243}
+            span_id::I
         end
-        struct AfterSuperCoolEvent <: Event{:my_custom_event_534}
+        struct AfterSuperCoolEvent{I} <: Event{:my_custom_event_534}
             result::Float64
-            span_id::UUID
+            span_id::I
         end
         
         function bar5(callback_handler, input::Float64)
