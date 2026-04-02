@@ -24,7 +24,7 @@ end
 @testitem "Callbacks handler should do absolutely nothing if no handler exists" setup = [
     CallbacksTestUtils
 ] begin
-    import ReactiveMP: invoke_callback, Event
+    import ReactiveMP: invoke_callback, Event, generate_span_id
     using UUIDs
 
     # We use here a type stable structure to achieve 0 allocations
@@ -98,26 +98,26 @@ end
     
     
     if VERSION >= v"1.12.0"
-        # Test that trace_id does not cause allocations
+        # Test that span_id does not cause allocations
         struct BeforeSuperCoolEvent <: Event{:my_custom_event_243}
-            trace_id::UUID
+            span_id::UUID
         end
         struct AfterSuperCoolEvent <: Event{:my_custom_event_534}
             result::Float64
-            trace_id::UUID
+            span_id::UUID
         end
         
         function bar5(callback_handler, input::Float64)
-            trace_id = uuid4()
+            span_id = generate_span_id(callback_handler)
             
             invoke_callback(callback_handler,
-                BeforeSuperCoolEvent(trace_id)
+                BeforeSuperCoolEvent(span_id)
             )
             
             result = input + 4.0
             
             invoke_callback(callback_handler,
-                AfterSuperCoolEvent(result, trace_id)
+                AfterSuperCoolEvent(result, span_id)
             )
             
             return result
