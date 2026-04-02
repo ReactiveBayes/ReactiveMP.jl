@@ -217,3 +217,10 @@ end
     @test prod.mappings[3] === r3
     @test prod.mappings[4] === r4
 end
+
+@testitem "AddonMemory throws an error" begin
+    import ReactiveMP: AddonMemory
+
+    @test_throws "AddonMemory` has been removed" AddonMemory()
+    @test_throws "InputArgumentsAnnotations" AddonMemory()
+end

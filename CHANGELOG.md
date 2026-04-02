@@ -14,12 +14,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docstrings for variable types, form constraints, and related functions
 - Documentation page for callbacks
 - `MethodError` hint for mismatched `handle_event` signatures
+- New annotations system: `AnnotationDict`, `AbstractAnnotations`, `LogScaleAnnotations`, `InputArgumentsAnnotations`
+- `post_rule_annotations!` and `post_product_annotations!` callbacks for annotation processors
+- `@logscale value` macro for setting log-scale annotations inside `@rule` bodies
+- `getannotations` function for `Message` and `Marginal`
+- Migration guide for v5 to v6
 
 ### Changed
 - Switched from `ReTestItems` to `TestItemRunner` for tests ([#584](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/584))
 - Made formatting checks stricter
 - Renamed `variables/variable.jl` to `variables/generic.jl`
 - Replaced hardcoded `DefaultMessageProdFn`/`DefaultMarginalProdFn` with `MessageProductContext`
+- `Message{D, A}` → `Message{D}` (type parameter `A` removed)
+- `Marginal{D, A}` → `Marginal{D}` (type parameter `A` removed)
+- `Message` and `Marginal` now carry an `AnnotationDict` instead of a typed addons tuple
+- Rules no longer return `(result, addons)` tuples — just the result
+- `@call_rule` no longer supports `return_addons` option; use `annotations` keyword with `AnnotationDict`
+- `MessageMapping.addons` field → `MessageMapping.annotations`
+- `MessageProductContext` gained `annotations` field for product-time annotation processors
+
+### Removed
+- `getaddons` — use `getannotations` instead
+- `getlogscale(::Message)`, `getlogscale(::Marginal)` — use `getlogscale(getannotations(...))` instead
+- `getmemory`, `getmemoryaddon` — use `get_rule_input_arguments(getannotations(...))` instead
+- `AddonLogScale` — replaced by `LogScaleAnnotations` (calling `AddonLogScale()` throws a descriptive error)
+- `AddonMemory` — replaced by `InputArgumentsAnnotations` (calling `AddonMemory()` throws a descriptive error)
+- `AddonDebug` — use callbacks instead
+- `AbstractAddon`, `multiply_addons`, `@invokeaddon`
+- `message_mapping_addons`, `message_mapping_addon` helper functions
 
 ## [5.6.6] - 2026-03-13
 

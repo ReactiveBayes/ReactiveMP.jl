@@ -128,3 +128,10 @@ end
     # 1.0 + 2.0 + compute_logscale(...) = 1.0 + 2.0 + 10.0 = 13.0
     @test getlogscale(merged) == 13.0
 end
+
+@testitem "AddonLogScale throws an error" begin
+    import ReactiveMP: AddonLogScale
+
+    @test_throws "AddonLogScale` has been removed" AddonLogScale()
+    @test_throws "LogScaleAnnotations" AddonLogScale()
+end

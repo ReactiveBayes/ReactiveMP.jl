@@ -41,6 +41,9 @@ makedocs(
         "Custom functionality" => [
             "Custom functional form" => "custom/custom-functional-form.md",
         ],
+        "Migration guides" => [
+            "v5 to v6" => "migration-guides/v5-to-v6.md",
+        ],
         "Extra" => [
             "Contributing"     => "extra/contributing.md",
             "Extensions"       => "extra/extensions.md",

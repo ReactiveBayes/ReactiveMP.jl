@@ -1,4 +1,4 @@
-export LogScaleAnnotations, getlogscale
+export LogScaleAnnotations, getlogscale, AddonLogScale
 
 """
     LogScaleAnnotations <: AbstractAnnotations
@@ -64,4 +64,17 @@ function post_product_annotations!(
     new_logscale   = compute_logscale(new_dist, left_dist, right_dist)
     annotate!(merged, :logscale, left_logscale + right_logscale + new_logscale)
     return nothing
+end
+
+"""
+    AddonLogScale(args...; kwargs...)
+
+Deprecated: `AddonLogScale` has been removed in ReactiveMP v6.
+Use [`LogScaleAnnotations`](@ref) instead. See the migration guide in the documentation for details.
+"""
+function AddonLogScale(args...; kwargs...)
+    error(
+        """`AddonLogScale` has been removed in ReactiveMP v6 and replaced by `LogScaleAnnotations`. """ *
+        """See the migration guide in the documentation for details."""
+    )
 end

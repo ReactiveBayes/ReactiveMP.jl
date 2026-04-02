@@ -1,7 +1,8 @@
 export InputArgumentsAnnotations,
     RuleInputArgumentsRecord,
     ProductInputArgumentsRecord,
-    get_rule_input_arguments
+    get_rule_input_arguments,
+    AddonMemory
 
 """
     RuleInputArgumentsRecord
@@ -113,4 +114,17 @@ function post_product_annotations!(
         _merge_input_arguments(left_record, right_record),
     )
     return nothing
+end
+
+"""
+    AddonMemory(args...; kwargs...)
+
+Deprecated: `AddonMemory` has been removed in ReactiveMP v6.
+Use [`InputArgumentsAnnotations`](@ref) instead. See the migration guide in the documentation for details.
+"""
+function AddonMemory(args...; kwargs...)
+    error(
+        """`AddonMemory` has been removed in ReactiveMP v6 and replaced by `InputArgumentsAnnotations`. """ *
+        """See the migration guide in the documentation for details."""
+    )
 end
