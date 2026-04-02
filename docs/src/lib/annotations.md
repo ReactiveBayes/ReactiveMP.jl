@@ -6,7 +6,7 @@ Annotations are designed to be zero-cost when unused: the underlying dictionary 
 
 ## AnnotationDict
 
-Every message and marginal holds an [`AnnotationDict`](@ref). The basic operations are:
+Every message and marginal holds an [`ReactiveMP.AnnotationDict`](@ref). The basic operations are:
 
 ```@docs
 ReactiveMP.AnnotationDict
@@ -17,10 +17,10 @@ ReactiveMP.has_annotation
 
 ## Annotation processors
 
-Annotation processors are subtypes of [`AbstractAnnotations`](@ref) that define *how* annotations are written and merged. There are two integration points:
+Annotation processors are subtypes of [`ReactiveMP.AbstractAnnotations`](@ref) that define *how* annotations are written and merged. There are two integration points:
 
-- **After a rule executes** — [`post_rule_annotations!`](@ref) is called with the processor, the rule's `AnnotationDict`, the `MessageMapping`, the incoming messages and marginals, and the result distribution. Use this to write annotations that depend on what the rule computed.
-- **During a message product** — [`post_product_annotations!`](@ref) is called with the processor, a fresh merged `AnnotationDict`, and the left and right annotation dicts together with the distributions involved. Use this to merge annotations from the two incoming messages into the product message.
+- **After a rule executes** — [`ReactiveMP.post_rule_annotations!`](@ref) is called with the processor, the rule's `AnnotationDict`, the `MessageMapping`, the incoming messages and marginals, and the result distribution. Use this to write annotations that depend on what the rule computed.
+- **During a message product** — [`ReactiveMP.post_product_annotations!`](@ref) is called with the processor, a fresh merged `AnnotationDict`, and the left and right annotation dicts together with the distributions involved. Use this to merge annotations from the two incoming messages into the product message.
 
 ```@docs
 ReactiveMP.AbstractAnnotations
@@ -34,6 +34,9 @@ To add a new kind of annotation, subtype `AbstractAnnotations` and implement the
 
 ```julia
 using ReactiveMP
+
+# not exported by default
+import ReactiveMP: AbstractAnnotations, AnnotationDict, has_annotation, get_annotation, annotate!
 
 struct CountAnnotations <: AbstractAnnotations end
 
@@ -53,7 +56,7 @@ function ReactiveMP.post_product_annotations!(::CountAnnotations, merged::Annota
 end
 ```
 
-Processors are passed to `FactorNodeActivationOptions` (for rule-time annotation) and `MessageProductContext` (for product-time merging) when building a model. Both sites must be configured — see the RxInfer documentation for how to set this up at the model level.
+Processors are passed to `FactorNodeActivationOptions` (for rule-time annotation) and [`ReactiveMP.MessageProductContext`](@ref) (for product-time merging) when building a model. Both sites must be configured — see the RxInfer documentation for how to set this up at the model level.
 
 ## Built-in annotation processors
 

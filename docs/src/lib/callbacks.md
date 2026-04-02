@@ -1,4 +1,4 @@
-# Callbacks in the Message Passing Procedure
+# [Callbacks in the Message Passing Procedure](@id lib-callbacks)
 
 ReactiveMP provides a way to "hook" into the message passing procedure and listen to various events
 via "callbacks". This can be useful, for example, to debug messages or monitor the order of computations.

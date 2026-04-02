@@ -74,6 +74,7 @@ If a rule does not call `@logscale` and `LogScaleAnnotations` is active, Reactiv
 ReactiveMP.LogScaleAnnotations
 ReactiveMP.getlogscale
 ReactiveMP.@logscale
+ReactiveMP.AddonLogScale
 ```
 
 ## References

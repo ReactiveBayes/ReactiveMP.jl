@@ -4,7 +4,7 @@ This guide covers the breaking changes introduced in ReactiveMP.jl v6 and how to
 
 ## Overview
 
-The main change in v6 is the replacement of the **addon system** with a new **annotations system**. The new system is simpler, more efficient, and easier to extend. Messages and marginals now carry an [`AnnotationDict`](@ref) instead of a typed tuple of addons. Annotation processors ([`AbstractAnnotations`](@ref) subtypes) handle post-processing externally.
+The main change in v6 is the replacement of the **addon system** with a new **annotations system**. The new system is simpler, more efficient, and easier to extend. Messages and marginals now carry an [`ReactiveMP.AnnotationDict`](@ref) instead of a typed tuple of addons. Annotation processors ([`ReactiveMP.AbstractAnnotations`](@ref) subtypes) handle post-processing externally.
 
 ## Type parameter changes
 
@@ -24,7 +24,7 @@ Code that dispatches on the second type parameter (e.g. `::Message{D, Nothing}`)
 
 ## Constructor changes
 
-The fourth positional argument (`addons`) is replaced by an optional [`AnnotationDict`](@ref). In most cases you can simply drop the fourth argument:
+The fourth positional argument (`addons`) is replaced by an optional [`ReactiveMP.AnnotationDict`](@ref). In most cases you can simply drop the fourth argument:
 
 ```julia
 # v5
@@ -51,18 +51,18 @@ The following exports no longer exist in v6:
 
 | Removed | Replacement |
 |---|---|
-| `AbstractAddon` | [`AbstractAnnotations`](@ref) |
-| `AddonLogScale` | [`LogScaleAnnotations`](@ref) |
-| `AddonMemory` | [`InputArgumentsAnnotations`](@ref) |
+| `AbstractAddon` | [`ReactiveMP.AbstractAnnotations`](@ref) |
+| `AddonLogScale` | [`ReactiveMP.LogScaleAnnotations`](@ref) |
+| `AddonMemory` | [`ReactiveMP.InputArgumentsAnnotations`](@ref) |
 | `AddonDebug` | *removed* (use [callbacks](@ref lib-callbacks) instead) |
-| `multiply_addons` | [`post_product_annotations!`](@ref) |
+| `multiply_addons` | [`ReactiveMP.post_product_annotations!`](@ref) |
 | `@invokeaddon` | *removed* (macros like `@logscale` call `annotate!` directly) |
 | `message_mapping_addons` | *removed* |
 | `message_mapping_addon` | *removed* |
 
 ## Writing custom rules
 
-Rules continue to return only the distribution result — no change needed for most rules. The `@logscale` macro now writes directly into the [`AnnotationDict`](@ref) instead of going through `@invokeaddon`:
+Rules continue to return only the distribution result — no change needed for most rules. The `@logscale` macro now writes directly into the [`ReactiveMP.AnnotationDict`](@ref) instead of going through `@invokeaddon`:
 
 ```julia
 # v5
@@ -80,11 +80,11 @@ end
 end
 ```
 
-Inside a `@rule` body, `getannotations()` (previously `getaddons()`) returns the [`AnnotationDict`](@ref) for the current rule execution. The `@logscale value` macro is a shorthand for `annotate!(getannotations(), :logscale, value)`.
+Inside a `@rule` body, `getannotations()` (previously `getaddons()`) returns the [`ReactiveMP.AnnotationDict`](@ref) for the current rule execution. The `@logscale value` macro is a shorthand for `annotate!(getannotations(), :logscale, value)`.
 
 ## Testing rules with `@call_rule`
 
-The `@call_rule` macro no longer supports `return_addons` or `addons` keyword arguments. Use the `annotations` keyword to pass an [`AnnotationDict`](@ref) and read it back after the call:
+The `@call_rule` macro no longer supports `return_addons` or `addons` keyword arguments. Use the `annotations` keyword to pass an [`ReactiveMP.AnnotationDict`](@ref) and read it back after the call:
 
 ```julia
 # v5
@@ -101,7 +101,7 @@ logscale = getlogscale(ann)
 
 ## Writing custom annotation processors
 
-If you had a custom `AbstractAddon` subtype, migrate it to an [`AbstractAnnotations`](@ref) subtype. See the [Annotations overview](@ref lib-annotations) for a complete guide.
+If you had a custom `AbstractAddon` subtype, migrate it to an [`ReactiveMP.AbstractAnnotations`](@ref) subtype. See the [Annotations overview](@ref lib-annotations) for a complete guide.
 
 ```julia
 # v5
