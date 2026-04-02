@@ -126,7 +126,9 @@ function _compute_marginal_from_messages(
     )
     invoke_callback(
         context.callbacks,
-        AfterMarginalComputationEvent(randomvar, context, messages, result, span_id),
+        AfterMarginalComputationEvent(
+            randomvar, context, messages, result, span_id
+        ),
     )
     return result
 end

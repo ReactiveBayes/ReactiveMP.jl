@@ -166,7 +166,9 @@ function compute_product_of_two_messages(
     span_id = generate_span_id(context.callbacks)
     invoke_callback(
         context.callbacks,
-        BeforeProductOfTwoMessagesEvent(variable, context, left, right, span_id),
+        BeforeProductOfTwoMessagesEvent(
+            variable, context, left, right, span_id
+        ),
     )
 
     # We propagate clamped message, in case if both are clamped
@@ -187,7 +189,11 @@ function compute_product_of_two_messages(
         invoke_callback(
             context.callbacks,
             BeforeFormConstraintAppliedEvent(
-                variable, context, FormConstraintCheckEach(), new_dist, form_span_id
+                variable,
+                context,
+                FormConstraintCheckEach(),
+                new_dist,
+                form_span_id,
             ),
         )
         unconstrained_dist = new_dist
@@ -195,7 +201,12 @@ function compute_product_of_two_messages(
         invoke_callback(
             context.callbacks,
             AfterFormConstraintAppliedEvent(
-                variable, context, FormConstraintCheckEach(), unconstrained_dist, new_dist, form_span_id
+                variable,
+                context,
+                FormConstraintCheckEach(),
+                unconstrained_dist,
+                new_dist,
+                form_span_id,
             ),
         )
     end
@@ -264,7 +275,12 @@ function compute_product_of_messages(
         invoke_callback(
             context.callbacks,
             AfterFormConstraintAppliedEvent(
-                variable, context, FormConstraintCheckLast(), dist, constrained_dist, form_span_id
+                variable,
+                context,
+                FormConstraintCheckLast(),
+                dist,
+                constrained_dist,
+                form_span_id,
             ),
         )
         result = Message(
@@ -277,7 +293,9 @@ function compute_product_of_messages(
 
     invoke_callback(
         context.callbacks,
-        AfterProductOfMessagesEvent(variable, context, messages, result, span_id),
+        AfterProductOfMessagesEvent(
+            variable, context, messages, result, span_id
+        ),
     )
 
     return result
@@ -668,7 +686,9 @@ function (mapping::MessageMapping)(messages, marginals)
     )
     invoke_callback(
         mapping.callbacks,
-        AfterMessageRuleCallEvent(mapping, messages, marginals, result, addons, span_id),
+        AfterMessageRuleCallEvent(
+            mapping, messages, marginals, result, addons, span_id
+        ),
     )
 
     return Message(result, is_message_clamped, is_message_initial, addons)
