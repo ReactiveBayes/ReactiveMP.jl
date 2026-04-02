@@ -39,7 +39,7 @@ end
     @test getlogscale(_annotations) == 2.5
 end
 
-@testitem "post_rule_annotations! is no-op when logscale already annotated" setup=[
+@testitem "post_rule_annotations! is no-op when logscale already annotated" setup = [
     LogScaleAnnotationsTestUtils
 ] begin
     import ReactiveMP:
@@ -59,15 +59,19 @@ end
     @test getlogscale(ann) == 7.0
 end
 
-@testitem "post_rule_annotations! sets logscale to 0 when all messages are PointMass" setup=[
+@testitem "post_rule_annotations! sets logscale to 0 when all messages are PointMass" setup = [
     LogScaleAnnotationsTestUtils
 ] begin
     import ReactiveMP:
-        AnnotationDict, getlogscale, post_rule_annotations!, LogScaleAnnotations
+        AnnotationDict,
+        getlogscale,
+        post_rule_annotations!,
+        LogScaleAnnotations,
+        Message
     import BayesBase: PointMass
 
     ann      = AnnotationDict()
-    messages = (PointMass(1.0), PointMass(2.0))
+    messages = (Message(PointMass(1.0), false, false), Message(PointMass(2.0), false, false))
 
     post_rule_annotations!(
         LogScaleAnnotations(), ann, nothing, messages, nothing, nothing
@@ -76,15 +80,19 @@ end
     @test getlogscale(ann) == 0
 end
 
-@testitem "post_rule_annotations! sets logscale to 0 when all marginals are PointMass" setup=[
+@testitem "post_rule_annotations! sets logscale to 0 when all marginals are PointMass" setup = [
     LogScaleAnnotationsTestUtils
 ] begin
     import ReactiveMP:
-        AnnotationDict, getlogscale, post_rule_annotations!, LogScaleAnnotations
+        AnnotationDict,
+        getlogscale,
+        post_rule_annotations!,
+        LogScaleAnnotations,
+        Marginal
     import BayesBase: PointMass
 
     ann       = AnnotationDict()
-    marginals = (PointMass(1.0),)
+    marginals = (Marginal(PointMass(1.0), false, false),)
 
     post_rule_annotations!(
         LogScaleAnnotations(), ann, nothing, nothing, marginals, nothing
@@ -93,21 +101,21 @@ end
     @test getlogscale(ann) == 0
 end
 
-@testitem "post_rule_annotations! errors when logscale not set and inputs are not all PointMass" setup=[
+@testitem "post_rule_annotations! errors when logscale not set and inputs are not all PointMass" setup = [
     LogScaleAnnotationsTestUtils
 ] begin
     import ReactiveMP:
         AnnotationDict, post_rule_annotations!, LogScaleAnnotations
 
     ann      = AnnotationDict()
-    messages = (LogScaleAnnotationsTestUtils.CustomDistributionForLogScaleTesting(),)
+    messages = (Message(LogScaleAnnotationsTestUtils.CustomDistributionForLogScaleTesting(), false, false),)
 
     @test_throws "Log-scale annotation has not been set" post_rule_annotations!(
         LogScaleAnnotations(), ann, nothing, messages, nothing, nothing
     )
 end
 
-@testitem "post_product_annotations! with LogScaleAnnotations sums logscales and adds compute_logscale" setup=[
+@testitem "post_product_annotations! with LogScaleAnnotations sums logscales and adds compute_logscale" setup = [
     LogScaleAnnotationsTestUtils
 ] begin
     import ReactiveMP:

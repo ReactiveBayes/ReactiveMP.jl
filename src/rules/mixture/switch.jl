@@ -6,10 +6,12 @@
     # `messages` are available from the `@rule` macro itself
     logscales = map(
         input -> getlogscale(
-            getannotations(
+            ReactiveMP.getannotations(
                 compute_product_of_two_messages(
                     ReactiveMP.randomvar(; label = :mixture_switch_rule),
-                    ReactiveMP.MessageProductContext(),
+                    ReactiveMP.MessageProductContext(;
+                        annotations = (LogScaleAnnotations(),)
+                    ),
                     messages[1],
                     input,
                 ),

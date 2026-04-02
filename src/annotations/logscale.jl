@@ -38,9 +38,9 @@ function post_rule_annotations!(
     result,
 )
     has_annotation(ann, :logscale) && return nothing
-    if isnothing(marginals) && all(m -> m isa PointMass, messages)
+    if isnothing(marginals) && all(m -> getdata(m) isa PointMass, messages)
         annotate!(ann, :logscale, 0)
-    elseif isnothing(messages) && all(m -> m isa PointMass, marginals)
+    elseif isnothing(messages) && all(m -> getdata(m) isa PointMass, marginals)
         annotate!(ann, :logscale, 0)
     else
         error(
@@ -75,6 +75,6 @@ Use [`LogScaleAnnotations`](@ref) instead. See the migration guide in the docume
 function AddonLogScale(args...; kwargs...)
     error(
         """`AddonLogScale` has been removed in ReactiveMP v6 and replaced by `LogScaleAnnotations`. """ *
-        """See the migration guide in the documentation for details."""
+        """See the migration guide in the documentation for details.""",
     )
 end

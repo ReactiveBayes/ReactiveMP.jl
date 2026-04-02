@@ -67,7 +67,6 @@ function score(
                     ),
                     false,
                     false,
-                    nothing,
                 )
                 return convert(T, -score(DifferentialEntropy(), marginal))
             end

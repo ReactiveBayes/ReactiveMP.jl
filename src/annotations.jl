@@ -1,3 +1,4 @@
+export getannotations
 
 """
     AnnotationDict()
@@ -25,6 +26,9 @@ mutable struct AnnotationDict
         )
     end
 end
+
+# Overloaded later for `::Message` and `::Marginal` in their respective files
+function getannotations end
 
 Base.isempty(ann::AnnotationDict) =
     isnothing(ann.data) || isempty(ann.data::Dict{Symbol, Any})
