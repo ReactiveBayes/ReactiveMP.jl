@@ -54,7 +54,9 @@ mutable struct Message{D} <: AbstractMessage    # `mutable` structure here appea
     const annotations :: AnnotationDict
 end
 
-Message(data, is_clamped::Bool, is_initial::Bool) = Message(data, is_clamped, is_initial, AnnotationDict())
+Message(data, is_clamped::Bool, is_initial::Bool) = Message(
+    data, is_clamped, is_initial, AnnotationDict()
+)
 
 """
     as_message(::AbstractMessage)
@@ -217,10 +219,8 @@ function compute_product_of_two_messages(
     # process annotations
     left_ann  = getannotations(left)
     right_ann = getannotations(right)
-    new_ann   = post_product_annotations!(
-        context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist
-    )
-    result = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
+    new_ann   = post_product_annotations!(context.annotations, left_ann, right_ann, new_dist, left_dist, right_dist)
+    result    = Message(new_dist, is_prod_clamped, is_prod_initial, new_ann)
 
     invoke_callback(
         context.callbacks,

@@ -303,7 +303,7 @@ function activate!(
     end
 
     scheduler    = getscheduler(options)
-    annotations       = getannotations(options)
+    annotations  = getannotations(options)
     rulefallback = getrulefallback(options)
     callbacks    = getcallbacks(options)
 

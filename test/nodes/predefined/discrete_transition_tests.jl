@@ -21,8 +21,7 @@
         q_a = PointMass(a_matrix)
 
         marginals = (
-            Marginal(q_out_in, false, false),
-            Marginal(q_a, false, false),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         # Expected value calculated by hand
@@ -43,8 +42,7 @@
         q_a = PointMass(a_matrix)
 
         marginals = (
-            Marginal(q_out_in, false, false),
-            Marginal(q_a, false, false),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
@@ -66,8 +64,7 @@
         q_a = PointMass(a_matrix)
 
         marginals = (
-            Marginal(q_out_in, false, false),
-            Marginal(q_a, false, false),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
@@ -85,8 +82,7 @@
         q_a = PointMass(diageye(3))
 
         marginals = (
-            Marginal(q_out_in, false, false),
-            Marginal(q_a, false, false),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))

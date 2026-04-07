@@ -204,20 +204,14 @@ end
                 AverageEnergy(),
                 GammaShapeRate,
                 Val{(:out, :α, :β)}(),
-                map(
-                    (q) -> Marginal(q, false, false),
-                    (q_out, q_a[1], q_b[1]),
-                ),
+                map((q) -> Marginal(q, false, false), (q_out, q_a[1], q_b[1])),
                 nothing,
             ) +
             z[2] * score(
                 AverageEnergy(),
                 GammaShapeRate,
                 Val{(:out, :α, :β)}(),
-                map(
-                    (q) -> Marginal(q, false, false),
-                    (q_out, q_a[2], q_b[2]),
-                ),
+                map((q) -> Marginal(q, false, false), (q_out, q_a[2], q_b[2])),
                 nothing,
             )
 

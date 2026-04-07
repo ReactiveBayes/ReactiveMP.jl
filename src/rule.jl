@@ -593,9 +593,8 @@ function call_rule_expression(options, fform, args)
     @capture(
         args,
         (inputs__, meta = meta_, annotations = annotations_) |
-        (inputs__, annotations = annotations_) |
-        (inputs__, meta = meta_) |
-        (inputs__,)
+        (inputs__, annotations = annotations_) | (inputs__, meta = meta_) |
+            (inputs__,)
     ) || error("Error in macro. Arguments specification is incorrect")
 
     # Default annotations to a fresh AnnotationDict if not provided

@@ -118,7 +118,7 @@ end
 
 function Base.show(io::IO, record::RuleInputArgumentsRecord)
     indent = get(io, :indent, 0)
-    pad    = ' '^indent
+    pad = ' '^indent
     mapping = record.mapping
     println(io, pad, "Rule input arguments:")
     println(io, pad, "  node:       ", message_mapping_fform(mapping))
@@ -145,7 +145,13 @@ end
 function Base.show(io::IO, record::ProductInputArgumentsRecord)
     indent = get(io, :indent, 0)
     pad    = ' '^indent
-    println(io, pad, "Product of ", length(record.mappings), " rule input arguments:")
+    println(
+        io,
+        pad,
+        "Product of ",
+        length(record.mappings),
+        " rule input arguments:",
+    )
     inner = IOContext(io, :indent => indent + 4)
     for (i, r) in enumerate(record.mappings)
         println(inner, pad, "  [", i, "]")
@@ -163,6 +169,6 @@ Use [`InputArgumentsAnnotations`](@ref) instead. See the migration guide in the 
 function AddonMemory(args...; kwargs...)
     error(
         """`AddonMemory` has been removed in ReactiveMP v6 and replaced by `InputArgumentsAnnotations`. """ *
-        """See the migration guide in the documentation for details."""
+        """See the migration guide in the documentation for details.""",
     )
 end

@@ -10,8 +10,7 @@ interfaces(::Type{<:NormalMixture}) = Val((:out, :switch, :m, :p))
 alias_interface(::Type{<:NormalMixture}, ::Int64, name::Symbol) = name
 is_predefined_node(::Type{<:NormalMixture}) = PredefinedNodeFunctionalForm()
 sdtype(::Type{<:NormalMixture}) = Stochastic()
-collect_factorisation(::Type{<:NormalMixture}, factorization) =
-    NormalMixtureNodeFactorisation()
+collect_factorisation(::Type{<:NormalMixture}, factorization) = NormalMixtureNodeFactorisation()
 
 struct NormalMixtureNodeFactorisation end
 
@@ -27,10 +26,7 @@ const GaussianMixtureNode = NormalMixtureNode
 
 functionalform(factornode::NormalMixtureNode{N}) where {N} = NormalMixture{N}
 getinterfaces(factornode::NormalMixtureNode) = (
-    factornode.out,
-    factornode.switch,
-    factornode.means...,
-    factornode.precs...,
+    factornode.out, factornode.switch, factornode.means..., factornode.precs...
 )
 sdtype(factornode::NormalMixtureNode) = Stochastic()
 
@@ -95,11 +91,8 @@ end
 
 struct NormalMixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
-collect_functional_dependencies(::NormalMixtureNode, ::Nothing) =
-    NormalMixtureNodeFunctionalDependencies()
-collect_functional_dependencies(
-    ::NormalMixtureNode, ::NormalMixtureNodeFunctionalDependencies
-) = NormalMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::NormalMixtureNode, ::Nothing) = NormalMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::NormalMixtureNode, ::NormalMixtureNodeFunctionalDependencies) = NormalMixtureNodeFunctionalDependencies()
 collect_functional_dependencies(::NormalMixtureNode, ::Any) = error(
     "The functional dependencies for NormalMixtureNode must be either `Nothing` or `NormalMixtureNodeFunctionalDependencies`",
 )

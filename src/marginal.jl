@@ -47,7 +47,9 @@ mutable struct Marginal{D}      # `mutable` structure here appears to be more pe
     const annotations :: AnnotationDict
 end
 
-Marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(data, is_clamped, is_initial, AnnotationDict())
+Marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(
+    data, is_clamped, is_initial, AnnotationDict()
+)
 
 function Base.show(io::IO, marginal::Marginal)
     print(io, "Marginal(", getdata(marginal), ")")
