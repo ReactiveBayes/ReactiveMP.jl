@@ -14,8 +14,7 @@
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false),
-            addons in (1, 2),
+            initial in (true, false), addons in (1, 2),
             data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
             msg = Message(data, clamped, initial, addons)
@@ -33,8 +32,7 @@
         dist2 = MvNormalMeanCovariance([0.0, 1.0], [1.0 0.0; 0.0 1.0])
 
         for clamped1 in (true, false),
-            clamped2 in (true, false),
-            initial1 in (true, false),
+            clamped2 in (true, false), initial1 in (true, false),
             initial2 in (true, false)
 
             msg1 = Message(dist1, clamped1, initial1, nothing)
@@ -228,8 +226,9 @@
             end
         end
 
-        _getpoint(rng, distribution) =
-            _getpoint(rng, variate_form(typeof(distribution)), distribution)
+        _getpoint(rng, distribution) = _getpoint(
+            rng, variate_form(typeof(distribution)), distribution
+        )
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
         _getpoint(rng, ::Type{<:Multivariate}, distribution) =
             10 .* rand(rng, 2)
@@ -436,8 +435,9 @@ end
     # A simple form constraint that adds +1 to the mean of a Normal distribution
     struct AddOneToMeanConstraint <: AbstractFormConstraint end
 
-    constrain_form(::AddOneToMeanConstraint, dist::Normal) =
-        Normal(dist.mean + 1, dist.var)
+    constrain_form(::AddOneToMeanConstraint, dist::Normal) = Normal(
+        dist.mean + 1, dist.var
+    )
 
     # A callback handler that only records events from a specified set
     struct SaveOrderOfComputationCallbacks
@@ -488,8 +488,7 @@ end
     context = MessageProductContext()
 
     for left_is_clamped in (true, false),
-        right_is_clamped in (true, false),
-        left_is_initial in (true, false),
+        right_is_clamped in (true, false), left_is_initial in (true, false),
         right_is_initial in (true, false)
 
         msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial, nothing)

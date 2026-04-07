@@ -1,3 +1,4 @@
+using UUIDs
 
 """
     Event{E}
@@ -79,9 +80,7 @@ julia> event.count
 
 If the `NamedTuple` does not have a field corresponding to the event name, the event will be ignored.
 """
-function invoke_callback(
-    callbacks::NamedTuple{K}, event::Event{E}
-) where {K, E}
+function invoke_callback(callbacks::NamedTuple{K}, event::Event{E}) where {K, E}
     if E in K
         callbacks[E](event)
     end
@@ -165,6 +164,23 @@ function invoke_callback(merged::MergedCallbacks, event::Event)
     return event
 end
 
+"""
+    generate_span_id(callbacks)
+
+Generates a unique identifier used for "before" and "after" events (see for example [`BeforeMessageRuleCallEvent`](@ref) and [`AfterMessageRuleCallEvent]`](@ref)). If callbacks are not set (e.g. `callbacks` is `nothing`), returns `nothing`.
+
+The current implementation uses `UUIDs.uuid4` to generate span IDs, but that may change in the future.
+"""
+function generate_span_id end
+
+function generate_span_id(::Nothing)
+    return nothing
+end
+
+function generate_span_id(callbacks)
+    return uuid4()
+end
+
 # All defined events go here, so its easier to document them all in one place
 
 """
@@ -176,15 +192,16 @@ This event fires right before computing the message and calling the correspondin
 - `mapping`: of type [`ReactiveMP.MessageMapping`](@ref), contains information about the node type, etc
 - `messages`: typically of type `Tuple` if present, `nothing` otherwise
 - `marginals`: typically of type `Tuple` if present, `nothing` otherwise
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterMessageRuleCallEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterMessageRuleCallEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMessageRuleCallEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct BeforeMessageRuleCallEvent{M, Ms, Mr} <: Event{:before_message_rule_call}
+struct BeforeMessageRuleCallEvent{M, Ms, Mr, S} <:
+       Event{:before_message_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
-    trace_id::UUID
+    span_id::S
 end
 
 """
@@ -198,17 +215,18 @@ This event fires right after computing the message and calling the corresponding
 - `marginals`: typically of type `Tuple` if present, `nothing` otherwise
 - `result`: the result of the rule invocation (or `rulefallback`), can be any type
 - `addons`: the result of the addons invocation, if present, can be any type
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A} <: Event{:after_message_rule_call}
+struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, S} <:
+       Event{:after_message_rule_call}
     mapping::M
     messages::Ms
     marginals::Mr
     result::R
     addons::A
-    trace_id::UUID
+    span_id::S
 end
 
 """
@@ -221,16 +239,17 @@ This event fires right before computing the product of two messages.
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `left`: of type [`ReactiveMP.Message`](@ref), the left-hand side message in the product
 - `right`: of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfTwoMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct BeforeProductOfTwoMessagesEvent{V, C, L, R} <: Event{:before_product_of_two_messages}
+struct BeforeProductOfTwoMessagesEvent{V, C, L, R, S} <:
+       Event{:before_product_of_two_messages}
     variable::V
     context::C
     left::L
     right::R
-    trace_id::UUID
+    span_id::S
 end
 
 """
@@ -245,18 +264,19 @@ This event fires right after computing the product of two messages.
 - `right`: of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
 - `result`: of type [`ReactiveMP.Message`](@ref), the resulting message from the product
 - `addons`: the computed addons for the result (can be `nothing`)
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A} <: Event{:after_product_of_two_messages}
+struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A, S} <:
+       Event{:after_product_of_two_messages}
     variable::V
     context::C
     left::L
     right::R
     result::Rs
     addons::A
-    trace_id::UUID
+    span_id::S
 end
 
 """
@@ -269,15 +289,16 @@ This event fires right before computing the product of a collection of messages
 - `variable`: of type [`ReactiveMP.AbstractVariable`](@ref)
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the collection of messages to be multiplied
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterProductOfMessagesEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterProductOfMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfMessagesEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterProductOfMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct BeforeProductOfMessagesEvent{V, C, Ms} <: Event{:before_product_of_messages}
+struct BeforeProductOfMessagesEvent{V, C, Ms, S} <:
+       Event{:before_product_of_messages}
     variable::V
     context::C
     messages::Ms
-    trace_id::UUID
+    span_id::S
 end
 
 """
@@ -291,16 +312,17 @@ This event fires right after computing the product of a collection of messages
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the original collection of messages that were multiplied
 - `result`: of type [`ReactiveMP.Message`](@ref), the final result after folding and form constraint application
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct AfterProductOfMessagesEvent{V, C, Ms, R} <: Event{:after_product_of_messages}
+struct AfterProductOfMessagesEvent{V, C, Ms, R, S} <:
+       Event{:after_product_of_messages}
     variable::V
     context::C
     messages::Ms
     result::R
-    trace_id::UUID
+    span_id::S
 end
 
 """
@@ -314,16 +336,17 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `strategy`: the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
 - `distribution`: the distribution about to be constrained
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterFormConstraintAppliedEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct BeforeFormConstraintAppliedEvent{V, C, S, D} <: Event{:before_form_constraint_applied}
+struct BeforeFormConstraintAppliedEvent{V, C, S, D, I} <:
+       Event{:before_form_constraint_applied}
     variable::V
     context::C
     strategy::S
     distribution::D
-    trace_id::UUID
+    span_id::I
 end
 
 """
@@ -338,17 +361,18 @@ Fires in both [`ReactiveMP.FormConstraintCheckEach`](@ref) and [`ReactiveMP.Form
 - `strategy`: the form constraint check strategy being used (e.g. [`ReactiveMP.FormConstraintCheckEach`](@ref) or [`ReactiveMP.FormConstraintCheckLast`](@ref))
 - `distribution`: the distribution before the constraint was applied
 - `result`: the distribution after the constraint was applied
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeFormConstraintAppliedEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct AfterFormConstraintAppliedEvent{V, C, S, D, R} <: Event{:after_form_constraint_applied}
+struct AfterFormConstraintAppliedEvent{V, C, S, D, R, I} <:
+       Event{:after_form_constraint_applied}
     variable::V
     context::C
     strategy::S
     distribution::D
     result::R
-    trace_id::UUID
+    span_id::I
 end
 
 """
@@ -360,15 +384,16 @@ This event fires right before computing the marginal for a [`ReactiveMP.RandomVa
 - `variable`: of type [`ReactiveMP.RandomVariable`](@ref)
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the collection of incoming messages used to compute the marginal
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.AfterMarginalComputationEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.AfterMarginalComputationEvent`](@ref)
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMarginalComputationEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.AfterMarginalComputationEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct BeforeMarginalComputationEvent{V, C, Ms} <: Event{:before_marginal_computation}
+struct BeforeMarginalComputationEvent{V, C, Ms, S} <:
+       Event{:before_marginal_computation}
     variable::V
     context::C
     messages::Ms
-    trace_id::UUID
+    span_id::S
 end
 
 """
@@ -380,15 +405,16 @@ This event fires right after computing the marginal for a [`ReactiveMP.RandomVar
 - `variable`: of type [`ReactiveMP.RandomVariable`](@ref)
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the collection of incoming messages used to compute the marginal
-- `trace_id`: a `UUID` shared with the corresponding [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
+- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
 - `result`: the computed marginal
 
-See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
+See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMarginalComputationEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """
-struct AfterMarginalComputationEvent{V, C, Ms, R} <: Event{:after_marginal_computation}
+struct AfterMarginalComputationEvent{V, C, Ms, R, S} <:
+       Event{:after_marginal_computation}
     variable::V
     context::C
     messages::Ms
-    trace_id::UUID
     result::R
+    span_id::S
 end
