@@ -6,7 +6,8 @@
     import Base.Iterators: repeated, product
     import BayesBase: xtlog, mirrorlog
     import ReactiveMP:
-        getaddons,
+        getannotations,
+        AnnotationDict,
         compute_product_of_two_messages,
         MessageProductContext,
         as_message
@@ -14,18 +15,17 @@
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false), addons in (1, 2),
+            initial in (true, false),
             data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
-            msg = Message(data, clamped, initial, addons)
+            msg = Message(data, clamped, initial)
             @test getdata(msg) === data
             @test is_clamped(msg) === clamped
             @test is_initial(msg) === initial
             @test as_message(msg) === msg
-            @test getaddons(msg) === addons
+            @test getannotations(msg) isa AnnotationDict
             @test occursin("Message", repr(msg))
             @test occursin(repr(data), repr(msg))
-            @test occursin(repr(addons), repr(msg))
         end
 
         dist1 = NormalMeanVariance(0.0, 1.0)
@@ -35,8 +35,8 @@
             clamped2 in (true, false), initial1 in (true, false),
             initial2 in (true, false)
 
-            msg1 = Message(dist1, clamped1, initial1, nothing)
-            msg2 = Message(dist2, clamped2, initial2, nothing)
+            msg1 = Message(dist1, clamped1, initial1)
+            msg2 = Message(dist2, clamped2, initial2)
 
             @test getdata((msg1, msg2)) === (dist1, dist2)
             @test is_clamped((msg1, msg2)) === all([clamped1, clamped2])
@@ -55,101 +55,89 @@
         dist2 = NormalMeanVariance(randn(), rand())
 
         @test getdata(
-            Message(dist1, false, false, nothing) ×
-            Message(dist2, false, false, nothing),
+            Message(dist1, false, false) × Message(dist2, false, false)
         ) == prod(GenericProd(), dist1, dist2)
         @test getdata(
-            Message(dist2, false, false, nothing) ×
-            Message(dist1, false, false, nothing),
+            Message(dist2, false, false) × Message(dist1, false, false)
         ) == prod(GenericProd(), dist2, dist1)
 
         for (left_is_initial, right_is_initial) in
             product(repeated([true, false], 2)...)
             @test is_clamped(
-                Message(dist1, true, left_is_initial, nothing) ×
-                Message(dist2, false, right_is_initial, nothing),
+                Message(dist1, true, left_is_initial) ×
+                Message(dist2, false, right_is_initial),
             ) == false
             @test is_clamped(
-                Message(dist1, false, left_is_initial, nothing) ×
-                Message(dist2, true, right_is_initial, nothing),
+                Message(dist1, false, left_is_initial) ×
+                Message(dist2, true, right_is_initial),
             ) == false
             @test is_clamped(
-                Message(dist1, true, left_is_initial, nothing) ×
-                Message(dist2, true, right_is_initial, nothing),
+                Message(dist1, true, left_is_initial) ×
+                Message(dist2, true, right_is_initial),
             ) == true
             @test is_clamped(
-                Message(dist2, true, left_is_initial, nothing) ×
-                Message(dist1, false, right_is_initial, nothing),
+                Message(dist2, true, left_is_initial) ×
+                Message(dist1, false, right_is_initial),
             ) == false
             @test is_clamped(
-                Message(dist2, false, left_is_initial, nothing) ×
-                Message(dist1, true, right_is_initial, nothing),
+                Message(dist2, false, left_is_initial) ×
+                Message(dist1, true, right_is_initial),
             ) == false
             @test is_clamped(
-                Message(dist2, true, left_is_initial, nothing) ×
-                Message(dist1, true, right_is_initial, nothing),
+                Message(dist2, true, left_is_initial) ×
+                Message(dist1, true, right_is_initial),
             ) == true
         end
 
         for (left_is_clamped, right_is_clamped) in
             product(repeated([true, false], 2)...)
             @test is_initial(
-                Message(dist1, left_is_clamped, true, nothing) ×
-                Message(dist2, right_is_clamped, true, nothing),
+                Message(dist1, left_is_clamped, true) ×
+                Message(dist2, right_is_clamped, true),
             ) == !(left_is_clamped && right_is_clamped)
             @test is_initial(
-                Message(dist2, left_is_clamped, true, nothing) ×
-                Message(dist1, right_is_clamped, true, nothing),
+                Message(dist2, left_is_clamped, true) ×
+                Message(dist1, right_is_clamped, true),
             ) == !(left_is_clamped && right_is_clamped)
             @test is_initial(
-                Message(dist1, left_is_clamped, false, nothing) ×
-                Message(dist2, right_is_clamped, false, nothing),
+                Message(dist1, left_is_clamped, false) ×
+                Message(dist2, right_is_clamped, false),
             ) == false
             @test is_initial(
-                Message(dist2, left_is_clamped, false, nothing) ×
-                Message(dist1, right_is_clamped, false, nothing),
+                Message(dist2, left_is_clamped, false) ×
+                Message(dist1, right_is_clamped, false),
             ) == false
         end
 
         @test is_initial(
-            Message(dist1, true, true, nothing) ×
-            Message(dist2, true, true, nothing),
+            Message(dist1, true, true) × Message(dist2, true, true)
         ) == false
         @test is_initial(
-            Message(dist1, true, true, nothing) ×
-            Message(dist2, true, false, nothing),
+            Message(dist1, true, true) × Message(dist2, true, false)
         ) == false
         @test is_initial(
-            Message(dist1, true, false, nothing) ×
-            Message(dist2, true, true, nothing),
+            Message(dist1, true, false) × Message(dist2, true, true)
         ) == false
         @test is_initial(
-            Message(dist1, false, true, nothing) ×
-            Message(dist2, true, false, nothing),
+            Message(dist1, false, true) × Message(dist2, true, false)
         ) == true
         @test is_initial(
-            Message(dist1, true, false, nothing) ×
-            Message(dist2, false, true, nothing),
+            Message(dist1, true, false) × Message(dist2, false, true)
         ) == true
         @test is_initial(
-            Message(dist2, true, true, nothing) ×
-            Message(dist1, true, true, nothing),
+            Message(dist2, true, true) × Message(dist1, true, true)
         ) == false
         @test is_initial(
-            Message(dist2, true, true, nothing) ×
-            Message(dist1, true, false, nothing),
+            Message(dist2, true, true) × Message(dist1, true, false)
         ) == false
         @test is_initial(
-            Message(dist2, true, false, nothing) ×
-            Message(dist1, true, true, nothing),
+            Message(dist2, true, false) × Message(dist1, true, true)
         ) == false
         @test is_initial(
-            Message(dist2, false, true, nothing) ×
-            Message(dist1, true, false, nothing),
+            Message(dist2, false, true) × Message(dist1, true, false)
         ) == true
         @test is_initial(
-            Message(dist2, true, false, nothing) ×
-            Message(dist1, false, true, nothing),
+            Message(dist2, true, false) × Message(dist1, false, true)
         ) == true
     end
 
@@ -205,7 +193,7 @@
             method in methods_to_test
 
             T       = typeof(distribution)
-            message = Message(distribution, false, false, nothing)
+            message = Message(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(method, (T,))
             if !isempty(ms) && all(m -> m ∈ distribution_methods, ms)
@@ -218,7 +206,7 @@
         for distribution in distributions, fn_mean in fn_mean_functions
             F       = typeof(fn_mean)
             T       = typeof(distribution)
-            message = Message(distribution, false, false, nothing)
+            message = Message(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(mean, (F, T), ReactiveMP)
             if !isempty(ms)
@@ -246,7 +234,7 @@
         rng = MersenneTwister(1234)
 
         for distribution in distributions2, method in methods_to_test2
-            message = Message(distribution, false, false, nothing)
+            message = Message(distribution, false, false)
 
             for _ in 1:3
                 point = _getpoint(rng, distribution)
@@ -267,7 +255,7 @@ end
         dmessage = DeferredMessage(
             messages_stream,
             marginals_stream,
-            (a, b) -> Message(a + b, false, false, nothing),
+            (a, b) -> Message(a + b, false, false),
         )
 
         # The data cannot be computed since no values were provided yet
@@ -294,7 +282,7 @@ end
 end
 
 @testitem "MessageMapping should call `rulefallback` is no rule is available" begin
-    import ReactiveMP: MessageMapping, getdata
+    import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
     struct SomeArbitraryNodeForRuleFallback end
 
@@ -303,7 +291,7 @@ end
     struct NonexistingDistribution end
 
     meta = "meta"
-    addons = ()
+    annotations = nothing
 
     mapping_no_rule_fallback = MessageMapping(
         SomeArbitraryNodeForRuleFallback,
@@ -312,20 +300,20 @@ end
         Val((:in,)),
         nothing,
         meta,
-        addons,
+        annotations,
         SomeArbitraryNodeForRuleFallback(),
         nothing,
         nothing,
     )
 
-    messages  = (Message(NonexistingDistribution(), false, false, nothing),)
+    messages  = (Message(NonexistingDistribution(), false, false),)
     marginals = nothing
 
     @test_throws ReactiveMP.RuleMethodError mapping_no_rule_fallback(
         messages, marginals
     )
 
-    rulefallback = (args...) -> (args, nothing)
+    rulefallback = (args...) -> (args)
 
     mapping_with_fallback = MessageMapping(
         SomeArbitraryNodeForRuleFallback,
@@ -334,7 +322,7 @@ end
         Val((:in,)),
         nothing,
         meta,
-        addons,
+        annotations,
         SomeArbitraryNodeForRuleFallback(),
         rulefallback,
         nothing,
@@ -349,13 +337,13 @@ end
         nothing,
         marginals,
         meta,
-        addons,
+        AnnotationDict(),
         SomeArbitraryNodeForRuleFallback(),
     )
 end
 
 @testitem "MessageMapping should call provided callbacks handler" begin
-    import ReactiveMP: MessageMapping, getdata
+    import ReactiveMP: MessageMapping, getdata, AnnotationDict
 
     struct SomeArbitraryNodeCallbacksTests end
 
@@ -386,7 +374,7 @@ end
         callbacks,
     )
 
-    messages = (Message(1, false, false, nothing),)
+    messages = (Message(1, false, false),)
     marginals = nothing
 
     @test getdata(mapping(messages, marginals)) == 2
@@ -403,7 +391,7 @@ end
     @test events[2].data.messages === messages
     @test events[2].data.marginals === marginals
     @test events[2].data.result === 2
-    @test events[2].data.addons === ()
+    @test events[2].data.annotations isa AnnotationDict
 end
 
 @testmodule MessageProductContextUtils begin
@@ -464,8 +452,8 @@ end
 
     context = MessageProductContext()
 
-    msg1 = Message(Normal(0, 1), false, false, nothing)
-    msg2 = Message(Normal(0, 1), false, false, nothing)
+    msg1 = Message(Normal(0, 1), false, false)
+    msg2 = Message(Normal(0, 1), false, false)
 
     result = @inferred(
         compute_product_of_two_messages(testvar, context, msg1, msg2)
@@ -491,10 +479,8 @@ end
         right_is_clamped in (true, false), left_is_initial in (true, false),
         right_is_initial in (true, false)
 
-        msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial, nothing)
-        msg2 = Message(
-            Normal(0, 1), right_is_clamped, right_is_initial, nothing
-        )
+        msg1 = Message(Normal(0, 1), left_is_clamped, left_is_initial)
+        msg2 = Message(Normal(0, 1), right_is_clamped, right_is_initial)
 
         result = @inferred(
             compute_product_of_two_messages(testvar, context, msg1, msg2)
@@ -521,12 +507,13 @@ end
         Message,
         compute_product_of_messages,
         compute_product_of_two_messages,
-        getdata
+        getdata,
+        AnnotationDict
 
     messages = [
-        Message(Normal(0, 1), false, false, nothing)
-        Message(Normal(0, 2), false, false, nothing)
-        Message(Normal(0, 3), false, false, nothing)
+        Message(Normal(0, 1), false, false)
+        Message(Normal(0, 2), false, false)
+        Message(Normal(0, 3), false, false)
     ]
 
     @testset "From left to right" begin
@@ -652,8 +639,8 @@ end
             callbacks = handler,
         )
 
-        msg1 = Message(Normal(0, 1), false, false, nothing)
-        msg2 = Message(Normal(0, 2), false, false, nothing)
+        msg1 = Message(Normal(0, 1), false, false)
+        msg2 = Message(Normal(0, 2), false, false)
 
         result = @inferred(
             compute_product_of_messages(testvar, context, [msg1, msg2])
@@ -669,7 +656,7 @@ end
         @test getdata(before.data.left) == Normal(0, 1)
         @test getdata(before.data.right) == Normal(0, 2)
 
-        # After callback: variable, context, left, right, result, addons
+        # After callback: variable, context, left, right, result, annotations
         after = handler.events[2]
         @test after.event === :after_product_of_two_messages
         @test after.data.variable === testvar
@@ -677,7 +664,7 @@ end
         @test getdata(after.data.left) == Normal(0, 1)
         @test getdata(after.data.right) == Normal(0, 2)
         @test after.data.result == result
-        @test after.data.addons == nothing  # no addons
+        @test after.data.annotations isa AnnotationDict  # AnnotationDict is default
     end
 end
 
@@ -693,9 +680,9 @@ end
         getdata
 
     messages = [
-        Message(Normal(0, 1), false, false, nothing)
-        Message(Normal(0, 2), false, false, nothing)
-        Message(Normal(0, 3), false, false, nothing)
+        Message(Normal(0, 1), false, false)
+        Message(Normal(0, 2), false, false)
+        Message(Normal(0, 3), false, false)
     ]
 
     @testset "CheckEach applies form constraint after each pairwise product" begin
@@ -753,9 +740,9 @@ end
         getdata
 
     messages = [
-        Message(Normal(0, 1), false, false, nothing)
-        Message(Normal(0, 2), false, false, nothing)
-        Message(Normal(0, 3), false, false, nothing)
+        Message(Normal(0, 1), false, false)
+        Message(Normal(0, 2), false, false)
+        Message(Normal(0, 3), false, false)
     ]
 
     @testset "CheckLast applies form constraint once at the end" begin
@@ -835,9 +822,9 @@ end
         context = MessageProductContext(; callbacks = handler)
 
         messages = [
-            Message(Normal(0, 1), false, false, nothing)
-            Message(Normal(0, 2), false, false, nothing)
-            Message(Normal(0, 3), false, false, nothing)
+            Message(Normal(0, 1), false, false)
+            Message(Normal(0, 2), false, false)
+            Message(Normal(0, 3), false, false)
         ]
 
         result = compute_product_of_messages(testvar, context, messages)
@@ -868,8 +855,8 @@ end
         context = MessageProductContext(; callbacks = handler)
 
         messages = [
-            Message(Normal(1, 4), false, false, nothing)
-            Message(Normal(3, 4), false, false, nothing)
+            Message(Normal(1, 4), false, false)
+            Message(Normal(3, 4), false, false)
         ]
 
         result = compute_product_of_messages(testvar, context, messages)
@@ -896,9 +883,9 @@ end
         context = MessageProductContext(; callbacks = handler)
 
         messages = [
-            Message(Normal(0, 1), false, false, nothing)
-            Message(Normal(0, 2), false, false, nothing)
-            Message(Normal(0, 3), false, false, nothing)
+            Message(Normal(0, 1), false, false)
+            Message(Normal(0, 2), false, false)
+            Message(Normal(0, 3), false, false)
         ]
 
         result = compute_product_of_messages(testvar, context, messages)

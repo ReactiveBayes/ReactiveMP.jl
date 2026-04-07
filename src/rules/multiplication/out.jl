@@ -18,7 +18,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
     ) # symmetric rule
 end
 
@@ -41,7 +41,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) where {F <: NormalDistributionsFamily} = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
     ) # symmetric rule
 end
 
@@ -81,7 +81,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
     ) # symmetric rule
 end
 
@@ -138,7 +138,7 @@ end
     meta::Union{<:AbstractCorrectionStrategy, Nothing},
 ) = begin
     return @call_rule typeof(*)(:out, Marginalisation) (
-        m_A = m_in, m_in = m_A, meta = meta, addons = getaddons()
+        m_A = m_in, m_in = m_A, meta = meta, annotations = getannotations()
     ) # symmetric rule
 end
 
@@ -154,7 +154,7 @@ end
         m_A = PointMass(mean(m_A).λ),
         m_in = m_in,
         meta = meta,
-        addons = getaddons(),
+        annotations = getannotations(),
     ) # dispatch to real * normal
 end
 

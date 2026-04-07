@@ -23,7 +23,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -34,7 +34,7 @@ function deltafn_apply_layout(
         meta,
         pipeline_stages,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -48,7 +48,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -59,7 +59,7 @@ function deltafn_apply_layout(
         meta,
         pipeline_stages,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -73,7 +73,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -103,7 +103,7 @@ function deltafn_apply_layout(
                     msgs_names,
                     marginal_names,
                     meta,
-                    addons,
+                    annotations,
                     factornode,
                     rulefallback,
                     callbacks,
@@ -132,7 +132,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -143,7 +143,7 @@ function deltafn_apply_layout(
         meta,
         pipeline_stages,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )

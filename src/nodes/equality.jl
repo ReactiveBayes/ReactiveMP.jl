@@ -40,8 +40,8 @@ mutable struct EqualityNode
     EqualityNode() = new(
         lazy(Missing),
         lazy(Missing),
-        Message(missing, true, true, nothing),
-        Message(missing, true, true, nothing),
+        Message(missing, true, true),
+        Message(missing, true, true),
     )
 end
 
@@ -113,7 +113,7 @@ __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <
     if __check_indices(type, chain, node_index)
         return getcache(type, getnode(chain, node_index))
     else
-        return Message(missing, true, true, nothing)
+        return Message(missing, true, true)
     end
 end
 
@@ -146,7 +146,7 @@ nextindex(::EqualityRightOutbound, node_index) = node_index - 1
             return materialize!(type, chain, node_index)
         end
     else
-        return Message(missing, true, true, nothing)
+        return Message(missing, true, true)
     end
 end
 

@@ -23,13 +23,12 @@ function ReactiveMP.rule(
         },
     },
     meta::Any,
-    addons::Any,
+    annotations::Any,
     ::Any,
 ) where {M, m_names}
     # Special case, if there is only one marginal, we can return the result directly.
     if M === 1
-        return DirichletCollection(components(getdata(first(marginals))) .+ 1),
-        addons
+        return DirichletCollection(components(getdata(first(marginals))) .+ 1)
     end
     # First, we have to count the number of dimensions that we need for the contingency matrix.
     c = 0
@@ -48,5 +47,5 @@ function ReactiveMP.rule(
         result = result .* v
     end
     result = Contingency(result)
-    return DirichletCollection(components(result) .+ 1), addons
+    return DirichletCollection(components(result) .+ 1)
 end

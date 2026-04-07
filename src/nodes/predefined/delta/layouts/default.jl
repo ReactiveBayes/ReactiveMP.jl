@@ -51,7 +51,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -70,7 +70,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -107,7 +107,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -137,7 +137,7 @@ function deltafn_apply_layout(
                     msgs_names,
                     marginal_names,
                     meta,
-                    addons,
+                    annotations,
                     factornode,
                     rulefallback,
                     callbacks,
@@ -166,7 +166,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -195,7 +195,7 @@ function deltafn_apply_layout(
                     msgs_names,
                     marginal_names,
                     meta,
-                    addons,
+                    annotations,
                     factornode,
                     rulefallback,
                     callbacks,
@@ -240,7 +240,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -251,7 +251,7 @@ function deltafn_apply_layout(
         meta,
         pipeline_stages,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -264,7 +264,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -275,7 +275,7 @@ function deltafn_apply_layout(
         meta,
         pipeline_stages,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -288,7 +288,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 )
@@ -299,7 +299,7 @@ function deltafn_apply_layout(
         meta,
         pipeline_stages,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -313,7 +313,7 @@ function deltafn_apply_layout(
     meta,
     pipeline_stages,
     scheduler,
-    addons,
+    annotations,
     rulefallback,
     callbacks,
 ) where {F}
@@ -325,7 +325,7 @@ function deltafn_apply_layout(
         # If we have only one `interface` we replace it with nothing
         # In other cases we remove the current index from the list of interfaces
         msgs_ins_stream = if N === 1 # `N` should be known at compile-time here so this `if` branch must be compiled out
-            of(Message(nothing, true, true, nothing))
+            of(Message(nothing, true, true))
         else
             combineLatestMessagesInUpdates(
                 TupleTools.deleteat(factornode.ins, index)
@@ -354,7 +354,7 @@ function deltafn_apply_layout(
                     msgs_names,
                     marginal_names,
                     meta,
-                    addons,
+                    annotations,
                     factornode,
                     rulefallback,
                     callbacks,

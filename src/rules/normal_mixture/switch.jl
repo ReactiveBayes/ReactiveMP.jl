@@ -22,7 +22,7 @@ function rule_nm_switch_k(::Type{Univariate}, q_out, m, p)
         AverageEnergy(),
         NormalMeanPrecision,
         Val{(:out, :μ, :τ)}(),
-        map((q) -> Marginal(q, false, false, nothing), (q_out, m, p)),
+        map((q) -> Marginal(q, false, false), (q_out, m, p)),
         nothing,
     )
 end
@@ -32,7 +32,7 @@ function rule_nm_switch_k(::Type{Multivariate}, q_out, m, p)
         AverageEnergy(),
         MvNormalMeanPrecision,
         Val{(:out, :μ, :Λ)}(),
-        map((q) -> Marginal(q, false, false, nothing), (q_out, m, p)),
+        map((q) -> Marginal(q, false, false), (q_out, m, p)),
         nothing,
     )
 end

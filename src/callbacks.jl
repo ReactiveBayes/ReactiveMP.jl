@@ -214,7 +214,7 @@ This event fires right after computing the message and calling the corresponding
 - `messages`: typically of type `Tuple` if present, `nothing` otherwise
 - `marginals`: typically of type `Tuple` if present, `nothing` otherwise
 - `result`: the result of the rule invocation (or `rulefallback`), can be any type
-- `addons`: the result of the addons invocation, if present, can be any type
+- `annotations`: the annotations attached to the result, of type [`ReactiveMP.AnnotationDict`](@ref)
 - `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMessageRuleCallEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
@@ -225,7 +225,7 @@ struct AfterMessageRuleCallEvent{M, Ms, Mr, R, A, S} <:
     messages::Ms
     marginals::Mr
     result::R
-    addons::A
+    annotations::A
     span_id::S
 end
 
@@ -263,7 +263,7 @@ This event fires right after computing the product of two messages.
 - `left`: of type [`ReactiveMP.Message`](@ref), the left-hand side message in the product
 - `right`: of type [`ReactiveMP.Message`](@ref), the right-hand side message in the product
 - `result`: of type [`ReactiveMP.Message`](@ref), the resulting message from the product
-- `addons`: the computed addons for the result (can be `nothing`)
+- `annotations`: the annotations attached to the result, of type [`ReactiveMP.AnnotationDict`](@ref)
 - `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
@@ -275,7 +275,7 @@ struct AfterProductOfTwoMessagesEvent{V, C, L, R, Rs, A, S} <:
     left::L
     right::R
     result::Rs
-    addons::A
+    annotations::A
     span_id::S
 end
 
@@ -405,8 +405,8 @@ This event fires right after computing the marginal for a [`ReactiveMP.RandomVar
 - `variable`: of type [`ReactiveMP.RandomVariable`](@ref)
 - `context`: of type [`ReactiveMP.MessageProductContext`](@ref)
 - `messages`: the collection of incoming messages used to compute the marginal
-- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
 - `result`: the computed marginal
+- `span_id`: an id shared with the corresponding [`ReactiveMP.BeforeMarginalComputationEvent`](@ref)
 
 See also: [`ReactiveMP.invoke_callback`](@ref), [`ReactiveMP.BeforeMarginalComputationEvent`](@ref), [`ReactiveMP.generate_span_id`](@ref)
 """

@@ -9,9 +9,9 @@
             Uniform,
             Val{(:out, :a, :b)}(),
             (
-                Marginal(Beta(α, β), false, false, nothing),
-                Marginal(PointMass(a), false, false, nothing),
-                Marginal(PointMass(b), false, false, nothing),
+                Marginal(Beta(α, β), false, false),
+                Marginal(PointMass(a), false, false),
+                Marginal(PointMass(b), false, false),
             ),
             nothing,
         ) == 0.0

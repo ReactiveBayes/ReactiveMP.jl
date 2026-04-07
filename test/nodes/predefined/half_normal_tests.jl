@@ -8,8 +8,7 @@
             q_v   = PointMass(2.0)
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_v, false, false, nothing),
+                Marginal(q_out, false, false), Marginal(q_v, false, false)
             )
 
             @test score(
@@ -25,8 +24,7 @@
             q_v   = PointMass(2.0)
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_v, false, false, nothing),
+                Marginal(q_out, false, false), Marginal(q_v, false, false)
             )
 
             @test score(
@@ -43,8 +41,7 @@
             q_v   = PointMass(2.0)
 
             marginals = (
-                Marginal(q_out, false, false, nothing),
-                Marginal(q_v, false, false, nothing),
+                Marginal(q_out, false, false), Marginal(q_v, false, false)
             )
 
             @test score(

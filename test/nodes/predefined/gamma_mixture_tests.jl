@@ -191,10 +191,10 @@ end
         q_b = (GammaShapeRate(1.5, 2.5), GammaShapeRate(3.5, 4.5))
 
         marginals = (
-            Marginal(q_out, false, false, nothing),
-            Marginal(q_switch, false, false, nothing),
-            ManyOf(map(q -> Marginal(q, false, false, nothing), q_a)),
-            ManyOf(map(q -> Marginal(q, false, false, nothing), q_b)),
+            Marginal(q_out, false, false),
+            Marginal(q_switch, false, false),
+            ManyOf(map(q -> Marginal(q, false, false), q_a)),
+            ManyOf(map(q -> Marginal(q, false, false), q_b)),
         )
 
         # @average_energy GammaMixture (q_out::Any, q_switch::Any, q_a::ManyOf{N, Any}, q_b::ManyOf{N, GammaShapeRate})
@@ -204,20 +204,14 @@ end
                 AverageEnergy(),
                 GammaShapeRate,
                 Val{(:out, :α, :β)}(),
-                map(
-                    (q) -> Marginal(q, false, false, nothing),
-                    (q_out, q_a[1], q_b[1]),
-                ),
+                map((q) -> Marginal(q, false, false), (q_out, q_a[1], q_b[1])),
                 nothing,
             ) +
             z[2] * score(
                 AverageEnergy(),
                 GammaShapeRate,
                 Val{(:out, :α, :β)}(),
-                map(
-                    (q) -> Marginal(q, false, false, nothing),
-                    (q_out, q_a[2], q_b[2]),
-                ),
+                map((q) -> Marginal(q, false, false), (q_out, q_a[2], q_b[2])),
                 nothing,
             )
 

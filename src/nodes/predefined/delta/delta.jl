@@ -88,7 +88,7 @@ function rule(
     qnames,
     marginals,
     meta::DeltaMeta,
-    addons::Any,
+    annotations::Any,
     node::DeltaFnNode,
 ) where {F <: Function}
     return rule(
@@ -100,7 +100,7 @@ function rule(
         qnames,
         marginals,
         meta,
-        addons,
+        annotations,
         node,
     )
 end
@@ -303,7 +303,7 @@ function activate!(
     end
 
     scheduler    = getscheduler(options)
-    addons       = getaddons(options)
+    annotations  = getannotations(options)
     rulefallback = getrulefallback(options)
     callbacks    = getcallbacks(options)
 
@@ -315,7 +315,7 @@ function activate!(
         meta,
         pipeline,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -328,7 +328,7 @@ function activate!(
         meta,
         pipeline,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -341,7 +341,7 @@ function activate!(
         meta,
         pipeline,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )
@@ -354,7 +354,7 @@ function activate!(
         meta,
         pipeline,
         scheduler,
-        addons,
+        annotations,
         rulefallback,
         callbacks,
     )

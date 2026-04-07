@@ -23,7 +23,7 @@ This function is used to compute an outbound message for a given node
 - `qnames`: Ordered marginal names in form of the Val type, eg. `::Val{ (:mean, :precision) }`
 - `marginals`: Tuple of marginals of the same length as `qnames` used to compute an outbound message
 - `meta`: Extra meta information
-- `addons`: Extra addons information
+- `annotations`: An `AnnotationDict` for writing annotations during rule execution
 - `__node`: Node reference
 
 For all available rules, see `ReactiveMP.print_rules_table()`.
@@ -255,7 +255,7 @@ function call_rule_macro_parse_fn_args(inputs; specname, prefix, proxy)
                 $(map(v -> apply_proxy(v, proxy), any.args[2:end])...),
             )))
         end
-        return :($(proxy)($any, false, false, nothing))
+        return :($(proxy)($any, false, false))
     end
 
     names_arg  = isempty(names) ? :nothing : :(Val{$(Expr(:tuple, map(n -> QuoteNode(Symbol(string(n)[(lprefix + 1):end])), names)...))}())
@@ -352,7 +352,7 @@ function rule_function_expression(
     metatype,
     whereargs,
 )
-    addonsvar = gensym(:addons)
+    annotationsvar = gensym(:annotations)
     nodevar = gensym(:node)
     return quote
         function ReactiveMP.rule(
@@ -364,13 +364,13 @@ function rule_function_expression(
             marginals_names::$(q_names),
             marginals::$(q_types),
             meta::$(metatype),
-            $(addonsvar),
+            $(annotationsvar),
             $(nodevar),
         ) where {$(whereargs...)}
             local getnode = () -> $nodevar
             local getnodefn =
                 (args...) -> ReactiveMP.nodefunction($nodevar, args...)
-            local getaddons = () -> $addonsvar
+            local getannotations = () -> $annotationsvar
             $(body())
         end
     end
@@ -543,26 +543,10 @@ macro rule(fform, lambda)
                 whereargs,
             ) do
                 return quote
-                    local _addons = getaddons()
-                    # This trick allows us to use arbitrary control-flow logic
-                    # inside rules, e.g. if-else-returns etc, however 
-                    # it makes it not-type-stable with respect to addons
-                    # on my (bvdmitri) benchmarks it accounted for 2-3% slowdown
-                    # when using addons, which is IMO acceptable, but can be changed 
-                    # in the future by banning return statements from the `@rule` macro
-                    # I'm against of manually removing return statements as 
-                    # it is very hard to implement correctly, I would rather make it more stable 
-                    # when fast but error-prone
-                    # Another way to speed-up this part a little bit would be to refactor addons 
-                    # in such a way that their structure is always known to the compiler and type stable
-                    local _messagebody = () -> begin
-                        $(on_index_init)
-                        $(m_init_block...)
-                        $(q_init_block...)
-                        $(body)
-                    end
-                    local _message = _messagebody()
-                    return _message, _addons
+                    $(on_index_init)
+                    $(m_init_block...)
+                    $(q_init_block...)
+                    $(body)
                 end
             end
         )
@@ -572,21 +556,24 @@ macro rule(fform, lambda)
 end
 
 """
-    @call_rule NodeType(:edge, Constraint) (argument1 = value1, argument2 = value2, ..., [ meta = ..., addons = ... ])
+    @call_rule NodeType(:edge, Constraint) (argument1 = value1, argument2 = value2, ..., [ meta = ..., annotations = ... ])
 
-The `@call_rule` macro helps to call the `rule` method with an easier syntax. 
+The `@call_rule` macro helps to call the `rule` method with an easier syntax.
 The structure of the macro is almost the same as in the `@rule` macro, but there is no `begin ... end` block, but instead each argument must have a specified value with the `=` operator.
 
 The `@call_rule` accepts optional list of options before the functional form specification, for example:
 
 ```julia
-@call_rule [ return_addons = true ] NodeType(:edge, Constraint) (argument1 = value1, argument2 = value2, ..., [ meta = ..., addons = ... ])
+@call_rule [ fallback = MyFallback() ] NodeType(:edge, Constraint) (argument1 = value1, argument2 = value2, ..., [ meta = ..., annotations = ... ])
 ```
 
 The list of available options is:
 
-- `return_addons` - forces the `@call_rule` to return the tuple of `(result, addons)`
 - `fallback` - specifies the fallback rule to use in case the rule is not defined for the given `NodeType` and specified arguments
+
+The optional `annotations` keyword accepts an `AnnotationDict` that will be passed to the rule body.
+Any annotations written during rule execution (e.g. via `@logscale`) will be stored in this dict.
+If not provided, a temporary `AnnotationDict()` is created internally.
 
 See also: [`@rule`](@ref), [`rule`](@ref), [`@call_marginalrule`](@ref)
 """
@@ -605,9 +592,15 @@ function call_rule_expression(options, fform, args)
 
     @capture(
         args,
-        (inputs__, meta = meta_, addons = addons_) |
-        (inputs__, addons = addons_) | (inputs__, meta = meta_) | (inputs__,)
+        (inputs__, meta = meta_, annotations = annotations_) |
+        (inputs__, annotations = annotations_) | (inputs__, meta = meta_) |
+            (inputs__,)
     ) || error("Error in macro. Arguments specification is incorrect")
+
+    # Default annotations to a fresh AnnotationDict if not provided
+    if annotations === nothing
+        annotations = :(ReactiveMP.AnnotationDict())
+    end
 
     fuppertype                       = MacroHelpers.upper_type(fformtype)
     fbottomtype                      = MacroHelpers.bottom_type(fformtype)
@@ -640,8 +633,6 @@ function call_rule_expression(options, fform, args)
     on_arg = call_rule_macro_construct_on_arg(on_type, on_index)
 
     # Options
-    # Option 1. Modifies the output of the `@call_rule` macro and returns a tuple of the result and the enabled addons
-    return_addons = false
     fallback = nothing
 
     if !isnothing(options)
@@ -652,9 +643,7 @@ function call_rule_expression(options, fform, args)
             @capture(option, key_ = value_) || error(
                 "Error in macro. An options should be in a form of `option = value`, got $(option).",
             )
-            if key === :return_addons
-                return_addons = Bool(value)
-            elseif key === :fallback
+            if key === :fallback
                 fallback = value
             else
                 @warn "Unknown option in the `@call_rule` macro: $(option)"
@@ -663,10 +652,8 @@ function call_rule_expression(options, fform, args)
     end
 
     __rule_result_sym = gensym(:call_rule_result)
-    __distribution_sym = gensym(:call_rule_distribution)
-    __addons_sym = gensym(:call_rule_addons)
 
-    call = quote
+    output = quote
         local $__rule_result_sym = ReactiveMP.rule(
             $fbottomtype,
             $on_arg,
@@ -676,7 +663,7 @@ function call_rule_expression(options, fform, args)
             $q_names_arg,
             $q_values_arg,
             $meta,
-            $addons,
+            $annotations,
             $node,
         )
         if ($__rule_result_sym) isa ReactiveMP.RuleMethodError &&
@@ -690,19 +677,13 @@ function call_rule_expression(options, fform, args)
                 $q_names_arg,
                 $q_values_arg,
                 $meta,
-                $addons,
+                $annotations,
                 $node,
             )
         elseif ($__rule_result_sym) isa ReactiveMP.RuleMethodError
             throw($__rule_result_sym)
         end
-        local $(__distribution_sym), $(__addons_sym) = $(__rule_result_sym)
-    end
-
-    output = if !return_addons
-        :($call; $__distribution_sym)
-    else
-        :($call)
+        $__rule_result_sym
     end
 
     return esc(output)
@@ -1558,11 +1539,11 @@ struct RuleMethodError
     qnames
     marginals
     meta
-    addons
+    annotations
     node
 end
 
-rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, __node) = RuleMethodError(
+rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, annotations, __node) = RuleMethodError(
     fform,
     on,
     vconstraint,
@@ -1571,7 +1552,7 @@ rule(fform, on, vconstraint, mnames, messages, qnames, marginals, meta, addons, 
     qnames,
     marginals,
     meta,
-    addons,
+    annotations,
     __node,
 )
 
@@ -1629,9 +1610,6 @@ function Base.showerror(io::IO, error::RuleMethodError)
 
         println(io, "\n\nPossible fix, define:\n")
         println(io, possible_fix_definition)
-        if !isnothing(error.addons)
-            println(io, "\n\nEnabled addons: ", error.addons, "\n")
-        end
 
         node_rules = filter(
             m -> ReactiveMP.get_node_from_rule_method(m) == spec_fform,
@@ -1704,7 +1682,7 @@ function Base.showerror(io::IO, error::RuleMethodError)
         println(io, "rule.qnames: ", error.qnames)
         println(io, "rule.marginals: ", error.marginals)
         println(io, "rule.meta: ", error.meta)
-        println(io, "rule.addons: ", error.addons)
+        println(io, "rule.annotations: ", error.annotations)
     end
 end
 

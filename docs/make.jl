@@ -33,9 +33,16 @@ makedocs(
                 "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
             ]
         ],
+        "Annotations" => [
+            "Overview"         => "lib/annotations.md",
+            "Log-scale"        => "lib/annotations/logscale.md",
+            "Input arguments"  => "lib/annotations/input_arguments.md",
+        ],
         "Custom functionality" => [
             "Custom functional form" => "custom/custom-functional-form.md",
-            "Custom addons"          => "custom/custom-addons.md"
+        ],
+        "Migration guides" => [
+            "v5 to v6" => "migration-guides/v5-to-v6.md",
         ],
         "Extra" => [
             "Contributing"     => "extra/contributing.md",

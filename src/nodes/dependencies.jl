@@ -29,7 +29,7 @@ abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
     scheduler    = getscheduler(options)
-    addons       = getaddons(options)
+    annotations  = getannotations(options)
     rulefallback = getrulefallback(options)
     callbacks    = getcallbacks(options)
     fform        = functionalform(factornode)
@@ -61,7 +61,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                             messagestag,
                             marginalstag,
                             meta,
-                            addons,
+                            annotations,
                             node_if_required(fform, factornode),
                             rulefallback,
                             callbacks,

@@ -41,13 +41,13 @@ Message
 
 From an implementation point a view the `Message` structure does nothing but hold some `data` object and redirects most of the statistical related functions to that `data` object. 
 However, this object is used extensively in Julia's multiple dispatch. 
-Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if [product of two messages](@ref lib-messages-product) results in `is_initial` or `is_clamped` posterior marginal. The final field contains the addons. These contain additional information on top of the functional form of the distribution, such as its scaling or computation history.
+Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if [product of two messages](@ref lib-messages-product) results in `is_initial` or `is_clamped` posterior marginal. Each message also carries an [`AnnotationDict`](@ref) for optional metadata such as log-scale factors or computation history (see [Annotations](@ref lib-annotations)).
 
 ```@docs
 ReactiveMP.getdata(message::Message)
 ReactiveMP.is_clamped(message::Message)
 ReactiveMP.is_initial(message::Message)
-ReactiveMP.getaddons(message::Message)
+ReactiveMP.getannotations(message::Message)
 ReactiveMP.as_message
 ```
 
@@ -55,7 +55,7 @@ ReactiveMP.as_message
 using ReactiveMP, BayesBase, ExponentialFamily
 
 distribution = ExponentialFamily.NormalMeanPrecision(0.0, 1.0)
-message      = Message(distribution, false, true, nothing)
+message      = Message(distribution, false, true)
 ```
 
 ```@example message

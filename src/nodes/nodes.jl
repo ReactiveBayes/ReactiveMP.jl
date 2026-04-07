@@ -278,7 +278,7 @@ struct FactorNodeActivationOptions{M, D, P, A, S, R, E}
     metadata::M
     dependencies::D
     pipeline::P
-    addons::A
+    annotations::A
     scheduler::S
     rulefallback::R
     callbacks::E
@@ -287,7 +287,7 @@ end
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
 getdependecies(options::FactorNodeActivationOptions) = options.dependencies
 getpipeline(options::FactorNodeActivationOptions) = options.pipeline
-getaddons(options::FactorNodeActivationOptions) = options.addons
+getannotations(options::FactorNodeActivationOptions) = options.annotations
 getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 getcallbacks(options::FactorNodeActivationOptions) = options.callbacks

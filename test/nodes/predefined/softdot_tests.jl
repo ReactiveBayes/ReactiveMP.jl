@@ -9,10 +9,10 @@
             q_x = NormalMeanVariance(5.0, 9.0)
             q_γ = GammaShapeRate(3 / 2, 4242 / 2)
             marginals = (
-                Marginal(q_y, false, false, nothing),
-                Marginal(q_θ, false, false, nothing),
-                Marginal(q_x, false, false, nothing),
-                Marginal(q_γ, false, false, nothing),
+                Marginal(q_y, false, false),
+                Marginal(q_θ, false, false),
+                Marginal(q_x, false, false),
+                Marginal(q_γ, false, false),
             )
 
             @test score(
@@ -30,10 +30,10 @@
             q_x = MvNormalMeanCovariance([5.0, 9.0], [11.0 13.0; 17.0 19.0])
             q_γ = GammaShapeRate(3 / 2, 191032 / 2)
             marginals = (
-                Marginal(q_y, false, false, nothing),
-                Marginal(q_θ, false, false, nothing),
-                Marginal(q_x, false, false, nothing),
-                Marginal(q_γ, false, false, nothing),
+                Marginal(q_y, false, false),
+                Marginal(q_θ, false, false),
+                Marginal(q_x, false, false),
+                Marginal(q_γ, false, false),
             )
 
             @test score(
@@ -51,9 +51,9 @@
             q_γ = GammaShapeRate(2.0, 3.0)
 
             marginals = (
-                Marginal(q_y_x, false, false, nothing),
-                Marginal(q_θ, false, false, nothing),
-                Marginal(q_γ, false, false, nothing),
+                Marginal(q_y_x, false, false),
+                Marginal(q_θ, false, false),
+                Marginal(q_γ, false, false),
             )
             @test score(
                 AverageEnergy(),
@@ -70,9 +70,9 @@
             q_γ = GammaShapeRate(2.0, 3.0)
 
             marginals = (
-                Marginal(q_y_x, false, false, nothing),
-                Marginal(q_θ, false, false, nothing),
-                Marginal(q_γ, false, false, nothing),
+                Marginal(q_y_x, false, false),
+                Marginal(q_θ, false, false),
+                Marginal(q_γ, false, false),
             )
             @test score(
                 AverageEnergy(),

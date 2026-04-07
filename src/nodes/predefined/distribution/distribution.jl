@@ -51,7 +51,7 @@ function activate!(
         factornode,
         options,
     )
-    vmessageout = of(Message(factornode.distribution, true, false, nothing))
+    vmessageout = of(Message(factornode.distribution, true, false))
     connect!(messageout(getinterface(factornode, 1)), vmessageout)
     return nothing
 end
