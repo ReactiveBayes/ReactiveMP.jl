@@ -168,11 +168,11 @@ function compute_product_of_two_messages(
     left::Message,
     right::Message,
 )
-    trace_id = uuid4()
+    span_id = generate_span_id(context.callbacks)
     invoke_callback(
         context.callbacks,
         BeforeProductOfTwoMessagesEvent(
-            variable, context, left, right, trace_id
+            variable, context, left, right, span_id
         ),
     )
 
@@ -190,7 +190,7 @@ function compute_product_of_two_messages(
     new_dist   = prod(context.prod_constraint, left_dist, right_dist)
 
     if context.form_constraint_check_strategy === FormConstraintCheckEach()
-        form_trace_id = uuid4()
+        form_span_id = generate_span_id(context.callbacks)
         invoke_callback(
             context.callbacks,
             BeforeFormConstraintAppliedEvent(
@@ -198,7 +198,7 @@ function compute_product_of_two_messages(
                 context,
                 FormConstraintCheckEach(),
                 new_dist,
-                form_trace_id,
+                form_span_id,
             ),
         )
         unconstrained_dist = new_dist
@@ -211,7 +211,7 @@ function compute_product_of_two_messages(
                 FormConstraintCheckEach(),
                 unconstrained_dist,
                 new_dist,
-                form_trace_id,
+                form_span_id,
             ),
         )
     end
@@ -225,7 +225,7 @@ function compute_product_of_two_messages(
     invoke_callback(
         context.callbacks,
         AfterProductOfTwoMessagesEvent(
-            variable, context, left, right, result, new_ann, trace_id
+            variable, context, left, right, result, new_ann, span_id
         ),
     )
 
@@ -251,10 +251,10 @@ See also: [`ReactiveMP.compute_product_of_two_messages`](@ref), [`ReactiveMP.Mes
 function compute_product_of_messages(
     variable::AbstractVariable, context::MessageProductContext, messages
 )
-    trace_id = uuid4()
+    span_id = generate_span_id(context.callbacks)
     invoke_callback(
         context.callbacks,
-        BeforeProductOfMessagesEvent(variable, context, messages, trace_id),
+        BeforeProductOfMessagesEvent(variable, context, messages, span_id),
     )
 
     result = as_message(
@@ -265,15 +265,11 @@ function compute_product_of_messages(
 
     if context.form_constraint_check_strategy === FormConstraintCheckLast()
         dist = getdata(result)
-        form_trace_id = uuid4()
+        form_span_id = generate_span_id(context.callbacks)
         invoke_callback(
             context.callbacks,
             BeforeFormConstraintAppliedEvent(
-                variable,
-                context,
-                FormConstraintCheckLast(),
-                dist,
-                form_trace_id,
+                variable, context, FormConstraintCheckLast(), dist, form_span_id
             ),
         )
         constrained_dist = constrain_form(context.form_constraint, dist)
@@ -285,7 +281,7 @@ function compute_product_of_messages(
                 FormConstraintCheckLast(),
                 dist,
                 constrained_dist,
-                form_trace_id,
+                form_span_id,
             ),
         )
         result = Message(
@@ -299,7 +295,7 @@ function compute_product_of_messages(
     invoke_callback(
         context.callbacks,
         AfterProductOfMessagesEvent(
-            variable, context, messages, result, trace_id
+            variable, context, messages, result, span_id
         ),
     )
 
@@ -596,10 +592,10 @@ function (mapping::MessageMapping)(messages, marginals)
             __check_all(is_clamped_or_initial, marginals)
         )
 
-    trace_id = uuid4()
+    span_id = generate_span_id(mapping.callbacks)
     invoke_callback(
         mapping.callbacks,
-        BeforeMessageRuleCallEvent(mapping, messages, marginals, trace_id),
+        BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id),
     )
 
     ann = AnnotationDict()
@@ -648,7 +644,7 @@ function (mapping::MessageMapping)(messages, marginals)
     invoke_callback(
         mapping.callbacks,
         AfterMessageRuleCallEvent(
-            mapping, messages, marginals, result, ann, trace_id
+            mapping, messages, marginals, result, ann, span_id
         ),
     )
 

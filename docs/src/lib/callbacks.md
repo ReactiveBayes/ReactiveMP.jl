@@ -38,6 +38,21 @@ To see which fields an event carries, use the standard Julia introspection:
 julia> ?ReactiveMP.BeforeProductOfTwoMessagesEvent
 ```
 
+## Event spans
+
+Certain events create a "span". For example all "before" and "after" events 
+can be considered together. To track these relationships ReactiveMP uses the 
+`span_id` field in such events and uses the [`ReactiveMP.generate_span_id`](@ref)
+function to generate shared ids.
+
+```@docs 
+ReactiveMP.generate_span_id
+```
+
+Custom callbacks can overwrite the `ReactiveMP.generate_span_id` to return `nothing`
+if necessary. Note, however, that [`ReactiveMP.MergedCallbacks`](@ref) would still 
+use the default implementation.
+
 ## All defined events
 
 Here is the list of predefined event types, to which a custom callback handler can react to.
