@@ -35,8 +35,7 @@
             q_τ = GammaShapeRate(1.5, 1.5)
 
             marginals = (
-                Marginal(q_out_μ, false, false),
-                Marginal(q_τ, false, false),
+                Marginal(q_out_μ, false, false), Marginal(q_τ, false, false)
             )
             @test score(
                 AverageEnergy(),
@@ -54,8 +53,7 @@
             )
 
             marginals = (
-                Marginal(q_out, false, false),
-                Marginal(q_μ_τ, false, false),
+                Marginal(q_out, false, false), Marginal(q_μ_τ, false, false)
             )
             @test score(
                 AverageEnergy(),

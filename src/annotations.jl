@@ -151,29 +151,12 @@ function post_product_annotations!(
     return merged
 end
 
-post_product_annotations!(
-    processors,
-    left_ann::AnnotationDict,
-    right_ann::AnnotationDict,
-    new_dist,
-    ::Missing,
-    ::Missing,
-) = AnnotationDict()
+post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, ::Missing) = AnnotationDict()
 
-post_product_annotations!(
-    processors,
-    left_ann::AnnotationDict,
-    right_ann::AnnotationDict,
-    new_dist,
-    ::Missing,
-    right_dist,
-) = AnnotationDict(right_ann)
+post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, ::Missing, right_dist) = AnnotationDict(
+    right_ann
+)
 
-post_product_annotations!(
-    processors,
-    left_ann::AnnotationDict,
-    right_ann::AnnotationDict,
-    new_dist,
-    left_dist,
-    ::Missing,
-) = AnnotationDict(left_ann)
+post_product_annotations!(processors, left_ann::AnnotationDict, right_ann::AnnotationDict, new_dist, left_dist, ::Missing) = AnnotationDict(
+    left_ann
+)

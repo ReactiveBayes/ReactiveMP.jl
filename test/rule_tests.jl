@@ -126,9 +126,7 @@
             outputs = (:(NormalMeanVariance(0.0, 0.0)), :(Gamma(2.0, 3.0)))
 
             for f in fns,
-                test_f in tfns,
-                spec in specs,
-                input in inputs,
+                test_f in tfns, spec in specs, input in inputs,
                 output in outputs
 
                 test_entry = convert(
