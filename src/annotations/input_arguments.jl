@@ -116,6 +116,44 @@ function post_product_annotations!(
     return nothing
 end
 
+function Base.show(io::IO, record::RuleInputArgumentsRecord)
+    indent = get(io, :indent, 0)
+    pad    = ' '^indent
+    mapping = record.mapping
+    println(io, pad, "Rule input arguments:")
+    println(io, pad, "  node:       ", message_mapping_fform(mapping))
+    println(io, pad, "  interface:  ", mapping.vtag)
+    println(io, pad, "  constraint: ", mapping.vconstraint)
+    if !isnothing(mapping.meta)
+        println(io, pad, "  meta:       ", mapping.meta)
+    end
+    if !isnothing(record.messages)
+        names = unval(mapping.msgs_names)
+        for (name, msg) in zip(names, record.messages)
+            println(io, pad, "  msg(", name, ") = ", msg)
+        end
+    end
+    if !isnothing(record.marginals)
+        names = unval(mapping.marginals_names)
+        for (name, mar) in zip(names, record.marginals)
+            println(io, pad, "  q(", name, ") = ", mar)
+        end
+    end
+    print(io, pad, "  result:     ", record.result)
+end
+
+function Base.show(io::IO, record::ProductInputArgumentsRecord)
+    indent = get(io, :indent, 0)
+    pad    = ' '^indent
+    println(io, pad, "Product of ", length(record.mappings), " rule input arguments:")
+    inner = IOContext(io, :indent => indent + 4)
+    for (i, r) in enumerate(record.mappings)
+        println(inner, pad, "  [", i, "]")
+        show(inner, r)
+        i < length(record.mappings) && println(io)
+    end
+end
+
 """
     AddonMemory(args...; kwargs...)
 
