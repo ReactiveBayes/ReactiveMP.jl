@@ -3,8 +3,6 @@
     using ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
 
     import ReactiveMP: activate!
-    import Rocket: getscheduler
-
     struct CustomDeterministicNodeForVariableTests end
 
     @node CustomDeterministicNodeForVariableTests Deterministic [out, x]

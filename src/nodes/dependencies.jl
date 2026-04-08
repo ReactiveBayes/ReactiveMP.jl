@@ -28,13 +28,11 @@ end
 abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
-    scheduler    = getscheduler(options)
     annotations  = getannotations(options)
     rulefallback = getrulefallback(options)
     callbacks    = getcallbacks(options)
     fform        = functionalform(factornode)
     meta         = collect_meta(fform, getmetadata(options))
-    pipeline     = collect_pipeline(fform, getpipeline(options))
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
@@ -72,10 +70,6 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                     end
 
                 vmessageout = vmessageout |> map(AbstractMessage, mapping)
-                vmessageout = apply_pipeline_stage(
-                    pipeline, factornode, vtag, vmessageout
-                )
-                vmessageout = vmessageout |> schedule_on(scheduler)
 
                 connect!(messageout(interface), vmessageout)
             end
@@ -289,7 +283,7 @@ end
 """
    RequireEverythingFunctionalDependencies
 
-This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally.
+This strategy specifies that in order to compute a message of some edge update rules request everything that is available locally.
 This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
 
 See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)

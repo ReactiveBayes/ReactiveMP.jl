@@ -62,24 +62,22 @@ setcache!(::EqualityRightOutbound, node::EqualityNode, cache::Message) = node.ca
 """
     EqualityChain
 """
-struct EqualityChain{P, F}
+struct EqualityChain{F}
     length     :: Int
     nodes      :: Vector{EqualityNode}
     inputmsgs  :: Vector{MessageObservable{AbstractMessage}}
     cacheleft  :: BitVector
     cacheright :: BitVector
-    pipeline   :: P
     prod_fn    :: F
 
     function EqualityChain(
         inputmsgs::Vector{MessageObservable{AbstractMessage}},
-        pipeline::P,
         prod_fn::F,
-    ) where {P, F}
+    ) where {F}
         n = length(inputmsgs)
         nodes = map(_ -> EqualityNode(), 1:n)
-        return new{P, F}(
-            n, nodes, inputmsgs, falses(n), falses(n), pipeline, prod_fn
+        return new{F}(
+            n, nodes, inputmsgs, falses(n), falses(n), prod_fn
         )
     end
 end
@@ -87,8 +85,6 @@ end
 Base.length(chain::EqualityChain) = chain.length
 
 prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
-
-getpipeline(chain::EqualityChain) = chain.pipeline
 
 @propagate_inbounds getnode(chain::EqualityChain, node_index) = chain.nodes[node_index]
 
@@ -205,8 +201,6 @@ Base.map(::Type{Message}, mapping::ChainOutboundMapping) = Rocket.MapOperator{
 function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
     n = length(chain)
 
-    pipeline = getpipeline(chain)
-
     Left  = EqualityLeftOutbound()
     Right = EqualityRightOutbound()
 
@@ -219,8 +213,8 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
             tap(ChainInvalidationCallback(index, chain)) |>
             share_recent()
 
-        left  = combineLatestUpdates((getoutbound(Left, chain, nextindex(Left, index)), input), PushNew()) |> pipeline |> map_to(missing) |> share_recent()
-        right = combineLatestUpdates((getoutbound(Right, chain, nextindex(Right, index)), input), PushNew()) |> pipeline |> map_to(missing) |> share_recent()
+        left  = combineLatestUpdates((getoutbound(Left, chain, nextindex(Left, index)), input), PushNew()) |> map_to(missing) |> share_recent()
+        right = combineLatestUpdates((getoutbound(Right, chain, nextindex(Right, index)), input), PushNew()) |> map_to(missing) |> share_recent()
 
         setoutbound!(Left, node, left)
         setoutbound!(Right, node, right)

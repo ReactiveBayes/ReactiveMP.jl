@@ -55,15 +55,14 @@ function messageout(randomvar::RandomVariable, index::Int)
 end
 
 struct RandomVariableActivationOptions{
-    S, F <: MessageProductContext, M <: MessageProductContext
+    F <: MessageProductContext, M <: MessageProductContext
 }
-    scheduler::S
     prod_context_for_message_computation::F
     prod_context_for_marginal_computation::M
 end
 
 RandomVariableActivationOptions() = RandomVariableActivationOptions(
-    AsapScheduler(), MessageProductContext(), MessageProductContext()
+    MessageProductContext(), MessageProductContext()
 )
 
 function activate!(
@@ -80,7 +79,6 @@ function activate!(
     if length(randomvar.input_messages) > 1
         chain = EqualityChain(
             randomvar.input_messages,
-            schedule_on(options.scheduler),
             (messages) -> compute_product_of_messages(
                 randomvar,
                 options.prod_context_for_message_computation,

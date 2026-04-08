@@ -58,7 +58,6 @@ end
             activate!(
                 var,
                 RandomVariableActivationOptions(
-                    AsapScheduler(),
                     MessageProductContext(fold_strategy = message_prod_fold),
                     MessageProductContext(fold_strategy = marginal_prod_fold),
                 ),
@@ -114,7 +113,6 @@ end
             activate!(
                 var,
                 RandomVariableActivationOptions(
-                    AsapScheduler(),
                     MessageProductContext(fold_strategy = message_prod_fold),
                     MessageProductContext(fold_strategy = marginal_prod_fold),
                 ),
@@ -190,7 +188,7 @@ end
         activate!(
             var,
             RandomVariableActivationOptions(
-                AsapScheduler(), MessageProductContext(), marginal_context
+                MessageProductContext(), marginal_context
             ),
         )
 
@@ -241,7 +239,7 @@ end
         activate!(
             var,
             RandomVariableActivationOptions(
-                AsapScheduler(), MessageProductContext(), marginal_context
+                MessageProductContext(), marginal_context
             ),
         )
 

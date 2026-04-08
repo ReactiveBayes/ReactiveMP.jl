@@ -9,7 +9,6 @@ using Rocket
 using TupleTools
 using MacroTools
 
-import Rocket: getscheduler
 
 import Base:
     show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
@@ -274,21 +273,17 @@ function prepare_interfaces_check_num_inputarguments(
     )
 end
 
-struct FactorNodeActivationOptions{M, D, P, A, S, R, E}
+struct FactorNodeActivationOptions{M, D, A, R, E}
     metadata::M
     dependencies::D
-    pipeline::P
     annotations::A
-    scheduler::S
     rulefallback::R
     callbacks::E
 end
 
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
 getdependecies(options::FactorNodeActivationOptions) = options.dependencies
-getpipeline(options::FactorNodeActivationOptions) = options.pipeline
 getannotations(options::FactorNodeActivationOptions) = options.annotations
-getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 

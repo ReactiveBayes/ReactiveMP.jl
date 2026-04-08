@@ -247,20 +247,15 @@ function score(
     node::NormalMixtureNode{N},
     meta,
     skip_strategy,
-    scheduler,
 ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(getvariable(node.out), skip_strategy) |>
-            schedule_on(scheduler),
-            getmarginal(getvariable(node.switch), skip_strategy) |>
-            schedule_on(scheduler),
+            getmarginal(getvariable(node.out), skip_strategy),
+            getmarginal(getvariable(node.switch), skip_strategy),
             ManyOfObservable(
                 combineLatest(
                     map(
-                        (mean) ->
-                            getmarginal(getvariable(mean), skip_strategy) |>
-                            schedule_on(scheduler),
+                        (mean) -> getmarginal(getvariable(mean), skip_strategy),
                         node.means,
                     ),
                     PushNew(),
@@ -269,9 +264,7 @@ function score(
             ManyOfObservable(
                 combineLatest(
                     map(
-                        (prec) ->
-                            getmarginal(getvariable(prec), skip_strategy) |>
-                            schedule_on(scheduler),
+                        (prec) -> getmarginal(getvariable(prec), skip_strategy),
                         node.precs,
                     ),
                     PushNew(),

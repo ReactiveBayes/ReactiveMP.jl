@@ -168,7 +168,7 @@ function functional_dependencies(
     return message_dependencies, marginal_dependencies
 end
 
-# create message observable for output or Mixture edge without pipeline constraints (the message towards the inputs are fine by default behaviour, i.e. they depend only on switch and output and no longer on all other inputs)
+# create message observable for output or Mixture edge (the message towards the inputs are fine by default behaviour, i.e. they depend only on switch and output and no longer on all other inputs)
 function collect_latest_messages(
     ::MixtureNodeFunctionalDependencies,
     factornode::MixtureNode{N},
@@ -197,7 +197,7 @@ function collect_latest_messages(
     return msgs_names, msgs_observable
 end
 
-# create an observable that is used to compute the switch with pipeline constraints
+# create an observable that is used to compute the switch
 function collect_latest_messages(
     ::RequireMarginalFunctionalDependencies,
     factornode::MixtureNode{N},
@@ -224,7 +224,7 @@ function collect_latest_messages(
     return msgs_names, msgs_observable
 end
 
-# create an observable that is used to compute the output with pipeline constraints
+# create an observable that is used to compute the output
 function collect_latest_messages(
     ::RequireMarginalFunctionalDependencies,
     ::MixtureNode{N},
@@ -241,7 +241,7 @@ function collect_latest_messages(
     return msgs_names, msgs_observable
 end
 
-# create an observable that is used to compute the input with pipeline constraints
+# create an observable that is used to compute the input
 function collect_latest_messages(
     ::RequireMarginalFunctionalDependencies,
     factornode::MixtureNode{N},

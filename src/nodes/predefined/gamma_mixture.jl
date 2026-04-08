@@ -231,20 +231,15 @@ function score(
     node::GammaMixtureNode{N},
     meta,
     skip_strategy,
-    scheduler,
 ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(getvariable(node.out), skip_strategy) |>
-            schedule_on(scheduler),
-            getmarginal(getvariable(node.switch), skip_strategy) |>
-            schedule_on(scheduler),
+            getmarginal(getvariable(node.out), skip_strategy),
+            getmarginal(getvariable(node.switch), skip_strategy),
             ManyOfObservable(
                 combineLatest(
                     map(
-                        (as) ->
-                            getmarginal(getvariable(as), skip_strategy) |>
-                            schedule_on(scheduler),
+                        (as) -> getmarginal(getvariable(as), skip_strategy),
                         node.as,
                     ),
                     PushNew(),
@@ -253,9 +248,7 @@ function score(
             ManyOfObservable(
                 combineLatest(
                     map(
-                        (bs) ->
-                            getmarginal(getvariable(bs), skip_strategy) |>
-                            schedule_on(scheduler),
+                        (bs) -> getmarginal(getvariable(bs), skip_strategy),
                         node.bs,
                     ),
                     PushNew(),

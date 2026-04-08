@@ -49,8 +49,6 @@ function deltafn_apply_layout(
     ::Val{:q_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -68,8 +66,6 @@ function deltafn_apply_layout(
     ::Val{:q_ins},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -105,8 +101,6 @@ function deltafn_apply_layout(
     ::Val{:m_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -149,11 +143,6 @@ function deltafn_apply_layout(
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
-        )
-        vmessageout = vmessageout |> schedule_on(scheduler)
-
         connect!(messageout(out), vmessageout)
     end
 end
@@ -164,8 +153,6 @@ function deltafn_apply_layout(
     ::Val{:m_in},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -207,11 +194,6 @@ function deltafn_apply_layout(
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
-        )
-        vmessageout = vmessageout |> schedule_on(scheduler)
-
         connect!(messageout(interface), vmessageout)
     end
 end
@@ -238,8 +220,6 @@ function deltafn_apply_layout(
     ::Val{:q_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -249,8 +229,6 @@ function deltafn_apply_layout(
         Val(:q_out),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
         annotations,
         rulefallback,
         callbacks,
@@ -262,8 +240,6 @@ function deltafn_apply_layout(
     ::Val{:q_ins},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -273,8 +249,6 @@ function deltafn_apply_layout(
         Val(:q_ins),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
         annotations,
         rulefallback,
         callbacks,
@@ -286,8 +260,6 @@ function deltafn_apply_layout(
     ::Val{:m_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -297,8 +269,6 @@ function deltafn_apply_layout(
         Val(:m_out),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
         annotations,
         rulefallback,
         callbacks,
@@ -311,8 +281,6 @@ function deltafn_apply_layout(
     ::Val{:m_in},
     factornode::DeltaFnNode{F},
     meta,
-    pipeline_stages,
-    scheduler,
     annotations,
     rulefallback,
     callbacks,
@@ -366,11 +334,6 @@ function deltafn_apply_layout(
 
         vmessageout = with_statics(factornode, vmessageout)
         vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
-        )
-        vmessageout = vmessageout |> schedule_on(scheduler)
-
         connect!(messageout(interface), vmessageout)
     end
 end

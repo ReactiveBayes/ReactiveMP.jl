@@ -268,9 +268,6 @@ end
 
 function activate!(factornode::DeltaFnNode, options)
     meta = collect_meta(functionalform(factornode), getmetadata(options))
-    pipeline = collect_pipeline(
-        functionalform(factornode), getpipeline(options)
-    )
 
     if !isnothing(getinverse(meta)) && !isempty(factornode.statics)
         error(
@@ -284,7 +281,6 @@ function activate!(factornode::DeltaFnNode, options)
         factornode,
         deltafn_rule_layout(factornode, meta),
         meta,
-        pipeline,
         options,
     )
 end
@@ -293,7 +289,6 @@ function activate!(
     factornode::DeltaFnNode,
     layout::AbstractDeltaNodeDependenciesLayout,
     meta,
-    pipeline,
     options,
 )
     foreach(getinterfaces(factornode)) do interface
@@ -302,7 +297,6 @@ function activate!(
         )
     end
 
-    scheduler    = getscheduler(options)
     annotations  = getannotations(options)
     rulefallback = getrulefallback(options)
     callbacks    = getcallbacks(options)
@@ -313,8 +307,6 @@ function activate!(
         Val(:q_out),
         factornode,
         meta,
-        pipeline,
-        scheduler,
         annotations,
         rulefallback,
         callbacks,
@@ -326,8 +318,6 @@ function activate!(
         Val(:q_ins),
         factornode,
         meta,
-        pipeline,
-        scheduler,
         annotations,
         rulefallback,
         callbacks,
@@ -339,8 +329,6 @@ function activate!(
         Val(:m_out),
         factornode,
         meta,
-        pipeline,
-        scheduler,
         annotations,
         rulefallback,
         callbacks,
@@ -352,8 +340,6 @@ function activate!(
         Val(:m_in),
         factornode,
         meta,
-        pipeline,
-        scheduler,
         annotations,
         rulefallback,
         callbacks,
@@ -367,15 +353,10 @@ function score(
     node::DeltaFnNode,
     meta,
     skip_strategy,
-    scheduler,
 ) where {T <: CountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
-    qinsmarginal = apply_skip_filter(
-        getmarginal(node.localmarginals.marginals[2]), skip_strategy
-    )
-
-    stream  = qinsmarginal |> schedule_on(scheduler)
+    stream  = apply_skip_filter(getmarginal(node.localmarginals.marginals[2]), skip_strategy)
     mapping = (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))
 
     return stream |> map(T, mapping)

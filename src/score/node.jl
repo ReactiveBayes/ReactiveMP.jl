@@ -10,7 +10,6 @@ function score(
     node::AbstractFactorNode,
     meta,
     skip_strategy,
-    scheduler,
 ) where {T <: CountingReal}
     return score(
         T,
@@ -19,7 +18,6 @@ function score(
         node,
         collect_meta(functionalform(node), meta),
         skip_strategy,
-        scheduler,
     )
 end
 
@@ -32,12 +30,9 @@ function score(
     node::AbstractFactorNode,
     meta,
     skip_strategy,
-    scheduler,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
-        (interface) ->
-            apply_skip_filter(messagein(interface), skip_strategy) |>
-            schedule_on(scheduler)
+    fnstream = let skip_strategy = skip_strategy
+        (interface) -> apply_skip_filter(messagein(interface), skip_strategy)
     end
 
     tinterfaces = Tuple(getinterfaces(node))
@@ -84,12 +79,9 @@ function score(
     node::AbstractFactorNode,
     meta,
     skip_strategy,
-    scheduler,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
-        (localmarginal) ->
-            apply_skip_filter(getmarginal(localmarginal), skip_strategy) |>
-            schedule_on(scheduler)
+    fnstream = let skip_strategy = skip_strategy
+        (localmarginal) -> apply_skip_filter(getmarginal(localmarginal), skip_strategy)
     end
 
     localmarginals = getmarginals(getlocalclusters(node))
