@@ -1,5 +1,4 @@
 export Marginal, getdata, is_clamped, is_initial, as_marginal
-export SkipClamped, SkipInitial, SkipClampedAndInitial, IncludeAll
 
 using Distributions
 using Rocket
@@ -47,9 +46,8 @@ mutable struct Marginal{D}      # `mutable` structure here appears to be more pe
     const annotations :: AnnotationDict
 end
 
-Marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(
-    data, is_clamped, is_initial, AnnotationDict()
-)
+Marginal(data, is_clamped::Bool, is_initial::Bool) =
+    Marginal(data, is_clamped, is_initial, AnnotationDict())
 
 function Base.show(io::IO, marginal::Marginal)
     print(io, "Marginal(", getdata(marginal), ")")
@@ -147,9 +145,8 @@ MacroHelpers.@proxy_methods Marginal getdata [
 # Otherwise it causes invalidations and slower compile times
 Base.eltype(::Type{<:Marginal{D}}) where {D} = Base.eltype(D)
 
-Distributions.mean(fn::Function, marginal::Marginal) = mean(
-    fn, getdata(marginal)
-)
+Distributions.mean(fn::Function, marginal::Marginal) =
+    mean(fn, getdata(marginal))
 
 """
     as_marginal(any)
@@ -164,9 +161,8 @@ as_marginal(marginal::Marginal) = marginal
 
 dropproxytype(::Type{<:Marginal{T}}) where {T} = T
 
-
-skip_initial()           = filter(v -> !is_initial(v))
-skip_clamped()           = filter(v -> !is_clamped(v))
+skip_initial() = filter(v -> !is_initial(v))
+skip_clamped() = filter(v -> !is_clamped(v))
 skip_clamped_and_initial() = filter(v -> !is_initial(v) && !is_clamped(v))
 
 ## Marginal observable
@@ -176,26 +172,14 @@ struct MarginalObservable <: Subscribable{Marginal}
     stream  :: LazyObservable{Marginal}
 end
 
-MarginalObservable() = MarginalObservable(
-    RecentSubject(Marginal), lazy(Marginal)
-)
+MarginalObservable() =
+    MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
 
-as_marginal_observable(observable::MarginalObservable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(observable, skip_strategy)
-as_marginal_observable(observable)                                                          = as_marginal_observable(observable, IncludeAll())
+Rocket.getrecent(observable::MarginalObservable) =
+    Rocket.getrecent(observable.subject)
 
-function as_marginal_observable(observable, skip_strategy::MarginalSkipStrategy)
-    output = MarginalObservable()
-    connect!(output, observable)
-    return as_marginal_observable(output, skip_strategy)
-end
-
-Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(
-    observable.subject
-)
-
-@inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(
-    observable.stream, actor
-)
+@inline Rocket.on_subscribe!(observable::MarginalObservable, actor) =
+    subscribe!(observable.stream, actor)
 
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{<:Marginal})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.NextActor{<:Marginal})       = Rocket.on_subscribe!(observable.stream, actor)
@@ -294,8 +278,5 @@ function (mapping::MarginalMapping)(dependencies)
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
 end
 
-Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{
-    T, M
-}(
-    mapping
-)
+Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =
+    Rocket.MapOperator{T, M}(mapping)

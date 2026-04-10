@@ -6,7 +6,7 @@ import ReactiveMP:
     AbstractDeltaNodeDependenciesLayout,
     DeltaFnDefaultRuleLayout,
     DeltaFnNode,
-    getmarginal,
+    get_stream_of_marginals,
     functionalform,
     tag,
     Marginalisation,
@@ -35,7 +35,8 @@ In order to compute:
 struct CVIProjectionApproximationDeltaFnRuleLayout <:
        AbstractDeltaNodeDependenciesLayout end
 
-deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) = CVIProjectionApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) =
+    CVIProjectionApproximationDeltaFnRuleLayout()
 
 function deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Any)
     @warn "CVI projection approximation does not accept the inverse function. Ignoring the provided inverse."
@@ -109,7 +110,7 @@ function deltafn_apply_layout(
         msgs_observable = combineLatestUpdates((messagein(factornode.out),), PushNew())
 
         marginal_names       = Val{(:out, :ins)}()
-        marginals_observable = combineLatestUpdates((getmarginal(factornode.localmarginals.marginals[1]), getmarginal(factornode.localmarginals.marginals[2])), PushNew())
+        marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[1]), get_stream_of_marginals(factornode.localmarginals.marginals[2])), PushNew())
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)

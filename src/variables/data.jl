@@ -1,4 +1,4 @@
-export datavar, DataVariable, update!, DataVariableActivationOptions
+export datavar, DataVariable, new_observation!, DataVariableActivationOptions
 
 """
     DataVariable <: AbstractVariable

@@ -124,7 +124,9 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(get_node_local_marginals(clusters), cindex)
+    marginal_dependencies = skipindex(
+        get_node_local_marginals(clusters), cindex
+    )
 
     return message_dependencies, marginal_dependencies
 end
@@ -179,7 +181,7 @@ function functional_dependencies(
         initialmessage = specification[name(interface)]
         # Set the initial message if its not `nothing`
         if !isnothing(initialmessage)
-            setmessage!(messagein(interface), initialmessage)
+            set_initial_message!(messagein(interface), initialmessage)
         end
         # And return the cluster as is
         cluster
@@ -191,7 +193,9 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(get_node_local_marginals(clusters), cindex)
+    marginal_dependencies = skipindex(
+        get_node_local_marginals(clusters), cindex
+    )
 
     return message_dependencies, marginal_dependencies
 end
