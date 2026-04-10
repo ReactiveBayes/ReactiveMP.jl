@@ -12,6 +12,11 @@ makedocs(
     sitename = "ReactiveMP.jl",
     pages    = [
         "Introduction"    => "index.md",
+        "Concepts" => [
+            "Factor graphs"       => "concepts/factor-graphs.md",
+            "Message passing"     => "concepts/message-passing.md",
+            "Inference lifecycle" => "concepts/inference-lifecycle.md",
+        ],
         "Library" => [
             "Factor nodes"         => "lib/nodes.md",
             "Variables"             => "lib/variables.md",

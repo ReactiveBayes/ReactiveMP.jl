@@ -1,7 +1,34 @@
 
 # [Variables](@id lib-variables)
 
-Variables are fundamental building blocks of a factor graph. Each variable represents either a latent quantity to be inferred, an observed data point, or a fixed constant. All variable types are subtypes of [`ReactiveMP.AbstractVariable`](@ref).
+Variables are fundamental building blocks of a [factor graph](@ref concepts-factor-graphs). Each variable represents either a latent quantity to be inferred, an observed data point, or a fixed constant. All variable types are subtypes of [`ReactiveMP.AbstractVariable`](@ref).
+
+## [Choosing the right variable type](@id lib-variables-choosing)
+
+There are three kinds of variables, each with a distinct role:
+
+| Type | Constructor | Role | Can be updated? |
+|------|-------------|------|----------------|
+| [`ReactiveMP.RandomVariable`](@ref) | [`ReactiveMP.randomvar`](@ref) | Latent quantity to be inferred | No — inference updates its marginal |
+| [`ReactiveMP.DataVariable`](@ref) | [`ReactiveMP.datavar`](@ref) | Observed quantity that receives data | Yes — via [`new_observation!`](@ref) |
+| [`ReactiveMP.ConstVariable`](@ref) | [`ReactiveMP.constvar`](@ref) | Fixed constant, never changes | No — wired at construction time |
+
+The choice of variable type affects how the engine allocates streams and handles messages:
+
+- Use `randomvar` for any quantity you want to infer a posterior over.
+- Use `datavar` for observations that may change between inference calls (e.g., in online or streaming settings).
+- Use `constvar` for fixed hyperparameters, known constants, or any value that will never change.
+
+## [Variables as reactive streams](@id lib-variables-streams)
+
+In ReactiveMP.jl, a variable is not a single value — it is a source of reactive *streams*. Each variable holds:
+
+- A **marginal stream** ([`ReactiveMP.MarginalObservable`](@ref)) that emits updated [`Marginal`](@ref) beliefs as inference progresses.
+- One **message stream** ([`ReactiveMP.MessageObservable`](@ref)) per connected factor node, carrying messages flowing between the variable and that node.
+
+These streams are *lazy*: they are allocated during [construction](@ref concepts-inference-lifecycle-construction) but carry no values until the graph is [activated](@ref concepts-inference-lifecycle-activation). After activation, feeding new data into a `datavar` triggers automatic propagation through the network, updating marginals reactively.
+
+See [Inference lifecycle](@ref concepts-inference-lifecycle) for an overview of the construction → activation → observation flow.
 
 ```@docs
 ReactiveMP.AbstractVariable
