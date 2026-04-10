@@ -39,7 +39,8 @@ end
         activate!,
         connect!,
         DataVariableActivationOptions,
-        messageout
+        messageout,
+        get_stream_of_marginals
 
     include("../testutilities.jl")
 
@@ -47,9 +48,10 @@ end
     for d in 1:5:100, constant in rand(10)
         let var = constvar(constant)
             marginal_expected = mgl(PointMass(constant))
-            marginal_result = check_stream_updated_once(getmarginal(var)) do
-                nothing
-            end
+            marginal_result =
+                check_stream_updated_once(get_stream_of_marginals(var)) do
+                    nothing
+                end
 
             @test getdata(marginal_result) === getdata(marginal_expected)
             @test getdata(marginal_result) === PointMass(constant)

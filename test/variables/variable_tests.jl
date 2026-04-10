@@ -2,7 +2,12 @@
 @testitem "Variable" begin
     using ReactiveMP, Rocket, BayesBase, Distributions, ExponentialFamily
 
-    import ReactiveMP: activate!
+    import ReactiveMP:
+        activate!,
+        get_stream_of_marginals,
+        degree,
+        set_initial_marginal!,
+        set_initial_message!
     import Rocket: getscheduler
 
     struct CustomDeterministicNodeForVariableTests end
@@ -26,15 +31,15 @@
 
         @test degree(variable) === k
 
-        # Check that before calling the `setmarginals!` all marginals are `nothing`
-        @test isnothing(Rocket.getrecent(getmarginal(variable, IncludeAll())))
+        # Check that before calling the `set_initial_marginal!` all marginals are `nothing`
+        @test isnothing(Rocket.getrecent(get_stream_of_marginals(variable)))
 
-        setmarginal!(variable, dist)
+        set_initial_marginal!(variable, dist)
 
         marginal_subscription_flag = false
-        # After calling the `setmarginals!` the marginal should be equal to `dist`
+        # After calling the `set_initial_marginal!` the marginal should be equal to `dist`
         subscription = subscribe!(
-            getmarginal(variable, IncludeAll()),
+            get_stream_of_marginals(variable),
             (marginal) -> begin
                 @test typeof(marginal) <: Marginal{T}
                 @test mean(marginal) === mean(dist)
@@ -45,16 +50,14 @@
         @test marginal_subscription_flag === true
         unsubscribe!(subscription)
 
-        # Check that before calling the `setmessages!` all messages are `nothing`
+        # Check that before calling the `set_initial_message!` all messages are `nothing`
         for node_index in 1:k
             @test isnothing(
                 Rocket.getrecent(ReactiveMP.messageout(variable, node_index))
             )
         end
 
-        for node_index in 1:k
-            setmessage!(variable, node_index, dist)
-        end
+        set_initial_message!(variable, dist)
 
         for node_index in 1:k
             message_subscription_flag = false
@@ -75,7 +78,7 @@
     function test_variables_set_methods(variables, dist::T, k::Int) where {T}
         marginal_subscription_flag = false
 
-        @test_throws AssertionError setmarginals!(
+        @test_throws AssertionError set_initial_marginal!(
             variables, Iterators.repeated(dist, length(variables) - 1)
         )
 
@@ -95,25 +98,25 @@
 
         @test all(degree.(variables) .== k)
 
-        @test_throws AssertionError setmessages!(
+        @test_throws AssertionError set_initial_message!(
             variables, Iterators.repeated(dist, length(variables) - 1)
         )
-        @test_throws AssertionError setmessages!(
+        @test_throws AssertionError set_initial_message!(
             variables, Iterators.repeated(dist, length(variables) - 1)
         )
 
-        # Test `setmarginals!`
+        # Test `set_initial_marginal!`
 
-        # Check that before calling the `setmarginals!` all marginals are `nothing`
+        # Check that before calling the `set_initial_marginal!` all marginals are `nothing`
         @test all(
-            isnothing, Rocket.getrecent.(getmarginal.(variables, IncludeAll()))
+            isnothing, Rocket.getrecent.(get_stream_of_marginals.(variables))
         )
 
-        setmarginals!(variables, dist)
+        set_initial_marginal!(variables, dist)
 
-        # After calling the `setmarginals!` all marginals should be equal to `dist`
+        # After calling the `set_initial_marginal!` all marginals should be equal to `dist`
         subscription = subscribe!(
-            getmarginals(variables, IncludeAll()),
+            collectLatest(map(get_stream_of_marginals, variables)),
             (marginals) -> begin
                 @test length(marginals) === length(variables)
                 foreach(marginals) do marginal
@@ -129,7 +132,7 @@
         @test marginal_subscription_flag === true
         unsubscribe!(subscription)
 
-        # Check that before calling the `setmessages!` all messages are `nothing`
+        # Check that before calling the `set_initial_message!` all messages are `nothing`
         for node_index in 1:k
             @test all(
                 isnothing,
@@ -139,8 +142,8 @@
             )
         end
 
-        # After calling the `setmessages!` all marginals should be equal to `dist`
-        setmessages!(variables, dist)
+        # After calling the `set_initial_message!` all marginals should be equal to `dist`
+        set_initial_message!(variables, dist)
         # For each outbound index
         for node_index in 1:k
             messages_subscription_flag = false
@@ -161,7 +164,7 @@
         end
     end
 
-    @testset "setmarginal! and setmessages! tests for randomvar" begin
+    @testset "set_initial_marginal! and set_initial_message! tests for randomvar" begin
         dists = (
             NormalMeanVariance(-2.0, 3.0),
             NormalMeanPrecision(-2.0, 3.0),

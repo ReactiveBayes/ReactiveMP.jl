@@ -91,7 +91,7 @@ end
 """
 TODO doc
 """
-function set_initial_messages!(variable::AbstractVariable, message)
+function set_initial_message!(variable::AbstractVariable, message)
     for i in 1:degree(variable)
         set_initial_message!(messageout(variable, i), message)
     end

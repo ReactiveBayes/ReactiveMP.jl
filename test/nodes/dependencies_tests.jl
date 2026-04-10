@@ -547,7 +547,9 @@ end
                 @test isempty(msg_dependencies_for_a)
                 @test getdata(
                     check_stream_updated_once(
-                        get_stream_of_marginals(first(marginal_dependencies_for_a))
+                        get_stream_of_marginals(
+                            first(marginal_dependencies_for_a)
+                        ),
                     ),
                 ) === initialmarginal
 
@@ -608,9 +610,7 @@ end
     struct CustomDependencyB <: FunctionalDependencies end
 
     # Define how meta affects functional dependencies
-    ReactiveMP.collect_functional_dependencies(
-        ::Type{CustomMetaNode}, options::FactorNodeActivationOptions
-    ) = ReactiveMP.collect_functional_dependencies(
+    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions) = ReactiveMP.collect_functional_dependencies(
         CustomMetaNode, options, getmetadata(options)
     )
 
@@ -618,11 +618,7 @@ end
     ReactiveMP.collect_functional_dependencies(
         ::Type{CustomMetaNode}, ::FactorNodeActivationOptions, meta::Symbol
     ) = meta === :use_a ? CustomDependencyA() : CustomDependencyB()
-    ReactiveMP.collect_functional_dependencies(
-        ::Type{CustomMetaNode},
-        options::FactorNodeActivationOptions,
-        meta::Nothing,
-    ) = ReactiveMP.collect_functional_dependencies(
+    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions, meta::Nothing) = ReactiveMP.collect_functional_dependencies(
         CustomMetaNode, getdependecies(options)
     )
 

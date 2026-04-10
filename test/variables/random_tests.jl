@@ -39,7 +39,8 @@ end
         activate!,
         connect!,
         RandomVariableActivationOptions,
-        messageout
+        messageout,
+        get_stream_of_marginals
 
     include("../testutilities.jl")
 
@@ -59,19 +60,20 @@ end
                 var,
                 RandomVariableActivationOptions(
                     AsapScheduler(),
-                    MessageProductContext(fold_strategy = message_prod_fold),
-                    MessageProductContext(fold_strategy = marginal_prod_fold),
+                    MessageProductContext(; fold_strategy = message_prod_fold),
+                    MessageProductContext(; fold_strategy = marginal_prod_fold),
                 ),
             )
 
             messages = map(msg, rand(d))
 
             marginal_expected = mgl(sum(getdata.(messages)))
-            marginal_result = check_stream_updated_once(getmarginal(var)) do
-                foreach(zip(messageins, messages)) do (messagein, message)
-                    next!(messagein, message)
+            marginal_result =
+                check_stream_updated_once(get_stream_of_marginals(var)) do
+                    foreach(zip(messageins, messages)) do (messagein, message)
+                        next!(messagein, message)
+                    end
                 end
-            end
 
             # We check the `getdata` here approximatelly because the `marginal_prod_fn` can rearrange
             # the messages under the hood that introduces minor numerical differences
@@ -115,8 +117,8 @@ end
                 var,
                 RandomVariableActivationOptions(
                     AsapScheduler(),
-                    MessageProductContext(fold_strategy = message_prod_fold),
-                    MessageProductContext(fold_strategy = marginal_prod_fold),
+                    MessageProductContext(; fold_strategy = message_prod_fold),
+                    MessageProductContext(; fold_strategy = marginal_prod_fold),
                 ),
             )
 
@@ -151,7 +153,8 @@ end
         create_messagein!,
         activate!,
         connect!,
-        getdata
+        getdata,
+        get_stream_of_marginals
 
     import Rocket: Subject, next!
 
@@ -172,7 +175,7 @@ end
     @testset "Fires before and after marginal computation with 3 messages" begin
         listen_to = (:before_marginal_computation, :after_marginal_computation)
         handler = MarginalCallbackHandler(listen_to, [])
-        marginal_context = MessageProductContext(
+        marginal_context = MessageProductContext(;
             fold_strategy = (variable, context, msgs) ->
                 msg(sum(getdata.(msgs))),
             callbacks = handler,
@@ -196,11 +199,12 @@ end
 
         messages = [msg(1.0), msg(2.0), msg(3.0)]
 
-        marginal_result = check_stream_updated_once(getmarginal(var)) do
-            foreach(zip(messageins, messages)) do (messagein, message)
-                next!(messagein, message)
+        marginal_result =
+            check_stream_updated_once(get_stream_of_marginals(var)) do
+                foreach(zip(messageins, messages)) do (messagein, message)
+                    next!(messagein, message)
+                end
             end
-        end
 
         # sum(1.0 + 2.0 + 3.0) = 6.0
         @test getdata(marginal_result) ≈ 6.0
@@ -223,7 +227,7 @@ end
     @testset "Fires before and after marginal computation with 2 messages" begin
         listen_to = (:before_marginal_computation, :after_marginal_computation)
         handler = MarginalCallbackHandler(listen_to, [])
-        marginal_context = MessageProductContext(
+        marginal_context = MessageProductContext(;
             fold_strategy = (variable, context, msgs) ->
                 msg(sum(getdata.(msgs))),
             callbacks = handler,
@@ -247,11 +251,12 @@ end
 
         messages = [msg(10.0), msg(20.0)]
 
-        marginal_result = check_stream_updated_once(getmarginal(var)) do
-            foreach(zip(messageins, messages)) do (messagein, message)
-                next!(messagein, message)
+        marginal_result =
+            check_stream_updated_once(get_stream_of_marginals(var)) do
+                foreach(zip(messageins, messages)) do (messagein, message)
+                    next!(messagein, message)
+                end
             end
-        end
 
         # sum(10.0 + 20.0) = 30.0
         @test getdata(marginal_result) ≈ 30.0

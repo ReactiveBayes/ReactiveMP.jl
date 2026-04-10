@@ -4,7 +4,7 @@ export datavar, DataVariable, new_observation!, DataVariableActivationOptions
     DataVariable <: AbstractVariable
 
 Represents an observed variable in the factor graph. Unlike [`ReactiveMP.ConstVariable`](@ref), the data is not fixed
-at creation time and can be updated later via [`update!`](@ref). Use [`datavar`](@ref) to create an instance.
+at creation time and can be updated later via [`ReactiveMP.new_observation!`](@ref). Use [`datavar`](@ref) to create an instance.
 
 See also: [`ReactiveMP.RandomVariable`](@ref), [`ReactiveMP.ConstVariable`](@ref)
 """
@@ -110,7 +110,7 @@ function activate!(
                 return __apply_link(f, getrecent.(args))
             end)
         # This subscription should unsubscribe automatically when the linked `datavar`s complete
-        subscribe!(linkstream, (val) -> update!(datavar, val))
+        subscribe!(linkstream, (val) -> new_observation!(datavar, val))
     end
 
     # The marginal stream is always the same as the message out
