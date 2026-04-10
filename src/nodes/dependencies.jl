@@ -6,7 +6,7 @@ export DefaultFunctionalDependencies,
 collect_latest_messages(dependencies, factornode, collection) =
     __collect_latest_updates(messagein, collection)
 collect_latest_marginals(dependencies, factornode, collection) =
-    __collect_latest_updates(getmarginal, collection)
+    __collect_latest_updates(get_stream_of_marginals, collection)
 
 function __collect_latest_updates(f::F, collection) where {F}
     return __collect_latest_updates(f, Tuple(collection))
@@ -124,7 +124,7 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies = skipindex(get_node_local_marginals(clusters), cindex)
 
     return message_dependencies, marginal_dependencies
 end
@@ -191,7 +191,7 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies = skipindex(get_node_local_marginals(clusters), cindex)
 
     return message_dependencies, marginal_dependencies
 end
@@ -245,7 +245,7 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies_default_clusters      = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies_default_clusters      = skipindex(get_node_local_marginals(clusters), cindex)
     marginal_dependencies_default_factorization = skipindex(getfactorization(clusters), cindex)
 
     marginal_dependencies = if name(interface) ∈ keys(specification)
@@ -301,7 +301,7 @@ function functional_dependencies(
     message_dependencies = Iterators.map(
         inds -> map(i -> getinterface(factornode, i), inds), cluster
     )
-    marginal_dependencies = getmarginals(clusters)
+    marginal_dependencies = get_node_local_marginals(clusters)
 
     return message_dependencies, marginal_dependencies
 end

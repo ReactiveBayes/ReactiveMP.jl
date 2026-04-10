@@ -85,7 +85,7 @@ function deltafn_apply_layout(
 
         # CVI requires `q_ins`
         marginal_names       = Val{(:ins,)}()
-        marginals_observable = combineLatestUpdates((getmarginal(factornode.localmarginals.marginals[2]),), PushNew())
+        marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[2]),), PushNew())
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)

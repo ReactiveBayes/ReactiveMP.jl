@@ -47,9 +47,9 @@ isconst(::AbstractArray{<:DataVariable})  = false
 
 get_stream_of_marginals(datavar::DataVariable) = datavar.marginal
 
-set_stream_of_marginals!(datavar::DaraVariable, stream) =
+set_stream_of_marginals!(datavar::DataVariable, stream) =
     connect!(datavar.marginal, stream)
-set_stream_of_predictions!(datavar::DaraVariable, stream) =
+set_stream_of_predictions!(datavar::DataVariable, stream) =
     connect!(datavar.prediction, stream)
 
 function create_messagein!(datavar::DataVariable)

@@ -366,14 +366,12 @@ function score(
     ::Deterministic,
     node::DeltaFnNode,
     meta,
-    skip_strategy,
     scheduler,
 ) where {T <: CountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
-    qinsmarginal = apply_skip_filter(
-        getmarginal(node.localmarginals.marginals[2]), skip_strategy
-    )
+    qinsmarginal = get_stream_of_marginals(node.localmarginals.marginals[2]) |>
+        skip_initial()
 
     stream  = qinsmarginal |> schedule_on(scheduler)
     mapping = (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))

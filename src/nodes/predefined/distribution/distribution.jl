@@ -62,16 +62,16 @@ function score(
     ::FactorBoundFreeEnergy,
     node::StandaloneDistributionNode,
     meta,
-    skip_strategy,
     scheduler,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
+    fnstream = let scheduler = scheduler
         (localmarginal) ->
-            apply_skip_filter(getmarginal(localmarginal), skip_strategy) |>
+            get_stream_of_marginals(localmarginal) |>
+            skip_initial() |>
             schedule_on(scheduler)
     end
     # `FactorBoundFreeEnergy` here is simply equal to `kldivergence` between the marginal and the outbound message
-    stream = fnstream(first(getmarginals(getlocalclusters(node))))
+    stream = fnstream(first(get_node_local_marginals(getlocalclusters(node))))
     return stream |> map(
         T,
         (marginal) ->

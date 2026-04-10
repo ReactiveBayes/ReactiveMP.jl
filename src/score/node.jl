@@ -9,7 +9,6 @@ function score(
     ::FactorBoundFreeEnergy,
     node::AbstractFactorNode,
     meta,
-    skip_strategy,
     scheduler,
 ) where {T <: CountingReal}
     return score(
@@ -18,7 +17,6 @@ function score(
         sdtype(node),
         node,
         collect_meta(functionalform(node), meta),
-        skip_strategy,
         scheduler,
     )
 end
@@ -31,12 +29,12 @@ function score(
     ::Deterministic,
     node::AbstractFactorNode,
     meta,
-    skip_strategy,
     scheduler,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
+    fnstream = let scheduler = scheduler
         (interface) ->
-            apply_skip_filter(messagein(interface), skip_strategy) |>
+            messagein(interface) |>
+            skip_initial() |>
             schedule_on(scheduler)
     end
 
@@ -83,16 +81,16 @@ function score(
     ::Stochastic,
     node::AbstractFactorNode,
     meta,
-    skip_strategy,
     scheduler,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
+    fnstream = let scheduler = scheduler
         (localmarginal) ->
-            apply_skip_filter(getmarginal(localmarginal), skip_strategy) |>
+            get_stream_of_marginals(localmarginal) |>
+            skip_initial() |>
             schedule_on(scheduler)
     end
 
-    localmarginals = getmarginals(getlocalclusters(node))
+    localmarginals = get_node_local_marginals(getlocalclusters(node))
     stream = combineLatest(map(fnstream, localmarginals), PushNew())
 
     mapping =

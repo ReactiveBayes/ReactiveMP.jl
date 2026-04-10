@@ -490,7 +490,7 @@ function connect!(message::MessageObservable, source)
     return nothing
 end
 
-function setmessage!(message::MessageObservable, value)
+function set_initial_message!(message::MessageObservable, value)
     next!(message.subject, Message(value, false, true))
     return nothing
 end

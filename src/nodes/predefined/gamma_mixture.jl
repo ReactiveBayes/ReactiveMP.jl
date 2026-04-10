@@ -9,7 +9,8 @@ interfaces(::Type{<:GammaMixture}) = Val((:out, :switch, :a, :b))
 alias_interface(::Type{<:GammaMixture}, ::Int64, name::Symbol) = name
 is_predefined_node(::Type{<:GammaMixture}) = PredefinedNodeFunctionalForm()
 sdtype(::Type{<:GammaMixture}) = Stochastic()
-collect_factorisation(::Type{<:GammaMixture}, factorization) = GammaMixtureNodeFactorisation()
+collect_factorisation(::Type{<:GammaMixture}, factorization) =
+    GammaMixtureNodeFactorisation()
 
 struct GammaMixtureNodeFactorisation end
 
@@ -21,9 +22,8 @@ struct GammaMixtureNode{N} <: AbstractFactorNode
 end
 
 functionalform(factornode::GammaMixtureNode{N}) where {N} = GammaMixture{N}
-getinterfaces(factornode::GammaMixtureNode) = (
-    factornode.out, factornode.switch, factornode.as..., factornode.bs...
-)
+getinterfaces(factornode::GammaMixtureNode) =
+    (factornode.out, factornode.switch, factornode.as..., factornode.bs...)
 sdtype(factornode::GammaMixtureNode) = Stochastic()
 
 interfaceindices(factornode::GammaMixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
@@ -85,8 +85,11 @@ end
 
 struct GammaMixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
-collect_functional_dependencies(::GammaMixtureNode, ::Nothing) = GammaMixtureNodeFunctionalDependencies()
-collect_functional_dependencies(::GammaMixtureNode, ::GammaMixtureNodeFunctionalDependencies) = GammaMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::GammaMixtureNode, ::Nothing) =
+    GammaMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(
+    ::GammaMixtureNode, ::GammaMixtureNodeFunctionalDependencies
+) = GammaMixtureNodeFunctionalDependencies()
 collect_functional_dependencies(::GammaMixtureNode, ::Any) = error(
     "The functional dependencies for GammaMixtureNode must be either `Nothing` or `GammaMixtureNodeFunctionalDependencies`",
 )
@@ -150,18 +153,17 @@ function collect_latest_marginals(
     marginals_observable =
         combineLatest(
             (
-                getmarginal(getvariable(varinterface), IncludeAll()),
+                get_stream_of_marginals(getvariable(varinterface)),
                 combineLatest(
                     map(
-                        (rate) -> getmarginal(getvariable(rate), IncludeAll()),
+                        (rate) -> get_stream_of_marginals(getvariable(rate)),
                         reverse(bsinterfaces),
                     ),
                     PushNew(),
                 ),
                 combineLatest(
                     map(
-                        (shape) ->
-                            getmarginal(getvariable(shape), IncludeAll()),
+                        (shape) -> get_stream_of_marginals(getvariable(shape)),
                         reverse(asinterfaces),
                     ),
                     PushNew(),
@@ -169,16 +171,16 @@ function collect_latest_marginals(
             ),
             PushNew(),
         ) |> map_to((
-            getmarginal(getvariable(varinterface), IncludeAll()),
+            get_stream_of_marginals(getvariable(varinterface)),
             ManyOf(
                 map(
-                    (shape) -> getmarginal(getvariable(shape), IncludeAll()),
+                    (shape) -> get_stream_of_marginals(getvariable(shape)),
                     asinterfaces,
                 ),
             ),
             ManyOf(
                 map(
-                    (rate) -> getmarginal(getvariable(rate), IncludeAll()),
+                    (rate) -> get_stream_of_marginals(getvariable(rate)),
                     bsinterfaces,
                 ),
             ),
@@ -199,7 +201,7 @@ function collect_latest_marginals(
     varinterface    = marginal_dependencies[3]
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
-    marginals_observable = combineLatestUpdates((getmarginal(getvariable(outinterface), IncludeAll()), getmarginal(getvariable(switchinterface), IncludeAll()), getmarginal(getvariable(varinterface), IncludeAll())), PushNew())
+    marginals_observable = combineLatestUpdates((get_stream_of_marginals(getvariable(outinterface)), get_stream_of_marginals(getvariable(switchinterface)), get_stream_of_marginals(getvariable(varinterface))), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -230,20 +232,22 @@ function score(
     ::Stochastic,
     node::GammaMixtureNode{N},
     meta,
-    skip_strategy,
     scheduler,
 ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(getvariable(node.out), skip_strategy) |>
+            get_stream_of_marginals(getvariable(node.out)) |>
+            skip_initial() |>
             schedule_on(scheduler),
-            getmarginal(getvariable(node.switch), skip_strategy) |>
+            get_stream_of_marginals(getvariable(node.switch)) |>
+            skip_initial() |>
             schedule_on(scheduler),
             ManyOfObservable(
                 combineLatest(
                     map(
                         (as) ->
-                            getmarginal(getvariable(as), skip_strategy) |>
+                            get_stream_of_marginals(getvariable(as)) |>
+                            skip_initial() |>
                             schedule_on(scheduler),
                         node.as,
                     ),
@@ -254,7 +258,8 @@ function score(
                 combineLatest(
                     map(
                         (bs) ->
-                            getmarginal(getvariable(bs), skip_strategy) |>
+                            get_stream_of_marginals(getvariable(bs)) |>
+                            skip_initial() |>
                             schedule_on(scheduler),
                         node.bs,
                     ),
@@ -303,22 +308,20 @@ struct GammaShapeLikelihood{T <: Real} <: ContinuousUnivariateDistribution
 end
 GammaShapeLikelihood(p::Real, γ::Real) = GammaShapeLikelihood(promote(p, γ)...)
 
-Distributions.params(distribution::GammaShapeLikelihood) = (
-    distribution.p, distribution.γ
-)
+Distributions.params(distribution::GammaShapeLikelihood) =
+    (distribution.p, distribution.γ)
 
 Distributions.@distr_support GammaShapeLikelihood 0.0 Inf
 
-BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} = Distributions.RealInterval(
-    zero(T), typemax(T)
-)
+BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} =
+    Distributions.RealInterval(zero(T), typemax(T))
 
 BayesBase.logpdf(distribution::GammaShapeLikelihood{T}, x::Real) where {T} =
     distribution.γ * x - distribution.p * loggamma(x)
 
-BayesBase.default_prod_rule(::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}) = PreserveTypeProd(
-    Distribution
-)
+BayesBase.default_prod_rule(
+    ::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}
+) = PreserveTypeProd(Distribution)
 
 function prod(
     ::PreserveTypeProd{Distribution},

@@ -58,7 +58,7 @@ function deltafn_apply_layout(
     let out = factornode.out,
         localmarginal = factornode.localmarginals.marginals[1]
         # We simply subscribe on the marginal of the connected variable on `out` edge
-        setmarginal!(localmarginal, getmarginal(getvariable(out), IncludeAll()))
+        set_stream_of_marginals!(localmarginal, get_stream_of_marginals(getvariable(out)))
     end
 end
 
@@ -79,7 +79,7 @@ function deltafn_apply_layout(
         localmarginal = factornode.localmarginals.marginals[2]
 
         cmarginal = MarginalObservable()
-        setmarginal!(localmarginal, cmarginal)
+        set_stream_of_marginals!(localmarginal, cmarginal)
 
         # By default to compute `q_ins` we need messages both from `:out` and `:ins`
         msgs_names      = Val{(:out, :ins)}()
@@ -177,7 +177,7 @@ function deltafn_apply_layout(
         msgs_observable = combineLatestUpdates((messagein(interface),), PushNew())
 
         marginal_names       = Val{(:ins,)}()
-        marginals_observable = combineLatestUpdates((getmarginal(factornode.localmarginals.marginals[2]),), PushNew())
+        marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[2]),), PushNew())
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)

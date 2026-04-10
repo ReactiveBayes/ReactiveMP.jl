@@ -164,24 +164,12 @@ as_marginal(marginal::Marginal) = marginal
 
 dropproxytype(::Type{<:Marginal{T}}) where {T} = T
 
+
+skip_initial()           = filter(v -> !is_initial(v))
+skip_clamped()           = filter(v -> !is_clamped(v))
+skip_clamped_and_initial() = filter(v -> !is_initial(v) && !is_clamped(v))
+
 ## Marginal observable
-
-abstract type MarginalSkipStrategy end
-
-struct SkipClamped <: MarginalSkipStrategy end
-struct SkipInitial <: MarginalSkipStrategy end
-struct SkipClampedAndInitial <: MarginalSkipStrategy end
-struct IncludeAll <: MarginalSkipStrategy end
-
-Base.broadcastable(::SkipClamped) = Ref(SkipClamped())
-Base.broadcastable(::SkipInitial) = Ref(SkipInitial())
-Base.broadcastable(::SkipClampedAndInitial) = Ref(SkipClampedAndInitial())
-Base.broadcastable(::IncludeAll) = Ref(IncludeAll())
-
-apply_skip_filter(observable, ::SkipClamped)           = observable |> filter(v -> !is_clamped(v))
-apply_skip_filter(observable, ::SkipInitial)           = observable |> filter(v -> !is_initial(v))
-apply_skip_filter(observable, ::SkipClampedAndInitial) = observable |> filter(v -> !is_initial(v) && !is_clamped(v))
-apply_skip_filter(observable, ::IncludeAll)            = observable
 
 struct MarginalObservable <: Subscribable{Marginal}
     subject :: Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}

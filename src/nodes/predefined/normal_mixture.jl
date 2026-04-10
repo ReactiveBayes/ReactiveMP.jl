@@ -10,7 +10,8 @@ interfaces(::Type{<:NormalMixture}) = Val((:out, :switch, :m, :p))
 alias_interface(::Type{<:NormalMixture}, ::Int64, name::Symbol) = name
 is_predefined_node(::Type{<:NormalMixture}) = PredefinedNodeFunctionalForm()
 sdtype(::Type{<:NormalMixture}) = Stochastic()
-collect_factorisation(::Type{<:NormalMixture}, factorization) = NormalMixtureNodeFactorisation()
+collect_factorisation(::Type{<:NormalMixture}, factorization) =
+    NormalMixtureNodeFactorisation()
 
 struct NormalMixtureNodeFactorisation end
 
@@ -26,7 +27,10 @@ const GaussianMixtureNode = NormalMixtureNode
 
 functionalform(factornode::NormalMixtureNode{N}) where {N} = NormalMixture{N}
 getinterfaces(factornode::NormalMixtureNode) = (
-    factornode.out, factornode.switch, factornode.means..., factornode.precs...
+    factornode.out,
+    factornode.switch,
+    factornode.means...,
+    factornode.precs...,
 )
 sdtype(factornode::NormalMixtureNode) = Stochastic()
 
@@ -91,8 +95,11 @@ end
 
 struct NormalMixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
-collect_functional_dependencies(::NormalMixtureNode, ::Nothing) = NormalMixtureNodeFunctionalDependencies()
-collect_functional_dependencies(::NormalMixtureNode, ::NormalMixtureNodeFunctionalDependencies) = NormalMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::NormalMixtureNode, ::Nothing) =
+    NormalMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(
+    ::NormalMixtureNode, ::NormalMixtureNodeFunctionalDependencies
+) = NormalMixtureNodeFunctionalDependencies()
 collect_functional_dependencies(::NormalMixtureNode, ::Any) = error(
     "The functional dependencies for NormalMixtureNode must be either `Nothing` or `NormalMixtureNodeFunctionalDependencies`",
 )
@@ -156,17 +163,17 @@ function collect_latest_marginals(
     marginals_observable =
         combineLatest(
             (
-                getmarginal(getvariable(varinterface), IncludeAll()),
+                get_stream_of_marginals(getvariable(varinterface)),
                 combineLatest(
                     map(
-                        (prec) -> getmarginal(getvariable(prec), IncludeAll()),
+                        (prec) -> get_stream_of_marginals(getvariable(prec)),
                         reverse(precsinterfaces),
                     ),
                     PushNew(),
                 ),
                 combineLatest(
                     map(
-                        (mean) -> getmarginal(getvariable(mean), IncludeAll()),
+                        (mean) -> get_stream_of_marginals(getvariable(mean)),
                         reverse(meansinterfaces),
                     ),
                     PushNew(),
@@ -174,16 +181,16 @@ function collect_latest_marginals(
             ),
             PushNew(),
         ) |> map_to((
-            getmarginal(getvariable(varinterface), IncludeAll()),
+            get_stream_of_marginals(getvariable(varinterface)),
             ManyOf(
                 map(
-                    (mean) -> getmarginal(getvariable(mean), IncludeAll()),
+                    (mean) -> get_stream_of_marginals(getvariable(mean)),
                     meansinterfaces,
                 ),
             ),
             ManyOf(
                 map(
-                    (prec) -> getmarginal(getvariable(prec), IncludeAll()),
+                    (prec) -> get_stream_of_marginals(getvariable(prec)),
                     precsinterfaces,
                 ),
             ),
@@ -204,7 +211,7 @@ function collect_latest_marginals(
     varinterface    = marginal_dependencies[3]
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
-    marginals_observable = combineLatestUpdates((getmarginal(getvariable(outinterface), IncludeAll()), getmarginal(getvariable(switchinterface), IncludeAll()), getmarginal(getvariable(varinterface), IncludeAll())), PushNew())
+    marginals_observable = combineLatestUpdates((get_stream_of_marginals(getvariable(outinterface)), get_stream_of_marginals(getvariable(switchinterface)), get_stream_of_marginals(getvariable(varinterface))), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -246,20 +253,22 @@ function score(
     ::Stochastic,
     node::NormalMixtureNode{N},
     meta,
-    skip_strategy,
     scheduler,
 ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(getvariable(node.out), skip_strategy) |>
+            get_stream_of_marginals(getvariable(node.out)) |>
+            skip_initial() |>
             schedule_on(scheduler),
-            getmarginal(getvariable(node.switch), skip_strategy) |>
+            get_stream_of_marginals(getvariable(node.switch)) |>
+            skip_initial() |>
             schedule_on(scheduler),
             ManyOfObservable(
                 combineLatest(
                     map(
                         (mean) ->
-                            getmarginal(getvariable(mean), skip_strategy) |>
+                            get_stream_of_marginals(getvariable(mean)) |>
+                            skip_initial() |>
                             schedule_on(scheduler),
                         node.means,
                     ),
@@ -270,7 +279,8 @@ function score(
                 combineLatest(
                     map(
                         (prec) ->
-                            getmarginal(getvariable(prec), skip_strategy) |>
+                            get_stream_of_marginals(getvariable(prec)) |>
+                            skip_initial() |>
                             schedule_on(scheduler),
                         node.precs,
                     ),

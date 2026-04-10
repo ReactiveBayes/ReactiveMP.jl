@@ -82,14 +82,14 @@ function _set_initial_marginal!(
 )
     @assert length(variables) == length(marginals) "Variables $(variables) and marginals $(marginals) should have the same length"
     foreach(zip(variables, marginals)) do (variable, marginal)
-        set_initial_marginal!(variable, marginal)
+        set_initial_marginal!(get_stream_of_marginals(variable), marginal)
     end
 end
 
 """
 TODO doc
 """
-function set_initial_message! end
+function set_initial_messages! end
 
 set_initial_message!(variables::AbstractArray{<:AbstractVariable}, message::PointMass)    = _set_initial_message!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
 set_initial_message!(variables::AbstractArray{<:AbstractVariable}, message::Distribution) = _set_initial_message!(Base.HasLength(), variables, Iterators.repeated(message, length(variables)))
@@ -100,6 +100,8 @@ function _set_initial_message!(
 )
     @assert length(variables) == length(messages) "Variables $(variables) and messages $(messages) should have the same length"
     foreach(zip(variables, messages)) do (variable, message)
-        setmessage!(variable, message)
+        for i in 1:degree(variable)
+            set_initial_message!(messageout(variable, i), message)
+        end
     end
 end
