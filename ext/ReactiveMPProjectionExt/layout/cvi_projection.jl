@@ -14,8 +14,8 @@ import ReactiveMP:
     DeferredMessage,
     with_statics,
     apply_pipeline_stage,
-    messageout,
-    messagein,
+    set_stream_of_outbound_messages,
+    get_stream_of_inbound_messages,
     connect!
 
 """
@@ -35,7 +35,8 @@ In order to compute:
 struct CVIProjectionApproximationDeltaFnRuleLayout <:
        AbstractDeltaNodeDependenciesLayout end
 
-deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) = CVIProjectionApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) =
+    CVIProjectionApproximationDeltaFnRuleLayout()
 
 function deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Any)
     @warn "CVI projection approximation does not accept the inverse function. Ignoring the provided inverse."
@@ -106,7 +107,7 @@ function deltafn_apply_layout(
 )
     let interface = factornode.out
         msgs_names      = Val{(:out,)}()
-        msgs_observable = combineLatestUpdates((messagein(factornode.out),), PushNew())
+        msgs_observable = combineLatestUpdates((get_stream_of_inbound_messages(factornode.out),), PushNew())
 
         marginal_names       = Val{(:out, :ins)}()
         marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[1]), get_stream_of_marginals(factornode.localmarginals.marginals[2])), PushNew())
@@ -115,7 +116,7 @@ function deltafn_apply_layout(
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest(
+        stream_of_outbound_messages = combineLatest(
             (msgs_observable, marginals_observable), PushNew()
         )
 
@@ -137,14 +138,18 @@ function deltafn_apply_layout(
                 )
             end
 
-        vmessageout = with_statics(factornode, vmessageout)
-        vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
+        stream_of_outbound_messages = with_statics(
+            factornode, stream_of_outbound_messages
         )
-        vmessageout = vmessageout |> schedule_on(scheduler)
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> map(AbstractMessage, mapping)
+        stream_of_outbound_messages = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, stream_of_outbound_messages
+        )
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> schedule_on(scheduler)
 
-        connect!(messageout(interface), vmessageout)
+        set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
     end
 end
 

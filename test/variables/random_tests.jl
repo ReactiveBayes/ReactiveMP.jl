@@ -1,25 +1,32 @@
 
 @testitem "RandomVariable: uninitialized" begin
-    import ReactiveMP: messageout, messagein
+    import ReactiveMP:
+        get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
     # Should throw if not initialised properly
     let var = randomvar()
         for i in 1:10
-            @test_throws BoundsError messageout(var, i)
-            @test_throws BoundsError messagein(var, i)
+            @test_throws BoundsError get_stream_of_outbound_messages(var, i)
+            @test_throws BoundsError get_stream_of_inbound_messages(var, i)
         end
     end
 end
 
-@testitem "RandomVariable: getmessagein!" begin
-    import ReactiveMP: MessageObservable, create_messagein!, messagein, degree
+@testitem "RandomVariable: getget_stream_of_inbound_messages!" begin
+    import ReactiveMP:
+        MessageObservable,
+        create_new_stream_of_inbound_messages!,
+        get_stream_of_inbound_messages,
+        degree
 
     # Test for different degrees `d`
     for d in 1:5:100
         let var = randomvar()
             for i in 1:d
-                messagein, index = create_messagein!(var)
-                @test messagein isa MessageObservable
+                new_stream_of_inbound_messages, index = create_new_stream_of_inbound_messages!(
+                    var
+                )
+                @test new_stream_of_inbound_messages isa MessageObservable
                 @test index === i
                 @test degree(var) === i
             end
@@ -32,14 +39,14 @@ end
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
-        create_messagein!,
+        create_new_stream_of_inbound_messages!,
         compute_product_of_messages,
-        messagein,
+        get_stream_of_inbound_messages,
         degree,
         activate!,
         connect!,
         RandomVariableActivationOptions,
-        messageout,
+        get_stream_of_outbound_messages,
         get_stream_of_marginals
 
     include("../testutilities.jl")
@@ -49,9 +56,9 @@ end
     marginal_prod_fold = (variable, context, msgs) -> msg(sum(getdata.(msgs)))
     for d in 1:5:100
         let var = randomvar()
-            messageins = map(1:d) do _
+            new_stream_of_inbound_messages = map(1:d) do _
                 s = Subject(AbstractMessage)
-                m, i = create_messagein!(var)
+                m, i = create_new_stream_of_inbound_messages!(var)
                 connect!(m, s)
                 return s
             end
@@ -70,8 +77,10 @@ end
             marginal_expected = mgl(sum(getdata.(messages)))
             marginal_result =
                 check_stream_updated_once(get_stream_of_marginals(var)) do
-                    foreach(zip(messageins, messages)) do (messagein, message)
-                        next!(messagein, message)
+                    foreach(
+                        zip(new_stream_of_inbound_messages, messages)
+                    ) do (new_stream_of_inbound_messages, message)
+                        next!(new_stream_of_inbound_messages, message)
                     end
                 end
 
@@ -82,18 +91,18 @@ end
     end
 end
 
-@testitem "RandomVariable: messageout" begin
+@testitem "RandomVariable: get_stream_of_outbound_messages" begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
-        create_messagein!,
+        create_new_stream_of_inbound_messages!,
         compute_product_of_messages,
-        messagein,
+        get_stream_of_inbound_messages,
         degree,
         activate!,
         connect!,
         RandomVariableActivationOptions,
-        messageout
+        get_stream_of_outbound_messages
 
     include("../testutilities.jl")
 
@@ -106,9 +115,9 @@ end
     # We start from `2` because `1` is not a valid degree for a random variable
     for d in 2:5:100, k in 1:d
         let var = randomvar()
-            messageins = map(1:d) do _
+            new_streams_of_inbound_messages = map(1:d) do _
                 s = Subject(AbstractMessage)
-                m, i = create_messagein!(var)
+                m, i = create_new_stream_of_inbound_messages!(var)
                 connect!(m, s)
                 return s
             end
@@ -132,9 +141,13 @@ end
                     ),
                 ),
             )
-            kmessage_result = check_stream_updated_once(messageout(var, k)) do
-                foreach(zip(messageins, messages)) do (messagein, message)
-                    next!(messagein, message)
+            kmessage_result = check_stream_updated_once(
+                get_stream_of_outbound_messages(var, k)
+            ) do
+                foreach(
+                    zip(new_streams_of_inbound_messages, messages)
+                ) do (new_stream_of_inbound_messages, message)
+                    next!(new_stream_of_inbound_messages, message)
                 end
             end
             # We check the `getdata` here approximatelly because the `message_prod_fn` can rearrange
@@ -150,7 +163,7 @@ end
         MessageProductContext,
         RandomVariableActivationOptions,
         AbstractMessage,
-        create_messagein!,
+        create_new_stream_of_inbound_messages!,
         activate!,
         connect!,
         getdata,
@@ -183,9 +196,9 @@ end
 
         var = randomvar()
 
-        messageins = map(1:3) do _
+        new_streams_of_inbounds_messages = map(1:3) do _
             s = Subject(AbstractMessage)
-            m, i = create_messagein!(var)
+            m, i = create_new_stream_of_inbound_messages!(var)
             connect!(m, s)
             return s
         end
@@ -201,8 +214,10 @@ end
 
         marginal_result =
             check_stream_updated_once(get_stream_of_marginals(var)) do
-                foreach(zip(messageins, messages)) do (messagein, message)
-                    next!(messagein, message)
+                foreach(
+                    zip(new_streams_of_inbounds_messages, messages)
+                ) do (new_stream_of_inbounds_messages, message)
+                    next!(new_stream_of_inbounds_messages, message)
                 end
             end
 
@@ -235,9 +250,9 @@ end
 
         var = randomvar()
 
-        messageins = map(1:2) do _
+        new_streams_of_inbounds_messages = map(1:2) do _
             s = Subject(AbstractMessage)
-            m, i = create_messagein!(var)
+            m, i = create_new_stream_of_inbound_messages!(var)
             connect!(m, s)
             return s
         end
@@ -253,8 +268,10 @@ end
 
         marginal_result =
             check_stream_updated_once(get_stream_of_marginals(var)) do
-                foreach(zip(messageins, messages)) do (messagein, message)
-                    next!(messagein, message)
+                foreach(
+                    zip(new_streams_of_inbounds_messages, messages)
+                ) do (new_stream_of_inbound_messages, message)
+                    next!(new_stream_of_inbound_messages, message)
                 end
             end
 
@@ -274,7 +291,10 @@ end
 end
 
 @testitem "RandomVariable: activate! - zero or less than one inbound messages should throw" begin
-    import ReactiveMP: RandomVariableActivationOptions, activate!, messageout
+    import ReactiveMP:
+        RandomVariableActivationOptions,
+        activate!,
+        get_stream_of_outbound_messages
 
     let var = randomvar()
         @test_throws "Cannot activate a random variable with zero or less than one inbound messages." activate!(

@@ -91,7 +91,7 @@ function deltafn_apply_layout(
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest(
+        stream_of_outbound_messages = combineLatest(
             (msgs_observable, marginals_observable), PushNew()
         )
 
@@ -113,14 +113,14 @@ function deltafn_apply_layout(
                 )
             end
 
-        vmessageout = with_statics(factornode, vmessageout)
-        vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
+        stream_of_outbound_messages = with_statics(factornode, stream_of_outbound_messages)
+        stream_of_outbound_messages = stream_of_outbound_messages |> map(AbstractMessage, mapping)
+        stream_of_outbound_messages = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, stream_of_outbound_messages
         )
-        vmessageout = vmessageout |> schedule_on(scheduler)
+        stream_of_outbound_messages = stream_of_outbound_messages |> schedule_on(scheduler)
 
-        connect!(messageout(interface), vmessageout)
+        set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
     end
 end
 

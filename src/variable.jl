@@ -93,7 +93,9 @@ TODO doc
 """
 function set_initial_message!(variable::AbstractVariable, message)
     for i in 1:degree(variable)
-        set_initial_message!(messageout(variable, i), message)
+        set_initial_message!(
+            get_stream_of_outbound_messages(variable, i), message
+        )
     end
 end
 

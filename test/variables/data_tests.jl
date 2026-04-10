@@ -1,25 +1,31 @@
 
 @testitem "DataVariable: uninitialized" begin
-    import ReactiveMP: messageout, messagein
+    import ReactiveMP: get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
     # Should throw if not initialised properly
     let var = datavar()
         for i in 1:10
-            @test messageout(var, 1) === messageout(var, i)
-            @test_throws BoundsError messagein(var, i)
+            @test get_stream_of_outbound_messages(var, 1) === get_stream_of_outbound_messages(var, i)
+            @test_throws BoundsError get_stream_of_inbound_messages(var, i)
         end
     end
 end
 
-@testitem "DataVariable: getmessagein!" begin
-    import ReactiveMP: MessageObservable, create_messagein!, messagein, degree
+@testitem "DataVariable: get_stream_of_inbound_messages" begin
+    import ReactiveMP:
+        MessageObservable,
+        create_new_stream_of_inbound_messages!,
+        get_stream_of_inbound_messages,
+        degree
 
     # Test for different degrees `d`
     for d in 1:5:100
         let var = datavar()
             for i in 1:d
-                messagein, index = create_messagein!(var)
-                @test messagein isa MessageObservable
+                new_stream_of_inbound_message, index = create_new_stream_of_inbound_messages!(
+                    var
+                )
+                @test new_stream_of_inbound_message isa MessageObservable
                 @test index === i
                 @test degree(var) === i
             end
@@ -33,23 +39,23 @@ end
 
     import ReactiveMP:
         MessageObservable,
-        create_messagein!,
-        messagein,
+        create_new_stream_of_inbound_messages!,
+        get_stream_of_inbound_messages,
         degree,
         activate!,
         connect!,
         new_observation!,
         DataVariableActivationOptions,
-        messageout,
+        get_stream_of_outbound_messages,
         get_stream_of_marginals
 
     include("../testutilities.jl")
 
     for d in 1:5:100
         let var = datavar()
-            messageins = map(1:d) do _
+            new_streams_of_inbound_messages = map(1:d) do _
                 s = Subject(AbstractMessage)
-                m, i = create_messagein!(var)
+                m, i = create_new_stream_of_inbound_messages!(var)
                 connect!(m, s)
                 return s
             end
@@ -62,8 +68,10 @@ end
             messages = map(msg, rand(d))
 
             @test check_stream_not_updated(get_stream_of_marginals(var)) do
-                foreach(zip(messageins, messages)) do (messagein, message)
-                    next!(messagein, message)
+                foreach(
+                    zip(new_streams_of_inbound_messages, messages)
+                ) do (new_stream_of_inbound_messages, message)
+                    next!(new_stream_of_inbound_messages, message)
                 end
             end
 
@@ -87,7 +95,7 @@ end
         DataVariable,
         DataVariableActivationOptions,
         activate!,
-        messageout,
+        get_stream_of_outbound_messages,
         get_stream_of_marginals,
         new_observation!
 
@@ -101,7 +109,7 @@ end
             activate!(var, options)
             marginal = check_stream_updated_once(get_stream_of_marginals(var))
             @test getdata(marginal) === PointMass(fn(val1, val2))
-            message = check_stream_updated_once(messageout(var, 1))
+            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -121,7 +129,7 @@ end
                 true, true, fn, (val1, val2)
             )
             activate!(var, options)
-            message = check_stream_updated_once(messageout(var, 1))
+            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -144,7 +152,7 @@ end
                     new_observation!(var1, val1)
                 end
             @test getdata(marginal) === PointMass(fn(val1, val2))
-            message = check_stream_updated_once(messageout(var, 1))
+            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -168,7 +176,7 @@ end
                 end
             @test getdata(marginal) === PointMass(fn(val1, val2))
 
-            message = check_stream_updated_once(messageout(var, 1))
+            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -198,7 +206,7 @@ end
                 end
             @test getdata(marginal) === PointMass(fn(val1, val2))
 
-            message = check_stream_updated_once(messageout(var, 1))
+            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 

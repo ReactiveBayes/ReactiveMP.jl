@@ -53,7 +53,7 @@
         # Check that before calling the `set_initial_message!` all messages are `nothing`
         for node_index in 1:k
             @test isnothing(
-                Rocket.getrecent(ReactiveMP.messageout(variable, node_index))
+                Rocket.getrecent(ReactiveMP.get_stream_of_outbound_messages(variable, node_index))
             )
         end
 
@@ -62,7 +62,7 @@
         for node_index in 1:k
             message_subscription_flag = false
             subscription = subscribe!(
-                ReactiveMP.messageout(variable, node_index),
+                ReactiveMP.get_stream_of_outbound_messages(variable, node_index),
                 (message) -> begin
                     @test typeof(message) <: Message{T}
                     @test mean(message) === mean(dist)
@@ -137,7 +137,7 @@
             @test all(
                 isnothing,
                 Rocket.getrecent.(
-                    ReactiveMP.messageout.(variables, node_index)
+                    ReactiveMP.get_stream_of_outbound_messages.(variables, node_index)
                 ),
             )
         end
@@ -148,7 +148,7 @@
         for node_index in 1:k
             messages_subscription_flag = false
             subscription = subscribe!(
-                collectLatest(ReactiveMP.messageout.(variables, node_index)),
+                collectLatest(ReactiveMP.get_stream_of_outbound_messages.(variables, node_index)),
                 (messages) -> begin
                     @test length(messages) === length(variables)
                     foreach(messages) do message

@@ -33,7 +33,9 @@ function score(
 ) where {T <: CountingReal}
     fnstream = let scheduler = scheduler
         (interface) ->
-            messagein(interface) |> skip_initial() |> schedule_on(scheduler)
+            get_stream_of_inbound_messages(interface) |>
+            skip_initial() |>
+            schedule_on(scheduler)
     end
 
     tinterfaces = Tuple(getinterfaces(node))

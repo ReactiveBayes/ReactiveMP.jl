@@ -4,8 +4,8 @@
     import ReactiveMP:
         AbstractVariable,
         NodeInterface,
-        messageout,
-        messagein,
+        get_stream_of_outbound_messages,
+        get_stream_of_inbound_messages,
         tag,
         getvariable,
         MessageObservable,
@@ -13,29 +13,31 @@
         name
 
     struct AbstractVariableImplemention <: AbstractVariable
-        messageout::MessageObservable
+        stream_of_outbound_messages::MessageObservable
     end
 
-    ReactiveMP.create_messagein!(variable::AbstractVariableImplemention) = (
-        variable.messageout, 1
-    )
-    ReactiveMP.messageout(variable::AbstractVariableImplemention, ::Int) =
-        variable.messageout
+    ReactiveMP.create_new_stream_of_inbound_messages!(
+        variable::AbstractVariableImplemention
+    ) = (variable.stream_of_outbound_messages, 1)
+    ReactiveMP.get_stream_of_outbound_messages(
+        variable::AbstractVariableImplemention, ::Int
+    ) = variable.stream_of_outbound_messages
 
-    varmessageout = MessageObservable()
+    stream_of_outbound_messages = MessageObservable()
     stream = Subject(AbstractMessage)
-    connect!(varmessageout, stream)
-    variable = AbstractVariableImplemention(varmessageout)
+    connect!(stream_of_outbound_messages, stream)
+    variable = AbstractVariableImplemention(stream_of_outbound_messages)
     interface = NodeInterface(:name, variable)
 
     @test name(interface) === :name
     @test occursin("name", repr(interface))
     @test tag(interface) === Val{:name}()
     @test getvariable(interface) === variable
-    @test messagein(interface) === varmessageout
+    @test get_stream_of_inbound_messages(interface) ===
+        stream_of_outbound_messages
 
     actor = keep(AbstractMessage)
-    subscription = subscribe!(messageout(interface), actor)
+    subscription = subscribe!(get_stream_of_outbound_messages(interface), actor)
 
     next!(stream, Message(1, false, false))
 

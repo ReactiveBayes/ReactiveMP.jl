@@ -53,17 +53,17 @@ set_stream_of_predictions!(randomvar::RandomVariable, stream) = error(
     "It is not possible to set a stream of predictions for `RandomVariable`"
 )
 
-function create_messagein!(randomvar::RandomVariable)
-    messagein = MessageObservable(AbstractMessage)
-    push!(randomvar.input_messages, messagein)
-    return messagein, length(randomvar.input_messages)
+function create_new_stream_of_inbound_messages!(randomvar::RandomVariable)
+    new_stream_of_inbound_messages = MessageObservable(AbstractMessage)
+    push!(randomvar.input_messages, new_stream_of_inbound_messages)
+    return new_stream_of_inbound_messages, length(randomvar.input_messages)
 end
 
-function messagein(randomvar::RandomVariable, index::Int)
+function get_stream_of_inbound_messages(randomvar::RandomVariable, index::Int)
     return randomvar.input_messages[index]
 end
 
-function messageout(randomvar::RandomVariable, index::Int)
+function get_stream_of_outbound_messages(randomvar::RandomVariable, index::Int)
     return randomvar.output_messages[index]
 end
 

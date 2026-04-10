@@ -9,8 +9,9 @@ ReactiveMP.FactorNode
 ReactiveMP.FactorNodeLocalMarginal
 ReactiveMP.NodeInterface
 ReactiveMP.IndexedNodeInterface
-ReactiveMP.messagein
-ReactiveMP.messageout
+ReactiveMP.get_stream_of_inbound_messages
+ReactiveMP.get_stream_of_outbound_messages
+ReactiveMP.set_stream_of_outbound_messages!
 ReactiveMP.tag
 ReactiveMP.name
 ReactiveMP.interfaces

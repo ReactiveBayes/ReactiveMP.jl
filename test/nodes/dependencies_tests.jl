@@ -146,7 +146,7 @@ end
         RandomVariableActivationOptions,
         functional_dependencies,
         getinterfaces,
-        messagein,
+        get_stream_of_inbound_messages,
         getdata,
         get_node_local_marginals,
         get_stream_of_marginals
@@ -199,9 +199,9 @@ end
             @test interfaces[3] ∉ msg_dependencies_for_c
             @test isempty(marginal_dependencies_for_c)
 
-            @test check_stream_not_updated(messagein(interfaces[1]))
-            @test check_stream_not_updated(messagein(interfaces[2]))
-            @test check_stream_not_updated(messagein(interfaces[3]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[1]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[2]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[3]))
         end
 
         @testset "RequireMessageFunctionalDependencies(a = nothing)" begin
@@ -234,9 +234,9 @@ end
             @test interfaces[3] ∉ msg_dependencies_for_c
             @test isempty(marginal_dependencies_for_c)
 
-            @test check_stream_not_updated(messagein(interfaces[1]))
-            @test check_stream_not_updated(messagein(interfaces[2]))
-            @test check_stream_not_updated(messagein(interfaces[3]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[1]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[2]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[3]))
         end
 
         @testset "RequireMessageFunctionalDependencies(b = ...)" begin
@@ -272,11 +272,11 @@ end
                 @test interfaces[3] ∉ msg_dependencies_for_c
                 @test isempty(marginal_dependencies_for_c)
 
-                @test check_stream_not_updated(messagein(interfaces[1]))
+                @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[1]))
                 @test getdata(
-                    check_stream_updated_once(messagein(interfaces[2]))
+                    check_stream_updated_once(get_stream_of_inbound_messages(interfaces[2]))
                 ) === initialmessage
-                @test check_stream_not_updated(messagein(interfaces[3]))
+                @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[3]))
             end
         end
 
@@ -439,9 +439,9 @@ end
             @test :c ∉ name.(marginal_dependencies_for_c)
             @test isempty(msg_dependencies_for_c)
 
-            @test check_stream_not_updated(messagein(interfaces[1]))
-            @test check_stream_not_updated(messagein(interfaces[2]))
-            @test check_stream_not_updated(messagein(interfaces[3]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[1]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[2]))
+            @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[3]))
         end
 
         @testset "RequireMessageFunctionalDependencies(b = ...)" begin
@@ -478,11 +478,11 @@ end
                 @test :c ∉ name.(marginal_dependencies_for_c)
                 @test isempty(msg_dependencies_for_c)
 
-                @test check_stream_not_updated(messagein(interfaces[1]))
+                @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[1]))
                 @test getdata(
-                    check_stream_updated_once(messagein(interfaces[2]))
+                    check_stream_updated_once(get_stream_of_inbound_messages(interfaces[2]))
                 ) === initialmessage
-                @test check_stream_not_updated(messagein(interfaces[3]))
+                @test check_stream_not_updated(get_stream_of_inbound_messages(interfaces[3]))
             end
         end
 

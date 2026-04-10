@@ -3,12 +3,10 @@ export DefaultFunctionalDependencies,
     RequireMarginalFunctionalDependencies,
     RequireEverythingFunctionalDependencies
 
-collect_latest_messages(dependencies, factornode, collection) = __collect_latest_updates(
-    messagein, collection
-)
-collect_latest_marginals(dependencies, factornode, collection) = __collect_latest_updates(
-    get_stream_of_marginals, collection
-)
+collect_latest_messages(dependencies, factornode, collection) =
+    __collect_latest_updates(get_stream_of_inbound_messages, collection)
+collect_latest_marginals(dependencies, factornode, collection) =
+    __collect_latest_updates(get_stream_of_marginals, collection)
 
 function __collect_latest_updates(f::F, collection) where {F}
     return __collect_latest_updates(f, Tuple(collection))
@@ -51,7 +49,9 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                 vtag        = tag(interface)
                 vconstraint = Marginalisation()
 
-                vmessageout = combineLatest((messages, marginals), PushNew())
+                stream_of_outbound_messages = combineLatest(
+                    (messages, marginals), PushNew()
+                )
 
                 mapping =
                     let messagemap = MessageMapping(
@@ -71,13 +71,17 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                         )
                     end
 
-                vmessageout = vmessageout |> map(AbstractMessage, mapping)
-                vmessageout = apply_pipeline_stage(
-                    pipeline, factornode, vtag, vmessageout
+                stream_of_outbound_messages =
+                    stream_of_outbound_messages |> map(AbstractMessage, mapping)
+                stream_of_outbound_messages = apply_pipeline_stage(
+                    pipeline, factornode, vtag, stream_of_outbound_messages
                 )
-                vmessageout = vmessageout |> schedule_on(scheduler)
+                stream_of_outbound_messages =
+                    stream_of_outbound_messages |> schedule_on(scheduler)
 
-                connect!(messageout(interface), vmessageout)
+                set_stream_of_outbound_messages!(
+                    interface, stream_of_outbound_messages
+                )
             end
         end
     end
@@ -104,9 +108,8 @@ struct DefaultFunctionalDependencies <: FunctionalDependencies end
 
 function collect_functional_dependencies end
 
-collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies(
-    fform
-)
+collect_functional_dependencies(fform::F, ::Nothing) where {F} =
+    default_functional_dependencies(fform)
 collect_functional_dependencies(fform::F, something) where {F} = something
 
 default_functional_dependencies(any) = DefaultFunctionalDependencies()
@@ -159,9 +162,8 @@ struct RequireMessageFunctionalDependencies{S <: NamedTuple} <:
     specification::S
 end
 
-RequireMessageFunctionalDependencies(; kwargs...) = RequireMessageFunctionalDependencies((;
-    kwargs...
-))
+RequireMessageFunctionalDependencies(; kwargs...) =
+    RequireMessageFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
     dependencies::RequireMessageFunctionalDependencies,
@@ -185,7 +187,7 @@ function functional_dependencies(
         initialmessage = specification[name(interface)]
         # Set the initial message if its not `nothing`
         if !isnothing(initialmessage)
-            set_initial_message!(messagein(interface), initialmessage)
+            set_initial_message!(get_stream_of_inbound_messages(interface), initialmessage)
         end
         # And return the cluster as is
         cluster
@@ -229,9 +231,8 @@ struct RequireMarginalFunctionalDependencies{S <: NamedTuple} <:
     specification::S
 end
 
-RequireMarginalFunctionalDependencies(; kwargs...) = RequireMarginalFunctionalDependencies((;
-    kwargs...
-))
+RequireMarginalFunctionalDependencies(; kwargs...) =
+    RequireMarginalFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
     dependencies::RequireMarginalFunctionalDependencies,

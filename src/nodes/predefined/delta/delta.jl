@@ -241,7 +241,7 @@ end
 # For datavar we get the latest value from the data stream
 __unpack_latest_static(_, constvar::ConstVariable) = getconst(constvar)
 __unpack_latest_static(_, datavar::DataVariable) = BayesBase.getpointmass(
-    getdata(Rocket.getrecent(messageout(datavar, 1)))
+    getdata(Rocket.getrecent(get_stream_of_outbound_messages(datavar, 1)))
 )
 
 # By default all `meta` objects fallback to the `DeltaFnDefaultRuleLayout`

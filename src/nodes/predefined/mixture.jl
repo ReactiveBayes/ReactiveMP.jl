@@ -9,7 +9,8 @@ interfaces(::Type{<:Mixture}) = Val((:out, :switch, :inputs))
 alias_interface(::Type{<:Mixture}, ::Int64, name::Symbol) = name
 is_predefined_node(::Type{<:Mixture}) = PredefinedNodeFunctionalForm()
 sdtype(::Type{<:Mixture}) = Stochastic()
-collect_factorisation(::Type{<:Mixture}, factorization) = MixtureNodeFactorisation()
+collect_factorisation(::Type{<:Mixture}, factorization) =
+    MixtureNodeFactorisation()
 
 struct MixtureNodeFactorisation end
 
@@ -48,9 +49,8 @@ struct MixtureNode{N} <: AbstractFactorNode
 end
 
 functionalform(factornode::MixtureNode{N}) where {N} = Mixture{N}
-getinterfaces(factornode::MixtureNode) = (
-    factornode.out, factornode.switch, factornode.inputs...
-)
+getinterfaces(factornode::MixtureNode) =
+    (factornode.out, factornode.switch, factornode.inputs...)
 sdtype(factornode::MixtureNode) = Stochastic()
 
 interfaceindices(factornode::MixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
@@ -93,9 +93,14 @@ end
 
 struct MixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
-collect_functional_dependencies(::MixtureNode, ::Nothing) = MixtureNodeFunctionalDependencies()
-collect_functional_dependencies(::MixtureNode, ::MixtureNodeFunctionalDependencies) = MixtureNodeFunctionalDependencies()
-collect_functional_dependencies(::MixtureNode, ::RequireMarginalFunctionalDependencies) = RequireMarginalFunctionalDependencies()
+collect_functional_dependencies(::MixtureNode, ::Nothing) =
+    MixtureNodeFunctionalDependencies()
+collect_functional_dependencies(
+    ::MixtureNode, ::MixtureNodeFunctionalDependencies
+) = MixtureNodeFunctionalDependencies()
+collect_functional_dependencies(
+    ::MixtureNode, ::RequireMarginalFunctionalDependencies
+) = RequireMarginalFunctionalDependencies()
 collect_functional_dependencies(::MixtureNode, ::Any) = error(
     "The functional dependencies for MixtureNode must be either `Nothing` or `MixtureNodeFunctionalDependencies` or `RequireMarginalFunctionalDependencies`",
 )
@@ -183,16 +188,24 @@ function collect_latest_messages(
     msgs_observable =
         combineLatest(
             (
-                messagein(output_or_switch_interface),
+                get_stream_of_inbound_messages(output_or_switch_interface),
                 combineLatest(
-                    map((input) -> messagein(input), inputsinterfaces),
+                    map(
+                        (input) -> get_stream_of_inbound_messages(input),
+                        inputsinterfaces,
+                    ),
                     PushNew(),
                 ),
             ),
             PushNew(),
         ) |> map_to((
-            messagein(output_or_switch_interface),
-            ManyOf(map((input) -> messagein(input), inputsinterfaces)),
+            get_stream_of_inbound_messages(output_or_switch_interface),
+            ManyOf(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
+                ),
+            ),
         ))
     return msgs_names, msgs_observable
 end
@@ -210,16 +223,24 @@ function collect_latest_messages(
     msgs_observable =
         combineLatest(
             (
-                messagein(switchinterface),
+                get_stream_of_inbound_messages(switchinterface),
                 combineLatest(
-                    map((input) -> messagein(input), inputsinterfaces),
+                    map(
+                        (input) -> get_stream_of_inbound_messages(input),
+                        inputsinterfaces,
+                    ),
                     PushNew(),
                 ),
             ),
             PushNew(),
         ) |> map_to((
-            messagein(switchinterface),
-            ManyOf(map((input) -> messagein(input), inputsinterfaces)),
+            get_stream_of_inbound_messages(switchinterface),
+            ManyOf(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
+                ),
+            ),
         ))
     return msgs_names, msgs_observable
 end
@@ -235,9 +256,19 @@ function collect_latest_messages(
     msgs_names = Val{(name(inputsinterfaces[1]),)}()
     msgs_observable =
         combineLatest(
-            map((input) -> messagein(input), inputsinterfaces), PushNew()
-        ) |>
-        map_to((ManyOf(map((input) -> messagein(input), inputsinterfaces)),))
+            map(
+                (input) -> get_stream_of_inbound_messages(input),
+                inputsinterfaces,
+            ),
+            PushNew(),
+        ) |> map_to((
+            ManyOf(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
+                ),
+            ),
+        ))
     return msgs_names, msgs_observable
 end
 
@@ -251,7 +282,7 @@ function collect_latest_messages(
 
     msgs_names = Val{(name(outputinterface),)}()
     msgs_observable = combineLatestUpdates(
-        (messagein(outputinterface),), PushNew()
+        (get_stream_of_inbound_messages(outputinterface),), PushNew()
     )
     return msgs_names, msgs_observable
 end

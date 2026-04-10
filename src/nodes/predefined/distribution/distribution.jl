@@ -8,15 +8,12 @@ struct StandaloneDistributionNode{D, C} <: AbstractFactorNode
 end
 
 functionalform(factornode::StandaloneDistributionNode) = factornode.distribution
-getinterfaces(factornode::StandaloneDistributionNode) = (
-    factornode.outinterface,
-)
-getinterface(factornode::StandaloneDistributionNode, index) = getindex(
-    getinterfaces(factornode), index
-)
-getinboundinterfaces(factornode::StandaloneDistributionNode) = error(
-    "`StandaloneDistributionNode` has no inbound interfaces"
-)
+getinterfaces(factornode::StandaloneDistributionNode) =
+    (factornode.outinterface,)
+getinterface(factornode::StandaloneDistributionNode, index) =
+    getindex(getinterfaces(factornode), index)
+getinboundinterfaces(factornode::StandaloneDistributionNode) =
+    error("`StandaloneDistributionNode` has no inbound interfaces")
 getlocalclusters(factornode::StandaloneDistributionNode) =
     factornode.localclusters
 
@@ -51,8 +48,12 @@ function activate!(
         factornode,
         options,
     )
-    vmessageout = of(Message(factornode.distribution, true, false))
-    connect!(messageout(getinterface(factornode, 1)), vmessageout)
+    stream_of_outbound_messages = of(
+        Message(factornode.distribution, true, false)
+    )
+    set_stream_of_outbound_messages!(
+        getinterface(factornode, 1), stream_of_outbound_messages
+    )
     return nothing
 end
 

@@ -5,7 +5,6 @@
         nodefunction,
         DeltaMeta,
         Linearization,
-        messageout,
         activate!,
         new_observation!,
         RandomVariableActivationOptions,
@@ -42,7 +41,6 @@ end
         nodefunction,
         DeltaMeta,
         Linearization,
-        messageout,
         activate!,
         new_observation!,
         RandomVariableActivationOptions,
@@ -120,9 +118,8 @@ end
 @testitem "Supported methods should not throw in DeltaMeta" begin
     struct SupportedApproximationMetßhod end
 
-    ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) = Val(
-        true
-    )
+    ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) =
+        Val(true)
 
     @test DeltaMeta(; method = SupportedApproximationMetßhod()) isa DeltaMeta
 end
@@ -136,7 +133,7 @@ end
         DeltaFnNode,
         DeltaMeta,
         CVIProjection,
-        messageout,
+        get_stream_of_outbound_messages,
         new_observation!,
         activate!,
         RandomVariableActivationOptions,
@@ -164,6 +161,7 @@ end
 
     # Test data variable update propagation
     new_observation!(y, 2.0)
-    @test BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(y, 1)))) ≈
-        2.0
+    @test BayesBase.getpointmass(
+        getdata(Rocket.getrecent(get_stream_of_outbound_messages(y, 1)))
+    ) ≈ 2.0
 end

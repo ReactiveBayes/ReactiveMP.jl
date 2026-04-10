@@ -29,7 +29,7 @@ function with_statics(
     # We wait for the statics to be available, but ignore their actual values 
     # They are being injected indirectly with the `fix` function upon node creation
     statics = map(
-        static -> messageout(static, 1),
+        static -> get_stream_of_outbound_messages(static, 1),
         FixedArguments.value.(factornode.statics),
     )
     return combineLatest((stream, combineLatest(statics, PushNew()))) |>
@@ -85,7 +85,7 @@ function deltafn_apply_layout(
 
         # By default to compute `q_ins` we need messages both from `:out` and `:ins`
         msgs_names      = Val{(:out, :ins)}()
-        msgs_observable = combineLatestUpdates((messagein(out), combineLatestMessagesInUpdates(ins)), PushNew())
+        msgs_observable = combineLatestUpdates((get_stream_of_inbound_messages(out), combineLatestMessagesInUpdates(ins)), PushNew())
 
         # By default, we should not need any local marginals
         marginal_names       = nothing
@@ -127,7 +127,7 @@ function deltafn_apply_layout(
         vtag        = Val{:out}()
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest(
+        stream_of_outbound_messages = combineLatest(
             (msgs_observable, marginals_observable), PushNew()
         )
 
@@ -149,14 +149,18 @@ function deltafn_apply_layout(
                 )
             end
 
-        vmessageout = with_statics(factornode, vmessageout)
-        vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
+        stream_of_outbound_messages = with_statics(
+            factornode, stream_of_outbound_messages
         )
-        vmessageout = vmessageout |> schedule_on(scheduler)
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> map(AbstractMessage, mapping)
+        stream_of_outbound_messages = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, stream_of_outbound_messages
+        )
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> schedule_on(scheduler)
 
-        connect!(messageout(out), vmessageout)
+        set_stream_of_outbound_messages!(out, stream_of_outbound_messages)
     end
 end
 
@@ -176,7 +180,7 @@ function deltafn_apply_layout(
     # For each outbound message from `in_k` edge we need an inbound message on this edge and a joint marginal over `:ins` edges
     foreach(factornode.ins) do interface
         msgs_names      = Val{(:in,)}()
-        msgs_observable = combineLatestUpdates((messagein(interface),), PushNew())
+        msgs_observable = combineLatestUpdates((get_stream_of_inbound_messages(interface),), PushNew())
 
         marginal_names       = Val{(:ins,)}()
         marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[2]),), PushNew())
@@ -185,7 +189,7 @@ function deltafn_apply_layout(
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest(
+        stream_of_outbound_messages = combineLatest(
             (msgs_observable, marginals_observable), PushNew()
         )
 
@@ -207,14 +211,18 @@ function deltafn_apply_layout(
                 )
             end
 
-        vmessageout = with_statics(factornode, vmessageout)
-        vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
+        stream_of_outbound_messages = with_statics(
+            factornode, stream_of_outbound_messages
         )
-        vmessageout = vmessageout |> schedule_on(scheduler)
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> map(AbstractMessage, mapping)
+        stream_of_outbound_messages = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, stream_of_outbound_messages
+        )
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> schedule_on(scheduler)
 
-        connect!(messageout(interface), vmessageout)
+        set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
     end
 end
 
@@ -335,7 +343,7 @@ function deltafn_apply_layout(
         end
 
         msgs_names      = Val{(:out, :ins)}()
-        msgs_observable = combineLatestUpdates((messagein(factornode.out), msgs_ins_stream), PushNew())
+        msgs_observable = combineLatestUpdates((get_stream_of_inbound_messages(factornode.out), msgs_ins_stream), PushNew())
 
         marginal_names       = nothing
         marginals_observable = of(nothing)
@@ -344,7 +352,7 @@ function deltafn_apply_layout(
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest(
+        stream_of_outbound_messages = combineLatest(
             (msgs_observable, marginals_observable), PushNew()
         )
 
@@ -366,13 +374,17 @@ function deltafn_apply_layout(
                 )
             end
 
-        vmessageout = with_statics(factornode, vmessageout)
-        vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
+        stream_of_outbound_messages = with_statics(
+            factornode, stream_of_outbound_messages
         )
-        vmessageout = vmessageout |> schedule_on(scheduler)
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> map(AbstractMessage, mapping)
+        stream_of_outbound_messages = apply_pipeline_stage(
+            pipeline_stages, factornode, vtag, stream_of_outbound_messages
+        )
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> schedule_on(scheduler)
 
-        connect!(messageout(interface), vmessageout)
+        set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
     end
 end
