@@ -79,7 +79,9 @@ end
         getrecent,
         default_functional_dependencies,
         getlocalclusters,
-        getmarginals
+        get_stream_of_marginals,
+        set_stream_of_marginals!,
+        get_node_local_marginals
 
     struct ArbitraryNodeForCollectLatestMarginals end
 
@@ -98,11 +100,11 @@ end
         ArbitraryNodeForCollectLatestMarginals
     )
 
-    a, b, c = getmarginals(getlocalclusters(node))
+    a, b, c = get_node_local_marginals(getlocalclusters(node))
 
-    setmarginal!(a, getmarginal(a_v, IncludeAll()))
-    setmarginal!(b, getmarginal(b_v, IncludeAll()))
-    setmarginal!(c, getmarginal(c_v, IncludeAll()))
+    set_stream_of_marginals!(a, get_stream_of_marginals(a_v))
+    set_stream_of_marginals!(b, get_stream_of_marginals(b_v))
+    set_stream_of_marginals!(c, get_stream_of_marginals(c_v))
 
     @testset let (tag, stream) = collect_latest_marginals(
             dependencies, node, (a, b, c)
@@ -146,7 +148,9 @@ end
         functional_dependencies,
         getinterfaces,
         messagein,
-        getdata
+        getdata,
+        get_node_local_marginals,
+        get_stream_of_marginals
 
     struct ArbitraryFactorNode end
 
@@ -204,7 +208,7 @@ end
         @testset "RequireMessageFunctionalDependencies(a = nothing)" begin
             import ReactiveMP: RequireMessageFunctionalDependencies
 
-            dependencies = RequireMessageFunctionalDependencies(a = nothing)
+            dependencies = RequireMessageFunctionalDependencies(; a = nothing)
 
             msg_dependencies_for_a, marginal_dependencies_for_a = functional_dependencies(
                 dependencies, node, interfaces[1], 1
@@ -240,7 +244,7 @@ end
             import ReactiveMP: RequireMessageFunctionalDependencies
 
             for initialmessage in (1, 2.0, "hello")
-                dependencies = RequireMessageFunctionalDependencies(
+                dependencies = RequireMessageFunctionalDependencies(;
                     b = initialmessage
                 )
 
@@ -280,7 +284,7 @@ end
         @testset "RequireMarginalFunctionalDependencies(a = nothing)" begin
             import ReactiveMP: RequireMarginalFunctionalDependencies
 
-            dependencies = RequireMarginalFunctionalDependencies(a = nothing)
+            dependencies = RequireMarginalFunctionalDependencies(; a = nothing)
 
             msg_dependencies_for_a, marginal_dependencies_for_a = functional_dependencies(
                 dependencies, node, interfaces[1], 1
@@ -298,7 +302,7 @@ end
             @test !isempty(marginal_dependencies_for_a)
             @test length(marginal_dependencies_for_a) === 1
             @test check_stream_not_updated(
-                getmarginal(first(marginal_dependencies_for_a))
+                get_stream_of_marginals(first(marginal_dependencies_for_a))
             )
 
             @test interfaces[1] ∈ msg_dependencies_for_b
@@ -318,7 +322,7 @@ end
             for initialmarginal in (1, 2.0, "hello")
                 import ReactiveMP: RequireMarginalFunctionalDependencies
 
-                dependencies = RequireMarginalFunctionalDependencies(
+                dependencies = RequireMarginalFunctionalDependencies(;
                     a = initialmarginal
                 )
 
@@ -339,7 +343,9 @@ end
                 @test length(marginal_dependencies_for_a) === 1
                 @test getdata(
                     check_stream_updated_once(
-                        getmarginal(first(marginal_dependencies_for_a))
+                        get_stream_of_marginals(
+                            first(marginal_dependencies_for_a)
+                        ),
                     ),
                 ) === initialmarginal
 
@@ -406,7 +412,7 @@ end
         @testset "RequireMessageFunctionalDependencies(a = nothing)" begin
             import ReactiveMP: RequireMessageFunctionalDependencies
 
-            dependencies = RequireMessageFunctionalDependencies(a = nothing)
+            dependencies = RequireMessageFunctionalDependencies(; a = nothing)
 
             msg_dependencies_for_a, marginal_dependencies_for_a = functional_dependencies(
                 dependencies, node, interfaces[1], 1
@@ -443,7 +449,7 @@ end
             import ReactiveMP: RequireMessageFunctionalDependencies
 
             for initialmessage in (1, 2.0, "hello")
-                dependencies = RequireMessageFunctionalDependencies(
+                dependencies = RequireMessageFunctionalDependencies(;
                     b = initialmessage
                 )
 
@@ -484,7 +490,7 @@ end
         @testset "RequireMarginalFunctionalDependencies(a = nothing)" begin
             import ReactiveMP: RequireMarginalFunctionalDependencies
 
-            dependencies = RequireMarginalFunctionalDependencies(a = nothing)
+            dependencies = RequireMarginalFunctionalDependencies(; a = nothing)
 
             msg_dependencies_for_a, marginal_dependencies_for_a = functional_dependencies(
                 dependencies, node, interfaces[1], 1
@@ -501,7 +507,7 @@ end
             @test :c ∈ name.(marginal_dependencies_for_a)
             @test isempty(msg_dependencies_for_a)
             @test check_stream_not_updated(
-                getmarginal(first(marginal_dependencies_for_a))
+                get_stream_of_marginals(first(marginal_dependencies_for_a))
             )
 
             @test :a ∈ name.(marginal_dependencies_for_b)
@@ -521,7 +527,7 @@ end
             for initialmarginal in (1, 2.0, "hello")
                 import ReactiveMP: RequireMarginalFunctionalDependencies
 
-                dependencies = RequireMarginalFunctionalDependencies(
+                dependencies = RequireMarginalFunctionalDependencies(;
                     a = initialmarginal
                 )
 
@@ -541,7 +547,7 @@ end
                 @test isempty(msg_dependencies_for_a)
                 @test getdata(
                     check_stream_updated_once(
-                        getmarginal(first(marginal_dependencies_for_a))
+                        get_stream_of_marginals(first(marginal_dependencies_for_a))
                     ),
                 ) === initialmarginal
 
@@ -602,7 +608,9 @@ end
     struct CustomDependencyB <: FunctionalDependencies end
 
     # Define how meta affects functional dependencies
-    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions) = ReactiveMP.collect_functional_dependencies(
+    ReactiveMP.collect_functional_dependencies(
+        ::Type{CustomMetaNode}, options::FactorNodeActivationOptions
+    ) = ReactiveMP.collect_functional_dependencies(
         CustomMetaNode, options, getmetadata(options)
     )
 
@@ -610,7 +618,11 @@ end
     ReactiveMP.collect_functional_dependencies(
         ::Type{CustomMetaNode}, ::FactorNodeActivationOptions, meta::Symbol
     ) = meta === :use_a ? CustomDependencyA() : CustomDependencyB()
-    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions, meta::Nothing) = ReactiveMP.collect_functional_dependencies(
+    ReactiveMP.collect_functional_dependencies(
+        ::Type{CustomMetaNode},
+        options::FactorNodeActivationOptions,
+        meta::Nothing,
+    ) = ReactiveMP.collect_functional_dependencies(
         CustomMetaNode, getdependecies(options)
     )
 
