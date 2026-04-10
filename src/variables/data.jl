@@ -46,6 +46,7 @@ isconst(::DataVariable)                   = false
 isconst(::AbstractArray{<:DataVariable})  = false
 
 get_stream_of_marginals(datavar::DataVariable) = datavar.marginal
+get_stream_of_predictions(datavar::DataVariable) = datavar.prediction
 
 set_stream_of_marginals!(datavar::DataVariable, stream) = connect!(
     datavar.marginal, stream

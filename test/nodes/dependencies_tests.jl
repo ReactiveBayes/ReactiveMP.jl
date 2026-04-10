@@ -73,7 +73,6 @@ end
     import ReactiveMP:
         NodeInterface,
         FactorNodeLocalMarginal,
-        getmarginal,
         collect_latest_marginals,
         getdata,
         getrecent,

@@ -28,7 +28,7 @@ end
     end
 end
 
-@testitem "ConstVariable: getmarginal" begin
+@testitem "ConstVariable: get_stream_of_marginals" begin
     using BayesBase
 
     import ReactiveMP:

@@ -28,7 +28,7 @@ end
     end
 end
 
-@testitem "RandomVariable: getmarginal" begin
+@testitem "RandomVariable: get_stream_of_marginals" begin
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
