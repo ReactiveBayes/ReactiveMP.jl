@@ -33,8 +33,9 @@ function set_stream_of_marginals!(
     localmarginal.marginal = marginal
 end
 
-Base.show(io::IO, marginal::FactorNodeLocalMarginal) =
-    print(io, "FactorNodeLocalMarginal(", name(marginal), ")")
+Base.show(io::IO, marginal::FactorNodeLocalMarginal) = print(
+    io, "FactorNodeLocalMarginal(", name(marginal), ")"
+)
 
 ## FactorNodeLocalClusters
 
@@ -44,13 +45,12 @@ struct FactorNodeLocalClusters{M, F}
 end
 
 get_node_local_marginals(clusters::FactorNodeLocalClusters) = clusters.marginals
-set_node_local_marginal_stream!(
-    clusters::FactorNodeLocalClusters, index, stream
-) = set_stream_of_marginals!(clusters.marginals[index], stream)
+set_node_local_marginal_stream!(clusters::FactorNodeLocalClusters, index, stream) = set_stream_of_marginals!(
+    clusters.marginals[index], stream
+)
 
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
-getfactorization(clusters::FactorNodeLocalClusters, index::Int) =
-    clusters.factorization[index]
+getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
 
 function FactorNodeLocalClusters(
     interfaces::AbstractArray{NodeInterface}, factorization
@@ -74,16 +74,18 @@ end
 
 ## FactorNodeLocalCluster
 
-clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) =
-    clusterindex(clusters, clusters.factorization, vindex)
-clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) =
-    findfirst(cluster -> vindex in cluster, factorization)
+clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) = clusterindex(
+    clusters, clusters.factorization, vindex
+)
+clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) = findfirst(
+    cluster -> vindex in cluster, factorization
+)
 
-clustername(cluster::Tuple, interfaces) =
-    mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
+clustername(cluster::Tuple, interfaces) = mapreduce(
+    v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster
+)
 clustername(cluster, interfaces) = reduce(
-    (a, b) -> Symbol(a, :_, b),
-    Iterators.map(v -> name(interfaces[v]), cluster),
+    (a, b) -> Symbol(a, :_, b), Iterators.map(v -> name(interfaces[v]), cluster)
 )
 clustername(interfaces) = reduce(
     (a, b) -> Symbol(a, :_, b),
@@ -120,7 +122,9 @@ function initialize_cluster!(
         # For the clusters of length `>1` we need to create the new strean, but it will be assigned later
         MarginalObservable()
     end
-    set_node_local_marginal_stream!(clusters, index, stream_of_cluster_marginals)
+    set_node_local_marginal_stream!(
+        clusters, index, stream_of_cluster_marginals
+    )
 end
 
 function activate_cluster!(

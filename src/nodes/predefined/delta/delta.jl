@@ -370,7 +370,8 @@ function score(
 ) where {T <: CountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
-    qinsmarginal = get_stream_of_marginals(node.localmarginals.marginals[2]) |>
+    qinsmarginal =
+        get_stream_of_marginals(node.localmarginals.marginals[2]) |>
         skip_initial()
 
     stream  = qinsmarginal |> schedule_on(scheduler)

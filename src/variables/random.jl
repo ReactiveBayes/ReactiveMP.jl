@@ -46,8 +46,9 @@ isconst(::AbstractArray{<:RandomVariable}) = false
 get_stream_of_marginals(randomvar::RandomVariable) = randomvar.marginal
 get_stream_of_predictions(randomvar::RandomVariable) = randomvar.marginal
 
-set_stream_of_marginals!(randomvar::RandomVariable, stream) =
-    connect!(randomvar.marginal, stream)
+set_stream_of_marginals!(randomvar::RandomVariable, stream) = connect!(
+    randomvar.marginal, stream
+)
 set_stream_of_predictions!(randomvar::RandomVariable, stream) = error(
     "It is not possible to set a stream of predictions for `RandomVariable`"
 )

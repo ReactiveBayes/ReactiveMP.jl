@@ -35,8 +35,7 @@ In order to compute:
 struct CVIProjectionApproximationDeltaFnRuleLayout <:
        AbstractDeltaNodeDependenciesLayout end
 
-deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) =
-    CVIProjectionApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Nothing) = CVIProjectionApproximationDeltaFnRuleLayout()
 
 function deltafn_rule_layout(::DeltaFnNode, ::CVIProjection, inverse::Any)
     @warn "CVI projection approximation does not accept the inverse function. Ignoring the provided inverse."

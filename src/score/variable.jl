@@ -3,10 +3,7 @@ export VariableBoundEntropy
 struct VariableBoundEntropy end
 
 function score(
-    ::Type{T},
-    ::VariableBoundEntropy,
-    variable::RandomVariable,
-    scheduler,
+    ::Type{T}, ::VariableBoundEntropy, variable::RandomVariable, scheduler
 ) where {T <: CountingReal}
     mapping = let d = degree(variable)
         (marginal) -> begin

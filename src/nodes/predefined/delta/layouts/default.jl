@@ -58,7 +58,9 @@ function deltafn_apply_layout(
     let out = factornode.out,
         localmarginal = factornode.localmarginals.marginals[1]
         # We simply subscribe on the marginal of the connected variable on `out` edge
-        set_stream_of_marginals!(localmarginal, get_stream_of_marginals(getvariable(out)))
+        set_stream_of_marginals!(
+            localmarginal, get_stream_of_marginals(getvariable(out))
+        )
     end
 end
 

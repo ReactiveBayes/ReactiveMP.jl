@@ -47,10 +47,12 @@ isconst(::AbstractArray{<:DataVariable})  = false
 
 get_stream_of_marginals(datavar::DataVariable) = datavar.marginal
 
-set_stream_of_marginals!(datavar::DataVariable, stream) =
-    connect!(datavar.marginal, stream)
-set_stream_of_predictions!(datavar::DataVariable, stream) =
-    connect!(datavar.prediction, stream)
+set_stream_of_marginals!(datavar::DataVariable, stream) = connect!(
+    datavar.marginal, stream
+)
+set_stream_of_predictions!(datavar::DataVariable, stream) = connect!(
+    datavar.prediction, stream
+)
 
 function create_messagein!(datavar::DataVariable)
     messagein = MessageObservable(AbstractMessage)
@@ -73,8 +75,9 @@ struct DataVariableActivationOptions
     args
 end
 
-DataVariableActivationOptions() =
-    DataVariableActivationOptions(false, false, nothing, nothing)
+DataVariableActivationOptions() = DataVariableActivationOptions(
+    false, false, nothing, nothing
+)
 
 function activate!(
     datavar::DataVariable, options::DataVariableActivationOptions
@@ -120,8 +123,9 @@ end
 
 __link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false))
 __link_getmarginal(l::AbstractVariable) = get_stream_of_marginals(l)
-__link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
-    collectLatest(map(get_stream_of_marginals, l))
+__link_getmarginal(l::AbstractArray{<:AbstractVariable}) = collectLatest(
+    map(get_stream_of_marginals, l)
+)
 
 __apply_link(f::F, args) where {F} = __apply_link(f, getdata.(args))
 __apply_link(f::F, args::NTuple{N, PointMass}) where {F, N} = f(mean.(args)...)
@@ -134,8 +138,9 @@ Provides a new observation to a [`ReactiveMP.DataVariable`](@ref) (or an array o
 The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
 Pass `missing` to indicate that the observation is not available.
 """
-new_observation!(datavar::DataVariable, data) =
-    new_observation!(datavar, PointMass(data))
+new_observation!(datavar::DataVariable, data) = new_observation!(
+    datavar, PointMass(data)
+)
 new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
 new_observation!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false))
 
