@@ -118,8 +118,9 @@ end
 @testitem "Supported methods should not throw in DeltaMeta" begin
     struct SupportedApproximationMetßhod end
 
-    ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) =
-        Val(true)
+    ReactiveMP.is_delta_node_compatible(::SupportedApproximationMetßhod) = Val(
+        true
+    )
 
     @test DeltaMeta(; method = SupportedApproximationMetßhod()) isa DeltaMeta
 end

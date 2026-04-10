@@ -49,7 +49,7 @@ set_stream_of_marginals!(constvar::ConstVariable, stream) = error(
     "It is not possible to set a stream of marginals for a `ConstVariable`"
 )
 set_stream_of_predictions!(constvar::ConstVariable, stream) = error(
-    "It is not possible to set a stream of predictions for a `ConstVariable`",
+    "It is not possible to set a stream of predictions for a `ConstVariable`"
 )
 
 function create_new_stream_of_inbound_messages!(constvar::ConstVariable)

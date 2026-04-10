@@ -16,9 +16,9 @@
         stream_of_outbound_messages::MessageObservable
     end
 
-    ReactiveMP.create_new_stream_of_inbound_messages!(
-        variable::AbstractVariableImplemention
-    ) = (variable.stream_of_outbound_messages, 1)
+    ReactiveMP.create_new_stream_of_inbound_messages!(variable::AbstractVariableImplemention) = (
+        variable.stream_of_outbound_messages, 1
+    )
     ReactiveMP.get_stream_of_outbound_messages(
         variable::AbstractVariableImplemention, ::Int
     ) = variable.stream_of_outbound_messages

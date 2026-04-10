@@ -1,11 +1,13 @@
 
 @testitem "ConstVariable: uninitialized" begin
-    import ReactiveMP: get_stream_of_outbound_messages, get_stream_of_inbound_messages
+    import ReactiveMP:
+        get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
     # Should throw if not initialised properly
     let var = constvar(1)
         for i in 1:10
-            @test get_stream_of_outbound_messages(var, 1) === get_stream_of_outbound_messages(var, i)
+            @test get_stream_of_outbound_messages(var, 1) ===
+                get_stream_of_outbound_messages(var, i)
             @test_throws ErrorException get_stream_of_inbound_messages(var, i)
         end
     end

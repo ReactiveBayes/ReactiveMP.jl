@@ -1,11 +1,13 @@
 
 @testitem "DataVariable: uninitialized" begin
-    import ReactiveMP: get_stream_of_outbound_messages, get_stream_of_inbound_messages
+    import ReactiveMP:
+        get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
     # Should throw if not initialised properly
     let var = datavar()
         for i in 1:10
-            @test get_stream_of_outbound_messages(var, 1) === get_stream_of_outbound_messages(var, i)
+            @test get_stream_of_outbound_messages(var, 1) ===
+                get_stream_of_outbound_messages(var, i)
             @test_throws BoundsError get_stream_of_inbound_messages(var, i)
         end
     end
@@ -109,7 +111,9 @@ end
             activate!(var, options)
             marginal = check_stream_updated_once(get_stream_of_marginals(var))
             @test getdata(marginal) === PointMass(fn(val1, val2))
-            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
+            message = check_stream_updated_once(
+                get_stream_of_outbound_messages(var, 1)
+            )
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -129,7 +133,9 @@ end
                 true, true, fn, (val1, val2)
             )
             activate!(var, options)
-            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
+            message = check_stream_updated_once(
+                get_stream_of_outbound_messages(var, 1)
+            )
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -152,7 +158,9 @@ end
                     new_observation!(var1, val1)
                 end
             @test getdata(marginal) === PointMass(fn(val1, val2))
-            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
+            message = check_stream_updated_once(
+                get_stream_of_outbound_messages(var, 1)
+            )
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -176,7 +184,9 @@ end
                 end
             @test getdata(marginal) === PointMass(fn(val1, val2))
 
-            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
+            message = check_stream_updated_once(
+                get_stream_of_outbound_messages(var, 1)
+            )
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
@@ -206,7 +216,9 @@ end
                 end
             @test getdata(marginal) === PointMass(fn(val1, val2))
 
-            message = check_stream_updated_once(get_stream_of_outbound_messages(var, 1))
+            message = check_stream_updated_once(
+                get_stream_of_outbound_messages(var, 1)
+            )
             @test getdata(message) === PointMass(fn(val1, val2))
         end
 
