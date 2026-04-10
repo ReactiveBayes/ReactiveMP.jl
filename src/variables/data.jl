@@ -45,6 +45,13 @@ isdata(::AbstractArray{<:DataVariable})   = true
 isconst(::DataVariable)                   = false
 isconst(::AbstractArray{<:DataVariable})  = false
 
+get_stream_of_marginals(datavar::DataVariable) = datavar.marginal
+
+set_stream_of_marginals!(datavar::DaraVariable, stream) =
+    connect!(datavar.marginal, stream)
+set_stream_of_predictions!(datavar::DaraVariable, stream) =
+    connect!(datavar.prediction, stream)
+
 function create_messagein!(datavar::DataVariable)
     messagein = MessageObservable(AbstractMessage)
     push!(datavar.input_messages, messagein)
@@ -66,15 +73,27 @@ struct DataVariableActivationOptions
     args
 end
 
-DataVariableActivationOptions() = DataVariableActivationOptions(
-    false, false, nothing, nothing
-)
+DataVariableActivationOptions() =
+    DataVariableActivationOptions(false, false, nothing, nothing)
 
 function activate!(
     datavar::DataVariable, options::DataVariableActivationOptions
 )
     if options.prediction
-        _setprediction!(datavar, _makeprediction(datavar))
+        # if the prediction is requested, we instantiate the stream of predictions 
+        # as the product of all inbound messages to the datavar 
+        # otherwise the stream of predictions is empty
+        stream_of_predictions = collectLatest(
+            AbstractMessage,
+            Marginal,
+            datavar.input_messages,
+            (messages) -> as_marginal(
+                compute_product_of_messages(
+                    datavar, MessageProductContext(), messages
+                ),
+            ),
+        )
+        set_stream_of_predictions!(datavar, stream_of_predictions)
     end
 
     if options.linked
@@ -92,51 +111,49 @@ function activate!(
     end
 
     # The marginal stream is always the same as the message out
-    connect!(datavar.marginal, datavar.messageout |> map(Marginal, as_marginal))
+    # but converted to Marginal with the as_marginal function
+    stream_of_marginals = datavar.messageout |> map(Marginal, as_marginal)
+    set_stream_of_marginals!(datavar, stream_of_marginals)
 
     return nothing
 end
 
 __link_getmarginal(constant) = of(Marginal(PointMass(constant), true, false))
-__link_getmarginal(l::AbstractVariable) = getmarginal(l, IncludeAll())
-__link_getmarginal(l::AbstractArray{<:AbstractVariable}) = getmarginals(
-    l, IncludeAll()
-)
+__link_getmarginal(l::AbstractVariable) = get_stream_of_marginals(l)
+__link_getmarginal(l::AbstractArray{<:AbstractVariable}) =
+    collectLatest(map(get_stream_of_marginals, l))
 
 __apply_link(f::F, args) where {F} = __apply_link(f, getdata.(args))
 __apply_link(f::F, args::NTuple{N, PointMass}) where {F, N} = f(mean.(args)...)
 
-_getmarginal(datavar::DataVariable)       = datavar.marginal
-_setmarginal!(::DataVariable, observable) = error("It is not possible to set a marginal stream for `DataVariable`")
-_makemarginal(::DataVariable)             = error("It is not possible to make marginal stream for `DataVariable`")
-
 """
-    update!(datavar::DataVariable, data)
-    update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
+    new_observation!(datavar::DataVariable, data)
+    new_observation!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
 
 Provides a new observation to a [`ReactiveMP.DataVariable`](@ref) (or an array of data variables).
 The `data` is wrapped in a `PointMass` distribution and pushed as a new message.
 Pass `missing` to indicate that the observation is not available.
 """
-update!(datavar::DataVariable, data) = update!(datavar, PointMass(data))
-update!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
-update!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false))
+new_observation!(datavar::DataVariable, data) =
+    new_observation!(datavar, PointMass(data))
+new_observation!(datavar::DataVariable, data::PointMass) = next!(datavar.messageout, Message(data, false, false))
+new_observation!(datavar::DataVariable, ::Missing)       = next!(datavar.messageout, Message(missing, false, false))
 
-function update!(datavars::AbstractArray{<:DataVariable}, data::AbstractArray)
+function new_observation!(
+    datavars::AbstractArray{<:DataVariable}, data::AbstractArray
+)
     @assert size(datavars) === size(data) """
-    Invalid `update!` call: size of datavar array and data must match: `variables` has size $(size(datavars)) and `data` has size $(size(data)). 
+    Invalid `new_observation!` call: size of datavar array and data must match: `variables` has size $(size(datavars)) and `data` has size $(size(data)). 
     """
     foreach(zip(datavars, data)) do (var, d)
-        update!(var, d)
+        new_observation!(var, d)
     end
 end
 
-function update!(datavars::AbstractArray{<:DataVariable}, data::Missing)
+function new_observation!(
+    datavars::AbstractArray{<:DataVariable}, data::Missing
+)
     foreach(datavars) do var
-        update!(var, data)
+        new_observation!(var, data)
     end
 end
-
-_getprediction(datavar::DataVariable)              = datavar.prediction
-_setprediction!(datavar::DataVariable, observable) = connect!(_getprediction(datavar), observable)
-_makeprediction(datavar::DataVariable)             = collectLatest(AbstractMessage, Marginal, datavar.input_messages, (messages) -> as_marginal(compute_product_of_messages(datavar, MessageProductContext(), messages)))

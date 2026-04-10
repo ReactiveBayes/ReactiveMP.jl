@@ -31,6 +31,9 @@ function randomvar(; label = nothing)
     )
 end
 
+"""
+TODO doc
+"""
 degree(randomvar::RandomVariable) = length(randomvar.input_messages)
 
 israndom(::RandomVariable) = true
@@ -39,6 +42,15 @@ isdata(::RandomVariable) = false
 isdata(::AbstractArray{<:RandomVariable}) = false
 isconst(::RandomVariable) = false
 isconst(::AbstractArray{<:RandomVariable}) = false
+
+get_stream_of_marginals(randomvar::RandomVariable) = randomvar.marginal
+get_stream_of_predictions(randomvar::RandomVariable) = randomvar.marginal
+
+set_stream_of_marginals!(randomvar::RandomVariable, stream) =
+    connect!(randomvar.marginal, stream)
+set_stream_of_predictions!(randomvar::RandomVariable, stream) = error(
+    "It is not possible to set a stream of predictions for `RandomVariable`"
+)
 
 function create_messagein!(randomvar::RandomVariable)
     messagein = MessageObservable(AbstractMessage)
@@ -100,15 +112,19 @@ function activate!(
         )
     end
 
-    _setmarginal!(randomvar, _makemarginal(randomvar, options))
+    stream_of_marginals = collectLatest(
+        AbstractMessage,
+        Marginal,
+        randomvar.input_messages,
+        (messages) ->
+            _compute_marginal_from_messages(randomvar, options, messages),
+        reset_vstatus,
+    )
+
+    set_stream_of_marginals!(randomvar, stream_of_marginals)
 
     return nothing
 end
-
-_getmarginal(randomvar::RandomVariable) = randomvar.marginal
-_setmarginal!(randomvar::RandomVariable, observable) = connect!(
-    _getmarginal(randomvar), observable
-)
 
 function _compute_marginal_from_messages(
     randomvar::RandomVariable,
@@ -131,19 +147,6 @@ function _compute_marginal_from_messages(
         ),
     )
     return result
-end
-
-_makemarginal(
-    randomvar::RandomVariable, options::RandomVariableActivationOptions
-) = begin
-    return collectLatest(
-        AbstractMessage,
-        Marginal,
-        randomvar.input_messages,
-        (messages) ->
-            _compute_marginal_from_messages(randomvar, options, messages),
-        reset_vstatus,
-    )
 end
 
 # Reset consumption of the combination of inbound messages if the result of the computations is `is_initial`

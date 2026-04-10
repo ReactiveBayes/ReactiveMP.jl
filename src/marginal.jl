@@ -225,7 +225,7 @@ function connect!(marginal::MarginalObservable, source)
     return nothing
 end
 
-function setmarginal!(marginal::MarginalObservable, value)
+function set_initial_marginal!(marginal::MarginalObservable, value)
     next!(marginal.subject, Marginal(value, false, true))
     return nothing
 end

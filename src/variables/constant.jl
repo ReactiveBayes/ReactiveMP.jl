@@ -42,6 +42,16 @@ isdata(::AbstractArray{<:ConstVariable})   = false
 isconst(::ConstVariable)                   = true
 isconst(::AbstractArray{<:ConstVariable})  = true
 
+get_stream_of_marginals(constvar::ConstVariable) = constvar.marginal
+get_stream_of_predictions(constvar::ConstVariable) = constvar.marginal
+
+set_stream_of_marginals!(constvar::ConstVariable, stream) = error(
+    "It is not possible to set a stream of marginals for a `ConstVariable`"
+)
+set_stream_of_predictions!(constvar::ConstVariable, stream) = error(
+    "It is not possible to set a stream of predictions for a `ConstVariable`",
+)
+
 function create_messagein!(constvar::ConstVariable)
     constvar.nconnected += 1
     return constvar.messageout, 1
@@ -54,7 +64,3 @@ end
 function messageout(constvar::ConstVariable, ::Int)
     return constvar.messageout
 end
-
-_getmarginal(constvar::ConstVariable)      = constvar.marginal
-_setmarginal!(::ConstVariable, observable) = error("It is not possible to set a marginal stream for `ConstVariable`")
-_makemarginal(::ConstVariable)             = error("It is not possible to make marginal stream for `ConstVariable`")

@@ -3,12 +3,10 @@ export DefaultFunctionalDependencies,
     RequireMarginalFunctionalDependencies,
     RequireEverythingFunctionalDependencies
 
-collect_latest_messages(dependencies, factornode, collection) = __collect_latest_updates(
-    messagein, collection
-)
-collect_latest_marginals(dependencies, factornode, collection) = __collect_latest_updates(
-    getmarginal, collection
-)
+collect_latest_messages(dependencies, factornode, collection) =
+    __collect_latest_updates(messagein, collection)
+collect_latest_marginals(dependencies, factornode, collection) =
+    __collect_latest_updates(getmarginal, collection)
 
 function __collect_latest_updates(f::F, collection) where {F}
     return __collect_latest_updates(f, Tuple(collection))
@@ -104,9 +102,8 @@ struct DefaultFunctionalDependencies <: FunctionalDependencies end
 
 function collect_functional_dependencies end
 
-collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies(
-    fform
-)
+collect_functional_dependencies(fform::F, ::Nothing) where {F} =
+    default_functional_dependencies(fform)
 collect_functional_dependencies(fform::F, something) where {F} = something
 
 default_functional_dependencies(any) = DefaultFunctionalDependencies()
@@ -157,9 +154,8 @@ struct RequireMessageFunctionalDependencies{S <: NamedTuple} <:
     specification::S
 end
 
-RequireMessageFunctionalDependencies(; kwargs...) = RequireMessageFunctionalDependencies((;
-    kwargs...
-))
+RequireMessageFunctionalDependencies(; kwargs...) =
+    RequireMessageFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
     dependencies::RequireMessageFunctionalDependencies,
@@ -225,9 +221,8 @@ struct RequireMarginalFunctionalDependencies{S <: NamedTuple} <:
     specification::S
 end
 
-RequireMarginalFunctionalDependencies(; kwargs...) = RequireMarginalFunctionalDependencies((;
-    kwargs...
-))
+RequireMarginalFunctionalDependencies(; kwargs...) =
+    RequireMarginalFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
     dependencies::RequireMarginalFunctionalDependencies,
@@ -259,14 +254,12 @@ function functional_dependencies(
         extra_localmarginal = FactorNodeLocalMarginal(name(interface))
         # Create a stream of marginals and connect it with the streams of marginals of the actual variable
         extra_stream = MarginalObservable()
-        connect!(
-            extra_stream, getmarginal(getvariable(interface), IncludeAll())
-        )
-        setmarginal!(extra_localmarginal, extra_stream)
+        connect!(extra_stream, get_stream_of_marginals(getvariable(interface)))
+        set_stream_of_marginals!(extra_localmarginal, extra_stream)
 
         initialmarginals = specification[name(interface)]
         if !isnothing(initialmarginals)
-            setmarginal!(extra_stream, initialmarginals)
+            set_initial_marginal!(extra_stream, initialmarginals)
         end
 
         insertafter = sum(

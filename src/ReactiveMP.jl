@@ -70,7 +70,6 @@ include("approximations/cvi_projection.jl")
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
-include("variables/generic.jl")
 include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")

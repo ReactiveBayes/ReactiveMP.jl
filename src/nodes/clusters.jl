@@ -16,13 +16,25 @@ end
 name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
 tag(localmarginal::FactorNodeLocalMarginal)  = Val{name(localmarginal)}()
 
-getmarginal(localmarginal::FactorNodeLocalMarginal) = localmarginal.marginal
-setmarginal!(localmarginal::FactorNodeLocalMarginal, marginal) =
-    localmarginal.marginal = marginal
+get_stream_of_marginals(localmarginal::FactorNodeLocalMarginal) =
+    localmarginal.marginal
 
-Base.show(io::IO, marginal::FactorNodeLocalMarginal) = print(
-    io, "FactorNodeLocalMarginal(", name(marginal), ")"
+function set_stream_of_marginals!(
+    localmarginal::FactorNodeLocalMarginal, stream::MarginalObservable
 )
+    localmarginal.marginal = stream
+end
+
+function set_stream_of_marginals!(
+    localmarginal::FactorNodeLocalMarginal, stream::MarginalObservable
+)
+    marginal = MarginalObservable()
+    connect!(marginal, stream)
+    localmarginal.marginal = marginal
+end
+
+Base.show(io::IO, marginal::FactorNodeLocalMarginal) =
+    print(io, "FactorNodeLocalMarginal(", name(marginal), ")")
 
 ## FactorNodeLocalClusters
 
@@ -31,16 +43,14 @@ struct FactorNodeLocalClusters{M, F}
     factorization::F
 end
 
-getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
-getmarginal(clusters::FactorNodeLocalClusters, index) = getindex(
-    getmarginals(clusters), index
-)
-setmarginal!(clusters::FactorNodeLocalClusters, index, marginal::MarginalObservable) = setmarginal!(
-    getmarginal(clusters, index), marginal
-)
+get_node_local_marginals(clusters::FactorNodeLocalClusters) = clusters.marginals
+set_node_local_marginal_stream!(
+    clusters::FactorNodeLocalMarginal, index, stream
+) = set_stream_of_marginals!(clusters.marginals[i], stream)
 
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
-getfactorization(clusters::FactorNodeLocalClusters, index::Int) = clusters.factorization[index]
+getfactorization(clusters::FactorNodeLocalClusters, index::Int) =
+    clusters.factorization[index]
 
 function FactorNodeLocalClusters(
     interfaces::AbstractArray{NodeInterface}, factorization
@@ -64,18 +74,16 @@ end
 
 ## FactorNodeLocalCluster
 
-clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) = clusterindex(
-    clusters, clusters.factorization, vindex
-)
-clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) = findfirst(
-    cluster -> vindex in cluster, factorization
-)
+clusterindex(clusters::FactorNodeLocalClusters, vindex::Int) =
+    clusterindex(clusters, clusters.factorization, vindex)
+clusterindex(::FactorNodeLocalClusters, factorization, vindex::Int) =
+    findfirst(cluster -> vindex in cluster, factorization)
 
-clustername(cluster::Tuple, interfaces) = mapreduce(
-    v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster
-)
+clustername(cluster::Tuple, interfaces) =
+    mapreduce(v -> name(interfaces[v]), (a, b) -> Symbol(a, :_, b), cluster)
 clustername(cluster, interfaces) = reduce(
-    (a, b) -> Symbol(a, :_, b), Iterators.map(v -> name(interfaces[v]), cluster)
+    (a, b) -> Symbol(a, :_, b),
+    Iterators.map(v -> name(interfaces[v]), cluster),
 )
 clustername(interfaces) = reduce(
     (a, b) -> Symbol(a, :_, b),
