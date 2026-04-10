@@ -158,17 +158,9 @@ ReactiveMP.is_predefined_node
 
 ## [Node pipelines](@id lib-node-pipelines)
 
-```@docs
-ReactiveMP.AbstractPipelineStage
-ReactiveMP.apply_pipeline_stage
-ReactiveMP.EmptyPipelineStage
-ReactiveMP.CompositePipelineStage
-ReactiveMP.LoggerPipelineStage
-ReactiveMP.DiscontinuePipelineStage
-ReactiveMP.AsyncPipelineStage
-ReactiveMP.ScheduleOnPipelineStage
-ReactiveMP.schedule_updates
-```
+Pipeline stages are composable transformations applied to message streams on individual edges. They are attached to a node during [Activation](@ref lib-node-activation) via [`ReactiveMP.FactorNodeActivationOptions`](@ref) and can be used for logging, scheduling, or early termination.
+
+See the dedicated [Pipelines](@ref lib-pipelines) page for a full description and API reference.
 
 ## [List of predefined factor node](@id lib-predefined-nodes)    
 

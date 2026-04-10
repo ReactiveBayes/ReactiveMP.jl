@@ -8,7 +8,7 @@ y \sim \mathcal{N}(K(a) \cdot x, \, W^{-1})
 
 It transforms an `m`-dimensional input vector `x` into an `n`-dimensional output vector `y` via a learned matrix `K(a)`, where `a` is a latent vector and `K` is a user-supplied transformation function. The precision matrix `W` controls the amount of jitter in the transition.
 
-This node is the continuous-state counterpart of [`DiscreteTransition`](@ref) and the primary building block for **Kalman-filter-style state-space models** where the transition matrix is uncertain and must be inferred.
+This node is the continuous-state counterpart of `DiscreteTransition` and the primary building block for **Kalman-filter-style state-space models** where the transition matrix is uncertain and must be inferred.
 
 ## [Interfaces](@id lib-nodes-ctransition-interfaces)
 

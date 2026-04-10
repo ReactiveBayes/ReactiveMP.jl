@@ -52,8 +52,6 @@ FlowMeta(compiled, Unscented())
 
 ## [Learning flow parameters](@id lib-nodes-flow-learning)
 
-Flow parameters are updated during inference through the **Optimisers.jl extension**. See [Extensions](@ref extra-extensions) for how to configure an optimizer and attach it to the flow node.
-
 !!! note
     See also the [Flow tutorial](https://reactivebayes.github.io/RxInfer.jl/stable/examples/overview/) in the RxInfer.jl documentation for a complete end-to-end example.
 

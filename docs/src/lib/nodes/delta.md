@@ -22,7 +22,7 @@ z ~ f(x, y) where { meta = DeltaMeta(method = CVI(...)) }
 | [`Unscented`](@ref) / [`UT`](@ref) | Nonlinear but smooth `f` in moderate dimension | Sigma points; no derivatives required |
 | [`CVI`](@ref) | Black-box or non-differentiable `f`, high dimension | Stochastic gradient estimator; requires an optimizer |
 | [`CVIProjection`](@ref) | Same as `CVI` with the result projected onto an exponential family member | Same as `CVI` |
-| [`LaplaceApproximation`](@ref) | Unimodal posteriors; `f` differentiable | Second-order Taylor expansion at the mode |
+| `LaplaceApproximation` | Unimodal posteriors; `f` differentiable | Second-order Taylor expansion at the mode |
 
 When `f` has a known analytical inverse `f⁻¹`, you can pass it as the `inverse` keyword to skip the backward approximation entirely:
 
@@ -51,28 +51,14 @@ See the [Message update rules](@ref lib-rules) page for how to define rules with
 !!! note
     The delta node is [`Deterministic`](@ref) and does not contribute to the Bethe free energy directly. It only transforms information between variables.
 
+For the full API of approximation methods (CVI, Unscented, Linearization, etc.), see [Approximation methods](@ref lib-approximations).
+
 ```@docs
 ReactiveMP.DeltaMeta
 ReactiveMP.ManyOf
-ReactiveMP.Linearization
-ReactiveMP.local_linearization
 ReactiveMP.smoothRTS
-ReactiveMP.Unscented
-ReactiveMP.sigma_points_weights
 ReactiveMP.CVIApproximationDeltaFnRuleLayout
 ReactiveMP.log_approximate
-ReactiveMP.ForwardDiffGrad
-ReactiveMP.UT
-ReactiveMP.UnscentedTransform
-ReactiveMP.ProdCVI
-ReactiveMP.CVI
-ReactiveMP.CVIProjection
-ReactiveMP.CVISamplingStrategy
-ReactiveMP.FullSampling
-ReactiveMP.MeanBased
-ReactiveMP.ProposalDistributionContainer
-ReactiveMP.cvi_setup!
-ReactiveMP.cvi_update!
 ReactiveMP.DeltaFnDefaultRuleLayout
 ReactiveMP.DeltaFnDefaultKnownInverseRuleLayout
 SoftDot
