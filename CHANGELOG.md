@@ -19,11 +19,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@logscale value` macro for setting log-scale annotations inside `@rule` bodies
 - `getannotations` function for `Message` and `Marginal`
 - Migration guide for v5 to v6
+- `skip_initial()`, `skip_clamped()`, `skip_clamped_and_initial()` filter operators replacing the `MarginalSkipStrategy` type hierarchy
+- `new_observation!(datavar, value)` for pushing observed values into a `DataVariable`
+- `get_stream_of_inbound_messages`, `get_stream_of_outbound_messages` accessors on `NodeInterface` and `IndexedNodeInterface`
+- `get_stream_of_marginals`, `set_stream_of_marginals!` accessors on variables
+- `get_stream_of_predictions`, `set_stream_of_predictions!` accessors on variables
+- `set_initial_marginal!`, `set_initial_message!` for seeding variables before inference
+- `create_new_stream_of_inbound_messages!` for allocating per-connection message streams
+- Docstrings for `MessageObservable`, `MarginalObservable`, `FunctionalDependencies`, `collect_functional_dependencies`, `RandomVariableActivationOptions`, `DataVariableActivationOptions`, `FactorNodeActivationOptions`, and `activate!` methods
+- Expanded documentation for variables (stream creation lifecycle per variable type), nodes (interfaces, activation), messages, and marginals
 
 ### Changed
 - Switched from `ReTestItems` to `TestItemRunner` for tests ([#584](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/584))
 - Made formatting checks stricter
-- Renamed `variables/variable.jl` to `variables/generic.jl`
+- Removed `variables/generic.jl`; generic variable interface moved into `variable.jl`
 - Replaced hardcoded `DefaultMessageProdFn`/`DefaultMarginalProdFn` with `MessageProductContext`
 - `Message{D, A}` → `Message{D}` (type parameter `A` removed)
 - `Marginal{D, A}` → `Marginal{D}` (type parameter `A` removed)
@@ -32,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@call_rule` no longer supports `return_addons` option; use `annotations` keyword with `AnnotationDict`
 - `MessageMapping.addons` field → `MessageMapping.annotations`
 - `MessageProductContext` gained `annotations` field for product-time annotation processors
+- `messagein(interface)` → `get_stream_of_inbound_messages(interface)`
+- `messageout(interface)` → `get_stream_of_outbound_messages(interface)`
+- `getmarginal(variable)` / `getmarginals` → `get_stream_of_marginals(variable)`
+- `getprediction(variable)` / `getpredictions` → `get_stream_of_predictions(variable)`
+- `setmarginal!(variable, value)` → `set_initial_marginal!(variable, value)`
+- `setmessage!(variable, value)` → `set_initial_message!(variable, value)`
+- `update!(datavar, value)` → `new_observation!(datavar, value)`
 
 ### Removed
 - `getaddons` — use `getannotations` instead
@@ -42,6 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AddonDebug` — use callbacks instead
 - `AbstractAddon`, `multiply_addons`, `@invokeaddon`
 - `message_mapping_addons`, `message_mapping_addon` helper functions
+- `MarginalSkipStrategy` abstract type and `SkipClamped`, `SkipInitial`, `SkipClampedAndInitial`, `IncludeAll` subtypes — use `skip_clamped()`, `skip_initial()`, `skip_clamped_and_initial()` filter operators instead
+- `apply_skip_filter`, `as_marginal_observable` — no longer part of the public API
+- `messagein`, `messageout` — use `get_stream_of_inbound_messages`, `get_stream_of_outbound_messages`
+- `getmarginal`, `getmarginals`, `getprediction`, `getpredictions` — use `get_stream_of_marginals`, `get_stream_of_predictions`
+- `setmarginal!`, `setmarginals!`, `setmessage!`, `setmessages!` — use `set_initial_marginal!`, `set_initial_message!`
+- `update!` — use `new_observation!`
+- `create_messagein!` — use `create_new_stream_of_inbound_messages!`
 
 ## [5.6.6] - 2026-03-13
 

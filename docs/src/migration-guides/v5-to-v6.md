@@ -4,7 +4,11 @@ This guide covers the breaking changes introduced in ReactiveMP.jl v6 and how to
 
 ## Overview
 
-The main change in v6 is the replacement of the **addon system** with a new **annotations system**. The new system is simpler, more efficient, and easier to extend. Messages and marginals now carry an [`ReactiveMP.AnnotationDict`](@ref) instead of a typed tuple of addons. Annotation processors ([`ReactiveMP.AbstractAnnotations`](@ref) subtypes) handle post-processing externally.
+v6 introduces two major changes:
+
+1. **Annotations system** — the addon system is replaced by a new annotations system. Messages and marginals now carry an [`ReactiveMP.AnnotationDict`](@ref) instead of a typed tuple of addons. Annotation processors ([`ReactiveMP.AbstractAnnotations`](@ref) subtypes) handle post-processing externally.
+
+2. **Renamed API** — many internal and public functions have been renamed to be more descriptive and consistent. The old names are removed; see the tables below for the mapping.
 
 ## Type parameter changes
 
@@ -38,6 +42,49 @@ Marginal(dist, false, false)
 
 ## Renamed functions
 
+### Variable API
+
+| v5 | v6 |
+|---|---|
+| `update!(datavar, value)` | `new_observation!(datavar, value)` |
+| `getmarginal(variable)` | `ReactiveMP.get_stream_of_marginals(variable)` |
+| `getmarginals(variables)` | `map(ReactiveMP.get_stream_of_marginals, variables)` |
+| `getprediction(variable)` | `ReactiveMP.get_stream_of_predictions(variable)` |
+| `getpredictions(variables)` | `map(ReactiveMP.get_stream_of_predictions, variables)` |
+| `setmarginal!(variable, value)` | `ReactiveMP.set_initial_marginal!(variable, value)` |
+| `setmarginals!(variables, values)` | `ReactiveMP.set_initial_marginal!.(variables, values)` |
+| `setmessage!(variable, value)` | `ReactiveMP.set_initial_message!(variable, value)` |
+| `setmessages!(variables, values)` | `ReactiveMP.set_initial_message!.(variables, values)` |
+
+### Node interface API
+
+| v5 | v6 |
+|---|---|
+| `messagein(interface)` | `ReactiveMP.get_stream_of_inbound_messages(interface)` |
+| `messageout(interface)` | `ReactiveMP.get_stream_of_outbound_messages(interface)` |
+| `create_messagein!(variable)` | `ReactiveMP.create_new_stream_of_inbound_messages!(variable)` |
+
+### Skip strategy API
+
+| v5 | v6 |
+|---|---|
+| `SkipInitial()` as strategy argument | `skip_initial()` as a pipe operator |
+| `SkipClamped()` as strategy argument | `skip_clamped()` as a pipe operator |
+| `SkipClampedAndInitial()` as strategy argument | `skip_clamped_and_initial()` as a pipe operator |
+| `IncludeAll()` | *(no filter needed)* |
+
+The old strategies were passed to `getmarginal` as a second argument. In v6 the observable returned by `ReactiveMP.get_stream_of_marginals` is filtered directly with a pipe:
+
+```julia
+# v5
+obs = getmarginal(variable, SkipInitial())
+
+# v6
+obs = ReactiveMP.get_stream_of_marginals(variable) |> skip_initial()
+```
+
+### Annotation / addon functions
+
 | v5 | v6 | Notes |
 |---|---|---|
 | `getaddons(msg)` | `getannotations(msg)` | Works on both `Message` and `Marginal` |
@@ -59,6 +106,22 @@ The following exports no longer exist in v6:
 | `@invokeaddon` | *removed* (macros like `@logscale` call `annotate!` directly) |
 | `message_mapping_addons` | *removed* |
 | `message_mapping_addon` | *removed* |
+| `MarginalSkipStrategy` | `skip_initial()`, `skip_clamped()`, `skip_clamped_and_initial()` filter operators |
+| `SkipClamped` | `skip_clamped()` |
+| `SkipInitial` | `skip_initial()` |
+| `SkipClampedAndInitial` | `skip_clamped_and_initial()` |
+| `IncludeAll` | *(no filter needed)* |
+| `apply_skip_filter` | *removed* |
+| `as_marginal_observable` | *removed* |
+| `AbstractVariable` | `ReactiveMP.AbstractVariable` (no longer exported) |
+| `update!` | `new_observation!` |
+| `getmarginal`, `getmarginals` | `ReactiveMP.get_stream_of_marginals` |
+| `getprediction`, `getpredictions` | `ReactiveMP.get_stream_of_predictions` |
+| `setmarginal!`, `setmarginals!` | `ReactiveMP.set_initial_marginal!` |
+| `setmessage!`, `setmessages!` | `ReactiveMP.set_initial_message!` |
+| `messagein` | `ReactiveMP.get_stream_of_inbound_messages` |
+| `messageout` | `ReactiveMP.get_stream_of_outbound_messages` |
+| `create_messagein!` | `ReactiveMP.create_new_stream_of_inbound_messages!` |
 
 ## Writing custom rules
 
