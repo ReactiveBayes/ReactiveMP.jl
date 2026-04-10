@@ -1,7 +1,13 @@
 """
-    NodeInterface
+    ReactiveMP.NodeInterface
 
-`NodeInterface` object represents a single node-variable connection.
+Represents a single directed connection between a factor node and an [`ReactiveMP.AbstractVariable`](@ref).
+
+Each interface owns one [`ReactiveMP.MessageObservable`](@ref) (`m_out`) — the *outbound* message stream from this node toward the connected variable. The constructor immediately calls [`ReactiveMP.create_new_stream_of_inbound_messages!`](@ref) on the variable, which allocates a per-connection slot in the variable's `input_messages` and returns the same observable together with its index. This means `m_out` for the interface is the inbound message stream from the variable's perspective.
+
+After graph construction the streams are unconnected (lazy). [`ReactiveMP.activate!`](@ref) wires `m_out` to the result of the message update rule via [`ReactiveMP.set_stream_of_outbound_messages!`](@ref).
+
+See also: [`ReactiveMP.IndexedNodeInterface`](@ref), [`ReactiveMP.get_stream_of_outbound_messages`](@ref), [`ReactiveMP.get_stream_of_inbound_messages`](@ref)
 """
 struct NodeInterface
     name::Symbol
@@ -52,7 +58,10 @@ Returns an outbound messages stream from the given interface.
 get_stream_of_outbound_messages(interface::NodeInterface) = interface.m_out
 
 """
-TODO docs
+    ReactiveMP.set_stream_of_outbound_messages!(interface, stream)
+
+Connects `stream` to the outbound message observable of `interface`.
+See also [`ReactiveMP.get_stream_of_outbound_messages`](@ref), [`ReactiveMP.get_stream_of_inbound_messages`](@ref).
 """
 set_stream_of_outbound_messages!(interface::NodeInterface, stream) = connect!(
     get_stream_of_outbound_messages(interface), stream
@@ -75,10 +84,11 @@ Returns a variable connected to the given interface.
 getvariable(interface::NodeInterface) = interface.variable
 
 """
-    IndexedNodeInterface
+    ReactiveMP.IndexedNodeInterface
 
-`IndexedNodeInterface` object represents a repetative node-variable connection.
-Used in cases when a node may connect to a different number of random variables with the same name, e.g. means and precisions of a Gaussian Mixture node.
+A thin wrapper around [`ReactiveMP.NodeInterface`](@ref) that adds a positional `index`, used for nodes with a variable-length list of same-named edges (e.g. the `means` or `precisions` of a Gaussian Mixture node). All stream and variable accessors delegate to the wrapped interface.
+
+See also: [`ReactiveMP.NodeInterface`](@ref), [`ReactiveMP.ManyOf`](@ref)
 """
 struct IndexedNodeInterface
     index     :: Int

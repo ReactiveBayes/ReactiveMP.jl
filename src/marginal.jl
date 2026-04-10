@@ -169,6 +169,19 @@ skip_clamped_and_initial() = filter(v -> !is_initial(v) && !is_clamped(v))
 
 ## Marginal observable
 
+"""
+    ReactiveMP.MarginalObservable
+
+A lazy, connectable reactive stream for [`Marginal`](@ref) values, used as the marginal stream of every variable in the factor graph.
+
+Internally combines two Rocket.jl primitives:
+- a `RecentSubject{Marginal}` that caches the most recently emitted value, so `Rocket.getrecent` always returns the latest belief and late subscribers receive it immediately
+- a `LazyObservable{Marginal}` that is the actual subscription target — initially unconnected, and wired to an upstream source during graph activation via `ReactiveMP.connect!`
+
+`connect!(observable, source)` sets the lazy stream to `source |> multicast(subject) |> ref_count()`: all subscribers share one upstream subscription, and every emission is forwarded through the cached subject. Before the upstream is connected, [`ReactiveMP.set_initial_marginal!`](@ref) can push an initial belief directly into the subject to seed the graph before inference begins.
+
+See also: [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref), [`ReactiveMP.set_initial_marginal!`](@ref)
+"""
 struct MarginalObservable <: Subscribable{Marginal}
     subject :: Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
     stream  :: LazyObservable{Marginal}

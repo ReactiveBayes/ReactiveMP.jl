@@ -25,6 +25,13 @@ function __collect_latest_updates(f::F, collection::Tuple) where {F}
     end
 end
 
+"""
+    ReactiveMP.FunctionalDependencies
+
+Abstract supertype for policies that determine which messages and marginals are required to compute each outbound message at a factor node. A concrete subtype is passed as `options.dependencies` in [`ReactiveMP.FactorNodeActivationOptions`](@ref) and consulted during [`ReactiveMP.activate!(::FactorNode, ::FactorNodeActivationOptions)`](@ref).
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+"""
 abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
@@ -108,6 +115,13 @@ In order to compute a message out of some interface, this strategy requires mess
 """
 struct DefaultFunctionalDependencies <: FunctionalDependencies end
 
+"""
+    ReactiveMP.collect_functional_dependencies(fform, dependencies)
+
+Returns the [`ReactiveMP.FunctionalDependencies`](@ref) instance to use for a factor node with functional form `fform`.
+If `dependencies` is `nothing`, falls back to `default_functional_dependencies(fform)`, which returns [`ReactiveMP.DefaultFunctionalDependencies`](@ref) for most nodes.
+Otherwise returns `dependencies` unchanged, allowing callers to override the policy per node.
+"""
 function collect_functional_dependencies end
 
 collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies(

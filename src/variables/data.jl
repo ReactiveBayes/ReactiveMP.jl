@@ -69,6 +69,17 @@ function get_stream_of_outbound_messages(datavar::DataVariable, ::Int)
     return datavar.messageout
 end
 
+"""
+    DataVariableActivationOptions
+
+Collects all configuration needed to activate a [`ReactiveMP.DataVariable`](@ref). Passed to [`ReactiveMP.activate!(::DataVariable, ::DataVariableActivationOptions)`](@ref).
+
+Fields:
+- `prediction::Bool` — if `true`, a prediction stream is built during activation as the product of all inbound (backward) messages
+- `linked::Bool` — if `true`, the variable's observation stream is driven by a deterministic transformation of other variables' marginals rather than by direct [`ReactiveMP.new_observation!`](@ref) calls
+- `transform` — the transformation function applied to the linked variables' marginals (used only when `linked = true`)
+- `args` — the collection of linked variables or constants whose marginals are combined (used only when `linked = true`)
+"""
 struct DataVariableActivationOptions
     prediction::Bool
     linked::Bool
@@ -80,6 +91,21 @@ DataVariableActivationOptions() = DataVariableActivationOptions(
     false, false, nothing, nothing
 )
 
+"""
+    ReactiveMP.activate!(datavar::DataVariable, options::DataVariableActivationOptions)
+
+Wires all reactive streams of a [`ReactiveMP.DataVariable`](@ref) into the factor graph.
+
+Activation proceeds in up to three steps:
+
+1. **Prediction** — if `options.prediction` is `true`, a prediction stream is built via `collectLatest` over all inbound (backward) [`ReactiveMP.MessageObservable`](@ref)s: once all backward messages have emitted and again when all of them update, their product is emitted as the model's prior expectation for this variable.
+
+2. **Linked variables** — if `options.linked` is `true`, a subscription is created over a transformed combination of other variables' marginals. Each update is forwarded automatically to [`ReactiveMP.new_observation!`](@ref), making the data variable's observation a deterministic function of those variables.
+
+3. **Marginal** — always wired: the marginal stream is `messageout |> map(as_marginal)`, so the marginal always equals the most recently pushed observation.
+
+See also: [`ReactiveMP.DataVariableActivationOptions`](@ref), [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref)
+"""
 function activate!(
     datavar::DataVariable, options::DataVariableActivationOptions
 )

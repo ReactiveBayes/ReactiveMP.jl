@@ -70,6 +70,22 @@ logpdf(message, 1.0)
 is_clamped(message), is_initial(message)
 ```
 
+## Message observable
+
+Within the reactive message passing framework, messages are not computed once and stored as values — instead each edge of the factor graph carries a *stream* that continuously emits updated messages as the inference iterates. `MessageObservable` is the container for such a stream.
+
+```@docs
+ReactiveMP.MessageObservable
+```
+
+Each connection between a variable and a factor node owns one `MessageObservable`. From the variable's perspective it is an *inbound* message stream (a message arriving from a connected node); from the node's perspective the same object is the message that will eventually be used to compute the outbound message on another edge. The observable starts *unconnected*: its internal `LazyObservable` has no upstream source until the factor graph is activated. During activation, `ReactiveMP.connect!` wires the lazy stream to the result of the message update rule computation. After that point, every upstream change (a new observation, a changed prior, an iterated belief) propagates reactively through the `MessageObservable` to all its subscribers.
+
+The internal `RecentSubject` ensures that:
+- any subscriber that joins after the first emission immediately receives the current message via `Rocket.getrecent`
+- [`ReactiveMP.set_initial_message!`](@ref) can seed a value *before* activation, so that rules that read an inbound message at iteration zero have something to read
+
+All downstream subscriptions go through the `LazyObservable`, not the subject directly, so they see the full computed stream rather than only manually pushed values.
+
 ### [Product of messages](@id lib-messages-product)
 
 In message passing framework, in order to compute a posterior we must compute a normalized product of two messages.

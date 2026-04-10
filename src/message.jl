@@ -455,8 +455,23 @@ end
 
 dropproxytype(::Type{<:Message{T}}) where {T} = T
 
-## Message observable 
+## Message observable
 
+"""
+    ReactiveMP.MessageObservable{M <: AbstractMessage}
+
+A lazy, connectable reactive stream for message values of type `M <: AbstractMessage`, used as the per-connection message stream of every variable in the factor graph.
+
+Internally combines two Rocket.jl primitives:
+- a `RecentSubject{M}` that caches the most recently emitted value, so `Rocket.getrecent` always returns the latest message and late subscribers receive it immediately
+- a `LazyObservable{M}` that is the actual subscription target — initially unconnected, and wired to an upstream source during graph activation via `ReactiveMP.connect!`
+
+`connect!(observable, source)` sets the lazy stream to `source |> multicast(subject) |> ref_count()`: all subscribers share one upstream subscription, and every emission is forwarded through the cached subject. Before the upstream is connected, [`ReactiveMP.set_initial_message!`](@ref) can push an initial message directly into the subject to seed the graph before inference begins.
+
+Each variable-to-node connection owns one `MessageObservable`. For [`ReactiveMP.RandomVariable`](@ref) and [`ReactiveMP.DataVariable`](@ref) these are allocated on demand by `ReactiveMP.create_new_stream_of_inbound_messages!`; for [`ReactiveMP.ConstVariable`](@ref) a single shared instance is created at construction time.
+
+See also: [`ReactiveMP.MarginalObservable`](@ref), [`ReactiveMP.set_initial_message!`](@ref)
+"""
 struct MessageObservable{M <: AbstractMessage} <: Subscribable{M}
     subject :: Rocket.RecentSubjectInstance{M, Subject{M, AsapScheduler, AsapScheduler}}
     stream  :: LazyObservable{M}

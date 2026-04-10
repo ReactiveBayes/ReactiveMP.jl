@@ -32,7 +32,10 @@ function randomvar(; label = nothing)
 end
 
 """
-TODO doc
+    ReactiveMP.degree(randomvar::RandomVariable)
+
+Returns the number of factor nodes connected to `randomvar`, equal to the length of its inbound message streams collection.
+See also [`ReactiveMP.degree`](@ref).
 """
 degree(randomvar::RandomVariable) = length(randomvar.input_messages)
 
@@ -67,6 +70,16 @@ function get_stream_of_outbound_messages(randomvar::RandomVariable, index::Int)
     return randomvar.output_messages[index]
 end
 
+"""
+    RandomVariableActivationOptions
+
+Collects all configuration needed to activate a [`ReactiveMP.RandomVariable`](@ref). Passed to [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref).
+
+Fields:
+- `scheduler` — a Rocket.jl scheduler controlling when downstream updates are delivered
+- `prod_context_for_message_computation` — a [`ReactiveMP.MessageProductContext`](@ref) used when computing outbound messages (product of all-but-one inbound messages in the `EqualityChain`)
+- `prod_context_for_marginal_computation` — a [`ReactiveMP.MessageProductContext`](@ref) used when computing the marginal (product of all inbound messages)
+"""
 struct RandomVariableActivationOptions{
     S, F <: MessageProductContext, M <: MessageProductContext
 }
@@ -79,6 +92,19 @@ RandomVariableActivationOptions() = RandomVariableActivationOptions(
     AsapScheduler(), MessageProductContext(), MessageProductContext()
 )
 
+"""
+    ReactiveMP.activate!(randomvar::RandomVariable, options::RandomVariableActivationOptions)
+
+Wires all reactive streams of a [`ReactiveMP.RandomVariable`](@ref) into the factor graph.
+
+Activation proceeds in two steps:
+
+1. **Outbound messages** — resizes `output_messages` to match the number of connected nodes (the [`ReactiveMP.degree`](@ref)). If degree > 1, an `EqualityChain` is constructed: for each edge i the outbound message stream emits the product of all inbound messages *except* the one arriving on edge i, implementing the standard sum-product or variational update. If degree == 1 (a leaf variable), the single outbound stream is connected to `never()` because there are no other messages to multiply.
+
+2. **Marginal** — `collectLatest` is called over all inbound [`ReactiveMP.MessageObservable`](@ref)s. It waits for all inbound messages to have emitted at least once, then emits the product as a new [`Marginal`](@ref) via [`ReactiveMP.set_stream_of_marginals!`](@ref), and re-emits only once all inbound messages have each updated again.
+
+See also: [`ReactiveMP.RandomVariableActivationOptions`](@ref), [`ReactiveMP.activate!(::DataVariable, ::DataVariableActivationOptions)`](@ref)
+"""
 function activate!(
     randomvar::RandomVariable, options::RandomVariableActivationOptions
 )
@@ -158,7 +184,7 @@ function reset_vstatus(wrapper, value)
     # The logic here is that if the result of the computation is `is_initial` we should reuse the arguments for the next computation
     # This may happen, when we initialize messages on the graph, which in turn also initializes marginals (implicitly)
     # if this happens, the inference cannot proceed further, since the initial messages have been consumed
-    # This also prevents weird FE behaviour, when it "maximizes" the FE value, but converges to a minimum value 
+    # This also prevents weird FE behaviour, when it "maximizes" the FE value, but converges to a minimum value
     if is_initial(value)
         Rocket.fill_vstatus!(wrapper, true)
     end

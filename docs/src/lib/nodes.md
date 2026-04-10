@@ -7,6 +7,17 @@ A factor node represents a local function in a factorised representation of a ge
 @node
 ReactiveMP.FactorNode
 ReactiveMP.FactorNodeLocalMarginal
+```
+
+## [Interfaces](@id lib-node-interfaces)
+
+Every edge of a factor node — a connection to one variable — is represented by a [`ReactiveMP.NodeInterface`](@ref). When a `FactorNode` is constructed, one `NodeInterface` is created per edge. The constructor of `NodeInterface` immediately calls `ReactiveMP.create_new_stream_of_inbound_messages!` on the connected variable, which allocates a per-connection [`ReactiveMP.MessageObservable`](@ref) slot in the variable's `input_messages` and returns it. This observable is stored as `m_out` on the interface: it is the *outbound* message from the node's perspective (flowing toward the variable) and the *inbound* message from the variable's perspective.
+
+At construction time all message streams are unconnected (lazy). The actual rule computations are wired up later during graph activation (see [Activation](@ref lib-node-activation)).
+
+For nodes with a variable-length list of same-named edges (e.g. the `means` of a Gaussian Mixture node), [`ReactiveMP.IndexedNodeInterface`](@ref) wraps a `NodeInterface` and adds a positional index. The `ReactiveMP.ManyOf` container collects the corresponding streams for use in `@rule` dispatch; see the [Delta node](@ref lib-nodes-delta) documentation for usage examples.
+
+```@docs
 ReactiveMP.NodeInterface
 ReactiveMP.IndexedNodeInterface
 ReactiveMP.get_stream_of_inbound_messages
@@ -18,12 +29,15 @@ ReactiveMP.interfaces
 ReactiveMP.getvariable
 ReactiveMP.inputinterfaces
 ReactiveMP.alias_interface
-ReactiveMP.collect_factorisation
-ReactiveMP.collect_pipeline
-ReactiveMP.collect_meta
-ReactiveMP.default_meta
-ReactiveMP.as_node_symbol
-ReactiveMP.nodesymbol_to_nodefform
+```
+
+## [Activation](@id lib-node-activation)
+
+Graph activation is the step that connects all lazy [`ReactiveMP.MessageObservable`](@ref) and [`ReactiveMP.MarginalObservable`](@ref) streams into a live reactive network. For factor nodes this is done by calling [`ReactiveMP.activate!`](@ref) with a [`ReactiveMP.FactorNodeActivationOptions`](@ref) that bundles all inference-time configuration.
+
+```@docs
+ReactiveMP.FactorNodeActivationOptions
+ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)
 ```
 
 ## [Adding a custom node](@id lib-custom-node)
@@ -44,6 +58,19 @@ struct MyNewCustomNode end
 This expression registers a new node that can be used with the inference engine. 
 Note, however, that the `@node` macro does not generate any message passing update rules.
 These must be defined using the [`@rule`](@ref) macro. 
+
+## [Collecting node properties](@id lib-node-collect)
+
+```@docs
+ReactiveMP.collect_factorisation
+ReactiveMP.collect_pipeline
+ReactiveMP.collect_meta
+ReactiveMP.default_meta
+ReactiveMP.as_node_symbol
+ReactiveMP.nodesymbol_to_nodefform
+ReactiveMP.FunctionalDependencies
+ReactiveMP.collect_functional_dependencies
+```
 
 ## [Node types](@id lib-node-types)
 
