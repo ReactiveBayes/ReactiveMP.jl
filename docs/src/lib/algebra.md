@@ -80,7 +80,6 @@ ReactiveMP.v_a_vT
 
 ```@docs
 ReactiveMP.GammaShapeLikelihood
-ReactiveMP.ImportanceSamplingApproximation
 ReactiveMP.powerset
 ReactiveMP.besselmod
 ReactiveMP.isonehot

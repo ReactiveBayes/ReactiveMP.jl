@@ -51,3 +51,12 @@ These are internal helpers that surface when writing custom rules for AR-based m
 ReactiveMP.ar_unit
 ReactiveMP.ar_slice
 ```
+
+## [API reference](@id lib-nodes-ar-api)
+
+```@docs
+ReactiveMP.AR
+ReactiveMP.ARMeta
+ReactiveMP.ARsafe
+ReactiveMP.ARunsafe
+```

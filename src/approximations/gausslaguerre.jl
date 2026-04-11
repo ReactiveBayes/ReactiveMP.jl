@@ -6,6 +6,16 @@ using StatsFuns: logsumexp
 
 import Base: ==
 
+"""
+    GaussLaguerreQuadrature <: AbstractApproximationMethod
+
+Gauss-Laguerre quadrature for computing expectations over the half-line `[0, ∞)`.
+Useful when the input distribution has semi-infinite support, such as a Gamma or
+inverse-Gamma distribution.
+
+Construct with `GaussLaguerreQuadrature(n)` where `n` is the number of quadrature
+points. More points give higher accuracy at greater computational cost.
+"""
 struct GaussLaguerreQuadrature{
     R <: DomainIntegrals.HalfLineRule, W <: AbstractVector
 } <: AbstractApproximationMethod

@@ -22,7 +22,7 @@ z ~ f(x, y) where { meta = DeltaMeta(method = CVI(...)) }
 | [`Unscented`](@ref) / [`UT`](@ref) | Nonlinear but smooth `f` in moderate dimension | Sigma points; no derivatives required |
 | [`CVI`](@ref) | Black-box or non-differentiable `f`, high dimension | Stochastic gradient estimator; requires an optimizer |
 | [`CVIProjection`](@ref) | Same as `CVI` with the result projected onto an exponential family member | Same as `CVI` |
-| `LaplaceApproximation` | Unimodal posteriors; `f` differentiable | Second-order Taylor expansion at the mode |
+| [`LaplaceApproximation`](@ref) | Unimodal posteriors; `f` differentiable | Second-order Taylor expansion at the mode |
 
 When `f` has a known analytical inverse `f⁻¹`, you can pass it as the `inverse` keyword to skip the backward approximation entirely:
 
@@ -61,6 +61,28 @@ ReactiveMP.CVIApproximationDeltaFnRuleLayout
 ReactiveMP.log_approximate
 ReactiveMP.DeltaFnDefaultRuleLayout
 ReactiveMP.DeltaFnDefaultKnownInverseRuleLayout
+```
+
+## [SoftDot — soft dot product node](@id lib-nodes-delta-softdot)
+
+`SoftDot` is a **stochastic** counterpart of the deterministic dot-product delta node.
+Instead of enforcing `y = θ ⋅ x` exactly, it relaxes the constraint by adding
+Gaussian noise:
+
+```math
+y \sim \mathcal{N}(\theta^\top x,\; \gamma^{-1})
+```
+
+where `γ` is a precision parameter. This relaxation makes message computation
+tractable in closed form for both belief propagation and variational message passing.
+
+`SoftDot` is the natural building block for Bayesian linear regression, the
+[Autoregressive node](@ref lib-nodes-ar), and other models that need a
+differentiable but noisy dot product.
+
+Interfaces: `y` (result), `θ` (alias `theta`), `x`, `γ` (alias `gamma`).
+
+```@docs
 SoftDot
 softdot
 ```

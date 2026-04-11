@@ -1,8 +1,24 @@
 export LaplaceApproximation, laplace
 
-laplace() = LaplaceApproximation()
+"""
+    LaplaceApproximation <: AbstractApproximationMethod
 
+Laplace approximation for computing nonlinear expectations. Finds the mode of
+the log-unnormalized posterior using [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl)
+and fits a Gaussian at that mode using the local curvature computed via ForwardDiff.
+
+Best suited for unimodal, differentiable posteriors.
+
+Use [`laplace`](@ref) to construct an instance.
+"""
 struct LaplaceApproximation <: AbstractApproximationMethod end
+
+"""
+    laplace() -> LaplaceApproximation
+
+Construct a [`LaplaceApproximation`](@ref) instance.
+"""
+laplace() = LaplaceApproximation()
 
 approximation_name(::LaplaceApproximation)       = "LaplaceApproximation"
 approximation_short_name(::LaplaceApproximation) = "LP"

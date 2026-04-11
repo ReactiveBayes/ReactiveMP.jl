@@ -18,16 +18,24 @@ ReactiveMP.jl computes each term reactively: whenever a marginal changes, the lo
 
 ## [Score types](@id lib-score-types)
 
-Three tag types are used to dispatch the `score` function:
+Four tag types are used to dispatch the `score` function:
 
 | Type | Represents | Where used |
 |------|-----------|-----------|
-| `AverageEnergy` | `⟨-log f⟩_q` — the expected log-factor under the local marginal | Factor nodes |
-| `DifferentialEntropy` | `-∫ q log q` — the Shannon entropy of a marginal | Factor and variable nodes |
-| `FactorBoundFreeEnergy` | Local free energy contribution of one factor node | Factor nodes |
-| `VariableBoundEntropy` | Scaled entropy contribution of one variable node | Variable nodes |
+| [`AverageEnergy`](@ref) | `⟨-log f⟩_q` — the expected log-factor under the local marginal | Factor nodes |
+| [`DifferentialEntropy`](@ref) | `-∫ q log q` — the Shannon entropy of a marginal | Factor and variable nodes |
+| [`FactorBoundFreeEnergy`](@ref) | Local free energy contribution of one factor node | Factor nodes |
+| [`VariableBoundEntropy`](@ref) | Scaled entropy contribution of one variable node | Variable nodes |
 
 The full Bethe free energy is the sum of all `FactorBoundFreeEnergy` and `VariableBoundEntropy` scores across the graph.
+
+```@docs
+ReactiveMP.score
+ReactiveMP.AverageEnergy
+ReactiveMP.DifferentialEntropy
+ReactiveMP.FactorBoundFreeEnergy
+ReactiveMP.VariableBoundEntropy
+```
 
 ## [The `score` function](@id lib-score-function)
 
@@ -55,3 +63,7 @@ end
 ```
 
 The macro handles argument naming, dispatch, and interface checking automatically. Marginals are named with a `q_` prefix matching the node interface names declared in the corresponding `@node` definition.
+
+```@docs
+ReactiveMP.@average_energy
+```

@@ -1,10 +1,24 @@
 export srcubature
 
+"""
+    SphericalRadialCubature <: AbstractApproximationMethod
+
+Spherical-radial cubature rule for multivariate Gaussian integrals. Uses `2d + 1`
+deterministic sigma points (where `d` is the input dimension), providing a good
+balance between accuracy and computational cost for moderate dimensions.
+
+Use [`srcubature`](@ref) to construct an instance.
+"""
 struct SphericalRadialCubature <: AbstractApproximationMethod end
 
 approximation_name(::SphericalRadialCubature)       = "SphericalRadial"
 approximation_short_name(::SphericalRadialCubature) = "SR"
 
+"""
+    srcubature() -> SphericalRadialCubature
+
+Construct a [`SphericalRadialCubature`](@ref) instance.
+"""
 function srcubature()
     return SphericalRadialCubature()
 end

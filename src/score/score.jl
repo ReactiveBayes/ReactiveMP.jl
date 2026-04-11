@@ -1,12 +1,42 @@
 export score, AverageEnergy, DifferentialEntropy
 export @average_energy
 
+"""
+    score(type, args...)
+
+Central dispatch point for computing local free-energy contributions during
+inference. Called internally by the engine whenever a marginal changes.
+
+The first argument is a tag type that selects the kind of score:
+
+- `score(AverageEnergy(), fform, marginal_names, marginals, meta)` — computes
+  `⟨-log f⟩_q` for a factor node `fform` under the local joint marginal `q`.
+- `score(DifferentialEntropy(), marginal)` — computes the Shannon entropy `H[q]`
+  of a marginal.
+
+Use [`@average_energy`](@ref) to define the `AverageEnergy` score for a custom
+factor node.
+"""
 function score end
 
 ##
 
+"""
+    AverageEnergy
+
+Dispatch tag for computing the average energy `⟨-log f⟩_q` of a factor node
+under the local joint marginal. Used as the first argument to [`score`](@ref).
+
+Define the average energy for a custom node with the [`@average_energy`](@ref) macro.
+"""
 struct AverageEnergy end
 
+"""
+    DifferentialEntropy
+
+Dispatch tag for computing the Shannon (differential) entropy `H[q] = -∫ q log q`
+of a marginal distribution. Used as the first argument to [`score`](@ref).
+"""
 struct DifferentialEntropy end
 
 struct KLDivergence end
@@ -101,10 +131,35 @@ score(::KLDivergence, marginal::Marginal, p::Distribution) = Distributions.kldiv
     getdata(marginal), p
 )
 
-## Average enery macro helper
+## Average energy macro helper
 
 import .MacroHelpers
 
+"""
+    @average_energy NodeType (q_x::DistType, q_y::DistType, ...) begin
+        # return -⟨log f(x, y, ...)⟩_{q(x)q(y)...}
+    end
+
+Define the average energy `⟨-log f⟩_q` for a custom factor node. Generates a
+`score(::AverageEnergy, ...)` method dispatched on the node type and the types
+of the marginals.
+
+Marginal arguments must be named with a `q_` prefix matching the interface names
+declared in the corresponding [`@node`](@ref) definition. An optional `meta`
+argument of a specific type may be included as the last argument.
+
+# Example
+
+```julia
+@node MyNode Stochastic [out, x, y]
+
+@average_energy MyNode (q_out::Any, q_x::NormalMeanVariance, q_y::Gamma) begin
+    mx, vx = mean_var(q_x)
+    my     = mean(q_y)
+    return 0.5 * log(2π) + 0.5 * (vx + mx^2) * my
+end
+```
+"""
 macro average_energy(fformtype, lambda)
     @capture(lambda, (args_ where {whereargs__} = body_) | (args_ = body_)) ||
         error("Error in macro. Lambda body specification is incorrect")

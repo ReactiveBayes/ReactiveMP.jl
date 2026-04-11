@@ -8,12 +8,12 @@ All approximation methods are passed through [`DeltaMeta`](@ref) or [`FlowMeta`]
 
 | Method | Best for | Dimensionality | Requires |
 |--------|----------|----------------|---------|
-| `Linearization` | Smooth, nearly linear `f` | Any | ForwardDiff (auto) |
-| `Unscented` | Smooth nonlinear `f` | Low–moderate | Nothing |
-| `GaussHermiteCubature` | Univariate integrals with Gaussian inputs | Univariate | Point count `p` |
-| `GaussLaguerreQuadrature` | Integrals over `[0, ∞)` | Univariate | Point count `n` |
-| `srcubature` / `SphericalRadialCubature` | Multivariate Gaussian integrals | Multivariate | Nothing |
-| `LaplaceApproximation` | Unimodal posteriors, differentiable `f` | Any | ForwardDiff + Optim |
+| [`Linearization`](@ref) | Smooth, nearly linear `f` | Any | ForwardDiff (auto) |
+| [`Unscented`](@ref) | Smooth nonlinear `f` | Low–moderate | Nothing |
+| [`GaussHermiteCubature`](@ref) | Univariate integrals with Gaussian inputs | Univariate | Point count `p` |
+| [`GaussLaguerreQuadrature`](@ref) | Integrals over `[0, ∞)` | Univariate | Point count `n` |
+| [`srcubature`](@ref) / [`SphericalRadialCubature`](@ref) | Multivariate Gaussian integrals | Multivariate | Nothing |
+| [`LaplaceApproximation`](@ref) | Unimodal posteriors, differentiable `f` | Any | ForwardDiff + Optim |
 | [`CVI`](@ref) | Black-box or non-differentiable `f` | Any | Optimizer + gradient |
 | [`CVIProjection`](@ref) | CVI + exponential family projection | Any | ExponentialFamilyProjection.jl |
 | [`ImportanceSamplingApproximation`](@ref) | General expectations via sampling | Any | Proposal distribution |
@@ -30,7 +30,7 @@ All approximation methods are passed through [`DeltaMeta`](@ref) or [`FlowMeta`]
 
 ### Gauss-Hermite cubature
 
-`GaussHermiteCubature` computes expectations of the form `∫ g(x) N(x; μ, σ²) dx` using a fixed set of quadrature points and weights optimized for Gaussian measures. It is exact for polynomials up to a certain degree determined by the number of points `p`:
+[`GaussHermiteCubature`](@ref) computes expectations of the form `∫ g(x) N(x; μ, σ²) dx` using a fixed set of quadrature points and weights optimized for Gaussian measures. It is exact for polynomials up to a certain degree determined by the number of points `p`. Use [`ghcubature`](@ref) to construct an instance:
 
 ```julia
 DeltaMeta(method = GaussHermiteCubature(21))  # 21-point rule
@@ -38,15 +38,15 @@ DeltaMeta(method = GaussHermiteCubature(21))  # 21-point rule
 
 ### Gauss-Laguerre quadrature
 
-`GaussLaguerreQuadrature` computes expectations over the half-line `[0, ∞)` — useful when the input has a Gamma distribution or similar semi-infinite support.
+[`GaussLaguerreQuadrature`](@ref) computes expectations over the half-line `[0, ∞)` — useful when the input has a Gamma distribution or similar semi-infinite support.
 
 ### Spherical radial cubature
 
-`srcubature()` constructs a spherical-radial cubature rule for multivariate Gaussian integrals, using `2d + 1` deterministic points (where `d` is the input dimension). It provides a good balance between accuracy and cost for moderate dimensions.
+[`srcubature`](@ref) constructs a [`SphericalRadialCubature`](@ref) rule for multivariate Gaussian integrals, using `2d + 1` deterministic points (where `d` is the input dimension). It provides a good balance between accuracy and cost for moderate dimensions.
 
 ### Laplace approximation
 
-`LaplaceApproximation` finds the mode of the log-unnormalized posterior (using [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl)) and fits a Gaussian at that mode using the local curvature (via ForwardDiff). Best for unimodal, differentiable posteriors.
+[`LaplaceApproximation`](@ref) finds the mode of the log-unnormalized posterior (using [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl)) and fits a Gaussian at that mode using the local curvature (via ForwardDiff). Best for unimodal, differentiable posteriors. Use [`laplace`](@ref) to construct an instance.
 
 ## [Stochastic approximations](@id lib-approximations-stochastic)
 
@@ -86,6 +86,13 @@ ReactiveMP.Unscented
 ReactiveMP.sigma_points_weights
 ReactiveMP.UT
 ReactiveMP.UnscentedTransform
+ReactiveMP.GaussHermiteCubature
+ReactiveMP.ghcubature
+ReactiveMP.GaussLaguerreQuadrature
+ReactiveMP.SphericalRadialCubature
+ReactiveMP.srcubature
+ReactiveMP.LaplaceApproximation
+ReactiveMP.laplace
 ReactiveMP.CVI
 ReactiveMP.ProdCVI
 ReactiveMP.ForwardDiffGrad
@@ -96,4 +103,5 @@ ReactiveMP.MeanBased
 ReactiveMP.ProposalDistributionContainer
 ReactiveMP.cvi_setup!
 ReactiveMP.cvi_update!
+ReactiveMP.ImportanceSamplingApproximation
 ```

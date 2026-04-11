@@ -2,6 +2,14 @@ export FactorBoundFreeEnergy
 
 import Base: tail
 
+"""
+    FactorBoundFreeEnergy
+
+Dispatch tag for computing the local free-energy contribution of a single factor
+node. For stochastic nodes this is `⟨-log f⟩_q - H[q_f]`; for deterministic nodes
+it is `-H[q_f]` (negative entropy of the local marginal). Used as the first argument
+to [`score`](@ref).
+"""
 struct FactorBoundFreeEnergy end
 
 function score(

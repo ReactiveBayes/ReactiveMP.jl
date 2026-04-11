@@ -4,13 +4,58 @@ import LazyArrays
 import Distributions: VariateForm
 import StatsFuns: log2π
 
+"""
+    AR
+
+Factor node representing a Bayesian autoregressive (AR) process of order `p`:
+
+```math
+y_t \\sim \\mathcal{N}(\\theta^\\top x_t,\\, \\gamma^{-1})
+```
+
+where `yₜ` is the current output, `xₜ = (yₜ₋₁, …, yₜ₋ₚ)` is the lagged-state
+vector, `θ` is the AR coefficient vector, and `γ` is the observation precision.
+
+Also exported as `Autoregressive`. Requires [`ARMeta`](@ref) to be passed explicitly.
+
+Interfaces: `y` (alias `out`), `x`, `θ`, `γ`.
+"""
 struct AR end
 
 const Autoregressive = AR
 
+"""
+    ARsafe
+
+Numerical safety mode for the [`AR`](@ref) node. Adds a small regularization to
+covariance matrices during message computation to avoid numerical issues with
+near-singular matrices. Slower than [`ARunsafe`](@ref) but more numerically stable.
+"""
 struct ARsafe end
+
+"""
+    ARunsafe
+
+Numerical safety mode for the [`AR`](@ref) node. Skips the regularization step
+during message computation. Faster than [`ARsafe`](@ref) but may be numerically
+fragile for ill-conditioned covariance matrices.
+"""
 struct ARunsafe end
 
+"""
+    ARMeta{F <: VariateForm, S}
+
+Metadata for the [`AR`](@ref) (autoregressive) node. Specifies the variate form,
+the AR order, and the numerical safety mode.
+
+# Constructor
+
+    ARMeta(variate::Type{<:VariateForm}, order::Int, stype)
+
+- `variate` — `Univariate` for scalar AR(1) models; `Multivariate` for AR(p) with `p > 1`.
+- `order`   — the AR order `p` (forced to 1 for `Univariate` with a warning if different).
+- `stype`   — numerical stability mode; either [`ARsafe()`](@ref) or [`ARunsafe()`](@ref).
+"""
 struct ARMeta{F <: VariateForm, S}
     order::Int
     stype::S
