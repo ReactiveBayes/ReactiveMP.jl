@@ -13,9 +13,10 @@ makedocs(
     pages    = [
         "Introduction"    => "index.md",
         "Concepts" => [
-            "Factor graphs"       => "concepts/factor-graphs.md",
-            "Message passing"     => "concepts/message-passing.md",
-            "Inference lifecycle" => "concepts/inference-lifecycle.md",
+            "Factor graphs"           => "concepts/factor-graphs.md",
+            "Message passing"         => "concepts/message-passing.md",
+            "Reactive programming"   => "concepts/reactive-programming.md",
+            "Inference lifecycle"    => "concepts/inference-lifecycle.md",
         ],
         "Library" => [
             "Factor nodes"         => "lib/nodes.md",

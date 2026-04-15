@@ -50,7 +50,15 @@ The word *reactive* in the package name refers to how messages are scheduled. Ma
 - When new data arrives via [`new_observation!`](@ref), the change propagates automatically through the graph, triggering only the rules that depend on the updated value.
 - The propagation order is determined by the graph structure at runtime, not a static plan.
 
-This reactive design is built on top of [Rocket.jl](https://github.com/ReactiveBayes/Rocket.jl), a Julia library for reactive programming with observables. You do not need to know Rocket.jl to use ReactiveMP.jl, but understanding that messages are *streams* rather than *values* helps explain the activation step described in [Inference lifecycle](@ref concepts-inference-lifecycle).
+## [The reactive computation model](@id concepts-message-passing-reactive)
+
+The word *reactive* in the package name refers to how messages are scheduled. Many message passing libraries build an explicit computation schedule (e.g., forward-backward passes) before inference starts. ReactiveMP.jl takes a different approach: **there is no pre-built schedule**. Instead:
+
+- Each variable and factor node holds a *reactive stream* (a [`ReactiveMP.MessageObservable`](@ref) or [`ReactiveMP.MarginalObservable`](@ref)) that emits updated values whenever its inputs change.
+- When new data arrives via [`new_observation!`](@ref), the change propagates automatically through the graph, triggering only the rules that depend on the updated value.
+- The propagation order is determined by the graph structure at runtime, not a static plan.
+
+This reactive design is built on top of [Rocket.jl](https://github.com/ReactiveBayes/Rocket.jl), a Julia library for reactive programming with observables. For a higher-level explanation of this paradigm and how to conceptualize messages as streams, see the [Reactive Programming Model](@ref concepts-reactive-programming). Understanding that messages are *streams* rather than *values* helps explain the activation step described in [Inference lifecycle](@ref concepts-inference-lifecycle).
 
 ## [Messages and marginals](@id concepts-message-passing-types)
 
