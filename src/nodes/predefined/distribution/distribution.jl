@@ -8,15 +8,12 @@ struct StandaloneDistributionNode{D, C} <: AbstractFactorNode
 end
 
 functionalform(factornode::StandaloneDistributionNode) = factornode.distribution
-getinterfaces(factornode::StandaloneDistributionNode) = (
-    factornode.outinterface,
-)
-getinterface(factornode::StandaloneDistributionNode, index) = getindex(
-    getinterfaces(factornode), index
-)
-getinboundinterfaces(factornode::StandaloneDistributionNode) = error(
-    "`StandaloneDistributionNode` has no inbound interfaces"
-)
+getinterfaces(factornode::StandaloneDistributionNode) =
+    (factornode.outinterface,)
+getinterface(factornode::StandaloneDistributionNode, index) =
+    getindex(getinterfaces(factornode), index)
+getinboundinterfaces(factornode::StandaloneDistributionNode) =
+    error("`StandaloneDistributionNode` has no inbound interfaces")
 getlocalclusters(factornode::StandaloneDistributionNode) =
     factornode.localclusters
 
@@ -66,19 +63,21 @@ function score(
     ::FactorBoundFreeEnergy,
     node::StandaloneDistributionNode,
     meta,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
-    fnstream = let scheduler = scheduler
-        (localmarginal) ->
-            get_stream_of_marginals(localmarginal) |>
-            skip_initial() |>
-            schedule_on(scheduler)
-    end
     # `FactorBoundFreeEnergy` here is simply equal to `kldivergence` between the marginal and the outbound message
-    stream = fnstream(first(get_node_local_marginals(getlocalclusters(node))))
-    return stream |> map(
-        T,
-        (marginal) ->
-            convert(T, score(KLDivergence(), marginal, node.distribution)),
+    stream_of_scores =
+        get_stream_of_marginals(
+            first(get_node_local_marginals(getlocalclusters(node)))
+        ) |> skip_initial()
+    stream_of_scores =
+        stream_of_scores |> map(
+            T,
+            (marginal) ->
+                convert(T, score(KLDivergence(), marginal, node.distribution)),
+        )
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
     )
+    return stream_of_scores
 end

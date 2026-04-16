@@ -3,7 +3,10 @@ export VariableBoundEntropy
 struct VariableBoundEntropy end
 
 function score(
-    ::Type{T}, ::VariableBoundEntropy, variable::RandomVariable, scheduler
+    ::Type{T},
+    ::VariableBoundEntropy,
+    variable::RandomVariable,
+    stream_postprocessors,
 ) where {T <: CountingReal}
     mapping = let d = degree(variable)
         (marginal) -> begin
@@ -15,8 +18,10 @@ function score(
             return scaling * entropy
         end
     end
-    return get_stream_of_marginals(variable) |>
-           skip_initial() |>
-           schedule_on(scheduler) |>
-           map(T, mapping)
+    stream_of_scores =
+        get_stream_of_marginals(variable) |> skip_initial() |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+    return stream_of_scores
 end

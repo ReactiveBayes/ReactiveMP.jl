@@ -9,8 +9,6 @@ using Rocket
 using TupleTools
 using MacroTools
 
-import Rocket: getscheduler
-
 import Base:
     show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
 import Base: getindex, setindex!, firstindex, lastindex

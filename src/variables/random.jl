@@ -49,9 +49,8 @@ isconst(::AbstractArray{<:RandomVariable}) = false
 get_stream_of_marginals(randomvar::RandomVariable) = randomvar.marginal
 get_stream_of_predictions(randomvar::RandomVariable) = randomvar.marginal
 
-set_stream_of_marginals!(randomvar::RandomVariable, stream) = connect!(
-    randomvar.marginal, stream
-)
+set_stream_of_marginals!(randomvar::RandomVariable, stream) =
+    connect!(randomvar.marginal, stream)
 set_stream_of_predictions!(randomvar::RandomVariable, stream) = error(
     "It is not possible to set a stream of predictions for `RandomVariable`"
 )
@@ -76,20 +75,22 @@ end
 Collects all configuration needed to activate a [`ReactiveMP.RandomVariable`](@ref). Passed to [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref).
 
 Fields:
-- `scheduler` — a Rocket.jl scheduler controlling when downstream updates are delivered
+- `stream_postprocessor` — optional stream postprocessor applied to every created stream (see [`ReactiveMP.AbstractStreamPostprocessor`](@ref))
 - `prod_context_for_message_computation` — a [`ReactiveMP.MessageProductContext`](@ref) used when computing outbound messages (product of all-but-one inbound messages in the `EqualityChain`)
 - `prod_context_for_marginal_computation` — a [`ReactiveMP.MessageProductContext`](@ref) used when computing the marginal (product of all inbound messages)
 """
 struct RandomVariableActivationOptions{
     S, F <: MessageProductContext, M <: MessageProductContext
 }
-    scheduler::S
+    stream_postprocessor::S
     prod_context_for_message_computation::F
     prod_context_for_marginal_computation::M
 end
 
 RandomVariableActivationOptions() = RandomVariableActivationOptions(
-    AsapScheduler(), MessageProductContext(), MessageProductContext()
+    NoopStreamPostprocessor(),
+    MessageProductContext(),
+    MessageProductContext(),
 )
 
 """
@@ -119,7 +120,7 @@ function activate!(
     if length(randomvar.input_messages) > 1
         chain = EqualityChain(
             randomvar.input_messages,
-            schedule_on(options.scheduler),
+            options.stream_postprocessor,
             (messages) -> compute_product_of_messages(
                 randomvar,
                 options.prod_context_for_message_computation,

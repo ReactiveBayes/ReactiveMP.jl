@@ -9,7 +9,7 @@ function score(
     ::FactorBoundFreeEnergy,
     node::AbstractFactorNode,
     meta,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
     return score(
         T,
@@ -17,7 +17,7 @@ function score(
         sdtype(node),
         node,
         collect_meta(functionalform(node), meta),
-        scheduler,
+        stream_postprocessors,
     )
 end
 
@@ -29,14 +29,11 @@ function score(
     ::Deterministic,
     node::AbstractFactorNode,
     meta,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
-    fnstream = let scheduler = scheduler
+    fnstream =
         (interface) ->
-            get_stream_of_inbound_messages(interface) |>
-            skip_initial() |>
-            schedule_on(scheduler)
-    end
+            get_stream_of_inbound_messages(interface) |> skip_initial()
 
     tinterfaces = Tuple(getinterfaces(node))
     stream = combineLatest(map(fnstream, tinterfaces), PushNew())
@@ -70,7 +67,12 @@ function score(
             end
         end
 
-    return stream |> map(T, mapping)
+    stream_of_scores = stream |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+
+    return stream_of_scores
 end
 
 ## Stochastic mapping
@@ -81,14 +83,11 @@ function score(
     ::Stochastic,
     node::AbstractFactorNode,
     meta,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
-    fnstream = let scheduler = scheduler
+    fnstream =
         (localmarginal) ->
-            get_stream_of_marginals(localmarginal) |>
-            skip_initial() |>
-            schedule_on(scheduler)
-    end
+            get_stream_of_marginals(localmarginal) |> skip_initial()
 
     localmarginals = get_node_local_marginals(getlocalclusters(node))
     stream = combineLatest(map(fnstream, localmarginals), PushNew())
@@ -104,5 +103,10 @@ function score(
             end
         end
 
-    return stream |> map(T, mapping)
+    stream_of_scores = stream |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+
+    return stream_of_scores
 end

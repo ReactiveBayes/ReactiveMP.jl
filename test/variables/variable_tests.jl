@@ -8,7 +8,6 @@
         degree,
         set_initial_marginal!,
         set_initial_message!
-    import Rocket: getscheduler
 
     struct CustomDeterministicNodeForVariableTests end
 
