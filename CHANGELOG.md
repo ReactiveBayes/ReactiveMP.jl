@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.0]
+
 ### Added
 - Callback/event system for hooking into message passing steps (rule calls, message products, form constraints, marginal computation)
 - `MessageProductContext` struct to bundle product computation settings and callbacks
