@@ -13,7 +13,7 @@ import ReactiveMP:
     MessageMapping,
     DeferredMessage,
     with_statics,
-    apply_pipeline_stage,
+    postprocess_stream_of_outbound_messages,
     set_stream_of_outbound_messages!,
     get_stream_of_inbound_messages,
     connect!
@@ -48,8 +48,7 @@ function deltafn_apply_layout(
     ::Val{:q_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
+    stream_postprocessors,
     annotations,
     rulefallback,
     callbacks,
@@ -59,8 +58,7 @@ function deltafn_apply_layout(
         Val(:q_out),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
+        stream_postprocessors,
         annotations,
         rulefallback,
         callbacks,
@@ -73,8 +71,7 @@ function deltafn_apply_layout(
     ::Val{:q_ins},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
+    stream_postprocessors,
     annotations,
     rulefallback,
     callbacks,
@@ -84,8 +81,7 @@ function deltafn_apply_layout(
         Val(:q_ins),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
+        stream_postprocessors,
         annotations,
         rulefallback,
         callbacks,
@@ -98,8 +94,7 @@ function deltafn_apply_layout(
     ::Val{:m_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
+    stream_postprocessors,
     annotations,
     rulefallback,
     callbacks,
@@ -142,12 +137,9 @@ function deltafn_apply_layout(
         )
         stream_of_outbound_messages =
             stream_of_outbound_messages |> map(AbstractMessage, mapping)
-        stream_of_outbound_messages = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, stream_of_outbound_messages
+        stream_of_outbound_messages = postprocess_stream_of_outbound_messages(
+            stream_postprocessors, stream_of_outbound_messages
         )
-        stream_of_outbound_messages =
-            stream_of_outbound_messages |> schedule_on(scheduler)
-
         set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
     end
 end
@@ -158,8 +150,7 @@ function deltafn_apply_layout(
     ::Val{:m_in},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
+    stream_postprocessors,
     annotations,
     rulefallback,
     callbacks,
@@ -169,8 +160,7 @@ function deltafn_apply_layout(
         Val(:m_in),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
+        stream_postprocessors,
         annotations,
         rulefallback,
         callbacks,

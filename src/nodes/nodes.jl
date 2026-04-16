@@ -282,27 +282,24 @@ Collects all configuration needed to activate a [`FactorNode`](@ref). Passed to 
 Fields:
 - `metadata` — node-specific metadata forwarded to message update rules (see [`ReactiveMP.collect_meta`](@ref))
 - `dependencies` — a [`ReactiveMP.FunctionalDependencies`](@ref) policy that determines which messages and marginals each outbound message computation depends on (default: [`ReactiveMP.DefaultFunctionalDependencies`](@ref))
-- `pipeline` — optional pipeline stages applied to every outbound message stream (see [`ReactiveMP.AbstractPipelineStage`](@ref))
+- `postprocessor` — optional stream postprocessor applied to every created stream (see [`ReactiveMP.AbstractStreamPostprocessor`](@ref))
 - `annotations` — optional annotation processors (see [`ReactiveMP.AbstractAnnotations`](@ref))
-- `scheduler` — a Rocket.jl scheduler controlling when downstream updates are delivered
 - `rulefallback` — optional fallback called when no `@rule` method matches
 - `callbacks` — optional callbacks invoked at key points in the message computation (see [`ReactiveMP.invoke_callback`](@ref))
 """
-struct FactorNodeActivationOptions{M, D, P, A, S, R, E}
+struct FactorNodeActivationOptions{M, D, P, A, R, E}
     metadata::M
     dependencies::D
-    pipeline::P
+    postprocessor::P
     annotations::A
-    scheduler::S
     rulefallback::R
     callbacks::E
 end
 
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
 getdependecies(options::FactorNodeActivationOptions) = options.dependencies
-getpipeline(options::FactorNodeActivationOptions) = options.pipeline
+getpostprocessor(options::FactorNodeActivationOptions) = options.postprocessor
 getannotations(options::FactorNodeActivationOptions) = options.annotations
-getscheduler(options::FactorNodeActivationOptions) = options.scheduler
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
 getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 
@@ -325,7 +322,7 @@ Activation proceeds in three phases:
 3. **Wire outbound message streams** — for every interface connected to a [`ReactiveMP.RandomVariable`](@ref) or [`ReactiveMP.DataVariable`](@ref):
    - combines the required inbound message and marginal streams with `combineLatest`
    - wraps the rule application in a [`ReactiveMP.MessageMapping`](@ref), producing a [`ReactiveMP.DeferredMessage`](@ref) on each upstream update
-   - applies any `options.pipeline` stages and the `options.scheduler`
+   - applies any `options.postprocessor` transformations
    - connects the result to the interface's [`ReactiveMP.MessageObservable`](@ref) via [`ReactiveMP.set_stream_of_outbound_messages!`](@ref)
 
 Interfaces connected to [`ReactiveMP.ConstVariable`](@ref) are skipped: their message is fixed at graph construction.

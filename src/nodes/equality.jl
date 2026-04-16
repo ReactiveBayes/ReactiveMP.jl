@@ -63,23 +63,23 @@ setcache!(::EqualityRightOutbound, node::EqualityNode, cache::Message) = node.ca
     EqualityChain
 """
 struct EqualityChain{P, F}
-    length     :: Int
-    nodes      :: Vector{EqualityNode}
-    inputmsgs  :: Vector{MessageObservable{AbstractMessage}}
-    cacheleft  :: BitVector
-    cacheright :: BitVector
-    pipeline   :: P
-    prod_fn    :: F
+    length        :: Int
+    nodes         :: Vector{EqualityNode}
+    inputmsgs     :: Vector{MessageObservable{AbstractMessage}}
+    cacheleft     :: BitVector
+    cacheright    :: BitVector
+    postprocessor :: P
+    prod_fn       :: F
 
     function EqualityChain(
         inputmsgs::Vector{MessageObservable{AbstractMessage}},
-        pipeline::P,
+        postprocessor::P,
         prod_fn::F,
     ) where {P, F}
         n = length(inputmsgs)
         nodes = map(_ -> EqualityNode(), 1:n)
         return new{P, F}(
-            n, nodes, inputmsgs, falses(n), falses(n), pipeline, prod_fn
+            n, nodes, inputmsgs, falses(n), falses(n), postprocessor, prod_fn
         )
     end
 end
@@ -88,9 +88,10 @@ Base.length(chain::EqualityChain) = chain.length
 
 prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
 
-getpipeline(chain::EqualityChain) = chain.pipeline
+getpostprocessor(chain::EqualityChain) = chain.postprocessor
 
-@propagate_inbounds getnode(chain::EqualityChain, node_index) = chain.nodes[node_index]
+@propagate_inbounds getnode(chain::EqualityChain, node_index) =
+    chain.nodes[node_index]
 
 __check_indices(::EqualityLeftOutbound, chain::EqualityChain, node_index)  = 1 < node_index <= length(chain)
 __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <= node_index < length(chain)
@@ -162,11 +163,8 @@ struct ChainInvalidationCallback
     end
 end
 
-Rocket.tap(callback::ChainInvalidationCallback) = Rocket.TapOperator{
-    ChainInvalidationCallback
-}(
-    callback
-)
+Rocket.tap(callback::ChainInvalidationCallback) =
+    Rocket.TapOperator{ChainInvalidationCallback}(callback)
 
 function (callback::ChainInvalidationCallback)(_)
     fill_bitarray!(
@@ -196,16 +194,13 @@ function (mapping::ChainOutboundMapping)(_)
     return as_message(prod(mapping.chain, from_left, from_right))
 end
 
-Base.map(::Type{Message}, mapping::ChainOutboundMapping) = Rocket.MapOperator{
-    Message, ChainOutboundMapping
-}(
-    mapping
-)
+Base.map(::Type{Message}, mapping::ChainOutboundMapping) =
+    Rocket.MapOperator{Message, ChainOutboundMapping}(mapping)
 
 function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
     n = length(chain)
 
-    pipeline = getpipeline(chain)
+    postprocessor = getpostprocessor(chain)
 
     Left  = EqualityLeftOutbound()
     Right = EqualityRightOutbound()
@@ -219,8 +214,18 @@ function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
             tap(ChainInvalidationCallback(index, chain)) |>
             share_recent()
 
-        left  = combineLatestUpdates((getoutbound(Left, chain, nextindex(Left, index)), input), PushNew()) |> pipeline |> map_to(missing) |> share_recent()
-        right = combineLatestUpdates((getoutbound(Right, chain, nextindex(Right, index)), input), PushNew()) |> pipeline |> map_to(missing) |> share_recent()
+        left = combineLatestUpdates(
+            (getoutbound(Left, chain, nextindex(Left, index)), input), PushNew()
+        )
+        left = postprocess_stream_of_outbound_messages(postprocessor, left)
+        left = left |> map_to(missing) |> share_recent()
+
+        right = combineLatestUpdates(
+            (getoutbound(Right, chain, nextindex(Right, index)), input),
+            PushNew(),
+        )
+        right = postprocess_stream_of_outbound_messages(postprocessor, right)
+        right = right |> map_to(missing) |> share_recent()
 
         setoutbound!(Left, node, left)
         setoutbound!(Right, node, right)

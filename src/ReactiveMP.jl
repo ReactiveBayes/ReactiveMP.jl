@@ -23,6 +23,7 @@ include("helpers/algebra/standard_basis_vector.jl")
 include("constraints/form.jl")
 
 include("callbacks.jl")
+include("postprocessors.jl")
 include("variable.jl")
 include("annotations.jl")
 include("annotations/logscale.jl")
@@ -67,6 +68,9 @@ include("approximations/unscented.jl")
 include("approximations/cvi.jl")
 include("approximations/cvi_projection.jl")
 
+# Predefined postprocessors
+include("postprocessors/scheduled.jl")
+
 # Equality node is a special case and needs to be included before random variable implementation
 include("nodes/equality.jl")
 
@@ -74,14 +78,7 @@ include("variables/random.jl")
 include("variables/constant.jl")
 include("variables/data.jl")
 
-include("pipeline/pipeline.jl")
-include("pipeline/async.jl")
-include("pipeline/discontinue.jl")
-include("pipeline/logger.jl")
-include("pipeline/scheduled.jl")
-
 include("nodes/nodes.jl")
-
 include("rule.jl")
 
 include("score/score.jl")
