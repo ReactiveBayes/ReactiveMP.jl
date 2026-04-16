@@ -148,6 +148,9 @@ function activate!(
             _compute_marginal_from_messages(randomvar, options, messages),
         reset_vstatus,
     )
+    stream_of_marginals = postprocess_stream_of_marginals(
+        options.stream_postprocessor, stream_of_marginals
+    )
 
     set_stream_of_marginals!(randomvar, stream_of_marginals)
 
