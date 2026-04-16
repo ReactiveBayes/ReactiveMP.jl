@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [6.0.0]
 
 ### Added
+- `AbstractStreamPostprocessor` abstraction unifying the old pipeline stages and the per-node `scheduler` argument under a single concept that postprocesses outbound message streams, marginal streams, and score streams uniformly
+- `postprocess_stream_of_outbound_messages`, `postprocess_stream_of_marginals`, `postprocess_stream_of_scores` entry points with `::Nothing` pass-through fallbacks
+- `CompositeStreamPostprocessor` for chaining multiple postprocessors
+- `ScheduleOnStreamPostprocessor` — direct successor of `ScheduleOnPipelineStage` plus the per-node scheduler, applies a Rocket.jl scheduler to all three stream kinds
+- Marginal streams and score streams now go through stream postprocessors (previously only outbound message streams did)
+- Documentation page for stream postprocessors
 - Callback/event system for hooking into message passing steps (rule calls, message products, form constraints, marginal computation)
 - `MessageProductContext` struct to bundle product computation settings and callbacks
 - Labels for variables (`RandomVariable`, `ConstVariable`, `DataVariable`)
@@ -32,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded documentation for variables (stream creation lifecycle per variable type), nodes (interfaces, activation), messages, and marginals
 
 ### Changed
+- `FactorNodeActivationOptions` lost its `pipeline` and `scheduler` positional fields and gained a single `postprocessor` field
+- `RandomVariableActivationOptions` renamed its `scheduler` field to `stream_postprocessor`; the default is now `nothing` (no-op) instead of `AsapScheduler()`
+- `getpipeline(options)` and `getscheduler(options)` replaced by `getpostprocessor(options)`
+- `EqualityChain` renamed its `pipeline` field to `postprocessor`
 - Switched from `ReTestItems` to `TestItemRunner` for tests ([#584](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/584))
 - Made formatting checks stricter
 - Removed `variables/generic.jl`; generic variable interface moved into `variable.jl`
@@ -52,6 +62,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `update!(datavar, value)` → `new_observation!(datavar, value)`
 
 ### Removed
+- `AbstractPipelineStage`, `EmptyPipelineStage`, `CompositePipelineStage`, `ScheduleOnPipelineStage`, `apply_pipeline_stage`, `collect_pipeline`, `+` composition — replaced by the `AbstractStreamPostprocessor` abstraction (see migration guide)
+- `LoggerPipelineStage` — equivalent behaviour can be implemented via callbacks
+- `AsyncPipelineStage` — use `ScheduleOnStreamPostprocessor(AsyncScheduler())` instead
+- `DiscontinuePipelineStage` — was unused; implement a custom `AbstractStreamPostprocessor` if needed
+- `schedule_updates(vars; pipeline_stage = ...)` — construct a `ScheduleOnStreamPostprocessor` and pass it through the activation options instead
 - `getaddons` — use `getannotations` instead
 - `getlogscale(::Message)`, `getlogscale(::Marginal)` — use `getlogscale(getannotations(...))` instead
 - `getmemory`, `getmemoryaddon` — use `get_rule_input_arguments(getannotations(...))` instead

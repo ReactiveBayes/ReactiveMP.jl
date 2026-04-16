@@ -38,7 +38,7 @@ Activation wires the lazy observable streams into a live reactive network. This 
 
 For factor nodes, activation is driven by [`ReactiveMP.FactorNodeActivationOptions`](@ref), which carries:
 - The factorization assumption (mean-field, structured, or full BP).
-- Optional pipeline stages to apply to message streams (logging, scheduling, etc.).
+- An optional [stream postprocessor](@ref lib-stream-postprocessors) applied to outbound message, marginal, and score streams (e.g. for scheduling).
 - Metadata and approximation method settings.
 
 For variables, activation is driven by [`ReactiveMP.RandomVariableActivationOptions`](@ref) or [`ReactiveMP.DataVariableActivationOptions`](@ref), which wire up the marginal stream and prediction stream.

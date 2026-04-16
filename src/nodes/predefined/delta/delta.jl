@@ -356,7 +356,7 @@ function score(
     ::Deterministic,
     node::DeltaFnNode,
     meta,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
@@ -364,8 +364,12 @@ function score(
         get_stream_of_marginals(node.localmarginals.marginals[2]) |>
         skip_initial()
 
-    stream  = qinsmarginal |> schedule_on(scheduler)
     mapping = (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))
 
-    return stream |> map(T, mapping)
+    stream_of_scores = qinsmarginal |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+
+    return stream_of_scores
 end

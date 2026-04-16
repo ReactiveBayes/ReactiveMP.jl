@@ -39,7 +39,6 @@ end
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
-        NoopStreamPostprocessor,
         create_new_stream_of_inbound_messages!,
         compute_product_of_messages,
         get_stream_of_inbound_messages,
@@ -67,7 +66,7 @@ end
             activate!(
                 var,
                 RandomVariableActivationOptions(
-                    NoopStreamPostprocessor(),
+                    nothing,
                     MessageProductContext(; fold_strategy = message_prod_fold),
                     MessageProductContext(; fold_strategy = marginal_prod_fold),
                 ),
@@ -96,7 +95,6 @@ end
     import ReactiveMP:
         MessageObservable,
         MessageProductContext,
-        NoopStreamPostprocessor,
         create_new_stream_of_inbound_messages!,
         compute_product_of_messages,
         get_stream_of_inbound_messages,
@@ -127,7 +125,7 @@ end
             activate!(
                 var,
                 RandomVariableActivationOptions(
-                    NoopStreamPostprocessor(),
+                    nothing,
                     MessageProductContext(; fold_strategy = message_prod_fold),
                     MessageProductContext(; fold_strategy = marginal_prod_fold),
                 ),
@@ -164,7 +162,6 @@ end
         MessageObservable,
         MessageProductContext,
         RandomVariableActivationOptions,
-        NoopStreamPostprocessor,
         AbstractMessage,
         create_new_stream_of_inbound_messages!,
         activate!,
@@ -209,9 +206,7 @@ end
         activate!(
             var,
             RandomVariableActivationOptions(
-                NoopStreamPostprocessor(),
-                MessageProductContext(),
-                marginal_context,
+                nothing, MessageProductContext(), marginal_context
             ),
         )
 
@@ -265,9 +260,7 @@ end
         activate!(
             var,
             RandomVariableActivationOptions(
-                NoopStreamPostprocessor(),
-                MessageProductContext(),
-                marginal_context,
+                nothing, MessageProductContext(), marginal_context
             ),
         )
 

@@ -88,9 +88,7 @@ struct RandomVariableActivationOptions{
 end
 
 RandomVariableActivationOptions() = RandomVariableActivationOptions(
-    NoopStreamPostprocessor(),
-    MessageProductContext(),
-    MessageProductContext(),
+    nothing, MessageProductContext(), MessageProductContext()
 )
 
 """

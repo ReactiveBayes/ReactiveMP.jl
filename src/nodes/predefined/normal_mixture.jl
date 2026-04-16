@@ -257,10 +257,8 @@ function score(
 ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            get_stream_of_marginals(getvariable(node.out)) |>
-            skip_initial() |>
-            get_stream_of_marginals(getvariable(node.switch)) |>
-            skip_initial() |>
+            get_stream_of_marginals(getvariable(node.out)) |> skip_initial(),
+            get_stream_of_marginals(getvariable(node.switch)) |> skip_initial(),
             ManyOfObservable(
                 combineLatest(
                     map(

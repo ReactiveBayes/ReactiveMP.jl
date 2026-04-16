@@ -25,7 +25,7 @@ makedocs(
             "Marginals"            => "lib/marginal.md",
             "Message update rules" => "lib/rules.md",
             "Callbacks"            => "lib/callbacks.md",
-            "Pipelines"            => "lib/pipelines.md",
+            "Stream postprocessors" => "lib/stream-postprocessors.md",
             "Approximations"       => "lib/approximations.md",
             "Score functions"      => "lib/score.md",
             "Helper utils"         => "lib/helpers.md",

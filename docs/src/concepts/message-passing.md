@@ -28,7 +28,7 @@ Under a mean-field factorization assumption `q(x, y) = q(x) q(y)`, the VMP messa
 \mu_{f \to x}(x) = \exp \int q(y) \, q(z) \log f(x, y, z) \; \mathrm{d}y \; \mathrm{d}z
 ```
 
-Notice that this uses *marginals* `q(y)` and `q(z)` rather than messages `μ(y)` and `μ(z)`. ReactiveMP.jl tracks this distinction through its [functional dependencies pipeline](@ref lib-node-functional-dependencies-pipeline).
+Notice that this uses *marginals* `q(y)` and `q(z)` rather than messages `μ(y)` and `μ(z)`. ReactiveMP.jl tracks this distinction through its [functional dependencies](@ref lib-node-functional-dependencies) policy.
 
 For a deeper treatment of the theory, see the [PhD dissertation](https://pure.tue.nl/ws/portalfiles/portal/313860204/20231219_Bagaev_hf.pdf) that ReactiveMP.jl is based on.
 

@@ -63,7 +63,6 @@ These must be defined using the [`@rule`](@ref) macro.
 
 ```@docs
 ReactiveMP.collect_factorisation
-ReactiveMP.collect_pipeline
 ReactiveMP.collect_meta
 ReactiveMP.default_meta
 ReactiveMP.as_node_symbol
@@ -113,10 +112,10 @@ println("sdtype() of `Bernoulli` node is ", sdtype(Bernoulli))
 nothing #hide
 ```
 
-## [Node functional dependencies pipeline](@id lib-node-functional-dependencies-pipeline)
+## [Node functional dependencies](@id lib-node-functional-dependencies)
 
-The generic implementation of factor nodes in ReactiveMP supports custom functional dependency pipelines. Briefly, the __functional dependencies pipeline__ defines what
-dependencies are need to compute a single message. As an example, consider the belief-propagation message update equation for a factor node $f$ with three edges: $x$, $y$ and $z$:
+The generic implementation of factor nodes in ReactiveMP supports custom functional dependencies policies. Briefly, the __functional dependencies__ define what
+dependencies are needed to compute a single message. As an example, consider the belief-propagation message update equation for a factor node $f$ with three edges: $x$, $y$ and $z$:
 
 ```math
 \mu(x) = \int \mu(y) \mu(z) f(x, y, z) \mathrm{d}y \mathrm{d}z
@@ -130,9 +129,9 @@ Here we see that in the standard setting for the belief-propagation message out 
 
 We see that in this setting, we do not need messages $\mu(y)$ and $\mu(z)$, but only the marginals $q(y)$ and $q(z)$. 
 
-## [List of functional dependencies pipelines](@id lib-node-functional-dependencies-pipelines)
+## [List of functional dependencies policies](@id lib-node-functional-dependencies-policies)
 
-The purpose of a __functional dependencies pipeline__ is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in pipelines is presented below:
+The purpose of a __functional dependencies__ policy is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in policies is presented below:
 
 ```@docs
 ReactiveMP.DefaultFunctionalDependencies
@@ -156,11 +155,11 @@ ReactiveMP.UndefinedNodeFunctionalForm
 ReactiveMP.is_predefined_node
 ```
 
-## [Node pipelines](@id lib-node-pipelines)
+## [Stream postprocessors](@id lib-node-stream-postprocessors)
 
-Pipeline stages are composable transformations applied to message streams on individual edges. They are attached to a node during [Activation](@ref lib-node-activation) via [`ReactiveMP.FactorNodeActivationOptions`](@ref) and can be used for logging, scheduling, or early termination.
+Stream postprocessors are composable transformations applied to the reactive observables produced during activation — outbound message streams, marginal streams, and score streams. They are attached to a node via [`ReactiveMP.FactorNodeActivationOptions`](@ref) and to a random variable via [`ReactiveMP.RandomVariableActivationOptions`](@ref), and can be used for scheduling or custom instrumentation.
 
-See the dedicated [Pipelines](@ref lib-pipelines) page for a full description and API reference.
+See the dedicated [Stream postprocessors](@ref lib-stream-postprocessors) page for a full description and API reference.
 
 ## [List of predefined factor node](@id lib-predefined-nodes)    
 
