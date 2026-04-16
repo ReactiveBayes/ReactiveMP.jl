@@ -25,10 +25,12 @@ getmethod(meta::DeltaMeta)          = meta.method
 getinverse(meta::DeltaMeta)         = meta.inverse
 getinverse(meta::DeltaMeta, k::Int) = meta.inverse[k]
 
-check_delta_node_compatibility(method) =
-    check_delta_node_compatibility(is_delta_node_compatible(method), method)
-check_delta_node_compatibility(::Val{false}, method) =
-    error(lazy"Method `$method` is not compatible with delta nodes.")
+check_delta_node_compatibility(method) = check_delta_node_compatibility(
+    is_delta_node_compatible(method), method
+)
+check_delta_node_compatibility(::Val{false}, method) = error(
+    lazy"Method `$method` is not compatible with delta nodes."
+)
 check_delta_node_compatibility(::Val{true}, method) = nothing
 
 import Base: map
@@ -45,8 +47,9 @@ struct DeltaFnNode{F, P, N, S, L} <: AbstractFactorNode
     localmarginals :: L
 end
 
-as_node_symbol(::Type{<:DeltaFn{F}}) where {F} =
-    Symbol(replace(string(nameof(F)), "#" => ""))
+as_node_symbol(::Type{<:DeltaFn{F}}) where {F} = Symbol(
+    replace(string(nameof(F)), "#" => "")
+)
 
 functionalform(factornode::DeltaFnNode{F}) where {F} = DeltaFn{F}
 sdtype(factornode::DeltaFnNode)                      = Deterministic()
@@ -60,8 +63,9 @@ collect_meta(::Type{D}, something::Nothing) where {D <: DeltaFn} = error(
 )
 
 collect_meta(::Type{<:DeltaFn}, meta::DeltaMeta) = meta
-collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) =
-    DeltaMeta(; method = method, inverse = nothing)
+collect_meta(::Type{<:DeltaFn}, method::AbstractApproximationMethod) = DeltaMeta(;
+    method = method, inverse = nothing
+)
 
 function nodefunction(factornode::DeltaFnNode)
     # `DeltaFnNode` `nodefunction` is `δ(y - f(ins...))`
@@ -194,14 +198,13 @@ end
 __split_static_inputs(ins::Tuple) = __split_static_inputs(Val(1), (), (), ins)
 
 # Stop if the `remaining` tuple is empty
-__split_static_inputs(
-    ::Val{N}, randoms, statics, remaining::Tuple{}
-) where {N} = (randoms, statics)
+__split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple{}) where {N} = (
+    randoms, statics
+)
 # Split the `remaining` tuple into head (current) and tail (remaining)
-__split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple) where {N} =
-    __split_static_inputs(
-        Val(N), randoms, statics, first(remaining), Base.tail(remaining)
-    )
+__split_static_inputs(::Val{N}, randoms, statics, remaining::Tuple) where {N} = __split_static_inputs(
+    Val(N), randoms, statics, first(remaining), Base.tail(remaining)
+)
 
 # If the current input is a random variable, we add it to the `randoms` tuple
 function __split_static_inputs(
@@ -243,8 +246,9 @@ __unpack_latest_static(_, datavar::DataVariable) = BayesBase.getpointmass(
 
 # By default all `meta` objects fallback to the `DeltaFnDefaultRuleLayout`
 # We, however, allow for specific approximation methods to override the default `DeltaFn` rule layout for better efficiency
-deltafn_rule_layout(factornode::DeltaFnNode, meta::DeltaMeta) =
-    deltafn_rule_layout(factornode, getmethod(meta), getinverse(meta))
+deltafn_rule_layout(factornode::DeltaFnNode, meta::DeltaMeta) = deltafn_rule_layout(
+    factornode, getmethod(meta), getinverse(meta)
+)
 
 abstract type AbstractDeltaNodeDependenciesLayout end
 
@@ -255,8 +259,7 @@ deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Nothi
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::Function)                      = DeltaFnDefaultKnownInverseRuleLayout()
 deltafn_rule_layout(::DeltaFnNode, ::AbstractApproximationMethod, inverse::NTuple{N, Function}) where {N} = DeltaFnDefaultKnownInverseRuleLayout()
 
-deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Nothing) =
-    CVIApproximationDeltaFnRuleLayout()
+deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Nothing) = CVIApproximationDeltaFnRuleLayout()
 
 function deltafn_rule_layout(::DeltaFnNode, ::CVI, inverse::Any)
     @warn "CVI approximation does not accept the inverse function. Ignoring the provided inverse."

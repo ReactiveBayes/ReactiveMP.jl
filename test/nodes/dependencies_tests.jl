@@ -639,9 +639,7 @@ end
     struct CustomDependencyB <: FunctionalDependencies end
 
     # Define how meta affects functional dependencies
-    ReactiveMP.collect_functional_dependencies(
-        ::Type{CustomMetaNode}, options::FactorNodeActivationOptions
-    ) = ReactiveMP.collect_functional_dependencies(
+    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions) = ReactiveMP.collect_functional_dependencies(
         CustomMetaNode, options, getmetadata(options)
     )
 
@@ -649,11 +647,7 @@ end
     ReactiveMP.collect_functional_dependencies(
         ::Type{CustomMetaNode}, ::FactorNodeActivationOptions, meta::Symbol
     ) = meta === :use_a ? CustomDependencyA() : CustomDependencyB()
-    ReactiveMP.collect_functional_dependencies(
-        ::Type{CustomMetaNode},
-        options::FactorNodeActivationOptions,
-        meta::Nothing,
-    ) = ReactiveMP.collect_functional_dependencies(
+    ReactiveMP.collect_functional_dependencies(::Type{CustomMetaNode}, options::FactorNodeActivationOptions, meta::Nothing) = ReactiveMP.collect_functional_dependencies(
         CustomMetaNode, getdependecies(options)
     )
 

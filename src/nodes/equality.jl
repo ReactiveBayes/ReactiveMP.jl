@@ -90,8 +90,7 @@ prod(chain::EqualityChain, left, right) = chain.prod_fn((left, right))
 
 getpostprocessor(chain::EqualityChain) = chain.postprocessor
 
-@propagate_inbounds getnode(chain::EqualityChain, node_index) =
-    chain.nodes[node_index]
+@propagate_inbounds getnode(chain::EqualityChain, node_index) = chain.nodes[node_index]
 
 __check_indices(::EqualityLeftOutbound, chain::EqualityChain, node_index)  = 1 < node_index <= length(chain)
 __check_indices(::EqualityRightOutbound, chain::EqualityChain, node_index) = 1 <= node_index < length(chain)
@@ -163,8 +162,11 @@ struct ChainInvalidationCallback
     end
 end
 
-Rocket.tap(callback::ChainInvalidationCallback) =
-    Rocket.TapOperator{ChainInvalidationCallback}(callback)
+Rocket.tap(callback::ChainInvalidationCallback) = Rocket.TapOperator{
+    ChainInvalidationCallback
+}(
+    callback
+)
 
 function (callback::ChainInvalidationCallback)(_)
     fill_bitarray!(
@@ -194,8 +196,11 @@ function (mapping::ChainOutboundMapping)(_)
     return as_message(prod(mapping.chain, from_left, from_right))
 end
 
-Base.map(::Type{Message}, mapping::ChainOutboundMapping) =
-    Rocket.MapOperator{Message, ChainOutboundMapping}(mapping)
+Base.map(::Type{Message}, mapping::ChainOutboundMapping) = Rocket.MapOperator{
+    Message, ChainOutboundMapping
+}(
+    mapping
+)
 
 function initialize!(chain::EqualityChain, outputmsgs::AbstractVector)
     n = length(chain)
