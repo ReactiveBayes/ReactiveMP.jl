@@ -16,7 +16,7 @@ entry point:
   [`Marginal`](@ref)s emitted by a [`RandomVariable`](@ref) or by the local
   cluster of a factor node.
 - [`ReactiveMP.postprocess_stream_of_scores`](@ref) — the stream of free-energy
-  contributions emitted by [`ReactiveMP.score`](@ref).
+  contributions.
 
 Stream postprocessors are attached to an inference run via
 [`ReactiveMP.FactorNodeActivationOptions`](@ref) and
@@ -67,8 +67,7 @@ function postprocess_stream_of_marginals end
     postprocess_stream_of_scores(postprocessor, stream)
 
 Apply `postprocessor` to a stream of free-energy score contributions and return
-the transformed stream. Called by [`ReactiveMP.score`](@ref) on the per-node
-and per-variable score streams used to assemble Bethe Free Energy.
+the transformed stream. 
 
 The default fallback for `::Nothing` returns `stream` unchanged. Subtypes of
 [`ReactiveMP.AbstractStreamPostprocessor`](@ref) may override this method.
