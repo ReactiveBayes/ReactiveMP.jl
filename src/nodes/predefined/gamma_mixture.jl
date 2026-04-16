@@ -9,7 +9,8 @@ interfaces(::Type{<:GammaMixture}) = Val((:out, :switch, :a, :b))
 alias_interface(::Type{<:GammaMixture}, ::Int64, name::Symbol) = name
 is_predefined_node(::Type{<:GammaMixture}) = PredefinedNodeFunctionalForm()
 sdtype(::Type{<:GammaMixture}) = Stochastic()
-collect_factorisation(::Type{<:GammaMixture}, factorization) = GammaMixtureNodeFactorisation()
+collect_factorisation(::Type{<:GammaMixture}, factorization) =
+    GammaMixtureNodeFactorisation()
 
 struct GammaMixtureNodeFactorisation end
 
@@ -21,9 +22,8 @@ struct GammaMixtureNode{N} <: AbstractFactorNode
 end
 
 functionalform(factornode::GammaMixtureNode{N}) where {N} = GammaMixture{N}
-getinterfaces(factornode::GammaMixtureNode) = (
-    factornode.out, factornode.switch, factornode.as..., factornode.bs...
-)
+getinterfaces(factornode::GammaMixtureNode) =
+    (factornode.out, factornode.switch, factornode.as..., factornode.bs...)
 sdtype(factornode::GammaMixtureNode) = Stochastic()
 
 interfaceindices(factornode::GammaMixtureNode, iname::Symbol)                       = (interfaceindex(factornode, iname),)
@@ -85,8 +85,11 @@ end
 
 struct GammaMixtureNodeFunctionalDependencies <: FunctionalDependencies end
 
-collect_functional_dependencies(::GammaMixtureNode, ::Nothing) = GammaMixtureNodeFunctionalDependencies()
-collect_functional_dependencies(::GammaMixtureNode, ::GammaMixtureNodeFunctionalDependencies) = GammaMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(::GammaMixtureNode, ::Nothing) =
+    GammaMixtureNodeFunctionalDependencies()
+collect_functional_dependencies(
+    ::GammaMixtureNode, ::GammaMixtureNodeFunctionalDependencies
+) = GammaMixtureNodeFunctionalDependencies()
 collect_functional_dependencies(::GammaMixtureNode, ::Any) = error(
     "The functional dependencies for GammaMixtureNode must be either `Nothing` or `GammaMixtureNodeFunctionalDependencies`",
 )
@@ -240,8 +243,8 @@ function score(
                     map(
                         (as) ->
                             get_stream_of_marginals(getvariable(as)) |>
-                            skip_initial() |>
-                            node.as,
+                            skip_initial(),
+                        node.as,
                     ),
                     PushNew(),
                 ),
@@ -251,8 +254,8 @@ function score(
                     map(
                         (bs) ->
                             get_stream_of_marginals(getvariable(bs)) |>
-                            skip_initial() |>
-                            node.bs,
+                            skip_initial(),
+                        node.bs,
                     ),
                     PushNew(),
                 ),
@@ -303,22 +306,20 @@ struct GammaShapeLikelihood{T <: Real} <: ContinuousUnivariateDistribution
 end
 GammaShapeLikelihood(p::Real, γ::Real) = GammaShapeLikelihood(promote(p, γ)...)
 
-Distributions.params(distribution::GammaShapeLikelihood) = (
-    distribution.p, distribution.γ
-)
+Distributions.params(distribution::GammaShapeLikelihood) =
+    (distribution.p, distribution.γ)
 
 Distributions.@distr_support GammaShapeLikelihood 0.0 Inf
 
-BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} = Distributions.RealInterval(
-    zero(T), typemax(T)
-)
+BayesBase.support(distribution::GammaShapeLikelihood{T}) where {T} =
+    Distributions.RealInterval(zero(T), typemax(T))
 
 BayesBase.logpdf(distribution::GammaShapeLikelihood{T}, x::Real) where {T} =
     distribution.γ * x - distribution.p * loggamma(x)
 
-BayesBase.default_prod_rule(::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}) = PreserveTypeProd(
-    Distribution
-)
+BayesBase.default_prod_rule(
+    ::Type{<:GammaShapeLikelihood}, ::Type{<:GammaShapeLikelihood}
+) = PreserveTypeProd(Distribution)
 
 function prod(
     ::PreserveTypeProd{Distribution},
