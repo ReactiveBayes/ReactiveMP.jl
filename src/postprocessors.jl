@@ -21,23 +21,17 @@ function postprocess_stream_of_scores end
 """
 TODO
 """
-struct NoopStreamPostprocessor <: AbstractStreamPostprocessor end
+postprocess_stream_of_outbound_messages(::Nothing, stream) = stream
 
 """
 TODO
 """
-postprocess_stream_of_outbound_messages(::NoopStreamPostprocessor, stream) =
-    stream
+postprocess_stream_of_marginals(::Nothing, stream) = stream
 
 """
 TODO
 """
-postprocess_stream_of_marginals(::NoopStreamPostprocessor, stream) = stream
-
-"""
-TODO
-"""
-postprocess_stream_of_scores(::NoopStreamPostprocessor, stream) = stream
+postprocess_stream_of_scores(::Nothing, stream) = stream
 
 """
 TODO
@@ -76,27 +70,3 @@ function postprocess_stream_of_scores(
         init = stream,
     )
 end
-
-import Base: +
-
-Base.:+(stage::AbstractStreamPostprocessor) = stage
-
-Base.:+(left::NoopStreamPostprocessor, right::NoopStreamPostprocessor)           = NoopStreamPostprocessor()
-Base.:+(left::NoopStreamPostprocessor, right::AbstractStreamPostprocessor)       = right
-Base.:+(left::AbstractStreamPostprocessor, right::NoopStreamPostprocessor)       = left
-Base.:+(left::AbstractStreamPostprocessor, right::AbstractStreamPostprocessor)   = CompositeStreamPostprocessor((left, right))
-Base.:+(left::AbstractStreamPostprocessor, right::CompositeStreamPostprocessor)  = CompositeStreamPostprocessor((left, right.stages...))
-Base.:+(left::CompositeStreamPostprocessor, right::AbstractStreamPostprocessor)  = CompositeStreamPostprocessor((left.stages..., right))
-Base.:+(left::CompositeStreamPostprocessor, right::CompositeStreamPostprocessor) = CompositeStreamPostprocessor((left.stages..., right.stages...))
-
-"""
-    as_stream_postprocessor(nodetype, stream_postprocessor)
-
-This function converts given postprocessor to a correct internal postprocessor representation for a given factor node.
-Typically simply returns the provided `stream_postprocessor`. If `stream_postprocessor` is `nothing`, 
-returns [`ReactiveMP.NoopStreamPostprocessor`](@ref).
-"""
-function as_stream_postprocessor end
-
-as_stream_postprocessor(_, ::Nothing) = NoopStreamPostprocessor()
-as_stream_postprocessor(_, something) = something

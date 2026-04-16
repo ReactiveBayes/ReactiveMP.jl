@@ -1,5 +1,3 @@
-export ScheduleOnStreamPostprocessor
-
 import Rocket: release!
 
 """

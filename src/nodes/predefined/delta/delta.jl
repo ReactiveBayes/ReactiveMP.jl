@@ -265,9 +265,7 @@ end
 
 function activate!(factornode::DeltaFnNode, options)
     meta = collect_meta(functionalform(factornode), getmetadata(options))
-    stream_postprocessor = as_stream_postprocessor(
-        functionalform(factornode), getpostprocessor(options)
-    )
+    stream_postprocessor = getpostprocessor(options)
 
     if !isnothing(getinverse(meta)) && !isempty(factornode.statics)
         error(

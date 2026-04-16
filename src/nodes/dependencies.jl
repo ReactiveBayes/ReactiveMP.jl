@@ -3,12 +3,10 @@ export DefaultFunctionalDependencies,
     RequireMarginalFunctionalDependencies,
     RequireEverythingFunctionalDependencies
 
-collect_latest_messages(dependencies, factornode, collection) = __collect_latest_updates(
-    get_stream_of_inbound_messages, collection
-)
-collect_latest_marginals(dependencies, factornode, collection) = __collect_latest_updates(
-    get_stream_of_marginals, collection
-)
+collect_latest_messages(dependencies, factornode, collection) =
+    __collect_latest_updates(get_stream_of_inbound_messages, collection)
+collect_latest_marginals(dependencies, factornode, collection) =
+    __collect_latest_updates(get_stream_of_marginals, collection)
 
 function __collect_latest_updates(f::F, collection) where {F}
     return __collect_latest_updates(f, Tuple(collection))
@@ -40,7 +38,7 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
     callbacks            = getcallbacks(options)
     fform                = functionalform(factornode)
     meta                 = collect_meta(fform, getmetadata(options))
-    stream_postprocessor = as_stream_postprocessor(fform, getpostprocessor(options))
+    stream_postprocessor = getpostprocessor(options)
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
@@ -120,9 +118,8 @@ Otherwise returns `dependencies` unchanged, allowing callers to override the pol
 """
 function collect_functional_dependencies end
 
-collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies(
-    fform
-)
+collect_functional_dependencies(fform::F, ::Nothing) where {F} =
+    default_functional_dependencies(fform)
 collect_functional_dependencies(fform::F, something) where {F} = something
 
 default_functional_dependencies(any) = DefaultFunctionalDependencies()
@@ -175,9 +172,8 @@ struct RequireMessageFunctionalDependencies{S <: NamedTuple} <:
     specification::S
 end
 
-RequireMessageFunctionalDependencies(; kwargs...) = RequireMessageFunctionalDependencies((;
-    kwargs...
-))
+RequireMessageFunctionalDependencies(; kwargs...) =
+    RequireMessageFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
     dependencies::RequireMessageFunctionalDependencies,
@@ -247,9 +243,8 @@ struct RequireMarginalFunctionalDependencies{S <: NamedTuple} <:
     specification::S
 end
 
-RequireMarginalFunctionalDependencies(; kwargs...) = RequireMarginalFunctionalDependencies((;
-    kwargs...
-))
+RequireMarginalFunctionalDependencies(; kwargs...) =
+    RequireMarginalFunctionalDependencies((; kwargs...))
 
 function functional_dependencies(
     dependencies::RequireMarginalFunctionalDependencies,
