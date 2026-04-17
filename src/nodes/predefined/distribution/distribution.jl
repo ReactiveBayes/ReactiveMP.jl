@@ -51,8 +51,12 @@ function activate!(
         factornode,
         options,
     )
-    vmessageout = of(Message(factornode.distribution, true, false, nothing))
-    connect!(messageout(getinterface(factornode, 1)), vmessageout)
+    stream_of_outbound_messages = of(
+        Message(factornode.distribution, true, false)
+    )
+    set_stream_of_outbound_messages!(
+        getinterface(factornode, 1), stream_of_outbound_messages
+    )
     return nothing
 end
 
@@ -62,19 +66,21 @@ function score(
     ::FactorBoundFreeEnergy,
     node::StandaloneDistributionNode,
     meta,
-    skip_strategy,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
-        (localmarginal) ->
-            apply_skip_filter(getmarginal(localmarginal), skip_strategy) |>
-            schedule_on(scheduler)
-    end
     # `FactorBoundFreeEnergy` here is simply equal to `kldivergence` between the marginal and the outbound message
-    stream = fnstream(first(getmarginals(getlocalclusters(node))))
-    return stream |> map(
-        T,
-        (marginal) ->
-            convert(T, score(KLDivergence(), marginal, node.distribution)),
+    stream_of_scores =
+        get_stream_of_marginals(
+            first(get_node_local_marginals(getlocalclusters(node)))
+        ) |> skip_initial()
+    stream_of_scores =
+        stream_of_scores |> map(
+            T,
+            (marginal) ->
+                convert(T, score(KLDivergence(), marginal, node.distribution)),
+        )
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
     )
+    return stream_of_scores
 end

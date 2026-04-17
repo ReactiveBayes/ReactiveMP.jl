@@ -40,7 +40,7 @@ struct MixtureNode{N} <: AbstractFactorNode
     end
     ```
 
-    Note: The `Mixture` node requires the `AddonLogScale` addon to be included in the addons. However, this addon is not available for most message update rules. RxInfer.jl, which uses `ReactiveMP.jl` under the hood, allows to pass addons in the [`infer`](https://reactivebayes.github.io/RxInfer.jl/stable/manuals/inference/overview/) function. Only for certain sum-product update rules these are included. For a detailed explanation on the `Mixture` node see the [Mixture node paper](https://www.mdpi.com/1099-4300/25/8/1138).
+    Note: The `Mixture` node requires the `LogScaleAnnotations` annotation processor to be enabled. RxInfer.jl, which uses `ReactiveMP.jl` under the hood, allows to pass annotation processors in the [`infer`](https://reactivebayes.github.io/RxInfer.jl/stable/manuals/inference/overview/) function. Only for certain sum-product update rules these are included. For a detailed explanation on the `Mixture` node see the [Mixture node paper](https://www.mdpi.com/1099-4300/25/8/1138).
     """
     out    :: NodeInterface
     switch :: NodeInterface
@@ -168,7 +168,6 @@ function functional_dependencies(
     return message_dependencies, marginal_dependencies
 end
 
-# create message observable for output or Mixture edge without pipeline constraints (the message towards the inputs are fine by default behaviour, i.e. they depend only on switch and output and no longer on all other inputs)
 function collect_latest_messages(
     ::MixtureNodeFunctionalDependencies,
     factornode::MixtureNode{N},
@@ -183,21 +182,28 @@ function collect_latest_messages(
     msgs_observable =
         combineLatest(
             (
-                messagein(output_or_switch_interface),
+                get_stream_of_inbound_messages(output_or_switch_interface),
                 combineLatest(
-                    map((input) -> messagein(input), inputsinterfaces),
+                    map(
+                        (input) -> get_stream_of_inbound_messages(input),
+                        inputsinterfaces,
+                    ),
                     PushNew(),
                 ),
             ),
             PushNew(),
         ) |> map_to((
-            messagein(output_or_switch_interface),
-            ManyOf(map((input) -> messagein(input), inputsinterfaces)),
+            get_stream_of_inbound_messages(output_or_switch_interface),
+            ManyOf(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
+                ),
+            ),
         ))
     return msgs_names, msgs_observable
 end
 
-# create an observable that is used to compute the switch with pipeline constraints
 function collect_latest_messages(
     ::RequireMarginalFunctionalDependencies,
     factornode::MixtureNode{N},
@@ -210,21 +216,28 @@ function collect_latest_messages(
     msgs_observable =
         combineLatest(
             (
-                messagein(switchinterface),
+                get_stream_of_inbound_messages(switchinterface),
                 combineLatest(
-                    map((input) -> messagein(input), inputsinterfaces),
+                    map(
+                        (input) -> get_stream_of_inbound_messages(input),
+                        inputsinterfaces,
+                    ),
                     PushNew(),
                 ),
             ),
             PushNew(),
         ) |> map_to((
-            messagein(switchinterface),
-            ManyOf(map((input) -> messagein(input), inputsinterfaces)),
+            get_stream_of_inbound_messages(switchinterface),
+            ManyOf(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
+                ),
+            ),
         ))
     return msgs_names, msgs_observable
 end
 
-# create an observable that is used to compute the output with pipeline constraints
 function collect_latest_messages(
     ::RequireMarginalFunctionalDependencies,
     ::MixtureNode{N},
@@ -235,13 +248,22 @@ function collect_latest_messages(
     msgs_names = Val{(name(inputsinterfaces[1]),)}()
     msgs_observable =
         combineLatest(
-            map((input) -> messagein(input), inputsinterfaces), PushNew()
-        ) |>
-        map_to((ManyOf(map((input) -> messagein(input), inputsinterfaces)),))
+            map(
+                (input) -> get_stream_of_inbound_messages(input),
+                inputsinterfaces,
+            ),
+            PushNew(),
+        ) |> map_to((
+            ManyOf(
+                map(
+                    (input) -> get_stream_of_inbound_messages(input),
+                    inputsinterfaces,
+                ),
+            ),
+        ))
     return msgs_names, msgs_observable
 end
 
-# create an observable that is used to compute the input with pipeline constraints
 function collect_latest_messages(
     ::RequireMarginalFunctionalDependencies,
     factornode::MixtureNode{N},
@@ -251,7 +273,7 @@ function collect_latest_messages(
 
     msgs_names = Val{(name(outputinterface),)}()
     msgs_observable = combineLatestUpdates(
-        (messagein(outputinterface),), PushNew()
+        (get_stream_of_inbound_messages(outputinterface),), PushNew()
     )
     return msgs_names, msgs_observable
 end
@@ -272,7 +294,7 @@ function collect_latest_marginals(
     switchinterface = marginals[1]
 
     marginal_names       = Val{(name(switchinterface),)}()
-    marginals_observable = combineLatestUpdates((getmarginal(getvariable(switchinterface), IncludeAll()),), PushNew())
+    marginals_observable = combineLatestUpdates((get_stream_of_marginals(getvariable(switchinterface)),), PushNew())
 
     return marginal_names, marginals_observable
 end

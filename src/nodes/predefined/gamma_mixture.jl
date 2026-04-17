@@ -150,18 +150,17 @@ function collect_latest_marginals(
     marginals_observable =
         combineLatest(
             (
-                getmarginal(getvariable(varinterface), IncludeAll()),
+                get_stream_of_marginals(getvariable(varinterface)),
                 combineLatest(
                     map(
-                        (rate) -> getmarginal(getvariable(rate), IncludeAll()),
+                        (rate) -> get_stream_of_marginals(getvariable(rate)),
                         reverse(bsinterfaces),
                     ),
                     PushNew(),
                 ),
                 combineLatest(
                     map(
-                        (shape) ->
-                            getmarginal(getvariable(shape), IncludeAll()),
+                        (shape) -> get_stream_of_marginals(getvariable(shape)),
                         reverse(asinterfaces),
                     ),
                     PushNew(),
@@ -169,16 +168,16 @@ function collect_latest_marginals(
             ),
             PushNew(),
         ) |> map_to((
-            getmarginal(getvariable(varinterface), IncludeAll()),
+            get_stream_of_marginals(getvariable(varinterface)),
             ManyOf(
                 map(
-                    (shape) -> getmarginal(getvariable(shape), IncludeAll()),
+                    (shape) -> get_stream_of_marginals(getvariable(shape)),
                     asinterfaces,
                 ),
             ),
             ManyOf(
                 map(
-                    (rate) -> getmarginal(getvariable(rate), IncludeAll()),
+                    (rate) -> get_stream_of_marginals(getvariable(rate)),
                     bsinterfaces,
                 ),
             ),
@@ -199,7 +198,7 @@ function collect_latest_marginals(
     varinterface    = marginal_dependencies[3]
 
     marginal_names       = Val{(name(outinterface), name(switchinterface), name(varinterface))}()
-    marginals_observable = combineLatestUpdates((getmarginal(getvariable(outinterface), IncludeAll()), getmarginal(getvariable(switchinterface), IncludeAll()), getmarginal(getvariable(varinterface), IncludeAll())), PushNew())
+    marginals_observable = combineLatestUpdates((get_stream_of_marginals(getvariable(outinterface)), get_stream_of_marginals(getvariable(switchinterface)), get_stream_of_marginals(getvariable(varinterface))), PushNew())
 
     return marginal_names, marginals_observable
 end
@@ -218,10 +217,7 @@ end
             AverageEnergy(),
             GammaShapeRate,
             Val{(:out, :α, :β)}(),
-            map(
-                (q) -> Marginal(q, false, false, nothing),
-                (q_out, q_a[i], q_b[i]),
-            ),
+            map((q) -> Marginal(q, false, false), (q_out, q_a[i], q_b[i])),
             nothing,
         )
     end
@@ -233,21 +229,18 @@ function score(
     ::Stochastic,
     node::GammaMixtureNode{N},
     meta,
-    skip_strategy,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal, N}
     stream = combineLatest(
         (
-            getmarginal(getvariable(node.out), skip_strategy) |>
-            schedule_on(scheduler),
-            getmarginal(getvariable(node.switch), skip_strategy) |>
-            schedule_on(scheduler),
+            get_stream_of_marginals(getvariable(node.out)) |> skip_initial(),
+            get_stream_of_marginals(getvariable(node.switch)) |> skip_initial(),
             ManyOfObservable(
                 combineLatest(
                     map(
                         (as) ->
-                            getmarginal(getvariable(as), skip_strategy) |>
-                            schedule_on(scheduler),
+                            get_stream_of_marginals(getvariable(as)) |>
+                            skip_initial(),
                         node.as,
                     ),
                     PushNew(),
@@ -257,8 +250,8 @@ function score(
                 combineLatest(
                     map(
                         (bs) ->
-                            getmarginal(getvariable(bs), skip_strategy) |>
-                            schedule_on(scheduler),
+                            get_stream_of_marginals(getvariable(bs)) |>
+                            skip_initial(),
                         node.bs,
                     ),
                     PushNew(),
@@ -292,7 +285,11 @@ function score(
         end
     end
 
-    return stream |> map(T, mapping)
+    stream_of_scores = stream |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+    return stream_of_scores
 end
 
 ## Extra distribution for the Gamma Mixture

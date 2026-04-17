@@ -1,5 +1,4 @@
 export Marginal, getdata, is_clamped, is_initial, as_marginal
-export SkipClamped, SkipInitial, SkipClampedAndInitial, IncludeAll
 
 using Distributions
 using Rocket
@@ -8,7 +7,7 @@ import Rocket: getrecent
 import Base: ==, ndims, precision, length, size, iterate
 
 """
-    Marginal(data, is_clamped, is_initial, addons)
+    Marginal(data, is_clamped, is_initial[, annotations])
 
 An implementation of a marginal in variational message passing framework.
 
@@ -16,18 +15,18 @@ An implementation of a marginal in variational message passing framework.
 - `data::D`: marginal always holds some data object associated with it, which is usually a probability distribution
 - `is_clamped::Bool`, specifies if this marginal was the result of constant computations (e.g. clamped constants)
 - `is_initial::Bool`, specifies if this marginal was used for initialization
-- `addons::A`, specifies the addons of the marginal, which may carry extra bits of information, e.g. debug information, memory, etc.
+- `annotations::AnnotationDict`: optional annotation dictionary carrying extra metadata (e.g. log-scale, input arguments). Defaults to an empty `AnnotationDict()`.
 
-# Example 
+# Example
 
 ```jldoctest
 julia> distribution = Gamma(10.0, 2.0)
 Distributions.Gamma{Float64}(α=10.0, θ=2.0)
 
-julia> message = Marginal(distribution, false, true, nothing)
+julia> message = Marginal(distribution, false, true)
 Marginal(Distributions.Gamma{Float64}(α=10.0, θ=2.0))
 
-julia> mean(message) 
+julia> mean(message)
 20.0
 
 julia> getdata(message)
@@ -40,27 +39,31 @@ julia> is_initial(message)
 true
 ```
 """
-mutable struct Marginal{D, A}  # `mutable` structure here appears to be more performance 
-    const data       :: D      # in `RxInfer` benchmarks
-    const is_clamped :: Bool   # could be revised at some point though
-    const is_initial :: Bool
-    const addons     :: A
+mutable struct Marginal{D}      # `mutable` structure here appears to be more performance
+    const data        :: D      # in `RxInfer` benchmarks
+    const is_clamped  :: Bool   # could be revised at some point though
+    const is_initial  :: Bool
+    const annotations :: AnnotationDict
 end
 
+Marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(
+    data, is_clamped, is_initial, AnnotationDict()
+)
+
 function Base.show(io::IO, marginal::Marginal)
-    print(io, string("Marginal(", getdata(marginal), ")"))
-    if !isnothing(getaddons(marginal))
-        print(io, ") with ", string(getaddons(marginal)))
+    print(io, "Marginal(", getdata(marginal), ")")
+    ann = getannotations(marginal)
+    if !isempty(ann)
+        print(io, " with ", ann)
     end
 end
 
 function Base.:(==)(left::Marginal, right::Marginal)
-    # We need this dummy method as Julia is not smart enough to 
+    # We need this dummy method as Julia is not smart enough to
     # do that automatically if `data` is mutable
     return left.is_clamped == right.is_clamped &&
            left.is_initial == right.is_initial &&
-           left.data == right.data &&
-           left.addons == right.addons
+           left.data == right.data
 end
 
 """
@@ -89,11 +92,11 @@ See also: [`is_clamped`](@ref)
 is_initial(marginal::Marginal) = marginal.is_initial
 
 """
-    getaddons(marginal::Marginal)
+    getannotations(marginal::Marginal)
 
-Returns `addons` associated with the `marginal`.
+Returns the [`AnnotationDict`](@ref) associated with the `marginal`.
 """
-getaddons(marginal::Marginal) = marginal.addons
+getannotations(marginal::Marginal) = marginal.annotations
 
 typeofdata(marginal::Marginal) = typeof(getdata(marginal))
 
@@ -160,25 +163,25 @@ as_marginal(marginal::Marginal) = marginal
 
 dropproxytype(::Type{<:Marginal{T}}) where {T} = T
 
+skip_initial() = filter(v -> !is_initial(v))
+skip_clamped() = filter(v -> !is_clamped(v))
+skip_clamped_and_initial() = filter(v -> !is_initial(v) && !is_clamped(v))
+
 ## Marginal observable
 
-abstract type MarginalSkipStrategy end
+"""
+    ReactiveMP.MarginalObservable
 
-struct SkipClamped <: MarginalSkipStrategy end
-struct SkipInitial <: MarginalSkipStrategy end
-struct SkipClampedAndInitial <: MarginalSkipStrategy end
-struct IncludeAll <: MarginalSkipStrategy end
+A lazy, connectable reactive stream for [`Marginal`](@ref) values, used as the marginal stream of every variable in the factor graph.
 
-Base.broadcastable(::SkipClamped) = Ref(SkipClamped())
-Base.broadcastable(::SkipInitial) = Ref(SkipInitial())
-Base.broadcastable(::SkipClampedAndInitial) = Ref(SkipClampedAndInitial())
-Base.broadcastable(::IncludeAll) = Ref(IncludeAll())
+Internally combines two Rocket.jl primitives:
+- a `RecentSubject{Marginal}` that caches the most recently emitted value, so `Rocket.getrecent` always returns the latest belief and late subscribers receive it immediately
+- a `LazyObservable{Marginal}` that is the actual subscription target — initially unconnected, and wired to an upstream source during graph activation via `ReactiveMP.connect!`
 
-apply_skip_filter(observable, ::SkipClamped)           = observable |> filter(v -> !is_clamped(v))
-apply_skip_filter(observable, ::SkipInitial)           = observable |> filter(v -> !is_initial(v))
-apply_skip_filter(observable, ::SkipClampedAndInitial) = observable |> filter(v -> !is_initial(v) && !is_clamped(v))
-apply_skip_filter(observable, ::IncludeAll)            = observable
+`connect!(observable, source)` sets the lazy stream to `source |> multicast(subject) |> ref_count()`: all subscribers share one upstream subscription, and every emission is forwarded through the cached subject. Before the upstream is connected, [`ReactiveMP.set_initial_marginal!`](@ref) can push an initial belief directly into the subject to seed the graph before inference begins.
 
+See also: [`ReactiveMP.MessageObservable`](@ref), [`ReactiveMP.get_stream_of_marginals`](@ref), [`ReactiveMP.set_initial_marginal!`](@ref)
+"""
 struct MarginalObservable <: Subscribable{Marginal}
     subject :: Rocket.RecentSubjectInstance{Marginal, Subject{Marginal, AsapScheduler, AsapScheduler}}
     stream  :: LazyObservable{Marginal}
@@ -187,15 +190,6 @@ end
 MarginalObservable() = MarginalObservable(
     RecentSubject(Marginal), lazy(Marginal)
 )
-
-as_marginal_observable(observable::MarginalObservable, skip_strategy::MarginalSkipStrategy) = apply_skip_filter(observable, skip_strategy)
-as_marginal_observable(observable)                                                          = as_marginal_observable(observable, IncludeAll())
-
-function as_marginal_observable(observable, skip_strategy::MarginalSkipStrategy)
-    output = MarginalObservable()
-    connect!(output, observable)
-    return as_marginal_observable(output, skip_strategy)
-end
 
 Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(
     observable.subject
@@ -221,8 +215,8 @@ function connect!(marginal::MarginalObservable, source)
     return nothing
 end
 
-function setmarginal!(marginal::MarginalObservable, value)
-    next!(marginal.subject, Marginal(value, false, true, nothing))
+function set_initial_marginal!(marginal::MarginalObservable, value)
+    next!(marginal.subject, Marginal(value, false, true))
     return nothing
 end
 
@@ -299,7 +293,7 @@ function (mapping::MarginalMapping)(dependencies)
             )
         end
 
-    return Marginal(marginal, is_marginal_clamped, is_marginal_initial, nothing)
+    return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
 end
 
 Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{

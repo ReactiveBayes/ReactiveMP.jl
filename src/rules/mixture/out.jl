@@ -3,10 +3,14 @@
 ) where {N} = begin
 
     # get logscales of different inputs
-    logscales_inputs = map(getlogscale, messages[2])
+    logscales_inputs = map(
+        m -> getlogscale(ReactiveMP.getannotations(m)), messages[2]
+    )
 
     # get logscales of Categorical/Bernoulli
-    logscales_switch = getlogscale(messages[1]) .+ log.(probvec(m_switch))
+    logscales_switch =
+        getlogscale(ReactiveMP.getannotations(messages[1])) .+
+        log.(probvec(m_switch))
 
     # compute logscales of individual components
     logscales = logscales_inputs .+ logscales_switch

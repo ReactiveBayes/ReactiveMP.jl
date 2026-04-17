@@ -80,7 +80,7 @@ function rulefallback_nodefunction(
     qnames,
     marginals,
     meta,
-    addons,
+    annotations,
     __node,
 )
     return rulefallback_nodefunction(
@@ -94,7 +94,7 @@ function rulefallback_nodefunction(
         qnames,
         marginals,
         meta,
-        addons,
+        annotations,
         __node,
     )
 end
@@ -110,14 +110,14 @@ function rulefallback_nodefunction(
     qnames,
     marginals,
     meta,
-    addons,
+    annotations,
     __node,
 )
     vals   = _mergevals(mnames, qnames)
     means  = _extractvalues(fallback.extractfn, messages, marginals)
     kwargs = NamedTuple{vals}(means)
     fn     = ReactiveMP.nodefunction(fform, on; kwargs...)
-    return FallbackNodeFunctionUnnormalizedLogPdf(fn), addons
+    return FallbackNodeFunctionUnnormalizedLogPdf(fn)
 end
 
 function rulefallback_nodefunction(
@@ -131,7 +131,7 @@ function rulefallback_nodefunction(
     qnames,
     marginals,
     meta,
-    addons,
+    annotations,
     __node,
 )
     error(
@@ -150,7 +150,7 @@ function rulefallback_nodefunction(
     qnames,
     marginals,
     meta,
-    addons,
+    annotations,
     __node,
 )
     error(

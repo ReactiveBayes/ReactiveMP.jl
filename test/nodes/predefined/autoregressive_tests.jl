@@ -11,10 +11,10 @@
         q_γ = GammaShapeRate(2.0, 3.0)
 
         marginals = (
-            Marginal(q_y, false, false, nothing),
-            Marginal(q_x, false, false, nothing),
-            Marginal(q_θ, false, false, nothing),
-            Marginal(q_γ, false, false, nothing),
+            Marginal(q_y, false, false),
+            Marginal(q_x, false, false),
+            Marginal(q_θ, false, false),
+            Marginal(q_γ, false, false),
         )
         @test score(
             AverageEnergy(),
@@ -30,10 +30,10 @@
         q_γ = GammaShapeRate(2.0, 3.0)
 
         marginals = (
-            Marginal(q_y, false, false, nothing),
-            Marginal(q_x, false, false, nothing),
-            Marginal(q_θ, false, false, nothing),
-            Marginal(q_γ, false, false, nothing),
+            Marginal(q_y, false, false),
+            Marginal(q_x, false, false),
+            Marginal(q_θ, false, false),
+            Marginal(q_γ, false, false),
         )
         @test score(
             AverageEnergy(),
@@ -48,9 +48,9 @@
         q_γ = GammaShapeRate(2.0, 3.0)
 
         marginals = (
-            Marginal(q_y_x, false, false, nothing),
-            Marginal(q_θ, false, false, nothing),
-            Marginal(q_γ, false, false, nothing),
+            Marginal(q_y_x, false, false),
+            Marginal(q_θ, false, false),
+            Marginal(q_γ, false, false),
         )
         @test score(
             AverageEnergy(),

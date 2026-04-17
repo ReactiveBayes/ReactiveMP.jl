@@ -42,8 +42,7 @@ function score(
             let is_joint_clamped = is_clamped(joint),
                 is_joint_initial = is_initial(joint)
 
-                (data) ->
-                    Marginal(data, is_joint_clamped, is_joint_initial, nothing)
+                (data) -> Marginal(data, is_joint_clamped, is_joint_initial)
             end
 
         mod_marginals = TupleTools.insertat(
@@ -89,9 +88,7 @@ function score(::DifferentialEntropy, marginal::Marginal{<:NamedTuple})
 
             (data) -> score(
                 DifferentialEntropy(),
-                Marginal(
-                    data, is_marginal_clamped, is_marginal_initial, nothing
-                ),
+                Marginal(data, is_marginal_clamped, is_marginal_initial),
             )
         end
 

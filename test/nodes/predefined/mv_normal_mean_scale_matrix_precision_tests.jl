@@ -21,10 +21,10 @@
                 M in (Wishart,)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(g, q_γ), false, false, nothing),
-                    Marginal(convert(M, q_G), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(g, q_γ), false, false),
+                    Marginal(convert(M, q_G), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -71,10 +71,10 @@
                 M in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing),
-                    Marginal(convert(N2, q_μ), false, false, nothing),
-                    Marginal(convert(g, q_γ), false, false, nothing),
-                    Marginal(convert(M, q_G), false, false, nothing),
+                    Marginal(convert(N1, q_out), false, false),
+                    Marginal(convert(N2, q_μ), false, false),
+                    Marginal(convert(g, q_γ), false, false),
+                    Marginal(convert(M, q_G), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -116,9 +116,9 @@
                 MvNormalWeightedMeanPrecision,
             )
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(q_γ, false, false, nothing),
-                    Marginal(q_G, false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(q_γ, false, false),
+                    Marginal(q_G, false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -161,9 +161,9 @@
                 MvNormalWeightedMeanPrecision,
             )
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(q_γ, false, false, nothing),
-                    Marginal(q_G, false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(q_γ, false, false),
+                    Marginal(q_G, false, false),
                 )
                 @test score(
                     AverageEnergy(),

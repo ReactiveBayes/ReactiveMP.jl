@@ -12,11 +12,22 @@ makedocs(
     sitename = "ReactiveMP.jl",
     pages    = [
         "Introduction"    => "index.md",
+        "Concepts" => [
+            "Factor graphs"           => "concepts/factor-graphs.md",
+            "Message passing"         => "concepts/message-passing.md",
+            "Reactive programming"   => "concepts/reactive-programming.md",
+            "Inference lifecycle"    => "concepts/inference-lifecycle.md",
+        ],
         "Library" => [
             "Factor nodes"         => "lib/nodes.md",
+            "Variables"             => "lib/variables.md",
             "Messages"             => "lib/message.md",
             "Marginals"            => "lib/marginal.md",
             "Message update rules" => "lib/rules.md",
+            "Callbacks"            => "lib/callbacks.md",
+            "Stream postprocessors" => "lib/stream-postprocessors.md",
+            "Approximations"       => "lib/approximations.md",
+            "Score functions"      => "lib/score.md",
             "Helper utils"         => "lib/helpers.md",
             "Algebra utils"        => "lib/algebra.md",
             "Specific factor nodes" => [
@@ -31,9 +42,16 @@ makedocs(
                 "MultinomialPolya" => "lib/nodes/multinomial_polya.md",
             ]
         ],
+        "Annotations" => [
+            "Overview"         => "lib/annotations.md",
+            "Log-scale"        => "lib/annotations/logscale.md",
+            "Input arguments"  => "lib/annotations/input_arguments.md",
+        ],
         "Custom functionality" => [
             "Custom functional form" => "custom/custom-functional-form.md",
-            "Custom addons"          => "custom/custom-addons.md"
+        ],
+        "Migration guides" => [
+            "v5 to v6" => "migration-guides/v5-to-v6.md",
         ],
         "Extra" => [
             "Contributing"     => "extra/contributing.md",

@@ -1,25 +1,33 @@
 
 @testitem "ConstVariable: uninitialized" begin
-    import ReactiveMP: messageout, messagein
+    import ReactiveMP:
+        get_stream_of_outbound_messages, get_stream_of_inbound_messages
 
     # Should throw if not initialised properly
     let var = constvar(1)
         for i in 1:10
-            @test messageout(var, 1) === messageout(var, i)
-            @test_throws ErrorException messagein(var, i)
+            @test get_stream_of_outbound_messages(var, 1) ===
+                get_stream_of_outbound_messages(var, i)
+            @test_throws ErrorException get_stream_of_inbound_messages(var, i)
         end
     end
 end
 
-@testitem "ConstVariable: getmessagein!" begin
-    import ReactiveMP: MessageObservable, create_messagein!, messagein, degree
+@testitem "ConstVariable: get_stream_of_inbound_messages" begin
+    import ReactiveMP:
+        MessageObservable,
+        create_new_stream_of_inbound_messages!,
+        get_stream_of_inbound_messages,
+        degree
 
     # Test for different degrees `d`
     for d in 1:5:100
         let var = constvar(1)
             for i in 1:d
-                messagein, index = create_messagein!(var)
-                @test messagein isa MessageObservable
+                new_stream_of_inbound_messages, index = create_new_stream_of_inbound_messages!(
+                    var
+                )
+                @test new_stream_of_inbound_messages isa MessageObservable
                 @test index === 1
                 @test degree(var) === i
             end
@@ -28,18 +36,17 @@ end
     end
 end
 
-@testitem "ConstVariable: getmarginal" begin
+@testitem "ConstVariable: get_stream_of_marginals" begin
     using BayesBase
 
     import ReactiveMP:
         MessageObservable,
-        create_messagein!,
-        messagein,
         degree,
         activate!,
         connect!,
         DataVariableActivationOptions,
-        messageout
+        get_stream_of_outbound_messages,
+        get_stream_of_marginals
 
     include("../testutilities.jl")
 
@@ -47,9 +54,10 @@ end
     for d in 1:5:100, constant in rand(10)
         let var = constvar(constant)
             marginal_expected = mgl(PointMass(constant))
-            marginal_result = check_stream_updated_once(getmarginal(var)) do
-                nothing
-            end
+            marginal_result =
+                check_stream_updated_once(get_stream_of_marginals(var)) do
+                    nothing
+                end
 
             @test getdata(marginal_result) === getdata(marginal_expected)
             @test getdata(marginal_result) === PointMass(constant)

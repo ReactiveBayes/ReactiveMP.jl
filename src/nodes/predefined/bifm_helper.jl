@@ -31,7 +31,7 @@ function functional_dependencies(
     cindex = clusterindex(clusters, iindex)
 
     nodeinterfaces     = getinterfaces(factornode)
-    nodelocalmarginals = getmarginals(clusters)
+    nodelocalmarginals = get_node_local_marginals(clusters)
 
     # output
     if iindex === 2

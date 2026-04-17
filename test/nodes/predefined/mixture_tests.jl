@@ -21,7 +21,6 @@
         interfaces,
         sdtype,
         factornode,
-        FactorNodeActivationOptions,
         activate!
 
     # Common interfaces and factorizations used by both test groups

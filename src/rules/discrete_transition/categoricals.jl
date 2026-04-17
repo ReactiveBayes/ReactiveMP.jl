@@ -230,14 +230,13 @@ function ReactiveMP.rule(
         },
     },
     meta::Any,
-    addons::Any,
+    annotations::Any,
     ::Any,
 ) where {S, M, N, mes_names, mar_names}
     q_a = marginals[findfirst(==(:a), mar_names)]
     return discrete_transition_structured_message_rule(
         mes_names, messages, mar_names, marginals, q_a
-    ),
-    addons
+    )
 end
 
 function ReactiveMP.rule(
@@ -258,12 +257,11 @@ function ReactiveMP.rule(
         },
     },
     meta::Any,
-    addons::Any,
+    annotations::Any,
     ::Any,
 ) where {S, M, mar_names}
     q_a = marginals[findfirst(==(:a), mar_names)]
     return discrete_transition_structured_message_rule(
         (), (), mar_names, marginals, q_a
-    ),
-    addons
+    )
 end

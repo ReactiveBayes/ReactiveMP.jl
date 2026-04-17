@@ -10,8 +10,8 @@
                     Poisson,
                     Val{(:out, :l)}(),
                     (
-                        Marginal(PointMass(k), false, false, nothing),
-                        Marginal(PointMass(l), false, false, nothing),
+                        Marginal(PointMass(k), false, false),
+                        Marginal(PointMass(l), false, false),
                     ),
                     nothing,
                 ),
@@ -27,8 +27,8 @@
                     Poisson,
                     Val{(:out, :l)}(),
                     (
-                        Marginal(Poisson(k), false, false, nothing),
-                        Marginal(PointMass(k), false, false, nothing),
+                        Marginal(Poisson(k), false, false),
+                        Marginal(PointMass(k), false, false),
                     ),
                     nothing,
                 ),
@@ -44,8 +44,8 @@
                     Poisson,
                     Val{(:out, :l)}(),
                     (
-                        Marginal(Poisson(k), false, false, nothing),
-                        Marginal(PointMass(k), false, false, nothing),
+                        Marginal(Poisson(k), false, false),
+                        Marginal(PointMass(k), false, false),
                     ),
                     nothing,
                 ),

@@ -5,23 +5,22 @@
     import Base: methods
     import Base.Iterators: repeated, product
     import BayesBase: xtlog, mirrorlog
-    import ReactiveMP: getaddons, as_marginal
+    import ReactiveMP: getannotations, AnnotationDict, as_marginal
     import SpecialFunctions: loggamma
 
     @testset "Default methods" begin
         for clamped in (true, false),
-            initial in (true, false), addons in (1, 2),
+            initial in (true, false),
             data in (1, 1.0, Normal(0, 1), Gamma(1, 1), PointMass(1))
 
-            marginal = Marginal(data, clamped, initial, addons)
+            marginal = Marginal(data, clamped, initial)
             @test getdata(marginal) === data
             @test is_clamped(marginal) === clamped
             @test is_initial(marginal) === initial
             @test as_marginal(marginal) === marginal
-            @test getaddons(marginal) === addons
+            @test getannotations(marginal) isa AnnotationDict
             @test occursin("Marginal", repr(marginal))
             @test occursin(repr(data), repr(marginal))
-            @test occursin(repr(addons), repr(marginal))
         end
 
         dist1 = NormalMeanVariance(0.0, 1.0)
@@ -31,8 +30,8 @@
             clamped2 in (true, false), initial1 in (true, false),
             initial2 in (true, false)
 
-            msg1 = Marginal(dist1, clamped1, initial1, nothing)
-            msg2 = Marginal(dist2, clamped2, initial2, nothing)
+            msg1 = Marginal(dist1, clamped1, initial1)
+            msg2 = Marginal(dist2, clamped2, initial2)
 
             @test getdata((msg1, msg2)) === (dist1, dist2)
             @test is_clamped((msg1, msg2)) === all([clamped1, clamped2])
@@ -92,7 +91,7 @@
             method in methods_to_test
 
             T = typeof(distribution)
-            marginal = Marginal(distribution, false, false, nothing)
+            marginal = Marginal(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(method, (T,))
             if !isempty(ms) && all(m -> m ∈ distribution_methods, ms)
@@ -105,7 +104,7 @@
         for distribution in distributions, fn_mean in fn_mean_functions
             F = typeof(fn_mean)
             T = typeof(distribution)
-            marginal = Marginal(distribution, false, false, nothing)
+            marginal = Marginal(distribution, false, false)
             # Here we check that a specialised method for a particular type T exist
             ms = methods(mean, (F, T), ReactiveMP)
             if !isempty(ms)
@@ -133,7 +132,7 @@
         rng = MersenneTwister(1234)
 
         for distribution in distributions2, method in methods_to_test2
-            marginal = Marginal(distribution, false, false, nothing)
+            marginal = Marginal(distribution, false, false)
 
             for _ in 1:3
                 point = _getpoint(rng, distribution)

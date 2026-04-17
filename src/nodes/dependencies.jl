@@ -4,10 +4,10 @@ export DefaultFunctionalDependencies,
     RequireEverythingFunctionalDependencies
 
 collect_latest_messages(dependencies, factornode, collection) = __collect_latest_updates(
-    messagein, collection
+    get_stream_of_inbound_messages, collection
 )
 collect_latest_marginals(dependencies, factornode, collection) = __collect_latest_updates(
-    getmarginal, collection
+    get_stream_of_marginals, collection
 )
 
 function __collect_latest_updates(f::F, collection) where {F}
@@ -25,15 +25,22 @@ function __collect_latest_updates(f::F, collection::Tuple) where {F}
     end
 end
 
+"""
+    ReactiveMP.FunctionalDependencies
+
+Abstract supertype for policies that determine which messages and marginals are required to compute each outbound message at a factor node. A concrete subtype is passed as `options.dependencies` in [`ReactiveMP.FactorNodeActivationOptions`](@ref) and consulted during [`ReactiveMP.activate!(::FactorNode, ::FactorNodeActivationOptions)`](@ref).
+
+See also: [`ReactiveMP.DefaultFunctionalDependencies`](@ref), [`ReactiveMP.RequireMessageFunctionalDependencies`](@ref), [`ReactiveMP.RequireMarginalFunctionalDependencies`](@ref), [`ReactiveMP.RequireEverythingFunctionalDependencies`](@ref)
+"""
 abstract type FunctionalDependencies end
 
 function activate!(dependencies::FunctionalDependencies, factornode, options)
-    scheduler    = getscheduler(options)
-    addons       = getaddons(options)
-    rulefallback = getrulefallback(options)
-    fform        = functionalform(factornode)
-    meta         = collect_meta(fform, getmetadata(options))
-    pipeline     = collect_pipeline(fform, getpipeline(options))
+    annotations          = getannotations(options)
+    rulefallback         = getrulefallback(options)
+    callbacks            = getcallbacks(options)
+    fform                = functionalform(factornode)
+    meta                 = collect_meta(fform, getmetadata(options))
+    stream_postprocessor = getpostprocessor(options)
 
     foreach(enumerate(getinterfaces(factornode))) do (iindex, interface)
         if israndom(interface) || isdata(interface)
@@ -50,7 +57,9 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                 vtag        = tag(interface)
                 vconstraint = Marginalisation()
 
-                vmessageout = combineLatest((messages, marginals), PushNew())
+                stream_of_outbound_messages = combineLatest(
+                    (messages, marginals), PushNew()
+                )
 
                 mapping =
                     let messagemap = MessageMapping(
@@ -60,22 +69,24 @@ function activate!(dependencies::FunctionalDependencies, factornode, options)
                             messagestag,
                             marginalstag,
                             meta,
-                            addons,
+                            annotations,
                             node_if_required(fform, factornode),
                             rulefallback,
+                            callbacks,
                         )
                         (dependencies) -> DeferredMessage(
                             dependencies[1], dependencies[2], messagemap
                         )
                     end
 
-                vmessageout = vmessageout |> map(AbstractMessage, mapping)
-                vmessageout = apply_pipeline_stage(
-                    pipeline, factornode, vtag, vmessageout
+                stream_of_outbound_messages =
+                    stream_of_outbound_messages |> map(AbstractMessage, mapping)
+                stream_of_outbound_messages = postprocess_stream_of_outbound_messages(
+                    stream_postprocessor, stream_of_outbound_messages
                 )
-                vmessageout = vmessageout |> schedule_on(scheduler)
-
-                connect!(messageout(interface), vmessageout)
+                set_stream_of_outbound_messages!(
+                    interface, stream_of_outbound_messages
+                )
             end
         end
     end
@@ -100,6 +111,13 @@ In order to compute a message out of some interface, this strategy requires mess
 """
 struct DefaultFunctionalDependencies <: FunctionalDependencies end
 
+"""
+    ReactiveMP.collect_functional_dependencies(fform, dependencies)
+
+Returns the [`ReactiveMP.FunctionalDependencies`](@ref) instance to use for a factor node with functional form `fform`.
+If `dependencies` is `nothing`, falls back to `default_functional_dependencies(fform)`, which returns [`ReactiveMP.DefaultFunctionalDependencies`](@ref) for most nodes.
+Otherwise returns `dependencies` unchanged, allowing callers to override the policy per node.
+"""
 function collect_functional_dependencies end
 
 collect_functional_dependencies(fform::F, ::Nothing) where {F} = default_functional_dependencies(
@@ -125,7 +143,9 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies = skipindex(
+        get_node_local_marginals(clusters), cindex
+    )
 
     return message_dependencies, marginal_dependencies
 end
@@ -181,7 +201,9 @@ function functional_dependencies(
         initialmessage = specification[name(interface)]
         # Set the initial message if its not `nothing`
         if !isnothing(initialmessage)
-            setmessage!(messagein(interface), initialmessage)
+            set_initial_message!(
+                get_stream_of_inbound_messages(interface), initialmessage
+            )
         end
         # And return the cluster as is
         cluster
@@ -193,7 +215,9 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies = skipindex(
+        get_node_local_marginals(clusters), cindex
+    )
 
     return message_dependencies, marginal_dependencies
 end
@@ -248,7 +272,7 @@ function functional_dependencies(
     )
 
     # For the marginal dependencies we need to skip the current cluster
-    marginal_dependencies_default_clusters      = skipindex(getmarginals(clusters), cindex)
+    marginal_dependencies_default_clusters      = skipindex(get_node_local_marginals(clusters), cindex)
     marginal_dependencies_default_factorization = skipindex(getfactorization(clusters), cindex)
 
     marginal_dependencies = if name(interface) ∈ keys(specification)
@@ -257,14 +281,12 @@ function functional_dependencies(
         extra_localmarginal = FactorNodeLocalMarginal(name(interface))
         # Create a stream of marginals and connect it with the streams of marginals of the actual variable
         extra_stream = MarginalObservable()
-        connect!(
-            extra_stream, getmarginal(getvariable(interface), IncludeAll())
-        )
-        setmarginal!(extra_localmarginal, extra_stream)
+        connect!(extra_stream, get_stream_of_marginals(getvariable(interface)))
+        set_stream_of_marginals!(extra_localmarginal, extra_stream)
 
         initialmarginals = specification[name(interface)]
         if !isnothing(initialmarginals)
-            setmarginal!(extra_stream, initialmarginals)
+            set_initial_marginal!(extra_stream, initialmarginals)
         end
 
         insertafter = sum(
@@ -287,7 +309,7 @@ end
 """
    RequireEverythingFunctionalDependencies
 
-This pipeline specifies that in order to compute a message of some edge update rules request everything that is available locally.
+This strategy specifies that in order to compute a message of some edge update rules request everything that is available locally.
 This includes all inbound messages (including on the same edge) and marginals over all local edge-clusters (this may or may not include marginals on single edges, depends on the local factorisation constraint).
 
 See also: [`DefaultFunctionalDependencies`](@ref), [`RequireMessageFunctionalDependencies`](@ref), [`RequireMarginalFunctionalDependencies`](@ref)
@@ -306,7 +328,7 @@ function functional_dependencies(
     message_dependencies = Iterators.map(
         inds -> map(i -> getinterface(factornode, i), inds), cluster
     )
-    marginal_dependencies = getmarginals(clusters)
+    marginal_dependencies = get_node_local_marginals(clusters)
 
     return message_dependencies, marginal_dependencies
 end

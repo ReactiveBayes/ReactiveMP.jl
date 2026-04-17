@@ -9,8 +9,7 @@ function score(
     ::FactorBoundFreeEnergy,
     node::AbstractFactorNode,
     meta,
-    skip_strategy,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
     return score(
         T,
@@ -18,8 +17,7 @@ function score(
         sdtype(node),
         node,
         collect_meta(functionalform(node), meta),
-        skip_strategy,
-        scheduler,
+        stream_postprocessors,
     )
 end
 
@@ -31,14 +29,11 @@ function score(
     ::Deterministic,
     node::AbstractFactorNode,
     meta,
-    skip_strategy,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
+    fnstream =
         (interface) ->
-            apply_skip_filter(messagein(interface), skip_strategy) |>
-            schedule_on(scheduler)
-    end
+            get_stream_of_inbound_messages(interface) |> skip_initial()
 
     tinterfaces = Tuple(getinterfaces(node))
     stream = combineLatest(map(fnstream, tinterfaces), PushNew())
@@ -67,13 +62,17 @@ function score(
                     ),
                     false,
                     false,
-                    nothing,
                 )
                 return convert(T, -score(DifferentialEntropy(), marginal))
             end
         end
 
-    return stream |> map(T, mapping)
+    stream_of_scores = stream |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+
+    return stream_of_scores
 end
 
 ## Stochastic mapping
@@ -84,16 +83,13 @@ function score(
     ::Stochastic,
     node::AbstractFactorNode,
     meta,
-    skip_strategy,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
-    fnstream = let skip_strategy = skip_strategy, scheduler = scheduler
+    fnstream =
         (localmarginal) ->
-            apply_skip_filter(getmarginal(localmarginal), skip_strategy) |>
-            schedule_on(scheduler)
-    end
+            get_stream_of_marginals(localmarginal) |> skip_initial()
 
-    localmarginals = getmarginals(getlocalclusters(node))
+    localmarginals = get_node_local_marginals(getlocalclusters(node))
     stream = combineLatest(map(fnstream, localmarginals), PushNew())
 
     mapping =
@@ -107,5 +103,10 @@ function score(
             end
         end
 
-    return stream |> map(T, mapping)
+    stream_of_scores = stream |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+
+    return stream_of_scores
 end

@@ -16,9 +16,9 @@
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_Λ), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_Λ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -63,9 +63,9 @@
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(q_out, false, false, nothing),
-                    Marginal(convert(N, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_Λ), false, false, nothing),
+                    Marginal(q_out, false, false),
+                    Marginal(convert(N, q_μ), false, false),
+                    Marginal(convert(G, q_Λ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -113,9 +113,9 @@
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing),
-                    Marginal(convert(N2, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_Λ), false, false, nothing),
+                    Marginal(convert(N1, q_out), false, false),
+                    Marginal(convert(N2, q_μ), false, false),
+                    Marginal(convert(G, q_Λ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -166,9 +166,9 @@
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing),
-                    Marginal(convert(N2, q_μ), false, false, nothing),
-                    Marginal(convert(G, q_Λ), false, false, nothing),
+                    Marginal(convert(N1, q_out), false, false),
+                    Marginal(convert(N2, q_μ), false, false),
+                    Marginal(convert(G, q_Λ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -217,9 +217,9 @@
                 )
 
                 marginals = (
-                    Marginal(convert(N1, q_out), false, false, nothing),
-                    Marginal(convert(N2, q_μ), false, false, nothing),
-                    Marginal(q_Λ, false, false, nothing),
+                    Marginal(convert(N1, q_out), false, false),
+                    Marginal(convert(N2, q_μ), false, false),
+                    Marginal(q_Λ, false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -259,8 +259,8 @@
                 MvNormalWeightedMeanPrecision,
             )
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(q_Λ, false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(q_Λ, false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -300,8 +300,8 @@
                 MvNormalWeightedMeanPrecision,
             )
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(q_Λ, false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(q_Λ, false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -344,8 +344,8 @@
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(convert(G, q_Λ), false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(convert(G, q_Λ), false, false),
                 )
                 @test score(
                     AverageEnergy(),
@@ -388,8 +388,8 @@
                 G in (Wishart,)
 
                 marginals = (
-                    Marginal(convert(N, q_out_μ), false, false, nothing),
-                    Marginal(convert(G, q_Λ), false, false, nothing),
+                    Marginal(convert(N, q_out_μ), false, false),
+                    Marginal(convert(G, q_Λ), false, false),
                 )
                 @test score(
                     AverageEnergy(),

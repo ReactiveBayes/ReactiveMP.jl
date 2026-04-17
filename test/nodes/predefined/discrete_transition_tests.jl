@@ -21,8 +21,7 @@
         q_a = PointMass(a_matrix)
 
         marginals = (
-            Marginal(q_out_in, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         # Expected value calculated by hand
@@ -43,8 +42,7 @@
         q_a = PointMass(a_matrix)
 
         marginals = (
-            Marginal(q_out_in, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
@@ -66,8 +64,7 @@
         q_a = PointMass(a_matrix)
 
         marginals = (
-            Marginal(q_out_in, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
@@ -85,8 +82,7 @@
         q_a = PointMass(diageye(3))
 
         marginals = (
-            Marginal(q_out_in, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out_in, false, false), Marginal(q_a, false, false)
         )
 
         expected = -sum(contingency_matrix .* log.(clamp.(a_matrix, tiny, Inf)))
@@ -105,9 +101,9 @@
         q_a = PointMass([0.7 0.3; 0.2 0.8])
 
         marginals = (
-            Marginal(q_out, false, false, nothing),
-            Marginal(q_in, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out, false, false),
+            Marginal(q_in, false, false),
+            Marginal(q_a, false, false),
         )
 
         contingency = probvec(q_out) * probvec(q_in)'
@@ -126,9 +122,9 @@
         q_a = PointMass([1.0 0.0; 1.0 0.0])
 
         marginals = (
-            Marginal(q_out, false, false, nothing),
-            Marginal(q_in, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out, false, false),
+            Marginal(q_in, false, false),
+            Marginal(q_a, false, false),
         )
 
         contingency = probvec(q_out) * probvec(q_in)'
@@ -154,9 +150,9 @@
         )
 
         marginals = (
-            Marginal(q_out_in, false, false, nothing),
-            Marginal(q_T1_T2, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out_in, false, false),
+            Marginal(q_T1_T2, false, false),
+            Marginal(q_a, false, false),
         )
 
         contingency =
@@ -182,9 +178,9 @@
         )
 
         marginals = (
-            Marginal(q_out_in, false, false, nothing),
-            Marginal(q_T1_T2, false, false, nothing),
-            Marginal(q_a, false, false, nothing),
+            Marginal(q_out_in, false, false),
+            Marginal(q_T1_T2, false, false),
+            Marginal(q_a, false, false),
         )
 
         contingency =

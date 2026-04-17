@@ -7,22 +7,37 @@ A factor node represents a local function in a factorised representation of a ge
 @node
 ReactiveMP.FactorNode
 ReactiveMP.FactorNodeLocalMarginal
+```
+
+## [Interfaces](@id lib-node-interfaces)
+
+Every edge of a factor node — a connection to one variable — is represented by a [`ReactiveMP.NodeInterface`](@ref). When a `FactorNode` is constructed, one `NodeInterface` is created per edge. The constructor of `NodeInterface` immediately calls `ReactiveMP.create_new_stream_of_inbound_messages!` on the connected variable, which allocates a per-connection [`ReactiveMP.MessageObservable`](@ref) slot in the variable's `input_messages` and returns it. This observable is stored as `m_out` on the interface: it is the *outbound* message from the node's perspective (flowing toward the variable) and the *inbound* message from the variable's perspective.
+
+At construction time all message streams are unconnected (lazy). The actual rule computations are wired up later during graph activation (see [Activation](@ref lib-node-activation)).
+
+For nodes with a variable-length list of same-named edges (e.g. the `means` of a Gaussian Mixture node), [`ReactiveMP.IndexedNodeInterface`](@ref) wraps a `NodeInterface` and adds a positional index. The `ReactiveMP.ManyOf` container collects the corresponding streams for use in `@rule` dispatch; see the [Delta node](@ref lib-nodes-delta) documentation for usage examples.
+
+```@docs
 ReactiveMP.NodeInterface
 ReactiveMP.IndexedNodeInterface
-ReactiveMP.messagein
-ReactiveMP.messageout
+ReactiveMP.get_stream_of_inbound_messages
+ReactiveMP.get_stream_of_outbound_messages
+ReactiveMP.set_stream_of_outbound_messages!
 ReactiveMP.tag
 ReactiveMP.name
 ReactiveMP.interfaces
 ReactiveMP.getvariable
 ReactiveMP.inputinterfaces
 ReactiveMP.alias_interface
-ReactiveMP.collect_factorisation
-ReactiveMP.collect_pipeline
-ReactiveMP.collect_meta
-ReactiveMP.default_meta
-ReactiveMP.as_node_symbol
-ReactiveMP.nodesymbol_to_nodefform
+```
+
+## [Activation](@id lib-node-activation)
+
+Graph activation is the step that connects all lazy [`ReactiveMP.MessageObservable`](@ref) and [`ReactiveMP.MarginalObservable`](@ref) streams into a live reactive network. For factor nodes this is done by calling [`ReactiveMP.activate!`](@ref) with a [`ReactiveMP.FactorNodeActivationOptions`](@ref) that bundles all inference-time configuration.
+
+```@docs
+ReactiveMP.FactorNodeActivationOptions
+ReactiveMP.activate!(::FactorNode, ::ReactiveMP.FactorNodeActivationOptions)
 ```
 
 ## [Adding a custom node](@id lib-custom-node)
@@ -43,6 +58,18 @@ struct MyNewCustomNode end
 This expression registers a new node that can be used with the inference engine. 
 Note, however, that the `@node` macro does not generate any message passing update rules.
 These must be defined using the [`@rule`](@ref) macro. 
+
+## [Collecting node properties](@id lib-node-collect)
+
+```@docs
+ReactiveMP.collect_factorisation
+ReactiveMP.collect_meta
+ReactiveMP.default_meta
+ReactiveMP.as_node_symbol
+ReactiveMP.nodesymbol_to_nodefform
+ReactiveMP.FunctionalDependencies
+ReactiveMP.collect_functional_dependencies
+```
 
 ## [Node types](@id lib-node-types)
 
@@ -85,10 +112,10 @@ println("sdtype() of `Bernoulli` node is ", sdtype(Bernoulli))
 nothing #hide
 ```
 
-## [Node functional dependencies pipeline](@id lib-node-functional-dependencies-pipeline)
+## [Node functional dependencies](@id lib-node-functional-dependencies)
 
-The generic implementation of factor nodes in ReactiveMP supports custom functional dependency pipelines. Briefly, the __functional dependencies pipeline__ defines what
-dependencies are need to compute a single message. As an example, consider the belief-propagation message update equation for a factor node $f$ with three edges: $x$, $y$ and $z$:
+The generic implementation of factor nodes in ReactiveMP supports custom functional dependencies policies. Briefly, the __functional dependencies__ define what
+dependencies are needed to compute a single message. As an example, consider the belief-propagation message update equation for a factor node $f$ with three edges: $x$, $y$ and $z$:
 
 ```math
 \mu(x) = \int \mu(y) \mu(z) f(x, y, z) \mathrm{d}y \mathrm{d}z
@@ -102,9 +129,9 @@ Here we see that in the standard setting for the belief-propagation message out 
 
 We see that in this setting, we do not need messages $\mu(y)$ and $\mu(z)$, but only the marginals $q(y)$ and $q(z)$. 
 
-## [List of functional dependencies pipelines](@id lib-node-functional-dependencies-pipelines)
+## [List of functional dependencies policies](@id lib-node-functional-dependencies-policies)
 
-The purpose of a __functional dependencies pipeline__ is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in pipelines is presented below:
+The purpose of a __functional dependencies__ policy is to determine functional dependencies (a set of messages or marginals) that are needed to compute a single message. By default, `ReactiveMP.jl` uses so-called `DefaultFunctionalDependencies` that correctly implements belief-propagation and variational message passing schemes (including both mean-field and structured factorisations). The full list of built-in policies is presented below:
 
 ```@docs
 ReactiveMP.DefaultFunctionalDependencies
@@ -112,27 +139,6 @@ ReactiveMP.RequireMessageFunctionalDependencies
 ReactiveMP.RequireMarginalFunctionalDependencies
 ReactiveMP.RequireEverythingFunctionalDependencies
 ```
-
-## [Customizing Dependencies with Metadata](@id lib-node-metadata-dependencies)
-
-The functional dependencies of a node can be customized at runtime using options during node activation. This allows for runtime customization of the functional dependencies, e.g. to test different message passing schemes or implement specialized behavior for specific instances of a node type:
-
-```julia
-# Define custom dependencies based on metadata
-function ReactiveMP.collect_functional_dependencies(::Type{MyNode}, options::FactorNodeActivationOptions)
-    if some_condition(options) # a user can specify dependencies based, for example, on metadata
-        return CustomDependencies()
-    end
-    # Fall back to default dependencies
-    return ReactiveMP.collect_functional_dependencies(MyNode, getdependecies(options))
-end
-
-# Use custom dependencies during activation
-node = factornode(MyNode, ...)
-activate!(node, FactorNodeActivationOptions(:custom_behavior, ...))
-```
-
-This feature is particularly useful for testing different message passing schemes or implementing specialized behavior for specific instances of a node type.
 
 ## [Node traits](@id lib-node-traits)
 
@@ -149,19 +155,11 @@ ReactiveMP.UndefinedNodeFunctionalForm
 ReactiveMP.is_predefined_node
 ```
 
-## [Node pipelines](@id lib-node-pipelines)
+## [Stream postprocessors](@id lib-node-stream-postprocessors)
 
-```@docs
-ReactiveMP.AbstractPipelineStage
-ReactiveMP.apply_pipeline_stage
-ReactiveMP.EmptyPipelineStage
-ReactiveMP.CompositePipelineStage
-ReactiveMP.LoggerPipelineStage
-ReactiveMP.DiscontinuePipelineStage
-ReactiveMP.AsyncPipelineStage
-ReactiveMP.ScheduleOnPipelineStage
-ReactiveMP.schedule_updates
-```
+Stream postprocessors are composable transformations applied to the reactive observables produced during activation — outbound message streams, marginal streams, and score streams. They are attached to a node via [`ReactiveMP.FactorNodeActivationOptions`](@ref) and to a random variable via [`ReactiveMP.RandomVariableActivationOptions`](@ref), and can be used for scheduling or custom instrumentation.
+
+See the dedicated [Stream postprocessors](@ref lib-stream-postprocessors) page for a full description and API reference.
 
 ## [List of predefined factor node](@id lib-predefined-nodes)    
 

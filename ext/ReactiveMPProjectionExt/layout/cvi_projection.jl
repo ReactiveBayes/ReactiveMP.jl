@@ -6,16 +6,16 @@ import ReactiveMP:
     AbstractDeltaNodeDependenciesLayout,
     DeltaFnDefaultRuleLayout,
     DeltaFnNode,
-    getmarginal,
+    get_stream_of_marginals,
     functionalform,
     tag,
     Marginalisation,
     MessageMapping,
     DeferredMessage,
     with_statics,
-    apply_pipeline_stage,
-    messageout,
-    messagein,
+    postprocess_stream_of_outbound_messages,
+    set_stream_of_outbound_messages!,
+    get_stream_of_inbound_messages,
     connect!
 
 """
@@ -48,20 +48,20 @@ function deltafn_apply_layout(
     ::Val{:q_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
-    addons,
+    stream_postprocessors,
+    annotations,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:q_out),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
-        addons,
+        stream_postprocessors,
+        annotations,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -71,20 +71,20 @@ function deltafn_apply_layout(
     ::Val{:q_ins},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
-    addons,
+    stream_postprocessors,
+    annotations,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:q_ins),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
-        addons,
+        stream_postprocessors,
+        annotations,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -94,23 +94,23 @@ function deltafn_apply_layout(
     ::Val{:m_out},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
-    addons,
+    stream_postprocessors,
+    annotations,
     rulefallback,
+    callbacks,
 )
     let interface = factornode.out
         msgs_names      = Val{(:out,)}()
-        msgs_observable = combineLatestUpdates((messagein(factornode.out),), PushNew())
+        msgs_observable = combineLatestUpdates((get_stream_of_inbound_messages(factornode.out),), PushNew())
 
         marginal_names       = Val{(:out, :ins)}()
-        marginals_observable = combineLatestUpdates((getmarginal(factornode.localmarginals.marginals[1]), getmarginal(factornode.localmarginals.marginals[2])), PushNew())
+        marginals_observable = combineLatestUpdates((get_stream_of_marginals(factornode.localmarginals.marginals[1]), get_stream_of_marginals(factornode.localmarginals.marginals[2])), PushNew())
 
         fform       = functionalform(factornode)
         vtag        = tag(interface)
         vconstraint = Marginalisation()
 
-        vmessageout = combineLatest(
+        stream_of_outbound_messages = combineLatest(
             (msgs_observable, marginals_observable), PushNew()
         )
 
@@ -122,23 +122,25 @@ function deltafn_apply_layout(
                     msgs_names,
                     marginal_names,
                     meta,
-                    addons,
+                    annotations,
                     factornode,
                     rulefallback,
+                    callbacks,
                 )
                 (dependencies) -> DeferredMessage(
                     dependencies[1], dependencies[2], messagemap
                 )
             end
 
-        vmessageout = with_statics(factornode, vmessageout)
-        vmessageout = vmessageout |> map(AbstractMessage, mapping)
-        vmessageout = apply_pipeline_stage(
-            pipeline_stages, factornode, vtag, vmessageout
+        stream_of_outbound_messages = with_statics(
+            factornode, stream_of_outbound_messages
         )
-        vmessageout = vmessageout |> schedule_on(scheduler)
-
-        connect!(messageout(interface), vmessageout)
+        stream_of_outbound_messages =
+            stream_of_outbound_messages |> map(AbstractMessage, mapping)
+        stream_of_outbound_messages = postprocess_stream_of_outbound_messages(
+            stream_postprocessors, stream_of_outbound_messages
+        )
+        set_stream_of_outbound_messages!(interface, stream_of_outbound_messages)
     end
 end
 
@@ -148,19 +150,19 @@ function deltafn_apply_layout(
     ::Val{:m_in},
     factornode::DeltaFnNode,
     meta,
-    pipeline_stages,
-    scheduler,
-    addons,
+    stream_postprocessors,
+    annotations,
     rulefallback,
+    callbacks,
 )
     return deltafn_apply_layout(
         DeltaFnDefaultRuleLayout(),
         Val(:m_in),
         factornode,
         meta,
-        pipeline_stages,
-        scheduler,
-        addons,
+        stream_postprocessors,
+        annotations,
         rulefallback,
+        callbacks,
     )
 end

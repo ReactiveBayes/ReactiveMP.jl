@@ -5,8 +5,8 @@
         nodefunction,
         DeltaMeta,
         Linearization,
-        messageout,
         activate!,
+        new_observation!,
         RandomVariableActivationOptions,
         DataVariableActivationOptions
 
@@ -21,12 +21,12 @@
     node = factornode(
         foo, [(:out, out), (:in, x), (:in, y), (:in, z)], ((1, 2, 3, 4),)
     )
-    meta = DeltaMeta(method = Linearization())
+    meta = DeltaMeta(; method = Linearization())
 
     activate!(x, RandomVariableActivationOptions())
     activate!(y, DataVariableActivationOptions())
 
-    update!(y, 2.0)
+    new_observation!(y, 2.0)
 
     for xval in rand(10)
         @test nodefunction(node, meta, Val(:out))(xval) === foo(xval, 2.0, 3.0)
@@ -41,8 +41,8 @@ end
         nodefunction,
         DeltaMeta,
         Linearization,
-        messageout,
         activate!,
+        new_observation!,
         RandomVariableActivationOptions,
         DataVariableActivationOptions
 
@@ -86,7 +86,7 @@ end
                 i -> i isa Tuple{Symbol, RandomVariable}, in_interfaces
             )
             node = factornode(foo, interfaces, ((1, 2, 3, 4),))
-            meta = DeltaMeta(method = Linearization())
+            meta = DeltaMeta(; method = Linearization())
 
             foreach(interfaces) do (_, interface)
                 activate_interface(interface)
@@ -95,7 +95,7 @@ end
             # data variable inputs require an actual update
             foreach(enumerate(in_interfaces)) do (i, interface)
                 if interface isa Tuple{Symbol, DataVariable}
-                    update!(interface[2], vals[i])
+                    new_observation!(interface[2], vals[i])
                 end
             end
 
@@ -122,7 +122,7 @@ end
         true
     )
 
-    @test DeltaMeta(method = SupportedApproximationMetßhod()) isa DeltaMeta
+    @test DeltaMeta(; method = SupportedApproximationMetßhod()) isa DeltaMeta
 end
 
 @testitem "DeltaNode - CVI layout functionality" begin
@@ -134,7 +134,8 @@ end
         DeltaFnNode,
         DeltaMeta,
         CVIProjection,
-        messageout,
+        get_stream_of_outbound_messages,
+        new_observation!,
         activate!,
         RandomVariableActivationOptions,
         DataVariableActivationOptions
@@ -151,7 +152,7 @@ end
     node = factornode(f, [(:out, out), (:in, x), (:in, y)], ((1, 2, 3),))
 
     # Test meta creation and compatibility
-    meta = DeltaMeta(method = CVIProjection())
+    meta = DeltaMeta(; method = CVIProjection())
     @test meta.method isa CVIProjection
     @test isnothing(meta.inverse)
 
@@ -160,7 +161,8 @@ end
     activate!(y, DataVariableActivationOptions())
 
     # Test data variable update propagation
-    update!(y, 2.0)
-    @test BayesBase.getpointmass(getdata(Rocket.getrecent(messageout(y, 1)))) ≈
-        2.0
+    new_observation!(y, 2.0)
+    @test BayesBase.getpointmass(
+        getdata(Rocket.getrecent(get_stream_of_outbound_messages(y, 1)))
+    ) ≈ 2.0
 end

@@ -41,13 +41,13 @@ Message
 
 From an implementation point a view the `Message` structure does nothing but hold some `data` object and redirects most of the statistical related functions to that `data` object. 
 However, this object is used extensively in Julia's multiple dispatch. 
-Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if [product of two messages](@ref lib-messages-product) results in `is_initial` or `is_clamped` posterior marginal. The final field contains the addons. These contain additional information on top of the functional form of the distribution, such as its scaling or computation history.
+Our implementation also uses extra `is_initial` and `is_clamped` fields to determine if [product of two messages](@ref lib-messages-product) results in `is_initial` or `is_clamped` posterior marginal. Each message also carries an [`AnnotationDict`](@ref) for optional metadata such as log-scale factors or computation history (see [Annotations](@ref lib-annotations)).
 
 ```@docs
 ReactiveMP.getdata(message::Message)
 ReactiveMP.is_clamped(message::Message)
 ReactiveMP.is_initial(message::Message)
-ReactiveMP.getaddons(message::Message)
+ReactiveMP.getannotations(message::Message)
 ReactiveMP.as_message
 ```
 
@@ -55,7 +55,7 @@ ReactiveMP.as_message
 using ReactiveMP, BayesBase, ExponentialFamily
 
 distribution = ExponentialFamily.NormalMeanPrecision(0.0, 1.0)
-message      = Message(distribution, false, true, nothing)
+message      = Message(distribution, false, true)
 ```
 
 ```@example message
@@ -70,16 +70,34 @@ logpdf(message, 1.0)
 is_clamped(message), is_initial(message)
 ```
 
+## Message observable
+
+Within the reactive message passing framework, messages are not computed once and stored as values — instead each edge of the factor graph carries a *stream* that continuously emits updated messages as the inference iterates. `MessageObservable` is the container for such a stream.
+
+```@docs
+ReactiveMP.MessageObservable
+```
+
+Each connection between a variable and a factor node owns one `MessageObservable`. From the variable's perspective it is an *inbound* message stream (a message arriving from a connected node); from the node's perspective the same object is the message that will eventually be used to compute the outbound message on another edge. The observable starts *unconnected*: its internal `LazyObservable` has no upstream source until the factor graph is activated. During activation, `ReactiveMP.connect!` wires the lazy stream to the result of the message update rule computation. After that point, every upstream change (a new observation, a changed prior, an iterated belief) propagates reactively through the `MessageObservable` to all its subscribers.
+
+The internal `RecentSubject` ensures that:
+- any subscriber that joins after the first emission immediately receives the current message via `Rocket.getrecent`
+- [`ReactiveMP.set_initial_message!`](@ref) can seed a value *before* activation, so that rules that read an inbound message at iteration zero have something to read
+
+All downstream subscriptions go through the `LazyObservable`, not the subject directly, so they see the full computed stream rather than only manually pushed values.
+
 ### [Product of messages](@id lib-messages-product)
 
 In message passing framework, in order to compute a posterior we must compute a normalized product of two messages.
-For this purpose the `ReactiveMP.jl` uses the `multiply_messages` function, which internally uses the `prod` function
-defined in `BayesBase.jl` with various product strategies. We refer an interested reader to the documentation of the 
-`BayesBase.jl` package for more information.
+For this purpose the `ReactiveMP.jl` uses the [`ReactiveMP.MessageProductContext`](@ref) structure, together with the [`ReactiveMP.compute_product_of_messages`](@ref) and [`ReactiveMP.compute_product_of_two_messages`](@ref) functions. Both functions accept a [`ReactiveMP.AbstractVariable`](@ref) as the first argument to identify which variable the product is being computed for — this is useful for callbacks (e.g. [`ReactiveMP.BeforeProductOfTwoMessagesEvent`](@ref)). The [`ReactiveMP.compute_product_of_two_messages`](@ref) function internally uses the `prod` function
+defined in `BayesBase.jl` with various product strategies. We refer an interested reader to the documentation of the `BayesBase.jl` package for more information.
 
 ```@docs
-ReactiveMP.multiply_messages
-ReactiveMP.messages_prod_fn
+ReactiveMP.MessageProductContext
+ReactiveMP.compute_product_of_two_messages
+ReactiveMP.compute_product_of_messages
+ReactiveMP.MessagesProductFromLeftToRight
+ReactiveMP.MessagesProductFromRightToLeft
 ```
 
 

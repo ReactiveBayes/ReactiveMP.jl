@@ -16,9 +16,22 @@ end
 name(localmarginal::FactorNodeLocalMarginal) = localmarginal.name
 tag(localmarginal::FactorNodeLocalMarginal)  = Val{name(localmarginal)}()
 
-getmarginal(localmarginal::FactorNodeLocalMarginal) = localmarginal.marginal
-setmarginal!(localmarginal::FactorNodeLocalMarginal, marginal) =
+get_stream_of_marginals(localmarginal::FactorNodeLocalMarginal) =
+    localmarginal.marginal
+
+function set_stream_of_marginals!(
+    localmarginal::FactorNodeLocalMarginal, stream::MarginalObservable
+)
+    localmarginal.marginal = stream
+end
+
+function set_stream_of_marginals!(
+    localmarginal::FactorNodeLocalMarginal, stream
+)
+    marginal = MarginalObservable()
+    connect!(marginal, stream)
     localmarginal.marginal = marginal
+end
 
 Base.show(io::IO, marginal::FactorNodeLocalMarginal) = print(
     io, "FactorNodeLocalMarginal(", name(marginal), ")"
@@ -31,12 +44,9 @@ struct FactorNodeLocalClusters{M, F}
     factorization::F
 end
 
-getmarginals(clusters::FactorNodeLocalClusters) = clusters.marginals
-getmarginal(clusters::FactorNodeLocalClusters, index) = getindex(
-    getmarginals(clusters), index
-)
-setmarginal!(clusters::FactorNodeLocalClusters, index, marginal::MarginalObservable) = setmarginal!(
-    getmarginal(clusters, index), marginal
+get_node_local_marginals(clusters::FactorNodeLocalClusters) = clusters.marginals
+set_node_local_marginal_stream!(clusters::FactorNodeLocalClusters, index, stream) = set_stream_of_marginals!(
+    clusters.marginals[index], stream
 )
 
 getfactorization(clusters::FactorNodeLocalClusters) = clusters.factorization
@@ -86,10 +96,10 @@ function initialize_clusters!(
     clusters::FactorNodeLocalClusters, dependencies, factornode, options
 )
     # We first need to initialize all the clusters, since the `activate_cluster!` function may use any of the marginals
-    for i in eachindex(getmarginals(clusters))
+    for i in eachindex(get_node_local_marginals(clusters))
         initialize_cluster!(clusters, i, dependencies, factornode, options)
     end
-    for i in eachindex(getmarginals(clusters))
+    for i in eachindex(get_node_local_marginals(clusters))
         activate_cluster!(clusters, i, dependencies, factornode, options)
     end
 end
@@ -105,15 +115,16 @@ function initialize_cluster!(
     # For the clusters of length `1` there is no need to create a new `MarginalObservable` object
     # We can simply reuse it from the variable connected to the factor node. Potentially it saves a bit of memory 
     stream_of_cluster_marginals = if isone(length(localfactorization))
-        getmarginal(
-            getvariable(getinterface(factornode, first(localfactorization))),
-            IncludeAll(),
+        get_stream_of_marginals(
+            getvariable(getinterface(factornode, first(localfactorization)))
         )
     else
         # For the clusters of length `>1` we need to create the new strean, but it will be assigned later
         MarginalObservable()
     end
-    setmarginal!(clusters, index, stream_of_cluster_marginals)
+    set_node_local_marginal_stream!(
+        clusters, index, stream_of_cluster_marginals
+    )
 end
 
 function activate_cluster!(
@@ -124,19 +135,20 @@ function activate_cluster!(
     options,
 )
     localfactorization = getfactorization(clusters, index)
+    stream_postprocessors = getpostprocessor(options)
 
     if !isone(length(localfactorization))
         # For the clusters which length is not equal to one we should collect the dependencies 
         # and call the `MarginalMapping` to compute the result. The `MarginalObservable` should have 
         # been initialized in the `initialize_cluster!` before
-        marginal = getmarginal(clusters, index)
+        marginal = get_node_local_marginals(clusters)[index]
 
         clusterinterfaces = map(
             i -> getinterface(factornode, i), localfactorization
         )
 
         message_dependencies  = tuple(clusterinterfaces...)
-        marginal_dependencies = tuple(TupleTools.deleteat(getmarginals(clusters), index)...)
+        marginal_dependencies = tuple(TupleTools.deleteat(get_node_local_marginals(clusters), index)...)
 
         messagestag, messages = collect_latest_messages(
             dependencies, factornode, message_dependencies
@@ -146,12 +158,13 @@ function activate_cluster!(
         )
 
         fform = functionalform(factornode)
-        vtag  = tag(getmarginal(clusters, index))
+        vtag  = tag(get_node_local_marginals(clusters)[index])
         meta  = collect_meta(fform, getmetadata(options))
 
         mapping     = MarginalMapping(fform, vtag, messagestag, marginalstag, meta, node_if_required(fform, factornode))
         marginalout = combineLatestUpdates((messages, marginals), PushNew(), Marginal, mapping, reset_vstatus)
+        marginalout = postprocess_stream_of_marginals(stream_postprocessors, marginalout)
 
-        connect!(getmarginal(marginal), marginalout)
+        set_stream_of_marginals!(marginal, marginalout)
     end
 end

@@ -9,8 +9,6 @@ using Rocket
 using TupleTools
 using MacroTools
 
-import Rocket: getscheduler
-
 import Base:
     show, +, push!, iterate, IteratorSize, IteratorEltype, eltype, length, size
 import Base: getindex, setindex!, firstindex, lastindex
@@ -274,27 +272,61 @@ function prepare_interfaces_check_num_inputarguments(
     )
 end
 
-struct FactorNodeActivationOptions{M, D, P, A, S, R}
+"""
+    ReactiveMP.FactorNodeActivationOptions
+
+Collects all configuration needed to activate a [`FactorNode`](@ref). Passed to [`ReactiveMP.activate!(::FactorNode, ::FactorNodeActivationOptions)`](@ref).
+
+Fields:
+- `metadata` — node-specific metadata forwarded to message update rules (see [`ReactiveMP.collect_meta`](@ref))
+- `dependencies` — a [`ReactiveMP.FunctionalDependencies`](@ref) policy that determines which messages and marginals each outbound message computation depends on (default: [`ReactiveMP.DefaultFunctionalDependencies`](@ref))
+- `postprocessor` — optional stream postprocessor applied to every created stream (see [`ReactiveMP.AbstractStreamPostprocessor`](@ref))
+- `annotations` — optional annotation processors (see [`ReactiveMP.AbstractAnnotations`](@ref))
+- `rulefallback` — optional fallback called when no `@rule` method matches
+- `callbacks` — optional callbacks invoked at key points in the message computation (see [`ReactiveMP.invoke_callback`](@ref))
+"""
+struct FactorNodeActivationOptions{M, D, P, A, R, E}
     metadata::M
     dependencies::D
-    pipeline::P
-    addons::A
-    scheduler::S
+    postprocessor::P
+    annotations::A
     rulefallback::R
+    callbacks::E
 end
 
 getmetadata(options::FactorNodeActivationOptions) = options.metadata
 getdependecies(options::FactorNodeActivationOptions) = options.dependencies
-getpipeline(options::FactorNodeActivationOptions) = options.pipeline
-getaddons(options::FactorNodeActivationOptions) = options.addons
-getscheduler(options::FactorNodeActivationOptions) = options.scheduler
+getpostprocessor(options::FactorNodeActivationOptions) = options.postprocessor
+getannotations(options::FactorNodeActivationOptions) = options.annotations
 getrulefallback(options::FactorNodeActivationOptions) = options.rulefallback
+getcallbacks(options::FactorNodeActivationOptions) = options.callbacks
 
 # Users can override the dependencies if they want to
 collect_functional_dependencies(fform::F, options::FactorNodeActivationOptions) where {F} = collect_functional_dependencies(
     fform, getdependecies(options)
 )
 
+"""
+    ReactiveMP.activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
+
+Wires all reactive message-passing streams of a [`FactorNode`](@ref) into the factor graph.
+
+Activation proceeds in three phases:
+
+1. **Collect functional dependencies** — calls [`ReactiveMP.collect_functional_dependencies`](@ref) to determine, for each interface, which inbound messages and local marginals are needed to compute the outbound message. The policy is controlled by `options.dependencies` (default: [`ReactiveMP.DefaultFunctionalDependencies`](@ref)).
+
+2. **Initialize clusters** — sets up a [`ReactiveMP.FactorNodeLocalMarginal`](@ref) stream for each cluster in the factorization. For mean-field each cluster contains one variable and its local marginal is shared directly with the variable's marginal stream. For structured factorizations a joint marginal stream is created from the cluster's message dependencies.
+
+3. **Wire outbound message streams** — for every interface connected to a [`ReactiveMP.RandomVariable`](@ref) or [`ReactiveMP.DataVariable`](@ref):
+   - combines the required inbound message and marginal streams with `combineLatest`
+   - wraps the rule application in a [`ReactiveMP.MessageMapping`](@ref), producing a [`ReactiveMP.DeferredMessage`](@ref) on each upstream update
+   - applies any `options.postprocessor` transformations
+   - connects the result to the interface's [`ReactiveMP.MessageObservable`](@ref) via [`ReactiveMP.set_stream_of_outbound_messages!`](@ref)
+
+Interfaces connected to [`ReactiveMP.ConstVariable`](@ref) are skipped: their message is fixed at graph construction.
+
+See also: [`ReactiveMP.FactorNodeActivationOptions`](@ref), [`ReactiveMP.activate!(::RandomVariable, ::RandomVariableActivationOptions)`](@ref)
+"""
 function activate!(factornode::FactorNode, options::FactorNodeActivationOptions)
     dependencies = collect_functional_dependencies(
         functionalform(factornode), options

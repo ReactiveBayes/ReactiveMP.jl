@@ -1,9 +1,10 @@
 @testitem "FactorNodeLocalMarginal" begin
+    import Rocket: of, subscribe!, unsubscribe!
     import ReactiveMP:
         FactorNodeLocalMarginal,
         MarginalObservable,
-        getmarginal,
-        setmarginal!,
+        get_stream_of_marginals,
+        set_stream_of_marginals!,
         tag,
         name
 
@@ -12,13 +13,40 @@
         @test tag(localmarginal) === Val{:a}()
         @test occursin("a", repr(localmarginal))
         # The stream is not set
-        @test_throws UndefRefError getmarginal(localmarginal)
+        @test_throws UndefRefError get_stream_of_marginals(localmarginal)
 
         m = MarginalObservable()
 
-        setmarginal!(localmarginal, m)
+        set_stream_of_marginals!(localmarginal, m)
 
-        @test getmarginal(localmarginal) === m
+        @test get_stream_of_marginals(localmarginal) === m
+    end
+
+    @testset let localmarginal = FactorNodeLocalMarginal(:b)
+        @test name(localmarginal) === :b
+        @test tag(localmarginal) === Val{:b}()
+        @test occursin("b", repr(localmarginal))
+        # The stream is not set
+        @test_throws UndefRefError get_stream_of_marginals(localmarginal)
+
+        m = of(Marginal("message", false, false))
+
+        set_stream_of_marginals!(localmarginal, m)
+
+        @test get_stream_of_marginals(localmarginal) !== m
+
+        stream_of_marginals = get_stream_of_marginals(localmarginal)
+
+        output_value = []
+
+        subscription = subscribe!(
+            stream_of_marginals, (d) -> push!(output_value, d)
+        )
+
+        @test length(output_value) === 1
+        @test output_value[1] == Marginal("message", false, false)
+
+        unsubscribe!(subscription)
     end
 end
 
@@ -27,8 +55,7 @@ end
         NodeInterface,
         FactorNodeLocalClusters,
         getfactorization,
-        getmarginals,
-        getmarginal,
+        get_node_local_marginals,
         name
 
     a = NodeInterface(:a, randomvar())
@@ -40,8 +67,8 @@ end
         @testset let clusters = FactorNodeLocalClusters(
                 interfaces, ((1, 2, 3),)
             )
-            @test length(getmarginals(clusters)) === 1
-            @test name(getmarginal(clusters, 1)) === :a_b_c
+            @test length(get_node_local_marginals(clusters)) === 1
+            @test name(get_node_local_marginals(clusters)[1]) === :a_b_c
             @test getfactorization(clusters) === ((1, 2, 3),)
             @test getfactorization(clusters, 1) === (1, 2, 3)
         end
@@ -49,9 +76,9 @@ end
         @testset let clusters = FactorNodeLocalClusters(
                 interfaces, ((1, 2), (3,))
             )
-            @test length(getmarginals(clusters)) === 2
-            @test name(getmarginal(clusters, 1)) === :a_b
-            @test name(getmarginal(clusters, 2)) === :c
+            @test length(get_node_local_marginals(clusters)) === 2
+            @test name(get_node_local_marginals(clusters)[1]) === :a_b
+            @test name(get_node_local_marginals(clusters)[2]) === :c
             @test getfactorization(clusters) === ((1, 2), (3,))
             @test getfactorization(clusters, 1) === (1, 2)
             @test getfactorization(clusters, 2) === (3,)
@@ -60,9 +87,9 @@ end
         @testset let clusters = FactorNodeLocalClusters(
                 interfaces, ((1,), (2, 3))
             )
-            @test length(getmarginals(clusters)) === 2
-            @test name(getmarginal(clusters, 1)) === :a
-            @test name(getmarginal(clusters, 2)) === :b_c
+            @test length(get_node_local_marginals(clusters)) === 2
+            @test name(get_node_local_marginals(clusters)[1]) === :a
+            @test name(get_node_local_marginals(clusters)[2]) === :b_c
             @test getfactorization(clusters) === ((1,), (2, 3))
             @test getfactorization(clusters, 1) === (1,)
             @test getfactorization(clusters, 2) === (2, 3)
@@ -71,10 +98,10 @@ end
         @testset let clusters = FactorNodeLocalClusters(
                 interfaces, ((1,), (2,), (3,))
             )
-            @test length(getmarginals(clusters)) === 3
-            @test name(getmarginal(clusters, 1)) === :a
-            @test name(getmarginal(clusters, 2)) === :b
-            @test name(getmarginal(clusters, 3)) === :c
+            @test length(get_node_local_marginals(clusters)) === 3
+            @test name(get_node_local_marginals(clusters)[1]) === :a
+            @test name(get_node_local_marginals(clusters)[2]) === :b
+            @test name(get_node_local_marginals(clusters)[3]) === :c
             @test getfactorization(clusters) === ((1,), (2,), (3,))
             @test getfactorization(clusters, 1) === (1,)
             @test getfactorization(clusters, 2) === (2,)
@@ -194,7 +221,9 @@ end
         getlocalclusters,
         initialize_clusters!,
         getdata,
-        default_functional_dependencies
+        default_functional_dependencies,
+        get_node_local_marginals,
+        get_stream_of_marginals
 
     using BayesBase
 
@@ -244,7 +273,7 @@ end
                 nothing, nothing, nothing, nothing, nothing, nothing
             )
 
-            @test length(getmarginals(getlocalclusters(node))) === 1
+            @test length(get_node_local_marginals(getlocalclusters(node))) === 1
 
             initialize_clusters!(
                 getlocalclusters(node), dependencies, node, options
@@ -252,7 +281,9 @@ end
 
             @test PointMass(vout + va + vb) == getdata(
                 check_stream_updated_once(
-                    getmarginal(getmarginal(getlocalclusters(node), 1))
+                    get_stream_of_marginals(
+                        get_node_local_marginals(getlocalclusters(node))[1]
+                    ),
                 ),
             )
         end
@@ -272,7 +303,7 @@ end
                 nothing, nothing, nothing, nothing, nothing, nothing
             )
 
-            @test length(getmarginals(getlocalclusters(node))) === 2
+            @test length(get_node_local_marginals(getlocalclusters(node))) === 2
 
             initialize_clusters!(
                 getlocalclusters(node), dependencies, node, options
@@ -280,11 +311,14 @@ end
 
             @test PointMass(vout + va - vb) == getdata(
                 check_stream_updated_once(
-                    getmarginal(getmarginal(getlocalclusters(node), 1))
+                    get_stream_of_marginals(
+                        get_node_local_marginals(getlocalclusters(node))[1]
+                    ),
                 ),
             )
-            @test getmarginal(getmarginal(getlocalclusters(node), 2)) ===
-                getmarginal(b, IncludeAll())
+            @test get_stream_of_marginals(
+                get_node_local_marginals(getlocalclusters(node))[2]
+            ) === get_stream_of_marginals(b)
         end
     end
 
@@ -302,7 +336,7 @@ end
                 nothing, nothing, nothing, nothing, nothing, nothing
             )
 
-            @test length(getmarginals(getlocalclusters(node))) === 2
+            @test length(get_node_local_marginals(getlocalclusters(node))) === 2
 
             initialize_clusters!(
                 getlocalclusters(node), dependencies, node, options
@@ -310,11 +344,14 @@ end
 
             @test PointMass(vout + vb - va) == getdata(
                 check_stream_updated_once(
-                    getmarginal(getmarginal(getlocalclusters(node), 1))
+                    get_stream_of_marginals(
+                        get_node_local_marginals(getlocalclusters(node))[1]
+                    ),
                 ),
             )
-            @test getmarginal(getmarginal(getlocalclusters(node), 2)) ===
-                getmarginal(a, IncludeAll())
+            @test get_stream_of_marginals(
+                get_node_local_marginals(getlocalclusters(node))[2]
+            ) === get_stream_of_marginals(a)
         end
     end
 
@@ -332,7 +369,7 @@ end
                 nothing, nothing, nothing, nothing, nothing, nothing
             )
 
-            @test length(getmarginals(getlocalclusters(node))) === 2
+            @test length(get_node_local_marginals(getlocalclusters(node))) === 2
 
             initialize_clusters!(
                 getlocalclusters(node), dependencies, node, options
@@ -340,11 +377,14 @@ end
 
             @test PointMass(va + vb - vout) == getdata(
                 check_stream_updated_once(
-                    getmarginal(getmarginal(getlocalclusters(node), 2))
+                    get_stream_of_marginals(
+                        get_node_local_marginals(getlocalclusters(node))[2]
+                    ),
                 ),
             )
-            @test getmarginal(getmarginal(getlocalclusters(node), 1)) ===
-                getmarginal(out, IncludeAll())
+            @test get_stream_of_marginals(
+                get_node_local_marginals(getlocalclusters(node))[1]
+            ) === get_stream_of_marginals(out)
         end
     end
 end

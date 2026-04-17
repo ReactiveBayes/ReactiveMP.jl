@@ -88,7 +88,7 @@ function rule(
     qnames,
     marginals,
     meta::DeltaMeta,
-    addons::Any,
+    annotations::Any,
     node::DeltaFnNode,
 ) where {F <: Function}
     return rule(
@@ -100,7 +100,7 @@ function rule(
         qnames,
         marginals,
         meta,
-        addons,
+        annotations,
         node,
     )
 end
@@ -241,7 +241,7 @@ end
 # For datavar we get the latest value from the data stream
 __unpack_latest_static(_, constvar::ConstVariable) = getconst(constvar)
 __unpack_latest_static(_, datavar::DataVariable) = BayesBase.getpointmass(
-    getdata(Rocket.getrecent(messageout(datavar, 1)))
+    getdata(Rocket.getrecent(get_stream_of_outbound_messages(datavar, 1)))
 )
 
 # By default all `meta` objects fallback to the `DeltaFnDefaultRuleLayout`
@@ -268,9 +268,7 @@ end
 
 function activate!(factornode::DeltaFnNode, options)
     meta = collect_meta(functionalform(factornode), getmetadata(options))
-    pipeline = collect_pipeline(
-        functionalform(factornode), getpipeline(options)
-    )
+    stream_postprocessor = getpostprocessor(options)
 
     if !isnothing(getinverse(meta)) && !isempty(factornode.statics)
         error(
@@ -284,7 +282,7 @@ function activate!(factornode::DeltaFnNode, options)
         factornode,
         deltafn_rule_layout(factornode, meta),
         meta,
-        pipeline,
+        stream_postprocessor,
         options,
     )
 end
@@ -293,7 +291,7 @@ function activate!(
     factornode::DeltaFnNode,
     layout::AbstractDeltaNodeDependenciesLayout,
     meta,
-    pipeline,
+    stream_postprocessors,
     options,
 )
     foreach(getinterfaces(factornode)) do interface
@@ -302,9 +300,9 @@ function activate!(
         )
     end
 
-    scheduler    = getscheduler(options)
-    addons       = getaddons(options)
+    annotations  = getannotations(options)
     rulefallback = getrulefallback(options)
+    callbacks    = getcallbacks(options)
 
     # First we declare local marginal for `out` edge
     deltafn_apply_layout(
@@ -312,10 +310,10 @@ function activate!(
         Val(:q_out),
         factornode,
         meta,
-        pipeline,
-        scheduler,
-        addons,
+        stream_postprocessors,
+        annotations,
         rulefallback,
+        callbacks,
     )
 
     # Second we declare how to compute a joint marginal over all inbound edges
@@ -324,10 +322,10 @@ function activate!(
         Val(:q_ins),
         factornode,
         meta,
-        pipeline,
-        scheduler,
-        addons,
+        stream_postprocessors,
+        annotations,
         rulefallback,
+        callbacks,
     )
 
     # Second we declare message passing logic for out interface
@@ -336,10 +334,10 @@ function activate!(
         Val(:m_out),
         factornode,
         meta,
-        pipeline,
-        scheduler,
-        addons,
+        stream_postprocessors,
+        annotations,
         rulefallback,
+        callbacks,
     )
 
     # At last we declare message passing logic for input interfaces
@@ -348,10 +346,10 @@ function activate!(
         Val(:m_in),
         factornode,
         meta,
-        pipeline,
-        scheduler,
-        addons,
+        stream_postprocessors,
+        annotations,
         rulefallback,
+        callbacks,
     )
 end
 
@@ -361,17 +359,20 @@ function score(
     ::Deterministic,
     node::DeltaFnNode,
     meta,
-    skip_strategy,
-    scheduler,
+    stream_postprocessors,
 ) where {T <: CountingReal}
 
     # TODO (make a function for `node.localmarginals.marginals[2]`)
-    qinsmarginal = apply_skip_filter(
-        getmarginal(node.localmarginals.marginals[2]), skip_strategy
-    )
+    qinsmarginal =
+        get_stream_of_marginals(node.localmarginals.marginals[2]) |>
+        skip_initial()
 
-    stream  = qinsmarginal |> schedule_on(scheduler)
     mapping = (marginal) -> convert(T, -score(DifferentialEntropy(), marginal))
 
-    return stream |> map(T, mapping)
+    stream_of_scores = qinsmarginal |> map(T, mapping)
+    stream_of_scores = postprocess_stream_of_scores(
+        stream_postprocessors, stream_of_scores
+    )
+
+    return stream_of_scores
 end
