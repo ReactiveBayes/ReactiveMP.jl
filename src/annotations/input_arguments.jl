@@ -54,6 +54,16 @@ get_rule_input_arguments(ann::AnnotationDict) = get_annotation(
     ann, :rule_input_arguments
 )
 
+function pre_rule_annotations!(
+    ::InputArgumentsAnnotations,
+    ann::AnnotationDict,
+    mapping,
+    messages,
+    marginals,
+)
+    return nothing
+end
+
 function post_rule_annotations!(
     ::InputArgumentsAnnotations,
     ann::AnnotationDict,

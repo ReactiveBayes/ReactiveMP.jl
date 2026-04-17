@@ -29,6 +29,12 @@ macro logscale(value)
     return esc(:(ReactiveMP.annotate!(getannotations(), :logscale, $(value))))
 end
 
+function pre_rule_annotations!(
+    ::LogScaleAnnotations, ann::AnnotationDict, mapping, messages, marginals
+)
+    return nothing
+end
+
 function post_rule_annotations!(
     ::LogScaleAnnotations,
     ann::AnnotationDict,

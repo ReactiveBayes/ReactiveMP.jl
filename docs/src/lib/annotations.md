@@ -17,13 +17,15 @@ ReactiveMP.has_annotation
 
 ## Annotation processors
 
-Annotation processors are subtypes of [`ReactiveMP.AbstractAnnotations`](@ref) that define *how* annotations are written and merged. There are two integration points:
+Annotation processors are subtypes of [`ReactiveMP.AbstractAnnotations`](@ref) that define *how* annotations are written and merged. There are three integration points:
 
+- **Before a rule executes** — [`ReactiveMP.pre_rule_annotations!`](@ref) is called with the processor, the rule's `AnnotationDict`, the `MessageMapping`, the incoming messages and marginals. Use this to write annotations that does not depend on what the rule computed.
 - **After a rule executes** — [`ReactiveMP.post_rule_annotations!`](@ref) is called with the processor, the rule's `AnnotationDict`, the `MessageMapping`, the incoming messages and marginals, and the result distribution. Use this to write annotations that depend on what the rule computed.
 - **During a message product** — [`ReactiveMP.post_product_annotations!`](@ref) is called with the processor, a fresh merged `AnnotationDict`, and the left and right annotation dicts together with the distributions involved. Use this to merge annotations from the two incoming messages into the product message.
 
 ```@docs
 ReactiveMP.AbstractAnnotations
+ReactiveMP.pre_rule_annotations!
 ReactiveMP.post_rule_annotations!
 ReactiveMP.post_product_annotations!
 ```
@@ -39,6 +41,11 @@ using ReactiveMP
 import ReactiveMP: AbstractAnnotations, AnnotationDict, has_annotation, get_annotation, annotate!
 
 struct CountAnnotations <: AbstractAnnotations end
+
+# Called before each rule execution
+function ReactiveMP.pre_rule_annotations!(::CountAnnotations, ann::AnnotationDict, mapping, messages, marginals)
+    return nothing
+end
 
 # Called after each rule execution
 function ReactiveMP.post_rule_annotations!(::CountAnnotations, ann::AnnotationDict, mapping, messages, marginals, result)

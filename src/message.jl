@@ -613,7 +613,14 @@ function (mapping::MessageMapping)(messages, marginals)
         BeforeMessageRuleCallEvent(mapping, messages, marginals, span_id),
     )
 
-    ann = AnnotationDict()
+    annotations = AnnotationDict()
+
+    # Run annotation processors before the rule has been executed
+    if !isnothing(mapping.annotations)
+        for p in mapping.annotations
+            pre_rule_annotations!(p, annotations, mapping, messages, marginals)
+        end
+    end
 
     result =
         if !isnothing(messages) &&
@@ -632,7 +639,7 @@ function (mapping::MessageMapping)(messages, marginals)
                 mapping.marginals_names,
                 marginals,
                 mapping.meta,
-                ann,
+                annotations,
                 mapping.factornode,
             )
             ruleoutput = rule(ruleargs...)
@@ -652,16 +659,18 @@ function (mapping::MessageMapping)(messages, marginals)
     # Run annotation processors after the rule has been executed
     if !isnothing(mapping.annotations)
         for p in mapping.annotations
-            post_rule_annotations!(p, ann, mapping, messages, marginals, result)
+            post_rule_annotations!(
+                p, annotations, mapping, messages, marginals, result
+            )
         end
     end
 
     invoke_callback(
         mapping.callbacks,
         AfterMessageRuleCallEvent(
-            mapping, messages, marginals, result, ann, span_id
+            mapping, messages, marginals, result, annotations, span_id
         ),
     )
 
-    return Message(result, is_message_clamped, is_message_initial, ann)
+    return Message(result, is_message_clamped, is_message_initial, annotations)
 end

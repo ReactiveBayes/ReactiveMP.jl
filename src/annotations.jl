@@ -113,6 +113,14 @@ involved in the message product. Called once per processor inside
 function post_product_annotations! end
 
 """
+    pre_rule_annotations!(processor::AbstractAnnotations, ann::AnnotationDict, mapping, messages, marginals)
+
+Write annotations into `ann` before a rule has executed. Called once per processor
+inside the `MessageMapping` callable, before the rule returns its result distribution.
+"""
+function pre_rule_annotations! end
+
+"""
     post_rule_annotations!(processor::AbstractAnnotations, ann::AnnotationDict, mapping, messages, marginals, result)
 
 Write annotations into `ann` after a rule has executed. Called once per processor
