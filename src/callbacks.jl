@@ -513,3 +513,33 @@ function Base.show(io::IO, ev::AfterMessageRuleCallEvent)
     print(io, ")")
     return nothing
 end
+
+function Base.show(io::IO, ev::BeforeProductOfTwoMessagesEvent)
+    print(io, "BeforeProductOfTwoMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", left=")
+    show(io, ev.left)
+    print(io, ", right=")
+    show(io, ev.right)
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterProductOfTwoMessagesEvent)
+    print(io, "AfterProductOfTwoMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", left=")
+    show(io, ev.left)
+    print(io, ", right=")
+    show(io, ev.right)
+    print(io, ", result=")
+    show(io, ev.result)
+    print(io, ", annotations=")
+    show(io, ev.annotations)
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
