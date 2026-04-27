@@ -181,6 +181,45 @@ function generate_span_id(callbacks)
     return uuid4()
 end
 
+"""
+    _show_span(io, span_id)
+
+Internal helper that prints `span=<first 4 hex chars>…` for a non-`nothing`
+span identifier, or `span=nothing` otherwise. Used by the compact `Base.show`
+methods of the event types defined in this file. The truncated form keeps the
+single-line event representation readable while remaining greppable: the same
+4-char prefix appears on the matching `Before`/`After` pair.
+
+See also: [`_show_span_full`](@ref), [`generate_span_id`](@ref).
+"""
+function _show_span(io::IO, span_id)
+    print(io, "span=")
+    if isnothing(span_id)
+        print(io, "nothing")
+    else
+        s = string(span_id)
+        print(io, first(s, 4), "…")
+    end
+    return nothing
+end
+
+"""
+    _show_span_full(io, span_id)
+
+Internal helper that prints `span_id=<full uuid>` for a non-`nothing` span
+identifier, or `span_id=nothing` otherwise. Used by the long-form
+`show(io, ::MIME"text/plain", ev)` methods where the full UUID is preferable.
+"""
+function _show_span_full(io::IO, span_id)
+    print(io, "span_id=")
+    if isnothing(span_id)
+        print(io, "nothing")
+    else
+        print(io, span_id)
+    end
+    return nothing
+end
+
 # All defined events go here, so its easier to document them all in one place
 
 """
