@@ -565,3 +565,31 @@ function Base.show(io::IO, ev::AfterProductOfMessagesEvent)
     print(io, ")")
     return nothing
 end
+
+function Base.show(io::IO, ev::BeforeFormConstraintAppliedEvent)
+    print(io, "BeforeFormConstraintAppliedEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", strategy=")
+    show(io, ev.strategy)
+    print(io, ", dist=")
+    show(io, ev.distribution)
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterFormConstraintAppliedEvent)
+    print(io, "AfterFormConstraintAppliedEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", strategy=")
+    show(io, ev.strategy)
+    print(io, ", dist=")
+    show(io, ev.distribution)
+    print(io, ", result=")
+    show(io, ev.result)
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
