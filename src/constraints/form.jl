@@ -36,6 +36,8 @@ See also: [`FormConstraintCheckLast`](@ref), [`ReactiveMP.MessageProductContext`
 """
 struct FormConstraintCheckEach end
 
+Base.show(io::IO, ::FormConstraintCheckEach) = print(io, "CheckEach")
+
 """
     FormConstraintCheckLast
 
@@ -46,6 +48,8 @@ This is the default strategy and is more efficient when intermediate form doesn'
 See also: [`FormConstraintCheckEach`](@ref), [`ReactiveMP.MessageProductContext`](@ref)
 """
 struct FormConstraintCheckLast end
+
+Base.show(io::IO, ::FormConstraintCheckLast) = print(io, "CheckLast")
 
 """
     FormConstraintCheckPickDefault
