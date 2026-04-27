@@ -61,6 +61,7 @@ include("matrix_normal/out.jl")
 include("matrix_normal/M.jl")
 include("matrix_normal/U.jl")
 include("matrix_normal/V.jl")
+include("matrix_normal/marginals.jl")
 
 include("normal_mean_variance/out.jl")
 include("normal_mean_variance/mean.jl")
