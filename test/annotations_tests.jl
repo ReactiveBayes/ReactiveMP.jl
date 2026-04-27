@@ -79,10 +79,18 @@ end
 
     ann = AnnotationDict()
     @test repr(ann) == "AnnotationDict()"
+    @test repr("text/plain", ann) == "AnnotationDict()"
 
     annotate!(ann, :logscale, 1.0)
-    @test occursin("logscale", repr(ann))
-    @test occursin("1.0", repr(ann))
+    # Compact form keeps the trace summary short — only the count, no values.
+    @test repr(ann) == "AnnotationDict(n=1)"
+    # Long form (MIME"text/plain") keeps the full key/value listing.
+    long = repr("text/plain", ann)
+    @test occursin("logscale", long)
+    @test occursin("1.0", long)
+
+    annotate!(ann, :upper_bound, 2.5)
+    @test repr(ann) == "AnnotationDict(n=2)"
 end
 
 @testitem "AnnotationDict does not allocate on simple creation" begin
