@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Compact, single-line `Base.show` methods for every callback `Event` defined in `src/callbacks.jl` (`Before/AfterMessageRuleCallEvent`, `Before/AfterProductOfTwoMessagesEvent`, `Before/AfterProductOfMessagesEvent`, `Before/AfterFormConstraintAppliedEvent`, `Before/AfterMarginalComputationEvent`) so the RxInfer trace logger no longer dumps raw struct contents into TBLogger text summaries ([#599](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/599), [RxInfer.jl#638](https://github.com/ReactiveBayes/RxInfer.jl/issues/638))
+- Compact `Base.show` methods for the supporting types those events reference: `MessageMapping`, `MessageProductContext`, `FormConstraintCheckEach`, `FormConstraintCheckLast`
+- `_show_span` / `_show_span_full` internal helpers that render a UUID4 span identifier as either a 4-char prefix (default trace form) or the full UUID (`MIME"text/plain"` form)
+
+### Changed
+- `Base.show(io, ::AnnotationDict)` now prints `AnnotationDict(n=K)` for non-empty dicts; the previous full key/value listing moved to `Base.show(io, ::MIME"text/plain", ::AnnotationDict)` so trace output stays compact while interactive debugging keeps full detail
+
 ## [6.0.0]
 
 ### Added
