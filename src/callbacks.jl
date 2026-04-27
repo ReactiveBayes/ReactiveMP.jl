@@ -457,3 +457,59 @@ struct AfterMarginalComputationEvent{V, C, Ms, R, S} <:
     result::R
     span_id::S
 end
+
+# -----------------------------------------------------------------------------
+# Compact `Base.show` methods for the event types defined above.
+#
+# Two-axis goal:
+#   1. Make trace-logger output (TBLogger / RxInfer text summaries) readable
+#      instead of dumping every type parameter and nested struct.
+#   2. Keep the single-line form short enough that the same line fits in a
+#      Jupyter cell, a TensorBoard text panel, or a plain log line.
+#
+# Conventions:
+#   - `EventName(k=v, k=v, …)` — field order matches the struct definition
+#     so the output mirrors the event's own data.
+#   - `span=ab12…` (compact, 4 hex chars + ellipsis) for `show(io, ev)`.
+#   - `span_id=<full uuid>` only for `show(io, MIME"text/plain", ev)`.
+#   - Variable identity is shown via `var=<label>` (every variable subtype
+#     stores a `label` field, see `src/variables/*.jl`).
+#   - Messages tuples / collections are summarised by `nmessages=N` rather
+#     than printed in full; the matching span_id pairs `Before` and `After`
+#     events so an interested reader can correlate them post-hoc.
+# -----------------------------------------------------------------------------
+
+# Best-effort label extraction. Variables (`RandomVariable`, `ConstVariable`,
+# `DataVariable`) all carry a `label` field; fall back to the value itself
+# for any other shape so the show methods stay total.
+_var_label(v) = hasproperty(v, :label) ? getfield(v, :label) : v
+
+# Count for `messages::Union{Tuple, Nothing}` and the marginals counterpart.
+_count_or_zero(::Nothing) = 0
+_count_or_zero(x) = length(x)
+
+function Base.show(io::IO, ev::BeforeMessageRuleCallEvent)
+    print(io, "BeforeMessageRuleCallEvent(mapping=")
+    show(io, ev.mapping)
+    print(io, ", nmsgs=", _count_or_zero(ev.messages))
+    print(io, ", nmarginals=", _count_or_zero(ev.marginals))
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterMessageRuleCallEvent)
+    print(io, "AfterMessageRuleCallEvent(mapping=")
+    show(io, ev.mapping)
+    print(io, ", nmsgs=", _count_or_zero(ev.messages))
+    print(io, ", nmarginals=", _count_or_zero(ev.marginals))
+    print(io, ", result=")
+    show(io, ev.result)
+    print(io, ", annotations=")
+    show(io, ev.annotations)
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
