@@ -593,3 +593,25 @@ function Base.show(io::IO, ev::AfterFormConstraintAppliedEvent)
     print(io, ")")
     return nothing
 end
+
+function Base.show(io::IO, ev::BeforeMarginalComputationEvent)
+    print(io, "BeforeMarginalComputationEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", nmessages=", _count_or_zero(ev.messages))
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterMarginalComputationEvent)
+    print(io, "AfterMarginalComputationEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", nmessages=", _count_or_zero(ev.messages))
+    print(io, ", result=")
+    show(io, ev.result)
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
