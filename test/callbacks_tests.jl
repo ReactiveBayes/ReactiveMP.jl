@@ -444,3 +444,186 @@ end
     @test returned_event === event
     @test event.state === 11
 end
+
+# -----------------------------------------------------------------------------
+# `Base.show` golden-string tests for the Tier B events.
+#
+# Goal of these tests is to lock down the trace-logger output format so the
+# RxInfer TBLogger extension can rely on `repr(ev)` to produce a single,
+# greppable line per event. They use a fixed UUID for the span id so the
+# truncated 4-char prefix is deterministic and the matching Before/After
+# pair share it.
+#
+# Regression assertion: the output must NOT contain the raw struct dump
+# pattern `MessageMapping{` or curly-brace type parameters from the event
+# itself — that pattern is the telltale of the original `Base.show` default
+# fallback that prompted issue #599 / RxInfer.jl#638.
+# -----------------------------------------------------------------------------
+@testmodule EventShowTestUtils begin
+    using UUIDs
+    import ReactiveMP:
+        MessageMapping,
+        Message,
+        AnnotationDict,
+        FormConstraintCheckEach,
+        FormConstraintCheckLast,
+        MessageProductContext
+
+    struct MockVariable
+        label::Symbol
+    end
+
+    # Fixed UUID so the truncated "ab12…" prefix is reproducible across runs.
+    fixed_span() = UUID("ab123456-1234-5678-9abc-def012345678")
+
+    # Build a trivial MessageMapping that exercises the new show method.
+    # `F = Int` is a stand-in functional form: `show(::Type{Int})` yields "Int64".
+    mapping(; vtag = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing) = MessageMapping(
+        Int, vtag, nothing, msgs, marginals, nothing, nothing, nothing, nothing,
+        nothing,
+    )
+
+    msg(d) = Message(d, false, false, AnnotationDict())
+
+    annotated_dict() = begin
+        ann = AnnotationDict()
+        ReactiveMP.annotate!(ann, :logscale, 1.0)
+        ann
+    end
+
+    export MockVariable, fixed_span, mapping, msg, annotated_dict
+end
+
+@testitem "Base.show for Tier C supporting types" setup = [EventShowTestUtils] begin
+    import ReactiveMP:
+        MessageMapping,
+        MessageProductContext,
+        FormConstraintCheckEach,
+        FormConstraintCheckLast,
+        AnnotationDict
+
+    # MessageMapping — single-line summary, names extracted from the Val{...} tuple.
+    @test repr(EventShowTestUtils.mapping()) ==
+        "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
+    @test repr(
+        EventShowTestUtils.mapping(
+            vtag = :μ, msgs = Val{(:out, :τ)}(), marginals = Val{(:q,)}()
+        ),
+    ) == "MessageMapping(Int64, :μ, msgs=[:out, :τ], marginals=[:q])"
+
+    # MessageProductContext — surfaces only the strategy and fold direction.
+    ctx = MessageProductContext()
+    @test repr(ctx) == "MessageProductContext(strategy=CheckLast, fold=" *
+        repr(ReactiveMP.MessagesProductFromLeftToRight()) *
+        ")"
+
+    # Form constraint check strategies — short, distinguishable labels.
+    @test repr(FormConstraintCheckEach()) == "CheckEach"
+    @test repr(FormConstraintCheckLast()) == "CheckLast"
+end
+
+@testitem "Base.show for Before/After event pairs" setup = [EventShowTestUtils] begin
+    import ReactiveMP:
+        BeforeMessageRuleCallEvent,
+        AfterMessageRuleCallEvent,
+        BeforeProductOfTwoMessagesEvent,
+        AfterProductOfTwoMessagesEvent,
+        BeforeProductOfMessagesEvent,
+        AfterProductOfMessagesEvent,
+        BeforeFormConstraintAppliedEvent,
+        AfterFormConstraintAppliedEvent,
+        BeforeMarginalComputationEvent,
+        AfterMarginalComputationEvent,
+        FormConstraintCheckEach,
+        FormConstraintCheckLast,
+        MessageProductContext,
+        AnnotationDict
+
+    span = EventShowTestUtils.fixed_span()
+    var = EventShowTestUtils.MockVariable(:θ)
+    ctx = MessageProductContext()
+    mapping = EventShowTestUtils.mapping()
+    left = EventShowTestUtils.msg(0.1)
+    right = EventShowTestUtils.msg(0.2)
+    result = EventShowTestUtils.msg(0.3)
+    ann = AnnotationDict()
+
+    # ---- MessageRuleCall ---------------------------------------------------
+    before_rule = BeforeMessageRuleCallEvent(mapping, (left, right), nothing, span)
+    after_rule = AfterMessageRuleCallEvent(
+        mapping, (left, right), nothing, result, ann, span,
+    )
+    @test repr(before_rule) ==
+        "BeforeMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, span=ab12…)"
+    @test repr(after_rule) ==
+        "AfterMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, result=Message(0.3), annotations=AnnotationDict(), span=ab12…)"
+
+    # ---- ProductOfTwoMessages ---------------------------------------------
+    before_p2 = BeforeProductOfTwoMessagesEvent(var, ctx, left, right, span)
+    after_p2 = AfterProductOfTwoMessagesEvent(
+        var, ctx, left, right, result, ann, span,
+    )
+    @test repr(before_p2) ==
+        "BeforeProductOfTwoMessagesEvent(var=:θ, left=Message(0.1), right=Message(0.2), span=ab12…)"
+    @test repr(after_p2) ==
+        "AfterProductOfTwoMessagesEvent(var=:θ, left=Message(0.1), right=Message(0.2), result=Message(0.3), annotations=AnnotationDict(), span=ab12…)"
+
+    # ---- ProductOfMessages -------------------------------------------------
+    msgs = (left, right, result)
+    before_pn = BeforeProductOfMessagesEvent(var, ctx, msgs, span)
+    after_pn = AfterProductOfMessagesEvent(var, ctx, msgs, result, span)
+    @test repr(before_pn) ==
+        "BeforeProductOfMessagesEvent(var=:θ, nmessages=3, span=ab12…)"
+    @test repr(after_pn) ==
+        "AfterProductOfMessagesEvent(var=:θ, nmessages=3, result=Message(0.3), span=ab12…)"
+
+    # ---- FormConstraintApplied --------------------------------------------
+    before_form = BeforeFormConstraintAppliedEvent(
+        var, ctx, FormConstraintCheckEach(), 0.5, span,
+    )
+    after_form = AfterFormConstraintAppliedEvent(
+        var, ctx, FormConstraintCheckEach(), 0.5, 0.7, span,
+    )
+    @test repr(before_form) ==
+        "BeforeFormConstraintAppliedEvent(var=:θ, strategy=CheckEach, dist=0.5, span=ab12…)"
+    @test repr(after_form) ==
+        "AfterFormConstraintAppliedEvent(var=:θ, strategy=CheckEach, dist=0.5, result=0.7, span=ab12…)"
+
+    # ---- MarginalComputation ----------------------------------------------
+    before_marg = BeforeMarginalComputationEvent(var, ctx, msgs, span)
+    after_marg = AfterMarginalComputationEvent(var, ctx, msgs, result, span)
+    @test repr(before_marg) ==
+        "BeforeMarginalComputationEvent(var=:θ, nmessages=3, span=ab12…)"
+    @test repr(after_marg) ==
+        "AfterMarginalComputationEvent(var=:θ, nmessages=3, result=Message(0.3), span=ab12…)"
+
+    # ---- Regression guard --------------------------------------------------
+    # The original failure mode (issue #599 / RxInfer.jl#638) was that every
+    # event landed in the trace logger as a raw struct dump containing
+    # type-parameter braces. Make sure none of the new representations drift
+    # back into that shape.
+    for ev in (
+        before_rule, after_rule, before_p2, after_p2, before_pn, after_pn,
+        before_form, after_form, before_marg, after_marg,
+    )
+        rendered = repr(ev)
+        @test !occursin("MessageMapping{", rendered)
+        @test !occursin("Event{", rendered)
+        @test count('\n', rendered) == 0
+    end
+end
+
+@testitem "Base.show for nothing span_id remains total" begin
+    import ReactiveMP:
+        BeforeMessageRuleCallEvent, _show_span, _show_span_full, MessageMapping
+
+    # If callbacks are disabled the span id is `nothing`. The compact and
+    # full helpers must not throw — they degrade gracefully to a literal.
+    short_io = IOBuffer()
+    _show_span(short_io, nothing)
+    @test String(take!(short_io)) == "span=nothing"
+
+    full_io = IOBuffer()
+    _show_span_full(full_io, nothing)
+    @test String(take!(full_io)) == "span_id=nothing"
+end
