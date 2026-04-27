@@ -543,3 +543,25 @@ function Base.show(io::IO, ev::AfterProductOfTwoMessagesEvent)
     print(io, ")")
     return nothing
 end
+
+function Base.show(io::IO, ev::BeforeProductOfMessagesEvent)
+    print(io, "BeforeProductOfMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", nmessages=", _count_or_zero(ev.messages))
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterProductOfMessagesEvent)
+    print(io, "AfterProductOfMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", nmessages=", _count_or_zero(ev.messages))
+    print(io, ", result=")
+    show(io, ev.result)
+    print(io, ", ")
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
