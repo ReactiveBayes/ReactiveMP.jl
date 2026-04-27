@@ -143,6 +143,15 @@ Base.@kwdef struct MessageProductContext{C, F, S, L, N, A}
     callbacks::A = nothing
 end
 
+function Base.show(io::IO, ctx::MessageProductContext)
+    print(io, "MessageProductContext(strategy=")
+    show(io, ctx.form_constraint_check_strategy)
+    print(io, ", fold=")
+    show(io, ctx.fold_strategy)
+    print(io, ")")
+    return nothing
+end
+
 """
     compute_product_of_two_messages(variable::AbstractVariable, context::MessageProductContext, left::Message, right::Message)
 
