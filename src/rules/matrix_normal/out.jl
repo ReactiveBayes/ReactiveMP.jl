@@ -38,3 +38,14 @@ end
     p = size(M, 2)
     return MatrixTDist(ν_V - p + 1, M, U, Ψ_V)
 end
+
+@rule MatrixNormal(:out, Marginalisation) (
+    q_M::MatrixNormal,
+    q_U::Union{InverseWishartDistributionsFamily,PointMass},
+    q_V::Union{InverseWishartDistributionsFamily,PointMass},
+) = begin
+    M = mean(q_M)
+    U = cholinv(mean(cholinv, q_U))
+    V = cholinv(mean(cholinv, q_V))
+    return MatrixNormal(M, (U + U') / 2, (V + V') / 2)
+end

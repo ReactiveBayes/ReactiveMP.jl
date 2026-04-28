@@ -155,4 +155,71 @@
             ),
         ]
     end
+
+    @testset "Mean-field VMP: (q_M::MatrixNormal, q_U::InverseWishart, q_V::InverseWishart)" begin
+        @test_rules [check_type_promotion = true] MatrixNormal(
+            :out, Marginalisation
+        ) [
+            (
+                input = (
+                    q_M = MatrixNormal(
+                        [1.0 2.0; 3.0 4.0],
+                        [2.0 0.5; 0.5 3.0],
+                        [1.0 0.0; 0.0 2.0],
+                    ),
+                    q_U = InverseWishart(5.0, [2.0 0.0; 0.0 2.0]),
+                    q_V = InverseWishart(4.0, [1.0 0.0; 0.0 1.0]),
+                ),
+                output = MatrixNormal(
+                    [1.0 2.0; 3.0 4.0],
+                    [2.0 / 5.0 0.0; 0.0 2.0 / 5.0],
+                    [1.0 / 4.0 0.0; 0.0 1.0 / 4.0],
+                ),
+            ),
+            (
+                input = (
+                    q_M = MatrixNormal(
+                        ones(3, 2),
+                        Matrix(1.0 * I, 3, 3),
+                        Matrix(1.0 * I, 2, 2),
+                    ),
+                    q_U = InverseWishart(
+                        7.0,
+                        [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0],
+                    ),
+                    q_V = InverseWishart(5.0, [1.0 0.5; 0.5 2.0]),
+                ),
+                output = MatrixNormal(
+                    ones(3, 2),
+                    [2.0 / 7.0 0.0 0.0; 0.0 3.0 / 7.0 0.0; 0.0 0.0 4.0 / 7.0],
+                    [1.0 / 5.0 0.5 / 5.0; 0.5 / 5.0 2.0 / 5.0],
+                ),
+            ),
+        ]
+    end
+    # @testset "Mean-field VMP: (q_M::MatrixNormal, q_U::Union{PointMass,InverseWishart}, q_V::Union{PointMass,InverseWishart})" begin
+    #     @test_rules [check_type_promotion = true] MatrixNormal(
+    #         :out, Marginalisation
+    #     ) [
+    #         (
+    #             input = (
+    #                 q_M = MatrixNormal(
+    #                     ones(3, 2),
+    #                     Matrix(1.0 * I, 3, 3),
+    #                     Matrix(1.0 * I, 2, 2),
+    #                 ),
+    #                 q_U = InverseWishart(
+    #                     7.0,
+    #                     [2.0 0.0 0.0; 0.0 3.0 0.0; 0.0 0.0 4.0],
+    #                 ),
+    #                 q_V = PointMass([1.0 0.5; 0.5 2.0]),
+    #             ),
+    #             output = MatrixNormal(
+    #                 ones(3, 2),
+    #                 [2.0 / 7.0 0.0 0.0; 0.0 3.0 / 7.0 0.0; 0.0 0.0 4.0 / 7.0],
+    #                 [1.0 0.5; 0.5 2.0],
+    #             ),
+    #         ),
+    #     ]
+    # end
 end
