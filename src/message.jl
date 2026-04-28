@@ -554,24 +554,15 @@ end
 message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
 
-# Internal helpers used by `Base.show(::IO, ::MessageMapping)` to extract the
-# tuple of interface names that ReactiveMP stores as a `Val{(:a, :b)}()` value
-# at the type level for type stability. Returns the names tuple as-is for any
-# other value, including `nothing`.
-_message_mapping_names(::Val{T}) where {T} = T
-_message_mapping_names(other) = other
-
 function Base.show(io::IO, mapping::MessageMapping)
     print(io, "MessageMapping(")
     print(io, message_mapping_fform(mapping))
     print(io, ", ", repr(mapping.vtag))
-    msgs = _message_mapping_names(mapping.msgs_names)
-    if msgs !== nothing
-        print(io, ", msgs=", collect(msgs))
+    if mapping.msgs_names !== nothing
+        print(io, ", msgs=", collect(unval(mapping.msgs_names)))
     end
-    marginals = _message_mapping_names(mapping.marginals_names)
-    if marginals !== nothing
-        print(io, ", marginals=", collect(marginals))
+    if mapping.marginals_names !== nothing
+        print(io, ", marginals=", collect(unval(mapping.marginals_names)))
     end
     print(io, ")")
     return nothing
