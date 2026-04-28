@@ -184,38 +184,28 @@ end
 """
     _show_span(io, span_id)
 
-Internal helper that prints `span=<first 4 hex chars>…` for a non-`nothing`
-span identifier, or `span=nothing` otherwise. Used by the compact `Base.show`
-methods of the event types defined in this file. The truncated form keeps the
-single-line event representation readable while remaining greppable: the same
-4-char prefix appears on the matching `Before`/`After` pair.
+Internal helper used by the `Base.show` methods of the event types defined in
+this file. Honors the `:compact` `IOContext` flag and the `nothing` span:
 
-See also: [`_show_span_full`](@ref), [`generate_span_id`](@ref).
+- emits nothing at all when `span_id === nothing` (no `span=nothing` noise),
+- otherwise emits a leading `, ` separator followed by either
+    * `span=<first 4 hex chars>…` when `get(io, :compact, false) == true`
+      (greppable: the same prefix appears on the matching `Before`/`After`
+      pair), or
+    * `span_id=<full uuid>` for non-compact contexts (REPL, Pluto, …) where
+      the full identifier is preferable.
+
+See also: [`generate_span_id`](@ref).
 """
 function _show_span(io::IO, span_id)
-    print(io, "span=")
     if isnothing(span_id)
-        print(io, "nothing")
-    else
-        s = string(span_id)
-        print(io, first(s, 4), "…")
+        return nothing
     end
-    return nothing
-end
-
-"""
-    _show_span_full(io, span_id)
-
-Internal helper that prints `span_id=<full uuid>` for a non-`nothing` span
-identifier, or `span_id=nothing` otherwise. Used by the long-form
-`show(io, ::MIME"text/plain", ev)` methods where the full UUID is preferable.
-"""
-function _show_span_full(io::IO, span_id)
-    print(io, "span_id=")
-    if isnothing(span_id)
-        print(io, "nothing")
+    if get(io, :compact, false)
+        s = string(span_id)
+        print(io, ", span=", first(s, 4), "…")
     else
-        print(io, span_id)
+        print(io, ", span_id=", span_id)
     end
     return nothing
 end
@@ -459,24 +449,23 @@ struct AfterMarginalComputationEvent{V, C, Ms, R, S} <:
 end
 
 # -----------------------------------------------------------------------------
-# Compact `Base.show` methods for the event types defined above.
+# `Base.show` methods for the event types defined above.
 #
-# Two-axis goal:
-#   1. Make trace-logger output (TBLogger / RxInfer text summaries) readable
-#      instead of dumping every type parameter and nested struct.
-#   2. Keep the single-line form short enough that the same line fits in a
-#      Jupyter cell, a TensorBoard text panel, or a plain log line.
+# These honor the `:compact` `IOContext` flag (Julia stdlib convention, see
+# `Base.show_circular` and friends in `base/show.jl`):
 #
-# Conventions:
-#   - `EventName(k=v, k=v, …)` — field order matches the struct definition
-#     so the output mirrors the event's own data.
-#   - `span=ab12…` (compact, 4 hex chars + ellipsis) for `show(io, ev)`.
-#   - `span_id=<full uuid>` only for `show(io, MIME"text/plain", ev)`.
-#   - Variable identity is shown via `var=<label>` (every variable subtype
-#     stores a `label` field, see `src/variables/*.jl`).
-#   - Messages tuples / collections are summarised by `nmessages=N` rather
-#     than printed in full; the matching span_id pairs `Before` and `After`
-#     events so an interested reader can correlate them post-hoc.
+#   * `:compact => true`  — short, single-line form intended for trace
+#     loggers like RxInfer's TensorBoardLoggerExt. Tuples of messages and
+#     marginals are summarised by `nmsgs=N` / `nmarginals=N` and the span id
+#     is truncated to a 4-char prefix that matches across `Before`/`After`
+#     pairs.
+#   * `:compact => false` (the default for REPL, Pluto, Jupyter)  — full
+#     form: actual `messages` / `marginals` are printed, the span id is
+#     emitted in full.
+#
+# Field order matches the struct definition so the output mirrors the
+# event's own data. Variable identity is shown via `var=<label>` (every
+# variable subtype stores a `label` field, see `src/variables/*.jl`).
 # -----------------------------------------------------------------------------
 
 # Best-effort label extraction. Variables (`RandomVariable`, `ConstVariable`,
@@ -488,12 +477,24 @@ _var_label(v) = hasproperty(v, :label) ? getfield(v, :label) : v
 _count_or_zero(::Nothing) = 0
 _count_or_zero(x) = length(x)
 
+# Compact summary `nmsgs=N` vs. full `messages=<value>`. The compact form is
+# what trace loggers want; the full form is what an interactive user wants
+# when they `display(ev)` in a notebook.
+function _show_messages_field(io::IO, name::String, value)
+    if get(io, :compact, false)
+        print(io, ", n", name, "=", _count_or_zero(value))
+    else
+        print(io, ", ", name, "=")
+        show(io, value)
+    end
+    return nothing
+end
+
 function Base.show(io::IO, ev::BeforeMessageRuleCallEvent)
     print(io, "BeforeMessageRuleCallEvent(mapping=")
     show(io, ev.mapping)
-    print(io, ", nmsgs=", _count_or_zero(ev.messages))
-    print(io, ", nmarginals=", _count_or_zero(ev.marginals))
-    print(io, ", ")
+    _show_messages_field(io, "msgs", ev.messages)
+    _show_messages_field(io, "marginals", ev.marginals)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -502,13 +503,12 @@ end
 function Base.show(io::IO, ev::AfterMessageRuleCallEvent)
     print(io, "AfterMessageRuleCallEvent(mapping=")
     show(io, ev.mapping)
-    print(io, ", nmsgs=", _count_or_zero(ev.messages))
-    print(io, ", nmarginals=", _count_or_zero(ev.marginals))
+    _show_messages_field(io, "msgs", ev.messages)
+    _show_messages_field(io, "marginals", ev.marginals)
     print(io, ", result=")
     show(io, ev.result)
     print(io, ", annotations=")
     show(io, ev.annotations)
-    print(io, ", ")
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -521,7 +521,6 @@ function Base.show(io::IO, ev::BeforeProductOfTwoMessagesEvent)
     show(io, ev.left)
     print(io, ", right=")
     show(io, ev.right)
-    print(io, ", ")
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -538,7 +537,6 @@ function Base.show(io::IO, ev::AfterProductOfTwoMessagesEvent)
     show(io, ev.result)
     print(io, ", annotations=")
     show(io, ev.annotations)
-    print(io, ", ")
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -547,8 +545,7 @@ end
 function Base.show(io::IO, ev::BeforeProductOfMessagesEvent)
     print(io, "BeforeProductOfMessagesEvent(var=")
     show(io, _var_label(ev.variable))
-    print(io, ", nmessages=", _count_or_zero(ev.messages))
-    print(io, ", ")
+    _show_messages_field(io, "messages", ev.messages)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -557,10 +554,9 @@ end
 function Base.show(io::IO, ev::AfterProductOfMessagesEvent)
     print(io, "AfterProductOfMessagesEvent(var=")
     show(io, _var_label(ev.variable))
-    print(io, ", nmessages=", _count_or_zero(ev.messages))
+    _show_messages_field(io, "messages", ev.messages)
     print(io, ", result=")
     show(io, ev.result)
-    print(io, ", ")
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -573,7 +569,6 @@ function Base.show(io::IO, ev::BeforeFormConstraintAppliedEvent)
     show(io, ev.strategy)
     print(io, ", dist=")
     show(io, ev.distribution)
-    print(io, ", ")
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -588,7 +583,6 @@ function Base.show(io::IO, ev::AfterFormConstraintAppliedEvent)
     show(io, ev.distribution)
     print(io, ", result=")
     show(io, ev.result)
-    print(io, ", ")
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -597,8 +591,7 @@ end
 function Base.show(io::IO, ev::BeforeMarginalComputationEvent)
     print(io, "BeforeMarginalComputationEvent(var=")
     show(io, _var_label(ev.variable))
-    print(io, ", nmessages=", _count_or_zero(ev.messages))
-    print(io, ", ")
+    _show_messages_field(io, "messages", ev.messages)
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing
@@ -607,10 +600,9 @@ end
 function Base.show(io::IO, ev::AfterMarginalComputationEvent)
     print(io, "AfterMarginalComputationEvent(var=")
     show(io, _var_label(ev.variable))
-    print(io, ", nmessages=", _count_or_zero(ev.messages))
+    _show_messages_field(io, "messages", ev.messages)
     print(io, ", result=")
     show(io, ev.result)
-    print(io, ", ")
     _show_span(io, ev.span_id)
     print(io, ")")
     return nothing

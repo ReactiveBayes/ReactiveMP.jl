@@ -148,6 +148,12 @@ function Base.show(io::IO, ctx::MessageProductContext)
     show(io, ctx.form_constraint_check_strategy)
     print(io, ", fold=")
     show(io, ctx.fold_strategy)
+    if !get(io, :compact, false)
+        print(io, ", form_constraint=")
+        show(io, ctx.form_constraint)
+        print(io, ", prod_constraint=")
+        show(io, ctx.prod_constraint)
+    end
     print(io, ")")
     return nothing
 end
@@ -563,6 +569,14 @@ function Base.show(io::IO, mapping::MessageMapping)
     end
     if mapping.marginals_names !== nothing
         print(io, ", marginals=", collect(unval(mapping.marginals_names)))
+    end
+    if !get(io, :compact, false)
+        if mapping.vconstraint !== nothing
+            print(io, ", vconstraint=", mapping.vconstraint)
+        end
+        if mapping.meta !== nothing
+            print(io, ", meta=", mapping.meta)
+        end
     end
     print(io, ")")
     return nothing

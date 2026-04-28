@@ -36,22 +36,16 @@ Base.isempty(ann::AnnotationDict) =
 function Base.show(io::IO, ann::AnnotationDict)
     if isempty(ann)
         print(io, "AnnotationDict()")
-    else
-        n = length((ann.data::Dict{Symbol, Any}))
-        print(io, "AnnotationDict(n=", n, ")")
-    end
-    return nothing
-end
-
-function Base.show(io::IO, ::MIME"text/plain", ann::AnnotationDict)
-    if isempty(ann)
-        print(io, "AnnotationDict()")
         return nothing
     end
     data = ann.data::Dict{Symbol, Any}
-    print(io, "AnnotationDict(")
-    join(io, ("$k => $v" for (k, v) in data), ", ")
-    print(io, ")")
+    if get(io, :compact, false)
+        print(io, "AnnotationDict(n=", length(data), ")")
+    else
+        print(io, "AnnotationDict(")
+        join(io, ("$k => $v" for (k, v) in data), ", ")
+        print(io, ")")
+    end
     return nothing
 end
 

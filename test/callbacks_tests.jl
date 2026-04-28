@@ -446,15 +446,19 @@ end
 end
 
 # -----------------------------------------------------------------------------
-# `Base.show` golden-string tests for the Tier B events.
+# `Base.show` golden-string tests for the Tier B events and their supporting
+# types. These lock down two output forms:
 #
-# Goal of these tests is to lock down the trace-logger output format so the
-# RxInfer TBLogger extension can rely on `repr(ev)` to produce a single,
-# greppable line per event. They use a fixed UUID for the span id so the
-# truncated 4-char prefix is deterministic and the matching Before/After
-# pair share it.
+#   * The default (interactive) form returned by `repr(ev)` — full, with
+#     actual messages and full UUID span ids — used in REPL / Pluto.
+#   * The compact form requested by `IOContext(io, :compact => true)` —
+#     short, single-line, with `nmsgs=N` summaries and a 4-char span prefix
+#     — used by trace loggers like RxInfer's TensorBoardLoggerExt.
 #
-# Regression assertion: the output must NOT contain the raw struct dump
+# A fixed UUID is used so the truncated `ab12…` prefix is deterministic and
+# the matching `Before`/`After` pair share it.
+#
+# Regression assertion: neither form may contain the raw struct dump
 # pattern `MessageMapping{` or curly-brace type parameters from the event
 # itself — that pattern is the telltale of the original `Base.show` default
 # fallback that prompted issue #599 / RxInfer.jl#638.
@@ -491,19 +495,31 @@ end
         ann
     end
 
-    export MockVariable, fixed_span, mapping, msg, annotated_dict
+    # `sprint` with `:compact => true` mirrors what the trace loggers do.
+    compact(x) = sprint(show, x; context = :compact => true)
+
+    export MockVariable, fixed_span, mapping, msg, annotated_dict, compact
 end
 
-@testitem "Base.show for Tier C supporting types" setup = [EventShowTestUtils] begin
+@testitem "Base.show for Tier C supporting types — compact vs full" setup = [
+    EventShowTestUtils
+] begin
     import ReactiveMP:
         MessageMapping,
         MessageProductContext,
         FormConstraintCheckEach,
         FormConstraintCheckLast,
-        AnnotationDict
+        AnnotationDict,
+        MessagesProductFromLeftToRight
 
-    # MessageMapping — single-line summary, names extracted from the Val{...} tuple.
+    compact = EventShowTestUtils.compact
+
+    # MessageMapping — same shape in both forms. The full form additionally
+    # includes `vconstraint`/`meta` when those are not `nothing`; the test
+    # mapping leaves them as `nothing`, so both forms match here.
     @test repr(EventShowTestUtils.mapping()) ==
+        "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
+    @test compact(EventShowTestUtils.mapping()) ==
         "MessageMapping(Int64, :out, msgs=[:μ, :τ])"
     @test repr(
         EventShowTestUtils.mapping(
@@ -511,18 +527,27 @@ end
         ),
     ) == "MessageMapping(Int64, :μ, msgs=[:out, :τ], marginals=[:q])"
 
-    # MessageProductContext — surfaces only the strategy and fold direction.
+    # MessageProductContext — compact strips `form_constraint`/`prod_constraint`,
+    # the full form keeps them.
     ctx = MessageProductContext()
-    @test repr(ctx) == "MessageProductContext(strategy=CheckLast, fold=" *
-        repr(ReactiveMP.MessagesProductFromLeftToRight()) *
+    @test compact(ctx) ==
+        "MessageProductContext(strategy=CheckLast, fold=" *
+        compact(MessagesProductFromLeftToRight()) *
         ")"
+    @test occursin("form_constraint=", repr(ctx))
+    @test occursin("prod_constraint=", repr(ctx))
 
-    # Form constraint check strategies — short, distinguishable labels.
-    @test repr(FormConstraintCheckEach()) == "CheckEach"
-    @test repr(FormConstraintCheckLast()) == "CheckLast"
+    # Form constraint check strategies — abbreviated label vs. canonical
+    # constructor name.
+    @test compact(FormConstraintCheckEach()) == "CheckEach"
+    @test compact(FormConstraintCheckLast()) == "CheckLast"
+    @test repr(FormConstraintCheckEach()) == "FormConstraintCheckEach()"
+    @test repr(FormConstraintCheckLast()) == "FormConstraintCheckLast()"
 end
 
-@testitem "Base.show for Before/After event pairs" setup = [EventShowTestUtils] begin
+@testitem "Base.show for Before/After event pairs — compact form" setup = [
+    EventShowTestUtils
+] begin
     import ReactiveMP:
         BeforeMessageRuleCallEvent,
         AfterMessageRuleCallEvent,
@@ -539,6 +564,7 @@ end
         MessageProductContext,
         AnnotationDict
 
+    compact = EventShowTestUtils.compact
     span = EventShowTestUtils.fixed_span()
     var = EventShowTestUtils.MockVariable(:θ)
     ctx = MessageProductContext()
@@ -548,82 +574,123 @@ end
     result = EventShowTestUtils.msg(0.3)
     ann = AnnotationDict()
 
-    # ---- MessageRuleCall ---------------------------------------------------
     before_rule = BeforeMessageRuleCallEvent(mapping, (left, right), nothing, span)
     after_rule = AfterMessageRuleCallEvent(
         mapping, (left, right), nothing, result, ann, span,
     )
-    @test repr(before_rule) ==
+    @test compact(before_rule) ==
         "BeforeMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, span=ab12…)"
-    @test repr(after_rule) ==
+    @test compact(after_rule) ==
         "AfterMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, result=Message(0.3), annotations=AnnotationDict(), span=ab12…)"
 
-    # ---- ProductOfTwoMessages ---------------------------------------------
     before_p2 = BeforeProductOfTwoMessagesEvent(var, ctx, left, right, span)
     after_p2 = AfterProductOfTwoMessagesEvent(
         var, ctx, left, right, result, ann, span,
     )
-    @test repr(before_p2) ==
+    @test compact(before_p2) ==
         "BeforeProductOfTwoMessagesEvent(var=:θ, left=Message(0.1), right=Message(0.2), span=ab12…)"
-    @test repr(after_p2) ==
+    @test compact(after_p2) ==
         "AfterProductOfTwoMessagesEvent(var=:θ, left=Message(0.1), right=Message(0.2), result=Message(0.3), annotations=AnnotationDict(), span=ab12…)"
 
-    # ---- ProductOfMessages -------------------------------------------------
     msgs = (left, right, result)
     before_pn = BeforeProductOfMessagesEvent(var, ctx, msgs, span)
     after_pn = AfterProductOfMessagesEvent(var, ctx, msgs, result, span)
-    @test repr(before_pn) ==
+    @test compact(before_pn) ==
         "BeforeProductOfMessagesEvent(var=:θ, nmessages=3, span=ab12…)"
-    @test repr(after_pn) ==
+    @test compact(after_pn) ==
         "AfterProductOfMessagesEvent(var=:θ, nmessages=3, result=Message(0.3), span=ab12…)"
 
-    # ---- FormConstraintApplied --------------------------------------------
     before_form = BeforeFormConstraintAppliedEvent(
         var, ctx, FormConstraintCheckEach(), 0.5, span,
     )
     after_form = AfterFormConstraintAppliedEvent(
         var, ctx, FormConstraintCheckEach(), 0.5, 0.7, span,
     )
-    @test repr(before_form) ==
+    @test compact(before_form) ==
         "BeforeFormConstraintAppliedEvent(var=:θ, strategy=CheckEach, dist=0.5, span=ab12…)"
-    @test repr(after_form) ==
+    @test compact(after_form) ==
         "AfterFormConstraintAppliedEvent(var=:θ, strategy=CheckEach, dist=0.5, result=0.7, span=ab12…)"
 
-    # ---- MarginalComputation ----------------------------------------------
     before_marg = BeforeMarginalComputationEvent(var, ctx, msgs, span)
     after_marg = AfterMarginalComputationEvent(var, ctx, msgs, result, span)
-    @test repr(before_marg) ==
+    @test compact(before_marg) ==
         "BeforeMarginalComputationEvent(var=:θ, nmessages=3, span=ab12…)"
-    @test repr(after_marg) ==
+    @test compact(after_marg) ==
         "AfterMarginalComputationEvent(var=:θ, nmessages=3, result=Message(0.3), span=ab12…)"
 
-    # ---- Regression guard --------------------------------------------------
-    # The original failure mode (issue #599 / RxInfer.jl#638) was that every
-    # event landed in the trace logger as a raw struct dump containing
-    # type-parameter braces. Make sure none of the new representations drift
-    # back into that shape.
+    # Regression guard: neither form may revert to the raw struct dump that
+    # prompted issue #599 / RxInfer.jl#638.
     for ev in (
         before_rule, after_rule, before_p2, after_p2, before_pn, after_pn,
         before_form, after_form, before_marg, after_marg,
     )
-        rendered = repr(ev)
-        @test !occursin("MessageMapping{", rendered)
-        @test !occursin("Event{", rendered)
-        @test count('\n', rendered) == 0
+        for rendered in (compact(ev), repr(ev))
+            @test !occursin("MessageMapping{", rendered)
+            @test !occursin("Event{", rendered)
+            @test count('\n', rendered) == 0
+        end
     end
 end
 
-@testitem "Base.show for nothing span_id remains total" begin
+@testitem "Base.show for Before/After event pairs — full form" setup = [
+    EventShowTestUtils
+] begin
     import ReactiveMP:
-        BeforeMessageRuleCallEvent, _show_span, _show_span_full, MessageMapping
+        BeforeMessageRuleCallEvent,
+        AfterMarginalComputationEvent,
+        BeforeProductOfMessagesEvent,
+        MessageProductContext,
+        AnnotationDict
 
-    # If callbacks are disabled the span id is `nothing`. The compact and
-    # full helpers must not throw — they degrade gracefully to a literal.
+    span = EventShowTestUtils.fixed_span()
+    var = EventShowTestUtils.MockVariable(:θ)
+    ctx = MessageProductContext()
+    mapping = EventShowTestUtils.mapping()
+    left = EventShowTestUtils.msg(0.1)
+    right = EventShowTestUtils.msg(0.2)
+    result = EventShowTestUtils.msg(0.3)
+    msgs = (left, right, result)
+
+    # The full form prints actual messages (not a count) and the full span.
+    # Field name matches the struct field name (`msgs` for MessageRuleCall,
+    # `messages` for ProductOfMessages / MarginalComputation).
+    rendered = repr(BeforeMessageRuleCallEvent(mapping, (left, right), nothing, span))
+    @test occursin("msgs=(Message(0.1), Message(0.2))", rendered)
+    @test !occursin("nmsgs=", rendered)
+    @test occursin("span_id=ab123456-1234-5678-9abc-def012345678", rendered)
+    @test !occursin("span=ab12…", rendered)
+
+    rendered_marg = repr(BeforeProductOfMessagesEvent(var, ctx, msgs, span))
+    @test occursin("messages=", rendered_marg)
+    @test !occursin("nmessages=", rendered_marg)
+    @test occursin("Message(0.1)", rendered_marg)
+end
+
+@testitem "Base.show omits span field when span_id is nothing" setup = [
+    EventShowTestUtils
+] begin
+    import ReactiveMP:
+        BeforeMessageRuleCallEvent, AfterMarginalComputationEvent,
+        MessageProductContext, AnnotationDict, _show_span
+
+    compact = EventShowTestUtils.compact
+    var = EventShowTestUtils.MockVariable(:θ)
+    ctx = MessageProductContext()
+    mapping = EventShowTestUtils.mapping()
+    left = EventShowTestUtils.msg(0.1)
+    right = EventShowTestUtils.msg(0.2)
+
+    # The helper writes nothing when the span_id is `nothing`.
     short_io = IOBuffer()
-    _show_span(short_io, nothing)
-    @test String(take!(short_io)) == "span=nothing"
-
+    _show_span(IOContext(short_io, :compact => true), nothing)
+    @test String(take!(short_io)) == ""
     full_io = IOBuffer()
-    _show_span_full(full_io, nothing)
-    @test String(take!(full_io)) == "span_id=nothing"
+    _show_span(full_io, nothing)
+    @test String(take!(full_io)) == ""
+
+    # Events surface no `span=`/`span_id=` field at all when callbacks are
+    # disabled (no span id was generated).
+    ev = BeforeMessageRuleCallEvent(mapping, (left, right), nothing, nothing)
+    @test !occursin("span", compact(ev))
+    @test !occursin("span", repr(ev))
 end

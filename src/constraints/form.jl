@@ -36,7 +36,10 @@ See also: [`FormConstraintCheckLast`](@ref), [`ReactiveMP.MessageProductContext`
 """
 struct FormConstraintCheckEach end
 
-Base.show(io::IO, ::FormConstraintCheckEach) = print(io, "CheckEach")
+function Base.show(io::IO, ::FormConstraintCheckEach)
+    print(io, get(io, :compact, false) ? "CheckEach" : "FormConstraintCheckEach()")
+    return nothing
+end
 
 """
     FormConstraintCheckLast
@@ -49,7 +52,10 @@ See also: [`FormConstraintCheckEach`](@ref), [`ReactiveMP.MessageProductContext`
 """
 struct FormConstraintCheckLast end
 
-Base.show(io::IO, ::FormConstraintCheckLast) = print(io, "CheckLast")
+function Base.show(io::IO, ::FormConstraintCheckLast)
+    print(io, get(io, :compact, false) ? "CheckLast" : "FormConstraintCheckLast()")
+    return nothing
+end
 
 """
     FormConstraintCheckPickDefault
