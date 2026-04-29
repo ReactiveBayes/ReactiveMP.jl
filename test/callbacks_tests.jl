@@ -483,7 +483,15 @@ end
     # Build a trivial MessageMapping that exercises the new show method.
     # `F = Int` is a stand-in functional form: `show(::Type{Int})` yields "Int64".
     mapping(; vtag = :out, msgs = Val{(:μ, :τ)}(), marginals = nothing) = MessageMapping(
-        Int, vtag, nothing, msgs, marginals, nothing, nothing, nothing, nothing,
+        Int,
+        vtag,
+        nothing,
+        msgs,
+        marginals,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
         nothing,
     )
 
@@ -532,8 +540,8 @@ end
     ctx = MessageProductContext()
     @test compact(ctx) ==
         "MessageProductContext(strategy=CheckLast, fold=" *
-        compact(MessagesProductFromLeftToRight()) *
-        ")"
+          compact(MessagesProductFromLeftToRight()) *
+          ")"
     @test occursin("form_constraint=", repr(ctx))
     @test occursin("prod_constraint=", repr(ctx))
 
@@ -574,9 +582,11 @@ end
     result = EventShowTestUtils.msg(0.3)
     ann = AnnotationDict()
 
-    before_rule = BeforeMessageRuleCallEvent(mapping, (left, right), nothing, span)
+    before_rule = BeforeMessageRuleCallEvent(
+        mapping, (left, right), nothing, span
+    )
     after_rule = AfterMessageRuleCallEvent(
-        mapping, (left, right), nothing, result, ann, span,
+        mapping, (left, right), nothing, result, ann, span
     )
     @test compact(before_rule) ==
         "BeforeMessageRuleCallEvent(mapping=MessageMapping(Int64, :out, msgs=[:μ, :τ]), nmsgs=2, nmarginals=0, span=ab12…)"
@@ -585,7 +595,7 @@ end
 
     before_p2 = BeforeProductOfTwoMessagesEvent(var, ctx, left, right, span)
     after_p2 = AfterProductOfTwoMessagesEvent(
-        var, ctx, left, right, result, ann, span,
+        var, ctx, left, right, result, ann, span
     )
     @test compact(before_p2) ==
         "BeforeProductOfTwoMessagesEvent(var=:θ, left=Message(0.1), right=Message(0.2), span=ab12…)"
@@ -601,10 +611,10 @@ end
         "AfterProductOfMessagesEvent(var=:θ, nmessages=3, result=Message(0.3), span=ab12…)"
 
     before_form = BeforeFormConstraintAppliedEvent(
-        var, ctx, FormConstraintCheckEach(), 0.5, span,
+        var, ctx, FormConstraintCheckEach(), 0.5, span
     )
     after_form = AfterFormConstraintAppliedEvent(
-        var, ctx, FormConstraintCheckEach(), 0.5, 0.7, span,
+        var, ctx, FormConstraintCheckEach(), 0.5, 0.7, span
     )
     @test compact(before_form) ==
         "BeforeFormConstraintAppliedEvent(var=:θ, strategy=CheckEach, dist=0.5, span=ab12…)"
@@ -621,8 +631,16 @@ end
     # Regression guard: neither form may revert to the raw struct dump that
     # prompted issue #599 / RxInfer.jl#638.
     for ev in (
-        before_rule, after_rule, before_p2, after_p2, before_pn, after_pn,
-        before_form, after_form, before_marg, after_marg,
+        before_rule,
+        after_rule,
+        before_p2,
+        after_p2,
+        before_pn,
+        after_pn,
+        before_form,
+        after_form,
+        before_marg,
+        after_marg,
     )
         for rendered in (compact(ev), repr(ev))
             @test !occursin("MessageMapping{", rendered)
@@ -654,7 +672,9 @@ end
     # The full form prints actual messages (not a count) and the full span.
     # Field name matches the struct field name (`msgs` for MessageRuleCall,
     # `messages` for ProductOfMessages / MarginalComputation).
-    rendered = repr(BeforeMessageRuleCallEvent(mapping, (left, right), nothing, span))
+    rendered = repr(
+        BeforeMessageRuleCallEvent(mapping, (left, right), nothing, span)
+    )
     @test occursin("msgs=(Message(0.1), Message(0.2))", rendered)
     @test !occursin("nmsgs=", rendered)
     @test occursin("span_id=ab123456-1234-5678-9abc-def012345678", rendered)
@@ -670,8 +690,11 @@ end
     EventShowTestUtils
 ] begin
     import ReactiveMP:
-        BeforeMessageRuleCallEvent, AfterMarginalComputationEvent,
-        MessageProductContext, AnnotationDict, _show_span
+        BeforeMessageRuleCallEvent,
+        AfterMarginalComputationEvent,
+        MessageProductContext,
+        AnnotationDict,
+        _show_span
 
     compact = EventShowTestUtils.compact
     var = EventShowTestUtils.MockVariable(:θ)
