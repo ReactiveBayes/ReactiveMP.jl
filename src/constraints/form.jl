@@ -36,6 +36,13 @@ See also: [`FormConstraintCheckLast`](@ref), [`ReactiveMP.MessageProductContext`
 """
 struct FormConstraintCheckEach end
 
+function Base.show(io::IO, ::FormConstraintCheckEach)
+    print(
+        io, get(io, :compact, false) ? "CheckEach" : "FormConstraintCheckEach()"
+    )
+    return nothing
+end
+
 """
     FormConstraintCheckLast
 
@@ -46,6 +53,13 @@ This is the default strategy and is more efficient when intermediate form doesn'
 See also: [`FormConstraintCheckEach`](@ref), [`ReactiveMP.MessageProductContext`](@ref)
 """
 struct FormConstraintCheckLast end
+
+function Base.show(io::IO, ::FormConstraintCheckLast)
+    print(
+        io, get(io, :compact, false) ? "CheckLast" : "FormConstraintCheckLast()"
+    )
+    return nothing
+end
 
 """
     FormConstraintCheckPickDefault
