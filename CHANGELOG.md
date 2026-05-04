@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0] - 04-05-2026
+
 ### Added
 - `Base.show` methods for every callback `Event` defined in `src/callbacks.jl` (`Before/AfterMessageRuleCallEvent`, `Before/AfterProductOfTwoMessagesEvent`, `Before/AfterProductOfMessagesEvent`, `Before/AfterFormConstraintAppliedEvent`, `Before/AfterMarginalComputationEvent`) so the RxInfer trace logger no longer dumps raw struct contents into TBLogger text summaries ([#599](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/599), [RxInfer.jl#638](https://github.com/ReactiveBayes/RxInfer.jl/issues/638)). The methods honor the `IOContext` `:compact` flag: trace loggers pass `:compact => true` to get a one-line `nmsgs=N` / 4-char span summary, while REPL/Pluto/Jupyter sees the full form with actual messages and the full UUID span id.
 - `Base.show` methods following the same `:compact` convention for the supporting types those events reference: `MessageMapping`, `MessageProductContext`, `FormConstraintCheckEach`, `FormConstraintCheckLast`
@@ -218,7 +220,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.6...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.0...HEAD
+[6.1.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.0.0...v6.1.0
+[6.0.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.6...v6.0.0
 [5.6.6]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.5...v5.6.6
 [5.6.5]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.4...v5.6.5
 [5.6.4]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.3...v5.6.4
