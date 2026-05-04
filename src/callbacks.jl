@@ -181,22 +181,16 @@ function generate_span_id(callbacks)
     return uuid4()
 end
 
-"""
-    _show_span(io, span_id)
-
-Internal helper used by the `Base.show` methods of the event types defined in
-this file. Honors the `:compact` `IOContext` flag and the `nothing` span:
-
-- emits nothing at all when `span_id === nothing` (no `span=nothing` noise),
-- otherwise emits a leading `, ` separator followed by either
-    * `span=<first 4 hex chars>…` when `get(io, :compact, false) == true`
-      (greppable: the same prefix appears on the matching `Before`/`After`
-      pair), or
-    * `span_id=<full uuid>` for non-compact contexts (REPL, Pluto, …) where
-      the full identifier is preferable.
-
-See also: [`generate_span_id`](@ref).
-"""
+# Internal helper used by the `Base.show` methods of the event types defined in
+# this file. Honors the `:compact` `IOContext` flag and the `nothing` span:
+#
+# - emits nothing at all when `span_id === nothing` (no `span=nothing` noise),
+# - otherwise emits a leading `, ` separator followed by either
+#     * `span=<first 4 hex chars>…` when `get(io, :compact, false) == true`
+#       (greppable: the same prefix appears on the matching `Before`/`After`
+#       pair), or
+#     * `span_id=<full uuid>` for non-compact contexts (REPL, Pluto, …) where
+#       the full identifier is preferable.
 function _show_span(io::IO, span_id)
     if isnothing(span_id)
         return nothing
