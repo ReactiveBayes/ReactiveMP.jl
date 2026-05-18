@@ -1,18 +1,33 @@
-
-@testitem "cvi:prod" begin
+@testitem "cvi:prod - fisher information" begin
     using ReactiveMP,
-        Random,
-        StableRNGs,
+        BayesBase,
+        ExponentialFamily
+    import SpecialFunctions: polygamma
+
+    function gammafisher(dist::GammaShapeRate)
+        return [
+            polygamma(1, shape(dist)) -1/rate(dist);
+            -1/rate(dist) shape(dist)/rate(dist)^2
+        ]
+    end
+
+    @testset "Simple check for the existence of the `fisherinformation`" begin
+        @testset "GammaShapeRate" begin
+            for i in 1:10, j in 1:10
+                distribution = GammaShapeRate(i, j)
+                expform = convert(ExponentialFamilyDistribution, distribution)
+                F = fisherinformation(expform)
+                @test [1 0; 0 -1]' * F * [1 0; 0 -1] ≈ gammafisher(distribution)
+            end
+        end
+    end
+end
+
+@testitem "cvi:prod - noop optimiser" begin
+    using ReactiveMP,
         BayesBase,
         Distributions,
-        ExponentialFamily,
-        Optimisers,
-        DiffResults,
-        LinearAlgebra
-
-    import BayesBase: AbstractContinuousGenericLogPdf
-    import StatsFuns: logistic, softmax
-    import SpecialFunctions: polygamma
+        ExponentialFamily
 
     struct NoopOptimiser end
 
@@ -24,41 +39,6 @@
         state::Tuple{NoopOptimiser, Nothing}, new_λ, λ, ∇
     )
         return state, vec(λ)
-    end
-
-    mutable struct CountingOptimizer
-        num_its::Int
-    end
-
-    function ReactiveMP.cvi_setup(opt::CountingOptimizer, λ)
-        return (opt, nothing)
-    end
-
-    function ReactiveMP.cvi_update!(
-        state::Tuple{CountingOptimizer, Nothing}, new_λ, λ, ∇
-    )
-        opt = state[1]
-        opt.num_its += 1
-        return (state, vec(λ))
-    end
-
-    function gammafisher(dist::GammaShapeRate)
-        return [
-            polygamma(1, shape(dist)) -1/rate(dist);
-            -1/rate(dist) shape(dist)/rate(dist)^2
-        ]
-    end
-
-    # These are tested in the `ExponentialFamily`, test a simple case just to be sure
-    @testset "Simple check for the existence of the `fisherinformation`" begin
-        @testset "GammaShapeRate" begin
-            for i in 1:10, j in 1:10
-                distribution = GammaShapeRate(i, j)
-                expform = convert(ExponentialFamilyDistribution, distribution)
-                F = fisherinformation(expform)
-                @test [1 0; 0 -1]' * F * [1 0; 0 -1] ≈ gammafisher(distribution)
-            end
-        end
     end
 
     @testset "Checking that the procedure runs for different parameters (with a noop-optimiser)" begin
@@ -82,7 +62,7 @@
                     force_proper,
                     warn,
                 )
-                # `warn = true` reports that the iterations did not convertge, 
+                # `warn = true` reports that the iterations did not converge,
                 # but that is normal for the no-op optimiser
                 Base.with_logger(Base.NullLogger()) do
                     result = prod(method, left, right)
@@ -91,6 +71,29 @@
                 end
             end
         end
+    end
+end
+
+@testitem "cvi:prod - counting optimiser" begin
+    using ReactiveMP,
+        BayesBase,
+        Distributions,
+        ExponentialFamily
+
+    mutable struct CountingOptimizer
+        num_its::Int
+    end
+
+    function ReactiveMP.cvi_setup(opt::CountingOptimizer, λ)
+        return (opt, nothing)
+    end
+
+    function ReactiveMP.cvi_update!(
+        state::Tuple{CountingOptimizer, Nothing}, new_λ, λ, ∇
+    )
+        opt = state[1]
+        opt.num_its += 1
+        return (state, vec(λ))
     end
 
     @testset "Checking that the procedure runs for different parameters (with a counting-optimiser)" begin
@@ -109,7 +112,7 @@
                 method = CVI(
                     1, n_iters, opt, strategy, n_gradpoints, force_proper, warn
                 )
-                # `warn = true` reports that the iterations did not convertge, 
+                # `warn = true` reports that the iterations did not converge,
                 # but that is normal for the no-op optimiser
                 Base.with_logger(Base.NullLogger()) do
                     result = prod(method, left, right)
@@ -121,6 +124,13 @@
             end
         end
     end
+end
+
+@testitem "cvi:prod - lambda based counting optimiser" begin
+    using ReactiveMP,
+        BayesBase,
+        Distributions,
+        ExponentialFamily
 
     @testset "Checking that the procedure runs for different parameters (with a lambda based counting-optimiser)" begin
         for strategy in (ForwardDiffGrad(), ForwardDiffGrad(1)),
@@ -149,7 +159,7 @@
                     force_proper,
                     warn,
                 )
-                # `warn = true` reports that the iterations did not convertge, 
+                # `warn = true` reports that the iterations did not converge,
                 # but that is normal for the no-op optimiser
                 Base.with_logger(Base.NullLogger()) do
                     result = prod(method, left, right)
@@ -161,19 +171,22 @@
             end
         end
     end
+end
+
+@testitem "cvi:prod - simple products vs analytical solutions" begin
+    using ReactiveMP,
+        Random,
+        StableRNGs,
+        BayesBase,
+        Distributions,
+        ExponentialFamily,
+        Optimisers
+    import StatsFuns: softmax
 
     @testset "Simple products compared to their analytical solutions" begin
         rng = StableRNG(42)
 
         for i in 1:5
-            # Here candidates is a collection of tests 
-            # `left` - left message 
-            # `right` - right message 
-            # `grads` - a collection of gradient strategies (by default only `ForwardDiffGrad()`, `Zygote` is too slow)
-            # `optimisers` - a collection of optimisers (by default `Optimisers.Descent(0.007)`)
-            # `n_iters` - a collection of number of iterations (by default `1000`)
-            # `n_gradpoints` - a collection of number of gradient points (by default `50`)
-            # `tol` - an absolute tolerance (by default `1e-2`)
             candidates = (
                 (
                     left = Bernoulli(rand(rng)),
@@ -197,7 +210,6 @@
                 ),
                 # (left = Categorical(softmax(rand(rng, 3))), Categorical(softmax(rand(rng, 3)))) # Categorical is broken, needs fix!
             )
-            # This list is not exhaustive in any way, e.g. Gaussians are tested below
             for candidate in candidates
                 grads = get(candidate, :grads, (ForwardDiffGrad(),))
                 optimisers = get(
@@ -219,8 +231,6 @@
                         StableRNG(42), 1, n, optimiser, grad, k, Val(true), true
                     )
                     numerical_1 = prod(method, left, right)
-                    # TODO: This would require `ContinuousMultivariateLogPdf(UnspecifiedDomain(), (x) -> logpdf(left, x))`
-                    # for multivariate inputs
                     numerical_2 = prod(
                         method,
                         ContinuousUnivariateLogPdf((x) -> logpdf(left, x)),
@@ -230,7 +240,6 @@
                         @test all(
                             isapprox(mean(numerical), mean(closed), atol = tol)
                         )
-                        # For the univariate case additionaly check the variance
                         if variate_form(typeof(left)) === Univariate &&
                             variate_form(typeof(right)) === Univariate
                             @test all(
@@ -239,7 +248,6 @@
                                 ),
                             )
                         end
-                        # For the multivariate case additionaly check the covariance
                         if variate_form(typeof(left)) === Multivariate &&
                             variate_form(typeof(right)) === Multivariate
                             @test all(
@@ -253,6 +261,14 @@
             end
         end
     end
+end
+
+@testitem "cvi:prod - Normal x Normal" begin
+    using ReactiveMP,
+        StableRNGs,
+        BayesBase,
+        ExponentialFamily,
+        Optimisers
 
     @testset "Normal x Normal (Log-likelihood preconditioner prod)" begin
         seed = 123
@@ -276,6 +292,15 @@
             end
         end
     end
+end
+
+@testitem "cvi:prod - MvNormal x MvNormal" begin
+    using ReactiveMP,
+        StableRNGs,
+        BayesBase,
+        ExponentialFamily,
+        Optimisers,
+        LinearAlgebra
 
     @testset "MvNormal x MvNormal (Log-likelihood preconditioner prod)" begin
         seed = 123
