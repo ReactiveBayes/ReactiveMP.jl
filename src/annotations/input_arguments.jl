@@ -183,7 +183,7 @@ function AddonMemory(args...; kwargs...)
         """To migrate, replace:\n""" *
         """  addons = (AddonMemory(),)\n""" *
         """with:\n""" *
-        """  addons = (InputArgumentsAnnotations(),)\n""" *
+        """  annotations = (InputArgumentsAnnotations(),)\n""" *
         """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
     )
 end
