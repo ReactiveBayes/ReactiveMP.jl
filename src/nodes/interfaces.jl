@@ -138,7 +138,7 @@ is_clamped(many::ManyOf) = is_clamped(many.collection)
 is_initial(many::ManyOf) = is_initial(many.collection)
 typeofdata(many::ManyOf) = typeof(ManyOf(many.collection))
 
-paramfloattype(many::ManyOf) = paramfloattype(many.collection)
+BayesBase.paramfloattype(many::ManyOf) = paramfloattype(many.collection)
 
 rule_method_error_type_nameof(::Type{T}) where {V, T <: ManyOf{V}} = begin
     # V is the tuple type carried in ManyOf{V}
