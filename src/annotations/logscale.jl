@@ -84,7 +84,7 @@ function AddonLogScale(args...; kwargs...)
         """and replaced by `LogScaleAnnotations`.\n""" *
         """\n""" *
         """To migrate, replace:\n""" *
-        """  annotations = (AddonLogScale(),)\n""" *
+        """  addons = (AddonLogScale(),)\n""" *
         """with:\n""" *
         """  annotations = (LogScaleAnnotations(),)\n""" *
         """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
