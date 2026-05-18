@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Improved `AddonMemory` deprecation error message to include a before/after migration example and a direct link to the v5-to-v6 migration guide ([#600](https://github.com/ReactiveBayes/RxInfer.jl/issues/600))
+
 ## [6.1.0] - 04-05-2026
 
 ### Added
