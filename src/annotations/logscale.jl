@@ -80,7 +80,13 @@ Use [`LogScaleAnnotations`](@ref) instead. See the migration guide in the docume
 """
 function AddonLogScale(args...; kwargs...)
     error(
-        """`AddonLogScale` has been removed in ReactiveMP v6 and replaced by `LogScaleAnnotations`. """ *
-        """See the migration guide in the documentation for details.""",
+        """`AddonLogScale` has been removed in ReactiveMP v6 """ *
+        """and replaced by `LogScaleAnnotations`.\n""" *
+        """\n""" *
+        """To migrate, replace:\n""" *
+        """  addons = (AddonLogScale(),)\n""" *
+        """with:\n""" *
+        """  annotations = (LogScaleAnnotations(),)\n""" *
+        """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
     )
 end
