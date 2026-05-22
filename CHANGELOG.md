@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.1] - 2026-05-22
+
 ### Changed
-- Improved `AddonMemory` deprecation error message to include a before/after migration example and a direct link to the v5-to-v6 migration guide ([#600](https://github.com/ReactiveBayes/RxInfer.jl/issues/600))
-- Improved `AddonLogScale` deprecation error message to include a before/after migration example and a direct link to the v5-to-v6 migration guide
+- Improved `AddonMemory` deprecation error message to include a before/after migration example and a direct link to the v5-to-v6 migration guide ([#600](https://github.com/ReactiveBayes/RxInfer.jl/issues/600), [#605](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/605))
+- Improved `AddonLogScale` deprecation error message to include a before/after migration example and a direct link to the v5-to-v6 migration guide ([#605](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/605))
+
+### Fixed
+- Added missing `BayesBase` module prefix to `paramfloattype(::ManyOf)` method so the extension is correctly registered ([#606](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/606))
 
 ## [6.1.0] - 04-05-2026
 
@@ -224,7 +229,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.0...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.1...HEAD
+[6.1.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.6...v6.0.0
 [5.6.6]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.5...v5.6.6
