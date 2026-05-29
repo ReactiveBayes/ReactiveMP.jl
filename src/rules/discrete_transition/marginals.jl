@@ -24,12 +24,10 @@ function marginalrule(
     return Contingency(result, Val(false))
 end
 
-nonparametric_distribution(v::Vector{<:Real}) = Categorical(
-    normalize!(v, 1); check_args = false
-)
-nonparametric_distribution(v::AbstractArray{<:Real, N} where {N}) = Contingency(
-    normalize!(v, 1), Val(false)
-)
+nonparametric_distribution(v::Vector{<:Real}) =
+    Categorical(normalize!(v, 1); check_args = false)
+nonparametric_distribution(v::AbstractArray{<:Real, N} where {N}) =
+    Contingency(normalize!(v, 1), Val(false))
 
 # Generic implementation
 """
@@ -69,7 +67,15 @@ function discrete_transition_marginal_rule(
     return marginal
 end
 
-discrete_transition_marginal_rule_contingency(message_names::NTuple{N, Symbol}, messages::NTuple{N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}}, marginals_names::NTuple{M, Symbol}, marginals, q_a) where {N, M} = Contingency(
+discrete_transition_marginal_rule_contingency(
+    message_names::NTuple{N, Symbol},
+    messages::NTuple{
+        N, Union{<:Message{<:DiscreteNonParametric}, <:Message{<:Bernoulli}}
+    },
+    marginals_names::NTuple{M, Symbol},
+    marginals,
+    q_a,
+) where {N, M} = Contingency(
     discrete_transition_marginal_rule(
         message_names, messages, marginals_names, marginals, q_a
     ),

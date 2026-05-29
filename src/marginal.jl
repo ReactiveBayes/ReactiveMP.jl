@@ -46,9 +46,8 @@ mutable struct Marginal{D}      # `mutable` structure here appears to be more pe
     const annotations :: AnnotationDict
 end
 
-Marginal(data, is_clamped::Bool, is_initial::Bool) = Marginal(
-    data, is_clamped, is_initial, AnnotationDict()
-)
+Marginal(data, is_clamped::Bool, is_initial::Bool) =
+    Marginal(data, is_clamped, is_initial, AnnotationDict())
 
 function Base.show(io::IO, marginal::Marginal)
     print(io, "Marginal(", getdata(marginal), ")")
@@ -146,9 +145,8 @@ MacroHelpers.@proxy_methods Marginal getdata [
 # Otherwise it causes invalidations and slower compile times
 Base.eltype(::Type{<:Marginal{D}}) where {D} = Base.eltype(D)
 
-Distributions.mean(fn::Function, marginal::Marginal) = mean(
-    fn, getdata(marginal)
-)
+Distributions.mean(fn::Function, marginal::Marginal) =
+    mean(fn, getdata(marginal))
 
 """
     as_marginal(any)
@@ -187,17 +185,14 @@ struct MarginalObservable <: Subscribable{Marginal}
     stream  :: LazyObservable{Marginal}
 end
 
-MarginalObservable() = MarginalObservable(
-    RecentSubject(Marginal), lazy(Marginal)
-)
+MarginalObservable() =
+    MarginalObservable(RecentSubject(Marginal), lazy(Marginal))
 
-Rocket.getrecent(observable::MarginalObservable) = Rocket.getrecent(
-    observable.subject
-)
+Rocket.getrecent(observable::MarginalObservable) =
+    Rocket.getrecent(observable.subject)
 
-@inline Rocket.on_subscribe!(observable::MarginalObservable, actor) = subscribe!(
-    observable.stream, actor
-)
+@inline Rocket.on_subscribe!(observable::MarginalObservable, actor) =
+    subscribe!(observable.stream, actor)
 
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.Actor{<:Marginal})           = Rocket.on_subscribe!(observable.stream, actor)
 @inline Rocket.subscribe!(observable::MarginalObservable, actor::Rocket.NextActor{<:Marginal})       = Rocket.on_subscribe!(observable.stream, actor)
@@ -296,8 +291,5 @@ function (mapping::MarginalMapping)(dependencies)
     return Marginal(marginal, is_marginal_clamped, is_marginal_initial)
 end
 
-Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} = Rocket.MapOperator{
-    T, M
-}(
-    mapping
-)
+Base.map(::Type{T}, mapping::M) where {T, M <: MarginalMapping} =
+    Rocket.MapOperator{T, M}(mapping)

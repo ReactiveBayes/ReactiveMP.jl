@@ -22,9 +22,8 @@ function cvi_update! end
 
 # Specialized method for callback functions, a user can provide an arbitrary callback with the optimization procedure
 cvi_setup(callback::F, λ) where {F <: Function} = (callback, nothing)
-cvi_update!(tuple::Tuple{F, Nothing}, new_λ, λ, ∇) where {F <: Function} = (
-    tuple, tuple[1](new_λ, λ, ∇)
-)
+cvi_update!(tuple::Tuple{F, Nothing}, new_λ, λ, ∇) where {F <: Function} =
+    (tuple, tuple[1](new_λ, λ, ∇))
 
 cvilinearize(vector::AbstractVector) = vector
 cvilinearize(matrix::AbstractMatrix) = eachcol(matrix)

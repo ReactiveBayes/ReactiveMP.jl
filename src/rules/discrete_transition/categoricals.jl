@@ -1,6 +1,7 @@
 import Base.Broadcast: BroadcastFunction
 
-__get_corresponding_size(s::NTuple{N, Int}, occurrence::Int) where {N} = s[occurrence]
+__get_corresponding_size(s::NTuple{N, Int}, occurrence::Int) where {N} =
+    s[occurrence]
 __get_corresponding_size(s::NTuple{N, Int}, occurrence::Nothing) where {N} = 1
 
 function get_corresponding_size(
