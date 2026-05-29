@@ -8,9 +8,8 @@ _mergevals(::Val{L}, ::Val{R}) where {L, R} = (L..., R...)
 
 _extractvalues(f::F, ::Nothing, vals::Tuple) where {F} = f.(vals)
 _extractvalues(f::F, vals::Tuple, ::Nothing) where {F} = f.(vals)
-_extractvalues(f::F, left::Tuple, right::Tuple) where {F} = (
-    f.(left)..., f.(right)...
-)
+_extractvalues(f::F, left::Tuple, right::Tuple) where {F} =
+    (f.(left)..., f.(right)...)
 
 struct FallbackNodeFunctionUnnormalizedLogPdf{F}
     fn::F

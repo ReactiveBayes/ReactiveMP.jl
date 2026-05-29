@@ -35,9 +35,8 @@ struct MultinomialPolyaMeta
     ncubaturepoints::Int
 end
 
-default_meta(::Type{MultinomialPolya}) = MultinomialPolyaMeta(
-    MULTINOMIAL_POLYA_CUBATURE_POINTS
-)
+default_meta(::Type{MultinomialPolya}) =
+    MultinomialPolyaMeta(MULTINOMIAL_POLYA_CUBATURE_POINTS)
 
 @average_energy MultinomialPolya (
     q_x::Any,
@@ -49,8 +48,8 @@ default_meta(::Type{MultinomialPolya}) = MultinomialPolyaMeta(
     K             = first(size(mean(q_x)))
     x             = mean(q_x)
     T             = promote_samplefloattype(q_x, q_N, q_ψ)
-    μ_ψ         = mean(q_ψ)
-    v_ψ          = var(q_ψ)
+    μ_ψ           = mean(q_ψ)
+    v_ψ           = var(q_ψ)
     Nks           = compose_Nks(x, N)
     method        = ReactiveMP.ghcubature(meta.ncubaturepoints)
     weights(m, v) = ReactiveMP.getweights(method, m, v)
