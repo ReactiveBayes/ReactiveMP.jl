@@ -1,7 +1,7 @@
 name = "ReactiveMP"
 uuid = "a194aa59-28ba-4574-a09c-4a745416d6e3"
-authors = ["Dmitry Bagaev <d.v.bagaev@tue.nl>", "Albert Podusenko <a.podusenko@tue.nl>", "Bart van Erp <b.v.erp@tue.nl>", "Ismail Senoz <i.senoz@tue.nl>"]
 version = "6.1.1"
+authors = ["Dmitry Bagaev <d.v.bagaev@tue.nl>", "Albert Podusenko <a.podusenko@tue.nl>", "Bart van Erp <b.v.erp@tue.nl>", "Ismail Senoz <i.senoz@tue.nl>"]
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
@@ -65,7 +65,7 @@ Random = "1.9"
 Rocket = "1.8.0"
 SpecialFunctions = "2.3"
 StatsBase = "0.34.0"
-StatsFuns = "1.3.0"
+StatsFuns = "1.3.0, 2"
 TinyHugeNumbers = "1.0.0"
 Tullio = "0.3"
 TupleTools = "1.2.0"
