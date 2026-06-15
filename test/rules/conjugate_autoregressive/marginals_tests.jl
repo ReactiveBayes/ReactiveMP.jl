@@ -116,3 +116,28 @@
         @test β ≈ 5.375
     end
 end
+
+@testitem "marginalrules:ConjugateAR:y_x (delegates to AR)" begin
+    using ReactiveMP, BayesBase, ExponentialFamily, Distributions, LinearAlgebra, StableRNGs
+
+    import ReactiveMP: @call_marginalrule, conjugatear_effective_marginals
+
+    same_normal(a, b; atol = 1e-8) =
+        isapprox(mean(a), mean(b); atol = atol) && isapprox(cov(a), cov(b); atol = atol)
+
+    @testset "y_x joint marginal equals AR(:y_x) with effective (q_θ, q_γ)" begin
+        rng = StableRNG(55)
+        for order in (1, 2)
+            meta = ARMeta(Multivariate, order, ARsafe())
+            B = randn(rng, order, order)
+            q_w = MvNormalGamma(randn(rng, order), B * B' + diageye(order), 2.0 + rand(rng), 1.0 + rand(rng))
+            q_θ, q_γ = conjugatear_effective_marginals(q_w)
+            m_y = MvNormalMeanCovariance(randn(rng, order), diageye(order))
+            m_x = MvNormalMeanCovariance(randn(rng, order), diageye(order))
+
+            got = @call_marginalrule ConjugateAR(:y_x) (m_y = m_y, m_x = m_x, q_w = q_w, meta = meta)
+            exp = @call_marginalrule AR(:y_x) (m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta)
+            @test same_normal(got, exp)
+        end
+    end
+end
