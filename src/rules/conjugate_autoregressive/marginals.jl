@@ -50,3 +50,15 @@
 
     return MvNormalGamma(μn, Λn, αn, βn)
 end
+
+# Joint state marginal q(y, x). The factor matches AR, so delegate to the AR marginal rule with
+# the effective (q_θ, q_γ) derived from the joint q(w) = MvNormalGamma.
+@marginalrule ConjugateAR(:y_x) (
+    m_y::NormalDistributionsFamily,
+    m_x::NormalDistributionsFamily,
+    q_w::MvNormalGamma,
+    meta::ARMeta,
+) = begin
+    q_θ, q_γ = conjugatear_effective_marginals(q_w)
+    return @call_marginalrule AR(:y_x) (m_y = m_y, m_x = m_x, q_θ = q_θ, q_γ = q_γ, meta = meta)
+end
