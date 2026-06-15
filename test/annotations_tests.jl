@@ -79,10 +79,19 @@ end
 
     ann = AnnotationDict()
     @test repr(ann) == "AnnotationDict()"
+    @test sprint(show, ann; context = :compact => true) == "AnnotationDict()"
 
     annotate!(ann, :logscale, 1.0)
-    @test occursin("logscale", repr(ann))
-    @test occursin("1.0", repr(ann))
+    # Default form (`:compact => false`) keeps the full key/value listing —
+    # this is what an interactive user sees in REPL/Pluto.
+    long = repr(ann)
+    @test occursin("logscale", long)
+    @test occursin("1.0", long)
+    # Compact form (used by trace loggers) collapses to the entry count.
+    @test sprint(show, ann; context = :compact => true) == "AnnotationDict(n=1)"
+
+    annotate!(ann, :upper_bound, 2.5)
+    @test sprint(show, ann; context = :compact => true) == "AnnotationDict(n=2)"
 end
 
 @testitem "AnnotationDict does not allocate on simple creation" begin

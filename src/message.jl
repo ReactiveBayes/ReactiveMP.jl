@@ -143,6 +143,21 @@ Base.@kwdef struct MessageProductContext{C, F, S, L, N, A}
     callbacks::A = nothing
 end
 
+function Base.show(io::IO, ctx::MessageProductContext)
+    print(io, "MessageProductContext(strategy=")
+    show(io, ctx.form_constraint_check_strategy)
+    print(io, ", fold=")
+    show(io, ctx.fold_strategy)
+    if !get(io, :compact, false)
+        print(io, ", form_constraint=")
+        show(io, ctx.form_constraint)
+        print(io, ", prod_constraint=")
+        show(io, ctx.prod_constraint)
+    end
+    print(io, ")")
+    return nothing
+end
+
 """
     compute_product_of_two_messages(variable::AbstractVariable, context::MessageProductContext, left::Message, right::Message)
 
@@ -544,6 +559,28 @@ end
 
 message_mapping_fform(::MessageMapping{F}) where {F} = F
 message_mapping_fform(::MessageMapping{F}) where {F <: Function} = F.instance
+
+function Base.show(io::IO, mapping::MessageMapping)
+    print(io, "MessageMapping(")
+    print(io, message_mapping_fform(mapping))
+    print(io, ", ", repr(mapping.vtag))
+    if mapping.msgs_names !== nothing
+        print(io, ", msgs=", collect(unval(mapping.msgs_names)))
+    end
+    if mapping.marginals_names !== nothing
+        print(io, ", marginals=", collect(unval(mapping.marginals_names)))
+    end
+    if !get(io, :compact, false)
+        if mapping.vconstraint !== nothing
+            print(io, ", vconstraint=", mapping.vconstraint)
+        end
+        if mapping.meta !== nothing
+            print(io, ", meta=", mapping.meta)
+        end
+    end
+    print(io, ")")
+    return nothing
+end
 
 function MessageMapping(
     ::Type{F},

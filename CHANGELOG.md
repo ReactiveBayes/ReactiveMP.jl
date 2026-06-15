@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.1] - 2026-05-22
+
+### Changed
+- Improved `AddonMemory` deprecation error message to include a before/after migration example and a direct link to the v5-to-v6 migration guide ([#600](https://github.com/ReactiveBayes/RxInfer.jl/issues/600), [#605](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/605))
+- Improved `AddonLogScale` deprecation error message to include a before/after migration example and a direct link to the v5-to-v6 migration guide ([#605](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/605))
+
+### Fixed
+- Added missing `BayesBase` module prefix to `paramfloattype(::ManyOf)` method so the extension is correctly registered ([#606](https://github.com/ReactiveBayes/ReactiveMP.jl/pull/606))
+
+## [6.1.0] - 04-05-2026
+
+### Added
+- `Base.show` methods for every callback `Event` defined in `src/callbacks.jl` (`Before/AfterMessageRuleCallEvent`, `Before/AfterProductOfTwoMessagesEvent`, `Before/AfterProductOfMessagesEvent`, `Before/AfterFormConstraintAppliedEvent`, `Before/AfterMarginalComputationEvent`) so the RxInfer trace logger no longer dumps raw struct contents into TBLogger text summaries ([#599](https://github.com/ReactiveBayes/ReactiveMP.jl/issues/599), [RxInfer.jl#638](https://github.com/ReactiveBayes/RxInfer.jl/issues/638)). The methods honor the `IOContext` `:compact` flag: trace loggers pass `:compact => true` to get a one-line `nmsgs=N` / 4-char span summary, while REPL/Pluto/Jupyter sees the full form with actual messages and the full UUID span id.
+- `Base.show` methods following the same `:compact` convention for the supporting types those events reference: `MessageMapping`, `MessageProductContext`, `FormConstraintCheckEach`, `FormConstraintCheckLast`
+- `_show_span` internal helper that emits no field at all when the span id is `nothing` (callbacks disabled), a 4-char prefix in `:compact` contexts, and the full UUID otherwise
+
+### Changed
+- `Base.show(io, ::AnnotationDict)` now switches between the count summary `AnnotationDict(n=K)` and the full key/value listing based on `get(io, :compact, false)` rather than `MIME"text/plain"` dispatch, matching the convention used by the new event show methods
+
 ## [6.0.0]
 
 ### Added
@@ -210,7 +229,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.6...HEAD
+[Unreleased]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.1...HEAD
+[6.1.1]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.1.0...v6.1.1
+[6.1.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v6.0.0...v6.1.0
+[6.0.0]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.6...v6.0.0
 [5.6.6]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.5...v5.6.6
 [5.6.5]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.4...v5.6.5
 [5.6.4]: https://github.com/ReactiveBayes/ReactiveMP.jl/compare/v5.6.3...v5.6.4

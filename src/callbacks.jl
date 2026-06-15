@@ -181,6 +181,29 @@ function generate_span_id(callbacks)
     return uuid4()
 end
 
+# Internal helper used by the `Base.show` methods of the event types defined in
+# this file. Honors the `:compact` `IOContext` flag and the `nothing` span:
+#
+# - emits nothing at all when `span_id === nothing` (no `span=nothing` noise),
+# - otherwise emits a leading `, ` separator followed by either
+#     * `span=<first 4 hex chars>…` when `get(io, :compact, false) == true`
+#       (greppable: the same prefix appears on the matching `Before`/`After`
+#       pair), or
+#     * `span_id=<full uuid>` for non-compact contexts (REPL, Pluto, …) where
+#       the full identifier is preferable.
+function _show_span(io::IO, span_id)
+    if isnothing(span_id)
+        return nothing
+    end
+    if get(io, :compact, false)
+        s = string(span_id)
+        print(io, ", span=", first(s, 4), "…")
+    else
+        print(io, ", span_id=", span_id)
+    end
+    return nothing
+end
+
 # All defined events go here, so its easier to document them all in one place
 
 """
@@ -417,4 +440,164 @@ struct AfterMarginalComputationEvent{V, C, Ms, R, S} <:
     messages::Ms
     result::R
     span_id::S
+end
+
+# -----------------------------------------------------------------------------
+# `Base.show` methods for the event types defined above.
+#
+# These honor the `:compact` `IOContext` flag (Julia stdlib convention, see
+# `Base.show_circular` and friends in `base/show.jl`):
+#
+#   * `:compact => true`  — short, single-line form intended for trace
+#     loggers like RxInfer's TensorBoardLoggerExt. Tuples of messages and
+#     marginals are summarised by `nmsgs=N` / `nmarginals=N` and the span id
+#     is truncated to a 4-char prefix that matches across `Before`/`After`
+#     pairs.
+#   * `:compact => false` (the default for REPL, Pluto, Jupyter)  — full
+#     form: actual `messages` / `marginals` are printed, the span id is
+#     emitted in full.
+#
+# Field order matches the struct definition so the output mirrors the
+# event's own data. Variable identity is shown via `var=<label>` (every
+# variable subtype stores a `label` field, see `src/variables/*.jl`).
+# -----------------------------------------------------------------------------
+
+# Best-effort label extraction. Variables (`RandomVariable`, `ConstVariable`,
+# `DataVariable`) all carry a `label` field; fall back to the value itself
+# for any other shape so the show methods stay total.
+_var_label(v) = hasproperty(v, :label) ? getfield(v, :label) : v
+
+# Count for `messages::Union{Tuple, Nothing}` and the marginals counterpart.
+_count_or_zero(::Nothing) = 0
+_count_or_zero(x) = length(x)
+
+# Compact summary `nmsgs=N` vs. full `messages=<value>`. The compact form is
+# what trace loggers want; the full form is what an interactive user wants
+# when they `display(ev)` in a notebook.
+function _show_messages_field(io::IO, name::String, value)
+    if get(io, :compact, false)
+        print(io, ", n", name, "=", _count_or_zero(value))
+    else
+        print(io, ", ", name, "=")
+        show(io, value)
+    end
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeMessageRuleCallEvent)
+    print(io, "BeforeMessageRuleCallEvent(mapping=")
+    show(io, ev.mapping)
+    _show_messages_field(io, "msgs", ev.messages)
+    _show_messages_field(io, "marginals", ev.marginals)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterMessageRuleCallEvent)
+    print(io, "AfterMessageRuleCallEvent(mapping=")
+    show(io, ev.mapping)
+    _show_messages_field(io, "msgs", ev.messages)
+    _show_messages_field(io, "marginals", ev.marginals)
+    print(io, ", result=")
+    show(io, ev.result)
+    print(io, ", annotations=")
+    show(io, ev.annotations)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeProductOfTwoMessagesEvent)
+    print(io, "BeforeProductOfTwoMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", left=")
+    show(io, ev.left)
+    print(io, ", right=")
+    show(io, ev.right)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterProductOfTwoMessagesEvent)
+    print(io, "AfterProductOfTwoMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", left=")
+    show(io, ev.left)
+    print(io, ", right=")
+    show(io, ev.right)
+    print(io, ", result=")
+    show(io, ev.result)
+    print(io, ", annotations=")
+    show(io, ev.annotations)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeProductOfMessagesEvent)
+    print(io, "BeforeProductOfMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    _show_messages_field(io, "messages", ev.messages)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterProductOfMessagesEvent)
+    print(io, "AfterProductOfMessagesEvent(var=")
+    show(io, _var_label(ev.variable))
+    _show_messages_field(io, "messages", ev.messages)
+    print(io, ", result=")
+    show(io, ev.result)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeFormConstraintAppliedEvent)
+    print(io, "BeforeFormConstraintAppliedEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", strategy=")
+    show(io, ev.strategy)
+    print(io, ", dist=")
+    show(io, ev.distribution)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterFormConstraintAppliedEvent)
+    print(io, "AfterFormConstraintAppliedEvent(var=")
+    show(io, _var_label(ev.variable))
+    print(io, ", strategy=")
+    show(io, ev.strategy)
+    print(io, ", dist=")
+    show(io, ev.distribution)
+    print(io, ", result=")
+    show(io, ev.result)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::BeforeMarginalComputationEvent)
+    print(io, "BeforeMarginalComputationEvent(var=")
+    show(io, _var_label(ev.variable))
+    _show_messages_field(io, "messages", ev.messages)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ev::AfterMarginalComputationEvent)
+    print(io, "AfterMarginalComputationEvent(var=")
+    show(io, _var_label(ev.variable))
+    _show_messages_field(io, "messages", ev.messages)
+    print(io, ", result=")
+    show(io, ev.result)
+    _show_span(io, ev.span_id)
+    print(io, ")")
+    return nothing
 end

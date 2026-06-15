@@ -36,11 +36,17 @@ Base.isempty(ann::AnnotationDict) =
 function Base.show(io::IO, ann::AnnotationDict)
     if isempty(ann)
         print(io, "AnnotationDict()")
+        return nothing
+    end
+    data = ann.data::Dict{Symbol, Any}
+    if get(io, :compact, false)
+        print(io, "AnnotationDict(n=", length(data), ")")
     else
         print(io, "AnnotationDict(")
-        join(io, ("$k => $v" for (k, v) in ann.data::Dict{Symbol, Any}), ", ")
+        join(io, ("$k => $v" for (k, v) in data), ", ")
         print(io, ")")
     end
+    return nothing
 end
 
 function Base.:(==)(left::AnnotationDict, right::AnnotationDict)

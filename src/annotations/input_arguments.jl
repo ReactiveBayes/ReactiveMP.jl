@@ -178,7 +178,12 @@ Use [`InputArgumentsAnnotations`](@ref) instead. See the migration guide in the 
 """
 function AddonMemory(args...; kwargs...)
     error(
-        """`AddonMemory` has been removed in ReactiveMP v6 and replaced by `InputArgumentsAnnotations`. """ *
-        """See the migration guide in the documentation for details.""",
+        """`AddonMemory` has been removed in ReactiveMP v6 """ *
+        """and replaced by `InputArgumentsAnnotations`.\n""" *
+        """To migrate, replace:\n""" *
+        """  addons = (AddonMemory(),)\n""" *
+        """with:\n""" *
+        """  annotations = (InputArgumentsAnnotations(),)\n""" *
+        """See the migration guide: https://reactivebayes.github.io/ReactiveMP.jl/stable/migration-guides/v5-to-v6/""",
     )
 end
