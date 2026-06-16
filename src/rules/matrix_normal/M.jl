@@ -38,3 +38,16 @@ end
     p = size(X, 2)
     return MatrixTDist(ν_V - p + 1, X, U, Ψ_V)
 end
+
+# Mean-field VMP, mirror of the `:out` rule: the outgoing message in M is
+# proportional to MatrixNormal(E[out], (E[U⁻¹])⁻¹, (E[V⁻¹])⁻¹).
+@rule MatrixNormal(:M, Marginalisation) (
+    q_out::MatrixNormal,
+    q_U::Union{InverseWishartDistributionsFamily,PointMass},
+    q_V::Union{InverseWishartDistributionsFamily,PointMass},
+) = begin
+    X = mean(q_out)
+    U = cholinv(mean(cholinv, q_U))
+    V = cholinv(mean(cholinv, q_V))
+    return MatrixNormal(X, (U + U') / 2, (V + V') / 2)
+end
