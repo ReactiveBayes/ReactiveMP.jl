@@ -50,7 +50,8 @@ end
     struct FormConstraint3WithContext end
     struct FormConstraint3Context end
 
-    ReactiveMP.prepare_context(::FormConstraint3WithContext) = FormConstraint3Context()
+    ReactiveMP.prepare_context(::FormConstraint3WithContext) =
+        FormConstraint3Context()
 
     @test preprocess_form_constraints(FormConstraint1()) == FormConstraint1()
     @test preprocess_form_constraints(FormConstraint2()) ==
@@ -154,9 +155,8 @@ end
         value::Int
     end
 
-    ReactiveMP.prepare_context(::FormConstraintWithContext) = FormConstraintContext(
-        0
-    )
+    ReactiveMP.prepare_context(::FormConstraintWithContext) =
+        FormConstraintContext(0)
 
     function constrain_form(::FormConstraintWithContext, x)
         error("This function should not be called")

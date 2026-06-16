@@ -34,9 +34,8 @@ Returns linear components `(a, b)` for the function `g` at the point `x`.
 """
 function local_linearization end
 
-local_linearization(g::G, x_hat::Tuple{T}) where {G, T} = local_linearization(
-    g(first(x_hat)), g, x_hat
-)
+local_linearization(g::G, x_hat::Tuple{T}) where {G, T} =
+    local_linearization(g(first(x_hat)), g, x_hat)
 
 """Return local linearization of g around expansion point x_hat for Delta node with single input interface and univariate output"""
 function local_linearization(

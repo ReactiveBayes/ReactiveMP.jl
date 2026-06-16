@@ -55,9 +55,9 @@ mutable struct BIFMMeta{T}
     "Transition matrix B: converting the input to the latent state."
     B::Matrix{T}
     "Transition matrix C: converting the latent state to the output."
-    C        :: Matrix{T}
-    H        :: Union{Matrix{T}, Nothing}
-    BHBt     :: Union{Matrix{T}, Nothing}
+    C::Matrix{T}
+    H       :: Union{Matrix{T}, Nothing}
+    BHBt    :: Union{Matrix{T}, Nothing}
     ξz      :: Union{Vector{T}, Nothing}
     Λz      :: Union{Matrix{T}, Nothing}
     ξztilde :: Union{Vector{T}, Nothing}
@@ -123,11 +123,11 @@ function BIFMMeta(
     )
 end
 
-getA(meta::BIFMMeta)        = meta.A
-getB(meta::BIFMMeta)        = meta.B
-getC(meta::BIFMMeta)        = meta.C
-getH(meta::BIFMMeta)        = meta.H
-getBHBt(meta::BIFMMeta)     = meta.BHBt
+getA(meta::BIFMMeta)       = meta.A
+getB(meta::BIFMMeta)       = meta.B
+getC(meta::BIFMMeta)       = meta.C
+getH(meta::BIFMMeta)       = meta.H
+getBHBt(meta::BIFMMeta)    = meta.BHBt
 getξz(meta::BIFMMeta)      = meta.ξz
 getΛz(meta::BIFMMeta)      = meta.Λz
 getξztilde(meta::BIFMMeta) = meta.ξztilde
@@ -167,6 +167,5 @@ function setΣu!(meta::BIFMMeta, Σu)
     meta.Σu = Σu
 end
 
-default_meta(::Type{BIFM}) = error(
-    "BIFM node requires meta flag explicitly specified"
-)
+default_meta(::Type{BIFM}) =
+    error("BIFM node requires meta flag explicitly specified")

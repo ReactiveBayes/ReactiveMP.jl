@@ -24,7 +24,8 @@ Base.size(cmatrix::CompanionMatrix) = (length(cmatrix.θ), length(cmatrix.θ))
 Base.length(cmatrix::CompanionMatrix) = prod(size(cmatrix))
 
 Base.getindex(cmatrix::CompanionMatrix, i::Int) = getindex(
-    cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...
+    cmatrix,
+    map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...,
 )
 
 function Base.getindex(cmatrix::CompanionMatrix, i::Int, j::Int)
@@ -42,13 +43,13 @@ struct CompanionMatrixTransposed{R <: Real, T <: AbstractVector{R}} <:
     θ::T
 end
 
-Base.size(cmatrix::CompanionMatrixTransposed) = (
-    length(cmatrix.θ), length(cmatrix.θ)
-)
+Base.size(cmatrix::CompanionMatrixTransposed) =
+    (length(cmatrix.θ), length(cmatrix.θ))
 Base.length(cmatrix::CompanionMatrixTransposed) = prod(size(cmatrix))
 
 Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int) = getindex(
-    cmatrix, map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...
+    cmatrix,
+    map(r -> r + 1, reverse(divrem(i - 1, first(size(cmatrix)))))...,
 )
 
 function Base.getindex(cmatrix::CompanionMatrixTransposed, i::Int, j::Int)
@@ -70,9 +71,8 @@ LinearAlgebra.transpose(cmatrix::CompanionMatrixTransposed) = CompanionMatrix(cm
 LinearAlgebra.adjoint(cmatrix::CompanionMatrix)           = CompanionMatrixTransposed(cmatrix.θ)
 LinearAlgebra.adjoint(cmatrix::CompanionMatrixTransposed) = CompanionMatrix(cmatrix.θ)
 
-LinearAlgebra.inv(t::Union{CompanionMatrix, CompanionMatrixTransposed}) = inv(
-    as_matrix(t)
-)
+LinearAlgebra.inv(t::Union{CompanionMatrix, CompanionMatrixTransposed}) =
+    inv(as_matrix(t))
 
 function as_matrix(cmatrix::CompanionMatrix{R}) where {R}
     dim     = first(size(cmatrix))

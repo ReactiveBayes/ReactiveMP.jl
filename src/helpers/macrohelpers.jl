@@ -115,9 +115,8 @@ macro test_inferred(T, expression)
         quote
             let
                 local result = Test.@inferred($expression)
-                if !(
-                    ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <: $T
-                )
+                if !(ReactiveMP.MacroHelpers.__test_inferred_typeof(result) <:
+                     $T)
                     error(
                         "Result type $(ReactiveMP.MacroHelpers.__test_inferred_typeof(result)) does not match allowed type $T",
                     )
@@ -229,9 +228,8 @@ end
 
 __split_val(x::QuoteNode, mod) = valof_set(x.value, mod)
 __split_val(x::Expr, mod) = valof_set(Tuple(map(z -> z.value, x.args)), mod)
-__split_val(x::Nothing, mod) = error(
-    "Unexpected expression encountered (Not of form `Val{...}`)."
-)
+__split_val(x::Nothing, mod) =
+    error("Unexpected expression encountered (Not of form `Val{...}`).")
 
 # Fallback for other types
 valof_set(x, mod::Module) = Set{Symbol}()

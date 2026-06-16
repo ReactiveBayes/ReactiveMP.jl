@@ -88,19 +88,14 @@ end
 # get index function
 getind(e::StandardBasisVector) = e.index
 
-LinearAlgebra.adjoint(e::S) where {S <: StandardBasisVector} = Adjoint{
-    eltype(S), S
-}(
-    e
-)
+LinearAlgebra.adjoint(e::S) where {S <: StandardBasisVector} =
+    Adjoint{eltype(S), S}(e)
 
 # standard basis vector - scalar
-Base.:*(e::StandardBasisVector, x::Real) = StandardBasisVector(
-    length(e), getind(e), e.scale * x
-)
-Base.:*(x::Real, e::StandardBasisVector) = StandardBasisVector(
-    length(e), getind(e), x * e.scale
-)
+Base.:*(e::StandardBasisVector, x::Real) =
+    StandardBasisVector(length(e), getind(e), e.scale * x)
+Base.:*(x::Real, e::StandardBasisVector) =
+    StandardBasisVector(length(e), getind(e), x * e.scale)
 
 Base.:*(a::Adjoint{T, StandardBasisVector{T}}, x::Real) where {T} = (a' * x)'
 Base.:*(x::Real, a::Adjoint{T, StandardBasisVector{T}}) where {T} = (x * a')'
@@ -132,15 +127,17 @@ end
 end
 
 # Julia does not understand union here and throws an ambiguity error
-LinearAlgebra.dot(e1::StandardBasisVector, A::AbstractMatrix, e2::StandardBasisVector) = __dot3_basis_vector_mat(
-    e1, A, e2
-)
-LinearAlgebra.dot(e1::StandardBasisVector, A::Diagonal, e2::StandardBasisVector) = __dot3_basis_vector_mat(
-    e1, A, e2
-)
-LinearAlgebra.dot(e1::StandardBasisVector, A::Adjoint{T, <:AbstractMatrix{T}}, e2::StandardBasisVector) where {T} = __dot3_basis_vector_mat(
-    e1, A, e2
-)
+LinearAlgebra.dot(
+    e1::StandardBasisVector, A::AbstractMatrix, e2::StandardBasisVector
+) = __dot3_basis_vector_mat(e1, A, e2)
+LinearAlgebra.dot(
+    e1::StandardBasisVector, A::Diagonal, e2::StandardBasisVector
+) = __dot3_basis_vector_mat(e1, A, e2)
+LinearAlgebra.dot(
+    e1::StandardBasisVector,
+    A::Adjoint{T, <:AbstractMatrix{T}},
+    e2::StandardBasisVector,
+) where {T} = __dot3_basis_vector_mat(e1, A, e2)
 
 # vector - vector
 function Base.:*(
@@ -206,13 +203,12 @@ end
 end
 
 # Julia does not understand `Union` here and throws an ambiguity error
-Base.:*(A::AbstractMatrix, e::StandardBasisVector) = __mul_mat_basis_vector(
-    A, e
-)
+Base.:*(A::AbstractMatrix, e::StandardBasisVector) =
+    __mul_mat_basis_vector(A, e)
 Base.:*(A::Diagonal, e::StandardBasisVector) = __mul_mat_basis_vector(A, e)
-Base.:*(A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector) where {T <: Real} = __mul_mat_basis_vector(
-    A, e
-)
+Base.:*(
+    A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector
+) where {T <: Real} = __mul_mat_basis_vector(A, e)
 
 @inline function __mul_mat_adjoint_basis_vector(A, e)
     sA = size(A)
@@ -229,12 +225,10 @@ Base.:*(A::Adjoint{T, <:AbstractMatrix{T}}, e::StandardBasisVector) where {T <: 
     return result
 end
 
-Base.:*(A::AbstractMatrix, e::Adjoint{T2, StandardBasisVector{T2}}) where {T2} = __mul_mat_adjoint_basis_vector(
-    A, e
-)
-Base.:*(A::Diagonal, e::Adjoint{T2, StandardBasisVector{T2}}) where {T2} = __mul_mat_adjoint_basis_vector(
-    A, e
-)
+Base.:*(A::AbstractMatrix, e::Adjoint{T2, StandardBasisVector{T2}}) where {T2} =
+    __mul_mat_adjoint_basis_vector(A, e)
+Base.:*(A::Diagonal, e::Adjoint{T2, StandardBasisVector{T2}}) where {T2} =
+    __mul_mat_adjoint_basis_vector(A, e)
 
 @inline function __mul_basis_vector_mat(e, A)
     sA = size(A)
@@ -250,9 +244,8 @@ Base.:*(A::Diagonal, e::Adjoint{T2, StandardBasisVector{T2}}) where {T2} = __mul
     return result
 end
 
-Base.:*(e::StandardBasisVector, A::AbstractMatrix) = __mul_basis_vector_mat(
-    e, A
-)
+Base.:*(e::StandardBasisVector, A::AbstractMatrix) =
+    __mul_basis_vector_mat(e, A)
 Base.:*(e::StandardBasisVector, A::Diagonal) = __mul_basis_vector_mat(e, A)
 
 function Base.:*(

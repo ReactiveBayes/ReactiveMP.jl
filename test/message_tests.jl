@@ -214,9 +214,8 @@
             end
         end
 
-        _getpoint(rng, distribution) = _getpoint(
-            rng, variate_form(typeof(distribution)), distribution
-        )
+        _getpoint(rng, distribution) =
+            _getpoint(rng, variate_form(typeof(distribution)), distribution)
         _getpoint(rng, ::Type{<:Univariate}, distribution) = 10rand(rng)
         _getpoint(rng, ::Type{<:Multivariate}, distribution) =
             10 .* rand(rng, 2)
@@ -423,9 +422,8 @@ end
     # A simple form constraint that adds +1 to the mean of a Normal distribution
     struct AddOneToMeanConstraint <: AbstractFormConstraint end
 
-    constrain_form(::AddOneToMeanConstraint, dist::Normal) = Normal(
-        dist.mean + 1, dist.var
-    )
+    constrain_form(::AddOneToMeanConstraint, dist::Normal) =
+        Normal(dist.mean + 1, dist.var)
 
     # A callback handler that only records events from a specified set
     struct SaveOrderOfComputationCallbacks
